@@ -21,6 +21,7 @@
 
 import beaker
 import logging
+import threading
 
 from beaker.cache import _cache_decorate, cache_regions, region_invalidate
 
@@ -170,13 +171,20 @@ class InvalidationContext(object):
             safe_str(self.repo_name), safe_str(self.cache_type))
 
     def __init__(self, compute_func, repo_name, cache_type,
-                 raise_exception=False):
+                 raise_exception=False, thread_scoped=False):
         self.compute_func = compute_func
         self.repo_name = repo_name
         self.cache_type = cache_type
         self.cache_key = compute_key_from_params(
             repo_name, cache_type)
         self.raise_exception = raise_exception
+
+        # Append the thread id to the cache key if this invalidation context
+        # should be scoped to the current thread.
+        if thread_scoped:
+            thread_id = threading.current_thread().ident
+            self.cache_key = '{cache_key}_{thread_id}'.format(
+                cache_key=self.cache_key, thread_id=thread_id)
 
     def get_cache_obj(self):
         cache_key = CacheKey.get_cache_key(
