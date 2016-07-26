@@ -19,52 +19,13 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-import logging
-
-from pyramid.renderers import render
-
-from rhodecode.model.db import RepoGroup
-from rhodecode.svn_support import keys
+from .utils import generate_mod_dav_svn_config
 
 
-log = logging.getLogger(__name__)
-
-
-def generate_mod_dav_svn_config(event):
+def generate_config_subscriber(event):
     """
     Subscriber to the `rhodcode.events.RepoGroupEvent`. This triggers the
     automatic generation of mod_dav_svn config file on repository group
     changes.
     """
-    _generate(event.request.registry.settings)
-
-
-def _generate(settings):
-    """
-    Generate the configuration file for use with subversion's mod_dav_svn
-    module. The configuration has to contain a <Location> block for each
-    available repository group because the mod_dav_svn module does not support
-    repositories organized in sub folders.
-
-    Currently this is only used by the subscriber above. If we extend this
-    to include it as API method and in the web interface this should be moved
-    to an appropriate place.
-    """
-    filepath = settings[keys.config_file_path]
-    repository_root = settings[keys.parent_path_root]
-    list_parent_path = settings[keys.list_parent_path]
-    location_root = settings[keys.location_root]
-
-    # Render the configuration to string.
-    template = 'rhodecode:svn_support/templates/mod-dav-svn.conf.mako'
-    context = {
-        'location_root': location_root,
-        'repository_root': repository_root,
-        'repo_groups': RepoGroup.get_all_repo_groups(),
-        'svn_list_parent_path': list_parent_path,
-    }
-    mod_dav_svn_config = render(template, context)
-
-    # Write configuration to file.
-    with open(filepath, 'w') as file_:
-        file_.write(mod_dav_svn_config)
+    generate_mod_dav_svn_config(event.request.registry.settings)

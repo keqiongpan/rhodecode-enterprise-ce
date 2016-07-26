@@ -18,9 +18,9 @@
 </Location>
 
 % for repo_group in repo_groups:
-<Location ${location_root}${repo_group.full_path}>
+<Location ${location_root_stripped}${repo_group.full_path}>
     DAV svn
-    SVNParentPath ${parent_path_root}${repo_group.full_path}
+    SVNParentPath ${parent_path_root_stripped}${repo_group.full_path}
     SVNListParentPath ${'On' if svn_list_parent_path else 'Off'}
     Allow from all
     Order allow,deny

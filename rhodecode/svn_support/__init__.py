@@ -23,8 +23,9 @@ import os
 
 from rhodecode import events
 from rhodecode.lib.utils2 import str2bool
-from rhodecode.svn_support.subscribers import generate_mod_dav_svn_config
-from rhodecode.svn_support import keys
+
+from .subscribers import generate_config_subscriber
+from . import keys
 
 
 log = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ def includeme(config):
 
     if settings[keys.generate_config]:
         config.add_subscriber(
-            generate_mod_dav_svn_config, events.RepoGroupEvent)
+            generate_config_subscriber, events.RepoGroupEvent)
 
 
 def _sanitize_settings_and_apply_defaults(settings):
