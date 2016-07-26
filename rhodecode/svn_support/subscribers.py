@@ -31,11 +31,25 @@ log = logging.getLogger(__name__)
 
 
 def generate_mod_dav_svn_config(event):
-    _generate(event.request)
+    """
+    Subscriber to the `rhodcode.events.RepoGroupEvent`. This triggers the
+    automatic generation of mod_dav_svn config file on repository group
+    changes.
+    """
+    _generate(event.request.registry.settings)
 
 
-def _generate(request):
-    settings = request.registry.settings
+def _generate(settings):
+    """
+    Generate the configuration file for use with subversion's mod_dav_svn
+    module. The configuration has to contain a <Location> block for each
+    available repository group because the mod_dav_svn module does not support
+    repositories organized in sub folders.
+
+    Currently this is only used by the subscriber above. If we extend this
+    to include it as API method and in the web interface this should be moved
+    to an appropriate place.
+    """
     filepath = settings[keys.config_file_path]
     repository_root = settings[keys.parent_path_root]
     list_parent_path = settings[keys.list_parent_path]

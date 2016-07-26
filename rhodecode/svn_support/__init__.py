@@ -35,12 +35,14 @@ def includeme(config):
     _sanitize_settings_and_apply_defaults(settings)
 
     if settings[keys.generate_config]:
-        log.error('Add subscriber')
         config.add_subscriber(
             generate_mod_dav_svn_config, events.RepoGroupEvent)
 
 
 def _sanitize_settings_and_apply_defaults(settings):
+    """
+    Set defaults, convert to python types and validate settings.
+    """
     # Convert bool settings from string to bool.
     settings[keys.generate_config] = str2bool(
         settings.get(keys.generate_config, 'false'))
@@ -53,9 +55,9 @@ def _sanitize_settings_and_apply_defaults(settings):
     settings.setdefault(keys.parent_path_root, None)
 
     # Append path separator to paths.
-    settings[keys.location_root] = _append_slash(
+    settings[keys.location_root] = _append_path_sep(
         settings[keys.location_root])
-    settings[keys.parent_path_root] = _append_slash(
+    settings[keys.parent_path_root] = _append_path_sep(
         settings[keys.parent_path_root])
 
     # Validate settings.
@@ -63,7 +65,10 @@ def _sanitize_settings_and_apply_defaults(settings):
         assert settings[keys.config_file_path] is not None
 
 
-def _append_slash(path):
+def _append_path_sep(path):
+    """
+    Append the path separator if missing.
+    """
     if isinstance(path, basestring) and not path.endswith(os.path.sep):
         path += os.path.sep
     return path

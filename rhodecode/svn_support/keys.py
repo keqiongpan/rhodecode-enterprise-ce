@@ -19,7 +19,8 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-# Settings keys used in the ini file.
+# Definition of setting keys used to configure this module. Defined here to
+# avoid repetition of keys throughout the module.
 config_file_path = 'svn.proxy.config_file_path'
 generate_config = 'svn.proxy.generate_config'
 list_parent_path = 'svn.proxy.list_parent_path'
