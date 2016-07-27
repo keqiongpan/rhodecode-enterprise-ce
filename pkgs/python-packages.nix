@@ -38,6 +38,19 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  Chameleon = super.buildPythonPackage {
+    name = "Chameleon-2.24";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/5a/9e/637379ffa13c5172b5c0e704833ffea6bf51cec7567f93fd6e903d53ed74/Chameleon-2.24.tar.gz";
+      md5 = "1b01f1f6533a8a11d0d2f2366dec5342";
+    };
+    meta = {
+      license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
+    };
+  };
   Fabric = super.buildPythonPackage {
     name = "Fabric-1.10.0";
     buildInputs = with self; [];
@@ -556,6 +569,20 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
+  deform = super.buildPythonPackage {
+    name = "deform-2.0a3.dev0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [Chameleon colander iso8601 peppercorn translationstring zope.deprecation];
+    src = fetchgit {
+      url = "https://github.com/Pylons/deform";
+      rev = "08fb9de077c76951f6e70e28d4bf060a209d3d39";
+      sha256 = "0nmhajc4pfgp4lbwhs5szqfzswpij1qyr69m7qkyhncl2g2d759r";
+    };
+    meta = {
+      license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
     };
   };
   docutils = super.buildPythonPackage {
@@ -1355,7 +1382,7 @@
     name = "rhodecode-enterprise-ce-4.3.0";
     buildInputs = with self; [WebTest configobj cssselect flake8 lxml mock pytest pytest-cov pytest-runner];
     doCheck = true;
-    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery colander decorator docutils gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
+    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery colander decorator deform docutils gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
     src = ./.;
     meta = {
       license = [ { fullName = "AGPLv3, and Commercial License"; } ];

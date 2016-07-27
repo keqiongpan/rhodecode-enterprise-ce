@@ -1,0 +1,11 @@
+<div tal:omit-tag="field.widget.hidden"
+     tal:define="
+     hidden hidden|field.widget.hidden;
+     description description|field.description;"
+     title="${description}"
+     class="form-group row deform-seq-item ${field.error and error_class or ''} ${field.widget.item_css_class or ''}"
+     i18n:domain="deform">
+  <div class="deform-seq-item-group">
+    <span tal:replace="structure field.serialize(cstruct, readonly=True)"/>
+  </div>
+</div>

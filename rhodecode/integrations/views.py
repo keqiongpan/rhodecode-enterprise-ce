@@ -21,6 +21,7 @@
 import colander
 import logging
 import pylons
+import deform
 
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden
 from pyramid.renderers import render
@@ -101,30 +102,41 @@ class IntegrationSettingsViewBase(object):
         return c
 
     def _form_schema(self):
-        return self.IntegrationType.settings_schema()
+        if self.integration:
+            settings = self.integration.settings
+        else:
+            settings = {}
+        return self.IntegrationType(settings=settings).settings_schema()
 
-    def settings_get(self, defaults=None, errors=None):
+    def settings_get(self, defaults=None, errors=None, form=None):
         """
         View that displays the plugin settings as a form.
         """
         defaults = defaults or {}
         errors = errors or {}
 
-        schema = self._form_schema()
-
-        if not defaults:
-            if self.integration:
-                defaults['enabled'] = self.integration.enabled
-                defaults['name'] = self.integration.name
+        if self.integration:
+            defaults = self.integration.settings or {}
+            defaults['name'] = self.integration.name
+            defaults['enabled'] = self.integration.enabled
+        else:
+            if self.repo:
+                scope = self.repo.repo_name
             else:
-                if self.repo:
-                    scope = self.repo.repo_name
-                else:
-                    scope = _('Global')
+                scope = _('Global')
 
-                defaults['name'] = '{} {} integration'.format(scope,
-                    self.IntegrationType.display_name)
-                defaults['enabled'] = True
+            defaults['name'] = '{} {} integration'.format(scope,
+                self.IntegrationType.display_name)
+            defaults['enabled'] = True
+
+        schema = self._form_schema().bind(request=self.request)
+
+        if self.integration:
+            buttons = ('submit', 'delete')
+        else:
+            buttons = ('submit',)
+
+        form = form or deform.Form(schema, appstruct=defaults, buttons=buttons)
 
         for node in schema:
             setting = self.settings.get(node.name)
@@ -135,6 +147,7 @@ class IntegrationSettingsViewBase(object):
                     defaults.setdefault(node.name, node.default)
 
         template_context = {
+            'form': form,
             'defaults': defaults,
             'errors': errors,
             'schema': schema,
@@ -166,7 +179,9 @@ class IntegrationSettingsViewBase(object):
                 redirect_to = self.request.route_url('global_integrations_home')
             raise HTTPFound(redirect_to)
 
-        schema = self._form_schema()
+        schema = self._form_schema().bind(request=self.request)
+
+        form = deform.Form(schema, buttons=('submit', 'delete'))
 
         params = {}
         for node in schema.children:
@@ -177,15 +192,15 @@ class IntegrationSettingsViewBase(object):
             if val:
                 params[node.name] = val
 
+        controls = self.request.POST.items()
         try:
-            valid_data = schema.deserialize(params)
-        except colander.Invalid as e:
-            # Display error message and display form again.
+            valid_data = form.validate(controls)
+        except deform.ValidationFailure as e:
             self.request.session.flash(
-                _('Errors exist when saving plugin settings. '
+                _('Errors exist when saving integration settings. '
                   'Please check the form inputs.'),
                 queue='error')
-            return self.settings_get(errors=e.asdict(), defaults=params)
+            return self.settings_get(errors={}, defaults=params, form=e)
 
         if not self.integration:
             self.integration = Integration()
@@ -230,7 +245,6 @@ class IntegrationSettingsViewBase(object):
         template_context = {
             'current_IntegrationType': self.IntegrationType,
             'current_integrations': current_integrations,
-            'current_integration': 'none',
             'available_integrations': integration_type_registry,
             'c': self._template_c_context()
         }

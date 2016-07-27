@@ -19,6 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
+
 from rhodecode.integrations.registry import IntegrationTypeRegistry
 from rhodecode.integrations.types import webhook, slack
 

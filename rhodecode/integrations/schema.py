@@ -35,7 +35,6 @@ class IntegrationSettingsSchemaBase(colander.MappingSchema):
         description=lazy_ugettext('Enable or disable this integration.'),
         missing=False,
         title=lazy_ugettext('Enabled'),
-        widget='bool',
     )
 
     name = colander.SchemaNode(
@@ -43,6 +42,4 @@ class IntegrationSettingsSchemaBase(colander.MappingSchema):
         description=lazy_ugettext('Short name for this integration.'),
         missing=colander.required,
         title=lazy_ugettext('Integration name'),
-        widget='string',
     )
-

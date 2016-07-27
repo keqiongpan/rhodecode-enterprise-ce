@@ -41,6 +41,16 @@ for SELECT use formencode.All(OneOf(list), Int())
 
 """
 
+import deform
+from pkg_resources import resource_filename
+
+deform_templates = resource_filename('deform', 'templates')
+rhodecode_templates = resource_filename('rhodecode', 'templates/forms')
+search_path = (rhodecode_templates, deform_templates)
+
+deform.Form.set_zpt_renderer(search_path)
+
+
 import logging
 
 import formencode

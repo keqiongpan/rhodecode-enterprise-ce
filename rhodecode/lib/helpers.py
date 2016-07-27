@@ -950,7 +950,8 @@ def bool2icon(value):
 #==============================================================================
 from rhodecode.lib.auth import HasPermissionAny, HasPermissionAll, \
 HasRepoPermissionAny, HasRepoPermissionAll, HasRepoGroupPermissionAll, \
-HasRepoGroupPermissionAny, HasRepoPermissionAnyApi, get_csrf_token
+HasRepoGroupPermissionAny, HasRepoPermissionAnyApi, get_csrf_token, \
+csrf_token_key
 
 
 #==============================================================================
@@ -1877,10 +1878,14 @@ def secure_form(url, method="POST", multipart=False, **attrs):
 
     """
     from webhelpers.pylonslib.secure_form import insecure_form
-    from rhodecode.lib.auth import get_csrf_token, csrf_token_key
     form = insecure_form(url, method, multipart, **attrs)
-    token = HTML.div(hidden(csrf_token_key, get_csrf_token()), style="display: none;")
+    token = csrf_input()
     return literal("%s\n%s" % (form, token))
+
+def csrf_input():
+    return literal(
+        '<input type="hidden" id="{}" name="{}" value="{}">'.format(
+        csrf_token_key, csrf_token_key, get_csrf_token()))
 
 def dropdownmenu(name, selected, options, enable_filter=False, **attrs):
     select_html = select(name, selected, options, **attrs)
@@ -1935,6 +1940,16 @@ def route_path(*args, **kwds):
     """
     req = get_current_request()
     return req.route_path(*args, **kwds)
+
+
+def static_url(*args, **kwds):
+    """
+    Wrapper around pyramids `route_path` function. It is used to generate
+    URLs from within pylons views or templates. This will be removed when
+    pyramid migration if finished.
+    """
+    req = get_current_request()
+    return req.static_url(*args, **kwds)
 
 
 def resource_path(*args, **kwds):

@@ -31,8 +31,7 @@ class IntegrationTypeBase(object):
         self.settings = settings
 
 
-    @classmethod
-    def settings_schema(cls):
+    def settings_schema(self):
         """
         A colander schema of settings for the integration type
 

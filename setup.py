@@ -72,6 +72,7 @@ requirements = [
     'celery',
     'colander',
     'decorator',
+    'deform',
     'docutils',
     'gunicorn',
     'infrae.cache',

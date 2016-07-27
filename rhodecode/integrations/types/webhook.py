@@ -20,6 +20,7 @@
 
 from __future__ import unicode_literals
 
+import deform
 import logging
 import requests
 import colander
@@ -41,16 +42,18 @@ class WebhookSettingsSchema(IntegrationSettingsSchemaBase):
         description=lazy_ugettext('URL of the webhook to receive POST event.'),
         default='',
         validator=colander.url,
-        placeholder='https://www.example.com/webhook',
-        widget='string'
+        widget=deform.widget.TextInputWidget(
+            placeholder='https://www.example.com/webhook'
+        ),
     )
     secret_token = colander.SchemaNode(
         colander.String(),
         title=lazy_ugettext('Secret Token'),
         description=lazy_ugettext('String used to validate received payloads.'),
         default='',
-        placeholder='secret_token',
-        widget='string'
+        widget=deform.widget.TextInputWidget(
+            placeholder='secret_token'
+        ),
     )
 
 
@@ -68,13 +71,15 @@ class WebhookIntegrationType(IntegrationTypeBase):
         events.RepoCreateEvent,
     ]
 
-    @classmethod
-    def settings_schema(cls):
+    def settings_schema(self):
         schema = WebhookSettingsSchema()
         schema.add(colander.SchemaNode(
             colander.Set(),
-            widget='checkbox_list',
-            choices=sorted([e.name for e in cls.valid_events]),
+            widget=deform.widget.CheckboxChoiceWidget(
+                values=sorted(
+                    [(e.name, e.display_name) for e in self.valid_events]
+                )
+            ),
             description="Events activated for this integration",
             name='events'
         ))

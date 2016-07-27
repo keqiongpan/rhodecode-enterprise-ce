@@ -19,7 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 from __future__ import unicode_literals
-
+import deform
 import re
 import logging
 import requests
@@ -48,10 +48,11 @@ class SlackSettingsSchema(IntegrationSettingsSchemaBase):
             '<a href="https://my.slack.com/services/new/incoming-webhook/">'
             'slack app manager</a>')),
         default='',
-        placeholder='https://hooks.slack.com/services/...',
         preparer=strip_whitespace,
         validator=colander.url,
-        widget='string'
+        widget=deform.widget.TextInputWidget(
+            placeholder='https://hooks.slack.com/services/...',
+        ),
     )
     username = colander.SchemaNode(
         colander.String(),
@@ -59,8 +60,9 @@ class SlackSettingsSchema(IntegrationSettingsSchemaBase):
         description=lazy_ugettext('Username to show notifications coming from.'),
         missing='Rhodecode',
         preparer=strip_whitespace,
-        widget='string',
-        placeholder='Rhodecode'
+        widget=deform.widget.TextInputWidget(
+            placeholder='Rhodecode'
+        ),
     )
     channel = colander.SchemaNode(
         colander.String(),
@@ -68,8 +70,9 @@ class SlackSettingsSchema(IntegrationSettingsSchemaBase):
         description=lazy_ugettext('Channel to send notifications to.'),
         missing='',
         preparer=strip_whitespace,
-        widget='string',
-        placeholder='#general'
+        widget=deform.widget.TextInputWidget(
+            placeholder='#general'
+        ),
     )
     icon_emoji = colander.SchemaNode(
         colander.String(),
@@ -77,8 +80,9 @@ class SlackSettingsSchema(IntegrationSettingsSchemaBase):
         description=lazy_ugettext('Emoji to use eg. :studio_microphone:'),
         missing='',
         preparer=strip_whitespace,
-        widget='string',
-        placeholder=':studio_microphone:'
+        widget=deform.widget.TextInputWidget(
+            placeholder=':studio_microphone:'
+        ),
     )
 
 
@@ -144,16 +148,19 @@ class SlackIntegrationType(IntegrationTypeBase):
 
         run_task(post_text_to_slack, self.settings, text)
 
-    @classmethod
-    def settings_schema(cls):
+    def settings_schema(self):
         schema = SlackSettingsSchema()
         schema.add(colander.SchemaNode(
             colander.Set(),
-            widget='checkbox_list',
-            choices=sorted([e.name for e in cls.valid_events]),
+            widget=deform.widget.CheckboxChoiceWidget(
+                values=sorted(
+                    [(e.name, e.display_name) for e in self.valid_events]
+                )
+            ),
             description="Events activated for this integration",
             name='events'
         ))
+
         return schema
 
     def format_pull_request_comment_event(self, event, data):
