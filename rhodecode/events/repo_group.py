@@ -21,6 +21,7 @@ import logging
 from rhodecode.translation import lazy_ugettext
 from rhodecode.events.base import RhodecodeEvent
 
+
 log = logging.getLogger()
 
 
@@ -35,19 +36,21 @@ class RepoGroupEvent(RhodecodeEvent):
         super(RepoGroupEvent, self).__init__()
         self.repo_group = repo_group
 
-    # TODO: Implement this
-    # def as_dict(self):
-    #     from rhodecode.model.repo import RepoModel
-    #     data = super(RepoGroupEvent, self).as_dict()
-    #     data.update({
-    #         'repo': {
-    #             'repo_id': self.repo.repo_id,
-    #             'repo_name': self.repo.repo_name,
-    #             'repo_type': self.repo.repo_type,
-    #             'url': RepoModel().get_url(self.repo)
-    #         }
-    #     })
-    #     return data
+    def as_dict(self):
+        data = super(RepoGroupEvent, self).as_dict()
+        data.update({
+            'repo_group': {
+                'group_id': self.repo_group.group_id,
+                'group_name': self.repo_group.group_name,
+                'group_parent_id': self.repo_group.group_parent_id,
+                'group_description': self.repo_group.group_description,
+                'user_id': self.repo_group.user_id,
+                'created_by': self.repo_group.user.username,
+                'created_on': self.repo_group.created_on,
+                'enable_locking': self.repo_group.enable_locking,
+            }
+        })
+        return data
 
 
 class RepoGroupCreateEvent(RepoGroupEvent):
