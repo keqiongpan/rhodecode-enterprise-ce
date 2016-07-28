@@ -50,8 +50,6 @@ def generate_mod_dav_svn_config(settings):
     }
     mod_dav_svn_config = render(template, context)
 
-    print mod_dav_svn_config
-
     # Write configuration to file.
     with open(filepath, 'w') as file_:
         file_.write(mod_dav_svn_config)
