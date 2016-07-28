@@ -46,13 +46,13 @@ def trigger(event, registry=None):
 
 from rhodecode.events.base import RhodecodeEvent
 
-from rhodecode.events.user import (
+from rhodecode.events.user import (  # noqa
     UserPreCreate,
     UserPreUpdate,
     UserRegistered
 )
 
-from rhodecode.events.repo import (
+from rhodecode.events.repo import (  # noqa
     RepoEvent,
     RepoPreCreateEvent, RepoCreateEvent,
     RepoPreDeleteEvent, RepoDeleteEvent,
@@ -60,7 +60,14 @@ from rhodecode.events.repo import (
     RepoPrePullEvent,   RepoPullEvent,
 )
 
-from rhodecode.events.pullrequest import (
+from rhodecode.events.repo_group import (  # noqa
+    RepoGroupEvent,
+    RepoGroupCreateEvent,
+    RepoGroupUpdateEvent,
+    RepoGroupDeleteEvent,
+)
+
+from rhodecode.events.pullrequest import (  # noqa
     PullRequestEvent,
     PullRequestCreateEvent,
     PullRequestUpdateEvent,
