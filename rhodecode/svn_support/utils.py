@@ -23,7 +23,7 @@ import os
 from pyramid.renderers import render
 
 from rhodecode.model.db import RepoGroup
-from . import keys
+from . import config_keys
 
 
 def generate_mod_dav_svn_config(settings):
@@ -33,10 +33,10 @@ def generate_mod_dav_svn_config(settings):
     available repository group because the mod_dav_svn module does not support
     repositories organized in sub folders.
     """
-    filepath = settings[keys.config_file_path]
-    parent_path_root = settings[keys.parent_path_root]
-    list_parent_path = settings[keys.list_parent_path]
-    location_root = settings[keys.location_root]
+    filepath = settings[config_keys.config_file_path]
+    parent_path_root = settings[config_keys.parent_path_root]
+    list_parent_path = settings[config_keys.list_parent_path]
+    location_root = settings[config_keys.location_root]
 
     # Render the configuration to string.
     template = 'rhodecode:svn_support/templates/mod-dav-svn.conf.mako'

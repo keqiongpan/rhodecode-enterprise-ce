@@ -26,7 +26,7 @@ import tempfile
 
 from pyramid import testing
 
-from rhodecode.svn_support import keys
+from rhodecode.svn_support import config_keys
 from rhodecode.svn_support.utils import generate_mod_dav_svn_config
 
 
@@ -60,10 +60,10 @@ class TestModDavSvnConfig(object):
         config_file_path = tempfile.mkstemp(
             suffix='mod-dav-svn.conf', dir=cls.tempdir)[1]
         return {
-            keys.config_file_path: config_file_path,
-            keys.location_root: '/location/root/',
-            keys.parent_path_root: '/parent/path/root/',
-            keys.list_parent_path: True,
+            config_keys.config_file_path: config_file_path,
+            config_keys.location_root: '/location/root/',
+            config_keys.parent_path_root: '/parent/path/root/',
+            config_keys.list_parent_path: True,
         }
 
     @classmethod
@@ -86,7 +86,7 @@ class TestModDavSvnConfig(object):
         generate_mod_dav_svn_config(settings)
 
         # Read generated file.
-        with open(settings[keys.config_file_path], 'r') as file_:
+        with open(settings[config_keys.config_file_path], 'r') as file_:
             content = file_.read()
 
         # Assert that one location block exists for each repository group.
@@ -109,11 +109,11 @@ class TestModDavSvnConfig(object):
 
         # Execute the method under test.
         settings = self.get_settings()
-        settings[keys.list_parent_path] = True
+        settings[config_keys.list_parent_path] = True
         generate_mod_dav_svn_config(settings)
 
         # Read generated file.
-        with open(settings[keys.config_file_path], 'r') as file_:
+        with open(settings[config_keys.config_file_path], 'r') as file_:
             content = file_.read()
 
         # Make assertions.
@@ -126,11 +126,11 @@ class TestModDavSvnConfig(object):
 
         # Execute the method under test.
         settings = self.get_settings()
-        settings[keys.list_parent_path] = False
+        settings[config_keys.list_parent_path] = False
         generate_mod_dav_svn_config(settings)
 
         # Read generated file.
-        with open(settings[keys.config_file_path], 'r') as file_:
+        with open(settings[config_keys.config_file_path], 'r') as file_:
             content = file_.read()
 
         # Make assertions.
