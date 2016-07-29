@@ -127,7 +127,7 @@ Start the Development Server
 From the rhodecode-vcsserver directory, start the development server in another
 nix-shell, using the following command::
 
-      pserve configs/development_pyramid.ini http_port=9900
+      pserve configs/development.ini http_port=9900
 
 In the adjacent nix-shell which you created for your development server, you may
 now start CE with the following command::
