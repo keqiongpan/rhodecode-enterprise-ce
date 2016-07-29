@@ -42,26 +42,35 @@ for SELECT use formencode.All(OneOf(list), Int())
 """
 
 import deform
-from pkg_resources import resource_filename
-
-deform_templates = resource_filename('deform', 'templates')
-rhodecode_templates = resource_filename('rhodecode', 'templates/forms')
-search_path = (rhodecode_templates, deform_templates)
-
-deform.Form.set_zpt_renderer(search_path)
-
-
 import logging
-
 import formencode
+
+from pkg_resources import resource_filename
 from formencode import All, Pipe
 
 from pylons.i18n.translation import _
 
 from rhodecode import BACKENDS
+from rhodecode.lib import helpers
 from rhodecode.model import validators as v
 
 log = logging.getLogger(__name__)
+
+
+deform_templates = resource_filename('deform', 'templates')
+rhodecode_templates = resource_filename('rhodecode', 'templates/forms')
+search_path = (rhodecode_templates, deform_templates)
+
+
+class RhodecodeFormZPTRendererFactory(deform.ZPTRendererFactory):
+    """ Subclass of ZPTRendererFactory to add rhodecode context variables """
+    def __call__(self, template_name, **kw):
+        kw['h'] = helpers
+        return self.load(template_name)(**kw)
+
+
+form_renderer = RhodecodeFormZPTRendererFactory(search_path)
+deform.Form.set_default_renderer(form_renderer)
 
 
 def LoginForm():

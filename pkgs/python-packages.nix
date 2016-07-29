@@ -572,14 +572,13 @@
     };
   };
   deform = super.buildPythonPackage {
-    name = "deform-2.0a3.dev0";
+    name = "deform-2.0a2";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [Chameleon colander iso8601 peppercorn translationstring zope.deprecation];
-    src = fetchgit {
-      url = "https://github.com/Pylons/deform";
-      rev = "08fb9de077c76951f6e70e28d4bf060a209d3d39";
-      sha256 = "0nmhajc4pfgp4lbwhs5szqfzswpij1qyr69m7qkyhncl2g2d759r";
+    propagatedBuildInputs = with self; [Chameleon colander peppercorn translationstring zope.deprecation];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/8d/b3/aab57e81da974a806dc9c5fa024a6404720f890a6dcf2e80885e3cb4609a/deform-2.0a2.tar.gz";
+      md5 = "7a90d41f7fbc18002ce74f39bd90a5e4";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
