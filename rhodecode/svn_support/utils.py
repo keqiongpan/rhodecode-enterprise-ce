@@ -18,12 +18,16 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import logging
 import os
 
 from pyramid.renderers import render
 
 from rhodecode.model.db import RepoGroup
 from . import config_keys
+
+
+log = logging.getLogger(__name__)
 
 
 def generate_mod_dav_svn_config(settings):
@@ -33,14 +37,21 @@ def generate_mod_dav_svn_config(settings):
     available repository group because the mod_dav_svn module does not support
     repositories organized in sub folders.
     """
-    filepath = settings[config_keys.config_file_path]
-    parent_path_root = settings[config_keys.parent_path_root]
-    list_parent_path = settings[config_keys.list_parent_path]
-    location_root = settings[config_keys.location_root]
+    config = _render_mod_dav_svn_config(
+        settings[config_keys.parent_path_root],
+        settings[config_keys.list_parent_path],
+        settings[config_keys.location_root],
+        RepoGroup.get_all_repo_groups())
+    _write_mod_dav_svn_config(config, settings[config_keys.config_file_path])
 
-    # Prepare render context.
+
+def _render_mod_dav_svn_config(
+        parent_path_root, list_parent_path, location_root, repo_groups):
+    """
+    Render mod_dav_svn configuration to string.
+    """
     repo_group_paths = []
-    for repo_group in RepoGroup.get_all_repo_groups():
+    for repo_group in repo_groups:
         group_path = repo_group.full_path_splitted
         location = os.path.join(location_root, *group_path)
         parent_path = os.path.join(parent_path_root, *group_path)
@@ -55,8 +66,16 @@ def generate_mod_dav_svn_config(settings):
 
     # Render the configuration template to string.
     template = 'rhodecode:svn_support/templates/mod-dav-svn.conf.mako'
-    mod_dav_svn_config = render(template, context)
+    return render(template, context)
 
-    # Write configuration to file.
-    with open(filepath, 'w') as file_:
-        file_.write(mod_dav_svn_config)
+
+def _write_mod_dav_svn_config(config, filepath):
+    """
+    Write mod_dav_svn config to file. Log on exceptions but do not raise.
+    """
+    try:
+        with open(filepath, 'w') as file_:
+            file_.write(config)
+    except Exception:
+        log.exception(
+            'Can not write mod_dav_svn configuration to "%s"', filepath)
