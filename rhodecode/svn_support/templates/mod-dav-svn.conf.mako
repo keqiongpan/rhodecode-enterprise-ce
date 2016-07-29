@@ -46,8 +46,9 @@
     Order allow,deny
 </Location>
 
-% for repo_group in repo_groups:
-<Location ${location_root_stripped}${repo_group.full_path}>
+% for location, parent_path in repo_group_paths:
+
+<Location ${location}>
     AuthType Basic
     AuthName "Subversion proxy"
     AuthBasicProvider anon
@@ -55,7 +56,7 @@
     Require valid-user
 
     DAV svn
-    SVNParentPath ${parent_path_root_stripped}${repo_group.full_path}
+    SVNParentPath ${parent_path}
     SVNListParentPath ${'On' if svn_list_parent_path else 'Off'}
 
     Allow from all

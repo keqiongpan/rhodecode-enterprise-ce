@@ -38,16 +38,23 @@ def generate_mod_dav_svn_config(settings):
     list_parent_path = settings[config_keys.list_parent_path]
     location_root = settings[config_keys.location_root]
 
-    # Render the configuration to string.
-    template = 'rhodecode:svn_support/templates/mod-dav-svn.conf.mako'
+    # Prepare render context.
+    repo_group_paths = []
+    for repo_group in RepoGroup.get_all_repo_groups():
+        group_path = repo_group.full_path_splitted
+        location = os.path.join(location_root, *group_path)
+        parent_path = os.path.join(parent_path_root, *group_path)
+        repo_group_paths.append((location, parent_path))
+
     context = {
         'location_root': location_root,
-        'location_root_stripped': location_root.rstrip(os.path.sep),
         'parent_path_root': parent_path_root,
-        'parent_path_root_stripped': parent_path_root.rstrip(os.path.sep),
-        'repo_groups': RepoGroup.get_all_repo_groups(),
+        'repo_group_paths': repo_group_paths,
         'svn_list_parent_path': list_parent_path,
     }
+
+    # Render the configuration template to string.
+    template = 'rhodecode:svn_support/templates/mod-dav-svn.conf.mako'
     mod_dav_svn_config = render(template, context)
 
     # Write configuration to file.
