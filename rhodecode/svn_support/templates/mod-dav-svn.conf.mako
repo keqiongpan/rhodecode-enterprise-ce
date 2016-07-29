@@ -20,8 +20,8 @@
 #     <VirtualHost *:8080>
 #         ServerAdmin webmaster@localhost
 #         DocumentRoot /var/www/html
-#         ErrorLog ${APACHE_LOG_DIR}/error.log
-#         CustomLog ${APACHE_LOG_DIR}/access.log combined
+#         ErrorLog ${'${APACHE_LOG_DIR}'}/error.log
+#         CustomLog ${'${APACHE_LOG_DIR}'}/access.log combined
 #         Include /path/to/generated/mod_dav_svn.conf
 #     </VirtualHost>
 
