@@ -48,7 +48,7 @@
       md5 = "1b01f1f6533a8a11d0d2f2366dec5342";
     };
     meta = {
-      license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
+      license = [ { fullName = "BSD-like (http://repoze.org/license.html)"; } ];
     };
   };
   Fabric = super.buildPythonPackage {
@@ -972,6 +972,19 @@
     };
     meta = {
       license = [ { fullName = "Expat license"; } pkgs.lib.licenses.mit ];
+    };
+  };
+  peppercorn = super.buildPythonPackage {
+    name = "peppercorn-0.5";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/45/ec/a62ec317d1324a01567c5221b420742f094f05ee48097e5157d32be3755c/peppercorn-0.5.tar.gz";
+      md5 = "f08efbca5790019ab45d76b7244abd40";
+    };
+    meta = {
+      license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
     };
   };
   psutil = super.buildPythonPackage {
