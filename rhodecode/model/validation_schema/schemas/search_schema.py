@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2016  RhodeCode GmbH
+# Copyright (C) 2016-2016  RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -19,21 +19,26 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-class JSONRPCBaseError(Exception):
-    pass
+import colander
 
 
-class JSONRPCError(JSONRPCBaseError):
-    pass
-
-
-class JSONRPCValidationError(JSONRPCBaseError):
-
-    def __init__(self, *args, **kwargs):
-        self.colander_exception = kwargs.pop('colander_exc')
-        super(JSONRPCValidationError, self).__init__(*args, **kwargs)
-
-
-class JSONRPCForbidden(JSONRPCBaseError):
-    pass
-
+class SearchParamsSchema(colander.MappingSchema):
+    search_query = colander.SchemaNode(
+        colander.String(),
+        missing='')
+    search_type = colander.SchemaNode(
+        colander.String(),
+        missing='content',
+        validator=colander.OneOf(['content', 'path', 'commit', 'repository']))
+    search_sort = colander.SchemaNode(
+        colander.String(),
+        missing='newfirst',
+        validator=colander.OneOf(
+            ['oldfirst', 'newfirst']))
+    page_limit = colander.SchemaNode(
+        colander.Integer(),
+        missing=10,
+        validator=colander.Range(1, 500))
+    requested_page = colander.SchemaNode(
+        colander.Integer(),
+        missing=1)

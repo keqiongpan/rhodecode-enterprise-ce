@@ -30,7 +30,8 @@ from pyramid.renderers import render
 from pyramid.response import Response
 from pyramid.httpexceptions import HTTPNotFound
 
-from rhodecode.api.exc import JSONRPCBaseError, JSONRPCError, JSONRPCForbidden
+from rhodecode.api.exc import (
+    JSONRPCBaseError, JSONRPCError, JSONRPCForbidden, JSONRPCValidationError)
 from rhodecode.lib.auth import AuthUser
 from rhodecode.lib.base import get_ip_addr
 from rhodecode.lib.ext_json import json
@@ -126,6 +127,11 @@ def exception_view(exc, request):
     fault_message = 'undefined error'
     if isinstance(exc, JSONRPCError):
         fault_message = exc.message
+        log.debug('json-rpc error rpc_id:%s "%s"', rpc_id, fault_message)
+    elif isinstance(exc, JSONRPCValidationError):
+        colander_exc = exc.colander_exception
+        #TODO: think maybe of nicer way to serialize errors ?
+        fault_message = colander_exc.asdict()
         log.debug('json-rpc error rpc_id:%s "%s"', rpc_id, fault_message)
     elif isinstance(exc, JSONRPCForbidden):
         fault_message = 'Access was denied to this resource.'

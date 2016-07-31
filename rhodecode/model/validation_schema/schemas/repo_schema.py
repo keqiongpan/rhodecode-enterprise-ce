@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2016  RhodeCode GmbH
+# Copyright (C) 2016-2016  RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,22 +18,10 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import colander
 
-class JSONRPCBaseError(Exception):
-    pass
-
-
-class JSONRPCError(JSONRPCBaseError):
-    pass
+from rhodecode.model.validation_schema import validators, preparers, types
 
 
-class JSONRPCValidationError(JSONRPCBaseError):
-
-    def __init__(self, *args, **kwargs):
-        self.colander_exception = kwargs.pop('colander_exc')
-        super(JSONRPCValidationError, self).__init__(*args, **kwargs)
-
-
-class JSONRPCForbidden(JSONRPCBaseError):
-    pass
-
+class RepoSchema(colander.Schema):
+    repo_name = colander.SchemaNode(types.GroupNameType())

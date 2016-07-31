@@ -44,27 +44,31 @@
                     <label for='lifetime'>${_('Gist lifetime')}</label>
                     ${h.dropdownmenu('lifetime', '0', c.lifetime_options)}
 
-                    <label for='acl_level'>${_('Gist access level')}</label>
-                    ${h.dropdownmenu('acl_level', c.gist.acl_level, c.acl_options)}
+                    <label for='gist_acl_level'>${_('Gist access level')}</label>
+                    ${h.dropdownmenu('gist_acl_level', c.gist.acl_level, c.acl_options)}
                 </div>
             </div>
 
+            ## peppercorn schema
+            <input type="hidden" name="__start__" value="nodes:sequence"/>
             % for cnt, file in enumerate(c.files):
+                <input type="hidden" name="__start__" value="file:mapping"/>
                 <div id="codeblock" class="codeblock" >
                   <div class="code-header">
                     <div class="form">
                       <div class="fields">
-                        <input type="hidden" value="${file.path}" name="org_files">
-                        <input id="filename_${h.FID('f',file.path)}" name="files" size="30" type="text" value="${file.path}">
-                          ${h.dropdownmenu('mimetypes' ,'plain',[('plain',_('plain'))],enable_filter=True, id='mimetype_'+h.FID('f',file.path))}
+                        <input type="hidden" name="filename_org" value="${file.path}" >
+                        <input id="filename_${h.FID('f',file.path)}" name="filename" size="30" type="text" value="${file.path}">
+                          ${h.dropdownmenu('mimetype' ,'plain',[('plain',_('plain'))],enable_filter=True, id='mimetype_'+h.FID('f',file.path))}
                       </div>
                     </div>
                   </div>
                   <div class="editor_container">
                       <pre id="editor_pre"></pre>
-                      <textarea id="editor_${h.FID('f',file.path)}" name="contents" >${file.content}</textarea>
+                      <textarea id="editor_${h.FID('f',file.path)}" name="content" >${file.content}</textarea>
                   </div>
                 </div>
+                <input type="hidden" name="__end__" />
 
                 ## dynamic edit box.
                 <script type="text/javascript">
@@ -72,7 +76,7 @@
                     var myCodeMirror = initCodeMirror(
                             "editor_${h.FID('f',file.path)}", '');
 
-                    var modes_select = $('#mimetype_${h.FID('f',file.path)}');
+                    var modes_select = $("#mimetype_${h.FID('f',file.path)}");
                     fillCodeMirrorOptions(modes_select);
 
                     // try to detect the mode based on the file we edit
@@ -86,7 +90,7 @@
                         setCodeMirrorMode(myCodeMirror, detected_mode);
                     }
 
-                    var filename_selector = '#filename_${h.FID('f',file.path)}';
+                    var filename_selector = "#filename_${h.FID('f',file.path)}";
                     // on change of select field set mode
                     setCodeMirrorModeFromSelect(
                             modes_select, filename_selector, myCodeMirror, null);
@@ -96,8 +100,8 @@
                         modes_select, filename_selector, myCodeMirror, null);
                 });
                 </script>
-
             %endfor
+            <input type="hidden" name="__end__" />
 
             <div class="pull-right">
             ${h.submit('update',_('Update Gist'),class_="btn btn-success")}

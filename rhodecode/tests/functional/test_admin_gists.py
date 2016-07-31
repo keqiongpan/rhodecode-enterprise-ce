@@ -129,40 +129,33 @@ class TestGistsController(TestController):
         for gist in GistModel.get_all():
             response.mustcontain(no=['gist: %s' % gist.gist_access_id])
 
-    def test_create_missing_description(self):
+    def test_create(self):
         self.log_user()
         response = self.app.post(
             url('gists'),
-            params={'lifetime': -1, 'csrf_token': self.csrf_token},
-            status=200)
-
-        response.mustcontain('Missing value')
-
-    def test_create(self):
-        self.log_user()
-        response = self.app.post(url('gists'),
-                                 params={'lifetime': -1,
-                                         'content': 'gist test',
-                                         'filename': 'foo',
-                                         'public': 'public',
-                                         'acl_level': Gist.ACL_LEVEL_PUBLIC,
-                                         'csrf_token': self.csrf_token},
-                                 status=302)
+            params={'lifetime': -1,
+                    'content': 'gist test',
+                    'filename': 'foo',
+                    'public': 'public',
+                    'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
+                    'csrf_token': self.csrf_token},
+            status=302)
         response = response.follow()
         response.mustcontain('added file: foo')
         response.mustcontain('gist test')
 
     def test_create_with_path_with_dirs(self):
         self.log_user()
-        response = self.app.post(url('gists'),
-                                 params={'lifetime': -1,
-                                         'content': 'gist test',
-                                         'filename': '/home/foo',
-                                         'public': 'public',
-                                         'acl_level': Gist.ACL_LEVEL_PUBLIC,
-                                         'csrf_token': self.csrf_token},
-                                 status=200)
-        response.mustcontain('Filename cannot be inside a directory')
+        response = self.app.post(
+            url('gists'),
+            params={'lifetime': -1,
+                    'content': 'gist test',
+                    'filename': '/home/foo',
+                    'public': 'public',
+                    'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
+                    'csrf_token': self.csrf_token},
+            status=200)
+        response.mustcontain('Filename /home/foo cannot be inside a directory')
 
     def test_access_expired_gist(self, create_gist):
         self.log_user()
@@ -175,14 +168,15 @@ class TestGistsController(TestController):
 
     def test_create_private(self):
         self.log_user()
-        response = self.app.post(url('gists'),
-                                 params={'lifetime': -1,
-                                         'content': 'private gist test',
-                                         'filename': 'private-foo',
-                                         'private': 'private',
-                                         'acl_level': Gist.ACL_LEVEL_PUBLIC,
-                                         'csrf_token': self.csrf_token},
-                                 status=302)
+        response = self.app.post(
+            url('gists'),
+            params={'lifetime': -1,
+                    'content': 'private gist test',
+                    'filename': 'private-foo',
+                    'private': 'private',
+                    'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
+                    'csrf_token': self.csrf_token},
+            status=302)
         response = response.follow()
         response.mustcontain('added file: private-foo<')
         response.mustcontain('private gist test')
@@ -193,14 +187,15 @@ class TestGistsController(TestController):
 
     def test_create_private_acl_private(self):
         self.log_user()
-        response = self.app.post(url('gists'),
-                                 params={'lifetime': -1,
-                                         'content': 'private gist test',
-                                         'filename': 'private-foo',
-                                         'private': 'private',
-                                         'acl_level': Gist.ACL_LEVEL_PRIVATE,
-                                         'csrf_token': self.csrf_token},
-                                 status=302)
+        response = self.app.post(
+            url('gists'),
+            params={'lifetime': -1,
+                    'content': 'private gist test',
+                    'filename': 'private-foo',
+                    'private': 'private',
+                    'gist_acl_level': Gist.ACL_LEVEL_PRIVATE,
+                    'csrf_token': self.csrf_token},
+            status=302)
         response = response.follow()
         response.mustcontain('added file: private-foo<')
         response.mustcontain('private gist test')
@@ -211,15 +206,16 @@ class TestGistsController(TestController):
 
     def test_create_with_description(self):
         self.log_user()
-        response = self.app.post(url('gists'),
-                                 params={'lifetime': -1,
-                                         'content': 'gist test',
-                                         'filename': 'foo-desc',
-                                         'description': 'gist-desc',
-                                         'public': 'public',
-                                         'acl_level': Gist.ACL_LEVEL_PUBLIC,
-                                         'csrf_token': self.csrf_token},
-                                 status=302)
+        response = self.app.post(
+            url('gists'),
+            params={'lifetime': -1,
+                    'content': 'gist test',
+                    'filename': 'foo-desc',
+                    'description': 'gist-desc',
+                    'public': 'public',
+                    'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
+                    'csrf_token': self.csrf_token},
+             status=302)
         response = response.follow()
         response.mustcontain('added file: foo-desc')
         response.mustcontain('gist test')
@@ -233,7 +229,7 @@ class TestGistsController(TestController):
             'filename': 'foo-desc',
             'description': 'gist-desc',
             'public': 'public',
-            'acl_level': Gist.ACL_LEVEL_PUBLIC,
+            'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
             'csrf_token': self.csrf_token
         }
         response = self.app.post(url('gists'), params=params, status=302)

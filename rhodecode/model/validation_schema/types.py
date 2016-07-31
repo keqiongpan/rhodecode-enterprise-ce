@@ -19,7 +19,6 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import colander
-from colander import Invalid  # noqa
 
 
 class GroupNameType(colander.String):
@@ -33,34 +32,3 @@ class GroupNameType(colander.String):
         path = path.split(self.SEPARATOR)
         path = [item for item in path if item]
         return self.SEPARATOR.join(path)
-
-
-class RepoGroupSchema(colander.Schema):
-    group_name = colander.SchemaNode(GroupNameType())
-
-
-class RepoSchema(colander.Schema):
-    repo_name = colander.SchemaNode(GroupNameType())
-
-
-class SearchParamsSchema(colander.MappingSchema):
-    search_query = colander.SchemaNode(
-        colander.String(),
-        missing='')
-    search_type = colander.SchemaNode(
-        colander.String(),
-        missing='content',
-        validator=colander.OneOf(['content', 'path', 'commit', 'repository']))
-    search_sort = colander.SchemaNode(
-        colander.String(),
-        missing='newfirst',
-        validator=colander.OneOf(
-            ['oldfirst', 'newfirst']))
-    page_limit = colander.SchemaNode(
-        colander.Integer(),
-        missing=10,
-        validator=colander.Range(1, 500))
-    requested_page = colander.SchemaNode(
-        colander.Integer(),
-        missing=1)
-

@@ -18,29 +18,12 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+
 import colander
-import pytest
-
-from rhodecode.model.validation_schema import GroupNameType
 
 
-class TestGroupNameType(object):
-    @pytest.mark.parametrize('given, expected', [
-        ('//group1/group2//', 'group1/group2'),
-        ('//group1///group2//', 'group1/group2'),
-        ('group1/group2///group3', 'group1/group2/group3')
-    ])
-    def test_replace_extra_slashes_cleans_up_extra_slashes(
-            self, given, expected):
-        type_ = GroupNameType()
-        result = type_._replace_extra_slashes(given)
-        assert result == expected
+from rhodecode.model.validation_schema import validators, preparers, types
 
-    def test_deserialize_cleans_up_extra_slashes(self):
-        class TestSchema(colander.Schema):
-            field = colander.SchemaNode(GroupNameType())
 
-        schema = TestSchema()
-        cleaned_data = schema.deserialize(
-            {'field': '//group1/group2///group3//'})
-        assert cleaned_data['field'] == 'group1/group2/group3'
+class RepoGroupSchema(colander.Schema):
+    group_name = colander.SchemaNode(types.GroupNameType())

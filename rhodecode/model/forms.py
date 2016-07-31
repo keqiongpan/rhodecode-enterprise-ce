@@ -555,23 +555,6 @@ def PullRequestForm(repo_id):
     return _PullRequestForm
 
 
-def GistForm(lifetime_options, acl_level_options):
-    class _GistForm(formencode.Schema):
-
-        gistid = All(v.UniqGistId(), v.UnicodeString(strip=True, min=3, not_empty=False, if_missing=None))
-        filename = All(v.BasePath()(),
-                       v.UnicodeString(strip=True, required=False))
-        description = v.UnicodeString(required=False, if_missing=u'')
-        lifetime = v.OneOf(lifetime_options)
-        mimetype = v.UnicodeString(required=False, if_missing=None)
-        content = v.UnicodeString(required=True, not_empty=True)
-        public = v.UnicodeString(required=False, if_missing=u'')
-        private = v.UnicodeString(required=False, if_missing=u'')
-        acl_level = v.OneOf(acl_level_options)
-
-    return _GistForm
-
-
 def IssueTrackerPatternsForm():
     class _IssueTrackerPatternsForm(formencode.Schema):
         allow_extra_fields = True

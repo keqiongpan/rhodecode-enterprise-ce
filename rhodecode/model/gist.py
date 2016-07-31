@@ -107,7 +107,7 @@ class GistModel(BaseModel):
 
         :param description: description of the gist
         :param owner: user who created this gist
-        :param gist_mapping: mapping {filename:{'content':content},...}
+        :param gist_mapping: mapping [{'filename': 'file1.txt', 'content': content}, ...}]
         :param gist_type: type of gist private/public
         :param lifetime: in minutes, -1 == forever
         :param gist_acl_level: acl level for this gist
@@ -141,25 +141,10 @@ class GistModel(BaseModel):
             repo_name=gist_id, repo_type='hg', repo_group=GIST_STORE_LOC,
             use_global_config=True)
 
-        processed_mapping = {}
-        for filename in gist_mapping:
-            if filename != os.path.basename(filename):
-                raise Exception('Filename cannot be inside a directory')
-
-            content = gist_mapping[filename]['content']
-            # TODO: expand support for setting explicit lexers
-#             if lexer is None:
-#                 try:
-#                     guess_lexer = pygments.lexers.guess_lexer_for_filename
-#                     lexer = guess_lexer(filename,content)
-#                 except pygments.util.ClassNotFound:
-#                     lexer = 'text'
-            processed_mapping[filename] = {'content': content}
-
         # now create single multifile commit
         message = 'added file'
-        message += 's: ' if len(processed_mapping) > 1 else ': '
-        message += ', '.join([x for x in processed_mapping])
+        message += 's: ' if len(gist_mapping) > 1 else ': '
+        message += ', '.join([x for x in gist_mapping])
 
         # fake RhodeCode Repository object
         fake_repo = AttributeDict({
@@ -170,7 +155,7 @@ class GistModel(BaseModel):
         ScmModel().create_nodes(
             user=owner.user_id, repo=fake_repo,
             message=message,
-            nodes=processed_mapping,
+            nodes=gist_mapping,
             trigger_push_hook=False
         )
 
@@ -196,7 +181,6 @@ class GistModel(BaseModel):
         gist = self._get_gist(gist)
         gist_repo = gist.scm_instance()
 
-        lifetime = safe_int(lifetime, -1)
         if lifetime == 0:  # preserve old value
             gist_expires = gist.gist_expires
         else:
@@ -207,9 +191,9 @@ class GistModel(BaseModel):
         gist_mapping_op = {}
         for k, v in gist_mapping.items():
             # add, mod, del
-            if not v['org_filename'] and v['filename']:
+            if not v['filename_org'] and v['filename']:
                 op = 'add'
-            elif v['org_filename'] and not v['filename']:
+            elif v['filename_org'] and not v['filename']:
                 op = 'del'
             else:
                 op = 'mod'

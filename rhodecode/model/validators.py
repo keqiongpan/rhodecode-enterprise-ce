@@ -970,22 +970,6 @@ def FieldKey():
     return _validator
 
 
-def BasePath():
-    class _validator(formencode.validators.FancyValidator):
-        messages = {
-            'badPath': _(u'Filename cannot be inside a directory'),
-        }
-
-        def _to_python(self, value, state):
-            return value
-
-        def validate_python(self, value, state):
-            if value != os.path.basename(value):
-                raise formencode.Invalid(self.message('badPath', state),
-                                         value, state)
-    return _validator
-
-
 def ValidAuthPlugins():
     class _validator(formencode.validators.FancyValidator):
         messages = {
@@ -1057,26 +1041,6 @@ def ValidAuthPlugins():
                             next_to_load=plugin)
                     raise formencode.Invalid(msg, value, state)
                 unique_names[plugin.name] = plugin
-
-    return _validator
-
-
-def UniqGistId():
-    class _validator(formencode.validators.FancyValidator):
-        messages = {
-            'gistid_taken': _(u'This gistid is already in use')
-        }
-
-        def _to_python(self, value, state):
-            return repo_name_slug(value.lower())
-
-        def validate_python(self, value, state):
-            existing = Gist.get_by_access_id(value)
-            if existing:
-                msg = M(self, 'gistid_taken', state)
-                raise formencode.Invalid(
-                    msg, value, state, error_dict={'gistid': msg}
-                )
 
     return _validator
 

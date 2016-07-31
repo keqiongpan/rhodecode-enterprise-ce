@@ -44,7 +44,7 @@ from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import ScmModel, RepoList
 from rhodecode.model.settings import SettingsModel, VcsSettingsModel
-from rhodecode.model.validation_schema import RepoSchema
+from rhodecode.model.validation_schema.schemas import repo_schema
 
 log = logging.getLogger(__name__)
 
@@ -610,7 +610,7 @@ def create_repo(request, apiuser, repo_name, repo_type,
       }
 
     """
-    schema = RepoSchema()
+    schema = repo_schema.RepoSchema()
     try:
         data = schema.deserialize({
             'repo_name': repo_name

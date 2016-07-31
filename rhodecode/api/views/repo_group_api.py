@@ -34,7 +34,7 @@ from rhodecode.lib.auth import (
 from rhodecode.model.db import Session, RepoGroup
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import RepoGroupList
-from rhodecode.model.validation_schema import RepoGroupSchema
+from rhodecode.model.validation_schema.schemas import repo_group_schema
 
 
 log = logging.getLogger(__name__)
@@ -193,7 +193,7 @@ def create_repo_group(request, apiuser, group_name, description=Optional(''),
 
     """
 
-    schema = RepoGroupSchema()
+    schema = repo_group_schema.RepoGroupSchema()
     try:
         data = schema.deserialize({
             'group_name': group_name
