@@ -168,7 +168,7 @@ var pyroutes = (function() {
   };
   return {
     'asset': function(path, ver) {
-      var asset_url = ASSET_URL || '/_static/';
+      var asset_url = ASSET_URL || '/_static/rhodecode/';
       var ret = asset_url + path;
       if (ver !== undefined) {
         ret += '?ver=' + ver;

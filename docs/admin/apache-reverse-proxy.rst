@@ -10,8 +10,8 @@ Here is a sample configuration file for using Apache as a reverse proxy.
             ServerAlias hg.myserver.com
 
             ## uncomment to serve static files by Apache
-            ## ProxyPass /_static !
-            ## Alias /_static /path/to/.rccontrol/enterprise-1/static
+            ## ProxyPass /_static/rhodecode !
+            ## Alias /_static/rhodecode /path/to/.rccontrol/enterprise-1/static
 
             <Proxy *>
               Order allow,deny

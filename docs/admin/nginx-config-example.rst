@@ -59,7 +59,7 @@ Use the following example to configure Nginx as a your web server.
         include         /etc/nginx/proxy.conf;
 
         ## uncomment to serve static files by nginx
-        # location /_static {
+        # location /_static/rhodecode {
         #    alias /path/to/.rccontrol/enterprise-1/static;
         # }
 
