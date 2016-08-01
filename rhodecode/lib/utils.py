@@ -484,6 +484,16 @@ def get_rhodecode_realm():
     return safe_str(realm.app_settings_value)
 
 
+def get_rhodecode_base_path():
+    """
+    Returns the base path. The base path is the filesystem path which points
+    to the repository store.
+    """
+    from rhodecode.model.settings import SettingsModel
+    paths_ui = SettingsModel().get_ui_by_section_and_key('paths', '/')
+    return safe_str(paths_ui.ui_value)
+
+
 def map_groups(path):
     """
     Given a full path to a repository, create all nested groups that this
