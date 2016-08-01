@@ -327,8 +327,11 @@ class LoginView(object):
         if self.request.GET and self.request.GET.get('key'):
             try:
                 user = User.get_by_auth_token(self.request.GET.get('key'))
+                password_reset_url = self.request.route_url(
+                    'reset_password_confirmation',
+                    _query={'key': user.api_key})
                 data = {'email': user.email}
-                UserModel().reset_password(data)
+                UserModel().reset_password(data, password_reset_url)
                 self.session.flash(
                     _('Your password reset was successful, '
                       'a new password has been sent to your email'),

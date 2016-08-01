@@ -532,7 +532,7 @@ class UserModel(BaseModel):
 
         return True
 
-    def reset_password(self, data):
+    def reset_password(self, data, pwd_reset_url):
         from rhodecode.lib.celerylib import tasks, run_task
         from rhodecode.model.notification import EmailNotificationModel
         from rhodecode.lib import auth
@@ -557,6 +557,7 @@ class UserModel(BaseModel):
 
             email_kwargs = {
                 'new_password': new_passwd,
+                'password_reset_url': pwd_reset_url,
                 'user': user,
                 'email': user_email,
                 'date': datetime.datetime.now()
