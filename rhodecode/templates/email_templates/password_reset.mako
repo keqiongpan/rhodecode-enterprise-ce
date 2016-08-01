@@ -27,5 +27,5 @@ There was a request to reset your password using the email address ${email} on $
 <br/>
 <strong>If you did not request a password reset, please contact your RhodeCode administrator.</strong>
 </p><p>
-${_('<a href="%(url)s">Generate new password here</a>.') % {'url': password_reset_url} |n}
+<a href="${password_reset_url}">${_('Generate new password here')}.</a>
 </p>

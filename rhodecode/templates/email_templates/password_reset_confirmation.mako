@@ -27,4 +27,4 @@ Below is your new access password for RhodeCode.
 <br/>
 <strong>If you didn't request a new password, please contact your RhodeCode administrator.</strong>
 </p>
-<p>password: <input value='${new_password}'></pre></p>
+<p>password: <input value='${new_password}'/></p>
