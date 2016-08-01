@@ -475,6 +475,15 @@ def set_rhodecode_config(config):
         config[k] = v
 
 
+def get_rhodecode_realm():
+    """
+    Return the rhodecode realm from database.
+    """
+    from rhodecode.model.settings import SettingsModel
+    realm = SettingsModel().get_setting_by_name('realm')
+    return safe_str(realm.app_settings_value)
+
+
 def map_groups(path):
     """
     Given a full path to a repository, create all nested groups that this
