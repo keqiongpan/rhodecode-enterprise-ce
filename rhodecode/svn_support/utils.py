@@ -23,6 +23,7 @@ import os
 
 from pyramid.renderers import render
 
+from rhodecode.lib.utils import get_rhodecode_realm
 from rhodecode.model.db import RepoGroup
 from . import config_keys
 
@@ -62,6 +63,7 @@ def _render_mod_dav_svn_config(
         'parent_path_root': parent_path_root,
         'repo_group_paths': repo_group_paths,
         'svn_list_parent_path': list_parent_path,
+        'rhodecode_realm': get_rhodecode_realm(),
     }
 
     # Render the configuration template to string.

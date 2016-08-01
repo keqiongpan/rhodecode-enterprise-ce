@@ -33,7 +33,7 @@
     # following directives implement a fake authentication that allows every
     # username/password combination.
     AuthType Basic
-    AuthName None
+    AuthName ${rhodecode_realm}
     AuthBasicProvider anon
     Anonymous *
     Require valid-user
@@ -50,7 +50,7 @@
 
 <Location ${location}>
     AuthType Basic
-    AuthName None
+    AuthName ${rhodecode_realm}
     AuthBasicProvider anon
     Anonymous *
     Require valid-user
