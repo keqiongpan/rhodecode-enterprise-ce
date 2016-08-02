@@ -223,7 +223,6 @@ var formatSelect2SelectionRefs = function(commit_ref){
 // takes a given html element and scrolls it down offset pixels
 function offsetScroll(element, offset){
     setTimeout(function(){
-        console.log(element);
         var location = element.offset().top;
         // some browsers use body, some use html
         $('html, body').animate({ scrollTop: (location - offset) });
