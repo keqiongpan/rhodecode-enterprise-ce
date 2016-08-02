@@ -346,3 +346,17 @@ class MyAccountController(BaseController):
             h.flash(_("Auth token successfully deleted"), category='success')
 
         return redirect(url('my_account_auth_tokens'))
+
+    def my_notifications(self):
+        c.active = 'notifications'
+        return render('admin/my_account/my_account.html')
+
+    @auth.CSRFRequired()
+    def my_notifications_toggle_visibility(self):
+        user = c.rhodecode_user.get_instance()
+        user_data = user.user_data
+        status = user_data.get('notification_status', False)
+        user_data['notification_status'] = not status
+        user.user_data = user_data
+        Session().commit()
+        return redirect(url('my_account_notifications'))

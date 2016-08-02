@@ -22,6 +22,7 @@
 Pylons middleware initialization
 """
 import logging
+from collections import OrderedDict
 
 from paste.registry import RegistryManager
 from paste.gzipper import make_gzip_middleware
@@ -68,6 +69,12 @@ class SkippableRoutesMiddleware(RoutesMiddleware):
     def __call__(self, environ, start_response):
         for prefix in self.skip_prefixes:
             if environ['PATH_INFO'].startswith(prefix):
+                # added to avoid the case when a missing /_static route falls
+                # through to pylons and causes an exception as pylons is
+                # expecting wsgiorg.routingargs to be set in the environ
+                # by RoutesMiddleware.
+                if 'wsgiorg.routing_args' not in environ:
+                    environ['wsgiorg.routing_args'] = (None, {})
                 return self.app(environ, start_response)
 
         return super(SkippableRoutesMiddleware, self).__call__(
@@ -228,7 +235,7 @@ def includeme(config):
     settings = config.registry.settings
 
     # plugin information
-    config.registry.rhodecode_plugins = {}
+    config.registry.rhodecode_plugins = OrderedDict()
 
     config.add_directive(
         'register_rhodecode_plugin', register_rhodecode_plugin)
@@ -239,6 +246,7 @@ def includeme(config):
     # Includes which are required. The application would fail without them.
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
+    config.include('rhodecode.channelstream')
     config.include('rhodecode.admin')
     config.include('rhodecode.authentication')
     config.include('rhodecode.integrations')

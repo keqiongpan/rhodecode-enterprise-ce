@@ -32,6 +32,7 @@ module.exports = function(grunt) {
           '<%= dirs.js.src %>/plugins/jquery.mark.js',
           '<%= dirs.js.src %>/plugins/jquery.timeago.js',
           '<%= dirs.js.src %>/plugins/jquery.timeago-extension.js',
+          '<%= dirs.js.src %>/plugins/toastr.js',
 
           // Select2
           '<%= dirs.js.src %>/select2/select2.js',
@@ -64,6 +65,7 @@ module.exports = function(grunt) {
 
           // Rhodecode components
           '<%= dirs.js.src %>/rhodecode/init.js',
+          '<%= dirs.js.src %>/rhodecode/connection_controller.js',
           '<%= dirs.js.src %>/rhodecode/codemirror.js',
           '<%= dirs.js.src %>/rhodecode/comments.js',
           '<%= dirs.js.src %>/rhodecode/constants.js',
@@ -78,6 +80,7 @@ module.exports = function(grunt) {
           '<%= dirs.js.src %>/rhodecode/select2_widgets.js',
           '<%= dirs.js.src %>/rhodecode/tooltips.js',
           '<%= dirs.js.src %>/rhodecode/users.js',
+          '<%= dirs.js.src %>/rhodecode/utils/notifications.js',
           '<%= dirs.js.src %>/rhodecode/appenlight.js',
 
           // Rhodecode main module

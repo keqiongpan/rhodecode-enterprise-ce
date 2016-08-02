@@ -166,6 +166,7 @@ let
         ln -s ${self.supervisor}/bin/supervisor* $out/bin/
         ln -s ${self.gunicorn}/bin/gunicorn $out/bin/
         ln -s ${self.PasteScript}/bin/paster $out/bin/
+        ln -s ${self.channelstream}/bin/channelstream $out/bin/
         ln -s ${self.pyramid}/bin/* $out/bin/  #*/
 
         # rhodecode-tools

@@ -560,6 +560,13 @@ def make_map(config):
                   action='my_account_auth_tokens_add', conditions={'method': ['POST']})
         m.connect('my_account_auth_tokens', '/my_account/auth_tokens',
                   action='my_account_auth_tokens_delete', conditions={'method': ['DELETE']})
+        m.connect('my_account_notifications', '/my_account/notifications',
+                  action='my_notifications',
+                  conditions={'method': ['GET']})
+        m.connect('my_account_notifications_toggle_visibility',
+                  '/my_account/toggle_visibility',
+                  action='my_notifications_toggle_visibility',
+                  conditions={'method': ['POST']})
 
     # NOTIFICATION REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
@@ -568,7 +575,6 @@ def make_map(config):
                   action='index', conditions={'method': ['GET']})
         m.connect('notifications_mark_all_read', '/notifications/mark_all_read',
                   action='mark_all_read', conditions={'method': ['POST']})
-
         m.connect('/notifications/{notification_id}',
                   action='update', conditions={'method': ['PUT']})
         m.connect('/notifications/{notification_id}',

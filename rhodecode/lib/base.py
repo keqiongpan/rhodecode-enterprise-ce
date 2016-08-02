@@ -332,6 +332,7 @@ def attach_context_attributes(context, request):
         'rhodecode_user': {
             'username': None,
             'email': None,
+            'notification_status': False
         },
         'visual': {
             'default_renderer': None

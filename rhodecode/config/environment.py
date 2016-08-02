@@ -112,6 +112,13 @@ def load_environment(global_conf, app_conf, initial=False,
     # sets the c attribute access when don't existing attribute are accessed
     config['pylons.strict_tmpl_context'] = True
 
+    # configure channelstream
+    config['channelstream_config'] = {
+        'enabled': asbool(config.get('channelstream.enabled', False)),
+        'server': config.get('channelstream.server'),
+        'secret': config.get('channelstream.secret')
+    }
+
     # Limit backends to "vcs.backends" from configuration
     backends = config['vcs.backends'] = aslist(
         config.get('vcs.backends', 'hg,git'), sep=',')
