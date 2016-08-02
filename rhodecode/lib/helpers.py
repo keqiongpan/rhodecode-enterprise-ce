@@ -118,8 +118,11 @@ def asset(path, ver=None):
     :param ver: optional version query param to append as ?ver=
     """
     request = get_current_request()
+    query = {}
+    if ver:
+        query = {'ver': ver}
     return request.static_url(
-        'rhodecode:public/{}'.format(path), _query={'ver': ver})
+        'rhodecode:public/{}'.format(path), _query=query)
 
 
 def html_escape(text, html_escape_table=None):
