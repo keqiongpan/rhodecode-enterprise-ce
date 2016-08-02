@@ -480,6 +480,19 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  channelstream = super.buildPythonPackage {
+    name = "channelstream-0.4.2";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [gevent gevent-websocket pyramid pyramid-jinja2 itsdangerous];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/91/e7/b5faffc810e5e31aa01e74e43f9d66aaf52034d03e54c2782c474cb3e8a7/channelstream-0.4.2.tar.gz";
+      md5 = "5857cc2b1cef993088817ccc31285254";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
   click = super.buildPythonPackage {
     name = "click-5.1";
     buildInputs = with self; [];
@@ -601,7 +614,7 @@
     name = "dogpile.cache-0.6.1";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [dogpile.core];
+    propagatedBuildInputs = with self; [];
     src = fetchurl {
       url = "https://pypi.python.org/packages/f6/a0/6f2142c58c6588d17c734265b103ae1cd0741e1681dd9483a63f22033375/dogpile.cache-0.6.1.tar.gz";
       md5 = "35d7fb30f22bbd0685763d894dd079a9";
@@ -714,6 +727,32 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  gevent = super.buildPythonPackage {
+    name = "gevent-1.1.1";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [greenlet];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/12/dc/0b2e57823225de86f6e111a65d212c9e3b64847dddaa19691a6cb94b0b2e/gevent-1.1.1.tar.gz";
+      md5 = "1532f5396ab4d07a231f1935483be7c3";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  gevent-websocket = super.buildPythonPackage {
+    name = "gevent-websocket-0.9.5";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [gevent];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/de/93/6bc86ddd65435a56a2f2ea7cc908d92fea894fc08e364156656e71cc1435/gevent-websocket-0.9.5.tar.gz";
+      md5 = "03a8473b9a61426b0ef6094319141389";
+    };
+    meta = {
+      license = [ { fullName = "Copyright 2011-2013 Jeffrey Gelens <jeffrey@noppo.pro>"; } pkgs.lib.licenses.asl20 ];
+    };
+  };
   gnureadline = super.buildPythonPackage {
     name = "gnureadline-6.3.3";
     buildInputs = with self; [];
@@ -728,7 +767,7 @@
     };
   };
   gprof2dot = super.buildPythonPackage {
-    name = "gprof2dot-2015.12.1";
+    name = "gprof2dot-2015.12.01";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
@@ -738,6 +777,19 @@
     };
     meta = {
       license = [ { fullName = "LGPL"; } ];
+    };
+  };
+  greenlet = super.buildPythonPackage {
+    name = "greenlet-0.4.9";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/4e/3d/9d421539b74e33608b245092870156b2e171fb49f2b51390aa4641eecb4a/greenlet-0.4.9.zip";
+      md5 = "c6659cdb2a5e591723e629d2eef22e82";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
     };
   };
   gunicorn = super.buildPythonPackage {
@@ -1394,7 +1446,7 @@
     name = "rhodecode-enterprise-ce-4.3.0";
     buildInputs = with self; [WebTest configobj cssselect flake8 lxml mock pytest pytest-cov pytest-runner];
     doCheck = true;
-    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery colander decorator deform docutils gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
+    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
     src = ./.;
     meta = {
       license = [ { fullName = "AGPLv3, and Commercial License"; } ];

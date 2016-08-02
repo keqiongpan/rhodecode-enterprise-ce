@@ -24,10 +24,6 @@ Pyro4==4.41
 # TODO: This should probably not be in here
 # -e hg+https://johbo@code.rhodecode.com/johbo/rhodecode-fork@3a454bd1f17c0b2b2a951cf2b111e0320d7942a9#egg=RhodeCodeEnterprise-dev
 
-# TODO: This is not really a dependency, we should add it only
-# into the development environment, since there it is useful.
-# RhodeCodeVCSServer==3.9.0
-
 Routes==1.13
 SQLAlchemy==0.9.9
 Sphinx==1.2.2
@@ -53,6 +49,7 @@ backport-ipaddress==0.1
 bottle==0.12.8
 bumpversion==0.5.3
 celery==2.2.10
+channelstream==0.4.2
 click==5.1
 colander==1.2
 configobj==5.0.6
@@ -69,7 +66,9 @@ ecdsa==0.11
 flake8==2.4.1
 future==0.14.3
 futures==3.0.2
+gevent==1.1.1
 gprof2dot==2015.12.1
+greenlet==0.4.9
 gunicorn==19.6.0
 
 # TODO: Needs subvertpy and blows up without Subversion headers,
