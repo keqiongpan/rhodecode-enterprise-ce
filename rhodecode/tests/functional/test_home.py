@@ -22,6 +22,7 @@ import json
 
 from mock import patch
 import pytest
+from pylons import tmpl_context as c
 
 import rhodecode
 from rhodecode.lib.utils import map_groups
@@ -48,6 +49,14 @@ class TestHomeController(TestController):
         # search for objects inside the JavaScript JSON
         for repo in Repository.getAll():
             response.mustcontain('"name_raw": "%s"' % repo.repo_name)
+
+    def test_index_contains_statics_with_ver(self):
+        self.log_user()
+        response = self.app.get(url(controller='home', action='index'))
+
+        rhodecode_version_hash = c.rhodecode_version_hash
+        response.mustcontain('style.css?ver={0}'.format(rhodecode_version_hash))
+        response.mustcontain('scripts.js?ver={0}'.format(rhodecode_version_hash))
 
     def test_index_contains_backend_specific_details(self, backend):
         self.log_user()
