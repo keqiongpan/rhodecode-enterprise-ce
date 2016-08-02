@@ -67,7 +67,7 @@ var registerViewChannels;
                             $.Topic(data[i].message.topic).publish(data[i])
                         }
                         else {
-                            cclog.warning('unhandled message', data);
+                            ccLog.warning('unhandled message', data);
                         }
                     }
                 };
@@ -97,7 +97,7 @@ var registerViewChannels;
                             $.Topic(data[i].message.topic).publish(data[i])
                         }
                         else {
-                            cclog.warning('unhandled message', data);
+                            ccLog.warning('unhandled message', data);
                         }
                     }
                     self.listen();
