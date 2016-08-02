@@ -69,7 +69,9 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
             var APPENLIGHT = {
               enabled: ${'true' if getattr(c, 'appenlight_enabled', False) else 'false'},
               key: '${getattr(c, "appenlight_api_public_key", "")}',
-              serverUrl: '${getattr(c, "appenlight_server_url", "")}',
+              % if getattr(c, 'appenlight_server_url', None):
+                  serverUrl: '${getattr(c, "appenlight_server_url", "")}',
+              % endif
               requestInfo: {
               % if getattr(c, 'rhodecode_user', None):
                   ip: '${c.rhodecode_user.ip_addr}',
