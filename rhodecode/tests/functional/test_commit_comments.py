@@ -29,7 +29,7 @@ from rhodecode.lib import helpers as h
 
 
 @pytest.mark.backends("git", "hg", "svn")
-class TestChangeSetCommentsController(TestController):
+class TestCommitCommentsController(TestController):
 
     @pytest.fixture(autouse=True)
     def prepare(self, request, pylonsapp):
@@ -159,6 +159,46 @@ class TestChangeSetCommentsController(TestController):
 
         # test_regular gets notification by @mention
         assert sorted(users) == [u'test_admin', u'test_regular']
+
+    def test_create_with_status_change(self, backend):
+        self.log_user()
+        commit = backend.repo.get_commit('300')
+        commit_id = commit.raw_id
+        text = u'CommentOnCommit'
+        f_path = 'vcs/web/simplevcs/views/repository.py'
+        line = 'n1'
+
+        params = {'text': text, 'changeset_status': 'approved',
+                  'csrf_token': self.csrf_token}
+
+        self.app.post(
+            url(controller='changeset', action='comment',
+                repo_name=backend.repo_name, revision=commit_id), params=params)
+
+        response = self.app.get(
+            url(controller='changeset', action='index',
+                repo_name=backend.repo_name, revision=commit_id))
+
+        # test DB
+        assert ChangesetComment.query().count() == 1
+        assert_comment_links(response, ChangesetComment.query().count(), 0)
+
+        assert Notification.query().count() == 1
+        assert ChangesetComment.query().count() == 1
+
+        notification = Notification.query().all()[0]
+
+        comment_id = ChangesetComment.query().first().comment_id
+        assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
+
+        sbj = 'commented on commit `{0}` (status: Approved) ' \
+              'in the {1} repository'.format(
+            h.show_id(commit), backend.repo_name)
+        assert sbj in notification.subject
+
+        lnk = (u'/{0}/changeset/{1}#comment-{2}'.format(
+            backend.repo_name, commit_id, comment_id))
+        assert lnk in notification.body
 
     def test_delete(self, backend):
         self.log_user()
