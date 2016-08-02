@@ -25,6 +25,7 @@ from rhodecode.tests import *
 from rhodecode.model.db import (
     ChangesetComment, Notification, UserNotification)
 from rhodecode.model.meta import Session
+from rhodecode.lib import helpers as h
 
 
 @pytest.mark.backends("git", "hg", "svn")
@@ -53,7 +54,8 @@ class TestChangeSetCommentsController(TestController):
 
     def test_create(self, backend):
         self.log_user()
-        commit_id = backend.repo.get_commit('300').raw_id
+        commit = backend.repo.get_commit('300')
+        commit_id = commit.raw_id
         text = u'CommentOnCommit'
 
         params = {'text': text, 'csrf_token': self.csrf_token}
@@ -77,7 +79,8 @@ class TestChangeSetCommentsController(TestController):
         comment_id = ChangesetComment.query().first().comment_id
         assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
 
-        sbj = 'commented on a commit of {0}'.format(backend.repo_name)
+        sbj = 'commented on commit `{0}` in the {1} repository'.format(
+            h.show_id(commit), backend.repo_name)
         assert sbj in notification.subject
 
         lnk = (u'/{0}/changeset/{1}#comment-{2}'.format(
@@ -86,7 +89,8 @@ class TestChangeSetCommentsController(TestController):
 
     def test_create_inline(self, backend):
         self.log_user()
-        commit_id = backend.repo.get_commit('300').raw_id
+        commit = backend.repo.get_commit('300')
+        commit_id = commit.raw_id
         text = u'CommentOnCommit'
         f_path = 'vcs/web/simplevcs/views/repository.py'
         line = 'n1'
@@ -119,8 +123,10 @@ class TestChangeSetCommentsController(TestController):
         assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
 
         assert comment.revision == commit_id
-
-        sbj = ' commented on a commit of {0}'.format(backend.repo_name)
+        sbj = 'commented on commit `{commit}` ' \
+              '(file: `{f_path}`) in the {repo} repository'.format(
+            commit=h.show_id(commit),
+            f_path=f_path, line=line, repo=backend.repo_name)
         assert sbj in notification.subject
 
         lnk = (u'/{0}/changeset/{1}#comment-{2}'.format(
