@@ -33,7 +33,7 @@ from pylons import config
 import rhodecode
 from rhodecode.lib.celerylib import (
     run_task, dbsession, __get_lockkey, LockHeld, DaemonLock,
-    get_session, vcsconnection)
+    get_session, vcsconnection, RhodecodeCeleryTask)
 from rhodecode.lib.hooks_base import log_create_repository
 from rhodecode.lib.rcmail.smtp_mailer import SmtpMailer
 from rhodecode.lib.utils import add_cache, action_logger
@@ -56,7 +56,7 @@ def get_logger(cls):
     return log
 
 
-@task(ignore_result=True)
+@task(ignore_result=True, base=RhodecodeCeleryTask)
 @dbsession
 def send_email(recipients, subject, body='', html_body='', email_config=None):
     """
@@ -104,7 +104,7 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
     return True
 
 
-@task(ignore_result=False)
+@task(ignore_result=True, base=RhodecodeCeleryTask)
 @dbsession
 @vcsconnection
 def create_repo(form_data, cur_user):
@@ -197,7 +197,7 @@ def create_repo(form_data, cur_user):
     return True
 
 
-@task(ignore_result=False)
+@task(ignore_result=True, base=RhodecodeCeleryTask)
 @dbsession
 @vcsconnection
 def create_repo_fork(form_data, cur_user):
