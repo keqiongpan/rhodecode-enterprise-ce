@@ -82,7 +82,8 @@ class ChangesetCommentsModel(BaseModel):
         return global_renderer
 
     def create(self, text, repo, user, revision=None, pull_request=None,
-               f_path=None, line_no=None, status_change=None, closing_pr=False,
+               f_path=None, line_no=None, status_change=None,
+               status_change_type=None, closing_pr=False,
                send_email=True, renderer=None):
         """
         Creates new comment for commit or pull request.
@@ -96,7 +97,8 @@ class ChangesetCommentsModel(BaseModel):
         :param pull_request:
         :param f_path:
         :param line_no:
-        :param status_change:
+        :param status_change: Label for status change
+        :param status_change_type: type of status change
         :param closing_pr:
         :param send_email:
         """
@@ -144,6 +146,7 @@ class ChangesetCommentsModel(BaseModel):
             'renderer_type': renderer,
             'repo_name': repo.repo_name,
             'status_change': status_change,
+            'status_change_type': status_change_type,
             'comment_body': text,
             'comment_file': f_path,
             'comment_line': line_no,

@@ -1,5 +1,6 @@
 ## -*- coding: utf-8 -*-
 <%inherit file="base.mako"/>
+<%namespace name="base" file="base.mako"/>
 
 
 <%def name="subject()" filter="n,trim">
@@ -90,5 +91,8 @@ data = {
     </h4>
     </td></tr>
     <tr><td style="padding-right:20px;padding-top:15px;">${_('Source')}</td><td style="padding-top:15px;"><a style="color:#427cc9;text-decoration:none;cursor:pointer" href="${pr_source_repo_url}">${pr_source_repo.repo_name}</a></td></tr>
+    % if status_change:
+        <tr><td style="padding-right:20px;">${_('Submitted status')}</td><td>${base.status_text(status_change, tag_type=status_change_type)}</td></tr>
+    % endif
     <tr><td style="padding-right:20px;">${(_('Comment on line: %(comment_line)s') if comment_file else _('Comment')) % data}</td><td style="line-height:1.2em;">${h.render(comment_body, renderer=renderer_type, mentions=True)}</td></tr>
 </table>

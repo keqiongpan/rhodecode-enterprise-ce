@@ -1,6 +1,6 @@
 ## -*- coding: utf-8 -*-
 <%inherit file="base.mako"/>
-
+<%namespace name="base" file="base.mako"/>
 
 <%def name="subject()" filter="n,trim">
 <%
@@ -82,7 +82,7 @@ data = {
     <tr><td style="padding-right:20px;">${_('Description')}</td><td>${h.urlify_commit_message(commit.message, repo_name)}</td></tr>
 
     % if status_change:
-        <tr><td style="padding-right:20px;">${_('Status')}</td><td>${_('The commit status was changed to')}: ${status_change}.</td></tr>
+        <tr><td style="padding-right:20px;">${_('Status')}</td><td>${_('The commit status was changed to')}: ${base.status_text(status_change, tag_type=status_change_type)}</td></tr>
     % endif
     <tr><td style="padding-right:20px;">${(_('Comment on line: %(comment_line)s') if comment_file else _('Comment')) % data}</td><td style="line-height:1.2em;">${h.render(comment_body, renderer=renderer_type, mentions=True)}</td></tr>
 </table>

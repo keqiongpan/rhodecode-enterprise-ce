@@ -762,6 +762,8 @@ class PullrequestsController(BaseRepoController):
             line_no=request.POST.get('line'),
             status_change=(ChangesetStatus.get_status_lbl(status)
                            if status and allowed_to_change_status else None),
+            status_change_type=(status
+                                if status and allowed_to_change_status else None),
             closing_pr=close_pr
         )
 

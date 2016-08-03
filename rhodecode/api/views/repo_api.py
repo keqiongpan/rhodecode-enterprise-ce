@@ -1363,9 +1363,11 @@ def comment_commit(
     try:
         rc_config = SettingsModel().get_all_settings()
         renderer = rc_config.get('rhodecode_markup_renderer', 'rst')
-
+        status_change_label = ChangesetStatus.get_status_lbl(status)
         comm = ChangesetCommentsModel().create(
-            message, repo, user, revision=commit_id, status_change=status,
+            message, repo, user, revision=commit_id,
+            status_change=status_change_label,
+            status_change_type=status,
             renderer=renderer)
         if status:
             # also do a status change

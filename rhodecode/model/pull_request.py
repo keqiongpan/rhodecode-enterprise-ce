@@ -854,6 +854,7 @@ class PullRequestModel(BaseModel):
             f_path=None,
             line_no=None,
             status_change=ChangesetStatus.get_status_lbl(status),
+            status_change_type=status,
             closing_pr=True
         )
 

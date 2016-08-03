@@ -1,5 +1,30 @@
 ## -*- coding: utf-8 -*-
 
+## helpers
+<%def name="tag_button(text, tag_type=None)">
+    <%
+    color_scheme = {
+        'default': 'border:1px solid #979797;color:#666666;background-color:#f9f9f9',
+        'approved': 'border:1px solid #0ac878;color:#0ac878;background-color:#f9f9f9',
+        'rejected': 'border:1px solid #e85e4d;color:#e85e4d;background-color:#f9f9f9',
+        'under_review': 'border:1px solid #ffc854;color:#ffc854;background-color:#f9f9f9',
+    }
+    %>
+    <pre style="display:inline;border-radius:2px;font-size:12px;padding:.2em;${color_scheme.get(tag_type, color_scheme['default'])}">${text}</pre>
+</%def>
+
+<%def name="status_text(text, tag_type=None)">
+    <%
+    color_scheme = {
+        'default': 'color:#666666',
+        'approved': 'color:#0ac878',
+        'rejected': 'color:#e85e4d',
+        'under_review': 'color:#ffc854',
+    }
+    %>
+    <span style="font-weight:bold;font-size:12px;padding:.2em;${color_scheme.get(tag_type, color_scheme['default'])}">${text}</span>
+</%def>
+
 ## headers we additionally can set for email
 <%def name="headers()" filter="n,trim"></%def>
 
