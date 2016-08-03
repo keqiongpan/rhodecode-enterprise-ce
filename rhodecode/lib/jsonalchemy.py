@@ -171,6 +171,14 @@ class MutationDict(MutationObj, DictClass):
         DictClass.__delitem__(self, key)
         self.changed()
 
+    def __setstate__(self, state):
+        self.__dict__ = state
+
+    def __reduce_ex__(self, proto):
+        # support pickling of MutationDicts
+        d = dict(self)
+        return (self.__class__, (d, ))
+
 
 class MutationList(MutationObj, list):
     @classmethod
