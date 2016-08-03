@@ -17,12 +17,12 @@ data = {
 ${_('[mention]') if mention else ''} \
 
 % if comment_file:
-    ${_('%(user)s commented on pull request #%(pr_id)s "%(pr_title)s" (file: `%(comment_file)s`)') % data}
+    ${_('%(user)s commented on pull request #%(pr_id)s "%(pr_title)s" (file: `%(comment_file)s`)') % data |n}
 % else:
     % if status_change:
-    ${_('%(user)s commented on pull request #%(pr_id)s "%(pr_title)s" (status: %(status)s)') % data}
+    ${_('%(user)s commented on pull request #%(pr_id)s "%(pr_title)s" (status: %(status)s)') % data |n}
     % else:
-    ${_('%(user)s commented on pull request #%(pr_id)s "%(pr_title)s"') % data}
+    ${_('%(user)s commented on pull request #%(pr_id)s "%(pr_title)s"') % data |n}
     % endif
 % endif
 </%def>

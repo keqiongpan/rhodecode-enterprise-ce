@@ -16,12 +16,12 @@ data = {
 ${_('[mention]') if mention else ''} \
 
 % if comment_file:
-    ${_('%(user)s commented on commit `%(commit_id)s` (file: `%(comment_file)s`)') % data} ${_('in the %(repo_name)s repository') % data}
+    ${_('%(user)s commented on commit `%(commit_id)s` (file: `%(comment_file)s`)') % data} ${_('in the %(repo_name)s repository') % data |n}
 % else:
     % if status_change:
-    ${_('%(user)s commented on commit `%(commit_id)s` (status: %(status)s)') % data |n} ${_('in the %(repo_name)s repository') % data}
+    ${_('%(user)s commented on commit `%(commit_id)s` (status: %(status)s)') % data |n} ${_('in the %(repo_name)s repository') % data |n}
     % else:
-    ${_('%(user)s commented on commit `%(commit_id)s`') % data |n} ${_('in the %(repo_name)s repository') % data}
+    ${_('%(user)s commented on commit `%(commit_id)s`') % data |n} ${_('in the %(repo_name)s repository') % data |n}
     % endif
 % endif
 
