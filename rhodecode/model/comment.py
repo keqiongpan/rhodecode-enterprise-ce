@@ -245,7 +245,7 @@ class ChangesetCommentsModel(BaseModel):
 
         registry = get_current_registry()
         rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
-        channelstream_config = rhodecode_plugins.get('channelstream')
+        channelstream_config = rhodecode_plugins.get('channelstream', {})
         msg_url = ''
         if commit_obj:
             msg_url = commit_comment_url
@@ -254,7 +254,7 @@ class ChangesetCommentsModel(BaseModel):
             msg_url = pr_comment_url
             repo_name = pr_target_repo.repo_name
 
-        if channelstream_config:
+        if channelstream_config.get('enabled'):
             message = '<strong>{}</strong> {} - ' \
                       '<a onclick="window.location=\'{}\';' \
                       'window.location.reload()">' \
@@ -262,25 +262,24 @@ class ChangesetCommentsModel(BaseModel):
             message = message.format(
                 user.username, _('made a comment'), msg_url,
                 _('Refresh page'))
-            if channelstream_config:
-                channel = '/repo${}$/pr/{}'.format(
-                    repo_name,
-                    pull_request_id
-                )
-                payload = {
-                    'type': 'message',
-                    'timestamp': datetime.utcnow(),
-                    'user': 'system',
-                    'exclude_users': [user.username],
-                    'channel': channel,
-                    'message': {
-                        'message': message,
-                        'level': 'info',
-                        'topic': '/notifications'
-                    }
+            channel = '/repo${}$/pr/{}'.format(
+                repo_name,
+                pull_request_id
+            )
+            payload = {
+                'type': 'message',
+                'timestamp': datetime.utcnow(),
+                'user': 'system',
+                'exclude_users': [user.username],
+                'channel': channel,
+                'message': {
+                    'message': message,
+                    'level': 'info',
+                    'topic': '/notifications'
                 }
-                channelstream_request(channelstream_config, [payload],
-                                      '/message', raise_exc=False)
+            }
+            channelstream_request(channelstream_config, [payload],
+                                  '/message', raise_exc=False)
 
         return comment
 
