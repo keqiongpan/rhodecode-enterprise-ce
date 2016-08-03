@@ -271,6 +271,7 @@ class ChangesetCommentsModel(BaseModel):
                     'type': 'message',
                     'timestamp': datetime.utcnow(),
                     'user': 'system',
+                    'exclude_users': [user.username],
                     'channel': channel,
                     'message': {
                         'message': message,

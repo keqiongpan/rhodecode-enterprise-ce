@@ -49,7 +49,7 @@ backport-ipaddress==0.1
 bottle==0.12.8
 bumpversion==0.5.3
 celery==2.2.10
-channelstream==0.4.2
+channelstream==0.5.2
 click==5.1
 colander==1.2
 configobj==5.0.6

@@ -481,13 +481,13 @@
     };
   };
   channelstream = super.buildPythonPackage {
-    name = "channelstream-0.4.2";
+    name = "channelstream-0.5.2";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [gevent gevent-websocket pyramid pyramid-jinja2 itsdangerous];
+    propagatedBuildInputs = with self; [gevent ws4py pyramid pyramid-jinja2 itsdangerous requests six];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/91/e7/b5faffc810e5e31aa01e74e43f9d66aaf52034d03e54c2782c474cb3e8a7/channelstream-0.4.2.tar.gz";
-      md5 = "5857cc2b1cef993088817ccc31285254";
+      url = "https://pypi.python.org/packages/2b/31/29a8e085cf5bf97fa88e7b947adabfc581a18a3463adf77fb6dada34a65f/channelstream-0.5.2.tar.gz";
+      md5 = "1c5eb2a8a405be6f1073da94da6d81d3";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -738,19 +738,6 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
-    };
-  };
-  gevent-websocket = super.buildPythonPackage {
-    name = "gevent-websocket-0.9.5";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [gevent];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/de/93/6bc86ddd65435a56a2f2ea7cc908d92fea894fc08e364156656e71cc1435/gevent-websocket-0.9.5.tar.gz";
-      md5 = "03a8473b9a61426b0ef6094319141389";
-    };
-    meta = {
-      license = [ { fullName = "Copyright 2011-2013 Jeffrey Gelens <jeffrey@noppo.pro>"; } pkgs.lib.licenses.asl20 ];
     };
   };
   gnureadline = super.buildPythonPackage {
@@ -1658,6 +1645,19 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.zpt21 ];
+    };
+  };
+  ws4py = super.buildPythonPackage {
+    name = "ws4py-0.3.5";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/b6/4f/34af703be86939629479e74d6e650e39f3bd73b3b09212c34e5125764cbc/ws4py-0.3.5.zip";
+      md5 = "a261b75c20b980e55ce7451a3576a867";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   wsgiref = super.buildPythonPackage {
