@@ -94,5 +94,5 @@ data = {
     % if status_change:
         <tr><td style="padding-right:20px;">${_('Submitted status')}</td><td>${base.status_text(status_change, tag_type=status_change_type)}</td></tr>
     % endif
-    <tr><td style="padding-right:20px;">${(_('Comment on line: %(comment_line)s') if comment_file else _('Comment')) % data}</td><td style="line-height:1.2em;">${h.render(comment_body, renderer=renderer_type, mentions=True)}</td></tr>
+    <tr><td style="padding-right:20px;">${(_('Comment on line: %(comment_line)s') if comment_file else _('Comment')) % data}</td><td style="line-height:1.2em;white-space:pre-wrap">${h.render(comment_body, renderer=renderer_type, mentions=True)}</td></tr>
 </table>
