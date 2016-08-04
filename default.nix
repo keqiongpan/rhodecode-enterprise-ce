@@ -16,8 +16,7 @@ let
   pkgs = pkgs_.overridePackages (self: super: {
     # Override subversion derivation to
     #  - activate python bindings
-    #  - set version to 1.8
-    subversion = super.subversion18.override {
+    subversion = super.subversion.override {
        httpSupport = true;
        pythonBindings = true;
        python = self.python27Packages.python;
