@@ -264,7 +264,7 @@ class ChangesetCommentsModel(BaseModel):
                       '<strong>{}</strong></a>'
             message = message.format(
                 user.username, _('made a comment'), msg_url,
-                _('Refresh page'))
+                _('Show it now'))
             channel = '/repo${}$/pr/{}'.format(
                 repo_name,
                 pull_request_id
