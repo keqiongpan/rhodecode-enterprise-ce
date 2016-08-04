@@ -1,25 +1,49 @@
-.. _integrations-ref:
+.. _integrations:
 
-Integrations and Extensions
-===========================
+Integrations
+------------
 
-The integrations section references three concepts regularly,
-so to clarify what is meant each time, read the following definitions:
+Rhodecode supports integrations with external services for various events
+such as commit pushes and pull requests. Multiple integrations of the same type
+(eg. slack) can be added at the same time which is useful for example to post
+different events to different slack channels.
 
-* **Plugin**: A Plugin is software that adds a specific feature to
-  an existing software application.
-* **Extension**: An extension extends the capabilities of,
-  or the data available to, an existing software application.
-* **Hook**: A hook intercepts function calls, messages, or events passed
-  between software components and can be used to trigger plugins, or their
-  extensions.
+Supported integrations
+^^^^^^^^^^^^^^^^^^^^^^
+
+============================    ============    =====================================
+Type/Name                       |RC| Edition    Description
+============================    ============    =====================================
+:ref:`integrations-slack`       |RCCEshort|     https://slack.com/
+:ref:`integrations-hipchat`     |RCCEshort|     https://www.hipchat.com/
+:ref:`integrations-webhook`     |RCCEshort|     POST events as `json` to a custom url
+:ref:`integrations-redmine`     |RCEEshort|     Close/Resolve/Reference redmine issues
+:ref:`integrations-jira`        |RCEEshort|     Close/Resolve/Reference JIRA issues
+============================    ============    =====================================
+
+.. _creating-integrations:
+
+Creating an integration
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Integrations can be added globally via the admin UI:
+
+:menuselection:`Admin --> Integrations`
+
+or per repository in the repository settings:
+
+:menuselection:`Admin --> Repositories --> Edit --> Integrations`
+
+To create an integration, select the type from the list of types in the
+`Create an integration` section.
+
+The `Current integrations` section shows existing integrations that have been
+created along with their type (eg. slack) and enabled status.
 
 .. toctree::
 
-   rcx
-   install-ext
-   config-ext
-   extensions
-   hooks
-   full-blown-example
-   int-slack
+   slack
+   hipchat
+   redmine
+   jira
+   webhook

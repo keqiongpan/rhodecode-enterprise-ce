@@ -14,7 +14,7 @@ code review matters, see these posts on the topic:
 
 You can also use the |RCE| API set up continuous integration servers to leave
 comments from a test suite. See the :ref:`api` and
-:ref:`integrations-ref` sections for examples on how to set this up.
+:ref:`extensions-hooks-ref` sections for examples on how to set this up.
 
 .. toctree::
 

@@ -58,6 +58,7 @@ and commit files and |repos| while managing their security permissions.
    collaboration/review-notifications
    collaboration/pull-requests
    code-review/code-review
+   integrations/integrations
 
 .. toctree::
    :maxdepth: 1
@@ -65,7 +66,7 @@ and commit files and |repos| while managing their security permissions.
 
    api/api
    tools/rhodecode-tools
-   integrations/integrations
+   extensions/extensions-hooks
    contributing/contributing
 
 .. toctree::
