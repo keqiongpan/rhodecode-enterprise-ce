@@ -126,10 +126,6 @@ def make_app(global_conf, full_stack=True, static_files=True, **app_conf):
         # Appenlight monitoring and error handler
         app, appenlight_client = wrap_in_appenlight_if_enabled(app, config)
 
-        # we want our low level middleware to get to the request ASAP. We don't
-        # need any pylons stack middleware in them
-        app = VCSMiddleware(app, config, appenlight_client)
-
     # Establish the Registry for this application
     app = RegistryManager(app)
 
@@ -176,6 +172,57 @@ def make_pyramid_app(global_config, **settings):
     pyramid_app = config.make_wsgi_app()
     pyramid_app = wrap_app_in_wsgi_middlewares(pyramid_app, config)
     return pyramid_app
+
+
+def make_not_found_view(config):
+    """
+    This creates the view shich should be registered as not-found-view to
+    pyramid. Basically it contains of the old pylons app, converted to a view.
+    Additionally it is wrapped by some other middlewares.
+    """
+    settings = config.registry.settings
+
+    # Make pylons app from unprepared settings.
+    pylons_app = make_app(
+        config.registry._pylons_compat_global_config,
+        **config.registry._pylons_compat_settings)
+    config.registry._pylons_compat_config = pylons_app.config
+
+    # The VCSMiddleware shall operate like a fallback if pyramid doesn't find
+    # a view to handle the request. Therefore we wrap it around the pylons app
+    # and it will be added as not found view.
+    if settings['vcs.server.enable']:
+        pylons_app = VCSMiddleware(
+            pylons_app, settings, None, registry=config.registry)
+
+    pylons_app_as_view = wsgiapp(pylons_app)
+
+    # Protect from VCS Server error related pages when server is not available
+    vcs_server_enabled = asbool(settings.get('vcs.server.enable', 'true'))
+    if not vcs_server_enabled:
+        pylons_app_as_view = DisableVCSPagesWrapper(pylons_app_as_view)
+
+    def pylons_app_with_error_handler(context, request):
+        """
+        Handle exceptions from rc pylons app:
+
+        - old webob type exceptions get converted to pyramid exceptions
+        - pyramid exceptions are passed to the error handler view
+        """
+        try:
+            response = pylons_app_as_view(context, request)
+            if 400 <= response.status_int <= 599:  # webob type error responses
+                return error_handler(
+                    webob_to_pyramid_http_response(response), request)
+        except HTTPError as e:  # pyramid type exceptions
+            return error_handler(e, request)
+        except Exception:
+            if settings.get('debugtoolbar.enabled', False):
+                raise
+            return error_handler(HTTPInternalServerError(), request)
+        return response
+
+    return pylons_app_with_error_handler
 
 
 def add_pylons_compat_data(registry, global_config, settings):
@@ -274,44 +321,11 @@ def includeme(config):
     for inc in includes:
         config.include(inc)
 
-    pylons_app = make_app(
-        config.registry._pylons_compat_global_config,
-        **config.registry._pylons_compat_settings)
-    config.registry._pylons_compat_config = pylons_app.config
-
-    pylons_app_as_view = wsgiapp(pylons_app)
-
-    # Protect from VCS Server error related pages when server is not available
-    vcs_server_enabled = asbool(settings.get('vcs.server.enable', 'true'))
-    if not vcs_server_enabled:
-        pylons_app_as_view = DisableVCSPagesWrapper(pylons_app_as_view)
-
-
-    def pylons_app_with_error_handler(context, request):
-        """
-        Handle exceptions from rc pylons app:
-
-        - old webob type exceptions get converted to pyramid exceptions
-        - pyramid exceptions are passed to the error handler view
-        """
-        try:
-            response = pylons_app_as_view(context, request)
-            if 400 <= response.status_int <= 599: # webob type error responses
-                return error_handler(
-                    webob_to_pyramid_http_response(response), request)
-        except HTTPError as e: # pyramid type exceptions
-            return error_handler(e, request)
-        except Exception:
-            if settings.get('debugtoolbar.enabled', False):
-                raise
-            return error_handler(HTTPInternalServerError(), request)
-        return response
-
     # This is the glue which allows us to migrate in chunks. By registering the
     # pylons based application as the "Not Found" view in Pyramid, we will
     # fallback to the old application each time the new one does not yet know
     # how to handle a request.
-    config.add_notfound_view(pylons_app_with_error_handler)
+    config.add_notfound_view(make_not_found_view(config))
 
     if not settings.get('debugtoolbar.enabled', False):
         # if no toolbar, then any exception gets caught and rendered
