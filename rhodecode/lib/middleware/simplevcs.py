@@ -42,7 +42,8 @@ from rhodecode.lib.exceptions import (
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.middleware import appenlight
 from rhodecode.lib.middleware.utils import scm_app
-from rhodecode.lib.utils import is_valid_repo
+from rhodecode.lib.utils import (
+    is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path)
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool
 from rhodecode.model import meta
 from rhodecode.model.db import User, Repository
@@ -84,7 +85,7 @@ class SimpleVCS(object):
         self.application = application
         self.config = config
         # base path of repo locations
-        self.basepath = self.config['base_path']
+        self.basepath = get_rhodecode_base_path()
         # authenticate this VCS request using authfunc
         auth_ret_code_detection = \
             str2bool(self.config.get('auth_ret_code_detection', False))
@@ -289,8 +290,7 @@ class SimpleVCS(object):
 
                 # If not authenticated by the container, running basic auth
                 if not username:
-                    self.authenticate.realm = \
-                        safe_str(self.config['rhodecode_realm'])
+                    self.authenticate.realm = get_rhodecode_realm()
 
                     try:
                         result = self.authenticate(environ)
