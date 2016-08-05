@@ -34,6 +34,7 @@ from pyramid.settings import asbool, aslist
 from pyramid.wsgi import wsgiapp
 from pyramid.httpexceptions import HTTPError, HTTPInternalServerError
 from pylons.controllers.util import abort, redirect
+from pyramid.events import ApplicationCreated
 import pyramid.httpexceptions as httpexceptions
 from pyramid.renderers import render_to_response, render
 from routes.middleware import RoutesMiddleware
@@ -51,6 +52,7 @@ from rhodecode.lib.middleware.disable_vcs import DisableVCSPagesWrapper
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
+from rhodecode.subscribers import scan_repositories_if_enabled
 
 
 log = logging.getLogger(__name__)
@@ -256,6 +258,9 @@ def includeme(config):
     config.include('rhodecode.svn_support')
     config.add_route(
         'rhodecode_support', 'https://rhodecode.com/help/', static=True)
+
+    # Add subscribers.
+    config.add_subscriber(scan_repositories_if_enabled, ApplicationCreated)
 
     # Set the authorization policy.
     authz_policy = ACLAuthorizationPolicy()

@@ -53,3 +53,18 @@ def add_localizer(event):
 
     request.localizer = localizer
     request.translate = auto_translate
+
+
+def scan_repositories_if_enabled(event):
+    """
+    This is subscribed to the `pyramid.events.ApplicationCreated` event. It
+    does a repository scan if enabled in the settings.
+    """
+    from rhodecode.model.scm import ScmModel
+    from rhodecode.lib.utils import repo2db_mapper, get_rhodecode_base_path
+    settings = event.app.registry.settings
+    vcs_server_enabled = settings['vcs.server.enable']
+    import_on_startup = settings['startup.import_repos']
+    if vcs_server_enabled and import_on_startup:
+        repositories = ScmModel().repo_scan(get_rhodecode_base_path())
+        repo2db_mapper(repositories, remove_obsolete=False)

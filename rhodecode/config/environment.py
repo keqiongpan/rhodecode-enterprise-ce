@@ -165,9 +165,6 @@ def load_environment(global_conf, app_conf, initial=False,
     if vcs_server_enabled:
         connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(config))
 
-    import_on_startup = str2bool(config.get('startup.import_repos', False))
-    if vcs_server_enabled and import_on_startup:
-        repo2db_mapper(ScmModel().repo_scan(repos_path), remove_obsolete=False)
     return config
 
 
