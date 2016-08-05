@@ -119,26 +119,6 @@ def load_environment(global_conf, app_conf, initial=False,
         'secret': config.get('channelstream.secret')
     }
 
-    # Limit backends to "vcs.backends" from configuration
-    backends = config['vcs.backends'] = aslist(
-        config.get('vcs.backends', 'hg,git'), sep=',')
-    for alias in rhodecode.BACKENDS.keys():
-        if alias not in backends:
-            del rhodecode.BACKENDS[alias]
-    log.info("Enabled backends: %s", backends)
-
-    # initialize vcs client and optionally run the server if enabled
-    vcs_server_uri = config.get('vcs.server', '')
-    vcs_server_enabled = str2bool(config.get('vcs.server.enable', 'true'))
-    start_server = (
-        str2bool(config.get('vcs.start_server', 'false')) and
-        not int(os.environ.get('RC_VCSSERVER_TEST_DISABLE', '0')))
-    if vcs_server_enabled and start_server:
-        log.info("Starting vcsserver")
-        start_vcs_server(server_and_port=vcs_server_uri,
-                         protocol=utils.get_vcs_server_protocol(config),
-                         log_level=config['vcs.server.log_level'])
-
     set_available_permissions(config)
     db_cfg = make_db_config(clear_session=True)
 
@@ -161,10 +141,6 @@ def load_environment(global_conf, app_conf, initial=False,
     rhodecode.CONFIG.update(config)
 
     utils.configure_pyro4(config)
-    utils.configure_vcs(config)
-    if vcs_server_enabled:
-        connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(config))
-
     return config
 
 
@@ -194,3 +170,26 @@ def load_pyramid_environment(global_config, settings):
 
     # Initialize the database connection.
     utils.initialize_database(settings_merged)
+
+    # Limit backends to `vcs.backends` from configuration
+    for alias in rhodecode.BACKENDS.keys():
+        if alias not in settings['vcs.backends']:
+            del rhodecode.BACKENDS[alias]
+    log.info('Enabled VCS backends: %s', rhodecode.BACKENDS.keys())
+
+    # initialize vcs client and optionally run the server if enabled
+    vcs_server_uri = settings['vcs.server']
+    vcs_server_enabled = settings['vcs.server.enable']
+    start_server = (
+        settings['vcs.start_server'] and
+        not int(os.environ.get('RC_VCSSERVER_TEST_DISABLE', '0')))
+
+    if vcs_server_enabled and start_server:
+        log.info("Starting vcsserver")
+        start_vcs_server(server_and_port=vcs_server_uri,
+                         protocol=utils.get_vcs_server_protocol(settings),
+                         log_level=settings['vcs.server.log_level'])
+
+    utils.configure_vcs(settings)
+    if vcs_server_enabled:
+        connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(settings))
