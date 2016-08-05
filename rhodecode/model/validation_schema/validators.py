@@ -13,7 +13,3 @@ def ip_addr_validator(node, value):
     except ValueError:
         msg = _(u'Please enter a valid IPv4 or IpV6 address')
         raise colander.Invalid(node, msg)
-
-
-
-

@@ -1,0 +1,10 @@
+<%def name="panel(title, class_='default')">
+    <div class="panel panel-${class_}">
+      <div class="panel-heading">
+        <h3 class="panel-title">${title}</h3>
+      </div>
+      <div class="panel-body">
+        ${caller.body()}
+      </div>
+    </div>
+</%def>

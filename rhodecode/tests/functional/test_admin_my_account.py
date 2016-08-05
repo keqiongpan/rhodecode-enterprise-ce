@@ -21,6 +21,7 @@
 import pytest
 
 from rhodecode.lib import helpers as h
+from rhodecode.lib.auth import check_password
 from rhodecode.model.db import User, UserFollowing, Repository, UserApiKeys
 from rhodecode.model.meta import Session
 from rhodecode.tests import (
@@ -34,6 +35,7 @@ fixture = Fixture()
 
 class TestMyAccountController(TestController):
     test_user_1 = 'testme'
+    test_user_1_password = '0jd83nHNS/d23n'
     destroy_users = set()
 
     @classmethod
@@ -158,7 +160,8 @@ class TestMyAccountController(TestController):
             ('email', {'email': 'some@email.com'}),
         ])
     def test_my_account_update(self, name, attrs):
-        usr = fixture.create_user(self.test_user_1, password='qweqwe',
+        usr = fixture.create_user(self.test_user_1,
+                                  password=self.test_user_1_password,
                                   email='testme@rhodecode.org',
                                   extern_type='rhodecode',
                                   extern_name=self.test_user_1,
@@ -167,7 +170,8 @@ class TestMyAccountController(TestController):
 
         params = usr.get_api_data()  # current user data
         user_id = usr.user_id
-        self.log_user(username=self.test_user_1, password='qweqwe')
+        self.log_user(
+            username=self.test_user_1, password=self.test_user_1_password)
 
         params.update({'password_confirmation': ''})
         params.update({'new_password': ''})
@@ -321,8 +325,55 @@ class TestMyAccountController(TestController):
         response = response.follow()
         response.mustcontain(no=[api_key])
 
-    def test_password_is_updated_in_session_on_password_change(
-            self, user_util):
+    def test_valid_change_password(self, user_util):
+        new_password = 'my_new_valid_password'
+        user = user_util.create_user(password=self.test_user_1_password)
+        session = self.log_user(user.username, self.test_user_1_password)
+        form_data = [
+            ('current_password', self.test_user_1_password),
+            ('__start__', 'new_password:mapping'),
+            ('new_password', new_password),
+            ('new_password-confirm', new_password),
+            ('__end__', 'new_password:mapping'),
+            ('csrf_token', self.csrf_token),
+        ]
+        response = self.app.post(url('my_account_password'), form_data).follow()
+        assert 'Successfully updated password' in response
+
+         # check_password depends on user being in session
+        Session().add(user)
+        try:
+            assert check_password(new_password, user.password)
+        finally:
+            Session().expunge(user)
+
+    @pytest.mark.parametrize('current_pw,new_pw,confirm_pw', [
+        ('', 'abcdef123', 'abcdef123'),
+        ('wrong_pw', 'abcdef123', 'abcdef123'),
+        (test_user_1_password, test_user_1_password, test_user_1_password),
+        (test_user_1_password, '', ''),
+        (test_user_1_password, 'abcdef123', ''),
+        (test_user_1_password, '', 'abcdef123'),
+        (test_user_1_password, 'not_the', 'same_pw'),
+        (test_user_1_password, 'short', 'short'),
+    ])
+    def test_invalid_change_password(self, current_pw, new_pw, confirm_pw,
+                                     user_util):
+        user = user_util.create_user(password=self.test_user_1_password)
+        session = self.log_user(user.username, self.test_user_1_password)
+        old_password_hash = session['password']
+        form_data = [
+            ('current_password', current_pw),
+            ('__start__', 'new_password:mapping'),
+            ('new_password', new_pw),
+            ('new_password-confirm', confirm_pw),
+            ('__end__', 'new_password:mapping'),
+            ('csrf_token', self.csrf_token),
+        ]
+        response = self.app.post(url('my_account_password'), form_data)
+        assert 'Error occurred' in response
+
+    def test_password_is_updated_in_session_on_password_change(self, user_util):
         old_password = 'abcdef123'
         new_password = 'abcdef124'
 
@@ -330,12 +381,14 @@ class TestMyAccountController(TestController):
         session = self.log_user(user.username, old_password)
         old_password_hash = session['password']
 
-        form_data = {
-            'current_password': old_password,
-            'new_password': new_password,
-            'new_password_confirmation': new_password,
-            'csrf_token': self.csrf_token
-        }
+        form_data = [
+            ('current_password', old_password),
+            ('__start__', 'new_password:mapping'),
+            ('new_password', new_password),
+            ('new_password-confirm', new_password),
+            ('__end__', 'new_password:mapping'),
+            ('csrf_token', self.csrf_token),
+        ]
         self.app.post(url('my_account_password'), form_data)
 
         response = self.app.get(url('home'))

@@ -102,20 +102,6 @@ def LoginForm():
     return _LoginForm
 
 
-def PasswordChangeForm(username):
-    class _PasswordChangeForm(formencode.Schema):
-        allow_extra_fields = True
-        filter_extra_fields = True
-
-        current_password = v.ValidOldPassword(username)(not_empty=True)
-        new_password = All(v.ValidPassword(), v.UnicodeString(strip=False, min=6))
-        new_password_confirmation = All(v.ValidPassword(), v.UnicodeString(strip=False, min=6))
-
-        chained_validators = [v.ValidPasswordsMatch('new_password',
-                                                    'new_password_confirmation')]
-    return _PasswordChangeForm
-
-
 def UserForm(edit=False, available_languages=[], old_data={}):
     class _UserForm(formencode.Schema):
         allow_extra_fields = True

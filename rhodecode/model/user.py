@@ -147,7 +147,6 @@ class UserModel(BaseModel):
         # cleanups, my_account password change form
         kwargs.pop('current_password', None)
         kwargs.pop('new_password', None)
-        kwargs.pop('new_password_confirmation', None)
 
         # cleanups, user edit password change form
         kwargs.pop('password_confirmation', None)

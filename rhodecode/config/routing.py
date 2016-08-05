@@ -531,9 +531,7 @@ def make_map(config):
                   action='my_account_update', conditions={'method': ['POST']})
 
         m.connect('my_account_password', '/my_account/password',
-                  action='my_account_password', conditions={'method': ['GET']})
-        m.connect('my_account_password', '/my_account/password',
-                  action='my_account_password_update', conditions={'method': ['POST']})
+                  action='my_account_password', conditions={'method': ['GET', 'POST']})
 
         m.connect('my_account_repos', '/my_account/repos',
                   action='my_account_repos', conditions={'method': ['GET']})
