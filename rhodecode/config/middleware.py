@@ -413,6 +413,9 @@ def sanitize_settings_and_apply_defaults(settings):
     # should allow to pass in a prefix.
     settings.setdefault('rhodecode.api.url', '/_admin/api')
 
+    # Set the default encoding.
+    _list_setting(settings, 'default_encoding', 'UTF-8')
+
     _bool_setting(settings, 'is_test', 'false')
 
     # Call split out functions that sanitize settings for each topic.
