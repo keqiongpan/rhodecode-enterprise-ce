@@ -86,14 +86,11 @@ Sign the Contributor License Agreement
 ======================================
 
 If your contribution is approved, you will need to virtually sign the license
-agreement in order for it to be merged into the project's codebase. You can read
-it on our website here: https://rhodecode.com/static/pdf/RhodeCode-CLA.pdf
+agreement in order for it to be merged into the project's codebase.
 
-To sign, go to code.rhodecode.com
-and clone the CLA repository. Add your name and make a pull request to add it to
-the contributor agreement; this serves as your virtual signature. Once your
-signature is merged, add a link to the relevant commit to your contribution
-pull request.
+You can read it on our website at https://rhodecode.com/rhodecode-cla
+
+To sign electronically, go to https://rhodecode.com/sign-cla
 
 
 
