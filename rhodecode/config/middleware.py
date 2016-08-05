@@ -431,3 +431,7 @@ def _list_setting(settings, name, default):
         raw_value = raw_value.replace(',', ' ')
 
     settings[name] = aslist(raw_value)
+
+
+def _string_setting(settings, name, default):
+    settings[name] = settings.get(name, default).lower()
