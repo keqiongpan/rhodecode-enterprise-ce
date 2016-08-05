@@ -421,3 +421,13 @@ def sanitize_settings_and_apply_defaults(settings):
 
 def _bool_setting(settings, name, default):
     settings[name] = asbool(settings.get(name, default))
+
+
+def _list_setting(settings, name, default):
+    raw_value = settings.get(name, default)
+
+    # Check if we get a setting with the old syntax (comma separated).
+    if ',' in raw_value:
+        raw_value = raw_value.replace(',', ' ')
+
+    settings[name] = aslist(raw_value)
