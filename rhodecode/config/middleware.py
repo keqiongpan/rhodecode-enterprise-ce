@@ -413,10 +413,30 @@ def sanitize_settings_and_apply_defaults(settings):
     # should allow to pass in a prefix.
     settings.setdefault('rhodecode.api.url', '/_admin/api')
 
-    _bool_setting(settings, 'vcs.server.enable', 'true')
     _bool_setting(settings, 'is_test', 'false')
 
+    # Call split out functions that sanitize settings for each topic.
+    _sanitize_vcs_settings(settings)
+
     return settings
+
+
+def _sanitize_vcs_settings(settings):
+    """
+    Applies settings defaults and does type conversion for all VCS related
+    settings.
+    """
+    _string_setting(settings, 'vcs.svn.compatible_version', '')
+    _string_setting(settings, 'git_rev_filter', '--all')
+    _string_setting(settings, 'vcs.hooks.protocol', 'pyro4')
+    _string_setting(settings, 'vcs.server', '')
+    _string_setting(settings, 'vcs.server.log_level', 'debug')
+    _string_setting(settings, 'vcs.server.protocol', 'pyro4')
+    _bool_setting(settings, 'startup.import_repos', 'false')
+    _bool_setting(settings, 'vcs.hooks.direct_calls', 'false')
+    _bool_setting(settings, 'vcs.server.enable', 'true')
+    _bool_setting(settings, 'vcs.start_server', 'false')
+    _list_setting(settings, 'vcs.backends', 'hg, git, svn')
 
 
 def _bool_setting(settings, name, default):
