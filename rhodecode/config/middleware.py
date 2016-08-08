@@ -358,8 +358,7 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
         pyramid_app, config.registry._pylons_compat_config['routes.map'],
         skip_prefixes=(STATIC_FILE_PREFIX, '/_debug_toolbar'))
 
-    pyramid_app, _ = wrap_in_appenlight_if_enabled(
-        pyramid_app, config.registry._pylons_compat_config)
+    pyramid_app, _ = wrap_in_appenlight_if_enabled(pyramid_app, settings)
 
     if settings['gzip_responses']:
         pyramid_app = make_gzip_middleware(
