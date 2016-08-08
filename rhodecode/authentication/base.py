@@ -509,7 +509,7 @@ def get_auth_cache_manager(custom_ttl=None):
 
 
 def authenticate(username, password, environ=None, auth_type=None,
-                 skip_missing=False):
+                 skip_missing=False, registry=None):
     """
     Authentication function used for access control,
     It tries to authenticate based on enabled authentication modules.
@@ -526,7 +526,7 @@ def authenticate(username, password, environ=None, auth_type=None,
                          % auth_type)
     headers_only = environ and not (username and password)
 
-    authn_registry = get_authn_registry()
+    authn_registry = get_authn_registry(registry)
     for plugin in authn_registry.get_plugins_for_authentication():
         plugin.set_auth_type(auth_type)
         user = plugin.get_user(username)

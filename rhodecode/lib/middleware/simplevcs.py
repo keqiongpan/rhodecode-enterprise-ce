@@ -82,7 +82,8 @@ class SimpleVCS(object):
 
     SCM = 'unknown'
 
-    def __init__(self, application, config):
+    def __init__(self, application, config, registry):
+        self.registry = registry
         self.application = application
         self.config = config
         # base path of repo locations
@@ -90,9 +91,9 @@ class SimpleVCS(object):
         # authenticate this VCS request using authfunc
         auth_ret_code_detection = \
             str2bool(self.config.get('auth_ret_code_detection', False))
-        self.authenticate = BasicAuth('', authenticate,
-                                      config.get('auth_ret_code'),
-                                      auth_ret_code_detection)
+        self.authenticate = BasicAuth(
+            '', authenticate, registry, config.get('auth_ret_code'),
+            auth_ret_code_detection)
         self.ip_addr = '0.0.0.0'
 
     @property
@@ -284,7 +285,8 @@ class SimpleVCS(object):
 
                 # try to auth based on environ, container auth methods
                 log.debug('Running PRE-AUTH for container based authentication')
-                pre_auth = authenticate('', '', environ,VCS_TYPE)
+                pre_auth = authenticate(
+                    '', '', environ, VCS_TYPE, registry=self.registry)
                 if pre_auth and pre_auth.get('username'):
                     username = pre_auth['username']
                 log.debug('PRE-AUTH got %s as username', username)
