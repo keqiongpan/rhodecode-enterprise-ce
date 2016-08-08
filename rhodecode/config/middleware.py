@@ -319,7 +319,7 @@ def includeme_first(config):
     # redirect automatic browser favicon.ico requests to correct place
     def favicon_redirect(context, request):
         return redirect(
-            request.static_url('rhodecode:public/images/favicon.ico'))
+            request.static_path('rhodecode:public/images/favicon.ico'))
 
     config.add_view(favicon_redirect, route_name='favicon')
     config.add_route('favicon', '/favicon.ico')

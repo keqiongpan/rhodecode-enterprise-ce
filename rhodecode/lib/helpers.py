@@ -121,7 +121,7 @@ def asset(path, ver=None):
     query = {}
     if ver:
         query = {'ver': ver}
-    return request.static_url(
+    return request.static_path(
         'rhodecode:public/{}'.format(path), _query=query)
 
 
