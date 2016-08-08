@@ -199,9 +199,17 @@ def make_not_found_view(config):
         - old webob type exceptions get converted to pyramid exceptions
         - pyramid exceptions are passed to the error handler view
         """
+        def is_vcs_response(request):
+            return True == request.environ.get(
+                'rhodecode.vcs.skip_error_handling')
+
+        def is_webob_error(response):
+            # webob type error responses
+            return (400 <= response.status_int <= 599)
+
         try:
             response = pylons_app_as_view(context, request)
-            if 400 <= response.status_int <= 599:  # webob type error responses
+            if is_webob_error(response) and not is_vcs_response(request):
                 return error_handler(
                     webob_to_pyramid_http_response(response), request)
         except HTTPError as e:  # pyramid type exceptions
