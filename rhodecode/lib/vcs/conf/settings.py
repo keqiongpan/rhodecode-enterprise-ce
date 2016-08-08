@@ -49,6 +49,9 @@ ARCHIVE_SPECS = {
     'zip': ('application/zip', '.zip'),
 }
 
+HOOKS_PROTOCOL = None
+HOOKS_DIRECT_CALLS = False
+
 PYRO_PORT = 9900
 
 PYRO_GIT = 'git_remote'

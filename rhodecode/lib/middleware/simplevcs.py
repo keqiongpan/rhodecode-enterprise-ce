@@ -45,6 +45,7 @@ from rhodecode.lib.middleware.utils import scm_app
 from rhodecode.lib.utils import (
     is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path)
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool
+from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.model import meta
 from rhodecode.model.db import User, Repository
 from rhodecode.model.scm import ScmModel
@@ -429,8 +430,8 @@ class SimpleVCS(object):
 
     def _prepare_callback_daemon(self, extras):
         return prepare_callback_daemon(
-            extras, protocol=self.config.get('vcs.hooks.protocol'),
-            use_direct_calls=self.config.get('vcs.hooks.direct_calls'))
+            extras, protocol=vcs_settings.HOOKS_PROTOCOL,
+            use_direct_calls=vcs_settings.HOOKS_DIRECT_CALLS)
 
 
 def _should_check_locking(query_string):
