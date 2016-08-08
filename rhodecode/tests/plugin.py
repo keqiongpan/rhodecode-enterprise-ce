@@ -214,6 +214,22 @@ def app(request, pylonsapp, http_environ):
     return app
 
 
+@pytest.fixture()
+def app_settings(pylonsapp, pylons_config):
+    """
+    Settings dictionary used to create the app.
+
+    Parses the ini file and passes the result through the sanitize and apply
+    defaults mechanism in `rhodecode.config.middleware`.
+    """
+    from paste.deploy.loadwsgi import loadcontext, APP
+    from rhodecode.config.middleware import (
+        sanitize_settings_and_apply_defaults)
+    context = loadcontext(APP, 'config:' + pylons_config)
+    settings = sanitize_settings_and_apply_defaults(context.config())
+    return settings
+
+
 LoginData = collections.namedtuple('LoginData', ('csrf_token', 'user'))
 
 
