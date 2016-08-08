@@ -338,6 +338,7 @@ def includeme_first(config):
     config.add_static_view(
         '_static/rhodecode', path='rhodecode:public', cache_max_age=3600 * 24)
 
+
 def wrap_app_in_wsgi_middlewares(pyramid_app, config):
     """
     Apply outer WSGI middlewares around the application.
@@ -357,11 +358,10 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
         pyramid_app, config.registry._pylons_compat_config['routes.map'],
         skip_prefixes=(STATIC_FILE_PREFIX, '/_debug_toolbar'))
 
-    if asbool(settings.get('appenlight', 'false')):
-        pyramid_app, _ = wrap_in_appenlight_if_enabled(
-            pyramid_app, config.registry._pylons_compat_config)
+    pyramid_app, _ = wrap_in_appenlight_if_enabled(
+        pyramid_app, config.registry._pylons_compat_config)
 
-    if asbool(settings.get('gzip_responses', 'true')):
+    if settings['gzip_responses']:
         pyramid_app = make_gzip_middleware(
             pyramid_app, settings, compress_level=1)
 
@@ -403,15 +403,20 @@ def sanitize_settings_and_apply_defaults(settings):
     # should allow to pass in a prefix.
     settings.setdefault('rhodecode.api.url', '/_admin/api')
 
-    # Set the default encoding.
+    # Sanitize generic settings.
     _list_setting(settings, 'default_encoding', 'UTF-8')
-
     _bool_setting(settings, 'is_test', 'false')
+    _bool_setting(settings, 'gzip_responses', 'false')
 
     # Call split out functions that sanitize settings for each topic.
+    _sanitize_appenlight_settings(settings)
     _sanitize_vcs_settings(settings)
 
     return settings
+
+
+def _sanitize_appenlight_settings(settings):
+    _bool_setting(settings, 'appenlight', 'false')
 
 
 def _sanitize_vcs_settings(settings):
