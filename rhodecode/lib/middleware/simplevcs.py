@@ -352,6 +352,12 @@ class SimpleVCS(object):
         log.info(
             '%s action on %s repo "%s" by "%s" from %s',
             action, self.SCM, str_repo_name, safe_str(username), ip_addr)
+
+        # Set a flag to skip error handling for VCSMiddleware responses. This
+        # prevents converting error responses to human readable error pages
+        # which otherwise confuses the command line clients.
+        environ['rhodecode.vcs.skip_error_handling'] = True
+
         return self._generate_vcs_response(
             environ, start_response, repo_path, repo_name, extras, action)
 
