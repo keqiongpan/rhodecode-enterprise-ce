@@ -199,10 +199,14 @@ def prepare_callback_daemon(extras, protocol=None, use_direct_calls=False):
         callback_daemon = DummyHooksCallbackDaemon()
         extras['hooks_module'] = callback_daemon.hooks_module
     else:
-        callback_daemon = (
-            Pyro4HooksCallbackDaemon()
-            if protocol == 'pyro4'
-            else HttpHooksCallbackDaemon())
+        if protocol == 'pyro4':
+            callback_daemon = Pyro4HooksCallbackDaemon()
+        elif protocol == 'http':
+            callback_daemon = HttpHooksCallbackDaemon()
+        else:
+            log.error('Unsupported callback daemon protocol "%s"', protocol)
+            raise Exception('Unsupported callback daemon protocol.')
+
         extras['hooks_uri'] = callback_daemon.hooks_uri
         extras['hooks_protocol'] = protocol
 
