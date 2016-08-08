@@ -29,14 +29,13 @@ from paste.gzipper import make_gzip_middleware
 from pylons.wsgiapp import PylonsApp
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
-from pyramid.static import static_view
 from pyramid.settings import asbool, aslist
 from pyramid.wsgi import wsgiapp
 from pyramid.httpexceptions import HTTPError, HTTPInternalServerError
-from pylons.controllers.util import abort, redirect
+from pylons.controllers.util import redirect
 from pyramid.events import ApplicationCreated
 import pyramid.httpexceptions as httpexceptions
-from pyramid.renderers import render_to_response, render
+from pyramid.renderers import render_to_response
 from routes.middleware import RoutesMiddleware
 import routes.util
 
@@ -83,18 +82,12 @@ class SkippableRoutesMiddleware(RoutesMiddleware):
             environ, start_response)
 
 
-def make_app(global_conf, full_stack=True, static_files=True, **app_conf):
+def make_app(global_conf, static_files=True, **app_conf):
     """Create a Pylons WSGI application and return it
 
     ``global_conf``
         The inherited configuration for this application. Normally from
         the [DEFAULT] section of the Paste ini file.
-
-    ``full_stack``
-        Whether or not this application provides a full WSGI stack (by
-        default, meaning it handles its own exceptions and errors).
-        Disable full_stack when this application is "managed" by
-        another WSGI middleware.
 
     ``app_conf``
         The application's local configuration. Normally specified in
@@ -119,12 +112,6 @@ def make_app(global_conf, full_stack=True, static_files=True, **app_conf):
         # The API can be accessed from other Origins.
         app = csrf.OriginChecker(app, expected_origin,
                                  skip_urls=[routes.util.url_for('api')])
-
-
-    if asbool(full_stack):
-
-        # Appenlight monitoring and error handler
-        app, appenlight_client = wrap_in_appenlight_if_enabled(app, config)
 
     # Establish the Registry for this application
     app = RegistryManager(app)
@@ -176,11 +163,12 @@ def make_pyramid_app(global_config, **settings):
 
 def make_not_found_view(config):
     """
-    This creates the view shich should be registered as not-found-view to
+    This creates the view which should be registered as not-found-view to
     pyramid. Basically it contains of the old pylons app, converted to a view.
     Additionally it is wrapped by some other middlewares.
     """
     settings = config.registry.settings
+    vcs_server_enabled = settings['vcs.server.enable']
 
     # Make pylons app from unprepared settings.
     pylons_app = make_app(
@@ -188,17 +176,19 @@ def make_not_found_view(config):
         **config.registry._pylons_compat_settings)
     config.registry._pylons_compat_config = pylons_app.config
 
+    # Appenlight monitoring.
+    pylons_app, appenlight_client = wrap_in_appenlight_if_enabled(
+        pylons_app, settings)
+
     # The VCSMiddleware shall operate like a fallback if pyramid doesn't find
-    # a view to handle the request. Therefore we wrap it around the pylons app
-    # and it will be added as not found view.
-    if settings['vcs.server.enable']:
+    # a view to handle the request. Therefore we wrap it around the pylons app.
+    if vcs_server_enabled:
         pylons_app = VCSMiddleware(
-            pylons_app, settings, None, registry=config.registry)
+            pylons_app, settings, appenlight_client, registry=config.registry)
 
     pylons_app_as_view = wsgiapp(pylons_app)
 
     # Protect from VCS Server error related pages when server is not available
-    vcs_server_enabled = asbool(settings.get('vcs.server.enable', 'true'))
     if not vcs_server_enabled:
         pylons_app_as_view = DisableVCSPagesWrapper(pylons_app_as_view)
 
