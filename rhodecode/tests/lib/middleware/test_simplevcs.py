@@ -284,12 +284,11 @@ class TestInitializeGenerator:
 
 
 class TestPrepareHooksDaemon(object):
-    def test_calls_imported_prepare_callback_daemon(self, pylonsapp):
-        settings = pylonsapp.application.config
+    def test_calls_imported_prepare_callback_daemon(self, app_settings):
         expected_extras = {'extra1': 'value1'}
         daemon = DummyHooksCallbackDaemon()
 
-        controller = StubVCSController(None, settings, None)
+        controller = StubVCSController(None, app_settings, None)
         prepare_patcher = mock.patch.object(
             simplevcs, 'prepare_callback_daemon',
             return_value=(daemon, expected_extras))
@@ -298,8 +297,8 @@ class TestPrepareHooksDaemon(object):
                 expected_extras.copy())
         prepare_mock.assert_called_once_with(
             expected_extras,
-            protocol=settings['vcs.hooks.protocol'],
-            use_direct_calls=settings['vcs.hooks.direct_calls'])
+            protocol=app_settings['vcs.hooks.protocol'],
+            use_direct_calls=app_settings['vcs.hooks.direct_calls'])
 
         assert callback_daemon == daemon
         assert extras == extras
