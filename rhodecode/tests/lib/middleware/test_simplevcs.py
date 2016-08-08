@@ -25,9 +25,7 @@ import pytest
 import webtest.app
 
 from rhodecode.lib.caching_query import FromCache
-from rhodecode.lib.hooks_daemon import (
-    Pyro4HooksCallbackDaemon, DummyHooksCallbackDaemon,
-    HttpHooksCallbackDaemon)
+from rhodecode.lib.hooks_daemon import DummyHooksCallbackDaemon
 from rhodecode.lib.middleware import simplevcs
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.middleware.utils import scm_app
@@ -66,7 +64,7 @@ def vcscontroller(pylonsapp, config_stub):
     config_stub.include('rhodecode.authentication')
 
     set_anonymous_access(True)
-    controller = StubVCSController(pylonsapp, pylonsapp.config)
+    controller = StubVCSController(pylonsapp, pylonsapp.config, None)
     app = HttpsFixup(controller, pylonsapp.config)
     app = webtest.app.TestApp(app)
 
@@ -131,7 +129,7 @@ class StubFailVCSController(simplevcs.SimpleVCS):
 
 @pytest.fixture(scope='module')
 def fail_controller(pylonsapp):
-    controller = StubFailVCSController(pylonsapp, pylonsapp.config)
+    controller = StubFailVCSController(pylonsapp, pylonsapp.config, None)
     controller = HttpsFixup(controller, pylonsapp.config)
     controller = webtest.app.TestApp(controller)
     return controller
@@ -148,7 +146,7 @@ def test_provides_traceback_for_appenlight(fail_controller):
 
 
 def test_provides_utils_scm_app_as_scm_app_by_default(pylonsapp):
-    controller = StubVCSController(pylonsapp, pylonsapp.config)
+    controller = StubVCSController(pylonsapp, pylonsapp.config, None)
     assert controller.scm_app is scm_app
 
 
@@ -156,7 +154,7 @@ def test_allows_to_override_scm_app_via_config(pylonsapp):
     config = pylonsapp.config.copy()
     config['vcs.scm_app_implementation'] = (
         'rhodecode.tests.lib.middleware.mock_scm_app')
-    controller = StubVCSController(pylonsapp, config)
+    controller = StubVCSController(pylonsapp, config, None)
     assert controller.scm_app is mock_scm_app
 
 
@@ -231,7 +229,12 @@ class TestGenerateVcsResponse:
         assert prepare_mock.call_count == 1
 
     def call_controller_with_response_body(self, response_body):
-        controller = StubVCSController(None, {'base_path': 'fake_base_path'})
+        settings = {
+            'base_path': 'fake_base_path',
+            'vcs.hooks.protocol': 'http',
+            'vcs.hooks.direct_calls': False,
+        }
+        controller = StubVCSController(None, settings, None)
         controller._invalidate_cache = mock.Mock()
         controller.stub_response_body = response_body
         self.start_response = mock.Mock()
@@ -281,16 +284,12 @@ class TestInitializeGenerator:
 
 
 class TestPrepareHooksDaemon(object):
-    def test_calls_imported_prepare_callback_daemon(self):
-        config = {
-            'base_path': 'fake_base_path',
-            'vcs.hooks.direct_calls': False,
-            'vcs.hooks.protocol': 'http'
-        }
+    def test_calls_imported_prepare_callback_daemon(self, pylonsapp):
+        settings = pylonsapp.application.config
         expected_extras = {'extra1': 'value1'}
         daemon = DummyHooksCallbackDaemon()
 
-        controller = StubVCSController(None, config)
+        controller = StubVCSController(None, settings, None)
         prepare_patcher = mock.patch.object(
             simplevcs, 'prepare_callback_daemon',
             return_value=(daemon, expected_extras))
@@ -298,7 +297,9 @@ class TestPrepareHooksDaemon(object):
             callback_daemon, extras = controller._prepare_callback_daemon(
                 expected_extras.copy())
         prepare_mock.assert_called_once_with(
-            expected_extras, protocol='http', use_direct_calls=False)
+            expected_extras,
+            protocol=settings['vcs.hooks.protocol'],
+            use_direct_calls=settings['vcs.hooks.direct_calls'])
 
         assert callback_daemon == daemon
         assert extras == extras

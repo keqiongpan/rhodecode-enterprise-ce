@@ -55,7 +55,8 @@ def get_environ(url):
     ])
 def test_get_action(url, expected_action):
     app = simplehg.SimpleHg(application=None,
-                            config={'auth_ret_code': '', 'base_path': ''})
+                            config={'auth_ret_code': '', 'base_path': ''},
+                            registry=None)
     assert expected_action == app._get_action(get_environ(url))
 
 
@@ -72,13 +73,15 @@ def test_get_action(url, expected_action):
     ])
 def test_get_repository_name(url, expected_repo_name):
     app = simplehg.SimpleHg(application=None,
-                            config={'auth_ret_code': '', 'base_path': ''})
+                            config={'auth_ret_code': '', 'base_path': ''},
+                            registry=None)
     assert expected_repo_name == app._get_repository_name(get_environ(url))
 
 
 def test_get_config():
     app = simplehg.SimpleHg(application=None,
-                            config={'auth_ret_code': '', 'base_path': ''})
+                            config={'auth_ret_code': '', 'base_path': ''},
+                            registry=None)
     extras = {'foo': 'FOO', 'bar': 'BAR'}
 
     mock_config = Config()
@@ -108,6 +111,6 @@ def test_create_wsgi_app_uses_scm_app_from_simplevcs():
         'vcs.scm_app_implementation':
             'rhodecode.tests.lib.middleware.mock_scm_app',
     }
-    app = simplehg.SimpleHg(application=None, config=config)
+    app = simplehg.SimpleHg(application=None, config=config, registry=None)
     wsgi_app = app._create_wsgi_app('/tmp/test', 'test_repo', {})
     assert wsgi_app is mock_scm_app.mock_hg_wsgi

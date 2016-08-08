@@ -102,8 +102,9 @@ class TestVCSMiddleware(object):
         }
         app = Mock()
         config = Mock()
+        registry = Mock()
         middleware = vcs.VCSMiddleware(
-            app, config=config, appenlight_client=None)
+            app, config=config, appenlight_client=None, registry=registry)
         snv_patch = patch('rhodecode.lib.middleware.vcs.SimpleSvn')
         settings_patch = patch.dict(
             rhodecode.CONFIG,
@@ -112,7 +113,7 @@ class TestVCSMiddleware(object):
             svn_mock.return_value = None
             middleware._get_handler_app(environ)
 
-        svn_mock.assert_called_once_with(app, config)
+        svn_mock.assert_called_once_with(app, config, registry)
 
     def test_get_handler_app_retuns_no_svn_app_when_proxy_disabled(self):
         environ = {
@@ -121,8 +122,9 @@ class TestVCSMiddleware(object):
         }
         app = Mock()
         config = Mock()
+        registry = Mock()
         middleware = vcs.VCSMiddleware(
-            app, config=config, appenlight_client=None)
+            app, config=config, appenlight_client=None, registry=registry)
         snv_patch = patch('rhodecode.lib.middleware.vcs.SimpleSvn')
         settings_patch = patch.dict(
             rhodecode.CONFIG,
