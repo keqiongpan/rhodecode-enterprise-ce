@@ -125,9 +125,6 @@ def load_environment(global_conf, app_conf, initial=False,
     repos_path = list(db_cfg.items('paths'))[0][1]
     config['base_path'] = repos_path
 
-    config['vcs.hooks.direct_calls'] = _use_direct_hook_calls(config)
-    config['vcs.hooks.protocol'] = _get_vcs_hooks_protocol(config)
-
     # store db config also in main global CONFIG
     set_rhodecode_config(config)
 
@@ -142,18 +139,6 @@ def load_environment(global_conf, app_conf, initial=False,
 
     utils.configure_pyro4(config)
     return config
-
-
-def _use_direct_hook_calls(config):
-    default_direct_hook_calls = 'false'
-    direct_hook_calls = str2bool(
-        config.get('vcs.hooks.direct_calls', default_direct_hook_calls))
-    return direct_hook_calls
-
-
-def _get_vcs_hooks_protocol(config):
-    protocol = config.get('vcs.hooks.protocol', 'pyro4').lower()
-    return protocol
 
 
 def load_pyramid_environment(global_config, settings):
