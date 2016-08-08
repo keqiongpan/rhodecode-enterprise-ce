@@ -25,7 +25,6 @@ middleware to handle appenlight publishing of errors
 from appenlight_client import make_appenlight_middleware
 from appenlight_client.exceptions import get_current_traceback
 from appenlight_client.wsgi import AppenlightWSGIWrapper
-from paste.deploy.converters import asbool
 
 
 def track_exception(environ):
@@ -50,7 +49,7 @@ def track_extra_information(environ, section, value):
     environ['appenlight.extra'][section] = value
 
 
-def wrap_in_appenlight_if_enabled(app, config, appenlight_client=None):
+def wrap_in_appenlight_if_enabled(app, settings, appenlight_client=None):
     """
     Wraps the given `app` for appenlight support.
 
@@ -64,10 +63,10 @@ def wrap_in_appenlight_if_enabled(app, config, appenlight_client=None):
        This is in use to support our setup of the vcs related middlewares.
 
     """
-    if asbool(config['app_conf'].get('appenlight')):
+    if settings['appenlight']:
         app = RemoteTracebackTracker(app)
         if not appenlight_client:
-            app = make_appenlight_middleware(app, config)
+            app = make_appenlight_middleware(app, settings)
             appenlight_client = app.appenlight_client
         else:
             app = AppenlightWSGIWrapper(app, appenlight_client)
