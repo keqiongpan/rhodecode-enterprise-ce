@@ -25,6 +25,8 @@ import types
 
 import decorator
 import venusian
+from collections import OrderedDict
+
 from pyramid.exceptions import ConfigurationError
 from pyramid.renderers import render
 from pyramid.response import Response
@@ -480,7 +482,7 @@ def includeme(config):
         plugin_module, config.registry.settings)
 
     if not hasattr(config.registry, 'jsonrpc_methods'):
-        config.registry.jsonrpc_methods = {}
+        config.registry.jsonrpc_methods = OrderedDict()
 
     # match filter by given method only
     config.add_view_predicate(
