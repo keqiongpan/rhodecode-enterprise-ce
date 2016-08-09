@@ -27,14 +27,15 @@ from rhodecode.config.middleware import (
 
 class TestHelperFunctions(object):
     @pytest.mark.parametrize('raw, expected', [
-        ('true', True),
-        ('yes', True),
-        ('on', True),
-        ('false', False),
-        ('no', False),
-        ('off', False),
+        ('true', True), (u'true', True),
+        ('yes', True), (u'yes', True),
+        ('on', True), (u'on', True),
+        ('false', False), (u'false', False),
+        ('no', False), (u'no', False),
+        ('off', False), (u'off', False),
         ('invalid-bool-value', False),
         ('invalid-∫øø@-√å@¨€', False),
+        (u'invalid-∫øø@-√å@¨€', False),
     ])
     def test_bool_setting_helper(self, raw, expected):
         key = 'dummy-key'
@@ -47,6 +48,7 @@ class TestHelperFunctions(object):
         ('test-string', 'test-string'),
         ('CaSe-TeSt', 'case-test'),
         ('test-string-çƒ©€', 'test-string-çƒ©€'),
+        (u'test-string-çƒ©€', u'test-string-çƒ©€'),
     ])
     def test_string_setting_helper(self, raw, expected):
         key = 'dummy-key'
@@ -58,12 +60,15 @@ class TestHelperFunctions(object):
         ('', []),
         ('test', ['test']),
         ('CaSe-TeSt', ['CaSe-TeSt']),
+        ('test-string-çƒ©€', ['test-string-çƒ©€']),
+        (u'test-string-çƒ©€', [u'test-string-çƒ©€']),
         ('hg git svn', ['hg', 'git', 'svn']),
         ('hg,git,svn', ['hg', 'git', 'svn']),
         ('hg, git, svn', ['hg', 'git', 'svn']),
         ('hg\ngit\nsvn', ['hg', 'git', 'svn']),
-        ('hg\n git\n svn', ['hg', 'git', 'svn']),
-        ('test-string-çƒ©€', ['test-string-çƒ©€']),
+        (' hg\n git\n svn ', ['hg', 'git', 'svn']),
+        (', hg , git , svn , ', ['', 'hg', 'git', 'svn', '']),
+        ('cheese,free node,other', ['cheese', 'free node', 'other']),
     ])
     def test_list_setting_helper(self, raw, expected):
         key = 'dummy-key'
