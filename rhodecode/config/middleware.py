@@ -51,6 +51,7 @@ from rhodecode.lib.middleware.disable_vcs import DisableVCSPagesWrapper
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
+from rhodecode.lib.utils2 import aslist as rhodecode_aslist
 from rhodecode.subscribers import scan_repositories_if_enabled
 
 
@@ -451,11 +452,13 @@ def _bool_setting(settings, name, default):
 def _list_setting(settings, name, default):
     raw_value = settings.get(name, default)
 
-    # Check if we get a setting with the old syntax (comma separated).
-    if ',' in raw_value:
-        raw_value = raw_value.replace(',', ' ')
-
-    settings[name] = aslist(raw_value)
+    old_separator = ','
+    if old_separator in raw_value:
+        # If we get a comma separated list, pass it to our own function.
+        settings[name] = rhodecode_aslist(raw_value, sep=old_separator)
+    else:
+        # Otherwise we assume it uses pyramids space/newline separation.
+        settings[name] = aslist(raw_value)
 
 
 def _string_setting(settings, name, default):
