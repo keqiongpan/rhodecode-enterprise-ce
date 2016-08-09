@@ -15,7 +15,16 @@ Use the following example to configure Nginx to use a URL prefix.
     }
 
 In addition to the Nginx configuration you will need to add the following
-lines into the ``rhodecode.ini`` file.
+lines (if they not exist) into the ``rhodecode.ini`` file.
+
+* Above ``[app:main]`` section of the ``rhodecode.ini`` file add the
+  following section if it doesn't exist yet.
+
+.. code-block:: ini
+
+    [filter:proxy-prefix]
+    use = egg:PasteDeploy#prefix
+    prefix = /<someprefix> # Change <someprefix> into your chosen prefix
 
 * In the the ``[app:main]`` section of your ``rhodecode.ini`` file add the
   following line.
@@ -24,10 +33,4 @@ lines into the ``rhodecode.ini`` file.
 
     filter-with = proxy-prefix
 
-* At the end of the ``rhodecode.ini`` file add the following section.
 
-.. code-block:: ini
-
-    [filter:proxy-prefix]
-    use = egg:PasteDeploy#prefix
-    prefix = /<someprefix> # Change <someprefix> into your chosen prefix
