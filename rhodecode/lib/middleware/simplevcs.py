@@ -99,7 +99,7 @@ class SimpleVCS(object):
     @property
     def scm_app(self):
         custom_implementation = self.config.get('vcs.scm_app_implementation')
-        if custom_implementation:
+        if custom_implementation and custom_implementation != 'pyro4':
             log.info(
                 "Using custom implementation of scm_app: %s",
                 custom_implementation)
