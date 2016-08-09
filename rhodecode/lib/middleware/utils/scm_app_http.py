@@ -39,12 +39,12 @@ log = logging.getLogger(__name__)
 
 def create_git_wsgi_app(repo_path, repo_name, config):
     url = _vcs_streaming_url() + 'git/'
-    return VcsHttpProxy(url, repo_path, repo_name, config)
+    return VcsHttpProxy(url, repo_path, repo_name, config, 'git')
 
 
 def create_hg_wsgi_app(repo_path, repo_name, config):
     url = _vcs_streaming_url() + 'hg/'
-    return VcsHttpProxy(url, repo_path, repo_name, config)
+    return VcsHttpProxy(url, repo_path, repo_name, config, 'hg')
 
 
 def _vcs_streaming_url():
@@ -67,7 +67,7 @@ class VcsHttpProxy(object):
     server as well.
     """
 
-    def __init__(self, url, repo_path, repo_name, config):
+    def __init__(self, url, repo_path, repo_name, config, backend):
         """
         :param str url: The URL of the VCSServer to call.
         """
@@ -75,6 +75,7 @@ class VcsHttpProxy(object):
         self._repo_name = repo_name
         self._repo_path = repo_path
         self._config = config
+        self._backend = backend
         log.debug(
             "Creating VcsHttpProxy for repo %s, url %s",
             repo_name, url)
@@ -114,6 +115,10 @@ class VcsHttpProxy(object):
             (h, v) for h, v in response.headers.items()
             if not wsgiref.util.is_hop_by_hop(h)
         ]
+
+        # Add custom response header to indicate that this is a VCS response
+        # and which backend is used.
+        response_headers.append(('X-RhodeCode-Backend', self._backend))
 
         # TODO: johbo: Better way to get the status including text?
         status = str(response.status_code)
