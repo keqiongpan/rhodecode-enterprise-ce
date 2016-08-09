@@ -446,7 +446,10 @@ def _sanitize_vcs_settings(settings):
 
 
 def _bool_setting(settings, name, default):
-    settings[name] = asbool(settings.get(name, default))
+    input = settings.get(name, default)
+    if isinstance(input, unicode):
+        input = input.encode('utf8')
+    settings[name] = asbool(input)
 
 
 def _list_setting(settings, name, default):
