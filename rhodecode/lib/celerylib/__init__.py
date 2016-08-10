@@ -212,16 +212,16 @@ def dbsession(func):
 def vcsconnection(func):
     def __wrapper(func, *fargs, **fkwargs):
         if rhodecode.CELERY_ENABLED and not rhodecode.CELERY_EAGER:
-            backends = config['vcs.backends'] = aslist(
-                config.get('vcs.backends', 'hg,git'), sep=',')
+            settings = rhodecode.PYRAMID_SETTINGS
+            backends = settings['vcs.backends']
             for alias in rhodecode.BACKENDS.keys():
                 if alias not in backends:
                     del rhodecode.BACKENDS[alias]
-            utils.configure_pyro4(config)
-            utils.configure_vcs(config)
+            utils.configure_pyro4(settings)
+            utils.configure_vcs(settings)
             connect_vcs(
-                config['vcs.server'],
-                utils.get_vcs_server_protocol(config))
+                settings['vcs.server'],
+                utils.get_vcs_server_protocol(settings))
         ret = func(*fargs, **fkwargs)
         return ret
 
