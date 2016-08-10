@@ -445,6 +445,11 @@ def _sanitize_vcs_settings(settings):
     _bool_setting(settings, 'vcs.server.enable', 'true')
     _bool_setting(settings, 'vcs.start_server', 'false')
     _list_setting(settings, 'vcs.backends', 'hg, git, svn')
+    _int_setting(settings, 'vcs.connection_timeout', 3600)
+
+
+def _int_setting(settings, name, default):
+    settings[name] = int(settings.get(name, default))
 
 
 def _bool_setting(settings, name, default):
