@@ -137,7 +137,6 @@ def load_environment(global_conf, app_conf, initial=False,
     # store config reference into our module to skip import magic of pylons
     rhodecode.CONFIG.update(config)
 
-    utils.configure_pyro4(config)
     return config
 
 
@@ -175,6 +174,7 @@ def load_pyramid_environment(global_config, settings):
                          protocol=utils.get_vcs_server_protocol(settings),
                          log_level=settings['vcs.server.log_level'])
 
+    utils.configure_pyro4(settings)
     utils.configure_vcs(settings)
     if vcs_server_enabled:
         connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(settings))
