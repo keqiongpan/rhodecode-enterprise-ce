@@ -145,6 +145,9 @@ def load_pyramid_environment(global_config, settings):
     settings_merged = global_config.copy()
     settings_merged.update(settings)
 
+    # Store the settings to make them available to other modules.
+    rhodecode.PYRAMID_SETTINGS = settings_merged
+
     # If this is a test run we prepare the test environment like
     # creating a test database, test search index and test repositories.
     # This has to be done before the database connection is initialized.

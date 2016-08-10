@@ -43,6 +43,10 @@ CELERY_EAGER = False
 # link to config for pylons
 CONFIG = {}
 
+# Populated with the settings dictionary from application init in
+# rhodecode.conf.environment.load_pyramid_environment
+PYRAMID_SETTINGS = {}
+
 # Linked module for extensions
 EXTENSIONS = {}
 
