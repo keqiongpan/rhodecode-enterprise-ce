@@ -1332,6 +1332,10 @@ class EmptyCommit(BaseCommit):
     def short_id(self):
         return self.raw_id[:12]
 
+    @LazyProperty
+    def id(self):
+        return self.raw_id
+
     def get_file_commit(self, path):
         return self
 
