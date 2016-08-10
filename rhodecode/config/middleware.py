@@ -31,8 +31,7 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.settings import asbool, aslist
 from pyramid.wsgi import wsgiapp
-from pyramid.httpexceptions import HTTPError, HTTPInternalServerError
-from pylons.controllers.util import redirect
+from pyramid.httpexceptions import HTTPError, HTTPInternalServerError, HTTPFound
 from pyramid.events import ApplicationCreated
 import pyramid.httpexceptions as httpexceptions
 from pyramid.renderers import render_to_response
@@ -339,7 +338,7 @@ def includeme(config):
 def includeme_first(config):
     # redirect automatic browser favicon.ico requests to correct place
     def favicon_redirect(context, request):
-        return redirect(
+        return HTTPFound(
             request.static_path('rhodecode:public/images/favicon.ico'))
 
     config.add_view(favicon_redirect, route_name='favicon')
