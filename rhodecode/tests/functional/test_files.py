@@ -28,9 +28,13 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs import nodes
+from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.conf import settings
+from rhodecode.lib.vcs.nodes import FileNode
+from rhodecode.model.db import Repository
+from rhodecode.model.scm import ScmModel
 from rhodecode.tests import (
-    url, assert_session_flash, assert_not_in_session_flash)
+    url, TEST_USER_ADMIN_LOGIN, assert_session_flash, assert_not_in_session_flash)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import AssertResponse
 
@@ -43,6 +47,41 @@ NODE_HISTORY = {
 }
 
 
+
+def _commit_change(
+        repo, filename, content, message, vcs_type, parent=None,
+        newfile=False):
+    repo = Repository.get_by_repo_name(repo)
+    _commit = parent
+    if not parent:
+        _commit = EmptyCommit(alias=vcs_type)
+
+    if newfile:
+        nodes = {
+            filename: {
+                'content': content
+            }
+        }
+        commit = ScmModel().create_nodes(
+            user=TEST_USER_ADMIN_LOGIN, repo=repo,
+            message=message,
+            nodes=nodes,
+            parent_commit=_commit,
+            author=TEST_USER_ADMIN_LOGIN,
+        )
+    else:
+        commit = ScmModel().commit_change(
+            repo=repo.scm_instance(), repo_name=repo.repo_name,
+            commit=parent, user=TEST_USER_ADMIN_LOGIN,
+            author=TEST_USER_ADMIN_LOGIN,
+            message=message,
+            content=content,
+            f_path=filename
+        )
+    return commit
+
+
+    
 @pytest.mark.usefixtures("app")
 class TestFilesController:
 
@@ -940,3 +979,100 @@ def _assert_items_in_response(response, items, template, params):
 def assert_timeago_in_response(response, items, params):
     for item in items:
         response.mustcontain(h.age_component(params['date']))
+
+
+
+@pytest.mark.usefixtures("autologin_user", "app")
+class TestSideBySideDiff:
+
+    def test_diff2way(self, app, backend, backend_stub):
+        f_path = 'content'
+        commit1_content = 'content-25d7e49c18b159446c'
+        commit2_content = 'content-603d6c72c46d953420'
+        repo = backend.create_repo()
+
+        commit1 = _commit_change(
+            repo.repo_name, filename=f_path, content=commit1_content,
+            message='A', vcs_type=backend.alias, parent=None, newfile=True)
+
+        commit2 = _commit_change(
+            repo.repo_name, filename=f_path, content=commit2_content,
+            message='B, child of A', vcs_type=backend.alias, parent=commit1)
+
+        response = self.app.get(url(
+            controller='files', action='diff_2way',
+            repo_name=repo.repo_name,
+            diff1=commit1.raw_id,
+            diff2=commit2.raw_id,
+            f_path=f_path))
+
+        assert_response = AssertResponse(response)
+        response.mustcontain(
+            ('Side-by-side Diff r0:%s ... r1:%s') % ( commit1.short_id, commit2.short_id ))
+        response.mustcontain('id="compare"')
+        response.mustcontain((
+            "var orig1_url = '/%s/raw/%s/%s';\n"
+            "var orig2_url = '/%s/raw/%s/%s';") %
+                ( repo.repo_name, commit1.raw_id, f_path,
+                  repo.repo_name, commit2.raw_id, f_path))
+
+
+    def test_diff2way_with_empty_file(self, app, backend, backend_stub):
+        commits = [
+            {'message': 'First commit'},
+            {'message': 'Commit with binary',
+             'added': [nodes.FileNode('file.empty', content='')]},
+        ]
+        f_path='file.empty'
+        repo = backend.create_repo(commits=commits)
+        commit_id1 = repo.get_commit(commit_idx=0).raw_id
+        commit_id2 = repo.get_commit(commit_idx=1).raw_id
+
+        response = self.app.get(url(
+            controller='files', action='diff_2way',
+            repo_name=repo.repo_name,
+            diff1=commit_id1,
+            diff2=commit_id2,
+            f_path=f_path))
+
+        assert_response = AssertResponse(response)
+        if backend.alias == 'svn':
+            assert_session_flash( response,
+                ('%(file_path)s has not changed') % { 'file_path': 'file.empty' })
+        else:
+            response.mustcontain(
+                ('Side-by-side Diff r0:%s ... r1:%s') % ( repo.get_commit(commit_idx=0).short_id, repo.get_commit(commit_idx=1).short_id ))
+            response.mustcontain('id="compare"')
+            response.mustcontain((
+                "var orig1_url = '/%s/raw/%s/%s';\n"
+                "var orig2_url = '/%s/raw/%s/%s';") %
+                    ( repo.repo_name, commit_id1, f_path,
+                      repo.repo_name, commit_id2, f_path))
+
+
+    def test_empty_diff_2way_redirect_to_summary_with_alert(self, app, backend):
+        commit_id_range = {
+            'hg': (
+                '25d7e49c18b159446cadfa506a5cf8ad1cb04067',
+                '603d6c72c46d953420c89d36372f08d9f305f5dd'),
+            'git': (
+                '6fc9270775aaf5544c1deb014f4ddd60c952fcbb',
+                '03fa803d7e9fb14daa9a3089e0d1494eda75d986'),
+            'svn': (
+                '335',
+                '337'),
+        }
+        f_path = 'setup.py'
+
+        commit_ids = commit_id_range[backend.alias]
+
+        response = self.app.get(url(
+            controller='files', action='diff_2way',
+            repo_name=backend.repo_name,
+            diff2=commit_ids[0],
+            diff1=commit_ids[1],
+            f_path=f_path))
+
+        assert_response = AssertResponse(response)
+        assert_session_flash( response,
+            ('%(file_path)s has not changed') % { 'file_path': f_path })
