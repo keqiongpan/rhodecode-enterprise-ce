@@ -159,6 +159,7 @@ def make_pyramid_app(global_config, **settings):
     includeme(config)
     pyramid_app = config.make_wsgi_app()
     pyramid_app = wrap_app_in_wsgi_middlewares(pyramid_app, config)
+    pyramid_app.config = config
     return pyramid_app
 
 
