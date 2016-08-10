@@ -22,7 +22,8 @@
 import pytest
 
 from rhodecode.config.middleware import (
-    _sanitize_vcs_settings, _bool_setting, _string_setting, _list_setting)
+    _sanitize_vcs_settings, _bool_setting, _string_setting, _list_setting,
+    _int_setting)
 
 
 class TestHelperFunctions(object):
@@ -75,6 +76,32 @@ class TestHelperFunctions(object):
         settings = {key: raw}
         _list_setting(settings, key, None)
         assert settings[key] == expected
+
+    @pytest.mark.parametrize('raw, expected', [
+        ('0', 0),
+        ('-0', 0),
+        ('12345', 12345),
+        ('-12345', -12345),
+        (u'-12345', -12345),
+    ])
+    def test_int_setting_helper(self, raw, expected):
+        key = 'dummy-key'
+        settings = {key: raw}
+        _int_setting(settings, key, None)
+        assert settings[key] == expected
+
+    @pytest.mark.parametrize('raw', [
+        ('0xff'),
+        (''),
+        ('invalid-int'),
+        ('invalid-⁄~†'),
+        (u'invalid-⁄~†'),
+    ])
+    def test_int_setting_helper_invalid_input(self, raw):
+        key = 'dummy-key'
+        settings = {key: raw}
+        with pytest.raises(Exception):
+            _int_setting(settings, key, None)
 
 
 class TestSanitizeVcsSettings(object):
