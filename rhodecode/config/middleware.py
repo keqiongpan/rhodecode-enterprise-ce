@@ -39,7 +39,6 @@ from routes.middleware import RoutesMiddleware
 import routes.util
 
 import rhodecode
-import rhodecode.integrations # do not remove this as it registers celery tasks
 from rhodecode.config import patches
 from rhodecode.config.routing import STATIC_FILE_PREFIX
 from rhodecode.config.environment import (

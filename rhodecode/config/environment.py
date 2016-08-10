@@ -34,11 +34,16 @@ from pylons.configuration import PylonsConfig
 from pylons.error import handle_mako_error
 from pyramid.settings import asbool
 
-# don't remove this import it does magic for celery
-from rhodecode.lib import celerypylons  # noqa
+# ------------------------------------------------------------------------------
+# CELERY magic until refactor - issue #4163 - import order matters here:
+from rhodecode.lib import celerypylons  # this must be first, celerypylons
+                                        # sets config settings upon import
 
-import rhodecode.lib.app_globals as app_globals
+import rhodecode.integrations           # any modules using celery task
+                                        # decorators should be added afterwards:
+# ------------------------------------------------------------------------------
 
+from rhodecode.lib import app_globals
 from rhodecode.config import utils
 from rhodecode.config.routing import make_map
 from rhodecode.config.jsroutes import generate_jsroutes_content
