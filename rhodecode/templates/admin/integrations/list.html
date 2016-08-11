@@ -28,11 +28,11 @@
 </%def>
 <div class="panel panel-default">
   <div class="panel-heading">
-    <h3 class="panel-title">${_('Create new integration')}</h3>
+    <h3 class="panel-title">${_('Create New Integration')}</h3>
   </div>
   <div class="panel-body">
   %if not available_integrations:
-    No integrations available
+    ${_('No integrations available.')}
   %else:
     %for integration in available_integrations:
       <%
@@ -53,7 +53,7 @@
 </div>
 <div class="panel panel-default">
   <div class="panel-heading">
-    <h3 class="panel-title">${_('Current integrations')}</h3>
+    <h3 class="panel-title">${_('Current Integrations')}</h3>
   </div>
   <div class="panel-body">
     <table class="rctable issuetracker">
@@ -63,7 +63,7 @@
             <th>${_('Description')}</th>
             <th>${_('Type')}</th>
             <th>${_('Actions')}</th>
-            <th ></th>
+            <th></th>
         </tr>
       </thead>
       <tbody>
