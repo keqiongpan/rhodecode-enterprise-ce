@@ -31,21 +31,23 @@ General
 - Labs: moved rebase-merge option from labs settings into VCS settings.
 - System: send platform type and version to upgrade endpoint when checking
   for new versions.
-- Packaging: update rhodecode-tools from 0.8.3 to 0.9.0
+- Packaging: update rhodecode-tools from 0.8.3 to 0.10.0
 - Packaging: update codemirror from 5.4.0 to 5.11.0
 - Packaging: updated pygments to 2.1.3
 - Packaging: bumped supervisor to 3.3.0
 - Packaging: bumped psycopg2 to 2.6.1
+- Packaging: bumped mercurial to 3.8.4
 
 
 New Features
 ^^^^^^^^^^^^
 
 - Integrations: created new event based integration framework.
-  Allows to configure global, or per repo: Slack, hipchat, webhook integrations.
-  This also deprecated usage of rcextensions.
-- Integrations: added smart commits for Jira and Redmine with ability to map
-  keywords into issue tracker actions. Fixes #123, Closes #123 etc.
+  Allows to configure global, or per repo: Slack, Hipchat, Webhooks, Email
+  integrations. This also deprecated usage of rcextensions for those.
+- Integrations (EE only): added smart commits for Jira and Redmine with
+  ability to map keywords into issue tracker actions.
+  `Fixes #123 -> resolves issues`, `Closes #123 -> closes issue` etc.
 - Markdown: added improved support for Github flavored markdown.
 - Labs: enable labs setting by default. Labs are new experimental features in
   RhodeCode that can be used to test new upcomming features.
