@@ -3,10 +3,10 @@
 Integrations
 ------------
 
-Rhodecode supports integrations with external services for various events
+Rhodecode supports integrations with external services for various events,
 such as commit pushes and pull requests. Multiple integrations of the same type
-(eg. slack) can be added at the same time which is useful for example to post
-different events to different slack channels.
+can be added at the same time; this is useful for posting different events to
+different Slack channels, for example.
 
 Supported integrations
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -24,22 +24,24 @@ Type/Name                       |RC| Edition    Description
 
 .. _creating-integrations:
 
-Creating an integration
+Creating an Integration
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Integrations can be added globally via the admin UI:
 
 :menuselection:`Admin --> Integrations`
 
-or per repository in the repository settings:
+or per repository in each repository's settings:
 
 :menuselection:`Admin --> Repositories --> Edit --> Integrations`
 
-To create an integration, select the type from the list of types in the
-`Create an integration` section.
+To create an integration, select the type from the list in the *Create New
+Integration* section.
 
-The `Current integrations` section shows existing integrations that have been
-created along with their type (eg. slack) and enabled status.
+The *Current Integrations* section shows existing integrations that have been
+created along with their type (eg. Slack) and enabled status.
+
+See pages specific to each type of integration for more instructions:
 
 .. toctree::
 
