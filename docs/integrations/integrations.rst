@@ -17,6 +17,7 @@ Type/Name                       |RC| Edition    Description
 :ref:`integrations-slack`       |RCCEshort|     https://slack.com/
 :ref:`integrations-hipchat`     |RCCEshort|     https://www.hipchat.com/
 :ref:`integrations-webhook`     |RCCEshort|     POST events as `json` to a custom url
+:ref:`integrations-email`       |RCEEshort|     Send repo push commits by email
 :ref:`integrations-redmine`     |RCEEshort|     Close/Resolve/Reference redmine issues
 :ref:`integrations-jira`        |RCEEshort|     Close/Resolve/Reference JIRA issues
 ============================    ============    =====================================
