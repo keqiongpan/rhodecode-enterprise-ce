@@ -70,7 +70,7 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
     """
     log = get_logger(send_email)
 
-    email_config = email_config or config
+    email_config = email_config or rhodecode.CONFIG
     subject = "%s %s" % (email_config.get('email_prefix', ''), subject)
     if not recipients:
         # if recipients are not defined we send to email_config + all admins

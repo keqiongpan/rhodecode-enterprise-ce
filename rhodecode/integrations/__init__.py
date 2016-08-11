@@ -21,7 +21,7 @@
 import logging
 
 from rhodecode.integrations.registry import IntegrationTypeRegistry
-from rhodecode.integrations.types import webhook, slack, hipchat
+from rhodecode.integrations.types import webhook, slack, hipchat, email
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +37,8 @@ integration_type_registry.register_integration_type(
     slack.SlackIntegrationType)
 integration_type_registry.register_integration_type(
     hipchat.HipchatIntegrationType)
+integration_type_registry.register_integration_type(
+    email.EmailIntegrationType)
 
 
 def integrations_event_handler(event):
