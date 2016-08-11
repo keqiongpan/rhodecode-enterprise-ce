@@ -108,10 +108,6 @@ class RhodecodeCeleryTask(Task):
         log.debug('using celery proxy data to run task: %r', proxy_data)
 
         from rhodecode.config.routing import make_map
-        from rhodecode.config.middleware import make_pyramid_app
-
-        # TODO: this can be done once per worker versus per task
-        pyramid_app = make_pyramid_app(config, **config['app_conf'])
 
         request = Request.blank('/', environ=proxy_data['environ'])
         request.user = AuthUser(user_id=proxy_data['auth_user']['user_id'],

@@ -86,3 +86,7 @@ class PylonsLoader(BaseLoader):
         Import task modules.
         """
         self.import_default_modules()
+        from rhodecode.config.middleware import make_pyramid_app
+
+        # adding to self to keep a reference around
+        self.pyramid_app = make_pyramid_app(config, **config['app_conf'])
