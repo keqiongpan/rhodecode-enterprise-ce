@@ -14,7 +14,7 @@ var _TM = {
     'No bookmarks available yet.': 'No bookmarks available yet.',
     'No branches available yet.': 'No branches available yet.',
     'No gists available yet.': 'No gists available yet.',
-    'No matches found': 'No matches found',
+    'No matches found': 'Keine Treffer gefunden',
     'No matching files': 'No matching files',
     'No pull requests available yet.': 'No pull requests available yet.',
     'No repositories available yet.': 'No repositories available yet.',
