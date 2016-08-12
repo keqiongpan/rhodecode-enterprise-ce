@@ -30,6 +30,7 @@ import Pyro4
 import pylons
 import rhodecode
 
+from rhodecode.model import meta
 from rhodecode.lib import hooks_base
 from rhodecode.lib.utils2 import (
     AttributeDict, safe_str, get_routes_generator_for_server_url)
@@ -64,7 +65,10 @@ class HooksHttpHandler(BaseHTTPRequestHandler):
 
     def _call_hook(self, method, extras):
         hooks = Hooks()
-        result = getattr(hooks, method)(extras)
+        try:
+            result = getattr(hooks, method)(extras)
+        finally:
+            meta.Session.remove()
         return result
 
     def log_message(self, format, *args):

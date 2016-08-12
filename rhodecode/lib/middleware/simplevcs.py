@@ -406,8 +406,11 @@ class SimpleVCS(object):
                 yield chunk
         finally:
             # invalidate cache on push
-            if action == 'push':
-                self._invalidate_cache(repo_name)
+            try:
+                if action == 'push':
+                    self._invalidate_cache(repo_name)
+            finally:
+                meta.Session.remove()
 
     def _get_repository_name(self, environ):
         """Get repository name out of the environmnent
