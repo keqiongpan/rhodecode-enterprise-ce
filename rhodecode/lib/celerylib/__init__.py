@@ -76,25 +76,26 @@ class RhodecodeCeleryTask(Task):
 
         request = get_current_request()
 
-        # we hook into kwargs since it is the only way to pass our data to the
-        # celery worker in celery 2.2
-        kwargs.update({
-            '_rhodecode_proxy_data': {
-                'environ': {
-                    'PATH_INFO': request.environ['PATH_INFO'],
-                    'SCRIPT_NAME': request.environ['SCRIPT_NAME'],
-                    'HTTP_HOST': request.environ.get('HTTP_HOST',
-                        request.environ['SERVER_NAME']),
-                    'SERVER_NAME': request.environ['SERVER_NAME'],
-                    'SERVER_PORT': request.environ['SERVER_PORT'],
-                    'wsgi.url_scheme': request.environ['wsgi.url_scheme'],
-                },
-                'auth_user': {
-                    'ip_addr': request.user.ip_addr,
-                    'user_id': request.user.user_id
-                },
-            }
-        })
+        if request:
+            # we hook into kwargs since it is the only way to pass our data to
+            # the celery worker in celery 2.2
+            kwargs.update({
+                '_rhodecode_proxy_data': {
+                    'environ': {
+                        'PATH_INFO': request.environ['PATH_INFO'],
+                        'SCRIPT_NAME': request.environ['SCRIPT_NAME'],
+                        'HTTP_HOST': request.environ.get('HTTP_HOST',
+                            request.environ['SERVER_NAME']),
+                        'SERVER_NAME': request.environ['SERVER_NAME'],
+                        'SERVER_PORT': request.environ['SERVER_PORT'],
+                        'wsgi.url_scheme': request.environ['wsgi.url_scheme'],
+                    },
+                    'auth_user': {
+                        'ip_addr': request.user.ip_addr,
+                        'user_id': request.user.user_id
+                    },
+                }
+            })
         return super(RhodecodeCeleryTask, self).apply_async(
             args, kwargs, task_id, producer, link, link_error, **options)
 
