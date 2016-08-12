@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rhodecode-enterprise-ce 4.3.0\n"
 "Report-Msgid-Bugs-To: marcin@rhodecode.com\n"
-"POT-Creation-Date: 2016-08-02 20:55+0000\n"
+"POT-Creation-Date: 2016-08-12 12:29+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -41,7 +41,8 @@ msgstr ""
 msgid "Issue Tracker"
 msgstr ""
 
-#: rhodecode/admin/navigation.py:80 rhodecode/templates/register.html:76
+#: rhodecode/admin/navigation.py:80 rhodecode/integrations/types/email.py:172
+#: rhodecode/templates/register.html:76
 #: rhodecode/templates/admin/my_account/my_account_profile.html:48
 #: rhodecode/templates/admin/my_account/my_account_profile_edit.html:94
 #: rhodecode/templates/admin/users/user_add.html:86
@@ -384,12 +385,12 @@ msgstr ""
 
 #: rhodecode/controllers/changeset.py:335
 #: rhodecode/controllers/pullrequests.py:750
-#: rhodecode/model/pull_request.py:843
+#: rhodecode/model/pull_request.py:842
 #, python-format
 msgid "Status change %(transition_icon)s %(status)s"
 msgstr ""
 
-#: rhodecode/controllers/changeset.py:372
+#: rhodecode/controllers/changeset.py:373
 msgid "Changing the status of a commit associated with a closed pull request is not allowed"
 msgstr ""
 
@@ -635,11 +636,11 @@ msgid "Close Pull Request"
 msgstr ""
 
 #: rhodecode/controllers/pullrequests.py:754
-#: rhodecode/model/pull_request.py:847
+#: rhodecode/model/pull_request.py:846
 msgid "Closing with"
 msgstr ""
 
-#: rhodecode/controllers/pullrequests.py:802
+#: rhodecode/controllers/pullrequests.py:804
 #, python-format
 msgid "Closing pull request on other statuses than rejected or approved is forbidden. Calculated status from all reviewers is currently: %s"
 msgstr ""
@@ -1322,20 +1323,32 @@ msgstr ""
 msgid "repository deleted"
 msgstr ""
 
-#: rhodecode/events/repo.py:193
+#: rhodecode/events/repo.py:198
 msgid "repository pre pull"
 msgstr ""
 
-#: rhodecode/events/repo.py:202
+#: rhodecode/events/repo.py:207
 msgid "repository pull"
 msgstr ""
 
-#: rhodecode/events/repo.py:211
+#: rhodecode/events/repo.py:216
 msgid "repository pre push"
 msgstr ""
 
-#: rhodecode/events/repo.py:222
+#: rhodecode/events/repo.py:227
 msgid "repository push"
+msgstr ""
+
+#: rhodecode/events/repo_group.py:62
+msgid "repository group created"
+msgstr ""
+
+#: rhodecode/events/repo_group.py:71
+msgid "repository group deleted"
+msgstr ""
+
+#: rhodecode/events/repo_group.py:80
+msgid "repository group update"
 msgstr ""
 
 #: rhodecode/events/user.py:34
@@ -1372,6 +1385,67 @@ msgstr ""
 
 #: rhodecode/integrations/views.py:220
 msgid "Integration {integration_name} updated successfully."
+msgstr ""
+
+#: rhodecode/integrations/types/email.py:154
+msgid "Recipients"
+msgstr ""
+
+#: rhodecode/integrations/types/email.py:155
+msgid "Email addresses to send push events to"
+msgstr ""
+
+#: rhodecode/integrations/types/email.py:160
+#: rhodecode/integrations/types/email.py:161
+msgid "Email address"
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:44
+msgid "Yellow"
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:45
+msgid "Red"
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:46
+msgid "Green"
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:47
+msgid "Purple"
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:48
+msgid "Gray"
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:53
+msgid "Hipchat server URL"
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:54
+msgid "Hipchat integration url."
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:64
+msgid "Notify"
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:65
+msgid "Make a notification to the users in room."
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:71
+msgid "Color"
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:72
+msgid "Background color of message."
+msgstr ""
+
+#: rhodecode/integrations/types/hipchat.py:104
+msgid "Hipchat"
 msgstr ""
 
 #: rhodecode/integrations/types/slack.py:45
@@ -1583,7 +1657,7 @@ msgstr ""
 msgid "You need to be signed in to view this page"
 msgstr ""
 
-#: rhodecode/lib/base.py:545
+#: rhodecode/lib/base.py:547
 #, python-format
 msgid "The repository at %(repo_name)s cannot be located."
 msgstr ""
@@ -1608,36 +1682,36 @@ msgstr ""
 msgid "Click to select line"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1481
+#: rhodecode/lib/helpers.py:1484
 #, python-format
 msgid " and %s more"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1485
+#: rhodecode/lib/helpers.py:1488
 msgid "No Files"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1558
+#: rhodecode/lib/helpers.py:1561
 msgid "new file"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1561
+#: rhodecode/lib/helpers.py:1564
 msgid "mod"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1564
+#: rhodecode/lib/helpers.py:1567
 msgid "del"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1567
+#: rhodecode/lib/helpers.py:1570
 msgid "rename"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1572
+#: rhodecode/lib/helpers.py:1575
 msgid "chmod"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1819
+#: rhodecode/lib/helpers.py:1822
 msgid ""
 "Example filter terms:\n"
 "     repository:vcs\n"
@@ -1656,7 +1730,7 @@ msgid ""
 "     \"username:test AND repository:test*\"\n"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1839
+#: rhodecode/lib/helpers.py:1842
 #, python-format
 msgid "%s repository is not mapped to db perhaps it was created or renamed from the filesystem please run the application again in order to rescan repositories"
 msgstr ""
@@ -2044,7 +2118,7 @@ msgstr ""
 #: rhodecode/lib/dbmigrate/schema/db_3_3_0_0.py:1196
 #: rhodecode/lib/dbmigrate/schema/db_3_5_0_0.py:1318
 #: rhodecode/lib/dbmigrate/schema/db_3_7_0_0.py:1343
-#: rhodecode/lib/dbmigrate/schema/db_4_3_0_0.py:2952 rhodecode/model/db.py:2944
+#: rhodecode/lib/dbmigrate/schema/db_4_3_0_0.py:2952 rhodecode/model/db.py:2946
 msgid "Not Reviewed"
 msgstr ""
 
@@ -2071,7 +2145,7 @@ msgstr ""
 #: rhodecode/lib/dbmigrate/schema/db_3_3_0_0.py:1197
 #: rhodecode/lib/dbmigrate/schema/db_3_5_0_0.py:1319
 #: rhodecode/lib/dbmigrate/schema/db_3_7_0_0.py:1344
-#: rhodecode/lib/dbmigrate/schema/db_4_3_0_0.py:2953 rhodecode/model/db.py:2945
+#: rhodecode/lib/dbmigrate/schema/db_4_3_0_0.py:2953 rhodecode/model/db.py:2947
 msgid "Approved"
 msgstr ""
 
@@ -2098,7 +2172,7 @@ msgstr ""
 #: rhodecode/lib/dbmigrate/schema/db_3_3_0_0.py:1198
 #: rhodecode/lib/dbmigrate/schema/db_3_5_0_0.py:1320
 #: rhodecode/lib/dbmigrate/schema/db_3_7_0_0.py:1345
-#: rhodecode/lib/dbmigrate/schema/db_4_3_0_0.py:2954 rhodecode/model/db.py:2946
+#: rhodecode/lib/dbmigrate/schema/db_4_3_0_0.py:2954 rhodecode/model/db.py:2948
 msgid "Rejected"
 msgstr ""
 
@@ -2125,7 +2199,7 @@ msgstr ""
 #: rhodecode/lib/dbmigrate/schema/db_3_3_0_0.py:1199
 #: rhodecode/lib/dbmigrate/schema/db_3_5_0_0.py:1321
 #: rhodecode/lib/dbmigrate/schema/db_3_7_0_0.py:1346
-#: rhodecode/lib/dbmigrate/schema/db_4_3_0_0.py:2955 rhodecode/model/db.py:2947
+#: rhodecode/lib/dbmigrate/schema/db_4_3_0_0.py:2955 rhodecode/model/db.py:2949
 msgid "Under Review"
 msgstr ""
 
@@ -2668,12 +2742,12 @@ msgstr ""
 msgid "Your password reset was successful, a new password has been sent to your email"
 msgstr ""
 
-#: rhodecode/model/comment.py:263
+#: rhodecode/model/comment.py:266
 msgid "made a comment"
 msgstr ""
 
-#: rhodecode/model/comment.py:264
-msgid "Refresh page"
+#: rhodecode/model/comment.py:267
+msgid "Show it now"
 msgstr ""
 
 #: rhodecode/model/forms.py:85
@@ -2798,7 +2872,7 @@ msgid ""
 " %(pr_title)s"
 msgstr ""
 
-#: rhodecode/model/pull_request.py:449
+#: rhodecode/model/pull_request.py:448
 msgid "Pull request merged and closed"
 msgstr ""
 
@@ -3518,8 +3592,8 @@ msgstr ""
 #: rhodecode/templates/changeset/changeset.html:53
 #: rhodecode/templates/compare/compare_commits.html:24
 #: rhodecode/templates/email_templates/commit_comment.mako:82
-#: rhodecode/templates/email_templates/pull_request_review.mako:30
-#: rhodecode/templates/email_templates/pull_request_review.mako:51
+#: rhodecode/templates/email_templates/pull_request_review.mako:41
+#: rhodecode/templates/email_templates/pull_request_review.mako:75
 #: rhodecode/templates/files/file_tree_detail.html:5
 #: rhodecode/templates/files/file_tree_detail.html:12
 #: rhodecode/templates/forks/fork.html:48
@@ -4119,7 +4193,7 @@ msgid "Show as raw"
 msgstr ""
 
 #: rhodecode/templates/admin/integrations/base.html:12
-msgid "Integrations settings"
+msgid "Integrations Settings"
 msgstr ""
 
 #: rhodecode/templates/admin/integrations/edit.html:17
@@ -4135,15 +4209,19 @@ msgstr ""
 
 #: rhodecode/templates/admin/integrations/edit.html:36
 #, python-format
-msgid "Create new %(integration_type)s integration"
+msgid "Create New %(integration_type)s Integration"
 msgstr ""
 
 #: rhodecode/templates/admin/integrations/list.html:31
-msgid "Create new integration"
+msgid "Create New Integration"
+msgstr ""
+
+#: rhodecode/templates/admin/integrations/list.html:35
+msgid "No integrations available."
 msgstr ""
 
 #: rhodecode/templates/admin/integrations/list.html:56
-msgid "Current integrations"
+msgid "Current Integrations"
 msgstr ""
 
 #: rhodecode/templates/admin/integrations/list.html:65
@@ -4363,8 +4441,8 @@ msgstr ""
 #: rhodecode/templates/admin/my_account/my_account_pullrequests.html:26
 #: rhodecode/templates/admin/my_account/my_account_pullrequests.html:91
 #: rhodecode/templates/admin/settings/settings_global.html:9
-#: rhodecode/templates/email_templates/pull_request_review.mako:28
-#: rhodecode/templates/email_templates/pull_request_review.mako:48
+#: rhodecode/templates/email_templates/pull_request_review.mako:39
+#: rhodecode/templates/email_templates/pull_request_review.mako:72
 #: rhodecode/templates/pullrequests/pullrequest.html:38
 #: rhodecode/templates/pullrequests/pullrequests.html:104
 msgid "Title"
@@ -7111,7 +7189,7 @@ msgstr ""
 #: rhodecode/templates/changeset/changeset_file_comment.html:293
 #: rhodecode/templates/compare/compare_diff.html:57
 #: rhodecode/templates/email_templates/commit_comment.mako:87
-#: rhodecode/templates/email_templates/pull_request_comment.mako:93
+#: rhodecode/templates/email_templates/pull_request_comment.mako:97
 msgid "Comment"
 msgstr ""
 
@@ -7258,15 +7336,15 @@ msgid "Compare Commits"
 msgstr ""
 
 #: rhodecode/templates/compare/compare_diff.html:46
-#: rhodecode/templates/email_templates/pull_request_review.mako:50
+#: rhodecode/templates/email_templates/pull_request_review.mako:74
 #: rhodecode/templates/files/file_diff.html:56
 #: rhodecode/templates/pullrequests/pullrequest_show.html:85
 msgid "Target"
 msgstr ""
 
 #: rhodecode/templates/compare/compare_diff.html:47
-#: rhodecode/templates/email_templates/pull_request_comment.mako:92
-#: rhodecode/templates/email_templates/pull_request_review.mako:49
+#: rhodecode/templates/email_templates/pull_request_comment.mako:93
+#: rhodecode/templates/email_templates/pull_request_review.mako:73
 #: rhodecode/templates/files/file_diff.html:62
 #: rhodecode/templates/files/files_source.html:18
 msgid "Source"
@@ -7449,17 +7527,17 @@ msgstr ""
 msgid "Form vertical"
 msgstr ""
 
-#: rhodecode/templates/email_templates/base.mako:7
+#: rhodecode/templates/email_templates/base.mako:32
 #, python-format
 msgid "This is a notification from RhodeCode. %(instance_url)s"
 msgstr ""
 
-#: rhodecode/templates/email_templates/base.mako:90
+#: rhodecode/templates/email_templates/base.mako:115
 msgid "RhodeCode"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:16
-#: rhodecode/templates/email_templates/pull_request_comment.mako:17
+#: rhodecode/templates/email_templates/pull_request_comment.mako:18
 msgid "[mention]"
 msgstr ""
 
@@ -7487,12 +7565,12 @@ msgid "%(user)s commented on commit `%(commit_id)s`"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:43
-#: rhodecode/templates/email_templates/pull_request_comment.mako:43
+#: rhodecode/templates/email_templates/pull_request_comment.mako:44
 msgid "Comment link"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:48
-#: rhodecode/templates/email_templates/pull_request_comment.mako:48
+#: rhodecode/templates/email_templates/pull_request_comment.mako:49
 #, python-format
 msgid "File: %(comment_file)s on line %(comment_line)s"
 msgstr ""
@@ -7521,7 +7599,7 @@ msgid "The commit status was changed to"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:87
-#: rhodecode/templates/email_templates/pull_request_comment.mako:93
+#: rhodecode/templates/email_templates/pull_request_comment.mako:97
 #, python-format
 msgid "Comment on line: %(comment_line)s"
 msgstr ""
@@ -7530,88 +7608,92 @@ msgstr ""
 msgid "Generate new password here"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:20
+#: rhodecode/templates/email_templates/pull_request_comment.mako:21
 #, python-format
 msgid "%(user)s commented on pull request #%(pr_id)s \"%(pr_title)s\" (file: `%(comment_file)s`)"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:23
+#: rhodecode/templates/email_templates/pull_request_comment.mako:24
 #, python-format
 msgid "%(user)s commented on pull request #%(pr_id)s \"%(pr_title)s\" (status: %(status)s)"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:25
-#: rhodecode/templates/email_templates/pull_request_comment.mako:82
+#: rhodecode/templates/email_templates/pull_request_comment.mako:26
+#: rhodecode/templates/email_templates/pull_request_comment.mako:83
 #, python-format
 msgid "%(user)s commented on pull request #%(pr_id)s \"%(pr_title)s\""
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:45
+#: rhodecode/templates/email_templates/pull_request_comment.mako:46
 msgid "Source repository"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:54
+#: rhodecode/templates/email_templates/pull_request_comment.mako:55
 #, python-format
 msgid "%(user)s submitted pull request #%(pr_id)s status: *%(status)s*"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:56
+#: rhodecode/templates/email_templates/pull_request_comment.mako:57
 #, python-format
 msgid "%(user)s submitted pull request #%(pr_id)s status: *%(status)s and closed*"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:80
+#: rhodecode/templates/email_templates/pull_request_comment.mako:81
 #, python-format
 msgid "%(user)s commented on pull request #%(pr_id)s \"%(pr_title)s\" (file:`%(comment_file)s`)"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:86
+#: rhodecode/templates/email_templates/pull_request_comment.mako:87
 #, python-format
 msgid "submitted pull request status: %(status)s"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:88
+#: rhodecode/templates/email_templates/pull_request_comment.mako:89
 #, python-format
 msgid "submitted pull request status: %(status)s and closed"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_review.mako:5
-#, python-format
-msgid "%(user)s wants you to review pull request #%(pr_url)s: \"%(pr_title)s\""
+#: rhodecode/templates/email_templates/pull_request_comment.mako:95
+msgid "Submitted status"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_review.mako:17
+#: rhodecode/templates/email_templates/pull_request_review.mako:14
+#, python-format
+msgid "%(user)s wants you to review pull request #%(pr_id)s: \"%(pr_title)s\""
+msgstr ""
+
+#: rhodecode/templates/email_templates/pull_request_review.mako:34
 #, python-format
 msgid "Pull request from %(source_ref_type)s:%(source_ref_name)s of %(repo_url)s into %(target_ref_type)s:%(target_ref_name)s"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_review.mako:26
+#: rhodecode/templates/email_templates/pull_request_review.mako:37
 msgid "Link"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_review.mako:35
+#: rhodecode/templates/email_templates/pull_request_review.mako:46
 #, python-format
 msgid "Commit (%(num)s)"
 msgid_plural "Commits (%(num)s)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: rhodecode/templates/email_templates/pull_request_review.mako:47
+#: rhodecode/templates/email_templates/pull_request_review.mako:71
 #, python-format
 msgid "%(user)s wants you to review pull request #%(pr_id)s: \"%(pr_title)s\"."
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_review.mako:49
+#: rhodecode/templates/email_templates/pull_request_review.mako:73
 #, python-format
 msgid "%(source_ref_type)s of %(source_repo_url)s"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_review.mako:50
+#: rhodecode/templates/email_templates/pull_request_review.mako:74
 #, python-format
 msgid "%(target_ref_type)s of %(target_repo_url)s"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_review.mako:52
+#: rhodecode/templates/email_templates/pull_request_review.mako:76
 #: rhodecode/templates/summary/components.html:95
 #: rhodecode/templates/summary/components.html:98
 #, python-format
