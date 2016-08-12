@@ -13,12 +13,8 @@ recursive-include docs *
 # all config files
 recursive-include configs *
 
-# init.d
-recursive-include init.d *
-
 # translations
 recursive-include rhodecode/i18n *
-
 
 # hook templates
 recursive-include rhodecode/config/hook_templates *
