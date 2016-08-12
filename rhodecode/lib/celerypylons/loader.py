@@ -18,8 +18,8 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import pylons
 import rhodecode
-from pylons import config
 
 from celery.loaders.base import BaseLoader
 
@@ -36,9 +36,11 @@ class PylonsSettingsProxy(object):
     """
     def __getattr__(self, key):
         pylons_key = to_pylons(key)
+        proxy_config = rhodecode.PYRAMID_SETTINGS or pylons.config
         try:
-            value = rhodecode.PYRAMID_SETTINGS[pylons_key]
-            if key in LIST_PARAMS:return value.split()
+            value = proxy_config[pylons_key]
+            if key in LIST_PARAMS:
+                return value.split()
             return self.type_converter(value)
         except KeyError:
             raise AttributeError(pylons_key)
@@ -57,7 +59,8 @@ class PylonsSettingsProxy(object):
 
     def __setattr__(self, key, value):
         pylons_key = to_pylons(key)
-        rhodecode.PYRAMID_SETTINGS[pylons_key] = value
+        proxy_config = rhodecode.PYRAMID_SETTINGS or pylons.config
+        proxy_config[pylons_key] = value
 
     def __setitem__(self, key, value):
         self.__setattr__(key, value)
@@ -90,4 +93,5 @@ class PylonsLoader(BaseLoader):
         from rhodecode.config.middleware import make_pyramid_app
 
         # adding to self to keep a reference around
-        self.pyramid_app = make_pyramid_app(config, **config['app_conf'])
+        self.pyramid_app = make_pyramid_app(
+            pylons.config, **pylons.config['app_conf'])
