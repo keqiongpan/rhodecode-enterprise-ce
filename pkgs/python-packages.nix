@@ -754,7 +754,7 @@
     };
   };
   gprof2dot = super.buildPythonPackage {
-    name = "gprof2dot-2015.12.01";
+    name = "gprof2dot-2015.12.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
