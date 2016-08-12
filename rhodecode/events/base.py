@@ -31,6 +31,8 @@ class RhodecodeEvent(object):
     """
     Base event class for all Rhodecode events
     """
+    name = "RhodeCodeEvent"
+
     def __init__(self):
         self.request = get_current_request()
         self.utc_timestamp = datetime.utcnow()
@@ -47,6 +49,13 @@ class RhodecodeEvent(object):
             return self.request.user.ip_addr
         return '<no ip available>'
 
+    @property
+    def server_url(self):
+        if self.request:
+            from rhodecode.lib import helpers as h
+            return h.url('home', qualified=True)
+        return '<no server_url available>'
+
     def as_dict(self):
         data = {
             'name': self.name,
@@ -54,6 +63,7 @@ class RhodecodeEvent(object):
             'actor_ip': self.actor_ip,
             'actor': {
                 'username': self.actor.username
-            }
+            },
+            'server_url': self.server_url
         }
         return data
