@@ -18,14 +18,15 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import pylons
+import rhodecode
+
 from celery.loaders.base import BaseLoader
-from pylons import config
 
 to_pylons = lambda x: x.replace('_', '.').lower()
 to_celery = lambda x: x.replace('.', '_').upper()
 
 LIST_PARAMS = """CELERY_IMPORTS ADMINS ROUTES""".split()
-
 
 class PylonsSettingsProxy(object):
     """Pylons Settings Proxy
@@ -35,9 +36,11 @@ class PylonsSettingsProxy(object):
     """
     def __getattr__(self, key):
         pylons_key = to_pylons(key)
+        proxy_config = rhodecode.PYRAMID_SETTINGS or pylons.config
         try:
-            value = config[pylons_key]
-            if key in LIST_PARAMS:return value.split()
+            value = proxy_config[pylons_key]
+            if key in LIST_PARAMS:
+                return value.split()
             return self.type_converter(value)
         except KeyError:
             raise AttributeError(pylons_key)
@@ -56,7 +59,8 @@ class PylonsSettingsProxy(object):
 
     def __setattr__(self, key, value):
         pylons_key = to_pylons(key)
-        config[pylons_key] = value
+        proxy_config = rhodecode.PYRAMID_SETTINGS or pylons.config
+        proxy_config[pylons_key] = value
 
     def __setitem__(self, key, value):
         self.__setattr__(key, value)
@@ -86,3 +90,8 @@ class PylonsLoader(BaseLoader):
         Import task modules.
         """
         self.import_default_modules()
+        from rhodecode.config.middleware import make_pyramid_app
+
+        # adding to self to keep a reference around
+        self.pyramid_app = make_pyramid_app(
+            pylons.config, **pylons.config['app_conf'])

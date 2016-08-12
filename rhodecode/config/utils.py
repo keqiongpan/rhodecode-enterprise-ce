@@ -49,22 +49,18 @@ def configure_vcs(config):
     Patch VCS config with some RhodeCode specific stuff
     """
     from rhodecode.lib.vcs import conf
-    from rhodecode.lib.utils2 import aslist
     conf.settings.BACKENDS = {
         'hg': 'rhodecode.lib.vcs.backends.hg.MercurialRepository',
         'git': 'rhodecode.lib.vcs.backends.git.GitRepository',
         'svn': 'rhodecode.lib.vcs.backends.svn.SubversionRepository',
     }
 
-    conf.settings.HG_USE_REBASE_FOR_MERGING = config.get(
-        'rhodecode_hg_use_rebase_for_merging', False)
-    conf.settings.GIT_REV_FILTER = shlex.split(
-        config.get('git_rev_filter', '--all').strip())
-    conf.settings.DEFAULT_ENCODINGS = aslist(config.get('default_encoding',
-                                                        'UTF-8'), sep=',')
-    conf.settings.ALIASES[:] = config.get('vcs.backends')
-    conf.settings.SVN_COMPATIBLE_VERSION = config.get(
-        'vcs.svn.compatible_version')
+    conf.settings.HOOKS_PROTOCOL = config['vcs.hooks.protocol']
+    conf.settings.HOOKS_DIRECT_CALLS = config['vcs.hooks.direct_calls']
+    conf.settings.GIT_REV_FILTER = shlex.split(config['git_rev_filter'])
+    conf.settings.DEFAULT_ENCODINGS = config['default_encoding']
+    conf.settings.ALIASES[:] = config['vcs.backends']
+    conf.settings.SVN_COMPATIBLE_VERSION = config['vcs.svn.compatible_version']
 
 
 def initialize_database(config):
@@ -90,8 +86,7 @@ def initialize_test_environment(settings, test_env=None):
 
 
 def get_vcs_server_protocol(config):
-    protocol = config.get('vcs.server.protocol', 'pyro4')
-    return protocol
+    return config['vcs.server.protocol']
 
 
 def set_instance_id(config):

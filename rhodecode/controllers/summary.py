@@ -24,14 +24,12 @@ Summary controller for RhodeCode Enterprise
 
 import logging
 from string import lower
-from itertools import product
 
 from pylons import tmpl_context as c, request
 from pylons.i18n.translation import _
 from beaker.cache import cache_region, region_invalidate
 
-from rhodecode.config.conf import (
-    ALL_READMES, ALL_EXTS, LANGUAGES_EXTENSIONS_MAP)
+from rhodecode.config.conf import (LANGUAGES_EXTENSIONS_MAP)
 from rhodecode.controllers import utils
 from rhodecode.controllers.changelog import _load_changelog_summary
 from rhodecode.lib import caches, helpers as h
@@ -49,10 +47,6 @@ from rhodecode.model.db import Statistics, CacheKey, User
 
 log = logging.getLogger(__name__)
 
-README_FILES = [''.join([x[0][0], x[1][0]])
-                for x in sorted(list(product(ALL_READMES, ALL_EXTS)),
-                                key=lambda y:y[0][1] + y[1][1])]
-
 
 class SummaryController(BaseRepoController):
 
@@ -62,6 +56,7 @@ class SummaryController(BaseRepoController):
     def __get_readme_data(self, db_repo):
         repo_name = db_repo.repo_name
         log.debug('Looking for README file')
+        default_renderer = c.visual.default_renderer
 
         @cache_region('long_term')
         def _generate_readme(cache_key):
@@ -73,7 +68,7 @@ class SummaryController(BaseRepoController):
                 if isinstance(commit, EmptyCommit):
                     raise EmptyRepositoryError()
                 renderer = MarkupRenderer()
-                for f in README_FILES:
+                for f in renderer.pick_readme_order(default_renderer):
                     try:
                         node = commit.get_node(f)
                     except NodeDoesNotExistError:
@@ -241,7 +236,7 @@ class SummaryController(BaseRepoController):
             (_("Tag"), repo.tags, 'tag'),
             (_("Bookmark"), repo.bookmarks, 'book'),
         ]
-        res = self._create_reference_data(repo, refs_to_create)
+        res = self._create_reference_data(repo, repo_name, refs_to_create)
         data = {
             'more': False,
             'results': res
@@ -258,14 +253,14 @@ class SummaryController(BaseRepoController):
             # TODO: enable when vcs can handle bookmarks filters
             # (_("Bookmarks"), repo.bookmarks, "book"),
         ]
-        res = self._create_reference_data(repo, refs_to_create)
+        res = self._create_reference_data(repo, repo_name, refs_to_create)
         data = {
             'more': False,
             'results': res
         }
         return data
 
-    def _create_reference_data(self, repo, refs_to_create):
+    def _create_reference_data(self, repo, full_repo_name, refs_to_create):
         format_ref_id = utils.get_format_ref_id(repo)
 
         result = []
@@ -274,28 +269,32 @@ class SummaryController(BaseRepoController):
                 result.append({
                     'text': title,
                     'children': self._create_reference_items(
-                        repo, refs, ref_type, format_ref_id),
+                        repo, full_repo_name, refs, ref_type, format_ref_id),
                 })
         return result
 
-    def _create_reference_items(self, repo, refs, ref_type, format_ref_id):
+    def _create_reference_items(self, repo, full_repo_name, refs, ref_type,
+                                format_ref_id):
         result = []
         is_svn = h.is_svn(repo)
-        for name, raw_id in refs.iteritems():
+        for ref_name, raw_id in refs.iteritems():
+            files_url = self._create_files_url(
+                repo, full_repo_name, ref_name, raw_id, is_svn)
             result.append({
-                'text': name,
-                'id': format_ref_id(name, raw_id),
+                'text': ref_name,
+                'id': format_ref_id(ref_name, raw_id),
                 'raw_id': raw_id,
                 'type': ref_type,
-                'files_url': self._create_files_url(repo, name, raw_id, is_svn)
+                'files_url': files_url,
             })
         return result
 
-    def _create_files_url(self, repo, name, raw_id, is_svn):
-        use_commit_id = '/' in name or is_svn
+    def _create_files_url(self, repo, full_repo_name, ref_name, raw_id,
+                          is_svn):
+        use_commit_id = '/' in ref_name or is_svn
         return h.url(
             'files_home',
-            repo_name=repo.name,
-            f_path=name if is_svn else '',
-            revision=raw_id if use_commit_id else name,
-            at=name)
+            repo_name=full_repo_name,
+            f_path=ref_name if is_svn else '',
+            revision=raw_id if use_commit_id else ref_name,
+            at=ref_name)

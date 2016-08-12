@@ -33,6 +33,7 @@ import traceback
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
+from rhodecode import events
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     RepoGroup, UserRepoGroupToPerm, User, Permission, UserGroupRepoGroupToPerm,
@@ -257,6 +258,9 @@ class RepoGroupModel(BaseModel):
             log_create_repository_group(
                 created_by=user.username, **repo_group.get_dict())
 
+            # Trigger create event.
+            events.trigger(events.RepoGroupCreateEvent(repo_group))
+
             return new_repo_group
         except Exception:
             self.sa.rollback()
@@ -455,6 +459,9 @@ class RepoGroupModel(BaseModel):
 
             self._rename_group(old_path, new_path)
 
+            # Trigger update event.
+            events.trigger(events.RepoGroupUpdateEvent(repo_group))
+
             return repo_group
         except Exception:
             log.error(traceback.format_exc())
@@ -468,6 +475,9 @@ class RepoGroupModel(BaseModel):
                 self._delete_filesystem_group(repo_group, force_delete)
             else:
                 log.debug('skipping removal from filesystem')
+
+            # Trigger delete event.
+            events.trigger(events.RepoGroupDeleteEvent(repo_group))
 
         except Exception:
             log.error('Error removing repo_group %s', repo_group)

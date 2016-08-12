@@ -157,7 +157,8 @@ class TestPullRequestModel:
         self.merge_mock.assert_called_once_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
-            pull_request.source_ref_parts, self.workspace_id, dry_run=True)
+            pull_request.source_ref_parts, self.workspace_id, dry_run=True,
+            use_rebase=False)
 
         assert pull_request._last_merge_source_rev == self.source_commit
         assert pull_request._last_merge_target_rev == self.target_commit
@@ -185,7 +186,8 @@ class TestPullRequestModel:
         self.merge_mock.assert_called_once_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
-            pull_request.source_ref_parts, self.workspace_id, dry_run=True)
+            pull_request.source_ref_parts, self.workspace_id, dry_run=True,
+            use_rebase=False)
 
         assert pull_request._last_merge_source_rev == self.source_commit
         assert pull_request._last_merge_target_rev == self.target_commit
@@ -216,7 +218,8 @@ class TestPullRequestModel:
         self.merge_mock.assert_called_once_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
-            pull_request.source_ref_parts, self.workspace_id, dry_run=True)
+            pull_request.source_ref_parts, self.workspace_id, dry_run=True,
+            use_rebase=False)
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
@@ -271,6 +274,7 @@ class TestPullRequestModel:
             '6126b7bfcc82ad2d3deaee22af926b082ce54cc6',
             MergeFailureReason.NONE)
 
+        merge_extras['repository'] = pull_request.target_repo.repo_name
         PullRequestModel().merge(
             pull_request, pull_request.author, extras=merge_extras)
 
@@ -288,7 +292,8 @@ class TestPullRequestModel:
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id,
-            user_name=user.username, user_email=user.email, message=message
+            user_name=user.username, user_email=user.email, message=message,
+            use_rebase=False
         )
         self.invalidation_mock.assert_called_once_with(
             pull_request.target_repo.repo_name)
@@ -308,6 +313,7 @@ class TestPullRequestModel:
             '6126b7bfcc82ad2d3deaee22af926b082ce54cc6',
             MergeFailureReason.MERGE_FAILED)
 
+        merge_extras['repository'] = pull_request.target_repo.repo_name
         PullRequestModel().merge(
             pull_request, pull_request.author, extras=merge_extras)
 
@@ -325,7 +331,8 @@ class TestPullRequestModel:
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id,
-            user_name=user.username, user_email=user.email, message=message
+            user_name=user.username, user_email=user.email, message=message,
+            use_rebase=False
         )
 
         pull_request = PullRequest.get(pull_request.pull_request_id)
@@ -364,6 +371,7 @@ class TestIntegrationMerge(object):
         pull_request = pr_util.create_pull_request(
             approved=True, mergeable=True)
         # TODO: johbo: Needed for sqlite, try to find an automatic way for it
+        merge_extras['repository'] = pull_request.target_repo.repo_name
         Session().commit()
 
         with mock.patch.dict(rhodecode.CONFIG, extra_config, clear=False):
@@ -379,6 +387,7 @@ class TestIntegrationMerge(object):
         pull_request = pr_util.create_pull_request(
             approved=True, mergeable=True)
         # TODO: johbo: Needed for sqlite, try to find an automatic way for it
+        merge_extras['repository'] = pull_request.target_repo.repo_name
         Session().commit()
 
         with mock.patch('rhodecode.EXTENSIONS.PRE_PUSH_HOOK') as pre_pull:
@@ -400,6 +409,7 @@ class TestIntegrationMerge(object):
         # all data is pre-computed, that's why just updating the DB is not
         # enough.
         merge_extras['locked_by'] = locked_by
+        merge_extras['repository'] = pull_request.target_repo.repo_name
         # TODO: johbo: Needed for sqlite, try to find an automatic way for it
         Session().commit()
         merge_status = PullRequestModel().merge(

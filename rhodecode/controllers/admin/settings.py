@@ -79,7 +79,7 @@ class SettingsController(BaseController):
     def __before__(self):
         super(SettingsController, self).__before__()
         c.labs_active = str2bool(
-            rhodecode.CONFIG.get('labs_settings_active', 'false'))
+            rhodecode.CONFIG.get('labs_settings_active', 'true'))
         c.navlist = navigation_list(request)
 
     def _get_hg_ui_settings(self):
@@ -789,13 +789,6 @@ LabSetting = collections.namedtuple(
 # This list has to be kept in sync with the form
 # rhodecode.model.forms.LabsSettingsForm.
 _LAB_SETTINGS = [
-    LabSetting(
-        key='rhodecode_hg_use_rebase_for_merging',
-        type='bool',
-        group=lazy_ugettext('Mercurial server-side merge'),
-        label=lazy_ugettext('Use rebase instead of creating a merge commit when merging via web interface'),
-        help=''  # Do not translate the empty string!
-    ),
     LabSetting(
         key='rhodecode_proxy_subversion_http_requests',
         type='bool',

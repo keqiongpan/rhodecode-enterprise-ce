@@ -5,12 +5,12 @@ Issue Tracker Integration
 
 You can set an issue tracker connection in two ways with |RCE|.
 
-* At instance level you can set a default issue tracker.
-* At |repo| level you can configure an integration with a different issue
+* At the instance level, you can set a default issue tracker.
+* At the |repo| level, you can configure an integration with a different issue
   tracker.
 
-To integrate |RCM| with an issue tracker you need to define a regular
-expression that will fetch the issue ID stored in commit messages and replace
+To integrate |RCM| with an issue tracker, you need to define a regular
+expression that will fetch the issue ID stored in commit messages, and replace
 it with a URL. This enables |RCE| to generate a link matching each issue to the
 target |repo|.
 
@@ -33,9 +33,8 @@ To integrate your issue tracker, use the following steps:
 Repository Issue Tracker Configuration
 --------------------------------------
 
-You can configure specific |repos| to use a different issue tracker if
-you need to connect to a non-default one. See the instructions in
-:ref:`repo-it`
+You can configure specific |repos| to use a different issue tracker than the
+default one. See the instructions in :ref:`repo-it`
 
 .. _issue-tr-eg-ref:
 

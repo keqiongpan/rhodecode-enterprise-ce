@@ -20,14 +20,19 @@
 
 import json
 import logging
+import urlparse
 import threading
 from BaseHTTPServer import BaseHTTPRequestHandler
 from SocketServer import TCPServer
+from routes.util import URLGenerator
 
 import Pyro4
+import pylons
+import rhodecode
 
 from rhodecode.lib import hooks_base
-from rhodecode.lib.utils2 import AttributeDict
+from rhodecode.lib.utils2 import (
+    AttributeDict, safe_str, get_routes_generator_for_server_url)
 
 
 log = logging.getLogger(__name__)
@@ -194,10 +199,14 @@ def prepare_callback_daemon(extras, protocol=None, use_direct_calls=False):
         callback_daemon = DummyHooksCallbackDaemon()
         extras['hooks_module'] = callback_daemon.hooks_module
     else:
-        callback_daemon = (
-            Pyro4HooksCallbackDaemon()
-            if protocol == 'pyro4'
-            else HttpHooksCallbackDaemon())
+        if protocol == 'pyro4':
+            callback_daemon = Pyro4HooksCallbackDaemon()
+        elif protocol == 'http':
+            callback_daemon = HttpHooksCallbackDaemon()
+        else:
+            log.error('Unsupported callback daemon protocol "%s"', protocol)
+            raise Exception('Unsupported callback daemon protocol.')
+
         extras['hooks_uri'] = callback_daemon.hooks_uri
         extras['hooks_protocol'] = protocol
 
@@ -236,6 +245,8 @@ class Hooks(object):
 
     def _call_hook(self, hook, extras):
         extras = AttributeDict(extras)
+        pylons_router = get_routes_generator_for_server_url(extras.server_url)
+        pylons.url._push_object(pylons_router)
 
         try:
             result = hook(extras)
@@ -248,6 +259,9 @@ class Hooks(object):
                 'exception': type(error).__name__,
                 'exception_args': error_args,
             }
+        finally:
+            pylons.url._pop_object()
+
         return {
             'status': result.status,
             'output': result.output,

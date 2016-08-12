@@ -27,5 +27,13 @@ class JSONRPCError(JSONRPCBaseError):
     pass
 
 
+class JSONRPCValidationError(JSONRPCBaseError):
+
+    def __init__(self, *args, **kwargs):
+        self.colander_exception = kwargs.pop('colander_exc')
+        super(JSONRPCValidationError, self).__init__(*args, **kwargs)
+
+
 class JSONRPCForbidden(JSONRPCBaseError):
     pass
+

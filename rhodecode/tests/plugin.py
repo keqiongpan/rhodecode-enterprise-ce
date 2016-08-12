@@ -214,6 +214,22 @@ def app(request, pylonsapp, http_environ):
     return app
 
 
+@pytest.fixture()
+def app_settings(pylonsapp, pylons_config):
+    """
+    Settings dictionary used to create the app.
+
+    Parses the ini file and passes the result through the sanitize and apply
+    defaults mechanism in `rhodecode.config.middleware`.
+    """
+    from paste.deploy.loadwsgi import loadcontext, APP
+    from rhodecode.config.middleware import (
+        sanitize_settings_and_apply_defaults)
+    context = loadcontext(APP, 'config:' + pylons_config)
+    settings = sanitize_settings_and_apply_defaults(context.config())
+    return settings
+
+
 LoginData = collections.namedtuple('LoginData', ('csrf_token', 'user'))
 
 
@@ -283,6 +299,27 @@ def tests_tmp_path(request):
             shutil.rmtree(TESTS_TMP_PATH)
 
     return TESTS_TMP_PATH
+
+
+@pytest.fixture(scope='session', autouse=True)
+def patch_pyro_request_scope_proxy_factory(request):
+    """
+    Patch the pyro proxy factory to always use the same dummy request object
+    when under test. This will return the same pyro proxy on every call.
+    """
+    dummy_request = pyramid.testing.DummyRequest()
+
+    def mocked_call(self, request=None):
+        return self.getProxy(request=dummy_request)
+
+    patcher = mock.patch(
+        'rhodecode.lib.vcs.client.RequestScopeProxyFactory.__call__',
+        new=mocked_call)
+    patcher.start()
+
+    @request.addfinalizer
+    def undo_patching():
+        patcher.stop()
 
 
 @pytest.fixture
@@ -1168,8 +1205,8 @@ class UserUtility(object):
     def _inherit_default_user_permissions(self, user_name, value):
         user = UserModel().get_by_username(user_name)
         user.inherit_default_permissions = value
-        Session.add(user)
-        Session.commit()
+        Session().add(user)
+        Session().commit()
 
     def cleanup(self):
         self._cleanup_permissions()

@@ -43,8 +43,8 @@ from rhodecode.model.db import (
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import ScmModel, RepoList
-from rhodecode.model.settings import SettingsModel
-from rhodecode.model.validation_schema import RepoSchema
+from rhodecode.model.settings import SettingsModel, VcsSettingsModel
+from rhodecode.model.validation_schema.schemas import repo_schema
 
 log = logging.getLogger(__name__)
 
@@ -400,7 +400,8 @@ def get_repo_changesets(request, apiuser, repoid, start_rev, limit,
 
 @jsonrpc_method()
 def get_repo_nodes(request, apiuser, repoid, revision, root_path,
-                   ret_type=Optional('all'), details=Optional('basic')):
+                   ret_type=Optional('all'), details=Optional('basic'),
+                   max_file_bytes=Optional(None)):
     """
     Returns a list of nodes and children in a flat list for a given
     path at given revision.
@@ -425,6 +426,8 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
         md5, binary, and or content.  The valid options are ``basic`` and
         ``full``.
     :type details: Optional(str)
+    :param max_file_bytes: Only return file content under this file size bytes
+    :type details: Optional(int)
 
     Example output:
 
@@ -472,7 +475,8 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
 
         _d, _f = ScmModel().get_nodes(
             repo, revision, root_path, flat=False,
-            extended_info=extended_info, content=content)
+            extended_info=extended_info, content=content,
+            max_file_bytes=max_file_bytes)
         _map = {
             'all': _d + _f,
             'files': _f,
@@ -606,7 +610,7 @@ def create_repo(request, apiuser, repo_name, repo_type,
       }
 
     """
-    schema = RepoSchema()
+    schema = repo_schema.RepoSchema()
     try:
         data = schema.deserialize({
             'repo_name': repo_name
@@ -1310,8 +1314,6 @@ def comment_commit(
         userid=Optional(OAttr('apiuser')), status=Optional(None)):
     """
     Set a commit comment, and optionally change the status of the commit.
-    This command can be executed only using api_key belonging to user
-    with admin rights, or repository administrator.
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
@@ -1344,7 +1346,7 @@ def comment_commit(
     """
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
-        _perms = ('repository.admin',)
+        _perms = ('repository.read', 'repository.write', 'repository.admin')
         has_repo_permissions(apiuser, repoid, repo, _perms)
 
     if isinstance(userid, Optional):
@@ -1361,9 +1363,11 @@ def comment_commit(
     try:
         rc_config = SettingsModel().get_all_settings()
         renderer = rc_config.get('rhodecode_markup_renderer', 'rst')
-
+        status_change_label = ChangesetStatus.get_status_lbl(status)
         comm = ChangesetCommentsModel().create(
-            message, repo, user, revision=commit_id, status_change=status,
+            message, repo, user, revision=commit_id,
+            status_change=status_change_label,
+            status_change_type=status,
             renderer=renderer)
         if status:
             # also do a status change
@@ -1775,3 +1779,110 @@ def strip(request, apiuser, repoid, revision, branch):
             'Unable to strip commit %s from repo `%s`' % (
                 revision, repo.repo_name)
         )
+
+
+@jsonrpc_method()
+def get_repo_settings(request, apiuser, repoid, key=Optional(None)):
+    """
+    Returns all settings for a repository. If key is given it only returns the
+    setting identified by the key or null.
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: The repository name or repository id.
+    :type repoid: str or int
+    :param key: Key of the setting to return.
+    :type: key: Optional(str)
+
+    Example output:
+
+    .. code-block:: bash
+
+        {
+            "error": null,
+            "id": 237,
+            "result": {
+                "extensions_largefiles": true,
+                "hooks_changegroup_push_logger": true,
+                "hooks_changegroup_repo_size": false,
+                "hooks_outgoing_pull_logger": true,
+                "phases_publish": "True",
+                "rhodecode_hg_use_rebase_for_merging": true,
+                "rhodecode_pr_merge_enabled": true,
+                "rhodecode_use_outdated_comments": true
+            }
+        }
+    """
+
+    # Restrict access to this api method to admins only.
+    if not has_superadmin_permission(apiuser):
+        raise JSONRPCForbidden()
+
+    try:
+        repo = get_repo_or_error(repoid)
+        settings_model = VcsSettingsModel(repo=repo)
+        settings = settings_model.get_global_settings()
+        settings.update(settings_model.get_repo_settings())
+
+        # If only a single setting is requested fetch it from all settings.
+        key = Optional.extract(key)
+        if key is not None:
+            settings = settings.get(key, None)
+    except Exception:
+        msg = 'Failed to fetch settings for repository `{}`'.format(repoid)
+        log.exception(msg)
+        raise JSONRPCError(msg)
+
+    return settings
+
+
+@jsonrpc_method()
+def set_repo_settings(request, apiuser, repoid, settings):
+    """
+    Update repository settings. Returns true on success.
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: The repository name or repository id.
+    :type repoid: str or int
+    :param settings: The new settings for the repository.
+    :type: settings: dict
+
+    Example output:
+
+    .. code-block:: bash
+
+        {
+            "error": null,
+            "id": 237,
+            "result": true
+        }
+    """
+    # Restrict access to this api method to admins only.
+    if not has_superadmin_permission(apiuser):
+        raise JSONRPCForbidden()
+
+    if type(settings) is not dict:
+        raise JSONRPCError('Settings have to be a JSON Object.')
+
+    try:
+        settings_model = VcsSettingsModel(repo=repoid)
+
+        # Merge global, repo and incoming settings.
+        new_settings = settings_model.get_global_settings()
+        new_settings.update(settings_model.get_repo_settings())
+        new_settings.update(settings)
+
+        # Update the settings.
+        inherit_global_settings = new_settings.get(
+            'inherit_global_settings', False)
+        settings_model.create_or_update_repo_settings(
+            new_settings, inherit_global_settings=inherit_global_settings)
+        Session().commit()
+    except Exception:
+        msg = 'Failed to update settings for repository `{}`'.format(repoid)
+        log.exception(msg)
+        raise JSONRPCError(msg)
+
+    # Indicate success.
+    return True

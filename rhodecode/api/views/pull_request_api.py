@@ -265,7 +265,7 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
         PullRequestModel().close_pull_request(
             pull_request.pull_request_id, apiuser)
 
-        Session.commit()
+        Session().commit()
     return data
 
 
@@ -319,7 +319,7 @@ def close_pull_request(request, apiuser, repoid, pullrequestid,
 
     PullRequestModel().close_pull_request(
         pull_request.pull_request_id, apiuser)
-    Session.commit()
+    Session().commit()
     data = {
         'pull_request_id': pull_request.pull_request_id,
         'closed': True,
@@ -408,6 +408,8 @@ def comment_pull_request(request, apiuser, repoid, pullrequestid,
         line_no=None,
         status_change=(ChangesetStatus.get_status_lbl(status)
                        if status and allowed_to_change_status else None),
+        status_change_type=(status
+                            if status and allowed_to_change_status else None),
         closing_pr=False,
         renderer=renderer
     )

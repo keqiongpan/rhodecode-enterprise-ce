@@ -7,7 +7,7 @@
       <div id="header-inner" class="wrapper">
           <div id="logo">
               <div class="logo-wrapper">
-                  <a href="${h.url('home')}"><img src="${h.url('/images/rhodecode-logo-white-216x60.png')}" alt="RhodeCode"/></a>
+                  <a href="${h.url('home')}"><img src="${h.asset('images/rhodecode-logo-white-216x60.png')}" alt="RhodeCode"/></a>
               </div>
               %if c.rhodecode_name:
                <div class="branding">- ${h.branding(c.rhodecode_name)}</div>
@@ -16,7 +16,6 @@
           <!-- MENU BAR NAV -->
           ${self.menu_bar_nav()}
           <!-- END MENU BAR NAV -->
-          ${self.body()}
       </div>
   </div>
   ${self.menu_bar_subnav()}
@@ -82,6 +81,7 @@
       <li><a href="${h.url('users_groups')}">${_('User groups')}</a></li>
       <li><a href="${h.url('admin_permissions_application')}">${_('Permissions')}</a></li>
       <li><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
+      <li><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>
       <li><a href="${h.url('admin_defaults_repositories')}">${_('Defaults')}</a></li>
       <li class="last"><a href="${h.url('admin_settings')}">${_('Settings')}</a></li>
   </ul>
@@ -135,8 +135,9 @@
 
 
 <%def name="gravatar_with_user(contact, size=16, show_disabled=False)">
-  <div class="rc-user tooltip" title="${contact}">
-    ${self.gravatar(h.email_or_none(contact), size)}
+  <% email = h.email_or_none(contact) %>
+  <div class="rc-user tooltip" title="${h.author_string(email)}">
+    ${self.gravatar(email, size)}
     <span class="${'user user-disabled' if show_disabled else 'user'}"> ${h.link_to_user(contact)}</span>
   </div>
 </%def>
@@ -579,7 +580,7 @@
         % endif
 
     </script>
-    <script src="${h.url('/js/rhodecode/base/keyboard-bindings.js', ver=c.rhodecode_version_hash)}"></script>
+    <script src="${h.asset('js/rhodecode/base/keyboard-bindings.js', ver=c.rhodecode_version_hash)}"></script>
 </%def>
 
 <div class="modal" id="help_kb" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">

@@ -58,9 +58,10 @@ def get_environ(url):
         # Edge case: not a smart protocol url
         ('/foo/bar', 'pull'),
     ])
-def test_get_action(url, expected_action):
+def test_get_action(url, expected_action, pylonsapp):
     app = simplegit.SimpleGit(application=None,
-                              config={'auth_ret_code': '', 'base_path': ''})
+                              config={'auth_ret_code': '', 'base_path': ''},
+                              registry=None)
     assert expected_action == app._get_action(get_environ(url))
 
 
@@ -74,15 +75,17 @@ def test_get_action(url, expected_action):
         ('/foo/bar/git-upload-pack', 'foo/bar'),
         ('/foo/bar/git-receive-pack', 'foo/bar'),
     ])
-def test_get_repository_name(url, expected_repo_name):
+def test_get_repository_name(url, expected_repo_name, pylonsapp):
     app = simplegit.SimpleGit(application=None,
-                              config={'auth_ret_code': '', 'base_path': ''})
+                              config={'auth_ret_code': '', 'base_path': ''},
+                              registry=None)
     assert expected_repo_name == app._get_repository_name(get_environ(url))
 
 
-def test_get_config():
+def test_get_config(pylonsapp):
     app = simplegit.SimpleGit(application=None,
-                              config={'auth_ret_code': '', 'base_path': ''})
+                              config={'auth_ret_code': '', 'base_path': ''},
+                              registry=None)
     extras = {'foo': 'FOO', 'bar': 'BAR'}
 
     # We copy the extras as the method below will change the contents.
@@ -95,13 +98,13 @@ def test_get_config():
     assert config == expected_config
 
 
-def test_create_wsgi_app_uses_scm_app_from_simplevcs():
+def test_create_wsgi_app_uses_scm_app_from_simplevcs(pylonsapp):
     config = {
         'auth_ret_code': '',
         'base_path': '',
         'vcs.scm_app_implementation':
             'rhodecode.tests.lib.middleware.mock_scm_app',
     }
-    app = simplegit.SimpleGit(application=None, config=config)
+    app = simplegit.SimpleGit(application=None, config=config, registry=None)
     wsgi_app = app._create_wsgi_app('/tmp/test', 'test_repo', {})
     assert wsgi_app is mock_scm_app.mock_git_wsgi

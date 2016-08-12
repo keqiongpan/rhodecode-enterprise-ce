@@ -9,6 +9,6 @@ Release Date
 Fixes
 ^^^^^
 
-- ui: fixed empty labels caused by missing translation of JS components
-- login: fixed bad routing URL in comments when user is not logged in.
-- celery: make sure to run tasks in sync mode if connection to celery is lost.
+- UI: fixed empty labels caused by missing translation of JS components.
+- Login: fixed bad routing URL in comments when user is not logged in.
+- Celery: make sure to run tasks in sync mode if connection to celery is lost.

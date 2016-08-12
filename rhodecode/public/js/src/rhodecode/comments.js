@@ -150,19 +150,6 @@ var injectInlineForm = function(tr){
 
   var _form = $(f).find('.inline-form').get(0);
 
-  $('.switch-to-chat', _form).on('click', function(evt){
-    var fParent = $(_parent).closest('.injected_diff').parent().prev('*[fid]');
-    var fid = fParent.attr('fid');
-
-    // activate chat and trigger subscription to channels
-    $.Topic('/chat_controller').publish({
-      action:'subscribe_to_channels',
-      data: ['/chat${0}$/fid/{1}/{2}'.format(templateContext.repo_name, fid, lineno)]
-    });
-    $(_form).closest('td').find('.comment-inline-form').addClass('hidden');
-    $(_form).closest('td').find('.chat-holder').removeClass('hidden');
-  });
-
   var pullRequestId = templateContext.pull_request_data.pull_request_id;
   var commitId = templateContext.commit_data.commit_id;
 
@@ -205,7 +192,6 @@ var injectInlineForm = function(tr){
       // re trigger the linkification of next/prev navigation
       linkifyComments($('.inline-comment-injected'));
       timeagoActivate();
-      tooltip_activate();
       bindDeleteCommentButtons();
       commentForm.setActionButtonsDisabled(false);
 
@@ -224,6 +210,12 @@ var injectInlineForm = function(tr){
       }
   }, 10);
 
+    $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
+        form:_form,
+        parent:_parent,
+        lineno: lineno,
+        f_path: f_path}
+    );
 };
 
 var deleteComment = function(comment_id) {
@@ -545,7 +537,6 @@ var CommentForm = (function() {
                     self.resetCommentFormState();
                     bindDeleteCommentButtons();
                     timeagoActivate();
-                    tooltip_activate();
                 }
             };
             var submitFailCallback = function(){

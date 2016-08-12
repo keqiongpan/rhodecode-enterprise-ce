@@ -38,12 +38,14 @@ in enterprise.override (attrs: {
   # make development a little bit more convenient.
   src = null;
 
-  buildInputs = attrs.buildInputs ++
-    pkgs.lib.optionals (hasVcsserver) vcsserver.propagatedNativeBuildInputs ++ [
-    pythonPackages.bumpversion
-    pythonPackages.invoke
-    pythonPackages.ipdb
-  ];
+  buildInputs =
+    attrs.buildInputs ++
+    pkgs.lib.optionals (hasVcsserver) vcsserver.propagatedNativeBuildInputs ++
+    (with pythonPackages; [
+      bumpversion
+      invoke
+      ipdb
+    ]);
 
   shellHook = attrs.shellHook +
     pkgs.lib.strings.optionalString (hasVcsserver) ''

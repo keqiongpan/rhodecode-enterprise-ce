@@ -490,11 +490,17 @@ def loadplugin(plugin_id):
     or None on failure.
     """
     # TODO: Disusing pyramids thread locals to retrieve the registry.
-    authn_registry = get_current_registry().getUtility(IAuthnPluginRegistry)
+    authn_registry = get_authn_registry()
     plugin = authn_registry.get_plugin(plugin_id)
     if plugin is None:
         log.error('Authentication plugin not found: "%s"', plugin_id)
     return plugin
+
+
+def get_authn_registry(registry=None):
+    registry = registry or get_current_registry()
+    authn_registry = registry.getUtility(IAuthnPluginRegistry)
+    return authn_registry
 
 
 def get_auth_cache_manager(custom_ttl=None):
@@ -503,7 +509,7 @@ def get_auth_cache_manager(custom_ttl=None):
 
 
 def authenticate(username, password, environ=None, auth_type=None,
-                 skip_missing=False):
+                 skip_missing=False, registry=None):
     """
     Authentication function used for access control,
     It tries to authenticate based on enabled authentication modules.
@@ -520,7 +526,7 @@ def authenticate(username, password, environ=None, auth_type=None,
                          % auth_type)
     headers_only = environ and not (username and password)
 
-    authn_registry = get_current_registry().getUtility(IAuthnPluginRegistry)
+    authn_registry = get_authn_registry(registry)
     for plugin in authn_registry.get_plugins_for_authentication():
         plugin.set_auth_type(auth_type)
         user = plugin.get_user(username)
@@ -559,16 +565,16 @@ def authenticate(username, password, environ=None, auth_type=None,
         if isinstance(plugin.AUTH_CACHE_TTL, (int, long)):
             # plugin cache set inside is more important than the settings value
             _cache_ttl = plugin.AUTH_CACHE_TTL
-        elif plugin_settings.get('auth_cache_ttl'):
-            _cache_ttl = safe_int(plugin_settings.get('auth_cache_ttl'), 0)
+        elif plugin_settings.get('cache_ttl'):
+            _cache_ttl = safe_int(plugin_settings.get('cache_ttl'), 0)
 
         plugin_cache_active = bool(_cache_ttl and _cache_ttl > 0)
 
         # get instance of cache manager configured for a namespace
         cache_manager = get_auth_cache_manager(custom_ttl=_cache_ttl)
 
-        log.debug('Cache for plugin `%s` active: %s', plugin.get_id(),
-                  plugin_cache_active)
+        log.debug('AUTH_CACHE_TTL for plugin `%s` active: %s (TTL: %s)',
+                  plugin.get_id(), plugin_cache_active, _cache_ttl)
 
         # for environ based password can be empty, but then the validation is
         # on the server that fills in the env data needed for authentication
@@ -581,8 +587,7 @@ def authenticate(username, password, environ=None, auth_type=None,
         # to RhodeCode database. If this function returns data
         # then auth is correct.
         start = time.time()
-        log.debug('Running plugin `%s` _authenticate method',
-                  plugin.get_id())
+        log.debug('Running plugin `%s` _authenticate method', plugin.get_id())
 
         def auth_func():
             """

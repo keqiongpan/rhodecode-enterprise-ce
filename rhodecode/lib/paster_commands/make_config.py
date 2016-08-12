@@ -19,7 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 """
-depracated make-config paster command for RhodeCode
+deprecated make-config paster command for RhodeCode
 """
 
 import os

@@ -67,11 +67,11 @@ $(document).ready(function() {
                   "sort": "compare"}, title: "${_('Compare')}", className: "td-compare" }
       ],
       language: {
-            paginate: DEFAULT_GRID_PAGINATION
+            paginate: DEFAULT_GRID_PAGINATION,
+            emptyTable: _gettext("No branches available yet.")
       },
       "initComplete": function( settings, json ) {
           get_datatable_count();
-          tooltip_activate();
           timeagoActivate();
           compare_radio_buttons("${c.repo_name}", 'branch');
       }
@@ -80,7 +80,6 @@ $(document).ready(function() {
     // update when things change
     $('#obj_list_table').on('draw.dt', function() {
         get_datatable_count();
-        tooltip_activate();
         timeagoActivate();
     });
 

@@ -32,7 +32,7 @@ import ipaddress
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.sql.expression import true, false
 
-from rhodecode.events import UserPreCreate, UserPreUpdate
+from rhodecode import events
 from rhodecode.lib.utils2 import (
     safe_unicode, get_current_rhodecode_user, action_logger_generic,
     AttributeDict)
@@ -270,12 +270,12 @@ class UserModel(BaseModel):
                 # raises UserCreationError if it's not allowed for any reason to
                 # create new active user, this also executes pre-create hooks
                 check_allowed_create_user(user_data, cur_user, strict_check=True)
-            self.send_event(UserPreCreate(user_data))
+            events.trigger(events.UserPreCreate(user_data))
             new_user = User()
             edit = False
         else:
             log.debug('updating user %s', username)
-            self.send_event(UserPreUpdate(user, user_data))
+            events.trigger(events.UserPreUpdate(user, user_data))
             new_user = user
             edit = True
 
@@ -532,7 +532,7 @@ class UserModel(BaseModel):
 
         return True
 
-    def reset_password(self, data):
+    def reset_password(self, data, pwd_reset_url):
         from rhodecode.lib.celerylib import tasks, run_task
         from rhodecode.model.notification import EmailNotificationModel
         from rhodecode.lib import auth
@@ -557,6 +557,7 @@ class UserModel(BaseModel):
 
             email_kwargs = {
                 'new_password': new_passwd,
+                'password_reset_url': pwd_reset_url,
                 'user': user,
                 'email': user_email,
                 'date': datetime.datetime.now()

@@ -138,6 +138,10 @@
 
 .summary .sidebar-right-content {
     margin-bottom: @space;
+
+    .rc-user {
+        min-width: 0;
+    }
 }
 
 .fieldset {
@@ -167,6 +171,10 @@
         .commit-long {
             overflow-x: auto;
         }
+    }
+    .commit.truncate-wrap {
+        overflow:hidden;
+        text-overflow: ellipsis;
     }
 }
 
@@ -254,15 +262,3 @@
     
 }
 
-#readme {
-    width: 100%;
-
-    .readme {
-        overflow-x: auto;
-        border: @border-thickness solid @border-default-color;
-        .border-radius(@border-radius);
-    }
-    .readme_box {
-        margin: 15px;
-    }
-}

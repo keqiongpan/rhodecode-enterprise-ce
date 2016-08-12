@@ -352,17 +352,17 @@ def is_valid_repo_group(repo_group_name, base_path, skip_path_check=False):
     return False
 
 
-def ask_ok(prompt, retries=4, complaint='Yes or no please!'):
+def ask_ok(prompt, retries=4, complaint='[y]es or [n]o please!'):
     while True:
         ok = raw_input(prompt)
-        if ok in ('y', 'ye', 'yes'):
+        if ok.lower() in ('y', 'ye', 'yes'):
             return True
-        if ok in ('n', 'no', 'nop', 'nope'):
+        if ok.lower() in ('n', 'no', 'nop', 'nope'):
             return False
         retries = retries - 1
         if retries < 0:
             raise IOError
-        print complaint
+        print(complaint)
 
 # propagated from mercurial documentation
 ui_sections = [
@@ -473,6 +473,25 @@ def set_rhodecode_config(config):
 
     for k, v in app_settings.items():
         config[k] = v
+
+
+def get_rhodecode_realm():
+    """
+    Return the rhodecode realm from database.
+    """
+    from rhodecode.model.settings import SettingsModel
+    realm = SettingsModel().get_setting_by_name('realm')
+    return safe_str(realm.app_settings_value)
+
+
+def get_rhodecode_base_path():
+    """
+    Returns the base path. The base path is the filesystem path which points
+    to the repository store.
+    """
+    from rhodecode.model.settings import SettingsModel
+    paths_ui = SettingsModel().get_ui_by_section_and_key('paths', '/')
+    return safe_str(paths_ui.ui_value)
 
 
 def map_groups(path):
@@ -958,8 +977,10 @@ class PartialRenderer(object):
 
 
 def password_changed(auth_user, session):
-    if auth_user.username == User.DEFAULT_USER:
+    # Never report password change in case of default user or anonymous user.
+    if auth_user.username == User.DEFAULT_USER or auth_user.user_id is None:
         return False
+
     password_hash = md5(auth_user.password) if auth_user.password else None
     rhodecode_user = session.get('rhodecode_user', {})
     session_password_hash = rhodecode_user.get('password', '')

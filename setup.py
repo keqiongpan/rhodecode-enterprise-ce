@@ -70,9 +70,12 @@ requirements = [
     'authomatic',
     'backport_ipaddress',
     'celery',
+    'channelstream',
     'colander',
     'decorator',
+    'deform',
     'docutils',
+    'gevent',
     'gunicorn',
     'infrae.cache',
     'ipython',
@@ -81,6 +84,7 @@ requirements = [
     'msgpack-python',
     'packaging',
     'psycopg2',
+    'py-gfm',
     'pycrypto',
     'pycurl',
     'pyparsing',
@@ -99,6 +103,8 @@ requirements = [
     'simplejson',
     'waitress',
     'zope.cachedescriptors',
+    'dogpile.cache',
+    'dogpile.core'
 ]
 
 if is_windows:

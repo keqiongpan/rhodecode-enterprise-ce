@@ -49,7 +49,7 @@ from zope.cachedescriptors.property import Lazy as LazyProperty
 from pylons import url
 from pylons.i18n.translation import lazy_ugettext as _
 
-from rhodecode.lib.vcs import get_backend
+from rhodecode.lib.vcs import get_backend, get_vcs_instance
 from rhodecode.lib.vcs.utils.helpers import get_scm
 from rhodecode.lib.vcs.exceptions import VCSError
 from rhodecode.lib.vcs.backends.base import (
@@ -57,6 +57,7 @@ from rhodecode.lib.vcs.backends.base import (
 from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, remove_prefix, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict)
+from rhodecode.lib.jsonalchemy import MutationObj, JsonType, JSONDict
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.encrypt import AESCipher
@@ -720,7 +721,7 @@ class User(Base, BaseModel):
 
         if cache:
             q = q.options(FromCache("sql_cache_short",
-                                    "get_email_key_%s" % email))
+                                    "get_email_key_%s" % _hash_key(email)))
 
         ret = q.scalar()
         if ret is None:
@@ -908,7 +909,7 @@ class UserApiKeys(Base, BaseModel):
         return {
             cls.ROLE_ALL: _('all'),
             cls.ROLE_HTTP: _('http/web interface'),
-            cls.ROLE_VCS: _('vcs (git/hg protocol)'),
+            cls.ROLE_VCS: _('vcs (git/hg/svn protocol)'),
             cls.ROLE_API: _('api calls'),
             cls.ROLE_FEED: _('feed access'),
         }.get(role, role)
@@ -1330,6 +1331,8 @@ class Repository(Base, BaseModel):
         cascade="all, delete, delete-orphan")
     ui = relationship('RepoRhodeCodeUi', cascade="all")
     settings = relationship('RepoRhodeCodeSetting', cascade="all")
+    integrations = relationship('Integration',
+                                cascade="all, delete, delete-orphan")
 
     def __unicode__(self):
         return u"<%s('%s:%s')>" % (self.__class__.__name__, self.repo_id,
@@ -1641,6 +1644,7 @@ class Repository(Base, BaseModel):
             'repo_name': repo.repo_name,
             'repo_type': repo.repo_type,
             'clone_uri': repo.clone_uri or '',
+            'url': url('summary_home', repo_name=self.repo_name, qualified=True),
             'private': repo.private,
             'created_on': repo.created_on,
             'description': repo.description,
@@ -1861,7 +1865,8 @@ class Repository(Base, BaseModel):
             cs_cache = cs_cache.__json__()
 
         def is_outdated(new_cs_cache):
-            if new_cs_cache['raw_id'] != self.changeset_cache['raw_id']:
+            if (new_cs_cache['raw_id'] != self.changeset_cache['raw_id'] or
+                new_cs_cache['revision'] != self.changeset_cache['revision']):
                 return True
             return False
 
@@ -1972,7 +1977,7 @@ class Repository(Base, BaseModel):
             return self._get_instance()
 
         invalidator_context = CacheKey.repo_context_cache(
-            _get_repo, self.repo_name, None)
+            _get_repo, self.repo_name, None, thread_scoped=True)
 
         with invalidator_context as context:
             context.invalidate()
@@ -1981,27 +1986,16 @@ class Repository(Base, BaseModel):
         return repo
 
     def _get_instance(self, cache=True, config=None):
-        repo_full_path = self.repo_full_path
-        try:
-            vcs_alias = get_scm(repo_full_path)[0]
-            log.debug(
-                'Creating instance of %s repository from %s',
-                vcs_alias, repo_full_path)
-            backend = get_backend(vcs_alias)
-        except VCSError:
-            log.exception(
-                'Perhaps this repository is in db and not in '
-                'filesystem run rescan repositories with '
-                '"destroy old data" option from admin panel')
-            return
-
         config = config or self._config
         custom_wire = {
             'cache': cache  # controls the vcs.remote cache
         }
-        repo = backend(
-            safe_str(repo_full_path), config=config, create=False,
-            with_wire=custom_wire)
+
+        repo = get_vcs_instance(
+            repo_path=safe_str(self.repo_full_path),
+            config=config,
+            with_wire=custom_wire,
+            create=False)
 
         return repo
 
@@ -2854,7 +2848,8 @@ class CacheKey(Base, BaseModel):
         return None
 
     @classmethod
-    def repo_context_cache(cls, compute_func, repo_name, cache_type):
+    def repo_context_cache(cls, compute_func, repo_name, cache_type,
+                           thread_scoped=False):
         """
         @cache_region('long_term')
         def _heavy_calculation(cache_key):
@@ -2870,7 +2865,8 @@ class CacheKey(Base, BaseModel):
         assert computed == 'result'
         """
         from rhodecode.lib import caches
-        return caches.InvalidationContext(compute_func, repo_name, cache_type)
+        return caches.InvalidationContext(
+            compute_func, repo_name, cache_type, thread_scoped=thread_scoped)
 
 
 class ChangesetComment(Base, BaseModel):
@@ -3111,10 +3107,9 @@ class PullRequest(Base, _PullRequestBase):
         merge_status = PullRequestModel().merge_status(pull_request)
         data = {
             'pull_request_id': pull_request.pull_request_id,
-            'url': url('pullrequest_show',
-                       repo_name=pull_request.target_repo.repo_name,
-                       pull_request_id=pull_request.pull_request_id,
-                       qualified=True),
+            'url': url('pullrequest_show', repo_name=self.target_repo.repo_name,
+                                       pull_request_id=self.pull_request_id,
+                                       qualified=True),
             'title': pull_request.title,
             'description': pull_request.description,
             'status': pull_request.status,
@@ -3395,10 +3390,9 @@ class Gist(Base, BaseModel):
     # SCM functions
 
     def scm_instance(self, **kwargs):
-        from rhodecode.lib.vcs import get_repo
-        base_path = self.base_path()
-        return get_repo(os.path.join(*map(safe_str,
-                                          [base_path, self.gist_access_id])))
+        full_repo_path = os.path.join(self.base_path(), self.gist_access_id)
+        return get_vcs_instance(
+            repo_path=safe_str(full_repo_path), create=False)
 
 
 class DbMigrateVersion(Base, BaseModel):
@@ -3474,3 +3468,32 @@ class ExternalIdentity(Base, BaseModel):
         query = cls.query()
         query = query.filter(cls.local_user_id == local_user_id)
         return query
+
+
+class Integration(Base, BaseModel):
+    __tablename__ = 'integrations'
+    __table_args__ = (
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
+    )
+
+    integration_id = Column('integration_id', Integer(), primary_key=True)
+    integration_type = Column('integration_type', String(255))
+    enabled = Column('enabled', Boolean(), nullable=False)
+    name = Column('name', String(255), nullable=False)
+
+    settings = Column(
+        'settings_json', MutationObj.as_mutable(
+            JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
+    repo_id = Column(
+        'repo_id', Integer(), ForeignKey('repositories.repo_id'),
+        nullable=True, unique=None, default=None)
+    repo = relationship('Repository', lazy='joined')
+
+    def __repr__(self):
+        if self.repo:
+            scope = 'repo=%r' % self.repo
+        else:
+            scope = 'global'
+
+        return '<Integration(%r, %r)>' % (self.integration_type, scope)

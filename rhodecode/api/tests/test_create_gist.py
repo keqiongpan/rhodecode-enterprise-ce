@@ -43,7 +43,7 @@ class TestApiCreateGist(object):
             description='foobar-gist',
             gist_type=gist_type,
             acl_level=gist_acl_level,
-            files={'foobar': {'content': 'foo'}})
+            files={'foobar_ąć': {'content': 'foo'}})
         response = api_call(self.app, params)
         response_json = response.json
         gist = response_json['result']['gist']
@@ -65,6 +65,32 @@ class TestApiCreateGist(object):
         }
         try:
             assert_ok(id_, expected, given=response.body)
+        finally:
+            Fixture().destroy_gists()
+
+    @pytest.mark.parametrize("expected, lifetime, gist_type, gist_acl_level, files", [
+        ({'gist_type': '"ups" is not one of private, public'},
+         10, 'ups', Gist.ACL_LEVEL_PUBLIC, {'f': {'content': 'f'}}),
+
+        ({'lifetime': '-120 is less than minimum value -1'},
+         -120, Gist.GIST_PUBLIC, Gist.ACL_LEVEL_PUBLIC, {'f': {'content': 'f'}}),
+
+        ({'0.content': 'Required'},
+         10, Gist.GIST_PUBLIC, Gist.ACL_LEVEL_PUBLIC, {'f': {'x': 'f'}}),
+    ])
+    def test_api_try_create_gist(
+            self, expected, lifetime, gist_type, gist_acl_level, files):
+        id_, params = build_data(
+            self.apikey_regular, 'create_gist',
+            lifetime=lifetime,
+            description='foobar-gist',
+            gist_type=gist_type,
+            acl_level=gist_acl_level,
+            files=files)
+        response = api_call(self.app, params)
+
+        try:
+            assert_error(id_, expected, given=response.body)
         finally:
             Fixture().destroy_gists()
 

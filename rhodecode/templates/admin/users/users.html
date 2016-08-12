@@ -84,7 +84,6 @@ $(document).ready(function() {
       pageLength: ${c.visual.admin_grid_items},
       order: [[ 1, "asc" ]],
       columns: [
-         { data: {"_": "gravatar"}, className: "td-gravatar" },
          { data: {"_": "username",
                   "sort": "username_raw"}, title: "${_('Username')}", className: "td-user" },
          { data: {"_": "email",
@@ -106,11 +105,11 @@ $(document).ready(function() {
                   "sort": "action"}, title: "${_('Action')}", className: "td-action" }
       ],
       language: {
-          paginate: DEFAULT_GRID_PAGINATION
+          paginate: DEFAULT_GRID_PAGINATION,
+          emptyTable: _gettext("No users available yet.")
       },
       "initComplete": function( settings, json ) {
           get_datatable_count();
-          tooltip_activate();
       },
       "createdRow": function ( row, data, index ) {
           if (!data['active_raw']){

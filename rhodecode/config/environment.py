@@ -34,11 +34,16 @@ from pylons.configuration import PylonsConfig
 from pylons.error import handle_mako_error
 from pyramid.settings import asbool
 
-# don't remove this import it does magic for celery
-from rhodecode.lib import celerypylons  # noqa
+# ------------------------------------------------------------------------------
+# CELERY magic until refactor - issue #4163 - import order matters here:
+from rhodecode.lib import celerypylons  # this must be first, celerypylons
+                                        # sets config settings upon import
 
-import rhodecode.lib.app_globals as app_globals
+import rhodecode.integrations           # any modules using celery task
+                                        # decorators should be added afterwards:
+# ------------------------------------------------------------------------------
 
+from rhodecode.lib import app_globals
 from rhodecode.config import utils
 from rhodecode.config.routing import make_map
 from rhodecode.config.jsroutes import generate_jsroutes_content
@@ -112,34 +117,18 @@ def load_environment(global_conf, app_conf, initial=False,
     # sets the c attribute access when don't existing attribute are accessed
     config['pylons.strict_tmpl_context'] = True
 
-    # Limit backends to "vcs.backends" from configuration
-    backends = config['vcs.backends'] = aslist(
-        config.get('vcs.backends', 'hg,git'), sep=',')
-    for alias in rhodecode.BACKENDS.keys():
-        if alias not in backends:
-            del rhodecode.BACKENDS[alias]
-    log.info("Enabled backends: %s", backends)
-
-    # initialize vcs client and optionally run the server if enabled
-    vcs_server_uri = config.get('vcs.server', '')
-    vcs_server_enabled = str2bool(config.get('vcs.server.enable', 'true'))
-    start_server = (
-        str2bool(config.get('vcs.start_server', 'false')) and
-        not int(os.environ.get('RC_VCSSERVER_TEST_DISABLE', '0')))
-    if vcs_server_enabled and start_server:
-        log.info("Starting vcsserver")
-        start_vcs_server(server_and_port=vcs_server_uri,
-                         protocol=utils.get_vcs_server_protocol(config),
-                         log_level=config['vcs.server.log_level'])
+    # configure channelstream
+    config['channelstream_config'] = {
+        'enabled': asbool(config.get('channelstream.enabled', False)),
+        'server': config.get('channelstream.server'),
+        'secret': config.get('channelstream.secret')
+    }
 
     set_available_permissions(config)
     db_cfg = make_db_config(clear_session=True)
 
     repos_path = list(db_cfg.items('paths'))[0][1]
     config['base_path'] = repos_path
-
-    config['vcs.hooks.direct_calls'] = _use_direct_hook_calls(config)
-    config['vcs.hooks.protocol'] = _get_vcs_hooks_protocol(config)
 
     # store db config also in main global CONFIG
     set_rhodecode_config(config)
@@ -153,33 +142,16 @@ def load_environment(global_conf, app_conf, initial=False,
     # store config reference into our module to skip import magic of pylons
     rhodecode.CONFIG.update(config)
 
-    utils.configure_pyro4(config)
-    utils.configure_vcs(config)
-    if vcs_server_enabled:
-        connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(config))
-
-    import_on_startup = str2bool(config.get('startup.import_repos', False))
-    if vcs_server_enabled and import_on_startup:
-        repo2db_mapper(ScmModel().repo_scan(repos_path), remove_obsolete=False)
     return config
-
-
-def _use_direct_hook_calls(config):
-    default_direct_hook_calls = 'false'
-    direct_hook_calls = str2bool(
-        config.get('vcs.hooks.direct_calls', default_direct_hook_calls))
-    return direct_hook_calls
-
-
-def _get_vcs_hooks_protocol(config):
-    protocol = config.get('vcs.hooks.protocol', 'pyro4').lower()
-    return protocol
 
 
 def load_pyramid_environment(global_config, settings):
     # Some parts of the code expect a merge of global and app settings.
     settings_merged = global_config.copy()
     settings_merged.update(settings)
+
+    # Store the settings to make them available to other modules.
+    rhodecode.PYRAMID_SETTINGS = settings_merged
 
     # If this is a test run we prepare the test environment like
     # creating a test database, test search index and test repositories.
@@ -190,3 +162,27 @@ def load_pyramid_environment(global_config, settings):
 
     # Initialize the database connection.
     utils.initialize_database(settings_merged)
+
+    # Limit backends to `vcs.backends` from configuration
+    for alias in rhodecode.BACKENDS.keys():
+        if alias not in settings['vcs.backends']:
+            del rhodecode.BACKENDS[alias]
+    log.info('Enabled VCS backends: %s', rhodecode.BACKENDS.keys())
+
+    # initialize vcs client and optionally run the server if enabled
+    vcs_server_uri = settings['vcs.server']
+    vcs_server_enabled = settings['vcs.server.enable']
+    start_server = (
+        settings['vcs.start_server'] and
+        not int(os.environ.get('RC_VCSSERVER_TEST_DISABLE', '0')))
+
+    if vcs_server_enabled and start_server:
+        log.info("Starting vcsserver")
+        start_vcs_server(server_and_port=vcs_server_uri,
+                         protocol=utils.get_vcs_server_protocol(settings),
+                         log_level=settings['vcs.server.log_level'])
+
+    utils.configure_pyro4(settings)
+    utils.configure_vcs(settings)
+    if vcs_server_enabled:
+        connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(settings))

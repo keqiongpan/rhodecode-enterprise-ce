@@ -41,17 +41,36 @@ for SELECT use formencode.All(OneOf(list), Int())
 
 """
 
+import deform
 import logging
-
 import formencode
+
+from pkg_resources import resource_filename
 from formencode import All, Pipe
 
 from pylons.i18n.translation import _
 
 from rhodecode import BACKENDS
+from rhodecode.lib import helpers
 from rhodecode.model import validators as v
 
 log = logging.getLogger(__name__)
+
+
+deform_templates = resource_filename('deform', 'templates')
+rhodecode_templates = resource_filename('rhodecode', 'templates/forms')
+search_path = (rhodecode_templates, deform_templates)
+
+
+class RhodecodeFormZPTRendererFactory(deform.ZPTRendererFactory):
+    """ Subclass of ZPTRendererFactory to add rhodecode context variables """
+    def __call__(self, template_name, **kw):
+        kw['h'] = helpers
+        return self.load(template_name)(**kw)
+
+
+form_renderer = RhodecodeFormZPTRendererFactory(search_path)
+deform.Form.set_default_renderer(form_renderer)
 
 
 def LoginForm():
@@ -382,6 +401,7 @@ class _BaseVcsSettingsForm(formencode.Schema):
 
     rhodecode_pr_merge_enabled = v.StringBoolean(if_missing=False)
     rhodecode_use_outdated_comments = v.StringBoolean(if_missing=False)
+    rhodecode_hg_use_rebase_for_merging = v.StringBoolean(if_missing=False)
 
 
 def ApplicationUiSettingsForm():
@@ -415,7 +435,6 @@ def LabsSettingsForm():
         allow_extra_fields = True
         filter_extra_fields = False
 
-        rhodecode_hg_use_rebase_for_merging = v.StringBoolean(if_missing=False)
         rhodecode_proxy_subversion_http_requests = v.StringBoolean(
             if_missing=False)
         rhodecode_subversion_http_server_url = v.UnicodeString(
@@ -534,23 +553,6 @@ def PullRequestForm(repo_id):
         pullrequest_desc = v.UnicodeString(strip=True, required=False)
 
     return _PullRequestForm
-
-
-def GistForm(lifetime_options, acl_level_options):
-    class _GistForm(formencode.Schema):
-
-        gistid = All(v.UniqGistId(), v.UnicodeString(strip=True, min=3, not_empty=False, if_missing=None))
-        filename = All(v.BasePath()(),
-                       v.UnicodeString(strip=True, required=False))
-        description = v.UnicodeString(required=False, if_missing=u'')
-        lifetime = v.OneOf(lifetime_options)
-        mimetype = v.UnicodeString(required=False, if_missing=None)
-        content = v.UnicodeString(required=True, not_empty=True)
-        public = v.UnicodeString(required=False, if_missing=u'')
-        private = v.UnicodeString(required=False, if_missing=u'')
-        acl_level = v.OneOf(acl_level_options)
-
-    return _GistForm
 
 
 def IssueTrackerPatternsForm():

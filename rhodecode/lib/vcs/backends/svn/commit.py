@@ -203,6 +203,10 @@ class SubversionCommit(base.BaseCommit):
             changed_files.update(files)
         return list(changed_files)
 
+    @LazyProperty
+    def id(self):
+        return self.raw_id
+
     @property
     def added(self):
         return nodes.AddedFileNodesGenerator(

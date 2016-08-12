@@ -33,7 +33,8 @@ class TestSimpleSvn(object):
         self.app = SimpleSvn(
             application='None',
             config={'auth_ret_code': '',
-                    'base_path': rhodecode.CONFIG['base_path']})
+                    'base_path': rhodecode.CONFIG['base_path']},
+            registry=None)
 
     def test_get_config(self):
         extras = {'foo': 'FOO', 'bar': 'BAR'}
@@ -140,7 +141,8 @@ class TestSimpleSvnApp(object):
         }
         expected_headers = [
             ('MS-Author-Via', 'DAV'),
-            ('SVN-Supported-Posts', 'create-txn-with-props')
+            ('SVN-Supported-Posts', 'create-txn-with-props'),
+            ('X-RhodeCode-Backend', 'svn'),
         ]
         response_headers = self.app._get_response_headers(headers)
         assert sorted(response_headers) == sorted(expected_headers)
@@ -174,7 +176,8 @@ class TestSimpleSvnApp(object):
         }
         expected_response_headers = [
             ('SVN-Supported-Posts', 'create-txn-with-props'),
-            ('MS-Author-Via', 'DAV')
+            ('MS-Author-Via', 'DAV'),
+            ('X-RhodeCode-Backend', 'svn'),
         ]
         request_mock.assert_called_once_with(
             self.environment['REQUEST_METHOD'], expected_url,

@@ -86,6 +86,7 @@ class NotificationsController(BaseController):
 
         return render('admin/notifications/notifications.html')
 
+
     @auth.CSRFRequired()
     def mark_all_read(self):
         if request.is_xhr:

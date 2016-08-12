@@ -108,11 +108,11 @@ $(document).ready(function() {
                   "sort": "updated_on_raw"}, title: "${_('Updated on')}", className: "td-time" }
       ],
       language: {
-            paginate: DEFAULT_GRID_PAGINATION
+            paginate: DEFAULT_GRID_PAGINATION,
+            emptyTable: _gettext("No pull requests available yet.")
       },
       "drawCallback": function( settings, json ) {
           timeagoActivate();
-          tooltip_activate();
       },
       "createdRow": function ( row, data, index ) {
           if (data['closed']) {

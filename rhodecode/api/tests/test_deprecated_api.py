@@ -21,7 +21,7 @@
 
 import pytest
 
-from rhodecode.api.views import depracated_api
+from rhodecode.api.views import deprecated_api
 from rhodecode.lib.ext_json import json
 from rhodecode.api.tests.utils import (
     build_data, api_call)
@@ -30,7 +30,7 @@ from rhodecode.api.tests.utils import (
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestCommitComment(object):
     def test_deprecated_message_in_docstring(self):
-        docstring = depracated_api.changeset_comment.__doc__
+        docstring = deprecated_api.changeset_comment.__doc__
         assert '.. deprecated:: 3.4.0' in docstring
         assert 'Please use method `comment_commit` instead.' in docstring
 

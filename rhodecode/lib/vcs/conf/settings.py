@@ -29,8 +29,6 @@ DEFAULT_ENCODINGS = ['utf8']
 # It can also be ['--branches', '--tags']
 GIT_REV_FILTER = ['--all']
 
-HG_USE_REBASE_FOR_MERGING = False
-
 # Compatibility version when creating SVN repositories. None means newest.
 # Other available options are: pre-1.4-compatible, pre-1.5-compatible,
 # pre-1.6-compatible, pre-1.8-compatible
@@ -50,6 +48,9 @@ ARCHIVE_SPECS = {
     'tgz': ('application/x-gzip', '.tar.gz'),
     'zip': ('application/zip', '.zip'),
 }
+
+HOOKS_PROTOCOL = None
+HOOKS_DIRECT_CALLS = False
 
 PYRO_PORT = 9900
 

@@ -44,7 +44,7 @@ from pygments.formatters.html import HtmlFormatter
 from pygments import highlight as code_highlight
 from pygments.lexers import (
     get_lexer_by_name, get_lexer_for_filename, get_lexer_for_mimetype)
-from pylons import url
+from pylons import url as pylons_url
 from pylons.i18n.translation import _, ungettext
 from pyramid.threadlocal import get_current_request
 
@@ -69,6 +69,7 @@ from webhelpers2.number import format_byte_size
 
 from rhodecode.lib.annotate import annotate_highlight
 from rhodecode.lib.action_parser import action_parser
+from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils import repo_name_slug, get_custom_lexer
 from rhodecode.lib.utils2 import str2bool, safe_unicode, safe_str, \
     get_commit_safe, datetime_to_time, time_to_datetime, time_to_utcdatetime, \
@@ -84,8 +85,44 @@ from rhodecode.model.settings import IssueTrackerSettingsModel
 
 log = logging.getLogger(__name__)
 
+
 DEFAULT_USER = User.DEFAULT_USER
 DEFAULT_USER_EMAIL = User.DEFAULT_USER_EMAIL
+
+
+def url(*args, **kw):
+    return pylons_url(*args, **kw)
+
+
+def pylons_url_current(*args, **kw):
+    """
+    This function overrides pylons.url.current() which returns the current
+    path so that it will also work from a pyramid only context. This
+    should be removed once port to pyramid is complete.
+    """
+    if not args and not kw:
+        request = get_current_request()
+        return request.path
+    return pylons_url.current(*args, **kw)
+
+url.current = pylons_url_current
+
+
+def asset(path, ver=None):
+    """
+    Helper to generate a static asset file path for rhodecode assets
+
+    eg. h.asset('images/image.png', ver='3923')
+
+    :param path: path of asset
+    :param ver: optional version query param to append as ?ver=
+    """
+    request = get_current_request()
+    query = {}
+    if ver:
+        query = {'ver': ver}
+    return request.static_path(
+        'rhodecode:public/{}'.format(path), _query=query)
 
 
 def html_escape(text, html_escape_table=None):
@@ -771,19 +808,17 @@ def discover_user(author):
 def email_or_none(author):
     # extract email from the commit string
     _email = author_email(author)
-    if _email != '':
-        # check it against RhodeCode database, and use the MAIN email for this
-        # user
-        user = User.get_by_email(_email, case_insensitive=True, cache=True)
-        if user is not None:
-            return user.email
-        return _email
 
-    # See if it contains a username we can get an email from
-    user = User.get_by_username(author_name(author), case_insensitive=True,
-                                cache=True)
+    # If we have an email, use it, otherwise
+    # see if it contains a username we can get an email from
+    if _email != '':
+        return _email
+    else:
+        user = User.get_by_username(
+            author_name(author), case_insensitive=True, cache=True)
+
     if user is not None:
-        return user.email
+            return user.email
 
     # No valid email, not a valid user in the system, none!
     return None
@@ -817,6 +852,20 @@ def person(author, show_attr="username_and_name"):
         _author = author_name(author)
         _email = email(author)
         return _author or _email
+
+
+def author_string(email):
+    if email:
+        user = User.get_by_email(email, case_insensitive=True, cache=True)
+        if user:
+            if user.firstname or user.lastname:
+                return '%s %s &lt;%s&gt;' % (user.firstname, user.lastname, email)
+            else:
+                return email
+        else:
+            return email
+    else:
+        return None
 
 
 def person_by_id(id_, show_attr="username_and_name"):
@@ -905,7 +954,8 @@ def bool2icon(value):
 #==============================================================================
 from rhodecode.lib.auth import HasPermissionAny, HasPermissionAll, \
 HasRepoPermissionAny, HasRepoPermissionAll, HasRepoGroupPermissionAll, \
-HasRepoGroupPermissionAny, HasRepoPermissionAnyApi, get_csrf_token
+HasRepoGroupPermissionAny, HasRepoPermissionAnyApi, get_csrf_token, \
+csrf_token_key
 
 
 #==============================================================================
@@ -1601,7 +1651,7 @@ def urlify_commits(text_, repository):
             'pref': pref,
             'cls': 'revision-link',
             'url': url('changeset_home', repo_name=repository,
-                       revision=commit_id),
+                       revision=commit_id, qualified=True),
             'commit_id': commit_id,
             'suf': suf
         }
@@ -1611,7 +1661,8 @@ def urlify_commits(text_, repository):
     return newtext
 
 
-def _process_url_func(match_obj, repo_name, uid, entry):
+def _process_url_func(match_obj, repo_name, uid, entry,
+                      return_raw_data=False):
     pref = ''
     if match_obj.group().startswith(' '):
         pref = ' '
@@ -1637,7 +1688,7 @@ def _process_url_func(match_obj, repo_name, uid, entry):
     named_vars.update(match_obj.groupdict())
     _url = string.Template(entry['url']).safe_substitute(**named_vars)
 
-    return tmpl % {
+    data = {
         'pref': pref,
         'cls': 'issue-tracker-link',
         'url': _url,
@@ -1645,9 +1696,15 @@ def _process_url_func(match_obj, repo_name, uid, entry):
         'issue-prefix': entry['pref'],
         'serv': entry['url'],
     }
+    if return_raw_data:
+        return {
+            'id': issue_id,
+            'url': _url
+        }
+    return tmpl % data
 
 
-def process_patterns(text_string, repo_name, config):
+def process_patterns(text_string, repo_name, config=None):
     repo = None
     if repo_name:
         # Retrieving repo_name to avoid invalid repo_name to explode on
@@ -1657,11 +1714,9 @@ def process_patterns(text_string, repo_name, config):
     settings_model = IssueTrackerSettingsModel(repo=repo)
     active_entries = settings_model.get_settings(cache=True)
 
+    issues_data = []
     newtext = text_string
     for uid, entry in active_entries.items():
-        url_func = partial(
-            _process_url_func, repo_name=repo_name, entry=entry, uid=uid)
-
         log.debug('found issue tracker entry with uid %s' % (uid,))
 
         if not (entry['pat'] and entry['url']):
@@ -1679,10 +1734,20 @@ def process_patterns(text_string, repo_name, config):
                 entry['pat'])
             continue
 
+        data_func = partial(
+            _process_url_func, repo_name=repo_name, entry=entry, uid=uid,
+            return_raw_data=True)
+
+        for match_obj in pattern.finditer(text_string):
+            issues_data.append(data_func(match_obj))
+
+        url_func = partial(
+            _process_url_func, repo_name=repo_name, entry=entry, uid=uid)
+
         newtext = pattern.sub(url_func, newtext)
         log.debug('processed prefix:uid `%s`' % (uid,))
 
-    return newtext
+    return newtext, issues_data
 
 
 def urlify_commit_message(commit_text, repository=None):
@@ -1694,22 +1759,22 @@ def urlify_commit_message(commit_text, repository=None):
     :param repository:
     """
     from pylons import url  # doh, we need to re-import url to mock it later
-    from rhodecode import CONFIG
 
     def escaper(string):
         return string.replace('<', '&lt;').replace('>', '&gt;')
 
     newtext = escaper(commit_text)
+
+    # extract http/https links and make them real urls
+    newtext = urlify_text(newtext, safe=False)
+
     # urlify commits - extract commit ids and make link out of them, if we have
     # the scope of repository present.
     if repository:
         newtext = urlify_commits(newtext, repository)
 
-    # extract http/https links and make them real urls
-    newtext = urlify_text(newtext, safe=False)
-
     # process issue tracker patterns
-    newtext = process_patterns(newtext, repository or '', CONFIG)
+    newtext, issues = process_patterns(newtext, repository or '')
 
     return literal(newtext)
 
@@ -1721,21 +1786,11 @@ def rst(source, mentions=False):
 
 def markdown(source, mentions=False):
     return literal('<div class="markdown-block">%s</div>' %
-                   MarkupRenderer.markdown(source, flavored=False,
+                   MarkupRenderer.markdown(source, flavored=True,
                                            mentions=mentions))
 
 def renderer_from_filename(filename, exclude=None):
-    from rhodecode.config.conf import MARKDOWN_EXTS, RST_EXTS
-
-    def _filter(elements):
-        if isinstance(exclude, (list, tuple)):
-            return [x for x in elements if x not in exclude]
-        return elements
-
-    if filename.endswith(tuple(_filter([x[0] for x in MARKDOWN_EXTS if x[0]]))):
-        return 'markdown'
-    if filename.endswith(tuple(_filter([x[0] for x in RST_EXTS if x[0]]))):
-        return 'rst'
+    return MarkupRenderer.renderer_from_filename(filename, exclude=exclude)
 
 
 def render(source, renderer='rst', mentions=False):
@@ -1827,10 +1882,14 @@ def secure_form(url, method="POST", multipart=False, **attrs):
 
     """
     from webhelpers.pylonslib.secure_form import insecure_form
-    from rhodecode.lib.auth import get_csrf_token, csrf_token_key
     form = insecure_form(url, method, multipart, **attrs)
-    token = HTML.div(hidden(csrf_token_key, get_csrf_token()), style="display: none;")
+    token = csrf_input()
     return literal("%s\n%s" % (form, token))
+
+def csrf_input():
+    return literal(
+        '<input type="hidden" id="{}" name="{}" value="{}">'.format(
+        csrf_token_key, csrf_token_key, get_csrf_token()))
 
 def dropdownmenu(name, selected, options, enable_filter=False, **attrs):
     select_html = select(name, selected, options, **attrs)
@@ -1885,6 +1944,16 @@ def route_path(*args, **kwds):
     """
     req = get_current_request()
     return req.route_path(*args, **kwds)
+
+
+def static_url(*args, **kwds):
+    """
+    Wrapper around pyramids `route_path` function. It is used to generate
+    URLs from within pylons views or templates. This will be removed when
+    pyramid migration if finished.
+    """
+    req = get_current_request()
+    return req.static_url(*args, **kwds)
 
 
 def resource_path(*args, **kwds):

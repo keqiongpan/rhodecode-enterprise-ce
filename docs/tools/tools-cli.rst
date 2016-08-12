@@ -301,7 +301,7 @@ used to send signals to build-bots such as jenkins. Options:
 
     \ - -plugins
          Add plugins to your |RCE| installation. See the
-         :ref:`integrations-ref` section for more details.
+         :ref:`extensions-hooks-ref` section for more details.
 
     \ - -version
          Display your |RCT| version.

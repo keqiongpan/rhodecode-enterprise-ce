@@ -47,10 +47,10 @@ class TestAuthSettingsController(object):
         for plugin in plugins_list.split(','):
             plugin_name = plugin.partition('#')[-1]
             enabled_plugin = '%s_enabled' % plugin_name
-            cache_ttl = '%s_auth_cache_ttl' % plugin_name
+            cache_ttl = '%s_cache_ttl' % plugin_name
 
             # default params that are needed for each plugin,
-            # `enabled` and `auth_cache_ttl`
+            # `enabled` and `cache_ttl`
             params.update({
                 enabled_plugin: True,
                 cache_ttl: 0
@@ -67,7 +67,7 @@ class TestAuthSettingsController(object):
         for _plugin in _enabled_plugins:
             db_plugin = SettingsModel().get_setting_by_name(_plugin)
             if db_plugin:
-                Session.delete(db_plugin)
+                Session().delete(db_plugin)
         Session().commit()
 
         response = self.app.post(url=test_url, params=params)
@@ -97,7 +97,7 @@ class TestAuthSettingsController(object):
             'attr_firstname': 'ima',
             'attr_lastname': 'tester',
             'attr_email': 'test@example.com',
-            'auth_cache_ttl': '0',
+            'cache_ttl': '0',
         })
         if force:
             params = {}
@@ -113,8 +113,7 @@ class TestAuthSettingsController(object):
         response.mustcontain('Authentication Plugins')
 
     @pytest.mark.parametrize("disable_plugin, needs_import", [
-        pytest.mark.xfail(('egg:rhodecode-enterprise-ce#container', None),
-                          reason="Migration of container plugin pending."),
+        ('egg:rhodecode-enterprise-ce#headers', None),
         ('egg:rhodecode-enterprise-ce#crowd', None),
         ('egg:rhodecode-enterprise-ce#jasig_cas', None),
         ('egg:rhodecode-enterprise-ce#ldap', None),
@@ -191,7 +190,7 @@ class TestAuthSettingsController(object):
             'attr_firstname': 'ima',
             'attr_lastname': 'tester',
             'attr_email': 'test@example.com',
-            'auth_cache_ttl': '60',
+            'cache_ttl': '60',
             'csrf_token': csrf_token,
             }
         )

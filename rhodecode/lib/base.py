@@ -205,11 +205,12 @@ def vcs_operation_context(
 
 class BasicAuth(AuthBasicAuthenticator):
 
-    def __init__(self, realm, authfunc, auth_http_code=None,
+    def __init__(self, realm, authfunc, registry, auth_http_code=None,
                  initial_call_detection=False):
         self.realm = realm
         self.initial_call = initial_call_detection
         self.authfunc = authfunc
+        self.registry = registry
         self._rc_auth_http_code = auth_http_code
 
     def _get_response_from_code(self, http_code):
@@ -242,7 +243,8 @@ class BasicAuth(AuthBasicAuthenticator):
         if len(_parts) == 2:
             username, password = _parts
             if self.authfunc(
-                    username, password, environ, VCS_TYPE):
+                    username, password, environ, VCS_TYPE,
+                    registry=self.registry):
                 return username
             if username and password:
                 # we mark that we actually executed authentication once, at
@@ -254,7 +256,11 @@ class BasicAuth(AuthBasicAuthenticator):
     __call__ = authenticate
 
 
-def attach_context_attributes(context):
+def attach_context_attributes(context, request):
+    """
+    Attach variables into template context called `c`, please note that
+    request could be pylons or pyramid request in here.
+    """
     rc_config = SettingsModel().get_all_settings(cache=True)
 
     context.rhodecode_version = rhodecode.__version__
@@ -320,6 +326,36 @@ def attach_context_attributes(context):
         'appenlight.api_public_key', '')
     context.appenlight_server_url = config.get('appenlight.server_url', '')
 
+    # JS template context
+    context.template_context = {
+        'repo_name': None,
+        'repo_type': None,
+        'repo_landing_commit': None,
+        'rhodecode_user': {
+            'username': None,
+            'email': None,
+            'notification_status': False
+        },
+        'visual': {
+            'default_renderer': None
+        },
+        'commit_data': {
+            'commit_id': None
+        },
+        'pull_request_data': {'pull_request_id': None},
+        'timeago': {
+            'refresh_time': 120 * 1000,
+            'cutoff_limit': 1000 * 60 * 60 * 24 * 7
+        },
+        'pylons_dispatch': {
+            # 'controller': request.environ['pylons.routes_dict']['controller'],
+            # 'action': request.environ['pylons.routes_dict']['action'],
+        },
+        'pyramid_dispatch': {
+
+        },
+        'extra': {'plugins': {}}
+    }
     # END CONFIG VARS
 
     # TODO: This dosn't work when called from pylons compatibility tween.
@@ -380,7 +416,7 @@ class BaseController(WSGIController):
         """
         # on each call propagate settings calls into global settings.
         set_rhodecode_config(config)
-        attach_context_attributes(c)
+        attach_context_attributes(c, request)
 
         # TODO: Remove this when fixed in attach_context_attributes()
         c.repo_name = get_repo_slug(request)  # can be empty

@@ -311,6 +311,10 @@
                           %endif
                       </td>
                       <td class="td-actions rc-form">
+                        <div data-comment-id="${FID}" class="btn-link show-inline-comments comments-visible">
+                          <span class="comments-show">${_('Show comments')}</span>
+                          <span class="comments-hide">${_('Hide comments')}</span>
+                        </div>
                       </td>
                   </tr>
                   <tr id="tr_${FID}">
@@ -558,6 +562,23 @@
 
             $('#close_pull_request').on('click', function(e){
                 closePullRequest("${c.repo_name}", "${c.pull_request.pull_request_id}");
+            });
+
+            $('.show-inline-comments').on('click', function(e){
+                var boxid = $(this).attr('data-comment-id');
+                var button = $(this);
+  
+                if(button.hasClass("comments-visible")) {
+                  $('#{0} .inline-comments'.format(boxid)).each(function(index){
+                    $(this).hide();
+                  })
+                  button.removeClass("comments-visible");
+                } else {
+                  $('#{0} .inline-comments'.format(boxid)).each(function(index){
+                    $(this).show();
+                  })
+                  button.addClass("comments-visible");
+                }
             });
         })
       </script>

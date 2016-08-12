@@ -72,7 +72,11 @@ def is_svn(environ):
     Returns True if requests target is Subversion server
     """
     http_dav = environ.get('HTTP_DAV', '')
-    is_svn_path = 'subversion' in http_dav
+    magic_path_segment = rhodecode.CONFIG.get(
+        'rhodecode_subversion_magic_path', '/!svn')
+    is_svn_path = (
+        'subversion' in http_dav or
+        magic_path_segment in environ['PATH_INFO'])
     log.debug(
         'request path: `%s` detected as SVN PROTOCOL %s', environ['PATH_INFO'],
         is_svn_path)
@@ -122,23 +126,24 @@ class GunzipMiddleware(object):
 
 class VCSMiddleware(object):
 
-    def __init__(self, app, config, appenlight_client):
+    def __init__(self, app, config, appenlight_client, registry):
         self.application = app
         self.config = config
         self.appenlight_client = appenlight_client
+        self.registry = registry
 
     def _get_handler_app(self, environ):
         app = None
         if is_hg(environ):
-            app = SimpleHg(self.application, self.config)
+            app = SimpleHg(self.application, self.config, self.registry)
 
         if is_git(environ):
-            app = SimpleGit(self.application, self.config)
+            app = SimpleGit(self.application, self.config, self.registry)
 
         proxy_svn = rhodecode.CONFIG.get(
             'rhodecode_proxy_subversion_http_requests', False)
         if proxy_svn and is_svn(environ):
-            app = SimpleSvn(self.application, self.config)
+            app = SimpleSvn(self.application, self.config, self.registry)
 
         if app:
             app = GunzipMiddleware(app)

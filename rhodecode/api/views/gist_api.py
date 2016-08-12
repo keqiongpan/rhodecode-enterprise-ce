@@ -23,6 +23,7 @@ import logging
 import time
 
 from rhodecode.api import jsonrpc_method, JSONRPCError
+from rhodecode.api.exc import JSONRPCValidationError
 from rhodecode.api.utils import (
     Optional, OAttr, get_gist_or_error, get_user_or_error,
     has_superadmin_permission)
@@ -96,7 +97,8 @@ def get_gists(request, apiuser, userid=Optional(OAttr('apiuser'))):
 
 @jsonrpc_method()
 def create_gist(
-        request, apiuser, files, owner=Optional(OAttr('apiuser')),
+        request, apiuser, files, gistid=Optional(None),
+        owner=Optional(OAttr('apiuser')),
         gist_type=Optional(Gist.GIST_PUBLIC), lifetime=Optional(-1),
         acl_level=Optional(Gist.ACL_LEVEL_PUBLIC),
         description=Optional('')):
@@ -108,10 +110,11 @@ def create_gist(
     :param files: files to be added to the gist. The data structure has
         to match the following example::
 
-          {'filename': {'content':'...', 'lexer': null},
-           'filename2': {'content':'...', 'lexer': null}}
+          {'filename1': {'content':'...'}, 'filename2': {'content':'...'}}
 
     :type files: dict
+    :param gistid: Set a custom id for the gist
+    :type gistid: Optional(str)
     :param owner: Set the gist owner, defaults to api method caller
     :type owner: Optional(str or int)
     :param gist_type: type of gist ``public`` or ``private``
@@ -148,23 +151,49 @@ def create_gist(
       }
 
     """
+    from rhodecode.model import validation_schema
+    from rhodecode.model.validation_schema.schemas import gist_schema
+
+    if isinstance(owner, Optional):
+        owner = apiuser.user_id
+
+    owner = get_user_or_error(owner)
+
+    lifetime = Optional.extract(lifetime)
+    schema = gist_schema.GistSchema().bind(
+        # bind the given values if it's allowed, however the deferred
+        # validator will still validate it according to other rules
+        lifetime_options=[lifetime])
 
     try:
-        if isinstance(owner, Optional):
-            owner = apiuser.user_id
+        nodes = gist_schema.nodes_to_sequence(
+            files, colander_node=schema.get('nodes'))
 
-        owner = get_user_or_error(owner)
-        description = Optional.extract(description)
-        gist_type = Optional.extract(gist_type)
-        lifetime = Optional.extract(lifetime)
-        acl_level = Optional.extract(acl_level)
+        schema_data = schema.deserialize(dict(
+            gistid=Optional.extract(gistid),
+            description=Optional.extract(description),
+            gist_type=Optional.extract(gist_type),
+            lifetime=lifetime,
+            gist_acl_level=Optional.extract(acl_level),
+            nodes=nodes
+        ))
 
-        gist = GistModel().create(description=description,
-                                  owner=owner,
-                                  gist_mapping=files,
-                                  gist_type=gist_type,
-                                  lifetime=lifetime,
-                                  gist_acl_level=acl_level)
+        # convert to safer format with just KEYs so we sure no duplicates
+        schema_data['nodes'] = gist_schema.sequence_to_nodes(
+            schema_data['nodes'], colander_node=schema.get('nodes'))
+
+    except validation_schema.Invalid as err:
+        raise JSONRPCValidationError(colander_exc=err)
+
+    try:
+        gist = GistModel().create(
+            owner=owner,
+            gist_id=schema_data['gistid'],
+            description=schema_data['description'],
+            gist_mapping=schema_data['nodes'],
+            gist_type=schema_data['gist_type'],
+            lifetime=schema_data['lifetime'],
+            gist_acl_level=schema_data['gist_acl_level'])
         Session().commit()
         return {
             'msg': 'created new gist',

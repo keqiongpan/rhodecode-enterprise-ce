@@ -25,15 +25,15 @@ HG repository module
 import logging
 import binascii
 import os
-import re
 import shutil
 import urllib
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode.lib.compat import OrderedDict
-from rhodecode.lib.datelib import (date_to_timestamp_plus_offset,
-    utcdate_fromtimestamp, makedate, date_astimestamp)
+from rhodecode.lib.datelib import (
+    date_to_timestamp_plus_offset, utcdate_fromtimestamp, makedate,
+    date_astimestamp)
 from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.vcs import connection
 from rhodecode.lib.vcs.backends.base import (
@@ -42,7 +42,6 @@ from rhodecode.lib.vcs.backends.base import (
 from rhodecode.lib.vcs.backends.hg.commit import MercurialCommit
 from rhodecode.lib.vcs.backends.hg.diff import MercurialDiff
 from rhodecode.lib.vcs.backends.hg.inmemory import MercurialInMemoryCommit
-from rhodecode.lib.vcs.conf import settings
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, RepositoryError, TagAlreadyExistError,
     TagDoesNotExistError, CommitDoesNotExistError)
@@ -176,6 +175,7 @@ class MercurialRepository(BaseRepository):
 
         self._remote.tag(
             name, commit.raw_id, message, local, user, date, tz)
+        self._remote.invalidate_vcs_cache()
 
         # Reinitialize tags
         self.tags = self._get_tags()
@@ -203,6 +203,7 @@ class MercurialRepository(BaseRepository):
         date, tz = date_to_timestamp_plus_offset(date)
 
         self._remote.tag(name, nullid, message, local, user, date, tz)
+        self._remote.invalidate_vcs_cache()
         self.tags = self._get_tags()
 
     @LazyProperty
@@ -262,6 +263,7 @@ class MercurialRepository(BaseRepository):
     def strip(self, commit_id, branch=None):
         self._remote.strip(commit_id, update=False, backup="none")
 
+        self._remote.invalidate_vcs_cache()
         self.commit_ids = self._get_all_commit_ids()
         self._rebuild_cache(self.commit_ids)
 
@@ -531,6 +533,7 @@ class MercurialRepository(BaseRepository):
         """
         url = self._get_url(url)
         self._remote.pull(url, commit_ids=commit_ids)
+        self._remote.invalidate_vcs_cache()
 
     def _local_clone(self, clone_path):
         """
@@ -577,7 +580,7 @@ class MercurialRepository(BaseRepository):
             push_branches=push_branches)
 
     def _local_merge(self, target_ref, merge_message, user_name, user_email,
-                     source_ref):
+                     source_ref, use_rebase=False):
         """
         Merge the given source_revision into the checked out revision.
 
@@ -597,13 +600,14 @@ class MercurialRepository(BaseRepository):
             # In this case we should force a commit message
             return source_ref.commit_id, True
 
-        if settings.HG_USE_REBASE_FOR_MERGING:
+        if use_rebase:
             try:
                 bookmark_name = 'rcbook%s%s' % (source_ref.commit_id,
                                                 target_ref.commit_id)
                 self.bookmark(bookmark_name, revision=source_ref.commit_id)
                 self._remote.rebase(
                     source=source_ref.commit_id, dest=target_ref.commit_id)
+                self._remote.invalidate_vcs_cache()
                 self._update(bookmark_name)
                 return self._identify(), True
             except RepositoryError:
@@ -612,15 +616,19 @@ class MercurialRepository(BaseRepository):
                 log.exception('Error while rebasing shadow repo during merge.')
 
                 # Cleanup any rebase leftovers
+                self._remote.invalidate_vcs_cache()
                 self._remote.rebase(abort=True)
+                self._remote.invalidate_vcs_cache()
                 self._remote.update(clean=True)
                 raise
         else:
             try:
                 self._remote.merge(source_ref.commit_id)
+                self._remote.invalidate_vcs_cache()
                 self._remote.commit(
                     message=safe_str(merge_message),
                     username=safe_str('%s <%s>' % (user_name, user_email)))
+                self._remote.invalidate_vcs_cache()
                 return self._identify(), True
             except RepositoryError:
                 # Cleanup any merge leftovers
@@ -659,7 +667,8 @@ class MercurialRepository(BaseRepository):
 
     def _merge_repo(self, shadow_repository_path, target_ref,
                     source_repo, source_ref, merge_message,
-                    merger_name, merger_email, dry_run=False):
+                    merger_name, merger_email, dry_run=False,
+                    use_rebase=False):
         if target_ref.commit_id not in self._heads():
             return MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
@@ -690,7 +699,7 @@ class MercurialRepository(BaseRepository):
         try:
             merge_commit_id, needs_push = shadow_repo._local_merge(
                 target_ref, merge_message, merger_name, merger_email,
-                source_ref)
+                source_ref, use_rebase=use_rebase)
             merge_possible = True
         except RepositoryError as e:
             log.exception('Failure when doing local merge on hg shadow repo')
@@ -771,11 +780,13 @@ class MercurialRepository(BaseRepository):
 
         options = {option_name: [ref]}
         self._remote.pull_cmd(repository_path, hooks=False, **options)
+        self._remote.invalidate_vcs_cache()
 
     def bookmark(self, bookmark, revision=None):
         if isinstance(bookmark, unicode):
             bookmark = safe_str(bookmark)
         self._remote.bookmark(bookmark, revision=revision)
+        self._remote.invalidate_vcs_cache()
 
 
 class MercurialIndexBasedCollectionGenerator(CollectionGenerator):

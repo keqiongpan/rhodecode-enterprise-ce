@@ -36,6 +36,7 @@ from rhodecode.config import routing_links
 
 # prefix for non repository related links needs to be prefixed with `/`
 ADMIN_PREFIX = '/_admin'
+STATIC_FILE_PREFIX = '/_static'
 
 # Default requirements for URL parts
 URL_NAME_REQUIREMENTS = {
@@ -49,6 +50,19 @@ URL_NAME_REQUIREMENTS = {
     'source_ref_type': '(branch|book|tag|rev|\%\(source_ref_type\)s)',
     'target_ref_type': '(branch|book|tag|rev|\%\(target_ref_type\)s)',
 }
+
+
+def add_route_requirements(route_path, requirements):
+    """
+    Adds regex requirements to pyramid routes using a mapping dict
+
+    >>> add_route_requirements('/{action}/{id}', {'id': r'\d+'})
+    '/{action}/{id:\d+}'
+
+     """
+    for key, regex in requirements.items():
+        route_path = route_path.replace('{%s}' % key, '{%s:%s}' % (key, regex))
+    return route_path
 
 
 class JSRoutesMapper(Mapper):
@@ -546,6 +560,13 @@ def make_map(config):
                   action='my_account_auth_tokens_add', conditions={'method': ['POST']})
         m.connect('my_account_auth_tokens', '/my_account/auth_tokens',
                   action='my_account_auth_tokens_delete', conditions={'method': ['DELETE']})
+        m.connect('my_account_notifications', '/my_account/notifications',
+                  action='my_notifications',
+                  conditions={'method': ['GET']})
+        m.connect('my_account_notifications_toggle_visibility',
+                  '/my_account/toggle_visibility',
+                  action='my_notifications_toggle_visibility',
+                  conditions={'method': ['POST']})
 
     # NOTIFICATION REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
@@ -554,7 +575,6 @@ def make_map(config):
                   action='index', conditions={'method': ['GET']})
         m.connect('notifications_mark_all_read', '/notifications/mark_all_read',
                   action='mark_all_read', conditions={'method': ['POST']})
-
         m.connect('/notifications/{notification_id}',
                   action='update', conditions={'method': ['PUT']})
         m.connect('/notifications/{notification_id}',
@@ -850,7 +870,7 @@ def make_map(config):
                  conditions={'function': check_repo, 'method': ['DELETE']},
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
-    rmap.connect('changeset_info', '/changeset_info/{repo_name}/{revision}',
+    rmap.connect('changeset_info', '/{repo_name}/changeset_info/{revision}',
                  controller='changeset', action='changeset_info',
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
@@ -1090,9 +1110,9 @@ def make_map(config):
                  conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
-    rmap.connect('files_metadata_list_home',
-                 '/{repo_name}/metadata_list/{revision}/{f_path}',
-                 controller='files', action='metadata_list',
+    rmap.connect('files_nodetree_full',
+                 '/{repo_name}/nodetree_full/{commit_id}/{f_path}',
+                 controller='files', action='nodetree_full',
                  conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 

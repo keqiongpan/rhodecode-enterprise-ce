@@ -35,6 +35,7 @@ from rhodecode.lib.helpers import Page
 from rhodecode.lib.utils2 import safe_str, safe_int
 from rhodecode.lib.index import searcher_from_config
 from rhodecode.model import validation_schema
+from rhodecode.model.validation_schema.schemas import search_schema
 
 log = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class SearchController(BaseRepoController):
         formatted_results = []
         execution_time = ''
 
-        schema = validation_schema.SearchParamsSchema()
+        schema = search_schema.SearchParamsSchema()
 
         search_params = {}
         errors = []
@@ -74,7 +75,6 @@ class SearchController(BaseRepoController):
         if search_params.get('search_query'):
             page_limit = search_params['page_limit']
             requested_page = search_params['requested_page']
-
 
             c.perm_user = AuthUser(user_id=c.rhodecode_user.user_id,
                                    ip_addr=self.ip_addr)

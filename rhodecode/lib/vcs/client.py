@@ -34,6 +34,7 @@ from urllib2 import URLError
 import msgpack
 import Pyro4
 import requests
+from pyramid.threadlocal import get_current_request
 from Pyro4.errors import CommunicationError, ConnectionClosedError, DaemonError
 
 from rhodecode.lib.vcs import exceptions
@@ -190,19 +191,67 @@ class RepoMaker(object):
         return _wrap_remote_call(remote_proxy, func)
 
 
-class ThreadlocalProxyFactory(object):
+class RequestScopeProxyFactory(object):
     """
-    Creates one Pyro4 proxy per thread on demand.
+    This factory returns pyro proxy instances based on a per request scope.
+    It returns the same instance if called from within the same request and
+    different instances if called from different requests.
     """
 
     def __init__(self, remote_uri):
         self._remote_uri = remote_uri
-        self._thread_local = threading.local()
+        self._proxy_pool = []
+        self._borrowed_proxies = {}
 
-    def __call__(self):
-        if not hasattr(self._thread_local, 'proxy'):
-            self._thread_local.proxy = Pyro4.Proxy(self._remote_uri)
-        return self._thread_local.proxy
+    def __call__(self, request=None):
+        """
+        Wrapper around `getProxy`.
+        """
+        request = request or get_current_request()
+        return self.getProxy(request)
+
+    def getProxy(self, request):
+        """
+        Call this to get the pyro proxy instance for the request.
+        """
+
+        # If called without a request context we return new proxy instances
+        # on every call. This allows to run e.g. invoke tasks.
+        if request is None:
+            log.info('Creating pyro proxy without request context for '
+                     'remote_uri=%s', self._remote_uri)
+            return Pyro4.Proxy(self._remote_uri)
+
+        # If there is an already borrowed proxy for the request context we
+        # return that instance instead of creating a new one.
+        if request in self._borrowed_proxies:
+            return self._borrowed_proxies[request]
+
+        # Get proxy from pool or create new instance.
+        try:
+            proxy = self._proxy_pool.pop()
+        except IndexError:
+            log.info('Creating pyro proxy for remote_uri=%s', self._remote_uri)
+            proxy = Pyro4.Proxy(self._remote_uri)
+
+        # Mark proxy as borrowed for the request context and add a callback
+        # that returns it when the request processing is finished.
+        self._borrowed_proxies[request] = proxy
+        request.add_finished_callback(self._returnProxy)
+
+        return proxy
+
+    def _returnProxy(self, request):
+        """
+        Callback that gets called by pyramid when the request is finished.
+        It puts the proxy back into the pool.
+        """
+        if request in self._borrowed_proxies:
+            proxy = self._borrowed_proxies.pop(request)
+            self._proxy_pool.append(proxy)
+        else:
+            log.warn('Return proxy for remote_uri=%s but no proxy borrowed '
+                     'for this request.', self._remote_uri)
 
 
 class RemoteRepo(object):
@@ -211,7 +260,7 @@ class RemoteRepo(object):
         self._wire = {
             "path": path,
             "config": config,
-            "context": uuid.uuid4(),
+            "context": self._create_vcs_cache_context(),
         }
         if with_wire:
             self._wire.update(with_wire)
@@ -237,6 +286,19 @@ class RemoteRepo(object):
 
     def __getitem__(self, key):
         return self.revision(key)
+
+    def _create_vcs_cache_context(self):
+        """
+        Creates a unique string which is passed to the VCSServer on every
+        remote call. It is used as cache key in the VCSServer.
+        """
+        return str(uuid.uuid4())
+
+    def invalidate_vcs_cache(self):
+        """
+        This is a no-op method for the pyro4 backend but we want to have the
+        same API for client.RemoteRepo and client_http.RemoteRepo classes.
+        """
 
 
 def _get_proxy_method(proxy, name):

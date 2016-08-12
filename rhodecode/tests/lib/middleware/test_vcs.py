@@ -26,7 +26,7 @@ from rhodecode.lib.middleware import vcs
 
 def test_is_hg():
     environ = {
-        'PATH_INFO': 'rhodecode-dev',
+        'PATH_INFO': '/rhodecode-dev',
         'QUERY_STRING': 'cmd=changegroup',
         'HTTP_ACCEPT': 'application/mercurial'
     }
@@ -35,7 +35,7 @@ def test_is_hg():
 
 def test_is_hg_no_cmd():
     environ = {
-        'PATH_INFO': 'rhodecode-dev',
+        'PATH_INFO': '/rhodecode-dev',
         'QUERY_STRING': '',
         'HTTP_ACCEPT': 'application/mercurial'
     }
@@ -44,7 +44,7 @@ def test_is_hg_no_cmd():
 
 def test_is_hg_empty_cmd():
     environ = {
-        'PATH_INFO': 'rhodecode-dev',
+        'PATH_INFO': '/rhodecode-dev',
         'QUERY_STRING': 'cmd=',
         'HTTP_ACCEPT': 'application/mercurial'
     }
@@ -53,7 +53,7 @@ def test_is_hg_empty_cmd():
 
 def test_is_svn_returns_true_if_subversion_is_in_a_dav_header():
     environ = {
-        'PATH_INFO': 'rhodecode-dev',
+        'PATH_INFO': '/rhodecode-dev',
         'HTTP_DAV': 'http://subversion.tigris.org/xmlns/dav/svn/log-revprops'
     }
     assert vcs.is_svn(environ) is True
@@ -61,7 +61,7 @@ def test_is_svn_returns_true_if_subversion_is_in_a_dav_header():
 
 def test_is_svn_returns_false_if_subversion_is_not_in_a_dav_header():
     environ = {
-        'PATH_INFO': 'rhodecode-dev',
+        'PATH_INFO': '/rhodecode-dev',
         'HTTP_DAV': 'http://stuff.tigris.org/xmlns/dav/svn/log-revprops'
     }
     assert vcs.is_svn(environ) is False
@@ -69,9 +69,29 @@ def test_is_svn_returns_false_if_subversion_is_not_in_a_dav_header():
 
 def test_is_svn_returns_false_if_no_dav_header():
     environ = {
-        'PATH_INFO': 'rhodecode-dev',
+        'PATH_INFO': '/rhodecode-dev',
     }
     assert vcs.is_svn(environ) is False
+
+
+def test_is_svn_returns_true_if_magic_path_segment():
+    environ = {
+        'PATH_INFO': '/stub-repository/!svn/rev/4',
+    }
+    assert vcs.is_svn(environ)
+
+
+def test_is_svn_allows_to_configure_the_magic_path(monkeypatch):
+    """
+    This is intended as a fallback in case someone has configured his
+    Subversion server with a different magic path segment.
+    """
+    monkeypatch.setitem(
+        rhodecode.CONFIG, 'rhodecode_subversion_magic_path', '/!my-magic')
+    environ = {
+        'PATH_INFO': '/stub-repository/!my-magic/rev/4',
+    }
+    assert vcs.is_svn(environ)
 
 
 class TestVCSMiddleware(object):
@@ -82,8 +102,9 @@ class TestVCSMiddleware(object):
         }
         app = Mock()
         config = Mock()
+        registry = Mock()
         middleware = vcs.VCSMiddleware(
-            app, config=config, appenlight_client=None)
+            app, config=config, appenlight_client=None, registry=registry)
         snv_patch = patch('rhodecode.lib.middleware.vcs.SimpleSvn')
         settings_patch = patch.dict(
             rhodecode.CONFIG,
@@ -92,7 +113,7 @@ class TestVCSMiddleware(object):
             svn_mock.return_value = None
             middleware._get_handler_app(environ)
 
-        svn_mock.assert_called_once_with(app, config)
+        svn_mock.assert_called_once_with(app, config, registry)
 
     def test_get_handler_app_retuns_no_svn_app_when_proxy_disabled(self):
         environ = {
@@ -101,8 +122,9 @@ class TestVCSMiddleware(object):
         }
         app = Mock()
         config = Mock()
+        registry = Mock()
         middleware = vcs.VCSMiddleware(
-            app, config=config, appenlight_client=None)
+            app, config=config, appenlight_client=None, registry=registry)
         snv_patch = patch('rhodecode.lib.middleware.vcs.SimpleSvn')
         settings_patch = patch.dict(
             rhodecode.CONFIG,

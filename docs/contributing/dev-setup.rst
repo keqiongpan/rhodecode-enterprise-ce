@@ -78,7 +78,7 @@ following command from inside the cloned repository::
 
    On the first run, this will take a while to download and optionally compile
    a few things. The following runs will be faster. The development shell works
-   fine on MacOS and Linux platforms.
+   fine on both MacOS and Linux platforms.
 
 
 
@@ -91,9 +91,9 @@ use the following steps:
 1. Create a copy of `~/rhodecode-enterprise-ce/configs/development.ini`
 2. Adjust the configuration settings to your needs
 
-   .. note::
+.. note::
 
-      It is recommended to use the name `dev.ini`.
+  It is recommended to use the name `dev.ini`.
 
 
 Setup the Development Database
@@ -108,32 +108,37 @@ time operation::
         --repos=~/my_dev_repos
 
 
+Compile CSS and JavaScript
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To use the application's frontend, you will need to compile the CSS and
+JavaScript with Grunt. This is easily done from within the nix-shell using the
+following command::
+
+    make web-build
+
+You will need to recompile following any changes made to the CSS or JavaScript
+files.
+
+
 Start the Development Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When starting the development server, you should start the vcsserver as a
-separate process. To do this, use one of the following examples:
+From the rhodecode-vcsserver directory, start the development server in another
+nix-shell, using the following command::
 
-1. Set the `start.vcs_server` flag in the ``dev.ini`` file to true. For example:
+      pserve configs/development.ini http_port=9900
 
-   .. code-block:: python
+In the adjacent nix-shell which you created for your development server, you may
+now start CE with the following command::
 
-      ### VCS CONFIG ###
-      ##################
-      vcs.start_server = true
-      vcs.server = localhost:9900
-      vcs.server.log_level = debug
 
-   Then start the server using the following command: ``rcserver dev.ini``
+      rcserver dev.ini
 
-2. Start the development server using the following example::
+.. note::
 
-      rcserver --with-vcsserver dev.ini
-
-3. Start the development server in a different terminal using the following
-   example::
-
-      vcsserver
+  To automatically refresh - and recompile the frontend assets - when changes
+  are made in the source code, you can use the option `--reload`.
 
 
 Run the Environment Tests
@@ -141,4 +146,12 @@ Run the Environment Tests
 
 Please make sure that the tests are passing to verify that your environment is
 set up correctly. RhodeCode uses py.test to run tests.
-Please simply run ``make test`` to run the basic test suite.
+While your instance is running, start a new nix-shell and simply run
+``make test`` to run the basic test suite.
+
+
+Need Help?
+^^^^^^^^^^
+
+Join us on Slack via https://rhodecode.com/join or post questions in our
+Community Portal at https://community.rhodecode.com

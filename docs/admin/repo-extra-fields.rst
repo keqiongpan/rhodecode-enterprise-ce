@@ -32,7 +32,7 @@ Example Usage
 -------------
 
 To use the extra fields in an extension, see the example below. For more
-information and examples, see the :ref:`integrations-ref` section.
+information and examples, see the :ref:`extensions-hooks-ref` section.
 
 .. code-block:: python
 

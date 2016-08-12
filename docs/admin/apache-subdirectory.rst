@@ -16,17 +16,18 @@ Use the following example to configure Apache to use a URL prefix.
 In addition to the regular Apache setup you will need to add the following
 lines into the ``rhodecode.ini`` file.
 
-* In the the ``[app:main]`` section of your ``rhodecode.ini`` file add the
-  following line.
-
-.. code-block:: ini
-
-    filter-with = proxy-prefix
-
-* At the end of the ``rhodecode.ini`` file add the following section.
+* Above ``[app:main]`` section of the ``rhodecode.ini`` file add the
+  following section if it doesn't exist yet.
 
 .. code-block:: ini
 
     [filter:proxy-prefix]
     use = egg:PasteDeploy#prefix
     prefix = /<someprefix> # Change <someprefix> into your chosen prefix
+
+* In the the ``[app:main]`` section of your ``rhodecode.ini`` file add the
+  following line.
+
+.. code-block:: ini
+
+    filter-with = proxy-prefix

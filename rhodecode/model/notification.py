@@ -327,7 +327,8 @@ class EmailNotificationModel(BaseModel):
         :return:
         """
         _kwargs = {
-            'instance_url': h.url('home', qualified=True)
+            'instance_url': h.url('home', qualified=True),
+            'rhodecode_instance_name': getattr(c, 'rhodecode_name', '')
         }
         _kwargs.update(kwargs)
         return _kwargs
@@ -339,7 +340,7 @@ class EmailNotificationModel(BaseModel):
     def render_email(self, type_, **kwargs):
         """
         renders template for email, and returns a tuple of
-        (subject, email_headers, email_body)
+        (subject, email_headers, email_html_body, email_plaintext_body)
         """
         # translator and helpers inject
         _kwargs = self._update_kwargs_for_render(kwargs)

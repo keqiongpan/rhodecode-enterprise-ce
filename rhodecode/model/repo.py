@@ -34,6 +34,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import true, or_
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
+from rhodecode import events
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import HasUserGroupPermissionAny
 from rhodecode.lib.caching_query import FromCache
@@ -139,6 +140,10 @@ class RepoModel(BaseModel):
             log.exception('Failed to extract repo_name from URL')
 
         return None
+
+    def get_url(self, repo):
+        return h.url('summary_home', repo_name=safe_str(repo.repo_name),
+            qualified=True)
 
     def get_users(self, name_contains=None, limit=20, only_active=True):
         # TODO: mikhail: move this method to the UserModel.
@@ -470,6 +475,8 @@ class RepoModel(BaseModel):
                 parent_repo = fork_of
                 new_repo.fork = parent_repo
 
+            events.trigger(events.RepoPreCreateEvent(new_repo))
+
             self.sa.add(new_repo)
 
             EMPTY_PERM = 'repository.none'
@@ -525,11 +532,13 @@ class RepoModel(BaseModel):
             # now automatically start following this repository as owner
             ScmModel(self.sa).toggle_following_repo(new_repo.repo_id,
                                                     owner.user_id)
+
             # we need to flush here, in order to check if database won't
             # throw any exceptions, create filesystem dirs at the very end
             self.sa.flush()
-
+            events.trigger(events.RepoCreateEvent(new_repo))
             return new_repo
+
         except Exception:
             log.error(traceback.format_exc())
             raise
@@ -633,6 +642,7 @@ class RepoModel(BaseModel):
                 raise AttachedForksError()
 
             old_repo_dict = repo.get_dict()
+            events.trigger(events.RepoPreDeleteEvent(repo))
             try:
                 self.sa.delete(repo)
                 if fs_remove:
@@ -644,6 +654,7 @@ class RepoModel(BaseModel):
                     'deleted_on': time.time(),
                 })
                 log_delete_repository(**old_repo_dict)
+                events.trigger(events.RepoDeleteEvent(repo))
             except Exception:
                 log.error(traceback.format_exc())
                 raise

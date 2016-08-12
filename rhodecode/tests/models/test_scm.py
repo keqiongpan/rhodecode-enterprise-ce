@@ -51,7 +51,7 @@ def test_scm_instance_config(backend):
 def test__get_instance_config(backend):
     repo = backend.create_repo()
     vcs_class = Mock()
-    with patch.multiple('rhodecode.model.db',
+    with patch.multiple('rhodecode.lib.vcs.backends',
                         get_scm=DEFAULT,
                         get_backend=DEFAULT) as mocks:
         mocks['get_scm'].return_value = backend.alias
@@ -59,13 +59,13 @@ def test__get_instance_config(backend):
         with patch('rhodecode.model.db.Repository._config') as config_mock:
             repo._get_instance()
             vcs_class.assert_called_with(
-                repo.repo_full_path, config=config_mock, create=False,
-                with_wire={'cache': True})
+                repo_path=repo.repo_full_path, config=config_mock,
+                create=False, with_wire={'cache': True})
 
         new_config = {'override': 'old_config'}
         repo._get_instance(config=new_config)
         vcs_class.assert_called_with(
-            repo.repo_full_path, config=new_config, create=False,
+            repo_path=repo.repo_full_path, config=new_config, create=False,
             with_wire={'cache': True})
 
 
@@ -75,6 +75,19 @@ def test_mark_for_invalidation_config(backend):
         scm.ScmModel().mark_for_invalidation(repo.repo_name)
         _, kwargs = _mock.call_args
         assert kwargs['config'].__dict__ == repo._config.__dict__
+
+
+def test_mark_for_invalidation_with_delete_updates_last_commit(backend):
+    commits = [{'message': 'A'}, {'message': 'B'}]
+    repo = backend.create_repo(commits=commits)
+    scm.ScmModel().mark_for_invalidation(repo.repo_name, delete=True)
+    assert repo.changeset_cache['revision'] == 1
+
+
+def test_mark_for_invalidation_with_delete_updates_last_commit_empty(backend):
+    repo = backend.create_repo()
+    scm.ScmModel().mark_for_invalidation(repo.repo_name, delete=True)
+    assert repo.changeset_cache['revision'] == -1
 
 
 def test_strip_with_multiple_heads(backend_hg):
@@ -133,6 +146,23 @@ def test_get_nodes_returns_unicode_non_flat(backend_random):
     # part.
     assert_contains_only_unicode([d['name'] for d in directories])
     assert_contains_only_unicode([f['name'] for f in files])
+
+
+def test_get_nodes_max_file_bytes(backend_random):
+    repo = backend_random.repo
+    max_file_bytes = 10
+    directories, files = scm.ScmModel().get_nodes(
+        repo.repo_name, repo.get_commit(commit_idx=0).raw_id, content=True,
+        extended_info=True, flat=False)
+    assert any(file['content'] and len(file['content']) > max_file_bytes
+               for file in files)
+
+    directories, files = scm.ScmModel().get_nodes(
+        repo.repo_name, repo.get_commit(commit_idx=0).raw_id, content=True,
+        extended_info=True, flat=False, max_file_bytes=max_file_bytes)
+    assert all(
+        file['content'] is None if file['size'] > max_file_bytes else True
+        for file in files)
 
 
 def assert_contains_only_unicode(structure):

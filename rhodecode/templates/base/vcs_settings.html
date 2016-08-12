@@ -213,4 +213,32 @@
             </div>
         </div>
     % endif
+
+    ## This condition has to be adapted if we add more labs settings for
+    ## VCS types other than 'hg'
+    % if c.labs_active and (display_globals or repo_type in ['hg']):
+        <div class="panel panel-danger">
+            <div class="panel-heading">
+                <h3 class="panel-title">${_('Labs settings')}: ${_('These features are considered experimental and may not work as expected.')}</h3>
+            </div>
+            <div class="panel-body">
+              <div class="fields">
+
+                <div class="field">
+                  <div class="label">
+                    <label>${_('Mercurial server-side merge')}:</label>
+                  </div>
+                  <div class="checkboxes">
+                    <div class="checkbox">
+                      ${h.checkbox('rhodecode_hg_use_rebase_for_merging' + suffix, 'True', **kwargs)}
+                      <label for="rhodecode_hg_use_rebase_for_merging${suffix}">${_('Use rebase instead of creating a merge commit when merging via web interface')}</label>
+                    </div>
+                    <!-- <p class="help-block">Help message here</p> -->
+                  </div>
+                </div>
+
+              </div>
+            </div>
+        </div>
+    % endif
 </%def>

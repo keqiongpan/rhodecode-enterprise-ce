@@ -29,7 +29,7 @@ VERSION = (0, 5, 0, 'dev')
 __version__ = '.'.join((str(each) for each in VERSION[:4]))
 
 __all__ = [
-    'get_version', 'get_repo', 'get_backend',
+    'get_version', 'get_vcs_instance', 'get_backend',
     'VCSError', 'RepositoryError', 'CommitError'
     ]
 
@@ -40,17 +40,29 @@ import time
 import urlparse
 from cStringIO import StringIO
 
-import pycurl
 import Pyro4
 from Pyro4.errors import CommunicationError
 
 from rhodecode.lib.vcs.conf import settings
-from rhodecode.lib.vcs.backends import get_repo, get_backend
+from rhodecode.lib.vcs.backends import get_vcs_instance, get_backend
 from rhodecode.lib.vcs.exceptions import (
     VCSError, RepositoryError, CommitError)
 
-
 log = logging.getLogger(__name__)
+
+# The pycurl library directly accesses C API functions and is not patched by
+# gevent. This will potentially lead to deadlocks due to incompatibility to
+# gevent. Therefore we check if gevent is active and import a gevent compatible
+# wrapper in that case.
+try:
+    from gevent import monkey
+    if monkey.is_module_patched('__builtin__'):
+        import geventcurl as pycurl
+        log.debug('Using gevent comapatible pycurl: %s', pycurl)
+    else:
+        import pycurl
+except ImportError:
+    import pycurl
 
 
 def get_version():
@@ -64,11 +76,11 @@ def connect_pyro4(server_and_port):
     from rhodecode.lib.vcs import connection, client
     from rhodecode.lib.middleware.utils import scm_app
 
-    git_remote = client.ThreadlocalProxyFactory(
+    git_remote = client.RequestScopeProxyFactory(
         settings.pyro_remote(settings.PYRO_GIT, server_and_port))
-    hg_remote = client.ThreadlocalProxyFactory(
+    hg_remote = client.RequestScopeProxyFactory(
         settings.pyro_remote(settings.PYRO_HG, server_and_port))
-    svn_remote = client.ThreadlocalProxyFactory(
+    svn_remote = client.RequestScopeProxyFactory(
         settings.pyro_remote(settings.PYRO_SVN, server_and_port))
 
     connection.Git = client.RepoMaker(proxy_factory=git_remote)

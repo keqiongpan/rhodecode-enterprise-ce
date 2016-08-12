@@ -31,7 +31,6 @@ import datetime
 from pylons.i18n.translation import _
 from pylons.i18n.translation import lazy_ugettext
 
-import rhodecode
 from rhodecode.lib import helpers as h, hooks_utils, diffs
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
@@ -41,13 +40,14 @@ from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import safe_unicode, safe_str, md5_safe
 from rhodecode.lib.vcs.backends.base import (
     Reference, MergeResponse, MergeFailureReason)
+from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError)
 from rhodecode.model import BaseModel
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
 from rhodecode.model.db import (
-    PullRequest, PullRequestReviewers, Notification, ChangesetStatus,
+    PullRequest, PullRequestReviewers, ChangesetStatus,
     PullRequestVersion, ChangesetComment)
 from rhodecode.model.meta import Session
 from rhodecode.model.notification import NotificationModel, \
@@ -423,11 +423,11 @@ class PullRequestModel(BaseModel):
             }
 
         workspace_id = self._workspace_id(pull_request)
-        protocol = rhodecode.CONFIG.get('vcs.hooks.protocol')
-        use_direct_calls = rhodecode.CONFIG.get('vcs.hooks.direct_calls')
+        use_rebase = self._use_rebase_for_merging(pull_request)
 
         callback_daemon, extras = prepare_callback_daemon(
-            extras, protocol=protocol, use_direct_calls=use_direct_calls)
+            extras, protocol=vcs_settings.HOOKS_PROTOCOL,
+            use_direct_calls=vcs_settings.HOOKS_DIRECT_CALLS)
 
         with callback_daemon:
             # TODO: johbo: Implement a clean way to run a config_override
@@ -437,7 +437,7 @@ class PullRequestModel(BaseModel):
             merge_state = target_vcs.merge(
                 target_ref, source_vcs, pull_request.source_ref_parts,
                 workspace_id, user_name=user.username,
-                user_email=user.email, message=message)
+                user_email=user.email, message=message, use_rebase=use_rebase)
         return merge_state
 
     def _comment_and_close_pr(self, pull_request, user, merge_state):
@@ -747,6 +747,12 @@ class PullRequestModel(BaseModel):
 
         return ids_to_add, ids_to_remove
 
+    def get_url(self, pull_request):
+        return h.url('pullrequest_show',
+                     repo_name=safe_str(pull_request.target_repo.repo_name),
+                     pull_request_id=pull_request.pull_request_id,
+                     qualified=True)
+
     def notify_reviewers(self, pull_request, reviewers_ids):
         # notification to reviewers
         if not reviewers_ids:
@@ -847,6 +853,7 @@ class PullRequestModel(BaseModel):
             f_path=None,
             line_no=None,
             status_change=ChangesetStatus.get_status_lbl(status),
+            status_change_type=status,
             closing_pr=True
         )
 
@@ -955,9 +962,10 @@ class PullRequestModel(BaseModel):
     def _refresh_merge_state(self, pull_request, target_vcs, target_reference):
         workspace_id = self._workspace_id(pull_request)
         source_vcs = pull_request.source_repo.scm_instance()
+        use_rebase = self._use_rebase_for_merging(pull_request)
         merge_state = target_vcs.merge(
             target_reference, source_vcs, pull_request.source_ref_parts,
-            workspace_id, dry_run=True)
+            workspace_id, dry_run=True, use_rebase=use_rebase)
 
         # Do not store the response if there was an unknown error.
         if merge_state.failure_reason != MergeFailureReason.UNKNOWN:
@@ -1125,6 +1133,11 @@ class PullRequestModel(BaseModel):
         settings_model = VcsSettingsModel(repo=pull_request.target_repo)
         settings = settings_model.get_general_settings()
         return settings.get('rhodecode_pr_merge_enabled', False)
+
+    def _use_rebase_for_merging(self, pull_request):
+        settings_model = VcsSettingsModel(repo=pull_request.target_repo)
+        settings = settings_model.get_general_settings()
+        return settings.get('rhodecode_hg_use_rebase_for_merging', False)
 
     def _log_action(self, action, user, pull_request):
         action_logger(

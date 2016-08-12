@@ -9,9 +9,9 @@ Here is a sample configuration file for using Apache as a reverse proxy.
             ServerName hg.myserver.com
             ServerAlias hg.myserver.com
 
-            ## uncomment root directive if you want to serve static files by
-            ## Apache requires static_files = false in .ini file
-            #DocumentRoot /path/to/rhodecode/installation/public
+            ## uncomment to serve static files by Apache
+            ## ProxyPass /_static/rhodecode !
+            ## Alias /_static/rhodecode /path/to/.rccontrol/enterprise-1/static
 
             <Proxy *>
               Order allow,deny

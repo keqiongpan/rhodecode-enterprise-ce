@@ -26,10 +26,15 @@ import logging
 import traceback
 import collections
 
+from datetime import datetime
+
+from pylons.i18n.translation import _
+from pyramid.threadlocal import get_current_registry
 from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.functions import coalesce
 
 from rhodecode.lib import helpers as h, diffs
+from rhodecode.lib.channelstream import channelstream_request
 from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import extract_mentioned_users
 from rhodecode.model import BaseModel
@@ -77,7 +82,8 @@ class ChangesetCommentsModel(BaseModel):
         return global_renderer
 
     def create(self, text, repo, user, revision=None, pull_request=None,
-               f_path=None, line_no=None, status_change=None, closing_pr=False,
+               f_path=None, line_no=None, status_change=None,
+               status_change_type=None, closing_pr=False,
                send_email=True, renderer=None):
         """
         Creates new comment for commit or pull request.
@@ -91,7 +97,8 @@ class ChangesetCommentsModel(BaseModel):
         :param pull_request:
         :param f_path:
         :param line_no:
-        :param status_change:
+        :param status_change: Label for status change
+        :param status_change_type: type of status change
         :param closing_pr:
         :param send_email:
         """
@@ -134,89 +141,83 @@ class ChangesetCommentsModel(BaseModel):
 
         Session().add(comment)
         Session().flush()
+        kwargs = {
+            'user': user,
+            'renderer_type': renderer,
+            'repo_name': repo.repo_name,
+            'status_change': status_change,
+            'status_change_type': status_change_type,
+            'comment_body': text,
+            'comment_file': f_path,
+            'comment_line': line_no,
+        }
 
+        if commit_obj:
+            recipients = ChangesetComment.get_users(
+                revision=commit_obj.raw_id)
+            # add commit author if it's in RhodeCode system
+            cs_author = User.get_from_cs_author(commit_obj.author)
+            if not cs_author:
+                # use repo owner if we cannot extract the author correctly
+                cs_author = repo.user
+            recipients += [cs_author]
+
+            commit_comment_url = self.get_url(comment)
+
+            target_repo_url = h.link_to(
+                repo.repo_name,
+                h.url('summary_home',
+                      repo_name=repo.repo_name, qualified=True))
+
+            # commit specifics
+            kwargs.update({
+                'commit': commit_obj,
+                'commit_message': commit_obj.message,
+                'commit_target_repo': target_repo_url,
+                'commit_comment_url': commit_comment_url,
+            })
+
+        elif pull_request_obj:
+            # get the current participants of this pull request
+            recipients = ChangesetComment.get_users(
+                pull_request_id=pull_request_obj.pull_request_id)
+            # add pull request author
+            recipients += [pull_request_obj.author]
+
+            # add the reviewers to notification
+            recipients += [x.user for x in pull_request_obj.reviewers]
+
+            pr_target_repo = pull_request_obj.target_repo
+            pr_source_repo = pull_request_obj.source_repo
+
+            pr_comment_url = h.url(
+                'pullrequest_show',
+                repo_name=pr_target_repo.repo_name,
+                pull_request_id=pull_request_obj.pull_request_id,
+                anchor='comment-%s' % comment.comment_id,
+                qualified=True,)
+
+            # set some variables for email notification
+            pr_target_repo_url = h.url(
+                'summary_home', repo_name=pr_target_repo.repo_name,
+                qualified=True)
+
+            pr_source_repo_url = h.url(
+                'summary_home', repo_name=pr_source_repo.repo_name,
+                qualified=True)
+
+            # pull request specifics
+            kwargs.update({
+                'pull_request': pull_request_obj,
+                'pr_id': pull_request_obj.pull_request_id,
+                'pr_target_repo': pr_target_repo,
+                'pr_target_repo_url': pr_target_repo_url,
+                'pr_source_repo': pr_source_repo,
+                'pr_source_repo_url': pr_source_repo_url,
+                'pr_comment_url': pr_comment_url,
+                'pr_closing': closing_pr,
+            })
         if send_email:
-            kwargs = {
-                'user': user,
-                'renderer_type': renderer,
-                'repo_name': repo.repo_name,
-                'status_change': status_change,
-                'comment_body': text,
-                'comment_file': f_path,
-                'comment_line': line_no,
-            }
-
-            if commit_obj:
-                recipients = ChangesetComment.get_users(
-                    revision=commit_obj.raw_id)
-                # add commit author if it's in RhodeCode system
-                cs_author = User.get_from_cs_author(commit_obj.author)
-                if not cs_author:
-                    # use repo owner if we cannot extract the author correctly
-                    cs_author = repo.user
-                recipients += [cs_author]
-
-                commit_comment_url = h.url(
-                    'changeset_home',
-                    repo_name=repo.repo_name,
-                    revision=commit_obj.raw_id,
-                    anchor='comment-%s' % comment.comment_id,
-                    qualified=True,)
-
-                target_repo_url = h.link_to(
-                    repo.repo_name,
-                    h.url('summary_home',
-                          repo_name=repo.repo_name, qualified=True))
-
-                # commit specifics
-                kwargs.update({
-                    'commit': commit_obj,
-                    'commit_message': commit_obj.message,
-                    'commit_target_repo': target_repo_url,
-                    'commit_comment_url': commit_comment_url,
-                })
-
-            elif pull_request_obj:
-                # get the current participants of this pull request
-                recipients = ChangesetComment.get_users(
-                    pull_request_id=pull_request_obj.pull_request_id)
-                # add pull request author
-                recipients += [pull_request_obj.author]
-
-                # add the reviewers to notification
-                recipients += [x.user for x in pull_request_obj.reviewers]
-
-                pr_target_repo = pull_request_obj.target_repo
-                pr_source_repo = pull_request_obj.source_repo
-
-                pr_comment_url = h.url(
-                    'pullrequest_show',
-                    repo_name=pr_target_repo.repo_name,
-                    pull_request_id=pull_request_obj.pull_request_id,
-                    anchor='comment-%s' % comment.comment_id,
-                    qualified=True,)
-
-                # set some variables for email notification
-                pr_target_repo_url = h.url(
-                    'summary_home', repo_name=pr_target_repo.repo_name,
-                    qualified=True)
-
-                pr_source_repo_url = h.url(
-                    'summary_home', repo_name=pr_source_repo.repo_name,
-                    qualified=True)
-
-                # pull request specifics
-                kwargs.update({
-                    'pull_request': pull_request_obj,
-                    'pr_id': pull_request_obj.pull_request_id,
-                    'pr_target_repo': pr_target_repo,
-                    'pr_target_repo_url': pr_target_repo_url,
-                    'pr_source_repo': pr_source_repo,
-                    'pr_source_repo_url': pr_source_repo_url,
-                    'pr_comment_url': pr_comment_url,
-                    'pr_closing': closing_pr,
-                })
-
             # pre-generate the subject for notification itself
             (subject,
              _h, _e,  # we don't care about those
@@ -245,6 +246,44 @@ class ChangesetCommentsModel(BaseModel):
         )
         action_logger(user, action, comment.repo)
 
+        registry = get_current_registry()
+        rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
+        channelstream_config = rhodecode_plugins.get('channelstream', {})
+        msg_url = ''
+        if commit_obj:
+            msg_url = commit_comment_url
+            repo_name = repo.repo_name
+        elif pull_request_obj:
+            msg_url = pr_comment_url
+            repo_name = pr_target_repo.repo_name
+
+        if channelstream_config.get('enabled'):
+            message = '<strong>{}</strong> {} - ' \
+                      '<a onclick="window.location=\'{}\';' \
+                      'window.location.reload()">' \
+                      '<strong>{}</strong></a>'
+            message = message.format(
+                user.username, _('made a comment'), msg_url,
+                _('Show it now'))
+            channel = '/repo${}$/pr/{}'.format(
+                repo_name,
+                pull_request_id
+            )
+            payload = {
+                'type': 'message',
+                'timestamp': datetime.utcnow(),
+                'user': 'system',
+                'exclude_users': [user.username],
+                'channel': channel,
+                'message': {
+                    'message': message,
+                    'level': 'info',
+                    'topic': '/notifications'
+                }
+            }
+            channelstream_request(channelstream_config, [payload],
+                                  '/message', raise_exc=False)
+
         return comment
 
     def delete(self, comment):
@@ -270,6 +309,23 @@ class ChangesetCommentsModel(BaseModel):
             raise Exception('Please specify commit or pull_request')
         q = q.order_by(ChangesetComment.created_on)
         return q.all()
+
+    def get_url(self, comment):
+        comment = self.__get_commit_comment(comment)
+        if comment.pull_request:
+            return h.url(
+                'pullrequest_show',
+                repo_name=comment.pull_request.target_repo.repo_name,
+                pull_request_id=comment.pull_request.pull_request_id,
+                anchor='comment-%s' % comment.comment_id,
+                qualified=True,)
+        else:
+            return h.url(
+                'changeset_home',
+                repo_name=comment.repo.repo_name,
+                revision=comment.revision,
+                anchor='comment-%s' % comment.comment_id,
+                qualified=True,)
 
     def get_comments(self, repo_id, revision=None, pull_request=None):
         """

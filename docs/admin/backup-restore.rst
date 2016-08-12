@@ -121,7 +121,7 @@ then work on restoring any specific setup changes you had made.
   :ref:`indexing-ref` section for details.
 * To reconfigure any extensions, copy the backed up extensions into the
   :file:`/home/{user}/.rccontrol/{instance-id}/rcextensions` and also specify
-  any custom hooks if necessary. See the :ref:`integrations-ref` section for
+  any custom hooks if necessary. See the :ref:`extensions-hooks-ref` section for
   details.
 
 .. _Schrödinger's Backup: http://novabackup.novastor.com/blog/schrodingers-backup-good-bad-backup/

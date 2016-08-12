@@ -25,68 +25,6 @@ import pytest
 from rhodecode.config import environment
 
 
-class TestUseDirectHookCalls(object):
-    @pytest.mark.parametrize('config', [
-        {
-            'vcs.hooks.direct_calls': 'true',
-            'base_path': 'fake_base_path'
-        }
-    ])
-    def test_returns_true_when_conditions_are_met(self, config):
-        result = environment._use_direct_hook_calls(config)
-        assert result is True
-
-    @pytest.mark.parametrize('config', [
-        {
-            'vcs.hooks.direct_calls': 'false',
-            'base_path': 'fake_base_path'
-        },
-        {
-            'base_path': 'fake_base_path'
-        }
-    ])
-    def test_returns_false_when_conditions_are_not_met(self, config):
-        result = environment._use_direct_hook_calls(config)
-        assert result is False
-
-
-class TestGetVcsHooksProtocol(object):
-    def test_returns_pyro4_by_default(self):
-        config = {}
-        result = environment._get_vcs_hooks_protocol(config)
-        assert result == 'pyro4'
-
-    @pytest.mark.parametrize('protocol', ['PYRO4', 'HTTP', 'Pyro4', 'Http'])
-    def test_returns_lower_case_value(self, protocol):
-        config = {
-            'vcs.hooks.protocol': protocol
-        }
-        result = environment._get_vcs_hooks_protocol(config)
-        assert result == protocol.lower()
-
-
-class TestLoadEnvironment(object):
-    def test_calls_use_direct_hook_calls(self, _external_calls_patcher):
-        global_conf = {
-            'here': '',
-            'vcs.connection_timeout': '0',
-            'vcs.server.enable': 'false'
-        }
-        app_conf = {
-            'cache_dir': '/tmp/',
-            '__file__': '/tmp/abcde.ini'
-        }
-        direct_calls_patcher = mock.patch.object(
-            environment, '_use_direct_hook_calls', return_value=True)
-        protocol_patcher = mock.patch.object(
-            environment, '_get_vcs_hooks_protocol', return_value='http')
-        with direct_calls_patcher as direct_calls_mock, \
-                protocol_patcher as protocol_mock:
-            environment.load_environment(global_conf, app_conf)
-        direct_calls_mock.call_count == 1
-        protocol_mock.call_count == 1
-
-
 @pytest.fixture
 def _external_calls_patcher(request):
     # TODO: mikhail: This is a temporary solution. Ideally load_environment

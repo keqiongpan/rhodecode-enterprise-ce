@@ -28,12 +28,12 @@ from rhodecode.lib import hooks_base, utils2
     action_logger=mock.Mock(),
     post_push_extension=mock.Mock(),
     Repository=mock.Mock())
-def test_post_push_truncates_commits():
+def test_post_push_truncates_commits(user_regular, repo_stub):
     extras = {
         'ip': '127.0.0.1',
-        'username': 'test',
+        'username': user_regular.username,
         'action': 'push_local',
-        'repository': 'test',
+        'repository': repo_stub.repo_name,
         'scm': 'git',
         'config': '',
         'server_url': 'http://example.com',

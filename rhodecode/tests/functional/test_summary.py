@@ -19,13 +19,11 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import re
-import os
 
 import mock
 import pytest
 
 from rhodecode.controllers import summary
-from rhodecode.lib import vcs
 from rhodecode.lib import helpers as h
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
@@ -34,9 +32,9 @@ from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel
 from rhodecode.tests import (
-    TestController, url, HG_REPO, assert_session_flash, TESTS_TMP_PATH)
+    TestController, url, HG_REPO, assert_session_flash)
 from rhodecode.tests.fixture import Fixture
-from rhodecode.tests.utils import AssertResponse
+from rhodecode.tests.utils import AssertResponse, repo_on_filesystem
 
 
 fixture = Fixture()
@@ -302,20 +300,23 @@ class TestCreateReferenceData:
         repo = mock.Mock()
         repo.name = 'test-repo'
         repo.alias = 'git'
+        full_repo_name = 'pytest-repo-group/' + repo.name
         controller = summary.SummaryController()
 
-        result = controller._create_reference_data(repo, example_refs)
+        result = controller._create_reference_data(
+            repo, full_repo_name, example_refs)
 
+        expected_files_url = '/{}/files/'.format(full_repo_name)
         expected_result = [
             {
                 'children': [
                     {
                         'id': 'a', 'raw_id': 'a_id', 'text': 'a', 'type': 't1',
-                        'files_url': '/test-repo/files/a/?at=a'
+                        'files_url': expected_files_url + 'a/?at=a',
                     },
                     {
                         'id': 'b', 'raw_id': 'b_id', 'text': 'b', 'type': 't1',
-                        'files_url': '/test-repo/files/b/?at=b'
+                        'files_url': expected_files_url + 'b/?at=b',
                     }
                 ],
                 'text': 'section_1'
@@ -324,7 +325,7 @@ class TestCreateReferenceData:
                 'children': [
                     {
                         'id': 'c', 'raw_id': 'c_id', 'text': 'c', 'type': 't2',
-                        'files_url': '/test-repo/files/c/?at=c'
+                        'files_url': expected_files_url + 'c/?at=c',
                     }
                 ],
                 'text': 'section_2'
@@ -335,21 +336,24 @@ class TestCreateReferenceData:
         repo = mock.Mock()
         repo.name = 'test-repo'
         repo.alias = 'svn'
+        full_repo_name = 'pytest-repo-group/' + repo.name
         controller = summary.SummaryController()
-        result = controller._create_reference_data(repo, example_refs)
+        result = controller._create_reference_data(
+            repo, full_repo_name, example_refs)
 
+        expected_files_url = '/{}/files/'.format(full_repo_name)
         expected_result = [
             {
                 'children': [
                     {
                         'id': 'a@a_id', 'raw_id': 'a_id',
                         'text': 'a', 'type': 't1',
-                        'files_url': '/test-repo/files/a_id/a?at=a'
+                        'files_url': expected_files_url + 'a_id/a?at=a',
                     },
                     {
                         'id': 'b@b_id', 'raw_id': 'b_id',
                         'text': 'b', 'type': 't1',
-                        'files_url': '/test-repo/files/b_id/b?at=b'
+                        'files_url': expected_files_url + 'b_id/b?at=b',
                     }
                 ],
                 'text': 'section_1'
@@ -359,7 +363,7 @@ class TestCreateReferenceData:
                     {
                         'id': 'c@c_id', 'raw_id': 'c_id',
                         'text': 'c', 'type': 't2',
-                        'files_url': '/test-repo/files/c_id/c?at=c'
+                        'files_url': expected_files_url + 'c_id/c?at=c',
                     }
                 ],
                 'text': 'section_2'
@@ -394,44 +398,38 @@ class TestRepoLocation:
             response, 'The repository at %s cannot be located.' % repo_name)
 
 
-def repo_on_filesystem(repo_name):
-    try:
-        vcs.get_repo(os.path.join(TESTS_TMP_PATH, repo_name))
-        return True
-    except Exception:
-        return False
-
-
 class TestCreateFilesUrl(object):
     def test_creates_non_svn_url(self):
         controller = summary.SummaryController()
         repo = mock.Mock()
         repo.name = 'abcde'
+        full_repo_name = 'test-repo-group/' + repo.name
         ref_name = 'branch1'
         raw_id = 'deadbeef0123456789'
         is_svn = False
 
         with mock.patch.object(summary.h, 'url') as url_mock:
             result = controller._create_files_url(
-                repo, ref_name, raw_id, is_svn)
+                repo, full_repo_name, ref_name, raw_id, is_svn)
         url_mock.assert_called_once_with(
-            'files_home', repo_name=repo.name, f_path='', revision=ref_name,
-            at=ref_name)
+            'files_home', repo_name=full_repo_name, f_path='',
+            revision=ref_name, at=ref_name)
         assert result == url_mock.return_value
 
     def test_creates_svn_url(self):
         controller = summary.SummaryController()
         repo = mock.Mock()
         repo.name = 'abcde'
+        full_repo_name = 'test-repo-group/' + repo.name
         ref_name = 'branch1'
         raw_id = 'deadbeef0123456789'
         is_svn = True
 
         with mock.patch.object(summary.h, 'url') as url_mock:
             result = controller._create_files_url(
-                repo, ref_name, raw_id, is_svn)
+                repo, full_repo_name, ref_name, raw_id, is_svn)
         url_mock.assert_called_once_with(
-            'files_home', repo_name=repo.name, f_path=ref_name,
+            'files_home', repo_name=full_repo_name, f_path=ref_name,
             revision=raw_id, at=ref_name)
         assert result == url_mock.return_value
 
@@ -439,21 +437,24 @@ class TestCreateFilesUrl(object):
         controller = summary.SummaryController()
         repo = mock.Mock()
         repo.name = 'abcde'
+        full_repo_name = 'test-repo-group/' + repo.name
         ref_name = 'branch1/branch2'
         raw_id = 'deadbeef0123456789'
         is_svn = False
 
         with mock.patch.object(summary.h, 'url') as url_mock:
             result = controller._create_files_url(
-                repo, ref_name, raw_id, is_svn)
+                repo, full_repo_name, ref_name, raw_id, is_svn)
         url_mock.assert_called_once_with(
-            'files_home', repo_name=repo.name, f_path='', revision=raw_id,
+            'files_home', repo_name=full_repo_name, f_path='', revision=raw_id,
             at=ref_name)
         assert result == url_mock.return_value
 
 
 class TestReferenceItems(object):
     repo = mock.Mock()
+    repo.name = 'pytest-repo'
+    repo_full_name = 'pytest-repo-group/' + repo.name
     ref_type = 'branch'
     fake_url = '/abcde/'
 
@@ -477,7 +478,8 @@ class TestReferenceItems(object):
 
         with url_patcher as url_mock, svn_patcher:
             result = controller._create_reference_items(
-                self.repo, refs, self.ref_type, self._format_function)
+                self.repo, self.repo_full_name, refs, self.ref_type,
+                self._format_function)
         assert len(result) == amount
         assert url_mock.call_count == amount
 
@@ -496,9 +498,11 @@ class TestReferenceItems(object):
 
         with url_patcher as url_mock, svn_patcher:
             result = controller._create_reference_items(
-                self.repo, refs, self.ref_type, self._format_function)
+                self.repo, self.repo_full_name, refs, self.ref_type,
+                self._format_function)
 
-        url_mock.assert_called_once_with(self.repo, ref_name, ref_id, False)
+        url_mock.assert_called_once_with(
+            self.repo, self.repo_full_name, ref_name, ref_id, False)
         expected_result = [
             {
                 'text': ref_name,

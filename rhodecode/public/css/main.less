@@ -25,6 +25,8 @@
 @import 'comments';
 @import 'panels-bootstrap';
 @import 'panels';
+@import 'toastr';
+@import 'deform';
 
 
 //--- BASE ------------------//
@@ -141,7 +143,7 @@ input.inline[type="file"] {
     h1 {
         color: @grey2;
     }
-    
+
     .error-branding {
         font-family: @text-semibold;
         color: @grey4;
@@ -310,12 +312,18 @@ ul.auth_plugins {
     .td-status {
         padding-left: .5em;
     }
-    .truncate {
+    .log-container .truncate {
         height: 2.75em;
         white-space: pre-line;
     }
     table.rctable .user {
         padding-left: 0;
+    }
+    table.rctable {
+        td.td-description,
+        .rc-user {
+            min-width: auto;
+        }
     }
 }
 
@@ -670,6 +678,13 @@ label {
     }
 }
 
+.user-inline-data {
+    display: inline-block;
+    float: left;
+    padding-left: .5em;
+    line-height: 1.3em;
+}
+
 .rc-user { // gravatar + user wrapper
     float: left;
     position: relative;
@@ -1009,9 +1024,9 @@ label {
     padding: .9em;
     color: @grey3;
     background-color: @grey7;
-    border-right: @border-thickness solid @border-default-color; 
-    border-bottom: @border-thickness solid @border-default-color; 
-    border-left: @border-thickness solid @border-default-color; 
+    border-right: @border-thickness solid @border-default-color;
+    border-bottom: @border-thickness solid @border-default-color;
+    border-left: @border-thickness solid @border-default-color;
 }
 
 #repo_vcs_settings {
@@ -1601,6 +1616,10 @@ BIN_FILENODE = 7
 	float: right;
 }
 
+#notification-status{
+  display: inline;
+}
+
 // Repositories
 
 #summary.fields{
@@ -1864,15 +1883,6 @@ h3.files_location{
 	}
 }
 
-.file_author{
-	margin-bottom: @padding;
-
-	div{
-		display: inline-block;
-		margin-right: 0.5em;
-	}
-}
-
 .browser-cur-rev{
 	margin-bottom: @textmargin;
 }
@@ -1949,7 +1959,7 @@ div.search-feedback-items {
 	padding:0px 0px 0px 96px;
 }
 
-div.search-code-body { 
+div.search-code-body {
     background-color: #ffffff; padding: 5px 0 5px 10px;
     pre {
         .match { background-color: #faffa6;}

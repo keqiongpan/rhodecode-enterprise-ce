@@ -83,9 +83,6 @@ class UsersController(BaseController):
         from rhodecode.lib.utils import PartialRenderer
         _render = PartialRenderer('data_table/_dt_elements.html')
 
-        def grav_tmpl(user_email, size):
-            return _render("user_gravatar", user_email, size)
-
         def username(user_id, username):
             return _render("user_name", user_id, username)
 
@@ -100,9 +97,7 @@ class UsersController(BaseController):
         users_data = []
         for user in c.users_list:
             users_data.append({
-                "gravatar": grav_tmpl(user.email, 20),
-                "username": h.link_to(
-                    user.username, h.url('user_profile', username=user.username)),
+                "username": h.gravatar_with_user(user.username),
                 "username_raw": user.username,
                 "email": user.email,
                 "first_name": h.escape(user.name),

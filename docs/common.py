@@ -6,6 +6,8 @@ rst_epilog = '''
 .. |AE| replace:: Appenlight
 .. |authtoken| replace:: Authentication Token
 .. |authtokens| replace:: **Auth Tokens**
+.. |RCCEshort| replace:: Community
+.. |RCEEshort| replace:: Enterprise
 .. |git| replace:: Git
 .. |hg| replace:: Mercurial
 .. |svn| replace:: Subversion

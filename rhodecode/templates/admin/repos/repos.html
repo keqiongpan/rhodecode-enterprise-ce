@@ -69,11 +69,11 @@ $(document).ready(function() {
                   "sort": "action"}, title: "${_('Action')}", className: "td-action" }
       ],
       language: {
-          paginate: DEFAULT_GRID_PAGINATION
+          paginate: DEFAULT_GRID_PAGINATION,
+          emptyTable:_gettext("No repositories available yet.")
       },
       "initComplete": function( settings, json ) {
           get_datatable_count();
-          tooltip_activate();
           quick_repo_menu();
       }
     });

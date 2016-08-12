@@ -102,11 +102,11 @@
                       "sort": "owner"}, title: "${_('Owner')}", className: "td-user" }
           ],
           language: {
-            paginate: DEFAULT_GRID_PAGINATION
+            paginate: DEFAULT_GRID_PAGINATION,
+            emptyTable: _gettext("No repository groups available yet.")
           },
           "drawCallback": function( settings, json ) {
               timeagoActivate();
-              tooltip_activate();
               quick_repo_menu();
           }
         });
@@ -135,11 +135,11 @@
                       "sort": "rss"}, title: "rss", className: "td-rss" }
           ],
           language: {
-              paginate: DEFAULT_GRID_PAGINATION
+              paginate: DEFAULT_GRID_PAGINATION,
+              emptyTable: _gettext("No repositories available yet.")
           },
           "drawCallback": function( settings, json ) {
               timeagoActivate();
-              tooltip_activate();
               quick_repo_menu();
           }
         });

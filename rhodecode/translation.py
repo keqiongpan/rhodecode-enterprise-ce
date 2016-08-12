@@ -20,3 +20,16 @@ from pyramid.i18n import TranslationStringFactory
 
 # Create a translation string factory for the 'rhodecode' domain.
 _ = TranslationStringFactory('rhodecode')
+
+class LazyString(object):
+    def __init__(self, *args, **kw):
+        self.args = args
+        self.kw = kw
+
+    def __str__(self):
+        return _(*self.args, **self.kw)
+
+
+def lazy_ugettext(*args, **kw):
+    """ Lazily evaluated version of _() """
+    return LazyString(*args, **kw)

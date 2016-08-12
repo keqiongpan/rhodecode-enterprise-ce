@@ -159,7 +159,7 @@ var showRepoStats = function(target, data){
             lnk = document.createElement('a');
 
             lnk.href = '#';
-            lnk.innerHTML = _ngettext('Show more');
+            lnk.innerHTML = _gettext('Show more');
             lnk.id = 'code_stats_show_more';
             td.appendChild(lnk);
 
@@ -223,7 +223,6 @@ var formatSelect2SelectionRefs = function(commit_ref){
 // takes a given html element and scrolls it down offset pixels
 function offsetScroll(element, offset){
     setTimeout(function(){
-        console.log(element);
         var location = element.offset().top;
         // some browsers use body, some use html
         $('html, body').animate({ scrollTop: (location - offset) });
@@ -249,21 +248,26 @@ $(document).ready(function() {
             });
         }
     });
-    // Add tooltips
-    $('tr.line .lineno a').attr("title","Click to select line").addClass('tooltip');
-    $('tr.line .add-comment-line a').attr("title","Click to comment").addClass('tooltip');
+    $('.compare_view_files').on(
+        'mouseenter mouseleave', 'tr.line .lineno a',function(event) {
+            if (event.type === "mouseenter") {
+                $(this).parents('tr.line').addClass('hover');
+            } else {
+                $(this).parents('tr.line').removeClass('hover');
+            }
+        });
 
-    // Set colors and styles
-    $('tr.line .lineno a').hover(
-        function(){
-            $(this).parents('tr.line').addClass('hover');
-        }, function(){
-            $(this).parents('tr.line').removeClass('hover');
-        }
-    );
+    $('.compare_view_files').on(
+        'mouseenter mouseleave', 'tr.line .add-comment-line a',function(event){
+            if (event.type === "mouseenter") {
+                $(this).parents('tr.line').addClass('commenting');
+            } else {
+                $(this).parents('tr.line').removeClass('commenting');
+            }
+        });
 
-    $('tr.line .lineno a').click(
-        function(){
+    $('.compare_view_files').on(
+        'click', 'tr.line .lineno a',function(event) {
             if ($(this).text() != ""){
                 $('tr.line').removeClass('selected');
                 $(this).parents("tr.line").addClass('selected');
@@ -271,7 +275,7 @@ $(document).ready(function() {
                 // Replace URL without jumping to it if browser supports.
                 // Default otherwise
                 if (history.pushState) {
-                    var new_location = location.href
+                    var new_location = location.href;
                     if (location.hash){
                         new_location = new_location.replace(location.hash, "");
                     }
@@ -283,23 +287,14 @@ $(document).ready(function() {
                     return false;
                 }
             }
-        }
-    );
+        });
 
-    $('tr.line .add-comment-line a').hover(
-        function(){
-            $(this).parents('tr.line').addClass('commenting');
-        }, function(){
-            $(this).parents('tr.line').removeClass('commenting');
-        }
-    );
-
-    $('tr.line .add-comment-line a').on('click', function(e){
-        var tr = $(e.currentTarget).parents('tr.line')[0];
-        injectInlineForm(tr);
-        return false;
-    });
-
+    $('.compare_view_files').on(
+        'click', 'tr.line .add-comment-line a',function(event) {
+            var tr = $(event.currentTarget).parents('tr.line')[0];
+            injectInlineForm(tr);
+            return false;
+        });
 
     $('.collapse_file').on('click', function(e) {
         e.stopPropagation();
@@ -386,28 +381,14 @@ $(document).ready(function() {
                 var tr = lineno.parents('tr.line');
                 tr.addClass('selected');
 
-                // once we scrolled into our line, trigger chat app
-                if (remainder){
-                    tr.find('.add-comment-line a').trigger( "click" );
-                    setTimeout(function(){
-                        var nextNode = $(tr).next();
-                        if(nextNode.hasClass('inline-comments')){
-                            nextNode.next().find('.switch-to-chat').trigger( "click" );
-                        }
-                        else{
-                            nextNode.find('.switch-to-chat').trigger( "click" );
-                        }
-                        // trigger scroll into, later so all elements are already loaded
-                        tr[0].scrollIntoView();
-                    }, 250);
+                tr[0].scrollIntoView();
 
-                }
-                else{
-                    tr[0].scrollIntoView();
-                }
+                $.Topic('/ui/plugins/code/anchor_focus').prepareOrPublish({
+                    tr:tr,
+                    remainder:remainder});
             }
         }
-    };
+    }
 
     collapsableContent();
 });

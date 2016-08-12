@@ -42,8 +42,10 @@ from rhodecode.lib.exceptions import (
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.middleware import appenlight
 from rhodecode.lib.middleware.utils import scm_app
-from rhodecode.lib.utils import is_valid_repo
+from rhodecode.lib.utils import (
+    is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path)
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool
+from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.model import meta
 from rhodecode.model.db import User, Repository
 from rhodecode.model.scm import ScmModel
@@ -80,23 +82,24 @@ class SimpleVCS(object):
 
     SCM = 'unknown'
 
-    def __init__(self, application, config):
+    def __init__(self, application, config, registry):
+        self.registry = registry
         self.application = application
         self.config = config
         # base path of repo locations
-        self.basepath = self.config['base_path']
+        self.basepath = get_rhodecode_base_path()
         # authenticate this VCS request using authfunc
         auth_ret_code_detection = \
             str2bool(self.config.get('auth_ret_code_detection', False))
-        self.authenticate = BasicAuth('', authenticate,
-                                      config.get('auth_ret_code'),
-                                      auth_ret_code_detection)
+        self.authenticate = BasicAuth(
+            '', authenticate, registry, config.get('auth_ret_code'),
+            auth_ret_code_detection)
         self.ip_addr = '0.0.0.0'
 
     @property
     def scm_app(self):
         custom_implementation = self.config.get('vcs.scm_app_implementation')
-        if custom_implementation:
+        if custom_implementation and custom_implementation != 'pyro4':
             log.info(
                 "Using custom implementation of scm_app: %s",
                 custom_implementation)
@@ -282,15 +285,15 @@ class SimpleVCS(object):
 
                 # try to auth based on environ, container auth methods
                 log.debug('Running PRE-AUTH for container based authentication')
-                pre_auth = authenticate('', '', environ,VCS_TYPE)
+                pre_auth = authenticate(
+                    '', '', environ, VCS_TYPE, registry=self.registry)
                 if pre_auth and pre_auth.get('username'):
                     username = pre_auth['username']
                 log.debug('PRE-AUTH got %s as username', username)
 
                 # If not authenticated by the container, running basic auth
                 if not username:
-                    self.authenticate.realm = \
-                        safe_str(self.config['rhodecode_realm'])
+                    self.authenticate.realm = get_rhodecode_realm()
 
                     try:
                         result = self.authenticate(environ)
@@ -349,6 +352,7 @@ class SimpleVCS(object):
         log.info(
             '%s action on %s repo "%s" by "%s" from %s',
             action, self.SCM, str_repo_name, safe_str(username), ip_addr)
+
         return self._generate_vcs_response(
             environ, start_response, repo_path, repo_name, extras, action)
 
@@ -429,8 +433,8 @@ class SimpleVCS(object):
 
     def _prepare_callback_daemon(self, extras):
         return prepare_callback_daemon(
-            extras, protocol=self.config.get('vcs.hooks.protocol'),
-            use_direct_calls=self.config.get('vcs.hooks.direct_calls'))
+            extras, protocol=vcs_settings.HOOKS_PROTOCOL,
+            use_direct_calls=vcs_settings.HOOKS_DIRECT_CALLS)
 
 
 def _should_check_locking(query_string):

@@ -43,11 +43,15 @@ CELERY_EAGER = False
 # link to config for pylons
 CONFIG = {}
 
+# Populated with the settings dictionary from application init in
+# rhodecode.conf.environment.load_pyramid_environment
+PYRAMID_SETTINGS = {}
+
 # Linked module for extensions
 EXTENSIONS = {}
 
 __version__ = ('.'.join((str(each) for each in VERSION[:3])))
-__dbversion__ = 54  # defines current db version for migrations
+__dbversion__ = 55  # defines current db version for migrations
 __platform__ = platform.system()
 __license__ = 'AGPLv3, and Commercial License'
 __author__ = 'RhodeCode GmbH'

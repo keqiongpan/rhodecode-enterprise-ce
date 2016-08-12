@@ -1,0 +1,56 @@
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">${_('Your live notification settings')}</h3>
+  </div>
+
+    <div class="panel-body">
+
+        <p><strong>IMPORTANT:</strong> This feature requires enabled channelstream websocket server to function correctly.</p>
+
+        <p class="hidden">Status of browser notifications permission: <strong id="browser-notification-status"></strong></p>
+
+            ${h.secure_form(url('my_account_notifications_toggle_visibility'), method='post', id='notification-status')}
+            <button class="btn btn-default" type="submit">
+                ${_('Notifications')} <strong>${_('Enabled') if c.rhodecode_user.get_instance().user_data.get('notification_status') else _('Disabled')}</strong>
+            </button>
+            ${h.end_form()}
+
+        <a class="btn btn-info" id="test-notification">Test notification</a>
+
+    </div>
+</div>
+
+<script type="application/javascript">
+
+    function checkBrowserStatus(){
+        var browserStatus = 'Unknown';
+
+        if (!("Notification" in window)) {
+            browserStatus = 'Not supported'
+        }
+        else if(Notification.permission === 'denied'){
+            browserStatus = 'Denied';
+            $('.flash_msg').append('<div class="alert alert-error">Notifications are blocked on browser level - you need to enable them in your browser settings.</div>')
+        }
+        else if(Notification.permission === 'granted'){
+            browserStatus = 'Allowed';
+        }
+
+        $('#browser-notification-status').text(browserStatus);
+    };
+
+    checkBrowserStatus();
+
+$('#test-notification').on('click', function(e){
+    var levels = ['info', 'error', 'warning', 'success'];
+    var level = levels[Math.floor(Math.random()*levels.length)];
+    var payload = {
+        message: {
+            message: 'This is a test notification.',
+            level: level,
+            testMessage: true
+        }
+    };
+    $.Topic('/notifications').publish(payload);
+})
+</script>

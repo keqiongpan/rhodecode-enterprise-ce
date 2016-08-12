@@ -351,7 +351,8 @@ class ChangesetController(BaseRepoController):
                 f_path=request.POST.get('f_path'),
                 line_no=request.POST.get('line'),
                 status_change=(ChangesetStatus.get_status_lbl(status)
-                               if status else None)
+                               if status else None),
+                status_change_type=status
             )
             # get status if set !
             if status:

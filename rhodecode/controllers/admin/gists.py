@@ -25,15 +25,18 @@ gist controller for RhodeCode
 
 import time
 import logging
-import traceback
+
 import formencode
+import peppercorn
 from formencode import htmlfill
 
 from pylons import request, response, tmpl_context as c, url
 from pylons.controllers.util import abort, redirect
 from pylons.i18n.translation import _
+from webob.exc import HTTPNotFound, HTTPForbidden
+from sqlalchemy.sql.expression import or_
 
-from rhodecode.model.forms import GistForm
+
 from rhodecode.model.gist import GistModel
 from rhodecode.model.meta import Session
 from rhodecode.model.db import Gist, User
@@ -44,9 +47,10 @@ from rhodecode.lib.auth import LoginRequired, NotAnonymous
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_str, safe_int, time_to_datetime
 from rhodecode.lib.ext_json import json
-from webob.exc import HTTPNotFound, HTTPForbidden
-from sqlalchemy.sql.expression import or_
 from rhodecode.lib.vcs.exceptions import VCSError, NodeNotChangedError
+from rhodecode.model import validation_schema
+from rhodecode.model.validation_schema.schemas import gist_schema
+
 
 log = logging.getLogger(__name__)
 
@@ -56,11 +60,11 @@ class GistsController(BaseController):
 
     def __load_defaults(self, extra_values=None):
         c.lifetime_values = [
-            (str(-1), _('forever')),
-            (str(5), _('5 minutes')),
-            (str(60), _('1 hour')),
-            (str(60 * 24), _('1 day')),
-            (str(60 * 24 * 30), _('1 month')),
+            (-1, _('forever')),
+            (5, _('5 minutes')),
+            (60, _('1 hour')),
+            (60 * 24, _('1 day')),
+            (60 * 24 * 30, _('1 month')),
         ]
         if extra_values:
             c.lifetime_values.append(extra_values)
@@ -136,40 +140,56 @@ class GistsController(BaseController):
         """POST /admin/gists: Create a new item"""
         # url('gists')
         self.__load_defaults()
-        gist_form = GistForm([x[0] for x in c.lifetime_values],
-                             [x[0] for x in c.acl_options])()
+
+        data = dict(request.POST)
+        data['filename'] = data.get('filename') or Gist.DEFAULT_FILENAME
+        data['nodes'] = [{
+            'filename': data['filename'],
+            'content': data.get('content'),
+            'mimetype': data.get('mimetype')  # None is autodetect
+        }]
+
+        data['gist_type'] = (
+            Gist.GIST_PUBLIC if data.get('public') else Gist.GIST_PRIVATE)
+        data['gist_acl_level'] = (
+            data.get('gist_acl_level') or Gist.ACL_LEVEL_PRIVATE)
+
+        schema = gist_schema.GistSchema().bind(
+            lifetime_options=[x[0] for x in c.lifetime_values])
+
         try:
-            form_result = gist_form.to_python(dict(request.POST))
-            # TODO: multiple files support, from the form
-            filename = form_result['filename'] or Gist.DEFAULT_FILENAME
-            nodes = {
-                filename: {
-                    'content': form_result['content'],
-                    'lexer': form_result['mimetype']  # None is autodetect
-                }
-            }
-            _public = form_result['public']
-            gist_type = Gist.GIST_PUBLIC if _public else Gist.GIST_PRIVATE
-            gist_acl_level = form_result.get(
-                'acl_level', Gist.ACL_LEVEL_PRIVATE)
+
+            schema_data = schema.deserialize(data)
+            # convert to safer format with just KEYs so we sure no duplicates
+            schema_data['nodes'] = gist_schema.sequence_to_nodes(
+                schema_data['nodes'])
+
             gist = GistModel().create(
-                description=form_result['description'],
+                gist_id=schema_data['gistid'],  # custom access id not real ID
+                description=schema_data['description'],
                 owner=c.rhodecode_user.user_id,
-                gist_mapping=nodes,
-                gist_type=gist_type,
-                lifetime=form_result['lifetime'],
-                gist_id=form_result['gistid'],
-                gist_acl_level=gist_acl_level
+                gist_mapping=schema_data['nodes'],
+                gist_type=schema_data['gist_type'],
+                lifetime=schema_data['lifetime'],
+                gist_acl_level=schema_data['gist_acl_level']
             )
             Session().commit()
             new_gist_id = gist.gist_access_id
-        except formencode.Invalid as errors:
-            defaults = errors.value
+        except validation_schema.Invalid as errors:
+            defaults = data
+            errors = errors.asdict()
+
+            if 'nodes.0.content' in errors:
+                errors['content'] = errors['nodes.0.content']
+                del errors['nodes.0.content']
+            if 'nodes.0.filename' in errors:
+                errors['filename'] = errors['nodes.0.filename']
+                del errors['nodes.0.filename']
 
             return formencode.htmlfill.render(
                 render('admin/gists/new.html'),
                 defaults=defaults,
-                errors=errors.error_dict or {},
+                errors=errors,
                 prefix_error=False,
                 encoding="UTF-8",
                 force_defaults=False
@@ -243,7 +263,8 @@ class GistsController(BaseController):
             log.exception("Exception in gist show")
             raise HTTPNotFound()
         if format == 'raw':
-            content = '\n\n'.join([f.content for f in c.files if (f_path is None or f.path == f_path)])
+            content = '\n\n'.join([f.content for f in c.files
+                                   if (f_path is None or f.path == f_path)])
             response.content_type = 'text/plain'
             return content
         return render('admin/gists/show.html')
@@ -252,32 +273,35 @@ class GistsController(BaseController):
     @NotAnonymous()
     @auth.CSRFRequired()
     def edit(self, gist_id):
+        self.__load_defaults()
         self._add_gist_to_context(gist_id)
 
         owner = c.gist.gist_owner == c.rhodecode_user.user_id
         if not (h.HasPermissionAny('hg.admin')() or owner):
             raise HTTPForbidden()
 
-        rpost = request.POST
-        nodes = {}
-        _file_data = zip(rpost.getall('org_files'), rpost.getall('files'),
-                         rpost.getall('mimetypes'), rpost.getall('contents'))
-        for org_filename, filename, mimetype, content in _file_data:
-            nodes[org_filename] = {
-                'org_filename': org_filename,
-                'filename': filename,
-                'content': content,
-                'lexer': mimetype,
-            }
+        data = peppercorn.parse(request.POST.items())
+
+        schema = gist_schema.GistSchema()
+        schema = schema.bind(
+            # '0' is special value to leave lifetime untouched
+            lifetime_options=[x[0] for x in c.lifetime_values] + [0],
+        )
+
         try:
+            schema_data = schema.deserialize(data)
+            # convert to safer format with just KEYs so we sure no duplicates
+            schema_data['nodes'] = gist_schema.sequence_to_nodes(
+                schema_data['nodes'])
+
             GistModel().update(
                 gist=c.gist,
-                description=rpost['description'],
+                description=schema_data['description'],
                 owner=c.gist.owner,
-                gist_mapping=nodes,
-                gist_type=c.gist.gist_type,
-                lifetime=rpost['lifetime'],
-                gist_acl_level=rpost['acl_level']
+                gist_mapping=schema_data['nodes'],
+                gist_type=schema_data['gist_type'],
+                lifetime=schema_data['lifetime'],
+                gist_acl_level=schema_data['gist_acl_level']
             )
 
             Session().commit()
@@ -287,6 +311,10 @@ class GistsController(BaseController):
             # store only DB stuff for gist
             Session().commit()
             h.flash(_('Successfully updated gist data'), category='success')
+        except validation_schema.Invalid as errors:
+            errors = errors.asdict()
+            h.flash(_('Error occurred during update of gist {}: {}').format(
+                gist_id, errors), category='error')
         except Exception:
             log.exception("Exception in gist edit")
             h.flash(_('Error occurred during update of gist %s') % gist_id,
@@ -317,7 +345,7 @@ class GistsController(BaseController):
             # this cannot use timeago, since it's used in select2 as a value
             expiry = h.age(h.time_to_datetime(c.gist.gist_expires))
         self.__load_defaults(
-            extra_values=('0', _('%(expiry)s - current value') % {'expiry': expiry}))
+            extra_values=(0, _('%(expiry)s - current value') % {'expiry': expiry}))
         return render('admin/gists/edit.html')
 
     @LoginRequired()

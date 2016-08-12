@@ -34,8 +34,6 @@ from rhodecode.lib.vcs.exceptions import RepositoryError
 log = logging.getLogger(__name__)
 
 
-
-
 class OAttr(object):
     """
     Special Option that defines other attribute, and can default to them
