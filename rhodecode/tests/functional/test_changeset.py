@@ -57,7 +57,6 @@ class TestChangesetController(object):
             revision=self.commit_id[backend.alias]))
         assert response.body == self.diffs[backend.alias]
 
-    @pytest.mark.xfail_backends("svn", reason="Depends on consistent diffs")
     def test_single_commit_page_different_ops(self, backend):
         commit_id = {
             'hg': '603d6c72c46d953420c89d36372f08d9f305f5dd',
@@ -75,12 +74,16 @@ class TestChangesetController(object):
         # files op files
         response.mustcontain('File no longer present at commit: %s' %
                              _shorten_commit_id(commit_id))
-        response.mustcontain('new file 100644')
+
+        # svn uses a different filename
+        if backend.alias == 'svn':
+            response.mustcontain('new file 10644')
+        else:
+            response.mustcontain('new file 100644')
         response.mustcontain('Changed theme to ADC theme')  # commit msg
 
         self._check_diff_menus(response, right_menu=True)
 
-    @pytest.mark.xfail_backends("svn", reason="Depends on consistent diffs")
     def test_commit_range_page_different_ops(self, backend):
         commit_id_range = {
             'hg': (
@@ -101,18 +104,23 @@ class TestChangesetController(object):
 
         response.mustcontain(_shorten_commit_id(commit_ids[0]))
         response.mustcontain(_shorten_commit_id(commit_ids[1]))
-        response.mustcontain('33 files changed: 1165 inserted, 308 deleted')
+        
+        # svn is special
+        if backend.alias == 'svn':
+            response.mustcontain('new file 10644')
+            response.mustcontain('34 files changed: 1184 inserted, 311 deleted')
+        else:
+            response.mustcontain('new file 100644')
+            response.mustcontain('33 files changed: 1165 inserted, 308 deleted')
 
         # files op files
         response.mustcontain('File no longer present at commit: %s' %
                              _shorten_commit_id(commit_ids[1]))
-        response.mustcontain('new file 100644')
         response.mustcontain('Added docstrings to vcs.cli')  # commit msg
         response.mustcontain('Changed theme to ADC theme')  # commit msg
 
         self._check_diff_menus(response)
 
-    @pytest.mark.xfail_backends("svn", reason="Depends on consistent diffs")
     def test_combined_compare_commit_page_different_ops(self, backend):
         commit_id_range = {
             'hg': (
@@ -134,12 +142,19 @@ class TestChangesetController(object):
 
         response.mustcontain(_shorten_commit_id(commit_ids[0]))
         response.mustcontain(_shorten_commit_id(commit_ids[1]))
-        response.mustcontain('32 files changed: 1165 inserted, 308 deleted')
 
         # files op files
         response.mustcontain('File no longer present at commit: %s' %
                              _shorten_commit_id(commit_ids[1]))
-        response.mustcontain('new file 100644')
+        
+        # svn is special
+        if backend.alias == 'svn':
+            response.mustcontain('new file 10644')
+            response.mustcontain('32 files changed: 1179 inserted, 310 deleted')
+        else:
+            response.mustcontain('new file 100644')
+            response.mustcontain('32 files changed: 1165 inserted, 308 deleted')
+
         response.mustcontain('Added docstrings to vcs.cli')  # commit msg
         response.mustcontain('Changed theme to ADC theme')  # commit msg
 
