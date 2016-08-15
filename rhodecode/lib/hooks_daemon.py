@@ -265,6 +265,7 @@ class Hooks(object):
             }
         finally:
             pylons.url._pop_object()
+            meta.Session.remove()
 
         return {
             'status': result.status,
