@@ -29,7 +29,7 @@ from pyramid.response import Response
 
 from rhodecode.lib import auth
 from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
-from rhodecode.model.db import Repository, Session, Integration
+from rhodecode.model.db import Repository, RepoGroup, Session, Integration
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.integration import IntegrationModel
 from rhodecode.admin.navigation import navigation_list
@@ -59,6 +59,7 @@ class IntegrationSettingsViewBase(object):
 
         self.IntegrationType = None
         self.repo = None
+        self.repo_group = None
         self.integration = None
         self.integrations = {}
 
@@ -68,6 +69,10 @@ class IntegrationSettingsViewBase(object):
             repo_name = request.matchdict['repo_name']
             self.repo = Repository.get_by_repo_name(repo_name)
 
+        if 'repo_group_name' in request.matchdict: # we're in repo_group context
+            repo_group_name = request.matchdict['repo_group_name']
+            self.repo_group = RepoGroup.get_by_group_name(repo_group_name)
+
         if 'integration' in request.matchdict:  # we're in integration context
             integration_type = request.matchdict['integration']
             self.IntegrationType = integration_type_registry[integration_type]
@@ -76,7 +81,10 @@ class IntegrationSettingsViewBase(object):
             integration_id = request.matchdict['integration_id']
             self.integration = Integration.get(integration_id)
         else:                                      # list integrations context
-            for integration in IntegrationModel().get_integrations(self.repo):
+            integrations = IntegrationModel().get_integrations(
+                repo=self.repo, repo_group=self.repo_group)
+
+            for integration in integrations:
                 self.integrations.setdefault(integration.integration_type, []
                     ).append(integration)
 
@@ -91,7 +99,9 @@ class IntegrationSettingsViewBase(object):
         c.active = 'integrations'
         c.rhodecode_user = self.request.user
         c.repo = self.repo
+        c.repo_group = self.repo_group
         c.repo_name = self.repo and self.repo.repo_name or None
+        c.repo_group_name = self.repo_group and self.repo_group.group_name or None
         if self.repo:
             c.repo_info = self.repo
             c.rhodecode_db_repo = self.repo
@@ -121,7 +131,11 @@ class IntegrationSettingsViewBase(object):
             defaults['enabled'] = self.integration.enabled
         else:
             if self.repo:
-                scope = self.repo.repo_name
+                scope = _('{repo_name} repository').format(
+                    repo_name=self.repo.repo_name)
+            elif self.repo_group:
+                scope = _('{repo_group_name} repo group').format(
+                    repo_group_name=self.repo_group.group_name)
             else:
                 scope = _('Global')
 
@@ -207,6 +221,8 @@ class IntegrationSettingsViewBase(object):
             self.integration.integration_type = self.IntegrationType.key
             if self.repo:
                 self.integration.repo = self.repo
+            elif self.repo_group:
+                self.integration.repo_group = self.repo_group
             Session().add(self.integration)
 
         self.integration.enabled = valid_data.pop('enabled', False)
@@ -224,6 +240,12 @@ class IntegrationSettingsViewBase(object):
         if self.repo:
             redirect_to = self.request.route_url(
                 'repo_integrations_edit', repo_name=self.repo.repo_name,
+                integration=self.integration.integration_type,
+                integration_id=self.integration.integration_id)
+        elif self.repo:
+            redirect_to = self.request.route_url(
+                'repo_group_integrations_edit',
+                repo_group_name=self.repo_group.group_name,
                 integration=self.integration.integration_type,
                 integration_id=self.integration.integration_id)
         else:
@@ -270,3 +292,8 @@ class RepoIntegrationsView(IntegrationSettingsViewBase):
     def perm_check(self, user):
         return auth.HasRepoPermissionAll('repository.admin'
             )(repo_name=self.repo.repo_name, user=user)
+
+class RepoGroupIntegrationsView(IntegrationSettingsViewBase):
+    def perm_check(self, user):
+        return auth.HasRepoGroupPermissionAll('group.admin'
+            )(group_name=self.repo_group.group_name, user=user)

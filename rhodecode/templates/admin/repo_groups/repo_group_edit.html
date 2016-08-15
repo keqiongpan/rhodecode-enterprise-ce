@@ -30,6 +30,10 @@
     ${self.menu_items(active='admin')}
 </%def>
 
+<%def name="main_content()">
+    <%include file="/admin/repo_groups/repo_group_edit_${c.active}.html"/>
+</%def>
+
 <%def name="main()">
 <div class="box">
   <div class="title">
@@ -44,11 +48,12 @@
           <li class="${'active' if c.active=='settings' else ''}"><a href="${h.url('edit_repo_group', group_name=c.repo_group.group_name)}">${_('Settings')}</a></li>
           <li class="${'active' if c.active=='perms' else ''}"><a href="${h.url('edit_repo_group_perms', group_name=c.repo_group.group_name)}">${_('Permissions')}</a></li>
           <li class="${'active' if c.active=='advanced' else ''}"><a href="${h.url('edit_repo_group_advanced', group_name=c.repo_group.group_name)}">${_('Advanced')}</a></li>
+          <li class="${'active' if c.active=='integrations' else ''}"><a href="${h.route_path('repo_group_integrations_home', repo_group_name=c.repo_group.group_name)}">${_('Integrations')}</a></li>
         </ul>
     </div>
 
     <div class="main-content-full-width">
-        <%include file="/admin/repo_groups/repo_group_edit_${c.active}.html"/>
+      ${self.main_content()}
     </div>
 
   </div>

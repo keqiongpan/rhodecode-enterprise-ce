@@ -37,11 +37,15 @@
     %for integration in available_integrations:
       <%
       if c.repo:
-        create_url = request.route_url('repo_integrations_create',
+        create_url = request.route_path('repo_integrations_create',
                                         repo_name=c.repo.repo_name,
                                         integration=integration)
+      elif c.repo_group:
+        create_url = request.route_path('repo_group_integrations_create',
+                                        repo_group_name=c.repo_group.group_name,
+                                        integration=integration)
       else:
-        create_url = request.route_url('global_integrations_create',
+        create_url = request.route_path('global_integrations_create',
                                         integration=integration)
       %>
       <a href="${create_url}" class="btn">
@@ -90,12 +94,17 @@
           %else:
             <%
             if c.repo:
-              edit_url = request.route_url('repo_integrations_edit',
+              edit_url = request.route_path('repo_integrations_edit',
                                             repo_name=c.repo.repo_name,
                                             integration=integration.integration_type,
                                             integration_id=integration.integration_id)
+            elif c.repo_group:
+              edit_url = request.route_path('repo_group_integrations_edit',
+                                            repo_group_name=c.repo_group.group_name,
+                                            integration=integration.integration_type,
+                                            integration_id=integration.integration_id)
             else:
-              edit_url = request.route_url('global_integrations_edit',
+              edit_url = request.route_path('global_integrations_edit',
                                            integration=integration.integration_type,
                                            integration_id=integration.integration_id)
             %>

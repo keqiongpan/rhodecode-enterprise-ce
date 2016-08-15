@@ -100,10 +100,13 @@ class IntegrationModel(BaseModel):
         if handler:
             handler.send_event(event)
 
-    def get_integrations(self, repo=None):
+    def get_integrations(self, repo=None, repo_group=None):
         if repo:
             return self.sa.query(Integration).filter(
                 Integration.repo_id==repo.repo_id).all()
+        elif repo_group:
+            return self.sa.query(Integration).filter(
+                Integration.repo_group_id==repo_group.group_id).all()
 
         # global integrations
         return self.sa.query(Integration).filter(
@@ -116,9 +119,14 @@ class IntegrationModel(BaseModel):
         query = self.sa.query(Integration).filter(Integration.enabled==True)
 
         if isinstance(event, events.RepoEvent): # global + repo integrations
+                                                # + repo_group integrations
+            parent_groups = event.repo.groups_with_parents
             query = query.filter(
                         or_(Integration.repo_id==None,
-                            Integration.repo_id==event.repo.repo_id))
+                            Integration.repo_id==event.repo.repo_id,
+                            Integration.repo_group_id.in_(
+                                [group.group_id for group in parent_groups]
+                            )))
             if cache:
                 query = query.options(FromCache(
                     "sql_cache_short",

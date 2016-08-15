@@ -3490,9 +3490,16 @@ class Integration(Base, BaseModel):
         nullable=True, unique=None, default=None)
     repo = relationship('Repository', lazy='joined')
 
+    repo_group_id = Column(
+        'repo_group_id', Integer(), ForeignKey('groups.group_id'),
+        nullable=True, unique=None, default=None)
+    repo_group = relationship('RepoGroup', lazy='joined')
+
     def __repr__(self):
         if self.repo:
             scope = 'repo=%r' % self.repo
+        elif self.repo_group:
+            scope = 'repo_group=%r' % self.repo_group
         else:
             scope = 'global'
 

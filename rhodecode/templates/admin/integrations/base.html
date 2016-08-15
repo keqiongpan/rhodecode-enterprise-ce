@@ -3,6 +3,8 @@
    def inherit(context):
       if context['c'].repo:
         return "/admin/repos/repo_edit.html"
+      elif context['c'].repo_group:
+        return "/admin/repo_groups/repo_group_edit.html"
       else:
         return "/admin/settings/settings.html"
 %>
