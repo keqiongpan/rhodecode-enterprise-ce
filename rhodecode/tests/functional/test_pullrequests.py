@@ -64,8 +64,6 @@ class TestPullrequestsController:
         assert response.status == '302 Found'
         assert redirect_url in response.location
 
-    @pytest.mark.xfail_backends(
-        "git", reason="Pending bugfix/feature, issue #6")
     def test_create_pr_form_with_raw_commit_id(self, backend):
         repo = backend.repo
 

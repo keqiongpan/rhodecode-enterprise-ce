@@ -325,9 +325,12 @@ class TestCommits(BackendTestMixin):
         assert line_no == 1
         assert commit_id == file_added_commit.raw_id
         assert commit_loader() == file_added_commit
+
+        # git annotation is generated differently thus different results
         if self.repo.alias == 'git':
-            pytest.xfail("TODO: Git returns wrong value in line")
-        assert line == 'Foobar 3'
+            assert line == '(Joe Doe 2010-01-03 08:00:00 +0000 1) Foobar 3'
+        else:
+            assert line == 'Foobar 3'
 
     def test_get_file_annotate_does_not_exist(self):
         file_added_commit = self.repo.get_commit(commit_idx=2)
