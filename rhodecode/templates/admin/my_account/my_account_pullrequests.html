@@ -24,7 +24,7 @@
             <th>${_('Author')}</th>
             <th></th>
             <th>${_('Title')}</th>
-            <th class="td-time">${_('Opened On')}</th>
+            <th class="td-time">${_('Last Update')}</th>
             <th></th>
           </thead>
           %for pull_request in c.my_pull_requests:
@@ -54,9 +54,8 @@
                     <br/>${pull_request.description}</div>
                 </div>
               </td>
-
               <td class="td-time">
-                ${h.age_component(pull_request.created_on)}
+                ${h.age_component(pull_request.updated_on)}
               </td>
               <td class="td-action repolist_actions">
                 ${h.secure_form(url('pullrequest_delete', repo_name=pull_request.target_repo.repo_name, pull_request_id=pull_request.pull_request_id),method='delete')}
@@ -89,7 +88,7 @@
             <th>${_('Author')}</th>
             <th></th>
             <th>${_('Title')}</th>
-            <th class="td-time">${_('Opened On')}</th>
+            <th class="td-time">${_('Last Update')}</th>
           </thead>
           %for pull_request in c.participate_in_pull_requests:
             <tr class="${'closed' if pull_request.is_closed() else ''} prwrapper">
@@ -118,9 +117,8 @@
                     <br/>${pull_request.description}</div>
                 </div>
               </td>
-
               <td class="td-time">
-                ${h.age_component(pull_request.created_on)}
+                ${h.age_component(pull_request.updated_on)}
               </td>
             </tr>
           %endfor
