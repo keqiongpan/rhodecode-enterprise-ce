@@ -36,6 +36,7 @@ import urllib2
 import urlparse
 import uuid
 
+import pycurl
 import msgpack
 import requests
 
@@ -172,7 +173,11 @@ class RemoteObject(object):
 
 
 def _remote_call(url, payload, exceptions_map, session):
-    response = session.post(url, data=msgpack.packb(payload))
+    try:
+        response = session.post(url, data=msgpack.packb(payload))
+    except pycurl.error as e:
+        raise exceptions.HttpVCSCommunicationError(e)
+
     response = msgpack.unpackb(response.content)
     error = response.get('error')
     if error:

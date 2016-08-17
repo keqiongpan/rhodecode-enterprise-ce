@@ -43,9 +43,10 @@ from rhodecode.config import patches
 from rhodecode.config.routing import STATIC_FILE_PREFIX
 from rhodecode.config.environment import (
     load_environment, load_pyramid_environment)
+from rhodecode.lib.exceptions import VCSServerUnavailable
+from rhodecode.lib.vcs.exceptions import VCSCommunicationError
 from rhodecode.lib.middleware import csrf
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
-from rhodecode.lib.middleware.disable_vcs import DisableVCSPagesWrapper
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
@@ -188,10 +189,6 @@ def make_not_found_view(config):
 
     pylons_app_as_view = wsgiapp(pylons_app)
 
-    # Protect from VCS Server error related pages when server is not available
-    if not vcs_server_enabled:
-        pylons_app_as_view = DisableVCSPagesWrapper(pylons_app_as_view)
-
     def pylons_app_with_error_handler(context, request):
         """
         Handle exceptions from rc pylons app:
@@ -216,10 +213,17 @@ def make_not_found_view(config):
                 return error_handler(response, request)
         except HTTPError as e:  # pyramid type exceptions
             return error_handler(e, request)
-        except Exception:
+        except Exception as e:
+            log.exception(e)
+
             if settings.get('debugtoolbar.enabled', False):
                 raise
+
+            if isinstance(e, VCSCommunicationError):
+                return error_handler(VCSServerUnavailable(), request)
+
             return error_handler(HTTPInternalServerError(), request)
+
         return response
 
     return pylons_app_with_error_handler

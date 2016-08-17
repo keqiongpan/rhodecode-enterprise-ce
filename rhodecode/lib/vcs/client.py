@@ -305,7 +305,7 @@ def _get_proxy_method(proxy, name):
     try:
         return getattr(proxy, name)
     except CommunicationError:
-        raise CommunicationError(
+        raise exceptions.PyroVCSCommunicationError(
             'Unable to connect to remote pyro server %s' % proxy)
 
 

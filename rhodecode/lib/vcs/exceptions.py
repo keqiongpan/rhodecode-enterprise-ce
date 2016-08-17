@@ -24,6 +24,19 @@ Custom vcs exceptions module.
 
 import functools
 import urllib2
+import pycurl
+from Pyro4.errors import CommunicationError
+
+class VCSCommunicationError(Exception):
+    pass
+
+
+class PyroVCSCommunicationError(VCSCommunicationError):
+    pass
+
+
+class HttpVCSCommunicationError(VCSCommunicationError):
+    pass
 
 
 class VCSError(Exception):
@@ -161,7 +174,6 @@ def map_vcs_exceptions(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-
             # The error middleware adds information if it finds
             # __traceback_info__ in a frame object. This way the remote
             # traceback information is made available in error reports.
@@ -182,5 +194,4 @@ def map_vcs_exceptions(func):
                 raise _EXCEPTION_MAP[kind](*e.args)
             else:
                 raise
-
     return wrapper
