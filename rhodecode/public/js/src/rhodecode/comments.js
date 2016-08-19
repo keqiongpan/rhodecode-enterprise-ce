@@ -282,24 +282,27 @@ var placeInline = function(target_container, lineno, html, show_add_button) {
   var target_line = $('#' + lineid).get(0);
   var comment = new $(tableTr('inline-comments', html));
   // check if there are comments already !
-  var parent_node = target_line.parentNode;
-  var root_parent = parent_node;
-  while (1) {
-    var n = parent_node.nextElementSibling;
-    // next element are comments !
-    if ($(n).hasClass('inline-comments')) {
-      parent_node = n;
+  if (target_line) {
+    var parent_node = target_line.parentNode;
+    var root_parent = parent_node;
+
+    while (1) {
+      var n = parent_node.nextElementSibling;
+      // next element are comments !
+      if ($(n).hasClass('inline-comments')) {
+        parent_node = n;
+      }
+      else {
+        break;
+      }
     }
-    else {
-      break;
+    // put in the comment at the bottom
+    $(comment).insertAfter(parent_node);
+    $(comment).find('.comment-inline').addClass('inline-comment-injected');
+    // scan nodes, and attach add button to last one
+    if (show_add_button) {
+      placeAddButton(root_parent);
     }
-  }
-  // put in the comment at the bottom
-  $(comment).insertAfter(parent_node);
-  $(comment).find('.comment-inline').addClass('inline-comment-injected');
-  // scan nodes, and attach add button to last one
-  if (show_add_button) {
-    placeAddButton(root_parent);
   }
 
   return target_line;
