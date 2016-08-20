@@ -46,6 +46,7 @@ class OPS(object):
     MOD = 'M'
     DEL = 'D'
 
+
 def wrap_to_table(str_):
     return '''<table class="code-difftable">
                 <tr class="line no-comment">
@@ -57,8 +58,8 @@ def wrap_to_table(str_):
 
 
 def wrapped_diff(filenode_old, filenode_new, diff_limit=None, file_limit=None,
-                show_full_diff=False, ignore_whitespace=True, line_context=3,
-                enable_comments=False):
+                 show_full_diff=False, ignore_whitespace=True, line_context=3,
+                 enable_comments=False):
     """
     returns a wrapped diff into a table, checks for cut_off_limit for file and
     whole diff and presents proper message
@@ -79,8 +80,9 @@ def wrapped_diff(filenode_old, filenode_new, diff_limit=None, file_limit=None,
         f_gitdiff = get_gitdiff(filenode_old, filenode_new,
                                 ignore_whitespace=ignore_whitespace,
                                 context=line_context)
-        diff_processor = DiffProcessor(f_gitdiff, format='gitdiff', diff_limit=diff_limit,
-                            file_limit=file_limit, show_full_diff=show_full_diff)
+        diff_processor = DiffProcessor(
+            f_gitdiff, format='gitdiff', diff_limit=diff_limit,
+            file_limit=file_limit, show_full_diff=show_full_diff)
         _parsed = diff_processor.prepare()
 
         diff = diff_processor.as_html(enable_comments=enable_comments)
@@ -190,7 +192,8 @@ class DiffProcessor(object):
     # used for inline highlighter word split
     _token_re = re.compile(r'()(&gt;|&lt;|&amp;|\W+?)')
 
-    def __init__(self, diff, format='gitdiff', diff_limit=None, file_limit=None, show_full_diff=True):
+    def __init__(self, diff, format='gitdiff', diff_limit=None,
+                 file_limit=None, show_full_diff=True):
         """
         :param diff: A `Diff` object representing a diff from a vcs backend
         :param format: format of diff passed, `udiff` or `gitdiff`
