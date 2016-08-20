@@ -40,6 +40,10 @@ from rhodecode.lib.utils2 import safe_unicode
 
 log = logging.getLogger(__name__)
 
+# define max context, a file with more than this numbers of lines is unusable
+# in browser anyway
+MAX_CONTEXT = 1024 * 1014
+
 
 class OPS(object):
     ADD = 'A'
@@ -117,6 +121,10 @@ def get_gitdiff(filenode_old, filenode_new, ignore_whitespace=True, context=3):
     """
     # make sure we pass in default context
     context = context or 3
+    # protect against IntOverflow when passing HUGE context
+    if context > MAX_CONTEXT:
+        context = MAX_CONTEXT
+
     submodules = filter(lambda o: isinstance(o, SubModuleNode),
                         [filenode_new, filenode_old])
     if submodules:
