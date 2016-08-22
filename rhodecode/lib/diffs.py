@@ -55,6 +55,7 @@ def wrap_to_table(str_):
     return '''<table class="code-difftable">
                 <tr class="line no-comment">
                 <td class="add-comment-line tooltip" title="%s"><span class="add-comment-content"></span></td>
+                <td></td>
                 <td class="lineno new"></td>
                 <td class="code no-comment"><pre>%s</pre></td>
                 </tr>
@@ -691,14 +692,14 @@ class DiffProcessor(object):
                         anchor_link = False
 
                     ###########################################################
-                    # COMMENT ICON
+                    # COMMENT ICONS
                     ###########################################################
                     _html.append('''\t<td class="add-comment-line"><span class="add-comment-content">''')
 
                     if enable_comments and change['action'] != Action.CONTEXT:
                         _html.append('''<a href="#"><span class="icon-comment-add"></span></a>''')
 
-                    _html.append('''</span></td>\n''')
+                    _html.append('''</span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>\n''')
 
                     ###########################################################
                     # OLD LINE NUMBER

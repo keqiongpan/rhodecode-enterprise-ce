@@ -38,7 +38,8 @@ var tableTr = function(cls, body){
   var comment_id = fromHTML(body).children[0].id.split('comment-')[1];
   var id = 'comment-tr-{0}'.format(comment_id);
   var _html = ('<table><tbody><tr id="{0}" class="{1}">'+
-               '<td class="add-comment-line"><span class="add-comment-content"></span></td>'+
+               '<td class="add-comment-line tooltip tooltip" title="Add Comment"><span class="add-comment-content"></span></td>'+
+               '<td></td>'+
                '<td></td>'+
                '<td></td>'+
                '<td>{2}</td>'+
@@ -303,9 +304,22 @@ var placeInline = function(target_container, lineno, html, show_add_button) {
     if (show_add_button) {
       placeAddButton(root_parent);
     }
+    addCommentToggle(target_line);
   }
 
   return target_line;
+};
+
+var addCommentToggle = function(target_line) {
+  // exposes comment toggle button
+  $(target_line).siblings('.comment-toggle').addClass('active');
+  return;
+};
+
+var bindToggleButtons = function() {
+  $('.comment-toggle').on('click', function() {
+        $(this).parent().nextUntil('tr.line').toggle('inline-comments');
+  });
 };
 
 var linkifyComments = function(comments) {

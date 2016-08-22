@@ -31,6 +31,18 @@ div.diffblock.margined.comm tr {
         }
     }
 
+    .comment-toggle {
+        display: inline-block;
+        visibility: hidden;
+        width: 20px;
+        color: @rcblue;
+
+        &.active {
+            visibility: visible;
+            cursor: pointer;
+        }
+    }
+
     &.line {
         &:hover, &.hover{
             .add-comment-line a{
