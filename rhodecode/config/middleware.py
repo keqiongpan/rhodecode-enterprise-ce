@@ -39,6 +39,7 @@ from routes.middleware import RoutesMiddleware
 import routes.util
 
 import rhodecode
+from rhodecode.model import meta
 from rhodecode.config import patches
 from rhodecode.config.routing import STATIC_FILE_PREFIX
 from rhodecode.config.environment import (
@@ -159,6 +160,10 @@ def make_pyramid_app(global_config, **settings):
     pyramid_app = config.make_wsgi_app()
     pyramid_app = wrap_app_in_wsgi_middlewares(pyramid_app, config)
     pyramid_app.config = config
+
+    # creating the app uses a connection - return it after we are done
+    meta.Session.remove()
+
     return pyramid_app
 
 
@@ -381,7 +386,25 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
         pyramid_app = make_gzip_middleware(
             pyramid_app, settings, compress_level=1)
 
-    return pyramid_app
+
+    # this should be the outer most middleware in the wsgi stack since
+    # middleware like Routes make database calls
+    def pyramid_app_with_cleanup(environ, start_response):
+        try:
+            return pyramid_app(environ, start_response)
+        finally:
+            # Dispose current database session and rollback uncommitted
+            # transactions.
+            meta.Session.remove()
+
+            # In a single threaded mode server, on non sqlite db we should have
+            # '0 Current Checked out connections' at the end of a request,
+            # if not, then something, somewhere is leaving a connection open
+            pool = meta.Base.metadata.bind.engine.pool
+            log.debug('sa pool status: %s', pool.status())
+
+
+    return pyramid_app_with_cleanup
 
 
 def sanitize_settings_and_apply_defaults(settings):

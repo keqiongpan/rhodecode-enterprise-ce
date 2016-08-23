@@ -40,40 +40,35 @@ def pylons_compatibility_tween_factory(handler, registry):
         from pyramid. For example while rendering an old template that uses the
         'c' or 'h' objects. This tween sets up the needed pylons globals.
         """
-        try:
-            config = rhodecode.CONFIG
-            environ = request.environ
-            session = request.session
-            session_key = (config['pylons.environ_config']
-                           .get('session', 'beaker.session'))
+        config = rhodecode.CONFIG
+        environ = request.environ
+        session = request.session
+        session_key = (config['pylons.environ_config']
+                       .get('session', 'beaker.session'))
 
-            # Setup pylons globals.
-            pylons.config._push_object(config)
-            pylons.request._push_object(request)
-            pylons.session._push_object(session)
-            environ[session_key] = session
-            pylons.url._push_object(URLGenerator(config['routes.map'],
-                                                 environ))
+        # Setup pylons globals.
+        pylons.config._push_object(config)
+        pylons.request._push_object(request)
+        pylons.session._push_object(session)
+        environ[session_key] = session
+        pylons.url._push_object(URLGenerator(config['routes.map'],
+                                             environ))
 
-            # TODO: Maybe we should use the language from pyramid.
-            translator = _get_translator(config.get('lang'))
-            pylons.translator._push_object(translator)
+        # TODO: Maybe we should use the language from pyramid.
+        translator = _get_translator(config.get('lang'))
+        pylons.translator._push_object(translator)
 
-            # Get the rhodecode auth user object and make it available.
-            auth_user = get_auth_user(environ)
-            request.user = auth_user
-            environ['rc_auth_user'] = auth_user
+        # Get the rhodecode auth user object and make it available.
+        auth_user = get_auth_user(environ)
+        request.user = auth_user
+        environ['rc_auth_user'] = auth_user
 
-            # Setup the pylons context object ('c')
-            context = ContextObj()
-            context.rhodecode_user = auth_user
-            attach_context_attributes(context, request)
-            pylons.tmpl_context._push_object(context)
-            return handler(request)
-        finally:
-            # Dispose current database session and rollback uncommitted
-            # transactions.
-            meta.Session.remove()
+        # Setup the pylons context object ('c')
+        context = ContextObj()
+        context.rhodecode_user = auth_user
+        attach_context_attributes(context, request)
+        pylons.tmpl_context._push_object(context)
+        return handler(request)
 
     return pylons_compatibility_tween
 
