@@ -27,8 +27,7 @@ function notifyToaster(data){
 }
 
 function handleNotifications(data) {
-
-    if (!templateContext.rhodecode_user.notification_status && !data.testMessage) {
+    if (!templateContext.rhodecode_user.notification_status && !data.message.testMessage) {
         // do not act if notifications are disabled
         return
     }
