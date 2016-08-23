@@ -368,4 +368,4 @@ class MyAccountController(BaseController):
         user_data['notification_status'] = not status
         user.user_data = user_data
         Session().commit()
-        return redirect(url('my_account_notifications'))
+        return json.dumps(user_data['notification_status'])
