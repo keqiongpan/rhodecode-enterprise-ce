@@ -76,7 +76,7 @@ def test_diffprocessor_as_html_with_comments():
     expected_html = textwrap.dedent('''
         <table class="code-difftable">
         <tr class="line context">
-            <td class="add-comment-line"><span class="add-comment-content"></span></td>
+            <td class="add-comment-line"><span class="add-comment-content"></span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>
             <td  class="lineno old">...</td>
             <td  class="lineno new">...</td>
             <td class="code no-comment">
@@ -85,7 +85,7 @@ def test_diffprocessor_as_html_with_comments():
             </td>
         </tr>
         <tr class="line unmod">
-            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td>
+            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>
             <td id="setuppy_o2" class="lineno old"><a href="#setuppy_o2" class="tooltip"
                         title="Click to select line">2</a></td>
             <td id="setuppy_n2" class="lineno new"><a href="#setuppy_n2" class="tooltip"
@@ -96,7 +96,7 @@ def test_diffprocessor_as_html_with_comments():
             </td>
         </tr>
         <tr class="line unmod">
-            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td>
+            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>
             <td id="setuppy_o3" class="lineno old"><a href="#setuppy_o3" class="tooltip"
                         title="Click to select line">3</a></td>
             <td id="setuppy_n3" class="lineno new"><a href="#setuppy_n3" class="tooltip"
@@ -107,7 +107,7 @@ def test_diffprocessor_as_html_with_comments():
             </td>
         </tr>
         <tr class="line unmod">
-            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td>
+            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>
             <td id="setuppy_o4" class="lineno old"><a href="#setuppy_o4" class="tooltip"
                         title="Click to select line">4</a></td>
             <td id="setuppy_n4" class="lineno new"><a href="#setuppy_n4" class="tooltip"
@@ -118,7 +118,7 @@ def test_diffprocessor_as_html_with_comments():
             </td>
         </tr>
         <tr class="line del">
-            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td>
+            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>
             <td id="setuppy_o5" class="lineno old"><a href="#setuppy_o5" class="tooltip"
                         title="Click to select line">5</a></td>
             <td  class="lineno new"><a href="#setuppy_n" class="tooltip"
@@ -129,7 +129,7 @@ def test_diffprocessor_as_html_with_comments():
             </td>
         </tr>
         <tr class="line add">
-            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td>
+            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>
             <td  class="lineno old"><a href="#setuppy_o" class="tooltip"
                         title="Click to select line"></a></td>
             <td id="setuppy_n5" class="lineno new"><a href="#setuppy_n5" class="tooltip"
@@ -140,7 +140,7 @@ def test_diffprocessor_as_html_with_comments():
             </td>
         </tr>
         <tr class="line unmod">
-            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td>
+            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>
             <td id="setuppy_o6" class="lineno old"><a href="#setuppy_o6" class="tooltip"
                         title="Click to select line">6</a></td>
             <td id="setuppy_n6" class="lineno new"><a href="#setuppy_n6" class="tooltip"
@@ -151,7 +151,7 @@ def test_diffprocessor_as_html_with_comments():
             </td>
         </tr>
         <tr class="line unmod">
-            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td>
+            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>
             <td id="setuppy_o7" class="lineno old"><a href="#setuppy_o7" class="tooltip"
                         title="Click to select line">7</a></td>
             <td id="setuppy_n7" class="lineno new"><a href="#setuppy_n7" class="tooltip"
@@ -162,7 +162,7 @@ def test_diffprocessor_as_html_with_comments():
             </td>
         </tr>
         <tr class="line unmod">
-            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td>
+            <td class="add-comment-line"><span class="add-comment-content"><a href="#"><span class="icon-comment-add"></span></a></span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>
             <td id="setuppy_o8" class="lineno old"><a href="#setuppy_o8" class="tooltip"
                         title="Click to select line">8</a></td>
             <td id="setuppy_n8" class="lineno new"><a href="#setuppy_n8" class="tooltip"
