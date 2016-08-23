@@ -126,6 +126,28 @@
             <div class="panel-body">
                 <div class="field">
                     <div class="content" >
+                        <label>${_('Subversion HTTP Support')}</label><br/>
+                    </div>
+                    <div class="checkbox">
+                        ${h.checkbox('rhodecode_proxy_subversion_http_requests' + suffix, 'True', **kwargs)}
+                        <label for="rhodecode_proxy_subversion_http_requests${suffix}">${_('Proxy subversion HTTP requests')}</label>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="label">
+                        <label for="rhodecode_subversion_http_server_url">${_('Subversion HTTP Server URL')}</label><br/>
+                    </div>
+                    <div class="input">
+                        ${h.text('rhodecode_subversion_http_server_url',size=59)}
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="label">
+                        <span class="help-block">${_('e.g. http://localhost:8080/')}</span>
+                    </div>
+                 </div>
+                <div class="field">
+                    <div class="content" >
                         <label>${_('Repository patterns')}</label><br/>
                     </div>
                 </div>

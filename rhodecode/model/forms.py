@@ -389,6 +389,9 @@ class _BaseVcsSettingsForm(formencode.Schema):
     rhodecode_use_outdated_comments = v.StringBoolean(if_missing=False)
     rhodecode_hg_use_rebase_for_merging = v.StringBoolean(if_missing=False)
 
+    rhodecode_proxy_subversion_http_requests = v.StringBoolean(if_missing=False)
+    rhodecode_subversion_http_server_url = v.UnicodeString(
+        strip=True, if_missing=None)
 
 def ApplicationUiSettingsForm():
     class _ApplicationUiSettingsForm(_BaseVcsSettingsForm):
@@ -420,11 +423,6 @@ def LabsSettingsForm():
     class _LabSettingsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = False
-
-        rhodecode_proxy_subversion_http_requests = v.StringBoolean(
-            if_missing=False)
-        rhodecode_subversion_http_server_url = v.UnicodeString(
-            strip=True, if_missing=None)
 
     return _LabSettingsForm
 

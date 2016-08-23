@@ -789,18 +789,5 @@ LabSetting = collections.namedtuple(
 # This list has to be kept in sync with the form
 # rhodecode.model.forms.LabsSettingsForm.
 _LAB_SETTINGS = [
-    LabSetting(
-        key='rhodecode_proxy_subversion_http_requests',
-        type='bool',
-        group=lazy_ugettext('Subversion HTTP Support'),
-        label=lazy_ugettext('Proxy subversion HTTP requests'),
-        help=''  # Do not translate the empty string!
-    ),
-    LabSetting(
-        key='rhodecode_subversion_http_server_url',
-        type='str',
-        group=lazy_ugettext('Subversion HTTP Server URL'),
-        label='',  # Do not translate the empty string!
-        help=lazy_ugettext('e.g. http://localhost:8080/')
-    ),
+
 ]

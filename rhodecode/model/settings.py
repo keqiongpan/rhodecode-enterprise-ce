@@ -411,6 +411,9 @@ class VcsSettingsModel(object):
     HG_SETTINGS = (
         ('extensions', 'largefiles'), ('phases', 'publish'))
     GLOBAL_HG_SETTINGS = HG_SETTINGS + (('extensions', 'hgsubversion'), )
+    GLOBAL_SVN_SETTINGS = (
+        'rhodecode_proxy_subversion_http_requests',
+        'rhodecode_subversion_http_server_url')
     SVN_BRANCH_SECTION = 'vcs_svn_branch'
     SVN_TAG_SECTION = 'vcs_svn_tag'
     SSL_SETTING = ('web', 'push_ssl')
@@ -545,6 +548,21 @@ class VcsSettingsModel(object):
             self.global_settings, *phases, value=safe_str(data[phases_key]))
         self._create_or_update_ui(
             self.global_settings, *subversion, active=data[subversion_key])
+
+    def create_or_update_global_svn_settings(self, data):
+        rhodecode_proxy_subversion_http_requests,
+        rhodecode_subversion_http_server_url = self.GLOBAL_SVN_SETTINGS
+        rhodecode_proxy_subversion_http_requests_key,
+        rhodecode_subversion_http_server_url_key = self._get_svn_settings(
+            self.GLOBAL_SVN_SETTINGS, data)
+        self._create_or_update_ui(
+            self.global_settings,
+            *rhodecode_proxy_subversion_http_requests,
+            value=safe_str(data[rhodecode_proxy_subversion_http_requests_key]))
+        self._create_or_update_ui(
+            self.global_settings,
+            *rhodecode_subversion_http_server_url,
+            active=data[rhodecode_subversion_http_server_url_key])
 
     def update_global_ssl_setting(self, value):
         self._create_or_update_ui(
