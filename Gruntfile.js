@@ -8,7 +8,14 @@ module.exports = function(grunt) {
         "dest": "rhodecode/public/js"
       }
     },
-
+    copy: {
+      main: {
+        expand: true,
+        cwd: 'bower_components',
+        src: 'webcomponentsjs/**',
+        dest: '<%= dirs.js.dest %>/vendors',
+      },
+    },
     concat: {
       dist: {
         src: [
@@ -120,7 +127,7 @@ module.exports = function(grunt) {
         tasks: ["less:production"]
       },
       js: {
-        files: ["<%= dirs.js.src %>/**/*.js"],
+        files: ["<%= dirs.js.src %>/**/*.js", "<%= dirs.js.src %>/components/*.*"],
         tasks: ["concat:dist"]
       }
     },
@@ -132,6 +139,19 @@ module.exports = function(grunt) {
           jshintrc: '.jshintrc'
         }
       }
+    },
+    vulcanize: {
+      default: {
+        options: {
+          abspath: '',
+          inlineScripts: true,
+          inlineCss: true,
+          stripComments: true
+        },
+        files: {
+          '<%= dirs.js.dest %>/rhodecode-components.html': '<%= dirs.js.src %>/components/shared-components.html'
+        }
+      }
     }
   });
 
@@ -139,6 +159,9 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-vulcanize');
+  grunt.loadNpmTasks('grunt-crisper');
+  grunt.loadNpmTasks('grunt-contrib-copy');
 
-  grunt.registerTask('default', ['less:production', 'concat:dist']);
+  grunt.registerTask('default', ['copy','vulcanize', 'less:production', 'concat:dist']);
 };

@@ -23,6 +23,7 @@ syntax: regexp
 ^_dev
 ^._dev
 ^build/
+^bower_components/
 ^coverage\.xml$
 ^data$
 ^\.eggs/
