@@ -248,7 +248,6 @@ def webob_to_pyramid_http_response(webob_response):
 
 
 def error_handler(exception, request):
-    # TODO: dan: replace the old pylons error controller with this
     from rhodecode.model.settings import SettingsModel
     from rhodecode.lib.utils2 import AttributeDict
 
@@ -276,6 +275,10 @@ def error_handler(exception, request):
     c.rhodecode_name = rc_config.get('rhodecode_title', '')
     if not c.rhodecode_name:
         c.rhodecode_name = 'Rhodecode'
+
+    c.causes = []
+    if hasattr(base_response, 'causes'):
+        c.causes = base_response.causes
 
     response = render_to_response(
         '/errors/error_document.html', {'c': c}, request=request,
