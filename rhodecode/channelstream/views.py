@@ -95,6 +95,7 @@ class ChannelstreamView(object):
                 'display_name': None,
                 'display_link': None,
             }
+        user_data['permissions'] = c.rhodecode_user.permissions
         payload = {
             'username': user.username,
             'user_state': user_data,
