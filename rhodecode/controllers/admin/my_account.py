@@ -38,6 +38,7 @@ from rhodecode.lib import auth
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, AuthUser, generate_auth_token)
 from rhodecode.lib.base import BaseController, render
+from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_int, md5
 from rhodecode.lib.ext_json import json
 
@@ -361,6 +362,7 @@ class MyAccountController(BaseController):
         return render('admin/my_account/my_account.html')
 
     @auth.CSRFRequired()
+    @jsonify
     def my_notifications_toggle_visibility(self):
         user = c.rhodecode_user.get_instance()
         user_data = user.user_data
@@ -368,4 +370,4 @@ class MyAccountController(BaseController):
         user_data['notification_status'] = not status
         user.user_data = user_data
         Session().commit()
-        return json.dumps(user_data['notification_status'])
+        return user_data['notification_status']
