@@ -1,29 +1,17 @@
 "use strict";
 
-toastr.options = {
-    "closeButton": true,
-    "debug": false,
-    "newestOnTop": false,
-    "progressBar": false,
-    "positionClass": "toast-top-center",
-    "preventDuplicates": false,
-    "onclick": null,
-    "showDuration": "300",
-    "hideDuration": "300",
-    "timeOut": "0",
-    "extendedTimeOut": "0",
-    "showEasing": "swing",
-    "hideEasing": "linear",
-    "showMethod": "fadeIn",
-    "hideMethod": "fadeOut"
-};
 
 function notifySystem(data) {
     var notification = new Notification(data.message.level + ': ' + data.message.message);
 };
 
 function notifyToaster(data){
-    toastr[data.message.level](data.message.message);
+    var notifications = document.getElementById('notifications');
+    notifications.push('toasts',
+        {   level: data.message.level,
+            message: data.message.message
+        });
+    notifications.open();
 }
 
 function handleNotifications(data) {

@@ -1,5 +1,5 @@
 <template is="dom-bind" id="notificationsPage">
-
+<style include="shared-styles"></style>
 <iron-ajax id="toggleNotifications"
            method="post"
            url="${url('my_account_notifications_toggle_visibility')}"
@@ -31,7 +31,7 @@
                         <paper-tooltip>Toggle your notifications on/off globally.</paper-tooltip>
                         </div>
                         <template is="dom-if" if="{{changeNotificationsLoading}}">
-                        <paper-spinner active style="height: 22px; width: 22px"></paper-spinner>
+                        <paper-spinner active class="toggle-ajax-spinner"></paper-spinner>
                         </template>
                     </div>
                 </div>

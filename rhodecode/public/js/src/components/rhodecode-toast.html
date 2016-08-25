@@ -1,0 +1,79 @@
+<link rel="import" href="../../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="rhodecode-unsafe-html.html">
+<dom-module id="rhodecode-toast">
+    <template>
+        <style include="shared-styles"></style>
+
+        <style>
+            paper-toast{
+                width: 100%;
+                min-width: 400px;
+                --paper-toast-background-color: #ffffff;
+                --paper-toast-color: #000000;
+            }
+            paper-toast a{
+                font-weight: bold
+            }
+
+            .toast-message-holder {
+                width: calc(100% - 150px);
+                display: inline-block;
+            }
+            .toast-close {
+                display: inline-block;
+                width: 145px;
+                text-align: right;
+                float: right;
+            }
+            .toast-notification {
+                padding: 10px 0 10px 0;
+            }
+
+        </style>
+        <paper-toast id="p-toast" duration="0"  horizontal-offset="100" horizontal-align="auto" vertical-align="top" always-on-top>
+            <div class="toast-message-holder">
+                <template is="dom-repeat" items="{{toasts}}">
+                    <div class="toast-notification">
+                    <span class$="toast-level {{item.level}}">{{item.level}}</span>
+                    <rhodecode-unsafe-html text="{{item.message}}"></rhodecode-unsafe-html>
+                    </div>
+                </template>
+            </div>
+            <div class="toast-close">
+                <paper-button on-tap="dismissNotifications" class="btn btn-info">{{_gettext('Close now')}}</paper-button>
+            </div>
+        </paper-toast>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'rhodecode-toast',
+            properties: {
+                toasts: {
+                    type: Array,
+                    value: function(){
+                        return []
+                    }
+                }
+            },
+            observers: [
+                '_changedToasts(toasts.splices)'
+            ],
+            ready: function(){
+
+            },
+
+            _changedToasts: function(newValue, oldValue){
+                this.$['p-toast'].notifyResize();
+            },
+            dismissNotifications: function(){
+                this.$['p-toast'].close();
+                this.splice('toasts', 0);
+            },
+            open: function(){
+                this.$['p-toast'].open();
+            },
+            _gettext: _gettext
+        });
+    </script>
+</dom-module>

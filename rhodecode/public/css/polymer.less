@@ -1,0 +1,33 @@
+//Primary CSS
+//--- IMPORTS ------------------//
+@import 'helpers';
+@import 'mixins';
+@import 'rcicons';
+@import 'fonts';
+@import 'variables';
+@import 'legacy_code_styles';
+@import 'type';
+@import 'alerts';
+@import 'buttons';
+@import 'tags';
+@import 'examples';
+@import 'login';
+@import 'comments';
+
+
+.toast-level {
+  display: inline-block;
+  min-width: 100px;
+  font-weight: bold;
+  text-transform: uppercase;
+  &.info, &.success {
+    color: #0ac878;
+  }
+  &.error, &.danger {
+    color: #e85e4d;
+  }
+  &.warning {
+    color: #ffc854;
+  }
+}
+
