@@ -183,5 +183,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-crisper');
   grunt.loadNpmTasks('grunt-contrib-copy');
 
-  grunt.registerTask('default', ['less:production', 'less:components', 'concat:polymercss', 'copy','vulcanize', 'concat:dist']);
+  // TODO: johbo: missing bower bits
+  // grunt.registerTask('default', ['less:production', 'less:components', 'concat:polymercss', 'copy','vulcanize', 'concat:dist']);
+  grunt.registerTask('default', ['less:production', 'concat:dist']);
 };
