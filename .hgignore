@@ -8,6 +8,7 @@ syntax: glob
 *.swp
 *.tox
 *.DS_Store*
+rhodecode/public/js/src/components/**/*.css
 
 syntax: regexp
 

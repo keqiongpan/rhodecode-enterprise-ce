@@ -129,13 +129,22 @@ module.exports = function(grunt) {
           "<%= dirs.css %>/style.css": "<%= dirs.css %>/main.less",
           "<%= dirs.css %>/style-polymer.css": "<%= dirs.css %>/polymer.less"
         }
+      },
+      components: {
+        files: [{
+          cwd: '<%= dirs.js.src %>/components/',
+          dest: '<%= dirs.js.src %>/components/',
+          src: ['**/*.less'],
+          expand: true,
+          ext: '.css'
+        }]
       }
     },
 
     watch: {
       less: {
         files: ["<%= dirs.css %>/*.less"],
-        tasks: ["less:development", 'concat:polymercss', "vulcanize"]
+        tasks: ["less:development", 'less:components', 'concat:polymercss', "vulcanize"]
       },
       js: {
         files: ["<%= dirs.js.src %>/**/*.js", "<%= dirs.js.src %>/components/*.*"],
@@ -174,5 +183,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-crisper');
   grunt.loadNpmTasks('grunt-contrib-copy');
 
-  grunt.registerTask('default', ['less:production', 'concat:polymercss', 'copy','vulcanize', 'concat:dist']);
+  grunt.registerTask('default', ['less:production', 'less:components', 'concat:polymercss', 'copy','vulcanize', 'concat:dist']);
 };
