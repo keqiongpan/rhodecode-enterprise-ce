@@ -1,3 +1,5 @@
+@import '../../../../css/variables';
+
 paper-toast{
     width: 100%;
     min-width: 400px;
@@ -27,13 +29,16 @@ paper-toast a{
     min-width: 100px;
     font-weight: bold;
     text-transform: uppercase;
-    &.info, &.success {
-        color: #0ac878;
+    &.info{
+        color: @alert4;
+    }
+    &.success {
+        color: @alert1;
     }
     &.error, &.danger {
-        color: #e85e4d;
+        color: @alert2;
     }
     &.warning {
-        color: #ffc854;
+        color: @alert3;
     }
 }
