@@ -111,15 +111,18 @@ time operation::
 Compile CSS and JavaScript
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To use the application's frontend, you will need to compile the CSS and
-JavaScript with Grunt. This is easily done from within the nix-shell using the
-following command::
+To use the application's frontend and prepare it for production deployment,
+you will need to compile the CSS and JavaScript with Grunt.
+This is easily done from within the nix-shell using the following command::
 
-    make web-build
+    grunt
 
-You will need to recompile following any changes made to the CSS or JavaScript
-files.
+When developing new features you will need to recompile following any
+changes made to the CSS or JavaScript files when developing the code::
 
+    grunt watch
+
+This prepares the development (with comments/whitespace) versions of files.
 
 Start the Development Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

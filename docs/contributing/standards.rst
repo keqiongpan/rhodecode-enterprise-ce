@@ -45,6 +45,11 @@ JavaScript
 ----------
 This currently remains undefined. Suggestions welcome!
 
+However, we have decided to go forward with W3C standards and picked
+WebComponents as the foundation of user interface. New functionality should
+be implemented as components using the
+`Polymer Project` <https://www.polymer-project.org>`_ library
+and should avoid external dependencies like `jquery`.
 
 HTML
 ----
