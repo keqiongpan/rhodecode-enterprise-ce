@@ -49,23 +49,10 @@ let
   sources = pkgs.config.rc.sources or {};
   rhodecode-enterprise-ce-src = builtins.filterSource src-filter ./.;
 
-  # Load the generated node packages
-  nodePackages = pkgs.callPackage "${pkgs.path}/pkgs/top-level/node-packages.nix" rec {
-    self = nodePackages;
-    generated = pkgs.callPackage ./pkgs/node-packages.nix { inherit self; };
+  nodeEnv = import ./pkgs/node-default.nix {
+    inherit pkgs;
   };
-
-  # TODO: Should be taken automatically out of the generates packages.
-  # apps.nix has one solution for this, although I'd prefer to have the deps
-  # from package.json mapped in here.
-  nodeDependencies = with nodePackages; [
-    grunt
-    grunt-contrib-concat
-    grunt-contrib-jshint
-    grunt-contrib-less
-    grunt-contrib-watch
-    jshint
-  ];
+  nodeDependencies = nodeEnv.shell.nodeDependencies;
 
   pythonGeneratedPackages = self: basePythonPackages.override (a: {
     inherit self;
@@ -89,12 +76,14 @@ let
         version = builtins.readFile ./rhodecode/VERSION;
         linkNodeModules = ''
           echo "Link node packages"
-          # TODO: check if this adds stuff as a dependency, closure size
           rm -fr node_modules
-          mkdir -p node_modules
-          ${pkgs.lib.concatMapStrings (dep: ''
-            ln -sfv ${dep}/lib/node_modules/${dep.pkgName} node_modules/
-          '') nodeDependencies}
+          mkdir node_modules
+
+          # johbo: Linking individual packages allows us to run "npm install"
+          # inside of a shell to try things out. Re-entering the shell will
+          # restore a clean environment.
+          ln -s ${nodeDependencies}/lib/node_modules/* node_modules/
+
           echo "DONE: Link node packages"
         '';
       in super.rhodecode-enterprise-ce.override (attrs: {
