@@ -1100,6 +1100,44 @@ table.issuetracker {
     }
 }
 
+table.integrations {
+    .td-icon {
+        width: 20px;
+        .integration-icon {
+            height: 20px;
+            width: 20px;
+        }
+    }
+}
+
+.integrations {
+    a.integration-box {
+        color: @text-color;
+        &:hover {
+            .panel {
+                background: #fbfbfb;
+            }
+        }
+        .integration-icon {
+          width: 30px;
+          height: 30px;
+          margin-right: 20px;
+          float: left;
+        }
+
+        .panel-body {
+            padding: 10px;
+        }
+        .panel {
+            margin-bottom: 10px;
+        }
+        h2 {
+            display: inline-block;
+            margin: 0;
+            min-width: 140px;
+        }
+    }
+}
 
 //Permissions Settings
 #add_perm {

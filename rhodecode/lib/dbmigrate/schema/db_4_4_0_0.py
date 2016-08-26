@@ -3481,7 +3481,6 @@ class Integration(Base, BaseModel):
     integration_type = Column('integration_type', String(255))
     enabled = Column('enabled', Boolean(), nullable=False)
     name = Column('name', String(255), nullable=False)
-
     settings = Column(
         'settings_json', MutationObj.as_mutable(
             JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))

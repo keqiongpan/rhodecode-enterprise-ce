@@ -2036,8 +2036,6 @@ class RepoGroup(Base, BaseModel):
     users_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
     parent_group = relationship('RepoGroup', remote_side=group_id)
     user = relationship('User')
-    integrations = relationship('Integration',
-                                cascade="all, delete, delete-orphan")
 
     def __init__(self, group_name='', parent_group=None):
         self.group_name = group_name
@@ -3483,8 +3481,7 @@ class Integration(Base, BaseModel):
     integration_type = Column('integration_type', String(255))
     enabled = Column('enabled', Boolean(), nullable=False)
     name = Column('name', String(255), nullable=False)
-    child_repos_only = Column('child_repos_only', Boolean(), nullable=False,
-        default=False)
+    child_repos_only = Column('child_repos_only', Boolean(), nullable=True)
 
     settings = Column(
         'settings_json', MutationObj.as_mutable(
@@ -3515,12 +3512,10 @@ class Integration(Base, BaseModel):
         self.repo_id = None
         self.repo_group_id = None
         self.repo_group = None
-        self.child_repos_only = False
+        self.child_repos_only = None
         if isinstance(value, Repository):
-            self.repo_id = value.repo_id
             self.repo = value
         elif isinstance(value, RepoGroup):
-            self.repo_group_id = value.group_id
             self.repo_group = value
         elif value == 'root_repos':
             self.child_repos_only = True

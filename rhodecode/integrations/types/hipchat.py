@@ -29,29 +29,28 @@ from celery.task import task
 from mako.template import Template
 
 from rhodecode import events
-from rhodecode.translation import lazy_ugettext
+from rhodecode.translation import _
 from rhodecode.lib import helpers as h
 from rhodecode.lib.celerylib import run_task
 from rhodecode.lib.colander_utils import strip_whitespace
 from rhodecode.integrations.types.base import IntegrationTypeBase
-from rhodecode.integrations.schema import IntegrationSettingsSchemaBase
 
 log = logging.getLogger(__name__)
 
 
-class HipchatSettingsSchema(IntegrationSettingsSchemaBase):
+class HipchatSettingsSchema(colander.Schema):
     color_choices = [
-        ('yellow', lazy_ugettext('Yellow')),
-        ('red', lazy_ugettext('Red')),
-        ('green', lazy_ugettext('Green')),
-        ('purple', lazy_ugettext('Purple')),
-        ('gray', lazy_ugettext('Gray')),
+        ('yellow', _('Yellow')),
+        ('red', _('Red')),
+        ('green', _('Green')),
+        ('purple', _('Purple')),
+        ('gray', _('Gray')),
     ]
 
     server_url = colander.SchemaNode(
         colander.String(),
-        title=lazy_ugettext('Hipchat server URL'),
-        description=lazy_ugettext('Hipchat integration url.'),
+        title=_('Hipchat server URL'),
+        description=_('Hipchat integration url.'),
         default='',
         preparer=strip_whitespace,
         validator=colander.url,
@@ -61,15 +60,15 @@ class HipchatSettingsSchema(IntegrationSettingsSchemaBase):
     )
     notify = colander.SchemaNode(
         colander.Bool(),
-        title=lazy_ugettext('Notify'),
-        description=lazy_ugettext('Make a notification to the users in room.'),
+        title=_('Notify'),
+        description=_('Make a notification to the users in room.'),
         missing=False,
         default=False,
     )
     color = colander.SchemaNode(
         colander.String(),
-        title=lazy_ugettext('Color'),
-        description=lazy_ugettext('Background color of message.'),
+        title=_('Color'),
+        description=_('Background color of message.'),
         missing='',
         validator=colander.OneOf([x[0] for x in color_choices]),
         widget=deform.widget.Select2Widget(
@@ -98,10 +97,12 @@ in <a href="${data['repo']['url']}">${data['repo']['repo_name']}</a>
 ''')
 
 
-
 class HipchatIntegrationType(IntegrationTypeBase):
     key = 'hipchat'
-    display_name = lazy_ugettext('Hipchat')
+    display_name = _('Hipchat')
+    description = _('Send events such as repo pushes and pull requests to '
+                    'your hipchat channel.')
+    icon = '''<?xml version="1.0" encoding="utf-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 1000 1000" enable-background="new 0 0 1000 1000" xml:space="preserve"><g><g transform="translate(0.000000,511.000000) scale(0.100000,-0.100000)"><path fill="#205281" d="M4197.1,4662.4c-1661.5-260.4-3018-1171.6-3682.6-2473.3C219.9,1613.6,100,1120.3,100,462.6c0-1014,376.8-1918.4,1127-2699.4C2326.7-3377.6,3878.5-3898.3,5701-3730.5l486.5,44.5l208.9-123.3c637.2-373.4,1551.8-640.6,2240.4-650.9c304.9-6.9,335.7,0,417.9,75.4c185,174.7,147.3,411.1-89.1,548.1c-315.2,181.6-620,544.7-733.1,870.1l-51.4,157.6l472.7,472.7c349.4,349.4,520.7,551.5,657.7,774.2c784.5,1281.2,784.5,2788.5,0,4052.6c-236.4,376.8-794.8,966-1178.4,1236.7c-572.1,407.7-1264.1,709.1-1993.7,870.1c-267.2,58.2-479.6,75.4-1038,82.2C4714.4,4686.4,4310.2,4679.6,4197.1,4662.4z M5947.6,3740.9c1856.7-380.3,3127.6-1709.4,3127.6-3275c0-1000.3-534.4-1949.2-1466.2-2600.1c-188.4-133.6-287.8-226.1-301.5-284.4c-41.1-157.6,263.8-938.6,397.4-1020.8c20.5-10.3,34.3-44.5,34.3-75.4c0-167.8-811.9,195.3-1363.4,609.8l-181.6,137l-332.3-58.2c-445.3-78.8-1281.2-78.8-1702.6,0C2796-2569.2,1734.1-1832.6,1220.2-801.5C983.8-318.5,905,51.5,929,613.3c27.4,640.6,243.2,1192.1,685.1,1740.3c620,770.8,1661.5,1305.2,2822.8,1452.5C4806.9,3854,5553.7,3819.7,5947.6,3740.9z"/><path fill="#205281" d="M2381.5-345.9c-75.4-106.2-68.5-167.8,34.3-322c332.3-500.2,1010.6-928.4,1760.8-1120.2c417.9-106.2,1226.4-106.2,1644.3,0c712.5,181.6,1270.9,517.3,1685.4,1014C7681-561.7,7715.3-424.7,7616-325.4c-89.1,89.1-167.9,65.1-431.7-133.6c-835.8-630.3-2028-856.4-3086.5-585.8C3683.3-938.6,3142-685,2830.3-448.7C2576.8-253.4,2463.7-229.4,2381.5-345.9z"/></g></g><!-- Svg Vector Icons : http://www.onlinewebfonts.com/icon --></svg>'''
     valid_events = [
         events.PullRequestCloseEvent,
         events.PullRequestMergeEvent,

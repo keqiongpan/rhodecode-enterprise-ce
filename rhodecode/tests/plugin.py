@@ -33,6 +33,7 @@ import uuid
 import mock
 import pyramid.testing
 import pytest
+import colander
 import requests
 from webtest.app import TestApp
 
@@ -41,7 +42,7 @@ from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
 from rhodecode.model.db import (
     PullRequest, Repository, RhodeCodeSetting, ChangesetStatus, RepoGroup,
-    UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi)
+    UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi, Integration)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.repo import RepoModel
@@ -49,6 +50,9 @@ from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.user import UserModel
 from rhodecode.model.settings import VcsSettingsModel
 from rhodecode.model.user_group import UserGroupModel
+from rhodecode.model.integration import IntegrationModel
+from rhodecode.integrations import integration_type_registry
+from rhodecode.integrations.types.base import IntegrationTypeBase
 from rhodecode.lib.utils import repo2db_mapper
 from rhodecode.lib.vcs import create_vcsserver_proxy
 from rhodecode.lib.vcs.backends import get_backend
@@ -1636,3 +1640,101 @@ def config_stub(request, request_stub):
         pyramid.testing.tearDown()
 
     return config
+
+
+@pytest.fixture
+def StubIntegrationType():
+    class _StubIntegrationType(IntegrationTypeBase):
+        """ Test integration type class """
+
+        key = 'test'
+        display_name = 'Test integration type'
+        description = 'A test integration type for testing'
+        icon = 'test_icon_html_image'
+
+        def __init__(self, settings):
+            super(_StubIntegrationType, self).__init__(settings)
+            self.sent_events = [] # for testing
+
+        def send_event(self, event):
+            self.sent_events.append(event)
+
+        def settings_schema(self):
+            class SettingsSchema(colander.Schema):
+                test_string_field = colander.SchemaNode(
+                    colander.String(),
+                    missing=colander.required,
+                    title='test string field',
+                )
+                test_int_field = colander.SchemaNode(
+                    colander.Int(),
+                    title='some integer setting',
+                )
+            return SettingsSchema()
+
+
+    integration_type_registry.register_integration_type(_StubIntegrationType)
+    return _StubIntegrationType
+
+@pytest.fixture
+def stub_integration_settings():
+    return {
+        'test_string_field': 'some data',
+        'test_int_field': 100,
+    }
+
+
+@pytest.fixture
+def repo_integration_stub(request, repo_stub, StubIntegrationType,
+        stub_integration_settings):
+    integration = IntegrationModel().create(
+        StubIntegrationType, settings=stub_integration_settings, enabled=True,
+        name='test repo integration', scope=repo_stub)
+
+    @request.addfinalizer
+    def cleanup():
+        IntegrationModel().delete(integration)
+
+    return integration
+
+
+@pytest.fixture
+def repogroup_integration_stub(request, test_repo_group, StubIntegrationType,
+    stub_integration_settings):
+    integration = IntegrationModel().create(
+        StubIntegrationType, settings=stub_integration_settings, enabled=True,
+        name='test repogroup integration', scope=test_repo_group)
+
+    @request.addfinalizer
+    def cleanup():
+        IntegrationModel().delete(integration)
+
+    return integration
+
+
+@pytest.fixture
+def global_integration_stub(request, StubIntegrationType,
+    stub_integration_settings):
+    integration = IntegrationModel().create(
+        StubIntegrationType, settings=stub_integration_settings, enabled=True,
+        name='test global integration', scope='global')
+
+    @request.addfinalizer
+    def cleanup():
+        IntegrationModel().delete(integration)
+
+    return integration
+
+
+@pytest.fixture
+def root_repos_integration_stub(request, StubIntegrationType,
+    stub_integration_settings):
+    integration = IntegrationModel().create(
+        StubIntegrationType, settings=stub_integration_settings, enabled=True,
+        name='test global integration', scope='root_repos')
+
+    @request.addfinalizer
+    def cleanup():
+        IntegrationModel().delete(integration)
+
+    return integration

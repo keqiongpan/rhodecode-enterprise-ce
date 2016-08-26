@@ -1,0 +1,4 @@
+<div class="form-control readonly"
+   id="${oid|field.oid}">
+  ${cstruct}
+</div>

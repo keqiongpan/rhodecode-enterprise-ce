@@ -42,6 +42,7 @@ STATIC_FILE_PREFIX = '/_static'
 URL_NAME_REQUIREMENTS = {
     # group name can have a slash in them, but they must not end with a slash
     'group_name': r'.*?[^/]',
+    'repo_group_name': r'.*?[^/]',
     # repo names can have a slash in them, but they must not end with a slash
     'repo_name': r'.*?[^/]',
     # file path eats up everything at the end
