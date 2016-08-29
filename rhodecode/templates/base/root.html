@@ -60,7 +60,6 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
                     }
                 })();
             </script>
-            <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}" async>
 
             <script src="${h.asset('js/rhodecode/i18n/%s.js' % c.language, ver=c.rhodecode_version_hash)}"></script>
             <script type="text/javascript">
@@ -104,6 +103,8 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
             <![endif]-->
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode/routes.js', ver=c.rhodecode_version_hash)}"></script>
             <script language="javascript" type="text/javascript" src="${h.asset('js/scripts.js', ver=c.rhodecode_version_hash)}"></script>
+            <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
+            <style include="shared-styles" is="custom-style"></style>
             ## avoide escaping the %N
             <script>CodeMirror.modeURL = "${h.asset('') + 'js/mode/%N/%N.js?ver='+c.rhodecode_version_hash}";</script>
 
