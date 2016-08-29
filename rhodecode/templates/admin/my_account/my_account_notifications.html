@@ -10,7 +10,7 @@
 
 <div class="panel panel-default">
   <div class="panel-heading">
-    <h3 class="panel-title">${_('Your live notification settings')}</h3>
+    <h3 class="panel-title">${_('Your Live Notification Settings')}</h3>
   </div>
     <div class="panel-body">
 
@@ -23,15 +23,13 @@
             <div class="fields">
                 <div class="field">
                     <div class="label">
-                        <label for="new_email">${_('Notifications status')}:</label>
+                        <label for="new_email">${_('Notifications Status')}:</label>
                     </div>
                     <div class="checkboxes">
-                        <div style="display: inline-block">
-                        <paper-toggle-button on-change="toggleNotifications"  ${'checked' if c.rhodecode_user.get_instance().user_data.get('notification_status') else ''}></paper-toggle-button>
+                        <paper-toggle-button class="paper-toggle-button" on-change="toggleNotifications"  ${'checked' if c.rhodecode_user.get_instance().user_data.get('notification_status') else ''}></paper-toggle-button>
                         <paper-tooltip>Toggle your notifications on/off globally.</paper-tooltip>
-                        </div>
                         <template is="dom-if" if="{{changeNotificationsLoading}}">
-                        <paper-spinner active class="toggle-ajax-spinner"></paper-spinner>
+                            <paper-spinner active class="toggle-ajax-spinner"></paper-spinner>
                         </template>
                     </div>
                 </div>
