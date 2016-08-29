@@ -24,6 +24,7 @@ recursive-include rhodecode *.cfg
 recursive-include rhodecode *.json
 recursive-include rhodecode *.ini_tmpl
 recursive-include rhodecode *.sh
+recursive-include rhodecode *.mako
 
 # images, css
 include rhodecode/public/css/*.css
