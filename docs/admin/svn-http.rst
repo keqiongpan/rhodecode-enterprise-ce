@@ -23,11 +23,13 @@ Using Ubuntu Distribution as an example you can run:
 
     $ sudo apt-get install apache2 libapache2-mod-svn
 
-Once installed you need to enable ``dav_svn``:
+Once installed you need to enable ``dav_svn`` and ``anon``:
 
 .. code-block:: bash
 
     $ sudo a2enmod dav_svn
+    $ sudo a2enmod authn_anon
+
 
 Configuring Apache Setup
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -64,8 +66,8 @@ permission issues could occur. To do this edit the ``/etc/apache2/envvars``
     <VirtualHost *:8080>
         ServerAdmin rhodecode-admin@localhost
         DocumentRoot /var/www/html
-        ErrorLog ${'${APACHE_LOG_DIR}'}/error.log
-        CustomLog ${'${APACHE_LOG_DIR}'}/access.log combined
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
         Include /home/user/.rccontrol/enterprise-1/mod_dav_svn.conf
     </VirtualHost>
 
