@@ -43,7 +43,6 @@ syntax: regexp
 ^rhodecode/public/css/style-polymer.css$
 ^rhodecode/public/js/scripts.js$
 ^rhodecode/public/js/rhodecode-components.html$
-^rhodecode/public/js/src/components/shared-styles.html$
 ^rhodecode\.db$
 ^rhodecode\.log$
 ^rhodecode_dev\.log$

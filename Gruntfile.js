@@ -17,16 +17,6 @@ module.exports = function(grunt) {
       },
     },
     concat: {
-      polymercss:{
-        src: [
-          // Base libraries
-          '<%= dirs.js.src %>/components/shared-styles-prefix.html',
-          '<%= dirs.css %>/style-polymer.css',
-          '<%= dirs.js.src %>/components/shared-styles-suffix.html'
-        ],
-        dest: '<%= dirs.js.dest %>/src/components/shared-styles.html',
-        nonull: true
-      },
       dist: {
         src: [
           // Base libraries
@@ -144,7 +134,7 @@ module.exports = function(grunt) {
     watch: {
       less: {
         files: ["<%= dirs.css %>/*.less"],
-        tasks: ["less:development", 'less:components', 'concat:polymercss', "vulcanize"]
+        tasks: ["less:development", 'less:components', "vulcanize"]
       },
       js: {
         files: ["<%= dirs.js.src %>/**/*.js", "<%= dirs.js.src %>/components/*.*"],
@@ -183,7 +173,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-crisper');
   grunt.loadNpmTasks('grunt-contrib-copy');
 
-  // TODO: johbo: missing bower bits
-  // grunt.registerTask('default', ['less:production', 'less:components', 'concat:polymercss', 'copy','vulcanize', 'concat:dist']);
-  grunt.registerTask('default', ['less:production', 'concat:dist']);
+  grunt.registerTask('default', ['less:production', 'less:components', 'copy','vulcanize', 'concat:dist']);
 };
