@@ -26,6 +26,9 @@ recursive-include rhodecode *.ini_tmpl
 recursive-include rhodecode *.sh
 recursive-include rhodecode *.mako
 
+# 502 page
+include rhodecode/public/502.html
+
 # images, css
 include rhodecode/public/css/*.css
 include rhodecode/public/images/*.*
