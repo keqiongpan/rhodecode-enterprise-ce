@@ -54,6 +54,12 @@ let
   };
   nodeDependencies = nodeEnv.shell.nodeDependencies;
 
+  bowerComponents = pkgs.buildBowerComponents {
+    name = "enterprise-ce-bower-components";
+    generated = ./pkgs/bower-packages.nix;
+    src = rhodecode-enterprise-ce-src;
+  };
+
   pythonGeneratedPackages = self: basePythonPackages.override (a: {
     inherit self;
   })
@@ -113,6 +119,7 @@ let
       # pkgs/default.nix?
       passthru = {
         inherit
+          bowerComponents
           linkNodeModules
           myPythonPackagesUnfix
           pythonLocalOverrides;
