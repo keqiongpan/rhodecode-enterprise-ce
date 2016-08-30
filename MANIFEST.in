@@ -25,6 +25,9 @@ recursive-include rhodecode *.json
 recursive-include rhodecode *.ini_tmpl
 recursive-include rhodecode *.sh
 
+# 502 page
+include rhodecode/public/502.html
+
 # images, css
 include rhodecode/public/css/*.css
 include rhodecode/public/images/*.*
