@@ -41,7 +41,8 @@ let
       ext = last (splitString "." path);
     in
       !elem (basename path) [
-        ".git" ".hg" "__pycache__" ".eggs" "node_modules"
+        ".git" ".hg" "__pycache__" ".eggs"
+        "bower_components" "node_modules"
         "build" "data" "tmp"] &&
       !elem ext ["egg-info" "pyc"] &&
       !startsWith "result" path;
