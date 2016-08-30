@@ -30,6 +30,10 @@ let
     then pythonPackages
     else getAttr pythonPackages pkgs;
 
+  buildBowerComponents =
+    pkgs.buildBowerComponents or
+    (import ./pkgs/backport-16.03-build-bower-components.nix { inherit pkgs; });
+
   elem = builtins.elem;
   basename = path: with pkgs.lib; last (splitString "/" path);
   startsWith = prefix: full: let
@@ -58,7 +62,7 @@ let
   };
   nodeDependencies = nodeEnv.shell.nodeDependencies;
 
-  bowerComponents = pkgs.buildBowerComponents {
+  bowerComponents = buildBowerComponents {
     name = "enterprise-ce-${version}";
     generated = ./pkgs/bower-packages.nix;
     src = rhodecode-enterprise-ce-src;
