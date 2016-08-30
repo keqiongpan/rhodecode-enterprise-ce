@@ -80,7 +80,7 @@ let
     rhodecode-enterprise-ce =
       let
         version = builtins.readFile ./rhodecode/VERSION;
-        linkNodeModules = ''
+        linkNodeAndBowerPackages = ''
           echo "Link node packages"
           rm -fr node_modules
           mkdir node_modules
@@ -91,6 +91,13 @@ let
           ln -s ${nodeDependencies}/lib/node_modules/* node_modules/
 
           echo "DONE: Link node packages"
+
+          echo "Link bower packages"
+          rm -fr bower_components
+          mkdir bower_components
+
+          ln -s ${bowerComponents}/bower_components/* bower_components/
+          echo "DONE: Link bower packages"
         '';
       in super.rhodecode-enterprise-ce.override (attrs: {
 
@@ -120,10 +127,13 @@ let
       passthru = {
         inherit
           bowerComponents
-          linkNodeModules
+          linkNodeAndBowerPackages
           myPythonPackagesUnfix
           pythonLocalOverrides;
         pythonPackages = self;
+
+        # johbo: Legacy support for the EE build mechanisms
+        linkNodeModules = linkNodeAndBowerPackages;
       };
 
       LC_ALL = "en_US.UTF-8";
@@ -142,7 +152,7 @@ let
         export PYTHONPATH="$tmp_path/${self.python.sitePackages}:$PYTHONPATH"
         mkdir -p $tmp_path/${self.python.sitePackages}
         python setup.py develop --prefix $tmp_path --allow-hosts ""
-      '' + linkNodeModules;
+      '' + linkNodeAndBowerPackages;
 
       preCheck = ''
         export PATH="$out/bin:$PATH"
@@ -153,7 +163,7 @@ let
         rm -rf $out/lib/${self.python.libPrefix}/site-packages/rhodecode/tests
       '';
 
-      preBuild = linkNodeModules + ''
+      preBuild = linkNodeAndBowerPackages + ''
         grunt
         rm -fr node_modules
       '';
