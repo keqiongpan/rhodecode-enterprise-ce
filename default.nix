@@ -43,8 +43,10 @@ let
       !elem (basename path) [
         ".git" ".hg" "__pycache__" ".eggs"
         "bower_components" "node_modules"
-        "build" "data" "tmp"] &&
+        "build" "data" "result" "tmp"] &&
       !elem ext ["egg-info" "pyc"] &&
+      # TODO: johbo: This check is wrong, since "path" contains an absolute path,
+      # it would still be good to restore it since we want to ignore "result-*".
       !startsWith "result" path;
 
   sources = pkgs.config.rc.sources or {};
