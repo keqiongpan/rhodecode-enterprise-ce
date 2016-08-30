@@ -50,6 +50,7 @@ let
       !startsWith "result" path;
 
   sources = pkgs.config.rc.sources or {};
+  version = builtins.readFile ./rhodecode/VERSION;
   rhodecode-enterprise-ce-src = builtins.filterSource src-filter ./.;
 
   nodeEnv = import ./pkgs/node-default.nix {
@@ -58,7 +59,7 @@ let
   nodeDependencies = nodeEnv.shell.nodeDependencies;
 
   bowerComponents = pkgs.buildBowerComponents {
-    name = "enterprise-ce-bower-components";
+    name = "enterprise-ce-${version}";
     generated = ./pkgs/bower-packages.nix;
     src = rhodecode-enterprise-ce-src;
   };
@@ -82,7 +83,6 @@ let
   pythonLocalOverrides = self: super: {
     rhodecode-enterprise-ce =
       let
-        version = builtins.readFile ./rhodecode/VERSION;
         linkNodeAndBowerPackages = ''
           echo "Link node packages"
           rm -fr node_modules
