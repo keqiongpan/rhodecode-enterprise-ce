@@ -86,21 +86,14 @@ class SlackSettingsSchema(colander.Schema):
 
 
 repo_push_template = Template(r'''
-*${data['actor']['username']}* pushed to \
-%if data['push']['branches']:
-${len(data['push']['branches']) > 1 and 'branches' or 'branch'} \
-${', '.join('<%s|%s>' % (branch['url'], branch['name']) for branch in data['push']['branches'])} \
-%else:
-unknown branch \
-%endif
-in <${data['repo']['url']}|${data['repo']['repo_name']}>
->>>
-%for commit in data['push']['commits']:
-<${commit['url']}|${commit['short_id']}> - ${commit['message_html']|html_to_slack_links}
+*${data['actor']['username']}* pushed to repo <${data['repo']['url']}|${data['repo']['repo_name']}>:
+%for branch, branch_commits in branches_commits.items():
+branch: <${branch_commits['branch']['url']}|${branch_commits['branch']['name']}>
+    %for commit in branch_commits['commits']:
+> <${commit['url']}|${commit['short_id']}> - ${commit['message_html']|html_to_slack_links}
+    %endfor
 %endfor
 ''')
-
-
 
 
 class SlackIntegrationType(IntegrationTypeBase):
@@ -224,8 +217,23 @@ class SlackIntegrationType(IntegrationTypeBase):
         )
 
     def format_repo_push_event(self, data):
+        branch_data = {branch['name']: branch
+                      for branch in data['push']['branches']}
+
+        branches_commits = {}
+        for commit in data['push']['commits']:
+            log.critical(commit)
+            if commit['branch'] not in branches_commits:
+                branch_commits = {'branch': branch_data[commit['branch']],
+                                  'commits': []}
+                branches_commits[commit['branch']] = branch_commits
+
+            branch_commits = branches_commits[commit['branch']]
+            branch_commits['commits'].append(commit)
+
         result = repo_push_template.render(
             data=data,
+            branches_commits=branches_commits,
             html_to_slack_links=html_to_slack_links,
         )
         return result
