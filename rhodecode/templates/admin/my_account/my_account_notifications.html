@@ -50,7 +50,7 @@
         ajax.generateRequest();
     };
     ctrlr.handleNotifications = function(event){
-        $('#live-notifications')[0].active = event.detail.response;
+        $('#live-notifications')[0].checked = event.detail.response;
     };
 
     function checkBrowserStatus(){
