@@ -12,7 +12,7 @@ module.exports = function(grunt) {
       main: {
         expand: true,
         cwd: 'bower_components',
-        src: 'webcomponentsjs/**',
+        src: 'webcomponentsjs/webcomponents-lite.js',
         dest: '<%= dirs.js.dest %>/vendors',
       },
     },
