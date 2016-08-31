@@ -98,15 +98,23 @@ module.exports = function(grunt) {
           '<%= dirs.js.src %>/rhodecode/users.js',
           '<%= dirs.js.src %>/rhodecode/utils/notifications.js',
           '<%= dirs.js.src %>/rhodecode/appenlight.js',
-
           // Rhodecode main module
-          '<%= dirs.js.src %>/rhodecode.js'
+          '<%= dirs.js.src %>/rhodecode.js',
         ],
         dest: '<%= dirs.js.dest %>/scripts.js',
         nonull: true
       }
     },
-
+    crisper: {
+      dist: {
+        options: {
+          cleanup: false,
+          onlySplit: true
+        },
+        src: '<%= dirs.js.dest %>/rhodecode-components.html',
+        dest: '<%= dirs.js.dest %>/rhodecode-components.js'
+      }
+    },
     less: {
       development: {
         options: {
@@ -148,7 +156,7 @@ module.exports = function(grunt) {
       },
       js: {
         files: ["<%= dirs.js.src %>/**/*.js", "<%= dirs.js.src %>/components/**/*.html"],
-        tasks: ['less:components', 'concat:polymercss', "vulcanize", "concat:dist"]
+        tasks: ['less:components', 'concat:polymercss', "vulcanize", 'crisper', "concat:dist"]
       }
     },
 
@@ -183,5 +191,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-crisper');
   grunt.loadNpmTasks('grunt-contrib-copy');
 
-  grunt.registerTask('default', ['less:production', 'less:components', 'concat:polymercss', 'copy','vulcanize', 'concat:dist']);
+  grunt.registerTask('default', ['less:production', 'less:components', 'concat:polymercss', 'copy','vulcanize', 'crisper', 'concat:dist']);
 };
