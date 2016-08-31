@@ -8,9 +8,16 @@
 { buildInputs ? [], generated, ... } @ attrs:
 
 let
+  bower2nix-src = pkgs.fetchzip {
+    url = "https://github.com/rvl/bower2nix/archive/v3.0.1.tar.gz";
+    sha256 = "1zbvz96k2j6g0r4lvm5cgh41a73k9dgayk7x63cmg538dzznxvyb";
+  };
+
+  bower2nix = import "${bower2nix-src}/default.nix" { inherit pkgs; };
+
   fetchbower = import ./backport-16.03-fetchbower.nix {
     inherit (pkgs) stdenv lib;
-    inherit (pkgs.nodePackages) bower2nix;
+    inherit bower2nix;
   };
 
   # Fetches the bower packages. `generated` should be the result of a
