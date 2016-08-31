@@ -138,9 +138,6 @@ let
           myPythonPackagesUnfix
           pythonLocalOverrides;
         pythonPackages = self;
-
-        # johbo: Legacy support for the EE build mechanisms
-        linkNodeModules = linkNodeAndBowerPackages;
       };
 
       LC_ALL = "en_US.UTF-8";
