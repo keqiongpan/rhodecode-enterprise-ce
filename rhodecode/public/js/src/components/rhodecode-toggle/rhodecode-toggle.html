@@ -1,13 +1,20 @@
 <link rel="import" href="../../../../../../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../../../../../../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../../../../../../bower_components/paper-tooltip/paper-tooltip.html">
 
 <dom-module id="rhodecode-toggle">
+
+    <style include="shared-styles"></style>
+    <link rel="stylesheet" href="rhodecode-toggle.css">
+
     <template>
-        <style include="shared-styles"></style>
-        <!--<link rel="stylesheet" href="rhodecode-toggle.css">-->
-        FOOBAR
-        <paper-toggle-button>
-            toggle
-        </paper-toggle-button>
+        <div class="rc-toggle">
+            <paper-toggle-button checked={{checked}}>[[labelStatus(checked)]]</paper-toggle-button>
+            <paper-tooltip>[[tooltipText]]</paper-tooltip>
+            <template is="dom-if" if="[[shouldShow(noSpinner)]]">
+                <paper-spinner active=[[active]]></paper-spinner>
+            </template>
+        </div>
     </template>
 
     <script src="rhodecode-toggle.js"></script>

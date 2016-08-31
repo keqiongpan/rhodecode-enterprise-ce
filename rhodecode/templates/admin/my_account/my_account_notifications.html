@@ -18,18 +18,13 @@
         <p class="hidden">Status of browser notifications permission: <strong id="browser-notification-status"></strong></p>
 
         <div class="form">
-            <!-- fields -->
             <div class="fields">
                 <div class="field">
                     <div class="label">
                         <label for="new_email">${_('Notifications Status')}:</label>
                     </div>
                     <div class="checkboxes">
-                        <paper-toggle-button class="paper-toggle-button" on-change="toggleNotifications"  ${'checked' if c.rhodecode_user.get_instance().user_data.get('notification_status') else ''}></paper-toggle-button>
-                        <paper-tooltip>Toggle your notifications on/off globally.</paper-tooltip>
-                        <template is="dom-if" if="{{changeNotificationsLoading}}">
-                            <paper-spinner active class="toggle-ajax-spinner"></paper-spinner>
-                        </template>
+                        <rhodecode-toggle id="live-notifications" active="[[changeNotificationsLoading]]" on-change="toggleNotifications" ${'checked' if c.rhodecode_user.get_instance().user_data.get('notification_status') else ''}></rhodecode-toggle>
                     </div>
                 </div>
                 <div class="buttons">
@@ -55,7 +50,7 @@
         ajax.generateRequest();
     };
     ctrlr.handleNotifications = function(event){
-        $('paper-toggle-button')[0].active = event.detail.response;
+        $('#live-notifications')[0].active = event.detail.response;
     };
 
     function checkBrowserStatus(){
