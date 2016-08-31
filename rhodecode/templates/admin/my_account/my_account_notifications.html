@@ -79,7 +79,7 @@ $('#test-notification').on('click', function(e){
         message: {
             message: 'This is a test notification.',
             level: level,
-            testMessage: true
+            force: true
         }
     };
     $.Topic('/notifications').publish(payload);
