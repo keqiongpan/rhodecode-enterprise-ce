@@ -314,6 +314,7 @@ class UserModel(BaseModel):
                 new_user.update_userdata(force_password_change=True)
             if language:
                 new_user.update_userdata(language=language)
+            new_user.update_userdata(notification_status=True)
 
             self.sa.add(new_user)
 

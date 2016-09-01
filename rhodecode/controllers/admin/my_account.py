@@ -365,9 +365,7 @@ class MyAccountController(BaseController):
     @jsonify
     def my_notifications_toggle_visibility(self):
         user = c.rhodecode_user.get_instance()
-        user_data = user.user_data
-        status = user_data.get('notification_status', False)
-        user_data['notification_status'] = not status
-        user.user_data = user_data
+        new_status = not user.user_data.get('notification_status', True)
+        user.update_userdata(notification_status=new_status)
         Session().commit()
-        return user_data['notification_status']
+        return user.user_data['notification_status']
