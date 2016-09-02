@@ -23,18 +23,26 @@ py.test integration
 
 The integration with the test runner is based on the following three parts:
 
-- `pytest_pylons` is a py.test plugin which does the integration with the
-  Pylons web framework. It sets up the Pylons environment based on the given ini
-  file.
+- :file:`rhodecode/tests/pylons_plugin.py` is a py.test plugin which does the
+  integration with the Pylons web framework. It sets up the Pylons environment
+  based on the given ini file.
 
   Tests which depend on the Pylons environment to be set up must request the
   fixture `pylonsapp`.
 
 - :file:`rhodecode/tests/plugin.py` contains the integration of py.test with
-  RhodeCode Enterprise itself.
+  RhodeCode Enterprise itself and it takes care of setting up the needed parts
+  of the Pyramid framework.
 
 - :file:`conftest.py` plugins are used to provide a special integration for
   certain groups of tests based on the directory location.
+
+
+.. note::
+
+   We are migrating from Pylons to its successor Pyramid. Eventually the role of
+   the file `pylons_plugin.py` will change to provide only a Pyramid
+   integration.
 
 
 
