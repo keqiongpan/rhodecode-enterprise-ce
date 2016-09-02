@@ -14,9 +14,6 @@ py.test based test suite
 The test suite is in the folder :file:`rhodecode/tests/` and should be run with
 the test runner `py.test` inside of your `nix-shell` environment::
 
-   # In case you need the cythonized version
-   CYTHONIZE=1 python setup.py develop --prefix=$tmp_path
-
    py.test rhodecode
 
 
