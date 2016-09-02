@@ -60,3 +60,4 @@ __url__ = 'http://rhodecode.com'
 is_windows = __platform__ in ['Windows']
 is_unix = not is_windows
 is_test = False
+disable_error_handler = False
