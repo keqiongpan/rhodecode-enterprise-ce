@@ -32,13 +32,17 @@ div.diffblock.margined.comm tr {
     }
 
     .comment-toggle {
-        display: inline-block;
-        visibility: hidden;
         width: 20px;
         color: @rcblue;
+        .icon-comment{
+            display: inline-block;
+            visibility: hidden;
+        }
 
         &.active {
-            visibility: visible;
+            .icon-comment{
+                visibility: visible;
+            }
             cursor: pointer;
         }
     }
