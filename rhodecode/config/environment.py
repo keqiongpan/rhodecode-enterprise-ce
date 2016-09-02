@@ -158,6 +158,8 @@ def load_pyramid_environment(global_config, settings):
     # This has to be done before the database connection is initialized.
     if settings['is_test']:
         rhodecode.is_test = True
+        rhodecode.disable_error_handler = True
+
         utils.initialize_test_environment(settings_merged)
 
     # Initialize the database connection.

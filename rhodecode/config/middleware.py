@@ -221,7 +221,8 @@ def make_not_found_view(config):
         except Exception as e:
             log.exception(e)
 
-            if settings.get('debugtoolbar.enabled', False):
+            if (settings.get('debugtoolbar.enabled', False) or
+                rhodecode.disable_error_handler):
                 raise
 
             if isinstance(e, VCSCommunicationError):

@@ -20,6 +20,7 @@
 
 import mock
 import pytest
+import rhodecode
 import rhodecode.lib.vcs.client as client
 
 @pytest.mark.usefixtures('autologin_user', 'app')
@@ -34,9 +35,13 @@ def test_vcs_available_returns_summary_page(app, backend):
 def test_vcs_unavailable_returns_vcs_error_page(app, backend):
     url = '/{repo_name}'.format(repo_name=backend.repo.repo_name)
 
-    with mock.patch.object(client, '_get_proxy_method') as p:
-        p.side_effect = client.exceptions.PyroVCSCommunicationError()
-        response = app.get(url, expect_errors=True)
+    try:
+        rhodecode.disable_error_handler = False
+        with mock.patch.object(client, '_get_proxy_method') as p:
+            p.side_effect = client.exceptions.PyroVCSCommunicationError()
+            response = app.get(url, expect_errors=True)
+    finally:
+        rhodecode.disable_error_handler = True
 
     assert response.status_code == 502
     assert 'Could not connect to VCS Server' in response.body
