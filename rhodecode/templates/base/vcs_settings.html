@@ -125,12 +125,12 @@
             </div>
             <div class="panel-body">
                 <div class="field">
-                    <div class="content" >
-                        <label>${_('Subversion HTTP Support')}</label><br/>
-                    </div>
                     <div class="checkbox">
                         ${h.checkbox('rhodecode_proxy_subversion_http_requests' + suffix, 'True', **kwargs)}
                         <label for="rhodecode_proxy_subversion_http_requests${suffix}">${_('Proxy subversion HTTP requests')}</label>
+                    </div>
+                    <div class="label">
+                        <span class="help-block">${_('Subversion HTTP Support. Enables communication with SVN over HTTP protocol.')}</span>
                     </div>
                 </div>
                 <div class="field">
