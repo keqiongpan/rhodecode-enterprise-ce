@@ -88,10 +88,11 @@ let
     rhodecode-enterprise-ce =
       let
         linkNodeAndBowerPackages = ''
+          echo "Export RhodeCode CE path"
+          export RHODECODE_CE_PATH=${rhodecode-enterprise-ce-src}
           echo "Link node packages"
           rm -fr node_modules
           mkdir node_modules
-
           # johbo: Linking individual packages allows us to run "npm install"
           # inside of a shell to try things out. Re-entering the shell will
           # restore a clean environment.
