@@ -20,6 +20,8 @@
 
 import colander
 
+from rhodecode.model.db import User, UserGroup
+
 
 class GroupNameType(colander.String):
     SEPARATOR = '/'
@@ -32,3 +34,72 @@ class GroupNameType(colander.String):
         path = path.split(self.SEPARATOR)
         path = [item for item in path if item]
         return self.SEPARATOR.join(path)
+
+
+class UserOrUserGroupType(colander.SchemaType):
+    """ colander Schema type for valid rhodecode user and/or usergroup """
+    scopes = ('user', 'usergroup')
+
+    def __init__(self):
+        self.users = 'user' in self.scopes
+        self.usergroups = 'usergroup' in self.scopes
+
+    def serialize(self, node, appstruct):
+        if appstruct is colander.null:
+            return colander.null
+
+        if self.users:
+            if isinstance(appstruct, User):
+                if self.usergroups:
+                    return 'user:%s' % appstruct.username
+                return appstruct.username
+
+        if self.usergroups:
+            if isinstance(appstruct, UserGroup):
+                if self.users:
+                    return 'usergroup:%s' % appstruct.users_group_name
+                return appstruct.users_group_name
+
+        raise colander.Invalid(
+            node, '%s is not a valid %s' % (appstruct, ' or '.join(self.scopes)))
+
+    def deserialize(self, node, cstruct):
+        if cstruct is colander.null:
+            return colander.null
+
+        user, usergroup = None, None
+        if self.users:
+            if cstruct.startswith('user:'):
+                user = User.get_by_username(cstruct.split(':')[1])
+            else:
+                user = User.get_by_username(cstruct)
+
+        if self.usergroups:
+            if cstruct.startswith('usergroup:'):
+                usergroup = UserGroup.get_by_group_name(cstruct.split(':')[1])
+            else:
+                usergroup = UserGroup.get_by_group_name(cstruct)
+
+        if self.users and self.usergroups:
+            if user and usergroup:
+                raise colander.Invalid(node, (
+                    '%s is both a user and usergroup, specify which '
+                    'one was wanted by prepending user: or usergroup: to the '
+                    'name') % cstruct)
+
+        if self.users and user:
+            return user
+
+        if self.usergroups and usergroup:
+            return usergroup
+
+        raise colander.Invalid(
+            node, '%s is not a valid %s' % (cstruct, ' or '.join(self.scopes)))
+
+
+class UserType(UserOrUserGroupType):
+    scopes = ('user',)
+
+
+class UserGroupType(UserOrUserGroupType):
+    scopes = ('usergroup',)
