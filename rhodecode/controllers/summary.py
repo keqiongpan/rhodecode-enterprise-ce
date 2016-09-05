@@ -84,12 +84,12 @@ class SummaryController(BaseRepoController):
                                                   filename=f)
                     break
             except CommitError:
-                log.exception("Problem getting commit")
-                pass
+                log.exception(
+                    "Problem getting commit when trying to render the README.")
             except EmptyRepositoryError:
-                pass
+                log.debug("Repository is empty, no README to render.")
             except Exception:
-                log.exception("General failure")
+                log.exception("Exception while trying to render the README")
 
             return readme_data, readme_file
 
@@ -102,11 +102,13 @@ class SummaryController(BaseRepoController):
 
         return computed
 
-
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     def index(self, repo_name):
+
+        # Prepare the clone URL
+
         username = ''
         if c.rhodecode_user.username != User.DEFAULT_USER:
             username = safe_str(c.rhodecode_user.username)
@@ -123,6 +125,8 @@ class SummaryController(BaseRepoController):
             user=username, uri_tmpl=_def_clone_uri)
         c.clone_repo_url_id = c.rhodecode_db_repo.clone_url(
             user=username, uri_tmpl=_def_clone_uri_by_id)
+
+        # If enabled, get statistics data
 
         c.show_stats = bool(c.rhodecode_db_repo.enable_statistics)
 
