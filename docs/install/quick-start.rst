@@ -19,8 +19,7 @@ Quick Start Installation Guide
 
 To get |RCE| up and running, run through the below steps:
 
-1. Download the latest |RCC| installer from your `rhodecode.com`_ profile
-   or main page.
+1. Download the latest |RCC| installer from `rhodecode.com/download`_.
    If you don't have an account, sign up at `rhodecode.com/register`_.
 
 2. Run the |RCC| installer and accept the End User Licence using the
@@ -107,3 +106,5 @@ To get |RCE| up and running, run through the below steps:
 .. _rhodecode.com/download/: https://rhodecode.com/download/
 .. _rhodecode.com: https://rhodecode.com/
 .. _rhodecode.com/register: https://rhodecode.com/register/
+.. _rhodecode.com/download: https://rhodecode.com/download/
+
