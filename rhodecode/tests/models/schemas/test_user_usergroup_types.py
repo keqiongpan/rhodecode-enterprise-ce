@@ -22,6 +22,7 @@ import colander
 import pytest
 
 from rhodecode.model import validation_schema
+from rhodecode.model.db import Session
 from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model.validation_schema.types import (
@@ -72,8 +73,9 @@ class TestUserAndUserGroupSchemaType(object):
             err = exc_info.value.asdict()
             assert 'is both a user and usergroup' in err['user_or_usergroup']
         finally:
-            UserModel().delete(user)
             UserGroupModel().delete(usergroup)
+            Session().commit()
+            UserModel().delete(user)
 
 
 class TestUserType(object):
