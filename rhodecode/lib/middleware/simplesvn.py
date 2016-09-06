@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import logging
 from urlparse import urljoin
 
 import requests
@@ -25,6 +26,8 @@ import requests
 import rhodecode
 from rhodecode.lib.middleware import simplevcs
 from rhodecode.lib.utils import is_valid_repo
+
+log = logging.getLogger(__name__)
 
 
 class SimpleSvnApp(object):
