@@ -347,13 +347,13 @@ class TestAdminSettingsVcs:
         with mock.patch.dict(
                 rhodecode.CONFIG, {'labs_settings_active': 'true'}):
             response = self.app.get(url('admin_settings_vcs'))
-        response.mustcontain('Labs settings:')
+        response.mustcontain('Labs Settings')
 
     def test_has_not_a_section_for_labs_settings_if_disables(self, app):
         with mock.patch.dict(
                 rhodecode.CONFIG, {'labs_settings_active': 'false'}):
             response = self.app.get(url('admin_settings_vcs'))
-        response.mustcontain(no='Labs settings:')
+        response.mustcontain(no='Labs Settings')
 
     @pytest.mark.parametrize('new_value', [True, False])
     def test_allows_to_change_hg_rebase_merge_strategy(
@@ -443,50 +443,6 @@ class TestLabsSettings(object):
         assert '<label for="rhodecode_text">text label</label>' in response
         assert '<p class="help-block">text help</p>' in response
         assert 'name="rhodecode_text" size="60" type="text"' in response
-
-    @pytest.mark.parametrize('setting_name', [
-        'proxy_subversion_http_requests',
-    ])
-    def test_update_boolean_settings(self, csrf_token, setting_name):
-        self.app.post(
-            url('admin_settings_labs'),
-            params={
-                'rhodecode_{}'.format(setting_name): 'true',
-                'csrf_token': csrf_token,
-            })
-        setting = SettingsModel().get_setting_by_name(setting_name)
-        assert setting.app_settings_value
-
-        self.app.post(
-            url('admin_settings_labs'),
-            params={
-                'rhodecode_{}'.format(setting_name): 'false',
-                'csrf_token': csrf_token,
-            })
-        setting = SettingsModel().get_setting_by_name(setting_name)
-        assert not setting.app_settings_value
-
-    @pytest.mark.parametrize('setting_name', [
-        'subversion_http_server_url',
-    ])
-    def test_update_string_settings(self, csrf_token, setting_name):
-        self.app.post(
-            url('admin_settings_labs'),
-            params={
-                'rhodecode_{}'.format(setting_name): 'Test 1',
-                'csrf_token': csrf_token,
-            })
-        setting = SettingsModel().get_setting_by_name(setting_name)
-        assert setting.app_settings_value == 'Test 1'
-
-        self.app.post(
-            url('admin_settings_labs'),
-            params={
-                'rhodecode_{}'.format(setting_name): ' Test 2 ',
-                'csrf_token': csrf_token,
-            })
-        setting = SettingsModel().get_setting_by_name(setting_name)
-        assert setting.app_settings_value == 'Test 2'
 
 
 @pytest.mark.usefixtures('app')

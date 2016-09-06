@@ -276,7 +276,7 @@ def attach_context_attributes(context, request):
     # Visual options
     context.visual = AttributeDict({})
 
-    # DB store
+    # DB stored Visual Items
     context.visual.show_public_icon = str2bool(
         rc_config.get('rhodecode_show_public_icon'))
     context.visual.show_private_icon = str2bool(

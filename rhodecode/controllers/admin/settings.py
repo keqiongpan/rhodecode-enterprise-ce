@@ -135,6 +135,7 @@ class SettingsController(BaseController):
         c.svn_tag_patterns = model.get_global_svn_tag_patterns()
 
         application_form = ApplicationUiSettingsForm()()
+
         try:
             form_result = application_form.to_python(dict(request.POST))
         except formencode.Invalid as errors:
@@ -151,12 +152,14 @@ class SettingsController(BaseController):
             )
 
         try:
-            model.update_global_ssl_setting(form_result['web_push_ssl'])
             if c.visual.allow_repo_location_change:
                 model.update_global_path_setting(
                     form_result['paths_root_path'])
+
+            model.update_global_ssl_setting(form_result['web_push_ssl'])
             model.update_global_hook_settings(form_result)
-            model.create_global_svn_settings(form_result)
+
+            model.create_or_update_global_svn_settings(form_result)
             model.create_or_update_global_hg_settings(form_result)
             model.create_or_update_global_pr_settings(form_result)
         except Exception:

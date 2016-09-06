@@ -138,16 +138,16 @@
 
     % endif
 
-    % if display_globals or repo_type in ['svn']:
+    % if display_globals:
         <div class="panel panel-default">
             <div class="panel-heading">
-                <h3 class="panel-title">${_('Subversion Settings')}</h3>
+                <h3 class="panel-title">${_('Global Subversion Settings')}</h3>
             </div>
             <div class="panel-body">
                 <div class="field">
                     <div class="checkbox">
-                        ${h.checkbox('rhodecode_proxy_subversion_http_requests' + suffix, 'True', **kwargs)}
-                        <label for="rhodecode_proxy_subversion_http_requests${suffix}">${_('Proxy subversion HTTP requests')}</label>
+                        ${h.checkbox('vcs_svn_proxy_http_requests_enabled' + suffix, 'True', **kwargs)}
+                        <label for="vcs_svn_proxy_http_requests_enabled{suffix}">${_('Proxy subversion HTTP requests')}</label>
                     </div>
                     <div class="label">
                         <span class="help-block">${_('Subversion HTTP Support. Enables communication with SVN over HTTP protocol.')}</span>
@@ -155,17 +155,22 @@
                 </div>
                 <div class="field">
                     <div class="label">
-                        <label for="rhodecode_subversion_http_server_url">${_('Subversion HTTP Server URL')}</label><br/>
+                        <label for="vcs_svn_proxy_http_server_url">${_('Subversion HTTP Server URL')}</label><br/>
                     </div>
                     <div class="input">
-                        ${h.text('rhodecode_subversion_http_server_url',size=59)}
+                        ${h.text('vcs_svn_proxy_http_server_url',size=59)}
                     </div>
                 </div>
-                <div class="field">
-                    <div class="label">
-                        <span class="help-block">${_('Url to Apache Proxy, e.g. http://localhost:8080/')}</span>
-                    </div>
-                 </div>
+            </div>
+        </div>
+    % endif
+
+    % if display_globals or repo_type in ['svn']:
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">${_('Subversion Settings')}</h3>
+            </div>
+            <div class="panel-body">
                 <div class="field">
                     <div class="content" >
                         <label>${_('Repository patterns')}</label><br/>
@@ -231,6 +236,9 @@
         ${h.hidden('new_svn_branch' + suffix, '')}
         ${h.hidden('new_svn_tag' + suffix, '')}
     % endif
+
+
+
 
     % if display_globals or repo_type in ['hg', 'git']:
         <div class="panel panel-default">

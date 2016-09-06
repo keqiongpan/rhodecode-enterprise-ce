@@ -46,10 +46,12 @@ from rhodecode.lib.utils import (
     is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path)
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool
 from rhodecode.lib.vcs.conf import settings as vcs_settings
+from rhodecode.lib.vcs.backends import base
 from rhodecode.model import meta
 from rhodecode.model.db import User, Repository
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import SettingsModel
+
 
 log = logging.getLogger(__name__)
 
@@ -86,6 +88,8 @@ class SimpleVCS(object):
         self.registry = registry
         self.application = application
         self.config = config
+        # re-populated by specialized middlewares
+        self.repo_vcs_config = base.Config()
         # base path of repo locations
         self.basepath = get_rhodecode_base_path()
         # authenticate this VCS request using authfunc

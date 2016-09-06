@@ -24,9 +24,9 @@ from collections import namedtuple
 from functools import wraps
 
 from rhodecode.lib import caches
-from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.utils2 import (
     Optional, AttributeDict, safe_str, remove_prefix, str2bool)
+from rhodecode.lib.vcs.backends import base
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi, RhodeCodeSetting)
@@ -402,18 +402,25 @@ class VcsSettingsModel(object):
 
     INHERIT_SETTINGS = 'inherit_vcs_settings'
     GENERAL_SETTINGS = (
-        'use_outdated_comments', 'pr_merge_enabled',
+        'use_outdated_comments',
+        'pr_merge_enabled',
         'hg_use_rebase_for_merging')
+
     HOOKS_SETTINGS = (
         ('hooks', 'changegroup.repo_size'),
         ('hooks', 'changegroup.push_logger'),
         ('hooks', 'outgoing.pull_logger'))
     HG_SETTINGS = (
-        ('extensions', 'largefiles'), ('phases', 'publish'))
-    GLOBAL_HG_SETTINGS = HG_SETTINGS + (('extensions', 'hgsubversion'), )
+        ('extensions', 'largefiles'),
+        ('phases', 'publish'))
+    GLOBAL_HG_SETTINGS = (
+        ('extensions', 'largefiles'),
+        ('phases', 'publish'),
+        ('extensions', 'hgsubversion'))
     GLOBAL_SVN_SETTINGS = (
-        'rhodecode_proxy_subversion_http_requests',
-        'rhodecode_subversion_http_server_url')
+        ('vcs_svn_proxy', 'http_requests_enabled'),
+        ('vcs_svn_proxy', 'http_server_url'))
+
     SVN_BRANCH_SECTION = 'vcs_svn_branch'
     SVN_TAG_SECTION = 'vcs_svn_tag'
     SSL_SETTING = ('web', 'push_ssl')
@@ -523,13 +530,10 @@ class VcsSettingsModel(object):
     def create_repo_svn_settings(self, data):
         return self._create_svn_settings(self.repo_settings, data)
 
-    def create_global_svn_settings(self, data):
-        return self._create_svn_settings(self.global_settings, data)
-
     @assert_repo_settings
     def create_or_update_repo_hg_settings(self, data):
         largefiles, phases = self.HG_SETTINGS
-        largefiles_key, phases_key = self._get_hg_settings(
+        largefiles_key, phases_key = self._get_settings_keys(
             self.HG_SETTINGS, data)
         self._create_or_update_ui(
             self.repo_settings, *largefiles, value='',
@@ -538,8 +542,8 @@ class VcsSettingsModel(object):
             self.repo_settings, *phases, value=safe_str(data[phases_key]))
 
     def create_or_update_global_hg_settings(self, data):
-        largefiles, phases, subversion = self.GLOBAL_HG_SETTINGS
-        largefiles_key, phases_key, subversion_key = self._get_hg_settings(
+        largefiles, phases, hgsubversion = self.GLOBAL_HG_SETTINGS
+        largefiles_key, phases_key, subversion_key = self._get_settings_keys(
             self.GLOBAL_HG_SETTINGS, data)
         self._create_or_update_ui(
             self.global_settings, *largefiles, value='',
@@ -547,22 +551,22 @@ class VcsSettingsModel(object):
         self._create_or_update_ui(
             self.global_settings, *phases, value=safe_str(data[phases_key]))
         self._create_or_update_ui(
-            self.global_settings, *subversion, active=data[subversion_key])
+            self.global_settings, *hgsubversion, active=data[subversion_key])
 
     def create_or_update_global_svn_settings(self, data):
-        rhodecode_proxy_subversion_http_requests,
-        rhodecode_subversion_http_server_url = self.GLOBAL_SVN_SETTINGS
-        rhodecode_proxy_subversion_http_requests_key,
-        rhodecode_subversion_http_server_url_key = self._get_svn_settings(
+        # branch/tags patterns
+        self._create_svn_settings(self.global_settings, data)
+
+        http_requests_enabled, http_server_url = self.GLOBAL_SVN_SETTINGS
+        http_requests_enabled_key, http_server_url_key = self._get_settings_keys(
             self.GLOBAL_SVN_SETTINGS, data)
+
         self._create_or_update_ui(
-            self.global_settings,
-            *rhodecode_proxy_subversion_http_requests,
-            value=safe_str(data[rhodecode_proxy_subversion_http_requests_key]))
+            self.global_settings, *http_requests_enabled,
+            value=safe_str(data[http_requests_enabled_key]))
         self._create_or_update_ui(
-            self.global_settings,
-            *rhodecode_subversion_http_server_url,
-            active=data[rhodecode_subversion_http_server_url_key])
+            self.global_settings, *http_server_url,
+            value=data[http_server_url_key])
 
     def update_global_ssl_setting(self, value):
         self._create_or_update_ui(
@@ -599,6 +603,16 @@ class VcsSettingsModel(object):
 
     def get_global_ui_settings(self, section=None, key=None):
         return self.global_settings.get_ui(section, key)
+
+    def get_ui_settings_as_config_obj(self, section=None, key=None):
+        config = base.Config()
+
+        ui_settings = self.get_ui_settings(section=section, key=key)
+
+        for entry in ui_settings:
+            config.set(entry.section, entry.key, entry.value)
+
+        return config
 
     def get_ui_settings(self, section=None, key=None):
         if not self.repo_settings or self.inherit_global_settings:
@@ -707,7 +721,7 @@ class VcsSettingsModel(object):
                 name, data[data_key], 'bool')
             Session().add(setting)
 
-    def _get_hg_settings(self, settings, data):
+    def _get_settings_keys(self, settings, data):
         data_keys = [self._get_form_ui_key(*s) for s in settings]
         for data_key in data_keys:
             if data_key not in data:

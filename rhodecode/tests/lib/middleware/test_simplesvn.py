@@ -78,14 +78,29 @@ class TestSimpleSvn(object):
         assert name == repo.repo_name
 
     def test_create_wsgi_app(self):
-        with patch('rhodecode.lib.middleware.simplesvn.SimpleSvnApp') as (
-                wsgi_app_mock):
-            config = Mock()
-            wsgi_app = self.app._create_wsgi_app(
-                repo_path='', repo_name='', config=config)
+        with patch.object(SimpleSvn, '_is_svn_enabled') as mock_method:
+            mock_method.return_value = False
+            with patch('rhodecode.lib.middleware.simplesvn.DisabledSimpleSvnApp') as (
+                    wsgi_app_mock):
+                config = Mock()
+                wsgi_app = self.app._create_wsgi_app(
+                    repo_path='', repo_name='', config=config)
 
-        wsgi_app_mock.assert_called_once_with(config)
-        assert wsgi_app == wsgi_app_mock()
+            wsgi_app_mock.assert_called_once_with(config)
+            assert wsgi_app == wsgi_app_mock()
+
+    def test_create_wsgi_app_when_enabled(self):
+        with patch.object(SimpleSvn, '_is_svn_enabled') as mock_method:
+            mock_method.return_value = True
+            with patch('rhodecode.lib.middleware.simplesvn.SimpleSvnApp') as (
+                    wsgi_app_mock):
+                config = Mock()
+                wsgi_app = self.app._create_wsgi_app(
+                    repo_path='', repo_name='', config=config)
+
+            wsgi_app_mock.assert_called_once_with(config)
+            assert wsgi_app == wsgi_app_mock()
+
 
 
 class TestSimpleSvnApp(object):

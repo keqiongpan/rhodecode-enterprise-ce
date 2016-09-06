@@ -22,10 +22,11 @@ import logging
 from urlparse import urljoin
 
 import requests
+from webob.exc import HTTPNotAcceptable
 
-import rhodecode
 from rhodecode.lib.middleware import simplevcs
 from rhodecode.lib.utils import is_valid_repo
+from rhodecode.lib.utils2 import str2bool
 
 log = logging.getLogger(__name__)
 
@@ -95,10 +96,21 @@ class SimpleSvnApp(object):
         return headers
 
 
+class DisabledSimpleSvnApp(object):
+    def __init__(self, config):
+        self.config = config
+
+    def __call__(self, environ, start_response):
+        reason = 'Cannot handle SVN call because: SVN HTTP Proxy is not enabled'
+        log.warning(reason)
+        return HTTPNotAcceptable(reason)(environ, start_response)
+
+
 class SimpleSvn(simplevcs.SimpleVCS):
 
     SCM = 'svn'
     READ_ONLY_COMMANDS = ('OPTIONS', 'PROPFIND', 'GET', 'REPORT')
+    DEFAULT_HTTP_SERVER = 'http://localhost:8090'
 
     def _get_repository_name(self, environ):
         """
@@ -129,11 +141,19 @@ class SimpleSvn(simplevcs.SimpleVCS):
             else 'push')
 
     def _create_wsgi_app(self, repo_path, repo_name, config):
-        return SimpleSvnApp(config)
+        if self._is_svn_enabled():
+            return SimpleSvnApp(config)
+        # we don't have http proxy enabled return dummy request handler
+        return DisabledSimpleSvnApp(config)
+
+    def _is_svn_enabled(self):
+        conf = self.repo_vcs_config
+        return str2bool(conf.get('vcs_svn_proxy', 'http_requests_enabled'))
 
     def _create_config(self, extras, repo_name):
-        server_url = rhodecode.CONFIG.get(
-            'rhodecode_subversion_http_server_url', '')
-        extras['subversion_http_server_url'] = (
-            server_url or 'http://localhost/')
+        conf = self.repo_vcs_config
+        server_url = conf.get('vcs_svn_proxy', 'http_server_url')
+        server_url = server_url or self.DEFAULT_HTTP_SERVER
+
+        extras['subversion_http_server_url'] = server_url
         return extras

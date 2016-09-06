@@ -29,7 +29,8 @@ from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
 from rhodecode.lib.middleware.simplegit import SimpleGit, GIT_PROTO_PAT
 from rhodecode.lib.middleware.simplehg import SimpleHg
 from rhodecode.lib.middleware.simplesvn import SimpleSvn
-
+from rhodecode.lib.vcs.backends import base
+from rhodecode.model.settings import VcsSettingsModel
 
 log = logging.getLogger(__name__)
 
@@ -131,22 +132,38 @@ class VCSMiddleware(object):
         self.config = config
         self.appenlight_client = appenlight_client
         self.registry = registry
+        self.repo_vcs_config = base.Config()
+        self.use_gzip = True
+
+    def vcs_config(self, repo_name=None):
+        """
+        returns serialized VcsSettings
+        """
+        return VcsSettingsModel(repo=repo_name).get_ui_settings_as_config_obj()
+
+    def wrap_in_gzip_if_enabled(self, app):
+        if self.use_gzip:
+            app = GunzipMiddleware(app)
+        return app
 
     def _get_handler_app(self, environ):
         app = None
+
         if is_hg(environ):
             app = SimpleHg(self.application, self.config, self.registry)
 
         if is_git(environ):
             app = SimpleGit(self.application, self.config, self.registry)
 
-        proxy_svn = rhodecode.CONFIG.get(
-            'rhodecode_proxy_subversion_http_requests', False)
-        if proxy_svn and is_svn(environ):
+        if is_svn(environ):
             app = SimpleSvn(self.application, self.config, self.registry)
 
         if app:
-            app = GunzipMiddleware(app)
+            repo_name = app._get_repository_name(environ)
+            self.repo_vcs_config = self.vcs_config(repo_name)
+            app.repo_vcs_config = self.repo_vcs_config
+
+            app = self.wrap_in_gzip_if_enabled(app)
             app, _ = wrap_in_appenlight_if_enabled(
                 app, self.config, self.appenlight_client)
 

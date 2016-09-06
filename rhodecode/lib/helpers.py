@@ -772,10 +772,10 @@ def get_repo_type_by_name(repo_name):
 
 
 def is_svn_without_proxy(repository):
-    from rhodecode import CONFIG
     if is_svn(repository):
-        if not CONFIG.get('rhodecode_proxy_subversion_http_requests', False):
-            return True
+        from rhodecode.model.settings import VcsSettingsModel
+        conf = VcsSettingsModel().get_ui_settings_as_config_obj()
+        return not str2bool(conf.get('vcs_svn_proxy', 'http_requests_enabled'))
     return False
 
 
