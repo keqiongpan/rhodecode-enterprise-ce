@@ -105,7 +105,7 @@ class TestVCSMiddleware(object):
             'HTTP_DAV': 'http://subversion.tigris.org/xmlns/dav/svn/log'
         }
         application = Mock()
-        config = {'appenlight': False}
+        config = {'appenlight': False, 'vcs.backends': ['svn']}
         registry = Mock()
         middleware = vcs.VCSMiddleware(
             application, config=config,
@@ -125,7 +125,7 @@ class TestVCSMiddleware(object):
             'HTTP_DAV': 'http://subversion.tigris.org/xmlns/dav/svn/log'
         }
         application = Mock()
-        config = {'appenlight': False}
+        config = {'appenlight': False, 'vcs.backends': ['svn']}
         registry = Mock()
         middleware = vcs.VCSMiddleware(
             application, config=config,

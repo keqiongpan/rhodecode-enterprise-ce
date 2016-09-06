@@ -24,12 +24,13 @@ import logging
 import tempfile
 import urlparse
 
+from webob.exc import HTTPNotFound
+
 import rhodecode
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
 from rhodecode.lib.middleware.simplegit import SimpleGit, GIT_PROTO_PAT
 from rhodecode.lib.middleware.simplehg import SimpleHg
 from rhodecode.lib.middleware.simplesvn import SimpleSvn
-from rhodecode.lib.vcs.backends import base
 from rhodecode.model.settings import VcsSettingsModel
 
 log = logging.getLogger(__name__)
@@ -132,8 +133,14 @@ class VCSMiddleware(object):
         self.config = config
         self.appenlight_client = appenlight_client
         self.registry = registry
-        self.repo_vcs_config = base.Config()
         self.use_gzip = True
+        # order in which we check the middlewares, based on vcs.backends config
+        self.check_middlewares = config['vcs.backends']
+        self.checks = {
+            'hg': (is_hg, SimpleHg),
+            'git': (is_git, SimpleGit),
+            'svn': (is_svn, SimpleSvn),
+        }
 
     def vcs_config(self, repo_name=None):
         """
@@ -141,43 +148,50 @@ class VCSMiddleware(object):
         """
         return VcsSettingsModel(repo=repo_name).get_ui_settings_as_config_obj()
 
-    def wrap_in_gzip_if_enabled(self, app):
+    def wrap_in_gzip_if_enabled(self, app, config):
         if self.use_gzip:
             app = GunzipMiddleware(app)
         return app
 
     def _get_handler_app(self, environ):
         app = None
-
-        if is_hg(environ):
-            app = SimpleHg(self.application, self.config, self.registry)
-
-        if is_git(environ):
-            app = SimpleGit(self.application, self.config, self.registry)
-
-        if is_svn(environ):
-            app = SimpleSvn(self.application, self.config, self.registry)
-
-        if app:
-            # translate the _REPO_ID into real repo NAME for usage
-            # in midddleware
-            environ['PATH_INFO'] = app._get_by_id(environ['PATH_INFO'])
-            repo_name = app._get_repository_name(environ)
-            environ['REPO_NAME'] = repo_name
-
-            self.repo_vcs_config = self.vcs_config(repo_name)
-            app.repo_vcs_config = self.repo_vcs_config
-
-            app = self.wrap_in_gzip_if_enabled(app)
-            app, _ = wrap_in_appenlight_if_enabled(
-                app, self.config, self.appenlight_client)
+        log.debug('Checking vcs types in order: %r', self.check_middlewares)
+        for vcs_type in self.check_middlewares:
+            vcs_check, handler = self.checks[vcs_type]
+            if vcs_check(environ):
+                log.debug(
+                    'Found VCS Middleware to handle the request %s', handler)
+                app = handler(self.application, self.config, self.registry)
+                break
 
         return app
 
     def __call__(self, environ, start_response):
-        # check if we handle one of interesting protocols ?
+        # check if we handle one of interesting protocols, optionally extract
+        # specific vcsSettings and allow changes of how things are wrapped
         vcs_handler = self._get_handler_app(environ)
         if vcs_handler:
+            # translate the _REPO_ID into real repo NAME for usage
+            # in middleware
+            environ['PATH_INFO'] = vcs_handler._get_by_id(environ['PATH_INFO'])
+            repo_name = vcs_handler._get_repository_name(environ)
+
+            # check for type, presence in database and on filesystem
+            if not vcs_handler.is_valid_and_existing_repo(
+                    repo_name, vcs_handler.basepath, vcs_handler.SCM):
+                return HTTPNotFound()(environ, start_response)
+
+            # TODO(marcink): this is probably not needed anymore
+            environ['REPO_NAME'] = repo_name
+
+            # register repo_name and it's config back to the handler
+            vcs_handler.repo_name = repo_name
+            vcs_handler.repo_vcs_config = self.vcs_config(repo_name)
+
+            vcs_handler = self.wrap_in_gzip_if_enabled(
+                vcs_handler, self.config)
+            vcs_handler, _ = wrap_in_appenlight_if_enabled(
+                vcs_handler, self.config, self.appenlight_client)
             return vcs_handler(environ, start_response)
 
         return self.application(environ, start_response)
