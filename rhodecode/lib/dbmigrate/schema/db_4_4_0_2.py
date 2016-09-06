@@ -3575,7 +3575,7 @@ class RepoReviewRule(Base, BaseModel):
     def branch_pattern(self):
         return self._branch_pattern or '*'
 
-    def _validate_glob(self, value):
+    def _validate_pattern(self, value):
         re.compile('^' + glob2re(value) + '$')
 
     @branch_pattern.setter

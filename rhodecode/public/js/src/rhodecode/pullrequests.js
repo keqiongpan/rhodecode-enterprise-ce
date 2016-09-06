@@ -40,14 +40,23 @@ var removeReviewMember = function(reviewer_id, mark_delete){
     }
 };
 
-var addReviewMember = function(id,fname,lname,nname,gravatar_link){
+var addReviewMember = function(id, fname, lname, nname, gravatar_link, reasons) {
     var members = $('#review_members').get(0);
+    var reasons_html = '';
+    if (reasons) {
+        for (var i = 0; i < reasons.length; i++) {
+            reasons_html += '<div class="reviewer_reason">- {0}</div>'.format(
+                reasons[i]
+            );
+        }
+    }
     var tmpl = '<li id="reviewer_{2}">'+
        '<div class="reviewer_status">'+
           '<div class="flag_status not_reviewed pull-left reviewer_member_status"></div>'+
        '</div>'+
       '<img alt="gravatar" class="gravatar" src="{0}"/>'+
       '<span class="reviewer_name user">{1}</span>'+
+      reasons_html +
       '<input type="hidden" value="{2}" name="review_members" />'+
       '<div class="reviewer_member_remove action_button" onclick="removeReviewMember({2})">' +
       '<i class="icon-remove-sign"></i>'+

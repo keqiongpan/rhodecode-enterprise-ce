@@ -286,4 +286,3 @@ class HomeController(BaseController):
         _user_groups = _user_groups
 
         return {'suggestions': _user_groups}
-

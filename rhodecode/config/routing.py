@@ -196,7 +196,7 @@ def make_map(config):
     rmap.connect('user_autocomplete_data', '/_users', controller='home',
                  action='user_autocomplete_data', jsroute=True)
     rmap.connect('user_group_autocomplete_data', '/_user_groups', controller='home',
-                 action='user_group_autocomplete_data')
+                 action='user_group_autocomplete_data', jsroute=True)
 
     rmap.connect(
         'user_profile', '/_profiles/{username}', controller='users',
@@ -699,6 +699,9 @@ def make_map(config):
     rmap.connect('repo_refs_changelog_data', '/{repo_name}/refs-data-changelog',
                  controller='summary', action='repo_refs_changelog_data',
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
+    rmap.connect('repo_default_reviewers_data', '/{repo_name}/default-reviewers',
+                 controller='summary', action='repo_default_reviewers_data',
+                 jsroute=True, requirements=URL_NAME_REQUIREMENTS)
 
     rmap.connect('changeset_home', '/{repo_name}/changeset/{revision}',
                  controller='changeset', revision='tip', jsroute=True,
@@ -823,6 +826,10 @@ def make_map(config):
     rmap.connect('repo_vcs_settings', '/{repo_name}/settings/vcs',
                  controller='admin/repos', action='repo_delete_svn_pattern',
                  conditions={'method': ['DELETE'], 'function': check_repo},
+                 requirements=URL_NAME_REQUIREMENTS)
+    rmap.connect('repo_pullrequest_settings', '/{repo_name}/settings/pullrequest',
+                 controller='admin/repos', action='repo_settings_pullrequest',
+                 conditions={'method': ['GET', 'POST'], 'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
     # still working url for backward compat.

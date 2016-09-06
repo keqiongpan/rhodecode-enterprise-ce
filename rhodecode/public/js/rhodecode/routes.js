@@ -14,6 +14,7 @@ function registerRCRoutes() {
     // routes registration
     pyroutes.register('home', '/', []);
     pyroutes.register('user_autocomplete_data', '/_users', []);
+    pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('new_repo', '/_admin/create_repository', []);
     pyroutes.register('edit_user_group_members', '/_admin/user_groups/%(user_group_id)s/edit/members', ['user_group_id']);
     pyroutes.register('gists', '/_admin/gists', []);
@@ -22,6 +23,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_stats', '/%(repo_name)s/repo_stats/%(commit_id)s', ['repo_name', 'commit_id']);
     pyroutes.register('repo_refs_data', '/%(repo_name)s/refs-data', ['repo_name']);
     pyroutes.register('repo_refs_changelog_data', '/%(repo_name)s/refs-data-changelog', ['repo_name']);
+    pyroutes.register('repo_default_reviewers_data', '/%(repo_name)s/default-reviewers', ['repo_name']);
     pyroutes.register('changeset_home', '/%(repo_name)s/changeset/%(revision)s', ['repo_name', 'revision']);
     pyroutes.register('edit_repo', '/%(repo_name)s/settings', ['repo_name']);
     pyroutes.register('edit_repo_perms', '/%(repo_name)s/settings/permissions', ['repo_name']);
