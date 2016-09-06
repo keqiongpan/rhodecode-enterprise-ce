@@ -159,7 +159,12 @@ class VCSMiddleware(object):
             app = SimpleSvn(self.application, self.config, self.registry)
 
         if app:
+            # translate the _REPO_ID into real repo NAME for usage
+            # in midddleware
+            environ['PATH_INFO'] = app._get_by_id(environ['PATH_INFO'])
             repo_name = app._get_repository_name(environ)
+            environ['REPO_NAME'] = repo_name
+
             self.repo_vcs_config = self.vcs_config(repo_name)
             app.repo_vcs_config = self.repo_vcs_config
 

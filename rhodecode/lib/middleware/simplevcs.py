@@ -242,11 +242,9 @@ class SimpleVCS(object):
         environ['pylons.status_code_redirect'] = True
 
         # ======================================================================
-        # EXTRACT REPOSITORY NAME FROM ENV
+        # EXTRACT REPOSITORY NAME FROM ENV SET IN `class VCSMiddleware`
         # ======================================================================
-        environ['PATH_INFO'] = self._get_by_id(environ['PATH_INFO'])
-        repo_name = self._get_repository_name(environ)
-        environ['REPO_NAME'] = repo_name
+        repo_name = environ['REPO_NAME']
         log.debug('Extracted repo name is %s', repo_name)
 
         # check for type, presence in database and on filesystem
