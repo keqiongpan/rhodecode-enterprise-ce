@@ -29,13 +29,3 @@ use the following instructions:
    :menuselection:`Admin --> Settings --> labs` page.
 
 .. image:: ../images/lab-setting.png
-
-Available Lab Extras
---------------------
-
-Once lab settings are enabled, the following features are available.
-
-.. toctree::
-   :maxdepth: 1
-
-   svn-http
