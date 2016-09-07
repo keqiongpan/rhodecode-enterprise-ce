@@ -9,14 +9,13 @@
         <paper-toast id="p-toast" duration="0"  horizontal-offset="100" horizontal-align="auto" vertical-align="top" always-on-top>
             <div class="toast-message-holder">
                 <template is="dom-repeat" items="{{toasts}}">
-                    <div class="toast-notification">
-                    <span class$="toast-level {{item.level}}">{{item.level}}</span>
+                    <div class$="alert alert-{{item.level}}">
                     <rhodecode-unsafe-html text="{{item.message}}"></rhodecode-unsafe-html>
                     </div>
                 </template>
             </div>
             <div class="toast-close">
-                <paper-button on-tap="dismissNotifications" class="btn btn-primary">{{_gettext('Close now')}}</paper-button>
+                <paper-button on-tap="dismissNotifications" class="btn btn-default">{{_gettext('Close now')}}</paper-button>
             </div>
         </paper-toast>
     </template>

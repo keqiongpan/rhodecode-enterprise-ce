@@ -3,42 +3,26 @@
 paper-toast{
     width: 100%;
     min-width: 400px;
-    --paper-toast-background-color: #ffffff;
+    --paper-toast-background-color: transparent;
     --paper-toast-color: #000000;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
 }
 paper-toast a{
     font-weight: bold
 }
 
 .toast-message-holder {
-    width: ~'calc(100% - 150px)';
-    display: inline-block;
 }
 .toast-close {
-    display: inline-block;
-    width: 145px;
     text-align: right;
-    float: right;
-}
-.toast-notification {
-    padding: 10px 0 10px 0;
-}
 
-.toast-level {
-    display: inline-block;
-    min-width: 100px;
-    font-weight: bold;
-    text-transform: uppercase;
-    &.info{
-        color: @alert4;
+    paper-button{
+        box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.15);
     }
-    &.success {
-        color: @alert1;
-    }
-    &.error, &.danger {
-        color: @alert2;
-    }
-    &.warning {
-        color: @alert3;
-    }
+}
+paper-toast .alert{
+    margin: 0px 0 15px 0;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.15);
 }
