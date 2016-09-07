@@ -44,6 +44,8 @@ from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
     CommitError, EmptyRepositoryError, NodeDoesNotExistError)
 from rhodecode.model.db import Statistics, CacheKey, User
+from rhodecode.model.repo import ReadmeFinder
+
 
 log = logging.getLogger(__name__)
 
@@ -63,26 +65,21 @@ class SummaryController(BaseRepoController):
             readme_data = None
             readme_file = None
             try:
-                # gets the landing revision or tip if fails
+                # Find the landing commit
                 commit = db_repo.get_landing_commit()
                 if isinstance(commit, EmptyCommit):
                     raise EmptyRepositoryError()
-                renderer = MarkupRenderer()
-                for f in renderer.pick_readme_order(default_renderer):
-                    try:
-                        node = commit.get_node(f)
-                    except NodeDoesNotExistError:
-                        continue
 
-                    if not node.is_file():
-                        continue
+                readme_file = ReadmeFinder(default_renderer).search(commit)
 
-                    readme_file = f
+                # Render the readme if one was found
+                if readme_file:
+                    renderer = MarkupRenderer()
+                    node = commit.get_node(readme_file)
                     log.debug('Found README file `%s` rendering...',
                               readme_file)
-                    readme_data = renderer.render(node.content,
-                                                  filename=f)
-                    break
+                    readme_data = renderer.render(
+                        node.content, filename=readme_file)
             except CommitError:
                 log.exception(
                     "Problem getting commit when trying to render the README.")

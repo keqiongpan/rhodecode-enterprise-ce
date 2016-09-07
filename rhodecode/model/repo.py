@@ -40,11 +40,13 @@ from rhodecode.lib.auth import HasUserGroupPermissionAny
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.exceptions import AttachedForksError
 from rhodecode.lib.hooks_base import log_delete_repository
+from rhodecode.lib.markup_renderer import MarkupRenderer
 from rhodecode.lib.utils import make_db_config
 from rhodecode.lib.utils2 import (
     safe_str, safe_unicode, remove_prefix, obfuscate_url_pw,
     get_current_rhodecode_user, safe_int, datetime_to_time, action_logger_generic)
 from rhodecode.lib.vcs.backends import get_backend
+from rhodecode.lib.vcs.exceptions import NodeDoesNotExistError
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     Repository, UserRepoToPerm, UserGroupRepoToPerm, UserRepoGroupToPerm,
@@ -933,3 +935,34 @@ class RepoModel(BaseModel):
 
         if os.path.isdir(rm_path):
             shutil.move(rm_path, os.path.join(self.repos_path, _d))
+
+
+class ReadmeFinder:
+    """
+    Utility which knows how to find a readme for a specific commit.
+
+    The main idea is that this is a configurable algorithm. When creating an
+    instance you can define parameters, currently only the `default_renderer`.
+    Based on this configuration the method :meth:`search` behaves slightly
+    different.
+    """
+
+    def __init__(self, default_renderer):
+        self._default_renderer = default_renderer
+
+    def search(self, commit):
+        """
+        Try to find a readme in the given `commit`.
+        """
+        renderer = MarkupRenderer()
+        for f in renderer.pick_readme_order(self._default_renderer):
+            log.debug("Trying README %s", f)
+            try:
+                node = commit.get_node(f)
+            except NodeDoesNotExistError:
+                continue
+
+            if not node.is_file():
+                continue
+
+            return f
