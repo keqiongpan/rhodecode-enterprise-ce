@@ -139,7 +139,8 @@
   "watch": {
     "less": {
       "files": [
-        "<%= dirs.css.src %>/**/*.less"
+        "<%= dirs.css.src %>/**/*.less",
+        "<%= dirs.js.src %>/components/**/*.less"
       ],
       "tasks": [
         "less:development",
@@ -150,6 +151,7 @@
     },
     "js": {
       "files": [
+        "!<%= dirs.js.src %>/components/root-styles.gen.html",
         "<%= dirs.js.src %>/**/*.js",
         "<%= dirs.js.src %>/components/**/*.html"
       ],
