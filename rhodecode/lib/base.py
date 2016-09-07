@@ -28,6 +28,7 @@ import logging
 import socket
 
 import ipaddress
+import pyramid.threadlocal
 
 from paste.auth.basic import AuthBasicAuthenticator
 from paste.httpexceptions import HTTPUnauthorized, HTTPForbidden, get_exception
@@ -367,6 +368,8 @@ def attach_context_attributes(context, request):
     context.backends.sort()
     context.unread_notifications = NotificationModel().get_unread_cnt_for_user(
         context.rhodecode_user.user_id)
+
+    context.pyramid_request = pyramid.threadlocal.get_current_request()
 
 
 def get_auth_user(environ):
