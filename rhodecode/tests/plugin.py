@@ -719,6 +719,16 @@ def vcsbackend_random(vcsbackend_git):
     return vcsbackend_git
 
 
+@pytest.fixture
+def vcsbackend_stub(vcsbackend_git):
+    """
+    Use this to express that your test just needs a stub of a vcsbackend.
+
+    Plan is to eventually implement an in-memory stub to speed tests up.
+    """
+    return vcsbackend_git
+
+
 class VcsBackend(object):
     """
     Represents the test configuration for one supported vcs backend.
