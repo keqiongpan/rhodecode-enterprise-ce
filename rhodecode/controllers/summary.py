@@ -64,30 +64,12 @@ class SummaryController(BaseRepoController):
         def _generate_readme(cache_key):
             readme_data = None
             readme_file = None
-            try:
-                # Find the landing commit
-                commit = db_repo.get_landing_commit()
-                if isinstance(commit, EmptyCommit):
-                    raise EmptyRepositoryError()
-
+            commit = self._get_landing_commit_or_none(db_repo)
+            if commit:
+                log.debug("Searching for a README file.")
                 readme_file = ReadmeFinder(default_renderer).search(commit)
-
-                # Render the readme if one was found
-                if readme_file:
-                    renderer = MarkupRenderer()
-                    node = commit.get_node(readme_file)
-                    log.debug('Found README file `%s` rendering...',
-                              readme_file)
-                    readme_data = renderer.render(
-                        node.content, filename=readme_file)
-            except CommitError:
-                log.exception(
-                    "Problem getting commit when trying to render the README.")
-            except EmptyRepositoryError:
-                log.debug("Repository is empty, no README to render.")
-            except Exception:
-                log.exception("Exception while trying to render the README")
-
+            if readme_file:
+                readme_data = self._render_readme_or_none(commit, readme_file)
             return readme_data, readme_file
 
         invalidator_context = CacheKey.repo_context_cache(
@@ -98,6 +80,29 @@ class SummaryController(BaseRepoController):
             computed = context.compute()
 
         return computed
+
+    def _get_landing_commit_or_none(self, db_repo):
+        log.debug("Getting the landing commit.")
+        try:
+            commit = db_repo.get_landing_commit()
+            if not isinstance(commit, EmptyCommit):
+                return commit
+            else:
+                log.debug("Repository is empty, no README to render.")
+        except CommitError:
+            log.exception(
+                "Problem getting commit when trying to render the README.")
+
+    def _render_readme_or_none(self, commit, readme_file):
+        log.debug(
+            'Found README file `%s` rendering...', readme_file)
+        renderer = MarkupRenderer()
+        node = commit.get_node(readme_file)
+        try:
+            return renderer.render(node.content, filename=readme_file)
+        except Exception:
+            log.exception(
+                "Exception while trying to render the README")
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
