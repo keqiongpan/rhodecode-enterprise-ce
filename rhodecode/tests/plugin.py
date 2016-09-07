@@ -643,39 +643,10 @@ class Backend(object):
             self._fixture.destroy_repo(repo_name)
 
     def _add_commits_to_repo(self, repo, commits):
-        if not commits:
+        commit_ids = _add_commits_to_repo(repo, commits)
+        if not commit_ids:
             return
-
-        imc = repo.in_memory_commit
-        commit = None
-        self._commit_ids = {}
-
-        for idx, commit in enumerate(commits):
-            message = unicode(commit.get('message', 'Commit %s' % idx))
-
-            for node in commit.get('added', []):
-                imc.add(FileNode(node.path, content=node.content))
-            for node in commit.get('changed', []):
-                imc.change(FileNode(node.path, content=node.content))
-            for node in commit.get('removed', []):
-                imc.remove(FileNode(node.path))
-
-            parents = [
-                repo.get_commit(commit_id=self._commit_ids[p])
-                for p in commit.get('parents', [])]
-
-            operations = ('added', 'changed', 'removed')
-            if not any((commit.get(o) for o in operations)):
-                imc.add(FileNode('file_%s' % idx, content=message))
-
-            commit = imc.commit(
-                message=message,
-                author=unicode(commit.get('author', 'Automatic')),
-                date=commit.get('date'),
-                branch=commit.get('branch'),
-                parents=parents)
-
-            self._commit_ids[commit.message] = commit.raw_id
+        self._commit_ids = commit_ids
 
         # Creating refs for Git to allow fetching them from remote repository
         if self.alias == 'git':
@@ -686,8 +657,6 @@ class Backend(object):
                     message.replace(' ', ''))
                 refs[ref_name] = self._commit_ids[message]
             self._create_refs(repo, refs)
-
-        return commit
 
     def _create_refs(self, repo, refs):
         for ref_name in refs:
@@ -783,17 +752,20 @@ class VcsBackend(object):
         """
         return get_backend(self.alias)
 
-    def create_repo(self, number_of_commits=0, _clone_repo=None):
+    def create_repo(self, commits=None, number_of_commits=0, _clone_repo=None):
         repo_name = self._next_repo_name()
         self._repo_path = get_new_dir(repo_name)
-        Repository = get_backend(self.alias)
+        repo_class = get_backend(self.alias)
         src_url = None
         if _clone_repo:
             src_url = _clone_repo.path
-        repo = Repository(self._repo_path, create=True, src_url=src_url)
+        repo = repo_class(self._repo_path, create=True, src_url=src_url)
         self._cleanup_repos.append(repo)
-        for idx in xrange(number_of_commits):
-            self.ensure_file(filename='file_%s' % idx, content=repo.name)
+
+        commits = commits or [
+            {'message': 'Commit %s of %s' % (x, repo_name)}
+            for x in xrange(number_of_commits)]
+        _add_commits_to_repo(repo, commits)
         return repo
 
     def clone_repo(self, repo):
@@ -823,6 +795,44 @@ class VcsBackend(object):
     def ensure_file(self, filename, content='Test content\n'):
         assert self._cleanup_repos, "Avoid writing into vcs_test repos"
         self.add_file(self.repo, filename, content)
+
+
+def _add_commits_to_repo(vcs_repo, commits):
+    commit_ids = {}
+    if not commits:
+        return commit_ids
+
+    imc = vcs_repo.in_memory_commit
+    commit = None
+
+    for idx, commit in enumerate(commits):
+        message = unicode(commit.get('message', 'Commit %s' % idx))
+
+        for node in commit.get('added', []):
+            imc.add(FileNode(node.path, content=node.content))
+        for node in commit.get('changed', []):
+            imc.change(FileNode(node.path, content=node.content))
+        for node in commit.get('removed', []):
+            imc.remove(FileNode(node.path))
+
+        parents = [
+            vcs_repo.get_commit(commit_id=commit_ids[p])
+            for p in commit.get('parents', [])]
+
+        operations = ('added', 'changed', 'removed')
+        if not any((commit.get(o) for o in operations)):
+            imc.add(FileNode('file_%s' % idx, content=message))
+
+        commit = imc.commit(
+            message=message,
+            author=unicode(commit.get('author', 'Automatic')),
+            date=commit.get('date'),
+            branch=commit.get('branch'),
+            parents=parents)
+
+        commit_ids[commit.message] = commit.raw_id
+
+    return commit_ids
 
 
 @pytest.fixture
