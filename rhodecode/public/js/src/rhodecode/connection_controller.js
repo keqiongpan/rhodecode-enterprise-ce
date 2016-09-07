@@ -199,8 +199,14 @@ var registerViewChannels;
     };
 
     $.Topic('/plugins/__REGISTER__').subscribe(function (data) {
-        // enable chat controller
         if (window.CHANNELSTREAM_SETTINGS && window.CHANNELSTREAM_SETTINGS.enabled) {
+            connCtrlr = new ConnectionController(
+                CHANNELSTREAM_SETTINGS.webapp_location,
+                CHANNELSTREAM_SETTINGS.ws_location,
+                CHANNELSTREAM_URLS
+            );
+            registerViewChannels();
+
             $(document).ready(function () {
                 connCtrlr.run();
             });

@@ -9,6 +9,3 @@ ${pyramid_render(config['template_hooks'].get('plugin_init_template'),
 {'config':config}, request=get_current_request(), package='rc_ae')|n}
 % endif
 % endfor
-<script>
-    $.Topic('/plugins/__REGISTER__').prepareOrPublish({});
-</script>
