@@ -122,7 +122,6 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
                 document.head.appendChild(e);
             </script>
             <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
-            <style include="shared-styles" is="custom-style"></style>
             ## avoide escaping the %N
             <script>CodeMirror.modeURL = "${h.asset('') + 'js/mode/%N/%N.js?ver='+c.rhodecode_version_hash}";</script>
 
