@@ -1,13 +1,12 @@
 @import '../../../../css/variables';
+@import '../../../../css/mixins';
 
 paper-toast{
     width: 100%;
     min-width: 400px;
     --paper-toast-background-color: transparent;
     --paper-toast-color: #000000;
-    -webkit-box-shadow: none;
-    -moz-box-shadow: none;
-    box-shadow: none;
+    .box-shadow(none);
 }
 paper-toast a{
     font-weight: bold
@@ -19,10 +18,10 @@ paper-toast a{
     text-align: right;
 
     paper-button{
-        box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.15);
+        .box-shadow(0 2px 5px 0 rgba(0, 0, 0, 0.15));
     }
 }
 paper-toast .alert{
-    margin: 0px 0 15px 0;
-    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.15);
+    margin: 0px 0 @padding 0;
+    .box-shadow(0 2px 5px 0 rgba(0, 0, 0, 0.15));
 }
