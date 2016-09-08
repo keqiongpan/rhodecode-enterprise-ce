@@ -987,7 +987,7 @@ class ReadmeFinder:
         matches = self._match_readmes(nodes)
         matches = self._sort_according_to_priority(matches)
         if matches:
-            return matches[0]
+            return matches[0].node
 
         paths = self._match_paths(nodes)
         paths = self._sort_paths_according_to_priority(paths)
@@ -1041,13 +1041,13 @@ class ReadmeFinder:
 class ReadmeMatch:
 
     def __init__(self, node, match, priority):
-        self._node = node
+        self.node = node
         self._match = match
         self.priority = priority
 
     @property
     def path(self):
-        return self._node.path
+        return self.node.path
 
     def __repr__(self):
         return '<ReadmeMatch {} priority={}'.format(self.path, self.priority)

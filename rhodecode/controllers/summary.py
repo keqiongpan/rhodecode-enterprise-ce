@@ -101,7 +101,7 @@ class SummaryController(BaseRepoController):
         renderer = MarkupRenderer()
         try:
             return renderer.render(
-                readme_node.content, filename=readme_node.file)
+                readme_node.content, filename=readme_node.path)
         except Exception:
             log.exception(
                 "Exception while trying to render the README")
