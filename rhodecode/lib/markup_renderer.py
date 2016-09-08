@@ -51,18 +51,10 @@ class MarkupRenderer(object):
     RST_PAT = re.compile(r'\.re?st$', re.IGNORECASE)
     PLAIN_PAT = re.compile(r'^readme$', re.IGNORECASE)
 
-    # list of readme files to search in file tree and display in summary
-    # attached weights defines the search  order lower is first
-    ALL_READMES = [
-        ('readme', 0), ('README', 0), ('Readme', 0),
-        ('doc/readme', 1), ('doc/README', 1), ('doc/Readme', 1),
-        ('Docs/readme', 2), ('Docs/README', 2), ('Docs/Readme', 2),
-        ('DOCS/readme', 2), ('DOCS/README', 2), ('DOCS/Readme', 2),
-        ('docs/readme', 2), ('docs/README', 2), ('docs/Readme', 2),
-    ]
     # extension together with weights. Lower is first means we control how
     # extensions are attached to readme names with those.
     PLAIN_EXTS = [
+        # prefer no extension
         ('', 0),  # special case that renders READMES names without extension
         ('.text', 2), ('.TEXT', 2),
         ('.txt', 3), ('.TXT', 3)
@@ -79,8 +71,6 @@ class MarkupRenderer(object):
         ('.mdown', 3), ('.MDOWN', 3),
         ('.markdown', 4), ('.MARKDOWN', 4)
     ]
-
-    ALL_EXTS = PLAIN_EXTS + MARKDOWN_EXTS + RST_EXTS
 
     def _detect_renderer(self, source, filename=None):
         """
@@ -123,29 +113,6 @@ class MarkupRenderer(object):
             return 'rst'
 
         return None
-
-    @classmethod
-    def generate_readmes(cls, all_readmes, extensions):
-        combined = itertools.product(all_readmes, extensions)
-        # sort by filename weight(y[0][1]) + extensions weight(y[1][1])
-        prioritized_readmes = sorted(combined, key=lambda y: y[0][1] + y[1][1])
-        # filename, extension
-        return [''.join([x[0][0], x[1][0]]) for x in prioritized_readmes]
-
-    def pick_readme_order(self, default_renderer):
-
-        if default_renderer == 'markdown':
-            markdown = self.generate_readmes(self.ALL_READMES, self.MARKDOWN_EXTS)
-            readme_order = markdown + self.generate_readmes(
-                self.ALL_READMES, self.RST_EXTS + self.PLAIN_EXTS)
-        elif default_renderer == 'rst':
-            markdown = self.generate_readmes(self.ALL_READMES, self.RST_EXTS)
-            readme_order = markdown + self.generate_readmes(
-                self.ALL_READMES, self.MARKDOWN_EXTS + self.PLAIN_EXTS)
-        else:
-            readme_order = self.generate_readmes(self.ALL_READMES, self.ALL_EXTS)
-
-        return readme_order
 
     def render(self, source, filename=None):
         """

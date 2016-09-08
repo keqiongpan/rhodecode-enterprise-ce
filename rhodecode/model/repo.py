@@ -1037,23 +1037,6 @@ class ReadmeFinder:
 
         return sorted(paths, key=priority_and_path)
 
-    def search_old(self, commit):
-        """
-        Try to find a readme in the given `commit`.
-        """
-        renderer = MarkupRenderer()
-        for f in renderer.pick_readme_order(self._default_renderer):
-            log.debug("Trying README %s", f)
-            try:
-                node = commit.get_node(f)
-            except NodeDoesNotExistError:
-                continue
-
-            if not node.is_file():
-                continue
-
-            return f
-
 
 class ReadmeMatch:
 
