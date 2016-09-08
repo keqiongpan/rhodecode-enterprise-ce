@@ -63,14 +63,16 @@ class SummaryController(BaseRepoController):
         @cache_region('long_term')
         def _generate_readme(cache_key):
             readme_data = None
-            readme_file = None
+            readme_node = None
+            readme_filename = None
             commit = self._get_landing_commit_or_none(db_repo)
             if commit:
                 log.debug("Searching for a README file.")
-                readme_file = ReadmeFinder(default_renderer).search(commit)
-            if readme_file:
-                readme_data = self._render_readme_or_none(commit, readme_file)
-            return readme_data, readme_file
+                readme_node = ReadmeFinder(default_renderer).search(commit)
+            if readme_node:
+                readme_data = self._render_readme_or_none(commit, readme_node)
+                readme_filename = readme_node.path
+            return readme_data, readme_filename
 
         invalidator_context = CacheKey.repo_context_cache(
             _generate_readme, repo_name, CacheKey.CACHE_TYPE_README)
@@ -93,13 +95,13 @@ class SummaryController(BaseRepoController):
             log.exception(
                 "Problem getting commit when trying to render the README.")
 
-    def _render_readme_or_none(self, commit, readme_file):
+    def _render_readme_or_none(self, commit, readme_node):
         log.debug(
-            'Found README file `%s` rendering...', readme_file)
+            'Found README file `%s` rendering...', readme_node.path)
         renderer = MarkupRenderer()
-        node = commit.get_node(readme_file)
         try:
-            return renderer.render(node.content, filename=readme_file)
+            return renderer.render(
+                readme_node.content, filename=readme_node.file)
         except Exception:
             log.exception(
                 "Exception while trying to render the README")

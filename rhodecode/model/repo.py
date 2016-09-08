@@ -987,7 +987,7 @@ class ReadmeFinder:
         matches = self._match_readmes(nodes)
         matches = self._sort_according_to_priority(matches)
         if matches:
-            return matches[0].path
+            return matches[0]
 
         paths = self._match_paths(nodes)
         paths = self._sort_paths_according_to_priority(paths)

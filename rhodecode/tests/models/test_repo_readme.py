@@ -54,29 +54,29 @@ class CommitUtility:
 def test_no_matching_file_returns_none(commit_util):
     commit = commit_util.commit_with_files(['LIESMICH'])
     finder = ReadmeFinder(default_renderer='rst')
-    filename = finder.search(commit)
-    assert filename is None
+    filenode = finder.search(commit)
+    assert filenode is None
 
 
 def test_matching_file_returns_the_file_name(commit_util):
     commit = commit_util.commit_with_files(['README'])
     finder = ReadmeFinder(default_renderer='rst')
-    filename = finder.search(commit)
-    assert filename == 'README'
+    filenode = finder.search(commit)
+    assert filenode.path == 'README'
 
 
 def test_matching_file_with_extension(commit_util):
     commit = commit_util.commit_with_files(['README.rst'])
     finder = ReadmeFinder(default_renderer='rst')
-    filename = finder.search(commit)
-    assert filename == 'README.rst'
+    filenode = finder.search(commit)
+    assert filenode.path == 'README.rst'
 
 
 def test_prefers_readme_without_extension(commit_util):
     commit = commit_util.commit_with_files(['README.rst', 'Readme'])
     finder = ReadmeFinder()
-    filename = finder.search(commit)
-    assert filename == 'Readme'
+    filenode = finder.search(commit)
+    assert filenode.path == 'Readme'
 
 
 @pytest.mark.parametrize('renderer, expected', [
@@ -87,20 +87,20 @@ def test_prefers_renderer_extensions(commit_util, renderer, expected):
     commit = commit_util.commit_with_files(
         ['readme.rst', 'readme.md', 'readme.txt'])
     finder = ReadmeFinder(default_renderer=renderer)
-    filename = finder.search(commit)
-    assert filename == expected
+    filenode = finder.search(commit)
+    assert filenode.path == expected
 
 
 def test_finds_readme_in_subdirectory(commit_util):
     commit = commit_util.commit_with_files(['doc/README.rst', 'LIESMICH'])
     finder = ReadmeFinder()
-    filename = finder.search(commit)
-    assert filename == 'doc/README.rst'
+    filenode = finder.search(commit)
+    assert filenode.path == 'doc/README.rst'
 
 
 def test_prefers_subdirectory_with_priority(commit_util):
     commit = commit_util.commit_with_files(
         ['Doc/Readme.rst', 'Docs/Readme.rst'])
     finder = ReadmeFinder()
-    filename = finder.search(commit)
-    assert filename == 'Doc/Readme.rst'
+    filenode = finder.search(commit)
+    assert filenode.path == 'Doc/Readme.rst'
