@@ -1946,6 +1946,13 @@ def route_path(*args, **kwds):
     return req.route_path(*args, **kwds)
 
 
+def route_path_or_none(*args, **kwargs):
+    try:
+        return route_path(*args, **kwargs)
+    except KeyError:
+        return None
+
+
 def static_url(*args, **kwds):
     """
     Wrapper around pyramids `route_path` function. It is used to generate
