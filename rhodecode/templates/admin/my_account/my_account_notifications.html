@@ -28,7 +28,7 @@
                     </div>
                 </div>
                 <div class="buttons">
-                    <a class="btn btn-default" id="test-notification">Test notification</a>
+                    <a class="btn btn-default" id="test-notification" on-tap="testNotifications">Test notification</a>
                 </div>
             </div>
         </div>
@@ -36,7 +36,7 @@
     </div>
 </div>
 
-<script type="application/javascript">
+<script type="text/javascript">
     /** because im not creating a custom element for this page
      * we need to push the function onto the dom-template
      * ideally we turn this into notification-settings elements
@@ -68,21 +68,20 @@
         }
 
         $('#browser-notification-status').text(browserStatus);
-    };
+    }
 
-    checkBrowserStatus();
+    ctrlr.testNotifications = function(event){
+        var levels = ['info', 'error', 'warning', 'success'];
+        var level = levels[Math.floor(Math.random()*levels.length)];
+        var payload = {
+            message: {
+                message: 'This is a test notification.',
+                level: level,
+                force: true
+            }
+        };
+        $.Topic('/notifications').publish(payload);
+    }
 
-$('#test-notification').on('click', function(e){
-    var levels = ['info', 'error', 'warning', 'success'];
-    var level = levels[Math.floor(Math.random()*levels.length)];
-    var payload = {
-        message: {
-            message: 'This is a test notification.',
-            level: level,
-            force: true
-        }
-    };
-    $.Topic('/notifications').publish(payload);
-})
 </script>
 </template>
