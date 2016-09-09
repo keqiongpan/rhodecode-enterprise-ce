@@ -20,6 +20,8 @@ Polymer({
     },
     dismissNotifications: function(){
         this.$['p-toast'].close();
+    },
+    handleClosed: function(){
         this.splice('toasts', 0);
     },
     open: function(){
