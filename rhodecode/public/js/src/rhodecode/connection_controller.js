@@ -26,13 +26,6 @@ var registerViewChannels;
             channelsInfo: {},
             urls: urls
         };
-        this.channelNameParsers = [];
-
-        this.addChannelNameParser = function (fn) {
-            if (this.channelNameParsers.indexOf(fn) === -1) {
-                this.channelNameParsers.push(fn);
-            }
-        };
 
         this.listen = function () {
             if (window.WebSocket) {
@@ -176,16 +169,6 @@ var registerViewChannels;
                     // update channels with latest info
                     $.Topic('/connection_controller/channel_update').publish(
                         {channel: key, state: this.state.channelsInfo[key]});
-                }
-            }
-            /**
-             * checks current channel list in state and if channel is not present
-             * converts them into executable "commands" and pushes them on topics
-             */
-            for (var i = 0; i < this.state.channels.length; i++) {
-                var channel = this.state.channels[i];
-                for (var j = 0; j < this.channelNameParsers.length; j++) {
-                    this.channelNameParsers[j](channel);
                 }
             }
         };
