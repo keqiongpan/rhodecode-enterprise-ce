@@ -205,12 +205,6 @@ class GitRepository(BaseRepository):
             return []
         return output.splitlines()
 
-    def _get_all_commit_ids2(self):
-        # alternate implementation
-        includes = [x[1][0] for x in self._parsed_refs.iteritems()
-                    if x[1][1] != 'T']
-        return [c.commit.id for c in self._remote.get_walker(include=includes)]
-
     def _get_commit_id(self, commit_id_or_idx):
         def is_null(value):
             return len(value) == commit_id_or_idx.count('0')
@@ -232,17 +226,23 @@ class GitRepository(BaseRepository):
                 raise CommitDoesNotExistError(msg)
 
         elif is_bstr:
-            # get by branch/tag name
-            ref_id = self._parsed_refs.get(commit_id_or_idx)
-            if ref_id:  # and ref_id[1] in ['H', 'RH', 'T']:
-                return ref_id[0]
+            # check full path ref, eg. refs/heads/master
+            ref_id = self._refs.get(commit_id_or_idx)
+            if ref_id:
+                return ref_id
 
-            tag_ids = self.tags.values()
-            # maybe it's a tag ? we don't have them in self.commit_ids
-            if commit_id_or_idx in tag_ids:
-                return commit_id_or_idx
+            # check branch name
+            branch_ids = self.branches.values()
+            ref_id = self._refs.get('refs/heads/%s' % commit_id_or_idx)
+            if ref_id:
+                return ref_id
 
-            elif (not SHA_PATTERN.match(commit_id_or_idx) or
+            # check tag name
+            ref_id = self._refs.get('refs/tags/%s' % commit_id_or_idx)
+            if ref_id:
+                return ref_id
+
+            if (not SHA_PATTERN.match(commit_id_or_idx) or
                     commit_id_or_idx not in self.commit_ids):
                 msg = "Commit %s does not exist for %s" % (
                     commit_id_or_idx, self)
@@ -289,20 +289,25 @@ class GitRepository(BaseRepository):
         description = self._remote.get_description()
         return safe_unicode(description or self.DEFAULT_DESCRIPTION)
 
-    def _get_refs_entry(self, value, reverse):
+    def _get_refs_entries(self, prefix='', reverse=False, strip_prefix=True):
         if self.is_empty():
-            return {}
+            return OrderedDict()
 
-        def get_name(ctx):
-            return ctx[0]
+        result = []
+        for ref, sha in self._refs.iteritems():
+            if ref.startswith(prefix):
+                ref_name = ref
+                if strip_prefix:
+                    ref_name = ref[len(prefix):]
+                result.append((safe_unicode(ref_name), sha))
 
-        _branches = [
-            (safe_unicode(x[0]), x[1][0])
-            for x in self._parsed_refs.iteritems() if x[1][1] == value]
-        return OrderedDict(sorted(_branches, key=get_name, reverse=reverse))
+        def get_name(entry):
+            return entry[0]
+
+        return OrderedDict(sorted(result, key=get_name, reverse=reverse))
 
     def _get_branches(self):
-        return self._get_refs_entry('H', False)
+        return self._get_refs_entries(prefix='refs/heads/', strip_prefix=True)
 
     @LazyProperty
     def branches(self):
@@ -324,10 +329,12 @@ class GitRepository(BaseRepository):
         return self._get_tags()
 
     def _get_tags(self):
-        return self._get_refs_entry('T', True)
+        return self._get_refs_entries(
+            prefix='refs/tags/', strip_prefix=True, reverse=True)
 
     def tag(self, name, user, commit_id=None, message=None, date=None,
             **kwargs):
+        # TODO: fix this method to apply annotated tags correct with message
         """
         Creates and returns a tag for the given ``commit_id``.
 
@@ -346,7 +353,7 @@ class GitRepository(BaseRepository):
             name, commit.raw_id)
         self._remote.set_refs('refs/tags/%s' % name, commit._commit['id'])
 
-        self._parsed_refs = self._get_parsed_refs()
+        self._refs = self._get_refs()
         self.tags = self._get_tags()
         return commit
 
@@ -367,24 +374,28 @@ class GitRepository(BaseRepository):
             self._remote.get_refs_path(), 'refs', 'tags', name)
         try:
             os.remove(tagpath)
-            self._parsed_refs = self._get_parsed_refs()
+            self._refs = self._get_refs()
             self.tags = self._get_tags()
         except OSError as e:
             raise RepositoryError(e.strerror)
 
-    @LazyProperty
-    def _parsed_refs(self):
-        return self._get_parsed_refs()
+    def _get_refs(self):
+        return self._remote.get_refs()
 
-    def _get_parsed_refs(self):
-        # TODO: (oliver) who needs RH; branches?
-        # Remote Heads were commented out, as they may overwrite local branches
-        # See the TODO note in rhodecode.lib.vcs.remote.git:get_refs for more
-        # details.
-        keys = [('refs/heads/', 'H'),
-                #('refs/remotes/origin/', 'RH'),
-                ('refs/tags/', 'T')]
-        return self._remote.get_refs(keys=keys)
+    @LazyProperty
+    def _refs(self):
+        return self._get_refs()
+
+    @property
+    def _ref_tree(self):
+        node = tree = {}
+        for ref, sha in self._refs.iteritems():
+            path = ref.split('/')
+            for bit in path[:-1]:
+                node = node.setdefault(bit, {})
+            node[path[-1]] = sha
+            node = tree
+        return tree
 
     def get_commit(self, commit_id=None, commit_idx=None, pre_load=None):
         """
