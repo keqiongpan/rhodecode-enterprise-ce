@@ -32,10 +32,14 @@ div.diffblock.margined.comm tr {
     }
 
     .comment-toggle {
-        width: 20px;
+        position: relative;
         color: @rcblue;
-        .icon-comment{
-            display: inline-block;
+
+        .icon-comment {
+            position: absolute;
+            top: 2px;
+            left: 0;
+            z-index: 100;
             visibility: hidden;
         }
 
