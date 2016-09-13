@@ -372,9 +372,9 @@
               }
           });
 
-          if (location.href.indexOf('#') != -1) {
-            var id = '#'+location.href.substring(location.href.indexOf('#') + 1).split('#');
-            var line = $('html').find(id);
+          if (location.hash) {
+            var result = splitDelimitedHash(location.hash);
+            var line = $('html').find(result.loc);
             offsetScroll(line, 70);
           }
 

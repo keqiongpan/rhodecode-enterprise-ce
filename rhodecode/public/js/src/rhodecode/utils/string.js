@@ -74,6 +74,29 @@ String.prototype.capitalizeFirstLetter = function() {
 
 
 /**
+ * Splits remainder
+ *
+ * @param input
+ */
+function splitDelimitedHash(input){
+  var splitIx = input.indexOf('/?/');
+  if (splitIx !== -1){
+    var loc  = input.slice(0, splitIx);
+    var remainder = input.slice(splitIx + 2);
+  }
+  else{
+    var loc  = input;
+    var remainder = null;
+  }
+  //fixes for some urls generated incorrectly
+  var result = loc.match('#+(.*)');
+  if (result !== null){
+    loc = '#' + result[1];
+  }
+  return {loc:loc, remainder: remainder}
+}
+
+/**
  * Escape html characters in string
  */
 var entityMap = {
