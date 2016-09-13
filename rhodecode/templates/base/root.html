@@ -146,7 +146,9 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
         <%def name="head_extra()"></%def>
         ${self.head_extra()}
         <script>
-            $.Topic('/plugins/__REGISTER__').prepareOrPublish({});
+            window.addEventListener("load", function(event) {
+                $.Topic('/plugins/__REGISTER__').prepareOrPublish({});
+            });
         </script>
         ## extra stuff
         %if c.pre_code:
@@ -174,6 +176,6 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
       %if c.post_code:
         ${c.post_code|n}
       %endif
-    <rhodecode-toast id="notifications"></rhodecode-toast>
+    <rhodecode-app></rhodecode-app>
     </body>
 </html>

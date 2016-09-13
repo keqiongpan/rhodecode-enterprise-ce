@@ -11,10 +11,6 @@ Polymer({
     observers: [
         '_changedToasts(toasts.splices)'
     ],
-    ready: function(){
-
-    },
-
     _changedToasts: function(newValue, oldValue){
         this.$['p-toast'].notifyResize();
     },
@@ -26,6 +22,17 @@ Polymer({
     },
     open: function(){
         this.$['p-toast'].open();
+    },
+    handleNotification: function(data){
+        if (!templateContext.rhodecode_user.notification_status && !data.message.force) {
+            // do not act if notifications are disabled
+            return
+        }
+        this.push('toasts',{
+            level: data.message.level,
+            message: data.message.message
+        });
+        this.open();
     },
     _gettext: _gettext
 });
