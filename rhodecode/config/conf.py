@@ -28,7 +28,11 @@ from rhodecode.lib.utils2 import __get_lem
 
 # language map is also used by whoosh indexer, which for those specified
 # extensions will index it's content
-LANGUAGES_EXTENSIONS_MAP = __get_lem()
+# custom extensions to lexers, format is 'ext': 'LexerClass'
+extra = {
+    'vbs': 'VbNet'
+}
+LANGUAGES_EXTENSIONS_MAP = __get_lem(extra)
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

@@ -520,13 +520,18 @@ def get_lexer_safe(mimetype=None, filepath=None):
     return lexer
 
 
+def get_lexer_for_filenode(filenode):
+    lexer = get_custom_lexer(filenode.extension) or filenode.lexer
+    return lexer
+
+
 def pygmentize(filenode, **kwargs):
     """
     pygmentize function using pygments
 
     :param filenode:
     """
-    lexer = get_custom_lexer(filenode.extension) or filenode.lexer
+    lexer = get_lexer_for_filenode(filenode)
     return literal(code_highlight(filenode.content, lexer,
                                   CodeHtmlFormatter(**kwargs)))
 

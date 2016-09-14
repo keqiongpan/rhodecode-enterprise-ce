@@ -27,6 +27,7 @@ import stat
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
+from rhodecode.config.conf import LANGUAGES_EXTENSIONS_MAP
 from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.utils2 import md5
 from rhodecode.lib.vcs import path as vcspath
@@ -435,11 +436,26 @@ class FileNode(Node):
         content, name and mimetype.
         """
         from pygments import lexers
+
+        lexer = None
         try:
-            lexer = lexers.guess_lexer_for_filename(self.name, self.content, stripnl=False)
+            lexer = lexers.guess_lexer_for_filename(
+                self.name, self.content, stripnl=False)
         except lexers.ClassNotFound:
+            lexer = None
+
+        # try our EXTENSION_MAP
+        if not lexer:
+            try:
+                lexer_class = LANGUAGES_EXTENSIONS_MAP.get(self.extension)
+                if lexer_class:
+                    lexer = lexers.get_lexer_by_name(lexer_class[0])
+            except lexers.ClassNotFound:
+                lexer = None
+
+        if not lexer:
             lexer = lexers.TextLexer(stripnl=False)
-        # returns first alias
+
         return lexer
 
     @LazyProperty

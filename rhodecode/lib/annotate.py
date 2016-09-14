@@ -48,12 +48,12 @@ def annotate_highlight(
     :param headers: dictionary with headers (keys are whats in ``order``
       parameter)
     """
-    from rhodecode.lib.utils import get_custom_lexer
+    from rhodecode.lib.helpers import get_lexer_for_filenode
     options['linenos'] = True
     formatter = AnnotateHtmlFormatter(
         filenode=filenode, order=order, headers=headers,
         annotate_from_commit_func=annotate_from_commit_func, **options)
-    lexer = get_custom_lexer(filenode.extension) or filenode.lexer
+    lexer = get_lexer_for_filenode(filenode)
     highlighted = highlight(filenode.content, lexer, formatter)
     return highlighted
 

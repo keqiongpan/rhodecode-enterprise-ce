@@ -5,7 +5,8 @@
             <span> <strong>${c.file}</strong></span>
             <span> | ${c.file.lines()[0]} ${ungettext('line', 'lines', c.file.lines()[0])}</span>
             <span> | ${h.format_byte_size_binary(c.file.size)}</span>
-            <span class="item last"> | ${c.file.mimetype}</span>
+            <span> | ${c.file.mimetype} </span>
+            <span class="item last"> | ${h.get_lexer_for_filenode(c.file).__class__.__name__}</span>
       </div>
       <div class="buttons">
         <a id="file_history_overview" href="#">
