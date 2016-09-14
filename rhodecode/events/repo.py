@@ -57,7 +57,8 @@ def _commits_as_dict(commit_ids, repos):
 
         vcs_repo = repo.scm_instance(cache=False)
         try:
-            for commit_id in needed_commits:
+            # use copy of needed_commits since we modify it while iterating
+            for commit_id in list(needed_commits):
                 try:
                     cs = vcs_repo.get_changeset(commit_id)
                 except CommitDoesNotExistError:
