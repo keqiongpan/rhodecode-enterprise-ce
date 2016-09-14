@@ -51,75 +51,84 @@ class TestDeleteScopesDeletesIntegrations(object):
 def integration_repos(request, StubIntegrationType, stub_integration_settings):
     """
     Create repositories and integrations for testing, and destroy them after
+
+    Structure:
+        root_repo
+        parent_group/
+            parent_repo
+            child_group/
+                child_repo
+        other_group/
+            other_repo
     """
     fixture = Fixture()
 
-    repo_group_1_id = 'int_test_repo_group_1_%s' % time.time()
-    repo_group_1 = fixture.create_repo_group(repo_group_1_id)
-    repo_group_2_id = 'int_test_repo_group_2_%s' % time.time()
-    repo_group_2 = fixture.create_repo_group(repo_group_2_id)
 
-    repo_1_id = 'int_test_repo_1_%s' % time.time()
-    repo_1 = fixture.create_repo(repo_1_id, repo_group=repo_group_1)
-    repo_2_id = 'int_test_repo_2_%s' % time.time()
-    repo_2 = fixture.create_repo(repo_2_id, repo_group=repo_group_2)
+    parent_group_id = 'int_test_parent_group_%s' % time.time()
+    parent_group = fixture.create_repo_group(parent_group_id)
+
+    other_group_id = 'int_test_other_group_%s' % time.time()
+    other_group = fixture.create_repo_group(other_group_id)
+
+    child_group_id = (
+        parent_group_id + '/' + 'int_test_child_group_%s' % time.time())
+    child_group = fixture.create_repo_group(child_group_id)
+
+    parent_repo_id = 'int_test_parent_repo_%s' % time.time()
+    parent_repo = fixture.create_repo(parent_repo_id, repo_group=parent_group)
+
+    child_repo_id = 'int_test_child_repo_%s' % time.time()
+    child_repo = fixture.create_repo(child_repo_id, repo_group=child_group)
+
+    other_repo_id = 'int_test_other_repo_%s' % time.time()
+    other_repo = fixture.create_repo(other_repo_id, repo_group=other_group)
 
     root_repo_id = 'int_test_repo_root_%s' % time.time()
     root_repo = fixture.create_repo(root_repo_id)
 
-    integration_global = IntegrationModel().create(
-        StubIntegrationType, settings=stub_integration_settings,
-        enabled=True, name='test global integration', scope='global')
-    integration_root_repos = IntegrationModel().create(
-        StubIntegrationType, settings=stub_integration_settings,
-        enabled=True, name='test root repos integration', scope='root_repos')
-    integration_repo_1 = IntegrationModel().create(
-        StubIntegrationType, settings=stub_integration_settings,
-        enabled=True, name='test repo 1 integration', scope=repo_1)
-    integration_repo_group_1 = IntegrationModel().create(
-        StubIntegrationType, settings=stub_integration_settings,
-        enabled=True, name='test repo group 1 integration', scope=repo_group_1)
-    integration_repo_2 = IntegrationModel().create(
-        StubIntegrationType, settings=stub_integration_settings,
-        enabled=True, name='test repo 2 integration', scope=repo_2)
-    integration_repo_group_2 = IntegrationModel().create(
-        StubIntegrationType, settings=stub_integration_settings,
-        enabled=True, name='test repo group 2 integration', scope=repo_group_2)
+    integrations = {}
+    for name, repo, repo_group, child_repos_only in [
+            ('global', None, None, None),
+            ('root_repos', None, None, True),
+            ('parent_repo', parent_repo, None, None),
+            ('child_repo', child_repo, None, None),
+            ('other_repo', other_repo, None, None),
+            ('root_repo', root_repo, None, None),
+            ('parent_group', None, parent_group, True),
+            ('parent_group_recursive', None, parent_group, False),
+            ('child_group', None, child_group, True),
+            ('child_group_recursive', None, child_group, False),
+            ('other_group', None, other_group, True),
+            ('other_group_recursive', None, other_group, False),
+        ]:
+        integrations[name] = IntegrationModel().create(
+            StubIntegrationType, settings=stub_integration_settings,
+            enabled=True, name='test %s integration' % name,
+            repo=repo, repo_group=repo_group, child_repos_only=child_repos_only)
 
     Session().commit()
 
     def _cleanup():
-        Session().delete(integration_global)
-        Session().delete(integration_root_repos)
-        Session().delete(integration_repo_1)
-        Session().delete(integration_repo_group_1)
-        Session().delete(integration_repo_2)
-        Session().delete(integration_repo_group_2)
+        for integration in integrations.values():
+            Session.delete(integration)
+
         fixture.destroy_repo(root_repo)
-        fixture.destroy_repo(repo_1)
-        fixture.destroy_repo(repo_2)
-        fixture.destroy_repo_group(repo_group_1)
-        fixture.destroy_repo_group(repo_group_2)
+        fixture.destroy_repo(child_repo)
+        fixture.destroy_repo(parent_repo)
+        fixture.destroy_repo(other_repo)
+        fixture.destroy_repo_group(child_group)
+        fixture.destroy_repo_group(parent_group)
+        fixture.destroy_repo_group(other_group)
 
     request.addfinalizer(_cleanup)
 
     return {
+        'integrations': integrations,
         'repos': {
-            'repo_1': repo_1,
-            'repo_2': repo_2,
             'root_repo': root_repo,
-        },
-        'repo_groups': {
-            'repo_group_1': repo_group_1,
-            'repo_group_2': repo_group_2,
-        },
-        'integrations': {
-            'global': integration_global,
-            'root_repos': integration_root_repos,
-            'repo_1': integration_repo_1,
-            'repo_2': integration_repo_2,
-            'repo_group_1': integration_repo_group_1,
-            'repo_group_2': integration_repo_group_2,
+            'other_repo': other_repo,
+            'parent_repo': parent_repo,
+                'child_repo': child_repo,
         }
     }
 
@@ -133,27 +142,41 @@ def test_enabled_integration_repo_scopes(integration_repos):
 
     assert triggered_integrations == [
         integrations['global'],
-        integrations['root_repos']
+        integrations['root_repos'],
+        integrations['root_repo'],
     ]
 
 
     triggered_integrations = IntegrationModel().get_for_event(
-        events.RepoEvent(repos['repo_1']))
+        events.RepoEvent(repos['other_repo']))
 
     assert triggered_integrations == [
         integrations['global'],
-        integrations['repo_1'],
-        integrations['repo_group_1']
+        integrations['other_repo'],
+        integrations['other_group'],
+        integrations['other_group_recursive'],
     ]
 
 
     triggered_integrations = IntegrationModel().get_for_event(
-        events.RepoEvent(repos['repo_2']))
+        events.RepoEvent(repos['parent_repo']))
 
     assert triggered_integrations == [
         integrations['global'],
-        integrations['repo_2'],
-        integrations['repo_group_2'],
+        integrations['parent_repo'],
+        integrations['parent_group'],
+        integrations['parent_group_recursive'],
+    ]
+
+    triggered_integrations = IntegrationModel().get_for_event(
+        events.RepoEvent(repos['child_repo']))
+
+    assert triggered_integrations == [
+        integrations['global'],
+        integrations['child_repo'],
+        integrations['parent_group_recursive'],
+        integrations['child_group'],
+        integrations['child_group_recursive'],
     ]
 
 
@@ -172,15 +195,22 @@ def test_disabled_integration_repo_scopes(integration_repos):
 
 
     triggered_integrations = IntegrationModel().get_for_event(
-        events.RepoEvent(repos['repo_1']))
+        events.RepoEvent(repos['parent_repo']))
 
     assert triggered_integrations == []
 
 
     triggered_integrations = IntegrationModel().get_for_event(
-        events.RepoEvent(repos['repo_2']))
+        events.RepoEvent(repos['child_repo']))
 
     assert triggered_integrations == []
+
+
+    triggered_integrations = IntegrationModel().get_for_event(
+        events.RepoEvent(repos['other_repo']))
+
+    assert triggered_integrations == []
+
 
 
 def test_enabled_non_repo_integrations(integration_repos):

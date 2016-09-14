@@ -37,7 +37,7 @@ def integration_scope_choices(permissions):
     if 'hg.admin' in permissions['global']:
         result.extend([
            ('global', _('Global (all repositories)')),
-           ('root_repos', _('Top level repositories only')),
+           ('root-repos', _('Top level repositories only')),
         ])
 
     repo_choices = [
@@ -47,13 +47,19 @@ def integration_scope_choices(permissions):
         if repo_perm == 'repository.admin'
     ]
     repogroup_choices = [
-        ('repogroup:%s' % repo_group_name, '/' + repo_group_name + ' (group)')
+        ('repogroup:%s' % repo_group_name, '/' + repo_group_name + '/ (child repos only)')
+        for repo_group_name, repo_group_perm
+        in permissions['repositories_groups'].items()
+        if repo_group_perm == 'group.admin'
+    ]
+    repogroup_recursive_choices = [
+        ('repogroup-recursive:%s' % repo_group_name, '/' + repo_group_name + '/ (recursive)')
         for repo_group_name, repo_group_perm
         in permissions['repositories_groups'].items()
         if repo_group_perm == 'group.admin'
     ]
     result.extend(
-        sorted(repogroup_choices + repo_choices,
+        sorted(repogroup_recursive_choices + repogroup_choices + repo_choices,
             key=lambda (choice, label): choice.split(':', 1)[1]
         )
     )
@@ -66,27 +72,24 @@ def deferred_integration_scopes_validator(node, kw):
     def _scope_validator(_node, scope):
         is_super_admin = 'hg.admin' in perms['global']
 
-        if scope in ('global', 'root_repos'):
-            if is_super_admin:
-                return True
-            msg = _('Only superadmins can create global integrations')
-            raise colander.Invalid(_node, msg)
-        elif isinstance(scope, Repository):
+        if scope.get('repo'):
             if (is_super_admin or perms['repositories'].get(
-                                        scope.repo_name) == 'repository.admin'):
+                scope['repo'].repo_name) == 'repository.admin'):
                 return True
             msg = _('Only repo admins can create integrations')
             raise colander.Invalid(_node, msg)
-        elif isinstance(scope, RepoGroup):
+        elif scope.get('repo_group'):
             if (is_super_admin or perms['repositories_groups'].get(
-                                            scope.group_name) == 'group.admin'):
+                scope['repo_group'].group_name) == 'group.admin'):
                 return True
 
             msg = _('Only repogroup admins can create integrations')
             raise colander.Invalid(_node, msg)
-
-        msg = _('Invalid integration scope: %s' % scope)
-        raise colander.Invalid(node, msg)
+        else:
+            if is_super_admin:
+                return True
+            msg = _('Only superadmins can create global integrations')
+            raise colander.Invalid(_node, msg)
 
     return _scope_validator
 
@@ -100,17 +103,26 @@ def deferred_integration_scopes_widget(node, kw):
     widget = deform.widget.Select2Widget(values=choices)
     return widget
 
-class IntegrationScope(colander.SchemaType):
+
+class IntegrationScopeType(colander.SchemaType):
     def serialize(self, node, appstruct):
         if appstruct is colander.null:
             return colander.null
 
-        if isinstance(appstruct, Repository):
-            return 'repo:%s' % appstruct.repo_name
-        elif isinstance(appstruct, RepoGroup):
-            return 'repogroup:%s' % appstruct.group_name
-        elif appstruct in ('global', 'root_repos'):
-            return appstruct
+        if appstruct.get('repo'):
+            return 'repo:%s' % appstruct['repo'].repo_name
+        elif appstruct.get('repo_group'):
+            if appstruct.get('child_repos_only'):
+                return 'repogroup:%s' % appstruct['repo_group'].group_name
+            else:
+                return 'repogroup-recursive:%s' % (
+                    appstruct['repo_group'].group_name)
+        else:
+            if appstruct.get('child_repos_only'):
+                return 'root-repos'
+            else:
+                return 'global'
+
         raise colander.Invalid(node, '%r is not a valid scope' % appstruct)
 
     def deserialize(self, node, cstruct):
@@ -120,15 +132,42 @@ class IntegrationScope(colander.SchemaType):
         if cstruct.startswith('repo:'):
             repo = Repository.get_by_repo_name(cstruct.split(':')[1])
             if repo:
-                return repo
+                return {
+                    'repo': repo,
+                    'repo_group': None,
+                    'child_repos_only': None,
+                }
+        elif cstruct.startswith('repogroup-recursive:'):
+            repo_group = RepoGroup.get_by_group_name(cstruct.split(':')[1])
+            if repo_group:
+                return {
+                    'repo': None,
+                    'repo_group': repo_group,
+                    'child_repos_only': False
+                }
         elif cstruct.startswith('repogroup:'):
             repo_group = RepoGroup.get_by_group_name(cstruct.split(':')[1])
             if repo_group:
-                return repo_group
-        elif cstruct in ('global', 'root_repos'):
-            return cstruct
+                return {
+                    'repo': None,
+                    'repo_group': repo_group,
+                    'child_repos_only': True
+                }
+        elif cstruct == 'global':
+            return {
+                'repo': None,
+                'repo_group': None,
+                'child_repos_only': False
+            }
+        elif cstruct == 'root-repos':
+            return {
+                'repo': None,
+                'repo_group': None,
+                'child_repos_only': True
+            }
 
         raise colander.Invalid(node, '%r is not a valid scope' % cstruct)
+
 
 class IntegrationOptionsSchemaBase(colander.MappingSchema):
 
@@ -140,10 +179,10 @@ class IntegrationOptionsSchemaBase(colander.MappingSchema):
     )
 
     scope = colander.SchemaNode(
-        IntegrationScope(),
+        IntegrationScopeType(),
         description=_(
-            'Scope of the integration. Group scope means the integration '
-            ' runs on all child repos of that group.'),
+            'Scope of the integration. Recursive means the integration '
+            ' runs on all repos of that group and children recursively.'),
         title=_('Integration scope'),
         validator=deferred_integration_scopes_validator,
         widget=deferred_integration_scopes_widget,

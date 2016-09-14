@@ -40,7 +40,7 @@ from rhodecode.admin.navigation import navigation_list
 from rhodecode.translation import _
 from rhodecode.integrations import integration_type_registry
 from rhodecode.model.validation_schema.schemas.integration_schema import (
-    make_integration_schema)
+    make_integration_schema, IntegrationScopeType)
 
 log = logging.getLogger(__name__)
 
@@ -151,7 +151,11 @@ class IntegrationSettingsViewBase(object):
             defaults['options'] = {
                 'name': self.integration.name,
                 'enabled': self.integration.enabled,
-                'scope': self.integration.scope,
+                'scope': {
+                    'repo': self.integration.repo,
+                    'repo_group': self.integration.repo_group,
+                    'child_repos_only': self.integration.child_repos_only,
+                },
             }
         else:
             if self.repo:
@@ -168,10 +172,10 @@ class IntegrationSettingsViewBase(object):
                 'name': _('{name} integration').format(
                     name=self.IntegrationType.display_name),
             }
-            if self.repo:
-                defaults['options']['scope'] = self.repo
-            elif self.repo_group:
-                defaults['options']['scope'] = self.repo_group
+            defaults['options']['scope'] = {
+                'repo': self.repo,
+                'repo_group': self.repo_group,
+            }
 
         return defaults
 
@@ -250,11 +254,10 @@ class IntegrationSettingsViewBase(object):
             # scope is read only field in these cases, and has to be added
             options = pstruct.setdefault('options', {})
             if 'scope' not in options:
-                if self.repo:
-                    options['scope'] = 'repo:{}'.format(self.repo.repo_name)
-                elif self.repo_group:
-                    options['scope'] = 'repogroup:{}'.format(
-                        self.repo_group.group_name)
+                options['scope'] = IntegrationScopeType().serialize(None, {
+                    'repo': self.repo,
+                    'repo_group': self.repo_group,
+                })
 
         try:
             valid_data = form.validate_pstruct(pstruct)
@@ -276,7 +279,11 @@ class IntegrationSettingsViewBase(object):
             name=valid_data['options']['name'],
             enabled=valid_data['options']['enabled'],
             settings=valid_data['settings'],
-            scope=scope)
+            repo=scope['repo'],
+            repo_group=scope['repo_group'],
+            child_repos_only=scope['child_repos_only'],
+        )
+
 
         self.integration.settings = valid_data['settings']
         Session().commit()
@@ -291,16 +298,16 @@ class IntegrationSettingsViewBase(object):
         # keeping in mind if the original view was for /repo/ or /_admin/
         admin_view = not (self.repo or self.repo_group)
 
-        if isinstance(self.integration.scope, Repository) and not admin_view:
+        if self.integration.repo and not admin_view:
             redirect_to = self.request.route_path(
                 'repo_integrations_edit',
-                repo_name=self.integration.scope.repo_name,
+                repo_name=self.integration.repo.repo_name,
                 integration=self.integration.integration_type,
                 integration_id=self.integration.integration_id)
-        elif isinstance(self.integration.scope, RepoGroup) and not admin_view:
+        elif self.integration.repo_group and not admin_view:
             redirect_to = self.request.route_path(
                 'repo_group_integrations_edit',
-                repo_group_name=self.integration.scope.group_name,
+                repo_group_name=self.integration.repo_group.group_name,
                 integration=self.integration.integration_type,
                 integration_id=self.integration.integration_id)
         else:

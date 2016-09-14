@@ -166,14 +166,17 @@
             %elif integration.repo_group:
             <a href="${h.url('repo_group_home', group_name=integration.repo_group.group_name)}">
               ${_('repogroup')}:${integration.repo_group.group_name}
+              %if integration.child_repos_only:
+              ${_('child repos only')}
+              %else:
+              ${_('cascade to all')}
+              %endif
             </a>
             %else:
-              %if integration.scope == 'root_repos':
+              %if integration.child_repos_only:
               ${_('top level repos only')}
-              %elif integration.scope == 'global':
-              ${_('global')}
               %else:
-              ${_('unknown scope')}: ${integration.scope}
+              ${_('global')}
               %endif
           </td>
           %endif

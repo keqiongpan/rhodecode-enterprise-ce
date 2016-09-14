@@ -61,23 +61,24 @@ class IntegrationModel(BaseModel):
                 raise Exception('integration must be int, long or Instance'
                                 ' of Integration got %s' % type(integration))
 
-    def create(self, IntegrationType, name, enabled, scope, settings):
+    def create(self, IntegrationType, name, enabled, repo, repo_group,
+        child_repos_only, settings):
         """ Create an IntegrationType integration """
         integration = Integration()
         integration.integration_type = IntegrationType.key
         self.sa.add(integration)
-        self.update_integration(integration, name, enabled, scope, settings)
+        self.update_integration(integration, name, enabled, repo, repo_group,
+                                child_repos_only, settings)
         self.sa.commit()
         return integration
 
-    def update_integration(self, integration, name, enabled, scope, settings):
-        """
-        :param scope: one of ['global', 'root_repos', <RepoGroup>. <Repository>]
-        """
-
+    def update_integration(self, integration, name, enabled, repo, repo_group,
+        child_repos_only, settings):
         integration = self.__get_integration(integration)
 
-        integration.scope = scope
+        integration.repo = repo
+        integration.repo_group = repo_group
+        integration.child_repos_only = child_repos_only
         integration.name = name
         integration.enabled = enabled
         integration.settings = settings
@@ -127,7 +128,7 @@ class IntegrationModel(BaseModel):
             query = self.sa.query(Integration).filter(
                 and_(Integration.repo_id==None, Integration.repo_group_id==None)
             )
-        elif scope == 'root_repos':
+        elif scope == 'root-repos':
             query = self.sa.query(Integration).filter(
                 and_(Integration.repo_id==None,
                      Integration.repo_group_id==None,
@@ -185,13 +186,21 @@ class IntegrationModel(BaseModel):
 
             if event.repo.group:
                 clauses.append(
-                    Integration.repo_group_id == event.repo.group.group_id
+                    and_(
+                        Integration.repo_group_id==event.repo.group.group_id,
+                        Integration.child_repos_only==True
+                    )
                 )
-                # repo group cascade to kids (maybe implement this sometime?)
-                # clauses.append(Integration.repo_group_id.in_(
-                #     [group.group_id for group in
-                #     event.repo.groups_with_parents]
-                # ))
+                # repo group cascade to kids
+                clauses.append(
+                    and_(
+                        Integration.repo_group_id.in_(
+                            [group.group_id for group in
+                            event.repo.groups_with_parents]
+                        ),
+                        Integration.child_repos_only==False
+                    )
+                )
 
 
             if not event.repo.group: # root repo

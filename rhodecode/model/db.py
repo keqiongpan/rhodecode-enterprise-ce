@@ -3499,36 +3499,18 @@ class Integration(Base, BaseModel):
         nullable=True, unique=None, default=None)
     repo_group = relationship('RepoGroup', lazy='joined')
 
-    @hybrid_property
+    @property
     def scope(self):
         if self.repo:
-            return self.repo
+            return repr(self.repo)
         if self.repo_group:
-            return self.repo_group
+            if self.child_repos_only:
+                return repr(self.repo_group) + ' (child repos only)'
+            else:
+                return repr(self.repo_group) + ' (recursive)'
         if self.child_repos_only:
             return 'root_repos'
         return 'global'
-
-    @scope.setter
-    def scope(self, value):
-        self.repo = None
-        self.repo_id = None
-        self.repo_group_id = None
-        self.repo_group = None
-        self.child_repos_only = False
-        if isinstance(value, Repository):
-            self.repo_id = value.repo_id
-            self.repo = value
-        elif isinstance(value, RepoGroup):
-            self.repo_group_id = value.group_id
-            self.repo_group = value
-        elif value == 'root_repos':
-            self.child_repos_only = True
-        elif value == 'global':
-            pass
-        else:
-            raise Exception("invalid scope: %s, must be one of "
-                "['global', 'root_repos', <RepoGroup>. <Repository>]" % value)
 
     def __repr__(self):
         return '<Integration(%r, %r)>' % (self.integration_type, self.scope)

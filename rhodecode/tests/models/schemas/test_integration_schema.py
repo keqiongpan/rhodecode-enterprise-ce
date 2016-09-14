@@ -47,42 +47,93 @@ class TestIntegrationSchema(object):
             'repositories_groups': {},
         }
 
-        perms_tests = {
-            ('repo:%s' % repo.repo_name, repo): [
-                ({},  False),
-                ({'global': ['hg.admin']},  True),
-                ({'global': []},  False),
-                ({'repositories': {repo.repo_name: 'repository.admin'}}, True),
-                ({'repositories': {repo.repo_name: 'repository.read'}}, False),
-                ({'repositories': {repo.repo_name: 'repository.write'}}, False),
-                ({'repositories': {repo.repo_name: 'repository.none'}}, False),
-            ],
-            ('repogroup:%s' % repo_group.group_name, repo_group): [
-                ({},  False),
-                ({'global': ['hg.admin']},  True),
-                ({'global': []},  False),
-                ({'repositories_groups':
-                    {repo_group.group_name: 'group.admin'}}, True),
-                ({'repositories_groups':
-                    {repo_group.group_name: 'group.read'}}, False),
-                ({'repositories_groups':
-                    {repo_group.group_name: 'group.write'}}, False),
-                ({'repositories_groups':
-                    {repo_group.group_name: 'group.none'}}, False),
-            ],
-            ('global', 'global'): [
-                ({},  False),
-                ({'global': ['hg.admin']},  True),
-                ({'global': []},  False),
-            ],
-            ('root_repos', 'root_repos'): [
-                ({},  False),
-                ({'global': ['hg.admin']},  True),
-                ({'global': []},  False),
-            ],
-        }
+        perms_tests = [
+            (
+                'repo:%s' % repo.repo_name,
+                {
+                    'child_repos_only': None,
+                    'repo_group': None,
+                    'repo': repo,
+                },
+                [
+                    ({},  False),
+                    ({'global': ['hg.admin']},  True),
+                    ({'global': []},  False),
+                    ({'repositories': {repo.repo_name: 'repository.admin'}}, True),
+                    ({'repositories': {repo.repo_name: 'repository.read'}}, False),
+                    ({'repositories': {repo.repo_name: 'repository.write'}}, False),
+                    ({'repositories': {repo.repo_name: 'repository.none'}}, False),
+                ]
+            ),
+            (
+                'repogroup:%s' % repo_group.group_name,
+                {
+                    'repo': None,
+                    'repo_group': repo_group,
+                    'child_repos_only': True,
+                },
+                [
+                    ({},  False),
+                    ({'global': ['hg.admin']},  True),
+                    ({'global': []},  False),
+                    ({'repositories_groups':
+                        {repo_group.group_name: 'group.admin'}}, True),
+                    ({'repositories_groups':
+                        {repo_group.group_name: 'group.read'}}, False),
+                    ({'repositories_groups':
+                        {repo_group.group_name: 'group.write'}}, False),
+                    ({'repositories_groups':
+                        {repo_group.group_name: 'group.none'}}, False),
+                ]
+            ),
+            (
+                'repogroup-recursive:%s' % repo_group.group_name,
+                {
+                    'repo': None,
+                    'repo_group': repo_group,
+                    'child_repos_only': False,
+                },
+                [
+                    ({},  False),
+                    ({'global': ['hg.admin']},  True),
+                    ({'global': []},  False),
+                    ({'repositories_groups':
+                        {repo_group.group_name: 'group.admin'}}, True),
+                    ({'repositories_groups':
+                        {repo_group.group_name: 'group.read'}}, False),
+                    ({'repositories_groups':
+                        {repo_group.group_name: 'group.write'}}, False),
+                    ({'repositories_groups':
+                        {repo_group.group_name: 'group.none'}}, False),
+                ]
+            ),
+            (
+                'global',
+                {
+                    'repo': None,
+                    'repo_group': None,
+                    'child_repos_only': False,
+                }, [
+                    ({},  False),
+                    ({'global': ['hg.admin']},  True),
+                    ({'global': []},  False),
+                ]
+            ),
+            (
+                'root-repos',
+                {
+                    'repo': None,
+                    'repo_group': None,
+                    'child_repos_only': True,
+                }, [
+                    ({},  False),
+                    ({'global': ['hg.admin']},  True),
+                    ({'global': []},  False),
+                ]
+            ),
+        ]
 
-        for (scope_input, scope_output), perms_allowed in perms_tests.items():
+        for scope_input, scope_output, perms_allowed in perms_tests:
             for perms_update, allowed in perms_allowed:
                 perms = dict(empty_perms_dict, **perms_update)
 

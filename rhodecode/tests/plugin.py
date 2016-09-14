@@ -1709,7 +1709,8 @@ def repo_integration_stub(request, repo_stub, StubIntegrationType,
         stub_integration_settings):
     integration = IntegrationModel().create(
         StubIntegrationType, settings=stub_integration_settings, enabled=True,
-        name='test repo integration', scope=repo_stub)
+        name='test repo integration',
+        repo=repo_stub, repo_group=None, child_repos_only=None)
 
     @request.addfinalizer
     def cleanup():
@@ -1723,7 +1724,23 @@ def repogroup_integration_stub(request, test_repo_group, StubIntegrationType,
     stub_integration_settings):
     integration = IntegrationModel().create(
         StubIntegrationType, settings=stub_integration_settings, enabled=True,
-        name='test repogroup integration', scope=test_repo_group)
+        name='test repogroup integration',
+        repo=None, repo_group=test_repo_group, child_repos_only=True)
+
+    @request.addfinalizer
+    def cleanup():
+        IntegrationModel().delete(integration)
+
+    return integration
+
+
+@pytest.fixture
+def repogroup_recursive_integration_stub(request, test_repo_group,
+    StubIntegrationType, stub_integration_settings):
+    integration = IntegrationModel().create(
+        StubIntegrationType, settings=stub_integration_settings, enabled=True,
+        name='test recursive repogroup integration',
+        repo=None, repo_group=test_repo_group, child_repos_only=False)
 
     @request.addfinalizer
     def cleanup():
@@ -1737,7 +1754,8 @@ def global_integration_stub(request, StubIntegrationType,
     stub_integration_settings):
     integration = IntegrationModel().create(
         StubIntegrationType, settings=stub_integration_settings, enabled=True,
-        name='test global integration', scope='global')
+        name='test global integration',
+        repo=None, repo_group=None, child_repos_only=None)
 
     @request.addfinalizer
     def cleanup():
@@ -1751,7 +1769,8 @@ def root_repos_integration_stub(request, StubIntegrationType,
     stub_integration_settings):
     integration = IntegrationModel().create(
         StubIntegrationType, settings=stub_integration_settings, enabled=True,
-        name='test global integration', scope='root_repos')
+        name='test global integration',
+        repo=None, repo_group=None, child_repos_only=True)
 
     @request.addfinalizer
     def cleanup():

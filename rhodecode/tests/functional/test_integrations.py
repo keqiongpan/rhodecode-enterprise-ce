@@ -222,11 +222,13 @@ def _post_integration_test_helper(app, url, csrf_token, repo, repo_group,
     scopes_destinations = [
         ('global',
             ADMIN_PREFIX + '/integrations'),
-        ('root_repos',
+        ('root-repos',
                 ADMIN_PREFIX + '/integrations'),
         ('repo:%s' % repo.repo_name,
                 '/%s/settings/integrations' % repo.repo_name),
         ('repogroup:%s' % repo_group.group_name,
+                '/%s/settings/integrations' % repo_group.group_name),
+        ('repogroup-recursive:%s' % repo_group.group_name,
                 '/%s/settings/integrations' % repo_group.group_name),
     ]
 
