@@ -415,7 +415,9 @@
         if (location.hash) {
           var result = splitDelimitedHash(location.hash);
           var line = $('html').find(result.loc);
-          offsetScroll(line, 70);
+            if (line.length > 0){
+                offsetScroll(line, 70);
+            }
         }
         $(function(){
             ReviewerAutoComplete('user');
