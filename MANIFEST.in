@@ -24,6 +24,10 @@ recursive-include rhodecode *.cfg
 recursive-include rhodecode *.json
 recursive-include rhodecode *.ini_tmpl
 recursive-include rhodecode *.sh
+recursive-include rhodecode *.mako
+
+# 502 page
+include rhodecode/public/502.html
 
 # 502 page
 include rhodecode/public/502.html
