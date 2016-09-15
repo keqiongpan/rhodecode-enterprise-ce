@@ -168,8 +168,8 @@
                         ${self.gravatar_with_user(commit.author)}
                     </td>
 
-                    <td class="td-tags tags-col truncate-wrap">
-                    <div class="truncate tags-truncate" id="t-${commit.raw_id}">
+                    <td class="td-tags tags-col">
+                    <div id="t-${commit.raw_id}">
                         ## branch
                         %if commit.branch:
                           <span class="branchtag tag" title="${_('Branch %s') % commit.branch}">

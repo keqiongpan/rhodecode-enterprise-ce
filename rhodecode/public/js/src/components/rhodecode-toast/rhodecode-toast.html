@@ -1,0 +1,30 @@
+<link rel="import" href="../../../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../../../../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../rhodecode-unsafe-html/rhodecode-unsafe-html.html">
+<dom-module id="rhodecode-toast">
+    <template>
+        <style include="shared-styles"></style>
+        <link rel="stylesheet" href="rhodecode-toast.css">
+
+        <paper-toast id="p-toast"
+                     duration="0"
+                     horizontal-offset="100"
+                     horizontal-align="auto"
+                     vertical-align="top"
+                     on-iron-overlay-closed="handleClosed"
+                     always-on-top>
+            <div class="toast-message-holder">
+                <template is="dom-repeat" items="{{toasts}}">
+                    <div class$="alert alert-{{item.level}}">
+                    <rhodecode-unsafe-html text="{{item.message}}"></rhodecode-unsafe-html>
+                    </div>
+                </template>
+            </div>
+            <div class="toast-close">
+                <button on-tap="dismissNotifications" class="btn btn-default">{{_gettext('Close now')}}</button>
+            </div>
+        </paper-toast>
+    </template>
+
+    <script src="rhodecode-toast.js"></script>
+</dom-module>

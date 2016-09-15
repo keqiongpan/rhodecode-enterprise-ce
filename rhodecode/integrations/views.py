@@ -18,23 +18,29 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import colander
-import logging
 import pylons
 import deform
+import logging
+import colander
+import peppercorn
+import webhelpers.paginate
 
-from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPBadRequest
 from pyramid.renderers import render
 from pyramid.response import Response
 
 from rhodecode.lib import auth
 from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
-from rhodecode.model.db import Repository, Session, Integration
+from rhodecode.lib.utils2 import safe_int
+from rhodecode.lib.helpers import Page
+from rhodecode.model.db import Repository, RepoGroup, Session, Integration
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.integration import IntegrationModel
 from rhodecode.admin.navigation import navigation_list
 from rhodecode.translation import _
 from rhodecode.integrations import integration_type_registry
+from rhodecode.model.validation_schema.schemas.integration_schema import (
+    make_integration_schema, IntegrationScopeType)
 
 log = logging.getLogger(__name__)
 
@@ -59,28 +65,51 @@ class IntegrationSettingsViewBase(object):
 
         self.IntegrationType = None
         self.repo = None
+        self.repo_group = None
         self.integration = None
         self.integrations = {}
 
         request = self.request
 
-        if 'repo_name' in request.matchdict:  # we're in a repo context
+        if 'repo_name' in request.matchdict:  # in repo settings context
             repo_name = request.matchdict['repo_name']
             self.repo = Repository.get_by_repo_name(repo_name)
 
-        if 'integration' in request.matchdict:  # we're in integration context
+        if 'repo_group_name' in request.matchdict: # in group settings context
+            repo_group_name = request.matchdict['repo_group_name']
+            self.repo_group = RepoGroup.get_by_group_name(repo_group_name)
+
+
+        if 'integration' in request.matchdict:  # integration type context
             integration_type = request.matchdict['integration']
             self.IntegrationType = integration_type_registry[integration_type]
 
         if 'integration_id' in request.matchdict:  # single integration context
             integration_id = request.matchdict['integration_id']
             self.integration = Integration.get(integration_id)
-        else:                                      # list integrations context
-            for integration in IntegrationModel().get_integrations(self.repo):
-                self.integrations.setdefault(integration.integration_type, []
-                    ).append(integration)
+
+            # extra perms check just in case
+            if not self._has_perms_for_integration(self.integration):
+                raise HTTPForbidden()
 
         self.settings = self.integration and self.integration.settings or {}
+        self.admin_view = not (self.repo or self.repo_group)
+
+    def _has_perms_for_integration(self, integration):
+        perms = self.request.user.permissions
+
+        if 'hg.admin' in perms['global']:
+            return True
+
+        if integration.repo:
+            return perms['repositories'].get(
+                integration.repo.repo_name) == 'repository.admin'
+
+        if integration.repo_group:
+            return perms['repositories_groups'].get(
+                integration.repo_group.group_name) == 'group.admin'
+
+        return False
 
     def _template_c_context(self):
         # TODO: dan: this is a stopgap in order to inherit from current pylons
@@ -91,7 +120,10 @@ class IntegrationSettingsViewBase(object):
         c.active = 'integrations'
         c.rhodecode_user = self.request.user
         c.repo = self.repo
+        c.repo_group = self.repo_group
         c.repo_name = self.repo and self.repo.repo_name or None
+        c.repo_group_name = self.repo_group and self.repo_group.group_name or None
+
         if self.repo:
             c.repo_info = self.repo
             c.rhodecode_db_repo = self.repo
@@ -102,34 +134,77 @@ class IntegrationSettingsViewBase(object):
         return c
 
     def _form_schema(self):
-        if self.integration:
-            settings = self.integration.settings
-        else:
-            settings = {}
-        return self.IntegrationType(settings=settings).settings_schema()
+        schema = make_integration_schema(IntegrationType=self.IntegrationType,
+                                         settings=self.settings)
 
-    def settings_get(self, defaults=None, errors=None, form=None):
-        """
-        View that displays the plugin settings as a form.
-        """
-        defaults = defaults or {}
-        errors = errors or {}
+        # returns a clone, important if mutating the schema later
+        return schema.bind(
+            permissions=self.request.user.permissions,
+            no_scope=not self.admin_view)
+
+
+    def _form_defaults(self):
+        defaults = {}
 
         if self.integration:
-            defaults = self.integration.settings or {}
-            defaults['name'] = self.integration.name
-            defaults['enabled'] = self.integration.enabled
+            defaults['settings'] = self.integration.settings or {}
+            defaults['options'] = {
+                'name': self.integration.name,
+                'enabled': self.integration.enabled,
+                'scope': {
+                    'repo': self.integration.repo,
+                    'repo_group': self.integration.repo_group,
+                    'child_repos_only': self.integration.child_repos_only,
+                },
+            }
         else:
             if self.repo:
-                scope = self.repo.repo_name
+                scope = _('{repo_name} repository').format(
+                    repo_name=self.repo.repo_name)
+            elif self.repo_group:
+                scope = _('{repo_group_name} repo group').format(
+                    repo_group_name=self.repo_group.group_name)
             else:
                 scope = _('Global')
 
-            defaults['name'] = '{} {} integration'.format(scope,
-                self.IntegrationType.display_name)
-            defaults['enabled'] = True
+            defaults['options'] = {
+                'enabled': True,
+                'name': _('{name} integration').format(
+                    name=self.IntegrationType.display_name),
+            }
+            defaults['options']['scope'] = {
+                'repo': self.repo,
+                'repo_group': self.repo_group,
+            }
 
-        schema = self._form_schema().bind(request=self.request)
+        return defaults
+
+    def _delete_integration(self, integration):
+        Session().delete(self.integration)
+        Session().commit()
+        self.request.session.flash(
+            _('Integration {integration_name} deleted successfully.').format(
+                integration_name=self.integration.name),
+            queue='success')
+
+        if self.repo:
+            redirect_to = self.request.route_url(
+                'repo_integrations_home', repo_name=self.repo.repo_name)
+        elif self.repo_group:
+            redirect_to = self.request.route_url(
+                'repo_group_integrations_home',
+                repo_group_name=self.repo_group.group_name)
+        else:
+            redirect_to = self.request.route_url('global_integrations_home')
+        raise HTTPFound(redirect_to)
+
+    def settings_get(self, defaults=None, form=None):
+        """
+        View that displays the integration settings as a form.
+        """
+
+        defaults = defaults or self._form_defaults()
+        schema = self._form_schema()
 
         if self.integration:
             buttons = ('submit', 'delete')
@@ -138,23 +213,10 @@ class IntegrationSettingsViewBase(object):
 
         form = form or deform.Form(schema, appstruct=defaults, buttons=buttons)
 
-        for node in schema:
-            setting = self.settings.get(node.name)
-            if setting is not None:
-                defaults.setdefault(node.name, setting)
-            else:
-                if node.default:
-                    defaults.setdefault(node.name, node.default)
-
         template_context = {
             'form': form,
-            'defaults': defaults,
-            'errors': errors,
-            'schema': schema,
             'current_IntegrationType': self.IntegrationType,
             'integration': self.integration,
-            'settings': self.settings,
-            'resource': self.context,
             'c': self._template_c_context(),
         }
 
@@ -163,71 +225,93 @@ class IntegrationSettingsViewBase(object):
     @auth.CSRFRequired()
     def settings_post(self):
         """
-        View that validates and stores the plugin settings.
+        View that validates and stores the integration settings.
         """
-        if self.request.params.get('delete'):
-            Session().delete(self.integration)
-            Session().commit()
-            self.request.session.flash(
-                _('Integration {integration_name} deleted successfully.').format(
-                    integration_name=self.integration.name),
-                queue='success')
-            if self.repo:
-                redirect_to = self.request.route_url(
-                    'repo_integrations_home', repo_name=self.repo.repo_name)
-            else:
-                redirect_to = self.request.route_url('global_integrations_home')
-            raise HTTPFound(redirect_to)
-
-        schema = self._form_schema().bind(request=self.request)
-
-        form = deform.Form(schema, buttons=('submit', 'delete'))
-
-        params = {}
-        for node in schema.children:
-            if type(node.typ) in (colander.Set, colander.List):
-                val = self.request.params.getall(node.name)
-            else:
-                val = self.request.params.get(node.name)
-            if val:
-                params[node.name] = val
-
         controls = self.request.POST.items()
+        pstruct = peppercorn.parse(controls)
+
+        if self.integration and pstruct.get('delete'):
+            return self._delete_integration(self.integration)
+
+        schema = self._form_schema()
+
+        skip_settings_validation = False
+        if self.integration and 'enabled' not in pstruct.get('options', {}):
+            skip_settings_validation = True
+            schema['settings'].validator = None
+            for field in schema['settings'].children:
+                field.validator = None
+                field.missing = ''
+
+        if self.integration:
+            buttons = ('submit', 'delete')
+        else:
+            buttons = ('submit',)
+
+        form = deform.Form(schema, buttons=buttons)
+
+        if not self.admin_view:
+            # scope is read only field in these cases, and has to be added
+            options = pstruct.setdefault('options', {})
+            if 'scope' not in options:
+                options['scope'] = IntegrationScopeType().serialize(None, {
+                    'repo': self.repo,
+                    'repo_group': self.repo_group,
+                })
+
         try:
-            valid_data = form.validate(controls)
+            valid_data = form.validate_pstruct(pstruct)
         except deform.ValidationFailure as e:
             self.request.session.flash(
                 _('Errors exist when saving integration settings. '
                   'Please check the form inputs.'),
                 queue='error')
-            return self.settings_get(errors={}, defaults=params, form=e)
+            return self.settings_get(form=e)
 
         if not self.integration:
             self.integration = Integration()
             self.integration.integration_type = self.IntegrationType.key
-            if self.repo:
-                self.integration.repo = self.repo
             Session().add(self.integration)
 
-        self.integration.enabled = valid_data.pop('enabled', False)
-        self.integration.name = valid_data.pop('name')
-        self.integration.settings = valid_data
+        scope = valid_data['options']['scope']
 
+        IntegrationModel().update_integration(self.integration,
+            name=valid_data['options']['name'],
+            enabled=valid_data['options']['enabled'],
+            settings=valid_data['settings'],
+            repo=scope['repo'],
+            repo_group=scope['repo_group'],
+            child_repos_only=scope['child_repos_only'],
+        )
+
+
+        self.integration.settings = valid_data['settings']
         Session().commit()
-
         # Display success message and redirect.
         self.request.session.flash(
             _('Integration {integration_name} updated successfully.').format(
                 integration_name=self.IntegrationType.display_name),
             queue='success')
 
-        if self.repo:
-            redirect_to = self.request.route_url(
-                'repo_integrations_edit', repo_name=self.repo.repo_name,
+
+        # if integration scope changes, we must redirect to the right place
+        # keeping in mind if the original view was for /repo/ or /_admin/
+        admin_view = not (self.repo or self.repo_group)
+
+        if self.integration.repo and not admin_view:
+            redirect_to = self.request.route_path(
+                'repo_integrations_edit',
+                repo_name=self.integration.repo.repo_name,
+                integration=self.integration.integration_type,
+                integration_id=self.integration.integration_id)
+        elif self.integration.repo_group and not admin_view:
+            redirect_to = self.request.route_path(
+                'repo_group_integrations_edit',
+                repo_group_name=self.integration.repo_group.group_name,
                 integration=self.integration.integration_type,
                 integration_id=self.integration.integration_id)
         else:
-            redirect_to = self.request.route_url(
+            redirect_to = self.request.route_path(
                 'global_integrations_edit',
                 integration=self.integration.integration_type,
                 integration_id=self.integration.integration_id)
@@ -235,31 +319,60 @@ class IntegrationSettingsViewBase(object):
         return HTTPFound(redirect_to)
 
     def index(self):
-        current_integrations = self.integrations
-        if self.IntegrationType:
-            current_integrations = {
-                self.IntegrationType.key: self.integrations.get(
-                    self.IntegrationType.key, [])
-            }
+        """ List integrations """
+        if self.repo:
+            scope = self.repo
+        elif self.repo_group:
+            scope = self.repo_group
+        else:
+            scope = 'all'
+
+        integrations = []
+
+        for integration in IntegrationModel().get_integrations(
+                        scope=scope, IntegrationType=self.IntegrationType):
+
+            # extra permissions check *just in case*
+            if not self._has_perms_for_integration(integration):
+                continue
+            integrations.append(integration)
+
+        sort_arg = self.request.GET.get('sort', 'name:asc')
+        if ':' in sort_arg:
+            sort_field, sort_dir = sort_arg.split(':')
+        else:
+            sort_field = sort_arg, 'asc'
+
+        assert sort_field in ('name', 'integration_type', 'enabled', 'scope')
+
+        integrations.sort(
+            key=lambda x: getattr(x[1], sort_field), reverse=(sort_dir=='desc'))
+
+
+        page_url = webhelpers.paginate.PageURL(
+            self.request.path, self.request.GET)
+        page = safe_int(self.request.GET.get('page', 1), 1)
+
+        integrations = Page(integrations, page=page, items_per_page=10,
+                               url=page_url)
 
         template_context = {
+            'sort_field': sort_field,
+            'rev_sort_dir': sort_dir != 'desc' and 'desc' or 'asc',
             'current_IntegrationType': self.IntegrationType,
-            'current_integrations': current_integrations,
+            'integrations_list': integrations,
             'available_integrations': integration_type_registry,
-            'c': self._template_c_context()
+            'c': self._template_c_context(),
+            'request': self.request,
         }
+        return template_context
 
-        if self.repo:
-            html = render('rhodecode:templates/admin/integrations/list.html',
-                          template_context,
-                          request=self.request)
-        else:
-            html = render('rhodecode:templates/admin/integrations/list.html',
-                          template_context,
-                          request=self.request)
-
-        return Response(html)
-
+    def new_integration(self):
+        template_context = {
+            'available_integrations': integration_type_registry,
+            'c': self._template_c_context(),
+        }
+        return template_context
 
 class GlobalIntegrationsView(IntegrationSettingsViewBase):
     def perm_check(self, user):
@@ -270,3 +383,10 @@ class RepoIntegrationsView(IntegrationSettingsViewBase):
     def perm_check(self, user):
         return auth.HasRepoPermissionAll('repository.admin'
             )(repo_name=self.repo.repo_name, user=user)
+
+
+class RepoGroupIntegrationsView(IntegrationSettingsViewBase):
+    def perm_check(self, user):
+        return auth.HasRepoGroupPermissionAll('group.admin'
+            )(group_name=self.repo_group.group_name, user=user)
+

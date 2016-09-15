@@ -47,7 +47,7 @@ def _commits_as_dict(commit_ids, repos):
     if not commit_ids:
         return []
 
-    needed_commits = set(commit_ids)
+    needed_commits = list(commit_ids)
 
     commits = []
     reviewers = []
@@ -57,6 +57,7 @@ def _commits_as_dict(commit_ids, repos):
 
         vcs_repo = repo.scm_instance(cache=False)
         try:
+            # use copy of needed_commits since we modify it while iterating
             for commit_id in list(needed_commits):
                 try:
                     cs = vcs_repo.get_changeset(commit_id)
@@ -78,7 +79,7 @@ def _commits_as_dict(commit_ids, repos):
                     repo.repo_name)
                 commits.append(cs_data)
 
-                needed_commits.discard(commit_id)
+                needed_commits.remove(commit_id)
 
         except Exception as e:
             log.exception(e)

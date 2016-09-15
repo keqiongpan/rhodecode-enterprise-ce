@@ -934,19 +934,33 @@ class TestGitCommit(object):
             'vcs/nodes.py']
         assert set(changed) == set([f.path for f in commit.changed])
 
-    def test_unicode_refs(self):
+    def test_unicode_branch_refs(self):
         unicode_branches = {
-            'unicode': ['6c0ce52b229aa978889e91b38777f800e85f330b', 'H'],
-            u'uniçö∂e': ['ürl', 'H']
+            'refs/heads/unicode': '6c0ce52b229aa978889e91b38777f800e85f330b',
+            u'refs/heads/uniçö∂e': 'ürl',
         }
         with mock.patch(
             ("rhodecode.lib.vcs.backends.git.repository"
-                ".GitRepository._parsed_refs"),
+                ".GitRepository._refs"),
                 unicode_branches):
             branches = self.repo.branches
 
         assert 'unicode' in branches
         assert u'uniçö∂e' in branches
+
+    def test_unicode_tag_refs(self):
+        unicode_tags = {
+            'refs/tags/unicode': '6c0ce52b229aa978889e91b38777f800e85f330b',
+            u'refs/tags/uniçö∂e': '6c0ce52b229aa978889e91b38777f800e85f330b',
+        }
+        with mock.patch(
+            ("rhodecode.lib.vcs.backends.git.repository"
+                ".GitRepository._refs"),
+                unicode_tags):
+            tags = self.repo.tags
+
+        assert 'unicode' in tags
+        assert u'uniçö∂e' in tags
 
     def test_commit_message_is_unicode(self):
         for commit in self.repo:

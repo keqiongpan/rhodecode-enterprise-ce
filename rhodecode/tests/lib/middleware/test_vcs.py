@@ -22,11 +22,15 @@ from mock import patch, Mock
 
 import rhodecode
 from rhodecode.lib.middleware import vcs
+from rhodecode.lib.middleware.simplesvn import (
+    SimpleSvn, DisabledSimpleSvnApp, SimpleSvnApp)
+from rhodecode.tests import SVN_REPO
 
+svn_repo_path = '/'+ SVN_REPO
 
 def test_is_hg():
     environ = {
-        'PATH_INFO': '/rhodecode-dev',
+        'PATH_INFO': svn_repo_path,
         'QUERY_STRING': 'cmd=changegroup',
         'HTTP_ACCEPT': 'application/mercurial'
     }
@@ -35,7 +39,7 @@ def test_is_hg():
 
 def test_is_hg_no_cmd():
     environ = {
-        'PATH_INFO': '/rhodecode-dev',
+        'PATH_INFO': svn_repo_path,
         'QUERY_STRING': '',
         'HTTP_ACCEPT': 'application/mercurial'
     }
@@ -44,7 +48,7 @@ def test_is_hg_no_cmd():
 
 def test_is_hg_empty_cmd():
     environ = {
-        'PATH_INFO': '/rhodecode-dev',
+        'PATH_INFO': svn_repo_path,
         'QUERY_STRING': 'cmd=',
         'HTTP_ACCEPT': 'application/mercurial'
     }
@@ -53,7 +57,7 @@ def test_is_hg_empty_cmd():
 
 def test_is_svn_returns_true_if_subversion_is_in_a_dav_header():
     environ = {
-        'PATH_INFO': '/rhodecode-dev',
+        'PATH_INFO': svn_repo_path,
         'HTTP_DAV': 'http://subversion.tigris.org/xmlns/dav/svn/log-revprops'
     }
     assert vcs.is_svn(environ) is True
@@ -61,7 +65,7 @@ def test_is_svn_returns_true_if_subversion_is_in_a_dav_header():
 
 def test_is_svn_returns_false_if_subversion_is_not_in_a_dav_header():
     environ = {
-        'PATH_INFO': '/rhodecode-dev',
+        'PATH_INFO': svn_repo_path,
         'HTTP_DAV': 'http://stuff.tigris.org/xmlns/dav/svn/log-revprops'
     }
     assert vcs.is_svn(environ) is False
@@ -69,7 +73,7 @@ def test_is_svn_returns_false_if_subversion_is_not_in_a_dav_header():
 
 def test_is_svn_returns_false_if_no_dav_header():
     environ = {
-        'PATH_INFO': '/rhodecode-dev',
+        'PATH_INFO': svn_repo_path,
     }
     assert vcs.is_svn(environ) is False
 
@@ -95,42 +99,42 @@ def test_is_svn_allows_to_configure_the_magic_path(monkeypatch):
 
 
 class TestVCSMiddleware(object):
-    def test_get_handler_app_retuns_svn_app_when_proxy_enabled(self):
+    def test_get_handler_app_retuns_svn_app_when_proxy_enabled(self, app):
         environ = {
-            'PATH_INFO': 'rhodecode-dev',
+            'PATH_INFO': SVN_REPO,
             'HTTP_DAV': 'http://subversion.tigris.org/xmlns/dav/svn/log'
         }
-        app = Mock()
-        config = Mock()
+        application = Mock()
+        config = {'appenlight': False, 'vcs.backends': ['svn']}
         registry = Mock()
         middleware = vcs.VCSMiddleware(
-            app, config=config, appenlight_client=None, registry=registry)
-        snv_patch = patch('rhodecode.lib.middleware.vcs.SimpleSvn')
-        settings_patch = patch.dict(
-            rhodecode.CONFIG,
-            {'rhodecode_proxy_subversion_http_requests': True})
-        with snv_patch as svn_mock, settings_patch:
-            svn_mock.return_value = None
-            middleware._get_handler_app(environ)
+            application, config=config,
+            appenlight_client=None, registry=registry)
+        middleware.use_gzip = False
 
-        svn_mock.assert_called_once_with(app, config, registry)
+        with patch.object(SimpleSvn, '_is_svn_enabled') as mock_method:
+            mock_method.return_value = True
+            application = middleware._get_handler_app(environ)
+            assert isinstance(application, SimpleSvn)
+            assert isinstance(application._create_wsgi_app(
+                Mock(), Mock(), Mock()), SimpleSvnApp)
 
-    def test_get_handler_app_retuns_no_svn_app_when_proxy_disabled(self):
+    def test_get_handler_app_retuns_dummy_svn_app_when_proxy_disabled(self, app):
         environ = {
-            'PATH_INFO': 'rhodecode-dev',
+            'PATH_INFO': SVN_REPO,
             'HTTP_DAV': 'http://subversion.tigris.org/xmlns/dav/svn/log'
         }
-        app = Mock()
-        config = Mock()
+        application = Mock()
+        config = {'appenlight': False, 'vcs.backends': ['svn']}
         registry = Mock()
         middleware = vcs.VCSMiddleware(
-            app, config=config, appenlight_client=None, registry=registry)
-        snv_patch = patch('rhodecode.lib.middleware.vcs.SimpleSvn')
-        settings_patch = patch.dict(
-            rhodecode.CONFIG,
-            {'rhodecode_proxy_subversion_http_requests': False})
-        with snv_patch as svn_mock, settings_patch:
-            app = middleware._get_handler_app(environ)
+            application, config=config,
+            appenlight_client=None, registry=registry)
+        middleware.use_gzip = False
 
-        assert svn_mock.call_count == 0
-        assert app is None
+        with patch.object(SimpleSvn, '_is_svn_enabled') as mock_method:
+            mock_method.return_value = False
+            application = middleware._get_handler_app(environ)
+            assert isinstance(application, SimpleSvn)
+            assert isinstance(application._create_wsgi_app(
+                Mock(), Mock(), Mock()), DisabledSimpleSvnApp)

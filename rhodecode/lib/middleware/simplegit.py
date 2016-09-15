@@ -23,11 +23,14 @@ SimpleGit middleware for handling git protocol request (push/clone etc.)
 It's implemented with basic auth function
 """
 import re
+import logging
 import urlparse
 
 import rhodecode
 from rhodecode.lib import utils2
 from rhodecode.lib.middleware import simplevcs
+
+log = logging.getLogger(__name__)
 
 
 GIT_PROTO_PAT = re.compile(

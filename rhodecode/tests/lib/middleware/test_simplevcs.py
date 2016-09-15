@@ -42,6 +42,10 @@ class StubVCSController(simplevcs.SimpleVCS):
     SCM = 'hg'
     stub_response_body = tuple()
 
+    def __init__(self, *args, **kwargs):
+        super(StubVCSController, self).__init__(*args, **kwargs)
+        self.repo_name = HG_REPO
+
     def _get_repository_name(self, environ):
         return HG_REPO
 

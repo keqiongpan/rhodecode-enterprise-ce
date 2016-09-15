@@ -26,11 +26,10 @@ import colander
 from mako.template import Template
 
 from rhodecode import events
-from rhodecode.translation import _, lazy_ugettext
+from rhodecode.translation import _
 from rhodecode.lib.celerylib import run_task
 from rhodecode.lib.celerylib import tasks
 from rhodecode.integrations.types.base import IntegrationTypeBase
-from rhodecode.integrations.schema import IntegrationSettingsSchemaBase
 
 
 log = logging.getLogger(__name__)
@@ -147,18 +146,79 @@ repo_push_template_html = Template('''
 </html>
 ''')
 
+email_icon = '''
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 -256 1850 1850"
+   id="svg2989"
+   version="1.1"
+   inkscape:version="0.48.3.1 r9886"
+   width="100%"
+   height="100%"
+   sodipodi:docname="envelope_font_awesome.svg">
+  <metadata
+     id="metadata2999">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs2997" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="640"
+     inkscape:window-height="480"
+     id="namedview2995"
+     showgrid="false"
+     inkscape:zoom="0.13169643"
+     inkscape:cx="896"
+     inkscape:cy="896"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg2989" />
+  <g
+     transform="matrix(1,0,0,-1,37.966102,1282.678)"
+     id="g2991">
+    <path
+       d="m 1664,32 v 768 q -32,-36 -69,-66 -268,-206 -426,-338 -51,-43 -83,-67 -32,-24 -86.5,-48.5 Q 945,256 897,256 h -1 -1 Q 847,256 792.5,280.5 738,305 706,329 674,353 623,396 465,528 197,734 160,764 128,800 V 32 Q 128,19 137.5,9.5 147,0 160,0 h 1472 q 13,0 22.5,9.5 9.5,9.5 9.5,22.5 z m 0,1051 v 11 13.5 q 0,0 -0.5,13 -0.5,13 -3,12.5 -2.5,-0.5 -5.5,9 -3,9.5 -9,7.5 -6,-2 -14,2.5 H 160 q -13,0 -22.5,-9.5 Q 128,1133 128,1120 128,952 275,836 468,684 676,519 682,514 711,489.5 740,465 757,452 774,439 801.5,420.5 829,402 852,393 q 23,-9 43,-9 h 1 1 q 20,0 43,9 23,9 50.5,27.5 27.5,18.5 44.5,31.5 17,13 46,37.5 29,24.5 35,29.5 208,165 401,317 54,43 100.5,115.5 46.5,72.5 46.5,131.5 z m 128,37 V 32 q 0,-66 -47,-113 -47,-47 -113,-47 H 160 Q 94,-128 47,-81 0,-34 0,32 v 1088 q 0,66 47,113 47,47 113,47 h 1472 q 66,0 113,-47 47,-47 47,-113 z"
+       id="path2993"
+       inkscape:connector-curvature="0"
+       style="fill:currentColor" />
+  </g>
+</svg>
+'''
 
-class EmailSettingsSchema(IntegrationSettingsSchemaBase):
+class EmailSettingsSchema(colander.Schema):
     @colander.instantiate(validator=colander.Length(min=1))
     class recipients(colander.SequenceSchema):
-        title = lazy_ugettext('Recipients')
-        description = lazy_ugettext('Email addresses to send push events to')
+        title = _('Recipients')
+        description = _('Email addresses to send push events to')
         widget = deform.widget.SequenceWidget(min_len=1)
 
         recipient = colander.SchemaNode(
             colander.String(),
-            title=lazy_ugettext('Email address'),
-            description=lazy_ugettext('Email address'),
+            title=_('Email address'),
+            description=_('Email address'),
             default='',
             validator=colander.Email(),
             widget=deform.widget.TextInputWidget(
@@ -169,8 +229,9 @@ class EmailSettingsSchema(IntegrationSettingsSchemaBase):
 
 class EmailIntegrationType(IntegrationTypeBase):
     key = 'email'
-    display_name = lazy_ugettext('Email')
-    SettingsSchema = EmailSettingsSchema
+    display_name = _('Email')
+    description = _('Send repo push summaries to a list of recipients via email')
+    icon = email_icon
 
     def settings_schema(self):
         schema = EmailSettingsSchema()

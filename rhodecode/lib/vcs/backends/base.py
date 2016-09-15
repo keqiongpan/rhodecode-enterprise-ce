@@ -1438,7 +1438,8 @@ class Config(object):
         return clone
 
     def __repr__(self):
-        return '<Config(%s values) at %s>' % (len(self._values), hex(id(self)))
+        return '<Config(%s sections) at %s>' % (
+            len(self._values), hex(id(self)))
 
     def items(self, section):
         return self._values.get(section, {}).iteritems()

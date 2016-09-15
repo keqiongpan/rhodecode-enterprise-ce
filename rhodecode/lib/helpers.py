@@ -520,13 +520,18 @@ def get_lexer_safe(mimetype=None, filepath=None):
     return lexer
 
 
+def get_lexer_for_filenode(filenode):
+    lexer = get_custom_lexer(filenode.extension) or filenode.lexer
+    return lexer
+
+
 def pygmentize(filenode, **kwargs):
     """
     pygmentize function using pygments
 
     :param filenode:
     """
-    lexer = get_custom_lexer(filenode.extension) or filenode.lexer
+    lexer = get_lexer_for_filenode(filenode)
     return literal(code_highlight(filenode.content, lexer,
                                   CodeHtmlFormatter(**kwargs)))
 
@@ -772,10 +777,10 @@ def get_repo_type_by_name(repo_name):
 
 
 def is_svn_without_proxy(repository):
-    from rhodecode import CONFIG
     if is_svn(repository):
-        if not CONFIG.get('rhodecode_proxy_subversion_http_requests', False):
-            return True
+        from rhodecode.model.settings import VcsSettingsModel
+        conf = VcsSettingsModel().get_ui_settings_as_config_obj()
+        return not str2bool(conf.get('vcs_svn_proxy', 'http_requests_enabled'))
     return False
 
 
@@ -1944,6 +1949,13 @@ def route_path(*args, **kwds):
     """
     req = get_current_request()
     return req.route_path(*args, **kwds)
+
+
+def route_path_or_none(*args, **kwargs):
+    try:
+        return route_path(*args, **kwargs)
+    except KeyError:
+        return None
 
 
 def static_url(*args, **kwds):

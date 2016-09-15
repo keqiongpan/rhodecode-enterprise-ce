@@ -29,7 +29,7 @@ import traceback
 
 from pylons import tmpl_context as c
 from pylons.i18n.translation import _, ungettext
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from sqlalchemy.sql.expression import false, true
 from mako import exceptions
 
@@ -39,7 +39,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.utils import PartialRenderer
 from rhodecode.model import BaseModel
-from rhodecode.model.db import Integration, User
+from rhodecode.model.db import Integration, User, Repository, RepoGroup
 from rhodecode.model.meta import Session
 from rhodecode.integrations import integration_type_registry
 from rhodecode.integrations.types.base import IntegrationTypeBase
@@ -61,28 +61,35 @@ class IntegrationModel(BaseModel):
                 raise Exception('integration must be int, long or Instance'
                                 ' of Integration got %s' % type(integration))
 
-    def create(self, IntegrationType, enabled, name, settings, repo=None):
+    def create(self, IntegrationType, name, enabled, repo, repo_group,
+        child_repos_only, settings):
         """ Create an IntegrationType integration """
         integration = Integration()
         integration.integration_type = IntegrationType.key
-        integration.settings = {}
-        integration.repo = repo
-        integration.enabled = enabled
-        integration.name = name
-
         self.sa.add(integration)
+        self.update_integration(integration, name, enabled, repo, repo_group,
+                                child_repos_only, settings)
         self.sa.commit()
         return integration
 
+    def update_integration(self, integration, name, enabled, repo, repo_group,
+        child_repos_only, settings):
+        integration = self.__get_integration(integration)
+
+        integration.repo = repo
+        integration.repo_group = repo_group
+        integration.child_repos_only = child_repos_only
+        integration.name = name
+        integration.enabled = enabled
+        integration.settings = settings
+
+        return integration
+
     def delete(self, integration):
-        try:
-            integration = self.__get_integration(integration)
-            if integration:
-                self.sa.delete(integration)
-                return True
-        except Exception:
-            log.error(traceback.format_exc())
-            raise
+        integration = self.__get_integration(integration)
+        if integration:
+            self.sa.delete(integration)
+            return True
         return False
 
     def get_integration_handler(self, integration):
@@ -100,33 +107,116 @@ class IntegrationModel(BaseModel):
         if handler:
             handler.send_event(event)
 
-    def get_integrations(self, repo=None):
-        if repo:
-            return self.sa.query(Integration).filter(
-                Integration.repo_id==repo.repo_id).all()
+    def get_integrations(self, scope, IntegrationType=None):
+        """
+        Return integrations for a scope, which must be one of:
 
-        # global integrations
-        return self.sa.query(Integration).filter(
-            Integration.repo_id==None).all()
+        'all' - every integration, global/repogroup/repo
+        'global' - global integrations only
+        <Repository> instance - integrations for this repo only
+        <RepoGroup> instance - integrations for this repogroup only
+        """
+
+        if isinstance(scope, Repository):
+            query = self.sa.query(Integration).filter(
+                Integration.repo==scope)
+        elif isinstance(scope, RepoGroup):
+            query = self.sa.query(Integration).filter(
+                Integration.repo_group==scope)
+        elif scope == 'global':
+            # global integrations
+            query = self.sa.query(Integration).filter(
+                and_(Integration.repo_id==None, Integration.repo_group_id==None)
+            )
+        elif scope == 'root-repos':
+            query = self.sa.query(Integration).filter(
+                and_(Integration.repo_id==None,
+                     Integration.repo_group_id==None,
+                     Integration.child_repos_only==True)
+            )
+        elif scope == 'all':
+            query = self.sa.query(Integration)
+        else:
+            raise Exception(
+                "invalid `scope`, must be one of: "
+                "['global', 'all', <Repository>, <RepoGroup>]")
+
+        if IntegrationType is not None:
+            query = query.filter(
+                Integration.integration_type==IntegrationType.key)
+
+        result = []
+        for integration in query.all():
+            IntType = integration_type_registry.get(integration.integration_type)
+            result.append((IntType, integration))
+        return result
 
     def get_for_event(self, event, cache=False):
         """
         Get integrations that match an event
         """
-        query = self.sa.query(Integration).filter(Integration.enabled==True)
+        query = self.sa.query(
+            Integration
+        ).filter(
+            Integration.enabled==True
+        )
 
-        if isinstance(event, events.RepoEvent): # global + repo integrations
-            query = query.filter(
-                        or_(Integration.repo_id==None,
-                            Integration.repo_id==event.repo.repo_id))
+        global_integrations_filter = and_(
+            Integration.repo_id==None,
+            Integration.repo_group_id==None,
+            Integration.child_repos_only==False,
+        )
+
+        if isinstance(event, events.RepoEvent):
+            root_repos_integrations_filter = and_(
+                Integration.repo_id==None,
+                Integration.repo_group_id==None,
+                Integration.child_repos_only==True,
+            )
+
+            clauses = [
+                global_integrations_filter,
+            ]
+
+            # repo integrations
+            if event.repo.repo_id: # pre create events dont have a repo_id yet
+                clauses.append(
+                    Integration.repo_id==event.repo.repo_id
+                )
+
+            if event.repo.group:
+                clauses.append(
+                    and_(
+                        Integration.repo_group_id==event.repo.group.group_id,
+                        Integration.child_repos_only==True
+                    )
+                )
+                # repo group cascade to kids
+                clauses.append(
+                    and_(
+                        Integration.repo_group_id.in_(
+                            [group.group_id for group in
+                            event.repo.groups_with_parents]
+                        ),
+                        Integration.child_repos_only==False
+                    )
+                )
+
+
+            if not event.repo.group: # root repo
+                clauses.append(root_repos_integrations_filter)
+
+            query = query.filter(or_(*clauses))
+
             if cache:
                 query = query.options(FromCache(
                     "sql_cache_short",
                     "get_enabled_repo_integrations_%i" % event.repo.repo_id))
         else: # only global integrations
-            query = query.filter(Integration.repo_id==None)
+            query = query.filter(global_integrations_filter)
             if cache:
                 query = query.options(FromCache(
                     "sql_cache_short", "get_enabled_global_integrations"))
 
-        return query.all()
+        result = query.all()
+        return result

@@ -32,17 +32,21 @@ from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 from sqlalchemy.orm import joinedload
 
+from rhodecode import forms
 from rhodecode.lib import helpers as h
 from rhodecode.lib import auth
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, AuthUser, generate_auth_token)
 from rhodecode.lib.base import BaseController, render
+from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_int, md5
 from rhodecode.lib.ext_json import json
+
+from rhodecode.model.validation_schema.schemas import user_schema
 from rhodecode.model.db import (
     Repository, PullRequest, PullRequestReviewers, UserEmailMap, User,
     UserFollowing)
-from rhodecode.model.forms import UserForm, PasswordChangeForm
+from rhodecode.model.forms import UserForm
 from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
 from rhodecode.model.repo import RepoModel
@@ -185,38 +189,44 @@ class MyAccountController(BaseController):
             force_defaults=False
         )
 
-    @auth.CSRFRequired()
-    def my_account_password_update(self):
-        c.active = 'password'
-        self.__load_data()
-        _form = PasswordChangeForm(c.rhodecode_user.username)()
-        try:
-            form_result = _form.to_python(request.POST)
-            UserModel().update_user(c.rhodecode_user.user_id, **form_result)
-            instance = c.rhodecode_user.get_instance()
-            instance.update_userdata(force_password_change=False)
-            Session().commit()
-            session.setdefault('rhodecode_user', {}).update(
-                {'password': md5(instance.password)})
-            session.save()
-            h.flash(_("Successfully updated password"), category='success')
-        except formencode.Invalid as errors:
-            return htmlfill.render(
-                render('admin/my_account/my_account.html'),
-                defaults=errors.value,
-                errors=errors.error_dict or {},
-                prefix_error=False,
-                encoding="UTF-8",
-                force_defaults=False)
-        except Exception:
-            log.exception("Exception updating password")
-            h.flash(_('Error occurred during update of user password'),
-                    category='error')
-        return render('admin/my_account/my_account.html')
-
+    @auth.CSRFRequired(except_methods=['GET'])
     def my_account_password(self):
         c.active = 'password'
         self.__load_data()
+
+        schema = user_schema.ChangePasswordSchema().bind(
+            username=c.rhodecode_user.username)
+
+        form = forms.Form(schema,
+            buttons=(forms.buttons.save, forms.buttons.reset))
+
+        if request.method == 'POST':
+            controls = request.POST.items()
+            try:
+                valid_data = form.validate(controls)
+                UserModel().update_user(c.rhodecode_user.user_id, **valid_data)
+                instance = c.rhodecode_user.get_instance()
+                instance.update_userdata(force_password_change=False)
+                Session().commit()
+            except forms.ValidationFailure as e:
+                request.session.flash(
+                    _('Error occurred during update of user password'),
+                    queue='error')
+                form = e
+            except Exception:
+                log.exception("Exception updating password")
+                request.session.flash(
+                    _('Error occurred during update of user password'),
+                    queue='error')
+            else:
+                session.setdefault('rhodecode_user', {}).update(
+                    {'password': md5(instance.password)})
+                session.save()
+                request.session.flash(
+                    _("Successfully updated password"), queue='success')
+                return redirect(url('my_account_password'))
+
+        c.form = form
         return render('admin/my_account/my_account.html')
 
     def my_account_repos(self):
@@ -352,11 +362,10 @@ class MyAccountController(BaseController):
         return render('admin/my_account/my_account.html')
 
     @auth.CSRFRequired()
+    @jsonify
     def my_notifications_toggle_visibility(self):
         user = c.rhodecode_user.get_instance()
-        user_data = user.user_data
-        status = user_data.get('notification_status', False)
-        user_data['notification_status'] = not status
-        user.user_data = user_data
+        new_status = not user.user_data.get('notification_status', True)
+        user.update_userdata(notification_status=new_status)
         Session().commit()
-        return redirect(url('my_account_notifications'))
+        return user.user_data['notification_status']

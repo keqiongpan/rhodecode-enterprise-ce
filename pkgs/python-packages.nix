@@ -51,19 +51,6 @@
       license = [ { fullName = "BSD-like (http://repoze.org/license.html)"; } ];
     };
   };
-  Fabric = super.buildPythonPackage {
-    name = "Fabric-1.10.0";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [paramiko];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/e3/5f/b6ebdb5241d5ec9eab582a5c8a01255c1107da396f849e538801d2fe64a5/Fabric-1.10.0.tar.gz";
-      md5 = "2cb96473387f0e7aa035210892352f4a";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
-    };
-  };
   FormEncode = super.buildPythonPackage {
     name = "FormEncode-1.2.4";
     buildInputs = with self; [];
@@ -1430,7 +1417,7 @@
     };
   };
   rhodecode-enterprise-ce = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.3.1";
+    name = "rhodecode-enterprise-ce-4.4.0";
     buildInputs = with self; [WebTest configobj cssselect flake8 lxml mock pytest pytest-cov pytest-runner];
     doCheck = true;
     propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];

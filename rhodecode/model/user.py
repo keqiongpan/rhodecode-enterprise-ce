@@ -147,7 +147,6 @@ class UserModel(BaseModel):
         # cleanups, my_account password change form
         kwargs.pop('current_password', None)
         kwargs.pop('new_password', None)
-        kwargs.pop('new_password_confirmation', None)
 
         # cleanups, user edit password change form
         kwargs.pop('password_confirmation', None)
@@ -315,6 +314,7 @@ class UserModel(BaseModel):
                 new_user.update_userdata(force_password_change=True)
             if language:
                 new_user.update_userdata(language=language)
+            new_user.update_userdata(notification_status=True)
 
             self.sa.add(new_user)
 

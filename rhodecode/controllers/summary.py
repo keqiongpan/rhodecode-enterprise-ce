@@ -44,6 +44,8 @@ from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
     CommitError, EmptyRepositoryError, NodeDoesNotExistError)
 from rhodecode.model.db import Statistics, CacheKey, User
+from rhodecode.model.repo import ReadmeFinder
+
 
 log = logging.getLogger(__name__)
 
@@ -61,37 +63,16 @@ class SummaryController(BaseRepoController):
         @cache_region('long_term')
         def _generate_readme(cache_key):
             readme_data = None
-            readme_file = None
-            try:
-                # gets the landing revision or tip if fails
-                commit = db_repo.get_landing_commit()
-                if isinstance(commit, EmptyCommit):
-                    raise EmptyRepositoryError()
-                renderer = MarkupRenderer()
-                for f in renderer.pick_readme_order(default_renderer):
-                    try:
-                        node = commit.get_node(f)
-                    except NodeDoesNotExistError:
-                        continue
-
-                    if not node.is_file():
-                        continue
-
-                    readme_file = f
-                    log.debug('Found README file `%s` rendering...',
-                              readme_file)
-                    readme_data = renderer.render(node.content,
-                                                  filename=f)
-                    break
-            except CommitError:
-                log.exception("Problem getting commit")
-                pass
-            except EmptyRepositoryError:
-                pass
-            except Exception:
-                log.exception("General failure")
-
-            return readme_data, readme_file
+            readme_node = None
+            readme_filename = None
+            commit = self._get_landing_commit_or_none(db_repo)
+            if commit:
+                log.debug("Searching for a README file.")
+                readme_node = ReadmeFinder(default_renderer).search(commit)
+            if readme_node:
+                readme_data = self._render_readme_or_none(commit, readme_node)
+                readme_filename = readme_node.path
+            return readme_data, readme_filename
 
         invalidator_context = CacheKey.repo_context_cache(
             _generate_readme, repo_name, CacheKey.CACHE_TYPE_README)
@@ -102,11 +83,36 @@ class SummaryController(BaseRepoController):
 
         return computed
 
+    def _get_landing_commit_or_none(self, db_repo):
+        log.debug("Getting the landing commit.")
+        try:
+            commit = db_repo.get_landing_commit()
+            if not isinstance(commit, EmptyCommit):
+                return commit
+            else:
+                log.debug("Repository is empty, no README to render.")
+        except CommitError:
+            log.exception(
+                "Problem getting commit when trying to render the README.")
+
+    def _render_readme_or_none(self, commit, readme_node):
+        log.debug(
+            'Found README file `%s` rendering...', readme_node.path)
+        renderer = MarkupRenderer()
+        try:
+            return renderer.render(
+                readme_node.content, filename=readme_node.path)
+        except Exception:
+            log.exception(
+                "Exception while trying to render the README")
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     def index(self, repo_name):
+
+        # Prepare the clone URL
+
         username = ''
         if c.rhodecode_user.username != User.DEFAULT_USER:
             username = safe_str(c.rhodecode_user.username)
@@ -123,6 +129,8 @@ class SummaryController(BaseRepoController):
             user=username, uri_tmpl=_def_clone_uri)
         c.clone_repo_url_id = c.rhodecode_db_repo.clone_url(
             user=username, uri_tmpl=_def_clone_uri_by_id)
+
+        # If enabled, get statistics data
 
         c.show_stats = bool(c.rhodecode_db_repo.enable_statistics)
 

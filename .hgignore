@@ -8,6 +8,7 @@ syntax: glob
 *.swp
 *.tox
 *.DS_Store*
+rhodecode/public/js/src/components/**/*.css
 
 syntax: regexp
 
@@ -23,6 +24,7 @@ syntax: regexp
 ^_dev
 ^._dev
 ^build/
+^bower_components/
 ^coverage\.xml$
 ^data$
 ^\.eggs/
@@ -38,7 +40,11 @@ syntax: regexp
 ^rcextensions/
 ^result$
 ^rhodecode/public/css/style.css$
+^rhodecode/public/css/style-polymer.css$
+^rhodecode/public/js/rhodecode-components.html$
 ^rhodecode/public/js/scripts.js$
+^rhodecode/public/js/src/components/root-styles.gen.html$
+^rhodecode/public/js/vendors/webcomponentsjs/
 ^rhodecode\.db$
 ^rhodecode\.log$
 ^rhodecode_dev\.log$

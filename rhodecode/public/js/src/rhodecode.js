@@ -366,15 +366,9 @@ $(document).ready(function() {
     // At the time of development, Chrome didn't seem to support jquery's :target
     // element, so I had to scroll manually
     if (location.hash) {
-        var splitIx = location.hash.indexOf('/?/');
-        if (splitIx !== -1){
-            var loc  = location.hash.slice(0, splitIx);
-            var remainder = location.hash.slice(splitIx + 2);
-        }
-        else{
-            var loc  = location.hash;
-            var remainder = null;
-        }
+        var result = splitDelimitedHash(location.hash);
+        var loc  = result.loc;
+        var remainder = result.remainder;
         if (loc.length > 1){
             var lineno = $(loc+'.lineno');
             if (lineno.length > 0){

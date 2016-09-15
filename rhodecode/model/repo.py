@@ -40,11 +40,13 @@ from rhodecode.lib.auth import HasUserGroupPermissionAny
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.exceptions import AttachedForksError
 from rhodecode.lib.hooks_base import log_delete_repository
+from rhodecode.lib.markup_renderer import MarkupRenderer
 from rhodecode.lib.utils import make_db_config
 from rhodecode.lib.utils2 import (
     safe_str, safe_unicode, remove_prefix, obfuscate_url_pw,
     get_current_rhodecode_user, safe_int, datetime_to_time, action_logger_generic)
 from rhodecode.lib.vcs.backends import get_backend
+from rhodecode.lib.vcs.exceptions import NodeDoesNotExistError
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     Repository, UserRepoToPerm, UserGroupRepoToPerm, UserRepoGroupToPerm,
@@ -933,3 +935,119 @@ class RepoModel(BaseModel):
 
         if os.path.isdir(rm_path):
             shutil.move(rm_path, os.path.join(self.repos_path, _d))
+
+
+class ReadmeFinder:
+    """
+    Utility which knows how to find a readme for a specific commit.
+
+    The main idea is that this is a configurable algorithm. When creating an
+    instance you can define parameters, currently only the `default_renderer`.
+    Based on this configuration the method :meth:`search` behaves slightly
+    different.
+    """
+
+    readme_re = re.compile(r'^readme(\.[^\.]+)?$', re.IGNORECASE)
+    path_re = re.compile(r'^docs?', re.IGNORECASE)
+
+    default_priorities = {
+        None: 0,
+        '.text': 2,
+        '.txt': 3,
+        '.rst': 1,
+        '.rest': 2,
+        '.md': 1,
+        '.mkdn': 2,
+        '.mdown': 3,
+        '.markdown': 4,
+    }
+
+    path_priority = {
+        'doc': 0,
+        'docs': 1,
+    }
+
+    FALLBACK_PRIORITY = 99
+
+    RENDERER_TO_EXTENSION = {
+        'rst': ['.rst', '.rest'],
+        'markdown': ['.md', 'mkdn', '.mdown', '.markdown'],
+    }
+
+    def __init__(self, default_renderer=None):
+        self._default_renderer = default_renderer
+        self._renderer_extensions = self.RENDERER_TO_EXTENSION.get(
+            default_renderer, [])
+
+    def search(self, commit, path='/'):
+        """
+        Find a readme in the given `commit`.
+        """
+        nodes = commit.get_nodes(path)
+        matches = self._match_readmes(nodes)
+        matches = self._sort_according_to_priority(matches)
+        if matches:
+            return matches[0].node
+
+        paths = self._match_paths(nodes)
+        paths = self._sort_paths_according_to_priority(paths)
+        for path in paths:
+            match = self.search(commit, path=path)
+            if match:
+                return match
+
+        return None
+
+    def _match_readmes(self, nodes):
+        for node in nodes:
+            if not node.is_file():
+                continue
+            path = node.path.rsplit('/', 1)[-1]
+            match = self.readme_re.match(path)
+            if match:
+                extension = match.group(1)
+                yield ReadmeMatch(node, match, self._priority(extension))
+
+    def _match_paths(self, nodes):
+        for node in nodes:
+            if not node.is_dir():
+                continue
+            match = self.path_re.match(node.path)
+            if match:
+                yield node.path
+
+    def _priority(self, extension):
+        renderer_priority = (
+            0 if extension in self._renderer_extensions else 1)
+        extension_priority = self.default_priorities.get(
+            extension, self.FALLBACK_PRIORITY)
+        return (renderer_priority, extension_priority)
+
+    def _sort_according_to_priority(self, matches):
+
+        def priority_and_path(match):
+            return (match.priority, match.path)
+
+        return sorted(matches, key=priority_and_path)
+
+    def _sort_paths_according_to_priority(self, paths):
+
+        def priority_and_path(path):
+            return (self.path_priority.get(path, self.FALLBACK_PRIORITY), path)
+
+        return sorted(paths, key=priority_and_path)
+
+
+class ReadmeMatch:
+
+    def __init__(self, node, match, priority):
+        self.node = node
+        self._match = match
+        self.priority = priority
+
+    @property
+    def path(self):
+        return self.node.path
+
+    def __repr__(self):
+        return '<ReadmeMatch {} priority={}'.format(self.path, self.priority)

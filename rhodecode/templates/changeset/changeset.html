@@ -372,10 +372,12 @@
               }
           });
 
-          if (location.href.indexOf('#') != -1) {
-            var id = '#'+location.href.substring(location.href.indexOf('#') + 1).split('#');
-            var line = $('html').find(id);
-            offsetScroll(line, 70);
+          if (location.hash) {
+            var result = splitDelimitedHash(location.hash);
+            var line = $('html').find(result.loc);
+              if (line.length > 0){
+                  offsetScroll(line, 70);
+              }
           }
 
           // browse tree @ revision

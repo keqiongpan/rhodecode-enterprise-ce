@@ -54,7 +54,7 @@ def md5_safe(s):
     return md5(safe_str(s))
 
 
-def __get_lem():
+def __get_lem(extra_mapping=None):
     """
     Get language extension map based on what's inside pygments lexers
     """
@@ -82,7 +82,16 @@ def __get_lem():
                 desc = lx.replace('Lexer', '')
                 d[ext].append(desc)
 
-    return dict(d)
+    data = dict(d)
+
+    extra_mapping = extra_mapping or {}
+    if extra_mapping:
+        for k, v in extra_mapping.items():
+            if k not in data:
+                # register new mapping2lexer
+                data[k] = [v]
+
+    return data
 
 
 def str2bool(_str):
@@ -110,7 +119,7 @@ def aslist(obj, sep=None, strip=True):
     :param sep:
     :param strip:
     """
-    if isinstance(obj, (basestring)):
+    if isinstance(obj, (basestring,)):
         lst = obj.split(sep)
         if strip:
             lst = [v.strip() for v in lst]

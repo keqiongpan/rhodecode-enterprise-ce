@@ -404,15 +404,6 @@ class TestCreateRepoSvnSettings(object):
         assert exc_info.value.message == 'Repository is not specified'
 
 
-class TestCreateGlobalSvnSettings(object):
-    def test_calls_create_svn_settings(self):
-        model = VcsSettingsModel()
-        with mock.patch.object(model, '_create_svn_settings') as create_mock:
-            model.create_global_svn_settings(SVN_FORM_DATA)
-        create_mock.assert_called_once_with(
-            model.global_settings, SVN_FORM_DATA)
-
-
 class TestCreateSvnSettings(object):
     def test_create(self, repo_stub):
         model = VcsSettingsModel(repo=repo_stub.repo_name)

@@ -33,6 +33,7 @@ import uuid
 import mock
 import pyramid.testing
 import pytest
+import colander
 import requests
 from webtest.app import TestApp
 
@@ -41,7 +42,7 @@ from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
 from rhodecode.model.db import (
     PullRequest, Repository, RhodeCodeSetting, ChangesetStatus, RepoGroup,
-    UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi)
+    UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi, Integration)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.repo import RepoModel
@@ -49,6 +50,9 @@ from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.user import UserModel
 from rhodecode.model.settings import VcsSettingsModel
 from rhodecode.model.user_group import UserGroupModel
+from rhodecode.model.integration import IntegrationModel
+from rhodecode.integrations import integration_type_registry
+from rhodecode.integrations.types.base import IntegrationTypeBase
 from rhodecode.lib.utils import repo2db_mapper
 from rhodecode.lib.vcs import create_vcsserver_proxy
 from rhodecode.lib.vcs.backends import get_backend
@@ -639,39 +643,10 @@ class Backend(object):
             self._fixture.destroy_repo(repo_name)
 
     def _add_commits_to_repo(self, repo, commits):
-        if not commits:
+        commit_ids = _add_commits_to_repo(repo, commits)
+        if not commit_ids:
             return
-
-        imc = repo.in_memory_commit
-        commit = None
-        self._commit_ids = {}
-
-        for idx, commit in enumerate(commits):
-            message = unicode(commit.get('message', 'Commit %s' % idx))
-
-            for node in commit.get('added', []):
-                imc.add(FileNode(node.path, content=node.content))
-            for node in commit.get('changed', []):
-                imc.change(FileNode(node.path, content=node.content))
-            for node in commit.get('removed', []):
-                imc.remove(FileNode(node.path))
-
-            parents = [
-                repo.get_commit(commit_id=self._commit_ids[p])
-                for p in commit.get('parents', [])]
-
-            operations = ('added', 'changed', 'removed')
-            if not any((commit.get(o) for o in operations)):
-                imc.add(FileNode('file_%s' % idx, content=message))
-
-            commit = imc.commit(
-                message=message,
-                author=unicode(commit.get('author', 'Automatic')),
-                date=commit.get('date'),
-                branch=commit.get('branch'),
-                parents=parents)
-
-            self._commit_ids[commit.message] = commit.raw_id
+        self._commit_ids = commit_ids
 
         # Creating refs for Git to allow fetching them from remote repository
         if self.alias == 'git':
@@ -682,8 +657,6 @@ class Backend(object):
                     message.replace(' ', ''))
                 refs[ref_name] = self._commit_ids[message]
             self._create_refs(repo, refs)
-
-        return commit
 
     def _create_refs(self, repo, refs):
         for ref_name in refs:
@@ -746,6 +719,16 @@ def vcsbackend_random(vcsbackend_git):
     return vcsbackend_git
 
 
+@pytest.fixture
+def vcsbackend_stub(vcsbackend_git):
+    """
+    Use this to express that your test just needs a stub of a vcsbackend.
+
+    Plan is to eventually implement an in-memory stub to speed tests up.
+    """
+    return vcsbackend_git
+
+
 class VcsBackend(object):
     """
     Represents the test configuration for one supported vcs backend.
@@ -779,17 +762,20 @@ class VcsBackend(object):
         """
         return get_backend(self.alias)
 
-    def create_repo(self, number_of_commits=0, _clone_repo=None):
+    def create_repo(self, commits=None, number_of_commits=0, _clone_repo=None):
         repo_name = self._next_repo_name()
         self._repo_path = get_new_dir(repo_name)
-        Repository = get_backend(self.alias)
+        repo_class = get_backend(self.alias)
         src_url = None
         if _clone_repo:
             src_url = _clone_repo.path
-        repo = Repository(self._repo_path, create=True, src_url=src_url)
+        repo = repo_class(self._repo_path, create=True, src_url=src_url)
         self._cleanup_repos.append(repo)
-        for idx in xrange(number_of_commits):
-            self.ensure_file(filename='file_%s' % idx, content=repo.name)
+
+        commits = commits or [
+            {'message': 'Commit %s of %s' % (x, repo_name)}
+            for x in xrange(number_of_commits)]
+        _add_commits_to_repo(repo, commits)
         return repo
 
     def clone_repo(self, repo):
@@ -819,6 +805,44 @@ class VcsBackend(object):
     def ensure_file(self, filename, content='Test content\n'):
         assert self._cleanup_repos, "Avoid writing into vcs_test repos"
         self.add_file(self.repo, filename, content)
+
+
+def _add_commits_to_repo(vcs_repo, commits):
+    commit_ids = {}
+    if not commits:
+        return commit_ids
+
+    imc = vcs_repo.in_memory_commit
+    commit = None
+
+    for idx, commit in enumerate(commits):
+        message = unicode(commit.get('message', 'Commit %s' % idx))
+
+        for node in commit.get('added', []):
+            imc.add(FileNode(node.path, content=node.content))
+        for node in commit.get('changed', []):
+            imc.change(FileNode(node.path, content=node.content))
+        for node in commit.get('removed', []):
+            imc.remove(FileNode(node.path))
+
+        parents = [
+            vcs_repo.get_commit(commit_id=commit_ids[p])
+            for p in commit.get('parents', [])]
+
+        operations = ('added', 'changed', 'removed')
+        if not any((commit.get(o) for o in operations)):
+            imc.add(FileNode('file_%s' % idx, content=message))
+
+        commit = imc.commit(
+            message=message,
+            author=unicode(commit.get('author', 'Automatic')),
+            date=commit.get('date'),
+            branch=commit.get('branch'),
+            parents=parents)
+
+        commit_ids[commit.message] = commit.raw_id
+
+    return commit_ids
 
 
 @pytest.fixture
@@ -1636,3 +1660,120 @@ def config_stub(request, request_stub):
         pyramid.testing.tearDown()
 
     return config
+
+
+@pytest.fixture
+def StubIntegrationType():
+    class _StubIntegrationType(IntegrationTypeBase):
+        """ Test integration type class """
+
+        key = 'test'
+        display_name = 'Test integration type'
+        description = 'A test integration type for testing'
+        icon = 'test_icon_html_image'
+
+        def __init__(self, settings):
+            super(_StubIntegrationType, self).__init__(settings)
+            self.sent_events = [] # for testing
+
+        def send_event(self, event):
+            self.sent_events.append(event)
+
+        def settings_schema(self):
+            class SettingsSchema(colander.Schema):
+                test_string_field = colander.SchemaNode(
+                    colander.String(),
+                    missing=colander.required,
+                    title='test string field',
+                )
+                test_int_field = colander.SchemaNode(
+                    colander.Int(),
+                    title='some integer setting',
+                )
+            return SettingsSchema()
+
+
+    integration_type_registry.register_integration_type(_StubIntegrationType)
+    return _StubIntegrationType
+
+@pytest.fixture
+def stub_integration_settings():
+    return {
+        'test_string_field': 'some data',
+        'test_int_field': 100,
+    }
+
+
+@pytest.fixture
+def repo_integration_stub(request, repo_stub, StubIntegrationType,
+        stub_integration_settings):
+    integration = IntegrationModel().create(
+        StubIntegrationType, settings=stub_integration_settings, enabled=True,
+        name='test repo integration',
+        repo=repo_stub, repo_group=None, child_repos_only=None)
+
+    @request.addfinalizer
+    def cleanup():
+        IntegrationModel().delete(integration)
+
+    return integration
+
+
+@pytest.fixture
+def repogroup_integration_stub(request, test_repo_group, StubIntegrationType,
+    stub_integration_settings):
+    integration = IntegrationModel().create(
+        StubIntegrationType, settings=stub_integration_settings, enabled=True,
+        name='test repogroup integration',
+        repo=None, repo_group=test_repo_group, child_repos_only=True)
+
+    @request.addfinalizer
+    def cleanup():
+        IntegrationModel().delete(integration)
+
+    return integration
+
+
+@pytest.fixture
+def repogroup_recursive_integration_stub(request, test_repo_group,
+    StubIntegrationType, stub_integration_settings):
+    integration = IntegrationModel().create(
+        StubIntegrationType, settings=stub_integration_settings, enabled=True,
+        name='test recursive repogroup integration',
+        repo=None, repo_group=test_repo_group, child_repos_only=False)
+
+    @request.addfinalizer
+    def cleanup():
+        IntegrationModel().delete(integration)
+
+    return integration
+
+
+@pytest.fixture
+def global_integration_stub(request, StubIntegrationType,
+    stub_integration_settings):
+    integration = IntegrationModel().create(
+        StubIntegrationType, settings=stub_integration_settings, enabled=True,
+        name='test global integration',
+        repo=None, repo_group=None, child_repos_only=None)
+
+    @request.addfinalizer
+    def cleanup():
+        IntegrationModel().delete(integration)
+
+    return integration
+
+
+@pytest.fixture
+def root_repos_integration_stub(request, StubIntegrationType,
+    stub_integration_settings):
+    integration = IntegrationModel().create(
+        StubIntegrationType, settings=stub_integration_settings, enabled=True,
+        name='test global integration',
+        repo=None, repo_group=None, child_repos_only=True)
+
+    @request.addfinalizer
+    def cleanup():
+        IntegrationModel().delete(integration)
+
+    return integration

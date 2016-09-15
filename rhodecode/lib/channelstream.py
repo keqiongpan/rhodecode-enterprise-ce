@@ -84,6 +84,7 @@ def get_user_data(user_id):
         'icon_link': h.gravatar_url(user.email, 14),
         'display_name': h.person(user, 'username_or_name_or_email'),
         'display_link': h.link_to_user(user),
+        'notifications': user.user_data.get('notification_status', True)
     }
 
 

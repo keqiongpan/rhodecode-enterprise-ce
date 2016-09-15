@@ -13,12 +13,4 @@
         'webapp_location': ''};
     %endif
 
-if (CHANNELSTREAM_SETTINGS.enabled) {
-    connCtrlr = new ConnectionController(
-            CHANNELSTREAM_SETTINGS.webapp_location,
-            CHANNELSTREAM_SETTINGS.ws_location,
-            CHANNELSTREAM_URLS
-    );
-    registerViewChannels();
-}
 </script>

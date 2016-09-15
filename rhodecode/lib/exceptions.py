@@ -23,6 +23,7 @@ Set of custom exceptions used in RhodeCode
 """
 
 from webob.exc import HTTPClientError
+from pyramid.httpexceptions import HTTPBadGateway
 
 
 class LdapUsernameError(Exception):
@@ -120,3 +121,19 @@ class NotAllowedToCreateUserError(Exception):
 
 class RepositoryCreationError(Exception):
     pass
+
+
+class VCSServerUnavailable(HTTPBadGateway):
+    """ HTTP Exception class for VCS Server errors """
+    code = 502
+    title = 'VCS Server Error'
+    causes = [
+        'VCS Server is not running',
+        'Incorrect vcs.server=host:port',
+        'Incorrect vcs.server.protocol',
+    ]
+    def __init__(self, message=''):
+        self.explanation = 'Could not connect to VCS Server'
+        if message:
+            self.explanation += ': ' + message
+        super(VCSServerUnavailable, self).__init__()

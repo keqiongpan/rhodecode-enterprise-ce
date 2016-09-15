@@ -102,20 +102,6 @@ def LoginForm():
     return _LoginForm
 
 
-def PasswordChangeForm(username):
-    class _PasswordChangeForm(formencode.Schema):
-        allow_extra_fields = True
-        filter_extra_fields = True
-
-        current_password = v.ValidOldPassword(username)(not_empty=True)
-        new_password = All(v.ValidPassword(), v.UnicodeString(strip=False, min=6))
-        new_password_confirmation = All(v.ValidPassword(), v.UnicodeString(strip=False, min=6))
-
-        chained_validators = [v.ValidPasswordsMatch('new_password',
-                                                    'new_password_confirmation')]
-    return _PasswordChangeForm
-
-
 def UserForm(edit=False, available_languages=[], old_data={}):
     class _UserForm(formencode.Schema):
         allow_extra_fields = True
@@ -403,6 +389,9 @@ class _BaseVcsSettingsForm(formencode.Schema):
     rhodecode_use_outdated_comments = v.StringBoolean(if_missing=False)
     rhodecode_hg_use_rebase_for_merging = v.StringBoolean(if_missing=False)
 
+    vcs_svn_proxy_http_requests_enabled = v.StringBoolean(if_missing=False)
+    vcs_svn_proxy_http_server_url = v.UnicodeString(strip=True, if_missing=None)
+
 
 def ApplicationUiSettingsForm():
     class _ApplicationUiSettingsForm(_BaseVcsSettingsForm):
@@ -434,11 +423,6 @@ def LabsSettingsForm():
     class _LabSettingsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = False
-
-        rhodecode_proxy_subversion_http_requests = v.StringBoolean(
-            if_missing=False)
-        rhodecode_subversion_http_server_url = v.UnicodeString(
-            strip=True, if_missing=None)
 
     return _LabSettingsForm
 

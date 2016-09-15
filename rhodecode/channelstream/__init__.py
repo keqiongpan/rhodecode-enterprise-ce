@@ -29,7 +29,9 @@ from rhodecode.lib.ext_json import json
 def url_gen(request):
     urls = {
         'connect': request.route_url('channelstream_connect'),
-        'subscribe': request.route_url('channelstream_subscribe')
+        'subscribe': request.route_url('channelstream_subscribe'),
+        'longpoll': request.registry.settings.get('channelstream.longpoll_url', ''),
+        'ws': request.registry.settings.get('channelstream.ws_url', '')
     }
     return json.dumps(urls)
 

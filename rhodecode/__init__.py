@@ -51,7 +51,7 @@ PYRAMID_SETTINGS = {}
 EXTENSIONS = {}
 
 __version__ = ('.'.join((str(each) for each in VERSION[:3])))
-__dbversion__ = 55  # defines current db version for migrations
+__dbversion__ = 58  # defines current db version for migrations
 __platform__ = platform.system()
 __license__ = 'AGPLv3, and Commercial License'
 __author__ = 'RhodeCode GmbH'
@@ -60,3 +60,4 @@ __url__ = 'http://rhodecode.com'
 is_windows = __platform__ in ['Windows']
 is_unix = not is_windows
 is_test = False
+disable_error_handler = False

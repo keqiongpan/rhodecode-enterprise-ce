@@ -18,3 +18,4 @@ Welcome to the contribution guides and development docs of RhodeCode.
    db-schema
    dev-settings
    api
+   dependencies

@@ -98,7 +98,7 @@ class GitInMemoryCommit(base.BaseInMemoryCommit):
         self.repository._rebuild_cache(self.repository.commit_ids)
 
         # invalidate parsed refs after commit
-        self.repository._parsed_refs = self.repository._get_parsed_refs()
+        self.repository._refs = self.repository._get_refs()
         self.repository.branches = self.repository._get_branches()
         tip = self.repository.get_commit()
         self.reset()

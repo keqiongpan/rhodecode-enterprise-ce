@@ -46,10 +46,11 @@ from rhodecode.lib.utils import (
     is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path)
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool
 from rhodecode.lib.vcs.conf import settings as vcs_settings
+from rhodecode.lib.vcs.backends import base
 from rhodecode.model import meta
 from rhodecode.model.db import User, Repository
 from rhodecode.model.scm import ScmModel
-from rhodecode.model.settings import SettingsModel
+
 
 log = logging.getLogger(__name__)
 
@@ -86,6 +87,10 @@ class SimpleVCS(object):
         self.registry = registry
         self.application = application
         self.config = config
+        # re-populated by specialized middleware
+        self.repo_name = None
+        self.repo_vcs_config = base.Config()
+
         # base path of repo locations
         self.basepath = get_rhodecode_base_path()
         # authenticate this VCS request using authfunc
@@ -111,9 +116,7 @@ class SimpleVCS(object):
     def _get_by_id(self, repo_name):
         """
         Gets a special pattern _<ID> from clone url and tries to replace it
-        with a repository_name for support of _<ID> non changable urls
-
-        :param repo_name:
+        with a repository_name for support of _<ID> non changeable urls
         """
 
         data = repo_name.split('/')
@@ -205,8 +208,7 @@ class SimpleVCS(object):
         """
         org_proto = environ['wsgi._org_proto']
         # check if we have SSL required  ! if not it's a bad request !
-        require_ssl = str2bool(
-            SettingsModel().get_ui_by_key('push_ssl').ui_value)
+        require_ssl = str2bool(self.repo_vcs_config.get('web', 'push_ssl'))
         if require_ssl and org_proto == 'http':
             log.debug('proto is %s and SSL is required BAD REQUEST !',
                       org_proto)
@@ -231,24 +233,17 @@ class SimpleVCS(object):
             log.debug('User not allowed to proceed, %s', reason)
             return HTTPNotAcceptable(reason)(environ, start_response)
 
+        if not self.repo_name:
+            log.warning('Repository name is empty: %s', self.repo_name)
+            # failed to get repo name, we fail now
+            return HTTPNotFound()(environ, start_response)
+        log.debug('Extracted repo name is %s', self.repo_name)
+
         ip_addr = get_ip_addr(environ)
         username = None
 
         # skip passing error to error controller
         environ['pylons.status_code_redirect'] = True
-
-        # ======================================================================
-        # EXTRACT REPOSITORY NAME FROM ENV
-        # ======================================================================
-        environ['PATH_INFO'] = self._get_by_id(environ['PATH_INFO'])
-        repo_name = self._get_repository_name(environ)
-        environ['REPO_NAME'] = repo_name
-        log.debug('Extracted repo name is %s', repo_name)
-
-        # check for type, presence in database and on filesystem
-        if not self.is_valid_and_existing_repo(
-                repo_name, self.basepath, self.SCM):
-            return HTTPNotFound()(environ, start_response)
 
         # ======================================================================
         # GET ACTION PULL or PUSH
@@ -264,7 +259,7 @@ class SimpleVCS(object):
             if anonymous_user.active:
                 # ONLY check permissions if the user is activated
                 anonymous_perm = self._check_permission(
-                    action, anonymous_user, repo_name, ip_addr)
+                    action, anonymous_user, self.repo_name, ip_addr)
             else:
                 anonymous_perm = False
 
@@ -328,7 +323,8 @@ class SimpleVCS(object):
                     return HTTPNotAcceptable(reason)(environ, start_response)
 
                 # check permissions for this repository
-                perm = self._check_permission(action, user, repo_name, ip_addr)
+                perm = self._check_permission(
+                    action, user, self.repo_name, ip_addr)
                 if not perm:
                     return HTTPForbidden()(environ, start_response)
 
@@ -336,14 +332,14 @@ class SimpleVCS(object):
         # in hooks executed by rhodecode
         check_locking = _should_check_locking(environ.get('QUERY_STRING'))
         extras = vcs_operation_context(
-            environ, repo_name=repo_name, username=username,
+            environ, repo_name=self.repo_name, username=username,
             action=action, scm=self.SCM,
             check_locking=check_locking)
 
         # ======================================================================
         # REQUEST HANDLING
         # ======================================================================
-        str_repo_name = safe_str(repo_name)
+        str_repo_name = safe_str(self.repo_name)
         repo_path = os.path.join(safe_str(self.basepath), str_repo_name)
         log.debug('Repository path is %s', repo_path)
 
@@ -354,7 +350,7 @@ class SimpleVCS(object):
             action, self.SCM, str_repo_name, safe_str(username), ip_addr)
 
         return self._generate_vcs_response(
-            environ, start_response, repo_path, repo_name, extras, action)
+            environ, start_response, repo_path, self.repo_name, extras, action)
 
     @initialize_generator
     def _generate_vcs_response(

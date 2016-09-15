@@ -12,6 +12,7 @@
 
   .control-label {
     width: 200px;
+    padding: 10px;
     float: left;
   }
   .control-inputs {
@@ -26,14 +27,37 @@
 
   .form-group {
     clear: left;
+    margin-bottom: 20px;
+
+    &:after { /* clear fix */
+      content: " ";
+      display: block;
+      clear: left;
+    }
   }
 
   .form-control {
     width: 100%;
+    padding: 0.9em;
+    border: 1px solid #979797;
+    border-radius: 2px;
+  }
+  .form-control.select2-container {
+    padding: 0; /* padding already applied in .drop-menu a */
+  }
+
+  .form-control.readonly {
+    background: #eeeeee;
+    cursor: not-allowed;
   }
 
   .error-block {
     color: red;
+    margin: 0;
+  }
+
+  .help-block {
+    margin: 0;
   }
 
   .deform-seq-container .control-inputs {
@@ -62,7 +86,9 @@
       }
   }
 
-  .form-control.select2-container { height: 40px; }
+  .form-control.select2-container {
+    height: 40px;
+  }
 
   .deform-two-field-sequence .deform-seq-container .deform-seq-item label {
       display: none;
@@ -74,7 +100,7 @@
       display: none;
   }
   .deform-two-field-sequence .deform-seq-container .deform-seq-item.form-group {
-      background: red;
+      margin: 0;
   }
   .deform-two-field-sequence .deform-seq-container .deform-seq-item .deform-seq-item-group .form-group {
       width: 45%; padding: 0 2px; float: left; clear: none;

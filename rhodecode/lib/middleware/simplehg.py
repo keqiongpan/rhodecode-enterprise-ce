@@ -23,11 +23,14 @@ SimpleHG middleware for handling mercurial protocol request
 (push/clone etc.). It's implemented with basic auth function
 """
 
+import logging
 import urlparse
 
 from rhodecode.lib import utils
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.middleware import simplevcs
+
+log = logging.getLogger(__name__)
 
 
 class SimpleHg(simplevcs.SimpleVCS):

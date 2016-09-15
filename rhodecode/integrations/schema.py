@@ -20,26 +20,52 @@
 
 import colander
 
-from rhodecode.translation import lazy_ugettext
+from rhodecode.translation import _
 
 
-class IntegrationSettingsSchemaBase(colander.MappingSchema):
-    """
-    This base schema is intended for use in integrations.
-    It adds a few default settings (e.g., "enabled"), so that integration
-    authors don't have to maintain a bunch of boilerplate.
-    """
+class IntegrationOptionsSchemaBase(colander.MappingSchema):
     enabled = colander.SchemaNode(
         colander.Bool(),
         default=True,
-        description=lazy_ugettext('Enable or disable this integration.'),
+        description=_('Enable or disable this integration.'),
         missing=False,
-        title=lazy_ugettext('Enabled'),
+        title=_('Enabled'),
     )
 
     name = colander.SchemaNode(
         colander.String(),
-        description=lazy_ugettext('Short name for this integration.'),
+        description=_('Short name for this integration.'),
         missing=colander.required,
-        title=lazy_ugettext('Integration name'),
+        title=_('Integration name'),
     )
+
+
+class RepoIntegrationOptionsSchema(IntegrationOptionsSchemaBase):
+    pass
+
+
+class RepoGroupIntegrationOptionsSchema(IntegrationOptionsSchemaBase):
+    child_repos_only = colander.SchemaNode(
+        colander.Bool(),
+        default=True,
+        description=_(
+            'Limit integrations to to work only on the direct children '
+            'repositories of this repository group (no subgroups)'),
+        missing=False,
+        title=_('Limit to childen repos only'),
+    )
+
+
+class GlobalIntegrationOptionsSchema(IntegrationOptionsSchemaBase):
+    child_repos_only = colander.SchemaNode(
+        colander.Bool(),
+        default=False,
+        description=_(
+            'Limit integrations to to work only on root level repositories'),
+        missing=False,
+        title=_('Root repositories only'),
+    )
+
+
+class IntegrationSettingsSchemaBase(colander.MappingSchema):
+    pass

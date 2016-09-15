@@ -44,9 +44,10 @@ from rhodecode.config import patches
 from rhodecode.config.routing import STATIC_FILE_PREFIX
 from rhodecode.config.environment import (
     load_environment, load_pyramid_environment)
+from rhodecode.lib.exceptions import VCSServerUnavailable
+from rhodecode.lib.vcs.exceptions import VCSCommunicationError
 from rhodecode.lib.middleware import csrf
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
-from rhodecode.lib.middleware.disable_vcs import DisableVCSPagesWrapper
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
@@ -193,10 +194,6 @@ def make_not_found_view(config):
 
     pylons_app_as_view = wsgiapp(pylons_app)
 
-    # Protect from VCS Server error related pages when server is not available
-    if not vcs_server_enabled:
-        pylons_app_as_view = DisableVCSPagesWrapper(pylons_app_as_view)
-
     def pylons_app_with_error_handler(context, request):
         """
         Handle exceptions from rc pylons app:
@@ -221,10 +218,18 @@ def make_not_found_view(config):
                 return error_handler(response, request)
         except HTTPError as e:  # pyramid type exceptions
             return error_handler(e, request)
-        except Exception:
-            if settings.get('debugtoolbar.enabled', False):
+        except Exception as e:
+            log.exception(e)
+
+            if (settings.get('debugtoolbar.enabled', False) or
+                rhodecode.disable_error_handler):
                 raise
+
+            if isinstance(e, VCSCommunicationError):
+                return error_handler(VCSServerUnavailable(), request)
+
             return error_handler(HTTPInternalServerError(), request)
+
         return response
 
     return pylons_app_with_error_handler
@@ -249,7 +254,6 @@ def webob_to_pyramid_http_response(webob_response):
 
 
 def error_handler(exception, request):
-    # TODO: dan: replace the old pylons error controller with this
     from rhodecode.model.settings import SettingsModel
     from rhodecode.lib.utils2 import AttributeDict
 
@@ -277,6 +281,10 @@ def error_handler(exception, request):
     c.rhodecode_name = rc_config.get('rhodecode_title', '')
     if not c.rhodecode_name:
         c.rhodecode_name = 'Rhodecode'
+
+    c.causes = []
+    if hasattr(base_response, 'causes'):
+        c.causes = base_response.causes
 
     response = render_to_response(
         '/errors/error_document.html', {'c': c}, request=request,

@@ -6,14 +6,15 @@ div.diffblock .code-header .changeset_header > div {
 // Line select and comment
 div.diffblock.margined.comm tr {
     td {
-        position: relative;
+        // IMPORTANT - never position:relative this as it causes insanely
+        // slow rendering
     }
 
     .add-comment-line {
         // Force td width for Firefox
         width: 20px;
-        
-        // TODO: anderson: fixing mouse-over bug. 
+
+        // TODO: anderson: fixing mouse-over bug.
         // why was it vertical-align baseline in first place??
         vertical-align: top !important;
         // Force width and display for IE 9
@@ -23,11 +24,32 @@ div.diffblock.margined.comm tr {
 
             a {
                 display: none;
-                position: absolute;
-                top: 2px;
-                left: 2px;
+                margin-top: 2px;
+                margin-left: 2px;
                 color: @grey3;
             }
+        }
+    }
+
+    .comment-toggle {
+        position: relative;
+        min-width: 20px;
+        width: 20px;
+        color: @rcblue;
+
+        .icon-comment {
+            position: absolute;
+            top: 2px;
+            left: 0;
+            z-index: 100;
+            visibility: hidden;
+        }
+
+        &.active {
+            .icon-comment{
+                visibility: visible;
+            }
+            cursor: pointer;
         }
     }
 
@@ -47,7 +69,7 @@ div.diffblock.margined.comm tr {
         &.commenting {
             &, del, ins {
                     background-image: none !important;
-                    background-color:  lighten(@alert4, 10%) !important; 
+                    background-color:  lighten(@alert4, 10%) !important;
                 }
         }
     }

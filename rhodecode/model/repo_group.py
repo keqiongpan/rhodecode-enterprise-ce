@@ -469,6 +469,8 @@ class RepoGroupModel(BaseModel):
 
     def delete(self, repo_group, force_delete=False, fs_remove=True):
         repo_group = self._get_repo_group(repo_group)
+        if not repo_group:
+            return False
         try:
             self.sa.delete(repo_group)
             if fs_remove:
@@ -478,6 +480,7 @@ class RepoGroupModel(BaseModel):
 
             # Trigger delete event.
             events.trigger(events.RepoGroupDeleteEvent(repo_group))
+            return True
 
         except Exception:
             log.error('Error removing repo_group %s', repo_group)

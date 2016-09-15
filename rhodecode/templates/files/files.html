@@ -177,7 +177,9 @@
                         var _first_line = $('#L' + h_lines[0]).get(0);
                         if (_first_line) {
                             var line = $('#L' + h_lines[0]);
-                            offsetScroll(line, 70);
+                            if (line.length > 0){
+                                offsetScroll(line, 70);
+                            }
                         }
                     }
                 }

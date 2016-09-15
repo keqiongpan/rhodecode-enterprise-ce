@@ -2036,6 +2036,8 @@ class RepoGroup(Base, BaseModel):
     users_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
     parent_group = relationship('RepoGroup', remote_side=group_id)
     user = relationship('User')
+    integrations = relationship('Integration',
+                                cascade="all, delete, delete-orphan")
 
     def __init__(self, group_name='', parent_group=None):
         self.group_name = group_name
@@ -3481,6 +3483,8 @@ class Integration(Base, BaseModel):
     integration_type = Column('integration_type', String(255))
     enabled = Column('enabled', Boolean(), nullable=False)
     name = Column('name', String(255), nullable=False)
+    child_repos_only = Column('child_repos_only', Boolean(), nullable=False,
+        default=False)
 
     settings = Column(
         'settings_json', MutationObj.as_mutable(
@@ -3490,10 +3494,23 @@ class Integration(Base, BaseModel):
         nullable=True, unique=None, default=None)
     repo = relationship('Repository', lazy='joined')
 
-    def __repr__(self):
-        if self.repo:
-            scope = 'repo=%r' % self.repo
-        else:
-            scope = 'global'
+    repo_group_id = Column(
+        'repo_group_id', Integer(), ForeignKey('groups.group_id'),
+        nullable=True, unique=None, default=None)
+    repo_group = relationship('RepoGroup', lazy='joined')
 
-        return '<Integration(%r, %r)>' % (self.integration_type, scope)
+    @property
+    def scope(self):
+        if self.repo:
+            return repr(self.repo)
+        if self.repo_group:
+            if self.child_repos_only:
+                return repr(self.repo_group) + ' (child repos only)'
+            else:
+                return repr(self.repo_group) + ' (recursive)'
+        if self.child_repos_only:
+            return 'root_repos'
+        return 'global'
+
+    def __repr__(self):
+        return '<Integration(%r, %r)>' % (self.integration_type, self.scope)

@@ -1116,9 +1116,11 @@ class CSRFRequired(object):
     For use with the ``webhelpers.secure_form`` helper functions.
 
     """
-    def __init__(self, token=csrf_token_key, header='X-CSRF-Token'):
+    def __init__(self, token=csrf_token_key, header='X-CSRF-Token',
+        except_methods=None):
         self.token = token
         self.header = header
+        self.except_methods = except_methods or []
 
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
@@ -1131,6 +1133,9 @@ class CSRFRequired(object):
         return supplied_token and supplied_token == cur_token
 
     def __wrapper(self, func, *fargs, **fkwargs):
+        if request.method in self.except_methods:
+            return func(*fargs, **fkwargs)
+
         cur_token = get_csrf_token(save_if_missing=False)
         if self.check_csrf(request, cur_token):
             if request.POST.get(self.token):

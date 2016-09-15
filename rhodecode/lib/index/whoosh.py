@@ -265,7 +265,7 @@ class WhooshResultWrapper(object):
 
         f_path = ''  # noqa
         if self.search_type in ['content', 'path']:
-            f_path = res['path'].split(res['repository'])[-1]
+            f_path = res['path'][len(res['repository']):]
             f_path = f_path.lstrip(os.sep)
 
         if self.search_type == 'content':

@@ -30,6 +30,10 @@ let
     then pythonPackages
     else getAttr pythonPackages pkgs;
 
+  buildBowerComponents =
+    pkgs.buildBowerComponents or
+    (import ./pkgs/backport-16.03-build-bower-components.nix { inherit pkgs; });
+
   elem = builtins.elem;
   basename = path: with pkgs.lib; last (splitString "/" path);
   startsWith = prefix: full: let
@@ -41,31 +45,28 @@ let
       ext = last (splitString "." path);
     in
       !elem (basename path) [
-        ".git" ".hg" "__pycache__" ".eggs" "node_modules"
-        "build" "data" "tmp"] &&
+        ".git" ".hg" "__pycache__" ".eggs"
+        "bower_components" "node_modules"
+        "build" "data" "result" "tmp"] &&
       !elem ext ["egg-info" "pyc"] &&
+      # TODO: johbo: This check is wrong, since "path" contains an absolute path,
+      # it would still be good to restore it since we want to ignore "result-*".
       !startsWith "result" path;
 
   sources = pkgs.config.rc.sources or {};
+  version = builtins.readFile ./rhodecode/VERSION;
   rhodecode-enterprise-ce-src = builtins.filterSource src-filter ./.;
 
-  # Load the generated node packages
-  nodePackages = pkgs.callPackage "${pkgs.path}/pkgs/top-level/node-packages.nix" rec {
-    self = nodePackages;
-    generated = pkgs.callPackage ./pkgs/node-packages.nix { inherit self; };
+  nodeEnv = import ./pkgs/node-default.nix {
+    inherit pkgs;
   };
+  nodeDependencies = nodeEnv.shell.nodeDependencies;
 
-  # TODO: Should be taken automatically out of the generates packages.
-  # apps.nix has one solution for this, although I'd prefer to have the deps
-  # from package.json mapped in here.
-  nodeDependencies = with nodePackages; [
-    grunt
-    grunt-contrib-concat
-    grunt-contrib-jshint
-    grunt-contrib-less
-    grunt-contrib-watch
-    jshint
-  ];
+  bowerComponents = buildBowerComponents {
+    name = "enterprise-ce-${version}";
+    generated = ./pkgs/bower-packages.nix;
+    src = rhodecode-enterprise-ce-src;
+  };
 
   pythonGeneratedPackages = self: basePythonPackages.override (a: {
     inherit self;
@@ -86,16 +87,25 @@ let
   pythonLocalOverrides = self: super: {
     rhodecode-enterprise-ce =
       let
-        version = builtins.readFile ./rhodecode/VERSION;
-        linkNodeModules = ''
+        linkNodeAndBowerPackages = ''
+          echo "Export RhodeCode CE path"
+          export RHODECODE_CE_PATH=${rhodecode-enterprise-ce-src}
           echo "Link node packages"
-          # TODO: check if this adds stuff as a dependency, closure size
           rm -fr node_modules
-          mkdir -p node_modules
-          ${pkgs.lib.concatMapStrings (dep: ''
-            ln -sfv ${dep}/lib/node_modules/${dep.pkgName} node_modules/
-          '') nodeDependencies}
+          mkdir node_modules
+          # johbo: Linking individual packages allows us to run "npm install"
+          # inside of a shell to try things out. Re-entering the shell will
+          # restore a clean environment.
+          ln -s ${nodeDependencies}/lib/node_modules/* node_modules/
+
           echo "DONE: Link node packages"
+
+          echo "Link bower packages"
+          rm -fr bower_components
+          mkdir bower_components
+
+          ln -s ${bowerComponents}/bower_components/* bower_components/
+          echo "DONE: Link bower packages"
         '';
       in super.rhodecode-enterprise-ce.override (attrs: {
 
@@ -109,6 +119,7 @@ let
       buildInputs =
         attrs.buildInputs ++
         (with self; [
+          pkgs.nodePackages.bower
           pkgs.nodePackages.grunt-cli
           pkgs.subversion
           pytest-catchlog
@@ -123,7 +134,8 @@ let
       # pkgs/default.nix?
       passthru = {
         inherit
-          linkNodeModules
+          bowerComponents
+          linkNodeAndBowerPackages
           myPythonPackagesUnfix
           pythonLocalOverrides;
         pythonPackages = self;
@@ -145,7 +157,7 @@ let
         export PYTHONPATH="$tmp_path/${self.python.sitePackages}:$PYTHONPATH"
         mkdir -p $tmp_path/${self.python.sitePackages}
         python setup.py develop --prefix $tmp_path --allow-hosts ""
-      '' + linkNodeModules;
+      '' + linkNodeAndBowerPackages;
 
       preCheck = ''
         export PATH="$out/bin:$PATH"
@@ -156,7 +168,7 @@ let
         rm -rf $out/lib/${self.python.libPrefix}/site-packages/rhodecode/tests
       '';
 
-      preBuild = linkNodeModules + ''
+      preBuild = linkNodeAndBowerPackages + ''
         grunt
         rm -fr node_modules
       '';
