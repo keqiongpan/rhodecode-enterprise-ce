@@ -32,18 +32,20 @@ var rhodeCodeApp = Polymer({
         for (var i = 0; i < addChannels.length; i++) {
             channels.push(addChannels[i]);
         }
-        var channelstreamConnection = this.$['channelstream-connection'];
-        channelstreamConnection.connectUrl = CHANNELSTREAM_URLS.connect;
-        channelstreamConnection.subscribeUrl = CHANNELSTREAM_URLS.subscribe;
-        channelstreamConnection.websocketUrl = CHANNELSTREAM_URLS.ws + '/ws';
-        channelstreamConnection.longPollUrl = CHANNELSTREAM_URLS.longpoll + '/listen';
-        // some channels might already be registered by topic
-        for (var i = 0; i < channels.length; i++) {
-            channelstreamConnection.push('channels', channels[i]);
+        if (window.CHANNELSTREAM_SETTINGS && CHANNELSTREAM_SETTINGS.enabled){
+            var channelstreamConnection = this.$['channelstream-connection'];
+            channelstreamConnection.connectUrl = CHANNELSTREAM_URLS.connect;
+            channelstreamConnection.subscribeUrl = CHANNELSTREAM_URLS.subscribe;
+            channelstreamConnection.websocketUrl = CHANNELSTREAM_URLS.ws + '/ws';
+            channelstreamConnection.longPollUrl = CHANNELSTREAM_URLS.longpoll + '/listen';
+            // some channels might already be registered by topic
+            for (var i = 0; i < channels.length; i++) {
+                channelstreamConnection.push('channels', channels[i]);
+            }
+            // append any additional channels registered in other plugins
+            $.Topic('/connection_controller/subscribe').processPrepared();
+            channelstreamConnection.connect();
         }
-        // append any additional channels registered in other plugins
-        $.Topic('/connection_controller/subscribe').processPrepared();
-        channelstreamConnection.connect();
     },
 
     checkViewChannels: function () {
