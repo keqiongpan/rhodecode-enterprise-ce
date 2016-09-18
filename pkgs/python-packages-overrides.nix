@@ -190,7 +190,8 @@ self: super: {
       pkgs.openldap
       pkgs.openssl
     ];
-    NIX_CFLAGS_COMPILE = "-I${pkgs.cyrus_sasl}/include/sasl";
+    # TODO: johbo: Remove the "or" once we drop 16.03 support.
+    NIX_CFLAGS_COMPILE = "-I${pkgs.cyrus_sasl.dev or pkgs.cyrus_sasl}/include/sasl";
   });
 
   python-pam = super.python-pam.override (attrs:
