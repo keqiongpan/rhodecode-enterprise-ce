@@ -44,7 +44,9 @@ class StubVCSController(simplevcs.SimpleVCS):
 
     def __init__(self, *args, **kwargs):
         super(StubVCSController, self).__init__(*args, **kwargs)
-        self.repo_name = HG_REPO
+        self.acl_repo_name = HG_REPO
+        self.url_repo_name = HG_REPO
+        self.vcs_repo_name = HG_REPO
 
     def _get_repository_name(self, environ):
         return HG_REPO

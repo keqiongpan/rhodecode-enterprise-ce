@@ -83,12 +83,15 @@ class SimpleVCS(object):
 
     SCM = 'unknown'
 
+    acl_repo_name = None
+    url_repo_name = None
+    vcs_repo_name = None
+
     def __init__(self, application, config, registry):
         self.registry = registry
         self.application = application
         self.config = config
         # re-populated by specialized middleware
-        self.repo_name = None
         self.repo_vcs_config = base.Config()
 
         # base path of repo locations
@@ -100,6 +103,11 @@ class SimpleVCS(object):
             '', authenticate, registry, config.get('auth_ret_code'),
             auth_ret_code_detection)
         self.ip_addr = '0.0.0.0'
+
+    @property
+    def repo_name(self):
+        # TODO: johbo: Remove, switch to correct repo name attribute
+        return self.acl_repo_name
 
     @property
     def scm_app(self):
@@ -340,7 +348,8 @@ class SimpleVCS(object):
         # REQUEST HANDLING
         # ======================================================================
         str_repo_name = safe_str(self.repo_name)
-        repo_path = os.path.join(safe_str(self.basepath), str_repo_name)
+        repo_path = os.path.join(
+            safe_str(self.basepath), safe_str(self.vcs_repo_name))
         log.debug('Repository path is %s', repo_path)
 
         fix_PATH()
@@ -350,7 +359,7 @@ class SimpleVCS(object):
             action, self.SCM, str_repo_name, safe_str(username), ip_addr)
 
         return self._generate_vcs_response(
-            environ, start_response, repo_path, self.repo_name, extras, action)
+            environ, start_response, repo_path, self.url_repo_name, extras, action)
 
     @initialize_generator
     def _generate_vcs_response(
@@ -365,7 +374,7 @@ class SimpleVCS(object):
         the first chunk is produced by the underlying WSGI application.
         """
         callback_daemon, extras = self._prepare_callback_daemon(extras)
-        config = self._create_config(extras, repo_name)
+        config = self._create_config(extras, self.acl_repo_name)
         log.debug('HOOKS extras is %s', extras)
         app = self._create_wsgi_app(repo_path, repo_name, config)
 

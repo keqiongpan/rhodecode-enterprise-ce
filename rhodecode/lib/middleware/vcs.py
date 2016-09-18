@@ -176,18 +176,44 @@ class VCSMiddleware(object):
             environ['PATH_INFO'] = vcs_handler._get_by_id(environ['PATH_INFO'])
             repo_name = vcs_handler._get_repository_name(environ)
 
+            acl_repo_name = repo_name
+            vcs_repo_name = repo_name
+            url_repo_name = repo_name
+            pr_id = None
+
+            # TODO: johbo: recognize a pull request based on pattern matching
+            if '/pull-request/' in repo_name:
+                acl_repo_name, other = repo_name.split('/pull-request/')
+                # TODO: johbo: Set shadow repo path
+                basename, repo_segment = acl_repo_name.rsplit('/', 1)
+                pr_id = int(other[0:-len('/repository')])
+                vcs_repo_name = '{basename}/.__shadow_{repo_segment}_pr-{pr_id}'.format(
+                    basename=basename,
+                    repo_segment=repo_segment,
+                    pr_id=pr_id)
+
+            log.debug('repo_names %s', {
+                'acl_repo_name': acl_repo_name,
+                'vcs_repo_name': vcs_repo_name,
+                'url_repo_name': url_repo_name,
+            })
+            log.debug('pull_request %s', pr_id)
+
             # check for type, presence in database and on filesystem
             if not vcs_handler.is_valid_and_existing_repo(
-                    repo_name, vcs_handler.basepath, vcs_handler.SCM):
+                    acl_repo_name, vcs_handler.basepath, vcs_handler.SCM):
                 return HTTPNotFound()(environ, start_response)
 
             # TODO: johbo: Needed for the Pyro4 backend and Mercurial only.
             # Remove once we fully switched to the HTTP backend.
-            environ['REPO_NAME'] = repo_name
+            environ['REPO_NAME'] = url_repo_name
 
             # register repo_name and it's config back to the handler
-            vcs_handler.repo_name = repo_name
-            vcs_handler.repo_vcs_config = self.vcs_config(repo_name)
+            vcs_handler.acl_repo_name = acl_repo_name
+            vcs_handler.url_repo_name = url_repo_name
+            vcs_handler.vcs_repo_name = vcs_repo_name
+            vcs_handler.pr_id = pr_id
+            vcs_handler.repo_vcs_config = self.vcs_config(acl_repo_name)
 
             vcs_handler = self.wrap_in_gzip_if_enabled(
                 vcs_handler, self.config)
