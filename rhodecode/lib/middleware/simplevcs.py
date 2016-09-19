@@ -285,6 +285,15 @@ class SimpleVCS(object):
         action = self._get_action(environ)
 
         # ======================================================================
+        # Check if this is a request to a shadow repository of a pull request.
+        # In this case only pull action is allowed.
+        # ======================================================================
+        if self.pr_id is not None and action != 'pull':
+            reason = 'Only pull action is allowed for shadow repositories.'
+            log.debug('User not allowed to proceed, %s', reason)
+            return HTTPNotAcceptable(reason)(environ, start_response)
+
+        # ======================================================================
         # CHECK ANONYMOUS PERMISSION
         # ======================================================================
         if action in ['pull', 'push']:
