@@ -29,6 +29,7 @@ from webob.exc import HTTPNotFound, HTTPForbidden, HTTPBadRequest
 from pylons import request, tmpl_context as c, url
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
+from pyramid.threadlocal import get_current_registry
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 
@@ -40,6 +41,7 @@ from rhodecode.lib.base import (
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous,
     HasAcceptedRepoType, XHRRequired)
+from rhodecode.lib.channelstream import channelstream_request
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_int, safe_str, str2bool, safe_unicode
 from rhodecode.lib.vcs.backends.base import EmptyCommit
@@ -520,6 +522,34 @@ class PullrequestsController(BaseRepoController):
                         count_added=len(changes.added),
                         count_removed=len(changes.removed))
                     h.flash(msg, category='success')
+                    registry = get_current_registry()
+                    rhodecode_plugins = getattr(registry,
+                                                'rhodecode_plugins', {})
+                    channelstream_config = rhodecode_plugins.get(
+                        'channelstream', {})
+                    if channelstream_config.get('enabled'):
+                        message = msg + ' - <a onclick="' \
+                                        'window.location.reload()">' \
+                                        '<strong>{}</strong></a>'.format(
+                            _('Reload page')
+                        )
+                        channel = '/repo${}$/pr/{}'.format(
+                            pull_request.target_repo.repo_name,
+                            pull_request.pull_request_id
+                        )
+                        payload = {
+                            'type': 'message',
+                            'user': 'system',
+                            'exclude_users': [request.user.username],
+                            'channel': channel,
+                            'message': {
+                                'message': message,
+                                'level': 'success',
+                                'topic': '/notifications'
+                            }
+                        }
+                        channelstream_request(channelstream_config, [payload],
+                                              '/message', raise_exc=False)
                 else:
                     h.flash(_("Nothing changed in pull request."),
                             category='warning')
