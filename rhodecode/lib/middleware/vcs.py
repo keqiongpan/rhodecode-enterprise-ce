@@ -19,6 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import gzip
+import re
 import shutil
 import logging
 import tempfile
@@ -181,16 +182,17 @@ class VCSMiddleware(object):
             url_repo_name = repo_name
             pr_id = None
 
-            # TODO: johbo: recognize a pull request based on pattern matching
-            if '/pull-request/' in repo_name:
-                acl_repo_name, other = repo_name.split('/pull-request/')
-                # TODO: johbo: Set shadow repo path
-                basename, repo_segment = acl_repo_name.rsplit('/', 1)
-                pr_id = int(other[0:-len('/repository')])
-                vcs_repo_name = '{basename}/.__shadow_{repo_segment}_pr-{pr_id}'.format(
-                    basename=basename,
-                    repo_segment=repo_segment,
-                    pr_id=pr_id)
+            pr_regex = re.compile(
+                '(?P<base_name>(?:[\w-]+)(?:/[\w-]+)*)/'
+                '(?P<repo_name>[\w-]+)'
+                '/pull-request/(?P<pr_id>\d+)/repository')
+            match = pr_regex.match(repo_name)
+            if match:
+                match_dict = match.groupdict()
+                pr_id = match_dict.get('pr_id')
+                acl_repo_name = '{base_name}/{repo_name}'.format(**match_dict)
+                vcs_repo_name = '{base_name}/.__shadow_{repo_name}_pr-{pr_id}'.format(
+                    **match_dict)
 
             log.debug('repo_names %s', {
                 'acl_repo_name': acl_repo_name,
