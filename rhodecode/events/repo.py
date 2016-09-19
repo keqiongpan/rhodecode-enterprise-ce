@@ -237,6 +237,11 @@ class RepoPushEvent(RepoVCSEvent):
 
         commits = _commits_as_dict(
             commit_ids=self.pushed_commit_ids, repos=[self.repo])
+
+        last_branch = None
+        for commit in reversed(commits):
+            commit['branch'] = commit['branch'] or last_branch
+            last_branch = commit['branch']
         issues = _issues_as_dict(commits)
 
         branches = set(
