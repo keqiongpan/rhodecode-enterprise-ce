@@ -124,7 +124,7 @@ class SimpleVCS(object):
             self.acl_repo_name = '{base_name}/{repo_name}'.format(**match_dict)
             self.vcs_repo_name = '{base_name}/.__shadow_{repo_name}_pr-{pr_id}'.format(
                 **match_dict)
-            self.pr_id = match_dict.get('pr_id')
+            self.pr_id = match_dict['pr_id']
         else:
             self.acl_repo_name = self.url_repo_name
             self.vcs_repo_name = self.url_repo_name
