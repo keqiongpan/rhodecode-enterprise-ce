@@ -26,6 +26,7 @@ It's implemented with basic auth function
 import os
 import logging
 import importlib
+import re
 from functools import wraps
 
 from paste.httpheaders import REMOTE_USER, AUTH_TYPE
@@ -103,6 +104,31 @@ class SimpleVCS(object):
             '', authenticate, registry, config.get('auth_ret_code'),
             auth_ret_code_detection)
         self.ip_addr = '0.0.0.0'
+
+    def set_repo_names(self, environ):
+        """
+        This will populate the attributes acl_repo_name, url_repo_name and
+        vcs_repo_name on the current instance.
+        """
+        # TODO: martinb: Move to class or module scope.
+        pr_regex = re.compile(
+            '(?P<base_name>(?:[\w-]+)(?:/[\w-]+)*)/'
+            '(?P<repo_name>[\w-]+)'
+            '/pull-request/(?P<pr_id>\d+)/repository')
+
+        self.url_repo_name = self._get_repository_name(environ)
+        match = pr_regex.match(self.url_repo_name)
+
+        if match:
+            match_dict = match.groupdict()
+            self.acl_repo_name = '{base_name}/{repo_name}'.format(**match_dict)
+            self.vcs_repo_name = '{base_name}/.__shadow_{repo_name}_pr-{pr_id}'.format(
+                **match_dict)
+            self.pr_id = match_dict.get('pr_id')
+        else:
+            self.acl_repo_name = self.url_repo_name
+            self.vcs_repo_name = self.url_repo_name
+            self.pr_id = None
 
     @property
     def repo_name(self):
