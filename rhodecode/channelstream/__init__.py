@@ -27,11 +27,15 @@ from rhodecode.lib.ext_json import json
 
 
 def url_gen(request):
+    registry = request.registry
+    longpoll_url = registry.settings.get('channelstream.longpoll_url', '')
+    ws_url = registry.settings.get('channelstream.ws_url', '')
+    proxy_url = request.route_url('channelstream_proxy')
     urls = {
-        'connect': request.route_url('channelstream_connect'),
-        'subscribe': request.route_url('channelstream_subscribe'),
-        'longpoll': request.registry.settings.get('channelstream.longpoll_url', ''),
-        'ws': request.registry.settings.get('channelstream.ws_url', '')
+        'connect': request.route_path('channelstream_connect'),
+        'subscribe': request.route_path('channelstream_subscribe'),
+        'longpoll': longpoll_url or proxy_url,
+        'ws': ws_url or proxy_url.replace('http', 'ws')
     }
     return json.dumps(urls)
 
@@ -78,4 +82,7 @@ def includeme(config):
     config.add_route(
         name='channelstream_subscribe',
         pattern=ADMIN_PREFIX + '/channelstream/subscribe')
+    config.add_route(
+        name='channelstream_proxy',
+        pattern=settings.get('channelstream.proxy_path') or '/_channelstream')
     config.scan('rhodecode.channelstream')
