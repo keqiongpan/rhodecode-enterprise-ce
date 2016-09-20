@@ -110,6 +110,9 @@ class SimpleVCS(object):
         This will populate the attributes acl_repo_name, url_repo_name,
         vcs_repo_name and pr_id on the current instance.
         """
+        # TODO: martinb: Unify generation/suffix of clone url. It is currently
+        #       used here in the regex, in PullRequest in get_api_data() and
+        #       indirectly in routing configuration.
         # TODO: martinb: Move to class or module scope.
         # TODO: martinb: Check if we have to use re.UNICODE.
         # TODO: martinb: Check which chars are allowed for repo/group names.

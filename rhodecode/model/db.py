@@ -3109,11 +3109,12 @@ class PullRequest(Base, _PullRequestBase):
         from rhodecode.model.pull_request import PullRequestModel
         pull_request = self
         merge_status = PullRequestModel().merge_status(pull_request)
+        pull_request_url = url(
+            'pullrequest_show', repo_name=self.target_repo.repo_name,
+            pull_request_id=self.pull_request_id, qualified=True)
         data = {
             'pull_request_id': pull_request.pull_request_id,
-            'url': url('pullrequest_show', repo_name=self.target_repo.repo_name,
-                                       pull_request_id=self.pull_request_id,
-                                       qualified=True),
+            'url': pull_request_url,
             'title': pull_request.title,
             'description': pull_request.description,
             'status': pull_request.status,
@@ -3142,6 +3143,10 @@ class PullRequest(Base, _PullRequestBase):
                     'type': pull_request.target_ref_parts.type,
                     'commit_id': pull_request.target_ref_parts.commit_id,
                 },
+            },
+            'shadow': {
+                # TODO: martinb: Unify generation/suffix of clone url.
+                'clone_url': '{}/repository'.format(pull_request_url),
             },
             'author': pull_request.author.get_api_data(include_secrets=False,
                                                        details='basic'),

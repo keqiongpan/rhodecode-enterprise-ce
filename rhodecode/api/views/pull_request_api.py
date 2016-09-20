@@ -96,6 +96,9 @@ def get_pull_request(request, apiuser, repoid, pullrequestid):
                                          "commit_id": "<commit_id>",
                                      }
                                  },
+            "shadow":            {
+                                     "clone_url":   "<clone_url>",
+                                 },
            "author":             <user_obj>,
            "reviewers":          [
                                      ...
@@ -177,6 +180,9 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
                                              "type":      "<type>",
                                              "commit_id": "<commit_id>",
                                          }
+                                     },
+                "shadow":            {
+                                         "clone_url":   "<clone_url>",
                                      },
                "author":             <user_obj>,
                "reviewers":          [
