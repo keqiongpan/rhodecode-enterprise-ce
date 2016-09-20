@@ -283,7 +283,14 @@ def pylons_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
 
     overrides = [
         {'server:main': {'port': rcserver_port}},
-        {'app:main': {'vcs.server': 'localhost:%s' % vcsserver_port}}]
+        {'app:main': {
+            'vcs.server': 'localhost:%s' % vcsserver_port,
+            # johbo: We will always start the VCSServer on our own based on the
+            # fixtures of the test cases. For the test run it must always be
+            # off in the INI file.
+            'vcs.start_server': 'false',
+        }},
+    ]
     if _use_vcs_http_server(request.config):
         overrides.append({'app:main': {'vcs.server.protocol': 'http'}})
 
