@@ -49,8 +49,9 @@ from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool
 from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.backends import base
 from rhodecode.model import meta
-from rhodecode.model.db import User, Repository
+from rhodecode.model.db import User, Repository, PullRequest
 from rhodecode.model.scm import ScmModel
+from rhodecode.model.pull_request import PullRequestModel
 
 
 log = logging.getLogger(__name__)
