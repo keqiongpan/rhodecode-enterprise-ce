@@ -100,6 +100,25 @@
                 </div>
             </div>
            </div>
+
+           ## Clone link of the shadow repository.
+           %if not c.pull_request.is_closed():
+               <div class="field">
+                   <div class="label-summary">
+                       <label>${_('Shadow')}:</label>
+                   </div>
+                   <div class="input">
+                       <div class="pr-shadowinfo">
+                           %if h.is_hg(c.pull_request.target_repo):
+                               <input type="text"  value="hg clone ${c.shadow_clone_url}" readonly="readonly">
+                           %elif h.is_git(c.pull_request.target_repo):
+                               <input type="text"  value="git clone ${c.shadow_clone_url}" readonly="readonly">
+                           %endif
+                       </div>
+                   </div>
+               </div>
+           %endif
+
            <div class="field">
             <div class="label-summary">
                 <label>${_('Review')}:</label>

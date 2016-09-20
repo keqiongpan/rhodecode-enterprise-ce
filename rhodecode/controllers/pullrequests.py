@@ -691,6 +691,8 @@ class PullrequestsController(BaseRepoController):
             c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
         c.allowed_to_merge = PullRequestModel().check_user_merge(
             c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
+        c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
+            c.pull_request)
 
         cc_model = ChangesetCommentsModel()
 

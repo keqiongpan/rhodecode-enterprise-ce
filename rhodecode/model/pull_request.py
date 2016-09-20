@@ -776,6 +776,9 @@ class PullRequestModel(BaseModel):
                      pull_request_id=pull_request.pull_request_id,
                      qualified=True)
 
+    def get_shadow_clone_url(self, pull_request):
+        return u'{url}/repository'.format(url=self.get_url(pull_request))
+
     def notify_reviewers(self, pull_request, reviewers_ids):
         # notification to reviewers
         if not reviewers_ids:
