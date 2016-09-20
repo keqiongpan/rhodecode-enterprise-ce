@@ -24,7 +24,6 @@ Database Models for RhodeCode Enterprise
 
 import re
 import os
-import sys
 import time
 import hashlib
 import logging
@@ -37,29 +36,25 @@ import collections
 
 
 from sqlalchemy import *
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
 from sqlalchemy.sql.expression import true
-from beaker.cache import cache_region, region_invalidate
+from beaker.cache import cache_region
 from webob.exc import HTTPNotFound
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from pylons import url
 from pylons.i18n.translation import lazy_ugettext as _
 
-from rhodecode.lib.vcs import get_backend, get_vcs_instance
-from rhodecode.lib.vcs.utils.helpers import get_scm
-from rhodecode.lib.vcs.exceptions import VCSError
-from rhodecode.lib.vcs.backends.base import (
-    EmptyCommit, Reference, MergeFailureReason)
+from rhodecode.lib.vcs import get_vcs_instance
+from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
-    str2bool, safe_str, get_commit_safe, safe_unicode, remove_prefix, md5_safe,
+    str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
     glob2re)
-from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType, JSONDict
+from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.encrypt import AESCipher

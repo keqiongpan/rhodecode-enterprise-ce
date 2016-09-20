@@ -24,9 +24,10 @@ import logging
 import threading
 
 from beaker.cache import _cache_decorate, cache_regions, region_invalidate
+from sqlalchemy.exc import IntegrityError
 
 from rhodecode.lib.utils import safe_str, md5
-from rhodecode.model.db import Session, CacheKey, IntegrityError
+from rhodecode.model.db import Session, CacheKey
 
 log = logging.getLogger(__name__)
 
