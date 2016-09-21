@@ -144,7 +144,9 @@
         "less:development",
         "less:components",
         "concat:polymercss",
-        "vulcanize"
+        "vulcanize",
+        "crisper",
+        "concat:dist"
       ]
     },
     "js": {
