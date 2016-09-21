@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import codecs
 import logging
 import os
 
@@ -79,8 +80,9 @@ def _write_mod_dav_svn_config(config, filepath):
     Write mod_dav_svn config to file. Log on exceptions but do not raise.
     """
     try:
-        with open(filepath, 'w') as file_:
-            file_.write(config)
+        with codecs.open(filepath, 'w', encoding='utf-8') as f:
+            f.write(config)
     except Exception:
         log.exception(
-            'Can not write mod_dav_svn configuration to "%s"', filepath)
+            'Exception while writing mod_dav_svn configuration to '
+            '"%s"', filepath)
