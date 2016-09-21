@@ -109,7 +109,7 @@ class SimpleVCS(object):
     def set_repo_names(self, environ):
         """
         This will populate the attributes acl_repo_name, url_repo_name,
-        vcs_repo_name and pr_id on the current instance.
+        vcs_repo_name and is_shadow_repo on the current instance.
         """
         # TODO: martinb: Move to class or module scope.
         # TODO: martinb: Check if we have to use re.UNICODE.
@@ -143,14 +143,14 @@ class SimpleVCS(object):
                 workspace_id)
 
             # Store names for later usage.
-            self.pr_id = pr_id
             self.vcs_repo_name = vcs_repo_name
             self.acl_repo_name = pull_request.target_repo.repo_name
+            self.is_shadow_repo = True
         else:
             # All names are equal for normal (non shadow) repositories.
             self.acl_repo_name = self.url_repo_name
             self.vcs_repo_name = self.url_repo_name
-            self.pr_id = None
+            self.is_shadow_repo = False
 
     @property
     def scm_app(self):
@@ -305,7 +305,7 @@ class SimpleVCS(object):
         # Check if this is a request to a shadow repository of a pull request.
         # In this case only pull action is allowed.
         # ======================================================================
-        if self.pr_id is not None and action != 'pull':
+        if self.is_shadow_repo and action != 'pull':
             reason = 'Only pull action is allowed for shadow repositories.'
             log.debug('User not allowed to proceed, %s', reason)
             return HTTPNotAcceptable(reason)(environ, start_response)
@@ -393,8 +393,9 @@ class SimpleVCS(object):
         check_locking = _should_check_locking(environ.get('QUERY_STRING'))
         extras = vcs_operation_context(
             environ, repo_name=self.acl_repo_name, username=username,
-            action=action, scm=self.SCM,
-            check_locking=check_locking)
+            action=action, scm=self.SCM, check_locking=check_locking,
+            is_shadow_repo=self.is_shadow_repo
+        )
 
         # ======================================================================
         # REQUEST HANDLING

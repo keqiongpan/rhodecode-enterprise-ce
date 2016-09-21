@@ -163,7 +163,8 @@ def get_access_path(environ):
 
 
 def vcs_operation_context(
-        environ, repo_name, username, action, scm, check_locking=True):
+        environ, repo_name, username, action, scm, check_locking=True,
+        is_shadow_repo=False):
     """
     Generate the context for a vcs operation, e.g. push or pull.
 
@@ -200,6 +201,7 @@ def vcs_operation_context(
         'locked_by': locked_by,
         'server_url': utils2.get_server_url(environ),
         'hooks': get_enabled_hook_classes(ui_settings),
+        'is_shadow_repo': is_shadow_repo,
     }
     return extras
 
