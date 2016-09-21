@@ -53,13 +53,10 @@ def _sanitize_settings_and_apply_defaults(settings):
     # Set defaults if key not present.
     settings.setdefault(config_keys.config_file_path, None)
     settings.setdefault(config_keys.location_root, '/')
-    settings.setdefault(config_keys.parent_path_root, None)
 
     # Append path separator to paths.
     settings[config_keys.location_root] = _append_path_sep(
         settings[config_keys.location_root])
-    settings[config_keys.parent_path_root] = _append_path_sep(
-        settings[config_keys.parent_path_root])
 
     # Validate settings.
     if settings[config_keys.generate_config]:
