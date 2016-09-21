@@ -44,7 +44,7 @@ def generate_mod_dav_svn_config(settings):
     config = _render_mod_dav_svn_config(
         parent_path_root=parent_path_root,
         list_parent_path=settings[config_keys.list_parent_path],
-        localtion_root=settings[config_keys.location_root],
+        location_root=settings[config_keys.location_root],
         repo_groups=RepoGroup.get_all_repo_groups())
     _write_mod_dav_svn_config(config, settings[config_keys.config_file_path])
 
