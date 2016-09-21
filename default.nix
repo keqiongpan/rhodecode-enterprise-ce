@@ -10,19 +10,7 @@
 , doCheck ? true
 }:
 
-let pkgs_ = pkgs; in
-
 let
-  pkgs = pkgs_.overridePackages (self: super: {
-    # Override subversion derivation to
-    #  - activate python bindings
-    subversion = super.subversion.override {
-       httpSupport = true;
-       pythonBindings = true;
-       python = self.python27Packages.python;
-    };
-  });
-
   inherit (pkgs.lib) fix extends;
 
   basePythonPackages = with builtins; if isAttrs pythonPackages
