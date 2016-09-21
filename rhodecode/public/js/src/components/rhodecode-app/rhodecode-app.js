@@ -3,9 +3,13 @@ ccLog.setLevel(Logger.OFF);
 
 var rhodeCodeApp = Polymer({
     is: 'rhodecode-app',
-    created: function () {
+    attached: function () {
         ccLog.debug('rhodeCodeApp created');
         $.Topic('/notifications').subscribe(this.handleNotifications.bind(this));
+
+        for (var i = 0; i < alertMessagePayloads.length; i++) {
+            $.Topic('/notifications').publish(alertMessagePayloads[i]);
+        }
 
         $.Topic('/plugins/__REGISTER__').subscribe(
             this.kickoffChannelstreamPlugin.bind(this)

@@ -678,6 +678,20 @@ class Flash(_Flash):
         session.save()
         return messages
 
+    def json_alerts(self):
+        payloads = []
+        messages = flash.pop_messages()
+        if messages:
+          for message in messages:
+            payloads.append({
+                'message': {
+                    'message': u'{}'.format(message.message),
+                    'level':   message.category,
+                    'force': 'true'
+                }
+            })
+        return json.dumps(payloads)
+
 flash = Flash()
 
 #==============================================================================
