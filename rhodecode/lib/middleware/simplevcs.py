@@ -153,11 +153,6 @@ class SimpleVCS(object):
             self.pr_id = None
 
     @property
-    def repo_name(self):
-        # TODO: johbo: Remove, switch to correct repo name attribute
-        return self.acl_repo_name
-
-    @property
     def scm_app(self):
         custom_implementation = self.config.get('vcs.scm_app_implementation')
         if custom_implementation and custom_implementation != 'pyro4':
@@ -289,11 +284,11 @@ class SimpleVCS(object):
             log.debug('User not allowed to proceed, %s', reason)
             return HTTPNotAcceptable(reason)(environ, start_response)
 
-        if not self.repo_name:
-            log.warning('Repository name is empty: %s', self.repo_name)
+        if not self.url_repo_name:
+            log.warning('Repository name is empty: %s', self.url_repo_name)
             # failed to get repo name, we fail now
             return HTTPNotFound()(environ, start_response)
-        log.debug('Extracted repo name is %s', self.repo_name)
+        log.debug('Extracted repo name is %s', self.url_repo_name)
 
         ip_addr = get_ip_addr(environ)
         username = None
@@ -324,7 +319,7 @@ class SimpleVCS(object):
             if anonymous_user.active:
                 # ONLY check permissions if the user is activated
                 anonymous_perm = self._check_permission(
-                    action, anonymous_user, self.repo_name, ip_addr)
+                    action, anonymous_user, self.acl_repo_name, ip_addr)
             else:
                 anonymous_perm = False
 
@@ -389,7 +384,7 @@ class SimpleVCS(object):
 
                 # check permissions for this repository
                 perm = self._check_permission(
-                    action, user, self.repo_name, ip_addr)
+                    action, user, self.acl_repo_name, ip_addr)
                 if not perm:
                     return HTTPForbidden()(environ, start_response)
 
@@ -397,14 +392,14 @@ class SimpleVCS(object):
         # in hooks executed by rhodecode
         check_locking = _should_check_locking(environ.get('QUERY_STRING'))
         extras = vcs_operation_context(
-            environ, repo_name=self.repo_name, username=username,
+            environ, repo_name=self.acl_repo_name, username=username,
             action=action, scm=self.SCM,
             check_locking=check_locking)
 
         # ======================================================================
         # REQUEST HANDLING
         # ======================================================================
-        str_repo_name = safe_str(self.repo_name)
+        str_repo_name = safe_str(self.url_repo_name)
         repo_path = os.path.join(
             safe_str(self.basepath), safe_str(self.vcs_repo_name))
         log.debug('Repository path is %s', repo_path)
