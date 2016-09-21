@@ -25,6 +25,7 @@ from pyramid.renderers import render
 
 from rhodecode.lib.utils import get_rhodecode_realm
 from rhodecode.model.db import RepoGroup
+from rhodecode.model.settings import SettingsModel
 from . import config_keys
 
 
@@ -38,11 +39,13 @@ def generate_mod_dav_svn_config(settings):
     available repository group because the mod_dav_svn module does not support
     repositories organized in sub folders.
     """
+    parent_path_root = SettingsModel().get_ui_by_section_and_key(
+        'paths', '/').ui_value
     config = _render_mod_dav_svn_config(
-        settings[config_keys.parent_path_root],
-        settings[config_keys.list_parent_path],
-        settings[config_keys.location_root],
-        RepoGroup.get_all_repo_groups())
+        parent_path_root=parent_path_root,
+        list_parent_path=settings[config_keys.list_parent_path],
+        localtion_root=settings[config_keys.location_root],
+        repo_groups=RepoGroup.get_all_repo_groups())
     _write_mod_dav_svn_config(config, settings[config_keys.config_file_path])
 
 
