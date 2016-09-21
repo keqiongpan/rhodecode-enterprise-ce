@@ -26,22 +26,19 @@ from pyramid.renderers import render
 
 from rhodecode.lib.utils import get_rhodecode_realm
 from rhodecode.model.db import RepoGroup
-from rhodecode.model.settings import SettingsModel
 from . import config_keys
 
 
 log = logging.getLogger(__name__)
 
 
-def generate_mod_dav_svn_config(settings):
+def generate_mod_dav_svn_config(settings, parent_path_root):
     """
     Generate the configuration file for use with subversion's mod_dav_svn
     module. The configuration has to contain a <Location> block for each
     available repository group because the mod_dav_svn module does not support
     repositories organized in sub folders.
     """
-    parent_path_root = SettingsModel().get_ui_by_section_and_key(
-        'paths', '/').ui_value
     config = _render_mod_dav_svn_config(
         parent_path_root=parent_path_root,
         list_parent_path=settings[config_keys.list_parent_path],
@@ -77,12 +74,7 @@ def _render_mod_dav_svn_config(
 
 def _write_mod_dav_svn_config(config, filepath):
     """
-    Write mod_dav_svn config to file. Log on exceptions but do not raise.
+    Write mod_dav_svn config to file.
     """
-    try:
-        with codecs.open(filepath, 'w', encoding='utf-8') as f:
-            f.write(config)
-    except Exception:
-        log.exception(
-            'Exception while writing mod_dav_svn configuration to '
-            '"%s"', filepath)
+    with codecs.open(filepath, 'w', encoding='utf-8') as f:
+        f.write(config)
