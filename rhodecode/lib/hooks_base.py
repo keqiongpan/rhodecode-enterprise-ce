@@ -38,6 +38,13 @@ from rhodecode.model.db import Repository, User
 HookResponse = collections.namedtuple('HookResponse', ('status', 'output'))
 
 
+def is_shadow_repo(extras):
+    """
+    Returns ``True`` if this is an action executed against a shadow repository.
+    """
+    return extras['is_shadow_repo']
+
+
 def _get_scm_size(alias, root_path):
 
     if not alias.startswith('.'):
@@ -85,7 +92,6 @@ def pre_push(extras):
     """
     usr = User.get_by_username(extras.username)
 
-
     output = ''
     if extras.locked_by[0] and usr.user_id != int(extras.locked_by[0]):
         locked_by = User.get(extras.locked_by[0]).username
@@ -100,11 +106,12 @@ def pre_push(extras):
         else:
             raise _http_ret
 
-    # Calling hooks after checking the lock, for consistent behavior
-    pre_push_extension(repo_store_path=Repository.base_path(), **extras)
-
-    events.trigger(events.RepoPrePushEvent(repo_name=extras.repository,
-                                           extras=extras))
+    # Propagate to external components. This is done after checking the
+    # lock, for consistent behavior.
+    if not is_shadow_repo(extras):
+        pre_push_extension(repo_store_path=Repository.base_path(), **extras)
+        events.trigger(events.RepoPrePushEvent(
+            repo_name=extras.repository, extras=extras))
 
     return HookResponse(0, output)
 
@@ -130,10 +137,12 @@ def pre_pull(extras):
         else:
             raise _http_ret
 
-    # Calling hooks after checking the lock, for consistent behavior
-    pre_pull_extension(**extras)
-    events.trigger(events.RepoPrePullEvent(repo_name=extras.repository,
-                                           extras=extras))
+    # Propagate to external components. This is done after checking the
+    # lock, for consistent behavior.
+    if not is_shadow_repo(extras):
+        pre_pull_extension(**extras)
+        events.trigger(events.RepoPrePullEvent(
+            repo_name=extras.repository, extras=extras))
 
     return HookResponse(0, output)
 
@@ -144,14 +153,15 @@ def post_pull(extras):
     action = 'pull'
     action_logger(user, action, extras.repository, extras.ip, commit=True)
 
-    events.trigger(events.RepoPullEvent(repo_name=extras.repository,
-                                        extras=extras))
-    # extension hook call
-    post_pull_extension(**extras)
+    # Propagate to external components.
+    if not is_shadow_repo(extras):
+        post_pull_extension(**extras)
+        events.trigger(events.RepoPullEvent(
+            repo_name=extras.repository, extras=extras))
 
     output = ''
     # make lock is a tri state False, True, None. We only make lock on True
-    if extras.make_lock is True:
+    if extras.make_lock is True and not is_shadow_repo(extras):
         Repository.lock(Repository.get_by_repo_name(extras.repository),
                         user.user_id,
                         lock_reason=Repository.LOCK_PULL)
@@ -179,19 +189,20 @@ def post_push(extras):
     action_logger(
         extras.username, action, extras.repository, extras.ip, commit=True)
 
-    events.trigger(events.RepoPushEvent(repo_name=extras.repository,
-                                        pushed_commit_ids=commit_ids,
-                                        extras=extras))
-
-    # extension hook call
-    post_push_extension(
-        repo_store_path=Repository.base_path(),
-        pushed_revs=commit_ids,
-        **extras)
+    # Propagate to external components.
+    if not is_shadow_repo(extras):
+        post_push_extension(
+            repo_store_path=Repository.base_path(),
+            pushed_revs=commit_ids,
+            **extras)
+        events.trigger(events.RepoPushEvent(
+            repo_name=extras.repository,
+            pushed_commit_ids=commit_ids,
+            extras=extras))
 
     output = ''
     # make lock is a tri state False, True, None. We only release lock on False
-    if extras.make_lock is False:
+    if extras.make_lock is False and not is_shadow_repo(extras):
         Repository.unlock(Repository.get_by_repo_name(extras.repository))
         msg = 'Released lock on repo `%s`\n' % extras.repository
         output += msg
