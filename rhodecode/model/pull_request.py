@@ -777,7 +777,15 @@ class PullRequestModel(BaseModel):
                      qualified=True)
 
     def get_shadow_clone_url(self, pull_request):
-        return u'{url}/repository'.format(url=self.get_url(pull_request))
+        """
+        Returns qualified url pointing to the shadow repository. If this pull
+        request is closed there is no shadow repository and ``None`` will be
+        returned.
+        """
+        if pull_request.is_closed():
+            return None
+        else:
+            return u'{url}/repository'.format(url=self.get_url(pull_request))
 
     def notify_reviewers(self, pull_request, reviewers_ids):
         # notification to reviewers

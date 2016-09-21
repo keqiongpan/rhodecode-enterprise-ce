@@ -3140,8 +3140,8 @@ class PullRequest(Base, _PullRequestBase):
                 },
             },
             'shadow': {
-                # TODO: martinb: Unify generation/suffix of clone url.
-                'clone_url': '{}/repository'.format(pull_request_url),
+                'clone_url': PullRequestModel().get_shadow_clone_url(
+                    pull_request),
             },
             'author': pull_request.author.get_api_data(include_secrets=False,
                                                        details='basic'),
