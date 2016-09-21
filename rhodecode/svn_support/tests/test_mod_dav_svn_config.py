@@ -54,7 +54,6 @@ class TestModDavSvnConfig(object):
         return {
             config_keys.config_file_path: config_file_path,
             config_keys.location_root: cls.location_root,
-            config_keys.parent_path_root: cls.parent_path_root,
             config_keys.list_parent_path: True,
         }
 
@@ -78,15 +77,19 @@ class TestModDavSvnConfig(object):
             location=self.location_root, group_path=group_path)
         assert len(re.findall(pattern, config)) == 1
 
+    @mock.patch('rhodecode.svn_support.utils.get_rhodecode_realm')
     @mock.patch('rhodecode.svn_support.utils.RepoGroup')
-    def test_generate_mod_dav_svn_config(self, RepoGroupMock):
+    def test_generate_mod_dav_svn_config(self, RepoGroupMock, GetRealmMock):
+        # Setup mock objects.
+        GetRealmMock.return_value = 'DummyRealm'
         num_groups = 3
         RepoGroupMock.get_all_repo_groups.return_value = self.get_repo_groups(
             count=num_groups)
 
         # Execute the method under test.
         settings = self.get_settings()
-        utils.generate_mod_dav_svn_config(settings)
+        utils.generate_mod_dav_svn_config(
+            settings=settings, parent_path_root=self.parent_path_root)
 
         # Read generated file.
         with open(settings[config_keys.config_file_path], 'r') as file_:
@@ -99,14 +102,18 @@ class TestModDavSvnConfig(object):
         # Assert that the root location directive exists.
         self.assert_root_location_directive(content)
 
+    @mock.patch('rhodecode.svn_support.utils.get_rhodecode_realm')
     @mock.patch('rhodecode.svn_support.utils.RepoGroup')
-    def test_list_parent_path_on(self, RepoGroupMock):
+    def test_list_parent_path_on(self, RepoGroupMock, GetRealmMock):
+        # Setup mock objects.
+        GetRealmMock.return_value = 'DummyRealm'
         RepoGroupMock.get_all_repo_groups.return_value = self.get_repo_groups()
 
         # Execute the method under test.
         settings = self.get_settings()
         settings[config_keys.list_parent_path] = True
-        utils.generate_mod_dav_svn_config(settings)
+        utils.generate_mod_dav_svn_config(
+            settings=settings, parent_path_root=self.parent_path_root)
 
         # Read generated file.
         with open(settings[config_keys.config_file_path], 'r') as file_:
@@ -116,14 +123,18 @@ class TestModDavSvnConfig(object):
         assert not re.search('SVNListParentPath\s+Off', content)
         assert re.search('SVNListParentPath\s+On', content)
 
+    @mock.patch('rhodecode.svn_support.utils.get_rhodecode_realm')
     @mock.patch('rhodecode.svn_support.utils.RepoGroup')
-    def test_list_parent_path_off(self, RepoGroupMock):
+    def test_list_parent_path_off(self, RepoGroupMock, GetRealmMock):
+        # Setup mock objects.
+        GetRealmMock.return_value = 'DummyRealm'
         RepoGroupMock.get_all_repo_groups.return_value = self.get_repo_groups()
 
         # Execute the method under test.
         settings = self.get_settings()
         settings[config_keys.list_parent_path] = False
-        utils.generate_mod_dav_svn_config(settings)
+        utils.generate_mod_dav_svn_config(
+            settings=settings, parent_path_root=self.parent_path_root)
 
         # Read generated file.
         with open(settings[config_keys.config_file_path], 'r') as file_:
@@ -132,15 +143,3 @@ class TestModDavSvnConfig(object):
         # Make assertions.
         assert re.search('SVNListParentPath\s+Off', content)
         assert not re.search('SVNListParentPath\s+On', content)
-
-    @mock.patch('rhodecode.svn_support.utils.log')
-    def test_write_does_not_raise_on_error(self, LogMock):
-        """
-        Writing the configuration to file should never raise exceptions.
-        If e.g. path points to a place without write permissions.
-        """
-        utils._write_mod_dav_svn_config(
-            'content', '/dev/null/not/existing/path')
-
-        # Assert that we log the exception.
-        assert LogMock.exception.called
