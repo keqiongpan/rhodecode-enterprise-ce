@@ -171,7 +171,7 @@ class RepoModel(BaseModel):
                 'first_name': user.name,
                 'last_name': user.lastname,
                 'username': user.username,
-                'icon_link': h.gravatar_url(user.email, 14),
+                'icon_link': h.gravatar_url(user.email, 30),
                 'value_display': h.person(user.email),
                 'value': user.username,
                 'value_type': 'user',
