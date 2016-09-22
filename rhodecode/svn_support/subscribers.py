@@ -20,7 +20,7 @@
 
 import logging
 
-from rhodecode.model.settings import SettingsModel
+from rhodecode.lib.utils import get_rhodecode_base_path
 from .utils import generate_mod_dav_svn_config
 
 
@@ -34,11 +34,9 @@ def generate_config_subscriber(event):
     changes.
     """
     try:
-        parent_path_root = SettingsModel().get_ui_by_section_and_key(
-            'paths', '/').ui_value
         generate_mod_dav_svn_config(
             settings=event.request.registry.settings,
-            parent_path_root=parent_path_root)
+            parent_path_root=get_rhodecode_base_path())
     except Exception:
         log.exception(
             'Exception while generating subversion mod_dav_svn configuration.')
