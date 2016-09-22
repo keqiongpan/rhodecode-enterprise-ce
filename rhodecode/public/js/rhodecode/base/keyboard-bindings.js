@@ -1,6 +1,18 @@
 // Global keyboard bindings
 
 function setRCMouseBindings(repoName, repoLandingRev) {
+
+    /** custom callback for supressing mousetrap from firing */
+    Mousetrap.stopCallback = function(e, element) {
+        // if the element has the class "mousetrap" then no need to stop
+        if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
+            return false;
+        }
+
+        // stop for input, select, and textarea
+        return element.tagName == 'INPUT' || element.tagName == 'SELECT' || element.tagName == 'TEXTAREA' || element.isContentEditable;
+    };
+
     // general help "?"
     Mousetrap.bind(['?'], function(e) {
         $('#help_kb').modal({});
