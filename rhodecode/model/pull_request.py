@@ -1018,7 +1018,7 @@ class PullRequestModel(BaseModel):
         }
 
     def generate_pullrequest_title(self, source, source_ref, target):
-        return '{source}#{at_ref} to {target}'.format(
+        return u'{source}#{at_ref} to {target}'.format(
             source=source,
             at_ref=source_ref,
             target=target,
