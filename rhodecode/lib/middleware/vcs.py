@@ -19,7 +19,6 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import gzip
-import re
 import shutil
 import logging
 import tempfile
@@ -178,12 +177,6 @@ class VCSMiddleware(object):
 
             # Set repo names for permission checks, vcs and web interaction.
             vcs_handler.set_repo_names(environ)
-            log.debug('repo_names %s', {
-                'acl_repo_name': vcs_handler.acl_repo_name,
-                'vcs_repo_name': vcs_handler.vcs_repo_name,
-                'url_repo_name': vcs_handler.url_repo_name,
-            })
-            log.debug('pull_request %s', vcs_handler.pr_id)
 
             # check for type, presence in database and on filesystem
             if not vcs_handler.is_valid_and_existing_repo(
