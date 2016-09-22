@@ -58,26 +58,16 @@ log = logging.getLogger(__name__)
 
 REMOVED_REPO_PAT = re.compile(r'rm__\d{8}_\d{6}_\d{6}__.*')
 
+# String of characters which are not allowed in repo/group slugs.
+SLUG_BAD_CHARS = re.escape('`?=[]\;\'"<>,/~!@#$%^&*()+{}|:')
+# Regex that matches forbidden characters in repo/group slugs.
+SLUG_BAD_CHAR_RE = re.compile('[{}]'.format(SLUG_BAD_CHARS))
+# Regex that matches allowed characters in repo/group slugs.
+SLUG_GOOD_CHAR_RE = re.compile('[^{}]'.format(SLUG_BAD_CHARS))
+# Regex that matches whole repo/group slugs.
+SLUG_RE = re.compile('[^{}]+'.format(SLUG_BAD_CHARS))
+
 _license_cache = None
-
-
-def recursive_replace(str_, replace=' '):
-    """
-    Recursive replace of given sign to just one instance
-
-    :param str_: given string
-    :param replace: char to find and replace multiple instances
-
-    Examples::
-    >>> recursive_replace("Mighty---Mighty-Bo--sstones",'-')
-    'Mighty-Mighty-Bo-sstones'
-    """
-
-    if str_.find(replace * 2) == -1:
-        return str_
-    else:
-        str_ = str_.replace(replace * 2, replace)
-        return recursive_replace(str_, replace)
 
 
 def repo_name_slug(value):
@@ -86,14 +76,11 @@ def repo_name_slug(value):
     This function is called on each creation/modification
     of repository to prevent bad names in repo
     """
+    replacement_char = '-'
 
     slug = remove_formatting(value)
-    slug = strip_tags(slug)
-
-    for c in """`?=[]\;'"<>,/~!@#$%^&*()+{}|: """:
-        slug = slug.replace(c, '-')
-    slug = recursive_replace(slug, '-')
-    slug = collapse(slug, '-')
+    slug = SLUG_BAD_CHAR_RE.sub(replacement_char, slug)
+    slug = collapse(slug, replacement_char)
     return slug
 
 

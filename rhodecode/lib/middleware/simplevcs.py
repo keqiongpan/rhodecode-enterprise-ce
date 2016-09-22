@@ -112,14 +112,13 @@ class SimpleVCS(object):
         vcs_repo_name and is_shadow_repo on the current instance.
         """
         # TODO: martinb: Move to class or module scope.
-        # TODO: martinb: Check if we have to use re.UNICODE.
-        # TODO: martinb: Check which chars are allowed for repo/group names.
-        #       These chars are excluded: '`?=[]\;\'"<>,/~!@#$%^&*()+{}|: '
-        #       Code from: rhodecode/lib/utils.py:repo_name_slug()
+        from rhodecode.lib.utils import SLUG_RE
         pr_regex = re.compile(
-            '(?P<base_name>(?:[\w-]+)(?:/[\w-]+)*)/'    # repo groups
-            '(?P<repo_name>[\w-]+)'                     # target repo name
-            '/pull-request/(?P<pr_id>\d+)/repository')  # pr suffix
+            '(?P<groups>(?:{slug_pat})(?:/{slug_pat})*)'  # repo groups
+            '/(?P<target>{slug_pat})'                     # target repo
+            '/pull-request/(?P<pr_id>\d+)'                # pull request
+            '/repository$'                                # shadow repo
+            .format(slug_pat=SLUG_RE.pattern))
 
         # Get url repo name from environment.
         self.url_repo_name = self._get_repository_name(environ)
