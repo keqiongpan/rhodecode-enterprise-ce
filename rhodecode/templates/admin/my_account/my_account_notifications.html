@@ -53,23 +53,6 @@
         $('#live-notifications')[0].checked = event.detail.response;
     };
 
-    function checkBrowserStatus(){
-        var browserStatus = 'Unknown';
-
-        if (!("Notification" in window)) {
-            browserStatus = 'Not supported'
-        }
-        else if(Notification.permission === 'denied'){
-            browserStatus = 'Denied';
-            $('.flash_msg').append('<div class="alert alert-error">Notifications are blocked on browser level - you need to enable them in your browser settings.</div>')
-        }
-        else if(Notification.permission === 'granted'){
-            browserStatus = 'Allowed';
-        }
-
-        $('#browser-notification-status').text(browserStatus);
-    }
-
     ctrlr.testNotifications = function(event){
         var levels = ['info', 'error', 'warning', 'success'];
         var level = levels[Math.floor(Math.random()*levels.length)];
