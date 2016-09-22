@@ -24,12 +24,6 @@
     </div>
 
     <div class="table">
-        <div id="edit_error" class="flash_msg" style="display:none;">
-            <div class="alert alert-warning">
-              ${h.literal(_('Gist was updated since you started editing. Copy your changes and click %(here)s to reload the new version.')
-                             % {'here': h.link_to('here',h.url('edit_gist', gist_id=c.gist.gist_access_id))})}
-            </div>
-        </div>
 
         <div id="files_data">
           ${h.secure_form(h.url('edit_gist', gist_id=c.gist.gist_access_id), method='post', id='eform')}
@@ -115,7 +109,6 @@
 <script>
   $('#update').on('click', function(e){
       e.preventDefault();
-
       // check for newer version.
       $.ajax({
         url: "${h.url('edit_gist_check_revision', gist_id=c.gist.gist_access_id)}",
@@ -126,8 +119,11 @@
         type: 'GET',
         success: function(data) {
           if(data.success === false){
-              $('#edit_error').show();
-              window.scrollTo(0,0);
+            message = '${h.literal(_('Gist was updated since you started editing. Copy your changes and click %(here)s to reload the new version.')
+              % {'here': h.link_to('here',h.url('edit_gist', gist_id=c.gist.gist_access_id))})}'
+            alertMessage = [{"message": {
+              "message": message, "force": "true", "level": "warning"}}];
+            $.Topic('/notifications').publish(alertMessage[0]);
           }
           else{
             $('#eform').submit();
