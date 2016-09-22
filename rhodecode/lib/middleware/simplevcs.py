@@ -44,7 +44,7 @@ from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.middleware import appenlight
 from rhodecode.lib.middleware.utils import scm_app
 from rhodecode.lib.utils import (
-    is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path)
+    is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path, SLUG_RE)
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool
 from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.backends import base
@@ -89,6 +89,17 @@ class SimpleVCS(object):
     url_repo_name = None
     vcs_repo_name = None
 
+    # We have to handle requests to shadow repositories different than requests
+    # to normal repositories. Therefore we have to distinguish them. To do this
+    # we use this regex which will match only on URLs pointing to shadow
+    # repositories.
+    shadow_repo_re = re.compile(
+        '(?P<groups>(?:{slug_pat})(?:/{slug_pat})*)'  # repo groups
+        '/(?P<target>{slug_pat})'                     # target repo
+        '/pull-request/(?P<pr_id>\d+)'                # pull request
+        '/repository$'                                # shadow repo
+        .format(slug_pat=SLUG_RE.pattern))
+
     def __init__(self, application, config, registry):
         self.registry = registry
         self.application = application
@@ -111,15 +122,6 @@ class SimpleVCS(object):
         This will populate the attributes acl_repo_name, url_repo_name,
         vcs_repo_name and is_shadow_repo on the current instance.
         """
-        # TODO: martinb: Move to class or module scope.
-        from rhodecode.lib.utils import SLUG_RE
-        pr_regex = re.compile(
-            '(?P<groups>(?:{slug_pat})(?:/{slug_pat})*)'  # repo groups
-            '/(?P<target>{slug_pat})'                     # target repo
-            '/pull-request/(?P<pr_id>\d+)'                # pull request
-            '/repository$'                                # shadow repo
-            .format(slug_pat=SLUG_RE.pattern))
-
         # Get url repo name from environment.
         self.url_repo_name = self._get_repository_name(environ)
 
@@ -128,7 +130,11 @@ class SimpleVCS(object):
         # shadow repo. And set acl_repo_name to the pull request target repo
         # because we use the target repo for permission checks. Otherwise all
         # names are equal.
-        match = pr_regex.match(self.url_repo_name)
+        match = self.shadow_repo_re.match(self.url_repo_name)
+        # TODO: martinb: Think about checking the target repo from PR against
+        # the part in the URL. Otherwise we only rely on the PR id in the URL
+        # and the variable parts can be anything. This will lead to 500 errors
+        # from the VCSServer.
         if match:
             # Get pull request instance.
             match_dict = match.groupdict()
