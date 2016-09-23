@@ -417,7 +417,6 @@ class SimpleVCS(object):
         # ======================================================================
         # REQUEST HANDLING
         # ======================================================================
-        str_repo_name = safe_str(self.url_repo_name)
         repo_path = os.path.join(
             safe_str(self.basepath), safe_str(self.vcs_repo_name))
         log.debug('Repository path is %s', repo_path)
@@ -426,15 +425,15 @@ class SimpleVCS(object):
 
         log.info(
             '%s action on %s repo "%s" by "%s" from %s',
-            action, self.SCM, str_repo_name, safe_str(username), ip_addr)
+            action, self.SCM, safe_str(self.url_repo_name),
+            safe_str(username), ip_addr)
 
         return self._generate_vcs_response(
-            environ, start_response, repo_path, self.url_repo_name, extras, action)
+            environ, start_response, repo_path, extras, action)
 
     @initialize_generator
     def _generate_vcs_response(
-            self, environ, start_response, repo_path, repo_name, extras,
-            action):
+            self, environ, start_response, repo_path, extras, action):
         """
         Returns a generator for the response content.
 
@@ -446,7 +445,7 @@ class SimpleVCS(object):
         callback_daemon, extras = self._prepare_callback_daemon(extras)
         config = self._create_config(extras, self.acl_repo_name)
         log.debug('HOOKS extras is %s', extras)
-        app = self._create_wsgi_app(repo_path, repo_name, config)
+        app = self._create_wsgi_app(repo_path, self.url_repo_name, config)
 
         try:
             with callback_daemon:
@@ -483,7 +482,7 @@ class SimpleVCS(object):
             # invalidate cache on push
             try:
                 if action == 'push':
-                    self._invalidate_cache(repo_name)
+                    self._invalidate_cache(self.url_repo_name)
             finally:
                 meta.Session.remove()
 
