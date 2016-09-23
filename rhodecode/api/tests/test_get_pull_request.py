@@ -34,6 +34,7 @@ pytestmark = pytest.mark.backends("git", "hg")
 class TestGetPullRequest(object):
 
     def test_api_get_pull_request(self, pr_util):
+        from rhodecode.model.pull_request import PullRequestModel
         pull_request = pr_util.create_pull_request(mergeable=True)
         id_, params = build_data(
             self.apikey, 'get_pull_request',
@@ -57,6 +58,8 @@ class TestGetPullRequest(object):
         target_url = unicode(
             pull_request.target_repo.clone_url()
                 .with_netloc('test.example.com:80'))
+        shadow_url = unicode(
+            PullRequestModel().get_shadow_clone_url(pull_request))
         expected = {
             'pull_request_id': pull_request.pull_request_id,
             'url': pr_url,
@@ -88,6 +91,9 @@ class TestGetPullRequest(object):
                     'type': pull_request.target_ref_parts.type,
                     'commit_id': pull_request.target_ref_parts.commit_id,
                 },
+            },
+            'shadow': {
+                'clone_url': shadow_url,
             },
             'author': pull_request.author.get_api_data(include_secrets=False,
                                                        details='basic'),
