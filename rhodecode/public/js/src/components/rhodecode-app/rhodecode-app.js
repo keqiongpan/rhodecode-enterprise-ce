@@ -10,13 +10,9 @@ var rhodeCodeApp = Polymer({
         for (var i = 0; i < alertMessagePayloads.length; i++) {
             $.Topic('/notifications').publish(alertMessagePayloads[i]);
         }
-
-        $.Topic('/plugins/__REGISTER__').subscribe(
-            this.kickoffChannelstreamPlugin.bind(this)
-        );
-
         $.Topic('/connection_controller/subscribe').subscribe(
             this.subscribeToChannelTopic.bind(this));
+        this.kickoffChannelstreamPlugin();
     },
 
     /** proxy to channelstream connection */

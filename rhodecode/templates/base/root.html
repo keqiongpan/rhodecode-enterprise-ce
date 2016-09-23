@@ -146,11 +146,6 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
 
         <%def name="head_extra()"></%def>
         ${self.head_extra()}
-        <script>
-            window.addEventListener("load", function(event) {
-                $.Topic('/plugins/__REGISTER__').prepareOrPublish({});
-            });
-        </script>
         ## extra stuff
         %if c.pre_code:
             ${c.pre_code|n}
