@@ -47,6 +47,7 @@ class StubVCSController(simplevcs.SimpleVCS):
         self.acl_repo_name = HG_REPO
         self.url_repo_name = HG_REPO
         self.vcs_repo_name = HG_REPO
+        self.is_shadow_repo = False
 
     def _get_repository_name(self, environ):
         return HG_REPO

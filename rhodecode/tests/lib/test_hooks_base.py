@@ -40,6 +40,7 @@ def test_post_push_truncates_commits(user_regular, repo_stub):
         'make_lock': None,
         'locked_by': [None],
         'commit_ids': ['abcde12345' * 4] * 30000,
+        'is_shadow_repo': False,
     }
     extras = utils2.AttributeDict(extras)
 
