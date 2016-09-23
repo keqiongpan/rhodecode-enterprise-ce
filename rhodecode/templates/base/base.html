@@ -23,7 +23,6 @@
 
   <!-- CONTENT -->
   <div id="content" class="wrapper">
-      ${self.flash_msg()}
       <div class="main">
           ${next.main()}
       </div>
@@ -60,10 +59,6 @@
 ### MAKO DEFS ###
 
 <%def name="menu_bar_subnav()">
-</%def>
-
-<%def name="flash_msg()">
-    <%include file="/base/flash_msg.html"/>
 </%def>
 
 <%def name="breadcrumbs(class_='breadcrumbs')">

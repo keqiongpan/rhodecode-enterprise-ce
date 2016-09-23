@@ -1,10 +1,6 @@
 ## -*- coding: utf-8 -*-
 <%inherit file="/base/base.html"/>
 
-## don't trigger flash messages on this page
-<%def name="flash_msg()">
-</%def>
-
 <%def name="title()">
     ${_('%s Creating repository') % c.repo_name}
     %if c.rhodecode_name:
