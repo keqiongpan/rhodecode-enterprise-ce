@@ -175,7 +175,7 @@ class VCSMiddleware(object):
             # in middleware
             environ['PATH_INFO'] = vcs_handler._get_by_id(environ['PATH_INFO'])
 
-            # Set repo names for permission checks, vcs and web interaction.
+            # Set acl, url and vcs repo names.
             vcs_handler.set_repo_names(environ)
 
             # check for type, presence in database and on filesystem

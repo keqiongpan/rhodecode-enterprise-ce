@@ -45,7 +45,7 @@ from rhodecode.lib.middleware import appenlight
 from rhodecode.lib.middleware.utils import scm_app
 from rhodecode.lib.utils import (
     is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path, SLUG_RE)
-from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool
+from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool, safe_unicode
 from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.backends import base
 from rhodecode.model import meta
@@ -120,42 +120,54 @@ class SimpleVCS(object):
     def set_repo_names(self, environ):
         """
         This will populate the attributes acl_repo_name, url_repo_name,
-        vcs_repo_name and is_shadow_repo on the current instance.
+        vcs_repo_name and is_shadow_repo. In case of requests to normal (non
+        shadow) repositories all names are equal. In case of requests to a
+        shadow repository the acl-name points to the target repo of the pull
+        request and the vcs-name points to the shadow repo file system path.
+        The url-name is always the URL used by the vcs client program.
+
+        Example in case of a shadow repo:
+            acl_repo_name = RepoGroup/MyRepo
+            url_repo_name = RepoGroup/MyRepo/pull-request/3/repository
+            vcs_repo_name = /repo/base/path/RepoGroup/.__shadow_MyRepo_pr-3'
         """
-        # Get url repo name from environment.
+        # First we set the repo name from URL for all attributes. This is the
+        # default if handling normal (non shadow) repo requests.
         self.url_repo_name = self._get_repository_name(environ)
+        self.acl_repo_name = self.vcs_repo_name = self.url_repo_name
+        self.is_shadow_repo = False
 
-        # Check if this is a request to a shadow repository. In case of a
-        # shadow repo set vcs_repo_name to the file system path pointing to the
-        # shadow repo. And set acl_repo_name to the pull request target repo
-        # because we use the target repo for permission checks. Otherwise all
-        # names are equal.
+        # Check if this is a request to a shadow repository.
         match = self.shadow_repo_re.match(self.url_repo_name)
-        # TODO: martinb: Think about checking the target repo from PR against
-        # the part in the URL. Otherwise we only rely on the PR id in the URL
-        # and the variable parts can be anything. This will lead to 500 errors
-        # from the VCSServer.
         if match:
-            # Get pull request instance.
             match_dict = match.groupdict()
-            pr_id = match_dict['pr_id']
-            pull_request = PullRequest.get(pr_id)
 
-            # Get file system path to shadow repository.
-            workspace_id = PullRequestModel()._workspace_id(pull_request)
-            target_vcs = pull_request.target_repo.scm_instance()
-            vcs_repo_name = target_vcs._get_shadow_repository_path(
-                workspace_id)
+            # Build acl repo name from regex match.
+            acl_repo_name = safe_unicode(
+                '{groups}/{target}'.format(**match_dict))
 
-            # Store names for later usage.
-            self.vcs_repo_name = vcs_repo_name
-            self.acl_repo_name = pull_request.target_repo.repo_name
-            self.is_shadow_repo = True
-        else:
-            # All names are equal for normal (non shadow) repositories.
-            self.acl_repo_name = self.url_repo_name
-            self.vcs_repo_name = self.url_repo_name
-            self.is_shadow_repo = False
+            # Retrieve pull request instance by ID from regex match.
+            pull_request = PullRequest.get(match_dict['pr_id'])
+
+            # Only proceed if we got a pull request and if acl repo name from
+            # URL equals the target repo name of the pull request.
+            if pull_request and acl_repo_name == pull_request.target_repo.repo_name:
+                # Get file system path to shadow repository.
+                workspace_id = PullRequestModel()._workspace_id(pull_request)
+                target_vcs = pull_request.target_repo.scm_instance()
+                vcs_repo_name = target_vcs._get_shadow_repository_path(
+                    workspace_id)
+
+                # Store names for later usage.
+                self.vcs_repo_name = vcs_repo_name
+                self.acl_repo_name = acl_repo_name
+                self.is_shadow_repo = True
+
+        log.debug('Repository names: %s', {
+            'acl_repo_name': self.acl_repo_name,
+            'url_repo_name': self.url_repo_name,
+            'vcs_repo_name': self.vcs_repo_name,
+        })
 
     @property
     def scm_app(self):

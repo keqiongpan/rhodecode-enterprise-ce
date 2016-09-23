@@ -58,12 +58,17 @@ log = logging.getLogger(__name__)
 
 REMOVED_REPO_PAT = re.compile(r'rm__\d{8}_\d{6}_\d{6}__.*')
 
-# String of characters which are not allowed in repo/group slugs.
+# String which contains characters that are not allowed in slug names for
+# repositories or repository groups. It is properly escaped to use it in
+# regular expressions.
 SLUG_BAD_CHARS = re.escape('`?=[]\;\'"<>,/~!@#$%^&*()+{}|:')
+
 # Regex that matches forbidden characters in repo/group slugs.
 SLUG_BAD_CHAR_RE = re.compile('[{}]'.format(SLUG_BAD_CHARS))
+
 # Regex that matches allowed characters in repo/group slugs.
 SLUG_GOOD_CHAR_RE = re.compile('[^{}]'.format(SLUG_BAD_CHARS))
+
 # Regex that matches whole repo/group slugs.
 SLUG_RE = re.compile('[^{}]+'.format(SLUG_BAD_CHARS))
 
