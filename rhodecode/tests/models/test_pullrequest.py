@@ -457,6 +457,7 @@ def merge_extras(user_regular):
         'locked_by': [None, None, None],
         'server_url': 'http://test.example.com:5000',
         'hooks': ['push', 'pull'],
+        'is_shadow_repo': False,
     }
     return extras
 
