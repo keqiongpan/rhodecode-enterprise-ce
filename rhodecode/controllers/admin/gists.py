@@ -299,7 +299,6 @@ class GistsController(BaseController):
                 description=schema_data['description'],
                 owner=c.gist.owner,
                 gist_mapping=schema_data['nodes'],
-                gist_type=schema_data['gist_type'],
                 lifetime=schema_data['lifetime'],
                 gist_acl_level=schema_data['gist_acl_level']
             )
