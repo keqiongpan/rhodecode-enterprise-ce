@@ -44,16 +44,15 @@ class StubVCSController(simplevcs.SimpleVCS):
 
     def __init__(self, *args, **kwargs):
         super(StubVCSController, self).__init__(*args, **kwargs)
-        self.acl_repo_name = HG_REPO
-        self.url_repo_name = HG_REPO
-        self.vcs_repo_name = HG_REPO
-        self.is_shadow_repo = False
+        self._action = 'pull'
+        self._name = HG_REPO
+        self.set_repo_names(None)
 
     def _get_repository_name(self, environ):
-        return HG_REPO
+        return self._name
 
     def _get_action(self, environ):
-        return "pull"
+        return self._action
 
     def _create_wsgi_app(self, repo_path, repo_name, config):
         def fake_app(environ, start_response):
