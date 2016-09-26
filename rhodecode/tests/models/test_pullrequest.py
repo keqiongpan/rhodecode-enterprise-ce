@@ -359,6 +359,14 @@ class TestPullRequestModel:
             pull_request, context=6)
         assert 'file_1' in diff.raw
 
+    def test_generate_title_returns_unicode(self):
+        title = PullRequestModel().generate_pullrequest_title(
+            source='source-dummy',
+            source_ref='source-ref-dummy',
+            target='target-dummy',
+        )
+        assert type(title) == unicode
+
 
 class TestIntegrationMerge(object):
     @pytest.mark.parametrize('extra_config', (
