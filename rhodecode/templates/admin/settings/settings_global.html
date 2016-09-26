@@ -183,11 +183,15 @@ ${h.end_form()}
 // important messages to all users of the RhodeCode Enterprise system.
 
 $(document).ready(function(e){
- // put your message below
+
+ // EDIT - put your message below
  var message = "TYPE YOUR MESSAGE HERE";
 
- $('#body').prepend(
-  ('<div class="alert alert-info">_MSG_'+'</div>').replace('_MSG_', message)
+ // EDIT - choose "info"/"warning"/"error"/"success"/"neutral" as appropriate
+ var alert_level = "info";
+
+ $("#body").prepend(
+  ("<div id='server-announcement' class='"+alert_level+"'>_MSG_"+"</div>").replace("_MSG_", message)
  )
 })
 </script>
