@@ -177,7 +177,7 @@ class GistSchema(colander.MappingSchema):
 
     gist_type = colander.SchemaNode(
         colander.String(),
-        missing=Gist.ACL_LEVEL_PUBLIC,
+        missing=Gist.GIST_PUBLIC,
         validator=colander.OneOf([Gist.GIST_PRIVATE, Gist.GIST_PUBLIC]))
 
     nodes = Nodes()
