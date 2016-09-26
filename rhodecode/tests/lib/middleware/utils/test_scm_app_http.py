@@ -24,6 +24,7 @@ import pytest
 import webtest
 
 from rhodecode.lib.middleware.utils import scm_app_http, scm_app
+from rhodecode.lib.middleware.simplegit import SimpleGit
 from rhodecode.lib.vcs.conf import settings
 
 
@@ -111,7 +112,7 @@ def vcs_pyro4_app(vcsserver_pyro_echo_app):
     with mock.patch('rhodecode.lib.middleware.utils.scm_app.GIT_REMOTE_WSGI',
                     GIT_REMOTE_WSGI):
         pyro4_app = scm_app.create_git_wsgi_app(
-            'stub_path', 'stub_name', stub_config)
+            'stub_path', 'stub_name', stub_config, SimpleGit.SCM)
     app = webtest.TestApp(pyro4_app)
     return app
 
