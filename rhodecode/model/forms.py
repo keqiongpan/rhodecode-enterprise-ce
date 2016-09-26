@@ -519,7 +519,12 @@ def UserExtraIpForm():
     return _UserExtraIpForm
 
 
+
 def PullRequestForm(repo_id):
+    class ReviewerForm(formencode.Schema):
+        user_id = v.Int(not_empty=True)
+        reasons = All()
+
     class _PullRequestForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
@@ -531,8 +536,7 @@ def PullRequestForm(repo_id):
         target_ref = v.UnicodeString(strip=True, required=True)
         revisions = All(#v.NotReviewedRevisions(repo_id)(),
                         v.UniqueList()(not_empty=True))
-        review_members = v.UniqueList(convert=int)(not_empty=True)
-
+        review_members = formencode.ForEach(ReviewerForm())
         pullrequest_title = v.UnicodeString(strip=True, required=True)
         pullrequest_desc = v.UnicodeString(strip=True, required=False)
 

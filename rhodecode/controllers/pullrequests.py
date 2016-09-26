@@ -22,6 +22,7 @@
 pull requests controller for rhodecode for initializing pull requests
 """
 
+import peppercorn
 import formencode
 import logging
 
@@ -399,8 +400,10 @@ class PullrequestsController(BaseRepoController):
         if not repo:
             raise HTTPNotFound
 
+        controls = peppercorn.parse(request.POST.items())
+
         try:
-            _form = PullRequestForm(repo.repo_id)().to_python(request.POST)
+            _form = PullRequestForm(repo.repo_id)().to_python(controls)
         except formencode.Invalid as errors:
             if errors.error_dict.get('revisions'):
                 msg = 'Revisions: %s' % errors.error_dict['revisions']
@@ -419,7 +422,8 @@ class PullrequestsController(BaseRepoController):
         target_repo = _form['target_repo']
         target_ref = _form['target_ref']
         commit_ids = _form['revisions'][::-1]
-        reviewers = _form['review_members']
+        reviewers = [
+            (r['user_id'], r['reasons']) for r in _form['review_members']]
 
         # find the ancestor for this pr
         source_db_repo = Repository.get_by_repo_name(_form['source_repo'])
@@ -478,8 +482,11 @@ class PullrequestsController(BaseRepoController):
         allowed_to_update = PullRequestModel().check_user_update(
             pull_request, c.rhodecode_user)
         if allowed_to_update:
-            if 'reviewers_ids' in request.POST:
-                self._update_reviewers(pull_request_id)
+            controls = peppercorn.parse(request.POST.items())
+
+            if 'review_members' in controls:
+                self._update_reviewers(
+                    pull_request_id, controls['review_members'])
             elif str2bool(request.POST.get('update_commits', 'false')):
                 self._update_commits(pull_request)
             elif str2bool(request.POST.get('close_pull_request', 'false')):
@@ -631,11 +638,10 @@ class PullrequestsController(BaseRepoController):
                 merge_resp.failure_reason)
             h.flash(msg, category='error')
 
-    def _update_reviewers(self, pull_request_id):
-        reviewers_ids = map(int, filter(
-            lambda v: v not in [None, ''],
-            request.POST.get('reviewers_ids', '').split(',')))
-        PullRequestModel().update_reviewers(pull_request_id, reviewers_ids)
+    def _update_reviewers(self, pull_request_id, review_members):
+        reviewers = [
+            (int(r['user_id']), r['reasons']) for r in review_members]
+        PullRequestModel().update_reviewers(pull_request_id, reviewers)
         Session().commit()
 
     def _reject_close(self, pull_request):

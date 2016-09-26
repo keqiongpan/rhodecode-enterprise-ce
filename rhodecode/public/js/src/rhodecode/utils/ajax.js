@@ -20,6 +20,9 @@
 * turns objects into GET query string
 */
 var toQueryString = function(o) {
+  if(typeof o === 'string') {
+    return o;
+  }
   if(typeof o !== 'object') {
     return false;
   }

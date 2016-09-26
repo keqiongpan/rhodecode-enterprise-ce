@@ -463,7 +463,12 @@ def create_pull_request(
     :type description: Optional(str)
     :param reviewers: Set the new pull request reviewers list.
     :type reviewers: Optional(list)
+        Accepts username strings or objects of the format:
+        {
+            'username': 'nick', 'reasons': ['original author']
+        }
     """
+
     source = get_repo_or_error(source_repo)
     target = get_repo_or_error(target_repo)
     if not has_superadmin_permission(apiuser):
@@ -490,12 +495,21 @@ def create_pull_request(
     if not ancestor:
         raise JSONRPCError('no common ancestor found')
 
-    reviewer_names = Optional.extract(reviewers) or []
-    if not isinstance(reviewer_names, list):
+    reviewer_objects = Optional.extract(reviewers) or []
+    if not isinstance(reviewer_objects, list):
         raise JSONRPCError('reviewers should be specified as a list')
 
-    reviewer_users = [get_user_or_error(n) for n in reviewer_names]
-    reviewer_ids = [u.user_id for u in reviewer_users]
+    reviewers_reasons = []
+    for reviewer_object in reviewer_objects:
+        reviewer_reasons = []
+        if isinstance(reviewer_object, (basestring, int)):
+            reviewer_username = reviewer_object
+        else:
+            reviewer_username = reviewer_object['username']
+            reviewer_reasons = reviewer_object.get('reasons', [])
+
+        user = get_user_or_error(reviewer_username)
+        reviewers_reasons.append((user.user_id, reviewer_reasons))
 
     pull_request_model = PullRequestModel()
     pull_request = pull_request_model.create(
@@ -506,7 +520,7 @@ def create_pull_request(
         target_ref=full_target_ref,
         revisions=reversed(
             [commit.raw_id for commit in reversed(commit_ranges)]),
-        reviewers=reviewer_ids,
+        reviewers=reviewers_reasons,
         title=title,
         description=Optional.extract(description)
     )
@@ -585,12 +599,23 @@ def update_pull_request(
             'pull request `%s` update failed, pull request is closed' % (
                 pullrequestid,))
 
-    reviewer_names = Optional.extract(reviewers) or []
-    if not isinstance(reviewer_names, list):
+    reviewer_objects = Optional.extract(reviewers) or []
+    if not isinstance(reviewer_objects, list):
         raise JSONRPCError('reviewers should be specified as a list')
 
-    reviewer_users = [get_user_or_error(n) for n in reviewer_names]
-    reviewer_ids = [u.user_id for u in reviewer_users]
+    reviewers_reasons = []
+    reviewer_ids = set()
+    for reviewer_object in reviewer_objects:
+        reviewer_reasons = []
+        if isinstance(reviewer_object, (int, basestring)):
+            reviewer_username = reviewer_object
+        else:
+            reviewer_username = reviewer_object['username']
+            reviewer_reasons = reviewer_object.get('reasons', [])
+
+        user = get_user_or_error(reviewer_username)
+        reviewer_ids.add(user.user_id)
+        reviewers_reasons.append((user.user_id, reviewer_reasons))
 
     title = Optional.extract(title)
     description = Optional.extract(description)
@@ -611,7 +636,7 @@ def update_pull_request(
     reviewers_changes = {"added": [], "removed": []}
     if reviewer_ids:
         added_reviewers, removed_reviewers = \
-            PullRequestModel().update_reviewers(pull_request, reviewer_ids)
+            PullRequestModel().update_reviewers(pull_request, reviewers_reasons)
 
         reviewers_changes['added'] = sorted(
             [get_user_or_error(n).username for n in added_reviewers])

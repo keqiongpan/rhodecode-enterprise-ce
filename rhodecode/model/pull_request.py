@@ -333,10 +333,18 @@ class PullRequestModel(BaseModel):
         Session().add(pull_request)
         Session().flush()
 
+        reviewer_ids = set()
         # members / reviewers
-        for user_id in set(reviewers):
+        for reviewer_object in reviewers:
+            if isinstance(reviewer_object, tuple):
+                user_id, reasons = reviewer_object
+            else:
+                user_id, reasons = reviewer_object, []
+
             user = self._get_user(user_id)
-            reviewer = PullRequestReviewers(user, pull_request)
+            reviewer_ids.add(user.user_id)
+
+            reviewer = PullRequestReviewers(user, pull_request, reasons)
             Session().add(reviewer)
 
         # Set approval status to "Under Review" for all commits which are
@@ -348,7 +356,7 @@ class PullRequestModel(BaseModel):
             pull_request=pull_request
         )
 
-        self.notify_reviewers(pull_request, reviewers)
+        self.notify_reviewers(pull_request, reviewer_ids)
         self._trigger_pull_request_hook(
             pull_request, created_by_user, 'create')
 
@@ -570,6 +578,7 @@ class PullRequestModel(BaseModel):
         Session().commit()
         self._trigger_pull_request_hook(pull_request, pull_request.author,
                                         'update')
+
         return (pull_request_version, changes)
 
     def _create_version_from_snapshot(self, pull_request):
@@ -711,8 +720,21 @@ class PullRequestModel(BaseModel):
         pull_request.updated_on = datetime.datetime.now()
         Session().add(pull_request)
 
-    def update_reviewers(self, pull_request, reviewers_ids):
-        reviewers_ids = set(reviewers_ids)
+    def update_reviewers(self, pull_request, reviewer_data):
+        """
+        Update the reviewers in the pull request
+
+        :param pull_request: the pr to update
+        :param reviewer_data: list of tuples [(user, ['reason1', 'reason2'])]
+        """
+
+        reviewers_reasons = {}
+        for user_id, reasons in reviewer_data:
+            if isinstance(user_id, (int, basestring)):
+                user_id = self._get_user(user_id).user_id
+            reviewers_reasons[user_id] = reasons
+
+        reviewers_ids = set(reviewers_reasons.keys())
         pull_request = self.__get_pull_request(pull_request)
         current_reviewers = PullRequestReviewers.query()\
             .filter(PullRequestReviewers.pull_request ==
@@ -728,7 +750,8 @@ class PullRequestModel(BaseModel):
         for uid in ids_to_add:
             changed = True
             _usr = self._get_user(uid)
-            reviewer = PullRequestReviewers(_usr, pull_request)
+            reasons = reviewers_reasons[uid]
+            reviewer = PullRequestReviewers(_usr, pull_request, reasons)
             Session().add(reviewer)
 
         self.notify_reviewers(pull_request, ids_to_add)

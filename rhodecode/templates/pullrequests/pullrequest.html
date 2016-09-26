@@ -111,7 +111,9 @@
                 </div>
                 <div id="reviewers" class="block-right pr-details-content reviewers">
                     ## members goes here, filled via JS based on initial selection !
+                    <input type="hidden" name="__start__" value="review_members:sequence">
                     <ul id="review_members" class="group_members"></ul>
+                    <input type="hidden" name="__end__" value="review_members:sequence">
                     <div id="add_reviewer_input" class='ac'>
                         <div class="reviewer_ac">
                             ${h.text('user', class_='ac-input', placeholder=_('Add reviewer'))}

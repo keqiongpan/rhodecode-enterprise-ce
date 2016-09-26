@@ -59,7 +59,7 @@ from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, remove_prefix, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
     glob2re)
-from rhodecode.lib.jsonalchemy import MutationObj, JsonType, JSONDict
+from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType, JSONDict
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.encrypt import AESCipher
@@ -3149,9 +3149,10 @@ class PullRequest(Base, _PullRequestBase):
                 {
                     'user': reviewer.get_api_data(include_secrets=False,
                                                   details='basic'),
+                    'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, st in pull_request.reviewers_statuses()
+                for reviewer, reasons, st in pull_request.reviewers_statuses()
             ]
         }
 
@@ -3203,9 +3204,23 @@ class PullRequestReviewers(Base, BaseModel):
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
-    def __init__(self, user=None, pull_request=None):
+    def __init__(self, user=None, pull_request=None, reasons=None):
         self.user = user
         self.pull_request = pull_request
+        self.reasons = reasons or []
+
+    @hybrid_property
+    def reasons(self):
+        if not self._reasons:
+            return []
+        return self._reasons
+
+    @reasons.setter
+    def reasons(self, val):
+        val = val or []
+        if any(not isinstance(x, basestring) for x in val):
+            raise Exception('invalid reasons type, must be list of strings')
+        self._reasons = val
 
     pull_requests_reviewers_id = Column(
         'pull_requests_reviewers_id', Integer(), nullable=False,
@@ -3215,8 +3230,9 @@ class PullRequestReviewers(Base, BaseModel):
         ForeignKey('pull_requests.pull_request_id'), nullable=False)
     user_id = Column(
         "user_id", Integer(), ForeignKey('users.user_id'), nullable=True)
-    reason = Column('reason',
-        UnicodeText().with_variant(UnicodeText(255), 'mysql'), nullable=True)
+    _reasons = Column(
+        'reason', MutationList.as_mutable(
+            JsonType('list', dialect_map=dict(mysql=UnicodeText(16384)))))
 
     user = relationship('User')
     pull_request = relationship('PullRequest')

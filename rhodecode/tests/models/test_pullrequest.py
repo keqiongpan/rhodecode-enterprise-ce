@@ -115,7 +115,7 @@ class TestPullRequestModel:
 
     def test_get_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [pull_request.author])
+            pull_request, [(pull_request.author, ['author'])])
         prs = PullRequestModel().get_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
         assert isinstance(prs, list)
@@ -123,7 +123,7 @@ class TestPullRequestModel:
 
     def test_count_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [pull_request.author])
+            pull_request, [(pull_request.author, ['author'])])
         pr_count = PullRequestModel().count_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
         assert pr_count == 1

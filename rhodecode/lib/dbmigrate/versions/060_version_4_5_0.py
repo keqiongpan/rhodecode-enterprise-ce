@@ -26,7 +26,7 @@ def upgrade(migrate_engine):
     _reset_base(migrate_engine)
     from rhodecode.lib.dbmigrate.schema import db_4_5_0_0
 
-    db_4_5_0_0.PullRequestReviewers.reason.create(
+    db_4_5_0_0.PullRequestReviewers.reasons.create(
         table=db_4_5_0_0.PullRequestReviewers.__table__)
 
 def downgrade(migrate_engine):

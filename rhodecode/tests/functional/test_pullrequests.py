@@ -256,8 +256,8 @@ class TestPullrequestsController:
     def test_comment_force_close_pull_request(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
-        reviewers_ids = [1, 2]
-        PullRequestModel().update_reviewers(pull_request_id, reviewers_ids)
+        reviewers_data = [(1, ['reason']), (2, ['reason2'])]
+        PullRequestModel().update_reviewers(pull_request_id, reviewers_data)
         author = pull_request.user_id
         repo = pull_request.target_repo.repo_id
         self.app.post(
@@ -297,19 +297,27 @@ class TestPullrequestsController:
             url(
                 controller='pullrequests',
                 action='create',
-                repo_name=source.repo_name),
-            params={
-                'source_repo': source.repo_name,
-                'source_ref': 'branch:default:' + commit_ids['change'],
-                'target_repo': target.repo_name,
-                'target_ref': 'branch:default:' + commit_ids['ancestor'],
-                'pullrequest_desc': 'Description',
-                'pullrequest_title': 'Title',
-                'review_members': '1',
-                'revisions': commit_ids['change'],
-                'user': '',
-                'csrf_token': csrf_token,
-            },
+                repo_name=source.repo_name
+            ),
+            [
+                ('source_repo', source.repo_name),
+                ('source_ref', 'branch:default:' + commit_ids['change']),
+                ('target_repo', target.repo_name),
+                ('target_ref',  'branch:default:' + commit_ids['ancestor']),
+                ('pullrequest_desc', 'Description'),
+                ('pullrequest_title', 'Title'),
+                ('__start__', 'review_members:sequence'),
+                    ('__start__', 'reviewer:mapping'),
+                        ('user_id', '1'),
+                        ('__start__', 'reasons:sequence'),
+                            ('reason', 'Some reason'),
+                        ('__end__', 'reasons:sequence'),
+                    ('__end__', 'reviewer:mapping'),
+                ('__end__', 'review_members:sequence'),
+                ('revisions', commit_ids['change']),
+                ('user', ''),
+                ('csrf_token', csrf_token),
+            ],
             status=302)
 
         location = response.headers['Location']
@@ -344,19 +352,27 @@ class TestPullrequestsController:
             url(
                 controller='pullrequests',
                 action='create',
-                repo_name=source.repo_name),
-            params={
-                'source_repo': source.repo_name,
-                'source_ref': 'branch:default:' + commit_ids['change'],
-                'target_repo': target.repo_name,
-                'target_ref': 'branch:default:' + commit_ids['ancestor-child'],
-                'pullrequest_desc': 'Description',
-                'pullrequest_title': 'Title',
-                'review_members': '2',
-                'revisions': commit_ids['change'],
-                'user': '',
-                'csrf_token': csrf_token,
-            },
+                repo_name=source.repo_name
+            ),
+            [
+                ('source_repo', source.repo_name),
+                ('source_ref', 'branch:default:' + commit_ids['change']),
+                ('target_repo', target.repo_name),
+                ('target_ref',  'branch:default:' + commit_ids['ancestor-child']),
+                ('pullrequest_desc', 'Description'),
+                ('pullrequest_title', 'Title'),
+                ('__start__', 'review_members:sequence'),
+                    ('__start__', 'reviewer:mapping'),
+                        ('user_id', '2'),
+                        ('__start__', 'reasons:sequence'),
+                            ('reason', 'Some reason'),
+                        ('__end__', 'reasons:sequence'),
+                    ('__end__', 'reviewer:mapping'),
+                ('__end__', 'review_members:sequence'),
+                ('revisions', commit_ids['change']),
+                ('user', ''),
+                ('csrf_token', csrf_token),
+            ],
             status=302)
 
         location = response.headers['Location']
@@ -373,7 +389,8 @@ class TestPullrequestsController:
         assert len(notifications.all()) == 1
 
         # Change reviewers and check that a notification was made
-        PullRequestModel().update_reviewers(pull_request.pull_request_id, [1])
+        PullRequestModel().update_reviewers(
+            pull_request.pull_request_id, [(1, [])])
         assert len(notifications.all()) == 2
 
     def test_create_pull_request_stores_ancestor_commit_id(self, backend,
@@ -397,19 +414,27 @@ class TestPullrequestsController:
             url(
                 controller='pullrequests',
                 action='create',
-                repo_name=source.repo_name),
-            params={
-                'source_repo': source.repo_name,
-                'source_ref': 'branch:default:' + commit_ids['change'],
-                'target_repo': target.repo_name,
-                'target_ref': 'branch:default:' + commit_ids['ancestor-child'],
-                'pullrequest_desc': 'Description',
-                'pullrequest_title': 'Title',
-                'review_members': '1',
-                'revisions': commit_ids['change'],
-                'user': '',
-                'csrf_token': csrf_token,
-            },
+                repo_name=source.repo_name
+            ),
+            [
+                ('source_repo', source.repo_name),
+                ('source_ref', 'branch:default:' + commit_ids['change']),
+                ('target_repo', target.repo_name),
+                ('target_ref',  'branch:default:' + commit_ids['ancestor-child']),
+                ('pullrequest_desc', 'Description'),
+                ('pullrequest_title', 'Title'),
+                ('__start__', 'review_members:sequence'),
+                    ('__start__', 'reviewer:mapping'),
+                        ('user_id', '1'),
+                        ('__start__', 'reasons:sequence'),
+                            ('reason', 'Some reason'),
+                        ('__end__', 'reasons:sequence'),
+                    ('__end__', 'reviewer:mapping'),
+                ('__end__', 'review_members:sequence'),
+                ('revisions', commit_ids['change']),
+                ('user', ''),
+                ('csrf_token', csrf_token),
+            ],
             status=302)
 
         location = response.headers['Location']

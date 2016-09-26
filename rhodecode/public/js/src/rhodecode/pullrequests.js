@@ -32,7 +32,7 @@ var removeReviewMember = function(reviewer_id, mark_delete){
             var obj = $('#reviewer_{0}_name'.format(reviewer_id));
             obj.addClass('to-delete');
             // now delete the input
-            $('#reviewer_{0}_input'.format(reviewer_id)).remove();
+            $('#reviewer_{0} input'.format(reviewer_id)).remove();
         }
     }
     else{
@@ -43,29 +43,36 @@ var removeReviewMember = function(reviewer_id, mark_delete){
 var addReviewMember = function(id, fname, lname, nname, gravatar_link, reasons) {
     var members = $('#review_members').get(0);
     var reasons_html = '';
+    var reasons_inputs = '';
+    var reasons = reasons || [];
     if (reasons) {
         for (var i = 0; i < reasons.length; i++) {
-            reasons_html += '<div class="reviewer_reason">- {0}</div>'.format(
-                reasons[i]
-            );
+            reasons_html += '<div class="reviewer_reason">- {0}</div>'.format(reasons[i]);
+            reasons_inputs += '<input type="hidden" name="reason" value="' + escapeHtml(reasons[i]) + '">';
         }
     }
     var tmpl = '<li id="reviewer_{2}">'+
+       '<input type="hidden" name="__start__" value="reviewer:mapping">'+
        '<div class="reviewer_status">'+
           '<div class="flag_status not_reviewed pull-left reviewer_member_status"></div>'+
        '</div>'+
       '<img alt="gravatar" class="gravatar" src="{0}"/>'+
       '<span class="reviewer_name user">{1}</span>'+
       reasons_html +
-      '<input type="hidden" value="{2}" name="review_members" />'+
+      '<input type="hidden" name="user_id" value="{2}">'+
+       '<input type="hidden" name="__start__" value="reasons:sequence">'+
+       '{3}'+
+       '<input type="hidden" name="__end__" value="reasons:sequence">'+
       '<div class="reviewer_member_remove action_button" onclick="removeReviewMember({2})">' +
       '<i class="icon-remove-sign"></i>'+
         '</div>'+
     '</div>'+
+    '<input type="hidden" name="__end__" value="reviewer:mapping">'+
     '</li>' ;
+
     var displayname = "{0} ({1} {2})".format(
             nname, escapeHtml(fname), escapeHtml(lname));
-    var element = tmpl.format(gravatar_link,displayname,id);
+    var element = tmpl.format(gravatar_link,displayname,id,reasons_inputs);
     // check if we don't have this ID already in
     var ids = [];
     var _els = $('#review_members li').toArray();
@@ -83,7 +90,11 @@ var _updatePullRequest = function(repo_name, pull_request_id, postData) {
     var url = pyroutes.url(
         'pullrequest_update',
         {"repo_name": repo_name, "pull_request_id": pull_request_id});
-    postData.csrf_token = CSRF_TOKEN;
+    if (typeof postData === 'string' ) {
+        postData += '&csrf_token=' + CSRF_TOKEN;
+    } else {
+        postData.csrf_token = CSRF_TOKEN;
+    }
     var success = function(o) {
         window.location.reload();
     };
@@ -92,17 +103,9 @@ var _updatePullRequest = function(repo_name, pull_request_id, postData) {
 
 var updateReviewers = function(reviewers_ids, repo_name, pull_request_id){
     if (reviewers_ids === undefined){
-      var reviewers_ids = [];
-      var ids = $('#review_members input').toArray();
-      for(var i=0; i<ids.length;i++){
-          var id = ids[i].value
-          reviewers_ids.push(id);
-      }
+      var postData = '_method=put&' + $('#reviewers input').serialize();
+      _updatePullRequest(repo_name, pull_request_id, postData);
     }
-    var postData = {
-        '_method':'put',
-        'reviewers_ids': reviewers_ids};
-    _updatePullRequest(repo_name, pull_request_id, postData);
 };
 
 /**

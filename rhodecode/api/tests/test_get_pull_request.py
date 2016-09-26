@@ -95,9 +95,10 @@ class TestGetPullRequest(object):
                 {
                     'user': reviewer.get_api_data(include_secrets=False,
                                                   details='basic'),
+                    'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, st in pull_request.reviewers_statuses()
+                for reviewer, reasons, st in pull_request.reviewers_statuses()
             ]
         }
         assert_ok(id_, expected, response.body)

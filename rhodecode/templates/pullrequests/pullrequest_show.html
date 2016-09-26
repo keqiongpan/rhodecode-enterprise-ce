@@ -188,17 +188,27 @@
         </div>
         <div id="reviewers" class="block-right pr-details-content reviewers">
           ## members goes here !
+            <input type="hidden" name="__start__" value="review_members:sequence">
             <ul id="review_members" class="group_members">
-            %for member,status in c.pull_request_reviewers:
+            %for member,reasons,status in c.pull_request_reviewers:
               <li id="reviewer_${member.user_id}">
                 <div class="reviewers_member">
                     <div class="reviewer_status tooltip" title="${h.tooltip(h.commit_status_lbl(status[0][1].status if status else 'not_reviewed'))}">
                       <div class="${'flag_status %s' % (status[0][1].status if status else 'not_reviewed')} pull-left reviewer_member_status"></div>
                     </div>
                   <div id="reviewer_${member.user_id}_name" class="reviewer_name">
-                    ${self.gravatar_with_user(member.email, 16)} <div class="reviewer">(${_('owner') if c.pull_request.user_id == member.user_id else _('reviewer')})</div>
+                    ${self.gravatar_with_user(member.email, 16)}
                   </div>
-                  <input id="reviewer_${member.user_id}_input" type="hidden" value="${member.user_id}" name="review_members" />
+                  <input type="hidden" name="__start__" value="reviewer:mapping">
+                  <input type="hidden" name="__start__" value="reasons:sequence">
+                  %for reason in reasons:
+                  <div class="reviewer_reason">- ${reason}</div>
+                  <input type="hidden" name="reason" value="${reason}">
+
+                  %endfor
+                  <input type="hidden" name="__end__" value="reasons:sequence">
+                  <input id="reviewer_${member.user_id}_input" type="hidden" value="${member.user_id}" name="user_id" />
+                  <input type="hidden" name="__end__" value="reviewer:mapping">
                   %if c.allowed_to_update:
                   <div class="reviewer_member_remove action_button" onclick="removeReviewMember(${member.user_id}, true)" style="visibility: hidden;">
                       <i class="icon-remove-sign" ></i>
@@ -208,6 +218,7 @@
               </li>
             %endfor
             </ul>
+            <input type="hidden" name="__end__" value="review_members:sequence">
           %if not c.pull_request.is_closed():
           <div id="add_reviewer_input" class='ac' style="display: none;">
             %if c.allowed_to_update:
@@ -569,7 +580,7 @@
             $('.show-inline-comments').on('click', function(e){
                 var boxid = $(this).attr('data-comment-id');
                 var button = $(this);
-  
+
                 if(button.hasClass("comments-visible")) {
                   $('#{0} .inline-comments'.format(boxid)).each(function(index){
                     $(this).hide();
