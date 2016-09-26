@@ -176,8 +176,8 @@ class GistModel(BaseModel):
             log.error(traceback.format_exc())
             raise
 
-    def update(self, gist, description, owner, gist_mapping, gist_type,
-               lifetime, gist_acl_level):
+    def update(self, gist, description, owner, gist_mapping, lifetime,
+               gist_acl_level):
         gist = self._get_gist(gist)
         gist_repo = gist.scm_instance()
 
@@ -204,7 +204,6 @@ class GistModel(BaseModel):
         gist.gist_description = description
         gist.gist_expires = gist_expires
         gist.owner = owner
-        gist.gist_type = gist_type
         gist.acl_level = gist_acl_level
         self.sa.add(gist)
         self.sa.flush()
