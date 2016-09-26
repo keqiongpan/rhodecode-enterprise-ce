@@ -34,7 +34,7 @@ HG_REMOTE_WSGI = None
 GIT_REMOTE_WSGI = None
 
 
-def create_git_wsgi_app(repo_path, repo_name, config):
+def create_git_wsgi_app(repo_path, repo_name, config, backend):
     """
     Return a WSGI app backed by a remote app to handle Git.
 
@@ -45,10 +45,10 @@ def create_git_wsgi_app(repo_path, repo_name, config):
         log.error('Pyro server has not been initialized yet')
 
     return wsgi_app_caller_client.RemoteAppCaller(
-        factory, repo_path, repo_name, config)
+        factory, backend, repo_path, repo_name, config)
 
 
-def create_hg_wsgi_app(repo_path, repo_name, config):
+def create_hg_wsgi_app(repo_path, repo_name, config, backend):
     """
     Return a WSGI app backed by a remote app to handle Mercurial.
 
@@ -60,4 +60,4 @@ def create_hg_wsgi_app(repo_path, repo_name, config):
         log.error('Pyro server has not been initialized yet')
 
     return wsgi_app_caller_client.RemoteAppCaller(
-        factory, repo_path, repo_name, config)
+        factory, backend, repo_path, repo_name, config)

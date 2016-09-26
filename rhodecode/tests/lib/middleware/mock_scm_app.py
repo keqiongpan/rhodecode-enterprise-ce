@@ -27,11 +27,11 @@ for testing purposes.
 import mock
 
 
-def create_git_wsgi_app(repo_path, repo_name, config):
+def create_git_wsgi_app(repo_path, repo_name, config, backend):
     return mock_git_wsgi
 
 
-def create_hg_wsgi_app(repo_path, repo_name, config):
+def create_hg_wsgi_app(repo_path, repo_name, config, backend):
     return mock_hg_wsgi
 
 

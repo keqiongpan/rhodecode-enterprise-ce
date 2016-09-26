@@ -76,7 +76,8 @@ class SimpleGit(simplevcs.SimpleVCS):
         return 'pull'
 
     def _create_wsgi_app(self, repo_path, repo_name, config):
-        return self.scm_app.create_git_wsgi_app(repo_path, repo_name, config)
+        return self.scm_app.create_git_wsgi_app(
+            repo_path, repo_name, config, self.SCM)
 
     def _create_config(self, extras, repo_name):
         extras['git_update_server_info'] = utils2.str2bool(

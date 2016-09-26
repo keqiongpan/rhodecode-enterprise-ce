@@ -37,14 +37,14 @@ import rhodecode
 log = logging.getLogger(__name__)
 
 
-def create_git_wsgi_app(repo_path, repo_name, config):
+def create_git_wsgi_app(repo_path, repo_name, config, backend):
     url = _vcs_streaming_url() + 'git/'
-    return VcsHttpProxy(url, repo_path, repo_name, config, 'git')
+    return VcsHttpProxy(url, repo_path, repo_name, config, backend)
 
 
-def create_hg_wsgi_app(repo_path, repo_name, config):
+def create_hg_wsgi_app(repo_path, repo_name, config, backend):
     url = _vcs_streaming_url() + 'hg/'
-    return VcsHttpProxy(url, repo_path, repo_name, config, 'hg')
+    return VcsHttpProxy(url, repo_path, repo_name, config, backend)
 
 
 def _vcs_streaming_url():
