@@ -173,6 +173,113 @@ def test_should_check_locking(query_string, expected):
     assert result == expected
 
 
+@pytest.mark.backends('git', 'hg')
+class TestShadowRepoExposure(object):
+    def test_pull_on_shadow_repo_propagates_to_wsgi_app(self, pylonsapp):
+        """
+        Check that a pull action to a shadow repo is propagated to the
+        underlying wsgi app.
+        """
+        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller._check_ssl = mock.Mock()
+        controller.is_shadow_repo = True
+        controller._action = 'pull'
+        controller.stub_response_body = 'dummy body value'
+        environ_stub = {
+            'HTTP_HOST': 'test.example.com',
+            'REQUEST_METHOD': 'GET',
+            'wsgi.url_scheme': 'http',
+        }
+
+        response = controller(environ_stub, mock.Mock())
+        response_body = ''.join(response)
+
+        # Assert that we got the response from the wsgi app.
+        assert response_body == controller.stub_response_body
+
+    def test_push_on_shadow_repo_raises(self, pylonsapp):
+        """
+        Check that a push action to a shadow repo is aborted.
+        """
+        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller._check_ssl = mock.Mock()
+        controller.is_shadow_repo = True
+        controller._action = 'push'
+        controller.stub_response_body = 'dummy body value'
+        environ_stub = {
+            'HTTP_HOST': 'test.example.com',
+            'REQUEST_METHOD': 'GET',
+            'wsgi.url_scheme': 'http',
+        }
+
+        response = controller(environ_stub, mock.Mock())
+        response_body = ''.join(response)
+
+        assert response_body != controller.stub_response_body
+        # Assert that a 406 error is returned.
+        assert '406 Not Acceptable' in response_body
+
+    def test_set_repo_names_no_shadow(self, pylonsapp):
+        """
+        Check that the set_repo_names method sets all names to the one returned
+        by the _get_repository_name method on a request to a non shadow repo.
+        """
+        environ_stub = {}
+        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller._name = 'RepoGroup/MyRepo'
+        controller.set_repo_names(environ_stub)
+        assert not controller.is_shadow_repo
+        assert (controller.url_repo_name ==
+                controller.acl_repo_name ==
+                controller.vcs_repo_name ==
+                controller._get_repository_name(environ_stub))
+
+    def test_set_repo_names_with_shadow(self, pylonsapp, pr_util):
+        """
+        Check that the set_repo_names method sets correct names on a request
+        to a shadow repo.
+        """
+        from rhodecode.model.pull_request import PullRequestModel
+
+        pull_request = pr_util.create_pull_request()
+        shadow_url = '{target}/pull-request/{pr_id}/repository'.format(
+            target=pull_request.target_repo.repo_name,
+            pr_id=pull_request.pull_request_id)
+        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller._name = shadow_url
+        controller.set_repo_names({})
+
+        # Get file system path to shadow repo for assertions.
+        workspace_id = PullRequestModel()._workspace_id(pull_request)
+        target_vcs = pull_request.target_repo.scm_instance()
+        vcs_repo_name = target_vcs._get_shadow_repository_path(
+            workspace_id)
+
+        assert controller.vcs_repo_name == vcs_repo_name
+        assert controller.url_repo_name == shadow_url
+        assert controller.acl_repo_name == pull_request.target_repo.repo_name
+        assert controller.is_shadow_repo
+
+    def test_set_repo_names_with_shadow_but_missing_pr(
+            self, pylonsapp, pr_util):
+        """
+        Checks that the set_repo_names method enforces matching target repos
+        and pull request IDs.
+        """
+        pull_request = pr_util.create_pull_request()
+        shadow_url = '{target}/pull-request/{pr_id}/repository'.format(
+            target=pull_request.target_repo.repo_name,
+            pr_id=999999999)
+        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller._name = shadow_url
+        controller.set_repo_names({})
+
+        assert not controller.is_shadow_repo
+        assert (controller.url_repo_name ==
+                controller.acl_repo_name ==
+                controller.vcs_repo_name)
+
+
 @mock.patch.multiple(
     'Pyro4.config', SERVERTYPE='multiplex', POLLTIMEOUT=0.01)
 class TestGenerateVcsResponse:
