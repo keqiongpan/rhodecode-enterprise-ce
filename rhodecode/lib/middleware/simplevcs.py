@@ -94,10 +94,10 @@ class SimpleVCS(object):
     # we use this regex which will match only on URLs pointing to shadow
     # repositories.
     shadow_repo_re = re.compile(
-        '(?P<groups>(?:{slug_pat})(?:/{slug_pat})*)'  # repo groups
-        '/(?P<target>{slug_pat})'                     # target repo
-        '/pull-request/(?P<pr_id>\d+)'                # pull request
-        '/repository$'                                # shadow repo
+        '(?P<groups>(?:{slug_pat})(?:/{slug_pat})*/)?'  # repo groups
+        '(?P<target>{slug_pat})/'                       # target repo
+        'pull-request/(?P<pr_id>\d+)/'                  # pull request
+        'repository$'                                   # shadow repo
         .format(slug_pat=SLUG_RE.pattern))
 
     def __init__(self, application, config, registry):
@@ -143,15 +143,17 @@ class SimpleVCS(object):
             match_dict = match.groupdict()
 
             # Build acl repo name from regex match.
-            acl_repo_name = safe_unicode(
-                '{groups}/{target}'.format(**match_dict))
+            acl_repo_name = safe_unicode('{groups}{target}'.format(
+                groups=match_dict['groups'] or '',
+                target=match_dict['target']))
 
             # Retrieve pull request instance by ID from regex match.
             pull_request = PullRequest.get(match_dict['pr_id'])
 
             # Only proceed if we got a pull request and if acl repo name from
             # URL equals the target repo name of the pull request.
-            if pull_request and acl_repo_name == pull_request.target_repo.repo_name:
+            if pull_request and (acl_repo_name ==
+                                 pull_request.target_repo.repo_name):
                 # Get file system path to shadow repository.
                 workspace_id = PullRequestModel()._workspace_id(pull_request)
                 target_vcs = pull_request.target_repo.scm_instance()
