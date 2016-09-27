@@ -355,7 +355,6 @@ class TestGenerateVcsResponse:
         result = controller._generate_vcs_response(
             environ={}, start_response=self.start_response,
             repo_path='fake_repo_path',
-            repo_name='fake_repo_name',
             extras={}, action='push')
         self.controller = controller
         return result
