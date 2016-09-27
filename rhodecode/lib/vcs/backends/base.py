@@ -860,7 +860,7 @@ class BaseCommit(object):
 
         prefix = self._validate_archive_prefix(prefix)
 
-        mtime = mtime or time.time()
+        mtime = mtime or time.mktime(self.date.timetuple())
 
         file_info = []
         cur_rev = self.repository.get_commit(commit_id=self.raw_id)
