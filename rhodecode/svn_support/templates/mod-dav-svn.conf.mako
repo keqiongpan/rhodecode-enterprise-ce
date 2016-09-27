@@ -26,21 +26,21 @@
 #     </VirtualHost>
 
 
-<Location ${location_root}>
+<Location ${location_root|n}>
     # The mod_dav_svn module takes the username from the apache request object.
     # Without authorization this will be empty and no username is logged for the
     # transactions. This will result in "(no author)" for each revision. The
     # following directives implement a fake authentication that allows every
     # username/password combination.
     AuthType Basic
-    AuthName ${rhodecode_realm}
+    AuthName ${rhodecode_realm|n}
     AuthBasicProvider anon
     Anonymous *
     Require valid-user
 
     DAV svn
-    SVNParentPath ${parent_path_root}
-    SVNListParentPath ${'On' if svn_list_parent_path else 'Off'}
+    SVNParentPath ${parent_path_root|n}
+    SVNListParentPath ${'On' if svn_list_parent_path else 'Off'|n}
 
     Allow from all
     Order allow,deny
@@ -48,16 +48,16 @@
 
 % for location, parent_path in repo_group_paths:
 
-<Location ${location}>
+<Location ${location|n}>
     AuthType Basic
-    AuthName ${rhodecode_realm}
+    AuthName ${rhodecode_realm|n}
     AuthBasicProvider anon
     Anonymous *
     Require valid-user
 
     DAV svn
-    SVNParentPath ${parent_path}
-    SVNListParentPath ${'On' if svn_list_parent_path else 'Off'}
+    SVNParentPath ${parent_path|n}
+    SVNListParentPath ${'On' if svn_list_parent_path else 'Off'|n}
 
     Allow from all
     Order allow,deny
