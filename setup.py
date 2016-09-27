@@ -123,6 +123,7 @@ test_requirements = [
     'pytest',
     'pytest-cov',
     'pytest-runner',
+    'pytest-sugar',
 ]
 
 setup_requirements = [
