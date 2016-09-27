@@ -280,6 +280,7 @@ class TestShadowRepoExposure(object):
                 controller.vcs_repo_name)
 
 
+@pytest.mark.usefixtures('db')
 @mock.patch.multiple(
     'Pyro4.config', SERVERTYPE='multiplex', POLLTIMEOUT=0.01)
 class TestGenerateVcsResponse:
