@@ -19,6 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
+import codecs
 import mock
 import re
 import shutil
@@ -30,6 +31,7 @@ from rhodecode.svn_support import config_keys, utils
 
 
 class TestModDavSvnConfig(object):
+
     @classmethod
     def setup_class(cls):
         # Make mako renderer available in tests.
@@ -39,8 +41,9 @@ class TestModDavSvnConfig(object):
         # Temporary directory holding the generated config files.
         cls.tempdir = tempfile.mkdtemp(suffix='pytest-mod-dav-svn')
 
-        cls.location_root = '/location/root'
-        cls.parent_path_root = '/parent/path/root'
+        cls.location_root = u'/location/root/çµäö'
+        cls.parent_path_root = u'/parent/path/çµäö'
+        cls._dummy_realm = u'Dummy Realm (äöüçµ)'
 
     @classmethod
     def teardown_class(cls):
@@ -61,7 +64,7 @@ class TestModDavSvnConfig(object):
     def get_repo_groups(cls, count=1):
         repo_groups = []
         for num in range(0, count):
-            full_path = '/path/to/RepoGroup{}'.format(num)
+            full_path = u'/path/to/RepöGröúp-°µ {}'.format(num)
             repo_group_mock = mock.MagicMock()
             repo_group_mock.full_path = full_path
             repo_group_mock.full_path_splitted = full_path.split('/')
@@ -69,11 +72,12 @@ class TestModDavSvnConfig(object):
         return repo_groups
 
     def assert_root_location_directive(self, config):
-        pattern = '<Location {location}>'.format(location=self.location_root)
+        pattern = u'<Location "{location}">'.format(
+            location=self.location_root)
         assert len(re.findall(pattern, config)) == 1
 
     def assert_group_location_directive(self, config, group_path):
-        pattern = '<Location {location}{group_path}>'.format(
+        pattern = u'<Location "{location}{group_path}">'.format(
             location=self.location_root, group_path=group_path)
         assert len(re.findall(pattern, config)) == 1
 
@@ -81,7 +85,7 @@ class TestModDavSvnConfig(object):
     @mock.patch('rhodecode.svn_support.utils.RepoGroup')
     def test_generate_mod_dav_svn_config(self, RepoGroupMock, GetRealmMock):
         # Setup mock objects.
-        GetRealmMock.return_value = 'DummyRealm'
+        GetRealmMock.return_value = self._dummy_realm
         num_groups = 3
         RepoGroupMock.get_all_repo_groups.return_value = self.get_repo_groups(
             count=num_groups)
@@ -92,8 +96,9 @@ class TestModDavSvnConfig(object):
             settings=settings, parent_path_root=self.parent_path_root)
 
         # Read generated file.
-        with open(settings[config_keys.config_file_path], 'r') as file_:
-            content = file_.read()
+        path = settings[config_keys.config_file_path]
+        with codecs.open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
 
         # Assert that one location directive exists for each repository group.
         for group in self.get_repo_groups(count=num_groups):
@@ -106,7 +111,7 @@ class TestModDavSvnConfig(object):
     @mock.patch('rhodecode.svn_support.utils.RepoGroup')
     def test_list_parent_path_on(self, RepoGroupMock, GetRealmMock):
         # Setup mock objects.
-        GetRealmMock.return_value = 'DummyRealm'
+        GetRealmMock.return_value = self._dummy_realm
         RepoGroupMock.get_all_repo_groups.return_value = self.get_repo_groups()
 
         # Execute the method under test.
@@ -116,8 +121,9 @@ class TestModDavSvnConfig(object):
             settings=settings, parent_path_root=self.parent_path_root)
 
         # Read generated file.
-        with open(settings[config_keys.config_file_path], 'r') as file_:
-            content = file_.read()
+        path = settings[config_keys.config_file_path]
+        with codecs.open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
 
         # Make assertions.
         assert not re.search('SVNListParentPath\s+Off', content)
@@ -127,7 +133,7 @@ class TestModDavSvnConfig(object):
     @mock.patch('rhodecode.svn_support.utils.RepoGroup')
     def test_list_parent_path_off(self, RepoGroupMock, GetRealmMock):
         # Setup mock objects.
-        GetRealmMock.return_value = 'DummyRealm'
+        GetRealmMock.return_value = self._dummy_realm
         RepoGroupMock.get_all_repo_groups.return_value = self.get_repo_groups()
 
         # Execute the method under test.
