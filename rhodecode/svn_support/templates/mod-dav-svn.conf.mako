@@ -7,11 +7,10 @@
 # The mod_dav_svn module does not support subversion repositories which are
 # organized in subfolders. To support the repository groups of RhodeCode it is
 # required to provide a <Location> block for each group pointing to the
-# repository group sub folder.
-#
-# To ease the configuration RhodeCode auto generates this file whenever a
-# repository group is created/changed/deleted. Auto generation can be configured
-# in the ini file.
+# repository group sub folder. To ease the configuration RhodeCode auto
+# generates this file whenever a repository group is created/changed/deleted.
+# Auto generation can be configured in the ini file. Settings are prefixed with
+# ``svn.proxy``.
 #
 # To include this configuration into your apache config you can use the
 # `Include` directive. See the following example snippet of a virtual host how
@@ -24,6 +23,18 @@
 #         CustomLog ${'${APACHE_LOG_DIR}'}/access.log combined
 #         Include /path/to/generated/mod_dav_svn.conf
 #     </VirtualHost>
+#
+# Depending on the apache configuration you may encounter the following error if
+# you are using speecial characters in your repository or repository group
+# names.
+#
+#    ``Error converting entry in directory '/path/to/repo' to UTF-8``
+#
+# In this case you have to change the LANG environment variable in the apache
+# configuration. This setting is typically located at ``/etc/apache2/envvars``.
+# You have to change it to an UTF-8 value like ``export LANG="en_US.UTF-8"``.
+# After changing this a stop and start of Apache is required (using restart
+# doesn't work).
 
 
 <Location "${location_root|n}">
