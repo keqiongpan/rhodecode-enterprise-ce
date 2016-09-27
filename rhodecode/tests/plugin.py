@@ -218,7 +218,7 @@ def app(request, pylonsapp, http_environ):
     return app
 
 
-@pytest.fixture()
+@pytest.fixture(scope='session')
 def app_settings(pylonsapp, pylons_config):
     """
     Settings dictionary used to create the app.
@@ -232,6 +232,18 @@ def app_settings(pylonsapp, pylons_config):
     context = loadcontext(APP, 'config:' + pylons_config)
     settings = sanitize_settings_and_apply_defaults(context.config())
     return settings
+
+
+@pytest.fixture(scope='session')
+def db(app_settings):
+    """
+    Initializes the database connection.
+
+    It uses the same settings which are used to create the ``pylonsapp`` or
+    ``app`` fixtures.
+    """
+    from rhodecode.config.utils import initialize_database
+    initialize_database(app_settings)
 
 
 LoginData = collections.namedtuple('LoginData', ('csrf_token', 'user'))
