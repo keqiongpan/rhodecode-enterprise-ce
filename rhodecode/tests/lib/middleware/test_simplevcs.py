@@ -174,34 +174,40 @@ def test_should_check_locking(query_string, expected):
 
 
 class TestShadowRepoRegularExpression(object):
+    pr_segment = 'pull-request'
+    shadow_segment = 'repository'
+
     @pytest.mark.parametrize('url, expected', [
         # repo with/without groups
-        ('My-Repo/pull-request/1/repository', True),
-        ('Group/My-Repo/pull-request/2/repository', True),
-        ('Group/Sub-Group/My-Repo/pull-request/3/repository', True),
-        ('Group/Sub-Group1/Sub-Group2/My-Repo/pull-request/3/repository', True),
+        ('My-Repo/{pr_segment}/1/{shadow_segment}', True),
+        ('Group/My-Repo/{pr_segment}/2/{shadow_segment}', True),
+        ('Group/Sub-Group/My-Repo/{pr_segment}/3/{shadow_segment}', True),
+        ('Group/Sub-Group1/Sub-Group2/My-Repo/{pr_segment}/3/{shadow_segment}', True),
 
         # pull request ID
-        ('MyRepo/pull-request/1/repository', True),
-        ('MyRepo/pull-request/1234567890/repository', True),
-        ('MyRepo/pull-request/-1/repository', False),
-        ('MyRepo/pull-request/invalid/repository', False),
+        ('MyRepo/{pr_segment}/1/{shadow_segment}', True),
+        ('MyRepo/{pr_segment}/1234567890/{shadow_segment}', True),
+        ('MyRepo/{pr_segment}/-1/{shadow_segment}', False),
+        ('MyRepo/{pr_segment}/invalid/{shadow_segment}', False),
 
         # unicode
-        (u'Sp€çîál-Repö/pull-request/1/repository', True),
-        (u'Sp€çîál-Gröüp/Sp€çîál-Repö/pull-request/1/repository', True),
+        (u'Sp€çîál-Repö/{pr_segment}/1/{shadow_segment}', True),
+        (u'Sp€çîál-Gröüp/Sp€çîál-Repö/{pr_segment}/1/{shadow_segment}', True),
 
         # trailing/leading slash
-        ('/My-Repo/pull-request/1/repository', False),
-        ('My-Repo/pull-request/1/repository/', False),
-        ('/My-Repo/pull-request/1/repository/', False),
+        ('/My-Repo/{pr_segment}/1/{shadow_segment}', False),
+        ('My-Repo/{pr_segment}/1/{shadow_segment}/', False),
+        ('/My-Repo/{pr_segment}/1/{shadow_segment}/', False),
 
         # misc
-        ('My-Repo/pull-request/1/repository/extra', False),
-        ('My-Repo/pull-request/1/repositoryextra', False),
+        ('My-Repo/{pr_segment}/1/{shadow_segment}/extra', False),
+        ('My-Repo/{pr_segment}/1/{shadow_segment}extra', False),
     ])
     def test_shadow_repo_regular_expression(self, url, expected):
         from rhodecode.lib.middleware.simplevcs import SimpleVCS
+        url = url.format(
+            pr_segment=self.pr_segment,
+            shadow_segment=self.shadow_segment)
         match_obj = SimpleVCS.shadow_repo_re.match(url)
         assert (match_obj is not None) == expected
 
@@ -276,9 +282,11 @@ class TestShadowRepoExposure(object):
         from rhodecode.model.pull_request import PullRequestModel
 
         pull_request = pr_util.create_pull_request()
-        shadow_url = '{target}/pull-request/{pr_id}/repository'.format(
+        shadow_url = '{target}/{pr_segment}/{pr_id}/{shadow_segment}'.format(
             target=pull_request.target_repo.repo_name,
-            pr_id=pull_request.pull_request_id)
+            pr_id=pull_request.pull_request_id,
+            pr_segment=TestShadowRepoRegularExpression.pr_segment,
+            shadow_segment=TestShadowRepoRegularExpression.shadow_segment)
         controller = StubVCSController(pylonsapp, pylonsapp.config, None)
         controller._name = shadow_url
         controller.set_repo_names({})
@@ -301,9 +309,11 @@ class TestShadowRepoExposure(object):
         and pull request IDs.
         """
         pull_request = pr_util.create_pull_request()
-        shadow_url = '{target}/pull-request/{pr_id}/repository'.format(
+        shadow_url = '{target}/{pr_segment}/{pr_id}/{shadow_segment}'.format(
             target=pull_request.target_repo.repo_name,
-            pr_id=999999999)
+            pr_id=999999999,
+            pr_segment=TestShadowRepoRegularExpression.pr_segment,
+            shadow_segment=TestShadowRepoRegularExpression.shadow_segment)
         controller = StubVCSController(pylonsapp, pylonsapp.config, None)
         controller._name = shadow_url
         controller.set_repo_names({})
