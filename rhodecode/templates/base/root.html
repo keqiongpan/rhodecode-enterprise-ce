@@ -108,6 +108,10 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
                   ip: '${c.rhodecode_user.ip_addr}',
                   username: '${c.rhodecode_user.username}'
               % endif
+              },
+              tags: {
+                  rhodecode_version: '${c.rhodecode_version}',
+                  rhodecode_edition: '${c.rhodecode_edition}'
               }
             };
             </script>
