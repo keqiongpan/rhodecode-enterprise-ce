@@ -6,7 +6,9 @@
     },
     "js": {
       "src": "rhodecode/public/js/src",
-      "dest": "rhodecode/public/js"
+      "dest": "rhodecode/public/js",
+      "bower": "bower_components",
+      "node_modules": "node_modules"
     }
   },
   "copy": {
@@ -34,7 +36,7 @@
         "<%= dirs.js.src %>/bootstrap.js",
         "<%= dirs.js.src %>/mousetrap.js",
         "<%= dirs.js.src %>/moment.js",
-        "<%= dirs.js.src %>/appenlight-client-0.4.1.min.js",
+        "<%= dirs.js.node_modules %>/appenlight-client/appenlight-client.min.js",
         "<%= dirs.js.src %>/i18n_utils.js",
         "<%= dirs.js.src %>/deform.js",
         "<%= dirs.js.src %>/plugins/jquery.pjax.js",

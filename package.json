@@ -13,6 +13,8 @@
     "grunt-crisper": "^1.0.1",
     "grunt-vulcanize": "^1.0.0",
     "jshint": "^2.9.1-rc3",
-    "bower": "^1.7.9"
+    "bower": "^1.7.9",
+    "favico.js": "^0.3.10",
+    "appenlight-client": "git+https://git@github.com/AppEnlight/appenlight-client-js.git#0.5.0"
   }
 }
