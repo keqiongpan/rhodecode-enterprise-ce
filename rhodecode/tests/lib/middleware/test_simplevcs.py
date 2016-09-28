@@ -173,8 +173,42 @@ def test_should_check_locking(query_string, expected):
     assert result == expected
 
 
+class TestShadowRepoRegularExpression(object):
+    @pytest.mark.parametrize('url, expected', [
+        # repo with/without groups
+        ('My-Repo/pull-request/1/repository', True),
+        ('Group/My-Repo/pull-request/2/repository', True),
+        ('Group/Sub-Group/My-Repo/pull-request/3/repository', True),
+        ('Group/Sub-Group1/Sub-Group2/My-Repo/pull-request/3/repository', True),
+
+        # pull request ID
+        ('MyRepo/pull-request/1/repository', True),
+        ('MyRepo/pull-request/1234567890/repository', True),
+        ('MyRepo/pull-request/-1/repository', False),
+        ('MyRepo/pull-request/invalid/repository', False),
+
+        # unicode
+        (u'Sp€çîál-Repö/pull-request/1/repository', True),
+        (u'Sp€çîál-Gröüp/Sp€çîál-Repö/pull-request/1/repository', True),
+
+        # trailing/leading slash
+        ('/My-Repo/pull-request/1/repository', False),
+        ('My-Repo/pull-request/1/repository/', False),
+        ('/My-Repo/pull-request/1/repository/', False),
+
+        # misc
+        ('My-Repo/pull-request/1/repository/extra', False),
+        ('My-Repo/pull-request/1/repositoryextra', False),
+    ])
+    def test_shadow_repo_regular_expression(self, url, expected):
+        from rhodecode.lib.middleware.simplevcs import SimpleVCS
+        match_obj = SimpleVCS.shadow_repo_re.match(url)
+        assert (match_obj is not None) == expected
+
+
 @pytest.mark.backends('git', 'hg')
 class TestShadowRepoExposure(object):
+
     def test_pull_on_shadow_repo_propagates_to_wsgi_app(self, pylonsapp):
         """
         Check that a pull action to a shadow repo is propagated to the
