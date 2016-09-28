@@ -1433,7 +1433,7 @@
     propagatedBuildInputs = with self; [click future six Mako MarkupSafe requests Whoosh elasticsearch elasticsearch-dsl];
     src = fetchurl {
       url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.10.0.zip";
-      md5 = "e9bf3328d287707ca331bc430f868f85";
+      md5 = "8b74bc075ae7dd55fbd480a2406630c8";
     };
     meta = {
       license = [ { fullName = "AGPLv3 and Proprietary"; } ];

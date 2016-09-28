@@ -123,7 +123,7 @@ pyzmq==14.6.0
 # TODO: This is not available in public
 # rc-testdata==0.2.0
 
-https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.10.0.zip#md5=e9bf3328d287707ca331bc430f868f85
+https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.10.0.zip#md5=8b74bc075ae7dd55fbd480a2406630c8
 
 
 recaptcha-client==1.0.6
