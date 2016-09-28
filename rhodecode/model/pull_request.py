@@ -27,6 +27,7 @@ from collections import namedtuple
 import json
 import logging
 import datetime
+import urllib
 
 from pylons.i18n.translation import _
 from pylons.i18n.translation import lazy_ugettext
@@ -785,7 +786,8 @@ class PullRequestModel(BaseModel):
         if pull_request.is_closed():
             return None
         else:
-            return u'{url}/repository'.format(url=self.get_url(pull_request))
+            pr_url = urllib.unquote(self.get_url(pull_request))
+            return safe_unicode('{pr_url}/repository'.format(pr_url=pr_url))
 
     def notify_reviewers(self, pull_request, reviewers_ids):
         # notification to reviewers
