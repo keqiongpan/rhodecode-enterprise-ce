@@ -94,10 +94,10 @@ class SimpleVCS(object):
     # we use this regex which will match only on URLs pointing to shadow
     # repositories.
     shadow_repo_re = re.compile(
-        '(?P<groups>(?:{slug_pat})(?:/{slug_pat})*/)?'  # repo groups
-        '(?P<target>{slug_pat})/'                       # target repo
-        'pull-request/(?P<pr_id>\d+)/'                  # pull request
-        'repository$'                                   # shadow repo
+        '(?P<groups>(?:{slug_pat}/)*)'  # repo groups
+        '(?P<target>{slug_pat})/'       # target repo
+        'pull-request/(?P<pr_id>\d+)/'  # pull request
+        'repository$'                   # shadow repo
         .format(slug_pat=SLUG_RE.pattern))
 
     def __init__(self, application, config, registry):
