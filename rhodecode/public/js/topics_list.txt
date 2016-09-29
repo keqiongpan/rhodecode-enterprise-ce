@@ -6,3 +6,4 @@
 /connection_controller/subscribe - subscribes user to new channels
 /connection_controller/presence - receives presence change messages
 /connection_controller/channel_update - receives channel states
+/favicon/update - notify state change for favicon

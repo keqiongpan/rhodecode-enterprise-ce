@@ -6,6 +6,7 @@ var rhodeCodeApp = Polymer({
     attached: function () {
         ccLog.debug('rhodeCodeApp created');
         $.Topic('/notifications').subscribe(this.handleNotifications.bind(this));
+        $.Topic('/favicon/update').subscribe(this.faviconUpdate.bind(this));
         $.Topic('/connection_controller/subscribe').subscribe(
             this.subscribeToChannelTopic.bind(this));
         // this event can be used to coordinate plugins to do their
@@ -25,6 +26,10 @@ var rhodeCodeApp = Polymer({
 
     handleNotifications: function (data) {
         this.$['notifications'].handleNotification(data);
+    },
+
+    faviconUpdate: function (data) {
+        this.$$('rhodecode-favicon').counter = data.count;
     },
 
     /** opens connection to ws server */
