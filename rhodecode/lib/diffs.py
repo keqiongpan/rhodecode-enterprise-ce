@@ -699,7 +699,7 @@ class DiffProcessor(object):
                     if enable_comments and change['action'] != Action.CONTEXT:
                         _html.append('''<a href="#"><span class="icon-comment-add"></span></a>''')
 
-                    _html.append('''</span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>\n''')
+                    _html.append('''</span></td><td class="comment-toggle tooltip" title="Toggle Comment Thread"><i class="icon-comment"></i></td>\n''')
 
                     ###########################################################
                     # OLD LINE NUMBER
