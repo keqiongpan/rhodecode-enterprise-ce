@@ -56,7 +56,7 @@ class TestHomeController(TestController):
 
         rhodecode_version_hash = c.rhodecode_version_hash
         response.mustcontain('style.css?ver={0}'.format(rhodecode_version_hash))
-        response.mustcontain('scripts.js?ver={0}'.format(rhodecode_version_hash))
+        response.mustcontain('rhodecode-components.js?ver={0}'.format(rhodecode_version_hash))
 
     def test_index_contains_backend_specific_details(self, backend):
         self.log_user()
