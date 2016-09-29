@@ -6,12 +6,15 @@ var rhodeCodeApp = Polymer({
     attached: function () {
         ccLog.debug('rhodeCodeApp created');
         $.Topic('/notifications').subscribe(this.handleNotifications.bind(this));
+        $.Topic('/connection_controller/subscribe').subscribe(
+            this.subscribeToChannelTopic.bind(this));
+        // this event can be used to coordinate plugins to do their
+        // initialization before channelstream is kicked off
+        $.Topic('/__MAIN_APP__').publish({});
 
         for (var i = 0; i < alertMessagePayloads.length; i++) {
             $.Topic('/notifications').publish(alertMessagePayloads[i]);
         }
-        $.Topic('/connection_controller/subscribe').subscribe(
-            this.subscribeToChannelTopic.bind(this));
         this.kickoffChannelstreamPlugin();
     },
 
@@ -33,7 +36,7 @@ var rhodeCodeApp = Polymer({
             channels.push(addChannels[i]);
         }
         if (window.CHANNELSTREAM_SETTINGS && CHANNELSTREAM_SETTINGS.enabled){
-            var channelstreamConnection = this.$['channelstream-connection'];
+            var channelstreamConnection = this.getChannelStreamConnection();
             channelstreamConnection.connectUrl = CHANNELSTREAM_URLS.connect;
             channelstreamConnection.subscribeUrl = CHANNELSTREAM_URLS.subscribe;
             channelstreamConnection.websocketUrl = CHANNELSTREAM_URLS.ws + '/ws';
