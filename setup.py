@@ -117,7 +117,6 @@ test_requirements = [
     'WebTest',
     'configobj',
     'cssselect',
-    'flake8',
     'lxml',
     'mock',
     'pytest',
