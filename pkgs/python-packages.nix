@@ -675,19 +675,6 @@
       license = [ pkgs.lib.licenses.asl20 ];
     };
   };
-  flake8 = super.buildPythonPackage {
-    name = "flake8-2.4.1";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [pyflakes pep8 mccabe];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/8f/b5/9a73c66c7dba273bac8758398f060c008a25f3e84531063b42503b5d0a95/flake8-2.4.1.tar.gz";
-      md5 = "ed45d3db81a3b7c88bd63c6e37ca1d65";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
   future = super.buildPythonPackage {
     name = "future-0.14.3";
     buildInputs = with self; [];
@@ -883,19 +870,6 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  mccabe = super.buildPythonPackage {
-    name = "mccabe-0.3";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/c9/2e/75231479e11a906b64ac43bad9d0bb534d00080b18bdca8db9da46e1faf7/mccabe-0.3.tar.gz";
-      md5 = "81640948ff226f8c12b3277059489157";
-    };
-    meta = {
-      license = [ { fullName = "Expat license"; } pkgs.lib.licenses.mit ];
-    };
-  };
   meld3 = super.buildPythonPackage {
     name = "meld3-1.0.2";
     buildInputs = with self; [];
@@ -985,19 +959,6 @@
     };
     meta = {
       license = [ { fullName = "LGPL"; } { fullName = "GNU Library or Lesser General Public License (LGPL)"; } ];
-    };
-  };
-  pep8 = super.buildPythonPackage {
-    name = "pep8-1.5.7";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/8b/de/259f5e735897ada1683489dd514b2a1c91aaa74e5e6b68f80acf128a6368/pep8-1.5.7.tar.gz";
-      md5 = "f6adbdd69365ecca20513c709f9b7c93";
-    };
-    meta = {
-      license = [ { fullName = "Expat license"; } pkgs.lib.licenses.mit ];
     };
   };
   peppercorn = super.buildPythonPackage {
