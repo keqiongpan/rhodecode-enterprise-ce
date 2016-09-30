@@ -95,12 +95,12 @@
           ${dd}
       %endif
       %if show_items:
-          <span class="btn-collapse" data-toggle="item-${h.md5(dt)[:6]}-details">${_('Show More')} </span>
+          <span class="btn-collapse" data-toggle="item-${h.md5_safe(dt)[:6]}-details">${_('Show More')} </span>
       %endif
       </dd>
 
       %if show_items:
-          <div class="collapsable-content" data-toggle="item-${h.md5(dt)[:6]}-details" style="display: none">
+          <div class="collapsable-content" data-toggle="item-${h.md5_safe(dt)[:6]}-details" style="display: none">
           %for item in show_items:
               <dt></dt>
               <dd>${item}</dd>
