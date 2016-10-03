@@ -393,9 +393,9 @@ class BaseRepository(object):
             on top of the target instead of being merged.
         """
         if dry_run:
-            message = message or 'sample_message'
-            user_email = user_email or 'user@email.com'
-            user_name = user_name or 'user name'
+            message = message or 'dry_run_merge_message'
+            user_email = user_email or 'dry-run-merge@rhodecode.com'
+            user_name = user_name or 'Dry-Run User'
         else:
             if not user_name:
                 raise ValueError('user_name cannot be empty')
