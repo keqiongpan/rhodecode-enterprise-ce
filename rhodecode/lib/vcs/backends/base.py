@@ -421,7 +421,7 @@ class BaseRepository(object):
 
     def _merge_repo(self, shadow_repository_path, target_ref,
                     source_repo, source_ref, merge_message,
-                    merger_name, merger_email, dry_run=False):
+                    merger_name, merger_email, dry_run=False, use_rebase=False):
         """Internal implementation of merge."""
         raise NotImplementedError
 
