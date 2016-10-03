@@ -110,9 +110,9 @@
                    <div class="input">
                        <div class="pr-shadowinfo">
                            %if h.is_hg(c.pull_request.target_repo):
-                               <input type="text"  value="hg clone ${c.shadow_clone_url}" readonly="readonly">
+                               <input type="text"  value="hg clone ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
                            %elif h.is_git(c.pull_request.target_repo):
-                               <input type="text"  value="git clone ${c.shadow_clone_url}" readonly="readonly">
+                               <input type="text"  value="git clone ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
                            %endif
                        </div>
                    </div>
