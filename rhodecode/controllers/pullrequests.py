@@ -298,10 +298,12 @@ class PullrequestsController(BaseRepoController):
             redirect(url('pullrequest_home', repo_name=source_repo.repo_name))
 
         default_target_repo = source_repo
-        if (source_repo.parent and
-                not source_repo.parent.scm_instance().is_empty()):
-            # change default if we have a parent repo
-            default_target_repo = source_repo.parent
+
+        if source_repo.parent:
+            parent_vcs_obj = source_repo.parent.scm_instance()
+            if parent_vcs_obj and not parent_vcs_obj.is_empty():
+                # change default if we have a parent repo
+                default_target_repo = source_repo.parent
 
         target_repo_data = PullRequestModel().generate_repo_data(
             default_target_repo)
@@ -363,7 +365,8 @@ class PullrequestsController(BaseRepoController):
         add_parent = False
         if repo.parent:
             if filter_query in repo.parent.repo_name:
-                if not repo.parent.scm_instance().is_empty():
+                parent_vcs_obj = repo.parent.scm_instance()
+                if parent_vcs_obj and not parent_vcs_obj.is_empty():
                     add_parent = True
 
         limit = 20 - 1 if add_parent else 20
