@@ -218,7 +218,8 @@ class Pyro4VCSServer(VCSServer):
         self._args = args
 
     def wait_until_ready(self, timeout=30):
-        remote_server = vcs.create_vcsserver_proxy(self.server_and_port)
+        remote_server = vcs.create_vcsserver_proxy(
+            self.server_and_port, 'pyro4')
         start = time.time()
         with remote_server:
             while time.time() - start < timeout:
