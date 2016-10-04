@@ -42,7 +42,7 @@ from rhodecode.lib.exceptions import (
     NotAllowedToCreateUserError)
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.middleware import appenlight
-from rhodecode.lib.middleware.utils import scm_app
+from rhodecode.lib.middleware.utils import scm_app, scm_app_http
 from rhodecode.lib.utils import (
     is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path, SLUG_RE)
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool, safe_unicode
@@ -173,14 +173,17 @@ class SimpleVCS(object):
 
     @property
     def scm_app(self):
-        custom_implementation = self.config.get('vcs.scm_app_implementation')
-        if custom_implementation and custom_implementation != 'pyro4':
-            log.info(
-                "Using custom implementation of scm_app: %s",
-                custom_implementation)
-            scm_app_impl = importlib.import_module(custom_implementation)
-        else:
+        custom_implementation = self.config['vcs.scm_app_implementation']
+        if custom_implementation == 'http':
+            log.info('Using HTTP implementation of scm app.')
+            scm_app_impl = scm_app_http
+        elif custom_implementation == 'pyro4':
+            log.info('Using Pyro implementation of scm app.')
             scm_app_impl = scm_app
+        else:
+            log.info('Using custom implementation of scm_app: "{}"'.format(
+                custom_implementation))
+            scm_app_impl = importlib.import_module(custom_implementation)
         return scm_app_impl
 
     def _get_by_id(self, repo_name):
