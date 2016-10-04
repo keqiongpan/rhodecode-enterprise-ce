@@ -430,10 +430,11 @@ def _sanitize_vcs_settings(settings):
     """
     _string_setting(settings, 'vcs.svn.compatible_version', '')
     _string_setting(settings, 'git_rev_filter', '--all')
-    _string_setting(settings, 'vcs.hooks.protocol', 'pyro4')
+    _string_setting(settings, 'vcs.hooks.protocol', 'http')
+    _string_setting(settings, 'vcs.scm_app_implementation', 'http')
     _string_setting(settings, 'vcs.server', '')
     _string_setting(settings, 'vcs.server.log_level', 'debug')
-    _string_setting(settings, 'vcs.server.protocol', 'pyro4')
+    _string_setting(settings, 'vcs.server.protocol', 'http')
     _bool_setting(settings, 'startup.import_repos', 'false')
     _bool_setting(settings, 'vcs.hooks.direct_calls', 'false')
     _bool_setting(settings, 'vcs.server.enable', 'true')
