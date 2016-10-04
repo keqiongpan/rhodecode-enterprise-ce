@@ -246,7 +246,7 @@ class HttpVCSServer(VCSServer):
         config_data = configobj.ConfigObj(config_file)
         self._config = config_data['server:main']
 
-        args = ['pserve', config_file, 'http_host=0.0.0.0']
+        args = ['pserve', config_file]
         self._args = args
 
     @property
