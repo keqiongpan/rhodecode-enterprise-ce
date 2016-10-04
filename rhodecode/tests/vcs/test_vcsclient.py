@@ -46,7 +46,7 @@ def test_vcs_connections_have_a_timeout_set(pylonsapp, short_timeout):
     with pytest.raises(TimeoutError):
         # TODO: johbo: Find a better way to set this number
         for number in xrange(100):
-            server = create_vcsserver_proxy(server_and_port)
+            server = create_vcsserver_proxy(server_and_port, protocol='pyro4')
             server.ping()
             proxy_objects.append(server)
 
@@ -54,7 +54,7 @@ def test_vcs_connections_have_a_timeout_set(pylonsapp, short_timeout):
 def test_vcs_remote_calls_are_bound_by_timeout(pylonsapp, short_timeout):
     server_and_port = pylonsapp.config['vcs.server']
     with pytest.raises(TimeoutError):
-        server = create_vcsserver_proxy(server_and_port)
+        server = create_vcsserver_proxy(server_and_port, protocol='pyro4')
         server.sleep(short_timeout + 1.0)
 
 
