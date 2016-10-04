@@ -68,7 +68,7 @@ def pytest_addoption(parser):
         '--without-vcsserver', dest='with_vcsserver', action='store_false',
         help="Do not start the VCSServer in a background process.")
     vcsgroup.addoption(
-        '--with-vcsserver', dest='vcsserver_config',
+        '--with-vcsserver', dest='vcsserver_config_pyro4',
         help="Start the VCSServer with the specified config file.")
     vcsgroup.addoption(
         '--with-vcsserver-http', dest='vcsserver_config_http',
@@ -91,7 +91,7 @@ def pytest_addoption(parser):
             "against an already running server and random ports cause "
             "trouble."))
     parser.addini(
-        'vcsserver_config',
+        'vcsserver_config_pyro4',
         "Start the VCSServer with the specified config file.")
     parser.addini(
         'vcsserver_config_http',
@@ -151,7 +151,7 @@ def vcsserver_factory(tmpdir_factory):
             overrides.append(platform_override)
 
         option_name = (
-            'vcsserver_config_http' if use_http else 'vcsserver_config')
+            'vcsserver_config_http' if use_http else 'vcsserver_config_pyro4')
         override_option_name = 'vcsserver_config_override'
         config_file = get_config(
             request.config, option_name=option_name,
@@ -183,7 +183,7 @@ def _use_vcs_http_server(config):
     protocol = (
         config.getoption(protocol_option) or
         config.getini(protocol_option) or
-        'pyro4')
+        'http')
     return protocol == 'http'
 
 
