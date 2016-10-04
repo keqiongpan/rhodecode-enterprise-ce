@@ -24,8 +24,7 @@ Custom vcs exceptions module.
 
 import functools
 import urllib2
-import pycurl
-from Pyro4.errors import CommunicationError
+
 
 class VCSCommunicationError(Exception):
     pass

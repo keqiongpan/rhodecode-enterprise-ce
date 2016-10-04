@@ -46,7 +46,7 @@ from Pyro4.errors import CommunicationError
 from rhodecode.lib.vcs.conf import settings
 from rhodecode.lib.vcs.backends import get_vcs_instance, get_backend
 from rhodecode.lib.vcs.exceptions import (
-    VCSError, RepositoryError, CommitError)
+    VCSError, RepositoryError, CommitError, VCSCommunicationError)
 
 log = logging.getLogger(__name__)
 
@@ -180,7 +180,7 @@ def _start_http_vcs_server(server_and_port, log_level=None):
 
     host, port = server_and_port.rsplit(":", 1)
     args = [
-        'pserve', 'vcsserver/development_pyramid.ini',
+        'pserve', 'rhodecode/tests/vcsserver_http.ini',
         'http_port=%s' % (port, ), 'http_host=%s' % (host, )]
     proc = subprocess.Popen(args)
 
@@ -192,14 +192,18 @@ def _start_http_vcs_server(server_and_port, log_level=None):
     _wait_until_vcs_server_is_reachable(server)
 
 
-def _wait_until_vcs_server_is_reachable(server):
-    while xrange(80):  # max 40s of sleep
+def _wait_until_vcs_server_is_reachable(server, timeout=40):
+    begin = time.time()
+    while (time.time() - begin) < timeout:
         try:
             server.ping()
-            break
-        except (CommunicationError, pycurl.error):
-            pass
+            return
+        except (VCSCommunicationError, CommunicationError, pycurl.error):
+            log.debug('VCSServer not started yet, retry to connect.')
         time.sleep(0.5)
+    raise Exception(
+        'Starting the VCSServer failed or took more than {} '
+        'seconds.'.format(timeout))
 
 
 def _try_to_shutdown_running_server(server_and_port, protocol):
