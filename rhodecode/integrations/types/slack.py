@@ -173,7 +173,7 @@ class SlackIntegrationType(IntegrationTypeBase):
 
         return (textwrap.dedent(
             '''
-            {user} commented on pull request <{pr_url}|#{number}> - {pr_title}:
+            *{user}* commented on pull request <{pr_url}|#{number}> - {pr_title}:
             >>> {comment_status}{comment_text}
             ''').format(
                 comment_status=comment_status,
@@ -208,7 +208,7 @@ class SlackIntegrationType(IntegrationTypeBase):
         }.get(event.__class__, str(event.__class__))
 
         return ('Pull request <{url}|#{number}> - {title} '
-                '{action} by {user}').format(
+                '`{action}` by *{user}*').format(
             user=data['actor']['username'],
             number=data['pullrequest']['pull_request_id'],
             url=data['pullrequest']['url'],
