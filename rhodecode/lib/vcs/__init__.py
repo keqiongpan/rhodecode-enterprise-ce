@@ -126,7 +126,7 @@ def connect_http(server_and_port):
         connection.Svn = None
 
 
-def connect_vcs(server_and_port, protocol='pyro4'):
+def connect_vcs(server_and_port, protocol):
     """
     Initializes the connection to the vcs server.
 
@@ -141,7 +141,7 @@ def connect_vcs(server_and_port, protocol='pyro4'):
 
 # TODO: johbo: This function should be moved into our test suite, there is
 # no reason to support starting the vcsserver in Enterprise itself.
-def start_vcs_server(server_and_port, protocol='pyro4', log_level=None):
+def start_vcs_server(server_and_port, protocol, log_level=None):
     """
     Starts the vcs server in a subprocess.
     """
@@ -153,7 +153,7 @@ def start_vcs_server(server_and_port, protocol='pyro4', log_level=None):
 
 
 def _start_pyro4_vcs_server(server_and_port, log_level=None):
-    _try_to_shutdown_running_server(server_and_port)
+    _try_to_shutdown_running_server(server_and_port, protocol='pyro4')
     host, port = server_and_port.rsplit(":", 1)
     host = host.strip('[]')
     args = [
@@ -198,8 +198,8 @@ def _wait_until_vcs_server_is_reachable(server):
         time.sleep(0.5)
 
 
-def _try_to_shutdown_running_server(server_and_port):
-    server = create_vcsserver_proxy(server_and_port)
+def _try_to_shutdown_running_server(server_and_port, protocol):
+    server = create_vcsserver_proxy(server_and_port, protocol)
     try:
         server.shutdown()
     except (CommunicationError, pycurl.error):
@@ -207,11 +207,11 @@ def _try_to_shutdown_running_server(server_and_port):
 
     # TODO: Not sure why this is important, but without it the following start
     # of the server fails.
-    server = create_vcsserver_proxy(server_and_port)
+    server = create_vcsserver_proxy(server_and_port, protocol)
     server.ping()
 
 
-def create_vcsserver_proxy(server_and_port, protocol='pyro4'):
+def create_vcsserver_proxy(server_and_port, protocol):
     if protocol == 'pyro4':
         return _create_vcsserver_proxy_pyro4(server_and_port)
     elif protocol == 'http':
