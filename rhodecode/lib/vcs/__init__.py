@@ -137,6 +137,8 @@ def connect_vcs(server_and_port, protocol):
         connect_pyro4(server_and_port)
     elif protocol == 'http':
         connect_http(server_and_port)
+    else:
+        raise Exception('Invalid vcs server protocol "{}"'.format(protocol))
 
 
 # TODO: johbo: This function should be moved into our test suite, there is
@@ -150,6 +152,8 @@ def start_vcs_server(server_and_port, protocol, log_level=None):
         return _start_http_vcs_server(server_and_port, log_level)
     elif protocol == 'pyro4':
         return _start_pyro4_vcs_server(server_and_port, log_level)
+    else:
+        raise Exception('Invalid vcs server protocol "{}"'.format(protocol))
 
 
 def _start_pyro4_vcs_server(server_and_port, log_level=None):
@@ -216,6 +220,8 @@ def create_vcsserver_proxy(server_and_port, protocol):
         return _create_vcsserver_proxy_pyro4(server_and_port)
     elif protocol == 'http':
         return _create_vcsserver_proxy_http(server_and_port)
+    else:
+        raise Exception('Invalid vcs server protocol "{}"'.format(protocol))
 
 
 def _create_vcsserver_proxy_pyro4(server_and_port):
