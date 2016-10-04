@@ -45,7 +45,7 @@ def test_vcs_connections_have_a_timeout_set(pylonsapp, short_timeout):
     proxy_objects = []
     with pytest.raises(TimeoutError):
         # TODO: johbo: Find a better way to set this number
-        while xrange(100):
+        for number in xrange(100):
             server = create_vcsserver_proxy(server_and_port)
             server.ping()
             proxy_objects.append(server)
