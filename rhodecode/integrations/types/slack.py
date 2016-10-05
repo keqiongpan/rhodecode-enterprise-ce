@@ -222,7 +222,6 @@ class SlackIntegrationType(IntegrationTypeBase):
 
         branches_commits = {}
         for commit in data['push']['commits']:
-            log.critical(commit)
             if commit['branch'] not in branches_commits:
                 branch_commits = {'branch': branch_data[commit['branch']],
                                   'commits': []}
