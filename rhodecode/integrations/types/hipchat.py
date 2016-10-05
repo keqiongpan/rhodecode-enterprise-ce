@@ -206,7 +206,7 @@ class HipchatIntegrationType(IntegrationTypeBase):
         }.get(event.__class__, str(event.__class__))
 
         return ('Pull request <a href="{url}">#{number}</a> - {title} '
-                '{action} by {user}').format(
+                '{action} by <b>{user}</b>').format(
             user=data['actor']['username'],
             number=data['pullrequest']['pull_request_id'],
             url=data['pullrequest']['url'],
@@ -216,7 +216,7 @@ class HipchatIntegrationType(IntegrationTypeBase):
 
     def format_repo_push_event(self, data):
         branch_data = {branch['name']: branch
-                      for branch in data['push']['branches']}
+                       for branch in data['push']['branches']}
 
         branches_commits = {}
         for commit in data['push']['commits']:

@@ -218,7 +218,7 @@ class SlackIntegrationType(IntegrationTypeBase):
 
     def format_repo_push_event(self, data):
         branch_data = {branch['name']: branch
-                      for branch in data['push']['branches']}
+                       for branch in data['push']['branches']}
 
         branches_commits = {}
         for commit in data['push']['commits']:
