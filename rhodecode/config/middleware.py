@@ -31,9 +31,9 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.settings import asbool, aslist
 from pyramid.wsgi import wsgiapp
-from pyramid.httpexceptions import HTTPError, HTTPInternalServerError, HTTPFound
+from pyramid.httpexceptions import (
+    HTTPError, HTTPInternalServerError, HTTPFound)
 from pyramid.events import ApplicationCreated
-import pyramid.httpexceptions as httpexceptions
 from pyramid.renderers import render_to_response
 from routes.middleware import RoutesMiddleware
 import routes.util
@@ -44,10 +44,10 @@ from rhodecode.config import patches
 from rhodecode.config.routing import STATIC_FILE_PREFIX
 from rhodecode.config.environment import (
     load_environment, load_pyramid_environment)
-from rhodecode.lib.exceptions import VCSServerUnavailable
-from rhodecode.lib.vcs.exceptions import VCSCommunicationError
 from rhodecode.lib.middleware import csrf
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
+from rhodecode.lib.middleware.error_handling import (
+    PylonsErrorHandlingMiddleware)
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
@@ -192,47 +192,15 @@ def make_not_found_view(config):
         pylons_app = VCSMiddleware(
             pylons_app, settings, appenlight_client, registry=config.registry)
 
-    pylons_app_as_view = wsgiapp(pylons_app)
+    # Add an error handling middleware to convert errors from the old pylons
+    # app into a proper error page response.
+    reraise = (settings.get('debugtoolbar.enabled', False) or
+               rhodecode.disable_error_handler)
+    pylons_app = PylonsErrorHandlingMiddleware(
+        pylons_app, error_handler, reraise)
 
-    def pylons_app_with_error_handler(context, request):
-        """
-        Handle exceptions from rc pylons app:
-
-        - old webob type exceptions get converted to pyramid exceptions
-        - pyramid exceptions are passed to the error handler view
-        """
-        def is_vcs_response(response):
-            return 'X-RhodeCode-Backend' in response.headers
-
-        def is_http_error(response):
-            # webob type error responses
-            return (400 <= response.status_int <= 599)
-
-        def is_error_handling_needed(response):
-            return is_http_error(response) and not is_vcs_response(response)
-
-        try:
-            response = pylons_app_as_view(context, request)
-            if is_error_handling_needed(response):
-                response = webob_to_pyramid_http_response(response)
-                return error_handler(response, request)
-        except HTTPError as e:  # pyramid type exceptions
-            return error_handler(e, request)
-        except Exception as e:
-            log.exception(e)
-
-            if (settings.get('debugtoolbar.enabled', False) or
-                rhodecode.disable_error_handler):
-                raise
-
-            if isinstance(e, VCSCommunicationError):
-                return error_handler(VCSServerUnavailable(), request)
-
-            return error_handler(HTTPInternalServerError(), request)
-
-        return response
-
-    return pylons_app_with_error_handler
+    # Convert WSGI app to pyramid view and return it.
+    return wsgiapp(pylons_app)
 
 
 def add_pylons_compat_data(registry, global_config, settings):
@@ -241,16 +209,6 @@ def add_pylons_compat_data(registry, global_config, settings):
     """
     registry._pylons_compat_global_config = global_config
     registry._pylons_compat_settings = settings
-
-
-def webob_to_pyramid_http_response(webob_response):
-    ResponseClass = httpexceptions.status_map[webob_response.status_int]
-    pyramid_response = ResponseClass(webob_response.status)
-    pyramid_response.status = webob_response.status
-    pyramid_response.headers.update(webob_response.headers)
-    if pyramid_response.headers['content-type'] == 'text/html':
-        pyramid_response.headers['content-type'] = 'text/html; charset=UTF-8'
-    return pyramid_response
 
 
 def error_handler(exception, request):
