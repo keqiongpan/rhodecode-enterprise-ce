@@ -64,6 +64,9 @@ self: super: {
   });
 
   lxml = super.lxml.override (attrs: {
+    # johbo: On 16.09 we need this to compile on darwin, otherwise compilation
+    # fails on Darwin.
+    hardeningDisable = if pkgs.stdenv.isDarwin then [ "format" ] else null;
     buildInputs = with self; [
       pkgs.libxml2
       pkgs.libxslt
