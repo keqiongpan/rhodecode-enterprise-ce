@@ -72,7 +72,7 @@ class SimpleHg(simplevcs.SimpleVCS):
 
     def _create_wsgi_app(self, repo_path, repo_name, config):
         return self.scm_app.create_hg_wsgi_app(
-            repo_path, repo_name, config, self.SCM)
+            repo_path, repo_name, config)
 
     def _create_config(self, extras, repo_name):
         config = utils.make_db_config(repo=repo_name)

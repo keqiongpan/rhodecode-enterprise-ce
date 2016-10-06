@@ -133,4 +133,4 @@ def create_scm_app():
     """
     echo_app_url = os.environ["RC_ECHO_URL"]
     return scm_app_http.VcsHttpProxy(
-        echo_app_url, 'stub_path', 'stub_name', None, 'stub_backend')
+        echo_app_url, 'stub_path', 'stub_name', None)

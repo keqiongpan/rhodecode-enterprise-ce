@@ -86,8 +86,7 @@ def test_remote_app_caller():
             return (['content'], '200 OK', [('Content-Type', 'text/plain')])
 
     wrapper_app = wsgi_app_caller_client.RemoteAppCaller(
-        RemoteAppCallerMock(), 'dummy-backend',
-        'a1', 'a2', arg3='a3', arg4='a4')
+        RemoteAppCallerMock(), 'a1', 'a2', arg3='a3', arg4='a4')
 
     test_app = webtest.TestApp(wrapper_app)
 
@@ -95,7 +94,6 @@ def test_remote_app_caller():
 
     assert response.status == '200 OK'
     assert sorted(response.headers.items()) == sorted([
-        ('X-RhodeCode-Backend', 'dummy-backend'),
         ('Content-Type', 'text/plain'),
         ('Content-Length', '7'),
     ])

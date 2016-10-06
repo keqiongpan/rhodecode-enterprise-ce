@@ -37,14 +37,14 @@ import rhodecode
 log = logging.getLogger(__name__)
 
 
-def create_git_wsgi_app(repo_path, repo_name, config, backend):
+def create_git_wsgi_app(repo_path, repo_name, config):
     url = _vcs_streaming_url() + 'git/'
-    return VcsHttpProxy(url, repo_path, repo_name, config, backend)
+    return VcsHttpProxy(url, repo_path, repo_name, config)
 
 
-def create_hg_wsgi_app(repo_path, repo_name, config, backend):
+def create_hg_wsgi_app(repo_path, repo_name, config):
     url = _vcs_streaming_url() + 'hg/'
-    return VcsHttpProxy(url, repo_path, repo_name, config, backend)
+    return VcsHttpProxy(url, repo_path, repo_name, config)
 
 
 def _vcs_streaming_url():
@@ -67,7 +67,7 @@ class VcsHttpProxy(object):
     server as well.
     """
 
-    def __init__(self, url, repo_path, repo_name, config, backend):
+    def __init__(self, url, repo_path, repo_name, config):
         """
         :param str url: The URL of the VCSServer to call.
         """
@@ -75,7 +75,6 @@ class VcsHttpProxy(object):
         self._repo_name = repo_name
         self._repo_path = repo_path
         self._config = config
-        self._backend = backend
         log.debug(
             "Creating VcsHttpProxy for repo %s, url %s",
             repo_name, url)

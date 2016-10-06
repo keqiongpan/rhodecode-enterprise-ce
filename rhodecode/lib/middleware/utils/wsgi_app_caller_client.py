@@ -56,18 +56,16 @@ class RemoteAppCaller(object):
     It first cleans the environment, so as to reduce the data transferred.
     """
 
-    def __init__(self, remote_wsgi, backend, *args, **kwargs):
+    def __init__(self, remote_wsgi, *args, **kwargs):
         """
         :param remote_wsgi: The remote wsgi object that creates a
           WSGIAppCaller. This object
           has to have a handle method, with the signature:
           handle(environ, start_response, *args, **kwargs)
-        :param backend: Key (str) of the SCM backend that is in use.
         :param args: args to be passed to the app creation
         :param kwargs: kwargs to be passed to the app creation
         """
         self._remote_wsgi = remote_wsgi
-        self._backend = backend
         self._args = args
         self._kwargs = kwargs
 
