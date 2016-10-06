@@ -19,40 +19,11 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import pytest
-import requests
-from mock import Mock, patch
+from mock import patch
 
 from rhodecode import events
 from rhodecode.model.db import Session, Integration
 from rhodecode.integrations.types.slack import SlackIntegrationType
-
-@pytest.fixture
-def repo_push_event(backend, user_regular):
-    commits = [
-        {'message': 'ancestor commit fixes #15'},
-        {'message': 'quick fixes'},
-        {'message': 'change that fixes #41, #2'},
-        {'message': 'this is because 5b23c3532 broke stuff'},
-        {'message': 'last commit'},
-    ]
-    commit_ids = backend.create_master_repo(commits).values()
-    repo = backend.create_repo()
-    scm_extras = {
-        'ip': '127.0.0.1',
-        'username': user_regular.username,
-        'action': '',
-        'repository': repo.repo_name,
-        'scm': repo.scm_instance().alias,
-        'config': '',
-        'server_url': 'http://example.com',
-        'make_lock': None,
-        'locked_by': [None],
-        'commit_ids': commit_ids,
-    }
-
-    return events.RepoPushEvent(repo_name=repo.repo_name,
-                                pushed_commit_ids=commit_ids,
-                                extras=scm_extras)
 
 
 @pytest.fixture

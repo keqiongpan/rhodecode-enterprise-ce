@@ -21,6 +21,7 @@ from pyramid.i18n import TranslationStringFactory
 # Create a translation string factory for the 'rhodecode' domain.
 _ = TranslationStringFactory('rhodecode')
 
+
 class LazyString(object):
     def __init__(self, *args, **kw):
         self.args = args
