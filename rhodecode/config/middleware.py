@@ -186,12 +186,6 @@ def make_not_found_view(config):
     pylons_app, appenlight_client = wrap_in_appenlight_if_enabled(
         pylons_app, settings)
 
-    # The VCSMiddleware shall operate like a fallback if pyramid doesn't find
-    # a view to handle the request. Therefore we wrap it around the pylons app.
-    if vcs_server_enabled:
-        pylons_app = VCSMiddleware(
-            pylons_app, settings, appenlight_client, registry=config.registry)
-
     # The pylons app is executed inside of the pyramid 404 exception handler.
     # Exceptions which are raised inside of it are not handled by pyramid
     # again. Therefore we add a middleware that invokes the error handler in
@@ -201,6 +195,15 @@ def make_not_found_view(config):
                rhodecode.disable_error_handler)
     pylons_app = PylonsErrorHandlingMiddleware(
         pylons_app, error_handler, reraise)
+
+    # The VCSMiddleware shall operate like a fallback if pyramid doesn't find a
+    # view to handle the request. Therefore it is wrapped around the pylons
+    # app. It has to be outside of the error handling otherwise error responses
+    # from the vcsserver are converted to HTML error pages. This confuses the
+    # command line tools and the user won't get a meaningful error message.
+    if vcs_server_enabled:
+        pylons_app = VCSMiddleware(
+            pylons_app, settings, appenlight_client, registry=config.registry)
 
     # Convert WSGI app to pyramid view and return it.
     return wsgiapp(pylons_app)
