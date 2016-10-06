@@ -116,10 +116,6 @@ class VcsHttpProxy(object):
             if not wsgiref.util.is_hop_by_hop(h)
         ]
 
-        # Add custom response header to indicate that this is a VCS response
-        # and which backend is used.
-        response_headers.append(('X-RhodeCode-Backend', self._backend))
-
         # TODO: johbo: Better way to get the status including text?
         status = str(response.status_code)
         start_response(status, response_headers)

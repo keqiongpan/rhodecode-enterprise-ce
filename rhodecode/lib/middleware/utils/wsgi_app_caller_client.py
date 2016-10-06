@@ -94,10 +94,6 @@ class RemoteAppCaller(object):
             data, status, headers = self._remote_wsgi.handle(
                 clean_environ, input_data, *self._args, **self._kwargs)
 
-        # Add custom response header to indicate that this is a VCS response
-        # and which backend is used.
-        headers.append(('X-RhodeCode-Backend', self._backend))
-
         log.debug("Got result from proxy, returning to WSGI container")
         start_response(status, headers)
 
