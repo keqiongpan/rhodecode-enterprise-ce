@@ -161,7 +161,7 @@ class HipchatIntegrationType(IntegrationTypeBase):
         comment_text = data['comment']['text']
         if len(comment_text) > 200:
             comment_text = '{comment_text}<a href="{comment_url}">...<a/>'.format(
-                comment_text=comment_text[:200],
+                comment_text=h.html_escape(comment_text[:200]),
                 comment_url=data['comment']['url'],
             )
 
@@ -179,8 +179,8 @@ class HipchatIntegrationType(IntegrationTypeBase):
                 number=data['pullrequest']['pull_request_id'],
                 pr_url=data['pullrequest']['url'],
                 pr_status=data['pullrequest']['status'],
-                pr_title=data['pullrequest']['title'],
-                comment_text=comment_text
+                pr_title=h.html_escape(data['pullrequest']['title']),
+                comment_text=h.html_escape(comment_text)
             )
         )
 
@@ -193,7 +193,7 @@ class HipchatIntegrationType(IntegrationTypeBase):
                 number=data['pullrequest']['pull_request_id'],
                 pr_url=data['pullrequest']['url'],
                 pr_status=data['pullrequest']['status'],
-                pr_title=data['pullrequest']['title'],
+                pr_title=h.html_escape(data['pullrequest']['title']),
             )
         )
 
@@ -210,7 +210,7 @@ class HipchatIntegrationType(IntegrationTypeBase):
             user=data['actor']['username'],
             number=data['pullrequest']['pull_request_id'],
             url=data['pullrequest']['url'],
-            title=data['pullrequest']['title'],
+            title=h.html_escape(data['pullrequest']['title']),
             action=action
         )
 
@@ -238,7 +238,7 @@ class HipchatIntegrationType(IntegrationTypeBase):
     def format_repo_create_event(self, data):
         return '<a href="{}">{}</a> ({}) repository created by <b>{}</b>'.format(
             data['repo']['url'],
-            data['repo']['repo_name'],
+            h.html_escape(data['repo']['repo_name']),
             data['repo']['repo_type'],
             data['actor']['username'],
         )
