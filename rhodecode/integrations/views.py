@@ -329,13 +329,14 @@ class IntegrationSettingsViewBase(object):
 
         integrations = []
 
-        for integration in IntegrationModel().get_integrations(
+        for IntType, integration in IntegrationModel().get_integrations(
                         scope=scope, IntegrationType=self.IntegrationType):
 
             # extra permissions check *just in case*
             if not self._has_perms_for_integration(integration):
                 continue
-            integrations.append(integration)
+
+            integrations.append((IntType, integration))
 
         sort_arg = self.request.GET.get('sort', 'name:asc')
         if ':' in sort_arg:
