@@ -235,8 +235,8 @@ let
   rhodecode-testdata-src = sources.rhodecode-testdata or (
     pkgs.fetchhg {
       url = "https://code.rhodecode.com/upstream/rc_testdata";
-      rev = "v0.8.0";
-      sha256 = "0hy1ba134rq2f9si85yx7j4qhc9ky0hjzdk553s3q026i7km809m";
+      rev = "v0.9.0";
+      sha256 = "0k0ccb7cncd6mmzwckfbr6l7fsymcympwcm948qc3i0f0m6bbg1y";
   });
 
   # Apply all overrides and fix the final package set
