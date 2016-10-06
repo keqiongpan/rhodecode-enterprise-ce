@@ -51,16 +51,9 @@ class PylonsErrorHandlingMiddleware(object):
         response = self.handle_request(request)
         return response(environ, start_response)
 
-    def is_vcs_response(self, response):
-        return 'X-RhodeCode-Backend' in response.headers
-
     def is_http_error(self, response):
         # webob type error responses
         return (400 <= response.status_int <= 599)
-
-    def is_error_handling_needed(self, response):
-        return (self.is_http_error(response) and not
-                self.is_vcs_response(response))
 
     def reraise(self):
         return self._reraise
@@ -77,7 +70,7 @@ class PylonsErrorHandlingMiddleware(object):
         """
         try:
             response = request.get_response(self.app)
-            if self.is_error_handling_needed(response):
+            if self.is_http_error(response):
                 response = webob_to_pyramid_http_response(response)
                 return self.error_view(response, request)
         except HTTPError as e:  # pyramid type exceptions
