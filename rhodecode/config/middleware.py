@@ -192,8 +192,11 @@ def make_not_found_view(config):
         pylons_app = VCSMiddleware(
             pylons_app, settings, appenlight_client, registry=config.registry)
 
-    # Add an error handling middleware to convert errors from the old pylons
-    # app into a proper error page response.
+    # The pylons app is executed inside of the pyramid 404 exception handler.
+    # Exceptions which are raised inside of it are not handled by pyramid
+    # again. Therefore we add a middleware that invokes the error handler in
+    # case of an exception or error response. This way we return proper error
+    # HTML pages in case of an error.
     reraise = (settings.get('debugtoolbar.enabled', False) or
                rhodecode.disable_error_handler)
     pylons_app = PylonsErrorHandlingMiddleware(
