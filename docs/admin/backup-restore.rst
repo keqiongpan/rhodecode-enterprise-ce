@@ -11,7 +11,8 @@ following parts of the system at the same time.
 
 * The |repos| managed by the instance.
 * The |RCE| database.
-* Any configuration files or extensions that you've configured.
+* Any configuration files or extensions that you've configured. In most
+  cases it's only the :file:`rhodecode.ini` file.
 
 .. important::
 
@@ -54,13 +55,19 @@ backup location:
 .. code-block:: bash
 
    # For MySQL DBs
-   $ mysqldump -u <uname> -p <pass> db_name > mysql-db-backup
+   $ mysqldump -u <uname> -p <pass> rhodecode_db_name > mysql-db-backup
+   # MySQL restore command
+   $ mysql -u <uname> -p <pass> rhodecode_db_name < mysql-db-backup
 
    # For PostgreSQL DBs
-   $ pg_dump dbname > postgresql-db-backup
+   $ PGPASSWORD=<pass> pg_dump rhodecode_db_name > postgresql-db-backup
+   # PosgreSQL restore
+   $ PGPASSWORD=<pass> psql -U <uname> -h localhost -d rhodecode_db_name -1 -f postgresql-db-backup
 
-   # For SQLlite
+   # For SQLite
    $ sqlite3 rhodecode.db ‘.dump’ > sqlite-db-backup
+   # SQLite restore
+   $ copy sqlite-db-backup rhodecode.db
 
 
 The default |RCE| SQLite database location is
