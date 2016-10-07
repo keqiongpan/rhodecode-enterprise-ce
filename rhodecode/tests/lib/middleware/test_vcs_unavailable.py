@@ -20,8 +20,10 @@
 
 import mock
 import pytest
-import rhodecode
 import rhodecode.lib.vcs.client as client
+from rhodecode.lib.middleware.error_handling import (
+    PylonsErrorHandlingMiddleware)
+
 
 @pytest.mark.usefixtures('autologin_user', 'app')
 def test_vcs_available_returns_summary_page(app, backend):
@@ -35,13 +37,14 @@ def test_vcs_available_returns_summary_page(app, backend):
 def test_vcs_unavailable_returns_vcs_error_page(app, backend):
     url = '/{repo_name}'.format(repo_name=backend.repo.repo_name)
 
-    try:
-        rhodecode.disable_error_handler = False
-        with mock.patch.object(client, '_get_proxy_method') as p:
-            p.side_effect = client.exceptions.PyroVCSCommunicationError()
+    # Path the get proxy method to raise an exception instead of making a RPC
+    # call to the vcsserver.
+    with mock.patch.object(client, '_get_proxy_method') as p:
+        p.side_effect = client.exceptions.PyroVCSCommunicationError()
+        # Patch pylons error handling middleware to not re-raise exceptions.
+        with mock.patch.object(PylonsErrorHandlingMiddleware, 'reraise') as r:
+            r.return_value = False
             response = app.get(url, expect_errors=True)
-    finally:
-        rhodecode.disable_error_handler = True
 
     assert response.status_code == 502
     assert 'Could not connect to VCS Server' in response.body

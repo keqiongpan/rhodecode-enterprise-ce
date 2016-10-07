@@ -20,7 +20,6 @@
 
 
 import logging
-
 from pyramid import httpexceptions
 from pyramid.httpexceptions import HTTPError, HTTPInternalServerError
 from pyramid.threadlocal import get_current_request
@@ -40,7 +39,7 @@ class PylonsErrorHandlingMiddleware(object):
     def __init__(self, app, error_view, reraise=False):
         self.app = app
         self.error_view = error_view
-        self.reraise = reraise
+        self._reraise = reraise
 
     def __call__(self, environ, start_response):
         # We need to use the pyramid request here instead of creating a custom
@@ -63,6 +62,9 @@ class PylonsErrorHandlingMiddleware(object):
         return (self.is_http_error(response) and not
                 self.is_vcs_response(response))
 
+    def reraise(self):
+        return self._reraise
+
     def handle_request(self, request):
         """
         Calls the underlying WSGI app (typically the old RhodeCode pylons app)
@@ -83,7 +85,7 @@ class PylonsErrorHandlingMiddleware(object):
         except Exception as e:
             log.exception(e)
 
-            if self.reraise:
+            if self.reraise():
                 raise
 
             if isinstance(e, VCSCommunicationError):
