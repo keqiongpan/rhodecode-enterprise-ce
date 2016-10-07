@@ -209,8 +209,10 @@ var ReviewerAutoComplete = function(input_id) {
     formatResult: autocompleteFormatResult,
     lookupFilter: autocompleteFilterResult,
     onSelect: function(suggestion, data){
+      var msg = _gettext('added manually by "{0}"');
+      var reasons = [msg.format(templateContext.rhodecode_user.username)];
       addReviewMember(data.id, data.first_name, data.last_name,
-                      data.username, data.icon_link);
+                      data.username, data.icon_link, reasons);
       $('#'+input_id).val('');
     }
   });
