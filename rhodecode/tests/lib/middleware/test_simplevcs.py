@@ -28,7 +28,7 @@ from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.hooks_daemon import DummyHooksCallbackDaemon
 from rhodecode.lib.middleware import simplevcs
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
-from rhodecode.lib.middleware.utils import scm_app
+from rhodecode.lib.middleware.utils import scm_app_http
 from rhodecode.model.db import User, _hash_key
 from rhodecode.model.meta import Session
 from rhodecode.tests import (
@@ -153,7 +153,7 @@ def test_provides_traceback_for_appenlight(fail_controller):
 
 def test_provides_utils_scm_app_as_scm_app_by_default(pylonsapp):
     controller = StubVCSController(pylonsapp, pylonsapp.config, None)
-    assert controller.scm_app is scm_app
+    assert controller.scm_app is scm_app_http
 
 
 def test_allows_to_override_scm_app_via_config(pylonsapp):
