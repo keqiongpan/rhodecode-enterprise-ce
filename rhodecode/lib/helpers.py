@@ -682,14 +682,23 @@ class Flash(_Flash):
         payloads = []
         messages = flash.pop_messages()
         if messages:
-          for message in messages:
-            payloads.append({
-                'message': {
-                    'message': u'{}'.format(message.message),
-                    'level':   message.category,
-                    'force': 'true'
-                }
-            })
+            for message in messages:
+                subdata = {}
+                if hasattr(message.message, 'rsplit'):
+                    flash_data = message.message.rsplit('|DELIM|', 1)
+                    org_message = flash_data[0]
+                    if len(flash_data) > 1:
+                        subdata = json.loads(flash_data[1])
+                else:
+                    org_message = message.message
+                payloads.append({
+                    'message': {
+                        'message': u'{}'.format(org_message),
+                        'level': message.category,
+                        'force': True,
+                        'subdata': subdata
+                    }
+                })
         return json.dumps(payloads)
 
 flash = Flash()
