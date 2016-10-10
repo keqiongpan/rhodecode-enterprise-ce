@@ -90,6 +90,7 @@ class VcsHttpProxy(object):
             'X-RC-Path-Info': environ['PATH_INFO'],
             # TODO: johbo: Avoid encoding and put this into payload?
             'X-RC-Repo-Config': base64.b64encode(config),
+            'X-RC-Locked-Status-Code': rhodecode.CONFIG.get('lock_ret_code')
         })
 
         data = environ['wsgi.input'].read()
