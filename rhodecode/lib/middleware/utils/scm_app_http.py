@@ -80,8 +80,6 @@ class VcsHttpProxy(object):
             repo_name, url)
 
     def __call__(self, environ, start_response):
-        status = '200 OK'
-
         config = msgpack.packb(self._config)
         request = webob.request.Request(environ)
         request_headers = request.headers
@@ -115,8 +113,11 @@ class VcsHttpProxy(object):
             if not wsgiref.util.is_hop_by_hop(h)
         ]
 
-        # TODO: johbo: Better way to get the status including text?
-        status = str(response.status_code)
+        # Build status argument for start_reponse callable.
+        status = '{status_code} {reason_phrase}'.format(
+            status_code=response.status_code,
+            reason_phrase=response.reason)
+
         start_response(status, response_headers)
         return _maybe_stream(response)
 
