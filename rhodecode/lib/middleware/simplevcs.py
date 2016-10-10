@@ -469,6 +469,8 @@ class SimpleVCS(object):
                 for chunk in response:
                     yield chunk
         except Exception as exc:
+            # TODO: martinb: Exceptions are only raised in case of the Pyro4
+            # backend. Refactor this except block after dropping Pyro4 support.
             # TODO: johbo: Improve "translating" back the exception.
             if getattr(exc, '_vcs_kind', None) == 'repo_locked':
                 exc = HTTPLockedRC(*exc.args)
