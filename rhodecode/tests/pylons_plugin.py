@@ -134,7 +134,7 @@ def vcsserver_factory(tmpdir_factory):
     Use this if you need a running vcsserver with a special configuration.
     """
 
-    def factory(request, use_http=False, overrides=(), vcsserver_port=None):
+    def factory(request, use_http=True, overrides=(), vcsserver_port=None):
 
         if vcsserver_port is None:
             vcsserver_port = get_available_port()
@@ -293,7 +293,21 @@ def pylons_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
         }},
     ]
     if _use_vcs_http_server(request.config):
-        overrides.append({'app:main': {'vcs.server.protocol': 'http'}})
+        overrides.append({
+            'app:main': {
+                'vcs.server.protocol': 'http',
+                'vcs.scm_app_implementation': 'http',
+                'vcs.hooks.protocol': 'http',
+            }
+        })
+    else:
+        overrides.append({
+            'app:main': {
+                'vcs.server.protocol': 'pyro4',
+                'vcs.scm_app_implementation': 'pyro4',
+                'vcs.hooks.protocol': 'pyro4',
+            }
+        })
 
     filename = get_config(
         request.config, option_name=option_name,
@@ -353,6 +367,7 @@ def available_port(available_port_factory):
 
 @pytest.fixture(scope='session')
 def pylonsapp(pylons_config, vcsserver, http_environ_session):
+    print "Using the RhodeCode configuration", pylons_config
     logging.config.fileConfig(
         pylons_config, disable_existing_loggers=False)
     app = _setup_pylons_environment(pylons_config, http_environ_session)
