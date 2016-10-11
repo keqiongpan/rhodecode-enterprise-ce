@@ -32,8 +32,9 @@ def test_vcs_available_returns_summary_page(app, backend):
 
 @pytest.mark.usefixtures('autologin_user', 'app')
 def test_vcs_unavailable_returns_vcs_error_page(app, backend, app_settings):
-    import rhodecode
     from rhodecode.lib.vcs.exceptions import VCSCommunicationError
+    from rhodecode.lib.middleware.error_handling import (
+        PylonsErrorHandlingMiddleware)
 
     # Depending on the used VCSServer protocol we have to patch a different
     # RemoteRepo class to raise an exception. For the test it doesn't matter
