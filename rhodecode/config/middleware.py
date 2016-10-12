@@ -473,5 +473,8 @@ def _list_setting(settings, name, default):
         settings[name] = aslist(raw_value)
 
 
-def _string_setting(settings, name, default):
-    settings[name] = settings.get(name, default).lower()
+def _string_setting(settings, name, default, lower=True):
+    value = settings.get(name, default)
+    if lower:
+        value = value.lower()
+    settings[name] = value
