@@ -288,10 +288,11 @@ class TestPullrequestsController:
         commits = [
             {'message': 'ancestor'},
             {'message': 'change'},
+            {'message': 'change2'},
         ]
         commit_ids = backend.create_master_repo(commits)
         target = backend.create_repo(heads=['ancestor'])
-        source = backend.create_repo(heads=['change'])
+        source = backend.create_repo(heads=['change2'])
 
         response = self.app.post(
             url(
@@ -301,7 +302,7 @@ class TestPullrequestsController:
             ),
             [
                 ('source_repo', source.repo_name),
-                ('source_ref', 'branch:default:' + commit_ids['change']),
+                ('source_ref', 'branch:default:' + commit_ids['change2']),
                 ('target_repo', target.repo_name),
                 ('target_ref',  'branch:default:' + commit_ids['ancestor']),
                 ('pullrequest_desc', 'Description'),
@@ -314,7 +315,10 @@ class TestPullrequestsController:
                         ('__end__', 'reasons:sequence'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
-                ('revisions', commit_ids['change']),
+                ('__start__', 'revisions:sequence'),
+                    ('revisions', commit_ids['change']),
+                    ('revisions', commit_ids['change2']),
+                ('__end__', 'revisions:sequence'),
                 ('user', ''),
                 ('csrf_token', csrf_token),
             ],
@@ -325,8 +329,8 @@ class TestPullrequestsController:
         pull_request = PullRequest.get(pull_request_id)
 
         # check that we have now both revisions
-        assert pull_request.revisions == [commit_ids['change']]
-        assert pull_request.source_ref == 'branch:default:' + commit_ids['change']
+        assert pull_request.revisions == [commit_ids['change2'], commit_ids['change']]
+        assert pull_request.source_ref == 'branch:default:' + commit_ids['change2']
         expected_target_ref = 'branch:default:' + commit_ids['ancestor']
         assert pull_request.target_ref == expected_target_ref
 
@@ -369,7 +373,9 @@ class TestPullrequestsController:
                         ('__end__', 'reasons:sequence'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
-                ('revisions', commit_ids['change']),
+                ('__start__', 'revisions:sequence'),
+                    ('revisions', commit_ids['change']),
+                ('__end__', 'revisions:sequence'),
                 ('user', ''),
                 ('csrf_token', csrf_token),
             ],
@@ -431,7 +437,9 @@ class TestPullrequestsController:
                         ('__end__', 'reasons:sequence'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
-                ('revisions', commit_ids['change']),
+                ('__start__', 'revisions:sequence'),
+                    ('revisions', commit_ids['change']),
+                ('__end__', 'revisions:sequence'),
                 ('user', ''),
                 ('csrf_token', csrf_token),
             ],
