@@ -36,6 +36,8 @@ from webob.exc import HTTPNotFound, HTTPBadRequest
 from rhodecode.controllers.utils import parse_path_ref
 from rhodecode.lib import diffs, helpers as h, caches
 from rhodecode.lib.compat import OrderedDict
+from rhodecode.lib.codeblocks import (
+    filenode_as_lines_tokens, filenode_as_annotated_lines_tokens)
 from rhodecode.lib.utils import jsonify, action_logger
 from rhodecode.lib.utils2 import (
     convert_line_endings, detect_mode, safe_str, str2bool)
@@ -221,9 +223,15 @@ class FilesController(BaseRepoController):
             c.file_author = True
             c.file_tree = ''
             if c.file.is_file():
-                c.renderer = (
-                    c.renderer and h.renderer_from_filename(c.file.path))
                 c.file_last_commit = c.file.last_commit
+                if c.annotate: # annotation has precedence over renderer
+                    c.annotated_lines = filenode_as_annotated_lines_tokens(
+                        c.file)
+                else:
+                    c.renderer = (
+                        c.renderer and h.renderer_from_filename(c.file.path))
+                    if not c.renderer:
+                        c.lines = filenode_as_lines_tokens(c.file)
 
                 c.on_branch_head = self._is_valid_head(
                     commit_id, c.rhodecode_repo)

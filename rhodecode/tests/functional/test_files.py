@@ -81,7 +81,7 @@ def _commit_change(
     return commit
 
 
-    
+
 @pytest.mark.usefixtures("app")
 class TestFilesController:
 
@@ -270,9 +270,9 @@ class TestFilesController:
             annotate=True))
 
         expected_revisions = {
-            'hg': 'r356:25213a5fbb04',
-            'git': 'r345:c994f0de03b2',
-            'svn': 'r208:209',
+            'hg': 'r356',
+            'git': 'r345',
+            'svn': 'r208',
         }
         response.mustcontain(expected_revisions[backend.alias])
 

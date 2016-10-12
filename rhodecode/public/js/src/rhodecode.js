@@ -266,7 +266,35 @@ $(document).ready(function() {
             }
         });
 
-    $('.compare_view_files').on(
+    $('body').on( /* TODO: replace the $('.compare_view_files').on('click') below
+                    when new diffs are integrated */
+        'click', '.cb-lineno a', function(event) {
+
+            if ($(this).attr('data-line-no') !== ""){
+                $('.cb-line-selected').removeClass('cb-line-selected');
+                var td = $(this).parent();
+                td.addClass('cb-line-selected'); // line number td
+                td.next().addClass('cb-line-selected'); // line content td
+
+                // Replace URL without jumping to it if browser supports.
+                // Default otherwise
+                if (history.pushState) {
+                    var new_location = location.href.rstrip('#');
+                    if (location.hash) {
+                        new_location = new_location.replace(location.hash, "");
+                    }
+
+                    // Make new anchor url
+                    new_location = new_location + $(this).attr('href');
+                    history.pushState(true, document.title, new_location);
+
+                    return false;
+                }
+            }
+        });
+
+    $('.compare_view_files').on( /* TODO: replace this with .cb function above
+                                    when new diffs are integrated */
         'click', 'tr.line .lineno a',function(event) {
             if ($(this).text() != ""){
                 $('tr.line').removeClass('selected');
@@ -365,10 +393,11 @@ $(document).ready(function() {
     // Select the line that comes from the url anchor
     // At the time of development, Chrome didn't seem to support jquery's :target
     // element, so I had to scroll manually
-    if (location.hash) {
+
+    if (location.hash) { /* TODO: dan: remove this and replace with code block
+                            below when new diffs are ready */
         var result = splitDelimitedHash(location.hash);
         var loc  = result.loc;
-        var remainder = result.remainder;
         if (loc.length > 1){
             var lineno = $(loc+'.lineno');
             if (lineno.length > 0){
@@ -378,11 +407,70 @@ $(document).ready(function() {
                 tr[0].scrollIntoView();
 
                 $.Topic('/ui/plugins/code/anchor_focus').prepareOrPublish({
-                    tr:tr,
-                    remainder:remainder});
+                    tr: tr,
+                    remainder: result.remainder});
             }
         }
     }
 
+    if (location.hash) { /* TODO: dan: use this to replace the code block above
+                            when new diffs are ready */
+        var result = splitDelimitedHash(location.hash);
+        var loc  = result.loc;
+        if (loc.length > 1) {
+            var page_highlights = loc.substring(
+                loc.indexOf('#') + 1).split('L');
+
+            if (page_highlights.length > 1) {
+                var highlight_ranges = page_highlights[1].split(",");
+                var h_lines = [];
+                for (var pos in highlight_ranges) {
+                    var _range = highlight_ranges[pos].split('-');
+                    if (_range.length === 2) {
+                        var start = parseInt(_range[0]);
+                        var end = parseInt(_range[1]);
+                        if (start < end) {
+                            for (var i = start; i <= end; i++) {
+                                h_lines.push(i);
+                            }
+                        }
+                    }
+                    else {
+                        h_lines.push(parseInt(highlight_ranges[pos]));
+                    }
+                }
+                for (pos in h_lines) {
+                    var line_td = $('td.cb-lineno#L' + h_lines[pos]);
+                    if (line_td.length) {
+                        line_td.addClass('cb-line-selected'); // line number td
+                        line_td.next().addClass('cb-line-selected'); // line content
+                    }
+                }
+                var first_line_td = $('td.cb-lineno#L' + h_lines[0]);
+                if (first_line_td.length) {
+                    var elOffset = first_line_td.offset().top;
+                    var elHeight = first_line_td.height();
+                    var windowHeight = $(window).height();
+                    var offset;
+
+                    if (elHeight < windowHeight) {
+                        offset = elOffset - ((windowHeight / 4) - (elHeight / 2));
+                    }
+                    else {
+                        offset = elOffset;
+                    }
+                    $(function() { // let browser scroll to hash first, then
+                                   // scroll the line to the middle of page
+                        setTimeout(function() {
+                            $('html, body').animate({ scrollTop: offset });
+                          }, 100);
+                    });
+                    $.Topic('/ui/plugins/code/anchor_focus').prepareOrPublish({
+                        lineno: first_line_td,
+                        remainder: result.remainder});
+                }
+            }
+        }
+    }
     collapsableContent();
 });

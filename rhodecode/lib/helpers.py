@@ -67,7 +67,6 @@ from webhelpers.html.tags import _set_input_attrs, _set_id_attr, \
     convert_boolean_attrs, NotGiven, _make_safe_id_component
 from webhelpers2.number import format_byte_size
 
-from rhodecode.lib.annotate import annotate_highlight
 from rhodecode.lib.action_parser import action_parser
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils import repo_name_slug, get_custom_lexer
@@ -125,17 +124,18 @@ def asset(path, ver=None):
         'rhodecode:public/{}'.format(path), _query=query)
 
 
-def html_escape(text, html_escape_table=None):
+default_html_escape_table = {
+    ord('&'): u'&amp;',
+    ord('<'): u'&lt;',
+    ord('>'): u'&gt;',
+    ord('"'): u'&quot;',
+    ord("'"): u'&#39;',
+}
+
+
+def html_escape(text, html_escape_table=default_html_escape_table):
     """Produce entities within text."""
-    if not html_escape_table:
-        html_escape_table = {
-            "&": "&amp;",
-            '"': "&quot;",
-            "'": "&apos;",
-            ">": "&gt;",
-            "<": "&lt;",
-        }
-    return "".join(html_escape_table.get(c, c) for c in text)
+    return text.translate(html_escape_table)
 
 
 def chop_at_smart(s, sub, inclusive=False, suffix_if_chopped=None):
@@ -500,6 +500,86 @@ def get_matching_line_offsets(lines, terms):
     return matching_lines
 
 
+def hsv_to_rgb(h, s, v):
+    """ Convert hsv color values to rgb """
+
+    if s == 0.0:
+        return v, v, v
+    i = int(h * 6.0)  # XXX assume int() truncates!
+    f = (h * 6.0) - i
+    p = v * (1.0 - s)
+    q = v * (1.0 - s * f)
+    t = v * (1.0 - s * (1.0 - f))
+    i = i % 6
+    if i == 0:
+        return v, t, p
+    if i == 1:
+        return q, v, p
+    if i == 2:
+        return p, v, t
+    if i == 3:
+        return p, q, v
+    if i == 4:
+        return t, p, v
+    if i == 5:
+        return v, p, q
+
+
+def unique_color_generator(n=10000, saturation=0.10, lightness=0.95):
+    """
+    Generator for getting n of evenly distributed colors using
+    hsv color and golden ratio. It always return same order of colors
+
+    :param n: number of colors to generate
+    :param saturation: saturation of returned colors
+    :param lightness: lightness of returned colors
+    :returns: RGB tuple
+    """
+
+    golden_ratio = 0.618033988749895
+    h = 0.22717784590367374
+
+    for _ in xrange(n):
+        h += golden_ratio
+        h %= 1
+        HSV_tuple = [h, saturation, lightness]
+        RGB_tuple = hsv_to_rgb(*HSV_tuple)
+        yield map(lambda x: str(int(x * 256)), RGB_tuple)
+
+
+def color_hasher(n=10000, saturation=0.10, lightness=0.95):
+    """
+    Returns a function which when called with an argument returns a unique
+    color for that argument, eg.
+
+    :param n: number of colors to generate
+    :param saturation: saturation of returned colors
+    :param lightness: lightness of returned colors
+    :returns: css RGB string
+
+    >>> color_hash = color_hasher()
+    >>> color_hash('hello')
+    'rgb(34, 12, 59)'
+    >>> color_hash('hello')
+    'rgb(34, 12, 59)'
+    >>> color_hash('other')
+    'rgb(90, 224, 159)'
+    """
+
+    color_dict = {}
+    cgenerator = unique_color_generator(
+        saturation=saturation, lightness=lightness)
+
+    def get_color_string(thing):
+        if thing in color_dict:
+            col = color_dict[thing]
+        else:
+            col = color_dict[thing] = cgenerator.next()
+        return "rgb(%s)" % (', '.join(col))
+
+    return get_color_string
+
+
 def get_lexer_safe(mimetype=None, filepath=None):
     """
     Tries to return a relevant pygments lexer using mimetype/filepath name,
@@ -534,92 +614,6 @@ def pygmentize(filenode, **kwargs):
     lexer = get_lexer_for_filenode(filenode)
     return literal(code_highlight(filenode.content, lexer,
                                   CodeHtmlFormatter(**kwargs)))
-
-
-def pygmentize_annotation(repo_name, filenode, **kwargs):
-    """
-    pygmentize function for annotation
-
-    :param filenode:
-    """
-
-    color_dict = {}
-
-    def gen_color(n=10000):
-        """generator for getting n of evenly distributed colors using
-        hsv color and golden ratio. It always return same order of colors
-
-        :returns: RGB tuple
-        """
-
-        def hsv_to_rgb(h, s, v):
-            if s == 0.0:
-                return v, v, v
-            i = int(h * 6.0)  # XXX assume int() truncates!
-            f = (h * 6.0) - i
-            p = v * (1.0 - s)
-            q = v * (1.0 - s * f)
-            t = v * (1.0 - s * (1.0 - f))
-            i = i % 6
-            if i == 0:
-                return v, t, p
-            if i == 1:
-                return q, v, p
-            if i == 2:
-                return p, v, t
-            if i == 3:
-                return p, q, v
-            if i == 4:
-                return t, p, v
-            if i == 5:
-                return v, p, q
-
-        golden_ratio = 0.618033988749895
-        h = 0.22717784590367374
-
-        for _ in xrange(n):
-            h += golden_ratio
-            h %= 1
-            HSV_tuple = [h, 0.95, 0.95]
-            RGB_tuple = hsv_to_rgb(*HSV_tuple)
-            yield map(lambda x: str(int(x * 256)), RGB_tuple)
-
-    cgenerator = gen_color()
-
-    def get_color_string(commit_id):
-        if commit_id in color_dict:
-            col = color_dict[commit_id]
-        else:
-            col = color_dict[commit_id] = cgenerator.next()
-        return "color: rgb(%s)! important;" % (', '.join(col))
-
-    def url_func(repo_name):
-
-        def _url_func(commit):
-            author = commit.author
-            date = commit.date
-            message = tooltip(commit.message)
-
-            tooltip_html = ("<div style='font-size:0.8em'><b>Author:</b>"
-                            " %s<br/><b>Date:</b> %s</b><br/><b>Message:"
-                            "</b> %s<br/></div>")
-
-            tooltip_html = tooltip_html % (author, date, message)
-            lnk_format = '%5s:%s' % ('r%s' % commit.idx, commit.short_id)
-            uri = link_to(
-                lnk_format,
-                url('changeset_home', repo_name=repo_name,
-                    revision=commit.raw_id),
-                style=get_color_string(commit.raw_id),
-                class_='tooltip',
-                title=tooltip_html
-            )
-
-            uri += '\n'
-            return uri
-        return _url_func
-
-    return literal(annotate_highlight(filenode, url_func(repo_name), **kwargs))
 
 
 def is_following_repo(repo_name, user_id):
