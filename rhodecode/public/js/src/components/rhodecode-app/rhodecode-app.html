@@ -5,14 +5,14 @@
 
 <dom-module id="rhodecode-app">
     <template>
-        <rhodecode-favicon></rhodecode-favicon>
-        <rhodecode-toast id="notifications"></rhodecode-toast>
         <channelstream-connection
                 id="channelstream-connection"
                 on-channelstream-listen-message="receivedMessage"
                 on-channelstream-connected="handleConnected"
                 on-channelstream-subscribed="handleSubscribed">
         </channelstream-connection>
+        <rhodecode-favicon></rhodecode-favicon>
+        <rhodecode-toast id="notifications"></rhodecode-toast>
     </template>
     <script src="rhodecode-app.js"></script>
 </dom-module>
