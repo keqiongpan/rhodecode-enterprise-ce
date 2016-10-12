@@ -49,6 +49,7 @@ def _sanitize_settings_and_apply_defaults(settings):
     _bool_setting(settings, config_keys.list_parent_path, 'true')
     _string_setting(settings, config_keys.config_file_path, '', lower=False)
     _string_setting(settings, config_keys.location_root, '/', lower=False)
+    _string_setting(settings, config_keys.reload_command, '', lower=False)
 
     # Append path separator to location root.
     settings[config_keys.location_root] = _append_path_sep(
