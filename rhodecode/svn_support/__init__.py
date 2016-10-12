@@ -22,7 +22,7 @@ import logging
 import os
 
 from rhodecode import events
-from rhodecode.lib.utils2 import str2bool
+from rhodecode.config.middleware import _bool_setting, _string_setting
 
 from .subscribers import generate_config_subscriber
 from . import config_keys
@@ -45,22 +45,18 @@ def _sanitize_settings_and_apply_defaults(settings):
     Set defaults, convert to python types and validate settings.
     """
     # Convert bool settings from string to bool.
-    settings[config_keys.generate_config] = str2bool(
-        settings.get(config_keys.generate_config, 'false'))
-    settings[config_keys.list_parent_path] = str2bool(
-        settings.get(config_keys.list_parent_path, 'true'))
+    _bool_setting(settings, config_keys.generate_config, 'false')
+    _bool_setting(settings, config_keys.list_parent_path, 'true')
+    _string_setting(settings, config_keys.config_file_path, '', lower=False)
+    _string_setting(settings, config_keys.location_root, '/', lower=False)
 
-    # Set defaults if key not present.
-    settings.setdefault(config_keys.config_file_path, None)
-    settings.setdefault(config_keys.location_root, '/')
-
-    # Append path separator to paths.
+    # Append path separator to location root.
     settings[config_keys.location_root] = _append_path_sep(
         settings[config_keys.location_root])
 
     # Validate settings.
     if settings[config_keys.generate_config]:
-        assert settings[config_keys.config_file_path] is not None
+        assert len(settings[config_keys.config_file_path]) > 0
 
 
 def _append_path_sep(path):
