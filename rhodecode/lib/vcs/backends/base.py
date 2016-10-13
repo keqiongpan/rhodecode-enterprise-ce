@@ -628,7 +628,8 @@ class BaseCommit(object):
         return u'%s:%s' % (self.idx, self.short_id)
 
     def __eq__(self, other):
-        return self.raw_id == other.raw_id
+        same_instance = isinstance(other, self.__class__)
+        return same_instance and self.raw_id == other.raw_id
 
     def __json__(self):
         parents = []
