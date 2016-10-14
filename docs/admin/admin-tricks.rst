@@ -62,6 +62,24 @@ you can add a message to be displayed using the following steps:
 
 .. _md-rst:
 
+
+Suppress license warnings or errors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In case you're running on maximum allowed users, RhodeCode will display a
+warning message on pages that you're close to the license limits.
+It's often not desired to show that all the time. Here's how you can suppress
+the license messages.
+
+1. From the |RCE| interface, select
+   :menuselection:`Admin --> Settings --> Global`
+2. Select :guilabel:`Flash message filtering` from the drop-down menu.
+3. Select :guilabel:`Save`, and you will no longer see the license message
+   once your page refreshes.
+
+.. _admin-tricks-suppress-license-messages:
+
+
 Markdown or RST Rendering
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
