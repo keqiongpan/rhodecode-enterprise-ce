@@ -72,7 +72,7 @@ ${h.secure_form(url('admin_settings_global'), method='post')}
                 <option value="ga">Google Analytics</option>
                 <option value="clicky">Clicky</option>
                 <option value="server_announce">${_('Server Announcement')}</option>
-                <option value="flash_filtering">${_('Example flash message filtering')}</option>
+                <option value="flash_filtering">${_('Flash message filtering')}</option>
             </select>
         </div>
         <div style="padding: 10px 0px"></div>
@@ -200,10 +200,11 @@ $(document).ready(function(e){
 </script>
 
 <script id="flash_filtering_tmpl" type='text/x-template'>
-        <%text filter="h">
+<%text filter="h">
 <script>
     // This filters out some flash messages before they are presented to user
-    // based on their contents
+    // based on their contents. Could be used to filter out warnings/errors
+    // of license messages
 
     var filteredMessages = [];
     for(var i =0; i< alertMessagePayloads.length; i++){
