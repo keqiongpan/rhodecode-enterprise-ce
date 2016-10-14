@@ -101,6 +101,7 @@ requirements = [
     'repoze.lru',
     'requests',
     'simplejson',
+    'subprocess32',
     'waitress',
     'zope.cachedescriptors',
     'dogpile.cache',
