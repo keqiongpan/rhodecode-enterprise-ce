@@ -20,6 +20,7 @@
 
 import logging
 import os
+import shlex
 
 # Do not use `from rhodecode import events` here, it will be overridden by the
 # events module in this package due to pythons import mechanism.
@@ -46,11 +47,11 @@ def includeme(config):
 
         # Prepare reload command to pass it to the subprocess module and add a
         # subscriber to execute it on configuration changes.
-        cmd = settings[config_keys.reload_command]
-        cmd = cmd.split(' ') if cmd else cmd
-        config.add_subscriber(
-            AsyncSubprocessSubscriber(cmd=cmd, timeout=5),
-            ModDavSvnConfigChange)
+        reload_cmd = shlex.split(settings[config_keys.reload_command])
+        reload_timeout = settings[config_keys.reload_timeout] or None
+        config_change_subscriber = AsyncSubprocessSubscriber(
+            cmd=reload_cmd, timeout=reload_timeout)
+        config.add_subscriber(config_change_subscriber, ModDavSvnConfigChange)
 
 
 def _sanitize_settings_and_apply_defaults(settings):
