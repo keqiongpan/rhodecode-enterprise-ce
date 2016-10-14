@@ -24,7 +24,8 @@ import os
 # Do not use `from rhodecode import events` here, it will be overridden by the
 # events module in this package due to pythons import mechanism.
 from rhodecode.events import RepoGroupEvent
-from rhodecode.config.middleware import _bool_setting, _string_setting
+from rhodecode.config.middleware import (
+    _bool_setting, _string_setting, _int_setting)
 
 from .events import ModDavSvnConfigChange
 from .subscribers import generate_config_subscriber, AsyncSubprocessSubscriber
@@ -56,12 +57,16 @@ def _sanitize_settings_and_apply_defaults(settings):
     """
     Set defaults, convert to python types and validate settings.
     """
-    # Convert bool settings from string to bool.
     _bool_setting(settings, config_keys.generate_config, 'false')
     _bool_setting(settings, config_keys.list_parent_path, 'true')
+    _int_setting(settings, config_keys.reload_timeout, 10)
     _string_setting(settings, config_keys.config_file_path, '', lower=False)
     _string_setting(settings, config_keys.location_root, '/', lower=False)
     _string_setting(settings, config_keys.reload_command, '', lower=False)
+
+    # Convert negative timeout values to zero.
+    if settings[config_keys.reload_timeout] < 0:
+        settings[config_keys.reload_timeout] = 0
 
     # Append path separator to location root.
     settings[config_keys.location_root] = _append_path_sep(
