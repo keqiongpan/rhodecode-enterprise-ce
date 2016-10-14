@@ -1,7 +1,7 @@
 .. _server-methods-ref:
 
 server methods
-=================
+==============
 
 get_ip 
 ------

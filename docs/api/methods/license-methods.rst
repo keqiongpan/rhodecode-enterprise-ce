@@ -1,7 +1,7 @@
 .. _license-methods-ref:
 
 license methods
-=================
+===============
 
 get_license_info (EE only)
 ----------------

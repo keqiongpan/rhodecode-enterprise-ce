@@ -1,7 +1,7 @@
 .. _repo-methods-ref:
 
 repo methods
-=================
+============
 
 add_field_to_repo 
 -----------------

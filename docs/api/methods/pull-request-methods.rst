@@ -1,7 +1,7 @@
 .. _pull-request-methods-ref:
 
 pull_request methods
-=================
+====================
 
 close_pull_request 
 ------------------
@@ -103,6 +103,10 @@ create_pull_request
    :type description: Optional(str)
    :param reviewers: Set the new pull request reviewers list.
    :type reviewers: Optional(list)
+       Accepts username strings or objects of the format:
+       {
+           'username': 'nick', 'reasons': ['original author']
+       }
 
 
 get_pull_request 
@@ -164,6 +168,9 @@ get_pull_request
                                         "type":      "<type>",
                                         "commit_id": "<commit_id>",
                                     }
+                                },
+           "shadow":            {
+                                    "clone_url":   "<clone_url>",
                                 },
           "author":             <user_obj>,
           "reviewers":          [
@@ -240,6 +247,9 @@ get_pull_requests
                                             "type":      "<type>",
                                             "commit_id": "<commit_id>",
                                         }
+                                    },
+               "shadow":            {
+                                        "clone_url":   "<clone_url>",
                                     },
               "author":             <user_obj>,
               "reviewers":          [

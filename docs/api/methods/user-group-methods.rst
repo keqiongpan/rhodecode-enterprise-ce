@@ -1,7 +1,7 @@
 .. _user-group-methods-ref:
 
 user_group methods
-=================
+==================
 
 add_user_to_user_group 
 ----------------------

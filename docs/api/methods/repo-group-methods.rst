@@ -1,7 +1,7 @@
 .. _repo-group-methods-ref:
 
 repo_group methods
-=================
+==================
 
 create_repo_group 
 -----------------

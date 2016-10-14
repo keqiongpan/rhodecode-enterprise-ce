@@ -1,7 +1,7 @@
 .. _user-methods-ref:
 
 user methods
-=================
+============
 
 create_user 
 -----------
