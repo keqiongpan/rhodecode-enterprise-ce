@@ -397,19 +397,20 @@ class SettingsController(BaseController):
         settings_model = IssueTrackerSettingsModel()
 
         form = IssueTrackerPatternsForm()().to_python(request.POST)
-        for uid in form['delete_patterns']:
-            settings_model.delete_entries(uid)
+        if form:
+            for uid in form.get('delete_patterns', []):
+                settings_model.delete_entries(uid)
 
-        for pattern in form['patterns']:
-            for setting, value, type_ in pattern:
-                sett = settings_model.create_or_update_setting(
-                    setting, value, type_)
-                Session().add(sett)
+            for pattern in form.get('patterns', []):
+                for setting, value, type_ in pattern:
+                    sett = settings_model.create_or_update_setting(
+                        setting, value, type_)
+                    Session().add(sett)
 
-            Session().commit()
+                Session().commit()
 
-        SettingsModel().invalidate_settings_cache()
-        h.flash(_('Updated issue tracker entries'), category='success')
+            SettingsModel().invalidate_settings_cache()
+            h.flash(_('Updated issue tracker entries'), category='success')
         return redirect(url('admin_settings_issuetracker'))
 
     @HasPermissionAllDecorator('hg.admin')

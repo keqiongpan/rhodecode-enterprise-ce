@@ -494,6 +494,14 @@ class TestAdminSettingsIssueTracker:
         response = self.app.get(url('admin_settings_issuetracker'))
         assert response.status_code == 200
 
+    def test_add_empty_issuetracker_pattern(
+            self, request, autologin_user, csrf_token):
+        post_url = url('admin_settings_issuetracker_save')
+        post_data = {
+            'csrf_token': csrf_token
+        }
+        self.app.post(post_url, post_data, status=302)
+
     def test_add_issuetracker_pattern(
             self, request, autologin_user, csrf_token):
         pattern = 'issuetracker_pat'
