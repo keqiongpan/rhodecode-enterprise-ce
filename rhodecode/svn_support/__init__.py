@@ -21,10 +21,13 @@
 import logging
 import os
 
-from rhodecode import events
+# Do not use `from rhodecode import events` here, it will be overridden by the
+# events module in this package due to pythons import mechanism.
+from rhodecode.events import RepoGroupEvent
 from rhodecode.config.middleware import _bool_setting, _string_setting
 
-from .subscribers import generate_config_subscriber
+from .events import ModDavSvnConfigChange
+from .subscribers import generate_config_subscriber, AsyncSubprocessSubscriber
 from . import config_keys
 
 
@@ -36,8 +39,17 @@ def includeme(config):
     _sanitize_settings_and_apply_defaults(settings)
 
     if settings[config_keys.generate_config]:
+        # Add subscriber to generate the Apache mod dav svn configuration on
+        # repository group events.
+        config.add_subscriber(generate_config_subscriber, RepoGroupEvent)
+
+        # Prepare reload command to pass it to the subprocess module and add a
+        # subscriber to execute it on configuration changes.
+        cmd = settings[config_keys.reload_command]
+        cmd = cmd.split(' ') if cmd else cmd
         config.add_subscriber(
-            generate_config_subscriber, events.RepoGroupEvent)
+            AsyncSubprocessSubscriber(cmd=cmd, timeout=5),
+            ModDavSvnConfigChange)
 
 
 def _sanitize_settings_and_apply_defaults(settings):

@@ -19,8 +19,10 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
+import subprocess32
+from threading import Thread
 
-from rhodecode.lib.utils import get_rhodecode_base_path
+
 from .utils import generate_mod_dav_svn_config
 
 
@@ -34,9 +36,97 @@ def generate_config_subscriber(event):
     changes.
     """
     try:
-        generate_mod_dav_svn_config(
-            settings=event.request.registry.settings,
-            parent_path_root=get_rhodecode_base_path())
+        generate_mod_dav_svn_config(event.request.registry)
     except Exception:
         log.exception(
             'Exception while generating subversion mod_dav_svn configuration.')
+
+
+class Subscriber(object):
+    def __call__(self, event):
+        self.run(event)
+
+    def run(self, event):
+        raise NotImplementedError('Subclass has to implement this.')
+
+
+class AsyncSubscriber(Subscriber):
+    def __init__(self, *args, **kwargs):
+        self._init_args = args
+        self._init_kwargs = kwargs
+
+    def __call__(self, event):
+        kwargs = {'event': event}
+        kwargs.update(self._init_kwargs)
+        self.thread = Thread(
+            target=self.run, args=self._init_args, kwargs=kwargs)
+        self.thread.start()
+
+
+class AsyncSubprocessSubscriber(AsyncSubscriber):
+    def run(self, event, cmd, timeout=None):
+        log.debug('Executing command %s.', cmd)
+        try:
+            output = subprocess32.check_output(
+                cmd, timeout=timeout, stderr=subprocess32.STDOUT)
+            log.debug('Command finished %s', cmd)
+            if output:
+                log.debug('Command output: %s', output)
+        except subprocess32.TimeoutExpired as e:
+            log.exception('Timeout while executing command.')
+            if e.output:
+                log.error('Command output: %s', e.output)
+        except subprocess32.CalledProcessError as e:
+            log.exception('Error while executing command.')
+            if e.output:
+                log.error('Command output: %s', e.output)
+        except:
+            log.exception(
+                'Exception while executing command %s.', cmd)
+
+
+# class ReloadApacheSubscriber(object):
+#     """
+#     Subscriber to pyramids event system. It executes the Apache reload command
+#     if set in ini-file. The command is executed asynchronously in a separate
+#     task. This is done to prevent a delay of the function which triggered the
+#     event in case of a longer running command. If a timeout is passed to the
+#     constructor the command will be terminated after expiration.
+#     """
+#     def __init__(self, settings, timeout=None):
+#         self.thread = None
+#         cmd = self.get_command_from_settings(settings)
+#         if cmd:
+#             kwargs = {
+#                 'cmd': cmd,
+#                 'timeout': timeout,
+#             }
+#             self.thread = Thread(target=self.run, kwargs=kwargs)
+
+#     def __call__(self, event):
+#         if self.thread is not None:
+#             self.thread.start()
+
+#     def get_command_from_settings(self, settings):
+#         cmd = settings[config_keys.reload_command]
+#         return cmd.split(' ') if cmd else cmd
+
+#     def run(self, cmd, timeout=None):
+#         log.debug('Executing svn proxy reload command %s.', cmd)
+#         try:
+#             output = subprocess32.check_output(
+#                 cmd, timeout=timeout, stderr=subprocess32.STDOUT)
+#             log.debug('Svn proxy reload command finished.')
+#             if output:
+#                 log.debug('Command output: %s', output)
+#         except subprocess32.TimeoutExpired as e:
+#             log.exception('Timeout while executing svn proxy reload command.')
+#             if e.output:
+#                 log.error('Command output: %s', e.output)
+#         except subprocess32.CalledProcessError as e:
+#             log.exception('Error while executing svn proxy reload command.')
+#             if e.output:
+#                 log.error('Command output: %s', e.output)
+#         except:
+#             log.exception(
+#                 'Exception while executing svn proxy reload command %s.', cmd)
