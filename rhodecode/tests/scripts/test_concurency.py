@@ -30,10 +30,8 @@ from os.path import join as jn
 from os.path import dirname as dn
 
 from tempfile import _RandomNameSequence
-from subprocess import Popen, PIPE
-
+from subprocess32 import Popen, PIPE
 from paste.deploy import appconfig
-from pylons import config
 
 from rhodecode.lib.utils import add_cache
 from rhodecode.lib.utils2 import engine_from_config
@@ -42,7 +40,7 @@ from rhodecode.model import init_model
 from rhodecode.model import meta
 from rhodecode.model.db import User, Repository
 
-from rhodecode.tests import TESTS_TMP_PATH, NEW_HG_REPO, HG_REPO
+from rhodecode.tests import TESTS_TMP_PATH, HG_REPO
 from rhodecode.config.environment import load_environment
 
 rel_path = dn(dn(dn(dn(os.path.abspath(__file__)))))

@@ -35,7 +35,7 @@ __all__ = [
 
 import atexit
 import logging
-import subprocess
+import subprocess32
 import time
 import urlparse
 from cStringIO import StringIO
@@ -165,7 +165,7 @@ def _start_pyro4_vcs_server(server_and_port, log_level=None):
         '--threadpool', '32']
     if log_level:
         args += ['--log-level', log_level]
-    proc = subprocess.Popen(args)
+    proc = subprocess32.Popen(args)
 
     def cleanup_server_process():
         proc.kill()
@@ -182,7 +182,7 @@ def _start_http_vcs_server(server_and_port, log_level=None):
     args = [
         'pserve', 'rhodecode/tests/vcsserver_http.ini',
         'http_port=%s' % (port, ), 'http_host=%s' % (host, )]
-    proc = subprocess.Popen(args)
+    proc = subprocess32.Popen(args)
 
     def cleanup_server_process():
         proc.kill()

@@ -23,7 +23,7 @@ import logging.config
 import os
 import platform
 import socket
-import subprocess
+import subprocess32
 import time
 from urllib2 import urlopen, URLError
 
@@ -196,7 +196,7 @@ class VCSServer(object):
 
     def start(self):
         print("Starting the VCSServer: {}".format(self._args))
-        self.process = subprocess.Popen(self._args)
+        self.process = subprocess32.Popen(self._args)
 
     def wait_until_ready(self, timeout=30):
         raise NotImplementedError()
@@ -255,7 +255,7 @@ class HttpVCSServer(VCSServer):
         return template.format(**self._config)
 
     def start(self):
-        self.process = subprocess.Popen(self._args)
+        self.process = subprocess32.Popen(self._args)
 
     def wait_until_ready(self, timeout=30):
         host = self._config['host']

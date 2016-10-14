@@ -20,7 +20,7 @@
 
 import datetime
 import os
-import subprocess
+import subprocess32
 
 import pytest
 
@@ -86,8 +86,8 @@ class TestGetScm:
     def test_get_two_scms_for_path(self, tmpdir):
         multialias_repo_path = str(tmpdir)
 
-        subprocess.check_call(['hg', 'init', multialias_repo_path])
-        subprocess.check_call(['git', 'init', multialias_repo_path])
+        subprocess32.check_call(['hg', 'init', multialias_repo_path])
+        subprocess32.check_call(['git', 'init', multialias_repo_path])
 
         with pytest.raises(VCSError):
             get_scm(multialias_repo_path)

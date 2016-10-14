@@ -26,7 +26,7 @@ import re
 import pprint
 import shutil
 import socket
-import subprocess
+import subprocess32
 import time
 import uuid
 
@@ -42,7 +42,7 @@ from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
 from rhodecode.model.db import (
     PullRequest, Repository, RhodeCodeSetting, ChangesetStatus, RepoGroup,
-    UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi, Integration)
+    UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.repo import RepoModel
@@ -884,7 +884,7 @@ class RepoServer(object):
         if vcsrepo.alias != 'svn':
             raise TypeError("Backend %s not supported" % vcsrepo.alias)
 
-        proc = subprocess.Popen(
+        proc = subprocess32.Popen(
             ['svnserve', '-d', '--foreground', '--listen-host', 'localhost',
              '--root', vcsrepo.path])
         self._cleanup_servers.append(proc)

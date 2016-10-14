@@ -27,7 +27,7 @@ import os
 import re
 import sys
 
-from subprocess import Popen
+from subprocess32 import Popen
 
 
 class VCSTestError(Exception):

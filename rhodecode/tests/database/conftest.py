@@ -18,7 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-from subprocess import Popen, PIPE
+from subprocess32 import Popen, PIPE
 import os
 import shutil
 import sys

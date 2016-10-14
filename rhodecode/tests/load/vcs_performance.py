@@ -40,7 +40,7 @@ import functools
 import logging
 import os
 import shutil
-import subprocess
+import subprocess32
 import tempfile
 import time
 from itertools import chain
@@ -145,8 +145,8 @@ class Repository(object):
 
     def _run(self, *args):
         command = [self.BASE_COMMAND] + list(args)
-        process = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess32.Popen(
+            command, stdout=subprocess32.PIPE, stderr=subprocess32.PIPE)
         return process.communicate()
 
     def _create_file(self, name, size):

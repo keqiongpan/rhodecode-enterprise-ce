@@ -28,7 +28,7 @@ Base for test suite for making push/pull operations.
 """
 
 from os.path import join as jn
-from subprocess import Popen, PIPE
+from subprocess32 import Popen, PIPE
 import logging
 import os
 import tempfile

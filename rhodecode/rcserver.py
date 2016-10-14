@@ -15,7 +15,7 @@ import logging
 import optparse
 import os
 import re
-import subprocess
+import subprocess32
 import sys
 import textwrap
 import threading
@@ -32,9 +32,9 @@ from rhodecode.lib.compat import kill
 
 
 def make_web_build_callback(filename):
-    p = subprocess.Popen('make web-build', shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
+    p = subprocess32.Popen('make web-build', shell=True,
+                         stdout=subprocess32.PIPE,
+                         stderr=subprocess32.PIPE,
                          cwd=os.path.dirname(os.path.dirname(__file__)))
     stdout, stderr = p.communicate()
     stdout = ''.join(stdout)
@@ -658,7 +658,7 @@ class RcServerCommand(object):
             try:
                 try:
                     _turn_sigterm_into_systemexit()
-                    proc = subprocess.Popen(args, env=new_environ)
+                    proc = subprocess32.Popen(args, env=new_environ)
                     exit_code = proc.wait()
                     proc = None
                 except KeyboardInterrupt:

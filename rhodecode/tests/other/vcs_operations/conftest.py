@@ -29,7 +29,7 @@ py.test config for test suite for making push/pull operations.
 
 import ConfigParser
 import os
-import subprocess
+import subprocess32
 import tempfile
 import textwrap
 import pytest
@@ -164,7 +164,7 @@ def rc_web_server(
     print('Command: {}'.format(command))
     print('Logfile: {}'.format(RC_LOG))
 
-    proc = subprocess.Popen(
+    proc = subprocess32.Popen(
         command, bufsize=0, env=env, stdout=server_out, stderr=server_out)
 
     wait_for_url(host_url, timeout=30)
