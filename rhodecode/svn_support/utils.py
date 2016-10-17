@@ -46,7 +46,8 @@ def generate_mod_dav_svn_config(registry):
         parent_path_root=get_rhodecode_base_path(),
         list_parent_path=settings[config_keys.list_parent_path],
         location_root=settings[config_keys.location_root],
-        repo_groups=RepoGroup.get_all_repo_groups())
+        repo_groups=RepoGroup.get_all_repo_groups(),
+        realm=get_rhodecode_realm())
     _write_mod_dav_svn_config(config, settings[config_keys.config_file_path])
 
     # Trigger an event on mod dav svn configuration change.
@@ -54,7 +55,7 @@ def generate_mod_dav_svn_config(registry):
 
 
 def _render_mod_dav_svn_config(
-        parent_path_root, list_parent_path, location_root, repo_groups):
+        parent_path_root, list_parent_path, location_root, repo_groups, realm):
     """
     Render mod_dav_svn configuration to string.
     """
@@ -70,7 +71,7 @@ def _render_mod_dav_svn_config(
         'parent_path_root': parent_path_root,
         'repo_group_paths': repo_group_paths,
         'svn_list_parent_path': list_parent_path,
-        'rhodecode_realm': get_rhodecode_realm(),
+        'rhodecode_realm': realm,
     }
 
     # Render the configuration template to string.

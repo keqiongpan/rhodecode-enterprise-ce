@@ -19,15 +19,13 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-import codecs
 import mock
+import pytest
 import re
-import shutil
-import tempfile
 
 from pyramid import testing
 
-from rhodecode.svn_support import config_keys, utils
+from rhodecode.svn_support import utils
 
 
 class TestModDavSvnConfig(object):
@@ -38,30 +36,12 @@ class TestModDavSvnConfig(object):
         config = testing.setUp()
         config.include('pyramid_mako')
 
-        # Temporary directory holding the generated config files.
-        cls.tempdir = tempfile.mkdtemp(suffix='pytest-mod-dav-svn')
-
         cls.location_root = u'/location/root/çµäö'
         cls.parent_path_root = u'/parent/path/çµäö'
-        cls._dummy_realm = u'Dummy Realm (äöüçµ)'
+        cls.realm = u'Dummy Realm (äöüçµ)'
 
     @classmethod
-    def teardown_class(cls):
-        testing.tearDown()
-        shutil.rmtree(cls.tempdir, ignore_errors=True)
-
-    @classmethod
-    def get_settings(cls):
-        config_file_path = tempfile.mkstemp(
-            suffix='mod-dav-svn.conf', dir=cls.tempdir)[1]
-        return {
-            config_keys.config_file_path: config_file_path,
-            config_keys.location_root: cls.location_root,
-            config_keys.list_parent_path: True,
-        }
-
-    @classmethod
-    def get_repo_groups(cls, count=1):
+    def get_repo_group_mocks(cls, count=1):
         repo_groups = []
         for num in range(0, count):
             full_path = u'/path/to/RepöGröúp-°µ {}'.format(num)
@@ -81,71 +61,37 @@ class TestModDavSvnConfig(object):
             location=self.location_root, group_path=group_path)
         assert len(re.findall(pattern, config)) == 1
 
-    @mock.patch('rhodecode.svn_support.utils.get_rhodecode_realm')
-    @mock.patch('rhodecode.svn_support.utils.RepoGroup')
-    def test_generate_mod_dav_svn_config(self, RepoGroupMock, GetRealmMock):
-        # Setup mock objects.
-        GetRealmMock.return_value = self._dummy_realm
-        num_groups = 3
-        RepoGroupMock.get_all_repo_groups.return_value = self.get_repo_groups(
-            count=num_groups)
-
-        # Execute the method under test.
-        settings = self.get_settings()
-        utils.generate_mod_dav_svn_config(
-            settings=settings, parent_path_root=self.parent_path_root)
-
-        # Read generated file.
-        path = settings[config_keys.config_file_path]
-        with codecs.open(path, 'r', encoding='utf-8') as f:
-            content = f.read()
-
+    def test_render_mod_dav_svn_config(self):
+        repo_groups = self.get_repo_group_mocks(count=10)
+        generated_config = utils._render_mod_dav_svn_config(
+            parent_path_root=self.parent_path_root,
+            list_parent_path=True,
+            location_root=self.location_root,
+            repo_groups=repo_groups,
+            realm=self.realm
+        )
         # Assert that one location directive exists for each repository group.
-        for group in self.get_repo_groups(count=num_groups):
-            self.assert_group_location_directive(content, group.full_path)
+        for group in repo_groups:
+            self.assert_group_location_directive(
+                generated_config, group.full_path)
 
         # Assert that the root location directive exists.
-        self.assert_root_location_directive(content)
+        self.assert_root_location_directive(generated_config)
 
-    @mock.patch('rhodecode.svn_support.utils.get_rhodecode_realm')
-    @mock.patch('rhodecode.svn_support.utils.RepoGroup')
-    def test_list_parent_path_on(self, RepoGroupMock, GetRealmMock):
-        # Setup mock objects.
-        GetRealmMock.return_value = self._dummy_realm
-        RepoGroupMock.get_all_repo_groups.return_value = self.get_repo_groups()
+    @pytest.mark.parametrize('list_parent_path', [True, False])
+    def test_list_parent_path(self, list_parent_path):
+        generated_config = utils._render_mod_dav_svn_config(
+            parent_path_root=self.parent_path_root,
+            list_parent_path=list_parent_path,
+            location_root=self.location_root,
+            repo_groups=self.get_repo_group_mocks(count=10),
+            realm=self.realm
+        )
 
-        # Execute the method under test.
-        settings = self.get_settings()
-        settings[config_keys.list_parent_path] = True
-        utils.generate_mod_dav_svn_config(
-            settings=settings, parent_path_root=self.parent_path_root)
-
-        # Read generated file.
-        path = settings[config_keys.config_file_path]
-        with codecs.open(path, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        # Make assertions.
-        assert not re.search('SVNListParentPath\s+Off', content)
-        assert re.search('SVNListParentPath\s+On', content)
-
-    @mock.patch('rhodecode.svn_support.utils.get_rhodecode_realm')
-    @mock.patch('rhodecode.svn_support.utils.RepoGroup')
-    def test_list_parent_path_off(self, RepoGroupMock, GetRealmMock):
-        # Setup mock objects.
-        GetRealmMock.return_value = self._dummy_realm
-        RepoGroupMock.get_all_repo_groups.return_value = self.get_repo_groups()
-
-        # Execute the method under test.
-        settings = self.get_settings()
-        settings[config_keys.list_parent_path] = False
-        utils.generate_mod_dav_svn_config(
-            settings=settings, parent_path_root=self.parent_path_root)
-
-        # Read generated file.
-        with open(settings[config_keys.config_file_path], 'r') as file_:
-            content = file_.read()
-
-        # Make assertions.
-        assert re.search('SVNListParentPath\s+Off', content)
-        assert not re.search('SVNListParentPath\s+On', content)
+        # Assert that correct configuration directive is present.
+        if list_parent_path:
+            assert not re.search('SVNListParentPath\s+Off', generated_config)
+            assert re.search('SVNListParentPath\s+On', generated_config)
+        else:
+            assert re.search('SVNListParentPath\s+Off', generated_config)
+            assert not re.search('SVNListParentPath\s+On', generated_config)
