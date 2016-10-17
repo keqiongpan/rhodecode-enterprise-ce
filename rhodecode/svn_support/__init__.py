@@ -46,13 +46,14 @@ def includeme(config):
         # repository group events.
         config.add_subscriber(generate_config_subscriber, RepoGroupEvent)
 
-        # Prepare reload command to pass it to the subprocess module and add a
-        # subscriber to execute it on configuration changes.
+        # If a reload command is set add a subscriber to execute it on
+        # configuration changes.
         reload_cmd = shlex.split(settings[config_keys.reload_command])
-        reload_timeout = settings[config_keys.reload_timeout] or None
-        config_change_subscriber = AsyncSubprocessSubscriber(
-            cmd=reload_cmd, timeout=reload_timeout)
-        config.add_subscriber(config_change_subscriber, ModDavSvnConfigChange)
+        if reload_cmd:
+            reload_timeout = settings[config_keys.reload_timeout] or None
+            reload_subscriber = AsyncSubprocessSubscriber(
+                cmd=reload_cmd, timeout=reload_timeout)
+            config.add_subscriber(reload_subscriber, ModDavSvnConfigChange)
 
 
 def _sanitize_settings_and_apply_defaults(settings):
