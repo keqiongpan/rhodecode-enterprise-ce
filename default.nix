@@ -156,18 +156,6 @@ let
         then "${pkgs.glibcLocales}/lib/locale/locale-archive"
         else "";
 
-      # Somewhat snappier setup of the development environment
-      # TODO: move into shell.nix
-      # TODO: think of supporting a stable path again, so that multiple shells
-      #       can share it.
-      shellHook = ''
-        tmp_path=$(mktemp -d)
-        export PATH="$tmp_path/bin:$PATH"
-        export PYTHONPATH="$tmp_path/${self.python.sitePackages}:$PYTHONPATH"
-        mkdir -p $tmp_path/${self.python.sitePackages}
-        python setup.py develop --prefix $tmp_path --allow-hosts ""
-      '' + linkNodeAndBowerPackages;
-
       preCheck = ''
         export PATH="$out/bin:$PATH"
       '';
