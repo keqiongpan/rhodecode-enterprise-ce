@@ -25,11 +25,12 @@ import shlex
 # Do not use `from rhodecode import events` here, it will be overridden by the
 # events module in this package due to pythons import mechanism.
 from rhodecode.events import RepoGroupEvent
+from rhodecode.subscribers import AsyncSubprocessSubscriber
 from rhodecode.config.middleware import (
     _bool_setting, _string_setting, _int_setting)
 
 from .events import ModDavSvnConfigChange
-from .subscribers import generate_config_subscriber, AsyncSubprocessSubscriber
+from .subscribers import generate_config_subscriber
 from . import config_keys
 
 

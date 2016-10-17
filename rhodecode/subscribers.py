@@ -19,12 +19,19 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
+import logging
 import pylons
+import Queue
+import subprocess32
 
 from pyramid.i18n import get_localizer
 from pyramid.threadlocal import get_current_request
+from threading import Thread
 
 from rhodecode.translation import _ as tsf
+
+
+log = logging.getLogger(__name__)
 
 
 def add_renderer_globals(event):
@@ -68,3 +75,69 @@ def scan_repositories_if_enabled(event):
     if vcs_server_enabled and import_on_startup:
         repositories = ScmModel().repo_scan(get_rhodecode_base_path())
         repo2db_mapper(repositories, remove_obsolete=False)
+
+
+class Subscriber(object):
+    def __call__(self, event):
+        self.run(event)
+
+    def run(self, event):
+        raise NotImplementedError('Subclass has to implement this.')
+
+
+class AsyncSubscriber(Subscriber):
+    def __init__(self):
+        self._stop = False
+        self._eventq = Queue.Queue()
+        self._worker = self.create_worker()
+        self._worker.start()
+
+    def __call__(self, event):
+        self._eventq.put(event)
+
+    def create_worker(self):
+        worker = Thread(target=self.do_work)
+        worker.daemon = True
+        return worker
+
+    def stop_worker(self):
+        self._stop = False
+        self._eventq.put(None)
+        self._worker.join()
+
+    def do_work(self):
+        while not self._stop:
+            event = self._eventq.get()
+            if event is not None:
+                self.run(event)
+
+
+class AsyncSubprocessSubscriber(AsyncSubscriber):
+
+    def __init__(self, cmd, timeout=None):
+        super(AsyncSubprocessSubscriber, self).__init__()
+        self._cmd = cmd
+        self._timeout = timeout
+
+    def run(self, event):
+        cmd = self._cmd
+        timeout = self._timeout
+        log.debug('Executing command %s.', cmd)
+
+        try:
+            output = subprocess32.check_output(
+                cmd, timeout=timeout, stderr=subprocess32.STDOUT)
+            log.debug('Command finished %s', cmd)
+            if output:
+                log.debug('Command output: %s', output)
+        except subprocess32.TimeoutExpired as e:
+            log.exception('Timeout while executing command.')
+            if e.output:
+                log.error('Command output: %s', e.output)
+        except subprocess32.CalledProcessError as e:
+            log.exception('Error while executing command.')
+            if e.output:
+                log.error('Command output: %s', e.output)
+        except:
+            log.exception(
+                'Exception while executing command %s.', cmd)
