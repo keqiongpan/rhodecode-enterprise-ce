@@ -136,6 +136,10 @@ class SettingsController(BaseController):
         c.svn_branch_patterns = model.get_global_svn_branch_patterns()
         c.svn_tag_patterns = model.get_global_svn_tag_patterns()
 
+        # TODO: Replace with request.registry after migrating to pyramid.
+        pyramid_settings = get_current_registry().settings
+        c.svn_proxy_generate_config = pyramid_settings[generate_config]
+
         application_form = ApplicationUiSettingsForm()()
 
         try:
