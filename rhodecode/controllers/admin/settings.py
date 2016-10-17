@@ -34,6 +34,7 @@ import packaging.version
 from pylons import request, tmpl_context as c, url, config
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _, lazy_ugettext
+from pyramid.threadlocal import get_current_registry
 from webob.exc import HTTPBadRequest
 
 import rhodecode
@@ -63,6 +64,7 @@ from rhodecode.model.settings import (
     SettingsModel)
 
 from rhodecode.model.supervisor import SupervisorModel, SUPERVISOR_MASTER
+from rhodecode.svn_support.config_keys import generate_config
 
 
 log = logging.getLogger(__name__)
@@ -185,6 +187,10 @@ class SettingsController(BaseController):
         model = VcsSettingsModel()
         c.svn_branch_patterns = model.get_global_svn_branch_patterns()
         c.svn_tag_patterns = model.get_global_svn_tag_patterns()
+
+        # TODO: Replace with request.registry after migrating to pyramid.
+        pyramid_settings = get_current_registry().settings
+        c.svn_proxy_generate_config = pyramid_settings[generate_config]
 
         return htmlfill.render(
             render('admin/settings/settings.html'),
