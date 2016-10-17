@@ -78,6 +78,9 @@ def scan_repositories_if_enabled(event):
 
 
 class Subscriber(object):
+    """
+    Base class for subscribers to the pyramid event system.
+    """
     def __call__(self, event):
         self.run(event)
 
@@ -86,6 +89,12 @@ class Subscriber(object):
 
 
 class AsyncSubscriber(Subscriber):
+    """
+    Subscriber that handles the execution of events in a separate task to not
+    block the execution of the code which triggers the event. It puts the
+    received events into a queue from which the worker process takes them in
+    order.
+    """
     def __init__(self):
         self._stop = False
         self._eventq = Queue.Queue()
@@ -113,6 +122,10 @@ class AsyncSubscriber(Subscriber):
 
 
 class AsyncSubprocessSubscriber(AsyncSubscriber):
+    """
+    Subscriber that uses the subprocess32 module to execute a command if an
+    event is received. Events are handled asynchronously.
+    """
 
     def __init__(self, cmd, timeout=None):
         super(AsyncSubprocessSubscriber, self).__init__()
