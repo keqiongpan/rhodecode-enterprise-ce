@@ -46,6 +46,7 @@ class TestGetServerInfo(object):
         expected['load'] = resp['result']['load']
         expected['cpu'] = resp['result']['cpu']
         expected['disk'] = resp['result']['disk']
+        expected['disk_inodes'] = resp['result']['disk_inodes']
         expected['server_ip'] = '127.0.0.1:80'
 
         assert_ok(id_, expected, given=response.body)
@@ -60,6 +61,7 @@ class TestGetServerInfo(object):
         expected['load'] = resp['result']['load']
         expected['cpu'] = resp['result']['cpu']
         expected['disk'] = resp['result']['disk']
+        expected['disk_inodes'] = resp['result']['disk_inodes']
         expected['server_ip'] = '127.0.0.1:80'
 
         assert_ok(id_, expected, given=response.body)

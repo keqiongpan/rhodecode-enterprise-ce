@@ -11,6 +11,7 @@
     (_('Uptime'), c.uptime_age, ''),
     (_('Storage location'), c.storage, ''),
     (_('Storage disk space'), "%s/%s, %s%% used%s" % (h.format_byte_size_binary(c.disk['used']), h.format_byte_size_binary(c.disk['total']),(c.disk['percent']), ' %s' % c.disk['error'] if 'error' in c.disk else ''), ''),
+    (_('Storage file limit (inodes)'), "%s/%s, %.1f%% used%s" % (c.disk_inodes['used'], c.disk_inodes['total'],(c.disk_inodes['percent']), ' %s' % c.disk_inodes['error'] if 'error' in c.disk_inodes else ''), ''),
 
     (_('Search index storage'), c.index_storage, ''),
     (_('Search index size'), "%s %s" % (h.format_byte_size_binary(c.disk_index['used']), ' %s' % c.disk_index['error'] if 'error' in c.disk_index else ''), ''),

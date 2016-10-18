@@ -891,6 +891,9 @@ class ScmModel(BaseModel):
         from rhodecode.lib.vcs.backends.git import discover_git_version
         from rhodecode.model.gist import GIST_STORE_LOC
 
+        def percentage(part, whole):
+            return 100 * float(part) / float(whole)
+
         try:
             # cygwin cannot have yet psutil support.
             import psutil
@@ -904,6 +907,7 @@ class ScmModel(BaseModel):
         _boot_time = _NA
         _cpu = _NA
         _disk = dict(percent=0, used=0, total=0, error='')
+        _disk_inodes = dict(percent=0, free=0, used=0, total=0, error='')
         _load = {'1_min': _NA, '5_min': _NA, '15_min': _NA}
 
         model = VcsSettingsModel()
@@ -919,6 +923,19 @@ class ScmModel(BaseModel):
             except Exception as e:
                 log.exception('Failed to fetch disk info')
                 _disk = {'percent': 0, 'used': 0, 'total': 0, 'error': str(e)}
+
+            # disk inodes usage
+            try:
+                i_stat = os.statvfs(storage_path)
+
+                _disk_inodes['used'] = i_stat.f_ffree
+                _disk_inodes['free'] = i_stat.f_favail
+                _disk_inodes['total'] = i_stat.f_files
+                _disk_inodes['percent'] = percentage(
+                    _disk_inodes['used'], _disk_inodes['total'])
+            except Exception as e:
+                log.exception('Failed to fetch disk inodes info')
+                _disk_inodes['error'] = str(e)
 
             # memory
             _memory = dict(psutil.virtual_memory()._asdict())
@@ -1068,6 +1085,7 @@ class ScmModel(BaseModel):
             'cpu': _cpu,
             'memory': _memory,
             'disk': _disk,
+            'disk_inodes': _disk_inodes,
             'disk_archive': _disk_archive,
             'disk_gist': _disk_gist,
             'disk_index': _disk_index,
