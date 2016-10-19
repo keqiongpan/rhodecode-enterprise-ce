@@ -2,9 +2,9 @@
                         annotation=None,
                         bgcolor=None)">
     <%
-    # avoid module lookups for performance
-    from rhodecode.lib.codeblocks import pygment_token_class
-    from rhodecode.lib.helpers import html_escape
+    from rhodecode.lib.codeblocks import render_tokenstream
+    # avoid module lookup for performance
+    html_escape = h.html_escape
     %>
     <tr class="cb-line cb-line-fresh"
     %if annotation:
@@ -18,13 +18,11 @@
     %if bgcolor:
     style="background: ${bgcolor}"
     %endif
-    >${
-      ''.join(
-       '<span class="%s">%s</span>' %
-        (pygment_token_class(token_type), html_escape(token_text))
-        for token_type, token_text in tokens) + '\n' | n
-    }</td>
-    ## this ugly list comp is necessary for performance
+    >
+    ## newline at end is necessary for highlight to work when line is empty
+    ## and for copy pasting code to work as expected
+      <span class="cb-code">${render_tokenstream(tokens)|n}${'\n'}</span>
+    </td>
   </tr>
 </%def>
 

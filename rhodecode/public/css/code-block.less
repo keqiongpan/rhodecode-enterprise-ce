@@ -644,6 +644,9 @@ pre.literal-block, .codehilite pre{
 
 /* START NEW CODE BLOCK CSS */
 
+@cb-line-height: 18px;
+@cb-line-code-padding: 10px;
+
 table.cb {
     width: 100%;
     border-collapse: collapse;
@@ -678,21 +681,23 @@ table.cb {
 
     td {
         vertical-align: top;
-        padding: 2px 10px;
+        padding: 0;
 
         &.cb-content {
-            white-space: pre-wrap;
-            font-family: @font-family-monospace;
             font-size: 12.35px;
 
-            span {
+            span.cb-code {
+                line-height: @cb-line-height;
+                padding-left: @cb-line-code-padding;
+                display: block;
+                white-space: pre-wrap;
+                font-family: @font-family-monospace;
                 word-break: break-word;
             }
         }
 
         &.cb-lineno {
             padding: 0;
-            height: 1px; /* this allows the <a> link to fill to 100% height of the td */
             width: 50px;
             color: rgba(0, 0, 0, 0.3);
             text-align: right;
@@ -702,21 +707,20 @@ table.cb {
             a::before {
                 content: attr(data-line-no);
             }
-            &.cb-line-selected {
+            &.cb-line-selected a {
                 background: @comment-highlight-color !important;
             }
 
             a {
                 display: block;
-                height: 100%;
+                padding-right: @cb-line-code-padding;
+                line-height: @cb-line-height;
                 color: rgba(0, 0, 0, 0.3);
-                padding: 0 10px; /* vertical padding is 0 so that height: 100% works */
-                line-height: 18px; /* use this instead of vertical padding */
             }
         }
 
         &.cb-content {
-            &.cb-line-selected {
+            &.cb-line-selected .cb-code {
                 background: @comment-highlight-color !important;
             }
         }
