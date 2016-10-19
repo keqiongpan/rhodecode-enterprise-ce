@@ -1081,6 +1081,19 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  pygments-markdown-lexer = super.buildPythonPackage {
+    name = "pygments-markdown-lexer-0.1.0.dev39";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [Pygments];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/c3/12/674cdee66635d638cedb2c5d9c85ce507b7b2f91bdba29e482f1b1160ff6/pygments-markdown-lexer-0.1.0.dev39.zip";
+      md5 = "6360fe0f6d1f896e35b7a0142ce6459c";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.asl20 { fullName = "Apache"; } ];
+    };
+  };
   pyparsing = super.buildPythonPackage {
     name = "pyparsing-1.5.7";
     buildInputs = with self; [];
@@ -1384,7 +1397,7 @@
     name = "rhodecode-enterprise-ce-4.5.0";
     buildInputs = with self; [WebTest configobj cssselect lxml mock pytest pytest-cov pytest-runner pytest-sugar];
     doCheck = true;
-    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
+    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pygments-markdown-lexer pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
     src = ./.;
     meta = {
       license = [ { fullName = "AGPLv3, and Commercial License"; } ];

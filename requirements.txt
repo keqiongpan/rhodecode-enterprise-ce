@@ -12,6 +12,7 @@ Paste==2.0.2
 PasteDeploy==1.5.2
 PasteScript==1.7.5
 Pygments==2.1.3
+pygments-markdown-lexer==0.1.0.dev39
 
 # TODO: This version is not available on PyPI
 # Pylons==1.0.2.dev20160108
