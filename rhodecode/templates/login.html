@@ -56,10 +56,9 @@
                     ${h.checkbox('remember', value=True, checked=defaults.get('remember'))}
                     <label class="checkbox" for="remember">${_('Remember me')}</label>
 
-                    
-                    %if h.HasPermissionAny('hg.password_reset.enable')():
+                    %if h.HasPermissionAny('hg.password_reset.enabled')():
                         <p class="links">
-                            ${h.link_to(_('Forgot your password?'), h.route_path('reset_password'))}
+                            ${h.link_to(_('Forgot your password?'), h.route_path('reset_password'), class_='pwd_reset')}
                         </p>
                     %elif h.HasPermissionAny('hg.password_reset.hidden')():
                         <p class="help-block">

@@ -40,22 +40,22 @@ class TestAdminPermissionsController(TestController):
         self.app.get(url('admin_permissions_application'))
 
     @pytest.mark.parametrize(
-        'anonymous, default_register, default_register_message,'
+        'anonymous, default_register, default_register_message, default_password_reset,' 
         'default_extern_activate, expect_error, expect_form_error', [
-            (True, 'hg.register.none', '', 'hg.extern_activate.manual',
+            (True, 'hg.register.none', '', 'hg.password_reset.enabled', 'hg.extern_activate.manual',
              False, False),
-            (True, 'hg.register.manual_activate', '', 'hg.extern_activate.auto',
+            (True, 'hg.register.manual_activate', '', 'hg.password_reset.enabled', 'hg.extern_activate.auto',
              False, False),
-            (True, 'hg.register.auto_activate', '', 'hg.extern_activate.manual',
+            (True, 'hg.register.auto_activate', '', 'hg.password_reset.enabled', 'hg.extern_activate.manual',
              False, False),
-            (True, 'hg.register.auto_activate', '', 'hg.extern_activate.manual',
+            (True, 'hg.register.auto_activate', '', 'hg.password_reset.enabled', 'hg.extern_activate.manual',
              False, False),
-            (True, 'hg.register.XXX', '', 'hg.extern_activate.manual',
+            (True, 'hg.register.XXX', '', 'hg.password_reset.enabled', 'hg.extern_activate.manual',
              False, True),
-            (True, '', '', '', True, False),
+            (True, '', '', 'hg.password_reset.enabled', '', True, False),
         ])
     def test_update_application_permissions(
-            self, anonymous, default_register, default_register_message,
+            self, anonymous, default_register, default_register_message, default_password_reset,
             default_extern_activate, expect_error, expect_form_error):
 
         self.log_user()
@@ -66,6 +66,7 @@ class TestAdminPermissionsController(TestController):
             'anonymous': anonymous,
             'default_register': default_register,
             'default_register_message': default_register_message,
+            'default_password_reset': default_password_reset,
             'default_extern_activate': default_extern_activate,
         }
         response = self.app.post(url('admin_permissions_application'),
