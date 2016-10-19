@@ -1,5 +1,6 @@
 ## -*- coding: utf-8 -*-
 <%inherit file="/base/base.html"/>
+<%namespace name="cbdiffs" file="/codeblocks/diffs.html"/>
 
 <%def name="title()">
     %if c.compare_home:
@@ -53,7 +54,7 @@
                                     <a id="btn-swap" class="btn btn-primary" href="${c.swap_url}"><i class="icon-refresh"></i> ${_('Swap')}</a>
                                 %endif
                                 <div id="compare_revs" class="btn btn-primary"><i class ="icon-loop"></i> ${_('Compare Commits')}</div>
-                                %if c.files:
+                                %if c.diffset and c.diffset.files:
                                     <div id="compare_changeset_status_toggle" class="btn btn-primary">${_('Comment')}</div>
                                 %endif
                             </div>
@@ -248,72 +249,7 @@
                 <div id="changeset_compare_view_content">
                     ##CS
                     <%include file="compare_commits.html"/>
-
-                    ## FILES
-                  <div class="cs_files_title">
-                    <span class="cs_files_expand">
-                        <span id="expand_all_files">${_('Expand All')}</span> | <span id="collapse_all_files">${_('Collapse All')}</span>
-                    </span>
-                    <h2>
-                        ${diff_block.diff_summary_text(len(c.files), c.lines_added, c.lines_deleted, c.limited_diff)}
-                    </h2>
-                  </div>
-                    <div class="cs_files">
-                      %if not c.files:
-                         <p class="empty_data">${_('No files')}</p>
-                      %endif
-                  <table class="compare_view_files">
-                  <%namespace name="diff_block" file="/changeset/diff_block.html"/>
-                    %for FID, change, path, stats, file in c.files:
-                    <tr class="cs_${change} collapse_file" fid="${FID}">
-                        <td class="cs_icon_td">
-                            <span class="collapse_file_icon" fid="${FID}"></span>
-                        </td>
-                        <td class="cs_icon_td">
-                            <div class="flag_status not_reviewed hidden"></div>
-                        </td>
-                        <td class="cs_${change}" id="a_${FID}">
-                            <div class="node">
-                                <a href="#a_${FID}">
-                                    <i class="icon-file-${change.lower()}"></i>
-                                    ${h.safe_unicode(path)}
-                                </a>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="changes pull-right">${h.fancy_file_stats(stats)}</div>
-                            <div class="comment-bubble pull-right" data-path="${path}">
-                              <i class="icon-comment"></i>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr fid="${FID}" id="diff_${FID}" class="diff_links">
-                        <td></td>
-                        <td></td>
-                        <td class="cs_${change}">
-                            %if c.target_repo.repo_name == c.repo_name:
-                                ${diff_block.diff_menu(c.repo_name, h.safe_unicode(path), c.source_ref, c.target_ref, change, file)}
-                            %else:
-                                ## this is slightly different case later, since the target repo can have this
-                                ## file in target state than the source repo
-                                ${diff_block.diff_menu(c.target_repo.repo_name, h.safe_unicode(path), c.source_ref, c.target_ref, change, file)}
-                            %endif
-                        </td>
-                        <td class="td-actions rc-form">
-                        </td>
-                    </tr>
-                    <tr id="tr_${FID}">
-                      <td></td>
-                      <td></td>
-                      <td class="injected_diff" colspan="2">
-                          ${diff_block.diff_block_simple([c.changes[FID]])}
-                      </td>
-                    </tr>
-                  %endfor
-                  </table>
-                    % if c.limited_diff:
-                        ${diff_block.changeset_message()}
-                    % endif
+                    ${cbdiffs.render_diffset(c.diffset)}
                  </div>
             %endif
         </div>

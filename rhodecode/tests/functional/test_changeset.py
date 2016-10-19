@@ -104,7 +104,7 @@ class TestChangesetController(object):
 
         response.mustcontain(_shorten_commit_id(commit_ids[0]))
         response.mustcontain(_shorten_commit_id(commit_ids[1]))
-        
+
         # svn is special
         if backend.alias == 'svn':
             response.mustcontain('new file 10644')
@@ -146,7 +146,7 @@ class TestChangesetController(object):
         # files op files
         response.mustcontain('File no longer present at commit: %s' %
                              _shorten_commit_id(commit_ids[1]))
-        
+
         # svn is special
         if backend.alias == 'svn':
             response.mustcontain('new file 10644')
@@ -158,7 +158,7 @@ class TestChangesetController(object):
         response.mustcontain('Added docstrings to vcs.cli')  # commit msg
         response.mustcontain('Changed theme to ADC theme')  # commit msg
 
-        self._check_diff_menus(response)
+        self._check_new_diff_menus(response)
 
     def test_changeset_range(self, backend):
         self._check_changeset_range(
@@ -273,10 +273,23 @@ Added a symlink
 """ + diffs['svn'],
     }
 
-    def _check_diff_menus(self, response, right_menu=False):
+    def _check_diff_menus(self, response, right_menu=False,):
         # diff menus
         for elem in ['Show File', 'Unified Diff', 'Side-by-side Diff',
                      'Raw Diff', 'Download Diff']:
+            response.mustcontain(elem)
+
+        # right pane diff menus
+        if right_menu:
+            for elem in ['Ignore whitespace', 'Increase context',
+                         'Hide comments']:
+                response.mustcontain(elem)
+
+
+    def _check_new_diff_menus(self, response, right_menu=False,):
+        # diff menus
+        for elem in ['Show file before', 'Show file after',
+                     'Raw diff', 'Download diff']:
             response.mustcontain(elem)
 
         # right pane diff menus

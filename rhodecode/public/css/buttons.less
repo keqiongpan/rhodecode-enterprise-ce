@@ -188,6 +188,14 @@ input[type="button"] {
     padding: @padding * 1.2;
 }
 
+.btn-group {
+    display: inline-block;
+    .btn {
+        float: left;
+        margin: 0 0 0 -1px;
+    }
+}
+
 .btn-link {
     background: transparent;
     border: none;
@@ -326,15 +334,15 @@ input[type="submit"],
 input[type="reset"] {
     &.btn-danger {
         &:extend(.btn-danger);
-    
+
         &:focus {
             outline: 0;
         }
-    
+
         &:hover {
             &:extend(.btn-danger:hover);
         }
-    
+
         &.btn-link {
             &:extend(.btn-link);
             color: @alert2;

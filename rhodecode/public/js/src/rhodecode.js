@@ -221,12 +221,30 @@ var formatSelect2SelectionRefs = function(commit_ref){
 };
 
 // takes a given html element and scrolls it down offset pixels
-function offsetScroll(element, offset){
-    setTimeout(function(){
+function offsetScroll(element, offset) {
+    setTimeout(function() {
         var location = element.offset().top;
         // some browsers use body, some use html
         $('html, body').animate({ scrollTop: (location - offset) });
     }, 100);
+}
+
+// scroll an element `percent`% from the top of page in `time` ms
+function scrollToElement(element, percent, time) {
+    percent = (percent === undefined ? 25 : percent);
+    time = (time === undefined ? 100 : time);
+
+    var $element = $(element);
+    var elOffset = $element.offset().top;
+    var elHeight = $element.height();
+    var windowHeight = $(window).height();
+    var offset = elOffset;
+    if (elHeight < windowHeight) {
+        offset = elOffset - ((windowHeight / (100 / percent)) - (elHeight / 2));
+    }
+    setTimeout(function() {
+        $('html, body').animate({ scrollTop: offset});
+    }, time);
 }
 
 /**
@@ -418,6 +436,10 @@ $(document).ready(function() {
         var result = splitDelimitedHash(location.hash);
         var loc  = result.loc;
         if (loc.length > 1) {
+
+            var highlightable_line_tds = [];
+
+            // source code line format
             var page_highlights = loc.substring(
                 loc.indexOf('#') + 1).split('L');
 
@@ -442,33 +464,27 @@ $(document).ready(function() {
                 for (pos in h_lines) {
                     var line_td = $('td.cb-lineno#L' + h_lines[pos]);
                     if (line_td.length) {
-                        line_td.addClass('cb-line-selected'); // line number td
-                        line_td.next().addClass('cb-line-selected'); // line content
+                        highlightable_line_tds.push(line_td);
                     }
                 }
-                var first_line_td = $('td.cb-lineno#L' + h_lines[0]);
-                if (first_line_td.length) {
-                    var elOffset = first_line_td.offset().top;
-                    var elHeight = first_line_td.height();
-                    var windowHeight = $(window).height();
-                    var offset;
+            }
 
-                    if (elHeight < windowHeight) {
-                        offset = elOffset - ((windowHeight / 4) - (elHeight / 2));
-                    }
-                    else {
-                        offset = elOffset;
-                    }
-                    $(function() { // let browser scroll to hash first, then
-                                   // scroll the line to the middle of page
-                        setTimeout(function() {
-                            $('html, body').animate({ scrollTop: offset });
-                          }, 100);
-                    });
-                    $.Topic('/ui/plugins/code/anchor_focus').prepareOrPublish({
-                        lineno: first_line_td,
-                        remainder: result.remainder});
-                }
+            // now check a direct id reference (diff page)
+            if ($(loc).length && $(loc).hasClass('cb-lineno')) {
+                highlightable_line_tds.push($(loc));
+            }
+            $.each(highlightable_line_tds, function (i, $td) {
+                $td.addClass('cb-line-selected'); // line number td
+                $td.next().addClass('cb-line-selected'); // line content
+            });
+
+            if (highlightable_line_tds.length) {
+                var $first_line_td = highlightable_line_tds[0];
+                scrollToElement($first_line_td);
+                $.Topic('/ui/plugins/code/anchor_focus').prepareOrPublish({
+                    lineno: $first_line_td,
+                    remainder: result.remainder
+                });
             }
         }
     }

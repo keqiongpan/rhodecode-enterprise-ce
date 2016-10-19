@@ -264,19 +264,19 @@ class TestRenderTokenStream(object):
         ),
         (
             [('A', '', u'two\n'), ('A', '', u'lines')],
-            '<span class="A">two<nl>\n</nl>lines</span>',
+            '<span class="A">two\nlines</span>',
         ),
         (
             [('A', '', u'\nthree\n'), ('A', '', u'lines')],
-            '<span class="A"><nl>\n</nl>three<nl>\n</nl>lines</span>',
+            '<span class="A">\nthree\nlines</span>',
         ),
         (
             [('', '', u'\n'), ('A', '', u'line')],
-            '<span><nl>\n</nl></span><span class="A">line</span>',
+            '<span>\n</span><span class="A">line</span>',
         ),
         (
             [('', 'ins', u'\n'), ('A', '', u'line')],
-            '<span><ins><nl>\n</nl></ins></span><span class="A">line</span>',
+            '<span><ins>\n</ins></span><span class="A">line</span>',
         ),
         (
             [('A', '', u'hel'), ('A', 'ins', u'lo')],

@@ -646,14 +646,210 @@ pre.literal-block, .codehilite pre{
 
 @cb-line-height: 18px;
 @cb-line-code-padding: 10px;
+@cb-text-padding: 5px;
 
-table.cb {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 10px;
+@diff-pill-padding: 2px 7px;
+
+input.diff-collapse-state {
+    display: none;
+
+    &:checked + .diff { /* file diff is collapsed */
+        .cb {
+            display: none
+        }
+        .diff-collapse-indicator {
+            border-width: 9px 0 9px 15.6px;
+            border-color: transparent transparent transparent #ccc;
+        }
+        .diff-menu {
+            display: none;
+        }
+        margin: -1px 0 0 0;
+    }
+
+    &+ .diff { /* file diff is expanded */
+        .diff-collapse-indicator {
+            border-width: 15.6px 9px 0 9px;
+            border-color: #ccc transparent transparent transparent;
+        }
+        .diff-menu {
+            display: block;
+        }
+        margin: 20px 0;
+    }
+}
+.diff {
+    border: 1px solid @grey5;
+
+    /* START OVERRIDES */
+    .code-highlight {
+        border: none;  // TODO: remove this border from the global
+                       // .code-highlight, it doesn't belong there
+    }
+    label {
+        margin: 0; // TODO: remove this margin definition from global label
+                   // it doesn't belong there - if margin on labels
+                   // are needed for a form they should be defined
+                   // in the form's class
+    }
+    /* END OVERRIDES */
 
     * {
         box-sizing: border-box;
+    }
+    .diff-anchor {
+        visibility: hidden;
+    }
+    &:hover {
+        .diff-anchor {
+            visibility: visible;
+        }
+    }
+
+    .diff-collapse-indicator {
+        width: 0;
+        height: 0;
+        border-style: solid;
+        float: left;
+        margin: 2px 2px 0 0;
+        cursor: pointer;
+    }
+
+    .diff-heading {
+        background: @grey7;
+        cursor: pointer;
+        display: block;
+        padding: 5px 10px;
+    }
+    .diff-heading:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+    .diff-heading:hover {
+        background: #e1e9f4 !important;
+    }
+
+    .diff-menu {
+        float: right;
+        a, button {
+            padding: 5px;
+            display: block;
+            float: left
+        }
+    }
+    .diff-pill {
+        display: block;
+        float: left;
+        padding: @diff-pill-padding;
+    }
+    .diff-pill-group {
+        .diff-pill {
+            opacity: .8;
+            &:first-child {
+                border-radius: @border-radius 0 0 @border-radius;
+            }
+            &:last-child {
+                border-radius: 0 @border-radius @border-radius 0;
+            }
+            &:only-child {
+                border-radius: @border-radius;
+            }
+        }
+    }
+    .diff-pill {
+        &[op="name"] {
+            background: none;
+            color: @grey2;
+            opacity: 1;
+            color: white;
+        }
+        &[op="limited"] {
+            background: @grey2;
+            color: white;
+        }
+        &[op="binary"] {
+            background: @color7;
+            color: white;
+        }
+        &[op="modified"] {
+            background: @alert1;
+            color: white;
+        }
+        &[op="renamed"] {
+            background: @color4;
+            color: white;
+        }
+        &[op="mode"] {
+            background: @grey3;
+            color: white;
+        }
+        &[op="symlink"] {
+            background: @color8;
+            color: white;
+        }
+
+        &[op="added"] { /* added lines */
+            background: @alert1;
+            color: white;
+        }
+        &[op="deleted"] { /* deleted lines */
+            background: @alert2;
+            color: white;
+        }
+
+        &[op="created"] { /* created file */
+            background: @alert1;
+            color: white;
+        }
+        &[op="removed"] { /* deleted file */
+            background: @color5;
+            color: white;
+        }
+    }
+
+    .diff-collapse-button, .diff-expand-button {
+        cursor: pointer;
+    }
+    .diff-collapse-button {
+        display: inline;
+    }
+    .diff-expand-button {
+        display: none;
+    }
+    .diff-collapsed .diff-collapse-button {
+        display: none;
+    }
+    .diff-collapsed .diff-expand-button {
+        display: inline;
+    }
+}
+table.cb {
+    width: 100%;
+    border-collapse: collapse;
+
+    .cb-text {
+        padding: @cb-text-padding;
+    }
+    .cb-hunk {
+        padding: @cb-text-padding;
+    }
+    .cb-expand {
+        display: none;
+    }
+    .cb-collapse {
+        display: inline;
+    }
+    &.cb-collapsed {
+        .cb-line {
+            display: none;
+        }
+        .cb-expand {
+            display: inline;
+        }
+        .cb-collapse {
+            display: none;
+        }
     }
 
     /* intentionally general selector since .cb-line-selected must override it
@@ -663,18 +859,45 @@ table.cb {
     .cb-line-fresh .cb-content {
         background: white !important;
     }
+    .cb-warning {
+        background: #fff4dd;
+    }
 
-    tr.cb-annotate {
-        border-top: 1px solid #eee;
+    &.cb-diff-sideside {
+        td {
+            &.cb-content {
+                width: 50%;
+            }
+        }
+    }
 
-        &+ .cb-line {
+    tr {
+        &.cb-annotate {
             border-top: 1px solid #eee;
+
+            &+ .cb-line {
+                border-top: 1px solid #eee;
+            }
+
+            &:first-child {
+                border-top: none;
+                &+ .cb-line {
+                    border-top: none;
+                }
+            }
         }
 
-        &:first-child {
-            border-top: none;
-            &+ .cb-line {
-                border-top: none;
+        &.cb-hunk {
+            font-family: @font-family-monospace;
+            color: rgba(0, 0, 0, 0.3);
+
+            td {
+                &:first-child {
+                    background: #edf2f9;
+                }
+                &:last-child {
+                    background: #f4f7fb;
+                }
             }
         }
     }
@@ -686,9 +909,14 @@ table.cb {
         &.cb-content {
             font-size: 12.35px;
 
+            &.cb-line-selected .cb-code {
+                background: @comment-highlight-color !important;
+            }
+
             span.cb-code {
                 line-height: @cb-line-height;
                 padding-left: @cb-line-code-padding;
+                padding-right: @cb-line-code-padding;
                 display: block;
                 white-space: pre-wrap;
                 font-family: @font-family-monospace;
@@ -714,14 +942,38 @@ table.cb {
             a {
                 display: block;
                 padding-right: @cb-line-code-padding;
+                padding-left: @cb-line-code-padding;
                 line-height: @cb-line-height;
                 color: rgba(0, 0, 0, 0.3);
             }
         }
 
-        &.cb-content {
-            &.cb-line-selected .cb-code {
-                background: @comment-highlight-color !important;
+        &.cb-empty {
+            background: @grey7;
+        }
+
+        ins {
+            color: black;
+            background: #a6f3a6;
+            text-decoration: none;
+        }
+        del {
+            color: black;
+            background: #f8cbcb;
+            text-decoration: none;
+        }
+        &.cb-addition {
+            background: #ecffec;
+
+            &.blob-lineno {
+                background: #ddffdd;
+            }
+        }
+        &.cb-deletion {
+            background: #ffecec;
+
+            &.blob-lineno {
+                background: #ffdddd;
             }
         }
 

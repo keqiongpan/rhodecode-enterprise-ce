@@ -1,0 +1,398 @@
+<%def name="diff_line_anchor(filename, line, type)"><%
+return '%s_%s_%i' % (h.safeid(filename), type, line)
+%></%def>
+
+<%def name="action_class(action)"><%
+    return {
+        '-': 'cb-deletion',
+        '+': 'cb-addition',
+        ' ': 'cb-context',
+        }.get(action, 'cb-empty')
+%></%def>
+
+<%def name="op_class(op_id)"><%
+    return {
+        DEL_FILENODE: 'deletion', # file deleted
+        BIN_FILENODE: 'warning' # binary diff hidden
+    }.get(op_id, 'addition')
+%></%def>
+
+<%def name="link_for(**kw)"><%
+new_args = request.GET.mixed()
+new_args.update(kw)
+return h.url('', **new_args)
+%></%def>
+
+<%def name="render_diffset(diffset,
+
+    # collapse all file diff entries when there are more than this amount of files in the diff
+    collapse_when_files_over=20,
+
+    # collapse lines in the diff when more than this amount of lines changed in the file diff
+    lines_changed_limit=500,
+)">
+<%
+# TODO: dan: move this to an argument - and set a cookie so that it is saved
+# default option for future requests
+diff_mode = request.GET.get('diffmode', 'sideside')
+if diff_mode not in ('sideside', 'unified'):
+    diff_mode = 'sideside'
+
+collapse_all = len(diffset.files) > collapse_when_files_over
+%>
+
+%if diff_mode == 'sideside':
+<style>
+.wrapper {
+    max-width: 1600px !important;
+}
+</style>
+%endif
+
+% if diffset.limited_diff:
+<div class="alert alert-warning">
+    ${_('The requested commit is too big and content was truncated.')} <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+</div>
+% endif
+
+<div class="cs_files">
+    <div class="cs_files_title">
+        %if diffset.files:
+        <div class="pull-right">
+            <div class="btn-group">
+                <a
+                    class="btn ${diff_mode == 'sideside' and 'btn-primary'} tooltip"
+                    title="${_('View side by side')}"
+                    href="${link_for(diffmode='sideside')}">
+                    <span>${_('Side by Side')}</span>
+                </a>
+                <a
+                    class="btn ${diff_mode == 'unified' and 'btn-primary'} tooltip"
+                    title="${_('View unified')}" href="${link_for(diffmode='unified')}">
+                    <span>${_('Unified')}</span>
+                </a>
+            </div>
+        </div>
+        <div class="pull-left">
+            <div class="btn-group">
+                <a
+                    class="btn"
+                    href="#"
+                    onclick="$('input[class=diff-collapse-state]').prop('checked', false); return false">${_('Expand All')}</a>
+                <a
+                    class="btn"
+                    href="#"
+                    onclick="$('input[class=diff-collapse-state]').prop('checked', true); return false">${_('Collapse All')}</a>
+            </div>
+        </div>
+        %endif
+        <h2 style="padding: 5px; text-align: center;">
+    %if diffset.limited_diff:
+        ${ungettext('%(num)s file changed', '%(num)s files changed', diffset.changed_files) % {'num': diffset.changed_files}}
+    %else:
+        ${ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
+                    '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
+    %endif
+        </h2>
+    </div>
+
+    %if not diffset.files:
+        <p class="empty_data">${_('No files')}</p>
+    %endif
+
+    <div class="filediffs">
+    %for i, filediff in enumerate(diffset.files):
+    <%
+    lines_changed = filediff['patch']['stats']['added'] + filediff['patch']['stats']['deleted']
+    over_lines_changed_limit = lines_changed > lines_changed_limit
+    %>
+        <input ${collapse_all and 'checked' or ''} class="diff-collapse-state" id="diff-collapse-${i}" type="checkbox">
+        <div
+            class="diff"
+            data-f-path="${filediff['patch']['filename']}"
+            id="a_${h.FID('', filediff['patch']['filename'])}">
+            <label for="diff-collapse-${i}" class="diff-heading">
+                <div class="diff-collapse-indicator"></div>
+                ${diff_ops(filediff)}
+            </label>
+            ${diff_menu(filediff)}
+            <table class="cb cb-diff-${diff_mode} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
+        %if not filediff.hunks:
+            %for op_id, op_text in filediff['patch']['stats']['ops'].items():
+                <tr>
+                    <td class="cb-text cb-${op_class(op_id)}" ${diff_mode == 'unified' and 'colspan=3' or 'colspan=4'}>
+                        %if op_id == DEL_FILENODE:
+                        ${_('File was deleted')}
+                        %elif op_id == BIN_FILENODE:
+                        ${_('Binary file hidden')}
+                        %else:
+                        ${op_text}
+                        %endif
+                    </td>
+                </tr>
+            %endfor
+        %endif
+        %if over_lines_changed_limit:
+                <tr class="cb-warning cb-collapser">
+                    <td class="cb-text" ${diff_mode == 'unified' and 'colspan=3' or 'colspan=4'}>
+                        ${_('This diff has been collapsed as it changes many lines, (%i lines changed)' % lines_changed)}
+                        <a href="#" class="cb-expand"
+                           onclick="$(this).closest('table').removeClass('cb-collapsed'); return false;">${_('Show them')}
+                        </a>
+                        <a href="#" class="cb-collapse"
+                           onclick="$(this).closest('table').addClass('cb-collapsed'); return false;">${_('Hide them')}
+                        </a>
+                    </td>
+                </tr>
+        %endif
+        %if filediff.patch['is_limited_diff']:
+                <tr class="cb-warning cb-collapser">
+                    <td class="cb-text" ${diff_mode == 'unified' and 'colspan=3' or 'colspan=4'}>
+                        ${_('The requested commit is too big and content was truncated.')} <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+                    </td>
+                </tr>
+        %endif
+        %for hunk in filediff.hunks:
+                <tr class="cb-hunk">
+                    <td ${diff_mode == 'unified' and 'colspan=2' or ''}>
+                        ## TODO: dan: add ajax loading of more context here
+                        ## <a href="#">
+                            <i class="icon-more"></i>
+                        ## </a>
+                    </td>
+                    <td ${diff_mode == 'sideside' and 'colspan=3' or ''}>
+                        @@
+                        -${hunk.source_start},${hunk.source_length}
+                        +${hunk.target_start},${hunk.target_length}
+                        ${hunk.section_header}
+                    </td>
+                </tr>
+            %if diff_mode == 'unified':
+                    ${render_hunk_lines_unified(hunk)}
+            %elif diff_mode == 'sideside':
+                    ${render_hunk_lines_sideside(hunk)}
+            %else:
+                <tr class="cb-line">
+                    <td>unknown diff mode</td>
+                </tr>
+            %endif
+        %endfor
+            </table>
+        </div>
+    %endfor
+    </div>
+</div>
+</%def>
+
+<%def name="diff_ops(filediff)">
+<%
+stats = filediff['patch']['stats']
+from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
+    MOD_FILENODE, RENAMED_FILENODE, CHMOD_FILENODE, BIN_FILENODE
+%>
+    <span class="diff-pill">
+        %if filediff.source_file_path and filediff.target_file_path:
+            %if filediff.source_file_path != filediff.target_file_path: # file was renamed
+                  <strong>${filediff.target_file_path}</strong> ⬅ <del>${filediff.source_file_path}</del>
+            %else:
+                ## file was modified
+                <strong>${filediff.source_file_path}</strong>
+            %endif
+        %else:
+            %if filediff.source_file_path:
+                ## file was deleted
+                <strong>${filediff.source_file_path}</strong>
+            %else:
+                ## file was added
+                <strong>${filediff.target_file_path}</strong>
+            %endif
+        %endif
+    </span>
+    <span class="diff-pill-group" style="float: left">
+        %if filediff.patch['is_limited_diff']:
+        <span class="diff-pill tooltip" op="limited" title="The stats for this diff are not complete">limited diff</span>
+        %endif
+        %if RENAMED_FILENODE in stats['ops']:
+        <span class="diff-pill" op="renamed">renamed</span>
+        %endif
+
+        %if NEW_FILENODE in stats['ops']:
+        <span class="diff-pill" op="created">created</span>
+            %if filediff['target_mode'].startswith('120'):
+        <span class="diff-pill" op="symlink">symlink</span>
+            %else:
+        <span class="diff-pill" op="mode">${nice_mode(filediff['target_mode'])}</span>
+            %endif
+        %endif
+
+        %if DEL_FILENODE in stats['ops']:
+        <span class="diff-pill" op="removed">removed</span>
+        %endif
+
+        %if CHMOD_FILENODE in stats['ops']:
+        <span class="diff-pill" op="mode">
+            ${nice_mode(filediff['source_mode'])} ➡ ${nice_mode(filediff['target_mode'])}
+        </span>
+        %endif
+    </span>
+
+    <a class="diff-pill diff-anchor" href="#a_${h.FID('', filediff.patch['filename'])}">¶</a>
+
+    <span class="diff-pill-group" style="float: right">
+        %if BIN_FILENODE in stats['ops']:
+        <span class="diff-pill" op="binary">binary</span>
+            %if MOD_FILENODE in stats['ops']:
+            <span class="diff-pill" op="modified">modified</span>
+            %endif
+        %endif
+        %if stats['deleted']:
+        <span class="diff-pill" op="deleted">-${stats['deleted']}</span>
+        %endif
+        %if stats['added']:
+        <span class="diff-pill" op="added">+${stats['added']}</span>
+        %endif
+    </span>
+
+</%def>
+
+<%def name="nice_mode(filemode)">
+    ${filemode.startswith('100') and filemode[3:] or filemode}
+</%def>
+
+<%def name="diff_menu(filediff)">
+    <div class="diff-menu">
+%if filediff.diffset.source_ref:
+    %if filediff.patch['operation'] in ['D', 'M']:
+        <a
+            class="tooltip"
+            href="${h.url('files_home',repo_name=c.repo_name,f_path=filediff.source_file_path,revision=filediff.diffset.source_ref)}"
+            title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
+        >
+            ${_('Show file before')}
+        </a>
+    %else:
+        <a
+            disabled
+            class="tooltip"
+            title="${h.tooltip(_('File no longer present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
+        >
+            ${_('Show file before')}
+        </a>
+    %endif
+    %if filediff.patch['operation'] in ['A', 'M']:
+        <a
+            class="tooltip"
+            href="${h.url('files_home',repo_name=c.repo_name,f_path=filediff.target_file_path,revision=filediff.diffset.target_ref)}"
+            title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
+        >
+            ${_('Show file after')}
+        </a>
+    %else:
+        <a
+            disabled
+            class="tooltip"
+            title="${h.tooltip(_('File no longer present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
+            >
+                ${_('Show file after')}
+        </a>
+    %endif
+        <a
+            class="tooltip"
+            title="${h.tooltip(_('Raw diff'))}"
+            href="${h.url('files_diff_home',repo_name=c.repo_name,f_path=filediff.target_file_path,diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='raw')}"
+        >
+            ${_('Raw diff')}
+        </a>
+        <a
+            class="tooltip"
+            title="${h.tooltip(_('Download diff'))}"
+            href="${h.url('files_diff_home',repo_name=c.repo_name,f_path=filediff.target_file_path,diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='download')}"
+        >
+            ${_('Download diff')}
+        </a>
+%endif
+    </div>
+</%def>
+
+
+<%def name="render_hunk_lines_sideside(hunk)">
+    %for i, line in enumerate(hunk.sideside):
+    <%
+    old_line_anchor, new_line_anchor = None, None
+    if line.original.lineno:
+        old_line_anchor = diff_line_anchor(hunk.filediff.source_file_path, line.original.lineno, 'o')
+    if line.modified.lineno:
+        new_line_anchor = diff_line_anchor(hunk.filediff.target_file_path, line.modified.lineno, 'n')
+    %>
+    <tr class="cb-line">
+        <td class="cb-lineno ${action_class(line.original.action)}"
+            data-line-number="${line.original.lineno}"
+            %if old_line_anchor:
+            id="${old_line_anchor}"
+            %endif
+        >
+            %if line.original.lineno:
+            <a name="${old_line_anchor}" href="#${old_line_anchor}">${line.original.lineno}</a>
+            %endif
+        </td>
+        <td class="cb-content ${action_class(line.original.action)}"
+            data-line-number="o${line.original.lineno}"
+            ><span class="cb-code">${line.original.action} ${line.original.content or '' | n}</span>
+        </td>
+        <td class="cb-lineno ${action_class(line.modified.action)}"
+            data-line-number="${line.modified.lineno}"
+            %if new_line_anchor:
+            id="${new_line_anchor}"
+            %endif
+            >
+            %if line.modified.lineno:
+                <a name="${new_line_anchor}" href="#${new_line_anchor}">${line.modified.lineno}</a>
+            %endif
+            </td>
+        <td class="cb-content ${action_class(line.modified.action)}"
+            data-line-number="n${line.modified.lineno}"
+            >
+            <span class="cb-code">${line.modified.action} ${line.modified.content or '' | n}</span>
+        </td>
+    </tr>
+    %endfor
+</%def>
+
+
+<%def name="render_hunk_lines_unified(hunk)">
+    %for old_line_no, new_line_no, action, content in hunk.unified:
+    <%
+    old_line_anchor, new_line_anchor = None, None
+    if old_line_no:
+        old_line_anchor = diff_line_anchor(hunk.filediff.source_file_path, old_line_no, 'o')
+    if new_line_no:
+        new_line_anchor = diff_line_anchor(hunk.filediff.target_file_path, new_line_no, 'n')
+    %>
+    <tr class="cb-line">
+        <td class="cb-lineno ${action_class(action)}"
+            data-line-number="${old_line_no}"
+            %if old_line_anchor:
+            id="${old_line_anchor}"
+            %endif
+        >
+            %if old_line_anchor:
+            <a name="${old_line_anchor}" href="#${old_line_anchor}">${old_line_no}</a>
+            %endif
+        </td>
+        <td class="cb-lineno ${action_class(action)}"
+            data-line-number="${new_line_no}"
+            %if new_line_anchor:
+            id="${new_line_anchor}"
+            %endif
+        >
+            %if new_line_anchor:
+            <a name="${new_line_anchor}" href="#${new_line_anchor}">${new_line_no}</a>
+            %endif
+        </td>
+        <td class="cb-content ${action_class(action)}"
+            data-line-number="${new_line_no and 'n' or 'o'}${new_line_no or old_line_no}"
+            ><span class="cb-code">${action} ${content or '' | n}</span>
+          </td>
+    </tr>
+    %endfor
+</%def>
