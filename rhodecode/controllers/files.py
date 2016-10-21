@@ -224,14 +224,17 @@ class FilesController(BaseRepoController):
             c.file_tree = ''
             if c.file.is_file():
                 c.file_last_commit = c.file.last_commit
-                if c.annotate: # annotation has precedence over renderer
-                    c.annotated_lines = filenode_as_annotated_lines_tokens(
-                        c.file)
-                else:
-                    c.renderer = (
-                        c.renderer and h.renderer_from_filename(c.file.path))
-                    if not c.renderer:
-                        c.lines = filenode_as_lines_tokens(c.file)
+                if c.file.size < self.cut_off_limit_file:
+                    if c.annotate: # annotation has precedence over renderer
+                        c.annotated_lines = filenode_as_annotated_lines_tokens(
+                            c.file
+                        )
+                    else:
+                        c.renderer = (
+                            c.renderer and h.renderer_from_filename(c.file.path)
+                        )
+                        if not c.renderer:
+                            c.lines = filenode_as_lines_tokens(c.file)
 
                 c.on_branch_head = self._is_valid_head(
                     commit_id, c.rhodecode_repo)
