@@ -876,6 +876,16 @@ class GitRepository(BaseRepository):
             shadow_repo._local_merge(merge_message, merger_name, merger_email,
                                      [source_ref.commit_id])
             merge_possible = True
+
+            # Need to reload repo to invalidate the cache, or otherwise we
+            # cannot retrieve the merge commit.
+            shadow_repo = GitRepository(shadow_repository_path)
+            merge_commit_id = shadow_repo.branches[pr_branch]
+
+            # Set a reference pointing to the merge commit. This reference may
+            # be used to easily identify the last successful merge commit in
+            # the shadow repository.
+            shadow_repo.set_refs('refs/heads/pr-merge', merge_commit_id)
         except RepositoryError as e:
             log.exception('Failure when doing local merge on git shadow repo')
             merge_possible = False
@@ -887,10 +897,6 @@ class GitRepository(BaseRepository):
                     pr_branch, self.path, target_ref.name, enable_hooks=True,
                     rc_scm_data=self.config.get('rhodecode', 'RC_SCM_DATA'))
                 merge_succeeded = True
-                # Need to reload repo to invalidate the cache, or otherwise we
-                # cannot retrieve the merge commit.
-                shadow_repo = GitRepository(shadow_repository_path)
-                merge_commit_id = shadow_repo.branches[pr_branch]
             except RepositoryError as e:
                 log.exception(
                     'Failure when doing local push on git shadow repo')
