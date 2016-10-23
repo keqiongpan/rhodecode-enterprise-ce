@@ -3064,8 +3064,7 @@ class _PullRequestBase(BaseModel):
 
     @property
     def source_ref_parts(self):
-        refs = self.source_ref.split(':')
-        return Reference(refs[0], refs[1], refs[2])
+        return self.unicode_to_reference(self.source_ref)
 
     @declared_attr
     def target_repo(cls):
@@ -3075,8 +3074,28 @@ class _PullRequestBase(BaseModel):
 
     @property
     def target_ref_parts(self):
-        refs = self.target_ref.split(':')
-        return Reference(refs[0], refs[1], refs[2])
+        return self.unicode_to_reference(self.target_ref)
+
+    def unicode_to_reference(self, raw):
+        """
+        Convert a unicode (or string) to a reference object.
+        If unicode evaluates to False it returns None.
+        """
+        if raw:
+            refs = raw.split(':')
+            return Reference(*refs)
+        else:
+            return None
+
+    def reference_to_unicode(self, ref):
+        """
+        Convert a reference object to unicode.
+        If reference is None it returns None.
+        """
+        if ref:
+            return u':'.join(ref)
+        else:
+            return None
 
 
 class PullRequest(Base, _PullRequestBase):
