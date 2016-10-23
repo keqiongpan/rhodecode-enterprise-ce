@@ -101,23 +101,23 @@
             </div>
            </div>
 
-           ## Clone link of the shadow repository.
-           %if not c.pull_request.is_closed():
-               <div class="field">
-                   <div class="label-summary">
-                       <label>${_('Shadow')}:</label>
-                   </div>
-                   <div class="input">
-                       <div class="pr-shadowinfo">
-                           %if h.is_hg(c.pull_request.target_repo):
-                               <input type="text"  value="hg clone ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
-                           %elif h.is_git(c.pull_request.target_repo):
-                               <input type="text"  value="git clone ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
-                           %endif
-                       </div>
-                   </div>
-               </div>
-           %endif
+            ## Link to the shadow repository.
+            %if not c.pull_request.is_closed() and c.pull_request.last_merge_rev:
+                <div class="field">
+                    <div class="label-summary">
+                        <label>Merge:</label>
+                    </div>
+                    <div class="input">
+                        <div class="pr-mergeinfo">
+                            %if h.is_hg(c.pull_request.target_repo):
+                                <input type="text"  value="hg clone -u pr-merge ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                            %elif h.is_git(c.pull_request.target_repo):
+                                <input type="text"  value="git clone --branch pr-merge ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                            %endif
+                        </div>
+                    </div>
+                </div>
+            %endif
 
            <div class="field">
             <div class="label-summary">
