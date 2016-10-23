@@ -3137,9 +3137,18 @@ class PullRequest(Base, _PullRequestBase):
         from rhodecode.model.pull_request import PullRequestModel
         pull_request = self
         merge_status = PullRequestModel().merge_status(pull_request)
+
         pull_request_url = url(
             'pullrequest_show', repo_name=self.target_repo.repo_name,
             pull_request_id=self.pull_request_id, qualified=True)
+
+        merge_data = {
+            'clone_url': PullRequestModel().get_shadow_clone_url(pull_request),
+            'reference': (
+                pull_request.shadow_merge_ref._asdict()
+                if pull_request.shadow_merge_ref else None),
+        }
+
         data = {
             'pull_request_id': pull_request.pull_request_id,
             'url': pull_request_url,
@@ -3172,10 +3181,7 @@ class PullRequest(Base, _PullRequestBase):
                     'commit_id': pull_request.target_ref_parts.commit_id,
                 },
             },
-            'shadow': {
-                'clone_url': PullRequestModel().get_shadow_clone_url(
-                    pull_request),
-            },
+            'merge': merge_data,
             'author': pull_request.author.get_api_data(include_secrets=False,
                                                        details='basic'),
             'reviewers': [

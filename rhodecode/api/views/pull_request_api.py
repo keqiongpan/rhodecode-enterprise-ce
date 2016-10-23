@@ -96,8 +96,14 @@ def get_pull_request(request, apiuser, repoid, pullrequestid):
                                          "commit_id": "<commit_id>",
                                      }
                                  },
-            "shadow":            {
+            "merge":             {
                                      "clone_url":   "<clone_url>",
+                                     "reference":
+                                     {
+                                         "name":      "<name>",
+                                         "type":      "<type>",
+                                         "commit_id": "<commit_id>",
+                                     }
                                  },
            "author":             <user_obj>,
            "reviewers":          [
@@ -181,8 +187,14 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
                                              "commit_id": "<commit_id>",
                                          }
                                      },
-                "shadow":            {
+                "merge":             {
                                          "clone_url":   "<clone_url>",
+                                         "reference":
+                                         {
+                                             "name":      "<name>",
+                                             "type":      "<type>",
+                                             "commit_id": "<commit_id>",
+                                         }
                                      },
                "author":             <user_obj>,
                "reviewers":          [
