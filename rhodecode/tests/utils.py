@@ -149,6 +149,10 @@ class AssertResponse(object):
         element = self.get_element(css_selector)
         assert expected_content in element.text_content()
 
+    def element_value_contains(self, css_selector, expected_content):
+        element = self.get_element(css_selector)
+        assert expected_content in element.value
+
     def contains_one_link(self, link_text, href):
         doc = fromstring(self.response.body)
         sel = CSSSelector('a[href]')
