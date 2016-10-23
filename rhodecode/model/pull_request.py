@@ -598,6 +598,7 @@ class PullRequestModel(BaseModel):
         version._last_merge_source_rev = pull_request._last_merge_source_rev
         version._last_merge_target_rev = pull_request._last_merge_target_rev
         version._last_merge_status = pull_request._last_merge_status
+        version.last_merge_rev = pull_request.last_merge_rev
         version.merge_rev = pull_request.merge_rev
 
         version.revisions = pull_request.revisions
