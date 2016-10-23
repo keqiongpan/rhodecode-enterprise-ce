@@ -1012,7 +1012,7 @@ class PullRequestModel(BaseModel):
             pull_request._last_merge_status = merge_state.failure_reason
             pull_request.last_merge_rev = merge_state.merge_commit_id
             Session().add(pull_request)
-            Session().flush()
+            Session().commit()
 
         return merge_state
 
