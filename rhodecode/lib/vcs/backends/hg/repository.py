@@ -688,7 +688,7 @@ class MercurialRepository(BaseRepository):
             log.debug('Pulling in source reference %s', source_ref)
             source_repo._validate_pull_reference(source_ref)
             shadow_repo._local_pull(source_repo.path, source_ref)
-        except CommitDoesNotExistError as e:
+        except CommitDoesNotExistError:
             log.exception('Failure when doing local pull on hg shadow repo')
             return MergeResponse(
                 False, False, None, MergeFailureReason.MISSING_COMMIT)
@@ -706,7 +706,7 @@ class MercurialRepository(BaseRepository):
             # used to easily identify the last successful merge commit in the
             # shadow repository.
             shadow_repo.bookmark('pr-merge', revision=merge_commit_id)
-        except RepositoryError as e:
+        except RepositoryError:
             log.exception('Failure when doing local merge on hg shadow repo')
             merge_possible = False
             merge_failure_reason = MergeFailureReason.MERGE_FAILED

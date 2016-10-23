@@ -40,7 +40,6 @@ from rhodecode.lib.vcs.backends.base import (
 from rhodecode.lib.vcs.backends.git.commit import GitCommit
 from rhodecode.lib.vcs.backends.git.diff import GitDiff
 from rhodecode.lib.vcs.backends.git.inmemory import GitInMemoryCommit
-from rhodecode.lib.vcs.conf import settings
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError,
     RepositoryError, TagAlreadyExistError, TagDoesNotExistError, VCSError)
@@ -865,7 +864,7 @@ class GitRepository(BaseRepository):
         shadow_repo._checkout(pr_branch, create=True)
         try:
             shadow_repo._local_fetch(source_repo.path, source_ref.name)
-        except RepositoryError as e:
+        except RepositoryError:
             log.exception('Failure when doing local fetch on git shadow repo')
             return MergeResponse(
                 False, False, None, MergeFailureReason.MISSING_COMMIT)
@@ -886,7 +885,7 @@ class GitRepository(BaseRepository):
             # be used to easily identify the last successful merge commit in
             # the shadow repository.
             shadow_repo.set_refs('refs/heads/pr-merge', merge_commit_id)
-        except RepositoryError as e:
+        except RepositoryError:
             log.exception('Failure when doing local merge on git shadow repo')
             merge_possible = False
             merge_failure_reason = MergeFailureReason.MERGE_FAILED
@@ -897,7 +896,7 @@ class GitRepository(BaseRepository):
                     pr_branch, self.path, target_ref.name, enable_hooks=True,
                     rc_scm_data=self.config.get('rhodecode', 'RC_SCM_DATA'))
                 merge_succeeded = True
-            except RepositoryError as e:
+            except RepositoryError:
                 log.exception(
                     'Failure when doing local push on git shadow repo')
                 merge_succeeded = False
