@@ -102,7 +102,7 @@
            </div>
 
             ## Link to the shadow repository.
-            %if not c.pull_request.is_closed() and c.pull_request.last_merge_rev:
+            %if not c.pull_request.is_closed() and c.pull_request.shadow_merge_ref:
                 <div class="field">
                     <div class="label-summary">
                         <label>Merge:</label>
@@ -110,9 +110,9 @@
                     <div class="input">
                         <div class="pr-mergeinfo">
                             %if h.is_hg(c.pull_request.target_repo):
-                                <input type="text"  value="hg clone -u pr-merge ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                                <input type="text"  value="hg clone -u ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
                             %elif h.is_git(c.pull_request.target_repo):
-                                <input type="text"  value="git clone --branch pr-merge ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                                <input type="text"  value="git clone --branch ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
                             %endif
                         </div>
                     </div>

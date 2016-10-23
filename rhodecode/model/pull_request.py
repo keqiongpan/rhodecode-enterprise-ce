@@ -450,7 +450,7 @@ class PullRequestModel(BaseModel):
         return merge_state
 
     def _comment_and_close_pr(self, pull_request, user, merge_state):
-        pull_request.merge_rev = merge_state.merge_commit_id
+        pull_request.merge_rev = merge_state.merge_ref.commit_id
         pull_request.updated_on = datetime.datetime.now()
 
         ChangesetCommentsModel().create(
@@ -598,7 +598,7 @@ class PullRequestModel(BaseModel):
         version._last_merge_source_rev = pull_request._last_merge_source_rev
         version._last_merge_target_rev = pull_request._last_merge_target_rev
         version._last_merge_status = pull_request._last_merge_status
-        version.last_merge_rev = pull_request.last_merge_rev
+        version.shadow_merge_ref = pull_request.shadow_merge_ref
         version.merge_rev = pull_request.merge_rev
 
         version.revisions = pull_request.revisions
@@ -1010,7 +1010,7 @@ class PullRequestModel(BaseModel):
                 pull_request.source_ref_parts.commit_id
             pull_request._last_merge_target_rev = target_reference.commit_id
             pull_request._last_merge_status = merge_state.failure_reason
-            pull_request.last_merge_rev = merge_state.merge_commit_id
+            pull_request.shadow_merge_ref = merge_state.merge_ref
             Session().add(pull_request)
             Session().commit()
 
