@@ -53,7 +53,7 @@ FILEMODE_EXECUTABLE = 0100755
 Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
 MergeResponse = collections.namedtuple(
     'MergeResponse',
-    ('possible', 'executed', 'merge_commit_id', 'failure_reason'))
+    ('possible', 'executed', 'merge_ref', 'failure_reason'))
 
 
 class MergeFailureReason(object):

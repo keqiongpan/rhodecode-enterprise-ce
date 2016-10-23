@@ -38,7 +38,7 @@ from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.vcs import connection
 from rhodecode.lib.vcs.backends.base import (
     BaseRepository, CollectionGenerator, Config, MergeResponse,
-    MergeFailureReason)
+    MergeFailureReason, Reference)
 from rhodecode.lib.vcs.backends.hg.commit import MercurialCommit
 from rhodecode.lib.vcs.backends.hg.diff import MercurialDiff
 from rhodecode.lib.vcs.backends.hg.inmemory import MercurialInMemoryCommit
@@ -693,7 +693,7 @@ class MercurialRepository(BaseRepository):
             return MergeResponse(
                 False, False, None, MergeFailureReason.MISSING_COMMIT)
 
-        merge_commit_id = None
+        merge_ref = None
         merge_failure_reason = MergeFailureReason.NONE
 
         try:
@@ -706,6 +706,7 @@ class MercurialRepository(BaseRepository):
             # used to easily identify the last successful merge commit in the
             # shadow repository.
             shadow_repo.bookmark('pr-merge', revision=merge_commit_id)
+            merge_ref = Reference('book', 'pr-merge', merge_commit_id)
         except RepositoryError:
             log.exception('Failure when doing local merge on hg shadow repo')
             merge_possible = False
@@ -743,8 +744,7 @@ class MercurialRepository(BaseRepository):
             merge_succeeded = False
 
         return MergeResponse(
-            merge_possible, merge_succeeded, merge_commit_id,
-            merge_failure_reason)
+            merge_possible, merge_succeeded, merge_ref, merge_failure_reason)
 
     def _get_shadow_instance(
             self, shadow_repository_path, enable_hooks=False):
