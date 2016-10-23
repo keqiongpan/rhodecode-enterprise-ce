@@ -3041,6 +3041,7 @@ class _PullRequestBase(BaseModel):
     _last_merge_target_rev = Column(
         'last_merge_other_rev', String(40), nullable=True)
     _last_merge_status = Column('merge_status', Integer(), nullable=True)
+    last_merge_rev = Column('last_merge_rev', String(40), nullable=True)
     merge_rev = Column('merge_rev', String(40), nullable=True)
 
     @hybrid_property
