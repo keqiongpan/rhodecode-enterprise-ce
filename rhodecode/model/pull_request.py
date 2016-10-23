@@ -1006,11 +1006,11 @@ class PullRequestModel(BaseModel):
 
         # Do not store the response if there was an unknown error.
         if merge_state.failure_reason != MergeFailureReason.UNKNOWN:
-            pull_request._last_merge_source_rev = pull_request.\
-                source_ref_parts.commit_id
+            pull_request._last_merge_source_rev = \
+                pull_request.source_ref_parts.commit_id
             pull_request._last_merge_target_rev = target_reference.commit_id
-            pull_request._last_merge_status = (
-                merge_state.failure_reason)
+            pull_request._last_merge_status = merge_state.failure_reason
+            pull_request.last_merge_rev = merge_state.merge_commit_id
             Session().add(pull_request)
             Session().flush()
 
