@@ -3033,6 +3033,7 @@ class _PullRequestBase(BaseModel):
             nullable=False)
 
     target_ref = Column('other_ref', Unicode(255), nullable=False)
+    _shadow_merge_ref = Column('shadow_merge_ref', Unicode(255), nullable=True)
 
     # TODO: dan: rename column to last_merge_source_rev
     _last_merge_source_rev = Column(
@@ -3041,7 +3042,6 @@ class _PullRequestBase(BaseModel):
     _last_merge_target_rev = Column(
         'last_merge_other_rev', String(40), nullable=True)
     _last_merge_status = Column('merge_status', Integer(), nullable=True)
-    last_merge_rev = Column('last_merge_rev', String(40), nullable=True)
     merge_rev = Column('merge_rev', String(40), nullable=True)
 
     @hybrid_property
@@ -3075,6 +3075,14 @@ class _PullRequestBase(BaseModel):
     @property
     def target_ref_parts(self):
         return self.unicode_to_reference(self.target_ref)
+
+    @property
+    def shadow_merge_ref(self):
+        return self.unicode_to_reference(self._shadow_merge_ref)
+
+    @shadow_merge_ref.setter
+    def shadow_merge_ref(self, ref):
+        self._shadow_merge_ref = self.reference_to_unicode(ref)
 
     def unicode_to_reference(self, raw):
         """
