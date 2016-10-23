@@ -912,6 +912,35 @@ class TestPullrequestsController:
         response.mustcontain(
             "&lt;script&gt;alert(&#39;Hi!&#39;)&lt;/script&gt;")
 
+    @pytest.mark.parametrize('mergeable', [True, False])
+    def test_shadow_repository_link(
+            self, mergeable, pr_util, http_host_stub):
+        """
+        Check that the pull request summary page displays a link to the shadow
+        repository if the pull request is mergeable. If it is not mergeable
+        the link should not be displayed.
+        """
+        pull_request = pr_util.create_pull_request(
+            mergeable=mergeable, enable_notifications=False)
+        target_repo = pull_request.target_repo.scm_instance()
+        pr_id = pull_request.pull_request_id
+        shadow_url = '{host}/{repo}/pull-request/{pr_id}/repository'.format(
+            host=http_host_stub, repo=target_repo.name, pr_id=pr_id)
+
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=target_repo.name,
+            pull_request_id=str(pr_id)))
+
+        assertr = AssertResponse(response)
+        if mergeable:
+            assertr.element_value_contains(
+                'div.pr-mergeinfo input', shadow_url)
+            assertr.element_value_contains(
+                'div.pr-mergeinfo input', 'pr-merge')
+        else:
+            assertr.no_element_exists('div.pr-mergeinfo')
+
 
 def assert_pull_request_status(pull_request, expected_status):
     status = ChangesetStatusModel().calculated_review_status(
