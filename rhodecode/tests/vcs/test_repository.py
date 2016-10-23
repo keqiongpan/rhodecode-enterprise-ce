@@ -308,7 +308,7 @@ class TestRepositoryMerge:
             'test user', 'test@rhodecode.com', 'merge message 1',
             dry_run=False)
         expected_merge_response = MergeResponse(
-            True, True, merge_response.merge_commit_id,
+            True, True, merge_response.merge_ref,
             MergeFailureReason.NONE)
         assert merge_response == expected_merge_response
 
@@ -320,27 +320,28 @@ class TestRepositoryMerge:
         assert self.target_ref.commit_id in commit_ids
 
         merge_commit = target_commits[-1]
-        assert merge_commit.raw_id == merge_response.merge_commit_id
+        assert merge_commit.raw_id == merge_response.merge_ref
         assert merge_commit.message.strip() == 'merge message 1'
         assert merge_commit.author == 'test user <test@rhodecode.com>'
 
         # We call it twice so to make sure we can handle updates
         target_ref = Reference(
             self.target_ref.type, self.target_ref.name,
-            merge_response.merge_commit_id)
+            merge_response.merge_ref.commit_id)
 
         merge_response = target_repo.merge(
             target_ref, self.source_repo, self.source_ref, self.workspace,
             'test user', 'test@rhodecode.com', 'merge message 2',
             dry_run=False)
         expected_merge_response = MergeResponse(
-            True, True, merge_response.merge_commit_id,
+            True, True, merge_response.merge_ref,
             MergeFailureReason.NONE)
         assert merge_response == expected_merge_response
 
         target_repo = backends.get_backend(
             vcsbackend.alias)(self.target_repo.path)
-        merge_commit = target_repo.get_commit(merge_response.merge_commit_id)
+        merge_commit = target_repo.get_commit(
+            merge_response.merge_ref.commit_id)
         assert merge_commit.message.strip() == 'merge message 1'
         assert merge_commit.author == 'test user <test@rhodecode.com>'
 
