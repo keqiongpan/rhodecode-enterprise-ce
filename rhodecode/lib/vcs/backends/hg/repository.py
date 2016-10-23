@@ -701,6 +701,11 @@ class MercurialRepository(BaseRepository):
                 target_ref, merge_message, merger_name, merger_email,
                 source_ref, use_rebase=use_rebase)
             merge_possible = True
+
+            # Set a bookmark pointing to the merge commit. This bookmark may be
+            # used to easily identify the last successful merge commit in the
+            # shadow repository.
+            shadow_repo.bookmark('pr-merge', revision=merge_commit_id)
         except RepositoryError as e:
             log.exception('Failure when doing local merge on hg shadow repo')
             merge_possible = False
@@ -736,9 +741,6 @@ class MercurialRepository(BaseRepository):
                 merge_succeeded = True
         else:
             merge_succeeded = False
-
-        if dry_run:
-            merge_commit_id = None
 
         return MergeResponse(
             merge_possible, merge_succeeded, merge_commit_id,
