@@ -250,7 +250,12 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
             "executed":         "<bool>",
             "failure_reason":   "<int>",
             "merge_commit_id":  "<merge_commit_id>",
-            "possible":         "<bool>"
+            "possible":         "<bool>",
+            "merge_ref":        {
+                                    "commit_id": "<commit_id>",
+                                    "type":      "<type>",
+                                    "name":      "<name>"
+                                }
         },
       "error": null
 
@@ -278,13 +283,21 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
         request.environ, repo_name=target_repo.repo_name,
         username=apiuser.username, action='push',
         scm=target_repo.repo_type)
-    data = PullRequestModel().merge(pull_request, apiuser, extras=extras)
-    if data.executed:
+    merge_response = PullRequestModel().merge(
+        pull_request, apiuser, extras=extras)
+    if merge_response.executed:
         PullRequestModel().close_pull_request(
             pull_request.pull_request_id, apiuser)
 
         Session().commit()
-    return data
+
+    # In previous versions the merge response directly contained the merge
+    # commit id. It is now contained in the merge reference object. To be
+    # backwards compatible we have to extract it again.
+    merge_response = merge_response._asdict()
+    merge_response['merge_commit_id'] = merge_response['merge_ref'].commit_id
+
+    return merge_response
 
 
 @jsonrpc_method()
