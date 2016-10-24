@@ -32,42 +32,37 @@ from rhodecode.api.tests.utils import (
 class TestMergePullRequest(object):
     @pytest.mark.backends("git", "hg")
     def test_api_merge_pull_request(self, pr_util, no_notifications):
-        pull_request = pr_util.create_pull_request()
-        pull_request_2 = PullRequestModel().create(
-            created_by=pull_request.author,
-            source_repo=pull_request.source_repo,
-            source_ref=pull_request.source_ref,
-            target_repo=pull_request.target_repo,
-            target_ref=pull_request.target_ref,
-            revisions=pull_request.revisions,
-            reviewers=(),
-            title=pull_request.title,
-            description=pull_request.description,
-        )
+        pull_request = pr_util.create_pull_request(mergeable=True)
         author = pull_request.user_id
-        repo = pull_request_2.target_repo.repo_id
-        pull_request_2_id = pull_request_2.pull_request_id
-        pull_request_2_repo = pull_request_2.target_repo.repo_name
-        Session().commit()
+        repo = pull_request.target_repo.repo_id
+        pull_request_id = pull_request.pull_request_id
+        pull_request_repo = pull_request.target_repo.repo_name
 
         id_, params = build_data(
             self.apikey, 'merge_pull_request',
-            repoid=pull_request_2_repo,
-            pullrequestid=pull_request_2_id)
+            repoid=pull_request_repo,
+            pullrequestid=pull_request_id)
+
         response = api_call(self.app, params)
+
+        # The above api call detaches the pull request DB object from the
+        # session because of an unconditional transaction rollback in our
+        # middleware. Therefore we need to add it back here if we want to use
+        # it.
+        Session().add(pull_request)
 
         expected = {
             'executed': True,
             'failure_reason': 0,
-            'possible': True
+            'possible': True,
+            'merge_commit_id': pull_request.shadow_merge_ref.commit_id,
+            'merge_ref': pull_request.shadow_merge_ref._asdict()
         }
 
         response_json = response.json['result']
-        assert response_json['merge_commit_id']
-        response_json.pop('merge_commit_id')
         assert response_json == expected
 
-        action = 'user_merged_pull_request:%d' % (pull_request_2_id, )
+        action = 'user_merged_pull_request:%d' % (pull_request_id, )
         journal = UserLog.query()\
             .filter(UserLog.user_id == author)\
             .filter(UserLog.repository_id == repo)\
@@ -77,11 +72,11 @@ class TestMergePullRequest(object):
 
         id_, params = build_data(
             self.apikey, 'merge_pull_request',
-            repoid=pull_request_2_repo, pullrequestid=pull_request_2_id)
+            repoid=pull_request_repo, pullrequestid=pull_request_id)
         response = api_call(self.app, params)
 
         expected = 'pull request `%s` merge failed, pull request is closed' % (
-            pull_request_2_id)
+            pull_request_id)
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.backends("git", "hg")
