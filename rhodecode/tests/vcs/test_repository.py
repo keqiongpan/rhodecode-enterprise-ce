@@ -320,7 +320,7 @@ class TestRepositoryMerge:
         assert self.target_ref.commit_id in commit_ids
 
         merge_commit = target_commits[-1]
-        assert merge_commit.raw_id == merge_response.merge_ref
+        assert merge_commit.raw_id == merge_response.merge_ref.commit_id
         assert merge_commit.message.strip() == 'merge message 1'
         assert merge_commit.author == 'test user <test@rhodecode.com>'
 
@@ -347,19 +347,21 @@ class TestRepositoryMerge:
 
     def test_merge_success_dry_run(self, vcsbackend):
         self.prepare_for_success(vcsbackend)
-        expected_merge_response = MergeResponse(
-            True, False, None, MergeFailureReason.NONE)
 
         merge_response = self.target_repo.merge(
             self.target_ref, self.source_repo, self.source_ref, self.workspace,
             dry_run=True)
-        assert merge_response == expected_merge_response
 
         # We call it twice so to make sure we can handle updates
-        merge_response = self.target_repo.merge(
+        merge_response_update = self.target_repo.merge(
             self.target_ref, self.source_repo, self.source_ref, self.workspace,
             dry_run=True)
-        assert merge_response == expected_merge_response
+
+        assert merge_response == merge_response_update
+        assert merge_response.possible is True
+        assert merge_response.executed is False
+        assert merge_response.merge_ref
+        assert merge_response.failure_reason is MergeFailureReason.NONE
 
     @pytest.mark.parametrize('dry_run', [True, False])
     def test_merge_conflict(self, vcsbackend, dry_run):
