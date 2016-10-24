@@ -92,8 +92,13 @@ class TestGetPullRequest(object):
                     'commit_id': pull_request.target_ref_parts.commit_id,
                 },
             },
-            'shadow': {
+            'merge': {
                 'clone_url': shadow_url,
+                'reference': {
+                    'name': pull_request.shadow_merge_ref.name,
+                    'type': pull_request.shadow_merge_ref.type,
+                    'commit_id': pull_request.shadow_merge_ref.commit_id,
+                },
             },
             'author': pull_request.author.get_api_data(include_secrets=False,
                                                        details='basic'),
