@@ -180,8 +180,8 @@ class Action(object):
     UNMODIFIED = 'unmod'
 
     CONTEXT = 'context'
-    CONTEXT_OLD = 'context-old'
-    CONTEXT_NEW = 'context-new'
+    OLD_NO_NL = 'old-no-nl'
+    NEW_NO_NL = 'new-no-nl'
 
 
 class DiffProcessor(object):
@@ -846,9 +846,9 @@ class DiffProcessor(object):
                         # we need to append to lines, since this is not
                         # counted in the line specs of diff
                         if affects_old:
-                            action = Action.CONTEXT_OLD
+                            action = Action.OLD_NO_NL
                         elif affects_new:
-                            action = Action.CONTEXT_NEW
+                            action = Action.NEW_NO_NL
                         else:
                             raise Exception('invalid context for no newline')
 

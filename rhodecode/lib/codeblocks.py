@@ -493,9 +493,9 @@ class DiffSet(object):
                 after.append(line)
             elif line['action'] == 'del':
                 before.append(line)
-            elif line['action'] == 'context-old':
+            elif line['action'] == 'old-no-nl':
                 before.append(line)
-            elif line['action'] == 'context-new':
+            elif line['action'] == 'new-no-nl':
                 after.append(line)
 
         result.lines.extend(
@@ -527,25 +527,31 @@ class DiffSet(object):
             modified = AttributeDict()
 
             if before:
-                before_tokens = self.get_line_tokens(
-                    line_text=before['line'], line_number=before['old_lineno'],
-                    file=source_file)
+                if before['action'] == 'old-no-nl':
+                    before_tokens = [('nonl', before['line'])]
+                else:
+                    before_tokens = self.get_line_tokens(
+                        line_text=before['line'], line_number=before['old_lineno'],
+                        file=source_file)
                 original.lineno = before['old_lineno']
                 original.content = before['line']
                 original.action = self.action_to_op(before['action'])
 
             if after:
-                after_tokens = self.get_line_tokens(
-                    line_text=after['line'], line_number=after['new_lineno'],
-                    file=target_file)
+                if after['action'] == 'new-no-nl':
+                    after_tokens = [('nonl', after['line'])]
+                else:
+                    after_tokens = self.get_line_tokens(
+                        line_text=after['line'], line_number=after['new_lineno'],
+                        file=target_file)
                 modified.lineno = after['new_lineno']
                 modified.content = after['line']
                 modified.action = self.action_to_op(after['action'])
 
-
             # diff the lines
             if before_tokens and after_tokens:
-                o_tokens, m_tokens, similarity = tokens_diff(before_tokens, after_tokens)
+                o_tokens, m_tokens, similarity = tokens_diff(
+                    before_tokens, after_tokens)
                 original.content = render_tokenstream(o_tokens)
                 modified.content = render_tokenstream(m_tokens)
             elif before_tokens:
@@ -594,8 +600,8 @@ class DiffSet(object):
             'add': '+',
             'del': '-',
             'unmod': ' ',
-            'context-old': ' ',
-            'context-new': ' ',
+            'old-no-nl': ' ',
+            'new-no-nl': ' ',
         }.get(action, action)
 
     def as_unified(self, lines):
