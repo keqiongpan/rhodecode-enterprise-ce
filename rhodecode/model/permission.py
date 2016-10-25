@@ -51,8 +51,8 @@ class PermissionModel(BaseModel):
         'default_user_group_create': None,
         'default_fork_create': None,
         'default_inherit_default_permissions': None,
-
         'default_register': None,
+        'default_password_reset': None,
         'default_extern_activate': None,
 
         # object permissions below
@@ -84,6 +84,11 @@ class PermissionModel(BaseModel):
             ('hg.register.none', translator('Disabled')),
             ('hg.register.manual_activate', translator('Allowed with manual account activation')),
             ('hg.register.auto_activate', translator('Allowed with automatic account activation')),]
+
+        c_obj.password_reset_choices = [
+            ('hg.password_reset.enabled', translator('Allow password recovery')),
+            ('hg.password_reset.hidden', translator('Hide password recovery link')),
+            ('hg.password_reset.disabled', translator('Disable password recovery')),]
 
         c_obj.extern_activate_choices = [
             ('hg.extern_activate.manual', translator('Manual activation of external account')),
@@ -149,6 +154,9 @@ class PermissionModel(BaseModel):
             if perm.permission.permission_name.startswith('hg.register.'):
                 defaults['default_register' + suffix] = perm.permission.permission_name
 
+            if perm.permission.permission_name.startswith('hg.password_reset.'):
+                defaults['default_password_reset' + suffix] = perm.permission.permission_name
+
             if perm.permission.permission_name.startswith('hg.extern_activate.'):
                 defaults['default_extern_activate' + suffix] = perm.permission.permission_name
 
@@ -182,6 +190,7 @@ class PermissionModel(BaseModel):
 
                 # application perms
                 'default_register': 'hg.register.',
+                'default_password_reset': 'hg.password_reset.',
                 'default_extern_activate': 'hg.extern_activate.',
 
                 # object permissions below
@@ -383,6 +392,7 @@ class PermissionModel(BaseModel):
                 'default_user_group_perm',
 
                 'default_register',
+                'default_password_reset',
                 'default_extern_activate'])
             self.sa.commit()
         except (DatabaseError,):
@@ -404,6 +414,7 @@ class PermissionModel(BaseModel):
                 'default_user_group_perm',
 
                 'default_register',
+                'default_password_reset',
                 'default_extern_activate'])
             self.sa.commit()
         except (DatabaseError,):
@@ -429,6 +440,7 @@ class PermissionModel(BaseModel):
                 'default_inherit_default_permissions',
 
                 'default_register',
+                'default_password_reset',
                 'default_extern_activate'])
 
             # overwrite default repo permissions

@@ -81,6 +81,7 @@ def get_user(request, apiuser, userid=Optional(OAttr('apiuser'))):
                 "usergroup.read",
                 "hg.repogroup.create.false",
                 "hg.create.none",
+                "hg.password_reset.enabled",
                 "hg.extern_activate.manual",
                 "hg.create.write_on_repogroup.false",
                 "hg.usergroup.create.false",

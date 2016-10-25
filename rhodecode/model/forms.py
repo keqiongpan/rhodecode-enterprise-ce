@@ -427,7 +427,8 @@ def LabsSettingsForm():
     return _LabSettingsForm
 
 
-def ApplicationPermissionsForm(register_choices, extern_activate_choices):
+def ApplicationPermissionsForm(
+        register_choices, password_reset_choices, extern_activate_choices):
     class _DefaultPermissionsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
@@ -435,6 +436,7 @@ def ApplicationPermissionsForm(register_choices, extern_activate_choices):
         anonymous = v.StringBoolean(if_missing=False)
         default_register = v.OneOf(register_choices)
         default_register_message = v.UnicodeString()
+        default_password_reset = v.OneOf(password_reset_choices)
         default_extern_activate = v.OneOf(extern_activate_choices)
 
     return _DefaultPermissionsForm

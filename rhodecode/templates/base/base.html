@@ -308,7 +308,9 @@
                     <div class="field">
                         <div class="label">
                             <label for="password">${_('Password')}:</label>
-                            <span class="forgot_password">${h.link_to(_('(Forgot password?)'),h.route_path('reset_password'))}</span>
+                            %if h.HasPermissionAny('hg.password_reset.enabled')():
+                              <span class="forgot_password">${h.link_to(_('(Forgot password?)'),h.route_path('reset_password'))}</span>
+                            %endif
                         </div>
                         <div class="input">
                             ${h.password('password',class_='focus',tabindex=2)}

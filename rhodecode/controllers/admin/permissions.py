@@ -92,6 +92,7 @@ class PermissionsController(BaseController):
         self.__load_data()
         _form = ApplicationPermissionsForm(
             [x[0] for x in c.register_choices],
+            [x[0] for x in c.password_reset_choices],
             [x[0] for x in c.extern_activate_choices])()
 
         try:

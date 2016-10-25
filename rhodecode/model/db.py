@@ -2314,6 +2314,10 @@ class Permission(Base, BaseModel):
         ('hg.register.manual_activate', _('User Registration with manual account activation')),
         ('hg.register.auto_activate', _('User Registration with automatic account activation')),
 
+        ('hg.password_reset.enabled', _('Password reset enabled')),
+        ('hg.password_reset.hidden', _('Password reset hidden')),
+        ('hg.password_reset.disabled', _('Password reset disabled')),
+
         ('hg.extern_activate.manual', _('Manual activation of external account')),
         ('hg.extern_activate.auto', _('Automatic activation of external account')),
 
@@ -2332,6 +2336,7 @@ class Permission(Base, BaseModel):
         'hg.create.write_on_repogroup.true',
         'hg.fork.repository',
         'hg.register.manual_activate',
+        'hg.password_reset.enabled',
         'hg.extern_activate.auto',
         'hg.inherit_default_perms.true',
     ]
