@@ -309,7 +309,7 @@
                         <div class="label">
                             <label for="password">${_('Password')}:</label>
                             %if h.HasPermissionAny('hg.password_reset.enabled')():
-                              <span class="forgot_password">${h.link_to(_('(Forgot password?)'),h.route_path('reset_password'))}</span>
+                              <span class="forgot_password">${h.link_to(_('(Forgot password?)'),h.route_path('reset_password'), class_='pwd_reset')}</span>
                             %endif
                         </div>
                         <div class="input">

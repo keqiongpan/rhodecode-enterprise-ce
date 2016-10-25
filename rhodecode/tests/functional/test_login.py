@@ -25,7 +25,8 @@ import pytest
 
 from rhodecode.config.routing import ADMIN_PREFIX
 from rhodecode.tests import (
-    assert_session_flash, url, HG_REPO, TEST_USER_ADMIN_LOGIN)
+    TestController, assert_session_flash, clear_all_caches, url,
+    HG_REPO, TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import AssertResponse, get_session_from_response
 from rhodecode.lib.auth import check_password, generate_auth_token
@@ -39,6 +40,7 @@ fixture = Fixture()
 
 # Hardcode URLs because we don't have a request object to use
 # pyramids URL generation methods.
+index_url = '/'
 login_url = ADMIN_PREFIX + '/login'
 logut_url = ADMIN_PREFIX + '/logout'
 register_url = ADMIN_PREFIX + '/register'
@@ -517,3 +519,70 @@ class TestLoginController:
                                  repo_name=HG_REPO, revision='tip',
                                  api_key=new_auth_token.api_key),
                              status=302)
+
+
+class TestPasswordReset(TestController):
+
+    @pytest.mark.parametrize(
+        'pwd_reset_setting, show_link, show_reset', [
+            ('hg.password_reset.enabled', True, True),
+            ('hg.password_reset.hidden', False, True),
+            ('hg.password_reset.disabled', False, False),
+        ])
+    def test_password_reset_settings(
+            self, pwd_reset_setting, show_link, show_reset):
+        clear_all_caches()
+        self.log_user(TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
+        params = {
+            'csrf_token': self.csrf_token,
+            'anonymous': 'True',
+            'default_register': 'hg.register.auto_activate',
+            'default_register_message': '',
+            'default_password_reset': pwd_reset_setting,
+            'default_extern_activate': 'hg.extern_activate.auto',
+        }
+        resp = self.app.post(url('admin_permissions_application'), params=params)
+        self.logout_user()
+
+        login_page = self.app.get(login_url)
+        asr_login = AssertResponse(login_page)
+        index_page = self.app.get(index_url)
+        asr_index = AssertResponse(index_page)
+
+        if show_link:
+            asr_login.one_element_exists('a.pwd_reset')
+            asr_index.one_element_exists('a.pwd_reset')
+        else:
+            asr_login.no_element_exists('a.pwd_reset')
+            asr_index.no_element_exists('a.pwd_reset')
+
+        pwdreset_page = self.app.get(pwd_reset_url)
+        
+        asr_reset = AssertResponse(pwdreset_page)
+        if show_reset:
+            assert 'Send password reset email' in pwdreset_page
+            asr_reset.one_element_exists('#email')
+            asr_reset.one_element_exists('#send')
+        else:
+            assert 'Password reset has been disabled.' in pwdreset_page
+            asr_reset.no_element_exists('#email')
+            asr_reset.no_element_exists('#send')
+
+    def test_password_form_disabled(self):
+        self.log_user(TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
+        params = {
+            'csrf_token': self.csrf_token,
+            'anonymous': 'True',
+            'default_register': 'hg.register.auto_activate',
+            'default_register_message': '',
+            'default_password_reset': 'hg.password_reset.disabled',
+            'default_extern_activate': 'hg.extern_activate.auto',
+        }
+        self.app.post(url('admin_permissions_application'), params=params)
+        self.logout_user()
+
+        pwdreset_page = self.app.post(
+            pwd_reset_url,
+            {'email': 'lisa@rhodecode.com',}
+        )
+        assert 'Password reset has been disabled.' in pwdreset_page
