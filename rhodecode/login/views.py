@@ -30,6 +30,7 @@ from recaptcha.client.captcha import submit
 
 from rhodecode.authentication.base import authenticate, HTTP_TYPE
 from rhodecode.events import UserRegistered
+from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     AuthUser, HasPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib.base import get_ip_addr
@@ -285,6 +286,12 @@ class LoginView(object):
             try:
                 form_result = password_reset_form.to_python(
                     self.request.params)
+                if h.HasPermissionAny('hg.password_reset.disabled')():
+                    log.error('Failed attempt to reset password for %s.', form_result['email'] )
+                    self.session.flash(
+                        _('Password reset has been disabled.'),
+                        queue='error')
+                    return HTTPFound(self.request.route_path('reset_password'))
                 if captcha_active:
                     response = submit(
                         self.request.params.get('recaptcha_challenge_field'),
