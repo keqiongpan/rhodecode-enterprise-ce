@@ -62,9 +62,14 @@
                         </p>
                     %elif h.HasPermissionAny('hg.password_reset.hidden')():
                         <p class="help-block">
-                            ${_('Contact an administrator if you have forgotten your password.')}
+                            ${_('Password reset is disabled. Please contact ')}
+                            % if c.visual.rhodecode_support_url:
+                                <a href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support')}</a>
+                                ${_('or')}
+                            % endif
+                            ${_('an administrator if you need help.')}
                         </p>
-                    %endif
+                            %endif
                     
 
                     ${h.submit('sign_in', _('Sign In'), class_="btn sign-in")}

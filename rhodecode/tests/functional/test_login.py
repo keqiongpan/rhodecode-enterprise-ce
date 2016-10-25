@@ -564,7 +564,7 @@ class TestPasswordReset(TestController):
             asr_reset.one_element_exists('#email')
             asr_reset.one_element_exists('#send')
         else:
-            assert 'Password reset has been disabled.' in pwdreset_page
+            assert 'Password reset is disabled.' in pwdreset_page
             asr_reset.no_element_exists('#email')
             asr_reset.no_element_exists('#send')
 
@@ -585,4 +585,4 @@ class TestPasswordReset(TestController):
             pwd_reset_url,
             {'email': 'lisa@rhodecode.com',}
         )
-        assert 'Password reset has been disabled.' in pwdreset_page
+        assert 'Password reset is disabled.' in pwdreset_page
