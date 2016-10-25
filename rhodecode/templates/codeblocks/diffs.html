@@ -271,13 +271,12 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             ${_('Show file before')}
         </a>
     %else:
-        <a
-            disabled
+        <span
             class="tooltip"
             title="${h.tooltip(_('File no longer present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
         >
             ${_('Show file before')}
-        </a>
+        </span>
     %endif
     %if filediff.patch['operation'] in ['A', 'M']:
         <a
@@ -288,13 +287,12 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             ${_('Show file after')}
         </a>
     %else:
-        <a
-            disabled
+        <span
             class="tooltip"
             title="${h.tooltip(_('File no longer present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
             >
                 ${_('Show file after')}
-        </a>
+        </span>
     %endif
         <a
             class="tooltip"
