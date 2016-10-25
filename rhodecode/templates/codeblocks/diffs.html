@@ -30,6 +30,9 @@ return h.url('', **new_args)
 
     # collapse lines in the diff when more than this amount of lines changed in the file diff
     lines_changed_limit=500,
+
+    # add a ruler at to the output
+    ruler_at_chars=0,
 )">
 <%
 # TODO: dan: move this to an argument - and set a cookie so that it is saved
@@ -48,7 +51,20 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 }
 </style>
 %endif
-
+%if ruler_at_chars:
+<style>
+.diff table.cb .cb-content:after {
+    content: "";
+    border-left: 1px solid blue;
+    position: absolute;
+    top: 0;
+    height: 18px;
+    opacity: .2;
+    z-index: 10;
+    ## +5 to account for diff action (+/-)
+    left: ${ruler_at_chars + 5}ch;
+</style>
+%endif
 % if diffset.limited_diff:
 <div class="alert alert-warning">
     ${_('The requested commit is too big and content was truncated.')} <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
