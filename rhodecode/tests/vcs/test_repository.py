@@ -357,6 +357,13 @@ class TestRepositoryMerge:
             self.target_ref, self.source_repo, self.source_ref, self.workspace,
             dry_run=True)
 
+        # Multiple merges may differ in their commit id. Therefore we set the
+        # commit id to `None` before comparing the merge responses.
+        merge_response = merge_response._replace(
+            merge_ref=merge_response.merge_ref._replace(commit_id=None))
+        merge_response_update = merge_response_update._replace(
+            merge_ref=merge_response_update.merge_ref._replace(commit_id=None))
+
         assert merge_response == merge_response_update
         assert merge_response.possible is True
         assert merge_response.executed is False
