@@ -23,7 +23,7 @@ new_args.update(kw)
 return h.url('', **new_args)
 %></%def>
 
-<%def name="render_diffset(diffset,
+<%def name="render_diffset(diffset, commit_id=None,
 
     # collapse all file diff entries when there are more than this amount of files in the diff
     collapse_when_files_over=20,
@@ -122,12 +122,12 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     lines_changed = filediff['patch']['stats']['added'] + filediff['patch']['stats']['deleted']
     over_lines_changed_limit = lines_changed > lines_changed_limit
     %>
-        <input ${collapse_all and 'checked' or ''} class="diff-collapse-state" id="diff-collapse-${i}" type="checkbox">
+        <input ${collapse_all and 'checked' or ''} class="diff-collapse-state" id="diff-collapse-${id(filediff)}" type="checkbox">
         <div
             class="diff"
             data-f-path="${filediff['patch']['filename']}"
-            id="a_${h.FID('', filediff['patch']['filename'])}">
-            <label for="diff-collapse-${i}" class="diff-heading">
+            id="a_${h.FID(commit_id or '', filediff['patch']['filename'])}">
+            <label for="diff-collapse-${id(filediff)}" class="diff-heading">
                 <div class="diff-collapse-indicator"></div>
                 ${diff_ops(filediff)}
             </label>
@@ -252,7 +252,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         %endif
     </span>
 
-    <a class="diff-pill diff-anchor" href="#a_${h.FID('', filediff.patch['filename'])}">¶</a>
+    <a class="diff-pill diff-anchor" href="#a_${h.FID(commit_id or '', filediff.patch['filename'])}">¶</a>
 
     <span class="diff-pill-group" style="float: right">
         %if BIN_FILENODE in stats['ops']:
@@ -261,11 +261,11 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             <span class="diff-pill" op="modified">modified</span>
             %endif
         %endif
-        %if stats['deleted']:
-        <span class="diff-pill" op="deleted">-${stats['deleted']}</span>
-        %endif
         %if stats['added']:
         <span class="diff-pill" op="added">+${stats['added']}</span>
+        %endif
+        %if stats['deleted']:
+        <span class="diff-pill" op="deleted">-${stats['deleted']}</span>
         %endif
     </span>
 
