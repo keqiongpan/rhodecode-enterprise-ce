@@ -71,8 +71,8 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 </div>
 % endif
 
-<div class="cs_files">
-    <div class="cs_files_title">
+<div class="diffset">
+    <div class="diffset-heading">
         %if diffset.files:
         <div class="pull-right">
             <div class="btn-group">
@@ -94,11 +94,11 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 <a
                     class="btn"
                     href="#"
-                    onclick="$('input[class=diff-collapse-state]').prop('checked', false); return false">${_('Expand All')}</a>
+                    onclick="$('input[class=filediff-collapse-state]').prop('checked', false); return false">${_('Expand All')}</a>
                 <a
                     class="btn"
                     href="#"
-                    onclick="$('input[class=diff-collapse-state]').prop('checked', true); return false">${_('Collapse All')}</a>
+                    onclick="$('input[class=filediff-collapse-state]').prop('checked', true); return false">${_('Collapse All')}</a>
             </div>
         </div>
         %endif
@@ -122,13 +122,13 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     lines_changed = filediff['patch']['stats']['added'] + filediff['patch']['stats']['deleted']
     over_lines_changed_limit = lines_changed > lines_changed_limit
     %>
-        <input ${collapse_all and 'checked' or ''} class="diff-collapse-state" id="diff-collapse-${id(filediff)}" type="checkbox">
+        <input ${collapse_all and 'checked' or ''} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox">
         <div
-            class="diff"
+            class="filediff"
             data-f-path="${filediff['patch']['filename']}"
             id="a_${h.FID(commit_id or '', filediff['patch']['filename'])}">
-            <label for="diff-collapse-${id(filediff)}" class="diff-heading">
-                <div class="diff-collapse-indicator"></div>
+            <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
+                <div class="filediff-collapse-indicator"></div>
                 ${diff_ops(filediff)}
             </label>
             ${diff_menu(filediff)}
@@ -206,7 +206,7 @@ stats = filediff['patch']['stats']
 from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     MOD_FILENODE, RENAMED_FILENODE, CHMOD_FILENODE, BIN_FILENODE
 %>
-    <span class="diff-pill">
+    <span class="pill">
         %if filediff.source_file_path and filediff.target_file_path:
             %if filediff.source_file_path != filediff.target_file_path: # file was renamed
                   <strong>${filediff.target_file_path}</strong> ⬅ <del>${filediff.source_file_path}</del>
@@ -224,48 +224,48 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         %endif
     </span>
-    <span class="diff-pill-group" style="float: left">
+    <span class="pill-group" style="float: left">
         %if filediff.patch['is_limited_diff']:
-        <span class="diff-pill tooltip" op="limited" title="The stats for this diff are not complete">limited diff</span>
+        <span class="pill tooltip" op="limited" title="The stats for this diff are not complete">limited diff</span>
         %endif
         %if RENAMED_FILENODE in stats['ops']:
-        <span class="diff-pill" op="renamed">renamed</span>
+        <span class="pill" op="renamed">renamed</span>
         %endif
 
         %if NEW_FILENODE in stats['ops']:
-        <span class="diff-pill" op="created">created</span>
+        <span class="pill" op="created">created</span>
             %if filediff['target_mode'].startswith('120'):
-        <span class="diff-pill" op="symlink">symlink</span>
+        <span class="pill" op="symlink">symlink</span>
             %else:
-        <span class="diff-pill" op="mode">${nice_mode(filediff['target_mode'])}</span>
+        <span class="pill" op="mode">${nice_mode(filediff['target_mode'])}</span>
             %endif
         %endif
 
         %if DEL_FILENODE in stats['ops']:
-        <span class="diff-pill" op="removed">removed</span>
+        <span class="pill" op="removed">removed</span>
         %endif
 
         %if CHMOD_FILENODE in stats['ops']:
-        <span class="diff-pill" op="mode">
+        <span class="pill" op="mode">
             ${nice_mode(filediff['source_mode'])} ➡ ${nice_mode(filediff['target_mode'])}
         </span>
         %endif
     </span>
 
-    <a class="diff-pill diff-anchor" href="#a_${h.FID(commit_id or '', filediff.patch['filename'])}">¶</a>
+    <a class="pill filediff-anchor" href="#a_${h.FID(commit_id or '', filediff.patch['filename'])}">¶</a>
 
-    <span class="diff-pill-group" style="float: right">
+    <span class="pill-group" style="float: right">
         %if BIN_FILENODE in stats['ops']:
-        <span class="diff-pill" op="binary">binary</span>
+        <span class="pill" op="binary">binary</span>
             %if MOD_FILENODE in stats['ops']:
-            <span class="diff-pill" op="modified">modified</span>
+            <span class="pill" op="modified">modified</span>
             %endif
         %endif
         %if stats['added']:
-        <span class="diff-pill" op="added">+${stats['added']}</span>
+        <span class="pill" op="added">+${stats['added']}</span>
         %endif
         %if stats['deleted']:
-        <span class="diff-pill" op="deleted">-${stats['deleted']}</span>
+        <span class="pill" op="deleted">-${stats['deleted']}</span>
         %endif
     </span>
 
@@ -276,7 +276,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 </%def>
 
 <%def name="diff_menu(filediff)">
-    <div class="diff-menu">
+    <div class="filediff-menu">
 %if filediff.diffset.source_ref:
     %if filediff.patch['operation'] in ['D', 'M']:
         <a

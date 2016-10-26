@@ -648,37 +648,37 @@ pre.literal-block, .codehilite pre{
 @cb-line-code-padding: 10px;
 @cb-text-padding: 5px;
 
-@diff-pill-padding: 2px 7px;
+@pill-padding: 2px 7px;
 
-input.diff-collapse-state {
+input.filediff-collapse-state {
     display: none;
 
-    &:checked + .diff { /* file diff is collapsed */
+    &:checked + .filediff { /* file diff is collapsed */
         .cb {
             display: none
         }
-        .diff-collapse-indicator {
+        .filediff-collapse-indicator {
             border-width: 9px 0 9px 15.6px;
             border-color: transparent transparent transparent #ccc;
         }
-        .diff-menu {
+        .filediff-menu {
             display: none;
         }
         margin: -1px 0 0 0;
     }
 
-    &+ .diff { /* file diff is expanded */
-        .diff-collapse-indicator {
+    &+ .filediff { /* file diff is expanded */
+        .filediff-collapse-indicator {
             border-width: 15.6px 9px 0 9px;
             border-color: #ccc transparent transparent transparent;
         }
-        .diff-menu {
+        .filediff-menu {
             display: block;
         }
         margin: 20px 0;
     }
 }
-.diff {
+.filediff {
     border: 1px solid @grey5;
 
     /* START OVERRIDES */
@@ -697,16 +697,16 @@ input.diff-collapse-state {
     * {
         box-sizing: border-box;
     }
-    .diff-anchor {
+    .filediff-anchor {
         visibility: hidden;
     }
     &:hover {
-        .diff-anchor {
+        .filediff-anchor {
             visibility: visible;
         }
     }
 
-    .diff-collapse-indicator {
+    .filediff-collapse-indicator {
         width: 0;
         height: 0;
         border-style: solid;
@@ -715,22 +715,22 @@ input.diff-collapse-state {
         cursor: pointer;
     }
 
-    .diff-heading {
+    .filediff-heading {
         background: @grey7;
         cursor: pointer;
         display: block;
         padding: 5px 10px;
     }
-    .diff-heading:after {
+    .filediff-heading:after {
         content: "";
         display: table;
         clear: both;
     }
-    .diff-heading:hover {
+    .filediff-heading:hover {
         background: #e1e9f4 !important;
     }
 
-    .diff-menu {
+    .filediff-menu {
         float: right;
 
         a, span {
@@ -739,13 +739,13 @@ input.diff-collapse-state {
             float: left
         }
     }
-    .diff-pill {
+    .pill {
         display: block;
         float: left;
-        padding: @diff-pill-padding;
+        padding: @pill-padding;
     }
-    .diff-pill-group {
-        .diff-pill {
+    .pill-group {
+        .pill {
             opacity: .8;
             &:first-child {
                 border-radius: @border-radius 0 0 @border-radius;
@@ -758,7 +758,7 @@ input.diff-collapse-state {
             }
         }
     }
-    .diff-pill {
+    .pill {
         &[op="name"] {
             background: none;
             color: @grey2;
@@ -809,19 +809,19 @@ input.diff-collapse-state {
         }
     }
 
-    .diff-collapse-button, .diff-expand-button {
+    .filediff-collapse-button, .filediff-expand-button {
         cursor: pointer;
     }
-    .diff-collapse-button {
+    .filediff-collapse-button {
         display: inline;
     }
-    .diff-expand-button {
+    .filediff-expand-button {
         display: none;
     }
-    .diff-collapsed .diff-collapse-button {
+    .filediff-collapsed .filediff-collapse-button {
         display: none;
     }
-    .diff-collapsed .diff-expand-button {
+    .filediff-collapsed .filediff-expand-button {
         display: inline;
     }
 }
