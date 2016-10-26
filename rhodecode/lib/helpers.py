@@ -107,6 +107,15 @@ def pylons_url_current(*args, **kw):
 url.current = pylons_url_current
 
 
+def url_replace(**qargs):
+    """ Returns the current request url while replacing query string args """
+
+    request = get_current_request()
+    new_args = request.GET.mixed()
+    new_args.update(qargs)
+    return url('', **new_args)
+
+
 def asset(path, ver=None):
     """
     Helper to generate a static asset file path for rhodecode assets

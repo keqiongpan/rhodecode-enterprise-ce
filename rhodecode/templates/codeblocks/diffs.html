@@ -35,16 +35,10 @@ return h.url('', **new_args)
     ruler_at_chars=0,
 )">
 <%
-# TODO: dan: move this to an argument - and set a cookie so that it is saved
-# default option for future requests
-diff_mode = request.GET.get('diffmode', 'sideside')
-if diff_mode not in ('sideside', 'unified'):
-    diff_mode = 'sideside'
-
 collapse_all = len(diffset.files) > collapse_when_files_over
 %>
 
-%if diff_mode == 'sideside':
+%if c.diffmode == 'sideside':
 <style>
 .wrapper {
     max-width: 1600px !important;
@@ -73,35 +67,33 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 
 <div class="diffset">
     <div class="diffset-heading">
-        %if diffset.files:
         <div class="pull-right">
             <div class="btn-group">
                 <a
-                    class="btn ${diff_mode == 'sideside' and 'btn-primary'} tooltip"
-                    title="${_('View side by side')}"
-                    href="${link_for(diffmode='sideside')}">
+                  class="btn ${c.diffmode == 'sideside' and 'btn-primary'} tooltip"
+                  title="${_('View side by side')}"
+                  href="${h.url_replace(diffmode='sideside')}">
                     <span>${_('Side by Side')}</span>
                 </a>
                 <a
-                    class="btn ${diff_mode == 'unified' and 'btn-primary'} tooltip"
-                    title="${_('View unified')}" href="${link_for(diffmode='unified')}">
+                  class="btn ${c.diffmode == 'unified' and 'btn-primary'} tooltip"
+                  title="${_('View unified')}" href="${h.url_replace(diffmode='unified')}">
                     <span>${_('Unified')}</span>
                 </a>
             </div>
         </div>
         <div class="pull-left">
-            <div class="btn-group">
-                <a
-                    class="btn"
-                    href="#"
-                    onclick="$('input[class=filediff-collapse-state]').prop('checked', false); return false">${_('Expand All')}</a>
-                <a
-                    class="btn"
-                    href="#"
-                    onclick="$('input[class=filediff-collapse-state]').prop('checked', true); return false">${_('Collapse All')}</a>
-            </div>
+          <div class="btn-group">
+              <a
+                  class="btn"
+                  href="#"
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); return false">${_('Expand All')}</a>
+              <a
+                  class="btn"
+                  href="#"
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); return false">${_('Collapse All')}</a>
+          </div>
         </div>
-        %endif
         <h2 style="padding: 5px; text-align: center;">
     %if diffset.limited_diff:
         ${ungettext('%(num)s file changed', '%(num)s files changed', diffset.changed_files) % {'num': diffset.changed_files}}
@@ -132,11 +124,11 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 ${diff_ops(filediff)}
             </label>
             ${diff_menu(filediff)}
-            <table class="cb cb-diff-${diff_mode} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
+            <table class="cb cb-diff-${c.diffmode} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
         %if not filediff.hunks:
             %for op_id, op_text in filediff['patch']['stats']['ops'].items():
                 <tr>
-                    <td class="cb-text cb-${op_class(op_id)}" ${diff_mode == 'unified' and 'colspan=3' or 'colspan=4'}>
+                    <td class="cb-text cb-${op_class(op_id)}" ${c.diffmode == 'unified' and 'colspan=3' or 'colspan=4'}>
                         %if op_id == DEL_FILENODE:
                         ${_('File was deleted')}
                         %elif op_id == BIN_FILENODE:
@@ -150,7 +142,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         %endif
         %if over_lines_changed_limit:
                 <tr class="cb-warning cb-collapser">
-                    <td class="cb-text" ${diff_mode == 'unified' and 'colspan=3' or 'colspan=4'}>
+                    <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=3' or 'colspan=4'}>
                         ${_('This diff has been collapsed as it changes many lines, (%i lines changed)' % lines_changed)}
                         <a href="#" class="cb-expand"
                            onclick="$(this).closest('table').removeClass('cb-collapsed'); return false;">${_('Show them')}
@@ -163,29 +155,29 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         %endif
         %if filediff.patch['is_limited_diff']:
                 <tr class="cb-warning cb-collapser">
-                    <td class="cb-text" ${diff_mode == 'unified' and 'colspan=3' or 'colspan=4'}>
+                    <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=3' or 'colspan=4'}>
                         ${_('The requested commit is too big and content was truncated.')} <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
                     </td>
                 </tr>
         %endif
         %for hunk in filediff.hunks:
                 <tr class="cb-hunk">
-                    <td ${diff_mode == 'unified' and 'colspan=2' or ''}>
+                    <td ${c.diffmode == 'unified' and 'colspan=2' or ''}>
                         ## TODO: dan: add ajax loading of more context here
                         ## <a href="#">
                             <i class="icon-more"></i>
                         ## </a>
                     </td>
-                    <td ${diff_mode == 'sideside' and 'colspan=3' or ''}>
+                    <td ${c.diffmode == 'sideside' and 'colspan=3' or ''}>
                         @@
                         -${hunk.source_start},${hunk.source_length}
                         +${hunk.target_start},${hunk.target_length}
                         ${hunk.section_header}
                     </td>
                 </tr>
-            %if diff_mode == 'unified':
+            %if c.diffmode == 'unified':
                     ${render_hunk_lines_unified(hunk)}
-            %elif diff_mode == 'sideside':
+            %elif c.diffmode == 'sideside':
                     ${render_hunk_lines_sideside(hunk)}
             %else:
                 <tr class="cb-line">
