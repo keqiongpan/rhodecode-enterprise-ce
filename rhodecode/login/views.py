@@ -241,7 +241,7 @@ class LoginView(object):
                     self.request.params.get('recaptcha_response_field'),
                     private_key=captcha.private_key,
                     remoteip=get_ip_addr(self.request.environ))
-                if captcha.active and not response.is_valid:
+                if not response.is_valid:
                     _value = form_result
                     _msg = _('bad captcha')
                     error_dict = {'recaptcha_field': _msg}
@@ -303,7 +303,7 @@ class LoginView(object):
                         self.request.params.get('recaptcha_response_field'),
                         private_key=captcha.private_key,
                         remoteip=get_ip_addr(self.request.environ))
-                    if captcha.active and not response.is_valid:
+                    if not response.is_valid:
                         _value = form_result
                         _msg = _('bad captcha')
                         error_dict = {'recaptcha_field': _msg}
