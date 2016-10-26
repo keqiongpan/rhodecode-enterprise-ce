@@ -32,7 +32,7 @@ from pylons.i18n.translation import _
 from pylons.controllers.util import redirect
 
 from rhodecode.lib import auth
-from rhodecode.lib import diffs
+from rhodecode.lib import diffs, codeblocks
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous)
 from rhodecode.lib.base import BaseRepoController, render
@@ -242,28 +242,32 @@ class ChangesetController(BaseRepoController):
             file_limit = self.cut_off_limit_file
 
             diff_processor = diffs.DiffProcessor(
-                _diff, format='gitdiff', diff_limit=diff_limit,
+                _diff, format='newdiff', diff_limit=diff_limit,
                 file_limit=file_limit, show_full_diff=fulldiff)
             commit_changes = OrderedDict()
             if method == 'show':
                 _parsed = diff_processor.prepare()
                 c.limited_diff = isinstance(_parsed, diffs.LimitedDiffContainer)
-                for f in _parsed:
-                    c.files.append(f)
-                    st = f['stats']
-                    c.lines_added += st['added']
-                    c.lines_deleted += st['deleted']
-                    fid = h.FID(commit.raw_id, f['filename'])
-                    diff = diff_processor.as_html(enable_comments=enable_comments,
-                                                  parsed_lines=[f])
-                    commit_changes[fid] = [
-                        commit1.raw_id, commit2.raw_id,
-                        f['operation'], f['filename'], diff, st, f]
+
+                _parsed = diff_processor.prepare()
+
+                def _node_getter(commit):
+                    def get_node(fname):
+                        try:
+                            return commit.get_node(fname)
+                        except NodeDoesNotExistError:
+                            return None
+                    return get_node
+
+                diffset = codeblocks.DiffSet(
+                    source_node_getter=_node_getter(commit1),
+                    target_node_getter=_node_getter(commit2),
+                ).render_patchset(_parsed, commit1.raw_id, commit2.raw_id)
+                c.changes[commit.raw_id] = diffset
             else:
                 # downloads/raw we only need RAW diff nothing else
                 diff = diff_processor.as_raw()
-                commit_changes[''] = [None, None, None, None, diff, None, None]
-            c.changes[commit.raw_id] = commit_changes
+                c.changes[commit.raw_id] = [None, None, None, None, diff, None, None]
 
         # sort comments by how they were generated
         c.comments = sorted(c.comments, key=lambda x: x.comment_id)

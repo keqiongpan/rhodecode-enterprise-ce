@@ -42,12 +42,12 @@
           <span id="parent_link">
             <a href="#" title="${_('Parent Commit')}">${_('Parent')}</a>
           </span>
-           | 
+           |
           <span id="child_link">
             <a href="#" title="${_('Child Commit')}">${_('Child')}</a>
           </span>
       </div>
-  
+
       <div class="fieldset">
         <div class="left-label">
           ${_('Description')}:
@@ -59,7 +59,7 @@
           </div>
         </div>
       </div>
-  
+
       %if c.statuses:
       <div class="fieldset">
         <div class="left-label">
@@ -73,20 +73,20 @@
         </div>
       </div>
       %endif
-  
+
       <div class="fieldset">
         <div class="left-label">
           ${_('References')}:
         </div>
         <div class="right-content">
           <div class="tags">
-  
+
             %if c.commit.merge:
               <span class="mergetag tag">
                <i class="icon-merge"></i>${_('merge')}
               </span>
             %endif
-  
+
             %if h.is_hg(c.rhodecode_repo):
               %for book in c.commit.bookmarks:
               <span class="booktag tag" title="${_('Bookmark %s') % book}">
@@ -94,13 +94,13 @@
               </span>
               %endfor
             %endif
-  
+
             %for tag in c.commit.tags:
              <span class="tagtag tag"  title="${_('Tag %s') % tag}">
               <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"><i class="icon-tag"></i>${tag}</a>
              </span>
             %endfor
-  
+
             %if c.commit.branch:
               <span class="branchtag tag" title="${_('Branch %s') % c.commit.branch}">
                 <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"><i class="icon-code-fork"></i>${h.shorter(c.commit.branch)}</a>
@@ -119,22 +119,22 @@
               <a href="${h.url('changeset_raw_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
                 ${_('Raw Diff')}
               </a>
-               | 
+               |
               <a href="${h.url('changeset_patch_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
                 ${_('Patch Diff')}
               </a>
-               | 
+               |
               <a href="${h.url('changeset_download_home',repo_name=c.repo_name,revision=c.commit.raw_id,diff='download')}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
                 ${_('Download Diff')}
               </a>
-               | 
+               |
               ${c.ignorews_url(request.GET)}
-               | 
+               |
               ${c.context_url(request.GET)}
             </div>
         </div>
       </div>
-  
+
       <div class="fieldset">
         <div class="left-label">
           ${_('Comments')}:
@@ -155,9 +155,9 @@
             </div>
         </div>
       </div>
-  
+
     </div> <!-- end summary-detail -->
-              
+
     <div id="commit-stats" class="sidebar-right">
       <div class="summary-detail-header">
         <h4 class="item">
@@ -170,91 +170,13 @@
         </div>
     </div><!-- end sidebar -->
   </div> <!-- end summary -->
-  <div class="cs_files_title">
-    <span class="cs_files_expand">
-        <span id="files_link"><a href="#" title="${_('Browse files at current commit')}">${_('Browse files')}</a></span> |
+  <div class="cs_files">
+  ${cbdiffs.render_diffset_menu()}
 
-        <span id="expand_all_files">${_('Expand All')}</span> | <span id="collapse_all_files">${_('Collapse All')}</span>
-    </span>
-    <h2>
-        ${diff_block.diff_summary_text(len(c.files), c.lines_added, c.lines_deleted, c.limited_diff)}
-    </h2>
+  <%namespace name="cbdiffs" file="/codeblocks/diffs.html"/>
+    ${cbdiffs.render_diffset(c.changes[c.commit.raw_id], commit=c.commit)}
   </div>
-</div> 
-
-<div class="cs_files">
-
-  %if not c.files:
-     <p class="empty_data">${_('No files')}</p>
-  %endif
-
-  <table class="compare_view_files commit_diff">
-      %for FID, (cs1, cs2, change, path, diff, stats, file) in c.changes[c.commit.raw_id].iteritems():
-        <tr class="cs_${change} collapse_file" fid="${FID}">
-          <td class="cs_icon_td">
-              <span class="collapse_file_icon" fid="${FID}"></span>
-          </td>
-          <td class="cs_icon_td">
-              <div class="flag_status not_reviewed hidden"></div>
-          </td>
-          <td class="cs_${change}" id="a_${FID}">
-            <div class="node">
-                <a href="#a_${FID}">
-                    <i class="icon-file-${change.lower()}"></i>
-                    ${h.safe_unicode(path)}
-                </a>
-            </div>
-          </td>
-          <td>
-            <div class="changes pull-right">${h.fancy_file_stats(stats)}</div>
-            <div class="comment-bubble pull-right" data-path="${path}">
-              <i class="icon-comment"></i>
-            </div>
-          </td>
-        </tr>
-        <tr fid="${FID}" id="diff_${FID}" class="diff_links">
-          <td></td>
-          <td></td>
-          <td class="cs_${change}">
-            ${diff_block.diff_menu(c.repo_name, h.safe_unicode(path), cs1, cs2, change, file)}
-          </td>
-          <td class="td-actions rc-form">
-            ${c.ignorews_url(request.GET, h.FID(cs2,path))} |
-            ${c.context_url(request.GET, h.FID(cs2,path))} |
-            <div data-comment-id="${h.FID(cs2,path)}" class="btn-link show-inline-comments comments-visible">
-              <span class="comments-show">${_('Show comments')}</span>
-              <span class="comments-hide">${_('Hide comments')}</span>
-            </div>
-          </td>
-        </tr>
-        <tr id="tr_${FID}">
-          <td></td>
-          <td></td>
-          <td class="injected_diff" colspan="2">
-            <div class="diff-container" id="${'diff-container-%s' % (id(change))}">
-              <div id="${FID}" class="diffblock margined comm">
-                <div class="code-body">
-                    <div class="full_f_path" path="${h.safe_unicode(path)}"></div>
-                    ${diff|n}
-                    % if file and file["is_limited_diff"]:
-                      % if file["exceeds_limit"]:
-                        ${diff_block.file_message()}
-                      % else:
-                        <h5>${_('Diff was truncated. File content available only in full diff.')} <a href="${h.url.current(fulldiff=1, **request.GET.mixed())}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>
-                      % endif
-                    % endif
-                </div>
-              </div>
-            </div>
-          </td>
-        </tr>
-      %endfor
-  </table>
 </div>
-
-    % if c.limited_diff:
-          ${diff_block.changeset_message()}
-    % endif
 
     ## template for inline comment form
     <%namespace name="comment" file="/changeset/changeset_file_comment.html"/>
