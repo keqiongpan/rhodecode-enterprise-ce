@@ -249,6 +249,7 @@
                 <div id="changeset_compare_view_content">
                     ##CS
                     <%include file="compare_commits.html"/>
+                    ${cbdiffs.render_diffset_menu()}
                     ${cbdiffs.render_diffset(c.diffset)}
                  </div>
             %endif

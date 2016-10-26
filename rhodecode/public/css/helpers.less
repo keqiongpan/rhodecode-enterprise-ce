@@ -13,6 +13,13 @@ a { cursor: pointer; }
     }
 }
 
+.clearinner:after { /* clears all floating divs inside a block */
+    content: "";
+    display: table;
+    clear: both;
+}
+
+
 .linebreak {
     display: block;
 }

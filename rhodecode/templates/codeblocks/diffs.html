@@ -23,7 +23,7 @@ new_args.update(kw)
 return h.url('', **new_args)
 %></%def>
 
-<%def name="render_diffset(diffset, commit_id=None,
+<%def name="render_diffset(diffset, commit=None,
 
     # collapse all file diff entries when there are more than this amount of files in the diff
     collapse_when_files_over=20,
@@ -33,6 +33,7 @@ return h.url('', **new_args)
 
     # add a ruler at to the output
     ruler_at_chars=0,
+
 )">
 <%
 collapse_all = len(diffset.files) > collapse_when_files_over
@@ -59,44 +60,26 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     left: ${ruler_at_chars + 5}ch;
 </style>
 %endif
-% if diffset.limited_diff:
-<div class="alert alert-warning">
-    ${_('The requested commit is too big and content was truncated.')} <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
-</div>
-% endif
 
 <div class="diffset">
-    <div class="diffset-heading">
-        <div class="pull-right">
-            <div class="btn-group">
-                <a
-                  class="btn ${c.diffmode == 'sideside' and 'btn-primary'} tooltip"
-                  title="${_('View side by side')}"
-                  href="${h.url_replace(diffmode='sideside')}">
-                    <span>${_('Side by Side')}</span>
-                </a>
-                <a
-                  class="btn ${c.diffmode == 'unified' and 'btn-primary'} tooltip"
-                  title="${_('View unified')}" href="${h.url_replace(diffmode='unified')}">
-                    <span>${_('Unified')}</span>
+    <div class="diffset-heading ${diffset.limited_diff and 'diffset-heading-warning' or ''}">
+        %if commit:
+            <div class="pull-right">
+                <a class="btn tooltip" title="${_('Browse Files at revision {}').format(commit.raw_id)}" href="${h.url('files_home',repo_name=c.repo_name, revision=commit.raw_id, f_path='')}">
+                    ${_('Browse Files')}
                 </a>
             </div>
-        </div>
-        <div class="pull-left">
-          <div class="btn-group">
-              <a
-                  class="btn"
-                  href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); return false">${_('Expand All')}</a>
-              <a
-                  class="btn"
-                  href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); return false">${_('Collapse All')}</a>
-          </div>
-        </div>
-        <h2 style="padding: 5px; text-align: center;">
+        %endif
+        <h2 class="clearinner">
+        %if commit:
+            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id)}">${'r%s:%s' % (commit.revision,h.short_id(commit.raw_id))}</a> -
+            ${h.age_component(commit.date)} -
+        %endif
     %if diffset.limited_diff:
-        ${ungettext('%(num)s file changed', '%(num)s files changed', diffset.changed_files) % {'num': diffset.changed_files}}
+    ${_('The requested commit is too big and content was truncated.')}
+
+        ${ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
+        <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
     %else:
         ${ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
                     '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
@@ -118,7 +101,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         <div
             class="filediff"
             data-f-path="${filediff['patch']['filename']}"
-            id="a_${h.FID(commit_id or '', filediff['patch']['filename'])}">
+            id="a_${h.FID(commit and commit.raw_id or '', filediff['patch']['filename'])}">
             <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
                 <div class="filediff-collapse-indicator"></div>
                 ${diff_ops(filediff)}
@@ -244,7 +227,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         %endif
     </span>
 
-    <a class="pill filediff-anchor" href="#a_${h.FID(commit_id or '', filediff.patch['filename'])}">¶</a>
+    <a class="pill filediff-anchor" href="#a_${h.FID(commit and commit.raw_id or '', filediff.patch['filename'])}">¶</a>
 
     <span class="pill-group" style="float: right">
         %if BIN_FILENODE in stats['ops']:
@@ -401,4 +384,37 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
           </td>
     </tr>
     %endfor
+</%def>
+
+
+<%def name="render_diffset_menu()">
+    <div class="diffset-menu clearinner">
+        <div class="pull-right">
+            <div class="btn-group">
+                <a
+                  class="btn ${c.diffmode == 'sideside' and 'btn-primary'} tooltip"
+                  title="${_('View side by side')}"
+                  href="${h.url_replace(diffmode='sideside')}">
+                    <span>${_('Side by Side')}</span>
+                </a>
+                <a
+                  class="btn ${c.diffmode == 'unified' and 'btn-primary'} tooltip"
+                  title="${_('View unified')}" href="${h.url_replace(diffmode='unified')}">
+                    <span>${_('Unified')}</span>
+                </a>
+            </div>
+        </div>
+        <div class="pull-left">
+          <div class="btn-group">
+              <a
+                  class="btn"
+                  href="#"
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); return false">${_('Expand All')}</a>
+              <a
+                  class="btn"
+                  href="#"
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); return false">${_('Collapse All')}</a>
+          </div>
+        </div>
+    </div>
 </%def>
