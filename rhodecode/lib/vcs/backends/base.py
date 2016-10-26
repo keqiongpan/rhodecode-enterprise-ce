@@ -97,6 +97,12 @@ class MergeFailureReason(object):
     # A involved commit could not be found.
     MISSING_COMMIT = 8
 
+    # The target repo reference is missing.
+    MISSING_TARGET_REF = 9
+
+    # The source repo reference is missing.
+    MISSING_SOURCE_REF = 10
+
 
 class BaseRepository(object):
     """
