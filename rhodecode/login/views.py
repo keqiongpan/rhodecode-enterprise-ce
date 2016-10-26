@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import collections
 import datetime
 import formencode
 import logging
@@ -46,6 +47,9 @@ from rhodecode.translation import _
 
 
 log = logging.getLogger(__name__)
+
+CaptchaData = collections.namedtuple(
+    'CaptchaData', 'active, private_key, public_key')
 
 
 def _store_user_in_session(session, username, remember=False):
@@ -112,6 +116,14 @@ class LoginView(object):
             'defaults': {},
             'errors': {},
         }
+
+    def _get_captcha_data(self):
+        settings = SettingsModel().get_all_settings()
+        private_key = settings.get('rhodecode_captcha_private_key')
+        public_key = settings.get('rhodecode_captcha_public_key')
+        active = bool(private_key)
+        return CaptchaData(
+            active=active, private_key=private_key, public_key=public_key)
 
     @view_config(
         route_name='login', request_method='GET',
@@ -192,10 +204,8 @@ class LoginView(object):
         errors = errors or {}
 
         settings = SettingsModel().get_all_settings()
-        captcha_public_key = settings.get('rhodecode_captcha_public_key')
-        captcha_private_key = settings.get('rhodecode_captcha_private_key')
-        captcha_active = bool(captcha_private_key)
         register_message = settings.get('rhodecode_register_message') or ''
+        captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
             .AuthUser.permissions['global']
 
@@ -204,8 +214,8 @@ class LoginView(object):
             'defaults': defaults,
             'errors': errors,
             'auto_active': auto_active,
-            'captcha_active': captcha_active,
-            'captcha_public_key': captcha_public_key,
+            'captcha_active': captcha.active,
+            'captcha_public_key': captcha.public_key,
             'register_message': register_message,
         })
         return render_ctx
@@ -216,9 +226,7 @@ class LoginView(object):
         route_name='register', request_method='POST',
         renderer='rhodecode:templates/register.html')
     def register_post(self):
-        captcha_private_key = SettingsModel().get_setting_by_name(
-            'rhodecode_captcha_private_key')
-        captcha_active = bool(captcha_private_key)
+        captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
             .AuthUser.permissions['global']
 
@@ -227,13 +235,13 @@ class LoginView(object):
             form_result = register_form.to_python(self.request.params)
             form_result['active'] = auto_active
 
-            if captcha_active:
+            if captcha.active:
                 response = submit(
                     self.request.params.get('recaptcha_challenge_field'),
                     self.request.params.get('recaptcha_response_field'),
-                    private_key=captcha_private_key,
+                    private_key=captcha.private_key,
                     remoteip=get_ip_addr(self.request.environ))
-                if captcha_active and not response.is_valid:
+                if captcha.active and not response.is_valid:
                     _value = form_result
                     _msg = _('bad captcha')
                     error_dict = {'recaptcha_field': _msg}
@@ -269,14 +277,11 @@ class LoginView(object):
         route_name='reset_password', request_method=('GET', 'POST'),
         renderer='rhodecode:templates/password_reset.html')
     def password_reset(self):
-        settings = SettingsModel().get_all_settings()
-        captcha_private_key = settings.get('rhodecode_captcha_private_key')
-        captcha_active = bool(captcha_private_key)
-        captcha_public_key = settings.get('rhodecode_captcha_public_key')
+        captcha = self._get_captcha_data()
 
         render_ctx = {
-            'captcha_active': captcha_active,
-            'captcha_public_key': captcha_public_key,
+            'captcha_active': captcha.active,
+            'captcha_public_key': captcha.public_key,
             'defaults': {},
             'errors': {},
         }
@@ -292,13 +297,13 @@ class LoginView(object):
                         _('Password reset has been disabled.'),
                         queue='error')
                     return HTTPFound(self.request.route_path('reset_password'))
-                if captcha_active:
+                if captcha.active:
                     response = submit(
                         self.request.params.get('recaptcha_challenge_field'),
                         self.request.params.get('recaptcha_response_field'),
-                        private_key=captcha_private_key,
+                        private_key=captcha.private_key,
                         remoteip=get_ip_addr(self.request.environ))
-                    if captcha_active and not response.is_valid:
+                    if captcha.active and not response.is_valid:
                         _value = form_result
                         _msg = _('bad captcha')
                         error_dict = {'recaptcha_field': _msg}
