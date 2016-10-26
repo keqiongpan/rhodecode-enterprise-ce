@@ -172,7 +172,7 @@ class LoginView(object):
         except formencode.Invalid as errors:
             defaults = errors.value
             # remove password from filling in form again
-            del defaults['password']
+            defaults.pop('password', None)
             render_ctx = self._get_template_context()
             render_ctx.update({
                 'errors': errors.error_dict,
@@ -260,8 +260,8 @@ class LoginView(object):
             raise HTTPFound(redirect_ro)
 
         except formencode.Invalid as errors:
-            del errors.value['password']
-            del errors.value['password_confirmation']
+            errors.value.pop('password', None)
+            errors.value.pop('password_confirmation', None)
             return self.register(
                 defaults=errors.value, errors=errors.error_dict)
 
