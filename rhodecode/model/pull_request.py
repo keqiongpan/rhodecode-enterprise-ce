@@ -92,6 +92,12 @@ class PullRequestModel(BaseModel):
         MergeFailureReason.MISSING_COMMIT: lazy_ugettext(
             'This pull request cannot be merged because the target or the '
             'source reference is missing.'),
+        MergeFailureReason.MISSING_TARGET_REF: lazy_ugettext(
+            'This pull request cannot be merged because the target '
+            'reference is missing.'),
+        MergeFailureReason.MISSING_SOURCE_REF: lazy_ugettext(
+            'This pull request cannot be merged because the source '
+            'reference is missing.'),
     }
 
     def __get_pull_request(self, pull_request):
