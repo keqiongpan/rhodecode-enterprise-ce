@@ -1,11 +1,13 @@
 { pkgs ? (import <nixpkgs> {})
 , pythonPackages ? "python27Packages"
 , doCheck ? true
+, sourcesOverrides ? {}
 , doDevelopInstall ? true
 }:
 
 let
-  sources = pkgs.config.rc.sources or {};
+  # Get sources from config and update them with overrides.
+  sources = (pkgs.config.rc.sources or {}) // sourcesOverrides;
 
   enterprise-ce = import ./default.nix {
     inherit pkgs pythonPackages doCheck;
