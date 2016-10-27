@@ -924,6 +924,7 @@ class PullRequestModel(BaseModel):
 
         try:
             resp = self._try_merge(pull_request)
+            log.debug("Merge response: %s", resp)
             status = resp.possible, self.merge_status_message(
                 resp.failure_reason)
         except NotImplementedError:
@@ -983,7 +984,7 @@ class PullRequestModel(BaseModel):
                 _last_merge_status == MergeFailureReason.NONE
             merge_state = MergeResponse(
                 possible, False, None, pull_request._last_merge_status)
-        log.debug("Merge response: %s", merge_state)
+
         return merge_state
 
     def _refresh_reference(self, reference, vcs_repository):
