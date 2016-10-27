@@ -45,7 +45,7 @@ from rhodecode.lib.auth import (
 from rhodecode.lib.channelstream import channelstream_request
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_int, safe_str, str2bool, safe_unicode
-from rhodecode.lib.vcs.backends.base import EmptyCommit
+from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, CommitDoesNotExistError, RepositoryRequirementError)
 from rhodecode.lib.diffs import LimitedDiffContainer
@@ -518,60 +518,54 @@ class PullrequestsController(BaseRepoController):
         return
 
     def _update_commits(self, pull_request):
-        try:
-            if PullRequestModel().has_valid_update_type(pull_request):
-                updated_version, changes = PullRequestModel().update_commits(
-                    pull_request)
-                if updated_version:
-                    msg = _(
-                        u'Pull request updated to "{source_commit_id}" with '
-                        u'{count_added} added, {count_removed} removed '
-                        u'commits.'
-                    ).format(
-                        source_commit_id=pull_request.source_ref_parts.commit_id,
-                        count_added=len(changes.added),
-                        count_removed=len(changes.removed))
-                    h.flash(msg, category='success')
-                    registry = get_current_registry()
-                    rhodecode_plugins = getattr(registry,
-                                                'rhodecode_plugins', {})
-                    channelstream_config = rhodecode_plugins.get(
-                        'channelstream', {})
-                    if channelstream_config.get('enabled'):
-                        message = msg + ' - <a onclick="' \
-                                        'window.location.reload()">' \
-                                        '<strong>{}</strong></a>'.format(
-                            _('Reload page')
-                        )
-                        channel = '/repo${}$/pr/{}'.format(
-                            pull_request.target_repo.repo_name,
-                            pull_request.pull_request_id
-                        )
-                        payload = {
-                            'type': 'message',
-                            'user': 'system',
-                            'exclude_users': [request.user.username],
-                            'channel': channel,
-                            'message': {
-                                'message': message,
-                                'level': 'success',
-                                'topic': '/notifications'
-                            }
-                        }
-                        channelstream_request(channelstream_config, [payload],
-                                              '/message', raise_exc=False)
-                else:
-                    h.flash(_("Nothing changed in pull request."),
-                            category='warning')
-            else:
-                msg = _(
-                    u"Skipping update of pull request due to reference "
-                    u"type: {reference_type}"
-                ).format(reference_type=pull_request.source_ref_parts.type)
-                h.flash(msg, category='warning')
-        except CommitDoesNotExistError:
-            h.flash(
-                _(u'Update failed due to missing commits.'), category='error')
+        resp = PullRequestModel().update_commits(pull_request)
+        msg = PullRequestModel.UPDATE_STATUS_MESSAGES[resp.reason]
+
+        # Abort if pull request update failed.
+        if not resp.success:
+            h.flash(msg, category='error')
+            return
+
+        if resp.reason == UpdateFailureReason.NONE:
+            msg = _(
+                u'Pull request updated to "{source_commit_id}" with '
+                u'{count_added} added, {count_removed} removed commits.')
+            msg = msg.format(
+                source_commit_id=pull_request.source_ref_parts.commit_id,
+                count_added=len(resp.changes.added),
+                count_removed=len(resp.changes.removed))
+            h.flash(msg, category='success')
+
+            registry = get_current_registry()
+            rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
+            channelstream_config = rhodecode_plugins.get('channelstream', {})
+            if channelstream_config.get('enabled'):
+                message = msg + (
+                    ' - <a onclick="window.location.reload()">'
+                    '<strong>{}</strong></a>'.format(_('Reload page')))
+                channel = '/repo${}$/pr/{}'.format(
+                    pull_request.target_repo.repo_name,
+                    pull_request.pull_request_id
+                )
+                payload = {
+                    'type': 'message',
+                    'user': 'system',
+                    'exclude_users': [request.user.username],
+                    'channel': channel,
+                    'message': {
+                        'message': message,
+                        'level': 'success',
+                        'topic': '/notifications'
+                    }
+                }
+                channelstream_request(
+                    channelstream_config, [payload], '/message',
+                    raise_exc=False)
+        elif resp.reason == UpdateFailureReason.NO_CHANGE:
+            # Display a warning if no update is needed.
+            h.flash(msg, category='warning')
+        else:
+            h.flash(msg, category='error')
 
     @auth.CSRFRequired()
     @LoginRequired()
