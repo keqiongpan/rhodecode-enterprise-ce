@@ -187,6 +187,8 @@ class TestPullrequestsController:
             category='error')
 
     def test_update_invalid_source_reference(self, pr_util, csrf_token):
+        from rhodecode.lib.vcs.backends.base import UpdateFailureReason
+
         pull_request = pr_util.create_pull_request()
         pull_request.source_ref = 'branch:invalid-branch:invalid-commit-id'
         Session().add(pull_request)
@@ -201,9 +203,9 @@ class TestPullrequestsController:
             params={'update_commits': 'true', '_method': 'put',
                     'csrf_token': csrf_token})
 
-        assert_session_flash(
-            response, u'Update failed due to missing commits.',
-            category='error')
+        expected_msg = PullRequestModel.UPDATE_STATUS_MESSAGES[
+            UpdateFailureReason.MISSING_SOURCE_REF]
+        assert_session_flash(response, expected_msg, category='error')
 
     def test_comment_and_close_pull_request(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request(approved=True)
