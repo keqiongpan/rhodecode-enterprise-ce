@@ -40,7 +40,7 @@ from rhodecode.lib.markup_renderer import (
 from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import safe_unicode, safe_str, md5_safe
 from rhodecode.lib.vcs.backends.base import (
-    Reference, MergeResponse, MergeFailureReason)
+    Reference, MergeResponse, MergeFailureReason, UpdateFailureReason)
 from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError)
@@ -97,6 +97,25 @@ class PullRequestModel(BaseModel):
             'reference is missing.'),
         MergeFailureReason.MISSING_SOURCE_REF: lazy_ugettext(
             'This pull request cannot be merged because the source '
+            'reference is missing.'),
+    }
+
+    UPDATE_STATUS_MESSAGES = {
+        UpdateFailureReason.NONE: lazy_ugettext(
+            'Pull request update successful.'),
+        UpdateFailureReason.UNKNOWN: lazy_ugettext(
+            'Pull request update failed because of an unknown error.'),
+        UpdateFailureReason.NO_CHANGE: lazy_ugettext(
+            'No update needed because the source reference is already '
+            'up to date.'),
+        UpdateFailureReason.WRONG_REF_TPYE: lazy_ugettext(
+            'Pull request cannot be updated because the reference type is '
+            'not supported for an update.'),
+        UpdateFailureReason.MISSING_TARGET_REF: lazy_ugettext(
+            'This pull request cannot be updated because the target '
+            'reference is missing.'),
+        UpdateFailureReason.MISSING_SOURCE_REF: lazy_ugettext(
+            'This pull request cannot be updated because the source '
             'reference is missing.'),
     }
 
