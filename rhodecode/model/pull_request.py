@@ -60,6 +60,12 @@ from rhodecode.model.settings import VcsSettingsModel
 log = logging.getLogger(__name__)
 
 
+# Data structure to hold the response data when updating commits during a pull
+# request update.
+UpdateResponse = namedtuple(
+    'UpdateResponse', 'success, reason, new, old, changes')
+
+
 class PullRequestModel(BaseModel):
 
     cls = PullRequest
