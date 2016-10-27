@@ -526,7 +526,14 @@ class PullRequestModel(BaseModel):
                 old=pull_request, new=None, changes=None)
 
         source_repo = pull_request.source_repo.scm_instance()
-        source_commit = source_repo.get_commit(commit_id=source_ref_name)
+        try:
+            source_commit = source_repo.get_commit(commit_id=source_ref_name)
+        except CommitDoesNotExistError:
+            return UpdateResponse(
+                success=False,
+                reason=UpdateFailureReason.MISSING_SOURCE_REF,
+                old=pull_request, new=None, changes=None)
+
         if source_ref_id == source_commit.raw_id:
             log.debug("Nothing changed in pull request %s", pull_request)
             return UpdateResponse(
@@ -543,10 +550,16 @@ class PullRequestModel(BaseModel):
         target_ref_id = pull_request.target_ref_parts.commit_id
         target_repo = pull_request.target_repo.scm_instance()
 
-        if target_ref_type in ('tag', 'branch', 'book'):
-            target_commit = target_repo.get_commit(target_ref_name)
-        else:
-            target_commit = target_repo.get_commit(target_ref_id)
+        try:
+            if target_ref_type in ('tag', 'branch', 'book'):
+                target_commit = target_repo.get_commit(target_ref_name)
+            else:
+                target_commit = target_repo.get_commit(target_ref_id)
+        except CommitDoesNotExistError:
+            return UpdateResponse(
+                success=False,
+                reason=UpdateFailureReason.MISSING_TARGET_REF,
+                old=pull_request, new=None, changes=None)
 
         # re-compute commit ids
         old_commit_ids = set(pull_request.revisions)
