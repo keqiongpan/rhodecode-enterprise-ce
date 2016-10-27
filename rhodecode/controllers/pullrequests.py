@@ -520,7 +520,7 @@ class PullrequestsController(BaseRepoController):
     def _update_commits(self, pull_request):
         resp = PullRequestModel().update_commits(pull_request)
 
-        if resp.success:
+        if resp.executed:
             msg = _(
                 u'Pull request updated to "{source_commit_id}" with '
                 u'{count_added} added, {count_removed} removed commits.')

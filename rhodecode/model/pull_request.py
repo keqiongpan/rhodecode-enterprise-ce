@@ -63,7 +63,7 @@ log = logging.getLogger(__name__)
 # Data structure to hold the response data when updating commits during a pull
 # request update.
 UpdateResponse = namedtuple(
-    'UpdateResponse', 'success, reason, new, old, changes')
+    'UpdateResponse', 'executed, reason, new, old, changes')
 
 
 class PullRequestModel(BaseModel):
@@ -521,7 +521,7 @@ class PullRequestModel(BaseModel):
                 "Skipping update of pull request %s due to ref type: %s",
                 pull_request, source_ref_type)
             return UpdateResponse(
-                success=False,
+                executed=False,
                 reason=UpdateFailureReason.WRONG_REF_TPYE,
                 old=pull_request, new=None, changes=None)
 
@@ -530,14 +530,14 @@ class PullRequestModel(BaseModel):
             source_commit = source_repo.get_commit(commit_id=source_ref_name)
         except CommitDoesNotExistError:
             return UpdateResponse(
-                success=False,
+                executed=False,
                 reason=UpdateFailureReason.MISSING_SOURCE_REF,
                 old=pull_request, new=None, changes=None)
 
         if source_ref_id == source_commit.raw_id:
             log.debug("Nothing changed in pull request %s", pull_request)
             return UpdateResponse(
-                success=False,
+                executed=False,
                 reason=UpdateFailureReason.NO_CHANGE,
                 old=pull_request, new=None, changes=None)
 
@@ -557,7 +557,7 @@ class PullRequestModel(BaseModel):
                 target_commit = target_repo.get_commit(target_ref_id)
         except CommitDoesNotExistError:
             return UpdateResponse(
-                success=False,
+                executed=False,
                 reason=UpdateFailureReason.MISSING_TARGET_REF,
                 old=pull_request, new=None, changes=None)
 
@@ -630,7 +630,7 @@ class PullRequestModel(BaseModel):
                                         'update')
 
         return UpdateResponse(
-            success=True, reason=UpdateFailureReason.NONE,
+            executed=True, reason=UpdateFailureReason.NONE,
             old=pull_request, new=pull_request_version, changes=changes)
 
     def _create_version_from_snapshot(self, pull_request):
