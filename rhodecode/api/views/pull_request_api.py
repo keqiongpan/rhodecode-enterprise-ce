@@ -659,9 +659,9 @@ def update_pull_request(
     commit_changes = {"added": [], "common": [], "removed": []}
     if str2bool(Optional.extract(update_commits)):
         if PullRequestModel().has_valid_update_type(pull_request):
-            _version, _commit_changes = PullRequestModel().update_commits(
+            update_response = PullRequestModel().update_commits(
                 pull_request)
-            commit_changes = _commit_changes or commit_changes
+            commit_changes = update_response.changes or commit_changes
         Session().commit()
 
     reviewers_changes = {"added": [], "removed": []}
@@ -687,5 +687,5 @@ def update_pull_request(
         'updated_commits': commit_changes,
         'updated_reviewers': reviewers_changes
     }
-    return data
 
+    return data

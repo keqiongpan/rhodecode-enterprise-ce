@@ -80,7 +80,7 @@ def test_pull_request_stays_if_update_without_change(pr_util, voted_status):
         voted_status, *pull_request.reviewers)
 
     # Update, without change
-    version, changes = PullRequestModel().update_commits(pull_request)
+    PullRequestModel().update_commits(pull_request)
 
     # Expect that review status is the voted_status
     expected_review_status = voted_status
@@ -99,7 +99,7 @@ def test_pull_request_under_review_if_update(pr_util, voted_status):
 
     # Update, with change
     pr_util.update_source_repository()
-    version, changes = PullRequestModel().update_commits(pull_request)
+    PullRequestModel().update_commits(pull_request)
 
     # Expect that review status is the voted_status
     expected_review_status = db.ChangesetStatus.STATUS_UNDER_REVIEW
