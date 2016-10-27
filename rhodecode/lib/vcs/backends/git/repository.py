@@ -867,7 +867,7 @@ class GitRepository(BaseRepository):
         except RepositoryError:
             log.exception('Failure when doing local fetch on git shadow repo')
             return MergeResponse(
-                False, False, None, MergeFailureReason.MISSING_COMMIT)
+                False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
 
         merge_ref = None
         merge_failure_reason = MergeFailureReason.NONE

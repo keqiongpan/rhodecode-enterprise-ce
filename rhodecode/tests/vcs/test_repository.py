@@ -401,10 +401,10 @@ class TestRepositoryMerge:
 
         assert merge_response == expected_merge_response
 
-    def test_merge_missing_commit(self, vcsbackend):
+    def test_merge_missing_source_reference(self, vcsbackend):
         self.prepare_for_success(vcsbackend)
         expected_merge_response = MergeResponse(
-            False, False, None, MergeFailureReason.MISSING_COMMIT)
+            False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
 
         source_ref = Reference(
             self.source_ref.type, 'not_existing', self.source_ref.commit_id)

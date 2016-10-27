@@ -673,11 +673,16 @@ class MercurialRepository(BaseRepository):
             return MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
 
-        if (target_ref.type == 'branch' and
-                len(self._heads(target_ref.name)) != 1):
+        try:
+            if (target_ref.type == 'branch' and
+                    len(self._heads(target_ref.name)) != 1):
+                return MergeResponse(
+                    False, False, None,
+                    MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS)
+        except CommitDoesNotExistError as e:
+            log.exception('Failure when looking up branch heads on hg target')
             return MergeResponse(
-                False, False, None,
-                MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS)
+                False, False, None, MergeFailureReason.MISSING_TARGET_REF)
 
         shadow_repo = self._get_shadow_instance(shadow_repository_path)
 
@@ -691,7 +696,7 @@ class MercurialRepository(BaseRepository):
         except CommitDoesNotExistError:
             log.exception('Failure when doing local pull on hg shadow repo')
             return MergeResponse(
-                False, False, None, MergeFailureReason.MISSING_COMMIT)
+                False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
 
         merge_ref = None
         merge_failure_reason = MergeFailureReason.NONE
