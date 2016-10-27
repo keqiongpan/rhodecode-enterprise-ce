@@ -967,8 +967,15 @@ class PullRequestModel(BaseModel):
             "Trying out if the pull request %s can be merged.",
             pull_request.pull_request_id)
         target_vcs = pull_request.target_repo.scm_instance()
-        target_ref = self._refresh_reference(
-            pull_request.target_ref_parts, target_vcs)
+
+        # Refresh the target reference.
+        try:
+            target_ref = self._refresh_reference(
+                pull_request.target_ref_parts, target_vcs)
+        except CommitDoesNotExistError:
+            merge_state = MergeResponse(
+                False, False, None, MergeFailureReason.MISSING_TARGET_REF)
+            return merge_state
 
         target_locked = pull_request.target_repo.locked
         if target_locked and target_locked[0]:
