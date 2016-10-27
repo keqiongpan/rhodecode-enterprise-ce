@@ -511,7 +511,6 @@ class PullRequestModel(BaseModel):
         and return the new pull request version and the list
         of commits processed by this update action
         """
-
         pull_request = self.__get_pull_request(pull_request)
         source_ref_type = pull_request.source_ref_parts.type
         source_ref_name = pull_request.source_ref_parts.name
@@ -521,13 +520,19 @@ class PullRequestModel(BaseModel):
             log.debug(
                 "Skipping update of pull request %s due to ref type: %s",
                 pull_request, source_ref_type)
-            return (None, None)
+            return UpdateResponse(
+                success=False,
+                reason=UpdateFailureReason.WRONG_REF_TPYE,
+                old=pull_request, new=None, changes=None)
 
         source_repo = pull_request.source_repo.scm_instance()
         source_commit = source_repo.get_commit(commit_id=source_ref_name)
         if source_ref_id == source_commit.raw_id:
             log.debug("Nothing changed in pull request %s", pull_request)
-            return (None, None)
+            return UpdateResponse(
+                success=True,
+                reason=UpdateFailureReason.NO_CHANGE,
+                old=pull_request, new=None, changes=None)
 
         # Finally there is a need for an update
         pull_request_version = self._create_version_from_snapshot(pull_request)
@@ -611,7 +616,9 @@ class PullRequestModel(BaseModel):
         self._trigger_pull_request_hook(pull_request, pull_request.author,
                                         'update')
 
-        return (pull_request_version, changes)
+        return UpdateResponse(
+            success=True, reason=UpdateFailureReason.NONE,
+            old=pull_request, new=pull_request_version, changes=changes)
 
     def _create_version_from_snapshot(self, pull_request):
         version = PullRequestVersion()
