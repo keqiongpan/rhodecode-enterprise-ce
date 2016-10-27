@@ -95,7 +95,7 @@ class PullRequestModel(BaseModel):
         MergeFailureReason.TARGET_IS_LOCKED: lazy_ugettext(
             'This pull request cannot be merged because the target repository'
             ' is locked.'),
-        MergeFailureReason.MISSING_COMMIT: lazy_ugettext(
+        MergeFailureReason._DEPRECATED_MISSING_COMMIT: lazy_ugettext(
             'This pull request cannot be merged because the target or the '
             'source reference is missing.'),
         MergeFailureReason.MISSING_TARGET_REF: lazy_ugettext(

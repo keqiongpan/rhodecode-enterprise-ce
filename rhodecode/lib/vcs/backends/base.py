@@ -94,8 +94,9 @@ class MergeFailureReason(object):
     # The target repository is locked
     TARGET_IS_LOCKED = 7
 
+    # Deprecated, use MISSING_TARGET_REF or MISSING_SOURCE_REF instead.
     # A involved commit could not be found.
-    MISSING_COMMIT = 8
+    _DEPRECATED_MISSING_COMMIT = 8
 
     # The target repo reference is missing.
     MISSING_TARGET_REF = 9
