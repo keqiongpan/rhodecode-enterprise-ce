@@ -519,14 +519,8 @@ class PullrequestsController(BaseRepoController):
 
     def _update_commits(self, pull_request):
         resp = PullRequestModel().update_commits(pull_request)
-        msg = PullRequestModel.UPDATE_STATUS_MESSAGES[resp.reason]
 
-        # Abort if pull request update failed.
-        if not resp.success:
-            h.flash(msg, category='error')
-            return
-
-        if resp.reason == UpdateFailureReason.NONE:
+        if resp.success:
             msg = _(
                 u'Pull request updated to "{source_commit_id}" with '
                 u'{count_added} added, {count_removed} removed commits.')
@@ -561,11 +555,14 @@ class PullrequestsController(BaseRepoController):
                 channelstream_request(
                     channelstream_config, [payload], '/message',
                     raise_exc=False)
-        elif resp.reason == UpdateFailureReason.NO_CHANGE:
-            # Display a warning if no update is needed.
-            h.flash(msg, category='warning')
         else:
-            h.flash(msg, category='error')
+            msg = PullRequestModel.UPDATE_STATUS_MESSAGES[resp.reason]
+            warning_reasons = [
+                UpdateFailureReason.NO_CHANGE,
+                UpdateFailureReason.WRONG_REF_TPYE,
+            ]
+            category = 'warning' if resp.reason in warning_reasons else 'error'
+            h.flash(msg, category=category)
 
     @auth.CSRFRequired()
     @LoginRequired()

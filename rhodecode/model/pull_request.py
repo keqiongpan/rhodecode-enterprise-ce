@@ -537,7 +537,7 @@ class PullRequestModel(BaseModel):
         if source_ref_id == source_commit.raw_id:
             log.debug("Nothing changed in pull request %s", pull_request)
             return UpdateResponse(
-                success=True,
+                success=False,
                 reason=UpdateFailureReason.NO_CHANGE,
                 old=pull_request, new=None, changes=None)
 
