@@ -207,6 +207,28 @@ class TestPullrequestsController:
             UpdateFailureReason.MISSING_SOURCE_REF]
         assert_session_flash(response, expected_msg, category='error')
 
+    def test_missing_target_reference(self, pr_util, csrf_token):
+        from rhodecode.lib.vcs.backends.base import MergeFailureReason
+        pull_request = pr_util.create_pull_request(
+            approved=True, mergeable=True)
+        pull_request.target_ref = 'branch:invalid-branch:invalid-commit-id'
+        Session().add(pull_request)
+        Session().commit()
+
+        pull_request_id = pull_request.pull_request_id
+        pull_request_url = url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.repo_name,
+            pull_request_id=str(pull_request_id))
+
+        response = self.app.get(pull_request_url)
+
+        assertr = AssertResponse(response)
+        expected_msg = PullRequestModel.MERGE_STATUS_MESSAGES[
+            MergeFailureReason.MISSING_TARGET_REF]
+        assertr.element_contains(
+            'span[data-role="merge-message"]', str(expected_msg))
+
     def test_comment_and_close_pull_request(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request(approved=True)
         pull_request_id = pull_request.pull_request_id
