@@ -2929,6 +2929,10 @@ class ChangesetComment(Base, BaseModel):
             q = q.filter(cls.pull_request_id == pull_request_id)
         return q.all()
 
+    @property
+    def outdated(self):
+        return self.display_state == self.COMMENT_OUTDATED
+
     def render(self, mentions=False):
         from rhodecode.lib import helpers as h
         return h.render(self.text, renderer=self.renderer, mentions=mentions)
