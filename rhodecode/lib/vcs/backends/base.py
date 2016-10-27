@@ -104,6 +104,36 @@ class MergeFailureReason(object):
     MISSING_SOURCE_REF = 10
 
 
+class UpdateFailureReason(object):
+    """
+    Enumeration with all the reasons why the pull request update could fail.
+
+    DO NOT change the number of the reasons, as they may be stored in the
+    database.
+
+    Changing the name of a reason is acceptable and encouraged to deprecate old
+    reasons.
+    """
+
+    # Everything went well.
+    NONE = 0
+
+    # An unexpected exception was raised. Check the logs for more details.
+    UNKNOWN = 1
+
+    # The pull request is up to date.
+    NO_CHANGE = 2
+
+    # The pull request has a reference type that is not supported for update.
+    WRONG_REF_TPYE = 3
+
+    # Update failed because the target reference is missing.
+    MISSING_TARGET_REF = 4
+
+    # Update failed because the source reference is missing.
+    MISSING_SOURCE_REF = 5
+
+
 class BaseRepository(object):
     """
     Base Repository for final backends
