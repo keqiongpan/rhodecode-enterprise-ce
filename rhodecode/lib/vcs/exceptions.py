@@ -128,6 +128,14 @@ class NodeAlreadyRemovedError(CommittingError):
     pass
 
 
+class SubrepoMergeError(RepositoryError):
+    """
+    This happens if we try to merge a repository which contains subrepos and
+    the subrepos cannot be merged. The subrepos are not merged itself but
+    their references in the root repo are merged.
+    """
+
+
 class ImproperArchiveTypeError(VCSError):
     pass
 
@@ -156,6 +164,7 @@ _EXCEPTION_MAP = {
     # TODO: johbo: Define our own exception for this and stop abusing
     # urllib's exception class.
     'url_error': urllib2.URLError,
+    'subrepo_merge_error': SubrepoMergeError,
 }
 
 
