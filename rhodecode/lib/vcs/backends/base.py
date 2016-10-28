@@ -104,6 +104,10 @@ class MergeFailureReason(object):
     # The source repo reference is missing.
     MISSING_SOURCE_REF = 10
 
+    # The merge was not successful, there are conflicts related to sub
+    # repositories.
+    SUBREPO_MERGE_FAILED = 11
+
 
 class UpdateFailureReason(object):
     """

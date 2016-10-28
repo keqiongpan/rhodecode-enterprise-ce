@@ -105,6 +105,9 @@ class PullRequestModel(BaseModel):
         MergeFailureReason.MISSING_SOURCE_REF: lazy_ugettext(
             'This pull request cannot be merged because the source '
             'reference is missing.'),
+        MergeFailureReason.SUBREPO_MERGE_FAILED: lazy_ugettext(
+            'This pull request cannot be merged because of conflicts related '
+            'to sub repositories.'),
     }
 
     UPDATE_STATUS_MESSAGES = {
