@@ -44,7 +44,7 @@ from rhodecode.lib.vcs.backends.hg.diff import MercurialDiff
 from rhodecode.lib.vcs.backends.hg.inmemory import MercurialInMemoryCommit
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, RepositoryError, TagAlreadyExistError,
-    TagDoesNotExistError, CommitDoesNotExistError)
+    TagDoesNotExistError, CommitDoesNotExistError, SubrepoMergeError)
 
 hexlify = binascii.hexlify
 nullid = "\0" * 20
@@ -712,6 +712,11 @@ class MercurialRepository(BaseRepository):
             # shadow repository.
             shadow_repo.bookmark('pr-merge', revision=merge_commit_id)
             merge_ref = Reference('book', 'pr-merge', merge_commit_id)
+        except SubrepoMergeError:
+            log.exception(
+                'Subrepo merge error during local merge on hg shadow repo.')
+            merge_possible = False
+            merge_failure_reason = MergeFailureReason.SUBREPO_MERGE_FAILED
         except RepositoryError:
             log.exception('Failure when doing local merge on hg shadow repo')
             merge_possible = False
