@@ -254,6 +254,7 @@ class CompareController(BaseRepoController):
             return get_node
 
         c.diffset = codeblocks.DiffSet(
+            repo_name=source_repo.repo_name,
             source_node_getter=_node_getter(source_commit),
             target_node_getter=_node_getter(target_commit),
         ).render_patchset(_parsed, source_ref, target_ref)

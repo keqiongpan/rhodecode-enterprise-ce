@@ -260,6 +260,7 @@ class ChangesetController(BaseRepoController):
                     return get_node
 
                 diffset = codeblocks.DiffSet(
+                    repo_name=c.repo_name,
                     source_node_getter=_node_getter(commit1),
                     target_node_getter=_node_getter(commit2),
                 ).render_patchset(_parsed, commit1.raw_id, commit2.raw_id)
