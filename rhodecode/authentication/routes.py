@@ -45,7 +45,7 @@ class AuthnPluginResourceBase(AuthnResourceBase):
 
     def __init__(self, plugin):
         self.plugin = plugin
-        self.__name__ = plugin.name
+        self.__name__ = plugin.get_url_slug()
         self.display_name = plugin.get_display_name()
 
 

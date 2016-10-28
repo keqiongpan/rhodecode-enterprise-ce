@@ -226,6 +226,15 @@ class RhodeCodeAuthPluginBase(object):
         """
         raise NotImplementedError("Not implemented in base class")
 
+    def get_url_slug(self):
+        """
+        Returns a slug which should be used when constructing URLs which refer
+        to this plugin. By default it returns the plugin name. If the name is
+        not suitable for using it in an URL the plugin should override this
+        method.
+        """
+        return self.name
+
     @property
     def is_headers_auth(self):
         """
