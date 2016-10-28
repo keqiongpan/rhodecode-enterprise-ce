@@ -34,7 +34,74 @@ return h.url('', **new_args)
     # add a ruler at to the output
     ruler_at_chars=0,
 
+    # turn on inline comments
+    use_comments=False,
+
 )">
+
+%if use_comments:
+<div id="cb-comments-inline-container-template" class="js-template">
+  ${inline_comments_container([])}
+</div>
+<div class="js-template" id="cb-comment-inline-form-template">
+    <div class="comment-inline-form ac">
+    %if c.rhodecode_user.username != h.DEFAULT_USER:
+        ${h.form('#', method='get')}
+        <div id="edit-container_{1}" class="clearfix">
+          <div class="comment-title pull-left">
+            ${_('Create a comment on line {1}.')}
+          </div>
+          <div class="comment-help pull-right">
+            ${(_('Comments parsed using %s syntax with %s support.') % (
+                   ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
+                     ('<span  class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user'))
+                 )
+              )|n
+             }
+          </div>
+              <div style="clear: both"></div>
+              <textarea id="text_{1}" name="text" class="comment-block-ta ac-input"></textarea>
+        </div>
+        <div id="preview-container_{1}" class="clearfix" style="display: none;">
+           <div class="comment-help">
+                ${_('Comment preview')}
+            </div>
+            <div id="preview-box_{1}" class="preview-box"></div>
+        </div>
+        <div class="comment-footer">
+          <div class="action-buttons">
+            <input type="hidden" name="f_path" value="{0}">
+            <input type="hidden" name="line" value="{1}">
+            <button id="preview-btn_{1}" class="btn btn-secondary">${_('Preview')}</button>
+            <button id="edit-btn_{1}" class="btn btn-secondary" style="display: none;">${_('Edit')}</button>
+            ${h.submit('save', _('Comment'), class_='btn btn-success save-inline-form')}
+          </div>
+          <div class="comment-button">
+           <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
+            ${_('Cancel')}
+           </button>
+          </div>
+        ${h.end_form()}
+      </div>
+    %else:
+        ${h.form('', class_='inline-form comment-form-login', method='get')}
+        <div class="pull-left">
+            <div class="comment-help pull-right">
+              ${_('You need to be logged in to comment.')} <a href="${h.route_path('login', _query={'came_from': h.url.current()})}">${_('Login now')}</a>
+            </div>
+        </div>
+        <div class="comment-button pull-right">
+         <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
+          ${_('Cancel')}
+         </button>
+        </div>
+        <div class="clearfix"></div>
+        ${h.end_form()}
+    %endif
+    </div>
+</div>
+
+%endif
 <%
 collapse_all = len(diffset.files) > collapse_when_files_over
 %>
@@ -101,12 +168,12 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         <div
             class="filediff"
             data-f-path="${filediff['patch']['filename']}"
-            id="a_${h.FID(commit and commit.raw_id or '', filediff['patch']['filename'])}">
+            id="a_${h.FID('', filediff['patch']['filename'])}">
             <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
                 <div class="filediff-collapse-indicator"></div>
                 ${diff_ops(filediff)}
             </label>
-            ${diff_menu(filediff)}
+            ${diff_menu(filediff, use_comments=use_comments)}
             <table class="cb cb-diff-${c.diffmode} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
         %if not filediff.hunks:
             %for op_id, op_text in filediff['patch']['stats']['ops'].items():
@@ -159,9 +226,9 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                     </td>
                 </tr>
             %if c.diffmode == 'unified':
-                    ${render_hunk_lines_unified(hunk)}
+                    ${render_hunk_lines_unified(hunk, use_comments=use_comments)}
             %elif c.diffmode == 'sideside':
-                    ${render_hunk_lines_sideside(hunk)}
+                    ${render_hunk_lines_sideside(hunk, use_comments=use_comments)}
             %else:
                 <tr class="cb-line">
                     <td>unknown diff mode</td>
@@ -227,7 +294,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         %endif
     </span>
 
-    <a class="pill filediff-anchor" href="#a_${h.FID(commit and commit.raw_id or '', filediff.patch['filename'])}">¶</a>
+    <a class="pill filediff-anchor" href="#a_${h.FID('', filediff.patch['filename'])}">¶</a>
 
     <span class="pill-group" style="float: right">
         %if BIN_FILENODE in stats['ops']:
@@ -250,7 +317,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     ${filemode.startswith('100') and filemode[3:] or filemode}
 </%def>
 
-<%def name="diff_menu(filediff)">
+<%def name="diff_menu(filediff, use_comments=False)">
     <div class="filediff-menu">
 %if filediff.diffset.source_ref:
     %if filediff.patch['operation'] in ['D', 'M']:
@@ -299,12 +366,41 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         >
             ${_('Download diff')}
         </a>
+
+        ## TODO: dan: refactor ignorews_url and context_url into the diff renderer same as diffmode=unified/sideside. Also use ajax to load more context (by clicking hunks)
+        %if hasattr(c, 'ignorews_url'):
+        ${c.ignorews_url(request.GET, h.FID('', filediff['patch']['filename']))}
+        %endif
+        %if hasattr(c, 'context_url'):
+        ${c.context_url(request.GET, h.FID('', filediff['patch']['filename']))}
+        %endif
+
+
+        %if use_comments:
+        <a href="#" onclick="$(this).closest('.filediff').toggleClass('hide-comments'); return false;">
+            <span class="show-comment-button">${_('Show comments')}</span><span class="hide-comment-button">${_('Hide comments')}</span>
+        </a>
+        %endif
 %endif
     </div>
 </%def>
 
 
-<%def name="render_hunk_lines_sideside(hunk)">
+<%namespace name="commentblock" file="/changeset/changeset_file_comment.html"/>
+<%def name="inline_comments_container(comments)">
+<div class="inline-comments">
+    %for comment in comments:
+    ${commentblock.comment_block(comment, inline=True)}
+    %endfor
+    <span onclick="return Rhodecode.comments.createComment(this)"
+          class="btn btn-secondary cb-comment-add-button">
+        ${_('Add another comment')}
+    </span>
+</div>
+</%def>
+
+
+<%def name="render_hunk_lines_sideside(hunk, use_comments=False)">
     %for i, line in enumerate(hunk.sideside):
     <%
     old_line_anchor, new_line_anchor = None, None
@@ -326,7 +422,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         </td>
         <td class="cb-content ${action_class(line.original.action)}"
             data-line-number="o${line.original.lineno}"
-            ><span class="cb-code">${line.original.action} ${line.original.content or '' | n}</span>
+            >
+            %if use_comments and line.original.lineno:
+            ${render_add_comment_button()}
+            %endif
+            <span class="cb-code">${line.original.action} ${line.original.content or '' | n}</span>
+            %if use_comments and line.original.lineno and line.original.comments:
+            ${inline_comments_container(line.original.comments)}
+            %endif
         </td>
         <td class="cb-lineno ${action_class(line.modified.action)}"
             data-line-number="${line.modified.lineno}"
@@ -341,15 +444,21 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         <td class="cb-content ${action_class(line.modified.action)}"
             data-line-number="n${line.modified.lineno}"
             >
+            %if use_comments and line.modified.lineno:
+            ${render_add_comment_button()}
+            %endif
             <span class="cb-code">${line.modified.action} ${line.modified.content or '' | n}</span>
+            %if use_comments and line.modified.lineno and line.modified.comments:
+            ${inline_comments_container(line.modified.comments)}
+            %endif
         </td>
     </tr>
     %endfor
 </%def>
 
 
-<%def name="render_hunk_lines_unified(hunk)">
-    %for old_line_no, new_line_no, action, content in hunk.unified:
+<%def name="render_hunk_lines_unified(hunk, use_comments=False)">
+    %for old_line_no, new_line_no, action, content, comments in hunk.unified:
     <%
     old_line_anchor, new_line_anchor = None, None
     if old_line_no:
@@ -380,12 +489,25 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         </td>
         <td class="cb-content ${action_class(action)}"
             data-line-number="${new_line_no and 'n' or 'o'}${new_line_no or old_line_no}"
-            ><span class="cb-code">${action} ${content or '' | n}</span>
-          </td>
+            >
+            %if use_comments:
+            ${render_add_comment_button()}
+            %endif
+            <span class="cb-code">${action} ${content or '' | n}</span>
+            %if use_comments and comments:
+            ${inline_comments_container(comments)}
+            %endif
+        </td>
     </tr>
     %endfor
 </%def>
 
+<%def name="render_add_comment_button()">
+<button
+    class="btn btn-small btn-primary cb-comment-box-opener"
+    onclick="return Rhodecode.comments.createComment(this)"
+>+</button>
+</%def>
 
 <%def name="render_diffset_menu()">
     <div class="diffset-menu clearinner">

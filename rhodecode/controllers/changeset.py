@@ -156,15 +156,24 @@ class ChangesetController(BaseRepoController):
         c.ignorews_url = _ignorews_url
         c.context_url = _context_url
         c.fulldiff = fulldiff = request.GET.get('fulldiff')
+
+        # fetch global flags of ignore ws or context lines
+        context_lcl = get_line_ctx('', request.GET)
+        ign_whitespace_lcl = get_ignore_ws('', request.GET)
+
+        # diff_limit will cut off the whole diff if the limit is applied
+        # otherwise it will just hide the big files from the front-end
+        diff_limit = self.cut_off_limit_diff
+        file_limit = self.cut_off_limit_file
+
         # get ranges of commit ids if preset
         commit_range = commit_id_range.split('...')[:2]
-        enable_comments = True
+
         try:
             pre_load = ['affected_files', 'author', 'branch', 'date',
                         'message', 'parents']
 
             if len(commit_range) == 2:
-                enable_comments = False
                 commits = c.rhodecode_repo.get_commits(
                     start_id=commit_range[0], end_id=commit_range[1],
                     pre_load=pre_load)
@@ -190,60 +199,45 @@ class ChangesetController(BaseRepoController):
         c.lines_deleted = 0
 
         c.commit_statuses = ChangesetStatus.STATUSES
-        c.comments = []
-        c.statuses = []
         c.inline_comments = []
         c.inline_cnt = 0
         c.files = []
 
+        c.statuses = []
+        c.comments = []
+        if len(c.commit_ranges) == 1:
+            commit = c.commit_ranges[0]
+            c.comments = ChangesetCommentsModel().get_comments(
+                c.rhodecode_db_repo.repo_id,
+                revision=commit.raw_id)
+            c.statuses.append(ChangesetStatusModel().get_status(
+                c.rhodecode_db_repo.repo_id, commit.raw_id))
+            # comments from PR
+            statuses = ChangesetStatusModel().get_statuses(
+                c.rhodecode_db_repo.repo_id, commit.raw_id,
+                with_revisions=True)
+            prs = set(st.pull_request for st in statuses
+                      if st is st.pull_request is not None)
+
+            # from associated statuses, check the pull requests, and
+            # show comments from them
+            for pr in prs:
+                c.comments.extend(pr.comments)
+
         # Iterate over ranges (default commit view is always one commit)
         for commit in c.commit_ranges:
-            if method == 'show':
-                c.statuses.extend([ChangesetStatusModel().get_status(
-                    c.rhodecode_db_repo.repo_id, commit.raw_id)])
-
-                c.comments.extend(ChangesetCommentsModel().get_comments(
-                    c.rhodecode_db_repo.repo_id,
-                    revision=commit.raw_id))
-
-                # comments from PR
-                st = ChangesetStatusModel().get_statuses(
-                    c.rhodecode_db_repo.repo_id, commit.raw_id,
-                    with_revisions=True)
-
-                # from associated statuses, check the pull requests, and
-                # show comments from them
-
-                prs = set(x.pull_request for x in
-                          filter(lambda x: x.pull_request is not None, st))
-                for pr in prs:
-                    c.comments.extend(pr.comments)
-
-                inlines = ChangesetCommentsModel().get_inline_comments(
-                    c.rhodecode_db_repo.repo_id, revision=commit.raw_id)
-                c.inline_comments.extend(inlines.iteritems())
-
             c.changes[commit.raw_id] = []
 
             commit2 = commit
             commit1 = commit.parents[0] if commit.parents else EmptyCommit()
 
-            # fetch global flags of ignore ws or context lines
-            context_lcl = get_line_ctx('', request.GET)
-            ign_whitespace_lcl = get_ignore_ws('', request.GET)
-
             _diff = c.rhodecode_repo.get_diff(
                 commit1, commit2,
                 ignore_whitespace=ign_whitespace_lcl, context=context_lcl)
-
-            # diff_limit will cut off the whole diff if the limit is applied
-            # otherwise it will just hide the big files from the front-end
-            diff_limit = self.cut_off_limit_diff
-            file_limit = self.cut_off_limit_file
-
             diff_processor = diffs.DiffProcessor(
                 _diff, format='newdiff', diff_limit=diff_limit,
                 file_limit=file_limit, show_full_diff=fulldiff)
+
             commit_changes = OrderedDict()
             if method == 'show':
                 _parsed = diff_processor.prepare()
@@ -259,10 +253,15 @@ class ChangesetController(BaseRepoController):
                             return None
                     return get_node
 
+                inline_comments = ChangesetCommentsModel().get_inline_comments(
+                    c.rhodecode_db_repo.repo_id, revision=commit.raw_id)
+                c.inline_cnt += len(inline_comments)
+
                 diffset = codeblocks.DiffSet(
                     repo_name=c.repo_name,
                     source_node_getter=_node_getter(commit1),
                     target_node_getter=_node_getter(commit2),
+                    comments=inline_comments
                 ).render_patchset(_parsed, commit1.raw_id, commit2.raw_id)
                 c.changes[commit.raw_id] = diffset
             else:
@@ -273,10 +272,6 @@ class ChangesetController(BaseRepoController):
         # sort comments by how they were generated
         c.comments = sorted(c.comments, key=lambda x: x.comment_id)
 
-        # count inline comments
-        for __, lines in c.inline_comments:
-            for comments in lines.values():
-                c.inline_cnt += len(comments)
 
         if len(c.commit_ranges) == 1:
             c.commit = c.commit_ranges[0]

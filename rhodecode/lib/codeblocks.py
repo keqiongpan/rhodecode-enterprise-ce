@@ -358,6 +358,7 @@ class DiffSet(object):
                  source_nodes=None, target_nodes=None,
                  max_file_size_limit=150 * 1024, # files over this size will
                                                  # use fast highlighting
+                 comments=None,
                  ):
 
         self.highlight_mode = highlight_mode
@@ -367,7 +368,7 @@ class DiffSet(object):
         self.source_nodes = source_nodes or {}
         self.target_nodes = target_nodes or {}
         self.repo_name = repo_name
-
+        self.comments = comments or {}
         self.max_file_size_limit = max_file_size_limit
 
     def render_patchset(self, patchset, source_ref=None, target_ref=None):
@@ -537,6 +538,8 @@ class DiffSet(object):
                 original.lineno = before['old_lineno']
                 original.content = before['line']
                 original.action = self.action_to_op(before['action'])
+                original.comments = self.get_comments_for('old',
+                    source_file, before['old_lineno'])
 
             if after:
                 if after['action'] == 'new-no-nl':
@@ -548,6 +551,8 @@ class DiffSet(object):
                 modified.lineno = after['new_lineno']
                 modified.content = after['line']
                 modified.action = self.action_to_op(after['action'])
+                modified.comments = self.get_comments_for('new',
+                    target_file, after['new_lineno'])
 
             # diff the lines
             if before_tokens and after_tokens:
@@ -568,6 +573,20 @@ class DiffSet(object):
             }))
 
         return lines
+
+    def get_comments_for(self, version, file, line_number):
+        if hasattr(file, 'unicode_path'):
+            file = file.unicode_path
+
+        if not isinstance(file, basestring):
+            return None
+
+        line_key = {
+            'old': 'o',
+            'new': 'n',
+        }[version] + str(line_number)
+
+        return self.comments.get(file, {}).get(line_key)
 
     def get_line_tokens(self, line_text, line_number, file=None):
         filenode = None
@@ -619,22 +638,26 @@ class DiffSet(object):
                 if line.original:
                     if line.original.action == ' ':
                         yield (line.original.lineno, line.modified.lineno,
-                               line.original.action, line.original.content)
+                               line.original.action, line.original.content,
+                               line.original.comments)
                         continue
 
                     if line.original.action == '-':
                         yield (line.original.lineno, None,
-                               line.original.action, line.original.content)
+                               line.original.action, line.original.content,
+                               line.original.comments)
 
                     if line.modified.action == '+':
                         buf.append((
                             None, line.modified.lineno,
-                            line.modified.action, line.modified.content))
+                            line.modified.action, line.modified.content,
+                            line.modified.comments))
                         continue
 
                 if line.modified:
                     yield (None, line.modified.lineno,
-                           line.modified.action, line.modified.content)
+                           line.modified.action, line.modified.content,
+                           line.modified.comments)
 
             for b in buf:
                 yield b

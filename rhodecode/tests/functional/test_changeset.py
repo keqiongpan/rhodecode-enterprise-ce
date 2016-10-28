@@ -82,7 +82,7 @@ class TestChangesetController(object):
             response.mustcontain('new file 100644')
         response.mustcontain('Changed theme to ADC theme')  # commit msg
 
-        self._check_diff_menus(response, right_menu=True)
+        self._check_new_diff_menus(response, right_menu=True)
 
     def test_commit_range_page_different_ops(self, backend):
         commit_id_range = {
@@ -108,10 +108,13 @@ class TestChangesetController(object):
         # svn is special
         if backend.alias == 'svn':
             response.mustcontain('new file 10644')
-            response.mustcontain('34 files changed: 1184 inserted, 311 deleted')
+            response.mustcontain('1 file changed: 5 inserted, 1 deleted')
+            response.mustcontain('12 files changed: 236 inserted, 22 deleted')
+            response.mustcontain('21 files changed: 943 inserted, 288 deleted')
         else:
             response.mustcontain('new file 100644')
-            response.mustcontain('33 files changed: 1165 inserted, 308 deleted')
+            response.mustcontain('12 files changed: 222 inserted, 20 deleted')
+            response.mustcontain('21 files changed: 943 inserted, 288 deleted')
 
         # files op files
         response.mustcontain('File no longer present at commit: %s' %
@@ -119,7 +122,7 @@ class TestChangesetController(object):
         response.mustcontain('Added docstrings to vcs.cli')  # commit msg
         response.mustcontain('Changed theme to ADC theme')  # commit msg
 
-        self._check_diff_menus(response)
+        self._check_new_diff_menus(response)
 
     def test_combined_compare_commit_page_different_ops(self, backend):
         commit_id_range = {

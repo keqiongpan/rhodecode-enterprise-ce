@@ -323,7 +323,7 @@ var bindToggleButtons = function() {
 };
 
 var linkifyComments = function(comments) {
-
+  /* TODO: dan: remove this - it should no longer needed */
   for (var i = 0; i < comments.length; i++) {
     var comment_id = $(comments[i]).data('comment-id');
     var prev_comment_id = $(comments[i - 1]).data('comment-id');
@@ -347,7 +347,7 @@ var linkifyComments = function(comments) {
   }
 
 };
-  
+
 /**
  * Iterates over all the inlines, and places them inside proper blocks of data
  */

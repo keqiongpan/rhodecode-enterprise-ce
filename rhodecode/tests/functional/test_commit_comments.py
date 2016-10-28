@@ -109,11 +109,17 @@ class TestCommitCommentsController(TestController):
         # test DB
         assert ChangesetComment.query().count() == 1
         assert_comment_links(response, 0, ChangesetComment.query().count())
-        response.mustcontain(
-            '''class="inline-comment-placeholder" '''
-            '''path="vcs/web/simplevcs/views/repository.py" '''
-            '''target_id="vcswebsimplevcsviewsrepositorypy"'''
-        )
+
+        if backend.alias == 'svn':
+            response.mustcontain(
+                '''data-f-path="vcs/commands/summary.py" '''
+                '''id="a_c--ad05457a43f8"'''
+            )
+        else:
+            response.mustcontain(
+                '''data-f-path="vcs/backends/hg.py" '''
+                '''id="a_c--9c390eb52cd6"'''
+            )
 
         assert Notification.query().count() == 1
         assert ChangesetComment.query().count() == 1
@@ -271,7 +277,6 @@ def assert_comment_links(response, comments, inline_comments):
                                      inline_comments) % inline_comments
     if inline_comments:
         response.mustcontain(
-            '<a href="#inline-comments" '
-            'id="inline-comments-counter">%s</a>' % inline_comments_text)
+            'id="inline-comments-counter">%s</' % inline_comments_text)
     else:
         response.mustcontain(inline_comments_text)
