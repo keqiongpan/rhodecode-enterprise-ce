@@ -149,6 +149,11 @@ class PullRequestModel(BaseModel):
         owner = user.user_id == pull_request.user_id
         return self.check_user_merge(pull_request, user, api) or owner
 
+    def check_user_delete(self, pull_request, user):
+        owner = user.user_id == pull_request.user_id
+        _perms = ('repository.admin')
+        return self._check_perms(_perms, pull_request, user) or owner
+
     def check_user_change_status(self, pull_request, user, api=False):
         reviewer = user.user_id in [x.user_id for x in
                                     pull_request.reviewers]

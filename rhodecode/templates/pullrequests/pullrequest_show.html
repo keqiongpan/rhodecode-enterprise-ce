@@ -47,8 +47,18 @@
         <div class="pr-details-title">
             ${_('Pull request #%s') % c.pull_request.pull_request_id} ${_('From')} ${h.format_date(c.pull_request.created_on)}
             %if c.allowed_to_update:
-              <span id="open_edit_pullrequest" class="block-right action_button">${_('Edit')}</span>
-              <span id="close_edit_pullrequest" class="block-right action_button" style="display: none;">${_('Close')}</span>
+              <div id="delete_pullrequest" class="pull-right action_button ${'' if c.allowed_to_delete else 'disabled' }" style="clear:inherit;padding: 0">
+                  % if c.allowed_to_delete:
+                      ${h.secure_form(url('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id),method='delete')}
+                          ${h.submit('remove_%s' % c.pull_request.pull_request_id, _('Delete'),
+                        class_="btn btn-link btn-danger",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
+                      ${h.end_form()}
+                  % else:
+                    ${_('Delete')}
+                  % endif
+              </div>
+              <div id="open_edit_pullrequest" class="pull-right action_button">${_('Edit')}</div>
+              <div id="close_edit_pullrequest" class="pull-right action_button" style="display: none;padding: 0">${_('Cancel edit')}</div>
             %endif
         </div>
 
@@ -457,6 +467,7 @@
             var PRDetails = {
               editButton: $('#open_edit_pullrequest'),
               closeButton: $('#close_edit_pullrequest'),
+              deleteButton: $('#delete_pullrequest'),
               viewFields: $('#pr-desc, #pr-title'),
               editFields: $('#pr-desc-edit, #pr-title-edit, #pr-save'),
 
@@ -469,11 +480,15 @@
               edit: function(event) {
                 this.viewFields.hide();
                 this.editButton.hide();
+                this.deleteButton.hide();
+                this.closeButton.show();
                 this.editFields.show();
                 codeMirrorInstance.refresh();
               },
 
               view: function(event) {
+                this.editButton.show();
+                this.deleteButton.show();
                 this.editFields.hide();
                 this.closeButton.hide();
                 this.viewFields.show();
@@ -504,7 +519,7 @@
                 this.closeButton.hide();
                 this.addButton.hide();
                 this.removeButtons.css('visibility', 'hidden');
-              }
+              },
             };
 
             PRDetails.init();
@@ -603,12 +618,12 @@
                 if(button.hasClass("comments-visible")) {
                   $('#{0} .inline-comments'.format(boxid)).each(function(index){
                     $(this).hide();
-                  })
+                  });
                   button.removeClass("comments-visible");
                 } else {
                   $('#{0} .inline-comments'.format(boxid)).each(function(index){
                     $(this).show();
-                  })
+                  });
                   button.addClass("comments-visible");
                 }
             });

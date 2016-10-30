@@ -30,6 +30,7 @@ from rhodecode.model.db import (
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
+from rhodecode.model.repo import RepoModel
 from rhodecode.tests import assert_session_flash, url, TEST_USER_ADMIN_LOGIN
 from rhodecode.tests.utils import AssertResponse
 
@@ -964,6 +965,68 @@ class TestPullrequestsController:
                 'div.pr-mergeinfo input', 'pr-merge')
         else:
             assertr.no_element_exists('div.pr-mergeinfo')
+
+
+@pytest.mark.usefixtures('app')
+@pytest.mark.backends("git", "hg")
+class TestPullrequestsControllerDelete(object):
+    def test_pull_request_delete_button_permissions_admin(
+            self, autologin_user, user_admin, pr_util):
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=str(pull_request.pull_request_id)))
+
+        response.mustcontain('id="delete_pullrequest"')
+        response.mustcontain('Confirm to delete this pull request')
+
+    def test_pull_request_delete_button_permissions_owner(
+            self, autologin_regular_user, user_regular, pr_util):
+        pull_request = pr_util.create_pull_request(
+            author=user_regular.username, enable_notifications=False)
+
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=str(pull_request.pull_request_id)))
+
+        response.mustcontain('id="delete_pullrequest"')
+        response.mustcontain('Confirm to delete this pull request')
+
+    def test_pull_request_delete_button_permissions_forbidden(
+            self, autologin_regular_user, user_regular, user_admin, pr_util):
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=str(pull_request.pull_request_id)))
+        response.mustcontain(no=['id="delete_pullrequest"'])
+        response.mustcontain(no=['Confirm to delete this pull request'])
+
+    def test_pull_request_delete_button_permissions_can_update_cannot_delete(
+            self, autologin_regular_user, user_regular, user_admin, pr_util,
+            user_util):
+
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+
+        user_util.grant_user_permission_to_repo(
+            pull_request.target_repo, user_regular,
+            'repository.write')
+
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=str(pull_request.pull_request_id)))
+
+        response.mustcontain('id="open_edit_pullrequest"')
+        response.mustcontain('id="delete_pullrequest"')
+        response.mustcontain(no=['Confirm to delete this pull request'])
 
 
 def assert_pull_request_status(pull_request, expected_status):

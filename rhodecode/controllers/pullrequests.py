@@ -687,6 +687,8 @@ class PullrequestsController(BaseRepoController):
             c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
         c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
             c.pull_request)
+        c.allowed_to_delete = PullRequestModel().check_user_delete(
+            c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
 
         cc_model = ChangesetCommentsModel()
 

@@ -27,7 +27,7 @@ from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.tests import assert_session_flash
 
 
-def test_merge_pull_request_renders_failure_reason(user_regular):
+def test_merge_pull_request_renders_failure_reason(app, user_regular):
     pull_request = mock.Mock()
     controller = pullrequests.PullrequestsController()
     model_patcher = mock.patch.multiple(
