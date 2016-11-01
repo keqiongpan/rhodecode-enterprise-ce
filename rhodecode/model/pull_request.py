@@ -31,6 +31,7 @@ import urllib
 
 from pylons.i18n.translation import _
 from pylons.i18n.translation import lazy_ugettext
+from sqlalchemy import or_
 
 from rhodecode.lib import helpers as h, hooks_utils, diffs
 from rhodecode.lib.compat import OrderedDict
@@ -159,12 +160,16 @@ class PullRequestModel(BaseModel):
     def _prepare_get_all_query(self, repo_name, source=False, statuses=None,
                                opened_by=None, order_by=None,
                                order_dir='desc'):
-        repo = self._get_repo(repo_name)
+        repo = None
+        if repo_name:
+            repo = self._get_repo(repo_name)
+
         q = PullRequest.query()
+
         # source or target
-        if source:
+        if repo and source:
             q = q.filter(PullRequest.source_repo == repo)
-        else:
+        elif repo:
             q = q.filter(PullRequest.target_repo == repo)
 
         # closed,opened
@@ -179,7 +184,8 @@ class PullRequestModel(BaseModel):
             order_map = {
                 'name_raw': PullRequest.pull_request_id,
                 'title': PullRequest.title,
-                'updated_on_raw': PullRequest.updated_on
+                'updated_on_raw': PullRequest.updated_on,
+                'target_repo': PullRequest.target_repo_id
             }
             if order_dir == 'asc':
                 q = q.order_by(order_map[order_by].asc())
@@ -336,6 +342,59 @@ class PullRequestModel(BaseModel):
             x.pull_request for x in PullRequestReviewers.query().filter(
                 PullRequestReviewers.user_id == user_id).all()
         ]
+
+    def _prepare_participating_query(self, user_id=None, statuses=None,
+                                     order_by=None, order_dir='desc'):
+        q = PullRequest.query()
+        if user_id:
+            reviewers_subquery = Session().query(
+                PullRequestReviewers.pull_request_id).filter(
+                PullRequestReviewers.user_id == user_id).subquery()
+            user_filter= or_(
+                PullRequest.user_id == user_id,
+                PullRequest.pull_request_id.in_(reviewers_subquery)
+            )
+            q = PullRequest.query().filter(user_filter)
+
+        # closed,opened
+        if statuses:
+            q = q.filter(PullRequest.status.in_(statuses))
+
+        if order_by:
+            order_map = {
+                'name_raw': PullRequest.pull_request_id,
+                'title': PullRequest.title,
+                'updated_on_raw': PullRequest.updated_on,
+                'target_repo': PullRequest.target_repo_id
+            }
+            if order_dir == 'asc':
+                q = q.order_by(order_map[order_by].asc())
+            else:
+                q = q.order_by(order_map[order_by].desc())
+
+        return q
+
+    def count_im_participating_in(self, user_id=None, statuses=None):
+        q = self._prepare_participating_query(user_id, statuses=statuses)
+        return q.count()
+
+    def get_im_participating_in(
+            self, user_id=None, statuses=None, offset=0,
+            length=None, order_by=None, order_dir='desc'):
+        """
+        Get all Pull requests that i'm participating in, or i have opened
+        """
+
+        q = self._prepare_participating_query(
+            user_id, statuses=statuses, order_by=order_by,
+            order_dir=order_dir)
+
+        if length:
+            pull_requests = q.limit(length).offset(offset).all()
+        else:
+            pull_requests = q.all()
+
+        return pull_requests
 
     def get_versions(self, pull_request):
         """

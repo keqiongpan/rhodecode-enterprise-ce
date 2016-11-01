@@ -11,123 +11,12 @@
 </div>
 
 <div class="panel panel-default">
-  <div class="panel-heading">
-    <h3 class="panel-title">${_('Pull Requests You Opened')}: ${len(c.my_pull_requests)}</h3>
-  </div>
-  <div class="panel-body">
-    <div class="pullrequestlist">
-        %if c.my_pull_requests:
-        <table class="rctable">
-          <thead>
-            <th class="td-status"></th>
-            <th>${_('Target Repo')}</th>
-            <th>${_('Author')}</th>
-            <th></th>
-            <th>${_('Title')}</th>
-            <th class="td-time">${_('Last Update')}</th>
-            <th></th>
-          </thead>
-          %for pull_request in c.my_pull_requests:
-            <tr class="${'closed' if pull_request.is_closed() else ''} prwrapper">
-              <td class="td-status">
-                <div class="${'flag_status %s' % pull_request.calculated_review_status()} pull-left"></div>
-              </td>
-              <td class="truncate-wrap td-componentname">
-                <div class="truncate">
-                  ${h.link_to(pull_request.target_repo.repo_name,h.url('summary_home',repo_name=pull_request.target_repo.repo_name))}
-                </div>
-              </td>
-              <td class="user">
-                ${base.gravatar_with_user(pull_request.author.email, 16)}
-              </td>
-              <td class="td-message expand_commit" data-pr-id="m${pull_request.pull_request_id}" title="${_('Expand commit message')}">
-                <div class="show_more_col">
-                  <i class="show_more"></i>&nbsp;
-                </div>
-              </td>
-              <td class="mid td-description">
-                <div class="log-container truncate-wrap">
-                    <div class="message truncate" id="c-m${pull_request.pull_request_id}"><a href="${h.url('pullrequest_show',repo_name=pull_request.target_repo.repo_name,pull_request_id=pull_request.pull_request_id)}">#${pull_request.pull_request_id}: ${pull_request.title}</a>\
-                    %if pull_request.is_closed():
-                      &nbsp;(${_('Closed')})\
-                    %endif
-                    <br/>${pull_request.description}</div>
-                </div>
-              </td>
-              <td class="td-time">
-                ${h.age_component(pull_request.updated_on)}
-              </td>
-              <td class="td-action repolist_actions">
-                ${h.secure_form(url('pullrequest_delete', repo_name=pull_request.target_repo.repo_name, pull_request_id=pull_request.pull_request_id),method='delete')}
-                  ${h.submit('remove_%s' % pull_request.pull_request_id, _('Delete'),
-                  class_="btn btn-link btn-danger",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
-                ${h.end_form()}
-              </td>
-            </tr>
-          %endfor
-        </table>
-       %else:
-        <h2><span class="empty_data">${_('You currently have no open pull requests.')}</span></h2>
-       %endif
+    <div class="panel-heading">
+        <h3 class="panel-title">${_('Pull Requests You Participate In')}: ${c.records_total_participate}</h3>
     </div>
-  </div>
-</div>
-
-<div class="panel panel-default">
-  <div class="panel-heading">
-    <h3 class="panel-title">${_('Pull Requests You Participate In')}: ${len(c.participate_in_pull_requests)}</h3>
-  </div>
-
-  <div class="panel-body">
-    <div class="pullrequestlist">
-        %if c.participate_in_pull_requests:
-        <table class="rctable">
-          <thead>
-            <th class="td-status"></th>
-            <th>${_('Target Repo')}</th>
-            <th>${_('Author')}</th>
-            <th></th>
-            <th>${_('Title')}</th>
-            <th class="td-time">${_('Last Update')}</th>
-          </thead>
-          %for pull_request in c.participate_in_pull_requests:
-            <tr class="${'closed' if pull_request.is_closed() else ''} prwrapper">
-              <td class="td-status">
-                <div class="${'flag_status %s' % pull_request.calculated_review_status()} pull-left"></div>
-              </td>
-              <td class="truncate-wrap td-componentname">
-                <div class="truncate">
-                  ${h.link_to(pull_request.target_repo.repo_name,h.url('summary_home',repo_name=pull_request.target_repo.repo_name))}
-                </div>
-              </td>
-              <td class="user">
-                ${base.gravatar_with_user(pull_request.author.email, 16)}
-              </td>
-              <td class="td-message expand_commit" data-pr-id="p${pull_request.pull_request_id}" title="${_('Expand commit message')}">
-                <div class="show_more_col">
-                  <i class="show_more"></i>&nbsp;
-                </div>
-              </td>
-              <td class="mid td-description">
-                <div class="log-container truncate-wrap">
-                    <div class="message truncate" id="c-p${pull_request.pull_request_id}"><a href="${h.url('pullrequest_show',repo_name=pull_request.target_repo.repo_name,pull_request_id=pull_request.pull_request_id)}">#${pull_request.pull_request_id}: ${pull_request.title}</a>\
-                    %if pull_request.is_closed():
-                      &nbsp;(${_('Closed')})\
-                    %endif
-                    <br/>${pull_request.description}</div>
-                </div>
-              </td>
-              <td class="td-time">
-                ${h.age_component(pull_request.updated_on)}
-              </td>
-            </tr>
-          %endfor
-        </table>
-        %else:
-         <h2 class="empty_data">${_('There are currently no open pull requests requiring your participation.')}</h2>
-        %endif
+    <div class="panel-body">
+        <table id="pull_request_list_table_participate" class="display"></table>
     </div>
-  </div>
 </div>
 
 <script>
@@ -139,17 +28,51 @@
             window.location = "${h.url('my_account_pullrequests')}";
         }
     });
-    $('.expand_commit').on('click',function(e){
-      var target_expand = $(this);
-      var cid = target_expand.data('prId');
+    $(document).ready(function() {
 
-      if (target_expand.hasClass('open')){
-        $('#c-'+cid).css({'height': '2.75em', 'text-overflow': 'ellipsis', 'overflow':'hidden'});
-        target_expand.removeClass('open');
-      }
-      else {
-        $('#c-'+cid).css({'height': 'auto', 'text-overflow': 'initial', 'overflow':'visible'});
-        target_expand.addClass('open');
-      }
+        var columnsDefs = [
+             { data: {"_": "status",
+                      "sort": "status"}, title: "", className: "td-status", orderable: false},
+             { data: {"_": "target_repo",
+                      "sort": "target_repo"}, title: "${_('Target Repo')}", className: "td-targetrepo", orderable: false},
+             { data: {"_": "name",
+                      "sort": "name_raw"}, title: "${_('Name')}", className: "td-componentname", "type": "num" },
+             { data: {"_": "author",
+                      "sort": "author_raw"}, title: "${_('Author')}", className: "td-user", orderable: false },
+             { data: {"_": "title",
+                      "sort": "title"}, title: "${_('Title')}", className: "td-description" },
+             { data: {"_": "comments",
+                      "sort": "comments_raw"}, title: "", className: "td-comments", orderable: false},
+             { data: {"_": "updated_on",
+                      "sort": "updated_on_raw"}, title: "${_('Last Update')}", className: "td-time" }
+        ];
+
+        // participating object list
+        $('#pull_request_list_table_participate').DataTable({
+          data: ${c.data_participate|n},
+          processing: true,
+          serverSide: true,
+          deferLoading: ${c.records_total_participate},
+          ajax: "",
+          dom: 'tp',
+          pageLength: ${c.visual.dashboard_items},
+          order: [[ 2, "desc" ]],
+          columns: columnsDefs,
+          language: {
+                paginate: DEFAULT_GRID_PAGINATION,
+                emptyTable: _gettext("There are currently no open pull requests requiring your participation.")
+          },
+          "drawCallback": function( settings, json ) {
+              timeagoActivate();
+          },
+          "createdRow": function ( row, data, index ) {
+              if (data['closed']) {
+                $(row).addClass('closed');
+              }
+              if (data['owned']) {
+                $(row).addClass('owned');
+              }
+          }
+        });
     });
 </script>

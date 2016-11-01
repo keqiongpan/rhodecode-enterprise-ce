@@ -3203,14 +3203,10 @@ class PullRequest(Base, _PullRequestBase):
         }
 
     def calculated_review_status(self):
-        # TODO: anderson: 13.05.15 Used only on templates/my_account_pullrequests.html
-        # because it's tricky on how to use ChangesetStatusModel from there
-        warnings.warn("Use calculated_review_status from ChangesetStatusModel", DeprecationWarning)
         from rhodecode.model.changeset_status import ChangesetStatusModel
         return ChangesetStatusModel().calculated_review_status(self)
 
     def reviewers_statuses(self):
-        warnings.warn("Use reviewers_statuses from ChangesetStatusModel", DeprecationWarning)
         from rhodecode.model.changeset_status import ChangesetStatusModel
         return ChangesetStatusModel().reviewers_statuses(self)
 
