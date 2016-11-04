@@ -892,7 +892,10 @@ class ScmModel(BaseModel):
         from rhodecode.model.gist import GIST_STORE_LOC
 
         def percentage(part, whole):
-            return 100 * float(part) / float(whole)
+            whole = float(whole)
+            if whole > 0:
+                return 100 * float(part) / whole
+            return 0
 
         try:
             # cygwin cannot have yet psutil support.
