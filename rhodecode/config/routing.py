@@ -305,7 +305,7 @@ def make_map(config):
         m.connect('delete_user', '/users/{user_id}',
                   action='delete', conditions={'method': ['DELETE']})
         m.connect('edit_user', '/users/{user_id}/edit',
-                  action='edit', conditions={'method': ['GET']})
+                  action='edit', conditions={'method': ['GET']}, jsroute=True)
         m.connect('user', '/users/{user_id}',
                   action='show', conditions={'method': ['GET']})
         m.connect('force_password_reset_user', '/users/{user_id}/password_reset',
@@ -389,7 +389,7 @@ def make_map(config):
 
         m.connect('edit_user_group_members',
                   '/user_groups/{user_group_id}/edit/members', jsroute=True,
-                  action='edit_members', conditions={'method': ['GET']})
+                  action='user_group_members', conditions={'method': ['GET']})
 
     # ADMIN PERMISSIONS ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,

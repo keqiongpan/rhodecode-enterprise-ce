@@ -54,40 +54,53 @@
                             ${h.checkbox('users_group_active',value=True)}
                         </div>
                      </div>
-                    <div class="field">
-                        <div class="label">
-                            <label for="users_group_active">${_('Search')}:</label>
-                               ${h.text('from_user_group',
-                                        placeholder="user/usergroup",
-                                        class_="medium")}
+
+                     <div class="field">
+                        <div class="label label-checkbox">
+                            <label for="users_group_active">${_('Add members')}:</label>
                         </div>
-                        <div class="select side-by-side-selector">
-                            <div class="left-group">
-                                <label class="text"><strong>${_('Chosen group members')}</strong></label>
-                                ${h.select('users_group_members',[x[0] for x in c.group_members],c.group_members,multiple=True,size=8,)}
-                               <div class="btn" id="remove_all_elements" >
-                                   ${_('Remove all elements')}
-                                   <i  class="icon-chevron-right"></i>
-                               </div>
-                            </div>
-                            <div class="middle-group">
-                                <i  id="add_element" class="icon-chevron-left"></i>
-                                <br />
-                                <i  id="remove_element" class="icon-chevron-right"></i>
-                            </div>
-                            <div class="right-group">
-                                 <label class="text" >${_('Available users')}
-                                 </label>
-                                 ${h.select('available_members',[],c.available_members,multiple=True,size=8,)}
-                                 <div  class="btn" id="add_all_elements" >
-                                     <i  class="icon-chevron-left"></i>${_('Add all elements')}
-                                 </div>
-                            </div>
+                        <div class="input">
+                            ${h.text('user_group_add_members', placeholder="user/usergroup", class_="medium")}
                         </div>
-                    </div>
-                    <div class="buttons">
-                      ${h.submit('Save',_('Save'),class_="btn")}
-                    </div>
+                     </div>
+
+                    <input type="hidden" name="__start__" value="user_group_members:sequence"/>
+                    <table id="group_members_placeholder" class="rctable group_members">
+                        <tr>
+                          <th>${_('Username')}</th>
+                          <th>${_('Action')}</th>
+                        </tr>
+
+                        % if c.group_members_obj:
+                          % for user in c.group_members_obj:
+                            <tr>
+                              <td id="member_user_${user.user_id}" class="td-author">
+                                <div class="group_member">
+                                  ${base.gravatar(user.email, 16)}
+                                  <span class="username user">${h.link_to(h.person(user), h.url( 'edit_user',user_id=user.user_id))}</span>
+                                  <input type="hidden" name="__start__" value="member:mapping">
+                                  <input type="hidden" name="member_user_id" value="${user.user_id}">
+                                  <input type="hidden" name="type" value="existing" id="member_${user.user_id}">
+                                  <input type="hidden" name="__end__" value="member:mapping">
+                                </div>
+                              </td>
+                              <td class="">
+                                <div class="usergroup_member_remove action_button" onclick="removeUserGroupMember(${user.user_id}, true)" style="visibility: visible;">
+                                    <i class="icon-remove-sign"></i>
+                                </div>
+                              </td>
+                            </tr>
+                          % endfor
+
+                        % else:
+                          <tr><td colspan="2">${_('No members yet')}</td></tr>
+                        % endif
+                     </table>
+                    <input type="hidden" name="__end__" value="user_group_members:sequence"/>
+
+                     <div class="buttons">
+                       ${h.submit('Save',_('Save'),class_="btn")}
+                     </div>
                 </div>
         </div>
     ${h.end_form()}
@@ -95,15 +108,18 @@
 </div>
 <script>
     $(document).ready(function(){
-        MultiSelectWidget('users_group_members','available_members','edit_users_group');
-
         $("#group_parent_id").select2({
             'containerCssClass': "drop-menu",
             'dropdownCssClass': "drop-menu-dropdown",
             'dropdownAutoWidth': true
         });
 
-        $('#from_user_group').autocomplete({
+        removeUserGroupMember = function(userId){
+            $('#member_'+userId).val('remove');
+            $('#member_user_'+userId).addClass('to-delete');
+        };
+
+        $('#user_group_add_members').autocomplete({
             serviceUrl: pyroutes.url('user_autocomplete_data'),
             minChars:2,
             maxHeight:400,
@@ -115,9 +131,37 @@
             lookupFilter: autocompleteFilterResult,
             onSelect: function(element, suggestion){
 
-                function preSelectUserIds(uids) {
-                    $('#available_members').val(uids);
-                    $('#users_group_members').val(uids);
+                function addMember(user, fromUserGroup) {
+                    var gravatar = user.icon_link;
+                    var username = user.value_display;
+                    var userLink = pyroutes.url('edit_user', {"user_id": user.id});
+                    var uid = user.id;
+
+                    if (fromUserGroup) {
+                        username = username +" "+ _gettext('(from usergroup {0})'.format(fromUserGroup))
+                    }
+
+                    var elem = $(
+                        ('<tr>'+
+                          '<td id="member_user_{6}" class="td-author td-author-new-entry">'+
+                            '<div class="group_member">'+
+                              '<img class="gravatar" src="{0}" height="16" width="16">'+
+                              '<span class="username user"><a href="{1}">{2}</a></span>'+
+                              '<input type="hidden" name="__start__" value="member:mapping">'+
+                              '<input type="hidden" name="member_user_id" value="{3}">'+
+                              '<input type="hidden" name="type" value="new" id="member_{4}">'+
+                              '<input type="hidden" name="__end__" value="member:mapping">'+
+                            '</div>'+
+                          '</td>'+
+                          '<td class="td-author-new-entry">'+
+                            '<div class="usergroup_member_remove action_button" onclick="removeUserGroupMember({5}, true)" style="visibility: visible;">'+
+                                '<i class="icon-remove-sign"></i>'+
+                            '</div>'+
+                          '</td>'+
+                        '</tr>').format(gravatar, userLink, username,
+                                uid, uid, uid, uid)
+                    );
+                    $('#group_members_placeholder').append(elem)
                 }
 
                 if (suggestion.value_type == 'user_group') {
@@ -125,20 +169,18 @@
                         pyroutes.url('edit_user_group_members',
                                     {'user_group_id': suggestion.id}),
                         function(data) {
-                            var uids = [];
                             $.each(data.members, function(idx, user) {
-                                var userid = user[0],
-                                    username = user[1];
-                                uids.push(userid.toString());
+                                addMember(user, suggestion.value)
                             });
-                            preSelectUserIds(uids)
                         }
                     );
                 } else if (suggestion.value_type == 'user') {
-                    preSelectUserIds([suggestion.id.toString()]);
+                    addMember(suggestion, null);
                 }
             }
         });
+
+
         UsersAutoComplete('user', '${c.rhodecode_user.user_id}');
     })
 </script>

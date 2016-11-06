@@ -113,38 +113,18 @@ def test_add_and_remove_user_from_group(user_regular, user_util):
     assert user_group.members == []
 
 
-@pytest.mark.parametrize(
-    'data, expected', [
-        ("1", [1]), (["1", "2"], [1, 2])
-    ]
-)
+@pytest.mark.parametrize('data, expected', [
+    ([], []),
+    ([{"member_user_id": 1, "type": "new"}], [1]),
+    ([{"member_user_id": 1, "type": "new"},
+      {"member_user_id": 1, "type": "existing"}], [1]),
+    ([{"member_user_id": 1, "type": "new"},
+      {"member_user_id": 2, "type": "new"},
+      {"member_user_id": 3, "type": "remove"}], [1, 2])
+])
 def test_clean_members_data(data, expected):
     cleaned = UserGroupModel()._clean_members_data(data)
     assert cleaned == expected
-
-
-def test_update_members_from_user_ids(user_regular, user_util):
-    user_group = user_util.create_user_group()
-    assert user_group.members == []
-    assert user_group.user != user_regular
-    expected_active_state = not user_group.users_group_active
-
-    form_data = {
-        'users_group_members': str(user_regular.user_id),
-        'user': str(user_regular.username),
-        'users_group_name': 'changed_name',
-        'users_group_active': expected_active_state,
-        'user_group_description': 'changed_description'
-    }
-
-    UserGroupModel().update(user_group, form_data)
-    assert user_group.members[0].user_id == user_regular.user_id
-    assert user_group.user_id == user_regular.user_id
-    assert 'changed_name' in user_group.users_group_name
-    assert 'changed_description' in user_group.user_group_description
-    assert user_group.users_group_active == expected_active_state
-    # Ignore changes on the test
-    Session().rollback()
 
 
 def _create_test_members():

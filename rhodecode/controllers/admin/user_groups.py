@@ -25,6 +25,7 @@ User Groups crud controller for pylons
 import logging
 import formencode
 
+import peppercorn
 from formencode import htmlfill
 from pylons import request, tmpl_context as c, url, config
 from pylons.controllers.util import redirect
@@ -40,7 +41,7 @@ from rhodecode.lib.utils import jsonify, action_logger
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, HasUserGroupPermissionAnyDecorator,
-    HasPermissionAnyDecorator)
+    HasPermissionAnyDecorator, XHRRequired)
 from rhodecode.lib.base import BaseController, render
 from rhodecode.model.permission import PermissionModel
 from rhodecode.model.scm import UserGroupList
@@ -69,12 +70,7 @@ class UserGroupsController(BaseController):
     def __load_data(self, user_group_id):
         c.group_members_obj = [x.user for x in c.user_group.members]
         c.group_members_obj.sort(key=lambda u: u.username.lower())
-
         c.group_members = [(x.user_id, x.username) for x in c.group_members_obj]
-
-        c.available_members = [(x.user_id, x.username)
-                               for x in User.query().all()]
-        c.available_members.sort(key=lambda u: u[1].lower())
 
     def __load_defaults(self, user_group_id):
         """
@@ -207,20 +203,21 @@ class UserGroupsController(BaseController):
         c.active = 'settings'
         self.__load_data(user_group_id)
 
-        available_members = [safe_unicode(x[0]) for x in c.available_members]
-
         users_group_form = UserGroupForm(
-            edit=True, old_data=c.user_group.get_dict(),
-            available_members=available_members, allow_disabled=True)()
+            edit=True, old_data=c.user_group.get_dict(), allow_disabled=True)()
 
         try:
             form_result = users_group_form.to_python(request.POST)
+            pstruct = peppercorn.parse(request.POST.items())
+            form_result['users_group_members'] = pstruct['user_group_members']
+
             UserGroupModel().update(c.user_group, form_result)
-            gr = form_result['users_group_name']
+            updated_user_group = form_result['users_group_name']
             action_logger(c.rhodecode_user,
-                          'admin_updated_users_group:%s' % gr,
+                          'admin_updated_users_group:%s' % updated_user_group,
                           None, self.ip_addr, self.sa)
-            h.flash(_('Updated user group %s') % gr, category='success')
+            h.flash(_('Updated user group %s') % updated_user_group,
+                    category='success')
             Session().commit()
         except formencode.Invalid as errors:
             defaults = errors.value
@@ -462,19 +459,29 @@ class UserGroupsController(BaseController):
         return render('admin/user_groups/user_group_edit.html')
 
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    def edit_members(self, user_group_id):
+    @XHRRequired()
+    @jsonify
+    def user_group_members(self, user_group_id):
         user_group_id = safe_int(user_group_id)
-        c.user_group = UserGroup.get_or_404(user_group_id)
-        c.active = 'members'
-        c.group_members_obj = sorted((x.user for x in c.user_group.members),
-                                     key=lambda u: u.username.lower())
+        user_group = UserGroup.get_or_404(user_group_id)
+        group_members_obj = sorted((x.user for x in user_group.members),
+                                   key=lambda u: u.username.lower())
 
-        group_members = [(x.user_id, x.username) for x in c.group_members_obj]
+        group_members = [
+            {
+                'id': user.user_id,
+                'first_name': user.name,
+                'last_name': user.lastname,
+                'username': user.username,
+                'icon_link': h.gravatar_url(user.email, 30),
+                'value_display': h.person(user.email),
+                'value': user.username,
+                'value_type': 'user',
+                'active': user.active,
+            }
+            for user in group_members_obj
+        ]
 
-        if request.is_xhr:
-            return jsonify(lambda *a, **k: {
-                'members': group_members
-            })
-
-        c.group_members = group_members
-        return render('admin/user_groups/user_group_edit.html')
+        return {
+            'members': group_members
+        }

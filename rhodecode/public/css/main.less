@@ -1370,7 +1370,27 @@ table.integrations {
         margin-right: .5em;
         margin-left: 3px;
     }
+
+    .to-delete {
+        .user {
+          text-decoration: line-through;
+        }
+    }
 }
+
+// new entry in group_members
+.td-author-new-entry {
+  background-color: rgba(red(@alert1), green(@alert1), blue(@alert1), 0.3);
+}
+
+.usergroup_member_remove {
+    width: 16px;
+    margin-bottom: 10px;
+    padding: 0;
+    color: black !important;
+    cursor: pointer;
+}
+
 .reviewer_ac .ac-input {
     width: 92%;
     margin-bottom: 1em;

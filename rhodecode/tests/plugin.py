@@ -38,6 +38,7 @@ import requests
 from webtest.app import TestApp
 
 import rhodecode
+from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
 from rhodecode.model.db import (

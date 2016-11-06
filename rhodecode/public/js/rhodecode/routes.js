@@ -16,6 +16,7 @@ function registerRCRoutes() {
     pyroutes.register('user_autocomplete_data', '/_users', []);
     pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('new_repo', '/_admin/create_repository', []);
+    pyroutes.register('edit_user', '/_admin/users/%(user_id)s/edit', ['user_id']);
     pyroutes.register('edit_user_group_members', '/_admin/user_groups/%(user_group_id)s/edit/members', ['user_group_id']);
     pyroutes.register('gists', '/_admin/gists', []);
     pyroutes.register('new_gist', '/_admin/gists/new', []);

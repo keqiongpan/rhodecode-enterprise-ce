@@ -143,10 +143,8 @@ def UserForm(edit=False, available_languages=[], old_data={}):
     return _UserForm
 
 
-def UserGroupForm(edit=False, old_data=None, available_members=None,
-                  allow_disabled=False):
+def UserGroupForm(edit=False, old_data=None, allow_disabled=False):
     old_data = old_data or {}
-    available_members = available_members or []
 
     class _UserGroupForm(formencode.Schema):
         allow_extra_fields = True
@@ -162,10 +160,6 @@ def UserGroupForm(edit=False, old_data=None, available_members=None,
         users_group_active = v.StringBoolean(if_missing=False)
 
         if edit:
-            users_group_members = v.OneOf(
-                available_members, hideList=False, testValueList=True,
-                if_missing=None, not_empty=False
-            )
             # this is user group owner
             user = All(
                 v.UnicodeString(not_empty=True),
