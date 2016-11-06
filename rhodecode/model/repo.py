@@ -148,6 +148,7 @@ class RepoModel(BaseModel):
             qualified=True)
 
     def get_users(self, name_contains=None, limit=20, only_active=True):
+
         # TODO: mikhail: move this method to the UserModel.
         query = self.sa.query(User)
         if only_active:
@@ -171,8 +172,9 @@ class RepoModel(BaseModel):
                 'first_name': user.name,
                 'last_name': user.lastname,
                 'username': user.username,
+                'email': user.email,
                 'icon_link': h.gravatar_url(user.email, 30),
-                'value_display': h.person(user.email),
+                'value_display': h.person(user),
                 'value': user.username,
                 'value_type': 'user',
                 'active': user.active,
