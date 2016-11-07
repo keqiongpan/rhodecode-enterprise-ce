@@ -195,6 +195,8 @@ class TestAdminSettingsGlobal:
             'rhodecode_post_code': '',
             'rhodecode_captcha_private_key': '',
             'rhodecode_captcha_public_key': '',
+            'rhodecode_create_personal_repo_group': False,
+            'rhodecode_personal_repo_group_pattern': '${username}',
         }
         params.update(settings)
         response = self.app.post(url('admin_settings_global'), params=params)
