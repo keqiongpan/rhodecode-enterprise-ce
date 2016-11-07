@@ -65,7 +65,7 @@ class UserGroupsController(BaseController):
     def __before__(self):
         super(UserGroupsController, self).__before__()
         c.available_permissions = config['available_permissions']
-        PermissionModel().set_global_permission_choices(c, translator=_)
+        PermissionModel().set_global_permission_choices(c, gettext_translator=_)
 
     def __load_data(self, user_group_id):
         c.group_members_obj = [x.user for x in c.user_group.members]

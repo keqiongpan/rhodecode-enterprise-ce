@@ -57,7 +57,7 @@ class PermissionsController(BaseController):
         super(PermissionsController, self).__before__()
 
     def __load_data(self):
-        PermissionModel().set_global_permission_choices(c, translator=_)
+        PermissionModel().set_global_permission_choices(c, gettext_translator=_)
 
     @HasPermissionAllDecorator('hg.admin')
     def permission_application(self):

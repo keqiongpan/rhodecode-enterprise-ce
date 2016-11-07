@@ -74,7 +74,7 @@ class UsersController(BaseController):
             ('ru', 'Russian (ru)'),
             ('zh', 'Chinese (zh)'),
         ]
-        PermissionModel().set_global_permission_choices(c, translator=_)
+        PermissionModel().set_global_permission_choices(c, gettext_translator=_)
 
     @HasPermissionAllDecorator('hg.admin')
     def index(self):
