@@ -224,9 +224,11 @@ def assert_session_flash(response=None, msg=None, category=None):
         raise ValueError("Parameter msg is required.")
 
     messages = flash.pop_messages()
+    msg = _eval_if_lazy(msg)
+
+    assert messages, 'unable to find message `%s` in empty flash list' % msg
     message = messages[0]
 
-    msg = _eval_if_lazy(msg)
     message_text = _eval_if_lazy(message.message)
 
     if msg not in message_text:
