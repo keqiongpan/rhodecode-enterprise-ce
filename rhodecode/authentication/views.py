@@ -84,7 +84,7 @@ class AuthnPluginViewBase(object):
 
         try:
             valid_data = schema.deserialize(data)
-        except colander.Invalid, e:
+        except colander.Invalid as e:
             # Display error message and display form again.
             self.request.session.flash(
                 _('Errors exist when saving plugin settings. '
