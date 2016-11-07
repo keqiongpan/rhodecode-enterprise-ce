@@ -30,6 +30,35 @@ ${h.secure_form(url('admin_settings_global'), method='post')}
     </div>
 </div>
 
+
+<div class="panel panel-default">
+    <div class="panel-heading" id="personal-group-options">
+        <h3 class="panel-title">${_('Personal Repository Group')} <a class="permalink" href="#personal-group-options"> ¶</a></h3>
+    </div>
+    <div class="panel-body">
+        <div class="checkbox">
+            ${h.checkbox('rhodecode_create_personal_repo_group','True')}
+            <label for="rhodecode_create_personal_repo_group">${_('Create Personal Repository Group')}</label>
+        </div>
+        <span class="help-block">
+            ${_('Always create Personal Repository Groups for new users.')} <br/>
+            ${_('When creating new users from add user form or API you can still turn this off via a checkbox or flag')}
+        </span>
+
+        <div class="label">
+            <label for="rhodecode_personal_repo_group_pattern">${_('Personal Repo Group Pattern')}</label>
+        </div>
+        <div class="field input">
+            ${h.text('rhodecode_personal_repo_group_pattern',size=60, placeholder=c.personal_repo_group_default_pattern)}
+        </div>
+        <span class="help-block">
+            ${_('Pattern used to create Personal Repository Groups. Prefix can be other existing repository group path[s], eg. /u/${username}')} <br/>
+            ${_('Available variables are currently ${username} and ${user_id}')}
+        </span>
+    </div>
+</div>
+
+
 <div class="panel panel-default">
     <div class="panel-heading" id="captcha-options">
         <h3 class="panel-title">${_('Registration Captcha')} <a class="permalink" href="#captcha-options"> ¶</a></h3>

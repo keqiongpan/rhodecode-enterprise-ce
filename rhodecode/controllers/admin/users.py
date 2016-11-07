@@ -45,12 +45,13 @@ from rhodecode.model.db import (
     PullRequestReviewers, User, UserEmailMap, UserIpMap, RepoGroup)
 from rhodecode.model.forms import (
     UserForm, UserPermissionsForm, UserIndividualPermissionsForm)
+from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.user import UserModel
 from rhodecode.model.meta import Session
 from rhodecode.model.permission import PermissionModel
 from rhodecode.lib.utils import action_logger
 from rhodecode.lib.ext_json import json
-from rhodecode.lib.utils2 import datetime_to_time, safe_int
+from rhodecode.lib.utils2 import datetime_to_time, safe_int, AttributeDict
 
 log = logging.getLogger(__name__)
 
@@ -120,6 +121,16 @@ class UsersController(BaseController):
         c.data = json.dumps(users_data)
         return render('admin/users/users.html')
 
+    def _get_personal_repo_group_template_vars(self):
+        DummyUser = AttributeDict({
+            'username': '${username}',
+            'user_id': '${user_id}',
+        })
+        c.default_create_repo_group = RepoGroupModel() \
+            .get_default_create_personal_repo_group()
+        c.personal_repo_group_name = RepoGroupModel() \
+            .get_personal_group_name(DummyUser)
+
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
     def create(self):
@@ -143,6 +154,7 @@ class UsersController(BaseController):
                               % {'user_link': user_link}), category='success')
             Session().commit()
         except formencode.Invalid as errors:
+            self._get_personal_repo_group_template_vars()
             return htmlfill.render(
                 render('admin/users/user_add.html'),
                 defaults=errors.value,
@@ -163,6 +175,7 @@ class UsersController(BaseController):
         """GET /users/new: Form to create a new item"""
         # url('new_user')
         c.default_extern_type = auth_rhodecode.RhodeCodeAuthPlugin.name
+        self._get_personal_repo_group_template_vars()
         return render('admin/users/user_add.html')
 
     @HasPermissionAllDecorator('hg.admin')
@@ -339,22 +352,41 @@ class UsersController(BaseController):
 
         user_id = safe_int(user_id)
         c.user = User.get_or_404(user_id)
+        personal_repo_group = RepoGroup.get_user_personal_repo_group(
+            c.user.user_id)
+        if personal_repo_group:
+            return redirect(url('edit_user_advanced', user_id=user_id))
 
+        personal_repo_group_name = RepoGroupModel().get_personal_group_name(
+            c.user)
+        named_personal_group = RepoGroup.get_by_group_name(
+            personal_repo_group_name)
         try:
-            desc = RepoGroupModel.PERSONAL_GROUP_DESC % {
-                'username': c.user.username}
-            if not RepoGroup.get_by_group_name(c.user.username):
-                RepoGroupModel().create(group_name=c.user.username,
-                                        group_description=desc,
-                                        owner=c.user.username)
 
-                msg = _('Created repository group `%s`' % (c.user.username,))
+            if named_personal_group and named_personal_group.user_id == c.user.user_id:
+                # migrate the same named group, and mark it as personal
+                named_personal_group.personal = True
+                Session().add(named_personal_group)
+                Session().commit()
+                msg = _('Linked repository group `%s` as personal' % (
+                    personal_repo_group_name,))
                 h.flash(msg, category='success')
+            elif not named_personal_group:
+                RepoGroupModel().create_personal_repo_group(c.user)
+
+                msg = _('Created repository group `%s`' % (
+                    personal_repo_group_name,))
+                h.flash(msg, category='success')
+            else:
+                msg = _('Repository group `%s` is already taken' % (
+                    personal_repo_group_name,))
+                h.flash(msg, category='warning')
         except Exception:
             log.exception("Exception during repository group creation")
             msg = _(
                 'An error occurred during repository group creation for user')
             h.flash(msg, category='error')
+            Session().rollback()
 
         return redirect(url('edit_user_advanced', user_id=user_id))
 
@@ -397,7 +429,9 @@ class UsersController(BaseController):
 
         c.active = 'advanced'
         c.perm_user = AuthUser(user_id=user_id, ip_addr=self.ip_addr)
-        c.personal_repo_group = RepoGroup.get_by_group_name(user.username)
+        c.personal_repo_group = c.perm_user.personal_repo_group
+        c.personal_repo_group_name = RepoGroupModel()\
+            .get_personal_group_name(user)
         c.first_admin = User.get_first_super_admin()
         defaults = user.get_dict()
 

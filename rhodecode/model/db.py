@@ -2028,6 +2028,7 @@ class RepoGroup(Base, BaseModel):
     enable_locking = Column("enable_locking", Boolean(), nullable=False, unique=None, default=False)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False, unique=False, default=None)
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
+    personal = Column('personal', Boolean(), nullable=True, unique=None, default=None)
 
     repo_group_to_perm = relationship('UserRepoGroupToPerm', cascade='all', order_by='UserRepoGroupToPerm.group_to_perm_id')
     users_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
@@ -2081,6 +2082,13 @@ class RepoGroup(Base, BaseModel):
                             "sql_cache_short",
                             "get_group_%s" % _hash_key(group_name)))
         return gr.scalar()
+
+    @classmethod
+    def get_user_personal_repo_group(cls, user_id):
+        user = User.get(user_id)
+        return cls.query()\
+            .filter(cls.personal == true())\
+            .filter(cls.user == user).scalar()
 
     @classmethod
     def get_all_repo_groups(cls, user_id=Optional(None), group_id=Optional(None),

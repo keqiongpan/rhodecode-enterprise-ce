@@ -341,6 +341,8 @@ def ApplicationSettingsForm():
         rhodecode_post_code = v.UnicodeString(strip=True, min=1, not_empty=False)
         rhodecode_captcha_public_key = v.UnicodeString(strip=True, min=1, not_empty=False)
         rhodecode_captcha_private_key = v.UnicodeString(strip=True, min=1, not_empty=False)
+        rhodecode_create_personal_repo_group = v.StringBoolean(if_missing=False)
+        rhodecode_personal_repo_group_pattern = v.UnicodeString(strip=True, min=1, not_empty=False)
 
     return _ApplicationSettingsForm
 

@@ -55,6 +55,7 @@ from rhodecode.model.db import RhodeCodeUi, Repository
 from rhodecode.model.forms import ApplicationSettingsForm, \
     ApplicationUiSettingsForm, ApplicationVisualisationForm, \
     LabsSettingsForm, IssueTrackerPatternsForm
+from rhodecode.model.repo_group import RepoGroupModel
 
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.notification import EmailNotificationModel
@@ -245,6 +246,8 @@ class SettingsController(BaseController):
         """POST /admin/settings/global: All items in the collection"""
         # url('admin_settings_global')
         c.active = 'global'
+        c.personal_repo_group_default_pattern = RepoGroupModel()\
+            .get_personal_group_name_pattern()
         application_form = ApplicationSettingsForm()()
         try:
             form_result = application_form.to_python(dict(request.POST))
@@ -259,16 +262,18 @@ class SettingsController(BaseController):
 
         try:
             settings = [
-                ('title', 'rhodecode_title'),
-                ('realm', 'rhodecode_realm'),
-                ('pre_code', 'rhodecode_pre_code'),
-                ('post_code', 'rhodecode_post_code'),
-                ('captcha_public_key', 'rhodecode_captcha_public_key'),
-                ('captcha_private_key', 'rhodecode_captcha_private_key'),
+                ('title', 'rhodecode_title', 'unicode'),
+                ('realm', 'rhodecode_realm', 'unicode'),
+                ('pre_code', 'rhodecode_pre_code', 'unicode'),
+                ('post_code', 'rhodecode_post_code', 'unicode'),
+                ('captcha_public_key', 'rhodecode_captcha_public_key', 'unicode'),
+                ('captcha_private_key', 'rhodecode_captcha_private_key', 'unicode'),
+                ('create_personal_repo_group', 'rhodecode_create_personal_repo_group', 'bool'),
+                ('personal_repo_group_pattern', 'rhodecode_personal_repo_group_pattern', 'unicode'),
             ]
-            for setting, form_key in settings:
+            for setting, form_key, type_ in settings:
                 sett = SettingsModel().create_or_update_setting(
-                    setting, form_result[form_key])
+                    setting, form_result[form_key], type_)
                 Session().add(sett)
 
             Session().commit()
@@ -287,6 +292,8 @@ class SettingsController(BaseController):
         """GET /admin/settings/global: All items in the collection"""
         # url('admin_settings_global')
         c.active = 'global'
+        c.personal_repo_group_default_pattern = RepoGroupModel()\
+            .get_personal_group_name_pattern()
 
         return htmlfill.render(
             render('admin/settings/settings.html'),

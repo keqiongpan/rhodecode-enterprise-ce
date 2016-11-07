@@ -160,6 +160,7 @@ class ReposController(BaseRepoController):
         self.__load_defaults()
         form_result = {}
         task_id = None
+        c.personal_repo_group = c.rhodecode_user.personal_repo_group
         try:
             # CanWriteToGroup validators checks permissions of this POST
             form_result = RepoForm(repo_groups=c.repo_groups_choices,
@@ -173,8 +174,6 @@ class ReposController(BaseRepoController):
             if isinstance(task, BaseAsyncResult):
                 task_id = task.task_id
         except formencode.Invalid as errors:
-            c.personal_repo_group = RepoGroup.get_by_group_name(
-                c.rhodecode_user.username)
             return htmlfill.render(
                 render('admin/repos/repo_add.html'),
                 defaults=errors.value,
@@ -215,7 +214,7 @@ class ReposController(BaseRepoController):
         c.repo_groups = RepoGroup.groups_choices(groups=acl_groups)
         c.repo_groups_choices = map(lambda k: unicode(k[0]), c.repo_groups)
         choices, c.landing_revs = ScmModel().get_repo_landing_revs()
-        c.personal_repo_group = RepoGroup.get_by_group_name(c.rhodecode_user.username)
+        c.personal_repo_group = c.rhodecode_user.personal_repo_group
         c.new_repo = repo_name_slug(new_repo)
 
         ## apply the defaults from defaults page
@@ -299,9 +298,8 @@ class ReposController(BaseRepoController):
         repo_model = RepoModel()
         changed_name = repo_name
 
+        c.personal_repo_group = c.rhodecode_user.personal_repo_group
         # override the choices with extracted revisions !
-        c.personal_repo_group = RepoGroup.get_by_group_name(
-            c.rhodecode_user.username)
         repo = Repository.get_by_repo_name(repo_name)
         old_data = {
             'repo_name': repo_name,
@@ -399,8 +397,7 @@ class ReposController(BaseRepoController):
 
         c.repo_fields = RepositoryField.query()\
             .filter(RepositoryField.repository == c.repo_info).all()
-        c.personal_repo_group = RepoGroup.get_by_group_name(
-            c.rhodecode_user.username)
+        c.personal_repo_group = c.rhodecode_user.personal_repo_group
         c.active = 'settings'
         return htmlfill.render(
             render('admin/repos/repo_edit.html'),

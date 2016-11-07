@@ -23,13 +23,13 @@
 repo group model for RhodeCode
 """
 
-
+import os
 import datetime
 import itertools
 import logging
-import os
 import shutil
 import traceback
+import string
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
@@ -38,7 +38,7 @@ from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     RepoGroup, UserRepoGroupToPerm, User, Permission, UserGroupRepoGroupToPerm,
     UserGroup, Repository)
-from rhodecode.model.settings import VcsSettingsModel
+from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.utils2 import action_logger_generic
 
@@ -49,6 +49,7 @@ class RepoGroupModel(BaseModel):
 
     cls = RepoGroup
     PERSONAL_GROUP_DESC = '[personal] repo group: owner `%(username)s`'
+    PERSONAL_GROUP_PATTERN = '${username}'  # default
 
     def _get_user_group(self, users_group):
         return self._get_instance(UserGroup, users_group,
@@ -75,6 +76,39 @@ class RepoGroupModel(BaseModel):
             repo = repo.options(FromCache(
                 "sql_cache_short", "get_repo_group_%s" % repo_group_name))
         return repo.scalar()
+
+    def get_default_create_personal_repo_group(self):
+        value = SettingsModel().get_setting_by_name(
+            'create_personal_repo_group')
+        return value.app_settings_value if value else None or False
+
+    def get_personal_group_name_pattern(self):
+        value = SettingsModel().get_setting_by_name(
+            'personal_repo_group_pattern')
+        val = value.app_settings_value if value else None
+        group_template = val or self.PERSONAL_GROUP_PATTERN
+
+        group_template = group_template.lstrip('/')
+        return group_template
+
+    def get_personal_group_name(self, user):
+        template = self.get_personal_group_name_pattern()
+        return string.Template(template).safe_substitute(
+            username=user.username,
+            user_id=user.user_id,
+        )
+
+    def create_personal_repo_group(self, user, commit_early=True):
+        desc = self.PERSONAL_GROUP_DESC % {'username': user.username}
+        personal_repo_group_name = self.get_personal_group_name(user)
+
+        # create a new one
+        RepoGroupModel().create(
+            group_name=personal_repo_group_name,
+            group_description=desc,
+            owner=user.username,
+            personal=True,
+            commit_early=commit_early)
 
     def _create_default_perms(self, new_group):
         # create default permission
@@ -191,7 +225,7 @@ class RepoGroupModel(BaseModel):
                 shutil.move(rm_path, os.path.join(self.repos_path, _d))
 
     def create(self, group_name, group_description, owner, just_db=False,
-               copy_permissions=False, commit_early=True):
+               copy_permissions=False, personal=None, commit_early=True):
 
         (group_name_cleaned,
          parent_group_name) = RepoGroupModel()._get_group_name_and_parent(group_name)
@@ -199,11 +233,18 @@ class RepoGroupModel(BaseModel):
         parent_group = None
         if parent_group_name:
             parent_group = self._get_repo_group(parent_group_name)
+            if not parent_group:
+                # we tried to create a nested group, but the parent is not
+                # existing
+                raise ValueError(
+                    'Parent group `%s` given in `%s` group name '
+                    'is not yet existing.' % (parent_group_name, group_name))
 
-        # becase we are doing a cleanup, we need to check if such directory
-        # already exists. If we don't do that we can accidentally delete existing
-        # directory via cleanup that can cause data issues, since delete does a
-        # folder rename to special syntax later cleanup functions can delete this
+        # because we are doing a cleanup, we need to check if such directory
+        # already exists. If we don't do that we can accidentally delete
+        # existing directory via cleanup that can cause data issues, since
+        # delete does a folder rename to special syntax later cleanup
+        # functions can delete this
         cleanup_group = self.check_exist_filesystem(group_name,
                                                     exc_on_failure=False)
         try:
@@ -213,6 +254,7 @@ class RepoGroupModel(BaseModel):
             new_repo_group.group_description = group_description or group_name
             new_repo_group.parent_group = parent_group
             new_repo_group.group_name = group_name
+            new_repo_group.personal = personal
 
             self.sa.add(new_repo_group)
 

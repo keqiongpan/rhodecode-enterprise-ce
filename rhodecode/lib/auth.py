@@ -49,7 +49,7 @@ from rhodecode.model.meta import Session
 from rhodecode.model.user import UserModel
 from rhodecode.model.db import (
     User, Repository, Permission, UserToPerm, UserGroupToPerm, UserGroupMember,
-    UserIpMap, UserApiKeys)
+    UserIpMap, UserApiKeys, RepoGroup)
 from rhodecode.lib import caches
 from rhodecode.lib.utils2 import safe_unicode, aslist, safe_str, md5
 from rhodecode.lib.utils import (
@@ -983,6 +983,9 @@ class AuthUser(object):
         inherit = self.inherit_default_permissions
         return AuthUser.check_ip_allowed(self.user_id, self.ip_addr,
                                          inherit_from_default=inherit)
+    @property
+    def personal_repo_group(self):
+        return RepoGroup.get_user_personal_repo_group(self.user_id)
 
     @classmethod
     def check_ip_allowed(cls, user_id, ip_addr, inherit_from_default):

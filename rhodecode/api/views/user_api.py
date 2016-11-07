@@ -25,7 +25,7 @@ from rhodecode.api.utils import (
     Optional, OAttr, has_superadmin_permission, get_user_or_error, store_update)
 from rhodecode.lib.auth import AuthUser, PasswordGenerator
 from rhodecode.lib.exceptions import DefaultUserException
-from rhodecode.lib.utils2 import safe_int
+from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.model.db import Session, User, Repository
 from rhodecode.model.user import UserModel
 
@@ -155,7 +155,8 @@ def create_user(request, apiuser, username, email, password=Optional(''),
                 active=Optional(True), admin=Optional(False),
                 extern_name=Optional('rhodecode'),
                 extern_type=Optional('rhodecode'),
-                force_password_change=Optional(False)):
+                force_password_change=Optional(False),
+                create_personal_repo_group=Optional(None)):
     """
     Creates a new user and returns the new user object.
 
@@ -188,7 +189,8 @@ def create_user(request, apiuser, username, email, password=Optional(''),
     :param force_password_change: Force the new user to change password
         on next login.
     :type force_password_change: Optional(``True`` | ``False``)
-
+    :param create_personal_repo_group: Create personal repo group for this user
+    :type create_personal_repo_group: Optional(``True`` | ``False``)
     Example output:
 
     .. code-block:: bash
@@ -230,6 +232,9 @@ def create_user(request, apiuser, username, email, password=Optional(''),
                 Optional.extract(extern_name) != 'rhodecode'):
         # generate temporary password if user is external
         password = PasswordGenerator().gen_password(length=16)
+    create_repo_group = Optional.extract(create_personal_repo_group)
+    if isinstance(create_repo_group, basestring):
+        create_repo_group = str2bool(create_repo_group)
 
     try:
         user = UserModel().create_or_update(
@@ -243,6 +248,7 @@ def create_user(request, apiuser, username, email, password=Optional(''),
             extern_type=Optional.extract(extern_type),
             extern_name=Optional.extract(extern_name),
             force_password_change=Optional.extract(force_password_change),
+            create_repo_group=create_repo_group
         )
         Session().commit()
         return {
