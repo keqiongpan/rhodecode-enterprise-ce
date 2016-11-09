@@ -72,6 +72,10 @@
   </div>
 </%def>
 
+<%def name="repo_desc(description)">
+    <div class="truncate-wrap">${description}</div>
+</%def>
+
 <%def name="last_change(last_change)">
     ${h.age_component(last_change)}
 </%def>
@@ -165,6 +169,10 @@
       %endif
   </a>
   </div>
+</%def>
+
+<%def name="repo_group_desc(description)">
+    <div class="truncate-wrap">${description}</div>
 </%def>
 
 <%def name="repo_group_actions(repo_group_id, repo_group_name, gr_count)">

@@ -48,7 +48,7 @@ log = logging.getLogger(__name__)
 class RepoGroupModel(BaseModel):
 
     cls = RepoGroup
-    PERSONAL_GROUP_DESC = '[personal] repo group: owner `%(username)s`'
+    PERSONAL_GROUP_DESC = 'personal repo group of user `%(username)s`'
     PERSONAL_GROUP_PATTERN = '${username}'  # default
 
     def _get_user_group(self, users_group):
@@ -656,11 +656,15 @@ class RepoGroupModel(BaseModel):
         def repo_group_lnk(repo_group_name):
             return _render('repo_group_name', repo_group_name)
 
-        def desc(desc):
+        def desc(desc, personal):
+            prefix = h.escaped_stylize(u'[personal] ') if personal else ''
+
             if c.visual.stylify_metatags:
-                return h.urlify_text(h.escaped_stylize(h.truncate(desc, 60)))
+                desc = h.urlify_text(prefix + h.escaped_stylize(desc))
             else:
-                return h.urlify_text(h.html_escape(h.truncate(desc, 60)))
+                desc = h.urlify_text(prefix + h.html_escape(desc))
+
+            return _render('repo_group_desc', desc)
 
         def repo_group_actions(repo_group_id, repo_group_name, gr_count):
             return _render(
@@ -679,7 +683,7 @@ class RepoGroupModel(BaseModel):
                 "menu": quick_menu(group.group_name),
                 "name": repo_group_lnk(group.group_name),
                 "name_raw": group.group_name,
-                "desc": desc(group.group_description),
+                "desc": desc(group.group_description, group.personal),
                 "top_level_repos": 0,
                 "owner": user_profile(group.user.username)
             }
