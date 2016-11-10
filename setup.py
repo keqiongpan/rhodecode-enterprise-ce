@@ -51,6 +51,7 @@ requirements = [
     'PasteDeploy',
     'PasteScript',
     'Pygments',
+    'pygments-markdown-lexer',
     'Pylons',
     'Pyro4',
     'Routes',
