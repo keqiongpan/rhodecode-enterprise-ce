@@ -126,7 +126,7 @@
 
                     <div class="checkbox">
                         ${h.checkbox('rhodecode_hg_use_rebase_for_merging' + suffix, 'True', **kwargs)}
-                        <label for="rhodecode_hg_use_rebase_for_merging{suffix}">${_('Use rebase as merge strategy')}</label>
+                        <label for="rhodecode_hg_use_rebase_for_merging${suffix}">${_('Use rebase as merge strategy')}</label>
                     </div>
                     <div class="label">
                         <span class="help-block">${_('Use rebase instead of creating a merge commit when merging via web interface.')}</span>
@@ -147,7 +147,7 @@
                 <div class="field">
                     <div class="checkbox">
                         ${h.checkbox('vcs_svn_proxy_http_requests_enabled' + suffix, 'True', **kwargs)}
-                        <label for="vcs_svn_proxy_http_requests_enabled{suffix}">${_('Proxy subversion HTTP requests')}</label>
+                        <label for="vcs_svn_proxy_http_requests_enabled${suffix}">${_('Proxy subversion HTTP requests')}</label>
                     </div>
                     <div class="label">
                         <span class="help-block">${_('Subversion HTTP Support. Enables communication with SVN over HTTP protocol.')}</span>
