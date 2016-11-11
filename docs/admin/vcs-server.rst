@@ -327,6 +327,8 @@ Once installed you need to enable ``dav_svn``:
 .. code-block:: bash
 
     $ sudo a2enmod dav_svn
+    $ sudo a2enmod headers
+
 
 Configuring Apache Setup
 ========================

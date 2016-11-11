@@ -36,6 +36,9 @@
 # After changing this a stop and start of Apache is required (using restart
 # doesn't work).
 
+# fix https -> http downgrade with DAV. It requires an header downgrade for
+# https -> http reverse proxy to work properly
+RequestHeader edit Destination ^https: http: early
 
 <Location "${location_root|n}">
     # The mod_dav_svn module takes the username from the apache request object.
