@@ -83,6 +83,29 @@ class RepoMaker(object):
             self.url, payload, EXCEPTIONS_MAP, self._session_factory())
 
 
+class ServiceConnection(object):
+    def __init__(self, server_and_port, backend_endpoint, session_factory):
+        self.url = urlparse.urljoin(
+            'http://%s' % server_and_port, backend_endpoint)
+        self._session_factory = session_factory
+
+    def __getattr__(self, name):
+        def f(*args, **kwargs):
+            return self._call(name, *args, **kwargs)
+
+        return f
+
+    @exceptions.map_vcs_exceptions
+    def _call(self, name, *args, **kwargs):
+        payload = {
+            'id': str(uuid.uuid4()),
+            'method': name,
+            'params': {'args': args, 'kwargs': kwargs}
+        }
+        return _remote_call(
+            self.url, payload, EXCEPTIONS_MAP, self._session_factory())
+
+
 class RemoteRepo(object):
 
     def __init__(self, path, config, url, session, with_wire=None):
@@ -178,7 +201,12 @@ def _remote_call(url, payload, exceptions_map, session):
     except pycurl.error as e:
         raise exceptions.HttpVCSCommunicationError(e)
 
-    response = msgpack.unpackb(response.content)
+    try:
+        response = msgpack.unpackb(response.content)
+    except Exception:
+        log.exception('Failed to decode repsponse %r', response.content)
+        raise
+
     error = response.get('error')
     if error:
         type_ = error.get('type', 'Exception')
