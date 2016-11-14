@@ -630,6 +630,7 @@ class SettingsController(BaseController):
 
         if snapshot:
             if c.allowed_to_snapshot:
+                c.data_items.pop(0)  # remove server info
                 return render('admin/settings/settings_system_snapshot.html')
             else:
                 h.flash('You are not allowed to do this', category='warning')

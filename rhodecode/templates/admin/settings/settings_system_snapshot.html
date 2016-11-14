@@ -4,8 +4,7 @@ SYSTEM INFO
 -----------
 
 % for dt, dd, warn in c.data_items:
-  ${dt}${':' if dt else '---'}
-  ${dd}
+  ${dt.lower().replace(' ', '_')}${': '+dd if dt else '---'}
   % if warn and warn['message']:
         ALERT_${warn['type'].upper()} ${warn['message']}
   % endif
