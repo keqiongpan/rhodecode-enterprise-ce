@@ -466,11 +466,18 @@ def vcs_server():
 
 def rhodecode_app_info():
     import rhodecode
+    edition = rhodecode.CONFIG.get('rhodecode.edition')
+
     value = dict(
         rhodecode_version=rhodecode.__version__,
-        rhodecode_lib_path=os.path.abspath(rhodecode.__file__)
+        rhodecode_lib_path=os.path.abspath(rhodecode.__file__),
+        text=''
     )
-    return SysInfoRes(value=value)
+    human_value = value.copy()
+    human_value['text'] = 'RhodeCode {edition}, version {ver}'.format(
+        edition=edition, ver=value['rhodecode_version']
+    )
+    return SysInfoRes(value=value, human_value=human_value)
 
 
 def rhodecode_config():

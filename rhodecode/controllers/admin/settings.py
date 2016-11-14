@@ -577,7 +577,7 @@ class SettingsController(BaseController):
             ), ''),
 
             # RhodeCode specific
-            (_('RhodeCode Version'), c.rhodecode_version, ''),
+            (_('RhodeCode Version'), val('rhodecode_app')['text'], state('rhodecode_app')),
             (_('RhodeCode Server IP'), val('server')['server_ip'], state('server')),
             (_('RhodeCode Server ID'), val('server')['server_id'], state('server')),
             (_('RhodeCode Configuration'), val('rhodecode_config')['path'], state('rhodecode_config')),
