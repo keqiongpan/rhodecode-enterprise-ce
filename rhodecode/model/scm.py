@@ -25,13 +25,11 @@ Scm model for RhodeCode
 import os.path
 import re
 import sys
-import time
 import traceback
 import logging
 import cStringIO
 import pkg_resources
 
-import pylons
 from pylons.i18n.translation import _
 from sqlalchemy import func
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -50,12 +48,12 @@ from rhodecode.lib.exceptions import NonRelativePathError, IMCCommitError
 from rhodecode.lib import hooks_utils, caches
 from rhodecode.lib.utils import (
     get_filesystem_repos, action_logger, make_db_config)
-from rhodecode.lib.utils2 import (
-    safe_str, safe_unicode, get_server_url, md5)
+from rhodecode.lib.utils2 import (safe_str, safe_unicode)
+from rhodecode.lib.system_info import get_system_info
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     Repository, CacheKey, UserFollowing, UserLog, User, RepoGroup,
-    PullRequest, DbMigrateVersion)
+    PullRequest)
 from rhodecode.model.settings import VcsSettingsModel
 
 log = logging.getLogger(__name__)
@@ -882,218 +880,8 @@ class ScmModel(BaseModel):
             self.install_svn_hooks(repo)
 
     def get_server_info(self, environ=None):
-        import platform
-        import rhodecode
-        import pkg_resources
-        from rhodecode.model.meta import Base as sql_base, Session
-        from sqlalchemy.engine import url
-        from rhodecode.lib.base import get_server_ip_addr, get_server_port
-        from rhodecode.lib.vcs.backends.git import discover_git_version
-        from rhodecode.model.gist import GIST_STORE_LOC
-
-        def percentage(part, whole):
-            whole = float(whole)
-            if whole > 0:
-                return 100 * float(part) / whole
-            return 0
-
-        try:
-            # cygwin cannot have yet psutil support.
-            import psutil
-        except ImportError:
-            psutil = None
-
-        environ = environ or {}
-        _NA = 'NOT AVAILABLE'
-        _memory = _NA
-        _uptime = _NA
-        _boot_time = _NA
-        _cpu = _NA
-        _disk = dict(percent=0, used=0, total=0, error='')
-        _disk_inodes = dict(percent=0, free=0, used=0, total=0, error='')
-        _load = {'1_min': _NA, '5_min': _NA, '15_min': _NA}
-
-        model = VcsSettingsModel()
-        storage_path = model.get_repos_location()
-        gist_storage_path = os.path.join(storage_path, GIST_STORE_LOC)
-        archive_storage_path = rhodecode.CONFIG.get('archive_cache_dir', '')
-        search_index_storage_path = rhodecode.CONFIG.get('search.location', '')
-
-        if psutil:
-            # disk storage
-            try:
-                _disk = dict(psutil.disk_usage(storage_path)._asdict())
-            except Exception as e:
-                log.exception('Failed to fetch disk info')
-                _disk = {'percent': 0, 'used': 0, 'total': 0, 'error': str(e)}
-
-            # disk inodes usage
-            try:
-                i_stat = os.statvfs(storage_path)
-
-                _disk_inodes['used'] = i_stat.f_ffree
-                _disk_inodes['free'] = i_stat.f_favail
-                _disk_inodes['total'] = i_stat.f_files
-                _disk_inodes['percent'] = percentage(
-                    _disk_inodes['used'], _disk_inodes['total'])
-            except Exception as e:
-                log.exception('Failed to fetch disk inodes info')
-                _disk_inodes['error'] = str(e)
-
-            # memory
-            _memory = dict(psutil.virtual_memory()._asdict())
-            _memory['percent2'] = psutil._common.usage_percent(
-                (_memory['total'] - _memory['free']),
-                _memory['total'], 1)
-
-            # load averages
-            if hasattr(psutil.os, 'getloadavg'):
-                _load = dict(zip(
-                    ['1_min', '5_min', '15_min'], psutil.os.getloadavg()))
-            _uptime = time.time() - psutil.boot_time()
-            _boot_time = psutil.boot_time()
-            _cpu = psutil.cpu_percent(0.5)
-
-        mods = dict([(p.project_name, p.version)
-                     for p in pkg_resources.working_set])
-
-        def get_storage_size(storage_path):
-            sizes = []
-            for file_ in os.listdir(storage_path):
-                storage_file = os.path.join(storage_path, file_)
-                if os.path.isfile(storage_file):
-                    try:
-                        sizes.append(os.path.getsize(storage_file))
-                    except OSError:
-                        log.exception('Failed to get size of storage file %s',
-                                      storage_file)
-                        pass
-
-            return sum(sizes)
-
-        # archive cache storage
-        _disk_archive = {'percent': 0, 'used': 0, 'total': 0}
-        try:
-            archive_storage_path_exists = os.path.isdir(
-                archive_storage_path)
-            if archive_storage_path and archive_storage_path_exists:
-                used = get_storage_size(archive_storage_path)
-                _disk_archive.update({
-                    'used': used,
-                    'total': used,
-                })
-        except Exception as e:
-            log.exception('failed to fetch archive cache storage')
-            _disk_archive['error'] = str(e)
-
-        # search index storage
-        _disk_index = {'percent': 0, 'used': 0, 'total': 0}
-        try:
-            search_index_storage_path_exists = os.path.isdir(
-                search_index_storage_path)
-            if search_index_storage_path_exists:
-                used = get_storage_size(search_index_storage_path)
-                _disk_index.update({
-                    'percent': 100,
-                    'used': used,
-                    'total': used,
-                })
-        except Exception as e:
-            log.exception('failed to fetch search index storage')
-            _disk_index['error'] = str(e)
-
-        # gist storage
-        _disk_gist = {'percent': 0, 'used': 0, 'total': 0, 'items': 0}
-        try:
-            items_count = 0
-            used = 0
-            for root, dirs, files in os.walk(safe_str(gist_storage_path)):
-                if root == gist_storage_path:
-                    items_count = len(dirs)
-
-                for f in files:
-                    try:
-                        used += os.path.getsize(os.path.join(root, f))
-                    except OSError:
-                        pass
-            _disk_gist.update({
-                'percent': 100,
-                'used': used,
-                'total': used,
-                'items': items_count
-            })
-        except Exception as e:
-            log.exception('failed to fetch gist storage items')
-            _disk_gist['error'] = str(e)
-
-        # GIT info
-        git_ver = discover_git_version()
-
-        # SVN info
-        # TODO: johbo: Add discover_svn_version to replace this code.
-        try:
-            import svn.core
-            svn_ver = svn.core.SVN_VERSION
-        except ImportError:
-            svn_ver = None
-
-        # DB stuff
-        db_info = url.make_url(rhodecode.CONFIG['sqlalchemy.db1.url'])
-        db_type = db_info.__to_string__()
-        try:
-            engine = sql_base.metadata.bind
-            db_server_info = engine.dialect._get_server_version_info(
-                Session.connection(bind=engine))
-            db_version = '%s %s' % (db_info.drivername,
-                                    '.'.join(map(str, db_server_info)))
-        except Exception:
-            log.exception('failed to fetch db version')
-            db_version = '%s %s' % (db_info.drivername, '?')
-
-        db_migrate = DbMigrateVersion.query().filter(
-            DbMigrateVersion.repository_id == 'rhodecode_db_migrations').one()
-        db_migrate_version = db_migrate.version
-
-        info = {
-            'py_version': ' '.join(platform._sys_version()),
-            'py_path': sys.executable,
-            'py_modules': sorted(mods.items(), key=lambda k: k[0].lower()),
-
-            'platform': safe_unicode(platform.platform()),
-            'storage': storage_path,
-            'archive_storage': archive_storage_path,
-            'index_storage': search_index_storage_path,
-            'gist_storage': gist_storage_path,
-
-
-            'db_type': db_type,
-            'db_version': db_version,
-            'db_migrate_version': db_migrate_version,
-
-            'rhodecode_version': rhodecode.__version__,
-            'rhodecode_config_ini': rhodecode.CONFIG.get('__file__'),
-            'server_ip': '%s:%s' % (
-                get_server_ip_addr(environ, log_errors=False),
-                get_server_port(environ)
-            ),
-            'server_id': rhodecode.CONFIG.get('instance_id'),
-
-            'git_version': safe_unicode(git_ver),
-            'hg_version': mods.get('mercurial'),
-            'svn_version': svn_ver,
-
-            'uptime': _uptime,
-            'boot_time': _boot_time,
-            'load': _load,
-            'cpu': _cpu,
-            'memory': _memory,
-            'disk': _disk,
-            'disk_inodes': _disk_inodes,
-            'disk_archive': _disk_archive,
-            'disk_gist': _disk_gist,
-            'disk_index': _disk_index,
-        }
-        return info
+        server_info = get_system_info(environ)
+        return server_info
 
 
 def _check_rhodecode_hook(hook_path):

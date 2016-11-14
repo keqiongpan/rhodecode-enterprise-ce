@@ -99,6 +99,7 @@ def connect_pyro4(server_and_port):
         connection.Git = None
         connection.Hg = None
         connection.Svn = None
+        connection.Service = None
 
 
 def connect_http(server_and_port):
@@ -113,6 +114,8 @@ def connect_http(server_and_port):
         server_and_port, '/hg', session_factory)
     connection.Svn = client_http.RepoMaker(
         server_and_port, '/svn', session_factory)
+    connection.Service = client_http.ServiceConnection(
+        server_and_port, '/_service', session_factory)
 
     scm_app.HG_REMOTE_WSGI = client_http.VcsHttpProxy(
         server_and_port, '/proxy/hg')
@@ -124,6 +127,7 @@ def connect_http(server_and_port):
         connection.Git = None
         connection.Hg = None
         connection.Svn = None
+        connection.Service = None
 
 
 def connect_vcs(server_and_port, protocol):

@@ -548,62 +548,85 @@ class SettingsController(BaseController):
         """GET /admin/settings/system: All items in the collection"""
         # url('admin_settings_system')
         snapshot = str2bool(request.GET.get('snapshot'))
-        c.active = 'system'
-
         defaults = self._form_defaults()
-        c.rhodecode_ini = rhodecode.CONFIG
+
+        c.active = 'system'
         c.rhodecode_update_url = defaults.get('rhodecode_update_url')
         server_info = ScmModel().get_server_info(request.environ)
+
         for key, val in server_info.iteritems():
             setattr(c, key, val)
 
-        if c.disk['percent'] > 90:
-            h.flash(h.literal(_(
-                'Critical: your disk space is very low <b>%s%%</b> used' %
-                c.disk['percent'])), 'error')
-        elif c.disk['percent'] > 70:
-            h.flash(h.literal(_(
-                'Warning: your disk space is running low <b>%s%%</b> used' %
-                c.disk['percent'])), 'warning')
+        def val(name, subkey='human_value'):
+            return server_info[name][subkey]
 
-        try:
-            c.uptime_age = h._age(
-                h.time_to_datetime(c.boot_time), False, show_suffix=False)
-        except TypeError:
-            c.uptime_age = c.boot_time
+        def state(name):
+            return server_info[name]['state']
 
-        try:
-            c.system_memory = '%s/%s, %s%% (%s%%) used%s' % (
-                h.format_byte_size_binary(c.memory['used']),
-                h.format_byte_size_binary(c.memory['total']),
-                c.memory['percent2'],
-                c.memory['percent'],
-                ' %s' % c.memory['error'] if 'error' in c.memory else '')
-        except TypeError:
-            c.system_memory = 'NOT AVAILABLE'
+        def val2(name):
+            val = server_info[name]['human_value']
+            state = server_info[name]['state']
+            return val, state
 
-        rhodecode_ini_safe = rhodecode.CONFIG.copy()
-        blacklist = [
-            'rhodecode_license_key',
-            'routes.map',
-            'pylons.h',
-            'pylons.app_globals',
-            'pylons.environ_config',
-            'sqlalchemy.db1.url',
-            ('app_conf', 'sqlalchemy.db1.url')
+        c.data_items = [
+            # update info
+            (_('Update info'), h.literal(
+                '<span class="link" id="check_for_update" >%s.</span>' % (
+                _('Check for updates')) +
+                '<br/> <span >%s.</span>' % (_('Note: please make sure this server can access `%s` for the update link to work') % c.rhodecode_update_url)
+            ), ''),
+
+            # RhodeCode specific
+            (_('RhodeCode Version'), c.rhodecode_version, ''),
+            (_('RhodeCode Server IP'), val('server')['server_ip'], state('server')),
+            (_('RhodeCode Server ID'), val('server')['server_id'], state('server')),
+            (_('RhodeCode Configuration'), val('rhodecode_config')['path'], state('rhodecode_config')),
+            ('', '', ''),  # spacer
+
+            # Database
+            (_('Database'), val('database')['url'], state('database')),
+            (_('Database version'), val('database')['version'], state('database')),
+            ('', '', ''),  # spacer
+
+            # Platform/Python
+            (_('Platform'), val('platform'), state('platform')),
+            (_('Python version'), val('python')['version'], state('python')),
+            (_('Python path'), val('python')['executable'], state('python')),
+            ('', '', ''),  # spacer
+
+            # Systems stats
+            (_('CPU'), val('cpu'), state('cpu')),
+            (_('Load'), val('load'), state('load')),
+            (_('Memory'), val('memory'), state('memory')),
+            (_('Uptime'), val('uptime')['uptime'], state('uptime')),
+            ('', '', ''),  # spacer
+
+            # Repo storage
+            (_('Storage location'), val('storage')['path'], state('storage')),
+            (_('Storage info'), val('storage')['text'], state('storage')),
+            (_('Storage inodes'), val('storage_inodes')['text'], state('storage_inodes')),
+
+            (_('Gist storage location'), val('storage_gist')['path'], state('storage_gist')),
+            (_('Gist storage info'), val('storage_gist')['text'], state('storage_gist')),
+
+            (_('Archive cache storage location'), val('storage_archive')['path'], state('storage_archive')),
+            (_('Archive cache info'), val('storage_archive')['text'], state('storage_archive')),
+
+            (_('Search storage'), val('storage_search')['path'], state('storage_search')),
+            (_('Search info'), val('storage_search')['text'], state('storage_search')),
+            ('', '', ''),  # spacer
+
+            # VCS specific
+            (_('VCS Backends'), val('vcs_backends'), state('vcs_backends')),
+            (_('VCS Server'), val('vcs_server')['text'], state('vcs_server')),
+            (_('GIT'), val('git'), state('git')),
+            (_('HG'), val('hg'), state('hg')),
+            (_('SVN'), val('svn'), state('svn')),
+
         ]
-        for k in blacklist:
-            if isinstance(k, tuple):
-                section, key = k
-                if section in rhodecode_ini_safe:
-                    rhodecode_ini_safe[section].pop(key, None)
-            else:
-                rhodecode_ini_safe.pop(k, None)
-
-        c.rhodecode_ini_safe = rhodecode_ini_safe
 
         # TODO: marcink, figure out how to allow only selected users to do this
-        c.allowed_to_snapshot = False
+        c.allowed_to_snapshot = c.rhodecode_user.admin
 
         if snapshot:
             if c.allowed_to_snapshot:

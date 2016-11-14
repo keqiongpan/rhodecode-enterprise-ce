@@ -21,7 +21,28 @@
 """
 HG module
 """
+import logging
 
+from rhodecode.lib.vcs import connection
 from rhodecode.lib.vcs.backends.hg.commit import MercurialCommit
 from rhodecode.lib.vcs.backends.hg.inmemory import MercurialInMemoryCommit
 from rhodecode.lib.vcs.backends.hg.repository import MercurialRepository
+
+
+log = logging.getLogger(__name__)
+
+
+def discover_hg_version(raise_on_exc=False):
+    """
+    Returns the string as it was returned by running 'git --version'
+
+    It will return an empty string in case the connection is not initialized
+    or no vcsserver is available.
+    """
+    try:
+        return connection.Hg.discover_hg_version()
+    except Exception:
+        log.warning("Failed to discover the HG version", exc_info=True)
+        if raise_on_exc:
+            raise
+        return ''

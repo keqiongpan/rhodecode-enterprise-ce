@@ -33,7 +33,7 @@ from rhodecode.lib.vcs.backends.git.inmemory import GitInMemoryCommit
 log = logging.getLogger(__name__)
 
 
-def discover_git_version():
+def discover_git_version(raise_on_exc=False):
     """
     Returns the string as it was returned by running 'git --version'
 
@@ -44,4 +44,6 @@ def discover_git_version():
         return connection.Git.discover_git_version()
     except Exception:
         log.warning("Failed to discover the Git version", exc_info=True)
+        if raise_on_exc:
+            raise
         return ''

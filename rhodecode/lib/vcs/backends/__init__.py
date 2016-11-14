@@ -76,3 +76,12 @@ def get_supported_backends():
     Returns list of aliases of supported backends.
     """
     return settings.BACKENDS.keys()
+
+
+def get_vcsserver_version():
+    from rhodecode.lib.vcs import connection
+    data = connection.Service.get_vcsserver_service_data()
+    if data and 'version' in data:
+        return data['version']
+
+    return None

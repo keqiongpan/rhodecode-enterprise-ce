@@ -30,6 +30,8 @@ def _not_initialized(*args, **kwargs):
         "Make sure `vcs.server` is enabled in your configuration.")
 
 # TODO: figure out a nice default value for these things
+Service = _not_initialized
+
 Git = _not_initialized
 Hg = _not_initialized
 Svn = _not_initialized
