@@ -589,7 +589,8 @@ class SettingsController(BaseController):
             ('', '', ''),  # spacer
 
             # Platform/Python
-            (_('Platform'), val('platform'), state('platform')),
+            (_('Platform'), val('platform')['name'], state('platform')),
+            (_('Platform UUID'), val('platform')['uuid'], state('platform')),
             (_('Python version'), val('python')['version'], state('python')),
             (_('Python path'), val('python')['executable'], state('python')),
             ('', '', ''),  # spacer

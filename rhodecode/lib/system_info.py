@@ -107,8 +107,12 @@ def py_modules():
 
 
 def platform_type():
-    from rhodecode.lib.utils import safe_unicode
-    value = safe_unicode(platform.platform())
+    from rhodecode.lib.utils import safe_unicode, generate_platform_uuid
+
+    value = dict(
+        name=safe_unicode(platform.platform()),
+        uuid=generate_platform_uuid()
+    )
     return SysInfoRes(value=value)
 
 

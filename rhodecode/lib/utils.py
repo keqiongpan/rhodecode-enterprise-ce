@@ -33,6 +33,7 @@ import tempfile
 import traceback
 import tarfile
 import warnings
+import hashlib
 from os.path import join as jn
 
 import paste
@@ -1001,3 +1002,17 @@ def get_registry(request):
         return request.registry
     except AttributeError:
         return get_current_registry()
+
+
+def generate_platform_uuid():
+    """
+    Generates platform UUID based on it's name
+    """
+    import platform
+
+    try:
+        uuid_list = [platform.platform()]
+        return hashlib.sha256(':'.join(uuid_list)).hexdigest()
+    except Exception as e:
+        log.error('Failed to generate host uuid: %s' % e)
+        return 'UNDEFINED'
