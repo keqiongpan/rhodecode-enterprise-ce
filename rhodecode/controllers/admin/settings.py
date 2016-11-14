@@ -596,9 +596,9 @@ class SettingsController(BaseController):
 
             # Systems stats
             (_('CPU'), val('cpu'), state('cpu')),
-            (_('Load'), val('load'), state('load')),
-            (_('Memory'), val('memory'), state('memory')),
-            (_('Uptime'), val('uptime')['uptime'], state('uptime')),
+            (_('Load'), val('load')['text'], state('load')),
+            (_('Memory'), val('memory')['text'], state('memory')),
+            (_('Uptime'), val('uptime')['text'], state('uptime')),
             ('', '', ''),  # spacer
 
             # Repo storage
@@ -612,8 +612,8 @@ class SettingsController(BaseController):
             (_('Archive cache storage location'), val('storage_archive')['path'], state('storage_archive')),
             (_('Archive cache info'), val('storage_archive')['text'], state('storage_archive')),
 
-            (_('Search storage'), val('storage_search')['path'], state('storage_search')),
-            (_('Search info'), val('storage_search')['text'], state('storage_search')),
+            (_('Search info'), val('search')['text'], state('search')),
+            (_('Search location'), val('search')['location'], state('search')),
             ('', '', ''),  # spacer
 
             # VCS specific

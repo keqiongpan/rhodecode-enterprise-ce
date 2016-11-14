@@ -4,6 +4,7 @@ import time
 import platform
 import pkg_resources
 import logging
+import string
 
 
 log = logging.getLogger(__name__)
@@ -93,10 +94,8 @@ class SysInfo(object):
 
 # SysInfo functions
 def python_info():
-    value = {
-        'version': ' '.join(platform._sys_version()),
-        'executable': sys.executable
-    }
+    value = dict(version=' '.join(platform._sys_version()),
+                 executable=sys.executable)
     return SysInfoRes(value=value)
 
 
@@ -115,84 +114,95 @@ def platform_type():
 
 def uptime():
     from rhodecode.lib.helpers import age, time_to_datetime
-    from rhodecode.translation import _
 
-    _uptime = _uptime_human = {'boot_time': 0, 'uptime': 0}
+    value = dict(boot_time=0, uptime=0, text='')
     state = STATE_OK_DEFAULT
     if not psutil:
-        return SysInfoRes(value=_uptime, state=state)
+        return SysInfoRes(value=value, state=state)
 
     boot_time = psutil.boot_time()
-    _uptime['boot_time'] = boot_time
-    _uptime['uptime'] = time.time() - boot_time
+    value['boot_time'] = boot_time
+    value['uptime'] = time.time() - boot_time
 
-    _uptime_human['boot_time'] = time_to_datetime(boot_time)
-    _uptime_human['uptime'] = _('Server started {}').format(
+    human_value = value.copy()
+    human_value['boot_time'] = time_to_datetime(boot_time)
+    human_value['uptime'] = age(time_to_datetime(boot_time), show_suffix=False)
+    human_value['text'] = 'Server started {}'.format(
         age(time_to_datetime(boot_time)))
 
-    return SysInfoRes(value=_uptime, human_value=_uptime_human)
+    return SysInfoRes(value=value, human_value=human_value)
 
 
 def memory():
     from rhodecode.lib.helpers import format_byte_size_binary
-    _memory = {'available': 0, 'used': 0, 'cached': 0, 'percent': 0,
-               'percent_used': 0, 'free': 0, 'inactive': 0, 'active': 0,
-               'shared': 0, 'total': 0, 'buffers': 0}
+    value = dict(available=0, used=0, cached=0, percent=0, percent_used=0,
+                 free=0, inactive=0, active=0, shared=0, total=0, buffers=0,
+                 text='')
+
     state = STATE_OK_DEFAULT
     if not psutil:
-        return SysInfoRes(value=_memory, state=state)
+        return SysInfoRes(value=value, state=state)
 
-    # memory
-    _memory = dict(psutil.virtual_memory()._asdict())
-    _memory['percent_used'] = psutil._common.usage_percent(
-        (_memory['total'] - _memory['free']), _memory['total'], 1)
+    value.update(dict(psutil.virtual_memory()._asdict()))
+    value['percent_used'] = psutil._common.usage_percent(
+        (value['total'] - value['free']), value['total'], 1)
 
-    try:
-        human_value = '%s/%s, %s%% used' % (
-            format_byte_size_binary(_memory['used']),
-            format_byte_size_binary(_memory['total']),
-            _memory['percent_used'],)
-    except TypeError:
-        human_value = 'NOT AVAILABLE'
+    human_value = value.copy()
+    human_value['text'] = '%s/%s, %s%% used' % (
+        format_byte_size_binary(value['used']),
+        format_byte_size_binary(value['total']),
+        value['percent_used'],)
 
-    if state['type'] == STATE_OK and _memory['percent_used'] > 90:
+    keys = value.keys()[::]
+    keys.pop(keys.index('percent'))
+    keys.pop(keys.index('percent_used'))
+    keys.pop(keys.index('text'))
+    for k in keys:
+        human_value[k] = format_byte_size_binary(value[k])
+
+    if state['type'] == STATE_OK and value['percent_used'] > 90:
         msg = 'Critical: your available RAM memory is very low.'
         state = {'message': msg, 'type': STATE_ERR}
 
-    elif state['type'] == STATE_OK and  _memory['percent_used'] > 70:
+    elif state['type'] == STATE_OK and value['percent_used'] > 70:
         msg = 'Warning: your available RAM memory is running low.'
         state = {'message': msg, 'type': STATE_WARN}
 
-    return SysInfoRes(value=_memory, state=state, human_value=human_value)
+    return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
 def machine_load():
-    _load = {'1_min': _NA, '5_min': _NA, '15_min': _NA}
-
+    value = {'1_min': _NA, '5_min': _NA, '15_min': _NA, 'text': ''}
     state = STATE_OK_DEFAULT
     if not psutil:
-        return SysInfoRes(value=_load, state=state)
+        return SysInfoRes(value=value, state=state)
 
     # load averages
     if hasattr(psutil.os, 'getloadavg'):
-        _load = dict(zip(['1_min', '5_min', '15_min'], psutil.os.getloadavg()))
+        value.update(dict(
+            zip(['1_min', '5_min', '15_min'], psutil.os.getloadavg())))
 
-    human_value = '1min: %s, 5min: %s, 15min: %s' % (
-    _load['1_min'], _load['5_min'], _load['15_min'])
+    human_value = value.copy()
+    human_value['text'] = '1min: {}, 5min: {}, 15min: {}'.format(
+        value['1_min'], value['5_min'], value['15_min'])
 
-    # TODO: warn about too-much load 15 min
-    return SysInfoRes(value=_load, state=state, human_value=human_value)
+    if state['type'] == STATE_OK and value['15_min'] > 5:
+        msg = 'Warning: your machine load is very high.'
+        state = {'message': msg, 'type': STATE_WARN}
+
+    return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
 def cpu():
+    value = 0
     state = STATE_OK_DEFAULT
-    cpu_value = 0
-    if not psutil:
-        return SysInfoRes(value=cpu_value, state=state)
 
-    cpu_value = psutil.cpu_percent(0.5)
-    human_value = '{} %'.format(cpu_value)
-    return SysInfoRes(value=cpu_value, state=state, human_value=human_value)
+    if not psutil:
+        return SysInfoRes(value=value, state=state)
+
+    value = psutil.cpu_percent(0.5)
+    human_value = '{} %'.format(value)
+    return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
 def storage():
@@ -200,69 +210,70 @@ def storage():
     from rhodecode.model.settings import VcsSettingsModel
     path = VcsSettingsModel().get_repos_location()
 
-    # disk storage
-    disk = {'percent': 0, 'used': 0, 'total': 0, 'path': path, 'text': ''}
+    value = dict(percent=0, used=0, total=0, path=path, text='')
     state = STATE_OK_DEFAULT
     if not psutil:
-        return SysInfoRes(value=disk, state=state)
+        return SysInfoRes(value=value, state=state)
 
     try:
-        disk.update(dict(psutil.disk_usage(path)._asdict()))
+        value.update(dict(psutil.disk_usage(path)._asdict()))
     except Exception as e:
         log.exception('Failed to fetch disk info')
         state = {'message': str(e), 'type': STATE_ERR}
 
-    human_value = disk
+    human_value = value.copy()
+    human_value['used'] = format_byte_size_binary(value['used'])
+    human_value['total'] = format_byte_size_binary(value['total'])
     human_value['text'] = "{}/{}, {}% used".format(
-        format_byte_size_binary(disk['used']),
-        format_byte_size_binary(disk['total']),
-        (disk['percent']))
+        format_byte_size_binary(value['used']),
+        format_byte_size_binary(value['total']),
+        value['percent'])
 
-    if state['type'] == STATE_OK and disk['percent'] > 90:
+    if state['type'] == STATE_OK and value['percent'] > 90:
         msg = 'Critical: your disk space is very low.'
         state = {'message': msg, 'type': STATE_ERR}
 
-    elif state['type'] == STATE_OK and disk['percent'] > 70:
+    elif state['type'] == STATE_OK and value['percent'] > 70:
         msg = 'Warning: your disk space is running low.'
         state = {'message': msg, 'type': STATE_WARN}
 
-    return SysInfoRes(value=disk, state=state, human_value=human_value)
+    return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
 def storage_inodes():
     from rhodecode.model.settings import VcsSettingsModel
     path = VcsSettingsModel().get_repos_location()
 
-    _disk_inodes = dict(percent=0, free=0, used=0, total=0, path=path, text='')
+    value = dict(percent=0, free=0, used=0, total=0, path=path, text='')
     state = STATE_OK_DEFAULT
     if not psutil:
-        return SysInfoRes(value=_disk_inodes, state=state)
+        return SysInfoRes(value=value, state=state)
 
     try:
         i_stat = os.statvfs(path)
 
-        _disk_inodes['used'] = i_stat.f_ffree
-        _disk_inodes['free'] = i_stat.f_favail
-        _disk_inodes['total'] = i_stat.f_files
-        _disk_inodes['percent'] = percentage(
-            _disk_inodes['used'], _disk_inodes['total'])
+        value['used'] = i_stat.f_ffree
+        value['free'] = i_stat.f_favail
+        value['total'] = i_stat.f_files
+        value['percent'] = percentage(
+            value['used'], value['total'])
     except Exception as e:
         log.exception('Failed to fetch disk inodes info')
         state = {'message': str(e), 'type': STATE_ERR}
 
-    human_value = _disk_inodes
+    human_value = value.copy()
     human_value['text'] = "{}/{}, {}% used".format(
-        _disk_inodes['used'], _disk_inodes['total'], _disk_inodes['percent'])
+        value['used'], value['total'], value['percent'])
 
-    if state['type'] == STATE_OK and _disk_inodes['percent'] > 90:
+    if state['type'] == STATE_OK and value['percent'] > 90:
         msg = 'Critical: your disk free inodes are very low.'
         state = {'message': msg, 'type': STATE_ERR}
 
-    elif state['type'] == STATE_OK and _disk_inodes['percent'] > 70:
+    elif state['type'] == STATE_OK and value['percent'] > 70:
         msg = 'Warning: your disk free inodes are running low.'
         state = {'message': msg, 'type': STATE_WARN}
 
-    return SysInfoRes(value=_disk_inodes, state=state)
+    return SysInfoRes(value=value, state=state)
 
 
 def storage_archives():
@@ -274,21 +285,21 @@ def storage_archives():
           'archive_cache_dir=/path/to/cache option in the .ini file'
     path = safe_str(rhodecode.CONFIG.get('archive_cache_dir', msg))
 
-    disk_archive = dict(percent=0, used=0, total=0, items=0, path=path, text='')
+    value = dict(percent=0, used=0, total=0, items=0, path=path, text='')
     state = STATE_OK_DEFAULT
     try:
         items_count = 0
         used = 0
         for root, dirs, files in os.walk(path):
             if root == path:
-                items_count = len(dirs)
+                items_count = len(files)
 
             for f in files:
                 try:
                     used += os.path.getsize(os.path.join(root, f))
                 except OSError:
                     pass
-        disk_archive.update({
+        value.update({
             'percent': 100,
             'used': used,
             'total': used,
@@ -299,11 +310,13 @@ def storage_archives():
         log.exception('failed to fetch archive cache storage')
         state = {'message': str(e), 'type': STATE_ERR}
 
-    human_value = disk_archive
-    human_value['text'] = "{} ({} items)".format(format_byte_size_binary(
-        disk_archive['used']), disk_archive['total'])
+    human_value = value.copy()
+    human_value['used'] = format_byte_size_binary(value['used'])
+    human_value['total'] = format_byte_size_binary(value['total'])
+    human_value['text'] = "{} ({} items)".format(
+        human_value['used'], value['items'])
 
-    return SysInfoRes(value=disk_archive, state=state, human_value=human_value)
+    return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
 def storage_gist():
@@ -315,7 +328,7 @@ def storage_gist():
         VcsSettingsModel().get_repos_location(), GIST_STORE_LOC))
 
     # gist storage
-    _disk_gist = dict(percent=0, used=0, total=0, items=0, path=path, text='')
+    value = dict(percent=0, used=0, total=0, items=0, path=path, text='')
     state = STATE_OK_DEFAULT
 
     try:
@@ -330,7 +343,7 @@ def storage_gist():
                     used += os.path.getsize(os.path.join(root, f))
                 except OSError:
                     pass
-        _disk_gist.update({
+        value.update({
             'percent': 100,
             'used': used,
             'total': used,
@@ -340,37 +353,36 @@ def storage_gist():
         log.exception('failed to fetch gist storage items')
         state = {'message': str(e), 'type': STATE_ERR}
 
-    human_value = _disk_gist
-    human_value['text'] = "{} ({} items)".format(format_byte_size_binary(
-        _disk_gist['used']), _disk_gist['items'])
-    return SysInfoRes(value=_disk_gist, state=state, human_value=human_value)
+    human_value = value.copy()
+    human_value['used'] = format_byte_size_binary(value['used'])
+    human_value['total'] = format_byte_size_binary(value['total'])
+    human_value['text'] = "{} ({} items)".format(
+        human_value['used'], value['items'])
+
+    return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
-def storage_search():
+def search_info():
     import rhodecode
-    path = rhodecode.CONFIG.get('search.location', '')
+    from rhodecode.lib.index import searcher_from_config
 
-    # search index storage
-    _disk_index = dict(percent=0, used=0, total=0, path=path, text='')
-    state = STATE_OK_DEFAULT
+    backend = rhodecode.CONFIG.get('search.module', '')
+    location = rhodecode.CONFIG.get('search.location', '')
+
     try:
-        search_index_storage_path_exists = os.path.isdir(path)
-        if search_index_storage_path_exists:
-            used = get_storage_size(path)
-            _disk_index.update({
-                'percent': 100,
-                'used': used,
-                'total': used,
-            })
-    except Exception as e:
-        log.exception('failed to fetch search index storage')
-        state = {'message': str(e), 'type': STATE_ERR}
+        searcher = searcher_from_config(rhodecode.CONFIG)
+        searcher = searcher.__class__.__name__
+    except Exception:
+        searcher = None
 
-    human_value = _disk_index
-    human_value['text'] = "{}/{}, {}% used".format(
-        _disk_index['used'], _disk_index['total'], _disk_index['percent'])
+    value = dict(
+        backend=backend, searcher=searcher, location=location, text='')
+    state = STATE_OK_DEFAULT
 
-    return SysInfoRes(value=_disk_index, state=state, human_value=human_value)
+    human_value = value.copy()
+    human_value['text'] = "backend:`{}`".format(human_value['backend'])
+
+    return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
 def git_info():
@@ -412,7 +424,8 @@ def svn_info():
 
 def vcs_backends():
     import rhodecode
-    value = rhodecode.CONFIG.get('vcs.backends', '').split(',')
+    value = map(
+        string.strip, rhodecode.CONFIG.get('vcs.backends', '').split(','))
     human_value = 'Enabled backends in order: {}'.format(','.join(value))
     return SysInfoRes(value=value, human_value=human_value)
 
@@ -443,17 +456,21 @@ def vcs_server():
         text='',
     )
 
-    human_value = value
+    human_value = value.copy()
     human_value['text'] = \
         '{url}@ver:{ver} via {mode} mode, connection:{conn}'.format(
             url=server_url, ver=version, mode=protocol, conn=connection)
 
-    return SysInfoRes(value='', state=state, human_value=human_value)
+    return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
 def rhodecode_app_info():
     import rhodecode
-    return SysInfoRes(value={'rhodecode_version': rhodecode.__version__})
+    value = dict(
+        rhodecode_version=rhodecode.__version__,
+        rhodecode_lib_path=os.path.abspath(rhodecode.__file__)
+    )
+    return SysInfoRes(value=value)
 
 
 def rhodecode_config():
@@ -529,7 +546,7 @@ def database_info():
         url=repr(db_url_obj)
     )
 
-    human_value = db_info
+    human_value = db_info.copy()
     human_value['url'] = "{} @ migration version: {}".format(
         db_info['url'], db_info['migrate_version'])
     human_value['version'] = "{} {}".format(db_info['type'], db_info['version'])
@@ -565,8 +582,9 @@ def get_system_info(environ):
         'storage': SysInfo(storage)(),
         'storage_inodes': SysInfo(storage_inodes)(),
         'storage_archive': SysInfo(storage_archives)(),
-        'storage_search': SysInfo(storage_search)(),
         'storage_gist': SysInfo(storage_gist)(),
+
+        'search': SysInfo(search_info)(),
 
         'uptime': SysInfo(uptime)(),
         'load': SysInfo(machine_load)(),
