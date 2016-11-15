@@ -88,10 +88,10 @@ let
   };
 
   Sphinx = buildPythonPackage (rec {
-    name = "Sphinx-1.4.4";
+    name = "Sphinx-1.4.8";
     src = fetchurl {
-      url = "https://pypi.python.org/packages/20/a2/72f44c84f6c4115e3fef58d36d657ec311d80196eab9fd5ec7bcde76143b/${name}.tar.gz";
-      md5 = "64ce2ec08d37ed56313a98232cbe2aee";
+      url = "https://pypi.python.org/packages/1f/f6/e54a7aad73e35232356103771ae76306dadd8546b024c646fbe75135571c/${name}.tar.gz";
+      md5 = "5ec718a4855917e149498bba91b74e67";
     };
     propagatedBuildInputs = [
       docutils

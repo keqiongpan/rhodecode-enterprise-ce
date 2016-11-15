@@ -48,7 +48,7 @@ comment_commit
 
    Example error output:
 
-   .. code-block:: json
+   .. code-block:: bash
 
        {
            "id" : <id_given_in_input>,
@@ -125,7 +125,7 @@ create_repo
      id : <id_given_in_input>
      result : null
      error :  {
-        'failed to create repository `<repo_name>`
+        'failed to create repository `<repo_name>`'
      }
 
 
@@ -729,7 +729,7 @@ lock
      id : <id_given_in_input>
      result : null
      error :  {
-       'Error occurred locking repository `<reponame>`
+       'Error occurred locking repository `<reponame>`'
      }
 
 

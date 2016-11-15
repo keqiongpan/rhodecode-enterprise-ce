@@ -321,7 +321,7 @@ def delete_repo_group(request, apiuser, repogroupid):
 
       id : <id_given_in_input>
       result : {
-        'msg': 'deleted repo group ID:<repogroupid> <repogroupname>
+        'msg': 'deleted repo group ID:<repogroupid> <repogroupname>'
         'repo_group': null
       }
       error :  null

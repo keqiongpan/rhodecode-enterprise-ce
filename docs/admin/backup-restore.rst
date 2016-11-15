@@ -127,10 +127,10 @@ system use the following steps.
 
 1. Install a new instance of |RCE| using sqlite option as database.
 2. Restore your database.
-2. Once installed, replace you backed up the :file:`rhodecode.ini` with your
+3. Once installed, replace you backed up the :file:`rhodecode.ini` with your
    backup version. Ensure this file points to the restored
    database, see the :ref:`config-database` section.
-3. Restart |RCE| and remap and rescan your |repos| to verify filesystem access,
+4. Restart |RCE| and remap and rescan your |repos| to verify filesystem access,
    see the :ref:`remap-rescan` section.
 
 

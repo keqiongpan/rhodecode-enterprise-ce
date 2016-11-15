@@ -9,9 +9,6 @@
 .. Avoid duplicating the quickstart instructions by importing the README
    file.
 
-.. include:: ../../../acceptance_tests/README.rst
-
-
 
 Choices of technology and tools
 ===============================

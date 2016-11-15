@@ -606,7 +606,7 @@ def create_repo(request, apiuser, repo_name, repo_type,
       id : <id_given_in_input>
       result : null
       error :  {
-         'failed to create repository `<repo_name>`
+         'failed to create repository `<repo_name>`'
       }
 
     """
@@ -1228,7 +1228,7 @@ def lock(request, apiuser, repoid, locked=Optional(None),
       id : <id_given_in_input>
       result : null
       error :  {
-        'Error occurred locking repository `<reponame>`
+        'Error occurred locking repository `<reponame>`'
       }
     """
 

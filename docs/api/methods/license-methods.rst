@@ -4,7 +4,7 @@ license methods
 ===============
 
 get_license_info (EE only)
-----------------
+--------------------------
 
 .. py:function:: get_license_info(apiuser)
 
@@ -32,7 +32,7 @@ get_license_info (EE only)
 
 
 set_license_key (EE only)
----------------
+-------------------------
 
 .. py:function:: set_license_key(apiuser, key)
 

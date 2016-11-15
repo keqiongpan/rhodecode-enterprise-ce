@@ -130,7 +130,7 @@ is a very small pencil which has to be clicked once you see the edit form of a
 ticket.
 
 
-.. figure:: images/redmine-description.png
+.. figure:: ../images/redmine-description.png
    :alt: Example of pencil to change the ticket description
 
    Shows an example of the pencil which lets you change the description.

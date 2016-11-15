@@ -38,7 +38,7 @@ changeset_comment
 
    Example error output:
 
-   .. code-block:: json
+   .. code-block:: bash
 
        {
            "id" : <id_given_in_input>,

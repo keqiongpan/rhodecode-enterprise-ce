@@ -36,7 +36,7 @@ following steps:
     Your public key has been saved in /home/user/.ssh/id_rsa.pub.
     The key fingerprint is:
     02:82:38:95:e5:30:d2:ad:17:60:15:7f:94:17:9f:30 user@ubuntu
-    The key's randomart image is:
+    The key\'s randomart image is:
     +--[ RSA 2048]----+
 
 2. SFTP to your server, and copy the public key to the ``~/.ssh`` folder.

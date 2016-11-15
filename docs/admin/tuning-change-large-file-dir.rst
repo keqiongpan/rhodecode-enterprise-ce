@@ -18,7 +18,7 @@ the following steps:
 2. Run the following commands, and ensure that |RCE| has write access to the
    new directory:
 
-.. code-block:: mysql
+.. code-block:: bash
 
     # Once logged into the database, use SQL to redirect
     # the large files location
