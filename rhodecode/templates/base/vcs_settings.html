@@ -150,7 +150,10 @@
                         <label for="vcs_svn_proxy_http_requests_enabled${suffix}">${_('Proxy subversion HTTP requests')}</label>
                     </div>
                     <div class="label">
-                        <span class="help-block">${_('Subversion HTTP Support. Enables communication with SVN over HTTP protocol.')}</span>
+                        <span class="help-block">
+                            ${_('Subversion HTTP Support. Enables communication with SVN over HTTP protocol.')}
+                            <a href="${h.url('enterprise_svn_setup')}" target="_blank">${_('SVN Protocol setup Documentation')}</a>.
+                        </span>
                     </div>
                 </div>
                 <div class="field">
