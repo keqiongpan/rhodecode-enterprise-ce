@@ -139,21 +139,22 @@ def uptime():
 
 def memory():
     from rhodecode.lib.helpers import format_byte_size_binary
-    value = dict(available=0, used=0, cached=0, percent=0, percent_used=0,
-                 free=0, inactive=0, active=0, shared=0, total=0, buffers=0,
-                 text='')
+    value = dict(available=0, used=0, used_real=0, cached=0, percent=0,
+                 percent_used=0, free=0, inactive=0, active=0, shared=0,
+                 total=0, buffers=0, text='')
 
     state = STATE_OK_DEFAULT
     if not psutil:
         return SysInfoRes(value=value, state=state)
 
     value.update(dict(psutil.virtual_memory()._asdict()))
+    value['used_real'] = value['total'] - value['available']
     value['percent_used'] = psutil._common.usage_percent(
-        (value['total'] - value['free']), value['total'], 1)
+        value['used_real'], value['total'], 1)
 
     human_value = value.copy()
     human_value['text'] = '%s/%s, %s%% used' % (
-        format_byte_size_binary(value['used']),
+        format_byte_size_binary(value['used_real']),
         format_byte_size_binary(value['total']),
         value['percent_used'],)
 
