@@ -18,6 +18,7 @@ The following are the most common system administration tasks.
 
     config-files-overview
     vcs-server
+    svn-http
     apache-config
     nginx-config
     backup-restore
