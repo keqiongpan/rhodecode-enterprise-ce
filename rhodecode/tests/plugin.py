@@ -1133,7 +1133,7 @@ def user_util(request, pylonsapp):
 class UserUtility(object):
 
     def __init__(self, test_name="test"):
-        self._test_name = test_name
+        self._test_name = self._sanitize_name(test_name)
         self.fixture = Fixture()
         self.repo_group_ids = []
         self.user_ids = []
@@ -1145,6 +1145,11 @@ class UserUtility(object):
         self.user_user_group_permission_ids = []
         self.user_group_user_group_permission_ids = []
         self.user_permissions = []
+
+    def _sanitize_name(self, name):
+        for char in ['[', ']']:
+            name = name.replace(char, '_')
+        return name
 
     def create_repo_group(
             self, owner=TEST_USER_ADMIN_LOGIN, auto_cleanup=True):
