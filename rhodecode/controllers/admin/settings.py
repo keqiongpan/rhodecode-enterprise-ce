@@ -613,6 +613,9 @@ class SettingsController(BaseController):
             (_('Archive cache storage location'), val('storage_archive')['path'], state('storage_archive')),
             (_('Archive cache info'), val('storage_archive')['text'], state('storage_archive')),
 
+            (_('Temp storage location'), val('storage_temp')['path'], state('storage_temp')),
+            (_('Temp storage info'), val('storage_temp')['text'], state('storage_temp')),
+
             (_('Search info'), val('search')['text'], state('search')),
             (_('Search location'), val('search')['location'], state('search')),
             ('', '', ''),  # spacer

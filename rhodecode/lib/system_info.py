@@ -367,6 +367,34 @@ def storage_gist():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+def storage_temp():
+    import tempfile
+    from rhodecode.lib.helpers import format_byte_size_binary
+
+    path = tempfile.gettempdir()
+    value = dict(percent=0, used=0, total=0, items=0, path=path, text='')
+    state = STATE_OK_DEFAULT
+
+    if not psutil:
+        return SysInfoRes(value=value, state=state)
+
+    try:
+        value.update(dict(psutil.disk_usage(path)._asdict()))
+    except Exception as e:
+        log.exception('Failed to fetch temp dir info')
+        state = {'message': str(e), 'type': STATE_ERR}
+
+    human_value = value.copy()
+    human_value['used'] = format_byte_size_binary(value['used'])
+    human_value['total'] = format_byte_size_binary(value['total'])
+    human_value['text'] = "{}/{}, {}% used".format(
+        format_byte_size_binary(value['used']),
+        format_byte_size_binary(value['total']),
+        value['percent'])
+
+    return SysInfoRes(value=value, state=state, human_value=human_value)
+
+
 def search_info():
     import rhodecode
     from rhodecode.lib.index import searcher_from_config
@@ -595,6 +623,7 @@ def get_system_info(environ):
         'storage_inodes': SysInfo(storage_inodes)(),
         'storage_archive': SysInfo(storage_archives)(),
         'storage_gist': SysInfo(storage_gist)(),
+        'storage_temp': SysInfo(storage_temp)(),
 
         'search': SysInfo(search_info)(),
 

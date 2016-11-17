@@ -46,6 +46,7 @@ class TestGetServerInfo(object):
         expected['load'] = resp['result']['load']
         expected['cpu'] = resp['result']['cpu']
         expected['storage'] = resp['result']['storage']
+        expected['storage_temp'] = resp['result']['storage_temp']
         expected['storage_inodes'] = resp['result']['storage_inodes']
         expected['server'] = resp['result']['server']
 
@@ -61,6 +62,7 @@ class TestGetServerInfo(object):
         expected['load'] = resp['result']['load']
         expected['cpu'] = resp['result']['cpu']
         expected['storage'] = resp['result']['storage']
+        expected['storage_temp'] = resp['result']['storage_temp']
         expected['storage_inodes'] = resp['result']['storage_inodes']
         expected['server'] = resp['result']['server']
 
