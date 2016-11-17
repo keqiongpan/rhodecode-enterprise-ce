@@ -7,10 +7,11 @@ Use the following example to configure Apache to use a URL prefix.
 
 .. code-block:: apache
 
-    <Location /<someprefix> > # Change <someprefix> into your chosen prefix
-      ProxyPass http://127.0.0.1:5000/<someprefix>
-      ProxyPassReverse http://127.0.0.1:5000/<someprefix>
-      SetEnvIf X-Url-Scheme https HTTPS=1
+    <Location /<someprefix>/ # Change <someprefix> into your chosen prefix
+      ProxyPreserveHost On
+      ProxyPass "http://127.0.0.1:5000/"
+      ProxyPassReverse "http://127.0.0.1:5000/"
+      Header set X-Url-Scheme https env=HTTPS
     </Location>
 
 In addition to the regular Apache setup you will need to add the following
