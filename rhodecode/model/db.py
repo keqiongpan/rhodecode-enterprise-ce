@@ -1987,12 +1987,12 @@ class Repository(Base, BaseModel):
         custom_wire = {
             'cache': cache  # controls the vcs.remote cache
         }
-
         repo = get_vcs_instance(
             repo_path=safe_str(self.repo_full_path),
             config=config,
             with_wire=custom_wire,
-            create=False)
+            create=False,
+            _vcs_alias=self.repo_type)
 
         return repo
 
