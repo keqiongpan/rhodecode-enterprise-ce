@@ -70,7 +70,7 @@ def stub_session_factory(stub_session):
 
 def test_repo_maker_uses_session_for_classmethods(stub_session_factory):
     repo_maker = client_http.RepoMaker(
-        'server_and_port', 'endpoint', stub_session_factory)
+        'server_and_port', 'endpoint', 'test_dummy_scm', stub_session_factory)
     repo_maker.example_call()
     stub_session_factory().post.assert_called_with(
         'http://server_and_port/endpoint', data=mock.ANY)
@@ -79,7 +79,7 @@ def test_repo_maker_uses_session_for_classmethods(stub_session_factory):
 def test_repo_maker_uses_session_for_instance_methods(
         stub_session_factory, config):
     repo_maker = client_http.RepoMaker(
-        'server_and_port', 'endpoint', stub_session_factory)
+        'server_and_port', 'endpoint', 'test_dummy_scm', stub_session_factory)
     repo = repo_maker('stub_path', config)
     repo.example_call()
     stub_session_factory().post.assert_called_with(

@@ -109,11 +109,11 @@ def connect_http(server_and_port):
     session_factory = client_http.ThreadlocalSessionFactory()
 
     connection.Git = client_http.RepoMaker(
-        server_and_port, '/git', session_factory)
+        server_and_port, '/git', 'git', session_factory)
     connection.Hg = client_http.RepoMaker(
-        server_and_port, '/hg', session_factory)
+        server_and_port, '/hg', 'hg', session_factory)
     connection.Svn = client_http.RepoMaker(
-        server_and_port, '/svn', session_factory)
+        server_and_port, '/svn', 'svn', session_factory)
     connection.Service = client_http.ServiceConnection(
         server_and_port, '/_service', session_factory)
 
