@@ -48,6 +48,9 @@ def _parse_json(value):
 
 
 def pytest_addoption(parser):
+    parser.addoption(
+        '--test-loglevel', dest='test_loglevel',
+        help="Set default Logging level for tests, warn (default), info, debug")
     group = parser.getgroup('pylons')
     group.addoption(
         '--with-pylons', dest='pylons_config',
@@ -187,6 +190,11 @@ def _use_vcs_http_server(config):
     return protocol == 'http'
 
 
+def _use_log_level(config):
+    level = config.getoption('test_loglevel') or 'warn'
+    return level.upper()
+
+
 class VCSServer(object):
     """
     Represents a running VCSServer instance.
@@ -281,6 +289,7 @@ class HttpVCSServer(VCSServer):
 @pytest.fixture(scope='session')
 def pylons_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
     option_name = 'pylons_config'
+    log_level = _use_log_level(request.config)
 
     overrides = [
         {'server:main': {'port': rcserver_port}},
@@ -291,6 +300,13 @@ def pylons_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
             # off in the INI file.
             'vcs.start_server': 'false',
         }},
+
+        {'handler_console': {
+            'class ': 'StreamHandler',
+            'args ': '(sys.stderr,)',
+            'level': log_level,
+        }},
+
     ]
     if _use_vcs_http_server(request.config):
         overrides.append({
