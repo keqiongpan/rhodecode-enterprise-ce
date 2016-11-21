@@ -21,6 +21,5 @@ def glob_validator(node, value):
     try:
         re.compile('^' + glob2re(value) + '$')
     except Exception:
-        raise
         msg = _(u'Invalid glob pattern')
         raise colander.Invalid(node, msg)
