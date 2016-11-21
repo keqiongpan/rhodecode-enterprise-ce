@@ -88,7 +88,7 @@
             if (metadataRequest && metadataRequest.readyState != 4) {
                 metadataRequest.abort();
             }
-            if (source_page) {
+            if (fileSourcePage) {
                 return false;
             }
 
@@ -143,8 +143,7 @@
                 $(this).hide();
             });
 
-
-            if (source_page) {
+            if (fileSourcePage) {
                 // variants for with source code, not tree view
 
                 // select code link event

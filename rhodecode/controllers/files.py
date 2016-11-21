@@ -223,9 +223,10 @@ class FilesController(BaseRepoController):
             c.file_author = True
             c.file_tree = ''
             if c.file.is_file():
+                c.file_source_page = 'true'
                 c.file_last_commit = c.file.last_commit
                 if c.file.size < self.cut_off_limit_file:
-                    if c.annotate: # annotation has precedence over renderer
+                    if c.annotate:  # annotation has precedence over renderer
                         c.annotated_lines = filenode_as_annotated_lines_tokens(
                             c.file
                         )
@@ -244,6 +245,7 @@ class FilesController(BaseRepoController):
                 c.authors = [(h.email(author),
                               h.person(author, 'username_or_name_or_email'))]
             else:
+                c.file_source_page = 'false'
                 c.authors = []
                 c.file_tree = self._get_tree_at_commit(
                     repo_name, c.commit.raw_id, f_path)

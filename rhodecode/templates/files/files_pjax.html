@@ -34,7 +34,10 @@
         % endif
 
     </div> <!--end summary-detail-->
-
+    <script>
+        // set the pageSource variable
+        var fileSourcePage = ${c.file_source_page};
+    </script>
     % if c.file.is_dir():
         <div id="commit-stats" class="sidebar-right">
             <%include file='file_tree_author_box.html'/>
