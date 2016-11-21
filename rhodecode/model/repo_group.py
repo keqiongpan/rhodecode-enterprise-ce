@@ -164,7 +164,8 @@ class RepoGroupModel(BaseModel):
 
         if os.path.isdir(create_path):
             if exc_on_failure:
-                raise Exception('That directory already exists !')
+                abs_create_path = os.path.abspath(create_path)
+                raise Exception('Directory `{}` already exists !'.format(abs_create_path))
             return False
         return True
 
