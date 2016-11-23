@@ -36,6 +36,38 @@ class GroupNameType(colander.String):
         return self.SEPARATOR.join(path)
 
 
+class StringBooleanType(colander.String):
+    true_values = ['true', 't', 'yes', 'y', 'on', '1']
+    false_values = ['false', 'f', 'no', 'n', 'off', '0']
+
+    def serialize(self, node, appstruct):
+        if appstruct is colander.null:
+            return colander.null
+        if not isinstance(appstruct, bool):
+            raise colander.Invalid(node, '%r is not a boolean' % appstruct)
+
+        return appstruct and 'true' or 'false'
+
+    def deserialize(self, node, cstruct):
+        if cstruct is colander.null:
+            return colander.null
+
+        if isinstance(cstruct, bool):
+            return cstruct
+
+        if not isinstance(cstruct, basestring):
+            raise colander.Invalid(node, '%r is not a string' % cstruct)
+
+        value = cstruct.lower()
+        if value in self.true_values:
+            return True
+        elif value in self.false_values:
+            return False
+        else:
+            raise colander.Invalid(
+                node, '{} value cannot be translated to bool'.format(value))
+
+
 class UserOrUserGroupType(colander.SchemaType):
     """ colander Schema type for valid rhodecode user and/or usergroup """
     scopes = ('user', 'usergroup')
