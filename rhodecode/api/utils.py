@@ -26,7 +26,8 @@ import collections
 import logging
 
 from rhodecode.api.exc import JSONRPCError
-from rhodecode.lib.auth import HasPermissionAnyApi, HasRepoPermissionAnyApi
+from rhodecode.lib.auth import HasPermissionAnyApi, HasRepoPermissionAnyApi, \
+    HasRepoGroupPermissionAnyApi
 from rhodecode.lib.utils import safe_unicode
 from rhodecode.controllers.utils import get_commit_from_ref_name
 from rhodecode.lib.vcs.exceptions import RepositoryError
@@ -168,6 +169,36 @@ def has_repo_permissions(apiuser, repoid, repo, perms):
             'repository `%s` does not exist' % repoid)
 
     return True
+
+
+def validate_repo_group_permissions(apiuser, repogroupid, repo_group, perms):
+    """
+    Raise JsonRPCError if apiuser is not authorized or return True
+
+    :param apiuser:
+    :param repogroupid: just the id of repository group
+    :param repo_group: instance of repo_group
+    :param perms:
+    """
+    if not HasRepoGroupPermissionAnyApi(*perms)(
+            user=apiuser, group_name=repo_group.group_name):
+        raise JSONRPCError(
+            'repository group `%s` does not exist' % repogroupid)
+
+    return True
+
+
+def has_set_owner_permissions(apiuser, owner):
+    if isinstance(owner, Optional):
+        owner = get_user_or_error(apiuser.user_id)
+    else:
+        if has_superadmin_permission(apiuser):
+            owner = get_user_or_error(owner)
+        else:
+            # forbid setting owner for non-admins
+            raise JSONRPCError(
+                'Only RhodeCode super-admin can specify `owner` param')
+    return owner
 
 
 def get_user_or_error(userid):
