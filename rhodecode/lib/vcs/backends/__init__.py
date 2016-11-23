@@ -43,11 +43,14 @@ def get_vcs_instance(repo_path, *args, **kwargs):
     for the path it returns None. Arguments and keyword arguments are passed
     to the vcs backend repository class.
     """
+    from rhodecode.lib.utils2 import safe_str
+
     explicit_vcs_alias = kwargs.pop('_vcs_alias', None)
     try:
-        vcs_alias = explicit_vcs_alias or get_scm(repo_path)[0]
+        vcs_alias = safe_str(explicit_vcs_alias or get_scm(repo_path)[0])
         log.debug(
-            'Creating instance of %s repository from %s', vcs_alias, repo_path)
+            'Creating instance of %s repository from %s', vcs_alias,
+            safe_str(repo_path))
         backend = get_backend(vcs_alias)
 
         if explicit_vcs_alias:
