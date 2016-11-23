@@ -62,7 +62,7 @@ REMOVED_REPO_PAT = re.compile(r'rm__\d{8}_\d{6}_\d{6}__.*')
 # String which contains characters that are not allowed in slug names for
 # repositories or repository groups. It is properly escaped to use it in
 # regular expressions.
-SLUG_BAD_CHARS = re.escape('`?=[]\;\'"<>,/~!@#$%^&*()+{}|: ')
+SLUG_BAD_CHARS = re.escape('`?=[]\;\'"<>,/~!@#$%^&*()+{}|:')
 
 # Regex that matches forbidden characters in repo/group slugs.
 SLUG_BAD_CHAR_RE = re.compile('[{}]'.format(SLUG_BAD_CHARS))
@@ -85,7 +85,8 @@ def repo_name_slug(value):
     replacement_char = '-'
 
     slug = remove_formatting(value)
-    slug = SLUG_BAD_CHAR_RE.sub(replacement_char, slug)
+    slug = SLUG_BAD_CHAR_RE.sub('', slug)
+    slug = re.sub('[\s]+', '-', slug)
     slug = collapse(slug, replacement_char)
     return slug
 
