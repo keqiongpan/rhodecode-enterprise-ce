@@ -25,7 +25,7 @@ from rhodecode.api import jsonrpc_method, JSONRPCError
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
     get_pull_request_or_error, get_commit_or_error, get_user_or_error,
-    has_repo_permissions, resolve_ref_or_error)
+    validate_repo_permissions, resolve_ref_or_error)
 from rhodecode.lib.auth import (HasRepoPermissionAnyApi)
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
@@ -215,7 +215,7 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
     if not has_superadmin_permission(apiuser):
         _perms = (
             'repository.admin', 'repository.write', 'repository.read',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     status = Optional.extract(status)
     pull_requests = PullRequestModel().get_all(repo, statuses=[status])
@@ -504,7 +504,7 @@ def create_pull_request(
     target = get_repo_or_error(target_repo)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
-        has_repo_permissions(apiuser, source_repo, source, _perms)
+        validate_repo_permissions(apiuser, source_repo, source, _perms)
 
     full_source_ref = resolve_ref_or_error(source_ref, source)
     full_target_ref = resolve_ref_or_error(target_ref, target)

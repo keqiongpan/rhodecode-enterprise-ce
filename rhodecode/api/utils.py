@@ -154,7 +154,7 @@ def has_superadmin_permission(apiuser):
     return False
 
 
-def has_repo_permissions(apiuser, repoid, repo, perms):
+def validate_repo_permissions(apiuser, repoid, repo, perms):
     """
     Raise JsonRPCError if apiuser is not authorized or return True
 
@@ -188,7 +188,7 @@ def validate_repo_group_permissions(apiuser, repogroupid, repo_group, perms):
     return True
 
 
-def has_set_owner_permissions(apiuser, owner):
+def validate_set_owner_permissions(apiuser, owner):
     if isinstance(owner, Optional):
         owner = get_user_or_error(apiuser.user_id)
     else:
