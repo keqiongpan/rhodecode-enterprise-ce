@@ -126,7 +126,8 @@ class RepoGroupModel(BaseModel):
         repo_group_to_perm.user_id = def_user.user_id
         return repo_group_to_perm
 
-    def _get_group_name_and_parent(self, group_name_full, repo_in_path=False):
+    def _get_group_name_and_parent(self, group_name_full, repo_in_path=False,
+                                   get_object=False):
         """
         Get's the group name and a parent group name from given group name.
         If repo_in_path is set to truth, we asume the full path also includes
@@ -148,8 +149,12 @@ class RepoGroupModel(BaseModel):
         if len(_parts) > 1:
             parent_repo_group_name = _parts[0]
 
+        parent_group = None
         if parent_repo_group_name:
             parent_group = RepoGroup.get_by_group_name(parent_repo_group_name)
+
+        if get_object:
+            return group_name_cleaned, parent_repo_group_name, parent_group
 
         return group_name_cleaned, parent_repo_group_name
 
