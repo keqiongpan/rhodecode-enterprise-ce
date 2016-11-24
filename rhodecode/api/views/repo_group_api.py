@@ -21,19 +21,18 @@
 
 import logging
 
-import colander
-
-from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCForbidden
+from rhodecode.api import JSONRPCValidationError
+from rhodecode.api import jsonrpc_method, JSONRPCError
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_user_or_error,
-    store_update, get_repo_group_or_error,
-    get_perm_or_error, get_user_group_or_error, get_origin)
+    get_repo_group_or_error, get_perm_or_error, get_user_group_or_error,
+    get_origin, validate_repo_group_permissions, validate_set_owner_permissions)
 from rhodecode.lib.auth import (
-    HasPermissionAnyApi, HasRepoGroupPermissionAnyApi,
-    HasUserGroupPermissionAnyApi)
-from rhodecode.model.db import Session, RepoGroup
+    HasRepoGroupPermissionAnyApi, HasUserGroupPermissionAnyApi)
+from rhodecode.model.db import Session
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import RepoGroupList
+from rhodecode.model import validation_schema
 from rhodecode.model.validation_schema.schemas import repo_group_schema
 
 
@@ -142,21 +141,24 @@ def get_repo_groups(request, apiuser):
 
 
 @jsonrpc_method()
-def create_repo_group(request, apiuser, group_name, description=Optional(''),
-                      owner=Optional(OAttr('apiuser')),
-                      copy_permissions=Optional(False)):
+def create_repo_group(
+        request, apiuser, group_name,
+        owner=Optional(OAttr('apiuser')),
+        description=Optional(''),
+        copy_permissions=Optional(False)):
     """
     Creates a repository group.
 
-    * If the repository group name contains "/", all the required repository
-      groups will be created.
+    * If the repository group name contains "/", repository group will be
+      created inside a repository group or nested repository groups
 
-      For example "foo/bar/baz" will create |repo| groups "foo" and "bar"
-      (with "foo" as parent). It will also create the "baz" repository
-      with "bar" as |repo| group.
+      For example "foo/bar/group1" will create repository group called "group1"
+      inside group "foo/bar". You have to have permissions to access and
+      write to the last repository group ("bar" in this example)
 
-    This command can only be run using an |authtoken| with admin
-    permissions.
+    This command can only be run using an |authtoken| with at least
+    permissions to create repository groups, or admin permissions to
+    parent repository groups.
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
@@ -193,71 +195,63 @@ def create_repo_group(request, apiuser, group_name, description=Optional(''),
 
     """
 
-    schema = repo_group_schema.RepoGroupSchema()
-    try:
-        data = schema.deserialize({
-            'group_name': group_name
-        })
-    except colander.Invalid as e:
-        raise JSONRPCError("Validation failed: %s" % (e.asdict(),))
-    group_name = data['group_name']
+    owner = validate_set_owner_permissions(apiuser, owner)
 
-    if isinstance(owner, Optional):
-        owner = apiuser.user_id
-
-    group_description = Optional.extract(description)
+    description = Optional.extract(description)
     copy_permissions = Optional.extract(copy_permissions)
 
-    # get by full name with parents, check if it already exist
-    if RepoGroup.get_by_group_name(group_name):
-        raise JSONRPCError("repo group `%s` already exist" % (group_name,))
+    schema = repo_group_schema.RepoGroupSchema().bind(
+        # user caller
+        user=apiuser)
 
-    (group_name_cleaned,
-     parent_group_name) = RepoGroupModel()._get_group_name_and_parent(
-        group_name)
+    try:
+        schema_data = schema.deserialize(dict(
+            repo_group_name=group_name,
+            repo_group_owner=owner.username,
+            repo_group_description=description,
+            repo_group_copy_permissions=copy_permissions,
+        ))
+    except validation_schema.Invalid as err:
+        raise JSONRPCValidationError(colander_exc=err)
 
-    parent_group = None
-    if parent_group_name:
-        parent_group = get_repo_group_or_error(parent_group_name)
-
-    if not HasPermissionAnyApi(
-            'hg.admin', 'hg.repogroup.create.true')(user=apiuser):
-        # check if we have admin permission for this parent repo group !
-        # users without admin or hg.repogroup.create can only create other
-        # groups in groups they own so this is a required, but can be empty
-        parent_group = getattr(parent_group, 'group_name', '')
-        _perms = ('group.admin',)
-        if not HasRepoGroupPermissionAnyApi(*_perms)(
-                user=apiuser, group_name=parent_group):
-            raise JSONRPCForbidden()
+    validated_group_name = schema_data['repo_group_name']
 
     try:
         repo_group = RepoGroupModel().create(
-            group_name=group_name,
-            group_description=group_description,
             owner=owner,
-            copy_permissions=copy_permissions)
+            group_name=validated_group_name,
+            group_description=schema_data['repo_group_name'],
+            copy_permissions=schema_data['repo_group_copy_permissions'])
         Session().commit()
         return {
-            'msg': 'Created new repo group `%s`' % group_name,
+            'msg': 'Created new repo group `%s`' % validated_group_name,
             'repo_group': repo_group.get_api_data()
         }
     except Exception:
         log.exception("Exception occurred while trying create repo group")
         raise JSONRPCError(
-            'failed to create repo group `%s`' % (group_name,))
+            'failed to create repo group `%s`' % (validated_group_name,))
 
 
 @jsonrpc_method()
 def update_repo_group(
         request, apiuser, repogroupid, group_name=Optional(''),
         description=Optional(''), owner=Optional(OAttr('apiuser')),
-        parent=Optional(None), enable_locking=Optional(False)):
+        enable_locking=Optional(False)):
     """
     Updates repository group with the details given.
 
     This command can only be run using an |authtoken| with admin
     permissions.
+
+    * If the group_name name contains "/", repository group will be updated
+      accordingly with a repository group or nested repository groups
+
+      For example repogroupid=group-test group_name="foo/bar/group-test"
+      will update repository group called "group-test" and place it
+      inside group "foo/bar".
+      You have to have permissions to access and write to the last repository
+      group ("bar" in this example)
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
@@ -269,29 +263,55 @@ def update_repo_group(
     :type description: str
     :param owner: Set the |repo| group owner.
     :type owner: str
-    :param parent: Set the |repo| group parent.
-    :type parent: str or int
     :param enable_locking: Enable |repo| locking. The default is false.
     :type enable_locking: bool
     """
 
     repo_group = get_repo_group_or_error(repogroupid)
-    if not has_superadmin_permission(apiuser):
-        # check if we have admin permission for this repo group !
-        _perms = ('group.admin',)
-        if not HasRepoGroupPermissionAnyApi(*_perms)(
-                user=apiuser, group_name=repo_group.group_name):
-            raise JSONRPCError(
-                'repository group `%s` does not exist' % (repogroupid,))
 
-    updates = {}
+    if not has_superadmin_permission(apiuser):
+        validate_repo_group_permissions(
+            apiuser, repogroupid, repo_group, ('group.admin',))
+
+    updates = dict(
+        group_name=group_name
+        if not isinstance(group_name, Optional) else repo_group.group_name,
+
+        group_description=description
+        if not isinstance(description, Optional) else repo_group.group_description,
+
+        user=owner
+        if not isinstance(owner, Optional) else repo_group.user.username,
+
+        enable_locking=enable_locking
+        if not isinstance(enable_locking, Optional) else repo_group.enable_locking
+    )
+
+    schema = repo_group_schema.RepoGroupSchema().bind(
+        # user caller
+        user=apiuser,
+        old_values=repo_group.get_api_data())
+
     try:
-        store_update(updates, group_name, 'group_name')
-        store_update(updates, description, 'group_description')
-        store_update(updates, owner, 'user')
-        store_update(updates, parent, 'group_parent_id')
-        store_update(updates, enable_locking, 'enable_locking')
-        repo_group = RepoGroupModel().update(repo_group, updates)
+        schema_data = schema.deserialize(dict(
+            repo_group_name=updates['group_name'],
+            repo_group_owner=updates['user'],
+            repo_group_description=updates['group_description'],
+            repo_group_enable_locking=updates['enable_locking'],
+        ))
+    except validation_schema.Invalid as err:
+        raise JSONRPCValidationError(colander_exc=err)
+
+    validated_updates = dict(
+        group_name=schema_data['repo_group']['repo_group_name_without_group'],
+        group_parent_id=schema_data['repo_group']['repo_group_id'],
+        user=schema_data['repo_group_owner'],
+        group_description=schema_data['repo_group_description'],
+        enable_locking=schema_data['repo_group_enable_locking'],
+    )
+
+    try:
+        RepoGroupModel().update(repo_group, validated_updates)
         Session().commit()
         return {
             'msg': 'updated repository group ID:%s %s' % (
@@ -299,7 +319,9 @@ def update_repo_group(
             'repo_group': repo_group.get_api_data()
         }
     except Exception:
-        log.exception("Exception occurred while trying update repo group")
+        log.exception(
+            u"Exception occurred while trying update repo group %s",
+            repogroupid)
         raise JSONRPCError('failed to update repository group `%s`'
                            % (repogroupid,))
 
@@ -340,12 +362,9 @@ def delete_repo_group(request, apiuser, repogroupid):
 
     repo_group = get_repo_group_or_error(repogroupid)
     if not has_superadmin_permission(apiuser):
-        # check if we have admin permission for this repo group !
-        _perms = ('group.admin',)
-        if not HasRepoGroupPermissionAnyApi(*_perms)(
-                user=apiuser, group_name=repo_group.group_name):
-            raise JSONRPCError(
-                'repository group `%s` does not exist' % (repogroupid,))
+        validate_repo_group_permissions(
+            apiuser, repogroupid, repo_group, ('group.admin',))
+
     try:
         RepoGroupModel().delete(repo_group)
         Session().commit()
@@ -408,12 +427,8 @@ def grant_user_permission_to_repo_group(
     repo_group = get_repo_group_or_error(repogroupid)
 
     if not has_superadmin_permission(apiuser):
-        # check if we have admin permission for this repo group !
-        _perms = ('group.admin',)
-        if not HasRepoGroupPermissionAnyApi(*_perms)(
-                user=apiuser, group_name=repo_group.group_name):
-            raise JSONRPCError(
-                'repository group `%s` does not exist' % (repogroupid,))
+        validate_repo_group_permissions(
+            apiuser, repogroupid, repo_group, ('group.admin',))
 
     user = get_user_or_error(userid)
     perm = get_perm_or_error(perm, prefix='group.')
@@ -487,12 +502,8 @@ def revoke_user_permission_from_repo_group(
     repo_group = get_repo_group_or_error(repogroupid)
 
     if not has_superadmin_permission(apiuser):
-        # check if we have admin permission for this repo group !
-        _perms = ('group.admin',)
-        if not HasRepoGroupPermissionAnyApi(*_perms)(
-                user=apiuser, group_name=repo_group.group_name):
-            raise JSONRPCError(
-                'repository group `%s` does not exist' % (repogroupid,))
+        validate_repo_group_permissions(
+            apiuser, repogroupid, repo_group, ('group.admin',))
 
     user = get_user_or_error(userid)
     apply_to_children = Optional.extract(apply_to_children)
@@ -569,12 +580,8 @@ def grant_user_group_permission_to_repo_group(
     perm = get_perm_or_error(perm, prefix='group.')
     user_group = get_user_group_or_error(usergroupid)
     if not has_superadmin_permission(apiuser):
-        # check if we have admin permission for this repo group !
-        _perms = ('group.admin',)
-        if not HasRepoGroupPermissionAnyApi(*_perms)(
-                user=apiuser, group_name=repo_group.group_name):
-            raise JSONRPCError(
-                'repository group `%s` does not exist' % (repogroupid,))
+        validate_repo_group_permissions(
+            apiuser, repogroupid, repo_group, ('group.admin',))
 
         # check if we have at least read permission for this user group !
         _perms = ('usergroup.read', 'usergroup.write', 'usergroup.admin',)
@@ -656,12 +663,8 @@ def revoke_user_group_permission_from_repo_group(
     repo_group = get_repo_group_or_error(repogroupid)
     user_group = get_user_group_or_error(usergroupid)
     if not has_superadmin_permission(apiuser):
-        # check if we have admin permission for this repo group !
-        _perms = ('group.admin',)
-        if not HasRepoGroupPermissionAnyApi(*_perms)(
-                user=apiuser, group_name=repo_group.group_name):
-            raise JSONRPCError(
-                'repository group `%s` does not exist' % (repogroupid,))
+        validate_repo_group_permissions(
+            apiuser, repogroupid, repo_group, ('group.admin',))
 
         # check if we have at least read permission for this user group !
         _perms = ('usergroup.read', 'usergroup.write', 'usergroup.admin',)
