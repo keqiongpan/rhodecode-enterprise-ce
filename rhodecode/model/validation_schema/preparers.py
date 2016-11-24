@@ -21,7 +21,6 @@
 import unicodedata
 
 
-
 def strip_preparer(value):
     """
     strips given values using .strip() function

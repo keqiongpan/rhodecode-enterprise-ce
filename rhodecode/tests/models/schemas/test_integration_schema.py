@@ -21,8 +21,6 @@
 import colander
 import pytest
 
-from rhodecode.model import validation_schema
-
 from rhodecode.integrations import integration_type_registry
 from rhodecode.integrations.types.base import IntegrationTypeBase
 from rhodecode.model.validation_schema.schemas.integration_schema import (
@@ -33,13 +31,11 @@ from rhodecode.model.validation_schema.schemas.integration_schema import (
 @pytest.mark.usefixtures('app', 'autologin_user')
 class TestIntegrationSchema(object):
 
-    def test_deserialize_integration_schema_perms(self, backend_random,
-                                                  test_repo_group,
-                                                  StubIntegrationType):
+    def test_deserialize_integration_schema_perms(
+            self, backend_random, test_repo_group, StubIntegrationType):
 
         repo = backend_random.repo
         repo_group = test_repo_group
-
 
         empty_perms_dict = {
             'global': [],

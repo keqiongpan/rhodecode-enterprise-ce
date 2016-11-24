@@ -21,29 +21,26 @@
 import logging
 import time
 
-import colander
-
-from rhodecode import BACKENDS
-from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCForbidden, json
+import rhodecode
+from rhodecode.api import (
+    jsonrpc_method, JSONRPCError, JSONRPCForbidden, JSONRPCValidationError)
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
-    get_user_group_or_error, get_user_or_error, has_repo_permissions,
-    get_perm_or_error, store_update, get_repo_group_or_error, parse_args,
-    get_origin, build_commit_data)
-from rhodecode.lib.auth import (
-    HasPermissionAnyApi, HasRepoGroupPermissionAnyApi,
-    HasUserGroupPermissionAnyApi)
+    get_user_group_or_error, get_user_or_error, validate_repo_permissions,
+    get_perm_or_error, parse_args, get_origin, build_commit_data,
+    validate_set_owner_permissions)
+from rhodecode.lib.auth import HasPermissionAnyApi, HasUserGroupPermissionAnyApi
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
-from rhodecode.lib.utils import map_groups
 from rhodecode.lib.utils2 import str2bool, time_to_datetime
+from rhodecode.lib.ext_json import json
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
 from rhodecode.model.db import (
     Session, ChangesetStatus, RepositoryField, Repository)
 from rhodecode.model.repo import RepoModel
-from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import ScmModel, RepoList
 from rhodecode.model.settings import SettingsModel, VcsSettingsModel
+from rhodecode.model import validation_schema
 from rhodecode.model.validation_schema.schemas import repo_schema
 
 log = logging.getLogger(__name__)
@@ -177,6 +174,7 @@ def get_repo(request, apiuser, repoid, cache=Optional(True)):
 
     repo = get_repo_or_error(repoid)
     cache = Optional.extract(cache)
+
     include_secrets = False
     if has_superadmin_permission(apiuser):
         include_secrets = True
@@ -184,7 +182,7 @@ def get_repo(request, apiuser, repoid, cache=Optional(True)):
         # check if we have at least read permission for this repo !
         _perms = (
             'repository.admin', 'repository.write', 'repository.read',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     permissions = []
     for _user in repo.permissions():
@@ -292,7 +290,7 @@ def get_repo_changeset(request, apiuser, repoid, revision,
     if not has_superadmin_permission(apiuser):
         _perms = (
             'repository.admin', 'repository.write', 'repository.read',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     changes_details = Optional.extract(details)
     _changes_details_types = ['basic', 'extended', 'full']
@@ -355,7 +353,7 @@ def get_repo_changesets(request, apiuser, repoid, start_rev, limit,
     if not has_superadmin_permission(apiuser):
         _perms = (
             'repository.admin', 'repository.write', 'repository.read',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     changes_details = Optional.extract(details)
     _changes_details_types = ['basic', 'extended', 'full']
@@ -450,7 +448,7 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
     if not has_superadmin_permission(apiuser):
         _perms = (
             'repository.admin', 'repository.write', 'repository.read',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     ret_type = Optional.extract(ret_type)
     details = Optional.extract(details)
@@ -523,7 +521,7 @@ def get_repo_refs(request, apiuser, repoid):
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     try:
         # check if repo is not empty by any chance, skip quicker if it is.
@@ -538,26 +536,30 @@ def get_repo_refs(request, apiuser, repoid):
 
 
 @jsonrpc_method()
-def create_repo(request, apiuser, repo_name, repo_type,
-                owner=Optional(OAttr('apiuser')), description=Optional(''),
-                private=Optional(False), clone_uri=Optional(None),
-                landing_rev=Optional('rev:tip'),
-                enable_statistics=Optional(False),
-                enable_locking=Optional(False),
-                enable_downloads=Optional(False),
-                copy_permissions=Optional(False)):
+def create_repo(
+        request, apiuser, repo_name, repo_type,
+        owner=Optional(OAttr('apiuser')),
+        description=Optional(''),
+        private=Optional(False),
+        clone_uri=Optional(None),
+        landing_rev=Optional('rev:tip'),
+        enable_statistics=Optional(False),
+        enable_locking=Optional(False),
+        enable_downloads=Optional(False),
+        copy_permissions=Optional(False)):
     """
     Creates a repository.
 
-    * If the repository name contains "/", all the required repository
-      groups will be created.
+    * If the repository name contains "/", repository will be created inside
+      a repository group or nested repository groups
 
-      For example "foo/bar/baz" will create |repo| groups "foo" and "bar"
-      (with "foo" as parent). It will also create the "baz" repository
-      with "bar" as |repo| group.
+      For example "foo/bar/repo1" will create |repo| called "repo1" inside
+      group "foo/bar". You have to have permissions to access and write to
+      the last repository group ("bar" in this example)
 
     This command can only be run using an |authtoken| with at least
-    write permissions to the |repo|.
+    permissions to create repositories, or write permissions to
+    parent repository groups.
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
@@ -569,9 +571,9 @@ def create_repo(request, apiuser, repo_name, repo_type,
     :type owner: Optional(str)
     :param description: Set the repository description.
     :type description: Optional(str)
-    :param private:
+    :param private: set repository as private
     :type private: bool
-    :param clone_uri:
+    :param clone_uri: set clone_uri
     :type clone_uri: str
     :param landing_rev: <rev_type>:<rev>
     :type landing_rev: str
@@ -610,49 +612,13 @@ def create_repo(request, apiuser, repo_name, repo_type,
       }
 
     """
-    schema = repo_schema.RepoSchema()
-    try:
-        data = schema.deserialize({
-            'repo_name': repo_name
-        })
-    except colander.Invalid as e:
-        raise JSONRPCError("Validation failed: %s" % (e.asdict(),))
-    repo_name = data['repo_name']
 
-    (repo_name_cleaned,
-     parent_group_name) = RepoGroupModel()._get_group_name_and_parent(
-        repo_name)
+    owner = validate_set_owner_permissions(apiuser, owner)
 
-    if not HasPermissionAnyApi(
-            'hg.admin', 'hg.create.repository')(user=apiuser):
-        # check if we have admin permission for this repo group if given !
-
-        if parent_group_name:
-            repogroupid = parent_group_name
-            repo_group = get_repo_group_or_error(parent_group_name)
-
-            _perms = ('group.admin',)
-            if not HasRepoGroupPermissionAnyApi(*_perms)(
-                    user=apiuser, group_name=repo_group.group_name):
-                raise JSONRPCError(
-                    'repository group `%s` does not exist' % (
-                        repogroupid,))
-        else:
-            raise JSONRPCForbidden()
-
-    if not has_superadmin_permission(apiuser):
-        if not isinstance(owner, Optional):
-            # forbid setting owner for non-admins
-            raise JSONRPCError(
-                'Only RhodeCode admin can specify `owner` param')
-
-    if isinstance(owner, Optional):
-        owner = apiuser.user_id
-
-    owner = get_user_or_error(owner)
-
-    if RepoModel().get_by_repo_name(repo_name):
-        raise JSONRPCError("repo `%s` already exist" % repo_name)
+    description = Optional.extract(description)
+    copy_permissions = Optional.extract(copy_permissions)
+    clone_uri = Optional.extract(clone_uri)
+    landing_commit_ref = Optional.extract(landing_rev)
 
     defs = SettingsModel().get_default_repo_settings(strip_prefix=True)
     if isinstance(private, Optional):
@@ -666,32 +632,44 @@ def create_repo(request, apiuser, repo_name, repo_type,
     if isinstance(enable_downloads, Optional):
         enable_downloads = defs.get('repo_enable_downloads')
 
-    clone_uri = Optional.extract(clone_uri)
-    description = Optional.extract(description)
-    landing_rev = Optional.extract(landing_rev)
-    copy_permissions = Optional.extract(copy_permissions)
+    schema = repo_schema.RepoSchema().bind(
+        repo_type_options=rhodecode.BACKENDS.keys(),
+        # user caller
+        user=apiuser)
 
     try:
-        # create structure of groups and return the last group
-        repo_group = map_groups(repo_name)
+        schema_data = schema.deserialize(dict(
+            repo_name=repo_name,
+            repo_type=repo_type,
+            repo_owner=owner.username,
+            repo_description=description,
+            repo_landing_commit_ref=landing_commit_ref,
+            repo_clone_uri=clone_uri,
+            repo_private=private,
+            repo_copy_permissions=copy_permissions,
+            repo_enable_statistics=enable_statistics,
+            repo_enable_downloads=enable_downloads,
+            repo_enable_locking=enable_locking))
+    except validation_schema.Invalid as err:
+        raise JSONRPCValidationError(colander_exc=err)
+
+    try:
         data = {
-            'repo_name': repo_name_cleaned,
-            'repo_name_full': repo_name,
-            'repo_type': repo_type,
-            'repo_description': description,
             'owner': owner,
-            'repo_private': private,
-            'clone_uri': clone_uri,
-            'repo_group': repo_group.group_id if repo_group else None,
-            'repo_landing_rev': landing_rev,
-            'enable_statistics': enable_statistics,
-            'enable_locking': enable_locking,
-            'enable_downloads': enable_downloads,
-            'repo_copy_permissions': copy_permissions,
+            'repo_name': schema_data['repo_group']['repo_name_without_group'],
+            'repo_name_full': schema_data['repo_name'],
+            'repo_group': schema_data['repo_group']['repo_group_id'],
+            'repo_type': schema_data['repo_type'],
+            'repo_description': schema_data['repo_description'],
+            'repo_private': schema_data['repo_private'],
+            'clone_uri': schema_data['repo_clone_uri'],
+            'repo_landing_rev': schema_data['repo_landing_commit_ref'],
+            'enable_statistics': schema_data['repo_enable_statistics'],
+            'enable_locking': schema_data['repo_enable_locking'],
+            'enable_downloads': schema_data['repo_enable_downloads'],
+            'repo_copy_permissions': schema_data['repo_copy_permissions'],
         }
 
-        if repo_type not in BACKENDS.keys():
-            raise Exception("Invalid backend type %s" % repo_type)
         task = RepoModel().create(form_data=data, cur_user=owner)
         from celery.result import BaseAsyncResult
         task_id = None
@@ -699,17 +677,17 @@ def create_repo(request, apiuser, repo_name, repo_type,
             task_id = task.task_id
         # no commit, it's done in RepoModel, or async via celery
         return {
-            'msg': "Created new repository `%s`" % (repo_name,),
+            'msg': "Created new repository `%s`" % (schema_data['repo_name'],),
             'success': True,  # cannot return the repo data here since fork
-            # cann be done async
+            # can be done async
             'task': task_id
         }
     except Exception:
         log.exception(
             u"Exception while trying to create the repository %s",
-            repo_name)
+            schema_data['repo_name'])
         raise JSONRPCError(
-            'failed to create repository `%s`' % (repo_name,))
+            'failed to create repository `%s`' % (schema_data['repo_name'],))
 
 
 @jsonrpc_method()
@@ -735,7 +713,7 @@ def add_field_to_repo(request, apiuser, repoid, key, label=Optional(''),
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     label = Optional.extract(label) or key
     description = Optional.extract(description)
@@ -778,7 +756,7 @@ def remove_field_from_repo(request, apiuser, repoid, key):
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     field = RepositoryField.get_by_key_name(key, repo)
     if not field:
@@ -800,33 +778,38 @@ def remove_field_from_repo(request, apiuser, repoid, key):
 
 
 @jsonrpc_method()
-def update_repo(request, apiuser, repoid, name=Optional(None),
-                owner=Optional(OAttr('apiuser')),
-                group=Optional(None),
-                fork_of=Optional(None),
-                description=Optional(''), private=Optional(False),
-                clone_uri=Optional(None), landing_rev=Optional('rev:tip'),
-                enable_statistics=Optional(False),
-                enable_locking=Optional(False),
-                enable_downloads=Optional(False),
-                fields=Optional('')):
+def update_repo(
+        request, apiuser, repoid, repo_name=Optional(None),
+        owner=Optional(OAttr('apiuser')), description=Optional(''),
+        private=Optional(False), clone_uri=Optional(None),
+        landing_rev=Optional('rev:tip'), fork_of=Optional(None),
+        enable_statistics=Optional(False),
+        enable_locking=Optional(False),
+        enable_downloads=Optional(False), fields=Optional('')):
     """
     Updates a repository with the given information.
 
     This command can only be run using an |authtoken| with at least
-    write permissions to the |repo|.
+    admin permissions to the |repo|.
+
+    * If the repository name contains "/", repository will be updated
+      accordingly with a repository group or nested repository groups
+
+      For example repoid=repo-test name="foo/bar/repo-test" will update |repo|
+      called "repo-test" and place it inside group "foo/bar".
+      You have to have permissions to access and write to the last repository
+      group ("bar" in this example)
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
     :param repoid: repository name or repository ID.
     :type repoid: str or int
-    :param name: Update the |repo| name.
-    :type name: str
+    :param repo_name: Update the |repo| name, including the
+        repository group it's in.
+    :type repo_name: str
     :param owner: Set the |repo| owner.
     :type owner: str
-    :param group: Set the |repo| group the |repo| belongs to.
-    :type group: str
-    :param fork_of: Set the master |repo| name.
+    :param fork_of: Set the |repo| as fork of another |repo|.
     :type fork_of: str
     :param description: Update the |repo| description.
     :type description: str
@@ -834,69 +817,115 @@ def update_repo(request, apiuser, repoid, name=Optional(None),
     :type private: bool
     :param clone_uri: Update the |repo| clone URI.
     :type clone_uri: str
-    :param landing_rev: Set the |repo| landing revision. Default is
-        ``tip``.
+    :param landing_rev: Set the |repo| landing revision. Default is ``rev:tip``.
     :type landing_rev: str
-    :param enable_statistics: Enable statistics on the |repo|,
-        (True | False).
+    :param enable_statistics: Enable statistics on the |repo|, (True | False).
     :type enable_statistics: bool
     :param enable_locking: Enable |repo| locking.
     :type enable_locking: bool
-    :param enable_downloads: Enable downloads from the |repo|,
-        (True | False).
+    :param enable_downloads: Enable downloads from the |repo|, (True | False).
     :type enable_downloads: bool
     :param fields: Add extra fields to the |repo|. Use the following
         example format: ``field_key=field_val,field_key2=fieldval2``.
         Escape ', ' with \,
     :type fields: str
     """
+
     repo = get_repo_or_error(repoid)
+
     include_secrets = False
-    if has_superadmin_permission(apiuser):
-        include_secrets = True
+    if not has_superadmin_permission(apiuser):
+        validate_repo_permissions(apiuser, repoid, repo, ('repository.admin',))
     else:
-        _perms = ('repository.admin',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        include_secrets = True
 
-    updates = {
-        # update function requires this.
-        'repo_name': repo.just_name
-    }
-    repo_group = group
-    if not isinstance(repo_group, Optional):
-        repo_group = get_repo_group_or_error(repo_group)
-        repo_group = repo_group.group_id
+    updates = dict(
+        repo_name=repo_name
+        if not isinstance(repo_name, Optional) else repo.repo_name,
 
-    repo_fork_of = fork_of
-    if not isinstance(repo_fork_of, Optional):
-        repo_fork_of = get_repo_or_error(repo_fork_of)
-        repo_fork_of = repo_fork_of.repo_id
+        fork_id=fork_of
+        if not isinstance(fork_of, Optional) else repo.fork.repo_name if repo.fork else None,
+
+        user=owner
+        if not isinstance(owner, Optional) else repo.user.username,
+
+        repo_description=description
+        if not isinstance(description, Optional) else repo.description,
+
+        repo_private=private
+        if not isinstance(private, Optional) else repo.private,
+
+        clone_uri=clone_uri
+        if not isinstance(clone_uri, Optional) else repo.clone_uri,
+
+        repo_landing_rev=landing_rev
+        if not isinstance(landing_rev, Optional) else repo._landing_revision,
+
+        repo_enable_statistics=enable_statistics
+        if not isinstance(enable_statistics, Optional) else repo.enable_statistics,
+
+        repo_enable_locking=enable_locking
+        if not isinstance(enable_locking, Optional) else repo.enable_locking,
+
+        repo_enable_downloads=enable_downloads
+        if not isinstance(enable_downloads, Optional) else repo.enable_downloads)
+
+    ref_choices, _labels = ScmModel().get_repo_landing_revs(repo=repo)
+
+    schema = repo_schema.RepoSchema().bind(
+        repo_type_options=rhodecode.BACKENDS.keys(),
+        repo_ref_options=ref_choices,
+        # user caller
+        user=apiuser,
+        old_values=repo.get_api_data())
+    try:
+        schema_data = schema.deserialize(dict(
+            # we save old value, users cannot change type
+            repo_type=repo.repo_type,
+
+            repo_name=updates['repo_name'],
+            repo_owner=updates['user'],
+            repo_description=updates['repo_description'],
+            repo_clone_uri=updates['clone_uri'],
+            repo_fork_of=updates['fork_id'],
+            repo_private=updates['repo_private'],
+            repo_landing_commit_ref=updates['repo_landing_rev'],
+            repo_enable_statistics=updates['repo_enable_statistics'],
+            repo_enable_downloads=updates['repo_enable_downloads'],
+            repo_enable_locking=updates['repo_enable_locking']))
+    except validation_schema.Invalid as err:
+        raise JSONRPCValidationError(colander_exc=err)
+
+    # save validated data back into the updates dict
+    validated_updates = dict(
+        repo_name=schema_data['repo_group']['repo_name_without_group'],
+        repo_group=schema_data['repo_group']['repo_group_id'],
+
+        user=schema_data['repo_owner'],
+        repo_description=schema_data['repo_description'],
+        repo_private=schema_data['repo_private'],
+        clone_uri=schema_data['repo_clone_uri'],
+        repo_landing_rev=schema_data['repo_landing_commit_ref'],
+        repo_enable_statistics=schema_data['repo_enable_statistics'],
+        repo_enable_locking=schema_data['repo_enable_locking'],
+        repo_enable_downloads=schema_data['repo_enable_downloads'],
+    )
+
+    if schema_data['repo_fork_of']:
+        fork_repo = get_repo_or_error(schema_data['repo_fork_of'])
+        validated_updates['fork_id'] = fork_repo.repo_id
+
+    # extra fields
+    fields = parse_args(Optional.extract(fields), key_prefix='ex_')
+    if fields:
+        validated_updates.update(fields)
 
     try:
-        store_update(updates, name, 'repo_name')
-        store_update(updates, repo_group, 'repo_group')
-        store_update(updates, repo_fork_of, 'fork_id')
-        store_update(updates, owner, 'user')
-        store_update(updates, description, 'repo_description')
-        store_update(updates, private, 'repo_private')
-        store_update(updates, clone_uri, 'clone_uri')
-        store_update(updates, landing_rev, 'repo_landing_rev')
-        store_update(updates, enable_statistics, 'repo_enable_statistics')
-        store_update(updates, enable_locking, 'repo_enable_locking')
-        store_update(updates, enable_downloads, 'repo_enable_downloads')
-
-        # extra fields
-        fields = parse_args(Optional.extract(fields), key_prefix='ex_')
-        if fields:
-            updates.update(fields)
-
-        RepoModel().update(repo, **updates)
+        RepoModel().update(repo, **validated_updates)
         Session().commit()
         return {
-            'msg': 'updated repo ID:%s %s' % (
-                repo.repo_id, repo.repo_name),
-            'repository': repo.get_api_data(
-                include_secrets=include_secrets)
+            'msg': 'updated repo ID:%s %s' % (repo.repo_id, repo.repo_name),
+            'repository': repo.get_api_data(include_secrets=include_secrets)
         }
     except Exception:
         log.exception(
@@ -908,26 +937,33 @@ def update_repo(request, apiuser, repoid, name=Optional(None),
 @jsonrpc_method()
 def fork_repo(request, apiuser, repoid, fork_name,
               owner=Optional(OAttr('apiuser')),
-              description=Optional(''), copy_permissions=Optional(False),
-              private=Optional(False), landing_rev=Optional('rev:tip')):
+              description=Optional(''),
+              private=Optional(False),
+              clone_uri=Optional(None),
+              landing_rev=Optional('rev:tip'),
+              copy_permissions=Optional(False)):
     """
     Creates a fork of the specified |repo|.
 
-    * If using |RCE| with Celery this will immediately return a success
-      message, even though the fork will be created asynchronously.
+    * If the fork_name contains "/", fork will be created inside
+      a repository group or nested repository groups
 
-    This command can only be run using an |authtoken| with fork
-    permissions on the |repo|.
+      For example "foo/bar/fork-repo" will create fork called "fork-repo"
+      inside group "foo/bar". You have to have permissions to access and
+      write to the last repository group ("bar" in this example)
+
+    This command can only be run using an |authtoken| with minimum
+    read permissions of the forked repo, create fork permissions for an user.
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
     :param repoid: Set repository name or repository ID.
     :type repoid: str or int
-    :param fork_name: Set the fork name.
+    :param fork_name: Set the fork name, including it's repository group membership.
     :type fork_name: str
     :param owner: Set the fork owner.
     :type owner: str
-    :param description: Set the fork descripton.
+    :param description: Set the fork description.
     :type description: str
     :param copy_permissions: Copy permissions from parent |repo|. The
         default is False.
@@ -965,71 +1001,63 @@ def fork_repo(request, apiuser, repoid, fork_name,
         error:  null
 
     """
-    if not has_superadmin_permission(apiuser):
-        if not HasPermissionAnyApi('hg.fork.repository')(user=apiuser):
-            raise JSONRPCForbidden()
 
     repo = get_repo_or_error(repoid)
     repo_name = repo.repo_name
-
-    (fork_name_cleaned,
-     parent_group_name) = RepoGroupModel()._get_group_name_and_parent(
-        fork_name)
 
     if not has_superadmin_permission(apiuser):
         # check if we have at least read permission for
         # this repo that we fork !
         _perms = (
             'repository.admin', 'repository.write', 'repository.read')
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
-        if not isinstance(owner, Optional):
-            # forbid setting owner for non super admins
-            raise JSONRPCError(
-                'Only RhodeCode admin can specify `owner` param'
-            )
-        # check if we have a create.repo permission if not maybe the parent
-        # group permission
-        if not HasPermissionAnyApi('hg.create.repository')(user=apiuser):
-            if parent_group_name:
-                repogroupid = parent_group_name
-                repo_group = get_repo_group_or_error(parent_group_name)
+        # check if the regular user has at least fork permissions as well
+        if not HasPermissionAnyApi('hg.fork.repository')(user=apiuser):
+            raise JSONRPCForbidden()
 
-                _perms = ('group.admin',)
-                if not HasRepoGroupPermissionAnyApi(*_perms)(
-                        user=apiuser, group_name=repo_group.group_name):
-                    raise JSONRPCError(
-                        'repository group `%s` does not exist' % (
-                            repogroupid,))
-            else:
-                raise JSONRPCForbidden()
+    # check if user can set owner parameter
+    owner = validate_set_owner_permissions(apiuser, owner)
 
-    _repo = RepoModel().get_by_repo_name(fork_name)
-    if _repo:
-        type_ = 'fork' if _repo.fork else 'repo'
-        raise JSONRPCError("%s `%s` already exist" % (type_, fork_name))
+    description = Optional.extract(description)
+    copy_permissions = Optional.extract(copy_permissions)
+    clone_uri = Optional.extract(clone_uri)
+    landing_commit_ref = Optional.extract(landing_rev)
+    private = Optional.extract(private)
 
-    if isinstance(owner, Optional):
-        owner = apiuser.user_id
-
-    owner = get_user_or_error(owner)
+    schema = repo_schema.RepoSchema().bind(
+        repo_type_options=rhodecode.BACKENDS.keys(),
+        # user caller
+        user=apiuser)
 
     try:
-        # create structure of groups and return the last group
-        repo_group = map_groups(fork_name)
-        form_data = {
-            'repo_name': fork_name_cleaned,
-            'repo_name_full': fork_name,
-            'repo_group': repo_group.group_id if repo_group else None,
-            'repo_type': repo.repo_type,
-            'description': Optional.extract(description),
-            'private': Optional.extract(private),
-            'copy_permissions': Optional.extract(copy_permissions),
-            'landing_rev': Optional.extract(landing_rev),
+        schema_data = schema.deserialize(dict(
+            repo_name=fork_name,
+            repo_type=repo.repo_type,
+            repo_owner=owner.username,
+            repo_description=description,
+            repo_landing_commit_ref=landing_commit_ref,
+            repo_clone_uri=clone_uri,
+            repo_private=private,
+            repo_copy_permissions=copy_permissions))
+    except validation_schema.Invalid as err:
+        raise JSONRPCValidationError(colander_exc=err)
+
+    try:
+        data = {
             'fork_parent_id': repo.repo_id,
+
+            'repo_name': schema_data['repo_group']['repo_name_without_group'],
+            'repo_name_full': schema_data['repo_name'],
+            'repo_group': schema_data['repo_group']['repo_group_id'],
+            'repo_type': schema_data['repo_type'],
+            'description': schema_data['repo_description'],
+            'private': schema_data['repo_private'],
+            'copy_permissions': schema_data['repo_copy_permissions'],
+            'landing_rev': schema_data['repo_landing_commit_ref'],
         }
 
-        task = RepoModel().create_fork(form_data, cur_user=owner)
+        task = RepoModel().create_fork(data, cur_user=owner)
         # no commit, it's done in RepoModel, or async via celery
         from celery.result import BaseAsyncResult
         task_id = None
@@ -1037,16 +1065,18 @@ def fork_repo(request, apiuser, repoid, fork_name,
             task_id = task.task_id
         return {
             'msg': 'Created fork of `%s` as `%s`' % (
-                repo.repo_name, fork_name),
+                repo.repo_name, schema_data['repo_name']),
             'success': True,  # cannot return the repo data here since fork
             # can be done async
             'task': task_id
         }
     except Exception:
-        log.exception("Exception occurred while trying to fork a repo")
+        log.exception(
+            u"Exception while trying to create fork %s",
+            schema_data['repo_name'])
         raise JSONRPCError(
             'failed to fork repository `%s` as `%s`' % (
-                repo_name, fork_name))
+                repo_name, schema_data['repo_name']))
 
 
 @jsonrpc_method()
@@ -1082,7 +1112,7 @@ def delete_repo(request, apiuser, repoid, forks=Optional('')):
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     try:
         handle_forks = Optional.extract(forks)
@@ -1157,7 +1187,7 @@ def invalidate_cache(request, apiuser, repoid, delete_keys=Optional(False)):
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin', 'repository.write',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     delete = Optional.extract(delete_keys)
     try:
@@ -1236,7 +1266,7 @@ def lock(request, apiuser, repoid, locked=Optional(None),
     if not has_superadmin_permission(apiuser):
         # check if we have at least write permission for this repo !
         _perms = ('repository.admin', 'repository.write',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
         # make sure normal user does not pass someone else userid,
         # he is not allowed to do that
@@ -1347,7 +1377,7 @@ def comment_commit(
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.read', 'repository.write', 'repository.admin')
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     if isinstance(userid, Optional):
         userid = apiuser.user_id
@@ -1438,7 +1468,7 @@ def grant_user_permission(request, apiuser, repoid, userid, perm):
     perm = get_perm_or_error(perm)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     try:
 
@@ -1492,7 +1522,7 @@ def revoke_user_permission(request, apiuser, repoid, userid):
     user = get_user_or_error(userid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     try:
         RepoModel().revoke_user_permission(repo=repo, user=user)
@@ -1560,7 +1590,7 @@ def grant_user_group_permission(request, apiuser, repoid, usergroupid, perm):
     perm = get_perm_or_error(perm)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     user_group = get_user_group_or_error(usergroupid)
     if not has_superadmin_permission(apiuser):
@@ -1625,7 +1655,7 @@ def revoke_user_group_permission(request, apiuser, repoid, usergroupid):
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     user_group = get_user_group_or_error(usergroupid)
     if not has_superadmin_permission(apiuser):
@@ -1701,7 +1731,7 @@ def pull(request, apiuser, repoid):
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     try:
         ScmModel().pull_changes(repo.repo_name, apiuser.username)
@@ -1764,7 +1794,7 @@ def strip(request, apiuser, repoid, revision, branch):
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     try:
         ScmModel().strip(repo, revision, branch)

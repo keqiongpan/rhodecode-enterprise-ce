@@ -377,11 +377,11 @@ class RepoModel(BaseModel):
             log.debug('Updating repo %s with params:%s', cur_repo, kwargs)
 
             update_keys = [
-                (1, 'repo_enable_downloads'),
                 (1, 'repo_description'),
-                (1, 'repo_enable_locking'),
                 (1, 'repo_landing_rev'),
                 (1, 'repo_private'),
+                (1, 'repo_enable_downloads'),
+                (1, 'repo_enable_locking'),
                 (1, 'repo_enable_statistics'),
                 (0, 'clone_uri'),
                 (0, 'fork_id')

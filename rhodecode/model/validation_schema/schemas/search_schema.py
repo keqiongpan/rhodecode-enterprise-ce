@@ -33,8 +33,7 @@ class SearchParamsSchema(colander.MappingSchema):
     search_sort = colander.SchemaNode(
         colander.String(),
         missing='newfirst',
-        validator=colander.OneOf(
-            ['oldfirst', 'newfirst']))
+        validator=colander.OneOf(['oldfirst', 'newfirst']))
     page_limit = colander.SchemaNode(
         colander.Integer(),
         missing=10,

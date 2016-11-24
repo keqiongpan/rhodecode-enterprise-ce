@@ -762,11 +762,15 @@ class ScmModel(BaseModel):
         :param repo:
         """
 
-        hist_l = []
-        choices = []
         repo = self._get_repo(repo)
-        hist_l.append(['rev:tip', _('latest tip')])
-        choices.append('rev:tip')
+
+        hist_l = [
+            ['rev:tip', _('latest tip')]
+        ]
+        choices = [
+            'rev:tip'
+        ]
+
         if not repo:
             return choices, hist_l
 

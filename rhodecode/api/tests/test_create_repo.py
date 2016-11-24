@@ -23,8 +23,11 @@ import json
 import mock
 import pytest
 
+from rhodecode.lib.utils2 import safe_unicode
 from rhodecode.lib.vcs import settings
+from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
+from rhodecode.model.user import UserModel
 from rhodecode.tests import TEST_USER_ADMIN_LOGIN
 from rhodecode.api.tests.utils import (
     build_data, api_call, assert_ok, assert_error, crash)
@@ -36,29 +39,37 @@ fixture = Fixture()
 
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestCreateRepo(object):
-    def test_api_create_repo(self, backend):
-        repo_name = 'api-repo-1'
+
+    @pytest.mark.parametrize('given, expected_name, expected_exc', [
+        ('api repo-1', 'api-repo-1', False),
+        ('api-repo 1-ąć', 'api-repo-1-ąć', False),
+        (u'unicode-ąć', u'unicode-ąć', False),
+        ('some repo v1.2', 'some-repo-v1.2', False),
+        ('v2.0', 'v2.0', False),
+    ])
+    def test_api_create_repo(self, backend, given, expected_name, expected_exc):
+
         id_, params = build_data(
             self.apikey,
             'create_repo',
-            repo_name=repo_name,
+            repo_name=given,
             owner=TEST_USER_ADMIN_LOGIN,
             repo_type=backend.alias,
         )
         response = api_call(self.app, params)
 
-        repo = RepoModel().get_by_repo_name(repo_name)
-
-        assert repo is not None
         ret = {
-            'msg': 'Created new repository `%s`' % (repo_name,),
+            'msg': 'Created new repository `%s`' % (expected_name,),
             'success': True,
             'task': None,
         }
         expected = ret
         assert_ok(id_, expected, given=response.body)
 
-        id_, params = build_data(self.apikey, 'get_repo', repoid=repo_name)
+        repo = RepoModel().get_by_repo_name(safe_unicode(expected_name))
+        assert repo is not None
+
+        id_, params = build_data(self.apikey, 'get_repo', repoid=expected_name)
         response = api_call(self.app, params)
         body = json.loads(response.body)
 
@@ -66,7 +77,7 @@ class TestCreateRepo(object):
         assert body['result']['enable_locking'] is False
         assert body['result']['enable_statistics'] is False
 
-        fixture.destroy_repo(repo_name)
+        fixture.destroy_repo(safe_unicode(expected_name))
 
     def test_api_create_restricted_repo_type(self, backend):
         repo_name = 'api-repo-type-{0}'.format(backend.alias)
@@ -158,6 +169,21 @@ class TestCreateRepo(object):
         fixture.destroy_repo(repo_name)
         fixture.destroy_repo_group(repo_group_name)
 
+    def test_create_repo_in_group_that_doesnt_exist(self, backend, user_util):
+        repo_group_name = 'fake_group'
+
+        repo_name = '%s/api-repo-gr' % (repo_group_name,)
+        id_, params = build_data(
+            self.apikey, 'create_repo',
+            repo_name=repo_name,
+            owner=TEST_USER_ADMIN_LOGIN,
+            repo_type=backend.alias,)
+        response = api_call(self.app, params)
+
+        expected = {'repo_group': 'Repository group `{}` does not exist'.format(
+            repo_group_name)}
+        assert_error(id_, expected, given=response.body)
+
     def test_api_create_repo_unknown_owner(self, backend):
         repo_name = 'api-repo-2'
         owner = 'i-dont-exist'
@@ -218,9 +244,47 @@ class TestCreateRepo(object):
             owner=owner)
         response = api_call(self.app, params)
 
-        expected = 'Only RhodeCode admin can specify `owner` param'
+        expected = 'Only RhodeCode super-admin can specify `owner` param'
         assert_error(id_, expected, given=response.body)
         fixture.destroy_repo(repo_name)
+
+    def test_api_create_repo_by_non_admin_no_parent_group_perms(self, backend):
+        repo_group_name = 'no-access'
+        fixture.create_repo_group(repo_group_name)
+        repo_name = 'no-access/api-repo'
+
+        id_, params = build_data(
+            self.apikey_regular, 'create_repo',
+            repo_name=repo_name,
+            repo_type=backend.alias)
+        response = api_call(self.app, params)
+
+        expected = {'repo_group': 'Repository group `{}` does not exist'.format(
+            repo_group_name)}
+        assert_error(id_, expected, given=response.body)
+        fixture.destroy_repo_group(repo_group_name)
+        fixture.destroy_repo(repo_name)
+
+    def test_api_create_repo_non_admin_no_permission_to_create_to_root_level(
+            self, backend, user_util):
+
+        regular_user = user_util.create_user()
+        regular_user_api_key = regular_user.api_key
+
+        usr = UserModel().get_by_username(regular_user.username)
+        usr.inherit_default_permissions = False
+        Session().add(usr)
+
+        repo_name = backend.new_repo_name()
+        id_, params = build_data(
+            regular_user_api_key, 'create_repo',
+            repo_name=repo_name,
+            repo_type=backend.alias)
+        response = api_call(self.app, params)
+        expected = {
+            "repo_name": "You do not have the permission to "
+                         "store repositories in the root location."}
+        assert_error(id_, expected, given=response.body)
 
     def test_api_create_repo_exists(self, backend):
         repo_name = backend.repo_name
@@ -230,7 +294,9 @@ class TestCreateRepo(object):
             owner=TEST_USER_ADMIN_LOGIN,
             repo_type=backend.alias,)
         response = api_call(self.app, params)
-        expected = "repo `%s` already exist" % (repo_name,)
+        expected = {
+            'unique_repo_name': 'Repository with name `{}` already exists'.format(
+                repo_name)}
         assert_error(id_, expected, given=response.body)
 
     @mock.patch.object(RepoModel, 'create', crash)
@@ -245,26 +311,40 @@ class TestCreateRepo(object):
         expected = 'failed to create repository `%s`' % (repo_name,)
         assert_error(id_, expected, given=response.body)
 
-    def test_create_repo_with_extra_slashes_in_name(self, backend, user_util):
-        existing_repo_group = user_util.create_repo_group()
-        dirty_repo_name = '//{}/repo_name//'.format(
-            existing_repo_group.group_name)
-        cleaned_repo_name = '{}/repo_name'.format(
-            existing_repo_group.group_name)
+    @pytest.mark.parametrize('parent_group, dirty_name, expected_name', [
+        (None, 'foo bar x', 'foo-bar-x'),
+        ('foo', '/foo//bar x', 'foo/bar-x'),
+        ('foo-bar', 'foo-bar //bar x', 'foo-bar/bar-x'),
+    ])
+    def test_create_repo_with_extra_slashes_in_name(
+            self, backend, parent_group, dirty_name, expected_name):
+
+        if parent_group:
+            gr = fixture.create_repo_group(parent_group)
+            assert gr.group_name == parent_group
 
         id_, params = build_data(
             self.apikey, 'create_repo',
-            repo_name=dirty_repo_name,
+            repo_name=dirty_name,
             repo_type=backend.alias,
             owner=TEST_USER_ADMIN_LOGIN,)
         response = api_call(self.app, params)
-        repo = RepoModel().get_by_repo_name(cleaned_repo_name)
+        expected ={
+           "msg": "Created new repository `{}`".format(expected_name),
+           "task": None,
+           "success": True
+        }
+        assert_ok(id_, expected, response.body)
+
+        repo = RepoModel().get_by_repo_name(expected_name)
         assert repo is not None
 
         expected = {
-            'msg': 'Created new repository `%s`' % (cleaned_repo_name,),
+            'msg': 'Created new repository `%s`' % (expected_name,),
             'success': True,
             'task': None,
         }
         assert_ok(id_, expected, given=response.body)
-        fixture.destroy_repo(cleaned_repo_name)
+        fixture.destroy_repo(expected_name)
+        if parent_group:
+            fixture.destroy_repo_group(parent_group)

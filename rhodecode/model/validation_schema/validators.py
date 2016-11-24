@@ -36,3 +36,13 @@ def glob_validator(node, value):
     except Exception:
         msg = _(u'Invalid glob pattern')
         raise colander.Invalid(node, msg)
+
+
+def valid_name_validator(node, value):
+    from rhodecode.model.validation_schema import types
+    if value is types.RootLocation:
+        return
+
+    msg = _('Name must start with a letter or number. Got `{}`').format(value)
+    if not re.match(r'^[a-zA-z0-9]{1,}', value):
+        raise colander.Invalid(node, msg)

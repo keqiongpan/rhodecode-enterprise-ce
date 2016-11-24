@@ -18,22 +18,73 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import colander
+import re
 
+import colander
+from rhodecode.model.validation_schema import preparers
 from rhodecode.model.db import User, UserGroup
+
+
+class _RootLocation(object):
+    pass
+
+RootLocation = _RootLocation()
+
+
+def _normalize(seperator, path):
+
+    if not path:
+        return ''
+    elif path is colander.null:
+        return colander.null
+
+    parts = path.split(seperator)
+
+    def bad_parts(value):
+        if not value:
+            return False
+        if re.match(r'^[.]+$', value):
+            return False
+
+        return True
+
+    def slugify(value):
+        value = preparers.slugify_preparer(value)
+        value = re.sub(r'[.]{2,}', '.', value)
+        return value
+
+    clean_parts = [slugify(item) for item in parts if item]
+    path = filter(bad_parts, clean_parts)
+    return seperator.join(path)
+
+
+class RepoNameType(colander.String):
+    SEPARATOR = '/'
+
+    def deserialize(self, node, cstruct):
+        result = super(RepoNameType, self).deserialize(node, cstruct)
+        if cstruct is colander.null:
+            return colander.null
+        return self._normalize(result)
+
+    def _normalize(self, path):
+        return _normalize(self.SEPARATOR, path)
 
 
 class GroupNameType(colander.String):
     SEPARATOR = '/'
 
     def deserialize(self, node, cstruct):
-        result = super(GroupNameType, self).deserialize(node, cstruct)
-        return self._replace_extra_slashes(result)
+        if cstruct is RootLocation:
+            return cstruct
 
-    def _replace_extra_slashes(self, path):
-        path = path.split(self.SEPARATOR)
-        path = [item for item in path if item]
-        return self.SEPARATOR.join(path)
+        result = super(GroupNameType, self).deserialize(node, cstruct)
+        if cstruct is colander.null:
+            return colander.null
+        return self._normalize(result)
+
+    def _normalize(self, path):
+        return _normalize(self.SEPARATOR, path)
 
 
 class StringBooleanType(colander.String):
