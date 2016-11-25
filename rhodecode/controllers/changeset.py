@@ -217,8 +217,7 @@ class ChangesetController(BaseRepoController):
                 c.rhodecode_db_repo.repo_id, commit.raw_id,
                 with_revisions=True)
             prs = set(st.pull_request for st in statuses
-                      if st is st.pull_request is not None)
-
+                      if st.pull_request is not None)
             # from associated statuses, check the pull requests, and
             # show comments from them
             for pr in prs:
