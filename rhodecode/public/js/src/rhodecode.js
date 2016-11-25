@@ -292,6 +292,7 @@ $(document).ready(function() {
                 $('.cb-line-selected').removeClass('cb-line-selected');
                 var td = $(this).parent();
                 td.addClass('cb-line-selected'); // line number td
+                td.prev().addClass('cb-line-selected'); // line data td
                 td.next().addClass('cb-line-selected'); // line content td
 
                 // Replace URL without jumping to it if browser supports.
@@ -475,6 +476,7 @@ $(document).ready(function() {
             }
             $.each(highlightable_line_tds, function (i, $td) {
                 $td.addClass('cb-line-selected'); // line number td
+                $td.prev().addClass('cb-line-selected'); // line data
                 $td.next().addClass('cb-line-selected'); // line content
             });
 

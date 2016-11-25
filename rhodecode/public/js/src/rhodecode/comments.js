@@ -670,3 +670,228 @@ var CommentForm = (function() {
 
     return CommentForm;
 })();
+
+var CommentsController = function() { /* comments controller */
+  var self = this;
+
+  this.cancelComment = function(node) {
+      var $node = $(node);
+      var $td = $node.closest('td');
+      $node.closest('.comment-inline-form').removeClass('comment-inline-form-open');
+      return false;
+  }
+  this.getLineNumber = function(node) {
+      var $node = $(node);
+      return $node.closest('td').attr('data-line-number');
+  }
+  this.scrollToComment = function(node, offset) {
+    if (!node) {
+      node = $('.comment-selected');
+      if (!node.length) {
+        node = $('comment-current')
+      }
+    }
+    $comment = $(node).closest('.comment-current');
+    $comments = $('.comment-current');
+
+    $('.comment-selected').removeClass('comment-selected');
+
+    var nextIdx = $('.comment-current').index($comment) + offset;
+    if (nextIdx >= $comments.length) {
+      nextIdx = 0;
+    }
+    var $next = $('.comment-current').eq(nextIdx);
+    var $cb = $next.closest('.cb');
+    $cb.removeClass('cb-collapsed')
+
+    var $filediffCollapseState = $cb.closest('.filediff').prev();
+    $filediffCollapseState.prop('checked', false);
+    $next.addClass('comment-selected');
+    scrollToElement($next);
+    return false;
+  }
+  this.nextComment = function(node) {
+    return self.scrollToComment(node, 1);
+  }
+  this.prevComment = function(node) {
+    return self.scrollToComment(node, -1);
+  }
+  this.deleteComment = function(node) {
+      if (!confirm(_gettext('Delete this comment?'))) {
+        return false;
+      }
+      var $node = $(node);
+      var $td = $node.closest('td');
+      var $comment = $node.closest('.comment');
+      var comment_id = $comment.attr('data-comment-id');
+      var url = AJAX_COMMENT_DELETE_URL.replace('__COMMENT_ID__', comment_id);
+      var postData = {
+        '_method': 'delete',
+        'csrf_token': CSRF_TOKEN
+      };
+
+      $comment.addClass('comment-deleting');
+      $comment.hide('fast');
+
+      var success = function(response) {
+        $comment.remove();
+        return false;
+      };
+      var failure = function(data, textStatus, xhr) {
+        alert("error processing request: " + textStatus);
+        $comment.show('fast');
+        $comment.removeClass('comment-deleting');
+        return false;
+      };
+      ajaxPOST(url, postData, success, failure);
+  }
+  this.toggleComments = function(node, show) {
+    var $filediff = $(node).closest('.filediff');
+    if (show === true) {
+      $filediff.removeClass('hide-comments');
+    } else if (show === false) {
+      $filediff.find('.hide-line-comments').removeClass('hide-line-comments');
+      $filediff.addClass('hide-comments');
+    } else {
+      $filediff.find('.hide-line-comments').removeClass('hide-line-comments');
+      $filediff.toggleClass('hide-comments');
+    }
+    return false;
+  }
+  this.toggleLineComments = function(node) {
+    self.toggleComments(node, true);
+    var $node = $(node);
+    $node.closest('tr').toggleClass('hide-line-comments');
+  }
+  this.createComment = function(node) {
+      var $node = $(node);
+      var $td = $node.closest('td');
+      var $form = $td.find('.comment-inline-form');
+
+      if (!$form.length) {
+          var tmpl = $('#cb-comment-inline-form-template').html();
+          var $filediff = $node.closest('.filediff');
+          $filediff.removeClass('hide-comments');
+          var f_path = $filediff.attr('data-f-path');
+          var lineno = self.getLineNumber(node);
+          tmpl = tmpl.format(f_path, lineno);
+          $form = $(tmpl);
+
+          var $comments = $td.find('.inline-comments');
+          if (!$comments.length) {
+            $comments = $(
+              $('#cb-comments-inline-container-template').html());
+            $td.append($comments);
+          }
+
+          $td.find('.cb-comment-add-button').before($form);
+
+          var pullRequestId = templateContext.pull_request_data.pull_request_id;
+          var commitId = templateContext.commit_data.commit_id;
+          var _form = $form[0];
+          var commentForm = new CommentForm(_form, commitId, pullRequestId, lineno, false);
+          var cm = commentForm.getCmInstance();
+
+          // set a CUSTOM submit handler for inline comments.
+          commentForm.setHandleFormSubmit(function(o) {
+            var text = commentForm.cm.getValue();
+
+            if (text === "") {
+              return;
+            }
+
+            if (lineno === undefined) {
+              alert('missing line !');
+              return;
+            }
+            if (f_path === undefined) {
+              alert('missing file path !');
+              return;
+            }
+
+            var excludeCancelBtn = false;
+            var submitEvent = true;
+            commentForm.setActionButtonsDisabled(true, excludeCancelBtn, submitEvent);
+            commentForm.cm.setOption("readOnly", true);
+            var postData = {
+                'text': text,
+                'f_path': f_path,
+                'line': lineno,
+                'csrf_token': CSRF_TOKEN
+            };
+            var submitSuccessCallback = function(json_data) {
+              $form.remove();
+              console.log(json_data)
+              try {
+                var html = json_data.rendered_text;
+                var lineno = json_data.line_no;
+                var target_id = json_data.target_id;
+
+                $comments.find('.cb-comment-add-button').before(html);
+                console.log(lineno, target_id, $comments);
+
+              } catch (e) {
+                console.error(e);
+              }
+
+
+              // re trigger the linkification of next/prev navigation
+              linkifyComments($('.inline-comment-injected'));
+              timeagoActivate();
+              bindDeleteCommentButtons();
+              commentForm.setActionButtonsDisabled(false);
+
+            };
+            var submitFailCallback = function(){
+                commentForm.resetCommentFormState(text)
+            };
+            commentForm.submitAjaxPOST(
+                commentForm.submitUrl, postData, submitSuccessCallback, submitFailCallback);
+          });
+
+          setTimeout(function() {
+              // callbacks
+              if (cm !== undefined) {
+                  cm.focus();
+              }
+          }, 10);
+
+            $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
+                form: _form,
+                parent: $td[0],
+                lineno: lineno,
+                f_path: f_path}
+            );
+      }
+
+      $form.addClass('comment-inline-form-open');
+  }
+
+  this.renderInlineComments = function(file_comments) {
+    show_add_button = typeof show_add_button !== 'undefined' ? show_add_button : true;
+
+    for (var i = 0; i < file_comments.length; i++) {
+      var box = file_comments[i];
+
+      var target_id = $(box).attr('target_id');
+
+      // actually comments with line numbers
+      var comments = box.children;
+
+      for (var j = 0; j < comments.length; j++) {
+        var data = {
+          'rendered_text': comments[j].outerHTML,
+          'line_no': $(comments[j]).attr('line'),
+          'target_id': target_id
+        };
+      }
+    }
+
+    // since order of injection is random, we're now re-iterating
+    // from correct order and filling in links
+    linkifyComments($('.inline-comment-injected'));
+    bindDeleteCommentButtons();
+    firefoxAnchorFix();
+  };
+
+}

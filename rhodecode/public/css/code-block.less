@@ -877,9 +877,15 @@ input.filediff-collapse-state {
             .show-comment-button {
                 display: inline;
             }
-            .show-comment-button {
+            .hide-comment-button {
                 display: none;
             }
+        }
+    }
+
+    .hide-line-comments {
+        .inline-comments {
+            display: none;
         }
     }
     .inline-comments {
@@ -1037,6 +1043,9 @@ table.cb {
                 white-space: pre-wrap;
                 font-family: @font-family-monospace;
                 word-break: break-word;
+                .nonl {
+                    color: @color5;
+                }
             }
 
             &> button.cb-comment-box-opener {
@@ -1058,6 +1067,22 @@ table.cb {
             }
             &+ td button.cb-comment-box-opener {
                 display: block
+            }
+        }
+
+        &.cb-data {
+            text-align: right;
+            width: 30px;
+            font-family: @font-family-monospace;
+
+            .icon-comment {
+                cursor: pointer;
+            }
+            &.cb-line-selected > div {
+                display: block;
+                background: @comment-highlight-color !important;
+                line-height: @cb-line-height;
+                color: rgba(0, 0, 0, 0.3);
             }
         }
 
