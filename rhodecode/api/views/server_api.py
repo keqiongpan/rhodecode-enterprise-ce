@@ -60,7 +60,13 @@ def get_server_info(request, apiuser):
     if not has_superadmin_permission(apiuser):
         raise JSONRPCForbidden()
 
-    return ScmModel().get_server_info(request.environ)
+    server_info = ScmModel().get_server_info(request.environ)
+    # rhodecode-index requires those
+
+    server_info['index_storage'] = server_info['search']['value']['location']
+    server_info['storage'] = server_info['storage']['value']['path']
+
+    return server_info
 
 
 @jsonrpc_method()

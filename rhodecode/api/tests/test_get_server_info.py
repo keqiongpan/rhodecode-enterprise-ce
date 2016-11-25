@@ -67,3 +67,12 @@ class TestGetServerInfo(object):
         expected['server'] = resp['result']['server']
 
         assert_ok(id_, expected, given=response.body)
+
+    def test_api_get_server_info_data_for_search_index_build(self):
+        id_, params = build_data(self.apikey, 'get_server_info')
+        response = api_call(self.app, params)
+        resp = response.json
+
+        # required by indexer
+        assert resp['result']['index_storage']
+        assert resp['result']['storage']
