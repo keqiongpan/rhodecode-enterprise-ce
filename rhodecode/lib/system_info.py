@@ -32,8 +32,8 @@ STATE_OK_DEFAULT = {'message': '', 'type': STATE_OK}
 def percentage(part, whole):
     whole = float(whole)
     if whole > 0:
-        return 100 * float(part) / whole
-    return 0
+        return round(100 * float(part) / whole, 1)
+    return 0.0
 
 
 def get_storage_size(storage_path):
@@ -260,8 +260,7 @@ def storage_inodes():
         value['used'] = i_stat.f_ffree
         value['free'] = i_stat.f_favail
         value['total'] = i_stat.f_files
-        value['percent'] = percentage(
-            value['used'], value['total'])
+        value['percent'] = percentage(value['used'], value['total'])
     except Exception as e:
         log.exception('Failed to fetch disk inodes info')
         state = {'message': str(e), 'type': STATE_ERR}
@@ -278,7 +277,7 @@ def storage_inodes():
         msg = 'Warning: your disk free inodes are running low.'
         state = {'message': msg, 'type': STATE_WARN}
 
-    return SysInfoRes(value=value, state=state)
+    return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
 def storage_archives():
