@@ -299,142 +299,17 @@
                 </div>
               % if not c.missing_commits:
                 <%include file="/compare/compare_commits.html" />
-                ## FILES
-                <div class="cs_files_title">
-                    <span class="cs_files_expand">
-                        <span id="expand_all_files">${_('Expand All')}</span> | <span id="collapse_all_files">${_('Collapse All')}</span>
-                    </span>
-                    <h2>
-                        ${diff_block.diff_summary_text(len(c.files), c.lines_added, c.lines_deleted, c.limited_diff)}
-                    </h2>
-                </div>
-              % endif
               <div class="cs_files">
-              %if not c.files and not c.missing_commits:
-                  <span class="empty_data">${_('No files')}</span>
-              %endif
-              <table class="compare_view_files">
-              <%namespace name="diff_block" file="/changeset/diff_block.html"/>
-              %for FID, change, path, stats in c.files:
-                  <tr class="cs_${change} collapse_file" fid="${FID}">
-                      <td class="cs_icon_td">
-                          <span class="collapse_file_icon" fid="${FID}"></span>
-                      </td>
-                      <td class="cs_icon_td">
-                          <div class="flag_status not_reviewed hidden"></div>
-                      </td>
-                      <td class="cs_${change}" id="a_${FID}">
-                          <div class="node">
-                              <a href="#a_${FID}">
-                                  <i class="icon-file-${change.lower()}"></i>
-                                  ${h.safe_unicode(path)}
-                              </a>
-                          </div>
-                      </td>
-                      <td>
-                          <div class="changes pull-right">${h.fancy_file_stats(stats)}</div>
-                          <div class="comment-bubble pull-right" data-path="${path}">
-                            <i class="icon-comment"></i>
-                          </div>
-                      </td>
-                  </tr>
-                  <tr fid="${FID}" id="diff_${FID}" class="diff_links">
-                      <td></td>
-                      <td></td>
-                      <td class="cs_${change}">
-                          %if c.target_repo.repo_name == c.repo_name:
-                              ${diff_block.diff_menu(c.repo_name, h.safe_unicode(path), c.target_ref, c.source_ref, change)}
-                          %else:
-                              ## this is slightly different case later, since the other repo can have this
-                              ## file in other state than the origin repo
-                              ${diff_block.diff_menu(c.target_repo.repo_name, h.safe_unicode(path), c.target_ref, c.source_ref, change)}
-                          %endif
-                      </td>
-                      <td class="td-actions rc-form">
-                        <div data-comment-id="${FID}" class="btn-link show-inline-comments comments-visible">
-                          <span class="comments-show">${_('Show comments')}</span>
-                          <span class="comments-hide">${_('Hide comments')}</span>
-                        </div>
-                      </td>
-                  </tr>
-                  <tr id="tr_${FID}">
-                    <td></td>
-                    <td></td>
-                    <td class="injected_diff" colspan="2">
-                        ${diff_block.diff_block_simple([c.changes[FID]])}
-                    </td>
-                  </tr>
+                <%namespace name="cbdiffs" file="/codeblocks/diffs.html"/>
+                ${cbdiffs.render_diffset_menu()}
+                ${cbdiffs.render_diffset(
+                  c.diffset, use_comments=True,
+                  collapse_when_files_over=30,
+                  disable_new_comments=c.pull_request.is_closed())}
 
-                ## Loop through inline comments
-                  % if c.outdated_comments.get(path,False):
-                    <tr class="outdated">
-                      <td></td>
-                      <td></td>
-                      <td colspan="2">
-                        <p>${_('Outdated Inline Comments')}:</p>
-                      </td>
-                    </tr>
-                    <tr class="outdated">
-                      <td></td>
-                      <td></td>
-                      <td colspan="2" class="outdated_comment_block">
-                      % for line, comments in c.outdated_comments[path].iteritems():
-                          <div class="inline-comment-placeholder" path="${path}" target_id="${h.safeid(h.safe_unicode(path))}">
-                            % for co in comments:
-                              ${comment.comment_block_outdated(co)}
-                            % endfor
-                          </div>
-                      % endfor
-                      </td>
-                    </tr>
-                  % endif
-              %endfor
-              ## Loop through inline comments for deleted files
-              %for path in c.deleted_files:
-                <tr class="outdated deleted">
-                  <td></td>
-                  <td></td>
-                  <td>${path}</td>
-                </tr>
-                <tr class="outdated deleted">
-                  <td></td>
-                  <td></td>
-                  <td>(${_('Removed')})</td>
-                </tr>
-                % if path in c.outdated_comments:
-                  <tr class="outdated deleted">
-                    <td></td>
-                    <td></td>
-                    <td colspan="2">
-                      <p>${_('Outdated Inline Comments')}:</p>
-                    </td>
-                  </tr>
-                  <tr class="outdated">
-                    <td></td>
-                    <td></td>
-                    <td colspan="2" class="outdated_comment_block">
-                    % for line, comments in c.outdated_comments[path].iteritems():
-                        <div class="inline-comment-placeholder" path="${path}" target_id="${h.safeid(h.safe_unicode(path))}">
-                          % for co in comments:
-                            ${comment.comment_block_outdated(co)}
-                          % endfor
-                        </div>
-                    % endfor
-                    </td>
-                  </tr>
-                % endif
-              %endfor
-              </table>
-              </div>
-              % if c.limited_diff:
-              <h5>${_('Commit was too big and was cut off...')} <a href="${h.url.current(fulldiff=1, **request.GET.mixed())}" onclick="return confirm('${_("Showing a huge diff might take some time and resources")}')">${_('Show full diff')}</a></h5>
-              % endif
           </div>
+              % endif
       </div>
-
-      % if c.limited_diff:
-        <p>${_('Commit was too big and was cut off...')} <a href="${h.url.current(fulldiff=1, **request.GET.mixed())}" onclick="return confirm('${_("Showing a huge diff might take some time and resources")}')">${_('Show full diff')}</a></p>
-      % endif
 
       ## template for inline comment form
       <%namespace name="comment" file="/changeset/changeset_file_comment.html"/>

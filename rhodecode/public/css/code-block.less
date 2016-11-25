@@ -710,7 +710,13 @@ input.filediff-collapse-state {
         background: @alert3-inner;
         border: 1px solid @alert3;
     }
+    &.diffset-comments-disabled {
+        .cb-comment-box-opener, .comment-inline-form, .cb-comment-add-button {
+            display: none !important;
+        }
+    }
 }
+
 .pill {
     display: block;
     float: left;
@@ -1023,6 +1029,7 @@ table.cb {
             }
         }
     }
+
 
     td {
         vertical-align: top;

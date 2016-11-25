@@ -34,8 +34,11 @@ return h.url('', **new_args)
     # add a ruler at to the output
     ruler_at_chars=0,
 
-    # turn on inline comments
+    # show inline comments
     use_comments=False,
+
+    # disable new comments
+    disable_new_comments=False,
 
 )">
 
@@ -127,8 +130,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     left: ${ruler_at_chars + 5}ch;
 </style>
 %endif
-
-<div class="diffset">
+<div class="diffset ${disable_new_comments and 'diffset-comments-disabled'}">
     <div class="diffset-heading ${diffset.limited_diff and 'diffset-heading-warning' or ''}">
         %if commit:
             <div class="pull-right">

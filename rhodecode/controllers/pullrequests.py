@@ -35,7 +35,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 
 from rhodecode import events
-from rhodecode.lib import auth, diffs, helpers as h
+from rhodecode.lib import auth, diffs, helpers as h, codeblocks
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.base import (
     BaseRepoController, render, vcs_operation_context)
@@ -43,11 +43,13 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous,
     HasAcceptedRepoType, XHRRequired)
 from rhodecode.lib.channelstream import channelstream_request
+from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_int, safe_str, str2bool, safe_unicode
 from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
 from rhodecode.lib.vcs.exceptions import (
-    EmptyRepositoryError, CommitDoesNotExistError, RepositoryRequirementError)
+    EmptyRepositoryError, CommitDoesNotExistError, RepositoryRequirementError,
+    NodeDoesNotExistError)
 from rhodecode.lib.diffs import LimitedDiffContainer
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
@@ -64,7 +66,7 @@ class PullrequestsController(BaseRepoController):
     def __before__(self):
         super(PullrequestsController, self).__before__()
 
-    def _load_compare_data(self, pull_request, enable_comments=True):
+    def _load_compare_data(self, pull_request, inline_comments, enable_comments=True):
         """
         Load context data needed for generating compare diff
 
@@ -117,6 +119,7 @@ class PullrequestsController(BaseRepoController):
         except RepositoryRequirementError:
             c.missing_requirements = True
 
+        c.changes = {}
         c.missing_commits = False
         if (c.missing_requirements or
                 isinstance(source_commit, EmptyCommit) or
@@ -126,11 +129,31 @@ class PullrequestsController(BaseRepoController):
         else:
             vcs_diff = PullRequestModel().get_diff(pull_request)
             diff_processor = diffs.DiffProcessor(
-                vcs_diff, format='gitdiff', diff_limit=diff_limit,
+                vcs_diff, format='newdiff', diff_limit=diff_limit,
                 file_limit=file_limit, show_full_diff=c.fulldiff)
             _parsed = diff_processor.prepare()
 
-        c.limited_diff = isinstance(_parsed, LimitedDiffContainer)
+            commit_changes = OrderedDict()
+            _parsed = diff_processor.prepare()
+            c.limited_diff = isinstance(_parsed, diffs.LimitedDiffContainer)
+
+            _parsed = diff_processor.prepare()
+
+            def _node_getter(commit):
+                def get_node(fname):
+                    try:
+                        return commit.get_node(fname)
+                    except NodeDoesNotExistError:
+                        return None
+                return get_node
+
+            c.diffset = codeblocks.DiffSet(
+                repo_name=c.repo_name,
+                source_node_getter=_node_getter(target_commit),
+                target_node_getter=_node_getter(source_commit),
+                comments=inline_comments
+            ).render_patchset(_parsed, target_commit.raw_id, source_commit.raw_id)
+
 
         c.files = []
         c.changes = {}
@@ -139,17 +162,17 @@ class PullrequestsController(BaseRepoController):
         c.included_files = []
         c.deleted_files = []
 
-        for f in _parsed:
-            st = f['stats']
-            c.lines_added += st['added']
-            c.lines_deleted += st['deleted']
+        # for f in _parsed:
+        #     st = f['stats']
+        #     c.lines_added += st['added']
+        #     c.lines_deleted += st['deleted']
 
-            fid = h.FID('', f['filename'])
-            c.files.append([fid, f['operation'], f['filename'], f['stats']])
-            c.included_files.append(f['filename'])
-            html_diff = diff_processor.as_html(enable_comments=enable_comments,
-                                               parsed_lines=[f])
-            c.changes[fid] = [f['operation'], f['filename'], html_diff, f]
+        #     fid = h.FID('', f['filename'])
+        #     c.files.append([fid, f['operation'], f['filename'], f['stats']])
+        #     c.included_files.append(f['filename'])
+        #     html_diff = diff_processor.as_html(enable_comments=enable_comments,
+        #                                        parsed_lines=[f])
+        #     c.changes[fid] = [f['operation'], f['filename'], html_diff, f]
 
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
@@ -703,23 +726,13 @@ class PullrequestsController(BaseRepoController):
             c.pr_merge_status = False
         # load compare data into template context
         enable_comments = not c.pull_request.is_closed()
-        self._load_compare_data(c.pull_request, enable_comments=enable_comments)
 
-        # this is a hack to properly display links, when creating PR, the
-        # compare view and others uses different notation, and
-        # compare_commits.html renders links based on the target_repo.
-        # We need to swap that here to generate it properly on the html side
-        c.target_repo = c.source_repo
 
         # inline comments
-        c.inline_cnt = 0
         c.inline_comments = cc_model.get_inline_comments(
             c.rhodecode_db_repo.repo_id,
-            pull_request=pull_request_id).items()
-        # count inline comments
-        for __, lines in c.inline_comments:
-            for comments in lines.values():
-                c.inline_cnt += len(comments)
+            pull_request=pull_request_id)
+        c.inline_cnt = len(c.inline_comments)
 
         # outdated comments
         c.outdated_cnt = 0
@@ -735,6 +748,15 @@ class PullrequestsController(BaseRepoController):
                     c.deleted_files.append(file_name)
         else:
             c.outdated_comments = {}
+
+        self._load_compare_data(
+            c.pull_request, c.inline_comments, enable_comments=enable_comments)
+
+        # this is a hack to properly display links, when creating PR, the
+        # compare view and others uses different notation, and
+        # compare_commits.html renders links based on the target_repo.
+        # We need to swap that here to generate it properly on the html side
+        c.target_repo = c.source_repo
 
         # comments
         c.comments = cc_model.get_comments(c.rhodecode_db_repo.repo_id,
