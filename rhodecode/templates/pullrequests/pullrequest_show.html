@@ -170,11 +170,11 @@
                             ${ungettext("%d Pull request comment", "%d Pull request comments", len(c.comments)) % len(c.comments)}
                         %endif
                         %if c.inline_cnt:
-                            ## this is replaced with a proper link to first comment via JS linkifyComments() func
-                            <a href="#inline-comments" id="inline-comments-counter">${ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}</a>
+                            <a href="#" onclick="return Rhodecode.comments.nextComment();" id="inline-comments-counter">${ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}</a>
                         %else:
                             ${ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}
                         %endif
+
 
                         % if c.outdated_cnt:
                           ,${ungettext("%d Outdated Comment", "%d Outdated Comments", c.outdated_cnt) % c.outdated_cnt} <span id="show-outdated-comments" class="btn btn-link">${_('(Show)')}</span>
