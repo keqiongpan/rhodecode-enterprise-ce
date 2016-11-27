@@ -165,6 +165,7 @@
 
 ## generate main comments
 <%def name="generate_comments(include_pull_request=False, is_pull_request=False)">
+  <div id="comments">
     %for comment in c.comments:
         <div id="comment-tr-${comment.comment_id}">
           ## only render comments that are not from pull request, or from
@@ -176,6 +177,7 @@
     %endfor
     ## to anchor ajax comments
     <div id="injected_page_comments"></div>
+  </div>
 </%def>
 
 ## MAIN COMMENT FORM
