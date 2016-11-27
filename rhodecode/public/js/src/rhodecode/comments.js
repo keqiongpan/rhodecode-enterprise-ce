@@ -821,14 +821,12 @@ var CommentsController = function() { /* comments controller */
             };
             var submitSuccessCallback = function(json_data) {
               $form.remove();
-              console.log(json_data)
               try {
                 var html = json_data.rendered_text;
                 var lineno = json_data.line_no;
                 var target_id = json_data.target_id;
 
                 $comments.find('.cb-comment-add-button').before(html);
-                console.log(lineno, target_id, $comments);
 
               } catch (e) {
                 console.error(e);
