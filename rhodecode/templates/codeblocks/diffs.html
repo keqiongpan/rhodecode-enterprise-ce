@@ -194,7 +194,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         %endif
         %if over_lines_changed_limit:
                 <tr class="cb-warning cb-collapser">
-                    <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=4'}>
+                    <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
                         ${_('This diff has been collapsed as it changes many lines, (%i lines changed)' % lines_changed)}
                         <a href="#" class="cb-expand"
                            onclick="$(this).closest('table').removeClass('cb-collapsed'); return false;">${_('Show them')}
@@ -207,7 +207,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         %endif
         %if filediff.patch['is_limited_diff']:
                 <tr class="cb-warning cb-collapser">
-                    <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=4'}>
+                    <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
                         ${_('The requested commit is too big and content was truncated.')} <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
                     </td>
                 </tr>
