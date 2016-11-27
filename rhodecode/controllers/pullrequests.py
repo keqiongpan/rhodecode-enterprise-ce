@@ -154,25 +154,13 @@ class PullrequestsController(BaseRepoController):
                 comments=inline_comments
             ).render_patchset(_parsed, target_commit.raw_id, source_commit.raw_id)
 
-
-        c.files = []
-        c.changes = {}
-        c.lines_added = 0
-        c.lines_deleted = 0
         c.included_files = []
         c.deleted_files = []
 
-        # for f in _parsed:
-        #     st = f['stats']
-        #     c.lines_added += st['added']
-        #     c.lines_deleted += st['deleted']
-
-        #     fid = h.FID('', f['filename'])
-        #     c.files.append([fid, f['operation'], f['filename'], f['stats']])
-        #     c.included_files.append(f['filename'])
-        #     html_diff = diff_processor.as_html(enable_comments=enable_comments,
-        #                                        parsed_lines=[f])
-        #     c.changes[fid] = [f['operation'], f['filename'], html_diff, f]
+        for f in _parsed:
+            st = f['stats']
+            fid = h.FID('', f['filename'])
+            c.included_files.append(f['filename'])
 
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
@@ -734,7 +722,11 @@ class PullrequestsController(BaseRepoController):
             pull_request=pull_request_id)
         c.inline_cnt = len(c.inline_comments)
 
+        self._load_compare_data(
+            c.pull_request, c.inline_comments, enable_comments=enable_comments)
+
         # outdated comments
+        c.outdated_comments = {}
         c.outdated_cnt = 0
         if ChangesetCommentsModel.use_outdated_comments(c.pull_request):
             c.outdated_comments = cc_model.get_outdated_comments(
@@ -746,11 +738,7 @@ class PullrequestsController(BaseRepoController):
                     c.outdated_cnt += len(comments)
                 if file_name not in c.included_files:
                     c.deleted_files.append(file_name)
-        else:
-            c.outdated_comments = {}
 
-        self._load_compare_data(
-            c.pull_request, c.inline_comments, enable_comments=enable_comments)
 
         # this is a hack to properly display links, when creating PR, the
         # compare view and others uses different notation, and
