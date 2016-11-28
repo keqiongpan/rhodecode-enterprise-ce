@@ -18,16 +18,14 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import hashlib
+import itsdangerous
 import logging
 import os
-
-import itsdangerous
 import requests
-
 from dogpile.core import ReadWriteMutex
 
 import rhodecode.lib.helpers as h
-
 from rhodecode.lib.auth import HasRepoPermissionAny
 from rhodecode.lib.ext_json import json
 from rhodecode.model.db import User
@@ -169,7 +167,9 @@ def parse_channels_info(info_result, include_channel_info=None):
 
 
 def log_filepath(history_location, channel_name):
-    filename = '{}.log'.format(channel_name.encode('hex'))
+    hasher = hashlib.sha256()
+    hasher.update(channel_name.encode('utf8'))
+    filename = '{}.log'.format(hasher.hexdigest())
     filepath = os.path.join(history_location, filename)
     return filepath
 
