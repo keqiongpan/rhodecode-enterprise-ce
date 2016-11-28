@@ -50,6 +50,9 @@ class TestGetServerInfo(object):
         expected['storage_inodes'] = resp['result']['storage_inodes']
         expected['server'] = resp['result']['server']
 
+        expected['index_storage'] = resp['result']['index_storage']
+        expected['storage'] = resp['result']['storage']
+
         assert_ok(id_, expected, given=response.body)
 
     def test_api_get_server_info_ip(self):
@@ -65,6 +68,9 @@ class TestGetServerInfo(object):
         expected['storage_temp'] = resp['result']['storage_temp']
         expected['storage_inodes'] = resp['result']['storage_inodes']
         expected['server'] = resp['result']['server']
+
+        expected['index_storage'] = resp['result']['index_storage']
+        expected['storage'] = resp['result']['storage']
 
         assert_ok(id_, expected, given=response.body)
 
