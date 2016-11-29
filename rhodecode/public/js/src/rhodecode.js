@@ -413,27 +413,7 @@ $(document).ready(function() {
     // At the time of development, Chrome didn't seem to support jquery's :target
     // element, so I had to scroll manually
 
-    if (location.hash) { /* TODO: dan: remove this and replace with code block
-                            below when new diffs are ready */
-        var result = splitDelimitedHash(location.hash);
-        var loc  = result.loc;
-        if (loc.length > 1){
-            var lineno = $(loc+'.lineno');
-            if (lineno.length > 0){
-                var tr = lineno.parents('tr.line');
-                tr.addClass('selected');
-
-                tr[0].scrollIntoView();
-
-                $.Topic('/ui/plugins/code/anchor_focus').prepareOrPublish({
-                    tr: tr,
-                    remainder: result.remainder});
-            }
-        }
-    }
-
-    if (location.hash) { /* TODO: dan: use this to replace the code block above
-                            when new diffs are ready */
+    if (location.hash) {
         var result = splitDelimitedHash(location.hash);
         var loc  = result.loc;
         if (loc.length > 1) {
@@ -484,7 +464,7 @@ $(document).ready(function() {
                 var $first_line_td = highlightable_line_tds[0];
                 scrollToElement($first_line_td);
                 $.Topic('/ui/plugins/code/anchor_focus').prepareOrPublish({
-                    lineno: $first_line_td,
+                    td: $first_line_td,
                     remainder: result.remainder
                 });
             }
