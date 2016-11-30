@@ -6,6 +6,27 @@ Release Date
 
 - 2016-08-23
 
+
+New Features
+^^^^^^^^^^^^
+
+
+
+General
+^^^^^^^
+
+
+
+Security
+^^^^^^^^
+
+
+
+Performance
+^^^^^^^^^^^
+
+
+
 Fixes
 ^^^^^
 

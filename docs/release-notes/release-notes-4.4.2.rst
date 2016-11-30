@@ -7,21 +7,21 @@ Release Date
 - 2016-10-17
 
 
-General
-^^^^^^^
-
-- packaging: pinned against rhodecode-tools 0.10.1
-
-
 New Features
 ^^^^^^^^^^^^
 
 
 
+General
+^^^^^^^
+
+- Packaging: pinned against rhodecode-tools 0.10.1
+
+
 Security
 ^^^^^^^^
 
-- integrations: fix 500 error on integrations page when delegated admin
+- Integrations: fix 500 error on integrations page when delegated admin
   tried to access integration page after adding some integrations.
   Permission checks were to strict for delegated admins.
 
@@ -34,8 +34,8 @@ Performance
 Fixes
 ^^^^^
 
-- vcsserver: make sure we correctly ping against bundled HG/GIT/SVN binaries.
+- Vcsserver: make sure we correctly ping against bundled HG/GIT/SVN binaries.
   This should fix a problem where system binaries could be used accidentally
   by the RhodeCode.
-- ldap: fixed email extraction issues. Empty email addresses from LDAP server
+- LDAP: fixed email extraction issues. Empty email addresses from LDAP server
   will no longer take precedence over those stored inside RhodeCode database.
