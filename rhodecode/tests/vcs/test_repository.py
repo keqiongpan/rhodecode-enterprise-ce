@@ -308,7 +308,7 @@ class TestRepositoryMerge:
             'test user', 'test@rhodecode.com', 'merge message 1',
             dry_run=False)
         expected_merge_response = MergeResponse(
-            True, True, merge_response.merge_commit_id,
+            True, True, merge_response.merge_ref,
             MergeFailureReason.NONE)
         assert merge_response == expected_merge_response
 
@@ -320,45 +320,55 @@ class TestRepositoryMerge:
         assert self.target_ref.commit_id in commit_ids
 
         merge_commit = target_commits[-1]
-        assert merge_commit.raw_id == merge_response.merge_commit_id
+        assert merge_commit.raw_id == merge_response.merge_ref.commit_id
         assert merge_commit.message.strip() == 'merge message 1'
         assert merge_commit.author == 'test user <test@rhodecode.com>'
 
         # We call it twice so to make sure we can handle updates
         target_ref = Reference(
             self.target_ref.type, self.target_ref.name,
-            merge_response.merge_commit_id)
+            merge_response.merge_ref.commit_id)
 
         merge_response = target_repo.merge(
             target_ref, self.source_repo, self.source_ref, self.workspace,
             'test user', 'test@rhodecode.com', 'merge message 2',
             dry_run=False)
         expected_merge_response = MergeResponse(
-            True, True, merge_response.merge_commit_id,
+            True, True, merge_response.merge_ref,
             MergeFailureReason.NONE)
         assert merge_response == expected_merge_response
 
         target_repo = backends.get_backend(
             vcsbackend.alias)(self.target_repo.path)
-        merge_commit = target_repo.get_commit(merge_response.merge_commit_id)
+        merge_commit = target_repo.get_commit(
+            merge_response.merge_ref.commit_id)
         assert merge_commit.message.strip() == 'merge message 1'
         assert merge_commit.author == 'test user <test@rhodecode.com>'
 
     def test_merge_success_dry_run(self, vcsbackend):
         self.prepare_for_success(vcsbackend)
-        expected_merge_response = MergeResponse(
-            True, False, None, MergeFailureReason.NONE)
 
         merge_response = self.target_repo.merge(
             self.target_ref, self.source_repo, self.source_ref, self.workspace,
             dry_run=True)
-        assert merge_response == expected_merge_response
 
         # We call it twice so to make sure we can handle updates
-        merge_response = self.target_repo.merge(
+        merge_response_update = self.target_repo.merge(
             self.target_ref, self.source_repo, self.source_ref, self.workspace,
             dry_run=True)
-        assert merge_response == expected_merge_response
+
+        # Multiple merges may differ in their commit id. Therefore we set the
+        # commit id to `None` before comparing the merge responses.
+        merge_response = merge_response._replace(
+            merge_ref=merge_response.merge_ref._replace(commit_id=None))
+        merge_response_update = merge_response_update._replace(
+            merge_ref=merge_response_update.merge_ref._replace(commit_id=None))
+
+        assert merge_response == merge_response_update
+        assert merge_response.possible is True
+        assert merge_response.executed is False
+        assert merge_response.merge_ref
+        assert merge_response.failure_reason is MergeFailureReason.NONE
 
     @pytest.mark.parametrize('dry_run', [True, False])
     def test_merge_conflict(self, vcsbackend, dry_run):
@@ -391,10 +401,10 @@ class TestRepositoryMerge:
 
         assert merge_response == expected_merge_response
 
-    def test_merge_missing_commit(self, vcsbackend):
+    def test_merge_missing_source_reference(self, vcsbackend):
         self.prepare_for_success(vcsbackend)
         expected_merge_response = MergeResponse(
-            False, False, None, MergeFailureReason.MISSING_COMMIT)
+            False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
 
         source_ref = Reference(
             self.source_ref.type, 'not_existing', self.source_ref.commit_id)

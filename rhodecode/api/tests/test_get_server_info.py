@@ -45,8 +45,13 @@ class TestGetServerInfo(object):
         expected['uptime'] = resp['result']['uptime']
         expected['load'] = resp['result']['load']
         expected['cpu'] = resp['result']['cpu']
-        expected['disk'] = resp['result']['disk']
-        expected['server_ip'] = '127.0.0.1:80'
+        expected['storage'] = resp['result']['storage']
+        expected['storage_temp'] = resp['result']['storage_temp']
+        expected['storage_inodes'] = resp['result']['storage_inodes']
+        expected['server'] = resp['result']['server']
+
+        expected['index_storage'] = resp['result']['index_storage']
+        expected['storage'] = resp['result']['storage']
 
         assert_ok(id_, expected, given=response.body)
 
@@ -59,7 +64,21 @@ class TestGetServerInfo(object):
         expected['uptime'] = resp['result']['uptime']
         expected['load'] = resp['result']['load']
         expected['cpu'] = resp['result']['cpu']
-        expected['disk'] = resp['result']['disk']
-        expected['server_ip'] = '127.0.0.1:80'
+        expected['storage'] = resp['result']['storage']
+        expected['storage_temp'] = resp['result']['storage_temp']
+        expected['storage_inodes'] = resp['result']['storage_inodes']
+        expected['server'] = resp['result']['server']
+
+        expected['index_storage'] = resp['result']['index_storage']
+        expected['storage'] = resp['result']['storage']
 
         assert_ok(id_, expected, given=response.body)
+
+    def test_api_get_server_info_data_for_search_index_build(self):
+        id_, params = build_data(self.apikey, 'get_server_info')
+        response = api_call(self.app, params)
+        resp = response.json
+
+        # required by indexer
+        assert resp['result']['index_storage']
+        assert resp['result']['storage']

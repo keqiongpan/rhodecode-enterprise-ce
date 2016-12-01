@@ -34,6 +34,7 @@ pytestmark = pytest.mark.backends("git", "hg")
 class TestGetPullRequest(object):
 
     def test_api_get_pull_request(self, pr_util):
+        from rhodecode.model.pull_request import PullRequestModel
         pull_request = pr_util.create_pull_request(mergeable=True)
         id_, params = build_data(
             self.apikey, 'get_pull_request',
@@ -57,6 +58,8 @@ class TestGetPullRequest(object):
         target_url = unicode(
             pull_request.target_repo.clone_url()
                 .with_netloc('test.example.com:80'))
+        shadow_url = unicode(
+            PullRequestModel().get_shadow_clone_url(pull_request))
         expected = {
             'pull_request_id': pull_request.pull_request_id,
             'url': pr_url,
@@ -89,15 +92,24 @@ class TestGetPullRequest(object):
                     'commit_id': pull_request.target_ref_parts.commit_id,
                 },
             },
+            'merge': {
+                'clone_url': shadow_url,
+                'reference': {
+                    'name': pull_request.shadow_merge_ref.name,
+                    'type': pull_request.shadow_merge_ref.type,
+                    'commit_id': pull_request.shadow_merge_ref.commit_id,
+                },
+            },
             'author': pull_request.author.get_api_data(include_secrets=False,
                                                        details='basic'),
             'reviewers': [
                 {
                     'user': reviewer.get_api_data(include_secrets=False,
                                                   details='basic'),
+                    'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, st in pull_request.reviewers_statuses()
+                for reviewer, reasons, st in pull_request.reviewers_statuses()
             ]
         }
         assert_ok(id_, expected, response.body)

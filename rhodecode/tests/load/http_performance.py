@@ -32,7 +32,7 @@ import itertools
 import os
 import pprint
 import shutil
-import subprocess
+import subprocess32
 import sys
 import time
 
@@ -77,12 +77,12 @@ def execute(*popenargs, **kwargs):
     input = kwargs.pop('stdin', None)
     stdin = None
     if input:
-        stdin = subprocess.PIPE
+        stdin = subprocess32.PIPE
     #if 'stderr' not in kwargs:
-    #    kwargs['stderr'] = subprocess.PIPE
+    #    kwargs['stderr'] = subprocess32.PIPE
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
-    process = subprocess.Popen(stdin=stdin, stdout=subprocess.PIPE,
+    process = subprocess32.Popen(stdin=stdin, stdout=subprocess32.PIPE,
                                *popenargs, **kwargs)
     output, error = process.communicate(input=input)
     retcode = process.poll()
@@ -91,7 +91,7 @@ def execute(*popenargs, **kwargs):
         if cmd is None:
             cmd = popenargs[0]
         print cmd, output, error
-        raise subprocess.CalledProcessError(retcode, cmd, output=output)
+        raise subprocess32.CalledProcessError(retcode, cmd, output=output)
     return output
 
 

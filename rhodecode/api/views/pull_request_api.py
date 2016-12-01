@@ -25,7 +25,7 @@ from rhodecode.api import jsonrpc_method, JSONRPCError
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
     get_pull_request_or_error, get_commit_or_error, get_user_or_error,
-    has_repo_permissions, resolve_ref_or_error)
+    validate_repo_permissions, resolve_ref_or_error)
 from rhodecode.lib.auth import (HasRepoPermissionAnyApi)
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
@@ -89,6 +89,15 @@ def get_pull_request(request, apiuser, repoid, pullrequestid):
             "target":            {
                                      "clone_url":   "<clone_url>",
                                      "repository":    "<repository_name>",
+                                     "reference":
+                                     {
+                                         "name":      "<name>",
+                                         "type":      "<type>",
+                                         "commit_id": "<commit_id>",
+                                     }
+                                 },
+            "merge":             {
+                                     "clone_url":   "<clone_url>",
                                      "reference":
                                      {
                                          "name":      "<name>",
@@ -178,6 +187,15 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
                                              "commit_id": "<commit_id>",
                                          }
                                      },
+                "merge":             {
+                                         "clone_url":   "<clone_url>",
+                                         "reference":
+                                         {
+                                             "name":      "<name>",
+                                             "type":      "<type>",
+                                             "commit_id": "<commit_id>",
+                                         }
+                                     },
                "author":             <user_obj>,
                "reviewers":          [
                                          ...
@@ -197,7 +215,7 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
     if not has_superadmin_permission(apiuser):
         _perms = (
             'repository.admin', 'repository.write', 'repository.read',)
-        has_repo_permissions(apiuser, repoid, repo, _perms)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     status = Optional.extract(status)
     pull_requests = PullRequestModel().get_all(repo, statuses=[status])
@@ -232,7 +250,12 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
             "executed":         "<bool>",
             "failure_reason":   "<int>",
             "merge_commit_id":  "<merge_commit_id>",
-            "possible":         "<bool>"
+            "possible":         "<bool>",
+            "merge_ref":        {
+                                    "commit_id": "<commit_id>",
+                                    "type":      "<type>",
+                                    "name":      "<name>"
+                                }
         },
       "error": null
 
@@ -260,13 +283,21 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
         request.environ, repo_name=target_repo.repo_name,
         username=apiuser.username, action='push',
         scm=target_repo.repo_type)
-    data = PullRequestModel().merge(pull_request, apiuser, extras=extras)
-    if data.executed:
+    merge_response = PullRequestModel().merge(
+        pull_request, apiuser, extras=extras)
+    if merge_response.executed:
         PullRequestModel().close_pull_request(
             pull_request.pull_request_id, apiuser)
 
         Session().commit()
-    return data
+
+    # In previous versions the merge response directly contained the merge
+    # commit id. It is now contained in the merge reference object. To be
+    # backwards compatible we have to extract it again.
+    merge_response = merge_response._asdict()
+    merge_response['merge_commit_id'] = merge_response['merge_ref'].commit_id
+
+    return merge_response
 
 
 @jsonrpc_method()
@@ -463,12 +494,17 @@ def create_pull_request(
     :type description: Optional(str)
     :param reviewers: Set the new pull request reviewers list.
     :type reviewers: Optional(list)
+        Accepts username strings or objects of the format:
+        {
+            'username': 'nick', 'reasons': ['original author']
+        }
     """
+
     source = get_repo_or_error(source_repo)
     target = get_repo_or_error(target_repo)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
-        has_repo_permissions(apiuser, source_repo, source, _perms)
+        validate_repo_permissions(apiuser, source_repo, source, _perms)
 
     full_source_ref = resolve_ref_or_error(source_ref, source)
     full_target_ref = resolve_ref_or_error(target_ref, target)
@@ -490,12 +526,21 @@ def create_pull_request(
     if not ancestor:
         raise JSONRPCError('no common ancestor found')
 
-    reviewer_names = Optional.extract(reviewers) or []
-    if not isinstance(reviewer_names, list):
+    reviewer_objects = Optional.extract(reviewers) or []
+    if not isinstance(reviewer_objects, list):
         raise JSONRPCError('reviewers should be specified as a list')
 
-    reviewer_users = [get_user_or_error(n) for n in reviewer_names]
-    reviewer_ids = [u.user_id for u in reviewer_users]
+    reviewers_reasons = []
+    for reviewer_object in reviewer_objects:
+        reviewer_reasons = []
+        if isinstance(reviewer_object, (basestring, int)):
+            reviewer_username = reviewer_object
+        else:
+            reviewer_username = reviewer_object['username']
+            reviewer_reasons = reviewer_object.get('reasons', [])
+
+        user = get_user_or_error(reviewer_username)
+        reviewers_reasons.append((user.user_id, reviewer_reasons))
 
     pull_request_model = PullRequestModel()
     pull_request = pull_request_model.create(
@@ -506,7 +551,7 @@ def create_pull_request(
         target_ref=full_target_ref,
         revisions=reversed(
             [commit.raw_id for commit in reversed(commit_ranges)]),
-        reviewers=reviewer_ids,
+        reviewers=reviewers_reasons,
         title=title,
         description=Optional.extract(description)
     )
@@ -585,12 +630,23 @@ def update_pull_request(
             'pull request `%s` update failed, pull request is closed' % (
                 pullrequestid,))
 
-    reviewer_names = Optional.extract(reviewers) or []
-    if not isinstance(reviewer_names, list):
+    reviewer_objects = Optional.extract(reviewers) or []
+    if not isinstance(reviewer_objects, list):
         raise JSONRPCError('reviewers should be specified as a list')
 
-    reviewer_users = [get_user_or_error(n) for n in reviewer_names]
-    reviewer_ids = [u.user_id for u in reviewer_users]
+    reviewers_reasons = []
+    reviewer_ids = set()
+    for reviewer_object in reviewer_objects:
+        reviewer_reasons = []
+        if isinstance(reviewer_object, (int, basestring)):
+            reviewer_username = reviewer_object
+        else:
+            reviewer_username = reviewer_object['username']
+            reviewer_reasons = reviewer_object.get('reasons', [])
+
+        user = get_user_or_error(reviewer_username)
+        reviewer_ids.add(user.user_id)
+        reviewers_reasons.append((user.user_id, reviewer_reasons))
 
     title = Optional.extract(title)
     description = Optional.extract(description)
@@ -603,15 +659,15 @@ def update_pull_request(
     commit_changes = {"added": [], "common": [], "removed": []}
     if str2bool(Optional.extract(update_commits)):
         if PullRequestModel().has_valid_update_type(pull_request):
-            _version, _commit_changes = PullRequestModel().update_commits(
+            update_response = PullRequestModel().update_commits(
                 pull_request)
-            commit_changes = _commit_changes or commit_changes
+            commit_changes = update_response.changes or commit_changes
         Session().commit()
 
     reviewers_changes = {"added": [], "removed": []}
     if reviewer_ids:
         added_reviewers, removed_reviewers = \
-            PullRequestModel().update_reviewers(pull_request, reviewer_ids)
+            PullRequestModel().update_reviewers(pull_request, reviewers_reasons)
 
         reviewers_changes['added'] = sorted(
             [get_user_or_error(n).username for n in added_reviewers])
@@ -631,5 +687,5 @@ def update_pull_request(
         'updated_commits': commit_changes,
         'updated_reviewers': reviewers_changes
     }
-    return data
 
+    return data

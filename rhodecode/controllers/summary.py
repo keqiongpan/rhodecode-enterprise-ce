@@ -251,6 +251,16 @@ class SummaryController(BaseRepoController):
         }
         return data
 
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
+                                   'repository.admin')
+    @jsonify
+    def repo_default_reviewers_data(self, repo_name):
+        return {
+            'reviewers': [utils.reviewer_as_json(
+                user=c.rhodecode_db_repo.user, reasons=None)]
+        }
+
     @jsonify
     def repo_refs_changelog_data(self, repo_name):
         repo = c.rhodecode_repo

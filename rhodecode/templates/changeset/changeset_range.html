@@ -49,78 +49,23 @@
         ${self.breadcrumbs_links()}
       </h2>
     </div>
-
-    <div id="changeset_compare_view_content">
-      ##CS
-      <%include file="../compare/compare_commits.html"/>
-      ## FILES
-      <div class="cs_files_title">
-        <span class="cs_files_expand">
-            <span id="expand_all_files">${_('Expand All')}</span> | <span id="collapse_all_files">${_('Collapse All')}</span>
-        </span>
-        <h2>
-            ${diff_block.diff_summary_text(len(c.files), c.lines_added, c.lines_deleted, c.limited_diff)}
-        </h2>
-      </div>
-    </div>
   </div>
-
-  <div class="cs_files">
-    <table class="compare_view_files">
+  <div id="changeset_compare_view_content">
+    ##CS
+    <%include file="../compare/compare_commits.html"/>
+    <div class="cs_files">
+      <%namespace name="cbdiffs" file="/codeblocks/diffs.html"/>
       <%namespace name="comment" file="/changeset/changeset_file_comment.html"/>
       <%namespace name="diff_block" file="/changeset/diff_block.html"/>
-      %for cs in c.commit_ranges:
-        <tr class="rctable">
-          <td colspan="4">
-              <a class="tooltip revision" title="${h.tooltip(cs.message)}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=cs.raw_id)}">${'r%s:%s' % (cs.revision,h.short_id(cs.raw_id))}</a> |
-              ${h.age_component(cs.date)}
-          </td>
-        </tr>
-          %for FID, (cs1, cs2, change, path, diff, stats, file) in c.changes[cs.raw_id].iteritems():
-            <tr class="cs_${change} collapse_file" fid="${FID}">
-              <td class="cs_icon_td">
-                  <span class="collapse_file_icon" fid="${FID}"></span>
-              </td>
-              <td class="cs_icon_td">
-                  <div class="flag_status not_reviewed hidden"></div>
-              </td>
-              <td class="cs_${change}" id="a_${FID}">
-                <div class="node">
-                    <a href="#a_${FID}">
-                        <i class="icon-file-${change.lower()}"></i>
-                        ${h.safe_unicode(path)}
-                    </a>
-                </div>
-              </td>
-              <td>
-                <div class="changes">${h.fancy_file_stats(stats)}</div>
-              </td>
-            </tr>
-            <tr fid="${FID}" id="diff_${FID}" class="diff_links">
-              <td></td>
-              <td></td>
-              <td class="cs_${change}">
-                ${diff_block.diff_menu(c.repo_name, h.safe_unicode(path), cs1, cs2, change, file)}
-              </td>
-              <td class="td-actions rc-form"></td>
-            </tr>
-            <tr id="tr_${FID}">
-              <td></td>
-              <td></td>
-              <td class="injected_diff" colspan="2">
-                <div id="diff-container-${FID}" class="diff-container">
-                  <div id="${FID}" class="diffblock margined comm">
-                    <div class="code-body">
-                      ${diff|n}
-                    </div>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          %endfor
-      %endfor
-    </table>
+      ${cbdiffs.render_diffset_menu()}
+      %for commit in c.commit_ranges:
+        ${cbdiffs.render_diffset(
+            diffset=c.changes[commit.raw_id],
+            collapse_when_files_over=5,
+            commit=commit,
+         )}
+        %endfor
+      </table>
+    </div>
   </div>
-## end summary detail
-
 </%def>

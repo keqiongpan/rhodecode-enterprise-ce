@@ -34,6 +34,7 @@ import packaging.version
 from pylons import request, tmpl_context as c, url, config
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _, lazy_ugettext
+from pyramid.threadlocal import get_current_registry
 from webob.exc import HTTPBadRequest
 
 import rhodecode
@@ -54,6 +55,7 @@ from rhodecode.model.db import RhodeCodeUi, Repository
 from rhodecode.model.forms import ApplicationSettingsForm, \
     ApplicationUiSettingsForm, ApplicationVisualisationForm, \
     LabsSettingsForm, IssueTrackerPatternsForm
+from rhodecode.model.repo_group import RepoGroupModel
 
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.notification import EmailNotificationModel
@@ -63,6 +65,7 @@ from rhodecode.model.settings import (
     SettingsModel)
 
 from rhodecode.model.supervisor import SupervisorModel, SUPERVISOR_MASTER
+from rhodecode.svn_support.config_keys import generate_config
 
 
 log = logging.getLogger(__name__)
@@ -134,6 +137,10 @@ class SettingsController(BaseController):
         c.svn_branch_patterns = model.get_global_svn_branch_patterns()
         c.svn_tag_patterns = model.get_global_svn_tag_patterns()
 
+        # TODO: Replace with request.registry after migrating to pyramid.
+        pyramid_settings = get_current_registry().settings
+        c.svn_proxy_generate_config = pyramid_settings[generate_config]
+
         application_form = ApplicationUiSettingsForm()()
 
         try:
@@ -186,6 +193,10 @@ class SettingsController(BaseController):
         c.svn_branch_patterns = model.get_global_svn_branch_patterns()
         c.svn_tag_patterns = model.get_global_svn_tag_patterns()
 
+        # TODO: Replace with request.registry after migrating to pyramid.
+        pyramid_settings = get_current_registry().settings
+        c.svn_proxy_generate_config = pyramid_settings[generate_config]
+
         return htmlfill.render(
             render('admin/settings/settings.html'),
             defaults=self._form_defaults(),
@@ -235,6 +246,8 @@ class SettingsController(BaseController):
         """POST /admin/settings/global: All items in the collection"""
         # url('admin_settings_global')
         c.active = 'global'
+        c.personal_repo_group_default_pattern = RepoGroupModel()\
+            .get_personal_group_name_pattern()
         application_form = ApplicationSettingsForm()()
         try:
             form_result = application_form.to_python(dict(request.POST))
@@ -249,16 +262,18 @@ class SettingsController(BaseController):
 
         try:
             settings = [
-                ('title', 'rhodecode_title'),
-                ('realm', 'rhodecode_realm'),
-                ('pre_code', 'rhodecode_pre_code'),
-                ('post_code', 'rhodecode_post_code'),
-                ('captcha_public_key', 'rhodecode_captcha_public_key'),
-                ('captcha_private_key', 'rhodecode_captcha_private_key'),
+                ('title', 'rhodecode_title', 'unicode'),
+                ('realm', 'rhodecode_realm', 'unicode'),
+                ('pre_code', 'rhodecode_pre_code', 'unicode'),
+                ('post_code', 'rhodecode_post_code', 'unicode'),
+                ('captcha_public_key', 'rhodecode_captcha_public_key', 'unicode'),
+                ('captcha_private_key', 'rhodecode_captcha_private_key', 'unicode'),
+                ('create_personal_repo_group', 'rhodecode_create_personal_repo_group', 'bool'),
+                ('personal_repo_group_pattern', 'rhodecode_personal_repo_group_pattern', 'unicode'),
             ]
-            for setting, form_key in settings:
+            for setting, form_key, type_ in settings:
                 sett = SettingsModel().create_or_update_setting(
-                    setting, form_result[form_key])
+                    setting, form_result[form_key], type_)
                 Session().add(sett)
 
             Session().commit()
@@ -277,6 +292,8 @@ class SettingsController(BaseController):
         """GET /admin/settings/global: All items in the collection"""
         # url('admin_settings_global')
         c.active = 'global'
+        c.personal_repo_group_default_pattern = RepoGroupModel()\
+            .get_personal_group_name_pattern()
 
         return htmlfill.render(
             render('admin/settings/settings.html'),
@@ -397,19 +414,20 @@ class SettingsController(BaseController):
         settings_model = IssueTrackerSettingsModel()
 
         form = IssueTrackerPatternsForm()().to_python(request.POST)
-        for uid in form['delete_patterns']:
-            settings_model.delete_entries(uid)
+        if form:
+            for uid in form.get('delete_patterns', []):
+                settings_model.delete_entries(uid)
 
-        for pattern in form['patterns']:
-            for setting, value, type_ in pattern:
-                sett = settings_model.create_or_update_setting(
-                    setting, value, type_)
-                Session().add(sett)
+            for pattern in form.get('patterns', []):
+                for setting, value, type_ in pattern:
+                    sett = settings_model.create_or_update_setting(
+                        setting, value, type_)
+                    Session().add(sett)
 
-            Session().commit()
+                Session().commit()
 
-        SettingsModel().invalidate_settings_cache()
-        h.flash(_('Updated issue tracker entries'), category='success')
+            SettingsModel().invalidate_settings_cache()
+            h.flash(_('Updated issue tracker entries'), category='success')
         return redirect(url('admin_settings_issuetracker'))
 
     @HasPermissionAllDecorator('hg.admin')
@@ -530,65 +548,93 @@ class SettingsController(BaseController):
         """GET /admin/settings/system: All items in the collection"""
         # url('admin_settings_system')
         snapshot = str2bool(request.GET.get('snapshot'))
-        c.active = 'system'
-
         defaults = self._form_defaults()
-        c.rhodecode_ini = rhodecode.CONFIG
+
+        c.active = 'system'
         c.rhodecode_update_url = defaults.get('rhodecode_update_url')
         server_info = ScmModel().get_server_info(request.environ)
+
         for key, val in server_info.iteritems():
             setattr(c, key, val)
 
-        if c.disk['percent'] > 90:
-            h.flash(h.literal(_(
-                'Critical: your disk space is very low <b>%s%%</b> used' %
-                c.disk['percent'])), 'error')
-        elif c.disk['percent'] > 70:
-            h.flash(h.literal(_(
-                'Warning: your disk space is running low <b>%s%%</b> used' %
-                c.disk['percent'])), 'warning')
+        def val(name, subkey='human_value'):
+            return server_info[name][subkey]
 
-        try:
-            c.uptime_age = h._age(
-                h.time_to_datetime(c.boot_time), False, show_suffix=False)
-        except TypeError:
-            c.uptime_age = c.boot_time
+        def state(name):
+            return server_info[name]['state']
 
-        try:
-            c.system_memory = '%s/%s, %s%% (%s%%) used%s' % (
-                h.format_byte_size_binary(c.memory['used']),
-                h.format_byte_size_binary(c.memory['total']),
-                c.memory['percent2'],
-                c.memory['percent'],
-                ' %s' % c.memory['error'] if 'error' in c.memory else '')
-        except TypeError:
-            c.system_memory = 'NOT AVAILABLE'
+        def val2(name):
+            val = server_info[name]['human_value']
+            state = server_info[name]['state']
+            return val, state
 
-        rhodecode_ini_safe = rhodecode.CONFIG.copy()
-        blacklist = [
-            'rhodecode_license_key',
-            'routes.map',
-            'pylons.h',
-            'pylons.app_globals',
-            'pylons.environ_config',
-            'sqlalchemy.db1.url',
-            ('app_conf', 'sqlalchemy.db1.url')
+        c.data_items = [
+            # update info
+            (_('Update info'), h.literal(
+                '<span class="link" id="check_for_update" >%s.</span>' % (
+                _('Check for updates')) +
+                '<br/> <span >%s.</span>' % (_('Note: please make sure this server can access `%s` for the update link to work') % c.rhodecode_update_url)
+            ), ''),
+
+            # RhodeCode specific
+            (_('RhodeCode Version'), val('rhodecode_app')['text'], state('rhodecode_app')),
+            (_('RhodeCode Server IP'), val('server')['server_ip'], state('server')),
+            (_('RhodeCode Server ID'), val('server')['server_id'], state('server')),
+            (_('RhodeCode Configuration'), val('rhodecode_config')['path'], state('rhodecode_config')),
+            ('', '', ''),  # spacer
+
+            # Database
+            (_('Database'), val('database')['url'], state('database')),
+            (_('Database version'), val('database')['version'], state('database')),
+            ('', '', ''),  # spacer
+
+            # Platform/Python
+            (_('Platform'), val('platform')['name'], state('platform')),
+            (_('Platform UUID'), val('platform')['uuid'], state('platform')),
+            (_('Python version'), val('python')['version'], state('python')),
+            (_('Python path'), val('python')['executable'], state('python')),
+            ('', '', ''),  # spacer
+
+            # Systems stats
+            (_('CPU'), val('cpu'), state('cpu')),
+            (_('Load'), val('load')['text'], state('load')),
+            (_('Memory'), val('memory')['text'], state('memory')),
+            (_('Uptime'), val('uptime')['text'], state('uptime')),
+            ('', '', ''),  # spacer
+
+            # Repo storage
+            (_('Storage location'), val('storage')['path'], state('storage')),
+            (_('Storage info'), val('storage')['text'], state('storage')),
+            (_('Storage inodes'), val('storage_inodes')['text'], state('storage_inodes')),
+
+            (_('Gist storage location'), val('storage_gist')['path'], state('storage_gist')),
+            (_('Gist storage info'), val('storage_gist')['text'], state('storage_gist')),
+
+            (_('Archive cache storage location'), val('storage_archive')['path'], state('storage_archive')),
+            (_('Archive cache info'), val('storage_archive')['text'], state('storage_archive')),
+
+            (_('Temp storage location'), val('storage_temp')['path'], state('storage_temp')),
+            (_('Temp storage info'), val('storage_temp')['text'], state('storage_temp')),
+
+            (_('Search info'), val('search')['text'], state('search')),
+            (_('Search location'), val('search')['location'], state('search')),
+            ('', '', ''),  # spacer
+
+            # VCS specific
+            (_('VCS Backends'), val('vcs_backends'), state('vcs_backends')),
+            (_('VCS Server'), val('vcs_server')['text'], state('vcs_server')),
+            (_('GIT'), val('git'), state('git')),
+            (_('HG'), val('hg'), state('hg')),
+            (_('SVN'), val('svn'), state('svn')),
+
         ]
-        for k in blacklist:
-            if isinstance(k, tuple):
-                section, key = k
-                if section in rhodecode_ini_safe:
-                    rhodecode_ini_safe[section].pop(key, None)
-            else:
-                rhodecode_ini_safe.pop(k, None)
-
-        c.rhodecode_ini_safe = rhodecode_ini_safe
 
         # TODO: marcink, figure out how to allow only selected users to do this
-        c.allowed_to_snapshot = False
+        c.allowed_to_snapshot = c.rhodecode_user.admin
 
         if snapshot:
             if c.allowed_to_snapshot:
+                c.data_items.pop(0)  # remove server info
                 return render('admin/settings/settings_system_snapshot.html')
             else:
                 h.flash('You are not allowed to do this', category='warning')

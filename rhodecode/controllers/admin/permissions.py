@@ -57,7 +57,7 @@ class PermissionsController(BaseController):
         super(PermissionsController, self).__before__()
 
     def __load_data(self):
-        PermissionModel().set_global_permission_choices(c, translator=_)
+        PermissionModel().set_global_permission_choices(c, gettext_translator=_)
 
     @HasPermissionAllDecorator('hg.admin')
     def permission_application(self):
@@ -92,6 +92,7 @@ class PermissionsController(BaseController):
         self.__load_data()
         _form = ApplicationPermissionsForm(
             [x[0] for x in c.register_choices],
+            [x[0] for x in c.password_reset_choices],
             [x[0] for x in c.extern_activate_choices])()
 
         try:

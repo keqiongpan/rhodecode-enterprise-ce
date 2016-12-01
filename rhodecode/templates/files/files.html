@@ -88,7 +88,7 @@
             if (metadataRequest && metadataRequest.readyState != 4) {
                 metadataRequest.abort();
             }
-            if (source_page) {
+            if (fileSourcePage) {
                 return false;
             }
 
@@ -143,46 +143,8 @@
                 $(this).hide();
             });
 
-
-            if (source_page) {
+            if (fileSourcePage) {
                 // variants for with source code, not tree view
-
-                if (location.href.indexOf('#') != -1) {
-                    page_highlights = location.href.substring(location.href.indexOf('#') + 1).split('L');
-                    if (page_highlights.length == 2) {
-                        highlight_ranges = page_highlights[1].split(",");
-
-                        var h_lines = [];
-                        for (pos in highlight_ranges) {
-                            var _range = highlight_ranges[pos].split('-');
-                            if (_range.length == 2) {
-                                var start = parseInt(_range[0]);
-                                var end = parseInt(_range[1]);
-                                if (start < end) {
-                                    for (var i = start; i <= end; i++) {
-                                        h_lines.push(i);
-                                    }
-                                }
-                            }
-                            else {
-                                h_lines.push(parseInt(highlight_ranges[pos]));
-                            }
-                        }
-
-                        for (pos in h_lines) {
-                            // @comment-highlight-color
-                            $('#L' + h_lines[pos]).css('background-color', '#ffd887');
-                        }
-
-                        var _first_line = $('#L' + h_lines[0]).get(0);
-                        if (_first_line) {
-                            var line = $('#L' + h_lines[0]);
-                            if (line.length > 0){
-                                offsetScroll(line, 70);
-                            }
-                        }
-                    }
-                }
 
                 // select code link event
                 $("#hlcode").mouseup(getSelectionLink);

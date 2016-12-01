@@ -195,6 +195,8 @@ class TestAdminSettingsGlobal:
             'rhodecode_post_code': '',
             'rhodecode_captcha_private_key': '',
             'rhodecode_captcha_public_key': '',
+            'rhodecode_create_personal_repo_group': False,
+            'rhodecode_personal_repo_group_pattern': '${username}',
         }
         params.update(settings)
         response = self.app.post(url('admin_settings_global'), params=params)
@@ -493,6 +495,14 @@ class TestAdminSettingsIssueTracker:
     def test_issuetracker_index(self, autologin_user):
         response = self.app.get(url('admin_settings_issuetracker'))
         assert response.status_code == 200
+
+    def test_add_empty_issuetracker_pattern(
+            self, request, autologin_user, csrf_token):
+        post_url = url('admin_settings_issuetracker_save')
+        post_data = {
+            'csrf_token': csrf_token
+        }
+        self.app.post(post_url, post_data, status=302)
 
     def test_add_issuetracker_pattern(
             self, request, autologin_user, csrf_token):

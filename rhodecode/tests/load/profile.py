@@ -31,7 +31,7 @@ To stop the script by press Ctrl-C
 import datetime
 import os
 import psutil
-import subprocess
+import subprocess32
 import sys
 import time
 import traceback
@@ -66,7 +66,7 @@ def dump_system():
 
 
 def count_dulwich_fds(proc):
-    p = subprocess.Popen(["lsof", "-p", proc.pid], stdout=subprocess.PIPE)
+    p = subprocess32.Popen(["lsof", "-p", proc.pid], stdout=subprocess32.PIPE)
     out, err = p.communicate()
 
     count = 0
@@ -117,7 +117,7 @@ print "VCS - Ok"
 
 print "\nStarting RhodeCode..."
 rc = psutil.Popen("RC_VCSSERVER_TEST_DISABLE=1 paster serve test.ini",
-                  shell=True, stdin=subprocess.PIPE)
+                  shell=True, stdin=subprocess32.PIPE)
 time.sleep(1)
 if not rc.is_running():
     print "RC - Failed to start"

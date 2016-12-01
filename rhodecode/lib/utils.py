@@ -33,6 +33,7 @@ import tempfile
 import traceback
 import tarfile
 import warnings
+import hashlib
 from os.path import join as jn
 
 import paste
@@ -58,26 +59,21 @@ log = logging.getLogger(__name__)
 
 REMOVED_REPO_PAT = re.compile(r'rm__\d{8}_\d{6}_\d{6}__.*')
 
+# String which contains characters that are not allowed in slug names for
+# repositories or repository groups. It is properly escaped to use it in
+# regular expressions.
+SLUG_BAD_CHARS = re.escape('`?=[]\;\'"<>,/~!@#$%^&*()+{}|:')
+
+# Regex that matches forbidden characters in repo/group slugs.
+SLUG_BAD_CHAR_RE = re.compile('[{}]'.format(SLUG_BAD_CHARS))
+
+# Regex that matches allowed characters in repo/group slugs.
+SLUG_GOOD_CHAR_RE = re.compile('[^{}]'.format(SLUG_BAD_CHARS))
+
+# Regex that matches whole repo/group slugs.
+SLUG_RE = re.compile('[^{}]+'.format(SLUG_BAD_CHARS))
+
 _license_cache = None
-
-
-def recursive_replace(str_, replace=' '):
-    """
-    Recursive replace of given sign to just one instance
-
-    :param str_: given string
-    :param replace: char to find and replace multiple instances
-
-    Examples::
-    >>> recursive_replace("Mighty---Mighty-Bo--sstones",'-')
-    'Mighty-Mighty-Bo-sstones'
-    """
-
-    if str_.find(replace * 2) == -1:
-        return str_
-    else:
-        str_ = str_.replace(replace * 2, replace)
-        return recursive_replace(str_, replace)
 
 
 def repo_name_slug(value):
@@ -86,14 +82,12 @@ def repo_name_slug(value):
     This function is called on each creation/modification
     of repository to prevent bad names in repo
     """
+    replacement_char = '-'
 
     slug = remove_formatting(value)
-    slug = strip_tags(slug)
-
-    for c in """`?=[]\;'"<>,/~!@#$%^&*()+{}|: """:
-        slug = slug.replace(c, '-')
-    slug = recursive_replace(slug, '-')
-    slug = collapse(slug, '-')
+    slug = SLUG_BAD_CHAR_RE.sub('', slug)
+    slug = re.sub('[\s]+', '-', slug)
+    slug = collapse(slug, replacement_char)
     return slug
 
 
@@ -1009,3 +1003,17 @@ def get_registry(request):
         return request.registry
     except AttributeError:
         return get_current_registry()
+
+
+def generate_platform_uuid():
+    """
+    Generates platform UUID based on it's name
+    """
+    import platform
+
+    try:
+        uuid_list = [platform.platform()]
+        return hashlib.sha256(':'.join(uuid_list)).hexdigest()
+    except Exception as e:
+        log.error('Failed to generate host uuid: %s' % e)
+        return 'UNDEFINED'

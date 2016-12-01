@@ -13,6 +13,16 @@ a { cursor: pointer; }
     }
 }
 
+.clearinner:after { /* clears all floating divs inside a block */
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.js-template { /* mark a template for javascript use */
+    display: none;
+}
+
 .linebreak {
     display: block;
 }

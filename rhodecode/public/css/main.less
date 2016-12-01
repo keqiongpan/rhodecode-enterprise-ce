@@ -142,6 +142,10 @@ input.inline[type="file"] {
         color: @grey2;
     }
 
+    .alert {
+        margin: @padding 0;
+    }
+
     .error-branding {
         font-family: @text-semibold;
         color: @grey4;
@@ -434,6 +438,23 @@ ul.auth_plugins {
 
 //--- MODULES ------------------//
 
+
+// Server Announcement
+#server-announcement {
+    width: 95%;
+    margin: @padding auto;
+    padding: @padding;
+    border-width: 2px;
+    border-style: solid;
+    .border-radius(2px);
+    font-family: @text-bold;
+
+    &.info    { border-color: @alert4; background-color: @alert4-inner; }
+    &.warning { border-color: @alert3; background-color: @alert3-inner; }
+    &.error   { border-color: @alert2; background-color: @alert2-inner; }
+    &.success { border-color: @alert1; background-color: @alert1-inner; }
+    &.neutral { border-color: @grey3; background-color: @grey6; }
+}
 
 // Fixed Sidebar Column
 .sidebar-col-wrapper {
@@ -1173,6 +1194,8 @@ table.integrations {
 	}
 
 	img {
+        height: @gravatar-size;
+        width: @gravatar-size;
 		margin-right: 1em;
 	}
 
@@ -1261,6 +1284,9 @@ table.integrations {
     width: 100%;
     overflow: auto;
 }
+.reviewer_reason {
+    padding-left: 20px;
+}
 .reviewer_status {
     display: inline-block;
     vertical-align: top;
@@ -1317,6 +1343,11 @@ table.integrations {
 .pr-details-title {
     padding-bottom: 8px;
     border-bottom: @border-thickness solid @grey5;
+
+    .action_button.disabled {
+        color: @grey4;
+        cursor: inherit;
+    }
     .action_button {
         color: @rcblue;
     }
@@ -1332,7 +1363,34 @@ table.integrations {
     margin-top: 0;
     padding: 0;
     list-style: outside none none;
+
+    img {
+        height: @gravatar-size;
+        width: @gravatar-size;
+        margin-right: .5em;
+        margin-left: 3px;
+    }
+
+    .to-delete {
+        .user {
+          text-decoration: line-through;
+        }
+    }
 }
+
+// new entry in group_members
+.td-author-new-entry {
+  background-color: rgba(red(@alert1), green(@alert1), blue(@alert1), 0.3);
+}
+
+.usergroup_member_remove {
+    width: 16px;
+    margin-bottom: 10px;
+    padding: 0;
+    color: black !important;
+    cursor: pointer;
+}
+
 .reviewer_ac .ac-input {
     width: 92%;
     margin-bottom: 1em;

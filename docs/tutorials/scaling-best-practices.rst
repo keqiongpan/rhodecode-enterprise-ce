@@ -4,7 +4,7 @@
 Scaling Best Practices
 ======================
 
-When deploying |RCE| at scale; 100s of users, multiple instances, CI servers,
+When deploying |RCE| at scale; 1000s of users, multiple instances, CI servers,
 there are a number of steps you can take to ensure you are getting the
 most out of your system.
 
@@ -15,20 +15,23 @@ You can configure multiple |RCE| instances to point to the same database and
 set of |repos|. This lets users work on an instance that has less traffic
 than those being hit by CI servers. To configure this, use |RCC| to install
 multiple instances and configure the database and |repos| connection. If you
-do need to reset the database connection, see the
+do need to reset/adjust the database connection, see the
 :ref:`config-database` section.
 
-Once configured, set your CI servers to use a particular instance and for
-user specific instances you can configure loads balancing. See the
-:ref:`nginx-ws-ref` section for examples.
+You can configure then a load-balancer to balance the traffic between the CI
+dedicated instance and instance that end users would use.
+See the :ref:`nginx-ws-ref` section for examples on how to do it in NGINX.
 
 Switch to Database Sessions
 ---------------------------
 
-To increase database performance switch to database-based user sessions. In a
-large scale deployment, we recommend switching from file-based
-sessions to database-based user sessions. For configuration details, see the
-:ref:`db-session-ref` section.
+To increase |RCE| performance switch from the default file based sessions to
+database-based. In such way all your distributed instances would not need to
+share the file storage to use file-based sessions.
+Database based session have an additional advantage of the file
+based ones that they don't need a periodic cleanup as the session library
+cleans them up for users. For configuration details,
+see the :ref:`db-session-ref` section.
 
 Tuning |RCE|
 ------------

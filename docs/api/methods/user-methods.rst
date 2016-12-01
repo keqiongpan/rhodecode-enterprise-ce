@@ -1,12 +1,12 @@
 .. _user-methods-ref:
 
 user methods
-=================
+============
 
 create_user 
 -----------
 
-.. py:function:: create_user(apiuser, username, email, password=<Optional:''>, firstname=<Optional:''>, lastname=<Optional:''>, active=<Optional:True>, admin=<Optional:False>, extern_name=<Optional:'rhodecode'>, extern_type=<Optional:'rhodecode'>, force_password_change=<Optional:False>)
+.. py:function:: create_user(apiuser, username, email, password=<Optional:''>, firstname=<Optional:''>, lastname=<Optional:''>, active=<Optional:True>, admin=<Optional:False>, extern_name=<Optional:'rhodecode'>, extern_type=<Optional:'rhodecode'>, force_password_change=<Optional:False>, create_personal_repo_group=<Optional:None>)
 
    Creates a new user and returns the new user object.
 
@@ -39,7 +39,8 @@ create_user
    :param force_password_change: Force the new user to change password
        on next login.
    :type force_password_change: Optional(``True`` | ``False``)
-
+   :param create_personal_repo_group: Create personal repo group for this user
+   :type create_personal_repo_group: Optional(``True`` | ``False``)
    Example output:
 
    .. code-block:: bash
@@ -163,6 +164,7 @@ get_user
                "usergroup.read",
                "hg.repogroup.create.false",
                "hg.create.none",
+               "hg.password_reset.enabled",
                "hg.extern_activate.manual",
                "hg.create.write_on_repogroup.false",
                "hg.usergroup.create.false",

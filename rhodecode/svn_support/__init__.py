@@ -20,10 +20,16 @@
 
 import logging
 import os
+import shlex
 
-from rhodecode import events
-from rhodecode.lib.utils2 import str2bool
+# Do not use `from rhodecode import events` here, it will be overridden by the
+# events module in this package due to pythons import mechanism.
+from rhodecode.events import RepoGroupEvent
+from rhodecode.subscribers import AsyncSubprocessSubscriber
+from rhodecode.config.middleware import (
+    _bool_setting, _string_setting, _int_setting)
 
+from .events import ModDavSvnConfigChange
 from .subscribers import generate_config_subscriber
 from . import config_keys
 
@@ -36,34 +42,42 @@ def includeme(config):
     _sanitize_settings_and_apply_defaults(settings)
 
     if settings[config_keys.generate_config]:
-        config.add_subscriber(
-            generate_config_subscriber, events.RepoGroupEvent)
+        # Add subscriber to generate the Apache mod dav svn configuration on
+        # repository group events.
+        config.add_subscriber(generate_config_subscriber, RepoGroupEvent)
+
+        # If a reload command is set add a subscriber to execute it on
+        # configuration changes.
+        reload_cmd = shlex.split(settings[config_keys.reload_command])
+        if reload_cmd:
+            reload_timeout = settings[config_keys.reload_timeout] or None
+            reload_subscriber = AsyncSubprocessSubscriber(
+                cmd=reload_cmd, timeout=reload_timeout)
+            config.add_subscriber(reload_subscriber, ModDavSvnConfigChange)
 
 
 def _sanitize_settings_and_apply_defaults(settings):
     """
     Set defaults, convert to python types and validate settings.
     """
-    # Convert bool settings from string to bool.
-    settings[config_keys.generate_config] = str2bool(
-        settings.get(config_keys.generate_config, 'false'))
-    settings[config_keys.list_parent_path] = str2bool(
-        settings.get(config_keys.list_parent_path, 'true'))
+    _bool_setting(settings, config_keys.generate_config, 'false')
+    _bool_setting(settings, config_keys.list_parent_path, 'true')
+    _int_setting(settings, config_keys.reload_timeout, 10)
+    _string_setting(settings, config_keys.config_file_path, '', lower=False)
+    _string_setting(settings, config_keys.location_root, '/', lower=False)
+    _string_setting(settings, config_keys.reload_command, '', lower=False)
 
-    # Set defaults if key not present.
-    settings.setdefault(config_keys.config_file_path, None)
-    settings.setdefault(config_keys.location_root, '/')
-    settings.setdefault(config_keys.parent_path_root, None)
+    # Convert negative timeout values to zero.
+    if settings[config_keys.reload_timeout] < 0:
+        settings[config_keys.reload_timeout] = 0
 
-    # Append path separator to paths.
+    # Append path separator to location root.
     settings[config_keys.location_root] = _append_path_sep(
         settings[config_keys.location_root])
-    settings[config_keys.parent_path_root] = _append_path_sep(
-        settings[config_keys.parent_path_root])
 
     # Validate settings.
     if settings[config_keys.generate_config]:
-        assert settings[config_keys.config_file_path] is not None
+        assert len(settings[config_keys.config_file_path]) > 0
 
 
 def _append_path_sep(path):

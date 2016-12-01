@@ -7,38 +7,6 @@ Release Date
 - 2016-08-12
 
 
-General
-^^^^^^^
-
-- Subversion: detect requests also based on magic path.
-  This adds subversion 1.9 support for SVN backend.
-- Summary/changelog: unified how data is displayed for those pages.
-    * use consistent order of columns
-    * fix the link to commit status
-    * fix order of displaying comments
-- Live-chat: refactor live chat system for code review based on
-  latest channelstream changes.
-- SVN: Add template to generate the apache mod_dav_svn config for all
-  repository groups. Repository groups can now be automatically mapped to be
-  supported by SVN backend. Set `svn.proxy.generate_config = true` and similar
-  options found inside .ini config.
-- Readme/markup: improved order of generating readme files. Fixes #4050
-    * we now use order based on default system renderer
-    * having multiple readme files will pick correct one as set renderer
-- Api: add a max_file_bytes parameter to get_nodes so that large files
-  can be skipped.
-- Auth-ldap: added flag to set debug mode for LDAP connections.
-- Labs: moved rebase-merge option from labs settings into VCS settings.
-- System: send platform type and version to upgrade endpoint when checking
-  for new versions.
-- Packaging: update rhodecode-tools from 0.8.3 to 0.10.0
-- Packaging: update codemirror from 5.4.0 to 5.11.0
-- Packaging: updated pygments to 2.1.3
-- Packaging: bumped supervisor to 3.3.0
-- Packaging: bumped psycopg2 to 2.6.1
-- Packaging: bumped mercurial to 3.8.4
-
-
 New Features
 ^^^^^^^^^^^^
 
@@ -62,6 +30,38 @@ New Features
 - Notifications: added real-time notifications with via channelstream
   about new comments when reviewing the code. Never miss someone replies
   onto comments you submitted while doing a code-review.
+
+
+General
+^^^^^^^
+
+- Subversion: detect requests also based on magic path.
+  This adds subversion 1.9 support for SVN backend.
+- Summary/changelog: unified how data is displayed for those pages.
+    * use consistent order of columns
+    * fix the link to commit status
+    * fix order of displaying comments
+- Live chat: refactor live chat system for code review based on
+  latest channelstream changes.
+- SVN: Add template to generate the apache mod_dav_svn config for all
+  repository groups. Repository groups can now be automatically mapped to be
+  supported by SVN backend. Set `svn.proxy.generate_config = true` and similar
+  options found inside .ini config.
+- Readme/markup: improved order of generating readme files. Fixes #4050
+    * we now use order based on default system renderer
+    * having multiple readme files will pick correct one as set renderer
+- Api: add a max_file_bytes parameter to get_nodes so that large files
+  can be skipped.
+- Auth-ldap: added flag to set debug mode for LDAP connections.
+- Labs: moved rebase-merge option from labs settings into VCS settings.
+- System: send platform type and version to upgrade endpoint when checking
+  for new versions.
+- Packaging: update rhodecode-tools from 0.8.3 to 0.10.0
+- Packaging: update codemirror from 5.4.0 to 5.11.0
+- Packaging: updated pygments to 2.1.3
+- Packaging: bumped supervisor to 3.3.0
+- Packaging: bumped psycopg2 to 2.6.1
+- Packaging: bumped mercurial to 3.8.4
 
 
 Security
@@ -105,7 +105,7 @@ Fixes
   support to gevent compatible handling.
 - Diff2way: fixed unicode problem on non-ascii files.
 - Full text search: whoosh schema uses now bigger ints, fixes #4035
-- File-browser: optimized cached tree calculation, reduced load times by
+- File browser: optimized cached tree calculation, reduced load times by
   50% on complex file trees.
 - Styling: #4086 fixing bug where long commit messages did not wrap in file view.
 - SVN: Ignore the content length header from response, fixes #4112.

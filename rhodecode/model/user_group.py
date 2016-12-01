@@ -189,18 +189,15 @@ class UserGroupModel(BaseModel):
         self._log_user_changes('removed from', user_group, removed)
 
     def _clean_members_data(self, members_data):
-        # TODO: anderson: this should be in the form validation but I couldn't
-        # make it work there as it conflicts with the other validator
         if not members_data:
             members_data = []
 
-        if isinstance(members_data, basestring):
-            new_members = [members_data]
-        else:
-            new_members = members_data
-
-        new_members = [int(uid) for uid in new_members]
-        return new_members
+        members = []
+        for user in members_data:
+            uid = int(user['member_user_id'])
+            if uid not in members and user['type'] in ['new', 'existing']:
+                members.append(uid)
+        return members
 
     def update(self, user_group, form_data):
         user_group = self._get_user_group(user_group)

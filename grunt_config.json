@@ -6,7 +6,9 @@
     },
     "js": {
       "src": "rhodecode/public/js/src",
-      "dest": "rhodecode/public/js"
+      "dest": "rhodecode/public/js",
+      "bower": "bower_components",
+      "node_modules": "node_modules"
     }
   },
   "copy": {
@@ -34,7 +36,8 @@
         "<%= dirs.js.src %>/bootstrap.js",
         "<%= dirs.js.src %>/mousetrap.js",
         "<%= dirs.js.src %>/moment.js",
-        "<%= dirs.js.src %>/appenlight-client-0.4.1.min.js",
+        "<%= dirs.js.node_modules %>/appenlight-client/appenlight-client.min.js",
+        "<%= dirs.js.node_modules %>/favico.js/favico-0.3.10.min.js",
         "<%= dirs.js.src %>/i18n_utils.js",
         "<%= dirs.js.src %>/deform.js",
         "<%= dirs.js.src %>/plugins/jquery.pjax.js",
@@ -64,7 +67,6 @@
         "<%= dirs.js.src %>/rhodecode/utils/ie.js",
         "<%= dirs.js.src %>/rhodecode/utils/os.js",
         "<%= dirs.js.src %>/rhodecode/utils/topics.js",
-        "<%= dirs.js.src %>/rhodecode/widgets/multiselect.js",
         "<%= dirs.js.src %>/rhodecode/init.js",
         "<%= dirs.js.src %>/rhodecode/codemirror.js",
         "<%= dirs.js.src %>/rhodecode/comments.js",
@@ -144,7 +146,9 @@
         "less:development",
         "less:components",
         "concat:polymercss",
-        "vulcanize"
+        "vulcanize",
+        "crisper",
+        "concat:dist"
       ]
     },
     "js": {

@@ -195,9 +195,8 @@ class HttpHooksCallbackDaemon(ThreadedHookCallbackDaemon):
         self._callback_thread = None
 
 
-def prepare_callback_daemon(extras, protocol=None, use_direct_calls=False):
+def prepare_callback_daemon(extras, protocol, use_direct_calls):
     callback_daemon = None
-    protocol = protocol.lower() if protocol else None
 
     if use_direct_calls:
         callback_daemon = DummyHooksCallbackDaemon()

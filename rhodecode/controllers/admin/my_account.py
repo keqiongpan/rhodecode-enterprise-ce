@@ -39,19 +39,20 @@ from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, AuthUser, generate_auth_token)
 from rhodecode.lib.base import BaseController, render
 from rhodecode.lib.utils import jsonify
-from rhodecode.lib.utils2 import safe_int, md5
+from rhodecode.lib.utils2 import safe_int, md5, str2bool
 from rhodecode.lib.ext_json import json
 
 from rhodecode.model.validation_schema.schemas import user_schema
 from rhodecode.model.db import (
-    Repository, PullRequest, PullRequestReviewers, UserEmailMap, User,
-    UserFollowing)
+    Repository, PullRequest, UserEmailMap, User, UserFollowing)
 from rhodecode.model.forms import UserForm
 from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.meta import Session
+from rhodecode.model.pull_request import PullRequestModel
+from rhodecode.model.comment import ChangesetCommentsModel
 
 log = logging.getLogger(__name__)
 
@@ -289,25 +290,85 @@ class MyAccountController(BaseController):
                 category='success')
         return redirect(url('my_account_emails'))
 
+    def _extract_ordering(self, request):
+        column_index = safe_int(request.GET.get('order[0][column]'))
+        order_dir = request.GET.get('order[0][dir]', 'desc')
+        order_by = request.GET.get(
+            'columns[%s][data][sort]' % column_index, 'name_raw')
+        return order_by, order_dir
+
+    def _get_pull_requests_list(self, statuses):
+        start = safe_int(request.GET.get('start'), 0)
+        length = safe_int(request.GET.get('length'), c.visual.dashboard_items)
+        order_by, order_dir = self._extract_ordering(request)
+
+        pull_requests = PullRequestModel().get_im_participating_in(
+            user_id=c.rhodecode_user.user_id,
+            statuses=statuses,
+            offset=start, length=length, order_by=order_by,
+            order_dir=order_dir)
+
+        pull_requests_total_count = PullRequestModel().count_im_participating_in(
+            user_id=c.rhodecode_user.user_id, statuses=statuses)
+
+        from rhodecode.lib.utils import PartialRenderer
+        _render = PartialRenderer('data_table/_dt_elements.html')
+        data = []
+        for pr in pull_requests:
+            repo_id = pr.target_repo_id
+            comments = ChangesetCommentsModel().get_all_comments(
+                repo_id, pull_request=pr)
+            owned = pr.user_id == c.rhodecode_user.user_id
+            status = pr.calculated_review_status()
+
+            data.append({
+                'target_repo': _render('pullrequest_target_repo',
+                                       pr.target_repo.repo_name),
+                'name': _render('pullrequest_name',
+                                pr.pull_request_id, pr.target_repo.repo_name,
+                                short=True),
+                'name_raw': pr.pull_request_id,
+                'status': _render('pullrequest_status', status),
+                'title': _render(
+                    'pullrequest_title', pr.title, pr.description),
+                'description': h.escape(pr.description),
+                'updated_on': _render('pullrequest_updated_on',
+                                      h.datetime_to_time(pr.updated_on)),
+                'updated_on_raw': h.datetime_to_time(pr.updated_on),
+                'created_on': _render('pullrequest_updated_on',
+                                      h.datetime_to_time(pr.created_on)),
+                'created_on_raw': h.datetime_to_time(pr.created_on),
+                'author': _render('pullrequest_author',
+                                  pr.author.full_contact, ),
+                'author_raw': pr.author.full_name,
+                'comments': _render('pullrequest_comments', len(comments)),
+                'comments_raw': len(comments),
+                'closed': pr.is_closed(),
+                'owned': owned
+            })
+        # json used to render the grid
+        data = ({
+            'data': data,
+            'recordsTotal': pull_requests_total_count,
+            'recordsFiltered': pull_requests_total_count,
+        })
+        return data
+
     def my_account_pullrequests(self):
         c.active = 'pullrequests'
         self.__load_data()
-        c.show_closed = request.GET.get('pr_show_closed')
+        c.show_closed = str2bool(request.GET.get('pr_show_closed'))
 
-        def _filter(pr):
-            s = sorted(pr, key=lambda o: o.created_on, reverse=True)
-            if not c.show_closed:
-                s = filter(lambda p: p.status != PullRequest.STATUS_CLOSED, s)
-            return s
-
-        c.my_pull_requests = _filter(
-            PullRequest.query().filter(
-                PullRequest.user_id == c.rhodecode_user.user_id).all())
-        my_prs = [
-            x.pull_request for x in PullRequestReviewers.query().filter(
-                PullRequestReviewers.user_id == c.rhodecode_user.user_id).all()]
-        c.participate_in_pull_requests = _filter(my_prs)
-        return render('admin/my_account/my_account.html')
+        statuses = [PullRequest.STATUS_NEW, PullRequest.STATUS_OPEN]
+        if c.show_closed:
+            statuses += [PullRequest.STATUS_CLOSED]
+        data = self._get_pull_requests_list(statuses)
+        if not request.is_xhr:
+            c.data_participate = json.dumps(data['data'])
+            c.records_total_participate = data['recordsTotal']
+            return render('admin/my_account/my_account.html')
+        else:
+            return json.dumps(data)
 
     def my_account_auth_tokens(self):
         c.active = 'auth_tokens'

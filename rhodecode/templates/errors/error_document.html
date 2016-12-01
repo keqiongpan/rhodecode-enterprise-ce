@@ -22,7 +22,7 @@
         <script type="text/javascript" src="${h.asset('js/scripts.js', ver=c.rhodecode_version_hash)}"></script>
     </head>
     <body>
-        <%include file="/base/flash_msg.html"/>
+        <% messages = h.flash.pop_messages() %>
 
         <div class="wrapper error_page">
             <div class="sidebar">
@@ -35,6 +35,11 @@
                     </span><br/>
                     ${c.error_message} | <span class="error_message">${c.error_explanation}</span>
                 </h1>
+                % if messages:
+                    % for message in messages:
+                        <div class="alert alert-${message.category}">${message}</div>
+                    % endfor
+                % endif    
                 %if c.redirect_time:
                     <p>${_('You will be redirected to %s in %s seconds') % (c.redirect_module,c.redirect_time)}</p>
                 %endif

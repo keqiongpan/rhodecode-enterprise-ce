@@ -25,7 +25,8 @@ import textwrap
 import rhodecode
 from rhodecode.lib.utils2 import safe_unicode
 from rhodecode.lib.vcs.backends import get_backend
-from rhodecode.lib.vcs.backends.base import MergeResponse, MergeFailureReason
+from rhodecode.lib.vcs.backends.base import (
+    MergeResponse, MergeFailureReason, Reference)
 from rhodecode.lib.vcs.exceptions import RepositoryError
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.model.comment import ChangesetCommentsModel
@@ -115,7 +116,7 @@ class TestPullRequestModel:
 
     def test_get_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [pull_request.author])
+            pull_request, [(pull_request.author, ['author'])])
         prs = PullRequestModel().get_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
         assert isinstance(prs, list)
@@ -123,7 +124,7 @@ class TestPullRequestModel:
 
     def test_count_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [pull_request.author])
+            pull_request, [(pull_request.author, ['author'])])
         pr_count = PullRequestModel().count_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
         assert pr_count == 1
@@ -269,10 +270,10 @@ class TestPullRequestModel:
 
     def test_merge(self, pull_request, merge_extras):
         user = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
+        merge_ref = Reference(
+            'type', 'name', '6126b7bfcc82ad2d3deaee22af926b082ce54cc6')
         self.merge_mock.return_value = MergeResponse(
-            True, True,
-            '6126b7bfcc82ad2d3deaee22af926b082ce54cc6',
-            MergeFailureReason.NONE)
+            True, True, merge_ref, MergeFailureReason.NONE)
 
         merge_extras['repository'] = pull_request.target_repo.repo_name
         PullRequestModel().merge(
@@ -308,10 +309,10 @@ class TestPullRequestModel:
 
     def test_merge_failed(self, pull_request, merge_extras):
         user = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
+        merge_ref = Reference(
+            'type', 'name', '6126b7bfcc82ad2d3deaee22af926b082ce54cc6')
         self.merge_mock.return_value = MergeResponse(
-            False, False,
-            '6126b7bfcc82ad2d3deaee22af926b082ce54cc6',
-            MergeFailureReason.MERGE_FAILED)
+            False, False, merge_ref, MergeFailureReason.MERGE_FAILED)
 
         merge_extras['repository'] = pull_request.target_repo.repo_name
         PullRequestModel().merge(
@@ -358,6 +359,14 @@ class TestPullRequestModel:
         diff = PullRequestModel()._get_diff_from_pr_or_version(
             pull_request, context=6)
         assert 'file_1' in diff.raw
+
+    def test_generate_title_returns_unicode(self):
+        title = PullRequestModel().generate_pullrequest_title(
+            source='source-dummy',
+            source_ref='source-ref-dummy',
+            target='target-dummy',
+        )
+        assert type(title) == unicode
 
 
 class TestIntegrationMerge(object):
@@ -449,6 +458,7 @@ def merge_extras(user_regular):
         'locked_by': [None, None, None],
         'server_url': 'http://test.example.com:5000',
         'hooks': ['push', 'pull'],
+        'is_shadow_repo': False,
     }
     return extras
 

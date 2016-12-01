@@ -4,27 +4,55 @@
 # derivation. For advanced tweaks to pimp up the development environment we use
 # "shell.nix" so that it does not have to clutter this file.
 
-{ pkgs ? (import <nixpkgs> {})
-, pythonPackages ? "python27Packages"
+args@
+{ pythonPackages ? "python27Packages"
 , pythonExternalOverrides ? self: super: {}
 , doCheck ? true
+, ...
 }:
 
-let pkgs_ = pkgs; in
-
 let
-  pkgs = pkgs_.overridePackages (self: super: {
-    # Override subversion derivation to
-    #  - activate python bindings
-    #  - set version to 1.8
-    subversion = super.subversion18.override {
-       httpSupport = true;
-       pythonBindings = true;
-       python = self.python27Packages.python;
-    };
+
+  # Use nixpkgs from args or import them. We use this indirect approach
+  # through args to be able to use the name `pkgs` for our customized packages.
+  # Otherwise we will end up with an infinite recursion.
+  nixpkgs = args.pkgs or (import <nixpkgs> { });
+
+  # johbo: Interim bridge which allows us to build with the upcoming
+  # nixos.16.09 branch (unstable at the moment of writing this note) and the
+  # current stable nixos-16.03.
+  backwardsCompatibleFetchgit = { ... }@args:
+    let
+      origSources = nixpkgs.fetchgit args;
+    in
+    nixpkgs.lib.overrideDerivation origSources (oldAttrs: {
+      NIX_PREFETCH_GIT_CHECKOUT_HOOK = ''
+        find $out -name '.git*' -print0 | xargs -0 rm -rf
+      '';
+    });
+
+  # Create a customized version of nixpkgs which should be used throughout the
+  # rest of this file.
+  pkgs = nixpkgs.overridePackages (self: super: {
+    fetchgit = backwardsCompatibleFetchgit;
   });
 
-  inherit (pkgs.lib) fix extends;
+  # Evaluates to the last segment of a file system path.
+  basename = path: with pkgs.lib; last (splitString "/" path);
+
+  # source code filter used as arugment to builtins.filterSource.
+  src-filter = path: type: with pkgs.lib;
+    let
+      ext = last (splitString "." path);
+    in
+      !builtins.elem (basename path) [
+        ".git" ".hg" "__pycache__" ".eggs"
+        "bower_components" "node_modules"
+        "build" "data" "result" "tmp"] &&
+      !builtins.elem ext ["egg-info" "pyc"] &&
+      # TODO: johbo: This check is wrong, since "path" contains an absolute path,
+      # it would still be good to restore it since we want to ignore "result-*".
+      !hasPrefix "result" path;
 
   basePythonPackages = with builtins; if isAttrs pythonPackages
     then pythonPackages
@@ -33,25 +61,6 @@ let
   buildBowerComponents =
     pkgs.buildBowerComponents or
     (import ./pkgs/backport-16.03-build-bower-components.nix { inherit pkgs; });
-
-  elem = builtins.elem;
-  basename = path: with pkgs.lib; last (splitString "/" path);
-  startsWith = prefix: full: let
-    actualPrefix = builtins.substring 0 (builtins.stringLength prefix) full;
-  in actualPrefix == prefix;
-
-  src-filter = path: type: with pkgs.lib;
-    let
-      ext = last (splitString "." path);
-    in
-      !elem (basename path) [
-        ".git" ".hg" "__pycache__" ".eggs"
-        "bower_components" "node_modules"
-        "build" "data" "result" "tmp"] &&
-      !elem ext ["egg-info" "pyc"] &&
-      # TODO: johbo: This check is wrong, since "path" contains an absolute path,
-      # it would still be good to restore it since we want to ignore "result-*".
-      !startsWith "result" path;
 
   sources = pkgs.config.rc.sources or {};
   version = builtins.readFile ./rhodecode/VERSION;
@@ -147,18 +156,6 @@ let
         then "${pkgs.glibcLocales}/lib/locale/locale-archive"
         else "";
 
-      # Somewhat snappier setup of the development environment
-      # TODO: move into shell.nix
-      # TODO: think of supporting a stable path again, so that multiple shells
-      #       can share it.
-      shellHook = ''
-        tmp_path=$(mktemp -d)
-        export PATH="$tmp_path/bin:$PATH"
-        export PYTHONPATH="$tmp_path/${self.python.sitePackages}:$PYTHONPATH"
-        mkdir -p $tmp_path/${self.python.sitePackages}
-        python setup.py develop --prefix $tmp_path --allow-hosts ""
-      '' + linkNodeAndBowerPackages;
-
       preCheck = ''
         export PATH="$out/bin:$PATH"
       '';
@@ -226,16 +223,16 @@ let
   rhodecode-testdata-src = sources.rhodecode-testdata or (
     pkgs.fetchhg {
       url = "https://code.rhodecode.com/upstream/rc_testdata";
-      rev = "v0.8.0";
-      sha256 = "0hy1ba134rq2f9si85yx7j4qhc9ky0hjzdk553s3q026i7km809m";
+      rev = "v0.9.0";
+      sha256 = "0k0ccb7cncd6mmzwckfbr6l7fsymcympwcm948qc3i0f0m6bbg1y";
   });
 
   # Apply all overrides and fix the final package set
-  myPythonPackagesUnfix =
+  myPythonPackagesUnfix = with pkgs.lib;
     (extends pythonExternalOverrides
     (extends pythonLocalOverrides
     (extends pythonOverrides
              pythonGeneratedPackages)));
-  myPythonPackages = (fix myPythonPackagesUnfix);
+  myPythonPackages = (pkgs.lib.fix myPythonPackagesUnfix);
 
 in myPythonPackages.rhodecode-enterprise-ce

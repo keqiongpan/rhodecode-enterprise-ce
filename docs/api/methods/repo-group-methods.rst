@@ -1,24 +1,25 @@
 .. _repo-group-methods-ref:
 
 repo_group methods
-=================
+==================
 
 create_repo_group 
 -----------------
 
-.. py:function:: create_repo_group(apiuser, group_name, description=<Optional:''>, owner=<Optional:<OptionalAttr:apiuser>>, copy_permissions=<Optional:False>)
+.. py:function:: create_repo_group(apiuser, group_name, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, copy_permissions=<Optional:False>)
 
    Creates a repository group.
 
-   * If the repository group name contains "/", all the required repository
-     groups will be created.
+   * If the repository group name contains "/", repository group will be
+     created inside a repository group or nested repository groups
 
-     For example "foo/bar/baz" will create |repo| groups "foo" and "bar"
-     (with "foo" as parent). It will also create the "baz" repository
-     with "bar" as |repo| group.
+     For example "foo/bar/group1" will create repository group called "group1"
+     inside group "foo/bar". You have to have permissions to access and
+     write to the last repository group ("bar" in this example)
 
-   This command can only be run using an |authtoken| with admin
-   permissions.
+   This command can only be run using an |authtoken| with at least
+   permissions to create repository groups, or admin permissions to
+   parent repository groups.
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
@@ -73,7 +74,7 @@ delete_repo_group
 
      id : <id_given_in_input>
      result : {
-       'msg': 'deleted repo group ID:<repogroupid> <repogroupname>
+       'msg': 'deleted repo group ID:<repogroupid> <repogroupname>'
        'repo_group': null
      }
      error :  null
@@ -325,12 +326,21 @@ revoke_user_permission_from_repo_group
 update_repo_group 
 -----------------
 
-.. py:function:: update_repo_group(apiuser, repogroupid, group_name=<Optional:''>, description=<Optional:''>, owner=<Optional:<OptionalAttr:apiuser>>, parent=<Optional:None>, enable_locking=<Optional:False>)
+.. py:function:: update_repo_group(apiuser, repogroupid, group_name=<Optional:''>, description=<Optional:''>, owner=<Optional:<OptionalAttr:apiuser>>, enable_locking=<Optional:False>)
 
    Updates repository group with the details given.
 
    This command can only be run using an |authtoken| with admin
    permissions.
+
+   * If the group_name name contains "/", repository group will be updated
+     accordingly with a repository group or nested repository groups
+
+     For example repogroupid=group-test group_name="foo/bar/group-test"
+     will update repository group called "group-test" and place it
+     inside group "foo/bar".
+     You have to have permissions to access and write to the last repository
+     group ("bar" in this example)
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
@@ -342,8 +352,6 @@ update_repo_group
    :type description: str
    :param owner: Set the |repo| group owner.
    :type owner: str
-   :param parent: Set the |repo| group parent.
-   :type parent: str or int
    :param enable_locking: Enable |repo| locking. The default is false.
    :type enable_locking: bool
 

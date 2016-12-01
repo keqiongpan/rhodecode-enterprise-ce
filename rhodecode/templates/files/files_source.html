@@ -1,3 +1,4 @@
+<%namespace name="sourceblock" file="/codeblocks/source.html"/>
 
 <div id="codeblock" class="codeblock">
     <div class="codeblock-header">
@@ -51,12 +52,22 @@
            </div>
        %else:
         % if c.file.size < c.cut_off_limit:
-            %if c.annotate:
-              ${h.pygmentize_annotation(c.repo_name,c.file,linenos=True,anchorlinenos=True,lineanchors='L',cssclass="code-highlight")}
-            %elif c.renderer:
+            %if c.renderer and not c.annotate:
                 ${h.render(c.file.content, renderer=c.renderer)}
             %else:
-              ${h.pygmentize(c.file,linenos=True,anchorlinenos=True,lineanchors='L',cssclass="code-highlight")}
+                <table class="cb codehilite">
+                %if c.annotate:
+                  <% color_hasher = h.color_hasher() %>
+                  %for annotation, lines in c.annotated_lines:
+                    ${sourceblock.render_annotation_lines(annotation, lines, color_hasher)}
+                  %endfor
+                %else:
+                  %for line_num, tokens in enumerate(c.lines, 1):
+                    ${sourceblock.render_line(line_num, tokens)}
+                  %endfor
+                %endif
+                </table>
+              </div>
             %endif
         %else:
             ${_('File is too big to display')} ${h.link_to(_('Show as raw'),
@@ -65,7 +76,3 @@
      %endif
     </div>
 </div>
-
-<script>
-    var source_page = true;
-</script>

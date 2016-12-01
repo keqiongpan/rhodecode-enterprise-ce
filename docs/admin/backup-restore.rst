@@ -9,9 +9,14 @@ Backup and Restore
 To snapshot an instance of |RCE|, and save its settings, you need to backup the
 following parts of the system at the same time.
 
-* The |repos| managed by the instance.
+* The |repos| managed by the instance together with the stored Gists.
 * The |RCE| database.
-* Any configuration files or extensions that you've configured.
+* Any configuration files or extensions that you've configured. In most
+  cases it's only the :file:`rhodecode.ini` file.
+* Installer files such as those in `/opt/rhodecode` can be backed-up, however
+  it's not required since in case of a recovery installer simply
+  re-creates those.
+
 
 .. important::
 
@@ -29,11 +34,17 @@ Repository Backup
 ^^^^^^^^^^^^^^^^^
 
 To back up your |repos|, use the API to get a list of all |repos| managed,
-and then clone them to your backup location.
+and then clone them to your backup location. This is the most safe backup option.
+Backing up the storage directory could potentially result in a backup of
+partially committed files or commits. (Backup taking place during a big push)
+As an alternative you could use a rsync or simple `cp` commands if you can
+ensure your instance is only in read-only mode or stopped at the moment.
+
 
 Use the ``get_repos`` method to list all your managed |repos|,
 and use the ``clone_uri`` information that is returned. See the :ref:`api`
-for more information.
+for more information. Be sure to keep the structure or repositories with their
+repository groups.
 
 .. important::
 
@@ -54,13 +65,19 @@ backup location:
 .. code-block:: bash
 
    # For MySQL DBs
-   $ mysqldump -u <uname> -p <pass> db_name > mysql-db-backup
+   $ mysqldump -u <uname> -p <pass> rhodecode_db_name > mysql-db-backup
+   # MySQL restore command
+   $ mysql -u <uname> -p <pass> rhodecode_db_name < mysql-db-backup
 
    # For PostgreSQL DBs
-   $ pg_dump dbname > postgresql-db-backup
+   $ PGPASSWORD=<pass> pg_dump rhodecode_db_name > postgresql-db-backup
+   # PosgreSQL restore
+   $ PGPASSWORD=<pass> psql -U <uname> -h localhost -d rhodecode_db_name -1 -f postgresql-db-backup
 
-   # For SQLlite
+   # For SQLite
    $ sqlite3 rhodecode.db ‘.dump’ > sqlite-db-backup
+   # SQLite restore
+   $ copy sqlite-db-backup rhodecode.db
 
 
 The default |RCE| SQLite database location is
@@ -75,13 +92,18 @@ Configuration File Backup
 Depending on your setup, you could have a number of configuration files that
 should be backed up. You may have some, or all of the configuration files
 listed in the :ref:`config-rce-files` section. Ideally you should back these
-up at the same time as the database and |repos|.
+up at the same time as the database and |repos|. It really depends on if you need
+the configuration file like logs, custom modules. We always recommend backing
+those up.
 
 Gist Backup
 ^^^^^^^^^^^
 
-To backup the gists on your |RCE| instance you can use the ``get_users`` and
-``get_gists`` API methods to fetch the gists for each user on the instance.
+To backup the gists on your |RCE| instance you usually have to backup the
+gist storage path. If this haven't been changed it's located inside
+:file:`.rc_gist_store` and the metadata in :file:`.rc_gist_metadata`.
+You can use the ``get_users`` and ``get_gists`` API methods to fetch the
+gists for each user on the instance.
 
 Extension Backups
 ^^^^^^^^^^^^^^^^^
@@ -100,15 +122,17 @@ the :ref:`indexing-ref` section.
 Restoration Steps
 -----------------
 
-To restore an instance of |RCE| from its backed up components, use the
-following steps.
+To restore an instance of |RCE| from its backed up components, to a fresh
+system use the following steps.
 
-1. Install a new instance of |RCE|.
-2. Once installed, configure the instance to use the backed up
-   :file:`rhodecode.ini` file. Ensure this file points to the backed up
+1. Install a new instance of |RCE| using sqlite option as database.
+2. Restore your database.
+3. Once installed, replace you backed up the :file:`rhodecode.ini` with your
+   backup version. Ensure this file points to the restored
    database, see the :ref:`config-database` section.
-3. Restart |RCE| and remap and rescan your |repos|, see the
-   :ref:`remap-rescan` section.
+4. Restart |RCE| and remap and rescan your |repos| to verify filesystem access,
+   see the :ref:`remap-rescan` section.
+
 
 Post Restoration Steps
 ^^^^^^^^^^^^^^^^^^^^^^

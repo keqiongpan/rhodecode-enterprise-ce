@@ -1,7 +1,7 @@
 .. _gist-methods-ref:
 
 gist methods
-=================
+============
 
 create_gist 
 -----------

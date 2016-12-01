@@ -50,5 +50,17 @@ ${h.end_form()}
         if ($('.locked_input').children().hasClass('error-message')) {
             unlockpath();
         }
-    })
+
+        /* On click handler for the `Generate Apache Config` button. It sends a
+        POST request to trigger the (re)generation of the mod_dav_svn config. */
+        $('#vcs_svn_generate_cfg').on('click', function(event) {
+            event.preventDefault();
+            var url = "${h.route_path('admin_settings_vcs_svn_generate_cfg')}";
+            var jqxhr = $.post(url, {'csrf_token': CSRF_TOKEN});
+            jqxhr.done(function(data) {
+                $.Topic('/notifications').publish(data);
+            });
+        });
+
+    });
 </script>

@@ -126,7 +126,7 @@
 
                     <div class="checkbox">
                         ${h.checkbox('rhodecode_hg_use_rebase_for_merging' + suffix, 'True', **kwargs)}
-                        <label for="rhodecode_hg_use_rebase_for_merging{suffix}">${_('Use rebase as merge strategy')}</label>
+                        <label for="rhodecode_hg_use_rebase_for_merging${suffix}">${_('Use rebase as merge strategy')}</label>
                     </div>
                     <div class="label">
                         <span class="help-block">${_('Use rebase instead of creating a merge commit when merging via web interface.')}</span>
@@ -147,10 +147,13 @@
                 <div class="field">
                     <div class="checkbox">
                         ${h.checkbox('vcs_svn_proxy_http_requests_enabled' + suffix, 'True', **kwargs)}
-                        <label for="vcs_svn_proxy_http_requests_enabled{suffix}">${_('Proxy subversion HTTP requests')}</label>
+                        <label for="vcs_svn_proxy_http_requests_enabled${suffix}">${_('Proxy subversion HTTP requests')}</label>
                     </div>
                     <div class="label">
-                        <span class="help-block">${_('Subversion HTTP Support. Enables communication with SVN over HTTP protocol.')}</span>
+                        <span class="help-block">
+                            ${_('Subversion HTTP Support. Enables communication with SVN over HTTP protocol.')}
+                            <a href="${h.url('enterprise_svn_setup')}" target="_blank">${_('SVN Protocol setup Documentation')}</a>.
+                        </span>
                     </div>
                 </div>
                 <div class="field">
@@ -161,6 +164,11 @@
                         ${h.text('vcs_svn_proxy_http_server_url',size=59)}
                     </div>
                 </div>
+                % if c.svn_proxy_generate_config:
+                    <div class="buttons">
+                        <button class="btn btn-primary" id="vcs_svn_generate_cfg">${_('Generate Apache Config')}</button>
+                    </div>
+                % endif
             </div>
         </div>
     % endif

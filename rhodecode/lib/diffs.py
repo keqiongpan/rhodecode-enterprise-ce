@@ -180,6 +180,8 @@ class Action(object):
     UNMODIFIED = 'unmod'
 
     CONTEXT = 'context'
+    OLD_NO_NL = 'old-no-nl'
+    NEW_NO_NL = 'new-no-nl'
 
 
 class DiffProcessor(object):
@@ -227,7 +229,7 @@ class DiffProcessor(object):
             self._parser = self._parse_gitdiff
         else:
             self.differ = self._highlight_line_udiff
-            self._parser = self._parse_udiff
+            self._parser = self._new_parse_gitdiff
 
     def _copy_iterator(self):
         """
@@ -491,9 +493,181 @@ class DiffProcessor(object):
 
         return diff_container(sorted(_files, key=sorter))
 
-    def _parse_udiff(self, inline_diff=True):
-        raise NotImplementedError()
 
+    # FIXME: NEWDIFFS: dan: this replaces the old _escaper function
+    def _process_line(self, string):
+        """
+        Process a diff line, checks the diff limit
+
+        :param string:
+        """
+
+        self.cur_diff_size += len(string)
+
+        if not self.show_full_diff and (self.cur_diff_size > self.diff_limit):
+            raise DiffLimitExceeded('Diff Limit Exceeded')
+
+        return safe_unicode(string)
+
+    # FIXME: NEWDIFFS: dan: this replaces _parse_gitdiff
+    def _new_parse_gitdiff(self, inline_diff=True):
+        _files = []
+        diff_container = lambda arg: arg
+        for chunk in self._diff.chunks():
+            head = chunk.header
+            log.debug('parsing diff %r' % head)
+
+            diff = imap(self._process_line, chunk.diff.splitlines(1))
+            raw_diff = chunk.raw
+            limited_diff = False
+            exceeds_limit = False
+            # if 'empty_file_to_modify_and_rename' in head['a_path']:
+            #     1/0
+            op = None
+            stats = {
+                'added': 0,
+                'deleted': 0,
+                'binary': False,
+                'old_mode': None,
+                'new_mode': None,
+                'ops': {},
+            }
+            if head['old_mode']:
+                stats['old_mode'] = head['old_mode']
+            if head['new_mode']:
+                stats['new_mode'] = head['new_mode']
+            if head['b_mode']:
+                stats['new_mode'] = head['b_mode']
+
+            if head['deleted_file_mode']:
+                op = OPS.DEL
+                stats['binary'] = True
+                stats['ops'][DEL_FILENODE] = 'deleted file'
+
+            elif head['new_file_mode']:
+                op = OPS.ADD
+                stats['binary'] = True
+                stats['old_mode'] = None
+                stats['new_mode'] = head['new_file_mode']
+                stats['ops'][NEW_FILENODE] = 'new file %s' % head['new_file_mode']
+            else:  # modify operation, can be copy, rename or chmod
+
+                # CHMOD
+                if head['new_mode'] and head['old_mode']:
+                    op = OPS.MOD
+                    stats['binary'] = True
+                    stats['ops'][CHMOD_FILENODE] = (
+                        'modified file chmod %s => %s' % (
+                            head['old_mode'], head['new_mode']))
+
+                # RENAME
+                if head['rename_from'] != head['rename_to']:
+                    op = OPS.MOD
+                    stats['binary'] = True
+                    stats['renamed'] = (head['rename_from'], head['rename_to'])
+                    stats['ops'][RENAMED_FILENODE] = (
+                        'file renamed from %s to %s' % (
+                            head['rename_from'], head['rename_to']))
+                # COPY
+                if head.get('copy_from') and head.get('copy_to'):
+                    op = OPS.MOD
+                    stats['binary'] = True
+                    stats['copied'] = (head['copy_from'], head['copy_to'])
+                    stats['ops'][COPIED_FILENODE] = (
+                        'file copied from %s to %s' % (
+                            head['copy_from'], head['copy_to']))
+
+                # If our new parsed headers didn't match anything fallback to
+                # old style detection
+                if op is None:
+                    if not head['a_file'] and head['b_file']:
+                        op = OPS.ADD
+                        stats['binary'] = True
+                        stats['new_file'] = True
+                        stats['ops'][NEW_FILENODE] = 'new file'
+
+                    elif head['a_file'] and not head['b_file']:
+                        op = OPS.DEL
+                        stats['binary'] = True
+                        stats['ops'][DEL_FILENODE] = 'deleted file'
+
+                # it's not ADD not DELETE
+                if op is None:
+                    op = OPS.MOD
+                    stats['binary'] = True
+                    stats['ops'][MOD_FILENODE] = 'modified file'
+
+            # a real non-binary diff
+            if head['a_file'] or head['b_file']:
+                try:
+                    raw_diff, chunks, _stats = self._new_parse_lines(diff)
+                    stats['binary'] = False
+                    stats['added'] = _stats[0]
+                    stats['deleted'] = _stats[1]
+                    # explicit mark that it's a modified file
+                    if op == OPS.MOD:
+                        stats['ops'][MOD_FILENODE] = 'modified file'
+                    exceeds_limit = len(raw_diff) > self.file_limit
+
+                    # changed from _escaper function so we validate size of
+                    # each file instead of the whole diff
+                    # diff will hide big files but still show small ones
+                    # from my tests, big files are fairly safe to be parsed
+                    # but the browser is the bottleneck
+                    if not self.show_full_diff and exceeds_limit:
+                        raise DiffLimitExceeded('File Limit Exceeded')
+
+                except DiffLimitExceeded:
+                    diff_container = lambda _diff: \
+                        LimitedDiffContainer(
+                            self.diff_limit, self.cur_diff_size, _diff)
+
+                    exceeds_limit = len(raw_diff) > self.file_limit
+                    limited_diff = True
+                    chunks = []
+
+            else:  # GIT format binary patch, or possibly empty diff
+                if head['bin_patch']:
+                    # we have operation already extracted, but we mark simply
+                    # it's a diff we wont show for binary files
+                    stats['ops'][BIN_FILENODE] = 'binary diff hidden'
+                chunks = []
+
+            if chunks and not self.show_full_diff and op == OPS.DEL:
+                # if not full diff mode show deleted file contents
+                # TODO: anderson: if the view is not too big, there is no way
+                # to see the content of the file
+                chunks = []
+
+            chunks.insert(0, [{
+                                  'old_lineno': '',
+                                  'new_lineno': '',
+                                  'action': Action.CONTEXT,
+                                  'line': msg,
+                              } for _op, msg in stats['ops'].iteritems()
+                              if _op not in [MOD_FILENODE]])
+
+            original_filename = safe_unicode(head['a_path'])
+            _files.append({
+                'original_filename': original_filename,
+                'filename': safe_unicode(head['b_path']),
+                'old_revision': head['a_blob_id'],
+                'new_revision': head['b_blob_id'],
+                'chunks': chunks,
+                'raw_diff': safe_unicode(raw_diff),
+                'operation': op,
+                'stats': stats,
+                'exceeds_limit': exceeds_limit,
+                'is_limited_diff': limited_diff,
+            })
+
+
+        sorter = lambda info: {OPS.ADD: 0, OPS.MOD: 1,
+                               OPS.DEL: 2}.get(info['operation'])
+
+        return diff_container(sorted(_files, key=sorter))
+
+    # FIXME: NEWDIFFS: dan: this gets replaced by _new_parse_lines
     def _parse_lines(self, diff):
         """
         Parse the diff an return data for the template.
@@ -581,6 +755,107 @@ class DiffProcessor(object):
                             'old_lineno':   '...',
                             'new_lineno':   '...',
                             'action':       Action.CONTEXT,
+                            'line':         self._clean_line(line, command)
+                        })
+
+        except StopIteration:
+            pass
+        return ''.join(raw_diff), chunks, stats
+
+    # FIXME: NEWDIFFS: dan: this replaces _parse_lines
+    def _new_parse_lines(self, diff):
+        """
+        Parse the diff an return data for the template.
+        """
+
+        lineiter = iter(diff)
+        stats = [0, 0]
+        chunks = []
+        raw_diff = []
+
+        try:
+            line = lineiter.next()
+
+            while line:
+                raw_diff.append(line)
+                match = self._chunk_re.match(line)
+
+                if not match:
+                    break
+
+                gr = match.groups()
+                (old_line, old_end,
+                 new_line, new_end) = [int(x or 1) for x in gr[:-1]]
+
+                lines = []
+                hunk = {
+                    'section_header': gr[-1],
+                    'source_start': old_line,
+                    'source_length': old_end,
+                    'target_start': new_line,
+                    'target_length': new_end,
+                    'lines': lines,
+                }
+                chunks.append(hunk)
+
+                old_line -= 1
+                new_line -= 1
+
+                context = len(gr) == 5
+                old_end += old_line
+                new_end += new_line
+
+                line = lineiter.next()
+
+                while old_line < old_end or new_line < new_end:
+                    command = ' '
+                    if line:
+                        command = line[0]
+
+                    affects_old = affects_new = False
+
+                    # ignore those if we don't expect them
+                    if command in '#@':
+                        continue
+                    elif command == '+':
+                        affects_new = True
+                        action = Action.ADD
+                        stats[0] += 1
+                    elif command == '-':
+                        affects_old = True
+                        action = Action.DELETE
+                        stats[1] += 1
+                    else:
+                        affects_old = affects_new = True
+                        action = Action.UNMODIFIED
+
+                    if not self._newline_marker.match(line):
+                        old_line += affects_old
+                        new_line += affects_new
+                        lines.append({
+                            'old_lineno':   affects_old and old_line or '',
+                            'new_lineno':   affects_new and new_line or '',
+                            'action':       action,
+                            'line':         self._clean_line(line, command)
+                        })
+                        raw_diff.append(line)
+
+                    line = lineiter.next()
+
+                    if self._newline_marker.match(line):
+                        # we need to append to lines, since this is not
+                        # counted in the line specs of diff
+                        if affects_old:
+                            action = Action.OLD_NO_NL
+                        elif affects_new:
+                            action = Action.NEW_NO_NL
+                        else:
+                            raise Exception('invalid context for no newline')
+
+                        lines.append({
+                            'old_lineno':   None,
+                            'new_lineno':   None,
+                            'action':       action,
                             'line':         self._clean_line(line, command)
                         })
 
@@ -699,7 +974,7 @@ class DiffProcessor(object):
                     if enable_comments and change['action'] != Action.CONTEXT:
                         _html.append('''<a href="#"><span class="icon-comment-add"></span></a>''')
 
-                    _html.append('''</span></td><td class="comment-toggle tooltip" title="Toggle Comments"><i class="icon-comment"></i></td>\n''')
+                    _html.append('''</span></td><td class="comment-toggle tooltip" title="Toggle Comment Thread"><i class="icon-comment"></i></td>\n''')
 
                     ###########################################################
                     # OLD LINE NUMBER

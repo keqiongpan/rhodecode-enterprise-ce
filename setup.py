@@ -51,6 +51,7 @@ requirements = [
     'PasteDeploy',
     'PasteScript',
     'Pygments',
+    'pygments-markdown-lexer',
     'Pylons',
     'Pyro4',
     'Routes',
@@ -101,6 +102,7 @@ requirements = [
     'repoze.lru',
     'requests',
     'simplejson',
+    'subprocess32',
     'waitress',
     'zope.cachedescriptors',
     'dogpile.cache',
@@ -117,12 +119,12 @@ test_requirements = [
     'WebTest',
     'configobj',
     'cssselect',
-    'flake8',
     'lxml',
     'mock',
     'pytest',
     'pytest-cov',
     'pytest-runner',
+    'pytest-sugar',
 ]
 
 setup_requirements = [

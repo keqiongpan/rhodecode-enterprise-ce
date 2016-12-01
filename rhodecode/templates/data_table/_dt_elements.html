@@ -72,6 +72,10 @@
   </div>
 </%def>
 
+<%def name="repo_desc(description)">
+    <div class="truncate-wrap">${description}</div>
+</%def>
+
 <%def name="last_change(last_change)">
     ${h.age_component(last_change)}
 </%def>
@@ -165,6 +169,10 @@
       %endif
   </a>
   </div>
+</%def>
+
+<%def name="repo_group_desc(description)">
+    <div class="truncate-wrap">${description}</div>
 </%def>
 
 <%def name="repo_group_actions(repo_group_id, repo_group_name, gr_count)">
@@ -271,6 +279,12 @@
 
 
 ## PULL REQUESTS GRID RENDERERS
+
+<%def name="pullrequest_target_repo(repo_name)">
+    <div class="truncate">
+      ${h.link_to(repo_name,h.url('summary_home',repo_name=repo_name))}
+    </div>
+</%def>
 <%def name="pullrequest_status(status)">
     <div class="${'flag_status %s' % status} pull-left"></div>
 </%def>
@@ -284,9 +298,13 @@
     <i class="icon-comment icon-comment-colored"></i> ${comments_nr}
 </%def>
 
-<%def name="pullrequest_name(pull_request_id, target_repo_name)">
+<%def name="pullrequest_name(pull_request_id, target_repo_name, short=False)">
     <a href="${h.url('pullrequest_show',repo_name=target_repo_name,pull_request_id=pull_request_id)}">
-      ${_('Pull request #%(pr_number)s') % {'pr_number': pull_request_id,}}
+      % if short:
+        #${pull_request_id}
+      % else:
+        ${_('Pull request #%(pr_number)s') % {'pr_number': pull_request_id,}}
+      % endif
     </a>
 </%def>
 

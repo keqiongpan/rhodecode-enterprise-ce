@@ -143,10 +143,8 @@ def UserForm(edit=False, available_languages=[], old_data={}):
     return _UserForm
 
 
-def UserGroupForm(edit=False, old_data=None, available_members=None,
-                  allow_disabled=False):
+def UserGroupForm(edit=False, old_data=None, allow_disabled=False):
     old_data = old_data or {}
-    available_members = available_members or []
 
     class _UserGroupForm(formencode.Schema):
         allow_extra_fields = True
@@ -162,10 +160,6 @@ def UserGroupForm(edit=False, old_data=None, available_members=None,
         users_group_active = v.StringBoolean(if_missing=False)
 
         if edit:
-            users_group_members = v.OneOf(
-                available_members, hideList=False, testValueList=True,
-                if_missing=None, not_empty=False
-            )
             # this is user group owner
             user = All(
                 v.UnicodeString(not_empty=True),
@@ -347,6 +341,8 @@ def ApplicationSettingsForm():
         rhodecode_post_code = v.UnicodeString(strip=True, min=1, not_empty=False)
         rhodecode_captcha_public_key = v.UnicodeString(strip=True, min=1, not_empty=False)
         rhodecode_captcha_private_key = v.UnicodeString(strip=True, min=1, not_empty=False)
+        rhodecode_create_personal_repo_group = v.StringBoolean(if_missing=False)
+        rhodecode_personal_repo_group_pattern = v.UnicodeString(strip=True, min=1, not_empty=False)
 
     return _ApplicationSettingsForm
 
@@ -427,7 +423,8 @@ def LabsSettingsForm():
     return _LabSettingsForm
 
 
-def ApplicationPermissionsForm(register_choices, extern_activate_choices):
+def ApplicationPermissionsForm(
+        register_choices, password_reset_choices, extern_activate_choices):
     class _DefaultPermissionsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
@@ -435,6 +432,7 @@ def ApplicationPermissionsForm(register_choices, extern_activate_choices):
         anonymous = v.StringBoolean(if_missing=False)
         default_register = v.OneOf(register_choices)
         default_register_message = v.UnicodeString()
+        default_password_reset = v.OneOf(password_reset_choices)
         default_extern_activate = v.OneOf(extern_activate_choices)
 
     return _DefaultPermissionsForm
@@ -519,7 +517,12 @@ def UserExtraIpForm():
     return _UserExtraIpForm
 
 
+
 def PullRequestForm(repo_id):
+    class ReviewerForm(formencode.Schema):
+        user_id = v.Int(not_empty=True)
+        reasons = All()
+
     class _PullRequestForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
@@ -531,8 +534,7 @@ def PullRequestForm(repo_id):
         target_ref = v.UnicodeString(strip=True, required=True)
         revisions = All(#v.NotReviewedRevisions(repo_id)(),
                         v.UniqueList()(not_empty=True))
-        review_members = v.UniqueList(convert=int)(not_empty=True)
-
+        review_members = formencode.ForEach(ReviewerForm())
         pullrequest_title = v.UnicodeString(strip=True, required=True)
         pullrequest_desc = v.UnicodeString(strip=True, required=False)
 

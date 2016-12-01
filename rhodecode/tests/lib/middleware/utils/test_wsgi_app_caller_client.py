@@ -93,6 +93,8 @@ def test_remote_app_caller():
     response = test_app.get('/path')
 
     assert response.status == '200 OK'
-    assert response.headers.items() == [
-        ('Content-Type', 'text/plain'), ('Content-Length', '7')]
+    assert sorted(response.headers.items()) == sorted([
+        ('Content-Type', 'text/plain'),
+        ('Content-Length', '7'),
+    ])
     assert response.body == 'content'

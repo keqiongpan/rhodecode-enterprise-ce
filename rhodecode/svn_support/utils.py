@@ -18,36 +18,44 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import codecs
 import logging
 import os
-
 from pyramid.renderers import render
 
-from rhodecode.lib.utils import get_rhodecode_realm
+from rhodecode.events import trigger
+from rhodecode.lib.utils import get_rhodecode_realm, get_rhodecode_base_path
 from rhodecode.model.db import RepoGroup
+
 from . import config_keys
+from .events import ModDavSvnConfigChange
 
 
 log = logging.getLogger(__name__)
 
 
-def generate_mod_dav_svn_config(settings):
+def generate_mod_dav_svn_config(registry):
     """
     Generate the configuration file for use with subversion's mod_dav_svn
     module. The configuration has to contain a <Location> block for each
     available repository group because the mod_dav_svn module does not support
     repositories organized in sub folders.
     """
+    settings = registry.settings
     config = _render_mod_dav_svn_config(
-        settings[config_keys.parent_path_root],
-        settings[config_keys.list_parent_path],
-        settings[config_keys.location_root],
-        RepoGroup.get_all_repo_groups())
+        parent_path_root=get_rhodecode_base_path(),
+        list_parent_path=settings[config_keys.list_parent_path],
+        location_root=settings[config_keys.location_root],
+        repo_groups=RepoGroup.get_all_repo_groups(),
+        realm=get_rhodecode_realm())
     _write_mod_dav_svn_config(config, settings[config_keys.config_file_path])
+
+    # Trigger an event on mod dav svn configuration change.
+    trigger(ModDavSvnConfigChange(), registry)
 
 
 def _render_mod_dav_svn_config(
-        parent_path_root, list_parent_path, location_root, repo_groups):
+        parent_path_root, list_parent_path, location_root, repo_groups, realm):
     """
     Render mod_dav_svn configuration to string.
     """
@@ -63,7 +71,7 @@ def _render_mod_dav_svn_config(
         'parent_path_root': parent_path_root,
         'repo_group_paths': repo_group_paths,
         'svn_list_parent_path': list_parent_path,
-        'rhodecode_realm': get_rhodecode_realm(),
+        'rhodecode_realm': realm,
     }
 
     # Render the configuration template to string.
@@ -73,11 +81,7 @@ def _render_mod_dav_svn_config(
 
 def _write_mod_dav_svn_config(config, filepath):
     """
-    Write mod_dav_svn config to file. Log on exceptions but do not raise.
+    Write mod_dav_svn config to file.
     """
-    try:
-        with open(filepath, 'w') as file_:
-            file_.write(config)
-    except Exception:
-        log.exception(
-            'Can not write mod_dav_svn configuration to "%s"', filepath)
+    with codecs.open(filepath, 'w', encoding='utf-8') as f:
+        f.write(config)

@@ -6,7 +6,14 @@
 <%namespace name="base" file="/base/base.html"/>
 
 <%def name="comment_block(comment, inline=False)">
-  <div class="comment ${'comment-inline' if inline else ''}" id="comment-${comment.comment_id}" line="${comment.line_no}" data-comment-id="${comment.comment_id}">
+  <div
+    class="comment
+    ${'comment-inline' if inline else ''}
+    ${'comment-outdated' if comment.outdated else 'comment-current'}"
+    "
+    id="comment-${comment.comment_id}"
+    line="${comment.line_no}"
+    data-comment-id="${comment.comment_id}">
       <div class="meta">
           <div class="author">
               ${base.gravatar_with_user(comment.author.email, 16)}
@@ -46,22 +53,13 @@
             ## only super-admin, repo admin OR comment owner can delete
             %if not comment.pull_request or (comment.pull_request and not comment.pull_request.is_closed()):
                %if h.HasPermissionAny('hg.admin')() or h.HasRepoPermissionAny('repository.admin')(c.repo_name) or comment.author.user_id == c.rhodecode_user.user_id:
-                  <div onClick="deleteComment(${comment.comment_id})" class="delete-comment"> ${_('Delete')}</div>
-                  %if inline:
-                    <div class="comment-links-divider"> | </div>
+                  ## TODO: dan: add edit comment here
+                  <a onclick="return Rhodecode.comments.deleteComment(this);" class="delete-comment"> ${_('Delete')}</a> |
+                  %if not comment.outdated:
+                  <a onclick="return Rhodecode.comments.prevComment(this);" class="prev-comment"> ${_('Prev')}</a> |
+                  <a onclick="return Rhodecode.comments.nextComment(this);" class="next-comment"> ${_('Next')}</a>
                   %endif
                %endif
-            %endif
-
-            %if inline:
-
-                <div id="prev_c_${comment.comment_id}" class="comment-previous-link" title="${_('Previous comment')}">
-                  <a class="arrow_comment_link disabled"><i class="icon-left"></i></a>
-                </div>
-
-                <div id="next_c_${comment.comment_id}" class="comment-next-link" title="${_('Next comment')}">
-                  <a class="arrow_comment_link disabled"><i class="icon-right"></i></a>
-                </div>
             %endif
 
           </div>
@@ -165,31 +163,8 @@
 </%def>
 
 
-## generates inlines taken from c.comments var
-<%def name="inlines(is_pull_request=False)">
-    %if is_pull_request:
-    <h2 id="comments">${ungettext("%d Pull Request Comment", "%d Pull Request Comments", len(c.comments)) % len(c.comments)}</h2>
-    %else:
-    <h2 id="comments">${ungettext("%d Commit Comment", "%d Commit Comments", len(c.comments)) % len(c.comments)}</h2>
-    %endif
-    %for path, lines_comments in c.inline_comments:
-        % for line, comments in lines_comments.iteritems():
-            <div style="display: none;" class="inline-comment-placeholder" path="${path}" target_id="${h.safeid(h.safe_unicode(path))}">
-            ## for each comment in particular line
-            %for comment in comments:
-                ${comment_block(comment, inline=True)}
-            %endfor
-            </div>
-        %endfor
-    %endfor
-
-</%def>
-
-## generate inline comments and the main ones
+## generate main comments
 <%def name="generate_comments(include_pull_request=False, is_pull_request=False)">
-    ## generate inlines for this changeset
-     ${inlines(is_pull_request)}
-
     %for comment in c.comments:
         <div id="comment-tr-${comment.comment_id}">
           ## only render comments that are not from pull request, or from

@@ -173,7 +173,7 @@ class SlackIntegrationType(IntegrationTypeBase):
 
         return (textwrap.dedent(
             '''
-            {user} commented on pull request <{pr_url}|#{number}> - {pr_title}:
+            *{user}* commented on pull request <{pr_url}|#{number}> - {pr_title}:
             >>> {comment_status}{comment_text}
             ''').format(
                 comment_status=comment_status,
@@ -208,7 +208,7 @@ class SlackIntegrationType(IntegrationTypeBase):
         }.get(event.__class__, str(event.__class__))
 
         return ('Pull request <{url}|#{number}> - {title} '
-                '{action} by {user}').format(
+                '`{action}` by *{user}*').format(
             user=data['actor']['username'],
             number=data['pullrequest']['pull_request_id'],
             url=data['pullrequest']['url'],
@@ -218,11 +218,10 @@ class SlackIntegrationType(IntegrationTypeBase):
 
     def format_repo_push_event(self, data):
         branch_data = {branch['name']: branch
-                      for branch in data['push']['branches']}
+                       for branch in data['push']['branches']}
 
         branches_commits = {}
         for commit in data['push']['commits']:
-            log.critical(commit)
             if commit['branch'] not in branches_commits:
                 branch_commits = {'branch': branch_data[commit['branch']],
                                   'commits': []}

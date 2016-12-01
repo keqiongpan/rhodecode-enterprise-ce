@@ -38,13 +38,13 @@ from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.vcs import connection
 from rhodecode.lib.vcs.backends.base import (
     BaseRepository, CollectionGenerator, Config, MergeResponse,
-    MergeFailureReason)
+    MergeFailureReason, Reference)
 from rhodecode.lib.vcs.backends.hg.commit import MercurialCommit
 from rhodecode.lib.vcs.backends.hg.diff import MercurialDiff
 from rhodecode.lib.vcs.backends.hg.inmemory import MercurialInMemoryCommit
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, RepositoryError, TagAlreadyExistError,
-    TagDoesNotExistError, CommitDoesNotExistError)
+    TagDoesNotExistError, CommitDoesNotExistError, SubrepoMergeError)
 
 hexlify = binascii.hexlify
 nullid = "\0" * 20
@@ -673,11 +673,16 @@ class MercurialRepository(BaseRepository):
             return MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
 
-        if (target_ref.type == 'branch' and
-                len(self._heads(target_ref.name)) != 1):
+        try:
+            if (target_ref.type == 'branch' and
+                    len(self._heads(target_ref.name)) != 1):
+                return MergeResponse(
+                    False, False, None,
+                    MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS)
+        except CommitDoesNotExistError as e:
+            log.exception('Failure when looking up branch heads on hg target')
             return MergeResponse(
-                False, False, None,
-                MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS)
+                False, False, None, MergeFailureReason.MISSING_TARGET_REF)
 
         shadow_repo = self._get_shadow_instance(shadow_repository_path)
 
@@ -688,12 +693,12 @@ class MercurialRepository(BaseRepository):
             log.debug('Pulling in source reference %s', source_ref)
             source_repo._validate_pull_reference(source_ref)
             shadow_repo._local_pull(source_repo.path, source_ref)
-        except CommitDoesNotExistError as e:
+        except CommitDoesNotExistError:
             log.exception('Failure when doing local pull on hg shadow repo')
             return MergeResponse(
-                False, False, None, MergeFailureReason.MISSING_COMMIT)
+                False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
 
-        merge_commit_id = None
+        merge_ref = None
         merge_failure_reason = MergeFailureReason.NONE
 
         try:
@@ -701,7 +706,18 @@ class MercurialRepository(BaseRepository):
                 target_ref, merge_message, merger_name, merger_email,
                 source_ref, use_rebase=use_rebase)
             merge_possible = True
-        except RepositoryError as e:
+
+            # Set a bookmark pointing to the merge commit. This bookmark may be
+            # used to easily identify the last successful merge commit in the
+            # shadow repository.
+            shadow_repo.bookmark('pr-merge', revision=merge_commit_id)
+            merge_ref = Reference('book', 'pr-merge', merge_commit_id)
+        except SubrepoMergeError:
+            log.exception(
+                'Subrepo merge error during local merge on hg shadow repo.')
+            merge_possible = False
+            merge_failure_reason = MergeFailureReason.SUBREPO_MERGE_FAILED
+        except RepositoryError:
             log.exception('Failure when doing local merge on hg shadow repo')
             merge_possible = False
             merge_failure_reason = MergeFailureReason.MERGE_FAILED
@@ -737,12 +753,8 @@ class MercurialRepository(BaseRepository):
         else:
             merge_succeeded = False
 
-        if dry_run:
-            merge_commit_id = None
-
         return MergeResponse(
-            merge_possible, merge_succeeded, merge_commit_id,
-            merge_failure_reason)
+            merge_possible, merge_succeeded, merge_ref, merge_failure_reason)
 
     def _get_shadow_instance(
             self, shadow_repository_path, enable_hooks=False):

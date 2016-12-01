@@ -39,12 +39,12 @@ log = logging.getLogger(__name__)
 
 def create_git_wsgi_app(repo_path, repo_name, config):
     url = _vcs_streaming_url() + 'git/'
-    return VcsHttpProxy(url, repo_path, repo_name, config, 'git')
+    return VcsHttpProxy(url, repo_path, repo_name, config)
 
 
 def create_hg_wsgi_app(repo_path, repo_name, config):
     url = _vcs_streaming_url() + 'hg/'
-    return VcsHttpProxy(url, repo_path, repo_name, config, 'hg')
+    return VcsHttpProxy(url, repo_path, repo_name, config)
 
 
 def _vcs_streaming_url():
@@ -67,7 +67,7 @@ class VcsHttpProxy(object):
     server as well.
     """
 
-    def __init__(self, url, repo_path, repo_name, config, backend):
+    def __init__(self, url, repo_path, repo_name, config):
         """
         :param str url: The URL of the VCSServer to call.
         """
@@ -75,14 +75,11 @@ class VcsHttpProxy(object):
         self._repo_name = repo_name
         self._repo_path = repo_path
         self._config = config
-        self._backend = backend
         log.debug(
             "Creating VcsHttpProxy for repo %s, url %s",
             repo_name, url)
 
     def __call__(self, environ, start_response):
-        status = '200 OK'
-
         config = msgpack.packb(self._config)
         request = webob.request.Request(environ)
         request_headers = request.headers
@@ -93,6 +90,7 @@ class VcsHttpProxy(object):
             'X-RC-Path-Info': environ['PATH_INFO'],
             # TODO: johbo: Avoid encoding and put this into payload?
             'X-RC-Repo-Config': base64.b64encode(config),
+            'X-RC-Locked-Status-Code': rhodecode.CONFIG.get('lock_ret_code')
         })
 
         data = environ['wsgi.input'].read()
@@ -116,12 +114,11 @@ class VcsHttpProxy(object):
             if not wsgiref.util.is_hop_by_hop(h)
         ]
 
-        # Add custom response header to indicate that this is a VCS response
-        # and which backend is used.
-        response_headers.append(('X-RhodeCode-Backend', self._backend))
+        # Build status argument for start_reponse callable.
+        status = '{status_code} {reason_phrase}'.format(
+            status_code=response.status_code,
+            reason_phrase=response.reason)
 
-        # TODO: johbo: Better way to get the status including text?
-        status = str(response.status_code)
         start_response(status, response_headers)
         return _maybe_stream(response)
 

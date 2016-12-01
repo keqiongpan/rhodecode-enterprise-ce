@@ -22,7 +22,7 @@ import threading
 import time
 import logging
 import os.path
-import subprocess
+import subprocess32
 import urllib2
 from urlparse import urlparse, parse_qsl
 from urllib import unquote_plus
@@ -113,10 +113,10 @@ def _load_svn_dump_into_repo(dump_name, repo_path):
     integrated with the main repository once they stabilize more.
     """
     dump = rc_testdata.load_svn_dump(dump_name)
-    load_dump = subprocess.Popen(
+    load_dump = subprocess32.Popen(
         ['svnadmin', 'load', repo_path],
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+        stdin=subprocess32.PIPE, stdout=subprocess32.PIPE,
+        stderr=subprocess32.PIPE)
     out, err = load_dump.communicate(dump)
     if load_dump.returncode != 0:
         log.error("Output of load_dump command: %s", out)
@@ -148,6 +148,10 @@ class AssertResponse(object):
     def element_contains(self, css_selector, expected_content):
         element = self.get_element(css_selector)
         assert expected_content in element.text_content()
+
+    def element_value_contains(self, css_selector, expected_content):
+        element = self.get_element(css_selector)
+        assert expected_content in element.value
 
     def contains_one_link(self, link_text, href):
         doc = fromstring(self.response.body)

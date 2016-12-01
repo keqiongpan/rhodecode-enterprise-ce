@@ -36,7 +36,7 @@ class TestAdminUsersGroupsController(TestController):
     def test_index(self):
         self.log_user()
         response = self.app.get(url('users_groups'))
-        response.status_int == 200
+        assert response.status_int == 200
 
     def test_create(self):
         self.log_user()
@@ -148,19 +148,21 @@ class TestAdminUsersGroupsController(TestController):
 
         fixture.destroy_user_group(users_group_name)
 
-    def test_edit(self):
+    def test_edit_autocomplete(self):
         self.log_user()
         ug = fixture.create_user_group(TEST_USER_GROUP, skip_if_exists=True)
         response = self.app.get(
             url('edit_users_group', user_group_id=ug.users_group_id))
         fixture.destroy_user_group(TEST_USER_GROUP)
 
-    def test_edit_user_group_members(self):
+    def test_edit_user_group_autocomplete_members(self, xhr_header):
         self.log_user()
         ug = fixture.create_user_group(TEST_USER_GROUP, skip_if_exists=True)
         response = self.app.get(
-            url('edit_user_group_members', user_group_id=ug.users_group_id))
-        response.mustcontain('No members yet')
+            url('edit_user_group_members', user_group_id=ug.users_group_id),
+            extra_environ=xhr_header)
+
+        assert response.body == '{"members": []}'
         fixture.destroy_user_group(TEST_USER_GROUP)
 
     def test_usergroup_escape(self):
@@ -181,7 +183,7 @@ class TestAdminUsersGroupsController(TestController):
             'csrf_token': self.csrf_token
         }
 
-        response = self.app.post(url('users_groups'), data)
+        self.app.post(url('users_groups'), data)
         response = self.app.get(url('users_groups'))
 
         response.mustcontain(
@@ -190,3 +192,42 @@ class TestAdminUsersGroupsController(TestController):
         response.mustcontain(
             '&lt;img src=&#34;/image2&#34; onload=&#34;'
             'alert(&#39;Hello, World!&#39;);&#34;&gt;')
+
+    def test_update_members_from_user_ids(self, user_regular):
+        uid = user_regular.user_id
+        username = user_regular.username
+        self.log_user()
+
+        user_group = fixture.create_user_group('test_gr_ids')
+        assert user_group.members == []
+        assert user_group.user != user_regular
+        expected_active_state = not user_group.users_group_active
+
+        form_data = [
+            ('csrf_token', self.csrf_token),
+            ('_method', 'put'),
+            ('user', username),
+            ('users_group_name', 'changed_name'),
+            ('users_group_active', expected_active_state),
+            ('user_group_description', 'changed_description'),
+
+            ('__start__', 'user_group_members:sequence'),
+            ('__start__', 'member:mapping'),
+            ('member_user_id', uid),
+            ('type', 'existing'),
+            ('__end__', 'member:mapping'),
+            ('__end__', 'user_group_members:sequence'),
+        ]
+        ugid = user_group.users_group_id
+        self.app.post(url('update_users_group', user_group_id=ugid), form_data)
+
+        user_group = UserGroup.get(ugid)
+        assert user_group
+
+        assert user_group.members[0].user_id == uid
+        assert user_group.user_id == uid
+        assert 'changed_name' in user_group.users_group_name
+        assert 'changed_description' in user_group.user_group_description
+        assert user_group.users_group_active == expected_active_state
+
+        fixture.destroy_user_group(user_group)

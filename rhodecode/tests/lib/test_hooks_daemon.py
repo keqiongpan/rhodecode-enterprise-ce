@@ -318,18 +318,18 @@ class TestHttpHooksCallbackDaemon(object):
 
 
 class TestPrepareHooksDaemon(object):
-    def test_returns_dummy_hooks_callback_daemon_when_using_direct_calls(self):
+    @pytest.mark.parametrize('protocol', ('http', 'pyro4'))
+    def test_returns_dummy_hooks_callback_daemon_when_using_direct_calls(
+            self, protocol):
         expected_extras = {'extra1': 'value1'}
         callback, extras = hooks_daemon.prepare_callback_daemon(
-            expected_extras.copy(), use_direct_calls=True)
+            expected_extras.copy(), protocol=protocol, use_direct_calls=True)
         assert isinstance(callback, hooks_daemon.DummyHooksCallbackDaemon)
         expected_extras['hooks_module'] = 'rhodecode.lib.hooks_daemon'
         assert extras == expected_extras
 
     @pytest.mark.parametrize('protocol, expected_class', (
         ('pyro4', hooks_daemon.Pyro4HooksCallbackDaemon),
-        ('Pyro4', hooks_daemon.Pyro4HooksCallbackDaemon),
-        ('HTTP', hooks_daemon.HttpHooksCallbackDaemon),
         ('http', hooks_daemon.HttpHooksCallbackDaemon)
     ))
     def test_returns_real_hooks_callback_daemon_when_protocol_is_specified(
@@ -339,12 +339,29 @@ class TestPrepareHooksDaemon(object):
             'hooks_protocol': protocol.lower()
         }
         callback, extras = hooks_daemon.prepare_callback_daemon(
-            expected_extras.copy(), protocol=protocol)
+            expected_extras.copy(), protocol=protocol, use_direct_calls=False)
         assert isinstance(callback, expected_class)
         hooks_uri = extras.pop('hooks_uri')
         assert extras == expected_extras
         if protocol.lower() == 'pyro4':
             assert hooks_uri.startswith('PYRO')
+
+    @pytest.mark.parametrize('protocol', (
+        'invalid',
+        'Pyro4',
+        'Http',
+        'HTTP',
+    ))
+    def test_raises_on_invalid_protocol(self, protocol):
+        expected_extras = {
+            'extra1': 'value1',
+            'hooks_protocol': protocol.lower()
+        }
+        with pytest.raises(Exception):
+            callback, extras = hooks_daemon.prepare_callback_daemon(
+                expected_extras.copy(),
+                protocol=protocol,
+                use_direct_calls=False)
 
 
 class MockRequest(object):

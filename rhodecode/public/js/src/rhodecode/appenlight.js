@@ -26,6 +26,9 @@ var initAppEnlight = function (config) {
         if (config.requestInfo){
             AppEnlight.setRequestInfo(config.requestInfo);
         }
+        if (config.tags){
+            AppEnlight.addGlobalTags(config.tags);
+        }
     }
 };
 

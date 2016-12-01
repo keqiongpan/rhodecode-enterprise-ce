@@ -22,6 +22,7 @@
 VCS Backends module
 """
 
+import os
 import logging
 
 from pprint import pformat
@@ -42,11 +43,21 @@ def get_vcs_instance(repo_path, *args, **kwargs):
     for the path it returns None. Arguments and keyword arguments are passed
     to the vcs backend repository class.
     """
+    from rhodecode.lib.utils2 import safe_str
+
+    explicit_vcs_alias = kwargs.pop('_vcs_alias', None)
     try:
-        vcs_alias = get_scm(repo_path)[0]
+        vcs_alias = safe_str(explicit_vcs_alias or get_scm(repo_path)[0])
         log.debug(
-            'Creating instance of %s repository from %s', vcs_alias, repo_path)
+            'Creating instance of %s repository from %s', vcs_alias,
+            safe_str(repo_path))
         backend = get_backend(vcs_alias)
+
+        if explicit_vcs_alias:
+            # do final verification of existance of the path, this does the
+            # same as get_scm() call which we skip in explicit_vcs_alias
+            if not os.path.isdir(repo_path):
+                raise VCSError("Given path %s is not a directory" % repo_path)
     except VCSError:
         log.exception(
             'Perhaps this repository is in db and not in '
@@ -76,3 +87,12 @@ def get_supported_backends():
     Returns list of aliases of supported backends.
     """
     return settings.BACKENDS.keys()
+
+
+def get_vcsserver_version():
+    from rhodecode.lib.vcs import connection
+    data = connection.Service.get_vcsserver_service_data()
+    if data and 'version' in data:
+        return data['version']
+
+    return None

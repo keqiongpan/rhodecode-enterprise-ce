@@ -1,7 +1,7 @@
 .. _deprecated-methods-ref:
 
 deprecated methods
-=================
+==================
 
 changeset_comment 
 -----------------

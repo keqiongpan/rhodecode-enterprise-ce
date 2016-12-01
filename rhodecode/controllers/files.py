@@ -36,6 +36,8 @@ from webob.exc import HTTPNotFound, HTTPBadRequest
 from rhodecode.controllers.utils import parse_path_ref
 from rhodecode.lib import diffs, helpers as h, caches
 from rhodecode.lib.compat import OrderedDict
+from rhodecode.lib.codeblocks import (
+    filenode_as_lines_tokens, filenode_as_annotated_lines_tokens)
 from rhodecode.lib.utils import jsonify, action_logger
 from rhodecode.lib.utils2 import (
     convert_line_endings, detect_mode, safe_str, str2bool)
@@ -221,9 +223,19 @@ class FilesController(BaseRepoController):
             c.file_author = True
             c.file_tree = ''
             if c.file.is_file():
-                c.renderer = (
-                    c.renderer and h.renderer_from_filename(c.file.path))
+                c.file_source_page = 'true'
                 c.file_last_commit = c.file.last_commit
+                if c.file.size < self.cut_off_limit_file:
+                    if c.annotate:  # annotation has precedence over renderer
+                        c.annotated_lines = filenode_as_annotated_lines_tokens(
+                            c.file
+                        )
+                    else:
+                        c.renderer = (
+                            c.renderer and h.renderer_from_filename(c.file.path)
+                        )
+                        if not c.renderer:
+                            c.lines = filenode_as_lines_tokens(c.file)
 
                 c.on_branch_head = self._is_valid_head(
                     commit_id, c.rhodecode_repo)
@@ -233,6 +245,7 @@ class FilesController(BaseRepoController):
                 c.authors = [(h.email(author),
                               h.person(author, 'username_or_name_or_email'))]
             else:
+                c.file_source_page = 'false'
                 c.authors = []
                 c.file_tree = self._get_tree_at_commit(
                     repo_name, c.commit.raw_id, f_path)

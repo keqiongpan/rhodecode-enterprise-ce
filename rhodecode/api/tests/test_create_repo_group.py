@@ -54,55 +54,10 @@ class TestCreateRepoGroup(object):
             'repo_group': repo_group.get_api_data()
         }
         expected = ret
-        assert_ok(id_, expected, given=response.body)
-        fixture.destroy_repo_group(repo_group_name)
-
-    def test_api_create_repo_group_regular_user(self):
-        repo_group_name = 'api-repo-group'
-
-        usr = UserModel().get_by_username(self.TEST_USER_LOGIN)
-        usr.inherit_default_permissions = False
-        Session().add(usr)
-        UserModel().grant_perm(
-            self.TEST_USER_LOGIN, 'hg.repogroup.create.true')
-        Session().commit()
-
-        repo_group = RepoGroupModel.cls.get_by_group_name(repo_group_name)
-        assert repo_group is None
-
-        id_, params = build_data(
-            self.apikey_regular, 'create_repo_group',
-            group_name=repo_group_name,
-            owner=TEST_USER_ADMIN_LOGIN,)
-        response = api_call(self.app, params)
-
-        repo_group = RepoGroupModel.cls.get_by_group_name(repo_group_name)
-        assert repo_group is not None
-        ret = {
-            'msg': 'Created new repo group `%s`' % (repo_group_name,),
-            'repo_group': repo_group.get_api_data()
-        }
-        expected = ret
-        assert_ok(id_, expected, given=response.body)
-        fixture.destroy_repo_group(repo_group_name)
-        UserModel().revoke_perm(
-            self.TEST_USER_LOGIN, 'hg.repogroup.create.true')
-        usr = UserModel().get_by_username(self.TEST_USER_LOGIN)
-        usr.inherit_default_permissions = True
-        Session().add(usr)
-        Session().commit()
-
-    def test_api_create_repo_group_regular_user_no_permission(self):
-        repo_group_name = 'api-repo-group'
-
-        id_, params = build_data(
-            self.apikey_regular, 'create_repo_group',
-            group_name=repo_group_name,
-            owner=TEST_USER_ADMIN_LOGIN,)
-        response = api_call(self.app, params)
-
-        expected = "Access was denied to this resource."
-        assert_error(id_, expected, given=response.body)
+        try:
+            assert_ok(id_, expected, given=response.body)
+        finally:
+            fixture.destroy_repo_group(repo_group_name)
 
     def test_api_create_repo_group_in_another_group(self):
         repo_group_name = 'api-repo-group'
@@ -127,9 +82,11 @@ class TestCreateRepoGroup(object):
             'repo_group': repo_group.get_api_data()
         }
         expected = ret
-        assert_ok(id_, expected, given=response.body)
-        fixture.destroy_repo_group(full_repo_group_name)
-        fixture.destroy_repo_group(repo_group_name)
+        try:
+            assert_ok(id_, expected, given=response.body)
+        finally:
+            fixture.destroy_repo_group(full_repo_group_name)
+            fixture.destroy_repo_group(repo_group_name)
 
     def test_api_create_repo_group_in_another_group_not_existing(self):
         repo_group_name = 'api-repo-group-no'
@@ -144,7 +101,10 @@ class TestCreateRepoGroup(object):
             owner=TEST_USER_ADMIN_LOGIN,
             copy_permissions=True)
         response = api_call(self.app, params)
-        expected = 'repository group `%s` does not exist' % (repo_group_name,)
+        expected = {
+            'repo_group':
+                'Parent repository group `{}` does not exist'.format(
+                    repo_group_name)}
         assert_error(id_, expected, given=response.body)
 
     def test_api_create_repo_group_that_exists(self):
@@ -159,9 +119,139 @@ class TestCreateRepoGroup(object):
             group_name=repo_group_name,
             owner=TEST_USER_ADMIN_LOGIN,)
         response = api_call(self.app, params)
-        expected = 'repo group `%s` already exist' % (repo_group_name,)
+        expected = {
+            'unique_repo_group_name':
+                'Repository group with name `{}` already exists'.format(
+                    repo_group_name)}
+        try:
+            assert_error(id_, expected, given=response.body)
+        finally:
+            fixture.destroy_repo_group(repo_group_name)
+
+    def test_api_create_repo_group_regular_user_wit_root_location_perms(
+            self, user_util):
+        regular_user = user_util.create_user()
+        regular_user_api_key = regular_user.api_key
+
+        repo_group_name = 'api-repo-group-by-regular-user'
+
+        usr = UserModel().get_by_username(regular_user.username)
+        usr.inherit_default_permissions = False
+        Session().add(usr)
+
+        UserModel().grant_perm(
+            regular_user.username, 'hg.repogroup.create.true')
+        Session().commit()
+
+        repo_group = RepoGroupModel.cls.get_by_group_name(repo_group_name)
+        assert repo_group is None
+
+        id_, params = build_data(
+            regular_user_api_key, 'create_repo_group',
+            group_name=repo_group_name)
+        response = api_call(self.app, params)
+
+        repo_group = RepoGroupModel.cls.get_by_group_name(repo_group_name)
+        assert repo_group is not None
+        expected = {
+            'msg': 'Created new repo group `%s`' % (repo_group_name,),
+            'repo_group': repo_group.get_api_data()
+        }
+        try:
+            assert_ok(id_, expected, given=response.body)
+        finally:
+            fixture.destroy_repo_group(repo_group_name)
+
+    def test_api_create_repo_group_regular_user_with_admin_perms_to_parent(
+            self, user_util):
+
+        repo_group_name = 'api-repo-group-parent'
+
+        repo_group = RepoGroupModel.cls.get_by_group_name(repo_group_name)
+        assert repo_group is None
+        # create the parent
+        fixture.create_repo_group(repo_group_name)
+
+        # user perms
+        regular_user = user_util.create_user()
+        regular_user_api_key = regular_user.api_key
+
+        usr = UserModel().get_by_username(regular_user.username)
+        usr.inherit_default_permissions = False
+        Session().add(usr)
+
+        RepoGroupModel().grant_user_permission(
+            repo_group_name, regular_user.username, 'group.admin')
+        Session().commit()
+
+        full_repo_group_name = repo_group_name + '/' + repo_group_name
+        id_, params = build_data(
+            regular_user_api_key, 'create_repo_group',
+            group_name=full_repo_group_name)
+        response = api_call(self.app, params)
+
+        repo_group = RepoGroupModel.cls.get_by_group_name(full_repo_group_name)
+        assert repo_group is not None
+        expected = {
+            'msg': 'Created new repo group `{}`'.format(full_repo_group_name),
+            'repo_group': repo_group.get_api_data()
+        }
+        try:
+            assert_ok(id_, expected, given=response.body)
+        finally:
+            fixture.destroy_repo_group(full_repo_group_name)
+            fixture.destroy_repo_group(repo_group_name)
+
+    def test_api_create_repo_group_regular_user_no_permission_to_create_to_root_level(self):
+        repo_group_name = 'api-repo-group'
+
+        id_, params = build_data(
+            self.apikey_regular, 'create_repo_group',
+            group_name=repo_group_name)
+        response = api_call(self.app, params)
+
+        expected = {
+            'repo_group':
+                u'You do not have the permission to store '
+                u'repository groups in the root location.'}
         assert_error(id_, expected, given=response.body)
-        fixture.destroy_repo_group(repo_group_name)
+
+    def test_api_create_repo_group_regular_user_no_parent_group_perms(self):
+        repo_group_name = 'api-repo-group-regular-user'
+
+        repo_group = RepoGroupModel.cls.get_by_group_name(repo_group_name)
+        assert repo_group is None
+        # create the parent
+        fixture.create_repo_group(repo_group_name)
+
+        full_repo_group_name = repo_group_name+'/'+repo_group_name
+
+        id_, params = build_data(
+            self.apikey_regular, 'create_repo_group',
+            group_name=full_repo_group_name)
+        response = api_call(self.app, params)
+
+        expected = {
+            'repo_group':
+                'Parent repository group `{}` does not exist'.format(
+                    repo_group_name)}
+        try:
+            assert_error(id_, expected, given=response.body)
+        finally:
+            fixture.destroy_repo_group(repo_group_name)
+
+    def test_api_create_repo_group_regular_user_no_permission_to_specify_owner(
+            self):
+        repo_group_name = 'api-repo-group'
+
+        id_, params = build_data(
+            self.apikey_regular, 'create_repo_group',
+            group_name=repo_group_name,
+            owner=TEST_USER_ADMIN_LOGIN,)
+        response = api_call(self.app, params)
+
+        expected = "Only RhodeCode super-admin can specify `owner` param"
+        assert_error(id_, expected, given=response.body)
 
     @mock.patch.object(RepoGroupModel, 'create', crash)
     def test_api_create_repo_group_exception_occurred(self):

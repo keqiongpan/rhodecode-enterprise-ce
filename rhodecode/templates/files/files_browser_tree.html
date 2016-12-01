@@ -27,17 +27,21 @@
           %for cnt,node in enumerate(c.file):
           <tr class="parity${cnt%2}">
             <td class="td-componentname">
-            %if node.is_submodule():
+            % if node.is_submodule():
               <span class="submodule-dir">
-                ${h.link_to_if(
-                    node.url.startswith('http://') or node.url.startswith('https://'),
-                    node.name, node.url)}
+                % if node.url.startswith('http://') or node.url.startswith('https://'):
+                  <a href="${node.url}">
+                      <i class="icon-folder browser-dir"></i>${node.name}
+                  </a>
+                % else:
+                  <i class="icon-folder browser-dir"></i>${node.name}
+                % endif
               </span>
-            %else:
+            % else:
               <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=h.safe_unicode(node.path))}" class="pjax-link">
                 <i class="${'icon-file browser-file' if node.is_file() else 'icon-folder browser-dir'}"></i>${node.name}
               </a>
-            %endif
+            % endif
             </td>
             %if node.is_file():
               <td class="td-size" data-attr-name="size">

@@ -31,13 +31,14 @@ from pylons.i18n.translation import _
 
 from rhodecode.controllers.utils import parse_path_ref, get_commit_from_ref_name
 from rhodecode.lib import helpers as h
-from rhodecode.lib import diffs
+from rhodecode.lib import diffs, codeblocks
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
 from rhodecode.lib.base import BaseRepoController, render
 from rhodecode.lib.utils import safe_str
 from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.lib.vcs.exceptions import (
-    EmptyRepositoryError, RepositoryError, RepositoryRequirementError)
+    EmptyRepositoryError, RepositoryError, RepositoryRequirementError,
+    NodeDoesNotExistError)
 from rhodecode.model.db import Repository, ChangesetStatus
 
 log = logging.getLogger(__name__)
@@ -78,7 +79,7 @@ class CompareController(BaseRepoController):
     def index(self, repo_name):
         c.compare_home = True
         c.commit_ranges = []
-        c.files = []
+        c.diffset = None
         c.limited_diff = False
         source_repo = c.rhodecode_db_repo.repo_name
         target_repo = request.GET.get('target_repo', source_repo)
@@ -239,28 +240,24 @@ class CompareController(BaseRepoController):
             commit1=source_commit, commit2=target_commit,
             path1=source_path, path=target_path)
         diff_processor = diffs.DiffProcessor(
-            txtdiff, format='gitdiff', diff_limit=diff_limit,
+            txtdiff, format='newdiff', diff_limit=diff_limit,
             file_limit=file_limit, show_full_diff=c.fulldiff)
         _parsed = diff_processor.prepare()
 
-        c.limited_diff = False
-        if isinstance(_parsed, diffs.LimitedDiffContainer):
-            c.limited_diff = True
+        def _node_getter(commit):
+            """ Returns a function that returns a node for a commit or None """
+            def get_node(fname):
+                try:
+                    return commit.get_node(fname)
+                except NodeDoesNotExistError:
+                    return None
+            return get_node
 
-        c.files = []
-        c.changes = {}
-        c.lines_added = 0
-        c.lines_deleted = 0
-        for f in _parsed:
-            st = f['stats']
-            if not st['binary']:
-                c.lines_added += st['added']
-                c.lines_deleted += st['deleted']
-            fid = h.FID('', f['filename'])
-            c.files.append([fid, f['operation'], f['filename'], f['stats'], f])
-            htmldiff = diff_processor.as_html(
-                enable_comments=False, parsed_lines=[f])
-            c.changes[fid] = [f['operation'], f['filename'], htmldiff, f]
+        c.diffset = codeblocks.DiffSet(
+            repo_name=source_repo.repo_name,
+            source_node_getter=_node_getter(source_commit),
+            target_node_getter=_node_getter(target_commit),
+        ).render_patchset(_parsed, source_ref, target_ref)
 
         c.preview_mode = merge
 

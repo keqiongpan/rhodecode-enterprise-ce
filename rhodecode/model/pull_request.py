@@ -27,9 +27,11 @@ from collections import namedtuple
 import json
 import logging
 import datetime
+import urllib
 
 from pylons.i18n.translation import _
 from pylons.i18n.translation import lazy_ugettext
+from sqlalchemy import or_
 
 from rhodecode.lib import helpers as h, hooks_utils, diffs
 from rhodecode.lib.compat import OrderedDict
@@ -39,7 +41,7 @@ from rhodecode.lib.markup_renderer import (
 from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import safe_unicode, safe_str, md5_safe
 from rhodecode.lib.vcs.backends.base import (
-    Reference, MergeResponse, MergeFailureReason)
+    Reference, MergeResponse, MergeFailureReason, UpdateFailureReason)
 from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError)
@@ -57,6 +59,12 @@ from rhodecode.model.settings import VcsSettingsModel
 
 
 log = logging.getLogger(__name__)
+
+
+# Data structure to hold the response data when updating commits during a pull
+# request update.
+UpdateResponse = namedtuple(
+    'UpdateResponse', 'executed, reason, new, old, changes')
 
 
 class PullRequestModel(BaseModel):
@@ -88,9 +96,37 @@ class PullRequestModel(BaseModel):
         MergeFailureReason.TARGET_IS_LOCKED: lazy_ugettext(
             'This pull request cannot be merged because the target repository'
             ' is locked.'),
-        MergeFailureReason.MISSING_COMMIT: lazy_ugettext(
+        MergeFailureReason._DEPRECATED_MISSING_COMMIT: lazy_ugettext(
             'This pull request cannot be merged because the target or the '
             'source reference is missing.'),
+        MergeFailureReason.MISSING_TARGET_REF: lazy_ugettext(
+            'This pull request cannot be merged because the target '
+            'reference is missing.'),
+        MergeFailureReason.MISSING_SOURCE_REF: lazy_ugettext(
+            'This pull request cannot be merged because the source '
+            'reference is missing.'),
+        MergeFailureReason.SUBREPO_MERGE_FAILED: lazy_ugettext(
+            'This pull request cannot be merged because of conflicts related '
+            'to sub repositories.'),
+    }
+
+    UPDATE_STATUS_MESSAGES = {
+        UpdateFailureReason.NONE: lazy_ugettext(
+            'Pull request update successful.'),
+        UpdateFailureReason.UNKNOWN: lazy_ugettext(
+            'Pull request update failed because of an unknown error.'),
+        UpdateFailureReason.NO_CHANGE: lazy_ugettext(
+            'No update needed because the source reference is already '
+            'up to date.'),
+        UpdateFailureReason.WRONG_REF_TPYE: lazy_ugettext(
+            'Pull request cannot be updated because the reference type is '
+            'not supported for an update.'),
+        UpdateFailureReason.MISSING_TARGET_REF: lazy_ugettext(
+            'This pull request cannot be updated because the target '
+            'reference is missing.'),
+        UpdateFailureReason.MISSING_SOURCE_REF: lazy_ugettext(
+            'This pull request cannot be updated because the source '
+            'reference is missing.'),
     }
 
     def __get_pull_request(self, pull_request):
@@ -116,6 +152,11 @@ class PullRequestModel(BaseModel):
         owner = user.user_id == pull_request.user_id
         return self.check_user_merge(pull_request, user, api) or owner
 
+    def check_user_delete(self, pull_request, user):
+        owner = user.user_id == pull_request.user_id
+        _perms = ('repository.admin')
+        return self._check_perms(_perms, pull_request, user) or owner
+
     def check_user_change_status(self, pull_request, user, api=False):
         reviewer = user.user_id in [x.user_id for x in
                                     pull_request.reviewers]
@@ -127,12 +168,16 @@ class PullRequestModel(BaseModel):
     def _prepare_get_all_query(self, repo_name, source=False, statuses=None,
                                opened_by=None, order_by=None,
                                order_dir='desc'):
-        repo = self._get_repo(repo_name)
+        repo = None
+        if repo_name:
+            repo = self._get_repo(repo_name)
+
         q = PullRequest.query()
+
         # source or target
-        if source:
+        if repo and source:
             q = q.filter(PullRequest.source_repo == repo)
-        else:
+        elif repo:
             q = q.filter(PullRequest.target_repo == repo)
 
         # closed,opened
@@ -147,7 +192,8 @@ class PullRequestModel(BaseModel):
             order_map = {
                 'name_raw': PullRequest.pull_request_id,
                 'title': PullRequest.title,
-                'updated_on_raw': PullRequest.updated_on
+                'updated_on_raw': PullRequest.updated_on,
+                'target_repo': PullRequest.target_repo_id
             }
             if order_dir == 'asc':
                 q = q.order_by(order_map[order_by].asc())
@@ -305,6 +351,59 @@ class PullRequestModel(BaseModel):
                 PullRequestReviewers.user_id == user_id).all()
         ]
 
+    def _prepare_participating_query(self, user_id=None, statuses=None,
+                                     order_by=None, order_dir='desc'):
+        q = PullRequest.query()
+        if user_id:
+            reviewers_subquery = Session().query(
+                PullRequestReviewers.pull_request_id).filter(
+                PullRequestReviewers.user_id == user_id).subquery()
+            user_filter= or_(
+                PullRequest.user_id == user_id,
+                PullRequest.pull_request_id.in_(reviewers_subquery)
+            )
+            q = PullRequest.query().filter(user_filter)
+
+        # closed,opened
+        if statuses:
+            q = q.filter(PullRequest.status.in_(statuses))
+
+        if order_by:
+            order_map = {
+                'name_raw': PullRequest.pull_request_id,
+                'title': PullRequest.title,
+                'updated_on_raw': PullRequest.updated_on,
+                'target_repo': PullRequest.target_repo_id
+            }
+            if order_dir == 'asc':
+                q = q.order_by(order_map[order_by].asc())
+            else:
+                q = q.order_by(order_map[order_by].desc())
+
+        return q
+
+    def count_im_participating_in(self, user_id=None, statuses=None):
+        q = self._prepare_participating_query(user_id, statuses=statuses)
+        return q.count()
+
+    def get_im_participating_in(
+            self, user_id=None, statuses=None, offset=0,
+            length=None, order_by=None, order_dir='desc'):
+        """
+        Get all Pull requests that i'm participating in, or i have opened
+        """
+
+        q = self._prepare_participating_query(
+            user_id, statuses=statuses, order_by=order_by,
+            order_dir=order_dir)
+
+        if length:
+            pull_requests = q.limit(length).offset(offset).all()
+        else:
+            pull_requests = q.all()
+
+        return pull_requests
+
     def get_versions(self, pull_request):
         """
         returns version of pull request sorted by ID descending
@@ -333,10 +432,18 @@ class PullRequestModel(BaseModel):
         Session().add(pull_request)
         Session().flush()
 
+        reviewer_ids = set()
         # members / reviewers
-        for user_id in set(reviewers):
+        for reviewer_object in reviewers:
+            if isinstance(reviewer_object, tuple):
+                user_id, reasons = reviewer_object
+            else:
+                user_id, reasons = reviewer_object, []
+
             user = self._get_user(user_id)
-            reviewer = PullRequestReviewers(user, pull_request)
+            reviewer_ids.add(user.user_id)
+
+            reviewer = PullRequestReviewers(user, pull_request, reasons)
             Session().add(reviewer)
 
         # Set approval status to "Under Review" for all commits which are
@@ -348,7 +455,7 @@ class PullRequestModel(BaseModel):
             pull_request=pull_request
         )
 
-        self.notify_reviewers(pull_request, reviewers)
+        self.notify_reviewers(pull_request, reviewer_ids)
         self._trigger_pull_request_hook(
             pull_request, created_by_user, 'create')
 
@@ -441,7 +548,7 @@ class PullRequestModel(BaseModel):
         return merge_state
 
     def _comment_and_close_pr(self, pull_request, user, merge_state):
-        pull_request.merge_rev = merge_state.merge_commit_id
+        pull_request.merge_rev = merge_state.merge_ref.commit_id
         pull_request.updated_on = datetime.datetime.now()
 
         ChangesetCommentsModel().create(
@@ -471,7 +578,6 @@ class PullRequestModel(BaseModel):
         and return the new pull request version and the list
         of commits processed by this update action
         """
-
         pull_request = self.__get_pull_request(pull_request)
         source_ref_type = pull_request.source_ref_parts.type
         source_ref_name = pull_request.source_ref_parts.name
@@ -481,13 +587,26 @@ class PullRequestModel(BaseModel):
             log.debug(
                 "Skipping update of pull request %s due to ref type: %s",
                 pull_request, source_ref_type)
-            return (None, None)
+            return UpdateResponse(
+                executed=False,
+                reason=UpdateFailureReason.WRONG_REF_TPYE,
+                old=pull_request, new=None, changes=None)
 
         source_repo = pull_request.source_repo.scm_instance()
-        source_commit = source_repo.get_commit(commit_id=source_ref_name)
+        try:
+            source_commit = source_repo.get_commit(commit_id=source_ref_name)
+        except CommitDoesNotExistError:
+            return UpdateResponse(
+                executed=False,
+                reason=UpdateFailureReason.MISSING_SOURCE_REF,
+                old=pull_request, new=None, changes=None)
+
         if source_ref_id == source_commit.raw_id:
             log.debug("Nothing changed in pull request %s", pull_request)
-            return (None, None)
+            return UpdateResponse(
+                executed=False,
+                reason=UpdateFailureReason.NO_CHANGE,
+                old=pull_request, new=None, changes=None)
 
         # Finally there is a need for an update
         pull_request_version = self._create_version_from_snapshot(pull_request)
@@ -498,10 +617,16 @@ class PullRequestModel(BaseModel):
         target_ref_id = pull_request.target_ref_parts.commit_id
         target_repo = pull_request.target_repo.scm_instance()
 
-        if target_ref_type in ('tag', 'branch', 'book'):
-            target_commit = target_repo.get_commit(target_ref_name)
-        else:
-            target_commit = target_repo.get_commit(target_ref_id)
+        try:
+            if target_ref_type in ('tag', 'branch', 'book'):
+                target_commit = target_repo.get_commit(target_ref_name)
+            else:
+                target_commit = target_repo.get_commit(target_ref_id)
+        except CommitDoesNotExistError:
+            return UpdateResponse(
+                executed=False,
+                reason=UpdateFailureReason.MISSING_TARGET_REF,
+                old=pull_request, new=None, changes=None)
 
         # re-compute commit ids
         old_commit_ids = set(pull_request.revisions)
@@ -570,7 +695,10 @@ class PullRequestModel(BaseModel):
         Session().commit()
         self._trigger_pull_request_hook(pull_request, pull_request.author,
                                         'update')
-        return (pull_request_version, changes)
+
+        return UpdateResponse(
+            executed=True, reason=UpdateFailureReason.NONE,
+            old=pull_request, new=pull_request_version, changes=changes)
 
     def _create_version_from_snapshot(self, pull_request):
         version = PullRequestVersion()
@@ -588,6 +716,7 @@ class PullRequestModel(BaseModel):
         version._last_merge_source_rev = pull_request._last_merge_source_rev
         version._last_merge_target_rev = pull_request._last_merge_target_rev
         version._last_merge_status = pull_request._last_merge_status
+        version.shadow_merge_ref = pull_request.shadow_merge_ref
         version.merge_rev = pull_request.merge_rev
 
         version.revisions = pull_request.revisions
@@ -711,8 +840,21 @@ class PullRequestModel(BaseModel):
         pull_request.updated_on = datetime.datetime.now()
         Session().add(pull_request)
 
-    def update_reviewers(self, pull_request, reviewers_ids):
-        reviewers_ids = set(reviewers_ids)
+    def update_reviewers(self, pull_request, reviewer_data):
+        """
+        Update the reviewers in the pull request
+
+        :param pull_request: the pr to update
+        :param reviewer_data: list of tuples [(user, ['reason1', 'reason2'])]
+        """
+
+        reviewers_reasons = {}
+        for user_id, reasons in reviewer_data:
+            if isinstance(user_id, (int, basestring)):
+                user_id = self._get_user(user_id).user_id
+            reviewers_reasons[user_id] = reasons
+
+        reviewers_ids = set(reviewers_reasons.keys())
         pull_request = self.__get_pull_request(pull_request)
         current_reviewers = PullRequestReviewers.query()\
             .filter(PullRequestReviewers.pull_request ==
@@ -728,7 +870,8 @@ class PullRequestModel(BaseModel):
         for uid in ids_to_add:
             changed = True
             _usr = self._get_user(uid)
-            reviewer = PullRequestReviewers(_usr, pull_request)
+            reasons = reviewers_reasons[uid]
+            reviewer = PullRequestReviewers(_usr, pull_request, reasons)
             Session().add(reviewer)
 
         self.notify_reviewers(pull_request, ids_to_add)
@@ -752,6 +895,18 @@ class PullRequestModel(BaseModel):
                      repo_name=safe_str(pull_request.target_repo.repo_name),
                      pull_request_id=pull_request.pull_request_id,
                      qualified=True)
+
+    def get_shadow_clone_url(self, pull_request):
+        """
+        Returns qualified url pointing to the shadow repository. If this pull
+        request is closed there is no shadow repository and ``None`` will be
+        returned.
+        """
+        if pull_request.is_closed():
+            return None
+        else:
+            pr_url = urllib.unquote(self.get_url(pull_request))
+            return safe_unicode('{pr_url}/repository'.format(pr_url=pr_url))
 
     def notify_reviewers(self, pull_request, reviewers_ids):
         # notification to reviewers
@@ -881,6 +1036,7 @@ class PullRequestModel(BaseModel):
 
         try:
             resp = self._try_merge(pull_request)
+            log.debug("Merge response: %s", resp)
             status = resp.possible, self.merge_status_message(
                 resp.failure_reason)
         except NotImplementedError:
@@ -923,8 +1079,15 @@ class PullRequestModel(BaseModel):
             "Trying out if the pull request %s can be merged.",
             pull_request.pull_request_id)
         target_vcs = pull_request.target_repo.scm_instance()
-        target_ref = self._refresh_reference(
-            pull_request.target_ref_parts, target_vcs)
+
+        # Refresh the target reference.
+        try:
+            target_ref = self._refresh_reference(
+                pull_request.target_ref_parts, target_vcs)
+        except CommitDoesNotExistError:
+            merge_state = MergeResponse(
+                False, False, None, MergeFailureReason.MISSING_TARGET_REF)
+            return merge_state
 
         target_locked = pull_request.target_repo.locked
         if target_locked and target_locked[0]:
@@ -940,7 +1103,7 @@ class PullRequestModel(BaseModel):
                 _last_merge_status == MergeFailureReason.NONE
             merge_state = MergeResponse(
                 possible, False, None, pull_request._last_merge_status)
-        log.debug("Merge response: %s", merge_state)
+
         return merge_state
 
     def _refresh_reference(self, reference, vcs_repository):
@@ -969,13 +1132,13 @@ class PullRequestModel(BaseModel):
 
         # Do not store the response if there was an unknown error.
         if merge_state.failure_reason != MergeFailureReason.UNKNOWN:
-            pull_request._last_merge_source_rev = pull_request.\
-                source_ref_parts.commit_id
+            pull_request._last_merge_source_rev = \
+                pull_request.source_ref_parts.commit_id
             pull_request._last_merge_target_rev = target_reference.commit_id
-            pull_request._last_merge_status = (
-                merge_state.failure_reason)
+            pull_request._last_merge_status = merge_state.failure_reason
+            pull_request.shadow_merge_ref = merge_state.merge_ref
             Session().add(pull_request)
-            Session().flush()
+            Session().commit()
 
         return merge_state
 

@@ -48,6 +48,7 @@ from rhodecode.events.base import RhodecodeEvent
 
 from rhodecode.events.user import (  # noqa
     UserPreCreate,
+    UserPostCreate,
     UserPreUpdate,
     UserRegistered
 )

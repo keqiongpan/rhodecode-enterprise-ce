@@ -90,28 +90,50 @@
     height: 40px;
   }
 
-  .deform-two-field-sequence .deform-seq-container .deform-seq-item label {
-      display: none;
-  }
-  .deform-two-field-sequence .deform-seq-container .deform-seq-item:first-child label {
-      display: block;
-  }
-  .deform-two-field-sequence .deform-seq-container .deform-seq-item .panel-heading {
-      display: none;
-  }
-  .deform-two-field-sequence .deform-seq-container .deform-seq-item.form-group {
-      margin: 0;
-  }
-  .deform-two-field-sequence .deform-seq-container .deform-seq-item .deform-seq-item-group .form-group {
-      width: 45%; padding: 0 2px; float: left; clear: none;
-  }
-  .deform-two-field-sequence .deform-seq-container .deform-seq-item .deform-seq-item-group > .panel {
-      padding: 0;
-      margin: 5px 0;
-      border: none;
-  }
-  .deform-two-field-sequence .deform-seq-container .deform-seq-item .deform-seq-item-group > .panel > .panel-body {
-      padding: 0;
+  .deform-full-field-sequence.control-inputs {
+     width: 100%;
   }
 
+  .deform-table-sequence {
+    .deform-seq-container {
+      .deform-seq-item {
+        margin: 0;
+        label {
+          display: none;
+        }
+        .panel-heading {
+          display: none;
+        }
+        .deform-seq-item-group > .panel {
+          padding: 0;
+          margin: 5px 0;
+          border: none;
+          &> .panel-body {
+            padding: 0;
+          }
+        }
+        &:first-child label {
+          display: block;
+        }
+      }
+    }
+  }
+  .deform-table-2-sequence {
+    .deform-seq-container {
+      .deform-seq-item {
+        .form-group {
+          width: 45% !important; padding: 0 2px; float: left; clear: none;
+        }
+      }
+    }
+  }
+  .deform-table-3-sequence {
+    .deform-seq-container {
+      .deform-seq-item {
+        .form-group {
+          width: 30% !important; padding: 0 2px; float: left; clear: none;
+        }
+      }
+    }
+  }
 }

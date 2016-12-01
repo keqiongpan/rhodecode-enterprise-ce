@@ -51,6 +51,19 @@ class UserPreCreate(RhodecodeEvent):
         self.user_data = user_data
 
 
+@implementer(IUserPreCreate)
+class UserPostCreate(RhodecodeEvent):
+    """
+    An instance of this class is emitted as an :term:`event` after a new user
+    object is created.
+    """
+    name = 'user-post-create'
+    display_name = lazy_ugettext('user post create')
+
+    def __init__(self, user_data):
+        self.user_data = user_data
+
+
 @implementer(IUserPreUpdate)
 class UserPreUpdate(RhodecodeEvent):
     """

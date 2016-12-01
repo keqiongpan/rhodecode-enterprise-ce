@@ -50,16 +50,18 @@ $(document).ready(function() {
     $.fn.dataTable.ext.search.push(
         function( settings, data, dataIndex ) {
             var query = $('#q_filter').val();
-            var username = data[1];
-            var email = data[2];
-            var first_name = data[3];
-            var last_name = data[4];
+
+            var username = data[0];
+            var email = data[1];
+            var first_name = data[2];
+            var last_name = data[3];
 
             var query_str = username + " " +
                             email + " " +
                             first_name + " " +
                             last_name;
-            if((query_str).indexOf(query) !== -1){
+
+            if ((query_str).indexOf(query) !== -1) {
                 return true;
             }
             return false;

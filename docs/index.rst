@@ -20,8 +20,10 @@ and commit files and |repos| while managing their security permissions.
 * Migration from existing databases.
 * |RCM| SDK.
 * Built-in analytics
+* Built in integrations including: Slack, Jenkins, Webhooks, Jira, Redmine, Hipchat
 * Pluggable authentication system.
-* Support for |LDAP|, Crowd, CAS, PAM.
+* Support for AD, |LDAP|, Crowd, CAS, PAM.
+* Support for external authentication via Oauth Google, Github, Bitbucket, Twitter.
 * Debug modes of operation.
 * Private and public gists.
 * Gists with limited lifetimes and within instance only sharing.

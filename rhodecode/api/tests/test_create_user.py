@@ -28,6 +28,7 @@ from rhodecode.tests import (
 from rhodecode.api.tests.utils import (
     build_data, api_call, assert_ok, assert_error, jsonify, crash)
 from rhodecode.tests.fixture import Fixture
+from rhodecode.model.db import RepoGroup
 
 
 # TODO: mikhail: remove fixture from here
@@ -144,6 +145,36 @@ class TestCreateUser(object):
             assert_ok(id_, expected, given=response.body)
         finally:
             fixture.destroy_user(usr.user_id)
+
+    def test_api_create_user_with_personal_repo_group(self):
+        username = 'test_new_api_user_personal_group'
+        email = username + "@foo.com"
+
+        id_, params = build_data(
+            self.apikey, 'create_user',
+            username=username,
+            email=email, extern_name='rhodecode',
+            create_personal_repo_group=True)
+        response = api_call(self.app, params)
+
+        usr = UserModel().get_by_username(username)
+        ret = {
+            'msg': 'created new user `%s`' % (username,),
+            'user': jsonify(usr.get_api_data(include_secrets=True)),
+        }
+
+        personal_group = RepoGroup.get_by_group_name(username)
+        assert personal_group
+        assert personal_group.personal == True
+        assert personal_group.user.username == username
+
+        try:
+            expected = ret
+            assert_ok(id_, expected, given=response.body)
+        finally:
+            fixture.destroy_repo_group(username)
+            fixture.destroy_user(usr.user_id)
+
 
     @mock.patch.object(UserModel, 'create_or_update', crash)
     def test_api_create_user_when_exception_happened(self):

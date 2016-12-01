@@ -28,10 +28,9 @@ import logging
 
 import formencode
 import peppercorn
-from formencode import htmlfill
 
 from pylons import request, response, tmpl_context as c, url
-from pylons.controllers.util import abort, redirect
+from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 from webob.exc import HTTPNotFound, HTTPForbidden
 from sqlalchemy.sql.expression import or_
@@ -45,7 +44,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.base import BaseController, render
 from rhodecode.lib.auth import LoginRequired, NotAnonymous
 from rhodecode.lib.utils import jsonify
-from rhodecode.lib.utils2 import safe_str, safe_int, time_to_datetime
+from rhodecode.lib.utils2 import time_to_datetime
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs.exceptions import VCSError, NodeNotChangedError
 from rhodecode.model import validation_schema

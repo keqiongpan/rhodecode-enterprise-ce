@@ -76,8 +76,8 @@ class TestINI(object):
 
         for data in self.ini_params:
             section, ini_params = data.items()[0]
-            key, val = ini_params.items()[0]
-            config[section][key] = val
+            for key, val in ini_params.items():
+                config[section][key] = val
         with tempfile.NamedTemporaryFile(
                 prefix=self.new_path_prefix, suffix='.ini', dir=self._dir,
                 delete=False) as new_ini_file:

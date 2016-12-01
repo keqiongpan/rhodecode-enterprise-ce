@@ -24,7 +24,7 @@ Checking the chunked data transfer via HTTP
 
 import os
 import time
-import subprocess
+import subprocess32
 
 import pytest
 import requests
@@ -53,7 +53,7 @@ def echo_app_chunking(request, available_port_factory):
         'rhodecode.tests.lib.middleware.utils.test_scm_app_http_chunking'
         ':create_echo_app')
     command = command.format(port=port)
-    proc = subprocess.Popen(command.split(' '), bufsize=0)
+    proc = subprocess32.Popen(command.split(' '), bufsize=0)
     echo_app_url = 'http://localhost:' + str(port)
 
     @request.addfinalizer
@@ -78,7 +78,7 @@ def scm_app(request, available_port_factory, echo_app_chunking):
     command = command.format(port=port)
     env = os.environ.copy()
     env["RC_ECHO_URL"] = echo_app_chunking
-    proc = subprocess.Popen(command.split(' '), bufsize=0, env=env)
+    proc = subprocess32.Popen(command.split(' '), bufsize=0, env=env)
     scm_app_url = 'http://localhost:' + str(port)
     wait_for_url(scm_app_url)
 
@@ -133,4 +133,4 @@ def create_scm_app():
     """
     echo_app_url = os.environ["RC_ECHO_URL"]
     return scm_app_http.VcsHttpProxy(
-        echo_app_url, 'stub_path', 'stub_name', None, 'stub_backend')
+        echo_app_url, 'stub_path', 'stub_name', None)

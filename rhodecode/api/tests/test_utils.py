@@ -249,7 +249,7 @@ class TestRepoAccess(object):
         fake_repo = Mock()
         with self.repo_perm_patch as rmock:
             rmock.return_value = repo_mock
-            assert utils.has_repo_permissions(
+            assert utils.validate_repo_permissions(
                 'fake_user', 'fake_repo_id', fake_repo,
                 ['perm1', 'perm2'])
             rmock.assert_called_once_with(*['perm1', 'perm2'])
@@ -263,6 +263,6 @@ class TestRepoAccess(object):
         with self.repo_perm_patch as rmock:
             rmock.return_value = repo_mock
             with pytest.raises(JSONRPCError) as excinfo:
-                utils.has_repo_permissions(
+                utils.validate_repo_permissions(
                     'fake_user', 'fake_repo_id', fake_repo, 'perms')
                 assert 'fake_repo_id' in excinfo

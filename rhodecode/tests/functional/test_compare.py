@@ -20,6 +20,7 @@
 
 import mock
 import pytest
+import lxml.html
 
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
@@ -609,9 +610,12 @@ class ComparePage(AssertResponse):
     """
 
     def contains_file_links_and_anchors(self, files):
+        doc = lxml.html.fromstring(self.response.body)
         for filename, file_id in files:
-            self.contains_one_link(filename, '#' + file_id)
             self.contains_one_anchor(file_id)
+            diffblock = doc.cssselect('[data-f-path="%s"]' % filename)
+            assert len(diffblock) == 1
+            assert len(diffblock[0].cssselect('a[href="#%s"]' % file_id)) == 1
 
     def contains_change_summary(self, files_changed, inserted, deleted):
         template = (

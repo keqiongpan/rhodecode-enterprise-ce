@@ -30,6 +30,7 @@ from rhodecode.model.db import (
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
+from rhodecode.model.repo import RepoModel
 from rhodecode.tests import assert_session_flash, url, TEST_USER_ADMIN_LOGIN
 from rhodecode.tests.utils import AssertResponse
 
@@ -187,6 +188,8 @@ class TestPullrequestsController:
             category='error')
 
     def test_update_invalid_source_reference(self, pr_util, csrf_token):
+        from rhodecode.lib.vcs.backends.base import UpdateFailureReason
+
         pull_request = pr_util.create_pull_request()
         pull_request.source_ref = 'branch:invalid-branch:invalid-commit-id'
         Session().add(pull_request)
@@ -201,9 +204,31 @@ class TestPullrequestsController:
             params={'update_commits': 'true', '_method': 'put',
                     'csrf_token': csrf_token})
 
-        assert_session_flash(
-            response, u'Update failed due to missing commits.',
-            category='error')
+        expected_msg = PullRequestModel.UPDATE_STATUS_MESSAGES[
+            UpdateFailureReason.MISSING_SOURCE_REF]
+        assert_session_flash(response, expected_msg, category='error')
+
+    def test_missing_target_reference(self, pr_util, csrf_token):
+        from rhodecode.lib.vcs.backends.base import MergeFailureReason
+        pull_request = pr_util.create_pull_request(
+            approved=True, mergeable=True)
+        pull_request.target_ref = 'branch:invalid-branch:invalid-commit-id'
+        Session().add(pull_request)
+        Session().commit()
+
+        pull_request_id = pull_request.pull_request_id
+        pull_request_url = url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.repo_name,
+            pull_request_id=str(pull_request_id))
+
+        response = self.app.get(pull_request_url)
+
+        assertr = AssertResponse(response)
+        expected_msg = PullRequestModel.MERGE_STATUS_MESSAGES[
+            MergeFailureReason.MISSING_TARGET_REF]
+        assertr.element_contains(
+            'span[data-role="merge-message"]', str(expected_msg))
 
     def test_comment_and_close_pull_request(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request(approved=True)
@@ -256,8 +281,8 @@ class TestPullrequestsController:
     def test_comment_force_close_pull_request(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
-        reviewers_ids = [1, 2]
-        PullRequestModel().update_reviewers(pull_request_id, reviewers_ids)
+        reviewers_data = [(1, ['reason']), (2, ['reason2'])]
+        PullRequestModel().update_reviewers(pull_request_id, reviewers_data)
         author = pull_request.user_id
         repo = pull_request.target_repo.repo_id
         self.app.post(
@@ -288,28 +313,40 @@ class TestPullrequestsController:
         commits = [
             {'message': 'ancestor'},
             {'message': 'change'},
+            {'message': 'change2'},
         ]
         commit_ids = backend.create_master_repo(commits)
         target = backend.create_repo(heads=['ancestor'])
-        source = backend.create_repo(heads=['change'])
+        source = backend.create_repo(heads=['change2'])
 
         response = self.app.post(
             url(
                 controller='pullrequests',
                 action='create',
-                repo_name=source.repo_name),
-            params={
-                'source_repo': source.repo_name,
-                'source_ref': 'branch:default:' + commit_ids['change'],
-                'target_repo': target.repo_name,
-                'target_ref': 'branch:default:' + commit_ids['ancestor'],
-                'pullrequest_desc': 'Description',
-                'pullrequest_title': 'Title',
-                'review_members': '1',
-                'revisions': commit_ids['change'],
-                'user': '',
-                'csrf_token': csrf_token,
-            },
+                repo_name=source.repo_name
+            ),
+            [
+                ('source_repo', source.repo_name),
+                ('source_ref', 'branch:default:' + commit_ids['change2']),
+                ('target_repo', target.repo_name),
+                ('target_ref',  'branch:default:' + commit_ids['ancestor']),
+                ('pullrequest_desc', 'Description'),
+                ('pullrequest_title', 'Title'),
+                ('__start__', 'review_members:sequence'),
+                    ('__start__', 'reviewer:mapping'),
+                        ('user_id', '1'),
+                        ('__start__', 'reasons:sequence'),
+                            ('reason', 'Some reason'),
+                        ('__end__', 'reasons:sequence'),
+                    ('__end__', 'reviewer:mapping'),
+                ('__end__', 'review_members:sequence'),
+                ('__start__', 'revisions:sequence'),
+                    ('revisions', commit_ids['change']),
+                    ('revisions', commit_ids['change2']),
+                ('__end__', 'revisions:sequence'),
+                ('user', ''),
+                ('csrf_token', csrf_token),
+            ],
             status=302)
 
         location = response.headers['Location']
@@ -317,8 +354,8 @@ class TestPullrequestsController:
         pull_request = PullRequest.get(pull_request_id)
 
         # check that we have now both revisions
-        assert pull_request.revisions == [commit_ids['change']]
-        assert pull_request.source_ref == 'branch:default:' + commit_ids['change']
+        assert pull_request.revisions == [commit_ids['change2'], commit_ids['change']]
+        assert pull_request.source_ref == 'branch:default:' + commit_ids['change2']
         expected_target_ref = 'branch:default:' + commit_ids['ancestor']
         assert pull_request.target_ref == expected_target_ref
 
@@ -344,19 +381,29 @@ class TestPullrequestsController:
             url(
                 controller='pullrequests',
                 action='create',
-                repo_name=source.repo_name),
-            params={
-                'source_repo': source.repo_name,
-                'source_ref': 'branch:default:' + commit_ids['change'],
-                'target_repo': target.repo_name,
-                'target_ref': 'branch:default:' + commit_ids['ancestor-child'],
-                'pullrequest_desc': 'Description',
-                'pullrequest_title': 'Title',
-                'review_members': '2',
-                'revisions': commit_ids['change'],
-                'user': '',
-                'csrf_token': csrf_token,
-            },
+                repo_name=source.repo_name
+            ),
+            [
+                ('source_repo', source.repo_name),
+                ('source_ref', 'branch:default:' + commit_ids['change']),
+                ('target_repo', target.repo_name),
+                ('target_ref',  'branch:default:' + commit_ids['ancestor-child']),
+                ('pullrequest_desc', 'Description'),
+                ('pullrequest_title', 'Title'),
+                ('__start__', 'review_members:sequence'),
+                    ('__start__', 'reviewer:mapping'),
+                        ('user_id', '2'),
+                        ('__start__', 'reasons:sequence'),
+                            ('reason', 'Some reason'),
+                        ('__end__', 'reasons:sequence'),
+                    ('__end__', 'reviewer:mapping'),
+                ('__end__', 'review_members:sequence'),
+                ('__start__', 'revisions:sequence'),
+                    ('revisions', commit_ids['change']),
+                ('__end__', 'revisions:sequence'),
+                ('user', ''),
+                ('csrf_token', csrf_token),
+            ],
             status=302)
 
         location = response.headers['Location']
@@ -373,7 +420,8 @@ class TestPullrequestsController:
         assert len(notifications.all()) == 1
 
         # Change reviewers and check that a notification was made
-        PullRequestModel().update_reviewers(pull_request.pull_request_id, [1])
+        PullRequestModel().update_reviewers(
+            pull_request.pull_request_id, [(1, [])])
         assert len(notifications.all()) == 2
 
     def test_create_pull_request_stores_ancestor_commit_id(self, backend,
@@ -397,19 +445,29 @@ class TestPullrequestsController:
             url(
                 controller='pullrequests',
                 action='create',
-                repo_name=source.repo_name),
-            params={
-                'source_repo': source.repo_name,
-                'source_ref': 'branch:default:' + commit_ids['change'],
-                'target_repo': target.repo_name,
-                'target_ref': 'branch:default:' + commit_ids['ancestor-child'],
-                'pullrequest_desc': 'Description',
-                'pullrequest_title': 'Title',
-                'review_members': '1',
-                'revisions': commit_ids['change'],
-                'user': '',
-                'csrf_token': csrf_token,
-            },
+                repo_name=source.repo_name
+            ),
+            [
+                ('source_repo', source.repo_name),
+                ('source_ref', 'branch:default:' + commit_ids['change']),
+                ('target_repo', target.repo_name),
+                ('target_ref',  'branch:default:' + commit_ids['ancestor-child']),
+                ('pullrequest_desc', 'Description'),
+                ('pullrequest_title', 'Title'),
+                ('__start__', 'review_members:sequence'),
+                    ('__start__', 'reviewer:mapping'),
+                        ('user_id', '1'),
+                        ('__start__', 'reasons:sequence'),
+                            ('reason', 'Some reason'),
+                        ('__end__', 'reasons:sequence'),
+                    ('__end__', 'reviewer:mapping'),
+                ('__end__', 'review_members:sequence'),
+                ('__start__', 'revisions:sequence'),
+                    ('revisions', commit_ids['change']),
+                ('__end__', 'revisions:sequence'),
+                ('user', ''),
+                ('csrf_token', csrf_token),
+            ],
             status=302)
 
         location = response.headers['Location']
@@ -878,6 +936,97 @@ class TestPullrequestsController:
             repo_name=pull_request.target_repo.repo_name))
         response.mustcontain(
             "&lt;script&gt;alert(&#39;Hi!&#39;)&lt;/script&gt;")
+
+    @pytest.mark.parametrize('mergeable', [True, False])
+    def test_shadow_repository_link(
+            self, mergeable, pr_util, http_host_stub):
+        """
+        Check that the pull request summary page displays a link to the shadow
+        repository if the pull request is mergeable. If it is not mergeable
+        the link should not be displayed.
+        """
+        pull_request = pr_util.create_pull_request(
+            mergeable=mergeable, enable_notifications=False)
+        target_repo = pull_request.target_repo.scm_instance()
+        pr_id = pull_request.pull_request_id
+        shadow_url = '{host}/{repo}/pull-request/{pr_id}/repository'.format(
+            host=http_host_stub, repo=target_repo.name, pr_id=pr_id)
+
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=target_repo.name,
+            pull_request_id=str(pr_id)))
+
+        assertr = AssertResponse(response)
+        if mergeable:
+            assertr.element_value_contains(
+                'div.pr-mergeinfo input', shadow_url)
+            assertr.element_value_contains(
+                'div.pr-mergeinfo input', 'pr-merge')
+        else:
+            assertr.no_element_exists('div.pr-mergeinfo')
+
+
+@pytest.mark.usefixtures('app')
+@pytest.mark.backends("git", "hg")
+class TestPullrequestsControllerDelete(object):
+    def test_pull_request_delete_button_permissions_admin(
+            self, autologin_user, user_admin, pr_util):
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=str(pull_request.pull_request_id)))
+
+        response.mustcontain('id="delete_pullrequest"')
+        response.mustcontain('Confirm to delete this pull request')
+
+    def test_pull_request_delete_button_permissions_owner(
+            self, autologin_regular_user, user_regular, pr_util):
+        pull_request = pr_util.create_pull_request(
+            author=user_regular.username, enable_notifications=False)
+
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=str(pull_request.pull_request_id)))
+
+        response.mustcontain('id="delete_pullrequest"')
+        response.mustcontain('Confirm to delete this pull request')
+
+    def test_pull_request_delete_button_permissions_forbidden(
+            self, autologin_regular_user, user_regular, user_admin, pr_util):
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=str(pull_request.pull_request_id)))
+        response.mustcontain(no=['id="delete_pullrequest"'])
+        response.mustcontain(no=['Confirm to delete this pull request'])
+
+    def test_pull_request_delete_button_permissions_can_update_cannot_delete(
+            self, autologin_regular_user, user_regular, user_admin, pr_util,
+            user_util):
+
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+
+        user_util.grant_user_permission_to_repo(
+            pull_request.target_repo, user_regular,
+            'repository.write')
+
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=str(pull_request.pull_request_id)))
+
+        response.mustcontain('id="open_edit_pullrequest"')
+        response.mustcontain('id="delete_pullrequest"')
+        response.mustcontain(no=['Confirm to delete this pull request'])
 
 
 def assert_pull_request_status(pull_request, expected_status):

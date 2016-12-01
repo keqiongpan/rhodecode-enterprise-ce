@@ -22,6 +22,7 @@
 pull requests controller for rhodecode for initializing pull requests
 """
 
+import peppercorn
 import formencode
 import logging
 
@@ -29,22 +30,26 @@ from webob.exc import HTTPNotFound, HTTPForbidden, HTTPBadRequest
 from pylons import request, tmpl_context as c, url
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
+from pyramid.threadlocal import get_current_registry
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 
 from rhodecode import events
-from rhodecode.lib import auth, diffs, helpers as h
+from rhodecode.lib import auth, diffs, helpers as h, codeblocks
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.base import (
     BaseRepoController, render, vcs_operation_context)
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous,
     HasAcceptedRepoType, XHRRequired)
+from rhodecode.lib.channelstream import channelstream_request
+from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_int, safe_str, str2bool, safe_unicode
-from rhodecode.lib.vcs.backends.base import EmptyCommit
+from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
 from rhodecode.lib.vcs.exceptions import (
-    EmptyRepositoryError, CommitDoesNotExistError, RepositoryRequirementError)
+    EmptyRepositoryError, CommitDoesNotExistError, RepositoryRequirementError,
+    NodeDoesNotExistError)
 from rhodecode.lib.diffs import LimitedDiffContainer
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
@@ -61,7 +66,7 @@ class PullrequestsController(BaseRepoController):
     def __before__(self):
         super(PullrequestsController, self).__before__()
 
-    def _load_compare_data(self, pull_request, enable_comments=True):
+    def _load_compare_data(self, pull_request, inline_comments, enable_comments=True):
         """
         Load context data needed for generating compare diff
 
@@ -114,6 +119,7 @@ class PullrequestsController(BaseRepoController):
         except RepositoryRequirementError:
             c.missing_requirements = True
 
+        c.changes = {}
         c.missing_commits = False
         if (c.missing_requirements or
                 isinstance(source_commit, EmptyCommit) or
@@ -123,11 +129,31 @@ class PullrequestsController(BaseRepoController):
         else:
             vcs_diff = PullRequestModel().get_diff(pull_request)
             diff_processor = diffs.DiffProcessor(
-                vcs_diff, format='gitdiff', diff_limit=diff_limit,
+                vcs_diff, format='newdiff', diff_limit=diff_limit,
                 file_limit=file_limit, show_full_diff=c.fulldiff)
             _parsed = diff_processor.prepare()
 
-        c.limited_diff = isinstance(_parsed, LimitedDiffContainer)
+            commit_changes = OrderedDict()
+            _parsed = diff_processor.prepare()
+            c.limited_diff = isinstance(_parsed, diffs.LimitedDiffContainer)
+
+            _parsed = diff_processor.prepare()
+
+            def _node_getter(commit):
+                def get_node(fname):
+                    try:
+                        return commit.get_node(fname)
+                    except NodeDoesNotExistError:
+                        return None
+                return get_node
+
+            c.diffset = codeblocks.DiffSet(
+                repo_name=c.repo_name,
+                source_node_getter=_node_getter(target_commit),
+                target_node_getter=_node_getter(source_commit),
+                comments=inline_comments
+            ).render_patchset(_parsed, target_commit.raw_id, source_commit.raw_id)
+
 
         c.files = []
         c.changes = {}
@@ -136,17 +162,17 @@ class PullrequestsController(BaseRepoController):
         c.included_files = []
         c.deleted_files = []
 
-        for f in _parsed:
-            st = f['stats']
-            c.lines_added += st['added']
-            c.lines_deleted += st['deleted']
+        # for f in _parsed:
+        #     st = f['stats']
+        #     c.lines_added += st['added']
+        #     c.lines_deleted += st['deleted']
 
-            fid = h.FID('', f['filename'])
-            c.files.append([fid, f['operation'], f['filename'], f['stats']])
-            c.included_files.append(f['filename'])
-            html_diff = diff_processor.as_html(enable_comments=enable_comments,
-                                               parsed_lines=[f])
-            c.changes[fid] = [f['operation'], f['filename'], html_diff, f]
+        #     fid = h.FID('', f['filename'])
+        #     c.files.append([fid, f['operation'], f['filename'], f['stats']])
+        #     c.included_files.append(f['filename'])
+        #     html_diff = diff_processor.as_html(enable_comments=enable_comments,
+        #                                        parsed_lines=[f])
+        #     c.changes[fid] = [f['operation'], f['filename'], html_diff, f]
 
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
@@ -295,10 +321,12 @@ class PullrequestsController(BaseRepoController):
             redirect(url('pullrequest_home', repo_name=source_repo.repo_name))
 
         default_target_repo = source_repo
-        if (source_repo.parent and
-                not source_repo.parent.scm_instance().is_empty()):
-            # change default if we have a parent repo
-            default_target_repo = source_repo.parent
+
+        if source_repo.parent:
+            parent_vcs_obj = source_repo.parent.scm_instance()
+            if parent_vcs_obj and not parent_vcs_obj.is_empty():
+                # change default if we have a parent repo
+                default_target_repo = source_repo.parent
 
         target_repo_data = PullRequestModel().generate_repo_data(
             default_target_repo)
@@ -360,7 +388,8 @@ class PullrequestsController(BaseRepoController):
         add_parent = False
         if repo.parent:
             if filter_query in repo.parent.repo_name:
-                if not repo.parent.scm_instance().is_empty():
+                parent_vcs_obj = repo.parent.scm_instance()
+                if parent_vcs_obj and not parent_vcs_obj.is_empty():
                     add_parent = True
 
         limit = 20 - 1 if add_parent else 20
@@ -397,8 +426,10 @@ class PullrequestsController(BaseRepoController):
         if not repo:
             raise HTTPNotFound
 
+        controls = peppercorn.parse(request.POST.items())
+
         try:
-            _form = PullRequestForm(repo.repo_id)().to_python(request.POST)
+            _form = PullRequestForm(repo.repo_id)().to_python(controls)
         except formencode.Invalid as errors:
             if errors.error_dict.get('revisions'):
                 msg = 'Revisions: %s' % errors.error_dict['revisions']
@@ -417,7 +448,8 @@ class PullrequestsController(BaseRepoController):
         target_repo = _form['target_repo']
         target_ref = _form['target_ref']
         commit_ids = _form['revisions'][::-1]
-        reviewers = _form['review_members']
+        reviewers = [
+            (r['user_id'], r['reasons']) for r in _form['review_members']]
 
         # find the ancestor for this pr
         source_db_repo = Repository.get_by_repo_name(_form['source_repo'])
@@ -476,8 +508,11 @@ class PullrequestsController(BaseRepoController):
         allowed_to_update = PullRequestModel().check_user_update(
             pull_request, c.rhodecode_user)
         if allowed_to_update:
-            if 'reviewers_ids' in request.POST:
-                self._update_reviewers(pull_request_id)
+            controls = peppercorn.parse(request.POST.items())
+
+            if 'review_members' in controls:
+                self._update_reviewers(
+                    pull_request_id, controls['review_members'])
             elif str2bool(request.POST.get('update_commits', 'false')):
                 self._update_commits(pull_request)
             elif str2bool(request.POST.get('close_pull_request', 'false')):
@@ -506,32 +541,51 @@ class PullrequestsController(BaseRepoController):
         return
 
     def _update_commits(self, pull_request):
-        try:
-            if PullRequestModel().has_valid_update_type(pull_request):
-                updated_version, changes = PullRequestModel().update_commits(
-                    pull_request)
-                if updated_version:
-                    msg = _(
-                        u'Pull request updated to "{source_commit_id}" with '
-                        u'{count_added} added, {count_removed} removed '
-                        u'commits.'
-                    ).format(
-                        source_commit_id=pull_request.source_ref_parts.commit_id,
-                        count_added=len(changes.added),
-                        count_removed=len(changes.removed))
-                    h.flash(msg, category='success')
-                else:
-                    h.flash(_("Nothing changed in pull request."),
-                            category='warning')
-            else:
-                msg = _(
-                    u"Skipping update of pull request due to reference "
-                    u"type: {reference_type}"
-                ).format(reference_type=pull_request.source_ref_parts.type)
-                h.flash(msg, category='warning')
-        except CommitDoesNotExistError:
-            h.flash(
-                _(u'Update failed due to missing commits.'), category='error')
+        resp = PullRequestModel().update_commits(pull_request)
+
+        if resp.executed:
+            msg = _(
+                u'Pull request updated to "{source_commit_id}" with '
+                u'{count_added} added, {count_removed} removed commits.')
+            msg = msg.format(
+                source_commit_id=pull_request.source_ref_parts.commit_id,
+                count_added=len(resp.changes.added),
+                count_removed=len(resp.changes.removed))
+            h.flash(msg, category='success')
+
+            registry = get_current_registry()
+            rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
+            channelstream_config = rhodecode_plugins.get('channelstream', {})
+            if channelstream_config.get('enabled'):
+                message = msg + (
+                    ' - <a onclick="window.location.reload()">'
+                    '<strong>{}</strong></a>'.format(_('Reload page')))
+                channel = '/repo${}$/pr/{}'.format(
+                    pull_request.target_repo.repo_name,
+                    pull_request.pull_request_id
+                )
+                payload = {
+                    'type': 'message',
+                    'user': 'system',
+                    'exclude_users': [request.user.username],
+                    'channel': channel,
+                    'message': {
+                        'message': message,
+                        'level': 'success',
+                        'topic': '/notifications'
+                    }
+                }
+                channelstream_request(
+                    channelstream_config, [payload], '/message',
+                    raise_exc=False)
+        else:
+            msg = PullRequestModel.UPDATE_STATUS_MESSAGES[resp.reason]
+            warning_reasons = [
+                UpdateFailureReason.NO_CHANGE,
+                UpdateFailureReason.WRONG_REF_TPYE,
+            ]
+            category = 'warning' if resp.reason in warning_reasons else 'error'
+            h.flash(msg, category=category)
 
     @auth.CSRFRequired()
     @LoginRequired()
@@ -601,11 +655,10 @@ class PullrequestsController(BaseRepoController):
                 merge_resp.failure_reason)
             h.flash(msg, category='error')
 
-    def _update_reviewers(self, pull_request_id):
-        reviewers_ids = map(int, filter(
-            lambda v: v not in [None, ''],
-            request.POST.get('reviewers_ids', '').split(',')))
-        PullRequestModel().update_reviewers(pull_request_id, reviewers_ids)
+    def _update_reviewers(self, pull_request_id, review_members):
+        reviewers = [
+            (int(r['user_id']), r['reasons']) for r in review_members]
+        PullRequestModel().update_reviewers(pull_request_id, reviewers)
         Session().commit()
 
     def _reject_close(self, pull_request):
@@ -655,6 +708,10 @@ class PullrequestsController(BaseRepoController):
             c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
         c.allowed_to_merge = PullRequestModel().check_user_merge(
             c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
+        c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
+            c.pull_request)
+        c.allowed_to_delete = PullRequestModel().check_user_delete(
+            c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
 
         cc_model = ChangesetCommentsModel()
 
@@ -669,23 +726,13 @@ class PullrequestsController(BaseRepoController):
             c.pr_merge_status = False
         # load compare data into template context
         enable_comments = not c.pull_request.is_closed()
-        self._load_compare_data(c.pull_request, enable_comments=enable_comments)
 
-        # this is a hack to properly display links, when creating PR, the
-        # compare view and others uses different notation, and
-        # compare_commits.html renders links based on the target_repo.
-        # We need to swap that here to generate it properly on the html side
-        c.target_repo = c.source_repo
 
         # inline comments
-        c.inline_cnt = 0
         c.inline_comments = cc_model.get_inline_comments(
             c.rhodecode_db_repo.repo_id,
-            pull_request=pull_request_id).items()
-        # count inline comments
-        for __, lines in c.inline_comments:
-            for comments in lines.values():
-                c.inline_cnt += len(comments)
+            pull_request=pull_request_id)
+        c.inline_cnt = len(c.inline_comments)
 
         # outdated comments
         c.outdated_cnt = 0
@@ -701,6 +748,15 @@ class PullrequestsController(BaseRepoController):
                     c.deleted_files.append(file_name)
         else:
             c.outdated_comments = {}
+
+        self._load_compare_data(
+            c.pull_request, c.inline_comments, enable_comments=enable_comments)
+
+        # this is a hack to properly display links, when creating PR, the
+        # compare view and others uses different notation, and
+        # compare_commits.html renders links based on the target_repo.
+        # We need to swap that here to generate it properly on the html side
+        c.target_repo = c.source_repo
 
         # comments
         c.comments = cc_model.get_comments(c.rhodecode_db_repo.repo_id,

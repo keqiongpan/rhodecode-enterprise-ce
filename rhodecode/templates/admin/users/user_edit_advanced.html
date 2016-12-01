@@ -61,7 +61,11 @@
         %if c.personal_repo_group:
             <div class="panel-body-title-text">${_('Users personal repository group')} : ${h.link_to(c.personal_repo_group.group_name, url('repo_group_home', group_name=c.personal_repo_group.group_name))}</div>
         %else:
-            <div class="panel-body-title-text">${_('This user currently does not have a personal repository group')}</div>
+            <div class="panel-body-title-text">
+                ${_('This user currently does not have a personal repository group')}
+                <br/>
+                ${_('New group will be created at: `/%(path)s`') % {'path': c.personal_repo_group_name}}
+            </div>
         %endif
             <button class="btn btn-default" type="submit" ${'disabled="disabled"' if c.personal_repo_group else ''}>
                 <i class="icon-folder-close"></i>

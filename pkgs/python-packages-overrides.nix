@@ -15,19 +15,6 @@ let
     };
   };
 
-  # johbo: Interim bridge which allows us to build with the upcoming
-  # nixos.16.09 branch (unstable at the moment of writing this note) and the
-  # current stable nixos-16.03.
-  backwardsCompatibleFetchgit = { ... }@args:
-    let
-      origSources = pkgs.fetchgit args;
-    in
-    pkgs.lib.overrideDerivation origSources (oldAttrs: {
-      NIX_PREFETCH_GIT_CHECKOUT_HOOK = ''
-        find $out -name '.git*' -print0 | xargs -0 rm -rf
-      '';
-    });
-
 in
 
 self: super: {
@@ -77,6 +64,9 @@ self: super: {
   });
 
   lxml = super.lxml.override (attrs: {
+    # johbo: On 16.09 we need this to compile on darwin, otherwise compilation
+    # fails on Darwin.
+    hardeningDisable = if pkgs.stdenv.isDarwin then [ "format" ] else null;
     buildInputs = with self; [
       pkgs.libxml2
       pkgs.libxslt
@@ -110,7 +100,7 @@ self: super: {
   });
 
   py-gfm = super.py-gfm.override  {
-    src = backwardsCompatibleFetchgit {
+    src = pkgs.fetchgit {
       url = "https://code.rhodecode.com/upstream/py-gfm";
       rev = "0d66a19bc16e3d49de273c0f797d4e4781e8c0f2";
       sha256 = "0ryp74jyihd3ckszq31bml5jr3bciimhfp7va7kw6ld92930ksv3";
@@ -134,7 +124,7 @@ self: super: {
 
   Pylons = super.Pylons.override (attrs: {
     name = "Pylons-1.0.1-patch1";
-    src = backwardsCompatibleFetchgit {
+    src = pkgs.fetchgit {
       url = "https://code.rhodecode.com/upstream/pylons";
       rev = "707354ee4261b9c10450404fc9852ccea4fd667d";
       sha256 = "b2763274c2780523a335f83a1df65be22ebe4ff413a7bc9e9288d23c1f62032e";
@@ -190,7 +180,8 @@ self: super: {
       pkgs.openldap
       pkgs.openssl
     ];
-    NIX_CFLAGS_COMPILE = "-I${pkgs.cyrus_sasl}/include/sasl";
+    # TODO: johbo: Remove the "or" once we drop 16.03 support.
+    NIX_CFLAGS_COMPILE = "-I${pkgs.cyrus_sasl.dev or pkgs.cyrus_sasl}/include/sasl";
   });
 
   python-pam = super.python-pam.override (attrs:

@@ -31,9 +31,9 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.settings import asbool, aslist
 from pyramid.wsgi import wsgiapp
-from pyramid.httpexceptions import HTTPError, HTTPInternalServerError, HTTPFound
+from pyramid.httpexceptions import (
+    HTTPError, HTTPInternalServerError, HTTPFound)
 from pyramid.events import ApplicationCreated
-import pyramid.httpexceptions as httpexceptions
 from pyramid.renderers import render_to_response
 from routes.middleware import RoutesMiddleware
 import routes.util
@@ -44,10 +44,10 @@ from rhodecode.config import patches
 from rhodecode.config.routing import STATIC_FILE_PREFIX
 from rhodecode.config.environment import (
     load_environment, load_pyramid_environment)
-from rhodecode.lib.exceptions import VCSServerUnavailable
-from rhodecode.lib.vcs.exceptions import VCSCommunicationError
 from rhodecode.lib.middleware import csrf
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
+from rhodecode.lib.middleware.error_handling import (
+    PylonsErrorHandlingMiddleware)
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
@@ -186,53 +186,27 @@ def make_not_found_view(config):
     pylons_app, appenlight_client = wrap_in_appenlight_if_enabled(
         pylons_app, settings)
 
-    # The VCSMiddleware shall operate like a fallback if pyramid doesn't find
-    # a view to handle the request. Therefore we wrap it around the pylons app.
+    # The pylons app is executed inside of the pyramid 404 exception handler.
+    # Exceptions which are raised inside of it are not handled by pyramid
+    # again. Therefore we add a middleware that invokes the error handler in
+    # case of an exception or error response. This way we return proper error
+    # HTML pages in case of an error.
+    reraise = (settings.get('debugtoolbar.enabled', False) or
+               rhodecode.disable_error_handler)
+    pylons_app = PylonsErrorHandlingMiddleware(
+        pylons_app, error_handler, reraise)
+
+    # The VCSMiddleware shall operate like a fallback if pyramid doesn't find a
+    # view to handle the request. Therefore it is wrapped around the pylons
+    # app. It has to be outside of the error handling otherwise error responses
+    # from the vcsserver are converted to HTML error pages. This confuses the
+    # command line tools and the user won't get a meaningful error message.
     if vcs_server_enabled:
         pylons_app = VCSMiddleware(
             pylons_app, settings, appenlight_client, registry=config.registry)
 
-    pylons_app_as_view = wsgiapp(pylons_app)
-
-    def pylons_app_with_error_handler(context, request):
-        """
-        Handle exceptions from rc pylons app:
-
-        - old webob type exceptions get converted to pyramid exceptions
-        - pyramid exceptions are passed to the error handler view
-        """
-        def is_vcs_response(response):
-            return 'X-RhodeCode-Backend' in response.headers
-
-        def is_http_error(response):
-            # webob type error responses
-            return (400 <= response.status_int <= 599)
-
-        def is_error_handling_needed(response):
-            return is_http_error(response) and not is_vcs_response(response)
-
-        try:
-            response = pylons_app_as_view(context, request)
-            if is_error_handling_needed(response):
-                response = webob_to_pyramid_http_response(response)
-                return error_handler(response, request)
-        except HTTPError as e:  # pyramid type exceptions
-            return error_handler(e, request)
-        except Exception as e:
-            log.exception(e)
-
-            if (settings.get('debugtoolbar.enabled', False) or
-                rhodecode.disable_error_handler):
-                raise
-
-            if isinstance(e, VCSCommunicationError):
-                return error_handler(VCSServerUnavailable(), request)
-
-            return error_handler(HTTPInternalServerError(), request)
-
-        return response
-
-    return pylons_app_with_error_handler
+    # Convert WSGI app to pyramid view and return it.
+    return wsgiapp(pylons_app)
 
 
 def add_pylons_compat_data(registry, global_config, settings):
@@ -241,16 +215,6 @@ def add_pylons_compat_data(registry, global_config, settings):
     """
     registry._pylons_compat_global_config = global_config
     registry._pylons_compat_settings = settings
-
-
-def webob_to_pyramid_http_response(webob_response):
-    ResponseClass = httpexceptions.status_map[webob_response.status_int]
-    pyramid_response = ResponseClass(webob_response.status)
-    pyramid_response.status = webob_response.status
-    pyramid_response.headers.update(webob_response.headers)
-    if pyramid_response.headers['content-type'] == 'text/html':
-        pyramid_response.headers['content-type'] = 'text/html; charset=UTF-8'
-    return pyramid_response
 
 
 def error_handler(exception, request):
@@ -466,16 +430,24 @@ def _sanitize_vcs_settings(settings):
     """
     _string_setting(settings, 'vcs.svn.compatible_version', '')
     _string_setting(settings, 'git_rev_filter', '--all')
-    _string_setting(settings, 'vcs.hooks.protocol', 'pyro4')
+    _string_setting(settings, 'vcs.hooks.protocol', 'http')
+    _string_setting(settings, 'vcs.scm_app_implementation', 'http')
     _string_setting(settings, 'vcs.server', '')
     _string_setting(settings, 'vcs.server.log_level', 'debug')
-    _string_setting(settings, 'vcs.server.protocol', 'pyro4')
+    _string_setting(settings, 'vcs.server.protocol', 'http')
     _bool_setting(settings, 'startup.import_repos', 'false')
     _bool_setting(settings, 'vcs.hooks.direct_calls', 'false')
     _bool_setting(settings, 'vcs.server.enable', 'true')
     _bool_setting(settings, 'vcs.start_server', 'false')
     _list_setting(settings, 'vcs.backends', 'hg, git, svn')
     _int_setting(settings, 'vcs.connection_timeout', 3600)
+
+    # Support legacy values of vcs.scm_app_implementation. Legacy
+    # configurations may use 'rhodecode.lib.middleware.utils.scm_app_http'
+    # which is now mapped to 'http'.
+    scm_app_impl = settings['vcs.scm_app_implementation']
+    if scm_app_impl == 'rhodecode.lib.middleware.utils.scm_app_http':
+        settings['vcs.scm_app_implementation'] = 'http'
 
 
 def _int_setting(settings, name, default):
@@ -501,5 +473,8 @@ def _list_setting(settings, name, default):
         settings[name] = aslist(raw_value)
 
 
-def _string_setting(settings, name, default):
-    settings[name] = settings.get(name, default).lower()
+def _string_setting(settings, name, default, lower=True):
+    value = settings.get(name, default)
+    if lower:
+        value = value.lower()
+    settings[name] = value

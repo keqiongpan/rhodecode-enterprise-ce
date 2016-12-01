@@ -113,11 +113,14 @@
 
             <div class="field">
                 <div class="label label-checkbox">
-                    <label for="create_repo_group">${_('Add repository group')}:</label>
+                    <label for="create_repo_group">${_('Add personal repository group')}:</label>
                 </div>
                 <div class="checkboxes">
-                    ${h.checkbox('create_repo_group',value=True)}
-                    <span class="help-block">${_('Add repository group with the same name as username. \nUser will be automatically set as this group owner.')}</span>
+                    ${h.checkbox('create_repo_group',value=True, checked=c.default_create_repo_group)}
+                    <span class="help-block">
+                        ${_('New group will be created at: `/%(path)s`') % {'path': c.personal_repo_group_name}}<br/>
+                        ${_('User will be automatically set as this group owner.')}
+                    </span>
                 </div>
              </div>
 

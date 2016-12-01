@@ -174,25 +174,31 @@ class VCSMiddleware(object):
             # translate the _REPO_ID into real repo NAME for usage
             # in middleware
             environ['PATH_INFO'] = vcs_handler._get_by_id(environ['PATH_INFO'])
-            repo_name = vcs_handler._get_repository_name(environ)
+
+            # Set acl, url and vcs repo names.
+            vcs_handler.set_repo_names(environ)
 
             # check for type, presence in database and on filesystem
             if not vcs_handler.is_valid_and_existing_repo(
-                    repo_name, vcs_handler.basepath, vcs_handler.SCM):
+                    vcs_handler.acl_repo_name,
+                    vcs_handler.basepath,
+                    vcs_handler.SCM):
                 return HTTPNotFound()(environ, start_response)
 
             # TODO: johbo: Needed for the Pyro4 backend and Mercurial only.
             # Remove once we fully switched to the HTTP backend.
-            environ['REPO_NAME'] = repo_name
+            environ['REPO_NAME'] = vcs_handler.url_repo_name
 
-            # register repo_name and it's config back to the handler
-            vcs_handler.repo_name = repo_name
-            vcs_handler.repo_vcs_config = self.vcs_config(repo_name)
+            # register repo config back to the handler
+            vcs_handler.repo_vcs_config = self.vcs_config(
+                vcs_handler.acl_repo_name)
 
+            # Wrap handler in middlewares if they are enabled.
             vcs_handler = self.wrap_in_gzip_if_enabled(
                 vcs_handler, self.config)
             vcs_handler, _ = wrap_in_appenlight_if_enabled(
                 vcs_handler, self.config, self.appenlight_client)
+
             return vcs_handler(environ, start_response)
 
         return self.application(environ, start_response)

@@ -29,7 +29,6 @@
         </div>
         <%block name="above_login_button" />
         <div id="login" class="right-column">
-            <%include file="/base/flash_msg.html"/>
             <!-- login -->
             <div class="sign-in-title">
                 <h1>${_('Sign In')}</h1>
@@ -57,9 +56,21 @@
                     ${h.checkbox('remember', value=True, checked=defaults.get('remember'))}
                     <label class="checkbox" for="remember">${_('Remember me')}</label>
 
-                    <p class="links">
-                        ${h.link_to(_('Forgot your password?'), h.route_path('reset_password'))}
-                    </p>
+                    %if h.HasPermissionAny('hg.password_reset.enabled')():
+                        <p class="links">
+                            ${h.link_to(_('Forgot your password?'), h.route_path('reset_password'), class_='pwd_reset')}
+                        </p>
+                    %elif h.HasPermissionAny('hg.password_reset.hidden')():
+                        <p class="help-block">
+                            ${_('Password reset is disabled. Please contact ')}
+                            % if c.visual.rhodecode_support_url:
+                                <a href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support')}</a>
+                                ${_('or')}
+                            % endif
+                            ${_('an administrator if you need help.')}
+                        </p>
+                            %endif
+                    
 
                     ${h.submit('sign_in', _('Sign In'), class_="btn sign-in")}
 

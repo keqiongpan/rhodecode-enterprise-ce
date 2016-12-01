@@ -33,7 +33,7 @@ def vcs_http_app(vcsserver_http_echo_app):
     """
     git_url = vcsserver_http_echo_app.http_url + 'stream/git/'
     vcs_http_proxy = scm_app_http.VcsHttpProxy(
-        git_url, 'stub_path', 'stub_name', None, 'stub_backend')
+        git_url, 'stub_path', 'stub_name', None)
     app = webtest.TestApp(vcs_http_proxy)
     return app
 

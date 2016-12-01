@@ -23,7 +23,7 @@ import os
 import colander
 
 from rhodecode.translation import _
-from rhodecode.model.validation_schema import validators, preparers
+from rhodecode.model.validation_schema import preparers
 
 
 def nodes_to_sequence(nodes, colander_node=None):
@@ -181,5 +181,3 @@ class GistSchema(colander.MappingSchema):
         validator=colander.OneOf([Gist.GIST_PRIVATE, Gist.GIST_PUBLIC]))
 
     nodes = Nodes()
-
-

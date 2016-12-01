@@ -32,35 +32,60 @@ fixture = Fixture()
 
 UPDATE_REPO_NAME = 'api_update_me'
 
-class SAME_AS_UPDATES(object): """ Constant used for tests below """
+
+class SAME_AS_UPDATES(object):
+    """ Constant used for tests below """
+
 
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestApiUpdateRepo(object):
 
     @pytest.mark.parametrize("updates, expected", [
-        ({'owner': TEST_USER_REGULAR_LOGIN}, SAME_AS_UPDATES),
-        ({'description': 'new description'}, SAME_AS_UPDATES),
-        ({'clone_uri': 'http://foo.com/repo'}, SAME_AS_UPDATES),
-        ({'clone_uri': None}, {'clone_uri': ''}),
-        ({'clone_uri': ''}, {'clone_uri': ''}),
-        ({'landing_rev': 'branch:master'}, {'landing_rev': ['branch','master']}),
-        ({'enable_statistics': True}, SAME_AS_UPDATES),
-        ({'enable_locking': True}, SAME_AS_UPDATES),
-        ({'enable_downloads': True}, SAME_AS_UPDATES),
-        ({'name': 'new_repo_name'}, {
+        ({'owner': TEST_USER_REGULAR_LOGIN},
+         SAME_AS_UPDATES),
+
+        ({'description': 'new description'},
+         SAME_AS_UPDATES),
+
+        ({'clone_uri': 'http://foo.com/repo'},
+         SAME_AS_UPDATES),
+
+        ({'clone_uri': None},
+         {'clone_uri': ''}),
+
+        ({'clone_uri': ''},
+         {'clone_uri': ''}),
+
+        ({'landing_rev': 'rev:tip'},
+         {'landing_rev': ['rev', 'tip']}),
+
+        ({'enable_statistics': True},
+         SAME_AS_UPDATES),
+
+        ({'enable_locking': True},
+         SAME_AS_UPDATES),
+
+        ({'enable_downloads': True},
+         SAME_AS_UPDATES),
+
+        ({'repo_name': 'new_repo_name'},
+         {
             'repo_name': 'new_repo_name',
-            'url': 'http://test.example.com:80/new_repo_name',
-        }),
-        ({'group': 'test_group_for_update'}, {
-            'repo_name': 'test_group_for_update/%s' % UPDATE_REPO_NAME,
-            'url': 'http://test.example.com:80/test_group_for_update/%s' % UPDATE_REPO_NAME
-        }),
+            'url': 'http://test.example.com:80/new_repo_name'
+         }),
+
+        ({'repo_name': 'test_group_for_update/{}'.format(UPDATE_REPO_NAME),
+          '_group': 'test_group_for_update'},
+         {
+            'repo_name': 'test_group_for_update/{}'.format(UPDATE_REPO_NAME),
+            'url': 'http://test.example.com:80/test_group_for_update/{}'.format(UPDATE_REPO_NAME)
+         }),
     ])
     def test_api_update_repo(self, updates, expected, backend):
         repo_name = UPDATE_REPO_NAME
         repo = fixture.create_repo(repo_name, repo_type=backend.alias)
-        if updates.get('group'):
-            fixture.create_repo_group(updates['group'])
+        if updates.get('_group'):
+            fixture.create_repo_group(updates['_group'])
 
         expected_api_data = repo.get_api_data(include_secrets=True)
         if expected is SAME_AS_UPDATES:
@@ -68,15 +93,12 @@ class TestApiUpdateRepo(object):
         else:
             expected_api_data.update(expected)
 
-
         id_, params = build_data(
             self.apikey, 'update_repo', repoid=repo_name, **updates)
         response = api_call(self.app, params)
 
-        if updates.get('name'):
-            repo_name = updates['name']
-        if updates.get('group'):
-            repo_name = '/'.join([updates['group'], repo_name])
+        if updates.get('repo_name'):
+            repo_name = updates['repo_name']
 
         try:
             expected = {
@@ -86,8 +108,8 @@ class TestApiUpdateRepo(object):
             assert_ok(id_, expected, given=response.body)
         finally:
             fixture.destroy_repo(repo_name)
-            if updates.get('group'):
-                fixture.destroy_repo_group(updates['group'])
+            if updates.get('_group'):
+                fixture.destroy_repo_group(updates['_group'])
 
     def test_api_update_repo_fork_of_field(self, backend):
         master_repo = backend.create_repo()
@@ -118,19 +140,23 @@ class TestApiUpdateRepo(object):
         id_, params = build_data(
             self.apikey, 'update_repo', repoid=repo.repo_name, **updates)
         response = api_call(self.app, params)
-        expected = 'repository `{}` does not exist'.format(master_repo_name)
+        expected = {
+            'repo_fork_of': 'Fork with id `{}` does not exists'.format(
+                master_repo_name)}
         assert_error(id_, expected, given=response.body)
 
     def test_api_update_repo_with_repo_group_not_existing(self):
         repo_name = 'admin_owned'
+        fake_repo_group = 'test_group_for_update'
         fixture.create_repo(repo_name)
-        updates = {'group': 'test_group_for_update'}
+        updates = {'repo_name': '{}/{}'.format(fake_repo_group, repo_name)}
         id_, params = build_data(
             self.apikey, 'update_repo', repoid=repo_name, **updates)
         response = api_call(self.app, params)
         try:
-            expected = 'repository group `%s` does not exist' % (
-                updates['group'],)
+            expected = {
+                'repo_group': 'Repository group `{}` does not exist'.format(fake_repo_group)
+            }
             assert_error(id_, expected, given=response.body)
         finally:
             fixture.destroy_repo(repo_name)

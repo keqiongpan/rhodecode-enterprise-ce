@@ -21,26 +21,82 @@
 import colander
 import pytest
 
-from rhodecode.model.validation_schema.types import GroupNameType
+from rhodecode.model.validation_schema.types import (
+    GroupNameType, RepoNameType, StringBooleanType)
 
 
 class TestGroupNameType(object):
     @pytest.mark.parametrize('given, expected', [
         ('//group1/group2//', 'group1/group2'),
         ('//group1///group2//', 'group1/group2'),
-        ('group1/group2///group3', 'group1/group2/group3')
+        ('group1/group2///group3', 'group1/group2/group3'),
     ])
-    def test_replace_extra_slashes_cleans_up_extra_slashes(
-            self, given, expected):
-        type_ = GroupNameType()
-        result = type_._replace_extra_slashes(given)
+    def test_normalize_path(self, given, expected):
+        result = GroupNameType()._normalize(given)
         assert result == expected
 
-    def test_deserialize_cleans_up_extra_slashes(self):
+    @pytest.mark.parametrize('given, expected', [
+        ('//group1/group2//', 'group1/group2'),
+        ('//group1///group2//', 'group1/group2'),
+        ('group1/group2///group3', 'group1/group2/group3'),
+        ('v1.2', 'v1.2'),
+        ('/v1.2', 'v1.2'),
+        ('.dirs', '.dirs'),
+        ('..dirs', '.dirs'),
+        ('./..dirs', '.dirs'),
+        ('dir/;name;/;[];/sub', 'dir/name/sub'),
+        (',/,/,d,,,', 'd'),
+        ('/;/#/,d,,,', 'd'),
+        ('long../../..name', 'long./.name'),
+        ('long../..name', 'long./.name'),
+        ('../', ''),
+        ('\'../"../', ''),
+        ('c,/,/..//./,c,,,/.d/../.........c', 'c/c/.d/.c'),
+        ('c,/,/..//./,c,,,', 'c/c'),
+        ('d../..d', 'd./.d'),
+        ('d../../d', 'd./d'),
+
+        ('d\;\./\,\./d', 'd./d'),
+        ('d\.\./\.\./d', 'd./d'),
+        ('d\.\./\..\../d', 'd./d'),
+    ])
+    def test_deserialize_clean_up_name(self, given, expected):
         class TestSchema(colander.Schema):
-            field = colander.SchemaNode(GroupNameType())
+            field_group = colander.SchemaNode(GroupNameType())
+            field_repo = colander.SchemaNode(RepoNameType())
 
         schema = TestSchema()
-        cleaned_data = schema.deserialize(
-            {'field': '//group1/group2///group3//'})
-        assert cleaned_data['field'] == 'group1/group2/group3'
+        cleaned_data = schema.deserialize({
+            'field_group': given,
+            'field_repo': given
+        })
+        assert cleaned_data['field_group'] == expected
+        assert cleaned_data['field_repo'] == expected
+
+
+class TestStringBooleanType(object):
+
+    def _get_schema(self):
+        class Schema(colander.MappingSchema):
+            bools = colander.SchemaNode(StringBooleanType())
+        return Schema()
+
+    @pytest.mark.parametrize('given, expected', [
+        ('1', True),
+        ('yEs', True),
+        ('true', True),
+
+        ('0', False),
+        ('NO', False),
+        ('FALSE', False),
+
+    ])
+    def test_convert_type(self, given, expected):
+        schema = self._get_schema()
+        result = schema.deserialize({'bools':given})
+        assert result['bools'] == expected
+
+    def test_try_convert_bad_type(self):
+        schema = self._get_schema()
+        with pytest.raises(colander.Invalid):
+            result = schema.deserialize({'bools': 'boom'})

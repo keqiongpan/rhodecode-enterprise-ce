@@ -89,10 +89,6 @@ class SimpleSvnApp(object):
             if h.lower() not in self.IGNORED_HEADERS
         ]
 
-        # Add custom response header to indicate that this is a VCS response
-        # and which backend is used.
-        headers.append(('X-RhodeCode-Backend', 'svn'))
-
         return headers
 
 

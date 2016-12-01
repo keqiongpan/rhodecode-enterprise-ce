@@ -13,9 +13,11 @@ Polymer({
     ],
     _changedToasts: function(newValue, oldValue){
         this.$['p-toast'].notifyResize();
+        $.Topic('/favicon/update').publish({count: this.toasts.length});
     },
     dismissNotifications: function(){
         this.$['p-toast'].close();
+        $.Topic('/favicon/update').publish({count: 0});
     },
     handleClosed: function(){
         this.splice('toasts', 0);

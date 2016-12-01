@@ -129,6 +129,13 @@ table.dataTable {
 
         &.td-description {
             min-width: 350px;
+
+            &.truncate, .truncate-wrap {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 450px;
+            }
         }
 
         &.td-componentname {

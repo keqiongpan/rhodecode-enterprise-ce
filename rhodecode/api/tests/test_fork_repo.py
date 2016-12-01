@@ -24,6 +24,7 @@ import pytest
 
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
+from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.user import UserModel
 from rhodecode.tests import TEST_USER_ADMIN_LOGIN
 from rhodecode.api.tests.utils import (
@@ -99,10 +100,34 @@ class TestApiForkRepo(object):
         finally:
             fixture.destroy_repo(fork_name)
 
+    def test_api_fork_repo_non_admin_into_group_no_permission(self, backend, user_util):
+        source_name = backend['minimal'].repo_name
+        repo_group = user_util.create_repo_group()
+        repo_group_name = repo_group.group_name
+        fork_name = '%s/api-repo-fork' % repo_group_name
+
+        id_, params = build_data(
+            self.apikey_regular, 'fork_repo',
+            repoid=source_name,
+            fork_name=fork_name)
+        response = api_call(self.app, params)
+
+        expected = {
+            'repo_group': 'Repository group `{}` does not exist'.format(
+                repo_group_name)}
+        try:
+            assert_error(id_, expected, given=response.body)
+        finally:
+            fixture.destroy_repo(fork_name)
+
     def test_api_fork_repo_non_admin_into_group(self, backend, user_util):
         source_name = backend['minimal'].repo_name
         repo_group = user_util.create_repo_group()
         fork_name = '%s/api-repo-fork' % repo_group.group_name
+
+        RepoGroupModel().grant_user_permission(
+            repo_group, self.TEST_USER_LOGIN, 'group.admin')
+        Session().commit()
 
         id_, params = build_data(
             self.apikey_regular, 'fork_repo',
@@ -129,10 +154,11 @@ class TestApiForkRepo(object):
             fork_name=fork_name,
             owner=TEST_USER_ADMIN_LOGIN)
         response = api_call(self.app, params)
-        expected = 'Only RhodeCode admin can specify `owner` param'
+        expected = 'Only RhodeCode super-admin can specify `owner` param'
         assert_error(id_, expected, given=response.body)
 
-    def test_api_fork_repo_non_admin_no_permission_to_fork(self, backend):
+    def test_api_fork_repo_non_admin_no_permission_of_source_repo(
+            self, backend):
         source_name = backend['minimal'].repo_name
         RepoModel().grant_user_permission(repo=source_name,
                                           user=self.TEST_USER_LOGIN,
@@ -147,19 +173,44 @@ class TestApiForkRepo(object):
         assert_error(id_, expected, given=response.body)
 
     def test_api_fork_repo_non_admin_no_permission_to_fork_to_root_level(
-            self, backend):
-        source_name = backend['minimal'].repo_name
+            self, backend, user_util):
 
-        usr = UserModel().get_by_username(self.TEST_USER_LOGIN)
+        regular_user = user_util.create_user()
+        regular_user_api_key = regular_user.api_key
+        usr = UserModel().get_by_username(regular_user.username)
         usr.inherit_default_permissions = False
         Session().add(usr)
+        UserModel().grant_perm(regular_user.username, 'hg.fork.repository')
 
+        source_name = backend['minimal'].repo_name
         fork_name = backend.new_repo_name()
         id_, params = build_data(
-            self.apikey_regular, 'fork_repo',
+            regular_user_api_key, 'fork_repo',
             repoid=source_name,
             fork_name=fork_name)
         response = api_call(self.app, params)
+        expected = {
+            "repo_name": "You do not have the permission to "
+                         "store repositories in the root location."}
+        assert_error(id_, expected, given=response.body)
+
+    def test_api_fork_repo_non_admin_no_permission_to_fork(
+            self, backend, user_util):
+
+        regular_user = user_util.create_user()
+        regular_user_api_key = regular_user.api_key
+        usr = UserModel().get_by_username(regular_user.username)
+        usr.inherit_default_permissions = False
+        Session().add(usr)
+
+        source_name = backend['minimal'].repo_name
+        fork_name = backend.new_repo_name()
+        id_, params = build_data(
+            regular_user_api_key, 'fork_repo',
+            repoid=source_name,
+            fork_name=fork_name)
+        response = api_call(self.app, params)
+
         expected = "Access was denied to this resource."
         assert_error(id_, expected, given=response.body)
 
@@ -189,7 +240,9 @@ class TestApiForkRepo(object):
         response = api_call(self.app, params)
 
         try:
-            expected = "fork `%s` already exist" % (fork_name,)
+            expected = {
+                'unique_repo_name': 'Repository with name `{}` already exists'.format(
+                    fork_name)}
             assert_error(id_, expected, given=response.body)
         finally:
             fixture.destroy_repo(fork_repo.repo_name)
@@ -205,7 +258,9 @@ class TestApiForkRepo(object):
             owner=TEST_USER_ADMIN_LOGIN)
         response = api_call(self.app, params)
 
-        expected = "repo `%s` already exist" % (fork_name,)
+        expected = {
+            'unique_repo_name': 'Repository with name `{}` already exists'.format(
+                fork_name)}
         assert_error(id_, expected, given=response.body)
 
     @mock.patch.object(RepoModel, 'create_fork', crash)

@@ -20,8 +20,7 @@
 
 import mock
 import pytest
-import rhodecode
-import rhodecode.lib.vcs.client as client
+
 
 @pytest.mark.usefixtures('autologin_user', 'app')
 def test_vcs_available_returns_summary_page(app, backend):
@@ -32,16 +31,31 @@ def test_vcs_available_returns_summary_page(app, backend):
 
 
 @pytest.mark.usefixtures('autologin_user', 'app')
-def test_vcs_unavailable_returns_vcs_error_page(app, backend):
+def test_vcs_unavailable_returns_vcs_error_page(app, backend, app_settings):
+    from rhodecode.lib.vcs.exceptions import VCSCommunicationError
+    from rhodecode.lib.middleware.error_handling import (
+        PylonsErrorHandlingMiddleware)
+
+    # Depending on the used VCSServer protocol we have to patch a different
+    # RemoteRepo class to raise an exception. For the test it doesn't matter
+    # if http or pyro4 is used, it just requires the exception to be raised.
+    vcs_protocol = app_settings['vcs.server.protocol']
+    if vcs_protocol == 'http':
+        from rhodecode.lib.vcs.client_http import RemoteRepo
+    elif vcs_protocol == 'pyro4':
+        from rhodecode.lib.vcs.client import RemoteRepo
+    else:
+        pytest.fail('Unknown VCS server protocol: "{}"'.format(vcs_protocol))
+
     url = '/{repo_name}'.format(repo_name=backend.repo.repo_name)
 
-    try:
-        rhodecode.disable_error_handler = False
-        with mock.patch.object(client, '_get_proxy_method') as p:
-            p.side_effect = client.exceptions.PyroVCSCommunicationError()
+    # Patch remote repo to raise an exception instead of making a RPC.
+    with mock.patch.object(RemoteRepo, '__getattr__') as remote_mock:
+        remote_mock.side_effect = VCSCommunicationError()
+        # Patch pylons error handling middleware to not re-raise exceptions.
+        with mock.patch.object(PylonsErrorHandlingMiddleware, 'reraise') as r:
+            r.return_value = False
             response = app.get(url, expect_errors=True)
-    finally:
-        rhodecode.disable_error_handler = True
 
     assert response.status_code == 502
     assert 'Could not connect to VCS Server' in response.body

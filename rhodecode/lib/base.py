@@ -163,7 +163,8 @@ def get_access_path(environ):
 
 
 def vcs_operation_context(
-        environ, repo_name, username, action, scm, check_locking=True):
+        environ, repo_name, username, action, scm, check_locking=True,
+        is_shadow_repo=False):
     """
     Generate the context for a vcs operation, e.g. push or pull.
 
@@ -200,6 +201,7 @@ def vcs_operation_context(
         'locked_by': locked_by,
         'server_url': utils2.get_server_url(environ),
         'hooks': get_enabled_hook_classes(ui_settings),
+        'is_shadow_repo': is_shadow_repo,
     }
     return extras
 
@@ -362,6 +364,18 @@ def attach_context_attributes(context, request):
     # TODO: This dosn't work when called from pylons compatibility tween.
     # Fix this and remove it from base controller.
     # context.repo_name = get_repo_slug(request)  # can be empty
+
+    diffmode = 'sideside'
+    if request.GET.get('diffmode'):
+        if request.GET['diffmode'] == 'unified':
+            diffmode = 'unified'
+    elif request.session.get('diffmode'):
+        diffmode = request.session['diffmode']
+
+    context.diffmode = diffmode
+
+    if request.session.get('diffmode') != diffmode:
+        request.session['diffmode'] = diffmode
 
     context.csrf_token = auth.get_csrf_token()
     context.backends = rhodecode.BACKENDS.keys()

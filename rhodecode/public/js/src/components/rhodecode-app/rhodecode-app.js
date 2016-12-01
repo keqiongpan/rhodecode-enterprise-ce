@@ -3,16 +3,20 @@ ccLog.setLevel(Logger.OFF);
 
 var rhodeCodeApp = Polymer({
     is: 'rhodecode-app',
-    created: function () {
+    attached: function () {
         ccLog.debug('rhodeCodeApp created');
         $.Topic('/notifications').subscribe(this.handleNotifications.bind(this));
-
-        $.Topic('/plugins/__REGISTER__').subscribe(
-            this.kickoffChannelstreamPlugin.bind(this)
-        );
-
+        $.Topic('/favicon/update').subscribe(this.faviconUpdate.bind(this));
         $.Topic('/connection_controller/subscribe').subscribe(
             this.subscribeToChannelTopic.bind(this));
+        // this event can be used to coordinate plugins to do their
+        // initialization before channelstream is kicked off
+        $.Topic('/__MAIN_APP__').publish({});
+
+        for (var i = 0; i < alertMessagePayloads.length; i++) {
+            $.Topic('/notifications').publish(alertMessagePayloads[i]);
+        }
+        this.kickoffChannelstreamPlugin();
     },
 
     /** proxy to channelstream connection */
@@ -24,6 +28,10 @@ var rhodeCodeApp = Polymer({
         this.$['notifications'].handleNotification(data);
     },
 
+    faviconUpdate: function (data) {
+        this.$$('rhodecode-favicon').counter = data.count;
+    },
+
     /** opens connection to ws server */
     kickoffChannelstreamPlugin: function (data) {
         ccLog.debug('kickoffChannelstreamPlugin');
@@ -33,7 +41,7 @@ var rhodeCodeApp = Polymer({
             channels.push(addChannels[i]);
         }
         if (window.CHANNELSTREAM_SETTINGS && CHANNELSTREAM_SETTINGS.enabled){
-            var channelstreamConnection = this.$['channelstream-connection'];
+            var channelstreamConnection = this.getChannelStreamConnection();
             channelstreamConnection.connectUrl = CHANNELSTREAM_URLS.connect;
             channelstreamConnection.subscribeUrl = CHANNELSTREAM_URLS.subscribe;
             channelstreamConnection.websocketUrl = CHANNELSTREAM_URLS.ws + '/ws';
@@ -61,7 +69,7 @@ var rhodeCodeApp = Polymer({
 
     /** subscribes users from channels in channelstream */
     subscribeToChannelTopic: function (channels) {
-        var channelstreamConnection = this.$['channelstream-connection'];
+        var channelstreamConnection = this.getChannelStreamConnection();
         var toSubscribe = channelstreamConnection.calculateSubscribe(channels);
         ccLog.debug('subscribeToChannelTopic', toSubscribe);
         if (toSubscribe.length > 0) {
@@ -96,7 +104,7 @@ var rhodeCodeApp = Polymer({
     },
 
     handleConnected: function (event) {
-        var channelstreamConnection = this.$['channelstream-connection'];
+        var channelstreamConnection = this.getChannelStreamConnection();
         channelstreamConnection.set('channelsState',
             event.detail.channels_info);
         channelstreamConnection.set('userState', event.detail.state);
@@ -104,7 +112,7 @@ var rhodeCodeApp = Polymer({
         this.propagageChannelsState();
     },
     handleSubscribed: function (event) {
-        var channelstreamConnection = this.$['channelstream-connection'];
+        var channelstreamConnection = this.getChannelStreamConnection();
         var channelInfo = event.detail.channels_info;
         var channelKeys = Object.keys(event.detail.channels_info);
         for (var i = 0; i < channelKeys.length; i++) {
@@ -116,7 +124,7 @@ var rhodeCodeApp = Polymer({
     },
     /** propagates channel states on topics */
     propagageChannelsState: function (event) {
-        var channelstreamConnection = this.$['channelstream-connection'];
+        var channelstreamConnection = this.getChannelStreamConnection();
         var channel_data = channelstreamConnection.channelsState;
         var channels = channelstreamConnection.channels;
         for (var i = 0; i < channels.length; i++) {

@@ -82,8 +82,7 @@ class TestChangelogController(TestController):
         assert expected_url in response.location
         response = response.follow()
         expected_warning = 'Branch {} is not found.'.format(branch)
-        assert_response = AssertResponse(response)
-        assert_response.element_contains('.alert-warning', expected_warning)
+        assert expected_warning in response.body
 
     def assert_commits_on_page(self, response, indexes):
         found_indexes = [int(idx) for idx in MATCH_HASH.findall(response.body)]

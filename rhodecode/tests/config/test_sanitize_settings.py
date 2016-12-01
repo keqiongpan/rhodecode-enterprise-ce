@@ -115,10 +115,11 @@ class TestSanitizeVcsSettings(object):
     _string_settings = [
         ('vcs.svn.compatible_version', ''),
         ('git_rev_filter', '--all'),
-        ('vcs.hooks.protocol', 'pyro4'),
+        ('vcs.hooks.protocol', 'http'),
+        ('vcs.scm_app_implementation', 'http'),
         ('vcs.server', ''),
         ('vcs.server.log_level', 'debug'),
-        ('vcs.server.protocol', 'pyro4'),
+        ('vcs.server.protocol', 'http'),
     ]
 
     _list_settings = [

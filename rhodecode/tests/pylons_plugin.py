@@ -23,7 +23,7 @@ import logging.config
 import os
 import platform
 import socket
-import subprocess
+import subprocess32
 import time
 from urllib2 import urlopen, URLError
 
@@ -48,6 +48,9 @@ def _parse_json(value):
 
 
 def pytest_addoption(parser):
+    parser.addoption(
+        '--test-loglevel', dest='test_loglevel',
+        help="Set default Logging level for tests, warn (default), info, debug")
     group = parser.getgroup('pylons')
     group.addoption(
         '--with-pylons', dest='pylons_config',
@@ -68,7 +71,7 @@ def pytest_addoption(parser):
         '--without-vcsserver', dest='with_vcsserver', action='store_false',
         help="Do not start the VCSServer in a background process.")
     vcsgroup.addoption(
-        '--with-vcsserver', dest='vcsserver_config',
+        '--with-vcsserver', dest='vcsserver_config_pyro4',
         help="Start the VCSServer with the specified config file.")
     vcsgroup.addoption(
         '--with-vcsserver-http', dest='vcsserver_config_http',
@@ -91,7 +94,7 @@ def pytest_addoption(parser):
             "against an already running server and random ports cause "
             "trouble."))
     parser.addini(
-        'vcsserver_config',
+        'vcsserver_config_pyro4',
         "Start the VCSServer with the specified config file.")
     parser.addini(
         'vcsserver_config_http',
@@ -134,7 +137,7 @@ def vcsserver_factory(tmpdir_factory):
     Use this if you need a running vcsserver with a special configuration.
     """
 
-    def factory(request, use_http=False, overrides=(), vcsserver_port=None):
+    def factory(request, use_http=True, overrides=(), vcsserver_port=None):
 
         if vcsserver_port is None:
             vcsserver_port = get_available_port()
@@ -151,7 +154,7 @@ def vcsserver_factory(tmpdir_factory):
             overrides.append(platform_override)
 
         option_name = (
-            'vcsserver_config_http' if use_http else 'vcsserver_config')
+            'vcsserver_config_http' if use_http else 'vcsserver_config_pyro4')
         override_option_name = 'vcsserver_config_override'
         config_file = get_config(
             request.config, option_name=option_name,
@@ -183,8 +186,13 @@ def _use_vcs_http_server(config):
     protocol = (
         config.getoption(protocol_option) or
         config.getini(protocol_option) or
-        'pyro4')
+        'http')
     return protocol == 'http'
+
+
+def _use_log_level(config):
+    level = config.getoption('test_loglevel') or 'warn'
+    return level.upper()
 
 
 class VCSServer(object):
@@ -196,7 +204,7 @@ class VCSServer(object):
 
     def start(self):
         print("Starting the VCSServer: {}".format(self._args))
-        self.process = subprocess.Popen(self._args)
+        self.process = subprocess32.Popen(self._args)
 
     def wait_until_ready(self, timeout=30):
         raise NotImplementedError()
@@ -218,7 +226,8 @@ class Pyro4VCSServer(VCSServer):
         self._args = args
 
     def wait_until_ready(self, timeout=30):
-        remote_server = vcs.create_vcsserver_proxy(self.server_and_port)
+        remote_server = vcs.create_vcsserver_proxy(
+            self.server_and_port, 'pyro4')
         start = time.time()
         with remote_server:
             while time.time() - start < timeout:
@@ -245,7 +254,7 @@ class HttpVCSServer(VCSServer):
         config_data = configobj.ConfigObj(config_file)
         self._config = config_data['server:main']
 
-        args = ['pserve', config_file, 'http_host=0.0.0.0']
+        args = ['pserve', config_file]
         self._args = args
 
     @property
@@ -254,7 +263,7 @@ class HttpVCSServer(VCSServer):
         return template.format(**self._config)
 
     def start(self):
-        self.process = subprocess.Popen(self._args)
+        self.process = subprocess32.Popen(self._args)
 
     def wait_until_ready(self, timeout=30):
         host = self._config['host']
@@ -280,12 +289,41 @@ class HttpVCSServer(VCSServer):
 @pytest.fixture(scope='session')
 def pylons_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
     option_name = 'pylons_config'
+    log_level = _use_log_level(request.config)
 
     overrides = [
         {'server:main': {'port': rcserver_port}},
-        {'app:main': {'vcs.server': 'localhost:%s' % vcsserver_port}}]
+        {'app:main': {
+            'vcs.server': 'localhost:%s' % vcsserver_port,
+            # johbo: We will always start the VCSServer on our own based on the
+            # fixtures of the test cases. For the test run it must always be
+            # off in the INI file.
+            'vcs.start_server': 'false',
+        }},
+
+        {'handler_console': {
+            'class ': 'StreamHandler',
+            'args ': '(sys.stderr,)',
+            'level': log_level,
+        }},
+
+    ]
     if _use_vcs_http_server(request.config):
-        overrides.append({'app:main': {'vcs.server.protocol': 'http'}})
+        overrides.append({
+            'app:main': {
+                'vcs.server.protocol': 'http',
+                'vcs.scm_app_implementation': 'http',
+                'vcs.hooks.protocol': 'http',
+            }
+        })
+    else:
+        overrides.append({
+            'app:main': {
+                'vcs.server.protocol': 'pyro4',
+                'vcs.scm_app_implementation': 'pyro4',
+                'vcs.hooks.protocol': 'pyro4',
+            }
+        })
 
     filename = get_config(
         request.config, option_name=option_name,
@@ -345,6 +383,7 @@ def available_port(available_port_factory):
 
 @pytest.fixture(scope='session')
 def pylonsapp(pylons_config, vcsserver, http_environ_session):
+    print "Using the RhodeCode configuration", pylons_config
     logging.config.fileConfig(
         pylons_config, disable_existing_loggers=False)
     app = _setup_pylons_environment(pylons_config, http_environ_session)

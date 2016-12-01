@@ -21,6 +21,27 @@
 """
 SVN module
 """
+import logging
 
+from rhodecode.lib.vcs import connection
 from rhodecode.lib.vcs.backends.svn.commit import SubversionCommit
 from rhodecode.lib.vcs.backends.svn.repository import SubversionRepository
+
+
+log = logging.getLogger(__name__)
+
+
+def discover_svn_version(raise_on_exc=False):
+    """
+    Returns the string as it was returned by running 'git --version'
+
+    It will return an empty string in case the connection is not initialized
+    or no vcsserver is available.
+    """
+    try:
+        return connection.Svn.discover_svn_version()
+    except Exception:
+        log.warning("Failed to discover the SVN version", exc_info=True)
+        if raise_on_exc:
+            raise
+        return ''

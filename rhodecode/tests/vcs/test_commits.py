@@ -465,6 +465,19 @@ class TestCommits(BackendTestMixin):
         with pytest.raises(TypeError):
             self.repo.get_commits(start_id=1, end_id=2)
 
+    def test_commit_equality(self):
+        commit1 = self.repo.get_commit(self.repo.commit_ids[0])
+        commit2 = self.repo.get_commit(self.repo.commit_ids[1])
+
+        assert commit1 == commit1
+        assert commit2 == commit2
+        assert commit1 != commit2
+        assert commit2 != commit1
+        assert commit1 != None
+        assert None != commit1
+        assert 1 != commit1
+        assert 'string' != commit1
+
 
 @pytest.mark.parametrize("filename, expected", [
     ("README.rst", False),

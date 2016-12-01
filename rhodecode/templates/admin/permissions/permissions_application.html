@@ -29,6 +29,15 @@
                     </div>
 
                     <div class="field">
+                        <div class="label label-select">
+                            <label for="default_password_reset">${_('Password Reset')}:</label>
+                        </div>
+                        <div class="select">
+                            ${h.select('default_password_reset','',c.password_reset_choices)}
+                        </div>
+                    </div>
+
+                    <div class="field">
                         <div class="label label-textarea">
                             <label for="default_register_message">${_('Registration Page Message')}:</label>
                         </div>
@@ -66,6 +75,7 @@
         };
 
         $("#default_register").select2(select2Options);
+        $("#default_password_reset").select2(select2Options);
         $("#default_extern_activate").select2(select2Options);
     });
 </script>

@@ -15,6 +15,7 @@
     </p>
     %endif
 
+    <input type="hidden" name="__start__" value="revisions:sequence">
     <table class="rctable compare_view_commits">
         <tr>
             <th>${_('Time')}</th>
@@ -66,6 +67,7 @@
         </tr>
     %endfor
     </table>
+    <input type="hidden" name="__end__" value="revisions:sequence">
   %endif
 </div>
 

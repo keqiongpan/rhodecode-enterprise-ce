@@ -23,7 +23,6 @@
 
   <!-- CONTENT -->
   <div id="content" class="wrapper">
-      ${self.flash_msg()}
       <div class="main">
           ${next.main()}
       </div>
@@ -62,10 +61,6 @@
 <%def name="menu_bar_subnav()">
 </%def>
 
-<%def name="flash_msg()">
-    <%include file="/base/flash_msg.html"/>
-</%def>
-
 <%def name="breadcrumbs(class_='breadcrumbs')">
     <div class="${class_}">
     ${self.breadcrumbs_links()}
@@ -100,12 +95,12 @@
           ${dd}
       %endif
       %if show_items:
-          <span class="btn-collapse" data-toggle="item-${h.md5(dt)[:6]}-details">${_('Show More')} </span>
+          <span class="btn-collapse" data-toggle="item-${h.md5_safe(dt)[:6]}-details">${_('Show More')} </span>
       %endif
       </dd>
 
       %if show_items:
-          <div class="collapsable-content" data-toggle="item-${h.md5(dt)[:6]}-details" style="display: none">
+          <div class="collapsable-content" data-toggle="item-${h.md5_safe(dt)[:6]}-details" style="display: none">
           %for item in show_items:
               <dt></dt>
               <dd>${item}</dd>
@@ -313,7 +308,9 @@
                     <div class="field">
                         <div class="label">
                             <label for="password">${_('Password')}:</label>
-                            <span class="forgot_password">${h.link_to(_('(Forgot password?)'),h.route_path('reset_password'))}</span>
+                            %if h.HasPermissionAny('hg.password_reset.enabled')():
+                              <span class="forgot_password">${h.link_to(_('(Forgot password?)'),h.route_path('reset_password'), class_='pwd_reset')}</span>
+                            %endif
                         </div>
                         <div class="input">
                             ${h.password('password',class_='focus',tabindex=2)}
@@ -341,6 +338,9 @@
             <div class="">
             <ol class="links">
               <li>${h.link_to(_(u'My account'),h.url('my_account'))}</li>
+              % if c.rhodecode_user.personal_repo_group:
+                <li>${h.link_to(_(u'My personal group'), h.url('repo_group_home', group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
+              % endif
               <li class="logout">
               ${h.secure_form(h.route_path('logout'))}
                   ${h.submit('log_out', _(u'Sign Out'),class_="btn btn-primary")}

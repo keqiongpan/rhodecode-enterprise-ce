@@ -22,8 +22,8 @@ account permissions.
 .. code-block:: bash
 
     # Open iShell from the terminal
-    $ .rccontrol/enterprise-5/profile/bin/paster \
-        ishell .rccontrol/enterprise-5/rhodecode.ini
+    $ .rccontrol/enterprise-1/profile/bin/paster \
+        ishell .rccontrol/enterprise-1/rhodecode.ini
 
 .. code-block:: mysql
 
@@ -52,11 +52,12 @@ following example to make changes to this table.
 .. code-block:: mysql
 
   # Use this example to enable global .hgrc access
-  In [4]: new_option = RhodeCodeUi()
-  In [5]: new_option.ui_section='web'
-  In [6]: new_option.ui_key='allow_push'
-  In [7]: new_option.ui_value='*'
-  In [8]: Session().add(new_option);Session().commit()
+  In [1]: new_option = RhodeCodeUi()
+  In [2]: new_option.ui_section='web'
+  In [3]: new_option.ui_key='allow_push'
+  In [4]: new_option.ui_value='*'
+  In [5]: Session().add(new_option);Session().commit()
+  In [6]: exit()
 
 Manually Reset Password
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -72,24 +73,47 @@ Use the following code example to carry out these steps.
 .. code-block:: bash
 
     # starts the ishell interactive prompt
-    $ .rccontrol/enterprise-5/profile/bin/paster \
-        ishell .rccontrol/enterprise-5/rhodecode.ini
+    $ .rccontrol/enterprise-1/profile/bin/paster \
+        ishell .rccontrol/enterprise-1/rhodecode.ini
 
 .. code-block:: mysql
 
-    from rhodecode.lib.auth import generate_auth_token
-    from rhodecode.lib.auth import get_crypt_password
-
+    In [1]: from rhodecode.lib.auth import generate_auth_token
+    In [2]: from rhodecode.lib.auth import get_crypt_password
     # Enter the user name whose password you wish to change
-    my_user = 'USERNAME'
-    u = User.get_by_username(my_user)
-
+    In [3]: my_user = 'USERNAME'
+    In [4]: u = User.get_by_username(my_user)
     # If this fails then the user does not exist
-    u.auth_token = generate_auth_token(my_user)
-
+    In [5]: u.auth_token = generate_auth_token(my_user)
     # Set the new password
-    u.password = get_crypt_password('PASSWORD')
+    In [6]: u.password = get_crypt_password('PASSWORD')
+    In [7]: Session().add(u);Session().commit()
+    In [8]: exit()
 
-    Session().add(u)
-    Session().commit()
-    exit
+
+
+Change user details
+^^^^^^^^^^^^^^^^^^^
+
+If you need to manually change some of users details, use the following steps.
+
+1. Navigate to your |RCE| install location.
+2. Run the interactive ``ishell`` prompt.
+3. Set a new arguments for users.
+
+Use the following code example to carry out these steps.
+
+.. code-block:: bash
+
+    # starts the ishell interactive prompt
+    $ .rccontrol/enterprise-1/profile/bin/paster \
+        ishell .rccontrol/enterprise-1/rhodecode.ini
+
+.. code-block:: mysql
+
+    # Use this example to change email and username of LDAP user
+    In [1]: my_user = User.get_by_username('some_username')
+    In [2]: my_user.email = 'new_email@foobar.com'
+    In [3]: my_user.username = 'SomeUser'
+    In [4]: Session().add(my_user);Session().commit()
+    In [5]: exit()

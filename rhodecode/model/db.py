@@ -22,8 +22,8 @@
 Database Models for RhodeCode Enterprise
 """
 
+import re
 import os
-import sys
 import time
 import hashlib
 import logging
@@ -36,28 +36,25 @@ import collections
 
 
 from sqlalchemy import *
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
 from sqlalchemy.sql.expression import true
-from beaker.cache import cache_region, region_invalidate
+from beaker.cache import cache_region
 from webob.exc import HTTPNotFound
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from pylons import url
 from pylons.i18n.translation import lazy_ugettext as _
 
-from rhodecode.lib.vcs import get_backend, get_vcs_instance
-from rhodecode.lib.vcs.utils.helpers import get_scm
-from rhodecode.lib.vcs.exceptions import VCSError
-from rhodecode.lib.vcs.backends.base import (
-    EmptyCommit, Reference, MergeFailureReason)
+from rhodecode.lib.vcs import get_vcs_instance
+from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
-    str2bool, safe_str, get_commit_safe, safe_unicode, remove_prefix, md5_safe,
-    time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict)
-from rhodecode.lib.jsonalchemy import MutationObj, JsonType, JSONDict
+    str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
+    time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
+    glob2re)
+from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.encrypt import AESCipher
@@ -1990,12 +1987,12 @@ class Repository(Base, BaseModel):
         custom_wire = {
             'cache': cache  # controls the vcs.remote cache
         }
-
         repo = get_vcs_instance(
             repo_path=safe_str(self.repo_full_path),
             config=config,
             with_wire=custom_wire,
-            create=False)
+            create=False,
+            _vcs_alias=self.repo_type)
 
         return repo
 
@@ -2031,6 +2028,7 @@ class RepoGroup(Base, BaseModel):
     enable_locking = Column("enable_locking", Boolean(), nullable=False, unique=None, default=False)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False, unique=False, default=None)
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
+    personal = Column('personal', Boolean(), nullable=True, unique=None, default=None)
 
     repo_group_to_perm = relationship('UserRepoGroupToPerm', cascade='all', order_by='UserRepoGroupToPerm.group_to_perm_id')
     users_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
@@ -2084,6 +2082,13 @@ class RepoGroup(Base, BaseModel):
                             "sql_cache_short",
                             "get_group_%s" % _hash_key(group_name)))
         return gr.scalar()
+
+    @classmethod
+    def get_user_personal_repo_group(cls, user_id):
+        user = User.get(user_id)
+        return cls.query()\
+            .filter(cls.personal == true())\
+            .filter(cls.user == user).scalar()
 
     @classmethod
     def get_all_repo_groups(cls, user_id=Optional(None), group_id=Optional(None),
@@ -2317,6 +2322,10 @@ class Permission(Base, BaseModel):
         ('hg.register.manual_activate', _('User Registration with manual account activation')),
         ('hg.register.auto_activate', _('User Registration with automatic account activation')),
 
+        ('hg.password_reset.enabled', _('Password reset enabled')),
+        ('hg.password_reset.hidden', _('Password reset hidden')),
+        ('hg.password_reset.disabled', _('Password reset disabled')),
+
         ('hg.extern_activate.manual', _('Manual activation of external account')),
         ('hg.extern_activate.auto', _('Automatic activation of external account')),
 
@@ -2335,6 +2344,7 @@ class Permission(Base, BaseModel):
         'hg.create.write_on_repogroup.true',
         'hg.fork.repository',
         'hg.register.manual_activate',
+        'hg.password_reset.enabled',
         'hg.extern_activate.auto',
         'hg.inherit_default_perms.true',
     ]
@@ -2919,6 +2929,10 @@ class ChangesetComment(Base, BaseModel):
             q = q.filter(cls.pull_request_id == pull_request_id)
         return q.all()
 
+    @property
+    def outdated(self):
+        return self.display_state == self.COMMENT_OUTDATED
+
     def render(self, mentions=False):
         from rhodecode.lib import helpers as h
         return h.render(self.text, renderer=self.renderer, mentions=mentions)
@@ -3031,6 +3045,7 @@ class _PullRequestBase(BaseModel):
             nullable=False)
 
     target_ref = Column('other_ref', Unicode(255), nullable=False)
+    _shadow_merge_ref = Column('shadow_merge_ref', Unicode(255), nullable=True)
 
     # TODO: dan: rename column to last_merge_source_rev
     _last_merge_source_rev = Column(
@@ -3061,8 +3076,7 @@ class _PullRequestBase(BaseModel):
 
     @property
     def source_ref_parts(self):
-        refs = self.source_ref.split(':')
-        return Reference(refs[0], refs[1], refs[2])
+        return self.unicode_to_reference(self.source_ref)
 
     @declared_attr
     def target_repo(cls):
@@ -3072,8 +3086,36 @@ class _PullRequestBase(BaseModel):
 
     @property
     def target_ref_parts(self):
-        refs = self.target_ref.split(':')
-        return Reference(refs[0], refs[1], refs[2])
+        return self.unicode_to_reference(self.target_ref)
+
+    @property
+    def shadow_merge_ref(self):
+        return self.unicode_to_reference(self._shadow_merge_ref)
+
+    @shadow_merge_ref.setter
+    def shadow_merge_ref(self, ref):
+        self._shadow_merge_ref = self.reference_to_unicode(ref)
+
+    def unicode_to_reference(self, raw):
+        """
+        Convert a unicode (or string) to a reference object.
+        If unicode evaluates to False it returns None.
+        """
+        if raw:
+            refs = raw.split(':')
+            return Reference(*refs)
+        else:
+            return None
+
+    def reference_to_unicode(self, ref):
+        """
+        Convert a reference object to unicode.
+        If reference is None it returns None.
+        """
+        if ref:
+            return u':'.join(ref)
+        else:
+            return None
 
 
 class PullRequest(Base, _PullRequestBase):
@@ -3107,11 +3149,21 @@ class PullRequest(Base, _PullRequestBase):
         from rhodecode.model.pull_request import PullRequestModel
         pull_request = self
         merge_status = PullRequestModel().merge_status(pull_request)
+
+        pull_request_url = url(
+            'pullrequest_show', repo_name=self.target_repo.repo_name,
+            pull_request_id=self.pull_request_id, qualified=True)
+
+        merge_data = {
+            'clone_url': PullRequestModel().get_shadow_clone_url(pull_request),
+            'reference': (
+                pull_request.shadow_merge_ref._asdict()
+                if pull_request.shadow_merge_ref else None),
+        }
+
         data = {
             'pull_request_id': pull_request.pull_request_id,
-            'url': url('pullrequest_show', repo_name=self.target_repo.repo_name,
-                                       pull_request_id=self.pull_request_id,
-                                       qualified=True),
+            'url': pull_request_url,
             'title': pull_request.title,
             'description': pull_request.description,
             'status': pull_request.status,
@@ -3141,15 +3193,17 @@ class PullRequest(Base, _PullRequestBase):
                     'commit_id': pull_request.target_ref_parts.commit_id,
                 },
             },
+            'merge': merge_data,
             'author': pull_request.author.get_api_data(include_secrets=False,
                                                        details='basic'),
             'reviewers': [
                 {
                     'user': reviewer.get_api_data(include_secrets=False,
                                                   details='basic'),
+                    'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, st in pull_request.reviewers_statuses()
+                for reviewer, reasons, st in pull_request.reviewers_statuses()
             ]
         }
 
@@ -3161,14 +3215,10 @@ class PullRequest(Base, _PullRequestBase):
         }
 
     def calculated_review_status(self):
-        # TODO: anderson: 13.05.15 Used only on templates/my_account_pullrequests.html
-        # because it's tricky on how to use ChangesetStatusModel from there
-        warnings.warn("Use calculated_review_status from ChangesetStatusModel", DeprecationWarning)
         from rhodecode.model.changeset_status import ChangesetStatusModel
         return ChangesetStatusModel().calculated_review_status(self)
 
     def reviewers_statuses(self):
-        warnings.warn("Use reviewers_statuses from ChangesetStatusModel", DeprecationWarning)
         from rhodecode.model.changeset_status import ChangesetStatusModel
         return ChangesetStatusModel().reviewers_statuses(self)
 
@@ -3201,9 +3251,23 @@ class PullRequestReviewers(Base, BaseModel):
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
-    def __init__(self, user=None, pull_request=None):
+    def __init__(self, user=None, pull_request=None, reasons=None):
         self.user = user
         self.pull_request = pull_request
+        self.reasons = reasons or []
+
+    @hybrid_property
+    def reasons(self):
+        if not self._reasons:
+            return []
+        return self._reasons
+
+    @reasons.setter
+    def reasons(self, val):
+        val = val or []
+        if any(not isinstance(x, basestring) for x in val):
+            raise Exception('invalid reasons type, must be list of strings')
+        self._reasons = val
 
     pull_requests_reviewers_id = Column(
         'pull_requests_reviewers_id', Integer(), nullable=False,
@@ -3213,6 +3277,9 @@ class PullRequestReviewers(Base, BaseModel):
         ForeignKey('pull_requests.pull_request_id'), nullable=False)
     user_id = Column(
         "user_id", Integer(), ForeignKey('users.user_id'), nullable=True)
+    _reasons = Column(
+        'reason', MutationList.as_mutable(
+            JsonType('list', dialect_map=dict(mysql=UnicodeText(16384)))))
 
     user = relationship('User')
     pull_request = relationship('PullRequest')
@@ -3514,3 +3581,125 @@ class Integration(Base, BaseModel):
 
     def __repr__(self):
         return '<Integration(%r, %r)>' % (self.integration_type, self.scope)
+
+
+class RepoReviewRuleUser(Base, BaseModel):
+    __tablename__ = 'repo_review_rules_users'
+    __table_args__ = (
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
+    )
+    repo_review_rule_user_id = Column(
+        'repo_review_rule_user_id', Integer(), primary_key=True)
+    repo_review_rule_id = Column("repo_review_rule_id",
+        Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
+    user_id = Column("user_id", Integer(), ForeignKey('users.user_id'),
+        nullable=False)
+    user = relationship('User')
+
+
+class RepoReviewRuleUserGroup(Base, BaseModel):
+    __tablename__ = 'repo_review_rules_users_groups'
+    __table_args__ = (
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
+    )
+    repo_review_rule_users_group_id = Column(
+        'repo_review_rule_users_group_id', Integer(), primary_key=True)
+    repo_review_rule_id = Column("repo_review_rule_id",
+        Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
+    users_group_id = Column("users_group_id", Integer(),
+        ForeignKey('users_groups.users_group_id'), nullable=False)
+    users_group = relationship('UserGroup')
+
+
+class RepoReviewRule(Base, BaseModel):
+    __tablename__ = 'repo_review_rules'
+    __table_args__ = (
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
+    )
+
+    repo_review_rule_id = Column(
+        'repo_review_rule_id', Integer(), primary_key=True)
+    repo_id = Column(
+        "repo_id", Integer(), ForeignKey('repositories.repo_id'))
+    repo = relationship('Repository', backref='review_rules')
+
+    _branch_pattern = Column("branch_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'),
+        default=u'*') # glob
+    _file_pattern = Column("file_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'),
+        default=u'*') # glob
+
+    use_authors_for_review = Column("use_authors_for_review", Boolean(),
+        nullable=False, default=False)
+    rule_users = relationship('RepoReviewRuleUser')
+    rule_user_groups = relationship('RepoReviewRuleUserGroup')
+
+    @hybrid_property
+    def branch_pattern(self):
+        return self._branch_pattern or '*'
+
+    def _validate_glob(self, value):
+        re.compile('^' + glob2re(value) + '$')
+
+    @branch_pattern.setter
+    def branch_pattern(self, value):
+        self._validate_glob(value)
+        self._branch_pattern = value or '*'
+
+    @hybrid_property
+    def file_pattern(self):
+        return self._file_pattern or '*'
+
+    @file_pattern.setter
+    def file_pattern(self, value):
+        self._validate_glob(value)
+        self._file_pattern = value or '*'
+
+    def matches(self, branch, files_changed):
+        """
+        Check if this review rule matches a branch/files in a pull request
+
+        :param branch: branch name for the commit
+        :param files_changed: list of file paths changed in the pull request
+        """
+
+        branch = branch or ''
+        files_changed = files_changed or []
+
+        branch_matches = True
+        if branch:
+            branch_regex = re.compile('^' + glob2re(self.branch_pattern) + '$')
+            branch_matches = bool(branch_regex.search(branch))
+
+        files_matches = True
+        if self.file_pattern != '*':
+            files_matches = False
+            file_regex = re.compile(glob2re(self.file_pattern))
+            for filename in files_changed:
+                if file_regex.search(filename):
+                    files_matches = True
+                    break
+
+        return branch_matches and files_matches
+
+    @property
+    def review_users(self):
+        """ Returns the users which this rule applies to """
+
+        users = set()
+        users |= set([
+            rule_user.user for rule_user in self.rule_users
+            if rule_user.user.active])
+        users |= set(
+            member.user
+            for rule_user_group in self.rule_user_groups
+            for member in rule_user_group.users_group.members
+            if member.user.active
+        )
+        return users
+
+    def __repr__(self):
+        return '<RepoReviewerRule(id=%r, repo=%r)>' % (
+            self.repo_review_rule_id, self.repo)

@@ -1,0 +1,75 @@
+## -*- coding: utf-8 -*-
+<%inherit file="/debug_style/index.html"/>
+
+<%def name="breadcrumbs_links()">
+    ${h.link_to(_('Style'), h.url('debug_style_home'))}
+    &raquo;
+    ${c.active}
+</%def>
+
+
+<%def name="real_main()">
+<div class="box">
+    <div class="title">
+        ${self.breadcrumbs()}
+    </div>
+
+    <div class='sidebar-col-wrapper'>
+
+      ${self.sidebar()}
+
+      <div class="main-content">
+
+        <h3>Alert Messages</h3>
+        <p>
+          Alert messages are produced using the custom Polymer element
+          <code>rhodecode-toast</code> which is passed a message and level.
+        </p>
+  
+        <div class="bs-example">
+          <p> There are four types of alert levels:</p>
+          <div class="alert alert-success">
+            "success" is used when an action is completed as expected<br/>
+            ex. updated settings, deletion of a repo/user
+          </div>
+          <div class="alert alert-warning">
+            "warning" is for notification of impending issues<br/>
+            ex. a gist which was updated elsewhere during editing, disk out of space
+          </div>
+          <div class="alert alert-error">
+            "error" should be used for unexpected results and actions which
+            are not successful<br/>
+            ex. a form not submitted, repo creation failure
+          </div>
+          <div class="alert alert-info">
+            "info" is used for non-critical information<br/>
+            ex. notification of new messages, invitations to chat
+          </div>
+        </div>
+
+        <p><br/>
+          Whether singular or multiple, alerts are grouped into a dismissable
+          panel with a single "Close" button underneath.
+        </p>
+        <a class="btn btn-default" id="test-notification">Test Notification</a>
+  
+        <script type="text/javascript">
+          $('#test-notification').on('click', function(e){
+            var levels = ['info', 'error', 'warning', 'success'];
+            var level = levels[Math.floor(Math.random()*levels.length)];
+            var payload = {
+              message: {
+                message: 'This is a test ' +level+ ' notification.',
+                level: level,
+                force: true
+              }
+            };
+            $.Topic('/notifications').publish(payload);
+          });
+        </script>
+
+      </div>
+      </div>  <!-- .main-content  -->
+    </div>
+  </div> <!-- .box -->
+</%def>

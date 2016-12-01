@@ -148,6 +148,7 @@ class RepoModel(BaseModel):
             qualified=True)
 
     def get_users(self, name_contains=None, limit=20, only_active=True):
+
         # TODO: mikhail: move this method to the UserModel.
         query = self.sa.query(User)
         if only_active:
@@ -171,8 +172,9 @@ class RepoModel(BaseModel):
                 'first_name': user.name,
                 'last_name': user.lastname,
                 'username': user.username,
-                'icon_link': h.gravatar_url(user.email, 14),
-                'value_display': h.person(user.email),
+                'email': user.email,
+                'icon_link': h.gravatar_url(user.email, 30),
+                'value_display': h.person(user),
                 'value': user.username,
                 'value_type': 'user',
                 'active': user.active,
@@ -252,9 +254,11 @@ class RepoModel(BaseModel):
 
         def desc(desc):
             if c.visual.stylify_metatags:
-                return h.urlify_text(h.escaped_stylize(h.truncate(desc, 60)))
+                desc = h.urlify_text(h.escaped_stylize(desc))
             else:
-                return h.urlify_text(h.html_escape(h.truncate(desc, 60)))
+                desc = h.urlify_text(h.html_escape(desc))
+
+            return _render('repo_desc', desc)
 
         def state(repo_state):
             return _render("repo_state", repo_state)
@@ -373,11 +377,11 @@ class RepoModel(BaseModel):
             log.debug('Updating repo %s with params:%s', cur_repo, kwargs)
 
             update_keys = [
-                (1, 'repo_enable_downloads'),
                 (1, 'repo_description'),
-                (1, 'repo_enable_locking'),
                 (1, 'repo_landing_rev'),
                 (1, 'repo_private'),
+                (1, 'repo_enable_downloads'),
+                (1, 'repo_enable_locking'),
                 (1, 'repo_enable_statistics'),
                 (0, 'clone_uri'),
                 (0, 'fork_id')

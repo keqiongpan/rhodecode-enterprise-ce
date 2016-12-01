@@ -12,11 +12,15 @@ if getattr(c, 'rhodecode_user', None) and c.rhodecode_user.user_id:
     c.template_context['rhodecode_user']['username'] = c.rhodecode_user.username
     c.template_context['rhodecode_user']['email'] = c.rhodecode_user.email
     c.template_context['rhodecode_user']['notification_status'] = c.rhodecode_user.get_instance().user_data.get('notification_status', True)
+    c.template_context['rhodecode_user']['first_name'] = c.rhodecode_user.name
+    c.template_context['rhodecode_user']['last_name'] = c.rhodecode_user.lastname
 
 c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default_renderer')
 %>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
+        <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-lite.min.js', ver=c.rhodecode_version_hash)}"></script>
+        <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
         <title>${self.title()}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
         <%def name="robots()">
@@ -64,10 +68,6 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
                             && 'content' in document.createElement('template')
                     );
                     if (!webComponentsSupported) {
-                        var e = document.createElement('script');
-                        e.async = true;
-                        e.src = '${h.asset('js/vendors/webcomponentsjs/webcomponents-lite.min.js', ver=c.rhodecode_version_hash)}';
-                        document.head.appendChild(e);
                     } else {
                         onload();
                     }
@@ -108,22 +108,22 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
                   ip: '${c.rhodecode_user.ip_addr}',
                   username: '${c.rhodecode_user.username}'
               % endif
+              },
+              tags: {
+                  rhodecode_version: '${c.rhodecode_version}',
+                  rhodecode_edition: '${c.rhodecode_edition}'
               }
             };
+
             </script>
             <%include file="/base/plugins_base.html"/>
             <!--[if lt IE 9]>
             <script language="javascript" type="text/javascript" src="${h.asset('js/excanvas.min.js')}"></script>
             <![endif]-->
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode/routes.js', ver=c.rhodecode_version_hash)}"></script>
-            <script language="javascript" type="text/javascript" src="${h.asset('js/scripts.js', ver=c.rhodecode_version_hash)}"></script>
-            <script>
-                var e = document.createElement('script');
-                e.src = '${h.asset('js/rhodecode-components.js', ver=c.rhodecode_version_hash)}';
-                document.head.appendChild(e);
-            </script>
-            <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
+            <script> var alertMessagePayloads = ${h.flash.json_alerts()|n}; </script>
             ## avoide escaping the %N
+            <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode-components.js', ver=c.rhodecode_version_hash)}"></script>
             <script>CodeMirror.modeURL = "${h.asset('') + 'js/mode/%N/%N.js?ver='+c.rhodecode_version_hash}";</script>
 
 
@@ -131,6 +131,13 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
             ${self.js_extra()}
 
             <script type="text/javascript">
+            Rhodecode = (function() {
+                function _Rhodecode() {
+                  this.comments = new CommentsController();
+                }
+                return new _Rhodecode();
+            })();
+
             $(document).ready(function(){
               show_more_event();
               timeagoActivate();
@@ -145,11 +152,6 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
 
         <%def name="head_extra()"></%def>
         ${self.head_extra()}
-        <script>
-            window.addEventListener("load", function(event) {
-                $.Topic('/plugins/__REGISTER__').prepareOrPublish({});
-            });
-        </script>
         ## extra stuff
         %if c.pre_code:
             ${c.pre_code|n}

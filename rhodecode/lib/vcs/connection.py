@@ -25,9 +25,13 @@ Holds connection for remote server.
 
 def _not_initialized(*args, **kwargs):
     """Placeholder for objects which have to be initialized first."""
-    raise Exception("rhodecode.lib.vcs is not yet initialized")
+    raise Exception(
+        "rhodecode.lib.vcs is not yet initialized. "
+        "Make sure `vcs.server` is enabled in your configuration.")
 
 # TODO: figure out a nice default value for these things
+Service = _not_initialized
+
 Git = _not_initialized
 Hg = _not_initialized
 Svn = _not_initialized

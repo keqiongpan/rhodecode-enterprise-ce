@@ -221,12 +221,30 @@ var formatSelect2SelectionRefs = function(commit_ref){
 };
 
 // takes a given html element and scrolls it down offset pixels
-function offsetScroll(element, offset){
-    setTimeout(function(){
+function offsetScroll(element, offset) {
+    setTimeout(function() {
         var location = element.offset().top;
         // some browsers use body, some use html
         $('html, body').animate({ scrollTop: (location - offset) });
     }, 100);
+}
+
+// scroll an element `percent`% from the top of page in `time` ms
+function scrollToElement(element, percent, time) {
+    percent = (percent === undefined ? 25 : percent);
+    time = (time === undefined ? 100 : time);
+
+    var $element = $(element);
+    var elOffset = $element.offset().top;
+    var elHeight = $element.height();
+    var windowHeight = $(window).height();
+    var offset = elOffset;
+    if (elHeight < windowHeight) {
+        offset = elOffset - ((windowHeight / (100 / percent)) - (elHeight / 2));
+    }
+    setTimeout(function() {
+        $('html, body').animate({ scrollTop: offset});
+    }, time);
 }
 
 /**
@@ -266,7 +284,36 @@ $(document).ready(function() {
             }
         });
 
-    $('.compare_view_files').on(
+    $('body').on( /* TODO: replace the $('.compare_view_files').on('click') below
+                    when new diffs are integrated */
+        'click', '.cb-lineno a', function(event) {
+
+            if ($(this).attr('data-line-no') !== ""){
+                $('.cb-line-selected').removeClass('cb-line-selected');
+                var td = $(this).parent();
+                td.addClass('cb-line-selected'); // line number td
+                td.prev().addClass('cb-line-selected'); // line data td
+                td.next().addClass('cb-line-selected'); // line content td
+
+                // Replace URL without jumping to it if browser supports.
+                // Default otherwise
+                if (history.pushState) {
+                    var new_location = location.href.rstrip('#');
+                    if (location.hash) {
+                        new_location = new_location.replace(location.hash, "");
+                    }
+
+                    // Make new anchor url
+                    new_location = new_location + $(this).attr('href');
+                    history.pushState(true, document.title, new_location);
+
+                    return false;
+                }
+            }
+        });
+
+    $('.compare_view_files').on( /* TODO: replace this with .cb function above
+                                    when new diffs are integrated */
         'click', 'tr.line .lineno a',function(event) {
             if ($(this).text() != ""){
                 $('tr.line').removeClass('selected');
@@ -365,24 +412,63 @@ $(document).ready(function() {
     // Select the line that comes from the url anchor
     // At the time of development, Chrome didn't seem to support jquery's :target
     // element, so I had to scroll manually
+
     if (location.hash) {
         var result = splitDelimitedHash(location.hash);
         var loc  = result.loc;
-        var remainder = result.remainder;
-        if (loc.length > 1){
-            var lineno = $(loc+'.lineno');
-            if (lineno.length > 0){
-                var tr = lineno.parents('tr.line');
-                tr.addClass('selected');
+        if (loc.length > 1) {
 
-                tr[0].scrollIntoView();
+            var highlightable_line_tds = [];
 
+            // source code line format
+            var page_highlights = loc.substring(
+                loc.indexOf('#') + 1).split('L');
+
+            if (page_highlights.length > 1) {
+                var highlight_ranges = page_highlights[1].split(",");
+                var h_lines = [];
+                for (var pos in highlight_ranges) {
+                    var _range = highlight_ranges[pos].split('-');
+                    if (_range.length === 2) {
+                        var start = parseInt(_range[0]);
+                        var end = parseInt(_range[1]);
+                        if (start < end) {
+                            for (var i = start; i <= end; i++) {
+                                h_lines.push(i);
+                            }
+                        }
+                    }
+                    else {
+                        h_lines.push(parseInt(highlight_ranges[pos]));
+                    }
+                }
+                for (pos in h_lines) {
+                    var line_td = $('td.cb-lineno#L' + h_lines[pos]);
+                    if (line_td.length) {
+                        highlightable_line_tds.push(line_td);
+                    }
+                }
+            }
+
+            // now check a direct id reference (diff page)
+            if ($(loc).length && $(loc).hasClass('cb-lineno')) {
+                highlightable_line_tds.push($(loc));
+            }
+            $.each(highlightable_line_tds, function (i, $td) {
+                $td.addClass('cb-line-selected'); // line number td
+                $td.prev().addClass('cb-line-selected'); // line data
+                $td.next().addClass('cb-line-selected'); // line content
+            });
+
+            if (highlightable_line_tds.length) {
+                var $first_line_td = highlightable_line_tds[0];
+                scrollToElement($first_line_td);
                 $.Topic('/ui/plugins/code/anchor_focus').prepareOrPublish({
-                    tr:tr,
-                    remainder:remainder});
+                    td: $first_line_td,
+                    remainder: result.remainder
+                });
             }
         }
     }
-
     collapsableContent();
 });

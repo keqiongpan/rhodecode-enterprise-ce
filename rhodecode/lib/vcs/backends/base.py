@@ -53,7 +53,7 @@ FILEMODE_EXECUTABLE = 0100755
 Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
 MergeResponse = collections.namedtuple(
     'MergeResponse',
-    ('possible', 'executed', 'merge_commit_id', 'failure_reason'))
+    ('possible', 'executed', 'merge_ref', 'failure_reason'))
 
 
 class MergeFailureReason(object):
@@ -94,8 +94,49 @@ class MergeFailureReason(object):
     # The target repository is locked
     TARGET_IS_LOCKED = 7
 
+    # Deprecated, use MISSING_TARGET_REF or MISSING_SOURCE_REF instead.
     # A involved commit could not be found.
-    MISSING_COMMIT = 8
+    _DEPRECATED_MISSING_COMMIT = 8
+
+    # The target repo reference is missing.
+    MISSING_TARGET_REF = 9
+
+    # The source repo reference is missing.
+    MISSING_SOURCE_REF = 10
+
+    # The merge was not successful, there are conflicts related to sub
+    # repositories.
+    SUBREPO_MERGE_FAILED = 11
+
+
+class UpdateFailureReason(object):
+    """
+    Enumeration with all the reasons why the pull request update could fail.
+
+    DO NOT change the number of the reasons, as they may be stored in the
+    database.
+
+    Changing the name of a reason is acceptable and encouraged to deprecate old
+    reasons.
+    """
+
+    # Everything went well.
+    NONE = 0
+
+    # An unexpected exception was raised. Check the logs for more details.
+    UNKNOWN = 1
+
+    # The pull request is up to date.
+    NO_CHANGE = 2
+
+    # The pull request has a reference type that is not supported for update.
+    WRONG_REF_TPYE = 3
+
+    # Update failed because the target reference is missing.
+    MISSING_TARGET_REF = 4
+
+    # Update failed because the source reference is missing.
+    MISSING_SOURCE_REF = 5
 
 
 class BaseRepository(object):
@@ -393,9 +434,9 @@ class BaseRepository(object):
             on top of the target instead of being merged.
         """
         if dry_run:
-            message = message or 'sample_message'
-            user_email = user_email or 'user@email.com'
-            user_name = user_name or 'user name'
+            message = message or 'dry_run_merge_message'
+            user_email = user_email or 'dry-run-merge@rhodecode.com'
+            user_name = user_name or 'Dry-Run User'
         else:
             if not user_name:
                 raise ValueError('user_name cannot be empty')
@@ -421,7 +462,7 @@ class BaseRepository(object):
 
     def _merge_repo(self, shadow_repository_path, target_ref,
                     source_repo, source_ref, merge_message,
-                    merger_name, merger_email, dry_run=False):
+                    merger_name, merger_email, dry_run=False, use_rebase=False):
         """Internal implementation of merge."""
         raise NotImplementedError
 
@@ -628,7 +669,8 @@ class BaseCommit(object):
         return u'%s:%s' % (self.idx, self.short_id)
 
     def __eq__(self, other):
-        return self.raw_id == other.raw_id
+        same_instance = isinstance(other, self.__class__)
+        return same_instance and self.raw_id == other.raw_id
 
     def __json__(self):
         parents = []
@@ -860,7 +902,7 @@ class BaseCommit(object):
 
         prefix = self._validate_archive_prefix(prefix)
 
-        mtime = mtime or time.time()
+        mtime = mtime or time.mktime(self.date.timetuple())
 
         file_info = []
         cur_rev = self.repository.get_commit(commit_id=self.raw_id)

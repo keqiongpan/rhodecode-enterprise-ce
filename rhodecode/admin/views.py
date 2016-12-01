@@ -24,8 +24,11 @@ import logging
 from pylons import tmpl_context as c
 from pyramid.view import view_config
 
-from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
+from rhodecode.lib.auth import (
+    LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib.utils import read_opensource_licenses
+from rhodecode.svn_support.utils import generate_mod_dav_svn_config
+from rhodecode.translation import _
 
 from .navigation import navigation_list
 
@@ -53,3 +56,27 @@ class AdminSettingsView(object):
             sorted(read_opensource_licenses().items(), key=lambda t: t[0]))
 
         return {}
+
+    @LoginRequired()
+    @CSRFRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='admin_settings_vcs_svn_generate_cfg',
+        request_method='POST', renderer='json')
+    def vcs_svn_generate_config(self):
+        try:
+            generate_mod_dav_svn_config(self.request.registry)
+            msg = {
+                'message': _('Apache configuration for Subversion generated.'),
+                'level': 'success',
+            }
+        except Exception:
+            log.exception(
+                'Exception while generating the Apache configuration for Subversion.')
+            msg = {
+                'message': _('Failed to generate the Apache configuration for Subversion.'),
+                'level': 'error',
+            }
+
+        data = {'message': msg}
+        return data

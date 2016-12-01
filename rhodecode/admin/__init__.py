@@ -35,6 +35,9 @@ def includeme(config):
     config.add_route(
         name='admin_settings_open_source',
         pattern=ADMIN_PREFIX + '/settings/open_source')
+    config.add_route(
+        name='admin_settings_vcs_svn_generate_cfg',
+        pattern=ADMIN_PREFIX + '/settings/vcs/svn_generate_cfg')
 
     # Scan module for configuration decorators.
     config.scan()

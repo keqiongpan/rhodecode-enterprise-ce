@@ -26,7 +26,7 @@ import re
 import pprint
 import shutil
 import socket
-import subprocess
+import subprocess32
 import time
 import uuid
 
@@ -38,11 +38,12 @@ import requests
 from webtest.app import TestApp
 
 import rhodecode
+from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
 from rhodecode.model.db import (
     PullRequest, Repository, RhodeCodeSetting, ChangesetStatus, RepoGroup,
-    UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi, Integration)
+    UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.repo import RepoModel
@@ -218,7 +219,7 @@ def app(request, pylonsapp, http_environ):
     return app
 
 
-@pytest.fixture()
+@pytest.fixture(scope='session')
 def app_settings(pylonsapp, pylons_config):
     """
     Settings dictionary used to create the app.
@@ -232,6 +233,18 @@ def app_settings(pylonsapp, pylons_config):
     context = loadcontext(APP, 'config:' + pylons_config)
     settings = sanitize_settings_and_apply_defaults(context.config())
     return settings
+
+
+@pytest.fixture(scope='session')
+def db(app_settings):
+    """
+    Initializes the database connection.
+
+    It uses the same settings which are used to create the ``pylonsapp`` or
+    ``app`` fixtures.
+    """
+    from rhodecode.config.utils import initialize_database
+    initialize_database(app_settings)
 
 
 LoginData = collections.namedtuple('LoginData', ('csrf_token', 'user'))
@@ -872,7 +885,7 @@ class RepoServer(object):
         if vcsrepo.alias != 'svn':
             raise TypeError("Backend %s not supported" % vcsrepo.alias)
 
-        proc = subprocess.Popen(
+        proc = subprocess32.Popen(
             ['svnserve', '-d', '--foreground', '--listen-host', 'localhost',
              '--root', vcsrepo.path])
         self._cleanup_servers.append(proc)
@@ -1120,7 +1133,7 @@ def user_util(request, pylonsapp):
 class UserUtility(object):
 
     def __init__(self, test_name="test"):
-        self._test_name = test_name
+        self._test_name = self._sanitize_name(test_name)
         self.fixture = Fixture()
         self.repo_group_ids = []
         self.user_ids = []
@@ -1132,6 +1145,11 @@ class UserUtility(object):
         self.user_user_group_permission_ids = []
         self.user_group_user_group_permission_ids = []
         self.user_permissions = []
+
+    def _sanitize_name(self, name):
+        for char in ['[', ']']:
+            name = name.replace(char, '_')
+        return name
 
     def create_repo_group(
             self, owner=TEST_USER_ADMIN_LOGIN, auto_cleanup=True):

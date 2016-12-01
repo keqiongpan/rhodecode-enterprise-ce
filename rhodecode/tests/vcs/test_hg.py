@@ -599,7 +599,7 @@ TODO: To be written...
             'test user', 'test@rhodecode.com', 'merge message 1',
             dry_run=False)
         expected_merge_response = MergeResponse(
-            True, True, merge_response.merge_commit_id,
+            True, True, merge_response.merge_ref,
             MergeFailureReason.NONE)
         assert merge_response == expected_merge_response
 
@@ -611,14 +611,14 @@ TODO: To be written...
         assert target_ref.commit_id in commit_ids
 
         merge_commit = target_commits[-1]
-        assert merge_commit.raw_id == merge_response.merge_commit_id
+        assert merge_commit.raw_id == merge_response.merge_ref.commit_id
         assert merge_commit.message.strip() == 'merge message 1'
         assert merge_commit.author == 'test user <test@rhodecode.com>'
 
         # Check the bookmark was updated in the target repo
         assert (
             target_repo.bookmarks[bookmark_name] ==
-            merge_response.merge_commit_id)
+            merge_response.merge_ref.commit_id)
 
     def test_merge_source_is_bookmark(self, vcsbackend_hg):
         target_repo = vcsbackend_hg.create_repo(number_of_commits=1)
@@ -643,7 +643,7 @@ TODO: To be written...
             'test user', 'test@rhodecode.com', 'merge message 1',
             dry_run=False)
         expected_merge_response = MergeResponse(
-            True, True, merge_response.merge_commit_id,
+            True, True, merge_response.merge_ref,
             MergeFailureReason.NONE)
         assert merge_response == expected_merge_response
 
@@ -717,7 +717,7 @@ TODO: To be written...
             dry_run=False, use_rebase=True)
 
         expected_merge_response = MergeResponse(
-            True, True, merge_response.merge_commit_id,
+            True, True, merge_response.merge_ref,
             MergeFailureReason.NONE)
         assert merge_response == expected_merge_response
 

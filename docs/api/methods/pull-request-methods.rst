@@ -1,7 +1,7 @@
 .. _pull-request-methods-ref:
 
 pull_request methods
-=================
+====================
 
 close_pull_request 
 ------------------
@@ -103,6 +103,10 @@ create_pull_request
    :type description: Optional(str)
    :param reviewers: Set the new pull request reviewers list.
    :type reviewers: Optional(list)
+       Accepts username strings or objects of the format:
+       {
+           'username': 'nick', 'reasons': ['original author']
+       }
 
 
 get_pull_request 
@@ -158,6 +162,15 @@ get_pull_request
            "target":            {
                                     "clone_url":   "<clone_url>",
                                     "repository":    "<repository_name>",
+                                    "reference":
+                                    {
+                                        "name":      "<name>",
+                                        "type":      "<type>",
+                                        "commit_id": "<commit_id>",
+                                    }
+                                },
+           "merge":             {
+                                    "clone_url":   "<clone_url>",
                                     "reference":
                                     {
                                         "name":      "<name>",
@@ -241,6 +254,15 @@ get_pull_requests
                                             "commit_id": "<commit_id>",
                                         }
                                     },
+               "merge":             {
+                                        "clone_url":   "<clone_url>",
+                                        "reference":
+                                        {
+                                            "name":      "<name>",
+                                            "type":      "<type>",
+                                            "commit_id": "<commit_id>",
+                                        }
+                                    },
               "author":             <user_obj>,
               "reviewers":          [
                                         ...
@@ -284,7 +306,12 @@ merge_pull_request
            "executed":         "<bool>",
            "failure_reason":   "<int>",
            "merge_commit_id":  "<merge_commit_id>",
-           "possible":         "<bool>"
+           "possible":         "<bool>",
+           "merge_ref":        {
+                                   "commit_id": "<commit_id>",
+                                   "type":      "<type>",
+                                   "name":      "<name>"
+                               }
        },
      "error": null
 

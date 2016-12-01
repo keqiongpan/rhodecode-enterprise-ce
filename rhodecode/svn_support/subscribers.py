@@ -18,8 +18,13 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import logging
+
 
 from .utils import generate_mod_dav_svn_config
+
+
+log = logging.getLogger(__name__)
 
 
 def generate_config_subscriber(event):
@@ -28,4 +33,8 @@ def generate_config_subscriber(event):
     automatic generation of mod_dav_svn config file on repository group
     changes.
     """
-    generate_mod_dav_svn_config(event.request.registry.settings)
+    try:
+        generate_mod_dav_svn_config(event.request.registry)
+    except Exception:
+        log.exception(
+            'Exception while generating subversion mod_dav_svn configuration.')

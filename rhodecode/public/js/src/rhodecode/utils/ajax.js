@@ -20,6 +20,9 @@
 * turns objects into GET query string
 */
 var toQueryString = function(o) {
+  if(typeof o === 'string') {
+    return o;
+  }
   if(typeof o !== 'object') {
     return false;
   }
@@ -33,18 +36,22 @@ var toQueryString = function(o) {
 /**
 * ajax call wrappers
 */
-var ajaxGET = function(url, success) {
+var ajaxGET = function(url, success, failure) {
   var sUrl = url;
   var request = $.ajax({url: sUrl, headers: {'X-PARTIAL-XHR': true}})
   .done(function(data){
     success(data);
   })
-  .fail(function(data, textStatus, xhr){
-    alert("error processing request: " + textStatus);
+  .fail(function(data, textStatus, xhr) {
+    if (failure) {
+      failure(data, textStatus, xhr);
+    } else {
+      alert("error processing request: " + textStatus);
+    }
   });
   return request;
 };
-var ajaxPOST = function(url,postData,success) {
+var ajaxPOST = function(url, postData, success, failure) {
   var sUrl = url;
   var postData = toQueryString(postData);
   var request = $.ajax({type: 'POST', data: postData, url: sUrl,
@@ -53,7 +60,11 @@ var ajaxPOST = function(url,postData,success) {
     success(data);
   })
   .fail(function(data, textStatus, xhr){
-    alert("error processing request: " + textStatus);
+    if (failure) {
+      failure(data, textStatus, xhr);
+    } else {
+      alert("error processing request: " + textStatus);
+    }
   });
   return request;
 };

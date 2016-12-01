@@ -45,6 +45,7 @@ def scm_extras(user_regular, repo_stub):
         'make_lock': None,
         'locked_by': [None],
         'commit_ids': ['a' * 40] * 3,
+        'is_shadow_repo': False,
     })
     return extras
 

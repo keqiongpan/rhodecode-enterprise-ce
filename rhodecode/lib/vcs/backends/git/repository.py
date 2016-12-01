@@ -36,11 +36,10 @@ from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.vcs import connection, path as vcspath
 from rhodecode.lib.vcs.backends.base import (
     BaseRepository, CollectionGenerator, Config, MergeResponse,
-    MergeFailureReason)
+    MergeFailureReason, Reference)
 from rhodecode.lib.vcs.backends.git.commit import GitCommit
 from rhodecode.lib.vcs.backends.git.diff import GitDiff
 from rhodecode.lib.vcs.backends.git.inmemory import GitInMemoryCommit
-from rhodecode.lib.vcs.conf import settings
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError,
     RepositoryError, TagAlreadyExistError, TagDoesNotExistError, VCSError)
@@ -865,18 +864,29 @@ class GitRepository(BaseRepository):
         shadow_repo._checkout(pr_branch, create=True)
         try:
             shadow_repo._local_fetch(source_repo.path, source_ref.name)
-        except RepositoryError as e:
+        except RepositoryError:
             log.exception('Failure when doing local fetch on git shadow repo')
             return MergeResponse(
-                False, False, None, MergeFailureReason.MISSING_COMMIT)
+                False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
 
-        merge_commit_id = None
+        merge_ref = None
         merge_failure_reason = MergeFailureReason.NONE
         try:
             shadow_repo._local_merge(merge_message, merger_name, merger_email,
                                      [source_ref.commit_id])
             merge_possible = True
-        except RepositoryError as e:
+
+            # Need to reload repo to invalidate the cache, or otherwise we
+            # cannot retrieve the merge commit.
+            shadow_repo = GitRepository(shadow_repository_path)
+            merge_commit_id = shadow_repo.branches[pr_branch]
+
+            # Set a reference pointing to the merge commit. This reference may
+            # be used to easily identify the last successful merge commit in
+            # the shadow repository.
+            shadow_repo.set_refs('refs/heads/pr-merge', merge_commit_id)
+            merge_ref = Reference('branch', 'pr-merge', merge_commit_id)
+        except RepositoryError:
             log.exception('Failure when doing local merge on git shadow repo')
             merge_possible = False
             merge_failure_reason = MergeFailureReason.MERGE_FAILED
@@ -887,11 +897,7 @@ class GitRepository(BaseRepository):
                     pr_branch, self.path, target_ref.name, enable_hooks=True,
                     rc_scm_data=self.config.get('rhodecode', 'RC_SCM_DATA'))
                 merge_succeeded = True
-                # Need to reload repo to invalidate the cache, or otherwise we
-                # cannot retrieve the merge commit.
-                shadow_repo = GitRepository(shadow_repository_path)
-                merge_commit_id = shadow_repo.branches[pr_branch]
-            except RepositoryError as e:
+            except RepositoryError:
                 log.exception(
                     'Failure when doing local push on git shadow repo')
                 merge_succeeded = False
@@ -900,7 +906,7 @@ class GitRepository(BaseRepository):
             merge_succeeded = False
 
         return MergeResponse(
-            merge_possible, merge_succeeded, merge_commit_id,
+            merge_possible, merge_succeeded, merge_ref,
             merge_failure_reason)
 
     def _get_shadow_repository_path(self, workspace_id):
