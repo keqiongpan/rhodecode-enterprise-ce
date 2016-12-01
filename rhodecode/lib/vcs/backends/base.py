@@ -830,7 +830,13 @@ class BaseCommit(object):
 
         :param pre_load: Optional. List of commit attributes to load.
         """
-        return self.get_file_history(path, limit=1, pre_load=pre_load)[0]
+        commits = self.get_file_history(path, limit=1, pre_load=pre_load)
+        if not commits:
+            raise RepositoryError(
+                'Failed to fetch history for path {}. '
+                'Please check if such path exists in your repository'.format(
+                    path))
+        return commits[0]
 
     def get_file_history(self, path, limit=None, pre_load=None):
         """
