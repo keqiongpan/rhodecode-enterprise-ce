@@ -48,7 +48,7 @@ comment_commit
 
    Example error output:
 
-   .. code-block:: bash
+   .. code-block:: json
 
        {
            "id" : <id_given_in_input>,
@@ -68,15 +68,16 @@ create_repo
 
    Creates a repository.
 
-   * If the repository name contains "/", all the required repository
-     groups will be created.
+   * If the repository name contains "/", repository will be created inside
+     a repository group or nested repository groups
 
-     For example "foo/bar/baz" will create |repo| groups "foo" and "bar"
-     (with "foo" as parent). It will also create the "baz" repository
-     with "bar" as |repo| group.
+     For example "foo/bar/repo1" will create |repo| called "repo1" inside
+     group "foo/bar". You have to have permissions to access and write to
+     the last repository group ("bar" in this example)
 
    This command can only be run using an |authtoken| with at least
-   write permissions to the |repo|.
+   permissions to create repositories, or write permissions to
+   parent repository groups.
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
@@ -88,9 +89,9 @@ create_repo
    :type owner: Optional(str)
    :param description: Set the repository description.
    :type description: Optional(str)
-   :param private:
+   :param private: set repository as private
    :type private: bool
-   :param clone_uri:
+   :param clone_uri: set clone_uri
    :type clone_uri: str
    :param landing_rev: <rev_type>:<rev>
    :type landing_rev: str
@@ -164,25 +165,29 @@ delete_repo
 fork_repo 
 ---------
 
-.. py:function:: fork_repo(apiuser, repoid, fork_name, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, copy_permissions=<Optional:False>, private=<Optional:False>, landing_rev=<Optional:'rev:tip'>)
+.. py:function:: fork_repo(apiuser, repoid, fork_name, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, landing_rev=<Optional:'rev:tip'>, copy_permissions=<Optional:False>)
 
    Creates a fork of the specified |repo|.
 
-   * If using |RCE| with Celery this will immediately return a success
-     message, even though the fork will be created asynchronously.
+   * If the fork_name contains "/", fork will be created inside
+     a repository group or nested repository groups
 
-   This command can only be run using an |authtoken| with fork
-   permissions on the |repo|.
+     For example "foo/bar/fork-repo" will create fork called "fork-repo"
+     inside group "foo/bar". You have to have permissions to access and
+     write to the last repository group ("bar" in this example)
+
+   This command can only be run using an |authtoken| with minimum
+   read permissions of the forked repo, create fork permissions for an user.
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
    :param repoid: Set repository name or repository ID.
    :type repoid: str or int
-   :param fork_name: Set the fork name.
+   :param fork_name: Set the fork name, including it's repository group membership.
    :type fork_name: str
    :param owner: Set the fork owner.
    :type owner: str
-   :param description: Set the fork descripton.
+   :param description: Set the fork description.
    :type description: str
    :param copy_permissions: Copy permissions from parent |repo|. The
        default is False.
@@ -923,24 +928,31 @@ strip
 update_repo 
 -----------
 
-.. py:function:: update_repo(apiuser, repoid, name=<Optional:None>, owner=<Optional:<OptionalAttr:apiuser>>, group=<Optional:None>, fork_of=<Optional:None>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, landing_rev=<Optional:'rev:tip'>, enable_statistics=<Optional:False>, enable_locking=<Optional:False>, enable_downloads=<Optional:False>, fields=<Optional:''>)
+.. py:function:: update_repo(apiuser, repoid, repo_name=<Optional:None>, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, landing_rev=<Optional:'rev:tip'>, fork_of=<Optional:None>, enable_statistics=<Optional:False>, enable_locking=<Optional:False>, enable_downloads=<Optional:False>, fields=<Optional:''>)
 
    Updates a repository with the given information.
 
    This command can only be run using an |authtoken| with at least
-   write permissions to the |repo|.
+   admin permissions to the |repo|.
+
+   * If the repository name contains "/", repository will be updated
+     accordingly with a repository group or nested repository groups
+
+     For example repoid=repo-test name="foo/bar/repo-test" will update |repo|
+     called "repo-test" and place it inside group "foo/bar".
+     You have to have permissions to access and write to the last repository
+     group ("bar" in this example)
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
    :param repoid: repository name or repository ID.
    :type repoid: str or int
-   :param name: Update the |repo| name.
-   :type name: str
+   :param repo_name: Update the |repo| name, including the
+       repository group it's in.
+   :type repo_name: str
    :param owner: Set the |repo| owner.
    :type owner: str
-   :param group: Set the |repo| group the |repo| belongs to.
-   :type group: str
-   :param fork_of: Set the master |repo| name.
+   :param fork_of: Set the |repo| as fork of another |repo|.
    :type fork_of: str
    :param description: Update the |repo| description.
    :type description: str
@@ -948,16 +960,13 @@ update_repo
    :type private: bool
    :param clone_uri: Update the |repo| clone URI.
    :type clone_uri: str
-   :param landing_rev: Set the |repo| landing revision. Default is
-       ``tip``.
+   :param landing_rev: Set the |repo| landing revision. Default is ``rev:tip``.
    :type landing_rev: str
-   :param enable_statistics: Enable statistics on the |repo|,
-       (True | False).
+   :param enable_statistics: Enable statistics on the |repo|, (True | False).
    :type enable_statistics: bool
    :param enable_locking: Enable |repo| locking.
    :type enable_locking: bool
-   :param enable_downloads: Enable downloads from the |repo|,
-       (True | False).
+   :param enable_downloads: Enable downloads from the |repo|, (True | False).
    :type enable_downloads: bool
    :param fields: Add extra fields to the |repo|. Use the following
        example format: ``field_key=field_val,field_key2=fieldval2``.

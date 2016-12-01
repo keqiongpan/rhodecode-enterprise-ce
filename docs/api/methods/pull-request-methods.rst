@@ -169,8 +169,14 @@ get_pull_request
                                         "commit_id": "<commit_id>",
                                     }
                                 },
-           "shadow":            {
+           "merge":             {
                                     "clone_url":   "<clone_url>",
+                                    "reference":
+                                    {
+                                        "name":      "<name>",
+                                        "type":      "<type>",
+                                        "commit_id": "<commit_id>",
+                                    }
                                 },
           "author":             <user_obj>,
           "reviewers":          [
@@ -248,8 +254,14 @@ get_pull_requests
                                             "commit_id": "<commit_id>",
                                         }
                                     },
-               "shadow":            {
+               "merge":             {
                                         "clone_url":   "<clone_url>",
+                                        "reference":
+                                        {
+                                            "name":      "<name>",
+                                            "type":      "<type>",
+                                            "commit_id": "<commit_id>",
+                                        }
                                     },
               "author":             <user_obj>,
               "reviewers":          [
@@ -294,7 +306,12 @@ merge_pull_request
            "executed":         "<bool>",
            "failure_reason":   "<int>",
            "merge_commit_id":  "<merge_commit_id>",
-           "possible":         "<bool>"
+           "possible":         "<bool>",
+           "merge_ref":        {
+                                   "commit_id": "<commit_id>",
+                                   "type":      "<type>",
+                                   "name":      "<name>"
+                               }
        },
      "error": null
 
