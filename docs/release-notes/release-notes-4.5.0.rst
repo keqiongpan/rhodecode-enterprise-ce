@@ -157,3 +157,24 @@ Fixes
 - Integrations: use consistent formatting of users data in Slack integration.
 - Meta-tags: meta tags are not taken into account when truncating descriptions
   that are too long. Fixes #4305.
+
+
+Upgrade notes
+^^^^^^^^^^^^^
+
+- Api: please adjust your scripts that uses any of create_repo,
+  create_repo_group, update_repo, update_repo_group. There's an important change
+  in how the repo_name/group_name parameters work. Please check the API docs
+  for latest information.
+
+- Installation: starting from 4.5.0 installer now changes the default mode to http.
+  If you were using the `self_managed_supervisor=True` flag inside
+  `.rccontrol.ini` to manually switch to that mode. This is no longer required
+  and we recommend removing that flag. Migration should already change that
+  however in case of any troubles with VCSServer after upgrade
+  please make sure `vcs.protocol=` is set to `http` and not `pyro4` inside
+  rhodecode.ini
+
+- New setting about password recovery was introduced. Please make sure to
+  adjust what ever default you want to have inside your instance. The default
+  is that password recovery is enabled.
