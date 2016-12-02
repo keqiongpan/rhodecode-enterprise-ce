@@ -468,7 +468,7 @@ def vcs_server():
 
     server_url = rhodecode.CONFIG.get('vcs.server')
     enabled = rhodecode.CONFIG.get('vcs.server.enable')
-    protocol = rhodecode.CONFIG.get('vcs.server.protocol')
+    protocol = rhodecode.CONFIG.get('vcs.server.protocol') or 'http'
     state = STATE_OK_DEFAULT
     version = None
 
