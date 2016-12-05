@@ -159,8 +159,7 @@ def create_repo(form_data, cur_user):
             state=state
         )
 
-        action_logger(cur_user, 'user_created_repo',
-                      repo_name_full, '', DBS)
+        action_logger(cur_user, 'user_created_repo', repo_name_full, '', DBS)
         DBS.commit()
 
         # now create this repo on Filesystem
@@ -179,9 +178,9 @@ def create_repo(form_data, cur_user):
         # set new created state
         repo.set_state(Repository.STATE_CREATED)
         DBS.commit()
-    except Exception as e:
-        log.warning('Exception %s occurred when creating repository, '
-                    'doing cleanup...', e)
+    except Exception:
+        log.warning('Exception occurred when creating repository, '
+                    'doing cleanup...', exc_info=True)
         # rollback things manually !
         repo = Repository.get_by_repo_name(repo_name_full)
         if repo:
