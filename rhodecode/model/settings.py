@@ -264,7 +264,8 @@ class SettingsModel(BaseModel):
         repo = self._get_repo(self.repo)
         if not repo:
             raise Exception(
-                'Repository {} cannot be found'.format(self.repo))
+                'Repository `{}` cannot be found inside the database'.format(
+                    self.repo))
         return repo
 
     def _filter_by_repo(self, model, query):
