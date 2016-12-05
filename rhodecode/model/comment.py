@@ -377,7 +377,7 @@ class ChangesetCommentsModel(BaseModel):
 
         elif pull_request:
             pull_request = self.__get_pull_request(pull_request)
-            if ChangesetCommentsModel.use_outdated_comments(pull_request):
+            if not ChangesetCommentsModel.use_outdated_comments(pull_request):
                 q = self._visible_inline_comments_of_pull_request(pull_request)
             else:
                 q = self._all_inline_comments_of_pull_request(pull_request)
