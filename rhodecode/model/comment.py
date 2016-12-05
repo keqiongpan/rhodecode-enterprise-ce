@@ -354,6 +354,16 @@ class ChangesetCommentsModel(BaseModel):
         q = self._get_inline_comments_query(repo_id, revision, pull_request)
         return self._group_comments_by_path_and_line_number(q)
 
+    def get_inline_comments_count(self, inline_comments, skip_outdated=True,
+                                  version=None):
+        inline_cnt = 0
+        for fname, per_line_comments in inline_comments.iteritems():
+            for lno, comments in per_line_comments.iteritems():
+                inline_cnt += len(
+                    [comm for comm in comments
+                     if (not comm.outdated and skip_outdated)])
+        return inline_cnt
+
     def get_outdated_comments(self, repo_id, pull_request):
         # TODO: johbo: Remove `repo_id`, it is not needed to find the comments
         # of a pull request.
