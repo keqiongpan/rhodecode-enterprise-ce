@@ -764,7 +764,10 @@ def test_create_version_from_snapshot_updates_attributes(pr_util):
     assert version.title == pr_util.create_parameters['title']
     assert version.description == pr_util.create_parameters['description']
     assert version.status == PullRequest.STATUS_CLOSED
-    assert version.created_on == created_on
+
+    # versions get updated created_on
+    assert version.created_on != created_on
+
     assert version.updated_on == updated_on
     assert version.user_id == pull_request.user_id
     assert version.revisions == pr_util.create_parameters['revisions']

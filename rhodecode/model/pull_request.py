@@ -130,7 +130,8 @@ class PullRequestModel(BaseModel):
     }
 
     def __get_pull_request(self, pull_request):
-        return self._get_instance(PullRequest, pull_request)
+        return self._get_instance((
+            PullRequest, PullRequestVersion), pull_request)
 
     def _check_perms(self, perms, pull_request, user, api=False):
         if not api:
@@ -705,7 +706,7 @@ class PullRequestModel(BaseModel):
         version.title = pull_request.title
         version.description = pull_request.description
         version.status = pull_request.status
-        version.created_on = pull_request.created_on
+        version.created_on = datetime.datetime.now()
         version.updated_on = pull_request.updated_on
         version.user_id = pull_request.user_id
         version.source_repo = pull_request.source_repo
