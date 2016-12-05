@@ -200,7 +200,6 @@ class ChangesetController(BaseRepoController):
 
         c.commit_statuses = ChangesetStatus.STATUSES
         c.inline_comments = []
-        c.inline_cnt = 0
         c.files = []
 
         c.statuses = []
@@ -254,7 +253,8 @@ class ChangesetController(BaseRepoController):
 
                 inline_comments = ChangesetCommentsModel().get_inline_comments(
                     c.rhodecode_db_repo.repo_id, revision=commit.raw_id)
-                c.inline_cnt += len(inline_comments)
+                c.inline_cnt = ChangesetCommentsModel().get_inline_comments_count(
+                    inline_comments)
 
                 diffset = codeblocks.DiffSet(
                     repo_name=c.repo_name,

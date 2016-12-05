@@ -810,7 +810,9 @@ def assert_inline_comments(pull_request, visible=None, outdated=None):
     if visible is not None:
         inline_comments = ChangesetCommentsModel().get_inline_comments(
             pull_request.target_repo.repo_id, pull_request=pull_request)
-        assert len(inline_comments) == visible
+        inline_cnt = ChangesetCommentsModel().get_inline_comments_count(
+            inline_comments)
+        assert inline_cnt == visible
     if outdated is not None:
         outdated_comments = ChangesetCommentsModel().get_outdated_comments(
             pull_request.target_repo.repo_id, pull_request)

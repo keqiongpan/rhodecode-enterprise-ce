@@ -720,7 +720,9 @@ class PullrequestsController(BaseRepoController):
         c.inline_comments = cc_model.get_inline_comments(
             c.rhodecode_db_repo.repo_id,
             pull_request=pull_request_id)
-        c.inline_cnt = len(c.inline_comments)
+
+        c.inline_cnt = cc_model.get_inline_comments_count(
+            c.inline_comments, version=at_version)
 
         self._load_compare_data(
             c.pull_request, c.inline_comments, enable_comments=enable_comments)
