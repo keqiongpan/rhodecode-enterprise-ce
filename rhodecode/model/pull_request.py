@@ -705,7 +705,7 @@ class PullRequestModel(BaseModel):
         version.title = pull_request.title
         version.description = pull_request.description
         version.status = pull_request.status
-        version.created_on = pull_request.created_on
+        version.created_on = datetime.datetime.now()
         version.updated_on = pull_request.updated_on
         version.user_id = pull_request.user_id
         version.source_repo = pull_request.source_repo
