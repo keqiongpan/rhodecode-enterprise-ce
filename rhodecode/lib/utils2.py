@@ -656,6 +656,16 @@ def extract_mentioned_users(s):
     return sorted(list(usrs), key=lambda k: k.lower())
 
 
+class UnsafeAttributeDict(dict):
+    def __getattr__(self, attr):
+        try:
+            return self[attr]
+        except KeyError:
+            raise AttributeError('%s object has no attribute %s' % (self, attr))
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
 class AttributeDict(dict):
     def __getattr__(self, attr):
         return self.get(attr, None)

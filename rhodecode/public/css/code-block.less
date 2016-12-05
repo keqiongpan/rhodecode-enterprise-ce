@@ -313,7 +313,7 @@ table.code-difftable {
 // Comments
 
 div.comment:target {
-    border-left: 6px solid @comment-highlight-color;
+    border-left: 6px solid @comment-highlight-color !important;
     padding-left: 3px;
     margin-left: -9px;
 }
@@ -737,6 +737,15 @@ input.filediff-collapse-state {
     }
 }
 
+/* Main comments*/
+#comments {
+    .comment-selected {
+        border-left: 6px solid @comment-highlight-color;
+        padding-left: 3px;
+        margin-left: -9px;
+    }
+}
+
 .filediff {
     border: 1px solid @grey5;
 
@@ -894,6 +903,7 @@ input.filediff-collapse-state {
             display: none;
         }
     }
+
     .inline-comments {
         border-radius: @border-radius;
         background: @grey6;
@@ -904,6 +914,7 @@ input.filediff-collapse-state {
         .comment-outdated {
             opacity: 0.5;
         }
+
         .comment-inline {
             background: white;
             padding: (@comment-padding + 3px) @comment-padding;

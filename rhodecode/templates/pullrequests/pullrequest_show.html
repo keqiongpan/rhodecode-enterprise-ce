@@ -165,24 +165,62 @@
                 <div>
                     <div class="comments-number">
                         %if c.comments:
-                            <a href="#comments">${ungettext("%d Pull request comment", "%d Pull request comments", len(c.comments)) % len(c.comments)}</a>,
+                            <a href="#comments">${ungettext("%d General Comment", "%d General Comments", len(c.comments)) % len(c.comments)}</a>,
                         %else:
-                            ${ungettext("%d Pull request comment", "%d Pull request comments", len(c.comments)) % len(c.comments)}
+                            ${ungettext("%d General Comment", "%d General Comments", len(c.comments)) % len(c.comments)}
                         %endif
+
                         %if c.inline_cnt:
                             <a href="#" onclick="return Rhodecode.comments.nextComment();" id="inline-comments-counter">${ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}</a>
                         %else:
                             ${ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}
                         %endif
 
-
-                        % if c.outdated_cnt:
-                          ,${ungettext("%d Outdated Comment", "%d Outdated Comments", c.outdated_cnt) % c.outdated_cnt} <span id="show-outdated-comments" class="btn btn-link">${_('(Show)')}</span>
-                        % endif
+                        %if c.outdated_cnt:
+                          , ${ungettext("%d Outdated Comment", "%d Outdated Comments", c.outdated_cnt) % c.outdated_cnt} <span id="show-outdated-comments" class="btn btn-link">${_('(Show)')}</span>
+                        %endif
                    </div>
                 </div>
-            </div>
            </div>
+
+           </div>
+
+           <div class="field">
+                <div class="label-summary">
+                <label>${_('Versions')}:</label>
+           </div>
+           <div>
+               <table>
+                   <tr>
+                       <td>
+                           % if c.at_version == None:
+                            <i class="icon-ok link"></i>
+                           % endif
+                       </td>
+                       <td><code><a href="${h.url.current()}">latest</a></code></td>
+                       <td>
+                           <code>${c.pull_request_latest.source_ref_parts.commit_id[:6]}</code>
+                       </td>
+                       <td>${_('created')} ${h.age_component(c.pull_request.created_on)}</td>
+                   </tr>
+                   % for ver in reversed(c.pull_request.versions()):
+                   <tr>
+                       <td>
+                           % if c.at_version == ver.pull_request_version_id:
+                            <i class="icon-ok link"></i>
+                           % endif
+                       </td>
+                       <td><code><a href="${h.url.current(version=ver.pull_request_version_id)}">version ${ver.pull_request_version_id}</a></code></td>
+                       <td>
+                           <code>${ver.source_ref_parts.commit_id[:6]}</code>
+                       </td>
+                       <td>${_('created')} ${h.age_component(ver.created_on)}</td>
+                   </tr>
+                   % endfor
+               </table>
+           </div>
+           </div>
+
            <div id="pr-save" class="field" style="display: none;">
             <div class="label-summary"></div>
             <div class="input">
@@ -291,7 +329,9 @@
               % endif
                 <div class="compare_view_commits_title">
                     % if c.allowed_to_update and not c.pull_request.is_closed():
-                      <button id="update_commits" class="btn btn-small">${_('Update commits')}</button>
+                      <button id="update_commits" class="btn pull-right">${_('Update commits')}</button>
+                    % else:
+                      <button class="btn disabled pull-right" disabled="disabled">${_('Update commits')}</button>
                     % endif
                     % if len(c.commit_ranges):
                       <h2>${ungettext('Compare View: %s commit','Compare View: %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}</h2>
@@ -305,7 +345,7 @@
                 ${cbdiffs.render_diffset(
                   c.diffset, use_comments=True,
                   collapse_when_files_over=30,
-                  disable_new_comments=c.pull_request.is_closed())}
+                  disable_new_comments=not c.allowed_to_comment)}
 
           </div>
               % endif
@@ -313,9 +353,8 @@
 
       ## template for inline comment form
       <%namespace name="comment" file="/changeset/changeset_file_comment.html"/>
-      ${comment.comment_inline_form()}
 
-      ## render comments and inlines
+      ## render general comments
       ${comment.generate_comments(include_pull_request=True, is_pull_request=True)}
 
       % if not c.pull_request.is_closed():
@@ -394,7 +433,7 @@
                 this.closeButton.hide();
                 this.addButton.hide();
                 this.removeButtons.css('visibility', 'hidden');
-              },
+              }
             };
 
             PRDetails.init();
@@ -402,7 +441,7 @@
 
             $('#show-outdated-comments').on('click', function(e){
                 var button = $(this);
-                var outdated = $('.outdated');
+                var outdated = $('.comment-outdated');
                 if (button.html() === "(Show)") {
                   button.html("(Hide)");
                   outdated.show();
@@ -426,29 +465,6 @@
                 $(comments).each(fn_display);
                 var btns = $('#{0} .inline-comments-button'.format(boxid));
                 $(btns).each(fn_display);
-            });
-
-            // inject comments into their proper positions
-            var file_comments = $('.inline-comment-placeholder');
-            %if c.pull_request.is_closed():
-                renderInlineComments(file_comments, false);
-            %else:
-                renderInlineComments(file_comments, true);
-            %endif
-            var commentTotals = {};
-            $.each(file_comments, function(i, comment) {
-                var path = $(comment).attr('path');
-                var comms = $(comment).children().length;
-                if (path in commentTotals) {
-                    commentTotals[path] += comms;
-                } else {
-                    commentTotals[path] = comms;
-                }
-            });
-            $.each(commentTotals, function(path, total) {
-                var elem = $('.comment-bubble[data-path="'+ path +'"]');
-                elem.css('visibility', 'visible');
-                elem.html(elem.html() + ' ' + total );
             });
 
             $('#merge_pull_request_form').submit(function() {

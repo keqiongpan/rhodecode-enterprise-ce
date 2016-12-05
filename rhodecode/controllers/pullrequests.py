@@ -45,16 +45,17 @@ from rhodecode.lib.auth import (
 from rhodecode.lib.channelstream import channelstream_request
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.utils import jsonify
-from rhodecode.lib.utils2 import safe_int, safe_str, str2bool, safe_unicode
+from rhodecode.lib.utils2 import (
+    safe_int, safe_str, str2bool, safe_unicode, UnsafeAttributeDict)
 from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, CommitDoesNotExistError, RepositoryRequirementError,
     NodeDoesNotExistError)
-from rhodecode.lib.diffs import LimitedDiffContainer
+
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
-from rhodecode.model.db import PullRequest, ChangesetStatus, ChangesetComment, \
-    Repository
+from rhodecode.model.db import (PullRequest, ChangesetStatus, ChangesetComment,
+    Repository, PullRequestVersion)
 from rhodecode.model.forms import PullRequestForm
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
@@ -675,46 +676,133 @@ class PullrequestsController(BaseRepoController):
             return redirect(url('my_account_pullrequests'))
         raise HTTPForbidden()
 
+    def _get_pr_version(self, pull_request_id, version=None):
+        pull_request_id = safe_int(pull_request_id)
+        at_version = None
+        if version:
+            pull_request_ver = PullRequestVersion.get_or_404(version)
+            pull_request_obj = pull_request_ver
+            _org_pull_request_obj = pull_request_ver.pull_request
+            at_version = pull_request_ver.pull_request_version_id
+        else:
+            _org_pull_request_obj = pull_request_obj = PullRequest.get_or_404(pull_request_id)
+
+        class PullRequestDisplay(object):
+            """
+            Special object wrapper for showing PullRequest data via Versions
+            It mimics PR object as close as possible. This is read only object
+            just for display
+            """
+            def __init__(self, attrs):
+                self.attrs = attrs
+                # internal have priority over the given ones via attrs
+                self.internal = ['versions']
+
+            def __getattr__(self, item):
+                if item in self.internal:
+                    return getattr(self, item)
+                try:
+                    return self.attrs[item]
+                except KeyError:
+                    raise AttributeError(
+                        '%s object has no attribute %s' % (self, item))
+
+            def versions(self):
+                return pull_request_obj.versions.order_by(
+                    PullRequestVersion.pull_request_version_id).all()
+
+            def is_closed(self):
+                return pull_request_obj.is_closed()
+
+        attrs = UnsafeAttributeDict(pull_request_obj.get_api_data())
+
+        attrs.author = UnsafeAttributeDict(
+            pull_request_obj.author.get_api_data())
+        if pull_request_obj.target_repo:
+            attrs.target_repo = UnsafeAttributeDict(
+                pull_request_obj.target_repo.get_api_data())
+            attrs.target_repo.clone_url = pull_request_obj.target_repo.clone_url
+
+        if pull_request_obj.source_repo:
+            attrs.source_repo = UnsafeAttributeDict(
+                pull_request_obj.source_repo.get_api_data())
+            attrs.source_repo.clone_url = pull_request_obj.source_repo.clone_url
+
+        attrs.source_ref_parts = pull_request_obj.source_ref_parts
+        attrs.target_ref_parts = pull_request_obj.target_ref_parts
+
+        attrs.shadow_merge_ref = _org_pull_request_obj.shadow_merge_ref
+
+        pull_request_ver = PullRequestDisplay(attrs)
+
+        return _org_pull_request_obj, pull_request_obj, \
+               pull_request_ver, at_version
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
                                    'repository.admin')
     def show(self, repo_name, pull_request_id):
         pull_request_id = safe_int(pull_request_id)
-        c.pull_request = PullRequest.get_or_404(pull_request_id)
+
+        version = request.GET.get('version')
+        pull_request_latest, \
+        pull_request, \
+        pull_request_ver, \
+        at_version = self._get_pr_version(pull_request_id, version=version)
 
         c.template_context['pull_request_data']['pull_request_id'] = \
             pull_request_id
 
         # pull_requests repo_name we opened it against
         # ie. target_repo must match
-        if repo_name != c.pull_request.target_repo.repo_name:
+        if repo_name != pull_request.target_repo.repo_name:
             raise HTTPNotFound
 
-        c.allowed_to_change_status = PullRequestModel(). \
-            check_user_change_status(c.pull_request, c.rhodecode_user)
-        c.allowed_to_update = PullRequestModel().check_user_update(
-            c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
-        c.allowed_to_merge = PullRequestModel().check_user_merge(
-            c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
         c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
-            c.pull_request)
-        c.allowed_to_delete = PullRequestModel().check_user_delete(
-            c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
+            pull_request)
+
+        if at_version:
+            c.allowed_to_change_status = False
+        else:
+            c.allowed_to_change_status = PullRequestModel(). \
+                check_user_change_status(pull_request, c.rhodecode_user)
+
+        if at_version:
+            c.allowed_to_update = False
+        else:
+            c.allowed_to_update = PullRequestModel().check_user_update(
+                pull_request, c.rhodecode_user) and not pull_request.is_closed()
+
+        if at_version:
+            c.allowed_to_merge = False
+        else:
+            c.allowed_to_merge = PullRequestModel().check_user_merge(
+                pull_request, c.rhodecode_user) and not pull_request.is_closed()
+
+        if at_version:
+            c.allowed_to_delete = False
+        else:
+            c.allowed_to_delete = PullRequestModel().check_user_delete(
+                pull_request, c.rhodecode_user) and not pull_request.is_closed()
+
+        if at_version:
+            c.allowed_to_comment = False
+        else:
+            c.allowed_to_comment = not pull_request.is_closed()
 
         cc_model = ChangesetCommentsModel()
 
-        c.pull_request_reviewers = c.pull_request.reviewers_statuses()
+        c.pull_request_reviewers = pull_request.reviewers_statuses()
 
-        c.pull_request_review_status = c.pull_request.calculated_review_status()
+        c.pull_request_review_status = pull_request.calculated_review_status()
         c.pr_merge_status, c.pr_merge_msg = PullRequestModel().merge_status(
-            c.pull_request)
+            pull_request)
         c.approval_msg = None
         if c.pull_request_review_status != ChangesetStatus.STATUS_APPROVED:
             c.approval_msg = _('Reviewer approval is pending.')
             c.pr_merge_status = False
         # load compare data into template context
-        enable_comments = not c.pull_request.is_closed()
-
+        enable_comments = not pull_request.is_closed()
 
         # inline comments
         c.inline_comments = cc_model.get_inline_comments(
@@ -725,22 +813,25 @@ class PullrequestsController(BaseRepoController):
             c.inline_comments, version=at_version)
 
         self._load_compare_data(
-            c.pull_request, c.inline_comments, enable_comments=enable_comments)
+            pull_request, c.inline_comments, enable_comments=enable_comments)
 
         # outdated comments
         c.outdated_comments = {}
         c.outdated_cnt = 0
-        if ChangesetCommentsModel.use_outdated_comments(c.pull_request):
+
+        if ChangesetCommentsModel.use_outdated_comments(pull_request):
             c.outdated_comments = cc_model.get_outdated_comments(
                 c.rhodecode_db_repo.repo_id,
-                pull_request=c.pull_request)
+                pull_request=pull_request)
+
             # Count outdated comments and check for deleted files
             for file_name, lines in c.outdated_comments.iteritems():
                 for comments in lines.values():
+                    comments = [comm for comm in comments
+                                if comm.outdated_at_version(at_version)]
                     c.outdated_cnt += len(comments)
                 if file_name not in c.included_files:
                     c.deleted_files.append(file_name)
-
 
         # this is a hack to properly display links, when creating PR, the
         # compare view and others uses different notation, and
@@ -760,6 +851,9 @@ class PullrequestsController(BaseRepoController):
         c.commit_statuses = statuses
 
         c.ancestor = None # TODO: add ancestor here
+        c.pull_request = pull_request_ver
+        c.pull_request_latest = pull_request_latest
+        c.at_version = at_version
 
         return render('/pullrequests/pullrequest_show.html')
 
@@ -812,8 +906,6 @@ class PullrequestsController(BaseRepoController):
                                 if status and allowed_to_change_status else None),
             closing_pr=close_pr
         )
-
-
 
         if allowed_to_change_status:
             old_calculated_status = pull_request.calculated_review_status()

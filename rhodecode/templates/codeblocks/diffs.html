@@ -394,10 +394,13 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     %for comment in comments:
     ${commentblock.comment_block(comment, inline=True)}
     %endfor
+
     <span onclick="return Rhodecode.comments.createComment(this)"
-          class="btn btn-secondary cb-comment-add-button">
+          class="btn btn-secondary cb-comment-add-button ${'comment-outdated' if comments and comments[-1].outdated else ''}"
+          style="${'display: none;' if comments and comments[-1].outdated else ''}">
         ${_('Add another comment')}
     </span>
+
 </div>
 </%def>
 

@@ -208,8 +208,14 @@ input[type="button"] {
         color: @rcdarkblue;
     }
 
+    //disabled buttons
+    //last; overrides any other styles
     &:disabled {
+        opacity: .7;
+        cursor: auto;
+        background-color: white;
         color: @grey4;
+        text-shadow: none;
     }
 
     // TODO: johbo: Check if we can avoid this, indicates that the structure

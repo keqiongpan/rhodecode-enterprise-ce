@@ -918,9 +918,6 @@ $(document).ready(function() {
                 $(btns).each(fn_display);
             });
 
-            // inject comments into they proper positions
-            var file_comments = $('.inline-comment-placeholder');
-            renderInlineComments(file_comments);
             var commentTotals = {};
             $.each(file_comments, function(i, comment) {
                 var path = $(comment).attr('path');

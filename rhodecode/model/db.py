@@ -2933,6 +2933,12 @@ class ChangesetComment(Base, BaseModel):
     def outdated(self):
         return self.display_state == self.COMMENT_OUTDATED
 
+    def outdated_at_version(self, version):
+        """
+        Checks if comment is outdated for given pull request version
+        """
+        return self.outdated and self.pull_request_version_id != version
+
     def render(self, mentions=False):
         from rhodecode.lib import helpers as h
         return h.render(self.text, renderer=self.renderer, mentions=mentions)
@@ -3117,34 +3123,6 @@ class _PullRequestBase(BaseModel):
         else:
             return None
 
-
-class PullRequest(Base, _PullRequestBase):
-    __tablename__ = 'pull_requests'
-    __table_args__ = (
-        {'extend_existing': True, 'mysql_engine': 'InnoDB',
-         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
-    )
-
-    pull_request_id = Column(
-        'pull_request_id', Integer(), nullable=False, primary_key=True)
-
-    def __repr__(self):
-        if self.pull_request_id:
-            return '<DB:PullRequest #%s>' % self.pull_request_id
-        else:
-            return '<DB:PullRequest at %#x>' % id(self)
-
-    reviewers = relationship('PullRequestReviewers',
-                             cascade="all, delete, delete-orphan")
-    statuses = relationship('ChangesetStatus')
-    comments = relationship('ChangesetComment',
-                            cascade="all, delete, delete-orphan")
-    versions = relationship('PullRequestVersion',
-                            cascade="all, delete, delete-orphan")
-
-    def is_closed(self):
-        return self.status == self.STATUS_CLOSED
-
     def get_api_data(self):
         from rhodecode.model.pull_request import PullRequestModel
         pull_request = self
@@ -3209,6 +3187,35 @@ class PullRequest(Base, _PullRequestBase):
 
         return data
 
+
+class PullRequest(Base, _PullRequestBase):
+    __tablename__ = 'pull_requests'
+    __table_args__ = (
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
+    )
+
+    pull_request_id = Column(
+        'pull_request_id', Integer(), nullable=False, primary_key=True)
+
+    def __repr__(self):
+        if self.pull_request_id:
+            return '<DB:PullRequest #%s>' % self.pull_request_id
+        else:
+            return '<DB:PullRequest at %#x>' % id(self)
+
+    reviewers = relationship('PullRequestReviewers',
+                             cascade="all, delete, delete-orphan")
+    statuses = relationship('ChangesetStatus')
+    comments = relationship('ChangesetComment',
+                            cascade="all, delete, delete-orphan")
+    versions = relationship('PullRequestVersion',
+                            cascade="all, delete, delete-orphan",
+                            lazy='dynamic')
+
+    def is_closed(self):
+        return self.status == self.STATUS_CLOSED
+
     def __json__(self):
         return {
             'revisions': self.revisions,
@@ -3242,6 +3249,24 @@ class PullRequestVersion(Base, _PullRequestBase):
             return '<DB:PullRequestVersion #%s>' % self.pull_request_version_id
         else:
             return '<DB:PullRequestVersion at %#x>' % id(self)
+
+    @property
+    def reviewers(self):
+        return self.pull_request.reviewers
+
+    @property
+    def versions(self):
+        return self.pull_request.versions
+
+    def is_closed(self):
+        # calculate from original
+        return self.pull_request.status == self.STATUS_CLOSED
+
+    def calculated_review_status(self):
+        return self.pull_request.calculated_review_status()
+
+    def reviewers_statuses(self):
+        return self.pull_request.reviewers_statuses()
 
 
 class PullRequestReviewers(Base, BaseModel):

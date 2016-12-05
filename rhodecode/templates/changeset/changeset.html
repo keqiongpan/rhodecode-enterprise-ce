@@ -178,9 +178,8 @@
 
     ## template for inline comment form
     <%namespace name="comment" file="/changeset/changeset_file_comment.html"/>
-    ${comment.comment_inline_form()}
 
-    ## ## render comments and inlines
+    ## render comments
     ${comment.generate_comments()}
 
     ## main comment form and it status
@@ -210,12 +209,12 @@
               if(button.hasClass("comments-visible")) {
                 $('#{0} .inline-comments'.format(boxid)).each(function(index){
                   $(this).hide();
-                })
+                });
                 button.removeClass("comments-visible");
               } else {
                 $('#{0} .inline-comments'.format(boxid)).each(function(index){
                   $(this).show();
-                })
+                });
                 button.addClass("comments-visible");
               }
           });
@@ -230,7 +229,7 @@
                     url: '${h.url('changeset_children',repo_name=c.repo_name, revision=c.commit.raw_id)}',
                     success: function(data) {
                       if(data.results.length === 0){
-                          $('#child_link').html('${_('No Child Commits')}').addClass('disabled');
+                          $('#child_link').html("${_('No Child Commits')}").addClass('disabled');
                       }
                       if(data.results.length === 1){
                           var commit = data.results[0];
@@ -263,7 +262,7 @@
               // >1 links show them to user to choose
               if(!$('#parent_link').hasClass('disabled')){
                   $.ajax({
-                    url: '${h.url('changeset_parents',repo_name=c.repo_name, revision=c.commit.raw_id)}',
+                    url: '${h.url("changeset_parents",repo_name=c.repo_name, revision=c.commit.raw_id)}',
                     success: function(data) {
                       if(data.results.length === 0){
                           $('#parent_link').html('${_('No Parent Commits')}').addClass('disabled');

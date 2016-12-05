@@ -48,58 +48,6 @@ var tableTr = function(cls, body){
   return _el.children[0].children[0].children[0];
 };
 
-var removeInlineForm = function(form) {
-  form.parentNode.removeChild(form);
-};
-
-var createInlineForm = function(parent_tr, f_path, line) {
-  var tmpl = $('#comment-inline-form-template').html();
-  tmpl = tmpl.format(f_path, line);
-  var form = tableTr('comment-form-inline', tmpl);
-  var form_hide_button = $(form).find('.hide-inline-form');
-
-  $(form_hide_button).click(function(e) {
-     $('.inline-comments').removeClass('hide-comment-button');
-     var newtr = e.currentTarget.parentNode.parentNode.parentNode.parentNode.parentNode;
-     if ($(newtr.nextElementSibling).hasClass('inline-comments-button')) {
-         $(newtr.nextElementSibling).show();
-     }
-     $(newtr).parents('.comment-form-inline').remove();
-     $(parent_tr).removeClass('form-open');
-     $(parent_tr).removeClass('hl-comment');
-  });
-
-  return form;
-};
-
-var getLineNo = function(tr) {
-  var line;
-  // Try to get the id and return "" (empty string) if it doesn't exist
-  var o = ($(tr).find('.lineno.old').attr('id')||"").split('_');
-  var n = ($(tr).find('.lineno.new').attr('id')||"").split('_');
-  if (n.length >= 2) {
-    line = n[n.length-1];
-  } else if (o.length >= 2) {
-   line = o[o.length-1];
-  }
-  return line;
-};
-
-/**
- * make a single inline comment and place it inside
- */
-var renderInlineComment = function(json_data, show_add_button) {
-  show_add_button = typeof show_add_button !== 'undefined' ? show_add_button : true;
-  try {
-    var html = json_data.rendered_text;
-    var lineno = json_data.line_no;
-    var target_id = json_data.target_id;
-    placeInline(target_id, lineno, html, show_add_button);
-  } catch (e) {
-    console.error(e);
-  }
-};
-
 function bindDeleteCommentButtons() {
     $('.delete-comment').one('click', function() {
         var comment_id = $(this).data("comment-id");
@@ -109,115 +57,6 @@ function bindDeleteCommentButtons() {
         }
     });
 }
-
-/**
- * Inject inline comment for on given TR this tr should be always an .line
- * tr containing the line. Code will detect comment, and always put the comment
- * block at the very bottom
- */
-var injectInlineForm = function(tr){
-  if (!$(tr).hasClass('line')) {
-      return;
-  }
-
-  var _td = $(tr).find('.code').get(0);
-  if ($(tr).hasClass('form-open') ||
-      $(tr).hasClass('context') ||
-      $(_td).hasClass('no-comment')) {
-      return;
-  }
-  $(tr).addClass('form-open');
-  $(tr).addClass('hl-comment');
-  var node = $(tr.parentNode.parentNode.parentNode).find('.full_f_path').get(0);
-  var f_path = $(node).attr('path');
-  var lineno = getLineNo(tr);
-  var form = createInlineForm(tr, f_path, lineno);
-
-  var parent = tr;
-  while (1) {
-      var n = parent.nextElementSibling;
-      // next element are comments !
-      if ($(n).hasClass('inline-comments')) {
-          parent = n;
-      }
-      else {
-          break;
-      }
-  }
-  var _parent = $(parent).get(0);
-  $(_parent).after(form);
-  $('.comment-form-inline').prev('.inline-comments').addClass('hide-comment-button');
-  var f = $(form).get(0);
-
-  var _form = $(f).find('.inline-form').get(0);
-
-  var pullRequestId = templateContext.pull_request_data.pull_request_id;
-  var commitId = templateContext.commit_data.commit_id;
-
-  var commentForm = new CommentForm(_form, commitId, pullRequestId, lineno, false);
-  var cm = commentForm.getCmInstance();
-
-  // set a CUSTOM submit handler for inline comments.
-  commentForm.setHandleFormSubmit(function(o) {
-    var text = commentForm.cm.getValue();
-
-    if (text === "") {
-      return;
-    }
-
-    if (lineno === undefined) {
-      alert('missing line !');
-      return;
-    }
-    if (f_path === undefined) {
-      alert('missing file path !');
-      return;
-    }
-
-    var excludeCancelBtn = false;
-    var submitEvent = true;
-    commentForm.setActionButtonsDisabled(true, excludeCancelBtn, submitEvent);
-    commentForm.cm.setOption("readOnly", true);
-    var postData = {
-        'text': text,
-        'f_path': f_path,
-        'line': lineno,
-        'csrf_token': CSRF_TOKEN
-    };
-    var submitSuccessCallback = function(o) {
-      $(tr).removeClass('form-open');
-      removeInlineForm(f);
-      renderInlineComment(o);
-      $('.inline-comments').removeClass('hide-comment-button');
-
-      // re trigger the linkification of next/prev navigation
-      linkifyComments($('.inline-comment-injected'));
-      timeagoActivate();
-      bindDeleteCommentButtons();
-      commentForm.setActionButtonsDisabled(false);
-
-    };
-    var submitFailCallback = function(){
-        commentForm.resetCommentFormState(text)
-    };
-    commentForm.submitAjaxPOST(
-        commentForm.submitUrl, postData, submitSuccessCallback, submitFailCallback);
-  });
-
-  setTimeout(function() {
-      // callbacks
-      if (cm !== undefined) {
-          cm.focus();
-      }
-  }, 10);
-
-    $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
-        form:_form,
-        parent:_parent,
-        lineno: lineno,
-        f_path: f_path}
-    );
-};
 
 var deleteComment = function(comment_id) {
   var url = AJAX_COMMENT_DELETE_URL.replace('__COMMENT_ID__', comment_id);
@@ -232,89 +71,6 @@ var deleteComment = function(comment_id) {
   ajaxPOST(url, postData, success);
 };
 
-var createInlineAddButton = function(tr){
-  var label = _gettext('Add another comment');
-  var html_el = document.createElement('div');
-  $(html_el).addClass('add-comment');
-  html_el.innerHTML = '<span class="btn btn-secondary">{0}</span>'.format(label);
-  var add = new $(html_el);
-  add.on('click', function(e) {
-    injectInlineForm(tr);
-  });
-  return add;
-};
-
-var placeAddButton = function(target_tr){
-  if(!target_tr){
-    return;
-  }
-  var last_node = target_tr;
-  // scan
-  while (1){
-    var n = last_node.nextElementSibling;
-    // next element are comments !
-    if($(n).hasClass('inline-comments')){
-      last_node = n;
-      // also remove the comment button from previous
-      var comment_add_buttons = $(last_node).find('.add-comment');
-      for(var i=0; i<comment_add_buttons.length; i++){
-        var b = comment_add_buttons[i];
-        b.parentNode.removeChild(b);
-      }
-    }
-    else{
-      break;
-    }
-  }
-  var add = createInlineAddButton(target_tr);
-  // get the comment div
-  var comment_block = $(last_node).find('.comment')[0];
-  // attach add button
-  $(add).insertAfter(comment_block);
-};
-
-/**
- * Places the inline comment into the changeset block in proper line position
- */
-var placeInline = function(target_container, lineno, html, show_add_button) {
-  show_add_button = typeof show_add_button !== 'undefined' ? show_add_button : true;
-
-  var lineid = "{0}_{1}".format(target_container, lineno);
-  var target_line = $('#' + lineid).get(0);
-  var comment = new $(tableTr('inline-comments', html));
-  // check if there are comments already !
-  if (target_line) {
-    var parent_node = target_line.parentNode;
-    var root_parent = parent_node;
-
-    while (1) {
-      var n = parent_node.nextElementSibling;
-      // next element are comments !
-      if ($(n).hasClass('inline-comments')) {
-        parent_node = n;
-      }
-      else {
-        break;
-      }
-    }
-    // put in the comment at the bottom
-    $(comment).insertAfter(parent_node);
-    $(comment).find('.comment-inline').addClass('inline-comment-injected');
-    // scan nodes, and attach add button to last one
-    if (show_add_button) {
-      placeAddButton(root_parent);
-    }
-    addCommentToggle(target_line);
-  }
-
-  return target_line;
-};
-
-var addCommentToggle = function(target_line) {
-  // exposes comment toggle button
-  $(target_line).siblings('.comment-toggle').addClass('active');
-  return;
-};
 
 var bindToggleButtons = function() {
   $('.comment-toggle').on('click', function() {
@@ -346,37 +102,6 @@ var linkifyComments = function(comments) {
     }
   }
 
-};
-
-/**
- * Iterates over all the inlines, and places them inside proper blocks of data
- */
-var renderInlineComments = function(file_comments, show_add_button) {
-  show_add_button = typeof show_add_button !== 'undefined' ? show_add_button : true;
-
-  for (var i = 0; i < file_comments.length; i++) {
-    var box = file_comments[i];
-
-    var target_id = $(box).attr('target_id');
-
-    // actually comments with line numbers
-    var comments = box.children;
-
-    for (var j = 0; j < comments.length; j++) {
-      var data = {
-        'rendered_text': comments[j].outerHTML,
-        'line_no': $(comments[j]).attr('line'),
-        'target_id': target_id
-      };
-      renderInlineComment(data, show_add_button);
-    }
-  }
-
-  // since order of injection is random, we're now re-iterating
-  // from correct order and filling in links
-  linkifyComments($('.inline-comment-injected'));
-  bindDeleteCommentButtons();
-  firefoxAnchorFix();
 };
 
 
@@ -679,11 +404,13 @@ var CommentsController = function() { /* comments controller */
       var $td = $node.closest('td');
       $node.closest('.comment-inline-form').removeClass('comment-inline-form-open');
       return false;
-  }
+  };
+
   this.getLineNumber = function(node) {
       var $node = $(node);
       return $node.closest('td').attr('data-line-number');
-  }
+  };
+
   this.scrollToComment = function(node, offset) {
     if (!node) {
       node = $('.comment-selected');
@@ -702,20 +429,23 @@ var CommentsController = function() { /* comments controller */
     }
     var $next = $('.comment-current').eq(nextIdx);
     var $cb = $next.closest('.cb');
-    $cb.removeClass('cb-collapsed')
+    $cb.removeClass('cb-collapsed');
 
     var $filediffCollapseState = $cb.closest('.filediff').prev();
     $filediffCollapseState.prop('checked', false);
     $next.addClass('comment-selected');
     scrollToElement($next);
     return false;
-  }
+  };
+
   this.nextComment = function(node) {
     return self.scrollToComment(node, 1);
-  }
+  };
+
   this.prevComment = function(node) {
     return self.scrollToComment(node, -1);
-  }
+  };
+
   this.deleteComment = function(node) {
       if (!confirm(_gettext('Delete this comment?'))) {
         return false;
@@ -744,7 +474,8 @@ var CommentsController = function() { /* comments controller */
         return false;
       };
       ajaxPOST(url, postData, success, failure);
-  }
+  };
+
   this.toggleComments = function(node, show) {
     var $filediff = $(node).closest('.filediff');
     if (show === true) {
@@ -757,12 +488,14 @@ var CommentsController = function() { /* comments controller */
       $filediff.toggleClass('hide-comments');
     }
     return false;
-  }
+  };
+
   this.toggleLineComments = function(node) {
     self.toggleComments(node, true);
     var $node = $(node);
     $node.closest('tr').toggleClass('hide-line-comments');
-  }
+  };
+
   this.createComment = function(node) {
       var $node = $(node);
       var $td = $node.closest('td');
@@ -832,7 +565,6 @@ var CommentsController = function() { /* comments controller */
                 console.error(e);
               }
 
-
               // re trigger the linkification of next/prev navigation
               linkifyComments($('.inline-comment-injected'));
               timeagoActivate();
@@ -863,7 +595,7 @@ var CommentsController = function() { /* comments controller */
       }
 
       $form.addClass('comment-inline-form-open');
-  }
+  };
 
   this.renderInlineComments = function(file_comments) {
     show_add_button = typeof show_add_button !== 'undefined' ? show_add_button : true;
@@ -892,4 +624,4 @@ var CommentsController = function() { /* comments controller */
     firefoxAnchorFix();
   };
 
-}
+};
