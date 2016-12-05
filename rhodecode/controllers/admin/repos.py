@@ -196,11 +196,13 @@ class ReposController(BaseRepoController):
     def create_repository(self):
         """GET /_admin/create_repository: Form to create a new item"""
         new_repo = request.GET.get('repo', '')
-        parent_group = request.GET.get('parent_group')
+        parent_group = safe_int(request.GET.get('parent_group'))
+        _gr = RepoGroup.get(parent_group)
+
         if not HasPermissionAny('hg.admin', 'hg.create.repository')():
             # you're not super admin nor have global create permissions,
             # but maybe you have at least write permission to a parent group ?
-            _gr = RepoGroup.get(parent_group)
+
             gr_name = _gr.group_name if _gr else None
             # create repositories with write permission on group is set to true
             create_on_write = HasPermissionAny('hg.create.write_on_repogroup.true')()
@@ -217,12 +219,20 @@ class ReposController(BaseRepoController):
         c.personal_repo_group = c.rhodecode_user.personal_repo_group
         c.new_repo = repo_name_slug(new_repo)
 
-        ## apply the defaults from defaults page
+        # apply the defaults from defaults page
         defaults = SettingsModel().get_default_repo_settings(strip_prefix=True)
         # set checkbox to autochecked
         defaults['repo_copy_permissions'] = True
-        if parent_group:
-            defaults.update({'repo_group': parent_group})
+
+        parent_group_choice = '-1'
+        if not c.rhodecode_user.is_admin and c.rhodecode_user.personal_repo_group:
+            parent_group_choice = c.rhodecode_user.personal_repo_group
+
+        if parent_group and _gr:
+            if parent_group in [x[0] for x in c.repo_groups]:
+                parent_group_choice = unicode(parent_group)
+
+        defaults.update({'repo_group': parent_group_choice})
 
         return htmlfill.render(
             render('admin/repos/repo_add.html'),
