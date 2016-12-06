@@ -476,6 +476,19 @@ var CommentsController = function() { /* comments controller */
       ajaxPOST(url, postData, success, failure);
   };
 
+  this.toggleWideMode = function (node) {
+      if ($('#content').hasClass('wrapper')) {
+          $('#content').removeClass("wrapper");
+          $('#content').addClass("wide-mode-wrapper");
+          $(node).addClass('btn-success');
+      } else {
+          $('#content').removeClass("wide-mode-wrapper");
+          $('#content').addClass("wrapper");
+          $(node).removeClass('btn-success');
+      }
+      return false;
+  };
+
   this.toggleComments = function(node, show) {
     var $filediff = $(node).closest('.filediff');
     if (show === true) {
