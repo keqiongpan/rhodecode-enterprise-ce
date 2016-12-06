@@ -111,8 +111,8 @@ bumpversion==0.5.3
 transifex-client==0.10
 
 # http servers
-gevent==1.1.1
-greenlet==0.4.9
+gevent==1.1.2
+greenlet==0.4.10
 gunicorn==19.6.0
 waitress==0.8.9
 
