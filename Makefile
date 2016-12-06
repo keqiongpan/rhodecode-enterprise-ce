@@ -13,6 +13,9 @@ docs:
 docs-clean:
 	(cd docs; make clean)
 
+docs-cleanup:
+	(cd docs; make cleanup)
+
 ci-docs: docs;
 
 
