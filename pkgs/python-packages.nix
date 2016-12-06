@@ -639,19 +639,6 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  dulwich = super.buildPythonPackage {
-    name = "dulwich-0.12.0";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/6f/04/fbe561b6d45c0ec758330d5b7f5ba4b6cb4f1ca1ab49859d2fc16320da75/dulwich-0.12.0.tar.gz";
-      md5 = "f3a8a12bd9f9dd8c233e18f3d49436fa";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.gpl2Plus ];
-    };
-  };
   ecdsa = super.buildPythonPackage {
     name = "ecdsa-0.11";
     buildInputs = with self; [];
