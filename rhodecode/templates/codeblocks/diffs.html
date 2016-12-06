@@ -341,7 +341,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     %if filediff.patch['operation'] in ['A', 'M']:
         <a
             class="tooltip"
-            href="${h.url('files_home',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path,revision=filediff.diffset.target_ref)}"
+            href="${h.url('files_home',repo_name=filediff.diffset.source_repo_name,f_path=filediff.target_file_path,revision=filediff.diffset.target_ref)}"
             title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
         >
             ${_('Show file after')}

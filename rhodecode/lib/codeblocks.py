@@ -353,6 +353,7 @@ class DiffSet(object):
     HL_NONE = 'NONE' # no highlighting, fastest
 
     def __init__(self, highlight_mode=HL_REAL, repo_name=None,
+                 source_repo_name=None,
                  source_node_getter=lambda filename: None,
                  target_node_getter=lambda filename: None,
                  source_nodes=None, target_nodes=None,
@@ -368,6 +369,7 @@ class DiffSet(object):
         self.source_nodes = source_nodes or {}
         self.target_nodes = target_nodes or {}
         self.repo_name = repo_name
+        self.source_repo_name = source_repo_name or repo_name
         self.comments = comments or {}
         self.max_file_size_limit = max_file_size_limit
 
@@ -379,6 +381,7 @@ class DiffSet(object):
             files=[],
             limited_diff=isinstance(patchset, LimitedDiffContainer),
             repo_name=self.repo_name,
+            source_repo_name=self.source_repo_name,
             source_ref=source_ref,
             target_ref=target_ref,
         ))

@@ -46,7 +46,7 @@ from rhodecode.lib.channelstream import channelstream_request
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import (
-    safe_int, safe_str, str2bool, safe_unicode, UnsafeAttributeDict)
+    safe_int, safe_str, str2bool, safe_unicode, StrictAttributeDict)
 from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, CommitDoesNotExistError, RepositoryRequirementError,
@@ -150,6 +150,7 @@ class PullrequestsController(BaseRepoController):
 
             c.diffset = codeblocks.DiffSet(
                 repo_name=c.repo_name,
+                source_repo_name=c.source_repo.repo_name,
                 source_node_getter=_node_getter(target_commit),
                 target_node_getter=_node_getter(source_commit),
                 comments=inline_comments
@@ -714,17 +715,17 @@ class PullrequestsController(BaseRepoController):
             def is_closed(self):
                 return pull_request_obj.is_closed()
 
-        attrs = UnsafeAttributeDict(pull_request_obj.get_api_data())
+        attrs = StrictAttributeDict(pull_request_obj.get_api_data())
 
-        attrs.author = UnsafeAttributeDict(
+        attrs.author = StrictAttributeDict(
             pull_request_obj.author.get_api_data())
         if pull_request_obj.target_repo:
-            attrs.target_repo = UnsafeAttributeDict(
+            attrs.target_repo = StrictAttributeDict(
                 pull_request_obj.target_repo.get_api_data())
             attrs.target_repo.clone_url = pull_request_obj.target_repo.clone_url
 
         if pull_request_obj.source_repo:
-            attrs.source_repo = UnsafeAttributeDict(
+            attrs.source_repo = StrictAttributeDict(
                 pull_request_obj.source_repo.get_api_data())
             attrs.source_repo.clone_url = pull_request_obj.source_repo.clone_url
 
@@ -733,76 +734,62 @@ class PullrequestsController(BaseRepoController):
 
         attrs.shadow_merge_ref = _org_pull_request_obj.shadow_merge_ref
 
-        pull_request_ver = PullRequestDisplay(attrs)
+        pull_request_display_obj = PullRequestDisplay(attrs)
 
         return _org_pull_request_obj, pull_request_obj, \
-               pull_request_ver, at_version
+               pull_request_display_obj, at_version
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
                                    'repository.admin')
     def show(self, repo_name, pull_request_id):
         pull_request_id = safe_int(pull_request_id)
-
         version = request.GET.get('version')
-        pull_request_latest, \
-        pull_request, \
-        pull_request_ver, \
-        at_version = self._get_pr_version(pull_request_id, version=version)
+
+        (pull_request_latest,
+         pull_request_at_ver,
+         pull_request_display_obj,
+         at_version) = self._get_pr_version(pull_request_id, version=version)
 
         c.template_context['pull_request_data']['pull_request_id'] = \
             pull_request_id
 
         # pull_requests repo_name we opened it against
         # ie. target_repo must match
-        if repo_name != pull_request.target_repo.repo_name:
+        if repo_name != pull_request_at_ver.target_repo.repo_name:
             raise HTTPNotFound
 
         c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
-            pull_request)
+            pull_request_at_ver)
 
+        pr_closed = pull_request_latest.is_closed()
         if at_version:
             c.allowed_to_change_status = False
-        else:
-            c.allowed_to_change_status = PullRequestModel(). \
-                check_user_change_status(pull_request, c.rhodecode_user)
-
-        if at_version:
             c.allowed_to_update = False
-        else:
-            c.allowed_to_update = PullRequestModel().check_user_update(
-                pull_request, c.rhodecode_user) and not pull_request.is_closed()
-
-        if at_version:
             c.allowed_to_merge = False
-        else:
-            c.allowed_to_merge = PullRequestModel().check_user_merge(
-                pull_request, c.rhodecode_user) and not pull_request.is_closed()
-
-        if at_version:
             c.allowed_to_delete = False
-        else:
-            c.allowed_to_delete = PullRequestModel().check_user_delete(
-                pull_request, c.rhodecode_user) and not pull_request.is_closed()
-
-        if at_version:
             c.allowed_to_comment = False
         else:
-            c.allowed_to_comment = not pull_request.is_closed()
+            c.allowed_to_change_status = PullRequestModel(). \
+                check_user_change_status(pull_request_at_ver, c.rhodecode_user)
+            c.allowed_to_update = PullRequestModel().check_user_update(
+                pull_request_latest, c.rhodecode_user) and not pr_closed
+            c.allowed_to_merge = PullRequestModel().check_user_merge(
+                pull_request_latest, c.rhodecode_user) and not pr_closed
+            c.allowed_to_delete = PullRequestModel().check_user_delete(
+                pull_request_latest, c.rhodecode_user) and not pr_closed
+            c.allowed_to_comment = not pr_closed
 
         cc_model = ChangesetCommentsModel()
 
-        c.pull_request_reviewers = pull_request.reviewers_statuses()
-
-        c.pull_request_review_status = pull_request.calculated_review_status()
+        c.pull_request_reviewers = pull_request_at_ver.reviewers_statuses()
+        c.pull_request_review_status = pull_request_at_ver.calculated_review_status()
         c.pr_merge_status, c.pr_merge_msg = PullRequestModel().merge_status(
-            pull_request)
+            pull_request_at_ver)
         c.approval_msg = None
         if c.pull_request_review_status != ChangesetStatus.STATUS_APPROVED:
             c.approval_msg = _('Reviewer approval is pending.')
             c.pr_merge_status = False
-        # load compare data into template context
-        enable_comments = not pull_request.is_closed()
 
         # inline comments
         c.inline_comments = cc_model.get_inline_comments(
@@ -812,17 +799,20 @@ class PullrequestsController(BaseRepoController):
         c.inline_cnt = cc_model.get_inline_comments_count(
             c.inline_comments, version=at_version)
 
+        # load compare data into template context
+        enable_comments = not pr_closed
         self._load_compare_data(
-            pull_request, c.inline_comments, enable_comments=enable_comments)
+            pull_request_at_ver,
+            c.inline_comments, enable_comments=enable_comments)
 
         # outdated comments
         c.outdated_comments = {}
         c.outdated_cnt = 0
 
-        if ChangesetCommentsModel.use_outdated_comments(pull_request):
+        if ChangesetCommentsModel.use_outdated_comments(pull_request_latest):
             c.outdated_comments = cc_model.get_outdated_comments(
                 c.rhodecode_db_repo.repo_id,
-                pull_request=pull_request)
+                pull_request=pull_request_at_ver)
 
             # Count outdated comments and check for deleted files
             for file_name, lines in c.outdated_comments.iteritems():
@@ -851,7 +841,7 @@ class PullrequestsController(BaseRepoController):
         c.commit_statuses = statuses
 
         c.ancestor = None # TODO: add ancestor here
-        c.pull_request = pull_request_ver
+        c.pull_request = pull_request_display_obj
         c.pull_request_latest = pull_request_latest
         c.at_version = at_version
 

@@ -656,7 +656,11 @@ def extract_mentioned_users(s):
     return sorted(list(usrs), key=lambda k: k.lower())
 
 
-class UnsafeAttributeDict(dict):
+class StrictAttributeDict(dict):
+    """
+    Strict Version of Attribute dict which raises an Attribute error when
+    requested attribute is not set
+    """
     def __getattr__(self, attr):
         try:
             return self[attr]
