@@ -926,13 +926,13 @@
     };
   };
   msgpack-python = super.buildPythonPackage {
-    name = "msgpack-python-0.4.6";
+    name = "msgpack-python-0.4.8";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/15/ce/ff2840885789ef8035f66cd506ea05bdb228340307d5e71a7b1e3f82224c/msgpack-python-0.4.6.tar.gz";
-      md5 = "8b317669314cf1bc881716cccdaccb30";
+      url = "https://pypi.python.org/packages/21/27/8a1d82041c7a2a51fcc73675875a5f9ea06c2663e02fcfeb708be1d081a0/msgpack-python-0.4.8.tar.gz";
+      md5 = "dcd854fb41ee7584ebbf35e049e6be98";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
