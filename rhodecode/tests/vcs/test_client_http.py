@@ -37,7 +37,7 @@ def test_uses_persistent_http_connections(caplog, vcsbackend_hg):
             remote_call(normal=True, closed=False)
 
     new_connections = [
-        r for r in caplog.record_tuples() if is_new_connection(*r)]
+        r for r in caplog.record_tuples if is_new_connection(*r)]
     assert len(new_connections) <= 1
 
 

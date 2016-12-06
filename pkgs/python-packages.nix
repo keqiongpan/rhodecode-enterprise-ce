@@ -757,13 +757,13 @@
     };
   };
   gprof2dot = super.buildPythonPackage {
-    name = "gprof2dot-2015.12.1";
+    name = "gprof2dot-2016.10.13";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/b9/34/7bf93c1952d40fa5c95ad963f4d8344b61ef58558632402eca18e6c14127/gprof2dot-2015.12.1.tar.gz";
-      md5 = "e23bf4e2f94db032750c193384b4165b";
+      url = "https://pypi.python.org/packages/a0/e0/73c71baed306f0402a00a94ffc7b2be94ad1296dfcb8b46912655b93154c/gprof2dot-2016.10.13.tar.gz";
+      md5 = "0125401f15fd2afe1df686a76c64a4fd";
     };
     meta = {
       license = [ { fullName = "LGPL"; } ];
@@ -1108,13 +1108,13 @@
     };
   };
   py = super.buildPythonPackage {
-    name = "py-1.4.29";
+    name = "py-1.4.31";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/2a/bc/a1a4a332ac10069b8e5e25136a35e08a03f01fd6ab03d819889d79a1fd65/py-1.4.29.tar.gz";
-      md5 = "c28e0accba523a29b35a48bb703fb96c";
+      url = "https://pypi.python.org/packages/f4/9a/8dfda23f36600dd701c6722316ba8a3ab4b990261f83e7d3ffc6dfedf7ef/py-1.4.31.tar.gz";
+      md5 = "5d2c63c56dc3f2115ec35c066ecd582b";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1290,13 +1290,13 @@
     };
   };
   pytest = super.buildPythonPackage {
-    name = "pytest-2.8.5";
+    name = "pytest-3.0.5";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [py];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/b1/3d/d7ea9b0c51e0cacded856e49859f0a13452747491e842c236bbab3714afe/pytest-2.8.5.zip";
-      md5 = "8493b06f700862f1294298d6c1b715a9";
+      url = "https://pypi.python.org/packages/a8/87/b7ca49efe52d2b4169f2bfc49aa5e384173c4619ea8e635f123a0dac5b75/pytest-3.0.5.tar.gz";
+      md5 = "cefd527b59332688bf5db4a10aa8a7cb";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1316,52 +1316,52 @@
     };
   };
   pytest-cov = super.buildPythonPackage {
-    name = "pytest-cov-1.8.1";
+    name = "pytest-cov-2.4.0";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [py pytest coverage cov-core];
+    propagatedBuildInputs = with self; [pytest coverage];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/11/4b/b04646e97f1721878eb21e9f779102d84dd044d324382263b1770a3e4838/pytest-cov-1.8.1.tar.gz";
-      md5 = "76c778afa2494088270348be42d759fc";
+      url = "https://pypi.python.org/packages/00/c0/2bfd1fcdb9d407b8ac8185b1cb5ff458105c6b207a9a7f0e13032de9828f/pytest-cov-2.4.0.tar.gz";
+      md5 = "2fda09677d232acc99ec1b3c5831e33f";
     };
     meta = {
-      license = [ pkgs.lib.licenses.mit ];
+      license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.mit ];
     };
   };
   pytest-profiling = super.buildPythonPackage {
-    name = "pytest-profiling-1.0.1";
+    name = "pytest-profiling-1.2.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six pytest gprof2dot];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/d8/67/8ffab73406e22870e07fa4dc8dce1d7689b26dba8efd00161c9b6fc01ec0/pytest-profiling-1.0.1.tar.gz";
-      md5 = "354404eb5b3fd4dc5eb7fffbb3d9b68b";
+      url = "https://pypi.python.org/packages/73/e8/804681323bac0bc45c520ec34185ba8469008942266d0074699b204835c1/pytest-profiling-1.2.2.tar.gz";
+      md5 = "0a16d7dda2d23b91e9730fa4558cf728";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   pytest-runner = super.buildPythonPackage {
-    name = "pytest-runner-2.7.1";
+    name = "pytest-runner-2.9";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/99/6b/c4ff4418d3424d4475b7af60724fd4a5cdd91ed8e489dc9443281f0052bc/pytest-runner-2.7.1.tar.gz";
-      md5 = "e56f0bc8d79a6bd91772b44ef4215c7e";
+      url = "https://pypi.python.org/packages/11/d4/c335ddf94463e451109e3494e909765c3e5205787b772e3b25ee8601b86a/pytest-runner-2.9.tar.gz";
+      md5 = "2212a2e34404b0960b2fdc2c469247b2";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   pytest-timeout = super.buildPythonPackage {
-    name = "pytest-timeout-0.4";
+    name = "pytest-timeout-1.2.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pytest];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/24/48/5f6bd4b8026a26e1dd427243d560a29a0f1b24a5c7cffca4bf049a7bb65b/pytest-timeout-0.4.tar.gz";
-      md5 = "03b28aff69cbbfb959ed35ade5fde262";
+      url = "https://pypi.python.org/packages/cc/b7/b2a61365ea6b6d2e8881360ae7ed8dad0327ad2df89f2f0be4a02304deb2/pytest-timeout-1.2.0.tar.gz";
+      md5 = "83607d91aa163562c7ee835da57d061d";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit { fullName = "DFSG approved"; } ];

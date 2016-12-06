@@ -122,13 +122,13 @@ class TestHooksHttpHandler(object):
         fake_date = '1/Nov/2015 00:00:00'
         date_patcher = mock.patch.object(
             handler, 'log_date_time_string', return_value=fake_date)
-        with date_patcher, caplog.atLevel(logging.DEBUG):
+        with date_patcher, caplog.at_level(logging.DEBUG):
             handler.log_message('Some message %d, %s', 123, 'string')
 
         expected_message = '{} - - [{}] Some message 123, string'.format(
             ip_port[0], fake_date)
         assert_message_in_log(
-            caplog.records(), expected_message,
+            caplog.records, expected_message,
             levelno=logging.DEBUG, module='hooks_daemon')
 
     def _generate_post_request(self, data):
@@ -175,7 +175,7 @@ class TestPyro4HooksCallbackDaemon(object):
     def test_prepare_inits_pyro4_and_registers_hooks(self, caplog):
         pyro4_daemon = mock.Mock()
 
-        with self._pyro4_patcher(pyro4_daemon), caplog.atLevel(logging.DEBUG):
+        with self._pyro4_patcher(pyro4_daemon), caplog.at_level(logging.DEBUG):
             daemon = hooks_daemon.Pyro4HooksCallbackDaemon()
 
         assert daemon._daemon == pyro4_daemon
@@ -186,7 +186,7 @@ class TestPyro4HooksCallbackDaemon(object):
         assert isinstance(args[0], hooks_daemon.Hooks)
 
         assert_message_in_log(
-            caplog.records(),
+            caplog.records,
             'Preparing callback daemon and registering hook object',
             levelno=logging.DEBUG, module='hooks_daemon')
 
@@ -213,7 +213,7 @@ class TestPyro4HooksCallbackDaemon(object):
         with self._pyro4_patcher(pyro4_daemon):
             daemon = hooks_daemon.Pyro4HooksCallbackDaemon()
 
-        with self._thread_patcher(thread), caplog.atLevel(logging.DEBUG):
+        with self._thread_patcher(thread), caplog.at_level(logging.DEBUG):
             with daemon:
                 assert daemon._daemon == pyro4_daemon
                 assert daemon._callback_thread == thread
@@ -224,7 +224,7 @@ class TestPyro4HooksCallbackDaemon(object):
         thread.join.assert_called_once_with()
 
         assert_message_in_log(
-            caplog.records(), 'Waiting for background thread to finish.',
+            caplog.records, 'Waiting for background thread to finish.',
             levelno=logging.DEBUG, module='hooks_daemon')
 
     def _pyro4_patcher(self, daemon):
@@ -238,18 +238,18 @@ class TestPyro4HooksCallbackDaemon(object):
 
 class TestHttpHooksCallbackDaemon(object):
     def test_prepare_inits_daemon_variable(self, tcp_server, caplog):
-        with self._tcp_patcher(tcp_server), caplog.atLevel(logging.DEBUG):
+        with self._tcp_patcher(tcp_server), caplog.at_level(logging.DEBUG):
             daemon = hooks_daemon.HttpHooksCallbackDaemon()
         assert daemon._daemon == tcp_server
 
         assert_message_in_log(
-            caplog.records(),
+            caplog.records,
             'Preparing callback daemon and registering hook object',
             levelno=logging.DEBUG, module='hooks_daemon')
 
     def test_prepare_inits_hooks_uri_and_logs_it(
             self, tcp_server, caplog):
-        with self._tcp_patcher(tcp_server), caplog.atLevel(logging.DEBUG):
+        with self._tcp_patcher(tcp_server), caplog.at_level(logging.DEBUG):
             daemon = hooks_daemon.HttpHooksCallbackDaemon()
 
         _, port = tcp_server.server_address
@@ -257,7 +257,7 @@ class TestHttpHooksCallbackDaemon(object):
         assert daemon.hooks_uri == expected_uri
 
         assert_message_in_log(
-            caplog.records(), 'Hooks uri is: {}'.format(expected_uri),
+            caplog.records, 'Hooks uri is: {}'.format(expected_uri),
             levelno=logging.DEBUG, module='hooks_daemon')
 
     def test_run_creates_a_thread(self, tcp_server):
@@ -280,11 +280,11 @@ class TestHttpHooksCallbackDaemon(object):
         with self._tcp_patcher(tcp_server):
             daemon = hooks_daemon.HttpHooksCallbackDaemon()
 
-        with self._thread_patcher(mock.Mock()), caplog.atLevel(logging.DEBUG):
+        with self._thread_patcher(mock.Mock()), caplog.at_level(logging.DEBUG):
             daemon._run()
 
         assert_message_in_log(
-            caplog.records(),
+            caplog.records,
             'Running event loop of callback daemon in background thread',
             levelno=logging.DEBUG, module='hooks_daemon')
 
@@ -294,7 +294,7 @@ class TestHttpHooksCallbackDaemon(object):
         with self._tcp_patcher(tcp_server):
             daemon = hooks_daemon.HttpHooksCallbackDaemon()
 
-        with self._thread_patcher(thread), caplog.atLevel(logging.DEBUG):
+        with self._thread_patcher(thread), caplog.at_level(logging.DEBUG):
             with daemon:
                 assert daemon._daemon == tcp_server
                 assert daemon._callback_thread == thread
@@ -305,7 +305,7 @@ class TestHttpHooksCallbackDaemon(object):
         thread.join.assert_called_once_with()
 
         assert_message_in_log(
-            caplog.records(), 'Waiting for background thread to finish.',
+            caplog.records, 'Waiting for background thread to finish.',
             levelno=logging.DEBUG, module='hooks_daemon')
 
     def _tcp_patcher(self, tcp_server):
