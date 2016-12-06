@@ -7,11 +7,33 @@ import os
 import sys
 import platform
 
+from pip.download import PipSession
+from pip.req import parse_requirements
+
+
 if sys.version_info < (2, 7):
     raise Exception('RhodeCode requires Python 2.7 or later')
 
-
 here = os.path.abspath(os.path.dirname(__file__))
+
+try:
+    install_reqs = parse_requirements(
+        os.path.join(here, 'requirements.txt'), session=PipSession())
+except TypeError:
+    # try pip < 6.0.0, that doesn't support session
+    install_reqs = parse_requirements(
+        os.path.join(here, 'requirements.txt'))
+install_requirements = [str(ir.req) for ir in install_reqs]
+
+try:
+    test_reqs = parse_requirements(
+        os.path.join(here, 'requirements_test.txt'), session=PipSession())
+except TypeError:
+    # try pip < 6.0.0, that doesn't support session
+    test_reqs = parse_requirements(
+        os.path.join(here, 'requirements_test.txt'))
+extras = ['configobj']
+test_requirements = [str(ir.req) for ir in test_reqs] + extras
 
 
 def _get_meta_var(name, data, callback_handler=None):
@@ -115,17 +137,6 @@ else:
     requirements.append('psutil')
     requirements.append('py-bcrypt')
 
-test_requirements = [
-    'WebTest',
-    'configobj',
-    'cssselect',
-    'lxml',
-    'mock',
-    'pytest',
-    'pytest-cov',
-    'pytest-runner',
-    'pytest-sugar',
-]
 
 setup_requirements = [
     'PasteScript',

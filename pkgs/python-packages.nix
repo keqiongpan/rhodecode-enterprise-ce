@@ -1354,6 +1354,19 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  pytest-sugar = super.buildPythonPackage {
+    name = "pytest-sugar-0.7.1";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [pytest termcolor];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/03/97/05d988b4fa870e7373e8ee4582408543b9ca2bd35c3c67b569369c6f9c49/pytest-sugar-0.7.1.tar.gz";
+      md5 = "7400f7c11f3d572b2c2a3b60352d35fe";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
   pytest-timeout = super.buildPythonPackage {
     name = "pytest-timeout-1.2.0";
     buildInputs = with self; [];
@@ -1499,7 +1512,7 @@
   };
   rhodecode-enterprise-ce = super.buildPythonPackage {
     name = "rhodecode-enterprise-ce-4.6.0";
-    buildInputs = with self; [WebTest configobj cssselect lxml mock pytest pytest-cov pytest-runner pytest-sugar];
+    buildInputs = with self; [pytest py pytest-runner pytest-catchlog pytest-cov pytest-profiling gprof2dot pytest-timeout pytest-sugar mock WebTest cov-core coverage cssselect lxml configobj];
     doCheck = true;
     propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
     src = ./.;
@@ -1635,6 +1648,19 @@
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
+    };
+  };
+  termcolor = super.buildPythonPackage {
+    name = "termcolor-1.1.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/8a/48/a76be51647d0eb9f10e2a4511bf3ffb8cc1e6b14e9e4fab46173aa79f981/termcolor-1.1.0.tar.gz";
+      md5 = "043e89644f8909d462fbbfa511c768df";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
     };
   };
   traitlets = super.buildPythonPackage {
@@ -1835,30 +1861,5 @@
 
 ### Test requirements
 
-  pytest-sugar = super.buildPythonPackage {
-    name = "pytest-sugar-0.7.1";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [pytest termcolor];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/03/97/05d988b4fa870e7373e8ee4582408543b9ca2bd35c3c67b569369c6f9c49/pytest-sugar-0.7.1.tar.gz";
-      md5 = "7400f7c11f3d572b2c2a3b60352d35fe";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
-    };
-  };
-  termcolor = super.buildPythonPackage {
-    name = "termcolor-1.1.0";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/8a/48/a76be51647d0eb9f10e2a4511bf3ffb8cc1e6b14e9e4fab46173aa79f981/termcolor-1.1.0.tar.gz";
-      md5 = "043e89644f8909d462fbbfa511c768df";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
+  
 }
