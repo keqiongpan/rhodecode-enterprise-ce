@@ -114,7 +114,7 @@ transifex-client==0.10
 gevent==1.1.2
 greenlet==0.4.10
 gunicorn==19.6.0
-waitress==0.8.9
+waitress==1.0.1
 
 # debug
 ipdb==0.10.1
