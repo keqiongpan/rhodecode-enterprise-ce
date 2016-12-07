@@ -341,13 +341,13 @@
     };
   };
   Whoosh = super.buildPythonPackage {
-    name = "Whoosh-2.7.0";
+    name = "Whoosh-2.7.4";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/1c/dc/2f0231ff3875ded36df8c1ab851451e51a237dc0e5a86d3d96036158da94/Whoosh-2.7.0.zip";
-      md5 = "7abfd970f16fadc7311960f3fa0bc7a9";
+      url = "https://pypi.python.org/packages/25/2b/6beed2107b148edc1321da0d489afc4617b9ed317ef7b72d4993cad9b684/Whoosh-2.7.4.tar.gz";
+      md5 = "c2710105f20b3e29936bd2357383c325";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.bsd2 ];
