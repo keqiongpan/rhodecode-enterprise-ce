@@ -55,7 +55,7 @@ __dbversion__ = 63  # defines current db version for migrations
 __platform__ = platform.system()
 __license__ = 'AGPLv3, and Commercial License'
 __author__ = 'RhodeCode GmbH'
-__url__ = 'http://rhodecode.com'
+__url__ = 'https://code.rhodecode.com'
 
 is_windows = __platform__ in ['Windows']
 is_unix = not is_windows
