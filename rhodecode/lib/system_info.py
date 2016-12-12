@@ -256,9 +256,8 @@ def storage_inodes():
 
     try:
         i_stat = os.statvfs(path)
-
-        value['used'] = i_stat.f_ffree
-        value['free'] = i_stat.f_favail
+        value['free'] = i_stat.f_ffree
+        value['used'] = i_stat.f_files-i_stat.f_favail
         value['total'] = i_stat.f_files
         value['percent'] = percentage(value['used'], value['total'])
     except Exception as e:
