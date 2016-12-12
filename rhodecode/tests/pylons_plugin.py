@@ -280,7 +280,7 @@ class HttpVCSServer(VCSServer):
         else:
             pytest.exit(
                 "Starting the VCSServer failed or took more than {} "
-                "seconds.".format(timeout))
+                "seconds. cmd: `{}`".format(timeout, ' '.join(self._args)))
 
     def shutdown(self):
         self.process.kill()
