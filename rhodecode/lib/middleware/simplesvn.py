@@ -49,6 +49,8 @@ class SimpleSvnApp(object):
         if environ['REQUEST_METHOD'] == 'MKCOL' or 'CONTENT_LENGTH' in environ:
             data = data.read()
 
+        log.debug('Calling: %s method via `%s`', environ['REQUEST_METHOD'],
+                  self._get_url(environ['PATH_INFO']))
         response = requests.request(
             environ['REQUEST_METHOD'], self._get_url(environ['PATH_INFO']),
             data=data, headers=request_headers)
