@@ -31,13 +31,13 @@ def strip_preparer(value):
     return value
 
 
-def slugify_preparer(value):
+def slugify_preparer(value, keep_case=True):
     """
     Slugify given value to a safe representation for url/id
     """
     from rhodecode.lib.utils import repo_name_slug
     if value:
-        value = repo_name_slug(value.lower())
+        value = repo_name_slug(value if keep_case else value.lower())
     return value
 
 
