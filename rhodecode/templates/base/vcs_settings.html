@@ -162,13 +162,13 @@
                     </div>
                     <div class="input">
                         ${h.text('vcs_svn_proxy_http_server_url',size=59)}
+                        % if c.svn_proxy_generate_config:
+                            <span class="buttons">
+                                <button class="btn btn-primary" id="vcs_svn_generate_cfg">${_('Generate Apache Config')}</button>
+                            </span>
+                        % endif
                     </div>
                 </div>
-                % if c.svn_proxy_generate_config:
-                    <div class="buttons">
-                        <button class="btn btn-primary" id="vcs_svn_generate_cfg">${_('Generate Apache Config')}</button>
-                    </div>
-                % endif
             </div>
         </div>
     % endif

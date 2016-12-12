@@ -68,7 +68,8 @@ class TestModDavSvnConfig(object):
             list_parent_path=True,
             location_root=self.location_root,
             repo_groups=repo_groups,
-            realm=self.realm
+            realm=self.realm,
+            use_ssl=True
         )
         # Assert that one location directive exists for each repository group.
         for group in repo_groups:
@@ -79,13 +80,15 @@ class TestModDavSvnConfig(object):
         self.assert_root_location_directive(generated_config)
 
     @pytest.mark.parametrize('list_parent_path', [True, False])
-    def test_list_parent_path(self, list_parent_path):
+    @pytest.mark.parametrize('use_ssl', [True, False])
+    def test_list_parent_path(self, list_parent_path, use_ssl):
         generated_config = utils._render_mod_dav_svn_config(
             parent_path_root=self.parent_path_root,
             list_parent_path=list_parent_path,
             location_root=self.location_root,
             repo_groups=self.get_repo_group_mocks(count=10),
-            realm=self.realm
+            realm=self.realm,
+            use_ssl=use_ssl
         )
 
         # Assert that correct configuration directive is present.
@@ -95,3 +98,10 @@ class TestModDavSvnConfig(object):
         else:
             assert re.search('SVNListParentPath\s+Off', generated_config)
             assert not re.search('SVNListParentPath\s+On', generated_config)
+
+        if use_ssl:
+            assert 'RequestHeader edit Destination ^https: http: early' \
+                   in generated_config
+        else:
+            assert '#RequestHeader edit Destination ^https: http: early' \
+                   in generated_config

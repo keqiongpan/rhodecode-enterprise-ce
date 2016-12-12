@@ -25,6 +25,7 @@ from pyramid.renderers import render
 
 from rhodecode.events import trigger
 from rhodecode.lib.utils import get_rhodecode_realm, get_rhodecode_base_path
+from rhodecode.lib.utils2 import str2bool
 from rhodecode.model.db import RepoGroup
 
 from . import config_keys
@@ -42,7 +43,10 @@ def generate_mod_dav_svn_config(registry):
     repositories organized in sub folders.
     """
     settings = registry.settings
+    use_ssl = str2bool(registry.settings['force_https'])
+
     config = _render_mod_dav_svn_config(
+        use_ssl=use_ssl,
         parent_path_root=get_rhodecode_base_path(),
         list_parent_path=settings[config_keys.list_parent_path],
         location_root=settings[config_keys.location_root],
@@ -55,7 +59,8 @@ def generate_mod_dav_svn_config(registry):
 
 
 def _render_mod_dav_svn_config(
-        parent_path_root, list_parent_path, location_root, repo_groups, realm):
+        parent_path_root, list_parent_path, location_root, repo_groups, realm,
+        use_ssl):
     """
     Render mod_dav_svn configuration to string.
     """
@@ -72,6 +77,7 @@ def _render_mod_dav_svn_config(
         'repo_group_paths': repo_group_paths,
         'svn_list_parent_path': list_parent_path,
         'rhodecode_realm': realm,
+        'use_https': use_ssl
     }
 
     # Render the configuration template to string.
