@@ -133,13 +133,13 @@
     };
   };
   Paste = super.buildPythonPackage {
-    name = "Paste-2.0.2";
+    name = "Paste-2.0.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/d5/8d/0f8ac40687b97ff3e07ebd1369be20bdb3f93864d2dc3c2ff542edb4ce50/Paste-2.0.2.tar.gz";
-      md5 = "4bfc8a7eaf858f6309d2ac0f40fc951c";
+      url = "https://pypi.python.org/packages/30/c3/5c2f7c7a02e4f58d4454353fa1c32c94f79fa4e36d07a67c0ac295ea369e/Paste-2.0.3.tar.gz";
+      md5 = "1231e14eae62fa7ed76e9130b04bc61e";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
