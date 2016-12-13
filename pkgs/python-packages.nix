@@ -666,13 +666,13 @@
     };
   };
   elasticsearch-dsl = super.buildPythonPackage {
-    name = "elasticsearch-dsl-2.0.0";
+    name = "elasticsearch-dsl-2.2.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six python-dateutil elasticsearch];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/4e/5d/e788ae8dbe2ff4d13426db0a027533386a5c276c77a2654dc0e2007ce04a/elasticsearch-dsl-2.0.0.tar.gz";
-      md5 = "4cdfec81bb35383dd3b7d02d7dc5ee68";
+      url = "https://pypi.python.org/packages/66/2f/52a086968788e58461641570f45c3207a52d46ebbe9b77dc22b6a8ffda66/elasticsearch-dsl-2.2.0.tar.gz";
+      md5 = "fa6bd3c87ea3caa8f0f051bc37c53221";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
@@ -1508,13 +1508,13 @@
     };
   };
   rhodecode-tools = super.buildPythonPackage {
-    name = "rhodecode-tools-0.10.2";
+    name = "rhodecode-tools-0.11.0";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [click future six Mako MarkupSafe requests Whoosh elasticsearch elasticsearch-dsl urllib3];
+    propagatedBuildInputs = with self; [click future six Mako MarkupSafe requests elasticsearch elasticsearch-dsl urllib3 Whoosh];
     src = fetchurl {
-      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.10.2.zip";
-      md5 = "d2af3985a1a32a678944d4d48870cb04";
+      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.11.0.tar.gz?md5=e5fd0a8363af08a0ced71b50ca9cce15";
+      md5 = "e5fd0a8363af08a0ced71b50ca9cce15";
     };
     meta = {
       license = [ { fullName = "AGPLv3 and Proprietary"; } ];

@@ -202,12 +202,6 @@ self: super: {
       '';
     });
 
-  rhodecode-tools = super.rhodecode-tools.override (attrs: {
-    patches = [
-      ./patch-rhodecode-tools-setup.diff
-    ];
-  });
-
   URLObject = super.URLObject.override (attrs: {
     meta = {
       license = {
