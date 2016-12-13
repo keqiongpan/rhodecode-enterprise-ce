@@ -1504,7 +1504,7 @@
     propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
     src = ./.;
     meta = {
-      license = [ { fullName = "AGPLv3, and Commercial License"; } ];
+      license = [ { fullName = "Affero GNU General Public License v3 or later (AGPLv3+)"; } { fullName = "AGPLv3, and Commercial License"; } ];
     };
   };
   rhodecode-tools = super.buildPythonPackage {

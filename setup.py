@@ -1,14 +1,35 @@
 # -*- coding: utf-8 -*-
 
+# Copyright (C) 2010-2016  RhodeCode GmbH
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License, version 3
+# (only), as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This program is dual-licensed. If you wish to learn more about the
+# RhodeCode Enterprise Edition, including its added features, Support services,
+# and proprietary license terms, please see https://rhodecode.com/licenses/
+
 # Import early to make sure things are patched up properly
 from setuptools import setup, find_packages
 
 import os
 import sys
+import pkgutil
 import platform
 
 from pip.download import PipSession
 from pip.req import parse_requirements
+
+from codecs import open
 
 
 if sys.version_info < (2, 7):
@@ -16,52 +37,40 @@ if sys.version_info < (2, 7):
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-try:
-    install_reqs = parse_requirements(
-        os.path.join(here, 'requirements.txt'), session=PipSession())
-except TypeError:
-    # try pip < 6.0.0, that doesn't support session
-    install_reqs = parse_requirements(
-        os.path.join(here, 'requirements.txt'))
-install_requirements = [str(ir.req) for ir in install_reqs]
-
-try:
-    test_reqs = parse_requirements(
-        os.path.join(here, 'requirements_test.txt'), session=PipSession())
-except TypeError:
-    # try pip < 6.0.0, that doesn't support session
-    test_reqs = parse_requirements(
-        os.path.join(here, 'requirements_test.txt'))
-extras = ['configobj']
-test_requirements = [str(ir.req) for ir in test_reqs] + extras
-
-
-def _get_meta_var(name, data, callback_handler=None):
-    import re
-    matches = re.compile(r'(?:%s)\s*=\s*(.*)' % name).search(data)
-    if matches:
-        if not callable(callback_handler):
-            callback_handler = lambda v: v
-
-        return callback_handler(eval(matches.groups()[0]))
-
-_meta = open(os.path.join(here, 'rhodecode', '__init__.py'), 'rb')
-_metadata = _meta.read()
-_meta.close()
-
-callback = lambda V: ('.'.join(map(str, V[:3])) + '.'.join(V[3:]))
-__version__ = open(os.path.join('rhodecode', 'VERSION')).read().strip()
-__license__ = _get_meta_var('__license__', _metadata)
-__author__ = _get_meta_var('__author__', _metadata)
-__url__ = _get_meta_var('__url__', _metadata)
 # defines current platform
 __platform__ = platform.system()
+__license__ = 'AGPLv3, and Commercial License'
+__author__ = 'RhodeCode GmbH'
+__url__ = 'https://code.rhodecode.com'
+is_windows = __platform__ in ('Windows',)
 
-# Cygwin has different platform identifiers, but they all contain the
-# term "CYGWIN"
-is_windows = __platform__ == 'Windows' or 'CYGWIN' in __platform__
 
-requirements = [
+def _get_requirements(req_filename, exclude=None, extras=None):
+    extras = extras or []
+    exclude = exclude or []
+
+    try:
+        parsed = parse_requirements(
+            os.path.join(here, req_filename), session=PipSession())
+    except TypeError:
+        # try pip < 6.0.0, that doesn't support session
+        parsed = parse_requirements(os.path.join(here, req_filename))
+
+    requirements = []
+    for ir in parsed:
+        if ir.req and ir.name not in exclude:
+            requirements.append(str(ir.req))
+    return requirements + extras
+
+
+# requirements extract
+setup_requirements = ['PasteScript', 'pytest-runner']
+install_requirements = _get_requirements(
+    'requirements.txt', exclude=['setuptools'])
+test_requirements = _get_requirements(
+    'requirements_test.txt', extras=['configobj'])
+
+install_requirements = [
     'Babel',
     'Beaker',
     'FormEncode',
@@ -128,98 +137,72 @@ requirements = [
     'waitress',
     'zope.cachedescriptors',
     'dogpile.cache',
-    'dogpile.core'
-]
-
-if is_windows:
-    pass
-else:
-    requirements.append('psutil')
-    requirements.append('py-bcrypt')
-
-
-setup_requirements = [
-    'PasteScript',
-    'pytest-runner',
-]
-
-dependency_links = [
-]
-
-classifiers = [
-    'Development Status :: 6 - Mature',
-    'Environment :: Web Environment',
-    'Framework :: Pylons',
-    'Intended Audience :: Developers',
-    'Operating System :: OS Independent',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 2.7',
+    'dogpile.core',
+    'psutil',
+    'py-bcrypt',
 ]
 
 
-# additional files from project that goes somewhere in the filesystem
-# relative to sys.prefix
-data_files = []
+def get_version():
+    version = pkgutil.get_data('rhodecode', 'VERSION')
+    return version.strip()
+
 
 # additional files that goes into package itself
-package_data = {'rhodecode': ['i18n/*/LC_MESSAGES/*.mo', ], }
+package_data = {
+    '': ['*.txt', '*.rst'],
+    'configs': ['*.ini'],
+    'rhodecode': ['VERSION', 'i18n/*/LC_MESSAGES/*.mo', ],
+}
 
-description = ('RhodeCode is a fast and powerful management tool '
-               'for Mercurial and GIT with a built in push/pull server, '
-               'full text search and code-review.')
-
+description = 'Source Code Management Platform'
 keywords = ' '.join([
-    'rhodecode', 'rhodiumcode', 'mercurial', 'git', 'code review',
-    'repo groups', 'ldap', 'repository management', 'hgweb replacement',
-    'hgwebdir', 'gitweb replacement', 'serving hgweb',
+    'rhodecode', 'mercurial', 'git', 'svn',
+    'code review',
+    'repo groups', 'ldap', 'repository management', 'hgweb',
+    'hgwebdir', 'gitweb', 'serving hgweb',
 ])
 
-# long description
-README_FILE = 'README.rst'
-CHANGELOG_FILE = 'CHANGES.rst'
-try:
-    long_description = open(README_FILE).read() + '\n\n' + \
-        open(CHANGELOG_FILE).read()
 
-except IOError, err:
+# README/DESCRIPTION generation
+readme_file = 'README.rst'
+changelog_file = 'CHANGES.rst'
+try:
+    long_description = open(readme_file).read() + '\n\n' + \
+        open(changelog_file).read()
+except IOError as err:
     sys.stderr.write(
-        '[WARNING] Cannot find file specified as long_description (%s)\n or '
-        'changelog (%s) skipping that file' % (README_FILE, CHANGELOG_FILE)
-    )
+        "[WARNING] Cannot find file specified as long_description (%s)\n "
+        "or changelog (%s) skipping that file" % (readme_file, changelog_file))
     long_description = description
 
-# packages
-packages = find_packages()
-
-paster_commands = [
-    'make-config=rhodecode.lib.paster_commands.make_config:Command',
-    'setup-rhodecode=rhodecode.lib.paster_commands.setup_rhodecode:Command',
-    'update-repoinfo=rhodecode.lib.paster_commands.update_repoinfo:Command',
-    'cache-keys=rhodecode.lib.paster_commands.cache_keys:Command',
-    'ishell=rhodecode.lib.paster_commands.ishell:Command',
-    'upgrade-db=rhodecode.lib.dbmigrate:UpgradeDb',
-    'celeryd=rhodecode.lib.celerypylons.commands:CeleryDaemonCommand',
-]
 
 setup(
     name='rhodecode-enterprise-ce',
-    version=__version__,
+    version=get_version(),
     description=description,
     long_description=long_description,
     keywords=keywords,
     license=__license__,
     author=__author__,
     author_email='marcin@rhodecode.com',
-    dependency_links=dependency_links,
     url=__url__,
-    install_requires=requirements,
-    tests_require=test_requirements,
-    classifiers=classifiers,
     setup_requires=setup_requirements,
-    data_files=data_files,
-    packages=packages,
-    include_package_data=True,
+    install_requires=install_requirements,
+    tests_require=test_requirements,
+    zip_safe=False,
+    packages=find_packages(exclude=["docs", "tests*"]),
     package_data=package_data,
+    include_package_data=True,
+    classifiers=[
+        'Development Status :: 6 - Mature',
+        'Environment :: Web Environment',
+        'Intended Audience :: Developers',
+        'Operating System :: OS Independent',
+        'Topic :: Software Development :: Version Control',
+        'License :: OSI Approved :: Affero GNU General Public License v3 or later (AGPLv3+)',
+        'Programming Language :: Python :: 2.7',
+    ],
     message_extractors={
         'rhodecode': [
             ('**.py', 'python', None),
@@ -229,7 +212,6 @@ setup(
             ('public/**', 'ignore', None),
         ]
     },
-    zip_safe=False,
     paster_plugins=['PasteScript', 'Pylons'],
     entry_points={
         'enterprise.plugins1': [
@@ -249,7 +231,15 @@ setup(
             'main=pylons.util:PylonsInstaller',
             'pylons=pylons.util:PylonsInstaller',
         ],
-        'paste.global_paster_command': paster_commands,
+        'paste.global_paster_command': [
+            'make-config=rhodecode.lib.paster_commands.make_config:Command',
+            'setup-rhodecode=rhodecode.lib.paster_commands.setup_rhodecode:Command',
+            'update-repoinfo=rhodecode.lib.paster_commands.update_repoinfo:Command',
+            'cache-keys=rhodecode.lib.paster_commands.cache_keys:Command',
+            'ishell=rhodecode.lib.paster_commands.ishell:Command',
+            'upgrade-db=rhodecode.lib.dbmigrate:UpgradeDb',
+            'celeryd=rhodecode.lib.celerypylons.commands:CeleryDaemonCommand',
+        ],
         'pytest11': [
             'pylons=rhodecode.tests.pylons_plugin',
             'enterprise=rhodecode.tests.plugin',
