@@ -1547,26 +1547,26 @@
     };
   };
   setuptools = super.buildPythonPackage {
-    name = "setuptools-20.8.1";
+    name = "setuptools-30.1.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/c4/19/c1bdc88b53da654df43770f941079dbab4e4788c2dcb5658fb86259894c7/setuptools-20.8.1.zip";
-      md5 = "fe58a5cac0df20bb83942b252a4b0543";
+      url = "https://pypi.python.org/packages/1e/43/002c8616db9a3e7be23c2556e39b90a32bb40ba0dc652de1999d5334d372/setuptools-30.1.0.tar.gz";
+      md5 = "cac497f42e5096ac8df29e38d3f81c3e";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   setuptools-scm = super.buildPythonPackage {
-    name = "setuptools-scm-1.11.0";
+    name = "setuptools-scm-1.15.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/cd/5f/e3a038292358058d83d764a47d09114aa5a8003ed4529518f9e580f1a94f/setuptools_scm-1.11.0.tar.gz";
-      md5 = "4c5c896ba52e134bbc3507bac6400087";
+      url = "https://pypi.python.org/packages/80/b7/31b6ae5fcb188e37f7e31abe75f9be90490a5456a72860fa6e643f8a3cbc/setuptools_scm-1.15.0.tar.gz";
+      md5 = "b6916c78ed6253d6602444fad4279c5b";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
