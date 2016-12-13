@@ -100,11 +100,7 @@ self: super: {
   });
 
   py-gfm = super.py-gfm.override  {
-    src = pkgs.fetchgit {
-      url = "https://code.rhodecode.com/upstream/py-gfm";
-      rev = "0d66a19bc16e3d49de273c0f797d4e4781e8c0f2";
-      sha256 = "0ryp74jyihd3ckszq31bml5jr3bciimhfp7va7kw6ld92930ksv3";
-    };
+    name = "py-gfm-0.1.3.rhodecode-upstream1";
   };
 
   pycurl = super.pycurl.override (attrs: {
@@ -123,12 +119,7 @@ self: super: {
   });
 
   Pylons = super.Pylons.override (attrs: {
-    name = "Pylons-1.0.1-patch1";
-    src = pkgs.fetchgit {
-      url = "https://code.rhodecode.com/upstream/pylons";
-      rev = "707354ee4261b9c10450404fc9852ccea4fd667d";
-      sha256 = "b2763274c2780523a335f83a1df65be22ebe4ff413a7bc9e9288d23c1f62032e";
-    };
+    name = "Pylons-1.0.2.rhodecode-patch1";
   });
 
   pyramid = super.pyramid.override (attrs: {
@@ -146,16 +137,6 @@ self: super: {
   pyramid-debugtoolbar = super.pyramid-debugtoolbar.override (attrs: {
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal localLicenses.repoze ];
-    };
-  });
-
-  Pyro4 = super.Pyro4.override (attrs: {
-    # TODO: Was not able to generate this version, needs further
-    # investigation.
-    name = "Pyro4-4.35";
-    src = pkgs.fetchurl {
-      url = "https://pypi.python.org/packages/source/P/Pyro4/Pyro4-4.35.src.tar.gz";
-      md5 = "cbe6cb855f086a0f092ca075005855f3";
     };
   });
 

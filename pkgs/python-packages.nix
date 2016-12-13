@@ -185,13 +185,13 @@
     };
   };
   Pylons = super.buildPythonPackage {
-    name = "Pylons-1.0.1";
+    name = "Pylons-1.0.2.dev20161213";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [Routes WebHelpers Beaker Paste PasteDeploy PasteScript FormEncode simplejson decorator nose Mako WebError WebTest Tempita MarkupSafe WebOb];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/a2/69/b835a6bad00acbfeed3f33c6e44fa3f936efc998c795bfb15c61a79ecf62/Pylons-1.0.1.tar.gz";
-      md5 = "6cb880d75fa81213192142b07a6e4915";
+      url = "https://code.rhodecode.com/upstream/pylons/archive/707354ee4261b9c10450404fc9852ccea4fd667d.tar.gz?md5=f26633726fa2cd3a340316ee6a5d218f";
+      md5 = "f26633726fa2cd3a340316ee6a5d218f";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1126,8 +1126,8 @@
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools Markdown];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/12/e4/6b3d8678da04f97d7490d8264d8de51c2dc9fb91209ccee9c515c95e14c5/py-gfm-0.1.3.tar.gz";
-      md5 = "e588d9e69640a241b97e2c59c22527a6";
+      url = "https://code.rhodecode.com/upstream/py-gfm/archive/0d66a19bc16e3d49de273c0f797d4e4781e8c0f2.tar.gz?md5=0d0d5385bfb629eea636a80b9c2bfd16";
+      md5 = "0d0d5385bfb629eea636a80b9c2bfd16";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1499,7 +1499,7 @@
   };
   rhodecode-enterprise-ce = super.buildPythonPackage {
     name = "rhodecode-enterprise-ce-4.6.0";
-    buildInputs = with self; [pytest py pytest-runner pytest-catchlog pytest-cov pytest-profiling gprof2dot pytest-timeout pytest-sugar mock WebTest cov-core coverage cssselect lxml configobj];
+    buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage cssselect lxml configobj];
     doCheck = true;
     propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
     src = ./.;
@@ -1521,13 +1521,13 @@
     };
   };
   serpent = super.buildPythonPackage {
-    name = "serpent-1.12";
+    name = "serpent-1.15";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/3b/19/1e0e83b47c09edaef8398655088036e7e67386b5c48770218ebb339fbbd5/serpent-1.12.tar.gz";
-      md5 = "05869ac7b062828b34f8f927f0457b65";
+      url = "https://pypi.python.org/packages/7b/38/b2b27673a882ff2ea5871bb3e3e6b496ebbaafd1612e51990ffb158b9254/serpent-1.15.tar.gz";
+      md5 = "e27b1aad5c218e16442f52abb7c7053a";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

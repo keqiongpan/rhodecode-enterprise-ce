@@ -135,6 +135,8 @@ let
           rhodecode-testdata
         ]);
 
+      #TODO: either move this into overrides, OR use the new machanics from
+      # pip2nix and requiremtn.txt file
       propagatedBuildInputs = attrs.propagatedBuildInputs ++ (with self; [
         rhodecode-tools
       ]);
