@@ -29,8 +29,6 @@ from urllib import unquote_plus
 
 import pytest
 import rc_testdata
-from lxml.html import fromstring, tostring
-from lxml.cssselect import CSSSelector
 
 from rhodecode.model.db import User
 from rhodecode.model.meta import Session
@@ -134,6 +132,11 @@ class AssertResponse(object):
     def __init__(self, response):
         self.response = response
 
+    def get_imports(self):
+        from lxml.html import fromstring, tostring
+        from lxml.cssselect import CSSSelector
+        return fromstring, tostring, CSSSelector
+
     def one_element_exists(self, css_selector):
         self.get_element(css_selector)
 
@@ -154,6 +157,7 @@ class AssertResponse(object):
         assert expected_content in element.value
 
     def contains_one_link(self, link_text, href):
+        fromstring, tostring, CSSSelector = self.get_imports()
         doc = fromstring(self.response.body)
         sel = CSSSelector('a[href]')
         elements = [
@@ -162,6 +166,7 @@ class AssertResponse(object):
         self._ensure_url_equal(elements[0].attrib.get('href'), href)
 
     def contains_one_anchor(self, anchor_id):
+        fromstring, tostring, CSSSelector = self.get_imports()
         doc = fromstring(self.response.body)
         sel = CSSSelector('#' + anchor_id)
         elements = sel(doc)
@@ -179,12 +184,14 @@ class AssertResponse(object):
         return self._get_elements(css_selector)
 
     def _get_elements(self, css_selector):
+        fromstring, tostring, CSSSelector = self.get_imports()
         doc = fromstring(self.response.body)
         sel = CSSSelector(css_selector)
         elements = sel(doc)
         return elements
 
     def _element_to_string(self, element):
+        fromstring, tostring, CSSSelector = self.get_imports()
         return tostring(element)
 
 
@@ -230,7 +237,7 @@ def run_test_concurrently(times, raise_catched_exc=True):
             def call_test_func():
                 try:
                     test_func(*args, **kwargs)
-                except Exception, e:
+                except Exception as e:
                     exceptions.append(e)
                     if raise_catched_exc:
                         raise
@@ -260,11 +267,11 @@ def wait_for_url(url, timeout=10):
     last = 0
     wait = 0.1
 
-    while (timeout > last):
+    while timeout > last:
         last = time.time()
         if is_url_reachable(url):
             break
-        elif ((last + wait) > time.time()):
+        elif (last + wait) > time.time():
             # Go to sleep because not enough time has passed since last check.
             time.sleep(wait)
     else:
