@@ -22,8 +22,7 @@ account permissions.
 .. code-block:: bash
 
     # Open iShell from the terminal
-    $ .rccontrol/enterprise-1/profile/bin/paster \
-        ishell .rccontrol/enterprise-1/rhodecode.ini
+    $ rccontrol ishell enterprise-1
 
 .. code-block:: mysql
 
@@ -46,8 +45,7 @@ following example to make changes to this table.
 .. code-block:: bash
 
   # Open iShell from the terminal
-  $ .rccontrol/enterprise-5/profile/bin/paster \
-      ishell.rccontrol/enterprise-5/rhodecode.ini
+  $ rccontrol ishell enterprise-1
 
 .. code-block:: mysql
 
@@ -73,8 +71,7 @@ Use the following code example to carry out these steps.
 .. code-block:: bash
 
     # starts the ishell interactive prompt
-    $ .rccontrol/enterprise-1/profile/bin/paster \
-        ishell .rccontrol/enterprise-1/rhodecode.ini
+    $ rccontrol ishell enterprise-1
 
 .. code-block:: mysql
 
@@ -106,8 +103,7 @@ Use the following code example to carry out these steps.
 .. code-block:: bash
 
     # starts the ishell interactive prompt
-    $ .rccontrol/enterprise-1/profile/bin/paster \
-        ishell .rccontrol/enterprise-1/rhodecode.ini
+    $ rccontrol ishell enterprise-1
 
 .. code-block:: mysql
 

@@ -13,7 +13,7 @@ the following steps:
 .. code-block:: bash
 
     # Open iShell from the terminal and set ini file
-    $ .rccontrol/enterprise-1/profile/bin/paster ishell .rccontrol/enterprise-1/rhodecode.ini
+    $ rccontrol ishell enterprise-1
 
 2. Run the following commands, and ensure that |RCE| has write access to the
    new directory:
