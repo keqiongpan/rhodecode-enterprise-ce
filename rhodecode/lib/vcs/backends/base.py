@@ -226,12 +226,24 @@ class BaseRepository(object):
         returns a `dict` with branches, bookmarks, tags, and closed_branches
         for this repository
         """
-        raise NotImplementedError
+        return dict(
+            branches=self.branches,
+            branches_closed=self.branches_closed,
+            tags=self.tags,
+            bookmarks=self.bookmarks
+        )
 
     @LazyProperty
     def branches(self):
         """
         A `dict` which maps branch names to commit ids.
+        """
+        raise NotImplementedError
+
+    @LazyProperty
+    def tags(self):
+        """
+        A `dict` which maps tags names to commit ids.
         """
         raise NotImplementedError
 

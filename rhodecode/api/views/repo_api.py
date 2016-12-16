@@ -512,9 +512,23 @@ def get_repo_refs(request, apiuser, repoid):
     .. code-block:: bash
 
         id : <id_given_in_input>
-        result: [
-                  TODO...
-                ]
+        "result": {
+            "bookmarks": {
+              "dev": "5611d30200f4040ba2ab4f3d64e5b06408a02188",
+              "master": "367f590445081d8ec8c2ea0456e73ae1f1c3d6cf"
+            },
+            "branches": {
+              "default": "5611d30200f4040ba2ab4f3d64e5b06408a02188",
+              "stable": "367f590445081d8ec8c2ea0456e73ae1f1c3d6cf"
+            },
+            "branches_closed": {},
+            "tags": {
+              "tip": "5611d30200f4040ba2ab4f3d64e5b06408a02188",
+              "v4.4.0": "1232313f9e6adac5ce5399c2a891dc1e72b79022",
+              "v4.4.1": "cbb9f1d329ae5768379cdec55a62ebdd546c4e27",
+              "v4.4.2": "24ffe44a27fcd1c5b6936144e176b9f6dd2f3a17",
+            }
+        }
         error:  null
     """
 
