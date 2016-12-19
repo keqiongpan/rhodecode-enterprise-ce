@@ -1442,6 +1442,15 @@ class EmptyChangeset(EmptyCommit):
             self.idx = value
 
 
+class EmptyRepository(BaseRepository):
+    def __init__(self, repo_path=None, config=None, create=False, **kwargs):
+        pass
+
+    def get_diff(self, *args, **kwargs):
+        from rhodecode.lib.vcs.backends.git.diff import GitDiff
+        return GitDiff('')
+
+
 class CollectionGenerator(object):
 
     def __init__(self, repo, commit_ids, collection_size=None, pre_load=None):

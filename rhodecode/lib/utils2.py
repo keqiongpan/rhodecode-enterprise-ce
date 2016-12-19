@@ -665,7 +665,8 @@ class StrictAttributeDict(dict):
         try:
             return self[attr]
         except KeyError:
-            raise AttributeError('%s object has no attribute %s' % (self, attr))
+            raise AttributeError('%s object has no attribute %s' % (
+                self.__class__, attr))
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 

@@ -95,7 +95,7 @@ def test_rst_xss_raw_directive():
 
 def test_render_rst_template_without_files():
     expected = u'''\
-Auto status change to |under_review|
+Pull request updated. Auto status change to |under_review|
 
 .. role:: added
 .. role:: removed
@@ -125,7 +125,7 @@ Auto status change to |under_review|
 
 def test_render_rst_template_with_files():
     expected = u'''\
-Auto status change to |under_review|
+Pull request updated. Auto status change to |under_review|
 
 .. role:: added
 .. role:: removed

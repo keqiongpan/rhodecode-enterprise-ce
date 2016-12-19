@@ -722,7 +722,7 @@ def test_update_adds_a_comment_to_the_pull_request_about_the_change(pr_util):
     # Expect to find a new comment about the change
     expected_message = textwrap.dedent(
         """\
-        Auto status change to |under_review|
+        Pull request updated. Auto status change to |under_review|
 
         .. role:: added
         .. role:: removed

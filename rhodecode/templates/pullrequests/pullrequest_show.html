@@ -45,7 +45,7 @@
       <div class="summary-details block-left">
         <%summary = lambda n:{False:'summary-short'}.get(n)%>
         <div class="pr-details-title">
-            ${_('Pull request #%s') % c.pull_request.pull_request_id} ${_('From')} ${h.format_date(c.pull_request.created_on)}
+            <a href="${h.url('pull_requests_global', pull_request_id=c.pull_request.pull_request_id)}">${_('Pull request #%s') % c.pull_request.pull_request_id}</a> ${_('From')} ${h.format_date(c.pull_request.created_on)}
             %if c.allowed_to_update:
               <div id="delete_pullrequest" class="pull-right action_button ${'' if c.allowed_to_delete else 'disabled' }" style="clear:inherit;padding: 0">
                   % if c.allowed_to_delete:
@@ -112,22 +112,26 @@
            </div>
 
             ## Link to the shadow repository.
-            %if not c.pull_request.is_closed() and c.pull_request.shadow_merge_ref:
-                <div class="field">
-                    <div class="label-summary">
-                        <label>Merge:</label>
-                    </div>
-                    <div class="input">
-                        <div class="pr-mergeinfo">
-                            %if h.is_hg(c.pull_request.target_repo):
-                                <input type="text"  value="hg clone -u ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
-                            %elif h.is_git(c.pull_request.target_repo):
-                                <input type="text"  value="git clone --branch ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
-                            %endif
-                        </div>
-                    </div>
+            <div class="field">
+                <div class="label-summary">
+                    <label>${_('Merge')}:</label>
                 </div>
-            %endif
+                <div class="input">
+                    % if not c.pull_request.is_closed() and c.pull_request.shadow_merge_ref:
+                    <div class="pr-mergeinfo">
+                        %if h.is_hg(c.pull_request.target_repo):
+                            <input type="text"  value="hg clone -u ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                        %elif h.is_git(c.pull_request.target_repo):
+                            <input type="text"  value="git clone --branch ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                        %endif
+                    </div>
+                    % else:
+                    <div class="">
+                        ${_('Shadow repository data not available')}.
+                    </div>
+                    % endif
+                </div>
+            </div>
 
            <div class="field">
             <div class="label-summary">
@@ -187,21 +191,23 @@
 
            <div class="field">
                 <div class="label-summary">
-                <label>${_('Versions')}:</label>
+                <label>${_('Versions')} (${len(c.versions)}):</label>
            </div>
+
            <div>
+           % if c.show_version_changes:
                <table>
                    <tr>
                        <td>
-                           % if c.at_version == None:
+                           % if c.at_version in [None, 'latest']:
                             <i class="icon-ok link"></i>
                            % endif
                        </td>
-                       <td><code><a href="${h.url.current()}">latest</a></code></td>
+                       <td><code><a href="${h.url.current(version='latest')}">latest</a></code></td>
                        <td>
                            <code>${c.pull_request_latest.source_ref_parts.commit_id[:6]}</code>
                        </td>
-                       <td>${_('created')} ${h.age_component(c.pull_request.created_on)}</td>
+                       <td>${_('created')} ${h.age_component(c.pull_request_latest.updated_on)}</td>
                    </tr>
                    % for ver in reversed(c.pull_request.versions()):
                    <tr>
@@ -214,10 +220,36 @@
                        <td>
                            <code>${ver.source_ref_parts.commit_id[:6]}</code>
                        </td>
-                       <td>${_('created')} ${h.age_component(ver.created_on)}</td>
+                       <td>${_('created')} ${h.age_component(ver.updated_on)}</td>
                    </tr>
                    % endfor
                </table>
+
+               % if c.at_version:
+<pre>
+  Changed commits:
+    * added: ${len(c.changes.added)}
+    * removed: ${len(c.changes.removed)}
+
+  % if not (c.file_changes.added+c.file_changes.modified+c.file_changes.removed):
+  No file changes found
+  % else:
+  Changed files:
+    %for file_name in c.file_changes.added:
+    * A <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
+    %endfor
+    %for file_name in c.file_changes.modified:
+    * M <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
+    %endfor
+    %for file_name in c.file_changes.removed:
+    * R ${file_name}
+    %endfor
+  % endif
+</pre>
+               % endif
+           % else:
+               ${_('Pull request versions not available')}.
+           % endif
            </div>
            </div>
 
@@ -329,9 +361,9 @@
               % endif
                 <div class="compare_view_commits_title">
                     % if c.allowed_to_update and not c.pull_request.is_closed():
-                      <button id="update_commits" class="btn pull-right">${_('Update commits')}</button>
+                      <a id="update_commits" class="btn btn-primary pull-right">${_('Update commits')}</a>
                     % else:
-                      <button class="btn disabled pull-right" disabled="disabled">${_('Update commits')}</button>
+                      <a class="tooltip btn disabled pull-right" disabled="disabled" title="${_('Update is disabled for current view')}">${_('Update commits')}</a>
                     % endif
                     % if len(c.commit_ranges):
                       <h2>${ungettext('Compare View: %s commit','Compare View: %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}</h2>

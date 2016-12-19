@@ -21,10 +21,12 @@
 """
 pull requests controller for rhodecode for initializing pull requests
 """
+import types
 
 import peppercorn
 import formencode
 import logging
+
 
 from webob.exc import HTTPNotFound, HTTPForbidden, HTTPBadRequest
 from pylons import request, tmpl_context as c, url
@@ -46,8 +48,9 @@ from rhodecode.lib.channelstream import channelstream_request
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import (
-    safe_int, safe_str, str2bool, safe_unicode, StrictAttributeDict)
-from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
+    safe_int, safe_str, str2bool, safe_unicode)
+from rhodecode.lib.vcs.backends.base import (
+    EmptyCommit, UpdateFailureReason, EmptyRepository)
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, CommitDoesNotExistError, RepositoryRequirementError,
     NodeDoesNotExistError)
@@ -680,7 +683,13 @@ class PullrequestsController(BaseRepoController):
     def _get_pr_version(self, pull_request_id, version=None):
         pull_request_id = safe_int(pull_request_id)
         at_version = None
-        if version:
+
+        if version and version == 'latest':
+            pull_request_ver = PullRequest.get(pull_request_id)
+            pull_request_obj = pull_request_ver
+            _org_pull_request_obj = pull_request_obj
+            at_version = 'latest'
+        elif version:
             pull_request_ver = PullRequestVersion.get_or_404(version)
             pull_request_obj = pull_request_ver
             _org_pull_request_obj = pull_request_ver.pull_request
@@ -688,56 +697,57 @@ class PullrequestsController(BaseRepoController):
         else:
             _org_pull_request_obj = pull_request_obj = PullRequest.get_or_404(pull_request_id)
 
-        class PullRequestDisplay(object):
-            """
-            Special object wrapper for showing PullRequest data via Versions
-            It mimics PR object as close as possible. This is read only object
-            just for display
-            """
-            def __init__(self, attrs):
-                self.attrs = attrs
-                # internal have priority over the given ones via attrs
-                self.internal = ['versions']
-
-            def __getattr__(self, item):
-                if item in self.internal:
-                    return getattr(self, item)
-                try:
-                    return self.attrs[item]
-                except KeyError:
-                    raise AttributeError(
-                        '%s object has no attribute %s' % (self, item))
-
-            def versions(self):
-                return pull_request_obj.versions.order_by(
-                    PullRequestVersion.pull_request_version_id).all()
-
-            def is_closed(self):
-                return pull_request_obj.is_closed()
-
-        attrs = StrictAttributeDict(pull_request_obj.get_api_data())
-
-        attrs.author = StrictAttributeDict(
-            pull_request_obj.author.get_api_data())
-        if pull_request_obj.target_repo:
-            attrs.target_repo = StrictAttributeDict(
-                pull_request_obj.target_repo.get_api_data())
-            attrs.target_repo.clone_url = pull_request_obj.target_repo.clone_url
-
-        if pull_request_obj.source_repo:
-            attrs.source_repo = StrictAttributeDict(
-                pull_request_obj.source_repo.get_api_data())
-            attrs.source_repo.clone_url = pull_request_obj.source_repo.clone_url
-
-        attrs.source_ref_parts = pull_request_obj.source_ref_parts
-        attrs.target_ref_parts = pull_request_obj.target_ref_parts
-
-        attrs.shadow_merge_ref = _org_pull_request_obj.shadow_merge_ref
-
-        pull_request_display_obj = PullRequestDisplay(attrs)
-
+        pull_request_display_obj = PullRequest.get_pr_display_object(
+            pull_request_obj, _org_pull_request_obj)
         return _org_pull_request_obj, pull_request_obj, \
                pull_request_display_obj, at_version
+
+    def _get_pr_version_changes(self, version, pull_request_latest):
+        """
+        Generate changes commits, and diff data based on the current pr version
+        """
+
+        #TODO(marcink): save those changes as JSON metadata for chaching later.
+
+        # fake the version to add the "initial" state object
+        pull_request_initial = PullRequest.get_pr_display_object(
+            pull_request_latest, pull_request_latest,
+            internal_methods=['get_commit', 'versions'])
+        pull_request_initial.revisions = []
+        pull_request_initial.source_repo.get_commit = types.MethodType(
+            lambda *a, **k: EmptyCommit(), pull_request_initial)
+        pull_request_initial.source_repo.scm_instance = types.MethodType(
+            lambda *a, **k: EmptyRepository(), pull_request_initial)
+
+        _changes_versions = [pull_request_latest] + \
+                            list(reversed(c.versions)) + \
+                            [pull_request_initial]
+
+        if version == 'latest':
+            index = 0
+        else:
+            for pos, prver in enumerate(_changes_versions):
+                ver = getattr(prver, 'pull_request_version_id', -1)
+                if ver == safe_int(version):
+                    index = pos
+                    break
+            else:
+                index = 0
+
+        cur_obj = _changes_versions[index]
+        prev_obj = _changes_versions[index + 1]
+
+        old_commit_ids = set(prev_obj.revisions)
+        new_commit_ids = set(cur_obj.revisions)
+
+        changes = PullRequestModel()._calculate_commit_id_changes(
+            old_commit_ids, new_commit_ids)
+
+        old_diff_data, new_diff_data = PullRequestModel()._generate_update_diffs(
+            cur_obj, prev_obj)
+        file_changes = PullRequestModel()._calculate_file_changes(
+            old_diff_data, new_diff_data)
+        return changes, file_changes
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
@@ -763,7 +773,7 @@ class PullrequestsController(BaseRepoController):
             pull_request_at_ver)
 
         pr_closed = pull_request_latest.is_closed()
-        if at_version:
+        if at_version and not at_version == 'latest':
             c.allowed_to_change_status = False
             c.allowed_to_update = False
             c.allowed_to_merge = False
@@ -840,10 +850,20 @@ class PullrequestsController(BaseRepoController):
             statuses = ChangesetStatus.STATUSES
         c.commit_statuses = statuses
 
-        c.ancestor = None # TODO: add ancestor here
+        c.ancestor = None  # TODO: add ancestor here
         c.pull_request = pull_request_display_obj
         c.pull_request_latest = pull_request_latest
         c.at_version = at_version
+
+        c.versions = pull_request_display_obj.versions()
+        c.changes = None
+        c.file_changes = None
+
+        c.show_version_changes = 1
+
+        if at_version and c.show_version_changes:
+            c.changes, c.file_changes = self._get_pr_version_changes(
+                version, pull_request_latest)
 
         return render('/pullrequests/pullrequest_show.html')
 
