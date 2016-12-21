@@ -35,7 +35,6 @@ import pyramid.testing
 import pytest
 import colander
 import requests
-from webtest.app import TestApp
 
 import rhodecode
 from rhodecode.lib.utils2 import AttributeDict
@@ -62,6 +61,7 @@ from rhodecode.tests import (
     login_user_session, get_new_dir, utils, TESTS_TMP_PATH,
     TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR2_LOGIN,
     TEST_USER_REGULAR_PASS)
+from rhodecode.tests.utils import CustomTestApp
 from rhodecode.tests.fixture import Fixture
 
 
@@ -211,7 +211,9 @@ def http_environ(http_host_stub):
 
 @pytest.fixture(scope='function')
 def app(request, pylonsapp, http_environ):
-    app = TestApp(
+
+
+    app = CustomTestApp(
         pylonsapp,
         extra_environ=http_environ)
     if request.cls:

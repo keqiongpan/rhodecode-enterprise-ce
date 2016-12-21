@@ -23,20 +23,90 @@ import time
 import logging
 import os.path
 import subprocess32
+import tempfile
 import urllib2
 from urlparse import urlparse, parse_qsl
 from urllib import unquote_plus
 
+from webtest.app import (
+    Request, TestResponse, TestApp, print_stderr, string_types)
+
 import pytest
 import rc_testdata
 
-from rhodecode.model.db import User
+from rhodecode.model.db import User, Repository
 from rhodecode.model.meta import Session
 from rhodecode.model.scm import ScmModel
 from rhodecode.lib.vcs.backends.svn.repository import SubversionRepository
 
 
 log = logging.getLogger(__name__)
+
+
+class CustomTestResponse(TestResponse):
+    def _save_output(self, out):
+        f = tempfile.NamedTemporaryFile(
+            delete=False, prefix='rc-test-', suffix='.html')
+        f.write(out)
+        return f.name
+
+    def mustcontain(self, *strings, **kw):
+        """
+        Assert that the response contains all of the strings passed
+        in as arguments.
+
+        Equivalent to::
+
+            assert string in res
+        """
+        if 'no' in kw:
+            no = kw['no']
+            del kw['no']
+            if isinstance(no, string_types):
+                no = [no]
+        else:
+            no = []
+        if kw:
+            raise TypeError(
+                "The only keyword argument allowed is 'no'")
+
+        f = self._save_output(str(self))
+
+        for s in strings:
+            if not s in self:
+                print_stderr("Actual response (no %r):" % s)
+                print_stderr(str(self))
+                raise IndexError(
+                    "Body does not contain string %r, output saved as %s" % (
+                    s, f))
+
+        for no_s in no:
+            if no_s in self:
+                print_stderr("Actual response (has %r)" % no_s)
+                print_stderr(str(self))
+                raise IndexError(
+                    "Body contains bad string %r, output saved as %s" % (
+                    no_s, f))
+
+    def assert_response(self):
+        return AssertResponse(self)
+
+
+class TestRequest(Request):
+
+    # for py.test
+    disabled = True
+    ResponseClass = CustomTestResponse
+
+
+class CustomTestApp(TestApp):
+    """
+    Custom app to make mustcontain more usefull
+    """
+    RequestClass = TestRequest
+
+
+
 
 
 def set_anonymous_access(enabled):

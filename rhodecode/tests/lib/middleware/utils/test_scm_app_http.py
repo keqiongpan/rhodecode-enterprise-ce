@@ -21,8 +21,8 @@
 import mock
 import Pyro4
 import pytest
-import webtest
 
+from rhodecode.tests.utils import CustomTestApp
 from rhodecode.lib.middleware.utils import scm_app_http, scm_app
 from rhodecode.lib.vcs.conf import settings
 
@@ -34,7 +34,7 @@ def vcs_http_app(vcsserver_http_echo_app):
     git_url = vcsserver_http_echo_app.http_url + 'stream/git/'
     vcs_http_proxy = scm_app_http.VcsHttpProxy(
         git_url, 'stub_path', 'stub_name', None)
-    app = webtest.TestApp(vcs_http_proxy)
+    app = CustomTestApp(vcs_http_proxy)
     return app
 
 
@@ -112,7 +112,7 @@ def vcs_pyro4_app(vcsserver_pyro_echo_app):
                     GIT_REMOTE_WSGI):
         pyro4_app = scm_app.create_git_wsgi_app(
             'stub_path', 'stub_name', stub_config)
-    app = webtest.TestApp(pyro4_app)
+    app = CustomTestApp(pyro4_app)
     return app
 
 

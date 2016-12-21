@@ -38,7 +38,6 @@ from pylons.i18n.translation import _get_translator
 from pylons.util import ContextObj
 
 from routes.util import URLGenerator
-from webtest import TestApp
 from nose.plugins.skip import SkipTest
 import pytest
 

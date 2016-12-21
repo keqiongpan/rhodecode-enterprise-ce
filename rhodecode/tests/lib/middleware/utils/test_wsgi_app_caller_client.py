@@ -18,8 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import webtest
-
+from rhodecode.tests.utils import CustomTestApp
 from rhodecode.lib.middleware.utils import wsgi_app_caller_client
 
 # pylint: disable=protected-access,too-many-public-methods
@@ -88,7 +87,7 @@ def test_remote_app_caller():
     wrapper_app = wsgi_app_caller_client.RemoteAppCaller(
         RemoteAppCallerMock(), 'a1', 'a2', arg3='a3', arg4='a4')
 
-    test_app = webtest.TestApp(wrapper_app)
+    test_app = CustomTestApp(wrapper_app)
 
     response = test_app.get('/path')
 

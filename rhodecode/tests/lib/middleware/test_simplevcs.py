@@ -22,7 +22,8 @@ import base64
 
 import mock
 import pytest
-import webtest.app
+
+from rhodecode.tests.utils import CustomTestApp
 
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.hooks_daemon import DummyHooksCallbackDaemon
@@ -72,7 +73,7 @@ def vcscontroller(pylonsapp, config_stub):
     set_anonymous_access(True)
     controller = StubVCSController(pylonsapp, pylonsapp.config, None)
     app = HttpsFixup(controller, pylonsapp.config)
-    app = webtest.app.TestApp(app)
+    app = CustomTestApp(app)
 
     _remove_default_user_from_query_cache()
 
@@ -137,7 +138,7 @@ class StubFailVCSController(simplevcs.SimpleVCS):
 def fail_controller(pylonsapp):
     controller = StubFailVCSController(pylonsapp, pylonsapp.config, None)
     controller = HttpsFixup(controller, pylonsapp.config)
-    controller = webtest.app.TestApp(controller)
+    controller = CustomTestApp(controller)
     return controller
 
 
