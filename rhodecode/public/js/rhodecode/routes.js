@@ -46,6 +46,7 @@ function registerRCRoutes() {
     pyroutes.register('files_home', '/%(repo_name)s/files/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_history_home', '/%(repo_name)s/history/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_authors_home', '/%(repo_name)s/authors/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
+    pyroutes.register('files_annotate_home', '/%(repo_name)s/annotate/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_archive_home', '/%(repo_name)s/archive/%(fname)s', ['repo_name', 'fname']);
     pyroutes.register('files_nodelist_home', '/%(repo_name)s/nodelist/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_nodetree_full', '/%(repo_name)s/nodetree_full/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);

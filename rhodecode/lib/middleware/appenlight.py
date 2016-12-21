@@ -75,7 +75,7 @@ def wrap_in_appenlight_if_enabled(app, settings, appenlight_client=None):
 
 class RemoteTracebackTracker(object):
     """
-    Utility middleware which forwards Pyro4 remote traceback information.
+    Utility middleware which forwards VCSServer remote traceback information.
     """
 
     def __init__(self, app):
@@ -85,7 +85,7 @@ class RemoteTracebackTracker(object):
         try:
             return self.application(environ, start_response)
         except Exception as e:
-            if hasattr(e, '_pyroTraceback'):
+            if hasattr(e, '_vcs_server_traceback'):
                 track_extra_information(
-                    environ, 'remote_traceback', ''.join(e._pyroTraceback))
+                    environ, 'remote_traceback', e._vcs_server_traceback)
             raise

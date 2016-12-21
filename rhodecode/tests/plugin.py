@@ -1331,22 +1331,21 @@ def pytest_runtest_makereport(item, call):
     """
     Adding the remote traceback if the exception has this information.
 
-    Pyro4 attaches this information as the attribute `_pyroTraceback`
+    Pyro4 attaches this information as the attribute `_vcs_server_traceback`
     to the exception instance.
     """
     outcome = yield
     report = outcome.get_result()
     if call.excinfo:
-        _add_pyro_remote_traceback(report, call.excinfo.value)
+        _add_vcsserver_remote_traceback(report, call.excinfo.value)
 
 
-def _add_pyro_remote_traceback(report, exc):
-    pyro_traceback = getattr(exc, '_pyroTraceback', None)
+def _add_vcsserver_remote_traceback(report, exc):
+    vcsserver_traceback = getattr(exc, '_vcs_server_traceback', None)
 
-    if pyro_traceback:
-        traceback = ''.join(pyro_traceback)
-        section = 'Pyro4 remote traceback ' + report.when
-        report.sections.append((section, traceback))
+    if vcsserver_traceback:
+        section = 'VCSServer remote traceback ' + report.when
+        report.sections.append((section, vcsserver_traceback))
 
 
 @pytest.fixture(scope='session')

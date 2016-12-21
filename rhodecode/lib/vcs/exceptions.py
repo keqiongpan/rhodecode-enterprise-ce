@@ -185,10 +185,10 @@ def map_vcs_exceptions(func):
             # The error middleware adds information if it finds
             # __traceback_info__ in a frame object. This way the remote
             # traceback information is made available in error reports.
-            remote_tb = getattr(e, '_pyroTraceback', None)
+            remote_tb = getattr(e, '_vcs_server_traceback', None)
             if remote_tb:
                 __traceback_info__ = (
-                    'Found Pyro4 remote traceback information:\n\n' +
+                    'Found VCSServer remote traceback information:\n\n' +
                     '\n'.join(remote_tb))
 
                 # Avoid that remote_tb also appears in the frame

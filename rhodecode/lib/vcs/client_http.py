@@ -218,6 +218,12 @@ def _remote_call(url, payload, exceptions_map, session):
             exc._vcs_kind = error['_vcs_kind']
         except KeyError:
             pass
+
+        try:
+            exc._vcs_server_traceback = error['traceback']
+        except KeyError:
+            pass
+
         raise exc
     return response.get('result')
 
