@@ -378,6 +378,7 @@ class BaseRepository(object):
           parameter works only for backends which support diff generation for
           different paths. Other backends will raise a `ValueError` if `path1`
           is set and has a different value than `path`.
+        :param file_path: filter this diff by given path pattern
         """
         raise NotImplementedError
 
@@ -1540,9 +1541,10 @@ class Diff(object):
     """
     Represents a diff result from a repository backend.
 
-    Subclasses have to provide a backend specific value for :attr:`_header_re`.
+    Subclasses have to provide a backend specific value for
+    :attr:`_header_re` and :attr:`_meta_re`.
     """
-
+    _meta_re = None
     _header_re = None
 
     def __init__(self, raw_diff):
@@ -1554,10 +1556,19 @@ class Diff(object):
         to make diffs consistent we must prepend with \n, and make sure
         we can detect last chunk as this was also has special rule
         """
-        chunks = ('\n' + self.raw).split('\ndiff --git')[1:]
+
+        diff_parts = ('\n' + self.raw).split('\ndiff --git')
+        header = diff_parts[0]
+
+        if self._meta_re:
+            match = self._meta_re.match(header)
+
+        chunks = diff_parts[1:]
         total_chunks = len(chunks)
-        return (DiffChunk(chunk, self, cur_chunk == total_chunks)
-                for cur_chunk, chunk in enumerate(chunks, start=1))
+
+        return (
+            DiffChunk(chunk, self, cur_chunk == total_chunks)
+            for cur_chunk, chunk in enumerate(chunks, start=1))
 
 
 class DiffChunk(object):

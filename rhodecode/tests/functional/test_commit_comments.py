@@ -244,7 +244,8 @@ class TestCommitCommentsController(TestController):
         ('markdown', '# header', '<h1>header</h1>'),
         ('markdown', '*italics*', '<em>italics</em>'),
         ('markdown', '**bold**', '<strong>bold</strong>'),
-    ])
+    ], ids=['rst-plain', 'rst-header', 'rst-italics', 'rst-bold', 'md-plain',
+            'md-header', 'md-italics', 'md-bold', ])
     def test_preview(self, renderer, input, output, backend):
         self.log_user()
         params = {

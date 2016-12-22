@@ -34,34 +34,132 @@
     <div class="box">
         <div class="title">
             ${self.repo_page_title(c.rhodecode_db_repo)}
-            <div class="breadcrumbs">
-                ${_('Compare Commits')}
-            </div>
         </div>
 
-        <div class="table">
-            <div id="codeblock" class="diffblock">
-                <div class="code-header" >
-                    <div class="compare_header">
-                        ## The hidden elements are replaced with a select2 widget
-                        <div class="compare-label">${_('Target')}</div>${h.hidden('compare_source')}
-                        <div class="compare-label">${_('Source')}</div>${h.hidden('compare_target')}
+        <div class="summary changeset">
+            <div class="summary-detail">
+              <div class="summary-detail-header">
+                  <span class="breadcrumbs files_location">
+                    <h4>
+                        ${_('Compare Commits')}
+                        % if c.file_path:
+                        ${_('for file')} <a href="#${'a_' + h.FID('',c.file_path)}">${c.file_path}</a>
+                        % endif
 
-                        %if not c.preview_mode:
-                            <div class="compare-label"></div>
-                            <div class="compare-buttons">
-                                %if not c.compare_home:
-                                    <a id="btn-swap" class="btn btn-primary" href="${c.swap_url}"><i class="icon-refresh"></i> ${_('Swap')}</a>
-                                %endif
-                                <div id="compare_revs" class="btn btn-primary"><i class ="icon-loop"></i> ${_('Compare Commits')}</div>
-                                %if c.diffset and c.diffset.files:
-                                    <div id="compare_changeset_status_toggle" class="btn btn-primary">${_('Comment')}</div>
-                                %endif
+                        % if c.commit_ranges:
+                        <code>
+                        r${c.source_commit.revision}:${h.short_id(c.source_commit.raw_id)}...r${c.target_commit.revision}:${h.short_id(c.target_commit.raw_id)}
+                        </code>
+                        % endif
+                    </h4>
+                  </span>
+              </div>
+
+              <div class="fieldset">
+                <div class="left-label">
+                  ${_('Target')}:
+                </div>
+                <div class="right-content">
+                    <div>
+                        <div class="code-header" >
+                            <div class="compare_header">
+                                ## The hidden elements are replaced with a select2 widget
+                                ${h.hidden('compare_source')}
                             </div>
-                        %endif
+                        </div>
                     </div>
                 </div>
-            </div>
+              </div>
+
+              <div class="fieldset">
+                <div class="left-label">
+                  ${_('Source')}:
+                </div>
+                <div class="right-content">
+                    <div>
+                        <div class="code-header" >
+                            <div class="compare_header">
+                                ## The hidden elements are replaced with a select2 widget
+                                ${h.hidden('compare_target')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </div>
+
+              <div class="fieldset">
+                <div class="left-label">
+                  ${_('Actions')}:
+                </div>
+                <div class="right-content">
+                    <div>
+                        <div class="code-header" >
+                            <div class="compare_header">
+
+                                <div class="compare-buttons">
+                                % if c.compare_home:
+                                  <a id="compare_revs" class="btn btn-primary"> ${_('Compare Commits')}</a>
+
+                                  <a class="btn disabled tooltip" disabled="disabled" title="${_('Action unavailable in current view')}">${_('Swap')}</a>
+                                  <a class="btn disabled tooltip" disabled="disabled" title="${_('Action unavailable in current view')}">${_('Comment')}</a>
+                                  <div id="changeset_compare_view_content">
+                                     <div class="help-block">${_('Compare commits, branches, bookmarks or tags.')}</div>
+                                  </div>
+
+                                % elif c.preview_mode:
+                                  <a class="btn disabled tooltip" disabled="disabled" title="${_('Action unavailable in current view')}">${_('Compare Commits')}</a>
+                                  <a class="btn disabled tooltip" disabled="disabled" title="${_('Action unavailable in current view')}">${_('Swap')}</a>
+                                  <a class="btn disabled tooltip" disabled="disabled" title="${_('Action unavailable in current view')}">${_('Comment')}</a>
+
+                                % else:
+                                  <a id="compare_revs" class="btn btn-primary"> ${_('Compare Commits')}</a>
+                                  <a id="btn-swap" class="btn btn-primary" href="${c.swap_url}">${_('Swap')}</a>
+
+                                  ## allow comment only if there are commits to comment on
+                                  % if c.diffset and c.diffset.files and c.commit_ranges:
+                                    <a id="compare_changeset_status_toggle" class="btn btn-primary">${_('Comment')}</a>
+                                  % else:
+                                    <a class="btn disabled tooltip" disabled="disabled" title="${_('Action unavailable in current view')}">${_('Comment')}</a>
+                                  % endif
+                                % endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </div>
+
+              <%doc>
+              ##TODO(marcink): implement this and diff menus
+              <div class="fieldset">
+                <div class="left-label">
+                  ${_('Diff options')}:
+                </div>
+                <div class="right-content">
+                    <div class="diff-actions">
+                      <a href="${h.url('changeset_raw_home',repo_name=c.repo_name,revision='?')}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
+                        ${_('Raw Diff')}
+                      </a>
+                       |
+                      <a href="${h.url('changeset_patch_home',repo_name=c.repo_name,revision='?')}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
+                        ${_('Patch Diff')}
+                      </a>
+                       |
+                      <a href="${h.url('changeset_download_home',repo_name=c.repo_name,revision='?',diff='download')}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
+                        ${_('Download Diff')}
+                      </a>
+                    </div>
+                </div>
+              </div>
+              </%doc>
+
+            </div> <!-- end summary-detail -->
+
+        </div> <!-- end summary -->
+
+
+        <div class="table">
+
             ## use JS script to load it quickly before potentially large diffs render long time
             ## this prevents from situation when large diffs block rendering of select2 fields
             <script type="text/javascript">
@@ -241,13 +339,26 @@
 
             </div>
 
-            %if c.compare_home:
+            %if not c.compare_home:
                 <div id="changeset_compare_view_content">
-                 <div class="help-block">${_('Compare commits, branches, bookmarks or tags.')}</div>
-                </div>
-            %else:
-                <div id="changeset_compare_view_content">
-                    ##CS
+                    <div class="pull-left">
+                      <div class="btn-group">
+                          <a
+                              class="btn"
+                              href="#"
+                              onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">
+                              ${ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                          </a>
+                          <a
+                              class="btn"
+                              href="#"
+                              onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
+                              ${ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                          </a>
+                      </div>
+                    </div>
+                    <div style="padding:0 10px 10px 0px" class="pull-left"></div>
+                    ## commit compare generated below
                     <%include file="compare_commits.html"/>
                     ${cbdiffs.render_diffset_menu()}
                     ${cbdiffs.render_diffset(c.diffset)}

@@ -1,20 +1,17 @@
 ## Changesets table !
 <%namespace name="base" file="/base/base.html"/>
+
+%if c.ancestor:
+<div class="ancestor">${_('Common Ancestor Commit')}:
+    <a href="${h.url('changeset_home',
+                     repo_name=c.repo_name,
+                     revision=c.ancestor)}">
+        ${h.short_id(c.ancestor)}
+    </a>
+</div>
+%endif
+
 <div class="container">
-  %if not c.commit_ranges:
-    <p class="empty_data">${_('No Commits')}</p>
-  %else:
-
-    %if c.ancestor:
-    <p class="ancestor">${_('Common Ancestor Commit')}:
-        <a href="${h.url('changeset_home',
-                         repo_name=c.repo_name,
-                         revision=c.ancestor)}">
-            ${h.short_id(c.ancestor)}
-        </a>
-    </p>
-    %endif
-
     <input type="hidden" name="__start__" value="revisions:sequence">
     <table class="rctable compare_view_commits">
         <tr>
@@ -66,9 +63,21 @@
             </td>
         </tr>
     %endfor
+        <tr class="compare_select_hidden" style="display: none">
+            <td colspan="5">
+                ${ungettext('%s commit hidden','%s commits hidden', len(c.commit_ranges)) % len(c.commit_ranges)}
+            </td>
+        </tr>
+    % if not c.commit_ranges:
+        <tr class="compare_select">
+            <td colspan="5">
+                ${_('No commits in this compare')}
+            </td>
+        </tr>
+    % endif
     </table>
     <input type="hidden" name="__end__" value="revisions:sequence">
-  %endif
+
 </div>
 
 <script>
@@ -76,7 +85,7 @@ $('.expand_commit').on('click',function(e){
   var target_expand = $(this);
   var cid = target_expand.data('commitId');
 
-  ## TODO: dan: extract styles into css, and just toggleClass('open') here
+  // ## TODO: dan: extract styles into css, and just toggleClass('open') here
   if (target_expand.hasClass('open')){
     $('#c-'+cid).css({
         'height': '1.5em',

@@ -799,21 +799,15 @@ class FilesController(BaseRepoController):
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
                                    'repository.admin')
     def diff(self, repo_name, f_path):
-        ignore_whitespace = request.GET.get('ignorews') == '1'
-        line_context = request.GET.get('context', 3)
+
+        c.action = request.GET.get('diff')
         diff1 = request.GET.get('diff1', '')
+        diff2 = request.GET.get('diff2', '')
 
         path1, diff1 = parse_path_ref(diff1, default_path=f_path)
 
-        diff2 = request.GET.get('diff2', '')
-        c.action = request.GET.get('diff')
-        c.no_changes = diff1 == diff2
-        c.f_path = f_path
-        c.big_diff = False
-        c.ignorews_url = _ignorews_url
-        c.context_url = _context_url
-        c.changes = OrderedDict()
-        c.changes[diff2] = []
+        ignore_whitespace = str2bool(request.GET.get('ignorews'))
+        line_context = request.GET.get('context', 3)
 
         if not any((diff1, diff2)):
             h.flash(
@@ -821,18 +815,16 @@ class FilesController(BaseRepoController):
                 category='error')
             raise HTTPBadRequest()
 
-        # special case if we want a show commit_id only, it's impl here
-        # to reduce JS and callbacks
-
-        if request.GET.get('show_rev') and diff1:
-            if str2bool(request.GET.get('annotate', 'False')):
-                _url = url('files_annotate_home', repo_name=c.repo_name,
-                           revision=diff1, f_path=path1)
-            else:
-                _url = url('files_home', repo_name=c.repo_name,
-                           revision=diff1, f_path=path1)
-
-            return redirect(_url)
+        if c.action not in ['download', 'raw']:
+            # redirect to new view if we render diff
+            return redirect(
+                url('compare_url', repo_name=repo_name,
+                    source_ref_type='rev',
+                    source_ref=diff1,
+                    target_repo=c.repo_name,
+                    target_ref_type='rev',
+                    target_ref=diff2,
+                    f_path=f_path))
 
         try:
             node1 = self._get_file_node(diff1, path1)
@@ -877,98 +869,40 @@ class FilesController(BaseRepoController):
             return diff.as_raw()
 
         else:
-            fid = h.FID(diff2, node2.path)
-            line_context_lcl = get_line_ctx(fid, request.GET)
-            ign_whitespace_lcl = get_ignore_ws(fid, request.GET)
-
-            __, commit1, commit2, diff, st, data = diffs.wrapped_diff(
-                filenode_old=node1,
-                filenode_new=node2,
-                diff_limit=self.cut_off_limit_diff,
-                file_limit=self.cut_off_limit_file,
-                show_full_diff=request.GET.get('fulldiff'),
-                ignore_whitespace=ign_whitespace_lcl,
-                line_context=line_context_lcl,)
-
-            c.lines_added = data['stats']['added'] if data else 0
-            c.lines_deleted = data['stats']['deleted'] if data else 0
-            c.files = [data]
-            c.commit_ranges = [c.commit_1, c.commit_2]
-            c.ancestor = None
-            c.statuses = []
-            c.target_repo = c.rhodecode_db_repo
-            c.filename1 = node1.path
-            c.filename = node2.path
-            c.binary_file = node1.is_binary or node2.is_binary
-            operation = data['operation'] if data else ''
-
-            commit_changes = {
-                # TODO: it's passing the old file to the diff to keep the
-                # standard but this is not being used for this template,
-                # but might need both files in the future or a more standard
-                # way to work with that
-                'fid': [commit1, commit2, operation,
-                        c.filename, diff, st, data]
-            }
-
-            c.changes = commit_changes
-
-        return render('files/file_diff.html')
+            return redirect(
+                url('compare_url', repo_name=repo_name,
+                    source_ref_type='rev',
+                    source_ref=diff1,
+                    target_repo=c.repo_name,
+                    target_ref_type='rev',
+                    target_ref=diff2,
+                    f_path=f_path))
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
                                    'repository.admin')
     def diff_2way(self, repo_name, f_path):
+        """
+        Kept only to make OLD links work
+        """
         diff1 = request.GET.get('diff1', '')
         diff2 = request.GET.get('diff2', '')
 
-        nodes = []
-        unknown_commits = []
-        for commit in [diff1, diff2]:
-            try:
-                nodes.append(self._get_file_node(commit, f_path))
-            except (RepositoryError, NodeError):
-                log.exception('%(commit)s does not exist' % {'commit': commit})
-                unknown_commits.append(commit)
-                h.flash(h.literal(
-                    _('Commit %(commit)s does not exist.') % {'commit': commit}
-                    ), category='error')
+        if not any((diff1, diff2)):
+            h.flash(
+                'Need query parameter "diff1" or "diff2" to generate a diff.',
+                category='error')
+            raise HTTPBadRequest()
 
-        if unknown_commits:
-            return redirect(url('files_home', repo_name=c.repo_name,
-                                f_path=f_path))
-
-        if all(isinstance(node.commit, EmptyCommit) for node in nodes):
-            raise HTTPNotFound
-
-        node1, node2 = nodes
-
-        f_gitdiff = diffs.get_gitdiff(node1, node2, ignore_whitespace=False)
-        diff_processor = diffs.DiffProcessor(f_gitdiff, format='gitdiff')
-        diff_data = diff_processor.prepare()
-
-        if not diff_data or diff_data[0]['raw_diff'] == '':
-            h.flash(h.literal(_('%(file_path)s has not changed '
-                                'between %(commit_1)s and %(commit_2)s.') % {
-                                    'file_path': f_path,
-                                    'commit_1': node1.commit.id,
-                                    'commit_2': node2.commit.id
-                                }), category='error')
-            return redirect(url('files_home', repo_name=c.repo_name,
-                                f_path=f_path))
-
-        c.diff_data = diff_data[0]
-        c.FID = h.FID(diff2, node2.path)
-        # cleanup some unneeded data
-        del c.diff_data['raw_diff']
-        del c.diff_data['chunks']
-
-        c.node1 = node1
-        c.commit_1 = node1.commit
-        c.node2 = node2
-        c.commit_2 = node2.commit
-
-        return render('files/diff_2way.html')
+        return redirect(
+            url('compare_url', repo_name=repo_name,
+                source_ref_type='rev',
+                source_ref=diff1,
+                target_repo=c.repo_name,
+                target_ref_type='rev',
+                target_ref=diff2,
+                f_path=f_path,
+                diffmode='sideside'))
 
     def _get_file_node(self, commit_id, f_path):
         if commit_id not in ['', None, 'None', '0' * 12, '0' * 40]:

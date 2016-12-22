@@ -162,10 +162,11 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 
     <div class="filediffs">
     %for i, filediff in enumerate(diffset.files):
-    <%
-    lines_changed = filediff['patch']['stats']['added'] + filediff['patch']['stats']['deleted']
-    over_lines_changed_limit = lines_changed > lines_changed_limit
-    %>
+
+        <%
+        lines_changed = filediff['patch']['stats']['added'] + filediff['patch']['stats']['deleted']
+        over_lines_changed_limit = lines_changed > lines_changed_limit
+        %>
         <input ${collapse_all and 'checked' or ''} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox">
         <div
             class="filediff"
@@ -414,6 +415,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     if line.modified.lineno:
         new_line_anchor = diff_line_anchor(hunk.filediff.target_file_path, line.modified.lineno, 'n')
     %>
+
     <tr class="cb-line">
         <td class="cb-data ${action_class(line.original.action)}"
             data-line-number="${line.original.lineno}"
@@ -544,6 +546,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     <div class="diffset-menu clearinner">
         <div class="pull-right">
             <div class="btn-group">
+
                 <a
                   class="btn ${c.diffmode == 'sideside' and 'btn-primary'} tooltip"
                   title="${_('View side by side')}"
@@ -557,20 +560,21 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
                 </a>
             </div>
         </div>
+
         <div class="pull-left">
           <div class="btn-group">
               <a
                   class="btn"
                   href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); return false">${_('Expand All')}</a>
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); return false">${_('Expand All Files')}</a>
               <a
                   class="btn"
                   href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); return false">${_('Collapse All')}</a>
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); return false">${_('Collapse All Files')}</a>
               <a
                   class="btn"
                   href="#"
-                  onclick="return Rhodecode.comments.toggleWideMode(this)">${_('Wide Mode')}</a>
+                  onclick="return Rhodecode.comments.toggleWideMode(this)">${_('Wide Mode Diff')}</a>
           </div>
         </div>
     </div>

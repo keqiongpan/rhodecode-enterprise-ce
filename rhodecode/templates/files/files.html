@@ -128,7 +128,7 @@
             // used for history, and switch to
             var initialCommitData = {
                 id: null,
-                text: '${_("Switch To Commit")}',
+                text: '${_("Pick Commit")}',
                 type: 'sha',
                 raw_id: null,
                 files_url: null
@@ -151,9 +151,47 @@
 
                 // file history select2
                 select2FileHistorySwitcher('#diff1', initialCommitData, state);
+
+                // show at, diff to actions handlers
                 $('#diff1').on('change', function(e) {
-                    $('#diff').removeClass('disabled').removeAttr("disabled");
-                    $('#show_rev').removeClass('disabled').removeAttr("disabled");
+                    $('#diff_to_commit').removeClass('disabled').removeAttr("disabled");
+                    $('#diff_to_commit').val(_gettext('Diff to Commit ') + e.val.truncateAfter(8, '...'));
+
+                    $('#show_at_commit').removeClass('disabled').removeAttr("disabled");
+                    $('#show_at_commit').val(_gettext('Show at Commit ') + e.val.truncateAfter(8, '...'));
+                });
+
+                $('#diff_to_commit').on('click', function(e) {
+                    var diff1 = $('#diff1').val();
+                    var diff2 = $('#diff2').val();
+
+                    var url_data = {
+                        repo_name: templateContext.repo_name,
+                        source_ref: diff1,
+                        source_ref_type: 'rev',
+                        target_ref: diff2,
+                        target_ref_type: 'rev',
+                        merge: 1,
+                        f_path: state.f_path
+                    };
+                    window.location = pyroutes.url('compare_url', url_data);
+                });
+
+                $('#show_at_commit').on('click', function(e) {
+                    var diff1 = $('#diff1').val();
+
+                    var annotate = $('#annotate').val();
+                    if (annotate === "True") {
+                        var url = pyroutes.url('files_annotate_home',
+                                {'repo_name': templateContext.repo_name,
+                                 'revision': diff1, 'f_path': state.f_path});
+                    } else {
+                        var url = pyroutes.url('files_home',
+                                {'repo_name': templateContext.repo_name,
+                                 'revision': diff1, 'f_path': state.f_path});
+                    }
+                    window.location = url;
+
                 });
 
                 // show more authors

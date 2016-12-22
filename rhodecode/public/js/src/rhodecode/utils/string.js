@@ -73,6 +73,16 @@ String.prototype.capitalizeFirstLetter = function() {
 };
 
 
+String.prototype.truncateAfter = function(chars, suffix) {
+    var suffix = suffix || '';
+    if (this.length > chars) {
+        return this.substr(0, chars) + suffix;
+    } else {
+        return this;
+    }
+};
+
+
 /**
  * Splits remainder
  *

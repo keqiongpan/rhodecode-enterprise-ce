@@ -360,14 +360,33 @@
                 </div>
               % endif
                 <div class="compare_view_commits_title">
-                    % if c.allowed_to_update and not c.pull_request.is_closed():
-                      <a id="update_commits" class="btn btn-primary pull-right">${_('Update commits')}</a>
-                    % else:
-                      <a class="tooltip btn disabled pull-right" disabled="disabled" title="${_('Update is disabled for current view')}">${_('Update commits')}</a>
-                    % endif
-                    % if len(c.commit_ranges):
-                      <h2>${ungettext('Compare View: %s commit','Compare View: %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}</h2>
-                    % endif
+
+                    <div class="pull-left">
+                      <div class="btn-group">
+                          <a
+                              class="btn"
+                              href="#"
+                              onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">
+                              ${ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                          </a>
+                          <a
+                              class="btn"
+                              href="#"
+                              onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
+                              ${ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                          </a>
+                      </div>
+                    </div>
+
+                    <div class="pull-right">
+                        % if c.allowed_to_update and not c.pull_request.is_closed():
+                          <a id="update_commits" class="btn btn-primary pull-right">${_('Update commits')}</a>
+                        % else:
+                          <a class="tooltip btn disabled pull-right" disabled="disabled" title="${_('Update is disabled for current view')}">${_('Update commits')}</a>
+                        % endif
+
+                    </div>
+
                 </div>
               % if not c.missing_commits:
                 <%include file="/compare/compare_commits.html" />

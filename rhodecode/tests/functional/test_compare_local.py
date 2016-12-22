@@ -44,7 +44,7 @@ class TestCompareController:
         response.mustcontain('%s@%s' % (backend.repo_name, tag1))
         response.mustcontain('%s@%s' % (backend.repo_name, tag2))
 
-        # outgoing changesets between tags
+        # outgoing commits between tags
         commit_indexes = {
             'git': [113] + range(115, 121),
             'hg': [112] + range(115, 121),
@@ -118,8 +118,8 @@ class TestCompareController:
         response.mustcontain('%s@%s' % (backend.repo_name, head_id))
 
         # branches are equal
-        response.mustcontain('<p class="empty_data">No files</p>')
-        response.mustcontain('<p class="empty_data">No Commits</p>')
+        response.mustcontain('No files')
+        response.mustcontain('No commits in this compare')
 
     def test_compare_commits(self, backend):
         repo = backend.repo

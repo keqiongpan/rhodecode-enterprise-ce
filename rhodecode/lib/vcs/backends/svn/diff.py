@@ -30,6 +30,10 @@ from rhodecode.lib.vcs.backends import base
 
 class SubversionDiff(base.Diff):
 
+    _meta_re = re.compile(r"""
+        (?:^(?P<svn_bin_patch>Cannot[ ]display:[ ]file[ ]marked[ ]as[ ]a[ ]binary[ ]type.)(?:\n|$))?
+    """, re.VERBOSE | re.MULTILINE)
+
     _header_re = re.compile(r"""
         #^diff[ ]--git
             [ ]"?a/(?P<a_path>.+?)"?[ ]"?b/(?P<b_path>.+?)"?\n

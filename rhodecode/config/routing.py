@@ -1066,7 +1066,7 @@ def make_map(config):
                  '/{repo_name}/annotate/{revision}/{f_path}',
                  controller='files', action='index', revision='tip',
                  f_path='', annotate=True, conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('files_edit',
                  '/{repo_name}/edit/{revision}/{f_path}',

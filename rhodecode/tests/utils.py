@@ -38,6 +38,7 @@ from rhodecode.model.db import User, Repository
 from rhodecode.model.meta import Session
 from rhodecode.model.scm import ScmModel
 from rhodecode.lib.vcs.backends.svn.repository import SubversionRepository
+from rhodecode.lib.vcs.backends.base import EmptyCommit
 
 
 log = logging.getLogger(__name__)
@@ -372,3 +373,37 @@ def repo_on_filesystem(repo_name):
     repo = vcs.get_vcs_instance(
         os.path.join(TESTS_TMP_PATH, repo_name), create=False)
     return repo is not None
+
+
+def commit_change(
+        repo, filename, content, message, vcs_type, parent=None, newfile=False):
+    from rhodecode.tests import TEST_USER_ADMIN_LOGIN
+
+    repo = Repository.get_by_repo_name(repo)
+    _commit = parent
+    if not parent:
+        _commit = EmptyCommit(alias=vcs_type)
+
+    if newfile:
+        nodes = {
+            filename: {
+                'content': content
+            }
+        }
+        commit = ScmModel().create_nodes(
+            user=TEST_USER_ADMIN_LOGIN, repo=repo,
+            message=message,
+            nodes=nodes,
+            parent_commit=_commit,
+            author=TEST_USER_ADMIN_LOGIN,
+        )
+    else:
+        commit = ScmModel().commit_change(
+            repo=repo.scm_instance(), repo_name=repo.repo_name,
+            commit=parent, user=TEST_USER_ADMIN_LOGIN,
+            author=TEST_USER_ADMIN_LOGIN,
+            message=message,
+            content=content,
+            f_path=filename
+        )
+    return commit

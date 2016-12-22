@@ -531,6 +531,81 @@ DIFF_FIXTURES = [
           }),
       ]),
 
+    ('svn',
+     'svn_diff_binary_add_file.diff',
+     [('intl.dll', 'A',
+       {'added': 0,
+        'deleted': 0,
+        'binary': False,
+        'ops': {NEW_FILENODE: 'new file 10644',
+                #TODO(Marcink): depends on binary detection on svn patches
+                # BIN_FILENODE: 'binary diff hidden'
+                }
+        }),
+      ]),
+
+    ('svn',
+     'svn_diff_multiple_changes.diff',
+     [('trunk/doc/images/SettingsOverlay.png', 'M',
+       {'added': 0,
+        'deleted': 0,
+        'binary': False,
+        'ops': {MOD_FILENODE: 'modified file',
+                #TODO(Marcink): depends on binary detection on svn patches
+                # BIN_FILENODE: 'binary diff hidden'
+                }
+        }),
+      ('trunk/doc/source/de/tsvn_ch04.xml', 'M',
+       {'added': 89,
+        'deleted': 34,
+        'binary': False,
+        'ops': {MOD_FILENODE: 'modified file'}
+        }),
+      ('trunk/doc/source/en/tsvn_ch04.xml', 'M',
+       {'added': 66,
+        'deleted': 21,
+        'binary': False,
+        'ops': {MOD_FILENODE: 'modified file'}
+        }),
+      ('trunk/src/Changelog.txt', 'M',
+       {'added': 2,
+        'deleted': 0,
+        'binary': False,
+        'ops': {MOD_FILENODE: 'modified file'}
+        }),
+      ('trunk/src/Resources/TortoiseProcENG.rc', 'M',
+       {'added': 19,
+        'deleted': 13,
+        'binary': False,
+        'ops': {MOD_FILENODE: 'modified file'}
+        }),
+      ('trunk/src/TortoiseProc/SetOverlayPage.cpp', 'M',
+       {'added': 16,
+        'deleted': 1,
+        'binary': False,
+        'ops': {MOD_FILENODE: 'modified file'}
+        }),
+      ('trunk/src/TortoiseProc/SetOverlayPage.h', 'M',
+       {'added': 3,
+        'deleted': 0,
+        'binary': False,
+        'ops': {MOD_FILENODE: 'modified file'}
+        }),
+      ('trunk/src/TortoiseProc/resource.h', 'M',
+       {'added': 2,
+        'deleted': 0,
+        'binary': False,
+        'ops': {MOD_FILENODE: 'modified file'}
+        }),
+      ('trunk/src/TortoiseShell/ShellCache.h', 'M',
+       {'added': 50,
+        'deleted': 1,
+        'binary': False,
+        'ops': {MOD_FILENODE: 'modified file'}
+        }),
+      ]),
+
+
     # TODO: mikhail: do we still need this?
     # (
     #     'hg',
@@ -579,7 +654,6 @@ DIFF_FIXTURES = [
     #             'pylons_app.egg-info/dependency_links.txt', 'A', {
     #                 'deleted': 0, 'binary': False, 'added': 1, 'ops': {
     #                     1: 'new file 100644'}}),
-    #         #TODO:
     #     ]
     # ),
 ]

@@ -27,6 +27,7 @@ Should only contain utilities to be shared in the controller layer.
 from rhodecode.lib import helpers as h
 from rhodecode.lib.vcs.exceptions import RepositoryError
 
+
 def parse_path_ref(ref, default_path=None):
     """
     Parse out a path and reference combination and return both parts of it.
@@ -76,8 +77,8 @@ def get_commit_from_ref_name(repo, ref_name, ref_type=None):
     }
 
     commit_id = ref_name
-    if repo_scm.alias != 'svn': # pass svn refs straight to backend until
-                                # the branch issue with svn is fixed
+    if repo_scm.alias != 'svn':  # pass svn refs straight to backend until
+                                 # the branch issue with svn is fixed
         if ref_type and ref_type in ref_type_mapping:
             try:
                 commit_id = ref_type_mapping[ref_type][ref_name]

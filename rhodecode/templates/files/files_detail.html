@@ -46,16 +46,28 @@
 </div>
 
 
-<div id="node_history" class="file_diff_buttons collapsable-content" data-toggle="summary-details">
-  ${h.form(h.url('files_diff_home',repo_name=c.repo_name,f_path=c.f_path),method='get')}
+<div class="fieldset collapsable-content" data-toggle="summary-details">
+  <div class="left-label">
+    ${_('Show/Diff file')}:
+  </div>
+  <div class="right-content">
   ${h.hidden('diff1')}
-  ${h.hidden('diff2',c.file_last_commit.raw_id)}
-
-  ${h.submit('diff',_('Diff to Commit'),class_="btn disabled",disabled="true")}
-  ${h.submit('show_rev',_('Show at Commit'),class_="btn disabled",disabled="true")}
+  ${h.hidden('diff2',c.commit.raw_id)}
   ${h.hidden('annotate', c.annotate)}
-  ${h.end_form()}
+  </div>
 </div>
+
+
+<div class="fieldset collapsable-content" data-toggle="summary-details">
+  <div class="left-label">
+    ${_('Action')}:
+  </div>
+  <div class="right-content">
+  ${h.submit('diff_to_commit',_('Diff to Commit'),class_="btn disabled",disabled="true")}
+  ${h.submit('show_at_commit',_('Show at Commit'),class_="btn disabled",disabled="true")}
+  </div>
+</div>
+
 
 <script>
   collapsableContent();
