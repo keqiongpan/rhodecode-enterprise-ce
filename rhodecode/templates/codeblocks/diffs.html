@@ -238,6 +238,34 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 </tr>
             %endif
         %endfor
+
+            % for lineno, comments in filediff.left_comments.items():
+
+            %if c.diffmode == 'unified':
+                <tr class="cb-line">
+                    <td class="cb-data cb-context"></td>
+                    <td class="cb-lineno cb-context"></td>
+                    <td class="cb-lineno cb-context"></td>
+                    <td class="cb-content cb-context">
+                   ${inline_comments_container(comments)}
+                    </td>
+                </tr>
+            %elif c.diffmode == 'sideside':
+                <tr class="cb-line">
+                        <td class="cb-data cb-context"></td>
+                        <td class="cb-lineno cb-context"></td>
+                        <td class="cb-content cb-context"></td>
+
+                        <td class="cb-data cb-context"></td>
+                        <td class="cb-lineno cb-context"></td>
+                        <td class="cb-content cb-context">
+                            ${inline_comments_container(comments)}
+                        </td>
+                </tr>
+            %endif
+
+            % endfor
+
             </table>
         </div>
     %endfor
