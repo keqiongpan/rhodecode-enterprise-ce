@@ -371,6 +371,7 @@ class DiffSet(object):
         self.repo_name = repo_name
         self.source_repo_name = source_repo_name or repo_name
         self.comments = comments or {}
+        self.comments_store = self.comments.copy()
         self.max_file_size_limit = max_file_size_limit
 
     def render_patchset(self, patchset, source_ref=None, target_ref=None):
@@ -475,6 +476,18 @@ class DiffSet(object):
             hunkbit = self.parse_hunk(hunk, source_file, target_file)
             hunkbit.filediff = filediff
             filediff.hunks.append(hunkbit)
+
+        left_comments = {}
+
+        if source_file_path in self.comments_store:
+            for lineno, comments in self.comments_store[source_file_path].items():
+                left_comments[lineno] = comments
+
+        if target_file_path in self.comments_store:
+            for lineno, comments in self.comments_store[target_file_path].items():
+                left_comments[lineno] = comments
+
+        filediff.left_comments = left_comments
         return filediff
 
     def parse_hunk(self, hunk, source_file, target_file):
@@ -507,6 +520,7 @@ class DiffSet(object):
             self.parse_lines(before, after, source_file, target_file))
         result.unified = self.as_unified(result.lines)
         result.sideside = result.lines
+
         return result
 
     def parse_lines(self, before_lines, after_lines, source_file, target_file):
@@ -589,7 +603,10 @@ class DiffSet(object):
             'new': 'n',
         }[version] + str(line_number)
 
-        return self.comments.get(file, {}).get(line_key)
+        if file in self.comments_store:
+            file_comments = self.comments_store[file]
+            if line_key in file_comments:
+                return file_comments.pop(line_key)
 
     def get_line_tokens(self, line_text, line_number, file=None):
         filenode = None
@@ -628,7 +645,9 @@ class DiffSet(object):
         }.get(action, action)
 
     def as_unified(self, lines):
-        """ Return a generator that yields the lines of a diff in unified order """
+        """
+        Return a generator that yields the lines of a diff in unified order
+        """
         def generator():
             buf = []
             for line in lines:
