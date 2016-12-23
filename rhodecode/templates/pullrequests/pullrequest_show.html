@@ -189,68 +189,95 @@
 
            </div>
 
+            <style>
+                .pr-versions {
+                    position: relative;
+                    top: 6px;
+                }
+            </style>
+
            <div class="field">
                 <div class="label-summary">
-                <label>${_('Versions')} (${len(c.versions)}):</label>
-           </div>
+                    <label>${_('Versions')} (${len(c.versions)+1}):</label>
+                </div>
 
-           <div>
-           % if c.show_version_changes:
-               <table>
-                   <tr>
-                       <td>
-                           % if c.at_version in [None, 'latest']:
-                            <i class="icon-ok link"></i>
-                           % endif
-                       </td>
-                       <td><code><a href="${h.url.current(version='latest')}">latest</a></code></td>
-                       <td>
-                           <code>${c.pull_request_latest.source_ref_parts.commit_id[:6]}</code>
-                       </td>
-                       <td>${_('created')} ${h.age_component(c.pull_request_latest.updated_on)}</td>
-                   </tr>
-                   % for ver in reversed(c.pull_request.versions()):
-                   <tr>
-                       <td>
-                           % if c.at_version == ver.pull_request_version_id:
-                            <i class="icon-ok link"></i>
-                           % endif
-                       </td>
-                       <td><code><a href="${h.url.current(version=ver.pull_request_version_id)}">version ${ver.pull_request_version_id}</a></code></td>
-                       <td>
-                           <code>${ver.source_ref_parts.commit_id[:6]}</code>
-                       </td>
-                       <td>${_('created')} ${h.age_component(ver.updated_on)}</td>
-                   </tr>
-                   % endfor
-               </table>
+               <div class="pr-versions">
+               % if c.show_version_changes:
+                   <table>
+                       ## current visible version
+                       <tr class="version-pr" style="display: ${'' if c.at_version in [None, 'latest'] else 'none'}">
+                           <td>
+                               % if c.at_version in [None, 'latest']:
+                                <i class="icon-ok link"></i>
+                               % endif
+                           </td>
+                           <td>
+                               <code>
+                               % if c.versions:
+                                <a href="${h.url.current(version='latest')}">${_('latest')}</a>
+                               % else:
+                                ${_('initial')}
+                               % endif
+                               </code>
+                           </td>
+                           <td>
+                               <code>${c.pull_request_latest.source_ref_parts.commit_id[:6]}</code>
+                           </td>
+                           <td>${_('created')} ${h.age_component(c.pull_request_latest.updated_on)}</td>
+                           <td>
+                               % if c.versions and c.at_version in [None, 'latest']:
+                               <span id="show-pr-versions" class="btn btn-link" onclick="$('.version-pr').show(); $(this).hide(); return false">${_('(Show all)')}</span>
+                               % endif
+                           </td>
+                       </tr>
 
-               % if c.at_version:
+                       % for ver in reversed(c.pull_request.versions()):
+                       <tr class="version-pr" style="display: ${'' if c.at_version == ver.pull_request_version_id else 'none'}">
+                           <td>
+                               % if c.at_version == ver.pull_request_version_id:
+                                <i class="icon-ok link"></i>
+                               % endif
+                           </td>
+                           <td><code><a href="${h.url.current(version=ver.pull_request_version_id)}">version ${ver.pull_request_version_id}</a></code></td>
+                           <td>
+                               <code>${ver.source_ref_parts.commit_id[:6]}</code>
+                           </td>
+                           <td>${_('created')} ${h.age_component(ver.updated_on)}</td>
+                           <td>
+                               % if c.at_version == ver.pull_request_version_id:
+                               <span id="show-pr-versions" class="btn btn-link" onclick="$('.version-pr').show(); $(this).hide(); return false">${_('(Show all)')}</span>
+                               % endif
+                           </td>
+                       </tr>
+                       % endfor
+                   </table>
+
+                   % if c.at_version:
 <pre>
-  Changed commits:
-    * added: ${len(c.changes.added)}
-    * removed: ${len(c.changes.removed)}
+   Changed commits:
+     * added: ${len(c.changes.added)}
+     * removed: ${len(c.changes.removed)}
 
-  % if not (c.file_changes.added+c.file_changes.modified+c.file_changes.removed):
-  No file changes found
-  % else:
-  Changed files:
-    %for file_name in c.file_changes.added:
-    * A <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
-    %endfor
-    %for file_name in c.file_changes.modified:
-    * M <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
-    %endfor
-    %for file_name in c.file_changes.removed:
-    * R ${file_name}
-    %endfor
-  % endif
+   % if not (c.file_changes.added+c.file_changes.modified+c.file_changes.removed):
+   No file changes found
+   % else:
+   Changed files:
+     %for file_name in c.file_changes.added:
+     * A <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
+     %endfor
+     %for file_name in c.file_changes.modified:
+     * M <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
+     %endfor
+     %for file_name in c.file_changes.removed:
+     * R ${file_name}
+     %endfor
+   % endif
 </pre>
+                   % endif
+               % else:
+                   ${_('Pull request versions not available')}.
                % endif
-           % else:
-               ${_('Pull request versions not available')}.
-           % endif
-           </div>
+               </div>
            </div>
 
            <div id="pr-save" class="field" style="display: none;">
