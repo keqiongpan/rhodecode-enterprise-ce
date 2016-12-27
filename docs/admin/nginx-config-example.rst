@@ -3,6 +3,7 @@ Nginx Configuration Example
 
 Use the following example to configure Nginx as a your web server.
 
+
 .. code-block:: nginx
 
     log_format log_custom '$remote_addr - $remote_user [$time_local] '
@@ -10,8 +11,10 @@ Use the following example to configure Nginx as a your web server.
                           '"$http_referer" "$http_user_agent" '
                           '$request_time $upstream_response_time $pipe';
 
+    ## define upstream (local RhodeCode instance) to connect to
     upstream rc {
-
+        # Url to running RhodeCode instance.
+        # This is shown as `- URL:` in output from rccontrol status.
         server 127.0.0.1:10002;
 
         # add more instances for load balancing
@@ -19,8 +22,17 @@ Use the following example to configure Nginx as a your web server.
         # server 127.0.0.1:10004;
     }
 
-    ## gist alias server, for serving nicer GIST urls
+    ## HTTP to HTTPS rewrite
+    server {
+        listen          80;
+        server_name     rhodecode.myserver.com;
 
+        if ($http_host = rhodecode.myserver.com) {
+            rewrite  (.*)  https://rhodecode.myserver.com$1 permanent;
+        }
+    }
+
+    ## Optional gist alias server, for serving nicer GIST urls.
     server {
         listen          443;
         server_name     gist.myserver.com;
@@ -37,6 +49,7 @@ Use the following example to configure Nginx as a your web server.
         ssl_prefer_server_ciphers on;
         ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
 
+        # strict http prevents from https -> http downgrade
         add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;";
 
         # Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
@@ -46,15 +59,6 @@ Use the following example to configure Nginx as a your web server.
         rewrite (.*)    https://rhodecode.myserver.com/_admin/gists;
     }
 
-    ## HTTP to HTTPS rewrite
-    server {
-        listen          80;
-        server_name     rhodecode.myserver.com;
-
-        if ($http_host = rhodecode.myserver.com) {
-            rewrite  (.*)  https://rhodecode.myserver.com$1 permanent;
-        }
-    }
 
     ## MAIN SSL enabled server
     server {
@@ -79,14 +83,15 @@ Use the following example to configure Nginx as a your web server.
 
         include     /etc/nginx/proxy.conf;
 
-        ## serve static files by nginx, recommended
+        ## serve static files by Nginx, recommended for performance
         # location /_static/rhodecode {
         #    alias /path/to/.rccontrol/enterprise-1/static;
         # }
 
-        ## channel stream live components
+        ## channelstream websocket handling
         location /_channelstream {
             rewrite /_channelstream/(.*) /$1 break;
+
             proxy_pass                  http://127.0.0.1:9800;
 
             proxy_connect_timeout        10;

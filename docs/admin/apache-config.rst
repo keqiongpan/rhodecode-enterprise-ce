@@ -9,7 +9,6 @@ the information in the following sections.
 .. toctree::
 
    apache-diffie-hellman
-   apache-conf-examples
+   apache-conf-example
    apache-subdirectory
-   apache-reverse-proxy
    apache-wsgi-coding
