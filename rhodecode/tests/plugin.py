@@ -1138,6 +1138,7 @@ class UserUtility(object):
         self._test_name = self._sanitize_name(test_name)
         self.fixture = Fixture()
         self.repo_group_ids = []
+        self.repos_ids = []
         self.user_ids = []
         self.user_group_ids = []
         self.user_repo_permission_ids = []
@@ -1163,6 +1164,17 @@ class UserUtility(object):
         if auto_cleanup:
             self.repo_group_ids.append(repo_group.group_id)
         return repo_group
+
+    def create_repo(self, owner=TEST_USER_ADMIN_LOGIN, parent=None, auto_cleanup=True):
+        repo_name = "{prefix}_repository_{count}".format(
+            prefix=self._test_name,
+            count=len(self.repos_ids))
+
+        repository = self.fixture.create_repo(
+            repo_name, cur_user=owner, repo_group=parent)
+        if auto_cleanup:
+            self.repos_ids.append(repository.repo_id)
+        return repository
 
     def create_user(self, auto_cleanup=True, **kwargs):
         user_name = "{prefix}_user_{count}".format(
@@ -1254,6 +1266,7 @@ class UserUtility(object):
 
     def cleanup(self):
         self._cleanup_permissions()
+        self._cleanup_repos()
         self._cleanup_repo_groups()
         self._cleanup_user_groups()
         self._cleanup_users()
@@ -1298,6 +1311,11 @@ class UserUtility(object):
             self.repo_group_ids, cmp=_repo_group_compare)
         for repo_group_id in sorted_repo_group_ids:
             self.fixture.destroy_repo_group(repo_group_id)
+
+    def _cleanup_repos(self):
+        sorted_repos_ids = sorted(self.repos_ids)
+        for repo_id in sorted_repos_ids:
+            self.fixture.destroy_repo(repo_id)
 
     def _cleanup_user_groups(self):
         def _user_group_compare(first_group_id, second_group_id):
