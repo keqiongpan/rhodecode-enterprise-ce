@@ -26,11 +26,12 @@ import collections
 import logging
 
 from rhodecode.api.exc import JSONRPCError
-from rhodecode.lib.auth import HasPermissionAnyApi, HasRepoPermissionAnyApi, \
-    HasRepoGroupPermissionAnyApi
+from rhodecode.lib.auth import (
+    HasPermissionAnyApi, HasRepoPermissionAnyApi, HasRepoGroupPermissionAnyApi)
 from rhodecode.lib.utils import safe_unicode
-from rhodecode.controllers.utils import get_commit_from_ref_name
 from rhodecode.lib.vcs.exceptions import RepositoryError
+from rhodecode.controllers.utils import get_commit_from_ref_name
+from rhodecode.lib.utils2 import str2bool
 
 log = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ class Optional(object):
         return self.type_
 
     @classmethod
-    def extract(cls, val, evaluate_locals=None):
+    def extract(cls, val, evaluate_locals=None, binary=None):
         """
         Extracts value from Optional() instance
 
@@ -101,7 +102,11 @@ class Optional(object):
             value of instance
         """
         if isinstance(val, cls):
-            return val.getval(evaluate_locals)
+            val = val.getval(evaluate_locals)
+
+        if binary:
+            val = str2bool(val)
+
         return val
 
 
