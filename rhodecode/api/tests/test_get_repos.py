@@ -22,7 +22,8 @@
 import pytest
 
 from rhodecode.model.repo import RepoModel
-from rhodecode.api.tests.utils import build_data, api_call, assert_ok, jsonify
+from rhodecode.api.tests.utils import (
+    build_data, api_call, assert_ok, assert_error, jsonify)
 from rhodecode.model.db import User
 
 
@@ -38,6 +39,76 @@ class TestGetRepos(object):
         ret = jsonify(result)
 
         expected = ret
+        assert_ok(id_, expected, given=response.body)
+
+    def test_api_get_repos_only_toplevel(self, user_util):
+        repo_group = user_util.create_repo_group(auto_cleanup=True)
+        user_util.create_repo(parent=repo_group)
+
+        id_, params = build_data(self.apikey, 'get_repos', traverse=0)
+        response = api_call(self.app, params)
+
+        result = []
+        for repo in RepoModel().get_repos_for_root(root=None):
+            result.append(repo.get_api_data(include_secrets=True))
+        expected = jsonify(result)
+
+        assert_ok(id_, expected, given=response.body)
+
+    def test_api_get_repos_with_wrong_root(self):
+        id_, params = build_data(self.apikey, 'get_repos', root='abracadabra')
+        response = api_call(self.app, params)
+
+        expected = 'Root repository group `abracadabra` does not exist'
+        assert_error(id_, expected, given=response.body)
+
+    def test_api_get_repos_with_root(self, user_util):
+        repo_group = user_util.create_repo_group(auto_cleanup=True)
+        repo_group_name = repo_group.group_name
+
+        user_util.create_repo(parent=repo_group)
+        user_util.create_repo(parent=repo_group)
+
+        # nested, should not show up
+        user_util._test_name = '{}/'.format(repo_group_name)
+        sub_repo_group = user_util.create_repo_group(auto_cleanup=True)
+        user_util.create_repo(parent=sub_repo_group)
+
+        id_, params = build_data(self.apikey, 'get_repos',
+                                 root=repo_group_name, traverse=0)
+        response = api_call(self.app, params)
+
+        result = []
+        for repo in RepoModel().get_repos_for_root(repo_group):
+            result.append(repo.get_api_data(include_secrets=True))
+
+        assert len(result) == 2
+        expected = jsonify(result)
+        assert_ok(id_, expected, given=response.body)
+
+    def test_api_get_repos_with_root_and_traverse(self, user_util):
+        repo_group = user_util.create_repo_group(auto_cleanup=True)
+        repo_group_name = repo_group.group_name
+
+        user_util.create_repo(parent=repo_group)
+        user_util.create_repo(parent=repo_group)
+
+        # nested, should not show up
+        user_util._test_name = '{}/'.format(repo_group_name)
+        sub_repo_group = user_util.create_repo_group(auto_cleanup=True)
+        user_util.create_repo(parent=sub_repo_group)
+
+        id_, params = build_data(self.apikey, 'get_repos',
+                                 root=repo_group_name, traverse=1)
+        response = api_call(self.app, params)
+
+        result = []
+        for repo in RepoModel().get_repos_for_root(
+                repo_group_name, traverse=True):
+            result.append(repo.get_api_data(include_secrets=True))
+
+        assert len(result) == 3
+        expected = jsonify(result)
         assert_ok(id_, expected, given=response.body)
 
     def test_api_get_repos_non_admin(self):

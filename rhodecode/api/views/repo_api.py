@@ -36,7 +36,7 @@ from rhodecode.lib.ext_json import json
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import ChangesetCommentsModel
 from rhodecode.model.db import (
-    Session, ChangesetStatus, RepositoryField, Repository)
+    Session, ChangesetStatus, RepositoryField, Repository, RepoGroup)
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel, RepoList
 from rhodecode.model.settings import SettingsModel, VcsSettingsModel
@@ -217,7 +217,7 @@ def get_repo(request, apiuser, repoid, cache=Optional(True)):
 
 
 @jsonrpc_method()
-def get_repos(request, apiuser):
+def get_repos(request, apiuser, root=Optional(None), traverse=Optional(True)):
     """
     Lists all existing repositories.
 
@@ -226,6 +226,14 @@ def get_repos(request, apiuser):
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
+    :param root: specify root repository group to fetch repositories.
+        filters the returned repositories to be members of given root group.
+    :type root: Optional(None)
+    :param traverse: traverse given root into subrepositories. With this flag
+        set to False, it will only return top-level repositories from `root`.
+        if root is empty it will return just top-level repositories.
+    :type traverse: Optional(True)
+
 
     Example output:
 
@@ -257,8 +265,28 @@ def get_repos(request, apiuser):
     _perms = ('repository.read', 'repository.write', 'repository.admin',)
     extras = {'user': apiuser}
 
-    repo_list = RepoList(
-        RepoModel().get_all(), perm_set=_perms, extra_kwargs=extras)
+    root = Optional.extract(root)
+    traverse = Optional.extract(traverse, binary=True)
+
+    if root:
+        # verify parent existance, if it's empty return an error
+        parent = RepoGroup.get_by_group_name(root)
+        if not parent:
+            raise JSONRPCError(
+                'Root repository group `{}` does not exist'.format(root))
+
+        if traverse:
+            repos = RepoModel().get_repos_for_root(root=root, traverse=traverse)
+        else:
+            repos = RepoModel().get_repos_for_root(root=parent)
+    else:
+        if traverse:
+            repos = RepoModel().get_all()
+        else:
+            # return just top-level
+            repos = RepoModel().get_repos_for_root(root=None)
+
+    repo_list = RepoList(repos, perm_set=_perms, extra_kwargs=extras)
     return [repo.get_api_data(include_secrets=include_secrets)
             for repo in repo_list]
 

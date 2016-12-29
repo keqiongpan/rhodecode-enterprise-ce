@@ -143,6 +143,19 @@ class RepoModel(BaseModel):
 
         return None
 
+    def get_repos_for_root(self, root, traverse=False):
+        if traverse:
+            like_expression = u'{}%'.format(safe_unicode(root))
+            repos = Repository.query().filter(
+                Repository.repo_name.like(like_expression)).all()
+        else:
+            if root and not isinstance(root, RepoGroup):
+                raise ValueError(
+                    'Root must be an instance '
+                    'of RepoGroup, got:{} instead'.format(type(root)))
+            repos = Repository.query().filter(Repository.group == root).all()
+        return repos
+
     def get_url(self, repo):
         return h.url('summary_home', repo_name=safe_str(repo.repo_name),
             qualified=True)
