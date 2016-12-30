@@ -3,11 +3,9 @@
 
 %if c.ancestor:
 <div class="ancestor">${_('Common Ancestor Commit')}:
-    <a href="${h.url('changeset_home',
-                     repo_name=c.repo_name,
-                     revision=c.ancestor)}">
+    <a href="${h.url('changeset_home', repo_name=c.repo_name, revision=c.ancestor)}">
         ${h.short_id(c.ancestor)}
-    </a>
+    </a>. ${_('Compare was calculated based on this shared commit.')}
 </div>
 %endif
 
