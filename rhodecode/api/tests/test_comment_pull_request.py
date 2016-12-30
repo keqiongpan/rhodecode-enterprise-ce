@@ -58,7 +58,7 @@ class TestCommentPullRequest(object):
         expected = {
             'pull_request_id': pull_request.pull_request_id,
             'comment_id': comments[-1].comment_id,
-            'status': None
+            'status': {'given': None, 'was_changed': None}
         }
         assert_ok(id_, expected, response.body)
 
@@ -88,7 +88,56 @@ class TestCommentPullRequest(object):
         expected = {
             'pull_request_id': pull_request.pull_request_id,
             'comment_id': comments[-1].comment_id,
-            'status': 'rejected'
+            'status':  {'given': 'rejected', 'was_changed': True}
+        }
+        assert_ok(id_, expected, response.body)
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_comment_pull_request_change_status_with_specific_commit_id(
+            self, pr_util, no_notifications):
+        pull_request = pr_util.create_pull_request()
+        pull_request_id = pull_request.pull_request_id
+        latest_commit_id = 'test_commit'
+        # inject additional revision, to fail test the status change on
+        # non-latest commit
+        pull_request.revisions = pull_request.revisions + ['test_commit']
+
+        id_, params = build_data(
+            self.apikey, 'comment_pull_request',
+            repoid=pull_request.target_repo.repo_name,
+            pullrequestid=pull_request.pull_request_id,
+            status='approved', commit_id=latest_commit_id)
+        response = api_call(self.app, params)
+        pull_request = PullRequestModel().get(pull_request_id)
+
+        expected = {
+            'pull_request_id': pull_request.pull_request_id,
+            'comment_id': None,
+            'status':  {'given': 'approved', 'was_changed': False}
+        }
+        assert_ok(id_, expected, response.body)
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_comment_pull_request_change_status_with_specific_commit_id(
+            self, pr_util, no_notifications):
+        pull_request = pr_util.create_pull_request()
+        pull_request_id = pull_request.pull_request_id
+        latest_commit_id = pull_request.revisions[0]
+
+        id_, params = build_data(
+            self.apikey, 'comment_pull_request',
+            repoid=pull_request.target_repo.repo_name,
+            pullrequestid=pull_request.pull_request_id,
+            status='approved', commit_id=latest_commit_id)
+        response = api_call(self.app, params)
+        pull_request = PullRequestModel().get(pull_request_id)
+
+        comments = ChangesetCommentsModel().get_comments(
+            pull_request.target_repo.repo_id, pull_request=pull_request)
+        expected = {
+            'pull_request_id': pull_request.pull_request_id,
+            'comment_id': comments[-1].comment_id,
+            'status':  {'given': 'approved', 'was_changed': True}
         }
         assert_ok(id_, expected, response.body)
 
@@ -103,7 +152,7 @@ class TestCommentPullRequest(object):
             pullrequestid=pull_request_id)
         response = api_call(self.app, params)
 
-        expected = 'message and status parameter missing'
+        expected = 'Both message and status parameters are missing. At least one is required.'
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.backends("git", "hg")
@@ -118,7 +167,7 @@ class TestCommentPullRequest(object):
             status='42')
         response = api_call(self.app, params)
 
-        expected = 'unknown comment status`42`'
+        expected = 'Unknown comment status: `42`'
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.backends("git", "hg")
@@ -143,4 +192,18 @@ class TestCommentPullRequest(object):
         response = api_call(self.app, params)
 
         expected = 'userid is not the same as your user'
+        assert_error(id_, expected, given=response.body)
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_comment_pull_request_wrong_commit_id_error(self, pr_util):
+        pull_request = pr_util.create_pull_request()
+        id_, params = build_data(
+            self.apikey_regular, 'comment_pull_request',
+            repoid=pull_request.target_repo.repo_name,
+            status='approved',
+            pullrequestid=pull_request.pull_request_id,
+            commit_id='XXX')
+        response = api_call(self.app, params)
+
+        expected = 'Invalid commit_id `XXX` for this pull request.'
         assert_error(id_, expected, given=response.body)
