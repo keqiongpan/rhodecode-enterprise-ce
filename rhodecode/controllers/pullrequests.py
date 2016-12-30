@@ -26,7 +26,7 @@ import types
 import peppercorn
 import formencode
 import logging
-
+import collections
 
 from webob.exc import HTTPNotFound, HTTPForbidden, HTTPBadRequest
 from pylons import request, tmpl_context as c, url
@@ -45,7 +45,6 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous,
     HasAcceptedRepoType, XHRRequired)
 from rhodecode.lib.channelstream import channelstream_request
-from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import (
     safe_int, safe_str, str2bool, safe_unicode)
@@ -70,7 +69,7 @@ class PullrequestsController(BaseRepoController):
     def __before__(self):
         super(PullrequestsController, self).__before__()
 
-    def _load_compare_data(self, pull_request, inline_comments, enable_comments=True):
+    def _load_compare_data(self, pull_request, inline_comments):
         """
         Load context data needed for generating compare diff
 
@@ -123,6 +122,10 @@ class PullrequestsController(BaseRepoController):
         except RepositoryRequirementError:
             c.missing_requirements = True
 
+        # auto collapse if we have more than limit
+        collapse_limit = diffs.DiffProcessor._collapse_commits_over
+        c.collapse_all_commits = len(c.commit_ranges) > collapse_limit
+
         c.changes = {}
         c.missing_commits = False
         if (c.missing_requirements or
@@ -135,13 +138,24 @@ class PullrequestsController(BaseRepoController):
             diff_processor = diffs.DiffProcessor(
                 vcs_diff, format='newdiff', diff_limit=diff_limit,
                 file_limit=file_limit, show_full_diff=c.fulldiff)
-            _parsed = diff_processor.prepare()
 
-            commit_changes = OrderedDict()
             _parsed = diff_processor.prepare()
             c.limited_diff = isinstance(_parsed, diffs.LimitedDiffContainer)
 
-            _parsed = diff_processor.prepare()
+            included_files = {}
+            for f in _parsed:
+                included_files[f['filename']] = f['stats']
+
+            c.deleted_files = [fname for fname in inline_comments if
+                               fname not in included_files]
+
+            c.deleted_files_comments = collections.defaultdict(dict)
+            for fname, per_line_comments in inline_comments.items():
+                if fname in c.deleted_files:
+                    c.deleted_files_comments[fname]['stats'] = 0
+                    c.deleted_files_comments[fname]['comments'] = list()
+                    for lno, comments in per_line_comments.items():
+                        c.deleted_files_comments[fname]['comments'].extend(comments)
 
             def _node_getter(commit):
                 def get_node(fname):
@@ -158,14 +172,6 @@ class PullrequestsController(BaseRepoController):
                 target_node_getter=_node_getter(source_commit),
                 comments=inline_comments
             ).render_patchset(_parsed, target_commit.raw_id, source_commit.raw_id)
-
-        c.included_files = []
-        c.deleted_files = []
-
-        for f in _parsed:
-            st = f['stats']
-            fid = h.FID('', f['filename'])
-            c.included_files.append(f['filename'])
 
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
@@ -802,36 +808,47 @@ class PullrequestsController(BaseRepoController):
             c.pr_merge_status = False
 
         # inline comments
-        c.inline_comments = cc_model.get_inline_comments(
-            c.rhodecode_db_repo.repo_id,
-            pull_request=pull_request_id)
+        inline_comments = cc_model.get_inline_comments(
+            c.rhodecode_db_repo.repo_id, pull_request=pull_request_id)
 
-        c.inline_cnt = cc_model.get_inline_comments_count(
-            c.inline_comments, version=at_version)
+        _inline_cnt, c.inline_versions = cc_model.get_inline_comments_count(
+            inline_comments, version=at_version, include_aggregates=True)
 
-        # load compare data into template context
-        enable_comments = not pr_closed
-        self._load_compare_data(
-            pull_request_at_ver,
-            c.inline_comments, enable_comments=enable_comments)
+        c.at_version_num = at_version if at_version and at_version != 'latest' else None
+        is_outdated = lambda co: \
+            not c.at_version_num \
+            or co.pull_request_version_id <= c.at_version_num
+
+        # inline_comments_until_version
+        if c.at_version_num:
+            # if we use version, then do not show later comments
+            # than current version
+            paths = collections.defaultdict(lambda: collections.defaultdict(list))
+            for fname, per_line_comments in inline_comments.iteritems():
+                for lno, comments in per_line_comments.iteritems():
+                    for co in comments:
+                        if co.pull_request_version_id and is_outdated(co):
+                            paths[co.f_path][co.line_no].append(co)
+            inline_comments = paths
 
         # outdated comments
-        c.outdated_comments = {}
         c.outdated_cnt = 0
-
         if ChangesetCommentsModel.use_outdated_comments(pull_request_latest):
-            c.outdated_comments = cc_model.get_outdated_comments(
+            outdated_comments = cc_model.get_outdated_comments(
                 c.rhodecode_db_repo.repo_id,
                 pull_request=pull_request_at_ver)
 
             # Count outdated comments and check for deleted files
-            for file_name, lines in c.outdated_comments.iteritems():
+            is_outdated = lambda co: \
+                not c.at_version_num \
+                or co.pull_request_version_id < c.at_version_num
+            for file_name, lines in outdated_comments.iteritems():
                 for comments in lines.values():
-                    comments = [comm for comm in comments
-                                if comm.outdated_at_version(at_version)]
+                    comments = [comm for comm in comments if is_outdated(comm)]
                     c.outdated_cnt += len(comments)
-                if file_name not in c.included_files:
-                    c.deleted_files.append(file_name)
+
+        # load compare data into template context
+        self._load_compare_data(pull_request_at_ver, inline_comments)
 
         # this is a hack to properly display links, when creating PR, the
         # compare view and others uses different notation, and
@@ -839,9 +856,9 @@ class PullrequestsController(BaseRepoController):
         # We need to swap that here to generate it properly on the html side
         c.target_repo = c.source_repo
 
-        # comments
-        c.comments = cc_model.get_comments(c.rhodecode_db_repo.repo_id,
-                                           pull_request=pull_request_id)
+        # general comments
+        c.comments = cc_model.get_comments(
+            c.rhodecode_db_repo.repo_id, pull_request=pull_request_id)
 
         if c.allowed_to_update:
             force_close = ('forced_closed', _('Close Pull Request'))
@@ -859,7 +876,7 @@ class PullrequestsController(BaseRepoController):
         c.changes = None
         c.file_changes = None
 
-        c.show_version_changes = 1
+        c.show_version_changes = 1  # control flag, not used yet
 
         if at_version and c.show_version_changes:
             c.changes, c.file_changes = self._get_pr_version_changes(

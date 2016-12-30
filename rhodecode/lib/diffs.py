@@ -203,6 +203,9 @@ class DiffProcessor(object):
     # used for inline highlighter word split
     _token_re = re.compile(r'()(&gt;|&lt;|&amp;|\W+?)')
 
+    # collapse ranges of commits over given number
+    _collapse_commits_over = 5
+
     def __init__(self, diff, format='gitdiff', diff_limit=None,
                  file_limit=None, show_full_diff=True):
         """

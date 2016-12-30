@@ -658,24 +658,30 @@ input.filediff-collapse-state {
             display: none
         }
         .filediff-collapse-indicator {
-            border-width: 9px 0 9px 15.6px;
-            border-color: transparent transparent transparent #ccc;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 6.5px 0 6.5px 11.3px;
+            border-color: transparent transparent transparent  #ccc;
         }
         .filediff-menu {
             display: none;
         }
-        margin: -1px 0 0 0;
+        margin: 10px 0 0 0;
     }
 
     &+ .filediff { /* file diff is expanded */
         .filediff-collapse-indicator {
-            border-width: 15.6px 9px 0 9px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 11.3px 6.5px 0 6.5px;
             border-color: #ccc transparent transparent transparent;
         }
         .filediff-menu {
             display: block;
         }
-        margin: 20px 0;
+        margin: 10px 0;
         &:nth-child(2) {
             margin: 0;
         }
@@ -775,11 +781,9 @@ input.filediff-collapse-state {
     }
 
     .filediff-collapse-indicator {
-        width: 0;
-        height: 0;
         border-style: solid;
         float: left;
-        margin: 2px 2px 0 0;
+        margin: 4px 0px 0 0;
         cursor: pointer;
     }
 
@@ -800,11 +804,12 @@ input.filediff-collapse-state {
 
     .filediff-menu {
         float: right;
+        text-align: right;
+        padding: 5px 5px 5px 0px;
 
-        &> a, &> span {
-            padding: 5px;
-            display: block;
-            float: left
+        &> a,
+        &> span {
+            padding: 1px;
         }
     }
 
@@ -962,6 +967,13 @@ input.filediff-collapse-state {
 
 }
 
+.filediff-outdated {
+    padding: 8px 0;
+
+    .filediff-heading {
+        opacity: .5;
+    }
+}
 
 table.cb {
     width: 100%;
@@ -1068,8 +1080,8 @@ table.cb {
 
             &> button.cb-comment-box-opener {
 
-                padding: 2px 5px 1px 5px;
-                margin-left: 0px;
+                padding: 2px 2px 1px 3px;
+                margin-left: -6px;
                 margin-top: -1px;
 
                 border-radius: @border-radius;

@@ -58,7 +58,7 @@
                   % endif
               </div>
               <div id="open_edit_pullrequest" class="pull-right action_button">${_('Edit')}</div>
-              <div id="close_edit_pullrequest" class="pull-right action_button" style="display: none;padding: 0">${_('Cancel edit')}</div>
+              <div id="close_edit_pullrequest" class="pull-right action_button" style="display: none;padding: 0">${_('Cancel')}</div>
             %endif
         </div>
 
@@ -161,40 +161,6 @@
                 <textarea id="pr-description-input" size="30">${c.pull_request.description}</textarea>
             </div>
            </div>
-           <div class="field">
-            <div class="label-summary">
-                <label>${_('Comments')}:</label>
-            </div>
-            <div class="input">
-                <div>
-                    <div class="comments-number">
-                        %if c.comments:
-                            <a href="#comments">${ungettext("%d General Comment", "%d General Comments", len(c.comments)) % len(c.comments)}</a>,
-                        %else:
-                            ${ungettext("%d General Comment", "%d General Comments", len(c.comments)) % len(c.comments)}
-                        %endif
-
-                        %if c.inline_cnt:
-                            <a href="#" onclick="return Rhodecode.comments.nextComment();" id="inline-comments-counter">${ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}</a>
-                        %else:
-                            ${ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}
-                        %endif
-
-                        %if c.outdated_cnt:
-                          , ${ungettext("%d Outdated Comment", "%d Outdated Comments", c.outdated_cnt) % c.outdated_cnt} <span id="show-outdated-comments" class="btn btn-link">${_('(Show)')}</span>
-                        %endif
-                   </div>
-                </div>
-           </div>
-
-           </div>
-
-            <style>
-                .pr-versions {
-                    position: relative;
-                    top: 6px;
-                }
-            </style>
 
            <div class="field">
                 <div class="label-summary">
@@ -204,11 +170,13 @@
                <div class="pr-versions">
                % if c.show_version_changes:
                    <table>
-                       ## current visible version
-                       <tr class="version-pr" style="display: ${'' if c.at_version in [None, 'latest'] else 'none'}">
+                       ## CURRENTLY SELECT PR VERSION
+                       <tr class="version-pr" style="display: ${'' if c.at_version_num is None else 'none'}">
                            <td>
                                % if c.at_version in [None, 'latest']:
                                 <i class="icon-ok link"></i>
+                               % else:
+                                <i class="icon-comment"></i> <code>${len(c.inline_versions[None])}</code>
                                % endif
                            </td>
                            <td>
@@ -223,57 +191,104 @@
                            <td>
                                <code>${c.pull_request_latest.source_ref_parts.commit_id[:6]}</code>
                            </td>
-                           <td>${_('created')} ${h.age_component(c.pull_request_latest.updated_on)}</td>
                            <td>
-                               % if c.versions and c.at_version in [None, 'latest']:
-                               <span id="show-pr-versions" class="btn btn-link" onclick="$('.version-pr').show(); $(this).hide(); return false">${_('(Show all)')}</span>
+                               ${_('created')} ${h.age_component(c.pull_request_latest.updated_on)}
+                           </td>
+                           <td align="right">
+                               % if c.versions and c.at_version_num in [None, 'latest']:
+                               <span id="show-pr-versions" class="btn btn-link" onclick="$('.version-pr').show(); $(this).hide(); return false">${_('Show all versions')}</span>
                                % endif
                            </td>
                        </tr>
 
+                       ## SHOW ALL VERSIONS OF PR
+                       <% ver_pr = None %>
                        % for ver in reversed(c.pull_request.versions()):
-                       <tr class="version-pr" style="display: ${'' if c.at_version == ver.pull_request_version_id else 'none'}">
+                       <% ver_pr = ver.pull_request_version_id %>
+                       <tr class="version-pr" style="display: ${'' if c.at_version == ver_pr else 'none'}">
                            <td>
-                               % if c.at_version == ver.pull_request_version_id:
+                               % if c.at_version == ver_pr:
                                 <i class="icon-ok link"></i>
+                               % else:
+                                <i class="icon-comment"></i> <code>${len(c.inline_versions[ver_pr])}</code>
                                % endif
                            </td>
-                           <td><code><a href="${h.url.current(version=ver.pull_request_version_id)}">version ${ver.pull_request_version_id}</a></code></td>
+                           <td>
+                               <code><a href="${h.url.current(version=ver_pr)}">version ${ver_pr}</a></code>
+                           </td>
                            <td>
                                <code>${ver.source_ref_parts.commit_id[:6]}</code>
                            </td>
-                           <td>${_('created')} ${h.age_component(ver.updated_on)}</td>
                            <td>
-                               % if c.at_version == ver.pull_request_version_id:
-                               <span id="show-pr-versions" class="btn btn-link" onclick="$('.version-pr').show(); $(this).hide(); return false">${_('(Show all)')}</span>
+                               ${_('created')} ${h.age_component(ver.updated_on)}
+                           </td>
+                           <td align="right">
+                               % if c.at_version == ver_pr:
+                               <span id="show-pr-versions" class="btn btn-link" onclick="$('.version-pr').show(); $(this).hide(); return false">${_('Show all versions')}</span>
                                % endif
                            </td>
                        </tr>
                        % endfor
-                   </table>
 
-                   % if c.at_version:
+                       ## show comment/inline comments summary
+                       <tr>
+                           <td>
+                           </td>
+
+                           <% inline_comm_count_ver = len(c.inline_versions[ver_pr])%>
+                           <td colspan="4" style="border-top: 1px dashed #dbd9da">
+                            ${_('Comments for this version')}:
+                            %if c.comments:
+                                <a href="#comments">${_("%d General ") % len(c.comments)}</a>
+                            %else:
+                                ${_("%d General ") % len(c.comments)}
+                            %endif
+
+                            <% inline_comm_count_ver = len(c.inline_versions[c.at_version_num])%>
+                            %if inline_comm_count_ver:
+                               , <a href="#" onclick="return Rhodecode.comments.nextComment();" id="inline-comments-counter">${_("%d Inline") % inline_comm_count_ver}</a>
+                            %else:
+                               , ${_("%d Inline") % inline_comm_count_ver}
+                            %endif
+
+                            %if c.outdated_cnt:
+                              , <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">${_("%d Outdated") % c.outdated_cnt}</a>
+                                <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated comments')}</a>
+                                <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated comments')}</a>
+                            %else:
+                              , ${_("%d Outdated") % c.outdated_cnt}
+                            %endif
+                           </td>
+                       </tr>
+
+                       <tr>
+                           <td></td>
+                           <td colspan="4">
+                           % if c.at_version:
 <pre>
-   Changed commits:
-     * added: ${len(c.changes.added)}
-     * removed: ${len(c.changes.removed)}
+Changed commits:
+ * added: ${len(c.changes.added)}
+ * removed: ${len(c.changes.removed)}
 
-   % if not (c.file_changes.added+c.file_changes.modified+c.file_changes.removed):
-   No file changes found
-   % else:
-   Changed files:
-     %for file_name in c.file_changes.added:
-     * A <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
-     %endfor
-     %for file_name in c.file_changes.modified:
-     * M <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
-     %endfor
-     %for file_name in c.file_changes.removed:
-     * R ${file_name}
-     %endfor
-   % endif
+% if not (c.file_changes.added+c.file_changes.modified+c.file_changes.removed):
+No file changes found
+% else:
+Changed files:
+ %for file_name in c.file_changes.added:
+ * A <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
+ %endfor
+ %for file_name in c.file_changes.modified:
+ * M <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
+ %endfor
+ %for file_name in c.file_changes.removed:
+ * R ${file_name}
+ %endfor
+% endif
 </pre>
-                   % endif
+                           % endif
+                           </td>
+                       </tr>
+                   </table>
                % else:
                    ${_('Pull request versions not available')}.
                % endif
@@ -423,7 +438,8 @@
                 ${cbdiffs.render_diffset(
                   c.diffset, use_comments=True,
                   collapse_when_files_over=30,
-                  disable_new_comments=not c.allowed_to_comment)}
+                  disable_new_comments=not c.allowed_to_comment,
+                  deleted_files_comments=c.deleted_files_comments)}
 
           </div>
               % endif
@@ -517,9 +533,25 @@
             PRDetails.init();
             ReviewersPanel.init();
 
+            showOutdated = function(self){
+                $('.comment-outdated').show();
+                $('.filediff-outdated').show();
+                $('.showOutdatedComments').hide();
+                $('.hideOutdatedComments').show();
+
+            };
+
+            hideOutdated = function(self){
+                $('.comment-outdated').hide();
+                $('.filediff-outdated').hide();
+                $('.hideOutdatedComments').hide();
+                $('.showOutdatedComments').show();
+            };
+
             $('#show-outdated-comments').on('click', function(e){
                 var button = $(this);
                 var outdated = $('.comment-outdated');
+
                 if (button.html() === "(Show)") {
                   button.html("(Hide)");
                   outdated.show();

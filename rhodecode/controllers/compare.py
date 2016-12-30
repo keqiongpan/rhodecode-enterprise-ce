@@ -79,6 +79,7 @@ class CompareController(BaseRepoController):
     def index(self, repo_name):
         c.compare_home = True
         c.commit_ranges = []
+        c.collapse_all_commits = False
         c.diffset = None
         c.limited_diff = False
         source_repo = c.rhodecode_db_repo.repo_name
@@ -208,6 +209,10 @@ class CompareController(BaseRepoController):
 
         c.statuses = c.rhodecode_db_repo.statuses(
             [x.raw_id for x in c.commit_ranges])
+
+        # auto collapse if we have more than limit
+        collapse_limit = diffs.DiffProcessor._collapse_commits_over
+        c.collapse_all_commits = len(c.commit_ranges) > collapse_limit
 
         if partial:  # for PR ajax commits loader
             if not c.ancestor:

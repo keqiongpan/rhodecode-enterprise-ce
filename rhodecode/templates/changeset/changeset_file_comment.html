@@ -6,13 +6,15 @@
 <%namespace name="base" file="/base/base.html"/>
 
 <%def name="comment_block(comment, inline=False)">
+  <% outdated_at_ver = comment.outdated_at_version(getattr(c, 'at_version', None)) %>
+
   <div class="comment
              ${'comment-inline' if inline else ''}
-             ${'comment-outdated' if comment.outdated_at_version(getattr(c, 'at_version', None)) else 'comment-current'}"
+             ${'comment-outdated' if outdated_at_ver else 'comment-current'}"
        id="comment-${comment.comment_id}"
        line="${comment.line_no}"
        data-comment-id="${comment.comment_id}"
-       style="${'display: none;' if comment.outdated_at_version(getattr(c, 'at_version', None)) else ''}">
+       style="${'display: none;' if outdated_at_ver else ''}">
 
       <div class="meta">
           <div class="author">
@@ -52,12 +54,10 @@
           %endif
           <a class="permalink" href="#comment-${comment.comment_id}"> &para;</a>
 
-
           <div class="comment-links-block">
-
             ## show delete comment if it's not a PR (regular comments) or it's PR that is not closed
-            ## only super-admin, repo admin OR comment owner can delete
-            %if not comment.pull_request or (comment.pull_request and not comment.pull_request.is_closed()):
+            ## only super-admin, repo admin OR comment owner can delete, also hide delete if currently viewed comment is outdated
+            %if not outdated_at_ver and (not comment.pull_request or (comment.pull_request and not comment.pull_request.is_closed())):
                ## permissions to delete
                %if h.HasPermissionAny('hg.admin')() or h.HasRepoPermissionAny('repository.admin')(c.repo_name) or comment.author.user_id == c.rhodecode_user.user_id:
                   ## TODO: dan: add edit comment here
@@ -68,7 +68,8 @@
             %else:
                <button class="btn-link" disabled="disabled"> ${_('Delete')}</button>
             %endif
-            %if not comment.outdated_at_version(getattr(c, 'at_version', None)):
+
+            %if not outdated_at_ver:
                | <a onclick="return Rhodecode.comments.prevComment(this);" class="prev-comment"> ${_('Prev')}</a>
                | <a onclick="return Rhodecode.comments.nextComment(this);" class="next-comment"> ${_('Next')}</a>
             %endif

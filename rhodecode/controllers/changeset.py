@@ -198,6 +198,10 @@ class ChangesetController(BaseRepoController):
         c.lines_added = 0
         c.lines_deleted = 0
 
+        # auto collapse if we have more than limit
+        collapse_limit = diffs.DiffProcessor._collapse_commits_over
+        c.collapse_all_commits = len(c.commit_ranges) > collapse_limit
+
         c.commit_statuses = ChangesetStatus.STATUSES
         c.inline_comments = []
         c.files = []

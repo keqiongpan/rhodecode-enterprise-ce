@@ -355,13 +355,18 @@ class ChangesetCommentsModel(BaseModel):
         return self._group_comments_by_path_and_line_number(q)
 
     def get_inline_comments_count(self, inline_comments, skip_outdated=True,
-                                  version=None):
+                                  version=None, include_aggregates=False):
+        version_aggregates = collections.defaultdict(list)
         inline_cnt = 0
         for fname, per_line_comments in inline_comments.iteritems():
             for lno, comments in per_line_comments.iteritems():
-                inline_cnt += len(
-                    [comm for comm in comments
-                     if (not comm.outdated_at_version(version) and skip_outdated)])
+                for comm in comments:
+                    version_aggregates[comm.pull_request_version_id].append(comm)
+                    if not comm.outdated_at_version(version) and skip_outdated:
+                        inline_cnt += 1
+
+        if include_aggregates:
+            return inline_cnt, version_aggregates
         return inline_cnt
 
     def get_outdated_comments(self, repo_id, pull_request):

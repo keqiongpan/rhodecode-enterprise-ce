@@ -25,6 +25,7 @@
         <tr id="row-${commit.raw_id}"
             commit_id="${commit.raw_id}"
             class="compare_select"
+            style="${'display: none' if c.collapse_all_commits else ''}"
         >
             <td class="td-time">
                 ${h.age_component(commit.date)}
@@ -63,9 +64,10 @@
             </td>
         </tr>
     %endfor
-        <tr class="compare_select_hidden" style="display: none">
+        <tr class="compare_select_hidden" style="${'' if c.collapse_all_commits else 'display: none'}">
             <td colspan="5">
-                ${ungettext('%s commit hidden','%s commits hidden', len(c.commit_ranges)) % len(c.commit_ranges)}
+                ${ungettext('%s commit hidden','%s commits hidden', len(c.commit_ranges)) % len(c.commit_ranges)},
+                <a href="#" onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">${ungettext('show it','show them', len(c.commit_ranges))}</a>
             </td>
         </tr>
     % if not c.commit_ranges:

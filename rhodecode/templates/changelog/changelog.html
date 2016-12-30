@@ -139,7 +139,7 @@
                     <td class="td-comments comments-col">
                     %if c.comments.get(commit.raw_id):
                       <a title="${_('Commit has comments')}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id,anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
-                          <i class="icon-comment icon-comment-colored"></i> ${len(c.comments[commit.raw_id])}
+                          <i class="icon-comment"></i> ${len(c.comments[commit.raw_id])}
                       </a>
                     %endif
                     </td>

@@ -411,23 +411,26 @@ var CommentsController = function() { /* comments controller */
       return $node.closest('td').attr('data-line-number');
   };
 
-  this.scrollToComment = function(node, offset) {
+  this.scrollToComment = function(node, offset, outdated) {
+    var outdated = outdated || false;
+    var klass = outdated ? 'div.comment-outdated' : 'div.comment-current';
+
     if (!node) {
       node = $('.comment-selected');
       if (!node.length) {
         node = $('comment-current')
       }
     }
-    $comment = $(node).closest('.comment-current');
-    $comments = $('.comment-current');
+    $comment = $(node).closest(klass);
+    $comments = $(klass);
 
     $('.comment-selected').removeClass('comment-selected');
 
-    var nextIdx = $('.comment-current').index($comment) + offset;
+    var nextIdx = $(klass).index($comment) + offset;
     if (nextIdx >= $comments.length) {
       nextIdx = 0;
     }
-    var $next = $('.comment-current').eq(nextIdx);
+    var $next = $(klass).eq(nextIdx);
     var $cb = $next.closest('.cb');
     $cb.removeClass('cb-collapsed');
 
@@ -444,6 +447,14 @@ var CommentsController = function() { /* comments controller */
 
   this.prevComment = function(node) {
     return self.scrollToComment(node, -1);
+  };
+
+  this.nextOutdatedComment = function(node) {
+    return self.scrollToComment(node, 1, true);
+  };
+
+  this.prevOutdatedComment = function(node) {
+    return self.scrollToComment(node, -1, true);
   };
 
   this.deleteComment = function(node) {

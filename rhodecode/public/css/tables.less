@@ -445,6 +445,15 @@ table.compare_view_commits {
         padding-left: .5em;
     }
 
+    // special case to not show hover actions on hidden indicator
+    tr.compare_select_hidden:hover {
+        cursor: inherit;
+
+        td {
+            background-color: inherit;
+        }
+    }
+
     tr:hover {
         cursor: pointer;
 
@@ -452,6 +461,8 @@ table.compare_view_commits {
             background-color: lighten(@alert4,25%);
         }
     }
+
+
 }
 
 .file_history {
