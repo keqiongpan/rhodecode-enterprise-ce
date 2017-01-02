@@ -15,7 +15,10 @@
         <% disabled = "disabled" %>
         <div class="infoform">
           <div class="fields">
-            <p>${_('Your user account details are managed by an external source, i.e. LDAP. Details cannot be managed here.')}.</p>
+            <p>${_('Your user account details are managed by an external source. Details cannot be managed here.')}
+               <br/>${_('Source type')}: <strong>${c.extern_type}</strong>
+            </p>
+
             <div class="field">
                <div class="label">
                    <label for="username">${_('Username')}:</label>

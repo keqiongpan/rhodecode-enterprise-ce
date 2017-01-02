@@ -81,6 +81,9 @@ class MyAccountController(BaseController):
                       " crucial for entire application"), category='warning')
             return redirect(url('users'))
 
+        c.auth_user = AuthUser(
+            user_id=c.rhodecode_user.user_id, ip_addr=self.ip_addr)
+
     def _load_my_repos_data(self, watched=False):
         if watched:
             admin = False
@@ -109,8 +112,7 @@ class MyAccountController(BaseController):
         # url('my_account')
         c.active = 'profile_edit'
         self.__load_data()
-        c.perm_user = AuthUser(user_id=c.rhodecode_user.user_id,
-                               ip_addr=self.ip_addr)
+        c.perm_user = c.auth_user
         c.extern_type = c.user.extern_type
         c.extern_name = c.user.extern_name
 
@@ -182,8 +184,7 @@ class MyAccountController(BaseController):
         """
         c.active = 'profile_edit'
         self.__load_data()
-        c.perm_user = AuthUser(user_id=c.rhodecode_user.user_id,
-                               ip_addr=self.ip_addr)
+        c.perm_user = c.auth_user
         c.extern_type = c.user.extern_type
         c.extern_name = c.user.extern_name
 
@@ -199,6 +200,7 @@ class MyAccountController(BaseController):
     def my_account_password(self):
         c.active = 'password'
         self.__load_data()
+        c.extern_type = c.user.extern_type
 
         schema = user_schema.ChangePasswordSchema().bind(
             username=c.rhodecode_user.username)
@@ -206,7 +208,7 @@ class MyAccountController(BaseController):
         form = forms.Form(schema,
             buttons=(forms.buttons.save, forms.buttons.reset))
 
-        if request.method == 'POST':
+        if request.method == 'POST' and c.extern_type == 'rhodecode':
             controls = request.POST.items()
             try:
                 valid_data = form.validate(controls)
@@ -254,8 +256,7 @@ class MyAccountController(BaseController):
     def my_account_perms(self):
         c.active = 'perms'
         self.__load_data()
-        c.perm_user = AuthUser(user_id=c.rhodecode_user.user_id,
-                               ip_addr=self.ip_addr)
+        c.perm_user = c.auth_user
 
         return render('admin/my_account/my_account.html')
 
