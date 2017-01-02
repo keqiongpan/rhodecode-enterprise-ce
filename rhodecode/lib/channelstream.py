@@ -42,11 +42,11 @@ class ChannelstreamException(Exception):
     pass
 
 
-class ChannelstreamConnectionException(Exception):
+class ChannelstreamConnectionException(ChannelstreamException):
     pass
 
 
-class ChannelstreamPermissionException(Exception):
+class ChannelstreamPermissionException(ChannelstreamException):
     pass
 
 
