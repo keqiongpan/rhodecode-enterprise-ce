@@ -24,13 +24,16 @@ my account controller for RhodeCode admin
 """
 
 import logging
+import datetime
 
 import formencode
 from formencode import htmlfill
+from pyramid.threadlocal import get_current_registry
 from pylons import request, tmpl_context as c, url, session
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 from sqlalchemy.orm import joinedload
+from webob.exc import HTTPBadGateway
 
 from rhodecode import forms
 from rhodecode.lib import helpers as h
@@ -41,6 +44,8 @@ from rhodecode.lib.base import BaseController, render
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_int, md5, str2bool
 from rhodecode.lib.ext_json import json
+from rhodecode.lib.channelstream import channelstream_request, \
+    ChannelstreamException
 
 from rhodecode.model.validation_schema.schemas import user_schema
 from rhodecode.model.db import (
@@ -430,3 +435,33 @@ class MyAccountController(BaseController):
         user.update_userdata(notification_status=new_status)
         Session().commit()
         return user.user_data['notification_status']
+
+    @auth.CSRFRequired()
+    @jsonify
+    def my_account_notifications_test_channelstream(self):
+        message = 'Test message sent via Channelstream by user: {}, on {}'.format(
+            c.rhodecode_user.username, datetime.datetime.now())
+        payload = {
+            'type': 'message',
+            'timestamp': datetime.datetime.utcnow(),
+            'user': 'system',
+            #'channel': 'broadcast',
+            'pm_users': [c.rhodecode_user.username],
+            'message': {
+                'message': message,
+                'level': 'info',
+                'topic': '/notifications'
+            }
+        }
+
+        registry = get_current_registry()
+        rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
+        channelstream_config = rhodecode_plugins.get('channelstream', {})
+
+        try:
+            channelstream_request(channelstream_config, [payload], '/message')
+        except ChannelstreamException as e:
+            log.exception('Failed to send channelstream data')
+            return {"response": 'ERROR: {}'.format(e.__class__.__name__)}
+        return {"response": 'Channelstream data sent. '
+                            'You should see a new live message now.'}

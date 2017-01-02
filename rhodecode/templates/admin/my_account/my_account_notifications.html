@@ -5,13 +5,22 @@
            content-type="application/json"
            loading="{{changeNotificationsLoading}}"
            on-response="handleNotifications"
-           handle-as="json"></iron-ajax>
+           handle-as="json">
+</iron-ajax>
+
+<iron-ajax id="sendTestNotification"
+           method="post"
+           url="${url('my_account_notifications_test_channelstream')}"
+           content-type="application/json"
+           on-response="handleTestNotification"
+           handle-as="json">
+</iron-ajax>
 
 <div class="panel panel-default">
   <div class="panel-heading">
     <h3 class="panel-title">${_('Your Live Notification Settings')}</h3>
   </div>
-    <div class="panel-body">
+  <div class="panel-body">
 
         <p><strong>IMPORTANT:</strong> This feature requires enabled channelstream websocket server to function correctly.</p>
 
@@ -27,13 +36,29 @@
                         <rhodecode-toggle id="live-notifications" active="[[changeNotificationsLoading]]" on-change="toggleNotifications" ${'checked' if c.rhodecode_user.get_instance().user_data.get('notification_status') else ''}></rhodecode-toggle>
                     </div>
                 </div>
-                <div class="buttons">
-                    <a class="btn btn-default" id="test-notification" on-tap="testNotifications">Test notification</a>
-                </div>
             </div>
         </div>
+  </div>
+</div>
 
-    </div>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">${_('Test Notifications')}</h3>
+  </div>
+  <div class="panel-body">
+
+
+        <div style="padding: 0px 0px 20px 0px">
+            <button class="btn" id="test-notification" on-tap="testNotifications">Test flash message</button>
+            <button class="btn" id="test-notification-live" on-tap="testNotificationsLive">Test live notification</button>
+        </div>
+            <h4 id="test-response"></h4>
+        </div>
+
+  </div>
+
+
+
 </div>
 
 <script type="text/javascript">
@@ -45,7 +70,7 @@
     var ctrlr = $('#notificationsPage')[0];
     ctrlr.toggleNotifications = function(event){
         var ajax = $('#toggleNotifications')[0];
-        ajax.headers = {"X-CSRF-Token": CSRF_TOKEN}
+        ajax.headers = {"X-CSRF-Token": CSRF_TOKEN};
         ajax.body = {notification_status:event.target.active};
         ajax.generateRequest();
     };
@@ -58,13 +83,25 @@
         var level = levels[Math.floor(Math.random()*levels.length)];
         var payload = {
             message: {
-                message: 'This is a test notification.',
+                message: 'This is a test notification. ' + new Date(),
                 level: level,
                 force: true
             }
         };
         $.Topic('/notifications').publish(payload);
-    }
+    };
+    ctrlr.testNotificationsLive = function(event){
+        var ajax = $('#sendTestNotification')[0];
+        ajax.headers = {"X-CSRF-Token": CSRF_TOKEN};
+        ajax.body = {test_msg: 'Hello !'};
+        ajax.generateRequest();
+    };
+    ctrlr.handleTestNotification = function(event){
+        var reply = event.detail.response.response;
+        reply = reply || 'no reply form server';
+        $('#test-response').html(reply);
+    };
 
 </script>
+
 </template>
