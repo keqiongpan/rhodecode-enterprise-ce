@@ -11,7 +11,11 @@
                     <span class="tag disabled">${_('Built-in')}</span>
                 </td>
                 <td class="td-tags">
-                    <span class="tag disabled">all</span>
+                    % for token in c.user.builtin_token_roles:
+                    <span class="tag disabled">
+                        ${token}
+                    </span>
+                    % endfor
                 </td>
                 <td class="td-exp">${_('expires')}: ${_('never')}</td>
                 <td class="td-action">

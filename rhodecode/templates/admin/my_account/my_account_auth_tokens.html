@@ -10,11 +10,15 @@
       <table class="rctable auth_tokens">
         <tr>
             <td class="truncate-wrap td-authtoken"><div class="user_auth_tokens truncate autoexpand"><code>${c.user.api_key}</code></div></td>
-            <td class="td-buttons">
-                <span class="btn btn-mini btn-info disabled">${_('Built-in')}</span>
+            <td class="td-tags">
+                <span class="tag disabled">${_('Built-in')}</span>
             </td>
-            <td class="td-buttons">
-                <span class="btn btn-mini btn-info disabled">all</span>
+            <td class="td-tags">
+                % for token in c.user.builtin_token_roles:
+                <span class="tag disabled">
+                    ${token}
+                </span>
+                % endfor
             </td>
             <td class="td-exp">${_('expires')}: ${_('never')}</td>
             <td class="td-action">
@@ -34,8 +38,8 @@
               <tr class="${'expired' if auth_token.expired else ''}">
                 <td class="truncate-wrap td-authtoken"><div class="user_auth_tokens truncate autoexpand"><code>${auth_token.api_key}</code></div></td>
                 <td class="td-wrap">${auth_token.description}</td>
-                <td class="td-buttons">
-                    <span class="btn btn-mini btn-info disabled">${auth_token.role_humanized}</span>
+                <td class="td-tags">
+                    <span class="tag disabled">${auth_token.role_humanized}</span>
                 </td>
                 <td class="td-exp">
                      %if auth_token.expires == -1:
