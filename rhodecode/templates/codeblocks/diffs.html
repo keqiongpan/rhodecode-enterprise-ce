@@ -52,41 +52,52 @@ return h.url('', **new_args)
 </div>
 <div class="js-template" id="cb-comment-inline-form-template">
     <div class="comment-inline-form ac">
+
     %if c.rhodecode_user.username != h.DEFAULT_USER:
         ${h.form('#', method='get')}
-        <div id="edit-container_{1}" class="clearfix">
-          <div class="comment-title pull-left">
-            ${_('Create a comment on line {1}.')}
-          </div>
-          <div class="comment-help pull-right">
-            ${(_('Comments parsed using %s syntax with %s support.') % (
-                   ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
-                     ('<span  class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user'))
-                 )
-              )|n
-             }
-          </div>
-              <div style="clear: both"></div>
-              <textarea id="text_{1}" name="text" class="comment-block-ta ac-input"></textarea>
-        </div>
-        <div id="preview-container_{1}" class="clearfix" style="display: none;">
-           <div class="comment-help">
-                ${_('Comment preview')}
+        <div class="comment-area">
+            <div class="comment-area-header">
+                <ul class="nav-links clearfix">
+                    <li class="active">
+                        <a href="#edit-btn" tabindex="-1" id="edit-btn_{1}">${_('Write')}</a>
+                    </li>
+                    <li class="">
+                        <a href="#preview-btn" tabindex="-1" id="preview-btn_{1}">${_('Preview')}</a>
+                    </li>
+                </ul>
             </div>
-            <div id="preview-box_{1}" class="preview-box"></div>
+
+            <div class="comment-area-write" style="display: block;">
+                <div id="edit-container_{1}">
+                    <textarea id="text_{1}" name="text" class="comment-block-ta ac-input"></textarea>
+                </div>
+                <div id="preview-container_{1}" class="clearfix" style="display: none;">
+                    <div id="preview-box_{1}" class="preview-box"></div>
+                </div>
+            </div>
+
+            <div class="comment-area-footer">
+                <div class="toolbar">
+                    <div class="toolbar-text">
+                      ${(_('Comments parsed using %s syntax with %s support.') % (
+                             ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
+                               ('<span  class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user'))
+                           )
+                        )|n
+                       }
+                    </div>
+                </div>
+            </div>
         </div>
+
         <div class="comment-footer">
           <div class="action-buttons">
             <input type="hidden" name="f_path" value="{0}">
             <input type="hidden" name="line" value="{1}">
-            <button id="preview-btn_{1}" class="btn btn-secondary">${_('Preview')}</button>
-            <button id="edit-btn_{1}" class="btn btn-secondary" style="display: none;">${_('Edit')}</button>
-            ${h.submit('save', _('Comment'), class_='btn btn-success save-inline-form')}
-          </div>
-          <div class="comment-button">
-           <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
-            ${_('Cancel')}
-           </button>
+               <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
+                ${_('Cancel')}
+               </button>
+               ${h.submit('save', _('Comment'), class_='btn btn-success save-inline-form')}
           </div>
         ${h.end_form()}
       </div>
@@ -94,7 +105,7 @@ return h.url('', **new_args)
         ${h.form('', class_='inline-form comment-form-login', method='get')}
         <div class="pull-left">
             <div class="comment-help pull-right">
-              ${_('You need to be logged in to comment.')} <a href="${h.route_path('login', _query={'came_from': h.url.current()})}">${_('Login now')}</a>
+              ${_('You need to be logged in to leave comments.')} <a href="${h.route_path('login', _query={'came_from': h.url.current()})}">${_('Login now')}</a>
             </div>
         </div>
         <div class="comment-button pull-right">
@@ -120,6 +131,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 }
 </style>
 %endif
+
 %if ruler_at_chars:
 <style>
 .diff table.cb .cb-content:after {
@@ -134,6 +146,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     left: ${ruler_at_chars + 5}ch;
 </style>
 %endif
+
 <div class="diffset ${disable_new_comments and 'diffset-comments-disabled'}">
     <div class="diffset-heading ${diffset.limited_diff and 'diffset-heading-warning' or ''}">
         %if commit:

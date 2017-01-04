@@ -216,10 +216,10 @@ var CommentForm = (function() {
             content = content || '';
 
             $(this.editContainer).show();
-            $(this.editButton).hide();
+            $(this.editButton).parent().addClass('active');
 
             $(this.previewContainer).hide();
-            $(this.previewButton).show();
+            $(this.previewButton).parent().removeClass('active');
 
             this.setActionButtonsDisabled(true);
             self.cm.setValue(content);
@@ -292,9 +292,9 @@ var CommentForm = (function() {
             $(self.previewBoxSelector).html(o);
             $(self.previewBoxSelector).removeClass('unloaded');
 
-            // swap buttons
-            $(self.previewButton).hide();
-            $(self.editButton).show();
+            // swap buttons, making preview active
+            $(self.previewButton).parent().addClass('active');
+            $(self.editButton).parent().removeClass('active');
 
             // unlock buttons
             self.setActionButtonsDisabled(false);
@@ -344,9 +344,10 @@ var CommentForm = (function() {
         $(this.editButton).on('click', function(e) {
             e.preventDefault();
 
-            $(self.previewButton).show();
+            $(self.previewButton).parent().removeClass('active');
             $(self.previewContainer).hide();
-            $(self.editButton).hide();
+
+            $(self.editButton).parent().addClass('active');
             $(self.editContainer).show();
 
         });
@@ -370,6 +371,7 @@ var CommentForm = (function() {
 
             $(self.previewBoxSelector).addClass('unloaded');
             $(self.previewBoxSelector).html(_gettext('Loading ...'));
+
             $(self.editContainer).hide();
             $(self.previewContainer).show();
 
@@ -378,8 +380,11 @@ var CommentForm = (function() {
                 self.resetCommentFormState(text)
             };
             self.submitAjaxPOST(
-                self.previewUrl, postData, self.previewSuccessCallback, previewFailCallback);
+                self.previewUrl, postData, self.previewSuccessCallback,
+                previewFailCallback);
 
+            $(self.previewButton).parent().addClass('active');
+            $(self.editButton).parent().removeClass('active');
         });
 
         $(this.submitForm).submit(function(e) {
@@ -606,7 +611,9 @@ var CommentsController = function() { /* comments controller */
           setTimeout(function() {
               // callbacks
               if (cm !== undefined) {
+                  cm.setOption('placeholder', _gettext('Leave a comment on line {0}.').format(lineno));
                   cm.focus();
+                  cm.refresh();
               }
           }, 10);
 

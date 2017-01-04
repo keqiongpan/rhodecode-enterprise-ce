@@ -26,10 +26,10 @@
 </%def>
 
 <%def name="main()">
-<script type="text/javascript">
-    // set fake commitId on this commit-range page
-    templateContext.commit_data.commit_id = "${h.EmptyCommit().raw_id}";
-</script>
+    <script type="text/javascript">
+        // set fake commitId on this commit-range page
+        templateContext.commit_data.commit_id = "${h.EmptyCommit().raw_id}";
+    </script>
 
     <div class="box">
         <div class="title">
@@ -153,16 +153,78 @@
               </div>
               </%doc>
 
-            </div> <!-- end summary-detail -->
+              ## commit status form
+              <div class="fieldset" id="compare_changeset_status" style="display: none; margin-bottom: -80px;">
+                <div class="left-label">
+                  ${_('Commit status')}:
+                </div>
+                <div class="right-content">
+                    <%namespace name="comment" file="/changeset/changeset_file_comment.html"/>
+                    ## main comment form and it status
+                    <%
+                    def revs(_revs):
+                        form_inputs = []
+                        for cs in _revs:
+                            tmpl = '<input type="hidden" data-commit-id="%(cid)s" name="commit_ids" value="%(cid)s">' % {'cid': cs.raw_id}
+                            form_inputs.append(tmpl)
+                        return form_inputs
+                    %>
+                    <div>
+                        ${comment.comments(h.url('changeset_comment', repo_name=c.repo_name, revision='0'*16), None, is_compare=True, form_extras=revs(c.commit_ranges))}
+                        <script type="text/javascript">
 
+                            mainCommentForm.setHandleFormSubmit(function(o) {
+                                var text = mainCommentForm.cm.getValue();
+                                var status = mainCommentForm.getCommentStatus();
+
+                                if (text === "" && !status) {
+                                    return;
+                                }
+
+                                // we can pick which commits we want to make the comment by
+                                // selecting them via click on preview pane, this will alter the hidden inputs
+                                var cherryPicked = $('#changeset_compare_view_content .compare_select.hl').length > 0;
+
+                                var commitIds = [];
+                                $('#changeset_compare_view_content .compare_select').each(function(el) {
+                                    var commitId = this.id.replace('row-', '');
+                                    if ($(this).hasClass('hl') || !cherryPicked) {
+                                        $("input[data-commit-id='{0}']".format(commitId)).val(commitId)
+                                        commitIds.push(commitId);
+                                    } else {
+                                        $("input[data-commit-id='{0}']".format(commitId)).val('')
+                                    }
+                                });
+
+                                mainCommentForm.setActionButtonsDisabled(true);
+                                mainCommentForm.cm.setOption("readOnly", true);
+                                var postData = {
+                                    'text': text,
+                                    'changeset_status': status,
+                                    'commit_ids': commitIds,
+                                    'csrf_token': CSRF_TOKEN
+                                };
+
+                                var submitSuccessCallback = function(o) {
+                                    location.reload(true);
+                                };
+                                var submitFailCallback = function(){
+                                    mainCommentForm.resetCommentFormState(text)
+                                };
+                                mainCommentForm.submitAjaxPOST(
+                                    mainCommentForm.submitUrl, postData, submitSuccessCallback, submitFailCallback);
+                            });
+                        </script>
+                    </div>
+                </div>
+              </div>
+
+            </div> <!-- end summary-detail -->
         </div> <!-- end summary -->
 
-
-        <div class="table">
-
-            ## use JS script to load it quickly before potentially large diffs render long time
-            ## this prevents from situation when large diffs block rendering of select2 fields
-            <script type="text/javascript">
+        ## use JS script to load it quickly before potentially large diffs render long time
+        ## this prevents from situation when large diffs block rendering of select2 fields
+        <script type="text/javascript">
 
                 var cache = {};
 
@@ -277,69 +339,13 @@
                     $('#compare_changeset_status').toggle();
                 });
 
-            </script>
+        </script>
 
-            ## changeset status form
-            <%namespace name="comment" file="/changeset/changeset_file_comment.html"/>
-            ## main comment form and it status
-            <%
-            def revs(_revs):
-                form_inputs = []
-                for cs in _revs:
-                    tmpl = '<input type="hidden" data-commit-id="%(cid)s" name="commit_ids" value="%(cid)s">' % {'cid': cs.raw_id}
-                    form_inputs.append(tmpl)
-                return form_inputs
-            %>
-            <div id="compare_changeset_status" style="display: none;">
-                ${comment.comments(h.url('changeset_comment', repo_name=c.repo_name, revision='0'*16), None, is_compare=True, form_extras=revs(c.commit_ranges))}
-                <script type="text/javascript">
+        ## table diff data
+        <div class="table">
 
-                    mainCommentForm.setHandleFormSubmit(function(o) {
-                        var text = mainCommentForm.cm.getValue();
-                        var status = mainCommentForm.getCommentStatus();
 
-                        if (text === "" && !status) {
-                            return;
-                        }
-
-                        // we can pick which commits we want to make the comment by
-                        // selecting them via click on preview pane, this will alter the hidden inputs
-                        var cherryPicked = $('#changeset_compare_view_content .compare_select.hl').length > 0;
-
-                        var commitIds = [];
-                        $('#changeset_compare_view_content .compare_select').each(function(el) {
-                            var commitId = this.id.replace('row-', '');
-                            if ($(this).hasClass('hl') || !cherryPicked) {
-                                $("input[data-commit-id='{0}']".format(commitId)).val(commitId)
-                                commitIds.push(commitId);
-                            } else {
-                                $("input[data-commit-id='{0}']".format(commitId)).val('')
-                            }
-                        });
-
-                        mainCommentForm.setActionButtonsDisabled(true);
-                        mainCommentForm.cm.setOption("readOnly", true);
-                        var postData = {
-                            'text': text,
-                            'changeset_status': status,
-                            'commit_ids': commitIds,
-                            'csrf_token': CSRF_TOKEN
-                        };
-
-                        var submitSuccessCallback = function(o) {
-                            location.reload(true);
-                        };
-                        var submitFailCallback = function(){
-                            mainCommentForm.resetCommentFormState(text)
-                        };
-                        mainCommentForm.submitAjaxPOST(
-                            mainCommentForm.submitUrl, postData, submitSuccessCallback, submitFailCallback);
-                    });
-                </script>
-
-            </div>
-
-            %if not c.compare_home:
+            % if not c.compare_home:
                 <div id="changeset_compare_view_content">
                     <div class="pull-left">
                       <div class="btn-group">
@@ -363,8 +369,9 @@
                     ${cbdiffs.render_diffset_menu()}
                     ${cbdiffs.render_diffset(c.diffset)}
                  </div>
-            %endif
+            % endif
+
         </div>
     </div>
-</div>
+
 </%def>

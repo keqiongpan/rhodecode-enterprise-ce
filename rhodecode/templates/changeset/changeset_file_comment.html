@@ -131,36 +131,50 @@
 </div>
 %endif
 <div class="comments">
-    %if c.rhodecode_user.username != h.DEFAULT_USER:
+    <%
+      if is_pull_request:
+        placeholder = _('Leave a comment on this Pull Request.')
+      elif is_compare:
+        placeholder = _('Leave a comment on all commits in this range.')
+      else:
+        placeholder = _('Leave a comment on this Commit.')
+    %>
+    % if c.rhodecode_user.username != h.DEFAULT_USER:
     <div class="comment-form ac">
         ${h.secure_form(post_url, id_=form_id)}
-        <div id="edit-container" class="clearfix">
-            <div class="comment-title pull-left">
-              %if is_pull_request:
-              ${(_('Create a comment on this Pull Request.'))}
-              %elif is_compare:
-              ${(_('Create comments on this Commit range.'))}
-              %else:
-              ${(_('Create a comment on this Commit.'))}
-              %endif
+        <div class="comment-area">
+            <div class="comment-area-header">
+                <ul class="nav-links clearfix">
+                    <li class="active">
+                        <a href="#edit-btn" tabindex="-1" id="edit-btn">${_('Write')}</a>
+                    </li>
+                    <li class="">
+                        <a href="#preview-btn" tabindex="-1" id="preview-btn">${_('Preview')}</a>
+                    </li>
+                </ul>
             </div>
-            <div class="comment-help pull-right">
-              ${(_('Comments parsed using %s syntax with %s support.') % (
-                     ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
-                       ('<span  class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user'))
-                   )
-                )|n
-               }
-            </div>
-             <div style="clear: both"></div>
-             ${h.textarea('text', class_="comment-block-ta")}
-        </div>
 
-        <div id="preview-container" class="clearfix" style="display: none;">
-           <div class="comment-title">
-                ${_('Comment preview')}
+            <div class="comment-area-write" style="display: block;">
+                <div id="edit-container">
+                    <textarea id="text" name="text" class="comment-block-ta ac-input"></textarea>
+                </div>
+                <div id="preview-container" class="clearfix" style="display: none;">
+                    <div id="preview-box" class="preview-box"></div>
+                </div>
             </div>
-            <div id="preview-box" class="preview-box"></div>
+
+            <div class="comment-area-footer">
+                <div class="toolbar">
+                    <div class="toolbar-text">
+                      ${(_('Comments parsed using %s syntax with %s support.') % (
+                             ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
+                               ('<span  class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user'))
+                           )
+                        )|n
+                       }
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="comment_form_extras">
@@ -185,15 +199,54 @@
           </div>
           %endif
           <div class="action-buttons">
-              <button id="preview-btn" class="btn btn-secondary">${_('Preview')}</button>
-              <button id="edit-btn" class="btn btn-secondary" style="display:none;">${_('Edit')}</button>
               <div class="comment-button">${h.submit('save', _('Comment'), class_="btn btn-success comment-button-input")}</div>
           </div>
         </div>
           ${h.end_form()}
     </div>
-    %endif
+    % else:
+    <div class="comment-form ac">
+
+        <div class="comment-area">
+            <div class="comment-area-header">
+                <ul class="nav-links clearfix">
+                    <li class="active">
+                        <a class="disabled" href="#edit-btn" disabled="disabled" onclick="return false">${_('Write')}</a>
+                    </li>
+                    <li class="">
+                        <a class="disabled" href="#preview-btn" disabled="disabled" onclick="return false">${_('Preview')}</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="comment-area-write" style="display: block;">
+                <div id="edit-container">
+                    <div style="padding: 40px 0">
+                      ${_('You need to be logged in to leave comments.')}
+                      <a href="${h.route_path('login', _query={'came_from': h.url.current()})}">${_('Login now')}</a>
+                    </div>
+                </div>
+                <div id="preview-container" class="clearfix" style="display: none;">
+                    <div id="preview-box" class="preview-box"></div>
+                </div>
+            </div>
+
+            <div class="comment-area-footer">
+                <div class="toolbar">
+                    <div class="toolbar-text">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comment-footer">
+        </div>
+
+    </div>
+    % endif
+
 </div>
+
 <script>
     // init active elements of commentForm
     var commitId = templateContext.commit_data.commit_id;
@@ -202,6 +255,8 @@
 
     var mainCommentForm = new CommentForm(
             "#${form_id}", commitId, pullRequestId, lineNo, true);
+
+    mainCommentForm.cm.setOption('placeholder', "${placeholder}");
 
     mainCommentForm.initStatusChangeSelector();
     bindToggleButtons();

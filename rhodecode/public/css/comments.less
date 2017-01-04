@@ -194,7 +194,6 @@ form.comment-form {
 .comment-inline-form .comment-block-ta,
 .comment-form .comment-block-ta,
 .comment-form .preview-box {
-    border: @border-thickness solid @grey5;
     .border-radius(@border-radius);
     .box-sizing(border-box);
     background-color: white;
@@ -259,6 +258,7 @@ form.comment-form {
 
     .comment-footer {
         margin-bottom: 110px;
+        margin-top: 10px;
     }
 }
 
@@ -276,11 +276,9 @@ form.comment-form {
 }
 
 .preview-box {
-    padding: 10px;
-    min-height: 100px;
+    min-height: 105px;
     margin-bottom: 15px;
     background-color: white;
-    border: @border-thickness solid #ccc;
     .border-radius(@border-radius);
     .box-sizing(border-box);
 }
@@ -299,7 +297,7 @@ form.comment-form {
 // Inline Comment Form
 .injected_diff .comment-inline-form,
 .comment-inline-form {
-    background-color: @grey6;
+    background-color: white;
     margin-top: 10px;
     margin-bottom: 20px;
 }
@@ -337,9 +335,73 @@ form.comment-form {
     margin: 0px;
 }
 
+.comment-inline-form .comment-footer {
+    margin: 10px 0px 0px 0px;
+}
+
 .hide-inline-form-button {
     margin-left: 5px;
 }
 .comment-button .hide-inline-form {
     background: white;
 }
+
+.comment-area {
+    padding: 8px 12px;
+    border: 1px solid @grey5;
+    .border-radius(@border-radius);
+}
+
+.comment-area-header .nav-links {
+    display: flex;
+    flex-flow: row wrap;
+    -webkit-flex-flow: row wrap;
+    width: 100%;
+}
+
+.comment-area-footer {
+    display: flex;
+}
+
+.comment-footer .toolbar {
+
+}
+
+.nav-links {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    height: auto;
+    border-bottom: 1px solid @grey5;
+}
+.nav-links li {
+    display: inline-block;
+}
+.nav-links li:before {
+    content: "";
+}
+.nav-links li a.disabled {
+    cursor: not-allowed;
+}
+
+.nav-links li.active a {
+    border-bottom: 2px solid @rcblue;
+    color: #000;
+    font-weight: 600;
+}
+.nav-links li a {
+    display: inline-block;
+    padding: 0px 10px 5px 10px;
+    margin-bottom: -1px;
+    font-size: 14px;
+    line-height: 28px;
+    color: #8f8f8f;
+    border-bottom: 2px solid transparent;
+}
+
+.toolbar-text {
+    float: left;
+    margin: -5px 0px 0px 0px;
+    font-size: 12px;
+}
+
