@@ -241,7 +241,7 @@ class RepoModel(BaseModel):
                           super_user_actions=False):
 
         from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
         c = _render.c
 
         def quick_menu(repo_name):

@@ -216,7 +216,7 @@ class PullrequestsController(BaseRepoController):
         if not request.is_xhr:
             c.data = json.dumps(data['data'])
             c.records_total = data['recordsTotal']
-            return render('/pullrequests/pullrequests.html')
+            return render('/pullrequests/pullrequests.mako')
         else:
             return json.dumps(data)
 
@@ -255,7 +255,7 @@ class PullrequestsController(BaseRepoController):
                 opened_by=opened_by)
 
         from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
         data = []
         for pr in pull_requests:
             comments = ChangesetCommentsModel().get_all_comments(
@@ -347,7 +347,7 @@ class PullrequestsController(BaseRepoController):
         }
         c.default_source_ref = selected_source_ref
 
-        return render('/pullrequests/pullrequest.html')
+        return render('/pullrequests/pullrequest.mako')
 
     @LoginRequired()
     @NotAnonymous()
@@ -852,7 +852,7 @@ class PullrequestsController(BaseRepoController):
 
         # this is a hack to properly display links, when creating PR, the
         # compare view and others uses different notation, and
-        # compare_commits.html renders links based on the target_repo.
+        # compare_commits.mako renders links based on the target_repo.
         # We need to swap that here to generate it properly on the html side
         c.target_repo = c.source_repo
 
@@ -882,7 +882,7 @@ class PullrequestsController(BaseRepoController):
             c.changes, c.file_changes = self._get_pr_version_changes(
                 version, pull_request_latest)
 
-        return render('/pullrequests/pullrequest_show.html')
+        return render('/pullrequests/pullrequest_show.mako')
 
     @LoginRequired()
     @NotAnonymous()
@@ -985,7 +985,7 @@ class PullrequestsController(BaseRepoController):
             c.co = comm
             data.update(comm.get_dict())
             data.update({'rendered_text':
-                             render('changeset/changeset_comment_block.html')})
+                             render('changeset/changeset_comment_block.mako')})
 
         return data
 

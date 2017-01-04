@@ -48,7 +48,7 @@ class AdminSettingsView(object):
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
         route_name='admin_settings_open_source', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.html')
+        renderer='rhodecode:templates/admin/settings/settings.mako')
     def open_source_licenses(self):
         c.active = 'open_source'
         c.navlist = navigation_list(self.request)

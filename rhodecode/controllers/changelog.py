@@ -193,7 +193,7 @@ class ChangelogController(BaseRepoController):
         if (request.environ.get('HTTP_X_PARTIAL_XHR')
                 or request.environ.get('HTTP_X_PJAX')):
             # loading from ajax, we don't want the first result, it's popped
-            return render('changelog/changelog_file_history.html')
+            return render('changelog/changelog_file_history.mako')
 
         if f_path:
             revs = []
@@ -201,7 +201,7 @@ class ChangelogController(BaseRepoController):
             revs = c.pagination
         self._graph(c.rhodecode_repo, revs)
 
-        return render('changelog/changelog.html')
+        return render('changelog/changelog.mako')
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
@@ -209,7 +209,7 @@ class ChangelogController(BaseRepoController):
     def changelog_details(self, commit_id):
         if request.environ.get('HTTP_X_PARTIAL_XHR'):
             c.commit = c.rhodecode_repo.get_commit(commit_id=commit_id)
-            return render('changelog/changelog_details.html')
+            return render('changelog/changelog_details.mako')
         raise HTTPNotFound()
 
     @LoginRequired()
@@ -218,5 +218,5 @@ class ChangelogController(BaseRepoController):
     def changelog_summary(self, repo_name):
         if request.environ.get('HTTP_X_PJAX'):
             _load_changelog_summary()
-            return render('changelog/changelog_summary_data.html')
+            return render('changelog/changelog_summary_data.mako')
         raise HTTPNotFound()

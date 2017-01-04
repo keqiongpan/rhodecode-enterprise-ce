@@ -34,8 +34,8 @@ log = logging.getLogger(__name__)
 
 class BookmarksController(BaseReferencesController):
 
-    partials_template = 'bookmarks/bookmarks_data.html'
-    template = 'bookmarks/bookmarks.html'
+    partials_template = 'bookmarks/bookmarks_data.mako'
+    template = 'bookmarks/bookmarks.mako'
 
     def __before__(self):
         super(BookmarksController, self).__before__()

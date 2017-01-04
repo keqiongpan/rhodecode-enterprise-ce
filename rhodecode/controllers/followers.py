@@ -50,9 +50,9 @@ class FollowersController(BaseRepoController):
             .order_by(UserFollowing.follows_from)
         c.followers_pager = Page(d, page=p, items_per_page=20)
 
-        c.followers_data = render('/followers/followers_data.html')
+        c.followers_data = render('/followers/followers_data.mako')
 
         if request.environ.get('HTTP_X_PJAX'):
             return c.followers_data
 
-        return render('/followers/followers.html')
+        return render('/followers/followers.mako')

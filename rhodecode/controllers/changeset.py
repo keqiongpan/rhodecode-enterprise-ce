@@ -288,17 +288,17 @@ class ChangesetController(BaseRepoController):
         elif method == 'patch':
             response.content_type = 'text/plain'
             c.diff = safe_unicode(diff)
-            return render('changeset/patch_changeset.html')
+            return render('changeset/patch_changeset.mako')
         elif method == 'raw':
             response.content_type = 'text/plain'
             return diff
         elif method == 'show':
             if len(c.commit_ranges) == 1:
-                return render('changeset/changeset.html')
+                return render('changeset/changeset.mako')
             else:
                 c.ancestor = None
                 c.target_repo = c.rhodecode_db_repo
-                return render('changeset/changeset_range.html')
+                return render('changeset/changeset_range.mako')
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
@@ -390,7 +390,7 @@ class ChangesetController(BaseRepoController):
         if comment:
             data.update(comment.get_dict())
             data.update({'rendered_text':
-                         render('changeset/changeset_comment_block.html')})
+                         render('changeset/changeset_comment_block.mako')})
 
         return data
 

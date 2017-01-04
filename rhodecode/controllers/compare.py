@@ -92,7 +92,7 @@ class CompareController(BaseRepoController):
         c.commit_statuses = ChangesetStatus.STATUSES
         c.preview_mode = False
         c.file_path = None
-        return render('compare/compare_diff.html')
+        return render('compare/compare_diff.mako')
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
@@ -217,7 +217,7 @@ class CompareController(BaseRepoController):
         if partial:  # for PR ajax commits loader
             if not c.ancestor:
                 return ''  # cannot merge if there is no ancestor
-            return render('compare/compare_commits.html')
+            return render('compare/compare_commits.mako')
 
         if c.ancestor:
             # case we want a simple diff without incoming commits,
@@ -279,4 +279,4 @@ class CompareController(BaseRepoController):
         c.source_commit = source_commit
         c.target_commit = target_commit
 
-        return render('compare/compare_diff.html')
+        return render('compare/compare_diff.mako')

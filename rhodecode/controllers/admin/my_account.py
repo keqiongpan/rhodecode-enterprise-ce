@@ -144,7 +144,7 @@ class MyAccountController(BaseController):
 
         except formencode.Invalid as errors:
             return htmlfill.render(
-                render('admin/my_account/my_account.html'),
+                render('admin/my_account/my_account.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -159,7 +159,7 @@ class MyAccountController(BaseController):
             return redirect('my_account')
 
         return htmlfill.render(
-            render('admin/my_account/my_account.html'),
+            render('admin/my_account/my_account.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
@@ -175,7 +175,7 @@ class MyAccountController(BaseController):
 
         defaults = c.user.get_dict()
         return htmlfill.render(
-            render('admin/my_account/my_account.html'),
+            render('admin/my_account/my_account.mako'),
             defaults=defaults, encoding="UTF-8", force_defaults=False)
 
     def my_account_edit(self):
@@ -190,7 +190,7 @@ class MyAccountController(BaseController):
 
         defaults = c.user.get_dict()
         return htmlfill.render(
-            render('admin/my_account/my_account.html'),
+            render('admin/my_account/my_account.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
@@ -235,7 +235,7 @@ class MyAccountController(BaseController):
                 return redirect(url('my_account_password'))
 
         c.form = form
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     def my_account_repos(self):
         c.active = 'repos'
@@ -243,7 +243,7 @@ class MyAccountController(BaseController):
 
         # json used to render the grid
         c.data = self._load_my_repos_data()
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     def my_account_watched(self):
         c.active = 'watched'
@@ -251,14 +251,14 @@ class MyAccountController(BaseController):
 
         # json used to render the grid
         c.data = self._load_my_repos_data(watched=True)
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     def my_account_perms(self):
         c.active = 'perms'
         self.__load_data()
         c.perm_user = c.auth_user
 
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     def my_account_emails(self):
         c.active = 'emails'
@@ -266,7 +266,7 @@ class MyAccountController(BaseController):
 
         c.user_email_map = UserEmailMap.query()\
             .filter(UserEmailMap.user == c.user).all()
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     @auth.CSRFRequired()
     def my_account_emails_add(self):
@@ -318,7 +318,7 @@ class MyAccountController(BaseController):
             user_id=c.rhodecode_user.user_id, statuses=statuses)
 
         from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
         data = []
         for pr in pull_requests:
             repo_id = pr.target_repo_id
@@ -372,7 +372,7 @@ class MyAccountController(BaseController):
         if not request.is_xhr:
             c.data_participate = json.dumps(data['data'])
             c.records_total_participate = data['recordsTotal']
-            return render('admin/my_account/my_account.html')
+            return render('admin/my_account/my_account.mako')
         else:
             return json.dumps(data)
 
@@ -393,7 +393,7 @@ class MyAccountController(BaseController):
         c.role_options = [(c.role_values, _("Role"))]
         c.user_auth_tokens = AuthTokenModel().get_auth_tokens(
             c.rhodecode_user.user_id, show_expired=show_expired)
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     @auth.CSRFRequired()
     def my_account_auth_tokens_add(self):
@@ -426,7 +426,7 @@ class MyAccountController(BaseController):
 
     def my_notifications(self):
         c.active = 'notifications'
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     @auth.CSRFRequired()
     @jsonify

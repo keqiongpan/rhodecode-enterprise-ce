@@ -108,4 +108,4 @@ class SearchController(BaseRepoController):
         c.cur_query = search_query
         c.search_type = search_type
         # Return a rendered template
-        return render('/search/search.html')
+        return render('/search/search.mako')

@@ -122,12 +122,12 @@ class ForksController(BaseRepoController):
             d.append(r)
         c.forks_pager = Page(d, page=p, items_per_page=20)
 
-        c.forks_data = render('/forks/forks_data.html')
+        c.forks_data = render('/forks/forks_data.mako')
 
         if request.environ.get('HTTP_X_PJAX'):
             return c.forks_data
 
-        return render('/forks/forks.html')
+        return render('/forks/forks.mako')
 
     @LoginRequired()
     @NotAnonymous()
@@ -144,7 +144,7 @@ class ForksController(BaseRepoController):
         defaults = self.__load_data(repo_name)
 
         return htmlfill.render(
-            render('forks/fork.html'),
+            render('forks/fork.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
@@ -177,7 +177,7 @@ class ForksController(BaseRepoController):
         except formencode.Invalid as errors:
             c.new_repo = errors.value['repo_name']
             return htmlfill.render(
-                render('forks/fork.html'),
+                render('forks/fork.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,

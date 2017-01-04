@@ -34,8 +34,8 @@ log = logging.getLogger(__name__)
 
 class BranchesController(BaseReferencesController):
 
-    partials_template = 'branches/branches_data.html'
-    template = 'branches/branches.html'
+    partials_template = 'branches/branches_data.mako'
+    template = 'branches/branches.mako'
 
     def __before__(self):
         super(BranchesController, self).__before__()

@@ -251,7 +251,7 @@ def error_handler(exception, request):
         c.causes = base_response.causes
 
     response = render_to_response(
-        '/errors/error_document.html', {'c': c}, request=request,
+        '/errors/error_document.mako', {'c': c}, request=request,
         response=base_response)
 
     return response

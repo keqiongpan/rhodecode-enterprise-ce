@@ -46,7 +46,7 @@ PLUGIN_DEFINITION = {
         'javascript': [],
         'css': [],
         'template_hooks': {
-            'plugin_init_template': 'rhodecode:templates/channelstream/plugin_init.html'
+            'plugin_init_template': 'rhodecode:templates/channelstream/plugin_init.mako'
         },
         'url_gen': url_gen,
         'static': None,

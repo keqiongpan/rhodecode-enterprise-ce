@@ -144,7 +144,7 @@ class FilesController(BaseRepoController):
             log.debug('Generating cached file tree for %s, %s, %s',
                       repo_name, commit_id, f_path)
             c.full_load = full_load
-            return render('files/files_browser_tree.html')
+            return render('files/files_browser_tree.mako')
 
         cache_manager = self.__get_tree_cache_manager(
             repo_name, caches.FILE_TREE)
@@ -255,9 +255,9 @@ class FilesController(BaseRepoController):
             raise HTTPNotFound()
 
         if request.environ.get('HTTP_X_PJAX'):
-            return render('files/files_pjax.html')
+            return render('files/files_pjax.mako')
 
-        return render('files/files.html')
+        return render('files/files.mako')
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
@@ -305,7 +305,7 @@ class FilesController(BaseRepoController):
                 c.authors.append((
                     h.email(author),
                     h.person(author, 'username_or_name_or_email')))
-            return render('files/file_authors_box.html')
+            return render('files/file_authors_box.mako')
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
@@ -465,7 +465,7 @@ class FilesController(BaseRepoController):
             'Deleted file %s via RhodeCode Enterprise') % (f_path)
         c.f_path = f_path
 
-        return render('files/files_delete.html')
+        return render('files/files_delete.mako')
 
     @CSRFRequired()
     @LoginRequired()
@@ -574,7 +574,7 @@ class FilesController(BaseRepoController):
             'Edited file %s via RhodeCode Enterprise') % (f_path)
         c.f_path = f_path
 
-        return render('files/files_edit.html')
+        return render('files/files_edit.mako')
 
     def _is_valid_head(self, commit_id, repo):
         # check if commit is a branch identifier- basically we cannot
@@ -700,7 +700,7 @@ class FilesController(BaseRepoController):
         c.default_message = (_('Added file via RhodeCode Enterprise'))
         c.f_path = f_path
 
-        return render('files/files_add.html')
+        return render('files/files_add.mako')
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',

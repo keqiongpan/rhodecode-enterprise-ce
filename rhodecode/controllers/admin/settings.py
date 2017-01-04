@@ -150,7 +150,7 @@ class SettingsController(BaseController):
                 _("Some form inputs contain invalid data."),
                 category='error')
             return htmlfill.render(
-                render('admin/settings/settings.html'),
+                render('admin/settings/settings.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -179,7 +179,7 @@ class SettingsController(BaseController):
             return redirect(url('admin_settings_vcs'))
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -198,7 +198,7 @@ class SettingsController(BaseController):
         c.svn_proxy_generate_config = pyramid_settings[generate_config]
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -235,7 +235,7 @@ class SettingsController(BaseController):
         c.active = 'mapping'
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -253,7 +253,7 @@ class SettingsController(BaseController):
             form_result = application_form.to_python(dict(request.POST))
         except formencode.Invalid as errors:
             return htmlfill.render(
-                render('admin/settings/settings.html'),
+                render('admin/settings/settings.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -296,7 +296,7 @@ class SettingsController(BaseController):
             .get_personal_group_name_pattern()
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -312,7 +312,7 @@ class SettingsController(BaseController):
             form_result = application_form.to_python(dict(request.POST))
         except formencode.Invalid as errors:
             return htmlfill.render(
-                render('admin/settings/settings.html'),
+                render('admin/settings/settings.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -360,7 +360,7 @@ class SettingsController(BaseController):
         c.active = 'visual'
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -406,7 +406,7 @@ class SettingsController(BaseController):
                 'desc': defaults.get('rhodecode_issuetracker_desc_' + uid),
             })
 
-        return render('admin/settings/settings.html')
+        return render('admin/settings/settings.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
@@ -469,7 +469,7 @@ class SettingsController(BaseController):
         c.rhodecode_ini = rhodecode.CONFIG
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -526,7 +526,7 @@ class SettingsController(BaseController):
         c.custom_hooks = model.get_custom_hooks()
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -541,7 +541,7 @@ class SettingsController(BaseController):
         searcher = searcher_from_config(config)
         c.statistics = searcher.statistics()
 
-        return render('admin/settings/settings.html')
+        return render('admin/settings/settings.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     def settings_system(self):
@@ -635,12 +635,12 @@ class SettingsController(BaseController):
         if snapshot:
             if c.allowed_to_snapshot:
                 c.data_items.pop(0)  # remove server info
-                return render('admin/settings/settings_system_snapshot.html')
+                return render('admin/settings/settings_system_snapshot.mako')
             else:
                 h.flash('You are not allowed to do this', category='warning')
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -688,7 +688,7 @@ class SettingsController(BaseController):
             c.should_upgrade = True
         c.important_notices = latest['general']
 
-        return render('admin/settings/settings_system_update.html')
+        return render('admin/settings/settings_system_update.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     def settings_supervisor(self):
@@ -710,7 +710,7 @@ class SettingsController(BaseController):
         except Exception as e:
             c.connection_error = str(e)
             log.exception("Exception reading supervisor data")
-            return render('admin/settings/settings.html')
+            return render('admin/settings/settings.mako')
 
         groupid = c.rhodecode_ini.get('supervisor.group_id')
 
@@ -734,7 +734,7 @@ class SettingsController(BaseController):
                 log.exception("Exception reading supervisor data")
                 c.supervisor_procs[k] = {'_rhodecode_error': str(e)}
 
-        return render('admin/settings/settings.html')
+        return render('admin/settings/settings.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     def settings_supervisor_log(self, procid):
@@ -751,7 +751,7 @@ class SettingsController(BaseController):
         offset = abs(safe_int(request.GET.get('offset', c.log_size))) * -1
         c.log = supervisor.read_process_log(_connection, procid, offset, 0)
 
-        return render('admin/settings/settings.html')
+        return render('admin/settings/settings.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
@@ -768,7 +768,7 @@ class SettingsController(BaseController):
                 _('Some form inputs contain invalid data.'),
                 category='error')
             return htmlfill.render(
-                render('admin/settings/settings.html'),
+                render('admin/settings/settings.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -795,7 +795,7 @@ class SettingsController(BaseController):
             return redirect(url('admin_settings_labs'))
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding='UTF-8',
             force_defaults=False)
@@ -811,7 +811,7 @@ class SettingsController(BaseController):
         c.lab_settings = _LAB_SETTINGS
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding='UTF-8',
             force_defaults=False)

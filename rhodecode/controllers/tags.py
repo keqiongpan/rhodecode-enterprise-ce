@@ -31,8 +31,8 @@ log = logging.getLogger(__name__)
 
 class TagsController(BaseReferencesController):
 
-    partials_template = 'tags/tags_data.html'
-    template = 'tags/tags.html'
+    partials_template = 'tags/tags_data.mako'
+    template = 'tags/tags.mako'
 
     def _get_reference_items(self, repo):
         return repo.tags.items()

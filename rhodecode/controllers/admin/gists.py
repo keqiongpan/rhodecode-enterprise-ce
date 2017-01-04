@@ -114,7 +114,7 @@ class GistsController(BaseController):
             c.active = 'public'
 
         from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
 
         data = []
 
@@ -130,7 +130,7 @@ class GistsController(BaseController):
                 'description': _render('gist_description', gist.gist_description)
             })
         c.data = json.dumps(data)
-        return render('admin/gists/index.html')
+        return render('admin/gists/index.mako')
 
     @LoginRequired()
     @NotAnonymous()
@@ -186,7 +186,7 @@ class GistsController(BaseController):
                 del errors['nodes.0.filename']
 
             return formencode.htmlfill.render(
-                render('admin/gists/new.html'),
+                render('admin/gists/new.mako'),
                 defaults=defaults,
                 errors=errors,
                 prefix_error=False,
@@ -206,7 +206,7 @@ class GistsController(BaseController):
         """GET /admin/gists/new: Form to create a new item"""
         # url('new_gist')
         self.__load_defaults()
-        return render('admin/gists/new.html')
+        return render('admin/gists/new.mako')
 
     @LoginRequired()
     @NotAnonymous()
@@ -266,7 +266,7 @@ class GistsController(BaseController):
                                    if (f_path is None or f.path == f_path)])
             response.content_type = 'text/plain'
             return content
-        return render('admin/gists/show.html')
+        return render('admin/gists/show.mako')
 
     @LoginRequired()
     @NotAnonymous()
@@ -344,7 +344,7 @@ class GistsController(BaseController):
             expiry = h.age(h.time_to_datetime(c.gist.gist_expires))
         self.__load_defaults(
             extra_values=(0, _('%(expiry)s - current value') % {'expiry': expiry}))
-        return render('admin/gists/edit.html')
+        return render('admin/gists/edit.mako')
 
     @LoginRequired()
     @NotAnonymous()

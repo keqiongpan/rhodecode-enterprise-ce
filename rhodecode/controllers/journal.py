@@ -205,11 +205,11 @@ class JournalController(BaseController):
         c.journal_pager = Page(journal, page=p, items_per_page=20, url=url_generator)
         c.journal_day_aggreagate = self._get_daily_aggregate(c.journal_pager)
 
-        c.journal_data = render('journal/journal_data.html')
+        c.journal_data = render('journal/journal_data.mako')
         if request.is_xhr:
             return c.journal_data
 
-        return render('journal/journal.html')
+        return render('journal/journal.mako')
 
     @LoginRequired(auth_token_access=True)
     @NotAnonymous()
@@ -276,10 +276,10 @@ class JournalController(BaseController):
 
         c.journal_day_aggreagate = self._get_daily_aggregate(c.journal_pager)
 
-        c.journal_data = render('journal/journal_data.html')
+        c.journal_data = render('journal/journal_data.mako')
         if request.is_xhr:
             return c.journal_data
-        return render('journal/public_journal.html')
+        return render('journal/public_journal.mako')
 
     @LoginRequired(auth_token_access=True)
     def public_journal_atom(self):

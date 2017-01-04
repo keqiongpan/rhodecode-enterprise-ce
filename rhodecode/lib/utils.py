@@ -903,7 +903,7 @@ class PartialRenderer(object):
     Partial renderer used to render chunks of html used in datagrids
     use like::
 
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
         _render('quick_menu', args, kwargs)
         PartialRenderer.h,
                         c,

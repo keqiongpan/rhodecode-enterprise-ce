@@ -134,7 +134,7 @@ class AuthSettingsView(object):
             'available_plugins': authn_registry.get_plugins(),
             'enabled_plugins': enabled_plugins,
         }
-        html = render('rhodecode:templates/admin/auth/auth_settings.html',
+        html = render('rhodecode:templates/admin/auth/auth_settings.mako',
                       template_context,
                       request=self.request)
 

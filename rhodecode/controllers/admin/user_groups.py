@@ -109,7 +109,7 @@ class UserGroupsController(BaseController):
         # url('users_groups')
 
         from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
 
         def user_group_name(user_group_id, user_group_name):
             return _render("user_group_name", user_group_id, user_group_name)
@@ -136,7 +136,7 @@ class UserGroupsController(BaseController):
             })
 
         c.data = json.dumps(user_groups_data)
-        return render('admin/user_groups/user_groups.html')
+        return render('admin/user_groups/user_groups.mako')
 
     @HasPermissionAnyDecorator('hg.admin', 'hg.usergroup.create.true')
     @auth.CSRFRequired()
@@ -167,7 +167,7 @@ class UserGroupsController(BaseController):
             Session().commit()
         except formencode.Invalid as errors:
             return htmlfill.render(
-                render('admin/user_groups/user_group_add.html'),
+                render('admin/user_groups/user_group_add.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -185,7 +185,7 @@ class UserGroupsController(BaseController):
     def new(self):
         """GET /user_groups/new: Form to create a new item"""
         # url('new_users_group')
-        return render('admin/user_groups/user_group_add.html')
+        return render('admin/user_groups/user_group_add.mako')
 
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     @auth.CSRFRequired()
@@ -224,7 +224,7 @@ class UserGroupsController(BaseController):
             e = errors.error_dict or {}
 
             return htmlfill.render(
-                render('admin/user_groups/user_group_edit.html'),
+                render('admin/user_groups/user_group_edit.mako'),
                 defaults=defaults,
                 errors=e,
                 prefix_error=False,
@@ -276,7 +276,7 @@ class UserGroupsController(BaseController):
         defaults = self.__load_defaults(user_group_id)
 
         return htmlfill.render(
-            render('admin/user_groups/user_group_edit.html'),
+            render('admin/user_groups/user_group_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
@@ -299,7 +299,7 @@ class UserGroupsController(BaseController):
                              p.permission.permission_name})
 
         return htmlfill.render(
-            render('admin/user_groups/user_group_edit.html'),
+            render('admin/user_groups/user_group_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
@@ -365,7 +365,7 @@ class UserGroupsController(BaseController):
             permissions['repositories_groups'][gr.group.group_name] \
                 = gr.permission.permission_name
         c.permissions = permissions
-        return render('admin/user_groups/user_group_edit.html')
+        return render('admin/user_groups/user_group_edit.mako')
 
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     def edit_global_perms(self, user_group_id):
@@ -379,7 +379,7 @@ class UserGroupsController(BaseController):
         defaults.update(c.user_group.get_default_perms())
 
         return htmlfill.render(
-            render('admin/user_groups/user_group_edit.html'),
+            render('admin/user_groups/user_group_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
@@ -425,7 +425,7 @@ class UserGroupsController(BaseController):
             defaults = errors.value
             c.user_group = user_group
             return htmlfill.render(
-                render('admin/user_groups/user_group_edit.html'),
+                render('admin/user_groups/user_group_edit.mako'),
                 defaults=defaults,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -456,7 +456,7 @@ class UserGroupsController(BaseController):
             (x.group for x in c.user_group.users_group_repo_group_to_perm),
             key=lambda u: u.group_name.lower())
 
-        return render('admin/user_groups/user_group_edit.html')
+        return render('admin/user_groups/user_group_edit.mako')
 
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     @XHRRequired()

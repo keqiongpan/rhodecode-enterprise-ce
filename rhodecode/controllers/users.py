@@ -40,4 +40,4 @@ class UsersController(BaseController):
             raise HTTPNotFound()
 
         c.active = 'user_profile'
-        return render('users/user.html')
+        return render('users/user.mako')

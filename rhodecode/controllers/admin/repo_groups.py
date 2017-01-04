@@ -162,7 +162,7 @@ class RepoGroupsController(BaseController):
         repo_group_data = RepoGroupModel().get_repo_groups_as_dict(
             repo_group_list=repo_group_list_acl, admin=True)
         c.data = json.dumps(repo_group_data)
-        return render('admin/repo_groups/repo_groups.html')
+        return render('admin/repo_groups/repo_groups.mako')
 
     # perm checks inside
     @NotAnonymous()
@@ -199,7 +199,7 @@ class RepoGroupsController(BaseController):
             # TODO: in futureaction_logger(, '', '', '', self.sa)
         except formencode.Invalid as errors:
             return htmlfill.render(
-                render('admin/repo_groups/repo_group_add.html'),
+                render('admin/repo_groups/repo_group_add.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -224,7 +224,7 @@ class RepoGroupsController(BaseController):
             return abort(403)
 
         self.__load_defaults()
-        return render('admin/repo_groups/repo_group_add.html')
+        return render('admin/repo_groups/repo_group_add.mako')
 
     @HasRepoGroupPermissionAnyDecorator('group.admin')
     @auth.CSRFRequired()
@@ -263,7 +263,7 @@ class RepoGroupsController(BaseController):
         except formencode.Invalid as errors:
             c.active = 'settings'
             return htmlfill.render(
-                render('admin/repo_groups/repo_group_edit.html'),
+                render('admin/repo_groups/repo_group_edit.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -338,7 +338,7 @@ class RepoGroupsController(BaseController):
         defaults = self.__load_data(c.repo_group.group_id)
 
         return htmlfill.render(
-            render('admin/repo_groups/repo_group_edit.html'),
+            render('admin/repo_groups/repo_group_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
@@ -351,7 +351,7 @@ class RepoGroupsController(BaseController):
         c.active = 'advanced'
         c.repo_group = RepoGroupModel()._get_repo_group(group_name)
 
-        return render('admin/repo_groups/repo_group_edit.html')
+        return render('admin/repo_groups/repo_group_edit.mako')
 
     @HasRepoGroupPermissionAnyDecorator('group.admin')
     def edit_repo_group_perms(self, group_name):
@@ -363,7 +363,7 @@ class RepoGroupsController(BaseController):
         defaults = self.__load_data(c.repo_group.group_id)
 
         return htmlfill.render(
-            render('admin/repo_groups/repo_group_edit.html'),
+            render('admin/repo_groups/repo_group_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False

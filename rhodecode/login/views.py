@@ -127,7 +127,7 @@ class LoginView(object):
 
     @view_config(
         route_name='login', request_method='GET',
-        renderer='rhodecode:templates/login.html')
+        renderer='rhodecode:templates/login.mako')
     def login(self):
         came_from = get_came_from(self.request)
         user = self.request.user
@@ -153,7 +153,7 @@ class LoginView(object):
 
     @view_config(
         route_name='login', request_method='POST',
-        renderer='rhodecode:templates/login.html')
+        renderer='rhodecode:templates/login.mako')
     def login_post(self):
         came_from = get_came_from(self.request)
         session = self.request.session
@@ -198,7 +198,7 @@ class LoginView(object):
         'hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')
     @view_config(
         route_name='register', request_method='GET',
-        renderer='rhodecode:templates/register.html',)
+        renderer='rhodecode:templates/register.mako',)
     def register(self, defaults=None, errors=None):
         defaults = defaults or {}
         errors = errors or {}
@@ -224,7 +224,7 @@ class LoginView(object):
         'hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')
     @view_config(
         route_name='register', request_method='POST',
-        renderer='rhodecode:templates/register.html')
+        renderer='rhodecode:templates/register.mako')
     def register_post(self):
         captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
@@ -275,7 +275,7 @@ class LoginView(object):
 
     @view_config(
         route_name='reset_password', request_method=('GET', 'POST'),
-        renderer='rhodecode:templates/password_reset.html')
+        renderer='rhodecode:templates/password_reset.mako')
     def password_reset(self):
         captcha = self._get_captcha_data()
 
