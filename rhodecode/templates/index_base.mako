@@ -131,8 +131,6 @@
                       "type": Number}, title: "${_('Commit')}", className: "td-hash" },
              { data: {"_": "owner",
                       "sort": "owner"}, title: "${_('Owner')}", className: "td-user" },
-             { data: {"_": "rss",
-                      "sort": "rss"}, title: "rss", className: "td-rss" }
           ],
           language: {
               paginate: DEFAULT_GRID_PAGINATION,
