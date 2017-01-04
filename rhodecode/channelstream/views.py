@@ -62,7 +62,7 @@ class ChannelstreamView(object):
         registry = request.registry
         self.channelstream_config = registry.rhodecode_plugins['channelstream']
         if not self.channelstream_config.get('enabled'):
-            log.exception('Channelstream plugin is disabled')
+            log.error('Channelstream plugin is disabled')
             raise HTTPBadRequest()
 
     @NotAnonymous()
