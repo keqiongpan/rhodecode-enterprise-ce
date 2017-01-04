@@ -12,14 +12,14 @@
 
 <%def name="diff_block_changeset_table(change)">
  <div class="diff-container" id="${'diff-container-%s' % (id(change))}">
-  %for FID,(cs1, cs2, change, filenode_path, diff, stats, file) in change.iteritems():
+  %for FID,(cs1, cs2, change, filenode_path, diff, stats, file_data) in change.iteritems():
     <div id="${h.FID('',filenode_path)}_target" ></div>
     <div id="${h.FID('',filenode_path)}" class="diffblock margined comm">
       <div class="code-body">
         <div class="full_f_path" path="${h.safe_unicode(filenode_path)}" style="display: none"></div>
         ${diff|n}
-          % if file["is_limited_diff"]:
-            % if file["exceeds_limit"]:
+          % if file_data["is_limited_diff"]:
+            % if file_data["exceeds_limit"]:
                 ${self.file_message()}
               % else:
                 <h5>${_('Diff was truncated. File content available only in full diff.')} <a href="${h.url.current(fulldiff=1, **request.GET.mixed())}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>
@@ -33,14 +33,14 @@
 
 <%def name="diff_block_simple(change)">
  <div class="diff-container" id="${'diff-container-%s' % (id(change))}">
-  %for op,filenode_path,diff,file in change:
+  %for op,filenode_path,diff,file_data in change:
     <div id="${h.FID('',filenode_path)}_target" ></div>
     <div id="${h.FID('',filenode_path)}" class="diffblock margined comm" >
         <div class="code-body">
             <div class="full_f_path" path="${h.safe_unicode(filenode_path)}" style="display: none;"></div>
             ${diff|n}
-           % if file["is_limited_diff"]:
-              % if file["exceeds_limit"]:
+           % if file_data["is_limited_diff"]:
+              % if file_data["exceeds_limit"]:
                   ${self.file_message()}
                 % else:
                   <h5>${_('Diff was truncated. File content available only in full diff.')} <a href="${h.url.current(fulldiff=1, **request.GET.mixed())}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>

@@ -2,26 +2,32 @@
 return '%s_%s_%i' % (h.safeid(filename), type, line)
 %></%def>
 
-<%def name="action_class(action)"><%
+<%def name="action_class(action)">
+<%
     return {
         '-': 'cb-deletion',
         '+': 'cb-addition',
         ' ': 'cb-context',
         }.get(action, 'cb-empty')
-%></%def>
+%>
+</%def>
 
-<%def name="op_class(op_id)"><%
+<%def name="op_class(op_id)">
+<%
     return {
         DEL_FILENODE: 'deletion', # file deleted
         BIN_FILENODE: 'warning' # binary diff hidden
     }.get(op_id, 'addition')
-%></%def>
+%>
+</%def>
 
-<%def name="link_for(**kw)"><%
+<%def name="link_for(**kw)">
+<%
 new_args = request.GET.mixed()
 new_args.update(kw)
 return h.url('', **new_args)
-%></%def>
+%>
+</%def>
 
 <%def name="render_diffset(diffset, commit=None,
 
@@ -83,8 +89,7 @@ return h.url('', **new_args)
                              ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
                                ('<span  class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user'))
                            )
-                        )|n
-                       }
+                        )|n}
                     </div>
                 </div>
             </div>
@@ -370,8 +375,9 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 %>
     <span class="pill">
         %if filediff.source_file_path and filediff.target_file_path:
-            %if filediff.source_file_path != filediff.target_file_path: # file was renamed
-                  <strong>${filediff.target_file_path}</strong> ⬅ <del>${filediff.source_file_path}</del>
+            %if filediff.source_file_path != filediff.target_file_path:
+                 ## file was renamed
+                 <strong>${filediff.target_file_path}</strong> ⬅ <del>${filediff.source_file_path}</del>
             %else:
                 ## file was modified
                 <strong>${filediff.source_file_path}</strong>

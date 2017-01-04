@@ -10,7 +10,7 @@
             <tr>
             <td class="td-user">
                 ${base.gravatar(c.user.email, 16)}
-                <span class="user email">${c.user.email}
+                <span class="user email">${c.user.email}</span>
             </td>
             <td class="td-tags">
                 <span class="tag">${_('Primary')}</span>

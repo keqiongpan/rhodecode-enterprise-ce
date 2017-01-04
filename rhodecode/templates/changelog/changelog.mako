@@ -47,8 +47,8 @@
                                 target_repo=c.repo_name,
                                 target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],
                                 target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1],
-                                merge=1)
-                            }">
+                                merge=1)}"
+                        >
                                 <i class="icon-loop"></i>
                                 ${_('Compare fork with Parent (%s)' % c.rhodecode_db_repo.fork.repo_name)}
                         </a>
@@ -285,7 +285,7 @@
             $commitCheckboxes.on('click', checkboxRangeSelector);
 
             $commitRangeClear.on('click',function(e) {
-                $commitCheckboxes.attr('checked', false)
+                $commitCheckboxes.attr('checked', false);
                 checkboxRangeSelector();
                 e.preventDefault();
             });

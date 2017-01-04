@@ -28,6 +28,7 @@
 </%def>
 
 <%def name="main()">
+
 <script type="text/javascript">
     // TODO: marcink switch this to pyroutes
     AJAX_COMMENT_DELETE_URL = "${url('pullrequest_comment_delete',repo_name=c.repo_name,comment_id='__COMMENT_ID__')}";
@@ -40,10 +41,9 @@
 
   ${self.breadcrumbs()}
 
-
   <div class="box pr-summary">
       <div class="summary-details block-left">
-        <%summary = lambda n:{False:'summary-short'}.get(n)%>
+        <% summary = lambda n:{False:'summary-short'}.get(n) %>
         <div class="pr-details-title">
             <a href="${h.url('pull_requests_global', pull_request_id=c.pull_request.pull_request_id)}">${_('Pull request #%s') % c.pull_request.pull_request_id}</a> ${_('From')} ${h.format_date(c.pull_request.created_on)}
             %if c.allowed_to_update:
@@ -432,7 +432,7 @@ Changed files:
                 </div>
               % if not c.missing_commits:
                 <%include file="/compare/compare_commits.mako" />
-              <div class="cs_files">
+                <div class="cs_files">
                 <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
                 ${cbdiffs.render_diffset_menu()}
                 ${cbdiffs.render_diffset(
@@ -441,8 +441,9 @@ Changed files:
                   disable_new_comments=not c.allowed_to_comment,
                   deleted_files_comments=c.deleted_files_comments)}
 
-          </div>
+              </div>
               % endif
+          </div>
       </div>
 
       ## template for inline comment form

@@ -56,7 +56,7 @@
                         %endif
     
                         %if captcha_active:
-                        <div class="login-captcha"
+                        <div class="login-captcha">
                             <label for="email">${_('Captcha')}:</label>
                             ${h.hidden('recaptcha_field')}
                             <div id="recaptcha"></div>

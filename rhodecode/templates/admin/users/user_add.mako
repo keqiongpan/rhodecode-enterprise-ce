@@ -136,9 +136,9 @@
         $('#username').focus();
 
         $('#generate_password').on('click', function(e){
-            var tmpl = "(${_('generated password:')} {0})"
-            var new_passwd = generatePassword(12)
-            $('#generate_password_preview').html(tmpl.format(new_passwd))
+            var tmpl = "(${_('generated password:')} {0})";
+            var new_passwd = generatePassword(12);
+            $('#generate_password_preview').html(tmpl.format(new_passwd));
             $('#password').val(new_passwd);
             $('#password_confirmation').val(new_passwd);
         })

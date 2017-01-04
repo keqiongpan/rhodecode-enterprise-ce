@@ -31,7 +31,7 @@ ${h.code_highlight(
 %if len(matching_lines) > shown_matching_lines:
 <a href="${url}">
   ${len(matching_lines) - shown_matching_lines} ${_('more matches in this file')}
-</p>
+</a>
 %endif
 </%def>
 

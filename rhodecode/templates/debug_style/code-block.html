@@ -1140,7 +1140,7 @@ $(document).ready(function () {
         var val = e.currentTarget.checked;
         $('#compare').mergely('options', {ignorews: val});
         $('#compare').mergely('update');
-    })
+    });
     $('#edit_mode').change(function(e){
         var val = !e.currentTarget.checked;
         $('#compare').mergely('cm', 'lhs').setOption('readOnly', val);

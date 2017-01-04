@@ -88,7 +88,7 @@
           <div class="right-content">
 
               <div class="repo-size">
-                  <%commit_rev = c.rhodecode_db_repo.changeset_cache.get('revision')%>
+                  <% commit_rev = c.rhodecode_db_repo.changeset_cache.get('revision') %>
 
                   ## commits
                   % if commit_rev == -1:

@@ -258,8 +258,7 @@ var post_old = post_cm.getValue();
 var get_data = function(type, old){
     var get_tmpl = function(tmpl_name){
         // unescape some stuff
-        var html = htmlEnDeCode.htmlDecode($('#'+tmpl_name+'_tmpl').html());
-        return html;
+        return htmlEnDeCode.htmlDecode($('#'+tmpl_name+'_tmpl').html());
     };
     return {
         '#': old,

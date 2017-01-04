@@ -93,7 +93,7 @@
     var auth_plugins_input = $('#auth_plugins');
     var notEmpty = function(element, index, array) {
       return (element != "");
-    }
+    };
     var elems = auth_plugins_input.val().split(',').filter(notEmpty);
     var cur_button = e.currentTarget;
     var plugin_id = $(cur_button).attr('plugin_id');

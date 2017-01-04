@@ -243,7 +243,7 @@
         }
       });
     };
-  }
+  };
 
   $('.delete_integration_entry').on('click', function(e){
     e.preventDefault();

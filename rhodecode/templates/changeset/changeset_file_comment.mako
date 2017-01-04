@@ -170,8 +170,7 @@
                              ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
                                ('<span  class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user'))
                            )
-                        )|n
-                       }
+                        )|n}
                     </div>
                 </div>
             </div>

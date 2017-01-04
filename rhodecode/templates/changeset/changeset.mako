@@ -243,7 +243,7 @@
                                   .replace('__rev__','r{0}:{1}'.format(data.results[0].revision, data.results[0].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[0].message)
                                   .replace('__url__', pyroutes.url('changeset_home', {'repo_name': '${c.repo_name}','revision': data.results[0].raw_id}));
-                          _html +=' | '
+                          _html +=' | ';
                           _html +='<a title="__title__" href="__url__">__rev__</a> '
                                   .replace('__rev__','r{0}:{1}'.format(data.results[1].revision, data.results[1].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[1].message)
@@ -279,7 +279,7 @@
                                   .replace('__rev__','r{0}:{1}'.format(data.results[0].revision, data.results[0].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[0].message)
                                   .replace('__url__', pyroutes.url('changeset_home', {'repo_name': '${c.repo_name}','revision': data.results[0].raw_id}));
-                          _html +=' | '
+                          _html +=' | ';
                           _html +='<a title="__title__" href="__url__">Parent __rev__</a>'
                                   .replace('__rev__','r{0}:{1}'.format(data.results[1].revision, data.results[1].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[1].message)

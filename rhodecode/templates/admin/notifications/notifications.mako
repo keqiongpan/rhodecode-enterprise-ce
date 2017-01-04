@@ -49,12 +49,12 @@ var run = function(){
   $('#notification_data').on('click','.delete-notification',function(e){
     var notification_id = e.currentTarget.id;
     deleteNotification(url_action,notification_id)
-  })
+  });
   $('#notification_data').on('click','.read-notification',function(e){
     var notification_id = e.currentTarget.id;
     readNotification(url_action,notification_id)
   })
-}
+};
 run();
 $('#mark_all_read').on('click',function(e){
     //set notifications as read
@@ -68,7 +68,7 @@ $('#mark_all_read').on('click',function(e){
         .fail(function(data, textStatus, errorThrown){
             alert("Error while saving notifications.\nError code {0} ({1}). URL: {2}".format(data.status,data.statusText,$(this)[0].url));
         });
-})
+});
 
 var current_filter = $("${c.current_filter}");
 if (current_filter.length){

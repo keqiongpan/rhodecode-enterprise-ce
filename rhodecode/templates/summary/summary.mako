@@ -14,11 +14,10 @@
     <ul class="links icon-only-links block-right">
       <li>
      %if c.rhodecode_user.username != h.DEFAULT_USER:
-       <a href="${h.url('atom_feed_home',repo_name=c.rhodecode_db_repo.repo_name,auth_token=c.rhodecode_user.feed_token)}" title="${_('RSS Feed')}">
+       <a href="${h.url('atom_feed_home',repo_name=c.rhodecode_db_repo.repo_name,auth_token=c.rhodecode_user.feed_token)}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
      %else:
-       <a href="${h.url('atom_feed_home',repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}">
+       <a href="${h.url('atom_feed_home',repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
      %endif
-       <i class="icon-rss-sign"></i></a>
       </li>
     </ul>
 </div>
@@ -97,9 +96,9 @@ $(document).ready(function(){
         // format of Object {text: "v0.0.3", type: "tag", id: "rev"}
         var selected_cs = e.added;
         var fname= e.added.raw_id + ".zip";
-        var href = pyroutes.url('files_archive_home', {'repo_name': templateContext.repo_name, 'fname':fname})
+        var href = pyroutes.url('files_archive_home', {'repo_name': templateContext.repo_name, 'fname':fname});
         // set new label
-        $('#archive_link').html('<i class="icon-archive"></i> '+ e.added.text+".zip")
+        $('#archive_link').html('<i class="icon-archive"></i> '+ e.added.text+".zip");
 
         // set new url to button,
         $('#archive_link').attr('href', href)

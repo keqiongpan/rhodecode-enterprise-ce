@@ -42,9 +42,7 @@
         title="Author: ${annotation.author | entity}<br>Date: ${annotation.date}<br>Message: ${annotation.message | entity}"
     >
       ${h.gravatar_with_user(annotation.author, 16) | n}
-      <strong class="cb-annotate-message">${
-          h.truncate(annotation.message, len(lines) * 30)
-      }</strong>
+      <strong class="cb-annotate-message">${h.truncate(annotation.message, len(lines) * 30)}</strong>
     </td>
     <td
       class="cb-annotate-revision"
