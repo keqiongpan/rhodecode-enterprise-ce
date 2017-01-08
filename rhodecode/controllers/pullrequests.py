@@ -814,7 +814,11 @@ class PullrequestsController(BaseRepoController):
         _inline_cnt, c.inline_versions = cc_model.get_inline_comments_count(
             inline_comments, version=at_version, include_aggregates=True)
 
+        c.versions = pull_request_display_obj.versions()
         c.at_version_num = at_version if at_version and at_version != 'latest' else None
+        c.at_version_pos = ChangesetComment.get_index_from_version(
+            c.at_version_num, c.versions)
+
         is_outdated = lambda co: \
             not c.at_version_num \
             or co.pull_request_version_id <= c.at_version_num
@@ -872,7 +876,6 @@ class PullrequestsController(BaseRepoController):
         c.pull_request_latest = pull_request_latest
         c.at_version = at_version
 
-        c.versions = pull_request_display_obj.versions()
         c.changes = None
         c.file_changes = None
 
@@ -983,6 +986,7 @@ class PullrequestsController(BaseRepoController):
         }
         if comm:
             c.co = comm
+            c.inline_comment = True if comm.line_no else False
             data.update(comm.get_dict())
             data.update({'rendered_text':
                              render('changeset/changeset_comment_block.mako')})

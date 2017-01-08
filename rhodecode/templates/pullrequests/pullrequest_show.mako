@@ -203,8 +203,11 @@
 
                        ## SHOW ALL VERSIONS OF PR
                        <% ver_pr = None %>
-                       % for ver in reversed(c.pull_request.versions()):
+                       % for data in reversed(list(enumerate(c.versions, 1))):
+                       <% ver_pos = data[0] %>
+                       <% ver = data[1] %>
                        <% ver_pr = ver.pull_request_version_id %>
+
                        <tr class="version-pr" style="display: ${'' if c.at_version == ver_pr else 'none'}">
                            <td>
                                % if c.at_version == ver_pr:
@@ -214,7 +217,9 @@
                                % endif
                            </td>
                            <td>
-                               <code><a href="${h.url.current(version=ver_pr)}">version ${ver_pr}</a></code>
+                                <code class="tooltip" title="${_('Comment from pull request version {0}').format(ver_pos)}">
+                                    <a href="${h.url.current(version=ver_pr)}">v${ver_pos}</a>
+                                </code>
                            </td>
                            <td>
                                <code>${ver.source_ref_parts.commit_id[:6]}</code>

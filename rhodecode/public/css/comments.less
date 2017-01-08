@@ -48,6 +48,12 @@ tr.inline-comments div {
 }
 
 .comment {
+
+    &.comment-general {
+        border: 1px solid @grey5;
+        padding: 5px 5px 5px 5px;
+    }
+
     margin: @padding 0;
     padding: 4px 0 0 0;
     line-height: 1em;
@@ -61,6 +67,8 @@ tr.inline-comments div {
         position: relative;
         width: 100%;
         margin: 0 0 .5em 0;
+        border-bottom: 1px solid @grey5;
+        padding: 8px 0px;
 
         &:hover .permalink {
             visibility: visible;
@@ -71,13 +79,18 @@ tr.inline-comments div {
     .author,
     .date {
         display: inline;
-        margin: 0 .5 0 0;
-        padding: 0 .5 0 0;
 
         &:after {
             content: ' | ';
             color: @grey5;
         }
+    }
+
+    .author-general img {
+        top: -3px;
+    }
+    .author-inline img {
+        top: -3px;
     }
 
     .status-change,
@@ -153,7 +166,6 @@ tr.inline-comments div {
 
     .text {
         clear: both;
-        border: @border-thickness solid @grey5;
         .border-radius(@border-radius);
         .box-sizing(border-box);
 
@@ -163,6 +175,19 @@ tr.inline-comments div {
           // TODO: lisa: This is needed because of other rst !important rules :[
         }
     }
+
+    .pr-version {
+        float: left;
+        margin: 0px 4px;
+    }
+    .pr-version-inline {
+        float: left;
+        margin: 1px 4px;
+    }
+    .pr-version-num {
+        font-size: 10px;
+    }
+
 }
 
 .show-outdated-comments {

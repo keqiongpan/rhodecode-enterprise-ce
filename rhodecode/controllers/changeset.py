@@ -357,6 +357,8 @@ class ChangesetController(BaseRepoController):
                                if status else None),
                 status_change_type=status
             )
+            c.inline_comment = True if comment.line_no else False
+
             # get status if set !
             if status:
                 # if latest status was from pull request and it's closed

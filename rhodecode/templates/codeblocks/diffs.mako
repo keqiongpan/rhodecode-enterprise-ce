@@ -176,10 +176,10 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                     '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
     %endif
 
-        <% at_ver = getattr(c, 'at_version_num', None) %>
+        <% at_ver = getattr(c, 'at_version_pos', None) %>
         % if at_ver:
             <div class="pull-right">
-            ${_('Changes at version %d') % at_ver}
+            ${_('Showing changes at version %d') % at_ver}
             </div>
         % endif
 

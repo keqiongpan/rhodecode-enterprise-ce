@@ -7,9 +7,10 @@
 
 <%def name="comment_block(comment, inline=False)">
   <% outdated_at_ver = comment.outdated_at_version(getattr(c, 'at_version', None)) %>
+  <% pr_index_ver = comment.get_index_version(getattr(c, 'versions', [])) %>
 
   <div class="comment
-             ${'comment-inline' if inline else ''}
+             ${'comment-inline' if inline else 'comment-general'}
              ${'comment-outdated' if outdated_at_ver else 'comment-current'}"
        id="comment-${comment.comment_id}"
        line="${comment.line_no}"
@@ -17,27 +18,24 @@
        style="${'display: none;' if outdated_at_ver else ''}">
 
       <div class="meta">
-          <div class="author">
-              ${base.gravatar_with_user(comment.author.email, 16)}
+          <div class="author ${'author-inline' if inline else 'author-general'}">
+              ${base.gravatar_with_user(comment.author.email, 20)}
           </div>
           <div class="date">
               ${h.age_component(comment.modified_at, time_is_local=True)}
           </div>
+          % if inline:
+              <span></span>
+          % else:
           <div class="status-change">
               % if comment.pull_request:
-                  % if comment.outdated:
-                      <a href="?version=${comment.pull_request_version_id}#comment-${comment.comment_id}">
-                        ${_('Outdated comment from pull request version {}').format(comment.pull_request_version_id)}
-                      </a>
-                  % else:
-                      <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
-                          %if comment.status_change:
-                              ${_('Vote on pull request #%s') % comment.pull_request.pull_request_id}:
-                          %else:
-                              ${_('Comment on pull request #%s') % comment.pull_request.pull_request_id}
-                          %endif
-                      </a>
-                  % endif
+                  <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
+                      % if comment.status_change:
+                          ${_('Vote on pull request #%s') % comment.pull_request.pull_request_id}:
+                      % else:
+                          ${_('Comment on pull request #%s') % comment.pull_request.pull_request_id}
+                      % endif
+                  </a>
               % else:
                   % if comment.status_change:
                       ${_('Status change on commit')}:
@@ -46,15 +44,51 @@
                   % endif
               % endif
           </div>
-          %if comment.status_change:
+          % endif
+
+          % if comment.status_change:
             <div class="${'flag_status %s' % comment.status_change[0].status}"></div>
             <div title="${_('Commit status')}" class="changeset-status-lbl">
                  ${comment.status_change[0].status_lbl}
             </div>
-          %endif
+          % endif
+
           <a class="permalink" href="#comment-${comment.comment_id}"> &para;</a>
 
           <div class="comment-links-block">
+
+            % if inline:
+              % if outdated_at_ver:
+                  <div class="pr-version-inline">
+                    <a href="${h.url.current(version=comment.pull_request_version_id, anchor='comment-{}'.format(comment.comment_id))}">
+                    <code class="pr-version-num">
+                        outdated ${'v{}'.format(pr_index_ver)}
+                    </code>
+                    </a>
+                  </div>
+                  |
+              % endif
+            % else:
+                % if comment.pull_request_version_id and pr_index_ver:
+                    |
+                    <div class="pr-version">
+                      % if comment.outdated:
+                        <a href="?version=${comment.pull_request_version_id}#comment-${comment.comment_id}">
+                            ${_('Outdated comment from pull request version {}').format(pr_index_ver)}
+                        </a>
+                      % else:
+                        <div class="tooltip" title="${_('Comment from pull request version {0}').format(pr_index_ver)}">
+                            <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}">
+                            <code class="pr-version-num">
+                                ${'v{}'.format(pr_index_ver)}
+                            </code>
+                            </a>
+                        </div>
+                      % endif
+                    </div>
+                % endif
+            % endif
+
             ## show delete comment if it's not a PR (regular comments) or it's PR that is not closed
             ## only super-admin, repo admin OR comment owner can delete, also hide delete if currently viewed comment is outdated
             %if not outdated_at_ver and (not comment.pull_request or (comment.pull_request and not comment.pull_request.is_closed())):

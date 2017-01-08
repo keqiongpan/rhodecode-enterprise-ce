@@ -2935,6 +2935,14 @@ class ChangesetComment(Base, BaseModel):
             q = q.filter(cls.pull_request_id == pull_request_id)
         return q.all()
 
+    @classmethod
+    def get_index_from_version(cls, pr_version, versions):
+        num_versions = [x.pull_request_version_id for x in versions]
+        try:
+            return num_versions.index(pr_version) +1
+        except (IndexError, ValueError):
+            return
+
     @property
     def outdated(self):
         return self.display_state == self.COMMENT_OUTDATED
@@ -2944,6 +2952,10 @@ class ChangesetComment(Base, BaseModel):
         Checks if comment is outdated for given pull request version
         """
         return self.outdated and self.pull_request_version_id != version
+
+    def get_index_version(self, versions):
+        return self.get_index_from_version(
+            self.pull_request_version_id, versions)
 
     def render(self, mentions=False):
         from rhodecode.lib import helpers as h
