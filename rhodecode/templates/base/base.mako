@@ -521,64 +521,6 @@
             window.location = e.choice.url;
         });
 
-        ## Global mouse bindings ##
-
-        // general help "?"
-        Mousetrap.bind(['?'], function(e) {
-            $('#help_kb').modal({})
-        });
-
-        // / open the quick filter
-        Mousetrap.bind(['/'], function(e) {
-            $("#repo_switcher").select2("open");
-
-            // return false to prevent default browser behavior
-            // and stop event from bubbling
-            return false;
-        });
-
-        // general nav g + action
-        Mousetrap.bind(['g h'], function(e) {
-            window.location = pyroutes.url('home');
-        });
-        Mousetrap.bind(['g g'], function(e) {
-            window.location = pyroutes.url('gists', {'private':1});
-        });
-        Mousetrap.bind(['g G'], function(e) {
-            window.location = pyroutes.url('gists', {'public':1});
-        });
-        Mousetrap.bind(['n g'], function(e) {
-            window.location = pyroutes.url('new_gist');
-        });
-        Mousetrap.bind(['n r'], function(e) {
-            window.location = pyroutes.url('new_repo');
-        });
-
-        % if hasattr(c, 'repo_name') and hasattr(c, 'rhodecode_db_repo'):
-            // nav in repo context
-            Mousetrap.bind(['g s'], function(e) {
-                window.location = pyroutes.url('summary_home', {'repo_name': REPO_NAME});
-            });
-            Mousetrap.bind(['g c'], function(e) {
-                window.location = pyroutes.url('changelog_home', {'repo_name': REPO_NAME});
-            });
-            Mousetrap.bind(['g F'], function(e) {
-                window.location = pyroutes.url('files_home', {'repo_name': REPO_NAME, 'revision': '${c.rhodecode_db_repo.landing_rev[1]}', 'f_path': '', 'search': '1'});
-            });
-            Mousetrap.bind(['g f'], function(e) {
-                window.location = pyroutes.url('files_home', {'repo_name': REPO_NAME, 'revision': '${c.rhodecode_db_repo.landing_rev[1]}', 'f_path': ''});
-            });
-            Mousetrap.bind(['g p'], function(e) {
-                window.location = pyroutes.url('pullrequest_show_all', {'repo_name': REPO_NAME});
-            });
-            Mousetrap.bind(['g o'], function(e) {
-                window.location = pyroutes.url('edit_repo', {'repo_name': REPO_NAME});
-            });
-            Mousetrap.bind(['g O'], function(e) {
-                window.location = pyroutes.url('edit_repo_perms', {'repo_name': REPO_NAME});
-            });
-        % endif
-
     </script>
     <script src="${h.asset('js/rhodecode/base/keyboard-bindings.js', ver=c.rhodecode_version_hash)}"></script>
 </%def>

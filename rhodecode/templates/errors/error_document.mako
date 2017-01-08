@@ -7,7 +7,6 @@
         <meta name="robots" content="index, nofollow"/>
         <link rel="icon" href="${h.asset('images/favicon.ico')}" sizes="16x16 32x32" type="image/png" />
 
-
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
         %if c.redirect_time:
             <meta http-equiv="refresh" content="${c.redirect_time}; url=${c.url_redirect}"/>
@@ -18,7 +17,10 @@
             <link rel="stylesheet" type="text/css" href="${h.asset('css/ie.css')}" media="screen"/>
         <![endif]-->
         <style>body { background:#eeeeee; }</style>
-
+        <script type="text/javascript">
+            // register templateContext to pass template variables to JS
+            var templateContext = {timeago: {}};
+        </script>
         <script type="text/javascript" src="${h.asset('js/scripts.js', ver=c.rhodecode_version_hash)}"></script>
     </head>
     <body>

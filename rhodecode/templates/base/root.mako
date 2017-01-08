@@ -79,23 +79,10 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
             // register templateContext to pass template variables to JS
             var templateContext = ${h.json.dumps(c.template_context)|n};
 
-            var REPO_NAME = "${getattr(c, 'repo_name', '')}";
-            %if hasattr(c, 'rhodecode_db_repo'):
-            var REPO_LANDING_REV = '${c.rhodecode_db_repo.landing_rev[1]}';
-            var REPO_TYPE = '${c.rhodecode_db_repo.repo_type}';
-            %else:
-            var REPO_LANDING_REV = '';
-            var REPO_TYPE = '';
-            %endif
             var APPLICATION_URL = "${h.url('home').rstrip('/')}";
             var ASSET_URL = "${h.asset('')}";
             var DEFAULT_RENDERER = "${h.get_visual_attr(c, 'default_renderer')}";
             var CSRF_TOKEN = "${getattr(c, 'csrf_token', '')}";
-            % if getattr(c, 'rhodecode_user', None):
-            var USER = {name:'${c.rhodecode_user.username}'};
-            % else:
-            var USER = {name:null};
-            % endif
 
             var APPENLIGHT = {
               enabled: ${'true' if getattr(c, 'appenlight_enabled', False) else 'false'},
