@@ -435,19 +435,23 @@ Changed files:
                     </div>
 
                 </div>
+
               % if not c.missing_commits:
                 <%include file="/compare/compare_commits.mako" />
                 <div class="cs_files">
-                <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
-                ${cbdiffs.render_diffset_menu()}
-                ${cbdiffs.render_diffset(
-                  c.diffset, use_comments=True,
-                  collapse_when_files_over=30,
-                  disable_new_comments=not c.allowed_to_comment,
-                  deleted_files_comments=c.deleted_files_comments)}
-
-              </div>
+                    <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
+                    ${cbdiffs.render_diffset_menu()}
+                    ${cbdiffs.render_diffset(
+                      c.diffset, use_comments=True,
+                      collapse_when_files_over=30,
+                      disable_new_comments=not c.allowed_to_comment,
+                      deleted_files_comments=c.deleted_files_comments)}
+                </div>
+              % else:
+                  ## skipping commits we need to clear the view for missing commits
+                  <div style="clear:both;"></div>
               % endif
+
           </div>
       </div>
 
