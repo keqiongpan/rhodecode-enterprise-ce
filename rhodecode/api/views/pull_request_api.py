@@ -30,7 +30,7 @@ from rhodecode.lib.auth import (HasRepoPermissionAnyApi)
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import Session, ChangesetStatus
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.settings import SettingsModel
@@ -455,7 +455,7 @@ def comment_pull_request(request, apiuser, repoid, pullrequestid,
     renderer = rc_config.get('rhodecode_markup_renderer', 'rst')
 
     status_change = status and allowed_to_change_status
-    comment = ChangesetCommentsModel().create(
+    comment = CommentsModel().create(
         text=text,
         repo=pull_request.target_repo.repo_id,
         user=apiuser.user_id,

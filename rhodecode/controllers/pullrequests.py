@@ -55,7 +55,7 @@ from rhodecode.lib.vcs.exceptions import (
     NodeDoesNotExistError)
 
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (PullRequest, ChangesetStatus, ChangesetComment,
     Repository, PullRequestVersion)
 from rhodecode.model.forms import PullRequestForm
@@ -258,7 +258,7 @@ class PullrequestsController(BaseRepoController):
         _render = PartialRenderer('data_table/_dt_elements.mako')
         data = []
         for pr in pull_requests:
-            comments = ChangesetCommentsModel().get_all_comments(
+            comments = CommentsModel().get_all_comments(
                 c.rhodecode_db_repo.repo_id, pull_request=pr)
 
             data.append({
@@ -796,7 +796,7 @@ class PullrequestsController(BaseRepoController):
                 pull_request_latest, c.rhodecode_user) and not pr_closed
             c.allowed_to_comment = not pr_closed
 
-        cc_model = ChangesetCommentsModel()
+        cc_model = CommentsModel()
 
         c.pull_request_reviewers = pull_request_at_ver.reviewers_statuses()
         c.pull_request_review_status = pull_request_at_ver.calculated_review_status()
@@ -837,7 +837,7 @@ class PullrequestsController(BaseRepoController):
 
         # outdated comments
         c.outdated_cnt = 0
-        if ChangesetCommentsModel.use_outdated_comments(pull_request_latest):
+        if CommentsModel.use_outdated_comments(pull_request_latest):
             outdated_comments = cc_model.get_outdated_comments(
                 c.rhodecode_db_repo.repo_id,
                 pull_request=pull_request_at_ver)
@@ -923,7 +923,7 @@ class PullrequestsController(BaseRepoController):
             if close_pr:
                 message = _('Closing with') + ' ' + message
             text = text or message
-        comm = ChangesetCommentsModel().create(
+        comm = CommentsModel().create(
             text=text,
             repo=c.rhodecode_db_repo.repo_id,
             user=c.rhodecode_user.user_id,
@@ -1013,7 +1013,7 @@ class PullrequestsController(BaseRepoController):
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(c.repo_name)
         if h.HasPermissionAny('hg.admin')() or is_repo_admin or is_owner:
             old_calculated_status = co.pull_request.calculated_review_status()
-            ChangesetCommentsModel().delete(comment=co)
+            CommentsModel().delete(comment=co)
             Session().commit()
             calculated_status = co.pull_request.calculated_review_status()
             if old_calculated_status != calculated_status:

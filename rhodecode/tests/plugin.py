@@ -39,7 +39,7 @@ import requests
 import rhodecode
 from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     PullRequest, Repository, RhodeCodeSetting, ChangesetStatus, RepoGroup,
     UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi)
@@ -1038,7 +1038,7 @@ class PRTestUtility(object):
         return removed_commit_id
 
     def create_comment(self, linked_to=None):
-        comment = ChangesetCommentsModel().create(
+        comment = CommentsModel().create(
             text=u"Test comment",
             repo=self.target_repository.repo_name,
             user=self.author,
@@ -1052,7 +1052,7 @@ class PRTestUtility(object):
 
     def create_inline_comment(
             self, linked_to=None, line_no=u'n1', file_path='file_1'):
-        comment = ChangesetCommentsModel().create(
+        comment = CommentsModel().create(
             text=u"Test comment",
             repo=self.target_repository.repo_name,
             user=self.author,

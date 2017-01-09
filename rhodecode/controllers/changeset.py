@@ -46,7 +46,7 @@ from rhodecode.lib.vcs.exceptions import (
     RepositoryError, CommitDoesNotExistError, NodeDoesNotExistError)
 from rhodecode.model.db import ChangesetComment, ChangesetStatus
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 
@@ -210,7 +210,7 @@ class ChangesetController(BaseRepoController):
         c.comments = []
         if len(c.commit_ranges) == 1:
             commit = c.commit_ranges[0]
-            c.comments = ChangesetCommentsModel().get_comments(
+            c.comments = CommentsModel().get_comments(
                 c.rhodecode_db_repo.repo_id,
                 revision=commit.raw_id)
             c.statuses.append(ChangesetStatusModel().get_status(
@@ -255,9 +255,9 @@ class ChangesetController(BaseRepoController):
                             return None
                     return get_node
 
-                inline_comments = ChangesetCommentsModel().get_inline_comments(
+                inline_comments = CommentsModel().get_inline_comments(
                     c.rhodecode_db_repo.repo_id, revision=commit.raw_id)
-                c.inline_cnt = ChangesetCommentsModel().get_inline_comments_count(
+                c.inline_cnt = CommentsModel().get_inline_comments_count(
                     inline_comments)
 
                 diffset = codeblocks.DiffSet(
@@ -346,7 +346,7 @@ class ChangesetController(BaseRepoController):
         commit_ids = multi_commit_ids or [commit_id]
         comment = None
         for current_id in filter(None, commit_ids):
-            c.co = comment = ChangesetCommentsModel().create(
+            c.co = comment = CommentsModel().create(
                 text=text,
                 repo=c.rhodecode_db_repo.repo_id,
                 user=c.rhodecode_user.user_id,
@@ -426,7 +426,7 @@ class ChangesetController(BaseRepoController):
         owner = (comment.author.user_id == c.rhodecode_user.user_id)
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(c.repo_name)
         if h.HasPermissionAny('hg.admin')() or is_repo_admin or owner:
-            ChangesetCommentsModel().delete(comment=comment)
+            CommentsModel().delete(comment=comment)
             Session().commit()
             return True
         else:

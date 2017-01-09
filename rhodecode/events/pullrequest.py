@@ -114,7 +114,7 @@ class PullRequestCommentEvent(PullRequestEvent):
         self.comment = comment
 
     def as_dict(self):
-        from rhodecode.model.comment import ChangesetCommentsModel
+        from rhodecode.model.comment import CommentsModel
         data = super(PullRequestCommentEvent, self).as_dict()
 
         status = None
@@ -125,7 +125,7 @@ class PullRequestCommentEvent(PullRequestEvent):
             'comment': {
                 'status': status,
                 'text': self.comment.text,
-                'url': ChangesetCommentsModel().get_url(self.comment)
+                'url': CommentsModel().get_url(self.comment)
             }
         })
         return data

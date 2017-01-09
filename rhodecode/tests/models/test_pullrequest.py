@@ -29,7 +29,7 @@ from rhodecode.lib.vcs.backends.base import (
     MergeResponse, MergeFailureReason, Reference)
 from rhodecode.lib.vcs.exceptions import RepositoryError
 from rhodecode.lib.vcs.nodes import FileNode
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import PullRequest, Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
@@ -811,13 +811,13 @@ def test_calculate_commits():
 
 def assert_inline_comments(pull_request, visible=None, outdated=None):
     if visible is not None:
-        inline_comments = ChangesetCommentsModel().get_inline_comments(
+        inline_comments = CommentsModel().get_inline_comments(
             pull_request.target_repo.repo_id, pull_request=pull_request)
-        inline_cnt = ChangesetCommentsModel().get_inline_comments_count(
+        inline_cnt = CommentsModel().get_inline_comments_count(
             inline_comments)
         assert inline_cnt == visible
     if outdated is not None:
-        outdated_comments = ChangesetCommentsModel().get_outdated_comments(
+        outdated_comments = CommentsModel().get_outdated_comments(
             pull_request.target_repo.repo_id, pull_request)
         assert len(outdated_comments) == outdated
 
@@ -842,5 +842,5 @@ def assert_pr_file_changes(
 
 def outdated_comments_patcher(use_outdated=True):
     return mock.patch.object(
-        ChangesetCommentsModel, 'use_outdated_comments',
+        CommentsModel, 'use_outdated_comments',
         return_value=use_outdated)

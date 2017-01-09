@@ -20,7 +20,7 @@
 
 import pytest
 
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import UserLog
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.tests import TEST_USER_ADMIN_LOGIN
@@ -52,7 +52,7 @@ class TestCommentPullRequest(object):
         response = api_call(self.app, params)
         pull_request = PullRequestModel().get(pull_request.pull_request_id)
 
-        comments = ChangesetCommentsModel().get_comments(
+        comments = CommentsModel().get_comments(
             pull_request.target_repo.repo_id, pull_request=pull_request)
 
         expected = {
@@ -83,7 +83,7 @@ class TestCommentPullRequest(object):
         response = api_call(self.app, params)
         pull_request = PullRequestModel().get(pull_request_id)
 
-        comments = ChangesetCommentsModel().get_comments(
+        comments = CommentsModel().get_comments(
             pull_request.target_repo.repo_id, pull_request=pull_request)
         expected = {
             'pull_request_id': pull_request.pull_request_id,
@@ -132,7 +132,7 @@ class TestCommentPullRequest(object):
         response = api_call(self.app, params)
         pull_request = PullRequestModel().get(pull_request_id)
 
-        comments = ChangesetCommentsModel().get_comments(
+        comments = CommentsModel().get_comments(
             pull_request.target_repo.repo_id, pull_request=pull_request)
         expected = {
             'pull_request_id': pull_request.pull_request_id,

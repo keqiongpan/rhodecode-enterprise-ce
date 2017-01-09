@@ -57,7 +57,7 @@ from rhodecode.model.repo import RepoModel
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 
 log = logging.getLogger(__name__)
 
@@ -322,7 +322,7 @@ class MyAccountController(BaseController):
         data = []
         for pr in pull_requests:
             repo_id = pr.target_repo_id
-            comments = ChangesetCommentsModel().get_all_comments(
+            comments = CommentsModel().get_all_comments(
                 repo_id, pull_request=pr)
             owned = pr.user_id == c.rhodecode_user.user_id
             status = pr.calculated_review_status()

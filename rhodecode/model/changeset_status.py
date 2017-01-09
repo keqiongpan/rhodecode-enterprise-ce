@@ -201,8 +201,8 @@ class ChangesetStatusModel(BaseModel):
             return new_status
 
         if not comment:
-            from rhodecode.model.comment import ChangesetCommentsModel
-            comment = ChangesetCommentsModel().create(
+            from rhodecode.model.comment import CommentsModel
+            comment = CommentsModel().create(
                 text=self._render_auto_status_message(
                     status, commit_id=revision, pull_request=pull_request),
                 repo=repo,

@@ -34,7 +34,7 @@ from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 from rhodecode.lib.utils2 import str2bool, time_to_datetime
 from rhodecode.lib.ext_json import json
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     Session, ChangesetStatus, RepositoryField, Repository, RepoGroup)
 from rhodecode.model.repo import RepoModel
@@ -1436,7 +1436,7 @@ def comment_commit(
         rc_config = SettingsModel().get_all_settings()
         renderer = rc_config.get('rhodecode_markup_renderer', 'rst')
         status_change_label = ChangesetStatus.get_status_lbl(status)
-        comm = ChangesetCommentsModel().create(
+        comm = CommentsModel().create(
             message, repo, user, commit_id=commit_id,
             status_change=status_change_label,
             status_change_type=status,

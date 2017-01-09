@@ -47,7 +47,7 @@ from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError)
 from rhodecode.model import BaseModel
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     PullRequest, PullRequestReviewers, ChangesetStatus,
     PullRequestVersion, ChangesetComment)
@@ -552,7 +552,7 @@ class PullRequestModel(BaseModel):
         pull_request.merge_rev = merge_state.merge_ref.commit_id
         pull_request.updated_on = datetime.datetime.now()
 
-        ChangesetCommentsModel().create(
+        CommentsModel().create(
             text=unicode(_('Pull request merged and closed')),
             repo=pull_request.target_repo.repo_id,
             user=user.user_id,
@@ -655,7 +655,7 @@ class PullRequestModel(BaseModel):
         old_diff_data, new_diff_data = self._generate_update_diffs(
             pull_request, pull_request_version)
 
-        ChangesetCommentsModel().outdate_comments(
+        CommentsModel().outdate_comments(
             pull_request, old_diff_data=old_diff_data,
             new_diff_data=new_diff_data)
 
@@ -663,7 +663,7 @@ class PullRequestModel(BaseModel):
             old_diff_data, new_diff_data)
 
         # Add an automatic comment to the pull request
-        update_comment = ChangesetCommentsModel().create(
+        update_comment = CommentsModel().create(
             text=self._render_update_message(changes, file_changes),
             repo=pull_request.target_repo,
             user=pull_request.author,
@@ -730,7 +730,7 @@ class PullRequestModel(BaseModel):
     def _generate_update_diffs(self, pull_request, pull_request_version):
         diff_context = (
             self.DIFF_CONTEXT +
-            ChangesetCommentsModel.needed_extra_diff_context())
+            CommentsModel.needed_extra_diff_context())
         old_diff = self._get_diff_from_pr_or_version(
             pull_request_version, context=diff_context)
         new_diff = self._get_diff_from_pr_or_version(
@@ -1001,7 +1001,7 @@ class PullRequestModel(BaseModel):
 
         internal_message = _('Closing with') + ' ' + message
 
-        comm = ChangesetCommentsModel().create(
+        comm = CommentsModel().create(
             text=internal_message,
             repo=repo.repo_id,
             user=user.user_id,

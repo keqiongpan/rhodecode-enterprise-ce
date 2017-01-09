@@ -48,7 +48,7 @@ from rhodecode.model.notification import EmailNotificationModel
 log = logging.getLogger(__name__)
 
 
-class ChangesetCommentsModel(BaseModel):
+class CommentsModel(BaseModel):
 
     cls = ChangesetComment
 
@@ -392,7 +392,7 @@ class ChangesetCommentsModel(BaseModel):
 
         elif pull_request:
             pull_request = self.__get_pull_request(pull_request)
-            if not ChangesetCommentsModel.use_outdated_comments(pull_request):
+            if not CommentsModel.use_outdated_comments(pull_request):
                 q = self._visible_inline_comments_of_pull_request(pull_request)
             else:
                 q = self._all_inline_comments_of_pull_request(pull_request)
@@ -414,7 +414,7 @@ class ChangesetCommentsModel(BaseModel):
         return max(cls.DIFF_CONTEXT_BEFORE, cls.DIFF_CONTEXT_AFTER)
 
     def outdate_comments(self, pull_request, old_diff_data, new_diff_data):
-        if not ChangesetCommentsModel.use_outdated_comments(pull_request):
+        if not CommentsModel.use_outdated_comments(pull_request):
             return
 
         comments = self._visible_inline_comments_of_pull_request(pull_request)
