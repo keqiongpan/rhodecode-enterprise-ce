@@ -81,8 +81,8 @@ class ChangesetCommentsModel(BaseModel):
             log.error(traceback.format_exc())
         return global_renderer
 
-    def create(self, text, repo, user, revision=None, pull_request=None,
-               f_path=None, line_no=None, status_change=None,
+    def create(self, text, repo, user, commit_id=None, pull_request=None,
+               f_path=None, line_no=None, status_change=None, comment_type=None,
                status_change_type=None, closing_pr=False,
                send_email=True, renderer=None):
         """
@@ -93,14 +93,16 @@ class ChangesetCommentsModel(BaseModel):
         :param text:
         :param repo:
         :param user:
-        :param revision:
+        :param commit_id:
         :param pull_request:
         :param f_path:
         :param line_no:
         :param status_change: Label for status change
+        :param comment_type: Type of comment
         :param status_change_type: type of status change
         :param closing_pr:
         :param send_email:
+        :param renderer: pick renderer for this comment
         """
         if not text:
             log.warning('Missing text for comment, skipping...')
@@ -119,8 +121,6 @@ class ChangesetCommentsModel(BaseModel):
         comment.f_path = f_path
         comment.line_no = line_no
 
-        #TODO (marcink): fix this and remove revision as param
-        commit_id = revision
         pull_request_id = pull_request
 
         commit_obj = None

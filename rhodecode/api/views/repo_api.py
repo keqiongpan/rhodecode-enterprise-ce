@@ -1437,7 +1437,7 @@ def comment_commit(
         renderer = rc_config.get('rhodecode_markup_renderer', 'rst')
         status_change_label = ChangesetStatus.get_status_lbl(status)
         comm = ChangesetCommentsModel().create(
-            message, repo, user, revision=commit_id,
+            message, repo, user, commit_id=commit_id,
             status_change=status_change_label,
             status_change_type=status,
             renderer=renderer)

@@ -350,7 +350,7 @@ class ChangesetController(BaseRepoController):
                 text=text,
                 repo=c.rhodecode_db_repo.repo_id,
                 user=c.rhodecode_user.user_id,
-                revision=current_id,
+                commit_id=current_id,
                 f_path=request.POST.get('f_path'),
                 line_no=request.POST.get('line'),
                 status_change=(ChangesetStatus.get_status_lbl(status)
