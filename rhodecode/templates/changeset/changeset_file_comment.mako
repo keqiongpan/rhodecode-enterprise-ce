@@ -289,7 +289,9 @@
     var mainCommentForm = new CommentForm(
             "#${form_id}", commitId, pullRequestId, lineNo, true);
 
-    mainCommentForm.cm.setOption('placeholder', "${placeholder}");
+    if (mainCommentForm.cm){
+        mainCommentForm.cm.setOption('placeholder', "${placeholder}");
+    }
 
     mainCommentForm.initStatusChangeSelector();
     bindToggleButtons();
