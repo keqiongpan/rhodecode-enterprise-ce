@@ -182,6 +182,12 @@ var showRepoStats = function(target, data){
 
 };
 
+// returns a node from given html;
+var fromHTML = function(html){
+  var _html = document.createElement('element');
+  _html.innerHTML = html;
+  return _html;
+};
 
 // Toggle Collapsable Content
 function collapsableContent() {

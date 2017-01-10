@@ -25,59 +25,6 @@ var firefoxAnchorFix = function() {
   }
 };
 
-// returns a node from given html;
-var fromHTML = function(html){
-  var _html = document.createElement('element');
-  _html.innerHTML = html;
-  return _html;
-};
-
-var tableTr = function(cls, body){
-  var _el = document.createElement('div');
-  var _body = $(body).attr('id');
-  var comment_id = fromHTML(body).children[0].id.split('comment-')[1];
-  var id = 'comment-tr-{0}'.format(comment_id);
-  var _html = ('<table><tbody><tr id="{0}" class="{1}">'+
-               '<td class="add-comment-line tooltip tooltip" title="Add Comment"><span class="add-comment-content"></span></td>'+
-               '<td></td>'+
-               '<td></td>'+
-               '<td></td>'+
-               '<td>{2}</td>'+
-               '</tr></tbody></table>').format(id, cls, body);
-  $(_el).html(_html);
-  return _el.children[0].children[0].children[0];
-};
-
-function bindDeleteCommentButtons() {
-    $('.delete-comment').one('click', function() {
-        var comment_id = $(this).data("comment-id");
-
-        if (comment_id){
-            deleteComment(comment_id);
-        }
-    });
-}
-
-var deleteComment = function(comment_id) {
-  var url = AJAX_COMMENT_DELETE_URL.replace('__COMMENT_ID__', comment_id);
-  var postData = {
-    '_method': 'delete',
-    'csrf_token': CSRF_TOKEN
-  };
-
-  var success = function(o) {
-    window.location.reload();
-  };
-  ajaxPOST(url, postData, success);
-};
-
-
-var bindToggleButtons = function() {
-  $('.comment-toggle').on('click', function() {
-        $(this).parent().nextUntil('tr.line').toggle('inline-comments');
-  });
-};
-
 var linkifyComments = function(comments) {
   /* TODO: marcink: remove this - it should no longer needed */
   for (var i = 0; i < comments.length; i++) {
@@ -180,7 +127,6 @@ var bindToggleButtons = function() {
             setTimeout(function() {
                 $(self.statusChange).select2('readonly', true);
             }, 10);
-
 
             var resolvedInfo = (
                 '<li class="">' +
@@ -364,7 +310,6 @@ var bindToggleButtons = function() {
                 } else {
                     $('#injected_page_comments').append(o.rendered_text);
                     self.resetCommentFormState();
-                    bindDeleteCommentButtons();
                     timeagoActivate();
 
                     // mark visually which comment was resolved
@@ -769,7 +714,6 @@ var CommentsController = function() {
               // re trigger the linkification of next/prev navigation
               linkifyComments($('.inline-comment-injected'));
               timeagoActivate();
-              bindDeleteCommentButtons();
               commentForm.setActionButtonsDisabled(false);
 
             };
@@ -779,7 +723,6 @@ var CommentsController = function() {
             commentForm.submitAjaxPOST(
                 commentForm.submitUrl, postData, submitSuccessCallback, submitFailCallback);
           });
-
       }
 
       $form.addClass('comment-inline-form-open');
@@ -842,7 +785,6 @@ var CommentsController = function() {
     // since order of injection is random, we're now re-iterating
     // from correct order and filling in links
     linkifyComments($('.inline-comment-injected'));
-    bindDeleteCommentButtons();
     firefoxAnchorFix();
   };
 
