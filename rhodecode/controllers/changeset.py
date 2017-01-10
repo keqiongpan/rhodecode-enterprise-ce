@@ -335,6 +335,7 @@ class ChangesetController(BaseRepoController):
         status = request.POST.get('changeset_status', None)
         text = request.POST.get('text')
         comment_type = request.POST.get('comment_type')
+        resolves_comment_id = request.POST.get('resolves_comment_id', None)
 
         if status:
             text = text or (_('Status change %(transition_icon)s %(status)s')
@@ -358,7 +359,8 @@ class ChangesetController(BaseRepoController):
                 status_change=(ChangesetStatus.get_status_lbl(status)
                                if status else None),
                 status_change_type=status,
-                comment_type=comment_type
+                comment_type=comment_type,
+                resolves_comment_id=resolves_comment_id
             )
             c.inline_comment = True if comment.line_no else False
 

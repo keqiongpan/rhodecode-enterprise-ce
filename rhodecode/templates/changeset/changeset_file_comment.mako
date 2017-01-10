@@ -196,24 +196,19 @@
     %>
 
     % if c.rhodecode_user.username != h.DEFAULT_USER:
-    <div class="comment-form ac">
+    <div class="js-template" id="cb-comment-general-form-template">
+        ## template generated for injection
+        ${comment_form(form_type='general', review_statuses=c.commit_statuses, form_extras=form_extras)}
+    </div>
+
+    <div id="cb-comment-general-form-placeholder" class="comment-form ac">
         ## inject form here
-        ${comment_form(form_type='general', form_id='general_comment', lineno_id='general', review_statuses=c.commit_statuses, form_extras=form_extras)}
     </div>
     <script type="text/javascript">
-        // init active elements of commentForm
-        var commitId = templateContext.commit_data.commit_id;
-        var pullRequestId = templateContext.pull_request_data.pull_request_id;
         var lineNo = 'general';
-        var resolvesCommitId = null;
-
-        var mainCommentForm = new CommentForm(
-                "#general_comment", commitId, pullRequestId, lineNo, true, resolvesCommitId);
-        mainCommentForm.setPlaceholder("${placeholder}");
-        mainCommentForm.initStatusChangeSelector();
+        var resolvesCommentId = null;
+        Rhodecode.comments.createGeneralComment(lineNo, "${placeholder}", resolvesCommentId)
     </script>
-
-
     % else:
     ## form state when not logged in
     <div class="comment-form ac">
@@ -313,7 +308,7 @@
 
         % if review_statuses:
         <div class="status_box">
-          <select id="change_status" name="changeset_status">
+          <select id="change_status_${lineno_id}" name="changeset_status">
               <option></option> ## Placeholder
               % for status, lbl in review_statuses:
               <option value="${status}" data-status="${status}">${lbl}</option>

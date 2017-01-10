@@ -72,6 +72,26 @@ tr.inline-comments div {
         color: @color5;
         font-family: @text-bold-italic;
     }
+
+    .resolve {
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .resolved {
+        text-decoration: line-through;
+        color: @color1;
+    }
+    .resolved a {
+        text-decoration: line-through;
+        color: @color1;
+    }
+    .resolve-text {
+        color: @color1;
+        margin: 2px 8px;
+        font-family: @text-italic;
+    }
+
 }
 
 
@@ -194,7 +214,6 @@ tr.inline-comments div {
             cursor: pointer;
         }
     }
-
 
     .text {
         clear: both;

@@ -370,7 +370,7 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
           hint: function(CodeMirror, data, completion) {
             CodeMirror.replaceRange("", completion.from || data.from,
                         completion.to || data.to, "complete");
-            $('#change_status').select2("val", 'approved').trigger('change');
+            $('#change_status_general').select2("val", 'approved').trigger('change');
           },
           render: function(elt, data, completion) {
             var el = document.createElement('div');
@@ -388,7 +388,7 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
           hint: function(CodeMirror, data, completion) {
               CodeMirror.replaceRange("", completion.from || data.from,
                           completion.to || data.to, "complete");
-              $('#change_status').select2("val", 'rejected').trigger('change');
+              $('#change_status_general').select2("val", 'rejected').trigger('change');
           },
           render: function(elt, data, completion) {
               var el = document.createElement('div');

@@ -106,6 +106,11 @@ var linkifyComments = function(comments) {
 
 };
 
+var bindToggleButtons = function() {
+  $('.comment-toggle').on('click', function() {
+        $(this).parent().nextUntil('tr.line').toggle('inline-comments');
+  });
+};
 
 /* Comment form for main and inline comments */
 
@@ -156,7 +161,7 @@ var linkifyComments = function(comments) {
         this.cmBox = this.withLineNo('#text');
         this.cm = initCommentBoxCodeMirror(this.cmBox, this.initAutocompleteActions);
 
-        this.statusChange = '#change_status';
+        this.statusChange = this.withLineNo('#change_status');
 
         this.submitForm = formElement;
         this.submitButton = $(this.submitForm).find('input[type="submit"]');
@@ -170,6 +175,12 @@ var linkifyComments = function(comments) {
             this.resolvesActionId = '#resolve_comment_action_{0}'.format(resolvesCommentId);
             $(this.commentType).prop('disabled', true);
             $(this.commentType).addClass('disabled');
+
+            // disable select
+            setTimeout(function() {
+                $(self.statusChange).select2('readonly', true);
+            }, 10);
+
 
             var resolvedInfo = (
                 '<li class="">' +
@@ -203,6 +214,13 @@ var linkifyComments = function(comments) {
                 'CommentForm requires pullRequestId, or commitId to be specified.')
         }
 
+        // FUNCTIONS and helpers
+        var self = this;
+
+        this.isInline = function(){
+            return this.lineNo && this.lineNo != 'general';
+        };
+
         this.getCmInstance = function(){
             return this.cm
         };
@@ -213,8 +231,6 @@ var linkifyComments = function(comments) {
                 cm.setOption('placeholder', placeholder);
             }
         };
-
-        var self = this;
 
         this.getCommentStatus = function() {
           return $(this.submitForm).find(this.statusChange).val();
@@ -260,7 +276,7 @@ var linkifyComments = function(comments) {
             });
             $(this.submitForm).find(this.statusChange).on('change', function() {
                 var status = self.getCommentStatus();
-                if (status && self.lineNo == 'general') {
+                if (status && !self.isInline()) {
                     $(self.submitButton).prop('disabled', false);
                 }
 
@@ -325,6 +341,7 @@ var linkifyComments = function(comments) {
             var submitEvent = true;
             self.setActionButtonsDisabled(true, excludeCancelBtn, submitEvent);
             self.cm.setOption("readOnly", true);
+
             var postData = {
                 'text': text,
                 'changeset_status': status,
@@ -343,9 +360,9 @@ var linkifyComments = function(comments) {
                     bindDeleteCommentButtons();
                     timeagoActivate();
 
-                    //mark visually which comment was resolved
+                    // mark visually which comment was resolved
                     if (resolvesCommentId) {
-                        this.markCommentResolved(resolvesCommentId);
+                        self.markCommentResolved(resolvesCommentId);
                     }
                 }
             };
@@ -595,6 +612,62 @@ var CommentsController = function() {
     $node.closest('tr').toggleClass('hide-line-comments');
   };
 
+  this.createCommentForm = function(formElement, lineno, placeholderText, initAutocompleteActions, resolvesCommentId){
+      var pullRequestId = templateContext.pull_request_data.pull_request_id;
+      var commitId = templateContext.commit_data.commit_id;
+
+      var commentForm = new CommentForm(
+          formElement, commitId, pullRequestId, lineno, initAutocompleteActions, resolvesCommentId);
+      var cm = commentForm.getCmInstance();
+
+      if (resolvesCommentId){
+        var placeholderText = _gettext('Leave a comment, or click resolve button to resolve TODO comment #{0}').format(resolvesCommentId);
+      }
+
+      setTimeout(function() {
+          // callbacks
+          if (cm !== undefined) {
+              commentForm.setPlaceholder(placeholderText);
+              if (commentForm.isInline()) {
+                cm.focus();
+                cm.refresh();
+              }
+          }
+      }, 10);
+
+      // trigger scrolldown to the resolve comment, since it might be away
+      // from the clicked
+      if (resolvesCommentId){
+        var actionNode = $(commentForm.resolvesActionId).offset();
+
+        setTimeout(function() {
+            if (actionNode) {
+                $('body, html').animate({scrollTop: actionNode.top}, 10);
+            }
+        }, 100);
+      }
+
+      return commentForm;
+  };
+
+  this.createGeneralComment = function(lineNo, placeholderText, resolvesCommentId){
+
+      var tmpl = $('#cb-comment-general-form-template').html();
+      tmpl = tmpl.format(null, 'general');
+      var $form = $(tmpl);
+
+      var curForm = $('#cb-comment-general-form-placeholder').find('form');
+      if (curForm){
+          curForm.remove();
+      }
+      $('#cb-comment-general-form-placeholder').append($form);
+
+      var _form = $($form[0]);
+      var commentForm = this.createCommentForm(
+          _form, lineNo, placeholderText, true, resolvesCommentId);
+      commentForm.initStatusChangeSelector();
+  };
+
   this.createComment = function(node, resolutionComment) {
       var resolvesCommentId = resolutionComment || null;
       var $node = $(node);
@@ -602,12 +675,13 @@ var CommentsController = function() {
       var $form = $td.find('.comment-inline-form');
 
       if (!$form.length) {
-          var tmpl = $('#cb-comment-inline-form-template').html();
+
           var $filediff = $node.closest('.filediff');
           $filediff.removeClass('hide-comments');
           var f_path = $filediff.attr('data-f-path');
           var lineno = self.getLineNumber(node);
-
+          // create a new HTML from template
+          var tmpl = $('#cb-comment-inline-form-template').html();
           tmpl = tmpl.format(f_path, lineno);
           $form = $(tmpl);
 
@@ -620,12 +694,18 @@ var CommentsController = function() {
 
           $td.find('.cb-comment-add-button').before($form);
 
-          var pullRequestId = templateContext.pull_request_data.pull_request_id;
-          var commitId = templateContext.commit_data.commit_id;
+          var placeholderText = _gettext('Leave a comment on line {0}.').format(lineno);
           var _form = $($form[0]).find('form');
 
-          var commentForm = new CommentForm(_form, commitId, pullRequestId, lineno, false, resolvesCommentId);
-          var cm = commentForm.getCmInstance();
+          var commentForm = this.createCommentForm(
+              _form, lineno, placeholderText, false, resolvesCommentId);
+
+          $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
+              form: _form,
+              parent: $td[0],
+              lineno: lineno,
+              f_path: f_path}
+          );
 
           // set a CUSTOM submit handler for inline comments.
           commentForm.setHandleFormSubmit(function(o) {
@@ -693,36 +773,6 @@ var CommentsController = function() {
                 commentForm.submitUrl, postData, submitSuccessCallback, submitFailCallback);
           });
 
-          if (resolvesCommentId){
-              var placeholderText = _gettext('Leave a comment, or click resolve button to resolve TODO comment #{0}').format(resolvesCommentId);
-
-          } else {
-              var placeholderText = _gettext('Leave a comment on line {0}.').format(lineno);
-          }
-
-          setTimeout(function() {
-              // callbacks
-              if (cm !== undefined) {
-                  commentForm.setPlaceholder(placeholderText);
-                  cm.focus();
-                  cm.refresh();
-              }
-          }, 10);
-
-          $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
-              form: _form,
-              parent: $td[0],
-              lineno: lineno,
-              f_path: f_path}
-          );
-
-          // trigger hash
-          if (resolvesCommentId){
-            var resolveAction = $(commentForm.resolvesActionId);
-            setTimeout(function() {
-                $('body, html').animate({ scrollTop: resolveAction.offset().top }, 10);
-            }, 100);
-          }
       }
 
       $form.addClass('comment-inline-form-open');
@@ -734,16 +784,10 @@ var CommentsController = function() {
 
     var comment = $('#comment-'+commentId);
     var commentData = comment.data();
-
     if (commentData.commentInline) {
-        var resolutionComment = true;
         this.createComment(comment, commentId)
     } else {
-
-        this.createComment(comment, commentId)
-
-        console.log('TODO')
-        console.log(commentId)
+        Rhodecode.comments.createGeneralComment('general', "$placeholder", commentId)
     }
 
     return false;

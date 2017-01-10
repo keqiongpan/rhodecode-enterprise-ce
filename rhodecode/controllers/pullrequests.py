@@ -904,7 +904,7 @@ class PullrequestsController(BaseRepoController):
         status = request.POST.get('changeset_status', None)
         text = request.POST.get('text')
         comment_type = request.POST.get('comment_type')
-        resolves_comment_id = request.POST.get('resolves_comment_id')
+        resolves_comment_id = request.POST.get('resolves_comment_id', None)
 
         if status and '_closed' in status:
             close_pr = True
