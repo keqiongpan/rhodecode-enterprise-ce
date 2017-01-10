@@ -298,6 +298,13 @@ var bindToggleButtons = function() {
             this.setActionButtonsDisabled(true);
             self.cm.setValue(content);
             self.cm.setOption("readOnly", false);
+
+            if (this.resolvesId) {
+                // destroy the resolve action
+                $(this.resolvesId).parent().remove();
+            }
+
+            $(this.statusChange).select2('readonly', false);
         };
 
         this.submitAjaxPOST = function(url, postData, successHandler, failHandler) {
