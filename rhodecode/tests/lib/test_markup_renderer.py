@@ -33,13 +33,13 @@ from rhodecode.lib.markup_renderer import MarkupRenderer, RstTemplateRenderer
         ('readme.Rst', 'rst'),
         ('readme.rest', 'rst'),
         ('readme.rest', 'rst'),
-        ('readme', 'rst'),
-        ('README', 'rst'),
 
         ('markdown.xml', 'plain'),
         ('rest.xml', 'plain'),
         ('readme.xml', 'plain'),
 
+        ('readme', 'plain'),
+        ('README', 'plain'),
         ('readme.mdx', 'plain'),
         ('readme.rstx', 'plain'),
         ('readmex', 'plain'),

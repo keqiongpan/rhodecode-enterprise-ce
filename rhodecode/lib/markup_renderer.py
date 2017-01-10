@@ -88,7 +88,7 @@ class MarkupRenderer(object):
         elif MarkupRenderer.RST_PAT.findall(filename):
             detected_renderer = 'rst'
         elif MarkupRenderer.PLAIN_PAT.findall(filename):
-            detected_renderer = 'rst'
+            detected_renderer = 'plain'
         else:
             detected_renderer = 'plain'
 
