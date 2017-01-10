@@ -107,7 +107,8 @@ class GitRepository(BaseRepository):
             raise ValueError('cmd must be a list, got %s instead' % type(cmd))
 
         out, err = self._remote.run_git_command(cmd, **opts)
-        log.debug('Stderr output of git command "%s":\n%s', cmd, err)
+        if err:
+            log.debug('Stderr output of git command "%s":\n%s', cmd, err)
         return out, err
 
     @staticmethod
