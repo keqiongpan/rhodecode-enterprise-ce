@@ -69,8 +69,10 @@ def _store_user_in_session(session, username, remember=False):
 
     session.save()
 
+    safe_cs = cs.copy()
+    safe_cs['password'] = '****'
     log.info('user %s is now authenticated and stored in '
-             'session, session attrs %s', username, cs)
+             'session, session attrs %s', username, safe_cs)
 
     # dumps session attrs back to cookie
     session._update_cookie_out()
