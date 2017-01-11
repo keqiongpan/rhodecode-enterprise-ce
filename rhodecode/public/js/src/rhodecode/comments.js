@@ -132,12 +132,13 @@ var CommentForm = (function() {
 
         this.editButton = this.withLineNo('#edit-btn');
         this.editContainer = this.withLineNo('#edit-container');
-
         this.cancelButton = this.withLineNo('#cancel-btn');
+        this.commentType = this.withLineNo('#comment_type');
 
-        this.statusChange = '#change_status';
         this.cmBox = this.withLineNo('#text');
         this.cm = initCommentBoxCodeMirror(this.cmBox, this.initAutocompleteActions);
+
+        this.statusChange = '#change_status';
 
         this.submitForm = formElement;
         this.submitButton = $(this.submitForm).find('input[type="submit"]');
@@ -172,7 +173,9 @@ var CommentForm = (function() {
         this.getCommentStatus = function() {
           return $(this.submitForm).find(this.statusChange).val();
         };
-
+        this.getCommentType = function() {
+          return $(this.submitForm).find(this.commentType).val();
+        };
         this.isAllowedToSubmit = function() {
           return !$(this.submitButton).prop('disabled');
         };
@@ -256,6 +259,7 @@ var CommentForm = (function() {
         this.handleFormSubmit = function() {
             var text = self.cm.getValue();
             var status = self.getCommentStatus();
+            var commentType = self.getCommentType();
 
             if (text === "" && !status) {
                 return;
@@ -268,6 +272,7 @@ var CommentForm = (function() {
             var postData = {
                 'text': text,
                 'changeset_status': status,
+                'comment_type': commentType,
                 'csrf_token': CSRF_TOKEN
             };
 
@@ -536,6 +541,7 @@ var CommentsController = function() { /* comments controller */
           $filediff.removeClass('hide-comments');
           var f_path = $filediff.attr('data-f-path');
           var lineno = self.getLineNumber(node);
+
           tmpl = tmpl.format(f_path, lineno);
           $form = $(tmpl);
 
@@ -557,6 +563,7 @@ var CommentsController = function() { /* comments controller */
           // set a CUSTOM submit handler for inline comments.
           commentForm.setHandleFormSubmit(function(o) {
             var text = commentForm.cm.getValue();
+            var commentType = commentForm.getCommentType();
 
             if (text === "") {
               return;
@@ -579,6 +586,7 @@ var CommentsController = function() { /* comments controller */
                 'text': text,
                 'f_path': f_path,
                 'line': lineno,
+                'comment_type': commentType,
                 'csrf_token': CSRF_TOKEN
             };
             var submitSuccessCallback = function(json_data) {

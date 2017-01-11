@@ -44,6 +44,8 @@ from rhodecode.model.notification import NotificationModel
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import VcsSettingsModel
 from rhodecode.model.notification import EmailNotificationModel
+from rhodecode.model.validation_schema.schemas import comment_schema
+
 
 log = logging.getLogger(__name__)
 
@@ -111,15 +113,32 @@ class CommentsModel(BaseModel):
         if not renderer:
             renderer = self._get_renderer()
 
-        repo = self._get_repo(repo)
-        user = self._get_user(user)
+
+        schema = comment_schema.CommentSchema()
+        validated_kwargs = schema.deserialize(dict(
+            comment_body=text,
+            comment_type=comment_type,
+            comment_file=f_path,
+            comment_line=line_no,
+            renderer_type=renderer,
+            status_change=status_change,
+
+            repo=repo,
+            user=user,
+        ))
+
+        repo = self._get_repo(validated_kwargs['repo'])
+        user = self._get_user(validated_kwargs['user'])
+
         comment = ChangesetComment()
-        comment.renderer = renderer
+        comment.renderer = validated_kwargs['renderer_type']
+        comment.text = validated_kwargs['comment_body']
+        comment.f_path = validated_kwargs['comment_file']
+        comment.line_no = validated_kwargs['comment_line']
+        comment.comment_type = validated_kwargs['comment_type']
+
         comment.repo = repo
         comment.author = user
-        comment.text = text
-        comment.f_path = f_path
-        comment.line_no = line_no
 
         pull_request_id = pull_request
 

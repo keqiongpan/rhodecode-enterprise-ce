@@ -2896,6 +2896,9 @@ class ChangesetComment(Base, BaseModel):
     )
 
     COMMENT_OUTDATED = u'comment_outdated'
+    COMMENT_TYPE_NOTE = u'note'
+    COMMENT_TYPE_TODO = u'todo'
+    COMMENT_TYPES = [COMMENT_TYPE_NOTE, COMMENT_TYPE_TODO]
 
     comment_id = Column('comment_id', Integer(), nullable=False, primary_key=True)
     repo_id = Column('repo_id', Integer(), ForeignKey('repositories.repo_id'), nullable=False)
@@ -2912,6 +2915,9 @@ class ChangesetComment(Base, BaseModel):
     renderer = Column('renderer', Unicode(64), nullable=True)
     display_state = Column('display_state',  Unicode(128), nullable=True)
 
+    comment_type = Column('comment_type',  Unicode(128), nullable=True, default=COMMENT_TYPE_NOTE)
+    resolved_comment_id = Column('resolved_comment_id', Integer(), ForeignKey('changeset_comments.comment_id'), nullable=True)
+    resolved_comment = relationship('ChangesetComment', remote_side=comment_id)
     author = relationship('User', lazy='joined')
     repo = relationship('Repository')
     status_change = relationship('ChangesetStatus', cascade="all, delete, delete-orphan")

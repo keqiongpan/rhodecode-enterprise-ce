@@ -334,6 +334,8 @@ class ChangesetController(BaseRepoController):
         commit_id = revision
         status = request.POST.get('changeset_status', None)
         text = request.POST.get('text')
+        comment_type = request.POST.get('comment_type')
+
         if status:
             text = text or (_('Status change %(transition_icon)s %(status)s')
                             % {'transition_icon': '>',
@@ -355,7 +357,8 @@ class ChangesetController(BaseRepoController):
                 line_no=request.POST.get('line'),
                 status_change=(ChangesetStatus.get_status_lbl(status)
                                if status else None),
-                status_change_type=status
+                status_change_type=status,
+                comment_type=comment_type
             )
             c.inline_comment = True if comment.line_no else False
 

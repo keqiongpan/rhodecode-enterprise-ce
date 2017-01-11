@@ -47,6 +47,33 @@ tr.inline-comments div {
     visibility: hidden;
 }
 
+.comment-label {
+    float: left;
+
+    padding: 0.4em 0.4em;
+    margin: 2px 5px 0px -10px;
+    display: inline-block;
+    min-height: 0;
+
+    text-align: center;
+    font-size: 10px;
+    line-height: .8em;
+
+    font-family: @text-italic;
+    background: #fff none;
+    color: @grey4;
+    border: 1px solid @grey4;
+    white-space: nowrap;
+
+    text-transform: uppercase;
+
+    &.todo {
+        color: @color5;
+        font-family: @text-bold-italic;
+    }
+}
+
+
 .comment {
 
     &.comment-general {
@@ -60,15 +87,19 @@ tr.inline-comments div {
 
     .rc-user {
         min-width: 0;
-        margin: -2px .5em 0 0;
+        margin: 0px .5em 0 0;
+
+        .user {
+            display: inline;
+        }
     }
 
     .meta {
         position: relative;
         width: 100%;
-        margin: 0 0 .5em 0;
         border-bottom: 1px solid @grey5;
-        padding: 8px 0px;
+        margin: -5px 0px;
+        line-height: 24px;
 
         &:hover .permalink {
             visibility: visible;
@@ -87,10 +118,10 @@ tr.inline-comments div {
     }
 
     .author-general img {
-        top: -3px;
+        top: 3px;
     }
     .author-inline img {
-        top: -3px;
+        top: 3px;
     }
 
     .status-change,
@@ -182,13 +213,71 @@ tr.inline-comments div {
     }
     .pr-version-inline {
         float: left;
-        margin: 1px 4px;
+        margin: 0px 4px;
     }
     .pr-version-num {
         font-size: 10px;
     }
 
 }
+
+@comment-padding: 5px;
+
+.inline-comments {
+    border-radius: @border-radius;
+    .comment {
+        margin: 0;
+        border-radius: @border-radius;
+    }
+    .comment-outdated {
+        opacity: 0.5;
+    }
+
+    .comment-inline {
+        background: white;
+        padding: @comment-padding @comment-padding;
+        border: @comment-padding solid @grey6;
+
+        .text {
+            border: none;
+        }
+        .meta {
+            border-bottom: 1px solid @grey6;
+            margin: -5px 0px;
+            line-height: 24px;
+        }
+    }
+    .comment-selected {
+        border-left: 6px solid @comment-highlight-color;
+    }
+    .comment-inline-form {
+        padding: @comment-padding;
+        display: none;
+    }
+    .cb-comment-add-button {
+        margin: @comment-padding;
+    }
+     /* hide add comment button when form is open */
+    .comment-inline-form-open ~ .cb-comment-add-button {
+        display: none;
+    }
+    .comment-inline-form-open {
+        display: block;
+    }
+     /* hide add comment button when form but no comments */
+    .comment-inline-form:first-child + .cb-comment-add-button {
+        display: none;
+    }
+     /* hide add comment button when no comments or form */
+    .cb-comment-add-button:first-child {
+        display: none;
+    }
+     /* hide add comment button when only comment is being deleted */
+    .comment-deleting:first-child + .cb-comment-add-button {
+        display: none;
+    }
+}
+
 
 .show-outdated-comments {
     display: inline;
@@ -298,6 +387,12 @@ form.comment-form {
         width: 100%;
         display: block;
     }
+}
+
+.comment-type {
+    margin: 0px;
+    border-radius: inherit;
+    border-color: @grey6;
 }
 
 .preview-box {

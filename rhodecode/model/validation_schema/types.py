@@ -186,3 +186,11 @@ class UserType(UserOrUserGroupType):
 
 class UserGroupType(UserOrUserGroupType):
     scopes = ('usergroup',)
+
+
+class StrOrIntType(colander.String):
+    def deserialize(self, node, cstruct):
+        if isinstance(node, basestring):
+            return super(StrOrIntType, self).deserialize(node, cstruct)
+        else:
+            return colander.Integer().deserialize(node, cstruct)

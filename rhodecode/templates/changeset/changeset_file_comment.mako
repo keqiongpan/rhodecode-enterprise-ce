@@ -18,8 +18,14 @@
        style="${'display: none;' if outdated_at_ver else ''}">
 
       <div class="meta">
+          <div class="comment-type-label tooltip">
+              <div class="comment-label ${comment.comment_type or 'note'}">
+                ${comment.comment_type or 'note'}
+              </div>
+          </div>
+
           <div class="author ${'author-inline' if inline else 'author-general'}">
-              ${base.gravatar_with_user(comment.author.email, 20)}
+              ${base.gravatar_with_user(comment.author.email, 16)}
           </div>
           <div class="date">
               ${h.age_component(comment.modified_at, time_is_local=True)}
@@ -31,16 +37,14 @@
               % if comment.pull_request:
                   <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
                       % if comment.status_change:
-                          ${_('Vote on pull request #%s') % comment.pull_request.pull_request_id}:
+                          ${_('pull request #%s') % comment.pull_request.pull_request_id}:
                       % else:
-                          ${_('Comment on pull request #%s') % comment.pull_request.pull_request_id}
+                          ${_('pull request #%s') % comment.pull_request.pull_request_id}
                       % endif
                   </a>
               % else:
                   % if comment.status_change:
                       ${_('Status change on commit')}:
-                  % else:
-                      ${_('Comment on commit')}
                   % endif
               % endif
           </div>
@@ -184,6 +188,13 @@
                     </li>
                     <li class="">
                         <a href="#preview-btn" tabindex="-1" id="preview-btn">${_('Preview')}</a>
+                    </li>
+                    <li class="pull-right">
+                        <select class="comment-type" id="comment_type" name="comment_type">
+                            % for val in c.visual.comment_types:
+                                <option value="${val}">${val.upper()}</option>
+                            % endfor
+                        </select>
                     </li>
                 </ul>
             </div>

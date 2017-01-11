@@ -903,6 +903,7 @@ class PullrequestsController(BaseRepoController):
         # as a changeset status, still we want to send it in one value.
         status = request.POST.get('changeset_status', None)
         text = request.POST.get('text')
+        comment_type = request.POST.get('comment_type')
         if status and '_closed' in status:
             close_pr = True
             status = status.replace('_closed', '')
@@ -934,7 +935,8 @@ class PullrequestsController(BaseRepoController):
                            if status and allowed_to_change_status else None),
             status_change_type=(status
                                 if status and allowed_to_change_status else None),
-            closing_pr=close_pr
+            closing_pr=close_pr,
+            comment_type=comment_type
         )
 
         if allowed_to_change_status:

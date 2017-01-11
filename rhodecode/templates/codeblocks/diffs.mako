@@ -70,6 +70,13 @@ return h.url('', **new_args)
                     <li class="">
                         <a href="#preview-btn" tabindex="-1" id="preview-btn_{1}">${_('Preview')}</a>
                     </li>
+                    <li class="pull-right">
+                        <select class="comment-type" id="comment_type_{1}" name="comment_type">
+                            % for val in c.visual.comment_types:
+                                <option value="${val}">${val.upper()}</option>
+                            % endfor
+                        </select>
+                    </li>
                 </ul>
             </div>
 

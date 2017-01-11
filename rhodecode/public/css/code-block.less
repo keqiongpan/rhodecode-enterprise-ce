@@ -880,8 +880,6 @@ input.filediff-collapse-state {
         display: inline;
     }
 
-    @comment-padding: 5px;
-
     /**** COMMENTS ****/
 
     .filediff-menu {
@@ -909,59 +907,6 @@ input.filediff-collapse-state {
         }
     }
 
-    .inline-comments {
-        border-radius: @border-radius;
-        .comment {
-            margin: 0;
-            border-radius: @border-radius;
-        }
-        .comment-outdated {
-            opacity: 0.5;
-        }
-
-        .comment-inline {
-            background: white;
-            padding: (@comment-padding + 3px) @comment-padding;
-            border: @comment-padding solid @grey6;
-
-            .text {
-                border: none;
-            }
-            .meta {
-                border-bottom: 1px solid @grey6;
-                padding-bottom: 10px;
-            }
-        }
-        .comment-selected {
-            border-left: 6px solid @comment-highlight-color;
-        }
-        .comment-inline-form {
-            padding: @comment-padding;
-            display: none;
-        }
-        .cb-comment-add-button {
-            margin: @comment-padding;
-        }
-         /* hide add comment button when form is open */
-        .comment-inline-form-open ~ .cb-comment-add-button {
-            display: none;
-        }
-        .comment-inline-form-open {
-            display: block;
-        }
-         /* hide add comment button when form but no comments */
-        .comment-inline-form:first-child + .cb-comment-add-button {
-            display: none;
-        }
-         /* hide add comment button when no comments or form */
-        .cb-comment-add-button:first-child {
-            display: none;
-        }
-         /* hide add comment button when only comment is being deleted */
-        .comment-deleting:first-child + .cb-comment-add-button {
-            display: none;
-        }
-    }
     /**** END COMMENTS ****/
 
 }

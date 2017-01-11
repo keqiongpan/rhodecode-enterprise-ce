@@ -56,7 +56,7 @@ from rhodecode.lib.utils2 import (
     str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist)
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import meta
-from rhodecode.model.db import Repository, User
+from rhodecode.model.db import Repository, User, ChangesetComment
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
@@ -299,6 +299,7 @@ def attach_context_attributes(context, request):
     context.visual.gravatar_url = rc_config.get('rhodecode_gravatar_url')
     context.visual.default_renderer = rc_config.get(
         'rhodecode_markup_renderer', 'rst')
+    context.visual.comment_types = ChangesetComment.COMMENT_TYPES
     context.visual.rhodecode_support_url = \
         rc_config.get('rhodecode_support_url') or url('rhodecode_support')
 
