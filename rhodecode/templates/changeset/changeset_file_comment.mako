@@ -190,7 +190,7 @@
       if is_pull_request:
         placeholder = _('Leave a comment on this Pull Request.')
       elif is_compare:
-        placeholder = _('Leave a comment on all commits in this range.')
+        placeholder = _('Leave a comment on {} commits in this range.').format(len(form_extras))
       else:
         placeholder = _('Leave a comment on this Commit.')
     %>
@@ -207,7 +207,59 @@
     <script type="text/javascript">
         var lineNo = 'general';
         var resolvesCommentId = null;
-        Rhodecode.comments.createGeneralComment(lineNo, "${placeholder}", resolvesCommentId)
+        var generalCommentForm = Rhodecode.comments.createGeneralComment(
+            lineNo, "${placeholder}", resolvesCommentId);
+
+        // set custom success callback on rangeCommit
+        % if is_compare:
+            generalCommentForm.setHandleFormSubmit(function(o) {
+                var self = generalCommentForm;
+
+                var text = self.cm.getValue();
+                var status = self.getCommentStatus();
+                var commentType = self.getCommentType();
+
+                if (text === "" && !status) {
+                    return;
+                }
+
+                // we can pick which commits we want to make the comment by
+                // selecting them via click on preview pane, this will alter the hidden inputs
+                var cherryPicked = $('#changeset_compare_view_content .compare_select.hl').length > 0;
+
+                var commitIds = [];
+                $('#changeset_compare_view_content .compare_select').each(function(el) {
+                    var commitId = this.id.replace('row-', '');
+                    if ($(this).hasClass('hl') || !cherryPicked) {
+                        $("input[data-commit-id='{0}']".format(commitId)).val(commitId);
+                        commitIds.push(commitId);
+                    } else {
+                        $("input[data-commit-id='{0}']".format(commitId)).val('')
+                    }
+                });
+
+                self.setActionButtonsDisabled(true);
+                self.cm.setOption("readOnly", true);
+                var postData = {
+                    'text': text,
+                    'changeset_status': status,
+                    'comment_type': commentType,
+                    'commit_ids': commitIds,
+                    'csrf_token': CSRF_TOKEN
+                };
+
+                var submitSuccessCallback = function(o) {
+                    location.reload(true);
+                };
+                var submitFailCallback = function(){
+                    self.resetCommentFormState(text)
+                };
+                self.submitAjaxPOST(
+                    self.submitUrl, postData, submitSuccessCallback, submitFailCallback);
+            });
+        % endif
+
+
     </script>
     % else:
     ## form state when not logged in

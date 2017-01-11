@@ -342,11 +342,14 @@ class ChangesetController(BaseRepoController):
                             % {'transition_icon': '>',
                                'status': ChangesetStatus.get_status_lbl(status)})
 
-        multi_commit_ids = filter(
-            lambda s: s not in ['', None],
-            request.POST.get('commit_ids', '').split(','),)
+        multi_commit_ids = []
+        for _commit_id in request.POST.get('commit_ids', '').split(','):
+            if _commit_id not in ['', None, EmptyCommit.raw_id]:
+                if _commit_id not in multi_commit_ids:
+                    multi_commit_ids.append(_commit_id)
 
         commit_ids = multi_commit_ids or [commit_id]
+
         comment = None
         for current_id in filter(None, commit_ids):
             c.co = comment = CommentsModel().create(

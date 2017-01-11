@@ -171,50 +171,6 @@
                     %>
                     <div>
                         ${comment.comments(h.url('changeset_comment', repo_name=c.repo_name, revision='0'*16), None, is_compare=True, form_extras=revs(c.commit_ranges))}
-                        <script type="text/javascript">
-
-                            mainCommentForm.setHandleFormSubmit(function(o) {
-                                var text = mainCommentForm.cm.getValue();
-                                var status = mainCommentForm.getCommentStatus();
-
-                                if (text === "" && !status) {
-                                    return;
-                                }
-
-                                // we can pick which commits we want to make the comment by
-                                // selecting them via click on preview pane, this will alter the hidden inputs
-                                var cherryPicked = $('#changeset_compare_view_content .compare_select.hl').length > 0;
-
-                                var commitIds = [];
-                                $('#changeset_compare_view_content .compare_select').each(function(el) {
-                                    var commitId = this.id.replace('row-', '');
-                                    if ($(this).hasClass('hl') || !cherryPicked) {
-                                        $("input[data-commit-id='{0}']".format(commitId)).val(commitId)
-                                        commitIds.push(commitId);
-                                    } else {
-                                        $("input[data-commit-id='{0}']".format(commitId)).val('')
-                                    }
-                                });
-
-                                mainCommentForm.setActionButtonsDisabled(true);
-                                mainCommentForm.cm.setOption("readOnly", true);
-                                var postData = {
-                                    'text': text,
-                                    'changeset_status': status,
-                                    'commit_ids': commitIds,
-                                    'csrf_token': CSRF_TOKEN
-                                };
-
-                                var submitSuccessCallback = function(o) {
-                                    location.reload(true);
-                                };
-                                var submitFailCallback = function(){
-                                    mainCommentForm.resetCommentFormState(text)
-                                };
-                                mainCommentForm.submitAjaxPOST(
-                                    mainCommentForm.submitUrl, postData, submitSuccessCallback, submitFailCallback);
-                            });
-                        </script>
                     </div>
                 </div>
               </div>

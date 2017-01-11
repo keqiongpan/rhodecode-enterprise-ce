@@ -43,12 +43,16 @@ var bindToggleButtons = function() {
 };
 
 /* Comment form for main and inline comments */
-
 (function(mod) {
-  if (typeof exports == "object" && typeof module == "object") // CommonJS
-    module.exports = mod();
-  else // Plain browser env
-    (this || window).CommentForm = mod();
+
+    if (typeof exports == "object" && typeof module == "object") {
+        // CommonJS
+        module.exports = mod();
+    }
+    else {
+        // Plain browser env
+        (this || window).CommentForm = mod();
+    }
 
 })(function() {
     "use strict";
@@ -236,6 +240,8 @@ var bindToggleButtons = function() {
             $(this.statusChange).select2('readonly', false);
         };
 
+        this.globalSubmitSuccessCallback = function(){};
+
         this.submitAjaxPOST = function(url, postData, successHandler, failHandler) {
             failHandler = failHandler || function() {};
             var postData = toQueryString(postData);
@@ -260,6 +266,11 @@ var bindToggleButtons = function() {
         // overwrite a submitHandler, we need to do it for inline comments
         this.setHandleFormSubmit = function(callback) {
             this.handleFormSubmit = callback;
+        };
+
+        // overwrite a submitSuccessHandler
+        this.setGlobalSubmitSuccessCallback = function(callback) {
+            this.globalSubmitSuccessCallback = callback;
         };
 
         // default handler for for submit for main comments
@@ -287,6 +298,7 @@ var bindToggleButtons = function() {
             if (resolvesCommentId){
                 postData['resolves_comment_id'] = resolvesCommentId;
             }
+
             var submitSuccessCallback = function(o) {
                 if (status) {
                     location.reload(true);
@@ -300,6 +312,10 @@ var bindToggleButtons = function() {
                         self.markCommentResolved(resolvesCommentId);
                     }
                 }
+
+                // run global callback on submit
+                self.globalSubmitSuccessCallback();
+
             };
             var submitFailCallback = function(){
                 self.resetCommentFormState(text);
@@ -585,22 +601,25 @@ var CommentsController = function() {
       return commentForm;
   };
 
-  this.createGeneralComment = function(lineNo, placeholderText, resolvesCommentId){
+  this.createGeneralComment = function (lineNo, placeholderText, resolvesCommentId) {
 
       var tmpl = $('#cb-comment-general-form-template').html();
       tmpl = tmpl.format(null, 'general');
       var $form = $(tmpl);
 
-      var curForm = $('#cb-comment-general-form-placeholder').find('form');
+      var $formPlaceholder = $('#cb-comment-general-form-placeholder');
+      var curForm = $formPlaceholder.find('form');
       if (curForm){
           curForm.remove();
       }
-      $('#cb-comment-general-form-placeholder').append($form);
+      $formPlaceholder.append($form);
 
       var _form = $($form[0]);
       var commentForm = this.createCommentForm(
           _form, lineNo, placeholderText, true, resolvesCommentId);
       commentForm.initStatusChangeSelector();
+
+      return commentForm;
   };
 
   this.createComment = function(node, resolutionComment) {
@@ -689,6 +708,9 @@ var CommentsController = function() {
                 if (resolvesCommentId) {
                     commentForm.markCommentResolved(resolvesCommentId);
                 }
+
+                // run global callback on submit
+                commentForm.globalSubmitSuccessCallback();
 
               } catch (e) {
                 console.error(e);
