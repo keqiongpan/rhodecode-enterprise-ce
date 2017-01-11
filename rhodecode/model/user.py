@@ -555,7 +555,7 @@ class UserModel(BaseModel):
 
                 Session().add(user)
                 Session().commit()
-                log.info('change password for %s', user_email)
+                log.info('successfully reset password for `%s`', user_email)
             if new_passwd is None:
                 raise Exception('unable to generate new password')
 
