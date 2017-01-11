@@ -3565,17 +3565,6 @@ class Gist(Base, BaseModel):
             repo_path=safe_str(full_repo_path), create=False)
 
 
-class DbMigrateVersion(Base, BaseModel):
-    __tablename__ = 'db_migrate_version'
-    __table_args__ = (
-        {'extend_existing': True, 'mysql_engine': 'InnoDB',
-         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
-    )
-    repository_id = Column('repository_id', String(250), primary_key=True)
-    repository_path = Column('repository_path', Text)
-    version = Column('version', Integer)
-
-
 class ExternalIdentity(Base, BaseModel):
     __tablename__ = 'external_identities'
     __table_args__ = (
@@ -3804,3 +3793,26 @@ class RepoReviewRule(Base, BaseModel):
     def __repr__(self):
         return '<RepoReviewerRule(id=%r, repo=%r)>' % (
             self.repo_review_rule_id, self.repo)
+
+
+class DbMigrateVersion(Base, BaseModel):
+    __tablename__ = 'db_migrate_version'
+    __table_args__ = (
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
+    )
+    repository_id = Column('repository_id', String(250), primary_key=True)
+    repository_path = Column('repository_path', Text)
+    version = Column('version', Integer)
+
+
+class DbSession(Base, BaseModel):
+    __tablename__ = 'db_session'
+    __table_args__ = (
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
+    )
+    namespace = Column('namespace', String(255), primary_key=True)
+    accessed = Column('accessed', DateTime, nullable=False)
+    created = Column('created', DateTime, nullable=False)
+    data = Column('data', PickleType, nullable=False)
