@@ -10,6 +10,7 @@ may find some of the following methods useful.
 
    tuning-gunicorn
    tuning-vcs-memory-cache
+   tuning-user-sessions-performance
    tuning-increase-db-performance
    tuning-scale-horizontally
    tuning-increase-cache-size
