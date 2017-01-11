@@ -428,6 +428,11 @@ class ChangesetController(BaseRepoController):
     @jsonify
     def delete_comment(self, repo_name, comment_id):
         comment = ChangesetComment.get(comment_id)
+        if not comment:
+            log.debug('Comment with id:%s not found, skipping', comment_id)
+            # comment already deleted in another call probably
+            return True
+
         owner = (comment.author.user_id == c.rhodecode_user.user_id)
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(c.repo_name)
         if h.HasPermissionAny('hg.admin')() or is_repo_admin or owner:
