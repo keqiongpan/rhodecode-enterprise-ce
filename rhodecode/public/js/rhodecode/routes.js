@@ -37,6 +37,7 @@ function registerRCRoutes() {
     pyroutes.register('pullrequest', '/%(repo_name)s/pull-request/new', ['repo_name']);
     pyroutes.register('pullrequest_repo_refs', '/%(repo_name)s/pull-request/refs/%(target_repo_name)s', ['repo_name', 'target_repo_name']);
     pyroutes.register('pullrequest_repo_destinations', '/%(repo_name)s/pull-request/repo-destinations', ['repo_name']);
+    pyroutes.register('pullrequest_show', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_update', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_show_all', '/%(repo_name)s/pull-request', ['repo_name']);
     pyroutes.register('pullrequest_comment', '/%(repo_name)s/pull-request-comment/%(pull_request_id)s', ['repo_name', 'pull_request_id']);

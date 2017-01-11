@@ -694,8 +694,8 @@ def make_map(config):
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('repo_refs_data', '/{repo_name}/refs-data',
-                 controller='summary', action='repo_refs_data', jsroute=True,
-                 requirements=URL_NAME_REQUIREMENTS)
+                 controller='summary', action='repo_refs_data',
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
     rmap.connect('repo_refs_changelog_data', '/{repo_name}/refs-data-changelog',
                  controller='summary', action='repo_refs_changelog_data',
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
@@ -704,9 +704,9 @@ def make_map(config):
                  jsroute=True, requirements=URL_NAME_REQUIREMENTS)
 
     rmap.connect('changeset_home', '/{repo_name}/changeset/{revision}',
-                 controller='changeset', revision='tip', jsroute=True,
+                 controller='changeset', revision='tip',
                  conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
     rmap.connect('changeset_children', '/{repo_name}/changeset_children/{revision}',
                  controller='changeset', revision='tip', action='changeset_children',
                  conditions={'function': check_repo},
@@ -923,7 +923,7 @@ def make_map(config):
                  controller='pullrequests',
                  action='show', conditions={'function': check_repo,
                                             'method': ['GET']},
-                 requirements=URL_NAME_REQUIREMENTS)
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('pullrequest_update',
                  '/{repo_name}/pull-request/{pull_request_id}',

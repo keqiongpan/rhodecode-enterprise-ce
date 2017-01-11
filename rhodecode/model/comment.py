@@ -84,9 +84,10 @@ class CommentsModel(BaseModel):
         return global_renderer
 
     def create(self, text, repo, user, commit_id=None, pull_request=None,
-               f_path=None, line_no=None, status_change=None, comment_type=None,
-               status_change_type=None, closing_pr=False,
-               send_email=True, renderer=None):
+               f_path=None, line_no=None, status_change=None,
+               status_change_type=None, comment_type=None,
+               resolves_comment_id=None, closing_pr=False, send_email=True,
+               renderer=None):
         """
         Creates new comment for commit or pull request.
         IF status_change is not none this comment is associated with a
@@ -113,6 +114,8 @@ class CommentsModel(BaseModel):
         if not renderer:
             renderer = self._get_renderer()
 
+        repo = self._get_repo(repo)
+        user = self._get_user(user)
 
         schema = comment_schema.CommentSchema()
         validated_kwargs = schema.deserialize(dict(
@@ -121,14 +124,11 @@ class CommentsModel(BaseModel):
             comment_file=f_path,
             comment_line=line_no,
             renderer_type=renderer,
-            status_change=status_change,
-
-            repo=repo,
-            user=user,
+            status_change=status_change_type,
+            resolves_comment_id=resolves_comment_id,
+            repo=repo.repo_id,
+            user=user.user_id,
         ))
-
-        repo = self._get_repo(validated_kwargs['repo'])
-        user = self._get_user(validated_kwargs['user'])
 
         comment = ChangesetComment()
         comment.renderer = validated_kwargs['renderer_type']
@@ -139,6 +139,8 @@ class CommentsModel(BaseModel):
 
         comment.repo = repo
         comment.author = user
+        comment.resolved_comment = self.__get_commit_comment(
+            validated_kwargs['resolves_comment_id'])
 
         pull_request_id = pull_request
 

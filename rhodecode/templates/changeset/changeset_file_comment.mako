@@ -15,12 +15,33 @@
        id="comment-${comment.comment_id}"
        line="${comment.line_no}"
        data-comment-id="${comment.comment_id}"
+       data-comment-type="${comment.comment_type}"
+       data-comment-inline=${h.json.dumps(inline)}
        style="${'display: none;' if outdated_at_ver else ''}">
 
       <div class="meta">
-          <div class="comment-type-label tooltip">
-              <div class="comment-label ${comment.comment_type or 'note'}">
-                ${comment.comment_type or 'note'}
+          <div class="comment-type-label">
+              <div class="comment-label ${comment.comment_type or 'note'}" id="comment-label-${comment.comment_id}">
+              % if comment.comment_type == 'todo':
+                  % if comment.resolved:
+                      <div class="resolved tooltip" title="${_('Resolved by comment #{}').format(comment.resolved.comment_id)}">
+                          <a href="#comment-${comment.resolved.comment_id}">${comment.comment_type}</a>
+                      </div>
+                  % else:
+                      <div class="resolved tooltip" style="display: none">
+                          <span>${comment.comment_type}</span>
+                      </div>
+                      <div class="resolve tooltip" onclick="return Rhodecode.comments.createResolutionComment(${comment.comment_id});" title="${_('Click to resolve this comment')}">
+                        ${comment.comment_type}
+                      </div>
+                  % endif
+              % else:
+                  % if comment.resolved_comment:
+                    fix
+                  % else:
+                    ${comment.comment_type or 'note'}
+                  % endif
+              % endif
               </div>
           </div>
 
@@ -120,6 +141,7 @@
 
   </div>
 </%def>
+
 ## generate main comments
 <%def name="generate_comments(include_pull_request=False, is_pull_request=False)">
   <div id="comments">
@@ -137,16 +159,10 @@
   </div>
 </%def>
 
-## MAIN COMMENT FORM
+
 <%def name="comments(post_url, cur_status, is_pull_request=False, is_compare=False, change_status=True, form_extras=None)">
 
-%if is_compare:
-  <% form_id = "comments_form_compare" %>
-%else:
-  <% form_id = "comments_form" %>
-%endif
-
-
+## merge status, and merge action
 %if is_pull_request:
 <div class="pull-request-merge">
     %if c.allowed_to_merge:
@@ -168,6 +184,7 @@
     %endif
 </div>
 %endif
+
 <div class="comments">
     <%
       if is_pull_request:
@@ -177,78 +194,28 @@
       else:
         placeholder = _('Leave a comment on this Commit.')
     %>
+
     % if c.rhodecode_user.username != h.DEFAULT_USER:
     <div class="comment-form ac">
-        ${h.secure_form(post_url, id_=form_id)}
-        <div class="comment-area">
-            <div class="comment-area-header">
-                <ul class="nav-links clearfix">
-                    <li class="active">
-                        <a href="#edit-btn" tabindex="-1" id="edit-btn">${_('Write')}</a>
-                    </li>
-                    <li class="">
-                        <a href="#preview-btn" tabindex="-1" id="preview-btn">${_('Preview')}</a>
-                    </li>
-                    <li class="pull-right">
-                        <select class="comment-type" id="comment_type" name="comment_type">
-                            % for val in c.visual.comment_types:
-                                <option value="${val}">${val.upper()}</option>
-                            % endfor
-                        </select>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="comment-area-write" style="display: block;">
-                <div id="edit-container">
-                    <textarea id="text" name="text" class="comment-block-ta ac-input"></textarea>
-                </div>
-                <div id="preview-container" class="clearfix" style="display: none;">
-                    <div id="preview-box" class="preview-box"></div>
-                </div>
-            </div>
-
-            <div class="comment-area-footer">
-                <div class="toolbar">
-                    <div class="toolbar-text">
-                      ${(_('Comments parsed using %s syntax with %s support.') % (
-                             ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
-                               ('<span  class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user'))
-                           )
-                        )|n}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="comment_form_extras">
-        %if form_extras and isinstance(form_extras, (list, tuple)):
-            % for form_ex_el in form_extras:
-                ${form_ex_el|n}
-            % endfor
-        %endif
-        </div>
-        <div class="comment-footer">
-          %if change_status:
-          <div class="status_box">
-              <select id="change_status" name="changeset_status">
-                  <option></option> # Placeholder
-                  %for status,lbl in c.commit_statuses:
-                  <option value="${status}" data-status="${status}">${lbl}</option>
-                      %if is_pull_request and change_status and status in ('approved', 'rejected'):
-                          <option value="${status}_closed" data-status="${status}">${lbl} & ${_('Closed')}</option>
-                      %endif
-                  %endfor
-              </select>
-          </div>
-          %endif
-          <div class="action-buttons">
-              <div class="comment-button">${h.submit('save', _('Comment'), class_="btn btn-success comment-button-input")}</div>
-          </div>
-        </div>
-          ${h.end_form()}
+        ## inject form here
+        ${comment_form(form_type='general', form_id='general_comment', lineno_id='general', review_statuses=c.commit_statuses, form_extras=form_extras)}
     </div>
+    <script type="text/javascript">
+        // init active elements of commentForm
+        var commitId = templateContext.commit_data.commit_id;
+        var pullRequestId = templateContext.pull_request_data.pull_request_id;
+        var lineNo = 'general';
+        var resolvesCommitId = null;
+
+        var mainCommentForm = new CommentForm(
+                "#general_comment", commitId, pullRequestId, lineNo, true, resolvesCommitId);
+        mainCommentForm.setPlaceholder("${placeholder}");
+        mainCommentForm.initStatusChangeSelector();
+    </script>
+
+
     % else:
+    ## form state when not logged in
     <div class="comment-form ac">
 
         <div class="comment-area">
@@ -289,22 +256,98 @@
     </div>
     % endif
 
+    <script type="text/javascript">
+        bindToggleButtons();
+    </script>
 </div>
+</%def>
 
-<script>
-    // init active elements of commentForm
-    var commitId = templateContext.commit_data.commit_id;
-    var pullRequestId = templateContext.pull_request_data.pull_request_id;
-    var lineNo;
 
-    var mainCommentForm = new CommentForm(
-            "#${form_id}", commitId, pullRequestId, lineNo, true);
+<%def name="comment_form(form_type, form_id='', lineno_id='{1}', review_statuses=None, form_extras=None)">
+  ## comment injected based on assumption that user is logged in
 
-    if (mainCommentForm.cm){
-        mainCommentForm.cm.setOption('placeholder', "${placeholder}");
-    }
+  <form ${'id="{}"'.format(form_id) if form_id else '' |n} action="#" method="GET">
 
-    mainCommentForm.initStatusChangeSelector();
-    bindToggleButtons();
-</script>
+    <div class="comment-area">
+        <div class="comment-area-header">
+            <ul class="nav-links clearfix">
+                <li class="active">
+                    <a href="#edit-btn" tabindex="-1" id="edit-btn_${lineno_id}">${_('Write')}</a>
+                </li>
+                <li class="">
+                    <a href="#preview-btn" tabindex="-1" id="preview-btn_${lineno_id}">${_('Preview')}</a>
+                </li>
+                <li class="pull-right">
+                    <select class="comment-type" id="comment_type_${lineno_id}" name="comment_type">
+                        % for val in c.visual.comment_types:
+                            <option value="${val}">${val.upper()}</option>
+                        % endfor
+                    </select>
+                </li>
+            </ul>
+        </div>
+
+        <div class="comment-area-write" style="display: block;">
+            <div id="edit-container_${lineno_id}">
+                <textarea id="text_${lineno_id}" name="text" class="comment-block-ta ac-input"></textarea>
+            </div>
+            <div id="preview-container_${lineno_id}" class="clearfix" style="display: none;">
+                <div id="preview-box_${lineno_id}" class="preview-box"></div>
+            </div>
+        </div>
+
+        <div class="comment-area-footer">
+            <div class="toolbar">
+                <div class="toolbar-text">
+                  ${(_('Comments parsed using %s syntax with %s support.') % (
+                         ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
+                           ('<span  class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user'))
+                       )
+                    )|n}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="comment-footer">
+
+        % if review_statuses:
+        <div class="status_box">
+          <select id="change_status" name="changeset_status">
+              <option></option> ## Placeholder
+              % for status, lbl in review_statuses:
+              <option value="${status}" data-status="${status}">${lbl}</option>
+                  %if is_pull_request and change_status and status in ('approved', 'rejected'):
+                      <option value="${status}_closed" data-status="${status}">${lbl} & ${_('Closed')}</option>
+                  %endif
+              % endfor
+          </select>
+        </div>
+        % endif
+
+        ## inject extra inputs into the form
+        % if form_extras and isinstance(form_extras, (list, tuple)):
+            <div id="comment_form_extras">
+                % for form_ex_el in form_extras:
+                    ${form_ex_el|n}
+                % endfor
+            </div>
+        % endif
+
+        <div class="action-buttons">
+            ## inline for has a file, and line-number together with cancel hide button.
+            % if form_type == 'inline':
+                <input type="hidden" name="f_path" value="{0}">
+                <input type="hidden" name="line" value="${lineno_id}">
+                <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
+                ${_('Cancel')}
+                </button>
+            % endif
+            ${h.submit('save', _('Comment'), class_='btn btn-success comment-button-input')}
+
+        </div>
+    </div>
+
+  </form>
+
 </%def>

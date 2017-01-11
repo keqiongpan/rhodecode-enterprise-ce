@@ -53,18 +53,22 @@ comment_types = ['note', 'todo']
 
 
 class CommentSchema(colander.MappingSchema):
-    from rhodecode.model.db import ChangesetComment
+    from rhodecode.model.db import ChangesetComment, ChangesetStatus
 
     comment_body = colander.SchemaNode(colander.String())
     comment_type = colander.SchemaNode(
         colander.String(),
-        validator=colander.OneOf(ChangesetComment.COMMENT_TYPES))
+        validator=colander.OneOf(ChangesetComment.COMMENT_TYPES),
+        missing=ChangesetComment.COMMENT_TYPE_NOTE)
 
     comment_file = colander.SchemaNode(colander.String(), missing=None)
     comment_line = colander.SchemaNode(colander.String(), missing=None)
-    status_change = colander.SchemaNode(colander.String(), missing=None)
+    status_change = colander.SchemaNode(
+        colander.String(), missing=None,
+        validator=colander.OneOf([x[0] for x in ChangesetStatus.STATUSES]))
     renderer_type = colander.SchemaNode(colander.String())
 
-    # do those ?
+    resolves_comment_id = colander.SchemaNode(colander.Integer(), missing=None)
+
     user = colander.SchemaNode(types.StrOrIntType())
     repo = colander.SchemaNode(types.StrOrIntType())

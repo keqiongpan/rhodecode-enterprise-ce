@@ -1,3 +1,5 @@
+<%namespace name="commentblock" file="/changeset/changeset_file_comment.mako"/>
+
 <%def name="diff_line_anchor(filename, line, type)"><%
 return '%s_%s_%i' % (h.safeid(filename), type, line)
 %></%def>
@@ -60,59 +62,8 @@ return h.url('', **new_args)
     <div class="comment-inline-form ac">
 
     %if c.rhodecode_user.username != h.DEFAULT_USER:
-        ${h.form('#', method='get')}
-        <div class="comment-area">
-            <div class="comment-area-header">
-                <ul class="nav-links clearfix">
-                    <li class="active">
-                        <a href="#edit-btn" tabindex="-1" id="edit-btn_{1}">${_('Write')}</a>
-                    </li>
-                    <li class="">
-                        <a href="#preview-btn" tabindex="-1" id="preview-btn_{1}">${_('Preview')}</a>
-                    </li>
-                    <li class="pull-right">
-                        <select class="comment-type" id="comment_type_{1}" name="comment_type">
-                            % for val in c.visual.comment_types:
-                                <option value="${val}">${val.upper()}</option>
-                            % endfor
-                        </select>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="comment-area-write" style="display: block;">
-                <div id="edit-container_{1}">
-                    <textarea id="text_{1}" name="text" class="comment-block-ta ac-input"></textarea>
-                </div>
-                <div id="preview-container_{1}" class="clearfix" style="display: none;">
-                    <div id="preview-box_{1}" class="preview-box"></div>
-                </div>
-            </div>
-
-            <div class="comment-area-footer">
-                <div class="toolbar">
-                    <div class="toolbar-text">
-                      ${(_('Comments parsed using %s syntax with %s support.') % (
-                             ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
-                               ('<span  class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user'))
-                           )
-                        )|n}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="comment-footer">
-          <div class="action-buttons">
-            <input type="hidden" name="f_path" value="{0}">
-            <input type="hidden" name="line" value="{1}">
-               <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
-                ${_('Cancel')}
-               </button>
-               ${h.submit('save', _('Comment'), class_='btn btn-success save-inline-form')}
-          </div>
-        ${h.end_form()}
-      </div>
+        ## render template for inline comments
+        ${commentblock.comment_form(form_type='inline')}
     %else:
         ${h.form('', class_='inline-form comment-form-login', method='get')}
         <div class="pull-left">
@@ -521,7 +472,6 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 </%def>
 
 
-<%namespace name="commentblock" file="/changeset/changeset_file_comment.mako"/>
 <%def name="inline_comments_container(comments)">
 <div class="inline-comments">
     %for comment in comments:

@@ -79,7 +79,7 @@ var bindToggleButtons = function() {
 };
 
 var linkifyComments = function(comments) {
-  /* TODO: dan: remove this - it should no longer needed */
+  /* TODO: marcink: remove this - it should no longer needed */
   for (var i = 0; i < comments.length; i++) {
     var comment_id = $(comments[i]).data('comment-id');
     var prev_comment_id = $(comments[i - 1]).data('comment-id');
@@ -96,6 +96,8 @@ var linkifyComments = function(comments) {
       $('#next_c_' + comment_id + " a.arrow_comment_link").attr(
           'href', '#comment-' + next_comment_id).removeClass('disabled');
     }
+    /* TODO(marcink): end removal here */
+
     // place a first link to the total counter
     if (i === 0) {
       $('#inline-comments-counter').attr('href', '#comment-' + comment_id);
@@ -106,10 +108,23 @@ var linkifyComments = function(comments) {
 
 
 /* Comment form for main and inline comments */
-var CommentForm = (function() {
+
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod();
+  else // Plain browser env
+    (this || window).CommentForm = mod();
+
+})(function() {
     "use strict";
 
-    function CommentForm(formElement, commitId, pullRequestId, lineNo, initAutocompleteActions) {
+    function CommentForm(formElement, commitId, pullRequestId, lineNo, initAutocompleteActions, resolvesCommentId) {
+        if (!(this instanceof CommentForm)) {
+            return new CommentForm(formElement, commitId, pullRequestId, lineNo, initAutocompleteActions, resolvesCommentId);
+        }
+
+        // bind the element instance to our Form
+        $(formElement).get(0).CommentForm = this;
 
         this.withLineNo = function(selector) {
             var lineNo = this.lineNo;
@@ -135,6 +150,9 @@ var CommentForm = (function() {
         this.cancelButton = this.withLineNo('#cancel-btn');
         this.commentType = this.withLineNo('#comment_type');
 
+        this.resolvesId = null;
+        this.resolvesActionId = null;
+
         this.cmBox = this.withLineNo('#text');
         this.cm = initCommentBoxCodeMirror(this.cmBox, this.initAutocompleteActions);
 
@@ -147,15 +165,36 @@ var CommentForm = (function() {
         this.previewUrl = pyroutes.url('changeset_comment_preview',
             {'repo_name': templateContext.repo_name});
 
-        // based on commitId, or pullReuqestId decide where do we submit
+        if (resolvesCommentId){
+            this.resolvesId = '#resolve_comment_{0}'.format(resolvesCommentId);
+            this.resolvesActionId = '#resolve_comment_action_{0}'.format(resolvesCommentId);
+            $(this.commentType).prop('disabled', true);
+            $(this.commentType).addClass('disabled');
+
+            var resolvedInfo = (
+                '<li class="">' +
+                '<input type="hidden" id="resolve_comment_{0}" name="resolve_comment_{0}" value="{0}">' +
+                '<button id="resolve_comment_action_{0}" class="resolve-text btn btn-sm" onclick="return Rhodecode.comments.submitResolution({0})">{1} #{0}</button>' +
+                '</li>'
+            ).format(resolvesCommentId, _gettext('resolve comment'));
+            $(resolvedInfo).insertAfter($(this.commentType).parent());
+        }
+
+        // based on commitId, or pullRequestId decide where do we submit
         // out data
         if (this.commitId){
             this.submitUrl = pyroutes.url('changeset_comment',
                 {'repo_name': templateContext.repo_name,
                  'revision': this.commitId});
+            this.selfUrl = pyroutes.url('changeset_home',
+                {'repo_name': templateContext.repo_name,
+                 'revision': this.commitId});
 
         } else if (this.pullRequestId) {
             this.submitUrl = pyroutes.url('pullrequest_comment',
+                {'repo_name': templateContext.repo_name,
+                 'pull_request_id': this.pullRequestId});
+            this.selfUrl = pyroutes.url('pullrequest_show',
                 {'repo_name': templateContext.repo_name,
                  'pull_request_id': this.pullRequestId});
 
@@ -168,6 +207,13 @@ var CommentForm = (function() {
             return this.cm
         };
 
+        this.setPlaceholder = function(placeholder) {
+            var cm = this.getCmInstance();
+            if (cm){
+                cm.setOption('placeholder', placeholder);
+            }
+        };
+
         var self = this;
 
         this.getCommentStatus = function() {
@@ -176,6 +222,15 @@ var CommentForm = (function() {
         this.getCommentType = function() {
           return $(this.submitForm).find(this.commentType).val();
         };
+
+        this.getResolvesId = function() {
+            return $(this.submitForm).find(this.resolvesId).val() || null;
+        };
+        this.markCommentResolved = function(resolvedCommentId){
+            $('#comment-label-{0}'.format(resolvedCommentId)).find('.resolved').show();
+            $('#comment-label-{0}'.format(resolvedCommentId)).find('.resolve').hide();
+        };
+
         this.isAllowedToSubmit = function() {
           return !$(this.submitButton).prop('disabled');
         };
@@ -205,12 +260,12 @@ var CommentForm = (function() {
             });
             $(this.submitForm).find(this.statusChange).on('change', function() {
                 var status = self.getCommentStatus();
-                if (status && !self.lineNo) {
+                if (status && self.lineNo == 'general') {
                     $(self.submitButton).prop('disabled', false);
                 }
-                //todo, fix this name
+
                 var placeholderText = _gettext('Comment text will be set automatically based on currently selected status ({0}) ...').format(status);
-                self.cm.setOption('placeholder', placeholderText);
+                self.setPlaceholder(placeholderText)
             })
         };
 
@@ -260,6 +315,7 @@ var CommentForm = (function() {
             var text = self.cm.getValue();
             var status = self.getCommentStatus();
             var commentType = self.getCommentType();
+            var resolvesCommentId = self.getResolvesId();
 
             if (text === "" && !status) {
                 return;
@@ -275,7 +331,9 @@ var CommentForm = (function() {
                 'comment_type': commentType,
                 'csrf_token': CSRF_TOKEN
             };
-
+            if (resolvesCommentId){
+                postData['resolves_comment_id'] = resolvesCommentId;
+            }
             var submitSuccessCallback = function(o) {
                 if (status) {
                     location.reload(true);
@@ -284,10 +342,15 @@ var CommentForm = (function() {
                     self.resetCommentFormState();
                     bindDeleteCommentButtons();
                     timeagoActivate();
+
+                    //mark visually which comment was resolved
+                    if (resolvesCommentId) {
+                        this.markCommentResolved(resolvesCommentId);
+                    }
                 }
             };
             var submitFailCallback = function(){
-                self.resetCommentFormState(text)
+                self.resetCommentFormState(text);
             };
             self.submitAjaxPOST(
                 self.submitUrl, postData, submitSuccessCallback, submitFailCallback);
@@ -367,7 +430,7 @@ var CommentForm = (function() {
 
             var postData = {
                 'text': text,
-                'renderer': DEFAULT_RENDERER,
+                'renderer': templateContext.visual.default_renderer,
                 'csrf_token': CSRF_TOKEN
             };
 
@@ -404,15 +467,17 @@ var CommentForm = (function() {
     }
 
     return CommentForm;
-})();
+});
 
-var CommentsController = function() { /* comments controller */
+/* comments controller */
+var CommentsController = function() {
+  var mainComment = '#text';
   var self = this;
 
   this.cancelComment = function(node) {
       var $node = $(node);
       var $td = $node.closest('td');
-      $node.closest('.comment-inline-form').removeClass('comment-inline-form-open');
+      $node.closest('.comment-inline-form').remove();
       return false;
   };
 
@@ -530,7 +595,8 @@ var CommentsController = function() { /* comments controller */
     $node.closest('tr').toggleClass('hide-line-comments');
   };
 
-  this.createComment = function(node) {
+  this.createComment = function(node, resolutionComment) {
+      var resolvesCommentId = resolutionComment || null;
       var $node = $(node);
       var $td = $node.closest('td');
       var $form = $td.find('.comment-inline-form');
@@ -556,14 +622,16 @@ var CommentsController = function() { /* comments controller */
 
           var pullRequestId = templateContext.pull_request_data.pull_request_id;
           var commitId = templateContext.commit_data.commit_id;
-          var _form = $form[0];
-          var commentForm = new CommentForm(_form, commitId, pullRequestId, lineno, false);
+          var _form = $($form[0]).find('form');
+
+          var commentForm = new CommentForm(_form, commitId, pullRequestId, lineno, false, resolvesCommentId);
           var cm = commentForm.getCmInstance();
 
           // set a CUSTOM submit handler for inline comments.
           commentForm.setHandleFormSubmit(function(o) {
             var text = commentForm.cm.getValue();
             var commentType = commentForm.getCommentType();
+            var resolvesCommentId = commentForm.getResolvesId();
 
             if (text === "") {
               return;
@@ -589,6 +657,10 @@ var CommentsController = function() { /* comments controller */
                 'comment_type': commentType,
                 'csrf_token': CSRF_TOKEN
             };
+            if (resolvesCommentId){
+                postData['resolves_comment_id'] = resolvesCommentId;
+            }
+
             var submitSuccessCallback = function(json_data) {
               $form.remove();
               try {
@@ -597,6 +669,11 @@ var CommentsController = function() { /* comments controller */
                 var target_id = json_data.target_id;
 
                 $comments.find('.cb-comment-add-button').before(html);
+
+                //mark visually which comment was resolved
+                if (resolvesCommentId) {
+                    commentForm.markCommentResolved(resolvesCommentId);
+                }
 
               } catch (e) {
                 console.error(e);
@@ -616,24 +693,79 @@ var CommentsController = function() { /* comments controller */
                 commentForm.submitUrl, postData, submitSuccessCallback, submitFailCallback);
           });
 
+          if (resolvesCommentId){
+              var placeholderText = _gettext('Leave a comment, or click resolve button to resolve TODO comment #{0}').format(resolvesCommentId);
+
+          } else {
+              var placeholderText = _gettext('Leave a comment on line {0}.').format(lineno);
+          }
+
           setTimeout(function() {
               // callbacks
               if (cm !== undefined) {
-                  cm.setOption('placeholder', _gettext('Leave a comment on line {0}.').format(lineno));
+                  commentForm.setPlaceholder(placeholderText);
                   cm.focus();
                   cm.refresh();
               }
           }, 10);
 
-            $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
-                form: _form,
-                parent: $td[0],
-                lineno: lineno,
-                f_path: f_path}
-            );
+          $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
+              form: _form,
+              parent: $td[0],
+              lineno: lineno,
+              f_path: f_path}
+          );
+
+          // trigger hash
+          if (resolvesCommentId){
+            var resolveAction = $(commentForm.resolvesActionId);
+            setTimeout(function() {
+                $('body, html').animate({ scrollTop: resolveAction.offset().top }, 10);
+            }, 100);
+          }
       }
 
       $form.addClass('comment-inline-form-open');
+  };
+
+  this.createResolutionComment = function(commentId){
+    // hide the trigger text
+    $('#resolve-comment-{0}'.format(commentId)).hide();
+
+    var comment = $('#comment-'+commentId);
+    var commentData = comment.data();
+
+    if (commentData.commentInline) {
+        var resolutionComment = true;
+        this.createComment(comment, commentId)
+    } else {
+
+        this.createComment(comment, commentId)
+
+        console.log('TODO')
+        console.log(commentId)
+    }
+
+    return false;
+  };
+
+  this.submitResolution = function(commentId){
+    var form = $('#resolve_comment_{0}'.format(commentId)).closest('form');
+    var commentForm = form.get(0).CommentForm;
+
+    var cm = commentForm.getCmInstance();
+    var renderer = templateContext.visual.default_renderer;
+    if (renderer == 'rst'){
+        var commentUrl = '`#{0} <{1}#comment-{0}>`_'.format(commentId, commentForm.selfUrl);
+    } else if (renderer == 'markdown') {
+        var commentUrl = '[#{0}]({1}#comment-{0})'.format(commentId, commentForm.selfUrl);
+    } else {
+        var commentUrl = '{1}#comment-{0}'.format(commentId, commentForm.selfUrl);
+    }
+
+    cm.setValue(_gettext('TODO from comment {0} was fixed.').format(commentUrl));
+    form.submit();
+    return false;
   };
 
   this.renderInlineComments = function(file_comments) {

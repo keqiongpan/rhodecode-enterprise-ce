@@ -2917,7 +2917,7 @@ class ChangesetComment(Base, BaseModel):
 
     comment_type = Column('comment_type',  Unicode(128), nullable=True, default=COMMENT_TYPE_NOTE)
     resolved_comment_id = Column('resolved_comment_id', Integer(), ForeignKey('changeset_comments.comment_id'), nullable=True)
-    resolved_comment = relationship('ChangesetComment', remote_side=comment_id)
+    resolved_comment = relationship('ChangesetComment', remote_side=comment_id, backref='resolved_by')
     author = relationship('User', lazy='joined')
     repo = relationship('Repository')
     status_change = relationship('ChangesetStatus', cascade="all, delete, delete-orphan")
@@ -2958,6 +2958,10 @@ class ChangesetComment(Base, BaseModel):
         Checks if comment is outdated for given pull request version
         """
         return self.outdated and self.pull_request_version_id != version
+
+    @property
+    def resolved(self):
+        return self.resolved_by[0] if self.resolved_by else None
 
     def get_index_version(self, versions):
         return self.get_index_from_version(
