@@ -20,7 +20,7 @@
             (_('SMTP auth'), c.rhodecode_ini.get('smtp_auth'), ''),
          ]
         %>
-        <dl class="dl-horizontal">
+        <dl class="dl-horizontal settings">
         %for dt, dd, tt in elems:
           <dt >${dt}:</dt>
           <dd  title="${tt}">${dd}</dd>

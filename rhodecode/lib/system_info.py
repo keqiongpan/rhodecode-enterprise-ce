@@ -64,6 +64,9 @@ class SysInfoRes(object):
             'human_value': self.human_value,
         }
 
+    def get_value(self):
+        return self.__json__()
+
     def __str__(self):
         return '<SysInfoRes({})>'.format(self.__json__())
 

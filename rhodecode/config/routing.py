@@ -509,6 +509,12 @@ def make_map(config):
         m.connect('admin_settings_system_update', '/settings/system/updates',
                   action='settings_system_update', conditions={'method': ['GET']})
 
+        m.connect('admin_settings_sessions', '/settings/sessions',
+                  action='settings_sessions', conditions={'method': ['GET']})
+
+        m.connect('admin_settings_sessions_cleanup', '/settings/sessions/cleanup',
+                  action='settings_sessions_cleanup', conditions={'method': ['POST']})
+
         m.connect('admin_settings_supervisor', '/settings/supervisor',
                   action='settings_supervisor', conditions={'method': ['GET']})
         m.connect('admin_settings_supervisor_log', '/settings/supervisor/{procid}/log',

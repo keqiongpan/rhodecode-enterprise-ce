@@ -83,8 +83,10 @@ class NavigationRegistry(object):
         NavEntry('integrations', _('Integrations'),
                  'global_integrations_home', pyramid=True),
         NavEntry('system', _('System Info'), 'admin_settings_system'),
+        NavEntry('session', _('User Sessions'), 'admin_settings_sessions'),
         NavEntry('open_source', _('Open Source Licenses'),
                  'admin_settings_open_source', pyramid=True),
+
         # TODO: marcink: we disable supervisor now until the supervisor stats
         # page is fixed in the nix configuration
         # NavEntry('supervisor', _('Supervisor'), 'admin_settings_supervisor'),
