@@ -26,31 +26,14 @@ var firefoxAnchorFix = function() {
 };
 
 var linkifyComments = function(comments) {
-  /* TODO: marcink: remove this - it should no longer needed */
-  for (var i = 0; i < comments.length; i++) {
-    var comment_id = $(comments[i]).data('comment-id');
-    var prev_comment_id = $(comments[i - 1]).data('comment-id');
-    var next_comment_id = $(comments[i + 1]).data('comment-id');
-
-    // place next/prev links
-    if (prev_comment_id) {
-      $('#prev_c_' + comment_id).show();
-      $('#prev_c_' + comment_id + " a.arrow_comment_link").attr(
-          'href', '#comment-' + prev_comment_id).removeClass('disabled');
-    }
-    if (next_comment_id) {
-      $('#next_c_' + comment_id).show();
-      $('#next_c_' + comment_id + " a.arrow_comment_link").attr(
-          'href', '#comment-' + next_comment_id).removeClass('disabled');
-    }
-    /* TODO(marcink): end removal here */
-
-    // place a first link to the total counter
-    if (i === 0) {
-      $('#inline-comments-counter').attr('href', '#comment-' + comment_id);
-    }
+  var firstCommentId = null;
+  if (comments) {
+      firstCommentId = $(comments[0]).data('comment-id');
   }
 
+  if (firstCommentId){
+    $('#inline-comments-counter').attr('href', '#comment-' + firstCommentId);
+  }
 };
 
 var bindToggleButtons = function() {
