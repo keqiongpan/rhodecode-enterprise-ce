@@ -141,7 +141,9 @@ class DBBackend(object):
         return self.stdout, self.stderr
 
     def assert_returncode_success(self):
-        assert self.p.returncode == 0, self.stderr
+        if not self.p.returncode == 0:
+            print(self.stderr)
+            raise AssertionError('non 0 retcode:{}'.format(self.p.returncode))
 
     def setup_rhodecode_db(self, ini_params=None, env=None):
         if not ini_params:
