@@ -48,7 +48,7 @@ def add_renderer_globals(event):
 
     # Add Pyramid translation as '_' to context
     event['_'] = request.translate
-    event['localizer'] = request.localizer
+    event['_ungettext'] = request.plularize
 
 
 def add_localizer(event):
@@ -60,6 +60,7 @@ def add_localizer(event):
 
     request.localizer = localizer
     request.translate = auto_translate
+    request.plularize = localizer.pluralize
 
 
 def scan_repositories_if_enabled(event):
