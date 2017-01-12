@@ -40,6 +40,13 @@ def includeme(config):
         pattern=ADMIN_PREFIX + '/settings/vcs/svn_generate_cfg')
 
     config.add_route(
+        name='admin_settings_system',
+        pattern=ADMIN_PREFIX + '/settings/system')
+    config.add_route(
+        name='admin_settings_system_update',
+        pattern=ADMIN_PREFIX + '/settings/system/updates')
+
+    config.add_route(
         name='admin_settings_sessions',
         pattern=ADMIN_PREFIX + '/settings/sessions')
     config.add_route(

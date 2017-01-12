@@ -503,12 +503,6 @@ def make_map(config):
         m.connect('admin_settings_search', '/settings/search',
                   action='settings_search', conditions={'method': ['GET']})
 
-        m.connect('admin_settings_system', '/settings/system',
-                  action='settings_system', conditions={'method': ['GET']})
-
-        m.connect('admin_settings_system_update', '/settings/system/updates',
-                  action='settings_system_update', conditions={'method': ['GET']})
-
         m.connect('admin_settings_supervisor', '/settings/supervisor',
                   action='settings_supervisor', conditions={'method': ['GET']})
         m.connect('admin_settings_supervisor_log', '/settings/supervisor/{procid}/log',

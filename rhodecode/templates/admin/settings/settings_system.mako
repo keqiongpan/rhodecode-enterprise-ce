@@ -8,7 +8,7 @@
     <div class="panel-heading">
         <h3 class="panel-title">${_('System Info')}</h3>
         % if c.allowed_to_snapshot:
-            <a href="${url('admin_settings_system', snapshot=1)}" class="panel-edit">${_('create summary snapshot')}</a>
+            <a href="${h.route_path('admin_settings_system', _query={'snapshot':1})}" class="panel-edit">${_('create summary snapshot')}</a>
         % endif
     </div>
     <div class="panel-body">
@@ -52,6 +52,6 @@
 <script>
     $('#check_for_update').click(function(e){
         $('#update_notice').show();
-        $('#update_notice').load("${h.url('admin_settings_system_update',version=c.rhodecode_version, platform=c.platform)}");
+        $('#update_notice').load("${h.route_path('admin_settings_system_update',version=c.rhodecode_version, platform=c.platform)}");
     })
 </script>
