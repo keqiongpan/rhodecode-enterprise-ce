@@ -50,8 +50,6 @@ from rhodecode.lib.utils2 import (
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils import jsonify
-from rhodecode.lib import system_info
-from rhodecode.lib import user_sessions
 
 from rhodecode.model.db import RhodeCodeUi, Repository
 from rhodecode.model.forms import ApplicationSettingsForm, \
@@ -691,52 +689,6 @@ class SettingsController(BaseController):
         c.important_notices = latest['general']
 
         return render('admin/settings/settings_system_update.mako')
-
-    @HasPermissionAllDecorator('hg.admin')
-    def settings_sessions(self):
-        # url('admin_settings_sessions')
-
-        c.active = 'sessions'
-        c.cleanup_older_days = 60
-        older_than_seconds = 24 * 60 * 60 * 24 * c.cleanup_older_days
-
-        config = system_info.rhodecode_config().get_value()['value']['config']
-        c.session_model = user_sessions.get_session_handler(
-            config.get('beaker.session.type', 'memory'))(config)
-
-        c.session_conf = c.session_model.config
-        c.session_count = c.session_model.get_count()
-        c.session_expired_count = c.session_model.get_expired_count(
-            older_than_seconds)
-
-        return render('admin/settings/settings.mako')
-
-    @HasPermissionAllDecorator('hg.admin')
-    def settings_sessions_cleanup(self):
-        # url('admin_settings_sessions_update')
-
-        expire_days = safe_int(request.POST.get('expire_days'))
-
-        if expire_days is None:
-            expire_days = 60
-
-        older_than_seconds = 24 * 60 * 60 * 24 * expire_days
-
-        config = system_info.rhodecode_config().get_value()['value']['config']
-        session_model = user_sessions.get_session_handler(
-            config.get('beaker.session.type', 'memory'))(config)
-
-        try:
-            session_model.clean_sessions(
-                older_than_seconds=older_than_seconds)
-            h.flash(_('Cleaned up old sessions'), category='success')
-        except user_sessions.CleanupCommand as msg:
-            h.flash(msg, category='warning')
-        except Exception as e:
-            log.exception('Failed session cleanup')
-            h.flash(_('Failed to cleanup up old sessions'), category='error')
-
-        return redirect(url('admin_settings_sessions'))
 
     @HasPermissionAllDecorator('hg.admin')
     def settings_supervisor(self):

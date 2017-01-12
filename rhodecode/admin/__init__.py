@@ -39,5 +39,12 @@ def includeme(config):
         name='admin_settings_vcs_svn_generate_cfg',
         pattern=ADMIN_PREFIX + '/settings/vcs/svn_generate_cfg')
 
+    config.add_route(
+        name='admin_settings_sessions',
+        pattern=ADMIN_PREFIX + '/settings/sessions')
+    config.add_route(
+        name='admin_settings_sessions_cleanup',
+        pattern=ADMIN_PREFIX + '/settings/sessions/cleanup')
+
     # Scan module for configuration decorators.
     config.scan()
