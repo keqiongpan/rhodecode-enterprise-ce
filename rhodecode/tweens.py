@@ -52,9 +52,11 @@ def pylons_compatibility_tween_factory(handler, registry):
             request.environ, request.registry.settings.get('vcs.backends'))
 
         if vcs_handler:
+            # save detected VCS type for later re-use
             request.environ[VCS_TYPE_KEY] = vcs_handler.SCM
             return handler(request)
 
+        # mark that we didn't detect an VCS, and we can skip detection later on
         request.environ[VCS_TYPE_KEY] = VCS_TYPE_SKIP
 
         # Setup pylons globals.

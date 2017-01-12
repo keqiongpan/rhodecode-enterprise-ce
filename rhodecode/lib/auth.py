@@ -846,7 +846,7 @@ class AuthUser(object):
         Fills in user data and propagates values to this instance. Maps fetched
         user attributes to this class instance attributes
         """
-
+        log.debug('starting data propagation for new potential AuthUser')
         user_model = UserModel()
         anon_user = self.anonymous_user = User.get_default_user(cache=True)
         is_user_loaded = False

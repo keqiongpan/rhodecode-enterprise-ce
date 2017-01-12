@@ -393,7 +393,8 @@ def get_auth_user(environ):
                    request.GET.get('api_key', ''))
 
     if _auth_token:
-        # when using API_KEY we are sure user exists.
+        # when using API_KEY we assume user exists, and
+        # doesn't need auth based on cookies.
         auth_user = AuthUser(api_key=_auth_token, ip_addr=ip_addr)
         authenticated = False
     else:
@@ -412,8 +413,7 @@ def get_auth_user(environ):
 
         if password_changed(auth_user, session):
             session.invalidate()
-            cookie_store = CookieStoreWrapper(
-                session.get('rhodecode_user'))
+            cookie_store = CookieStoreWrapper(session.get('rhodecode_user'))
             auth_user = AuthUser(ip_addr=ip_addr)
 
         authenticated = cookie_store.get('is_authenticated')
