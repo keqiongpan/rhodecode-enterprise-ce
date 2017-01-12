@@ -35,6 +35,7 @@ import traceback
 from functools import wraps
 
 import ipaddress
+from pyramid.httpexceptions import HTTPForbidden
 from pylons import url, request
 from pylons.controllers.util import abort, redirect
 from pylons.i18n.translation import _
@@ -1159,7 +1160,7 @@ class CSRFRequired(object):
                  'REMOTE_ADDR:%s, HEADERS:%s' % (
                      request, reason, request.remote_addr, request.headers))
 
-        abort(403, detail=csrf_message)
+        raise HTTPForbidden(explanation=csrf_message)
 
 
 class LoginRequired(object):
