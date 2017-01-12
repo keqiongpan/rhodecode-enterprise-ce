@@ -76,7 +76,6 @@ class PylonsErrorHandlingMiddleware(object):
         except HTTPError as e:  # pyramid type exceptions
             return self.error_view(e, request)
         except Exception as e:
-            log.exception(e)
 
             if self.reraise():
                 raise

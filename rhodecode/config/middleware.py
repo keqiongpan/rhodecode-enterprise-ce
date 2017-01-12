@@ -227,6 +227,8 @@ def error_handler(exception, request):
         log.exception('failed to fetch settings')
         rc_config = {}
 
+    log.exception(
+        'error occurred handling this request for path: %s', request.path)
     base_response = HTTPInternalServerError()
     # prefer original exception for the response since it may have headers set
     if isinstance(exception, HTTPError):
