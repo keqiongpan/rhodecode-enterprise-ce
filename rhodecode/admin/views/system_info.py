@@ -63,7 +63,7 @@ class AdminSystemInfoSettingsView(AdminSettingsView):
     @view_config(
         route_name='admin_settings_system', request_method='GET',
         renderer='rhodecode:templates/admin/settings/settings.mako')
-    def settings_sessions(self):
+    def settings_system_info(self):
         _ = self.request.translate
 
         c.active = 'system'
@@ -169,7 +169,7 @@ class AdminSystemInfoSettingsView(AdminSettingsView):
     @view_config(
         route_name='admin_settings_system_update', request_method='GET',
         renderer='rhodecode:templates/admin/settings/settings_system_update.mako')
-    def settings_sessions_cleanup(self):
+    def settings_system_info_check_update(self):
         _ = self.request.translate
 
         update_url = self.get_update_url()
@@ -179,9 +179,11 @@ class AdminSystemInfoSettingsView(AdminSettingsView):
             data = self.get_update_data(update_url)
         except urllib2.URLError as e:
             log.exception("Exception contacting upgrade server")
+            self.request.override_renderer = 'string'
             return _err('Failed to contact upgrade server: %r' % e)
         except ValueError as e:
             log.exception("Bad data sent from update server")
+            self.request.override_renderer = 'string'
             return _err('Bad data sent from update server')
 
         latest = data['versions'][0]

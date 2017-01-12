@@ -90,7 +90,7 @@ class AdminSessionSettingsView(AdminSettingsView):
             self.request.session.flash(
                 _('Cleaned up old sessions'), queue='success')
         except user_sessions.CleanupCommand as msg:
-            self.request.session.flash(msg, category='warning')
+            self.request.session.flash(msg.message, queue='warning')
         except Exception as e:
             log.exception('Failed session cleanup')
             self.request.session.flash(
