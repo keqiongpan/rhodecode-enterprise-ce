@@ -40,7 +40,7 @@ class BaseAuthSessions(object):
     def get_count(self):
         raise NotImplementedError
 
-    def get_expired_count(self):
+    def get_expired_count(self, older_than_seconds=None):
         raise NotImplementedError
 
     def clean_sessions(self, older_than_seconds=None):
@@ -73,7 +73,7 @@ class FileAuthSessions(BaseAuthSessions):
     def get_count(self):
         return 'NOT AVAILABLE'
 
-    def get_expired_count(self):
+    def get_expired_count(self, older_than_seconds=None):
         return self.get_count()
 
     def clean_sessions(self, older_than_seconds=None):
@@ -90,7 +90,7 @@ class MemcachedAuthSessions(BaseAuthSessions):
     def get_count(self):
         return 'NOT AVAILABLE'
 
-    def get_expired_count(self):
+    def get_expired_count(self, older_than_seconds=None):
         return self.get_count()
 
     def clean_sessions(self, older_than_seconds=None):
@@ -103,7 +103,7 @@ class MemoryAuthSessions(BaseAuthSessions):
     def get_count(self):
         return 'NOT AVAILABLE'
 
-    def get_expired_count(self):
+    def get_expired_count(self, older_than_seconds=None):
         return self.get_count()
 
     def clean_sessions(self, older_than_seconds=None):

@@ -30,10 +30,22 @@
     <div class="panel-body">
         ${h.secure_form(h.url('admin_settings_sessions_cleanup'), method='post')}
 
-            <div style="margin: 0 0 20px 0" class="fake-space">
-            ${_('Cleanup all sessions that were not active during choosen time frame')} <br/>
-            ${_('Picking All will log-out all users in the system, and each user will be required to log in again.')}
-            </div>
+            <p>
+            ${_('Cleanup user sessions that were not active during chosen time frame.')} <br/>
+            ${_('After performing this action users whose session will be removed will be required to log in again.')} <br/>
+            <strong>${_('Picking `All` will log-out you, and all users in the system.')}</strong>
+           </p>
+
+            <script type="text/javascript">
+              $(document).ready(function() {
+                  $('#expire_days').select2({
+                      containerCssClass: 'drop-menu',
+                      dropdownCssClass: 'drop-menu-dropdown',
+                      dropdownAutoWidth: true,
+                      minimumResultsForSearch: -1
+                  });
+              });
+            </script>
             <select id="expire_days" name="expire_days">
                 % for n in [60, 90, 30, 7, 0]:
                     <option value="${n}">${'{} days'.format(n) if n != 0 else 'All'}</option>
@@ -48,13 +60,3 @@
 </div>
 
 
-<script type="text/javascript">
-  $(document).ready(function() {
-      $('#expire_days').select2({
-          containerCssClass: 'drop-menu',
-          dropdownCssClass: 'drop-menu-dropdown',
-          dropdownAutoWidth: true,
-          minimumResultsForSearch: -1
-      });
-  });
-</script>
