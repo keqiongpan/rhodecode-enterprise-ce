@@ -30,6 +30,14 @@ from threading import Thread
 
 from rhodecode.translation import _ as tsf
 
+import rhodecode
+
+from pylons.i18n.translation import _get_translator
+from pylons.util import ContextObj
+from routes.util import URLGenerator
+
+from rhodecode.lib.base import attach_context_attributes, get_auth_user
+
 log = logging.getLogger(__name__)
 
 
@@ -63,13 +71,52 @@ def add_localizer(event):
 
 
 def set_user_lang(event):
-    cur_user = getattr(event.request, 'user', None)
+    request = event.request
+    cur_user = getattr(request, 'user', None)
 
     if cur_user:
         user_lang = cur_user.get_instance().user_data.get('language')
         if user_lang:
             log.debug('lang: setting current user:%s language to: %s', cur_user, user_lang)
             event.request._LOCALE_ = user_lang
+
+
+def add_pylons_context(event):
+    request = event.request
+
+    config = rhodecode.CONFIG
+    environ = request.environ
+    session = request.session
+
+    if hasattr(request, 'vcs_call'):
+        # skip vcs calls
+        return
+
+    # Setup pylons globals.
+    pylons.config._push_object(config)
+    pylons.request._push_object(request)
+    pylons.session._push_object(session)
+    pylons.translator._push_object(_get_translator(config.get('lang')))
+
+    pylons.url._push_object(URLGenerator(config['routes.map'], environ))
+    session_key = (
+        config['pylons.environ_config'].get('session', 'beaker.session'))
+    environ[session_key] = session
+
+    if hasattr(request, 'rpc_method'):
+        # skip api calls
+        return
+
+    # Get the rhodecode auth user object and make it available.
+    auth_user = get_auth_user(environ)
+    request.user = auth_user
+    environ['rc_auth_user'] = auth_user
+
+    # Setup the pylons context object ('c')
+    context = ContextObj()
+    context.rhodecode_user = auth_user
+    attach_context_attributes(context, request)
+    pylons.tmpl_context._push_object(context)
 
 
 def scan_repositories_if_enabled(event):

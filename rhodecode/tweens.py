@@ -20,33 +20,21 @@
 
 
 import logging
-import pylons
-import rhodecode
 
-from pylons.i18n.translation import _get_translator
-from pylons.util import ContextObj
-from routes.util import URLGenerator
-
-from rhodecode.lib.base import attach_context_attributes, get_auth_user
 from rhodecode.lib.middleware.vcs import (
     detect_vcs_request, VCS_TYPE_KEY, VCS_TYPE_SKIP)
-from rhodecode.model import meta
 
 
 log = logging.getLogger(__name__)
 
 
-def pylons_compatibility_tween_factory(handler, registry):
+def vcs_detection_tween_factory(handler, registry):
 
-    def pylons_compatibility_tween(request):
+    def vcs_detection_tween(request):
         """
-        While migrating from pylons to pyramid we need to call some pylons code
-        from pyramid. For example while rendering an old template that uses the
-        'c' or 'h' objects. This tween sets up the needed pylons globals.
+        Do detection of vcs type, and save results for other layers to re-use
+        this information
         """
-        config = rhodecode.CONFIG
-        environ = request.environ
-        session = request.session
 
         vcs_handler = detect_vcs_request(
             request.environ, request.registry.settings.get('vcs.backends'))
@@ -54,38 +42,15 @@ def pylons_compatibility_tween_factory(handler, registry):
         if vcs_handler:
             # save detected VCS type for later re-use
             request.environ[VCS_TYPE_KEY] = vcs_handler.SCM
+            request.vcs_call = vcs_handler.SCM
             return handler(request)
 
         # mark that we didn't detect an VCS, and we can skip detection later on
         request.environ[VCS_TYPE_KEY] = VCS_TYPE_SKIP
 
-        # Setup pylons globals.
-        pylons.config._push_object(config)
-        pylons.request._push_object(request)
-        pylons.session._push_object(session)
-
-        session_key = (
-            config['pylons.environ_config'].get('session', 'beaker.session'))
-        environ[session_key] = session
-        pylons.url._push_object(URLGenerator(config['routes.map'], environ))
-
-        # TODO: Maybe we should use the language from pyramid.
-        translator = _get_translator(config.get('lang'))
-        pylons.translator._push_object(translator)
-
-        # Get the rhodecode auth user object and make it available.
-        auth_user = get_auth_user(environ)
-        request.user = auth_user
-        environ['rc_auth_user'] = auth_user
-
-        # Setup the pylons context object ('c')
-        context = ContextObj()
-        context.rhodecode_user = auth_user
-        attach_context_attributes(context, request)
-        pylons.tmpl_context._push_object(context)
         return handler(request)
 
-    return pylons_compatibility_tween
+    return vcs_detection_tween
 
 
 def includeme(config):
@@ -95,4 +60,7 @@ def includeme(config):
                           'pyramid.events.NewRequest')
     config.add_subscriber('rhodecode.subscribers.add_localizer',
                           'pyramid.events.NewRequest')
-    config.add_tween('rhodecode.tweens.pylons_compatibility_tween_factory')
+    config.add_subscriber('rhodecode.subscribers.add_pylons_context',
+                          'pyramid.events.ContextFound')
+
+    config.add_tween('rhodecode.tweens.vcs_detection_tween_factory')
