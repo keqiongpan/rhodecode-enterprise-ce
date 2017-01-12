@@ -283,6 +283,9 @@ def includeme(config):
     config.add_route(
         'rhodecode_support', 'https://rhodecode.com/help/', static=True)
 
+    config.add_translation_dirs('rhodecode:i18n/')
+    settings['default_locale_name'] = settings.get('lang', 'en')
+
     # Add subscribers.
     config.add_subscriber(scan_repositories_if_enabled, ApplicationCreated)
 
