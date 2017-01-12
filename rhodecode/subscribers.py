@@ -63,6 +63,15 @@ def add_localizer(event):
     request.plularize = localizer.pluralize
 
 
+def set_user_lang(event):
+    cur_user = getattr(event.request, 'user', None)
+
+    if cur_user:
+        user_lang = cur_user.get_instance().user_data.get('language')
+        if user_lang:
+            event.request._LOCALE_ = user_lang
+
+
 def scan_repositories_if_enabled(event):
     """
     This is subscribed to the `pyramid.events.ApplicationCreated` event. It

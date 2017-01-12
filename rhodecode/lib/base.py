@@ -443,20 +443,12 @@ class BaseController(WSGIController):
         self.sa = meta.Session
         self.scm_model = ScmModel(self.sa)
 
-        default_lang = c.language
-        user_lang = c.language
-        try:
-            user_obj = self._rhodecode_user.get_instance()
-            if user_obj:
-                user_lang = user_obj.user_data.get('language')
-        except Exception:
-            log.exception('Failed to fetch user language for user %s',
-                          self._rhodecode_user)
-
-        if user_lang and user_lang != default_lang:
-            log.debug('set language to %s for user %s', user_lang,
-                      self._rhodecode_user)
+        # set user language
+        user_lang = getattr(c.pyramid_request, '_LOCALE_', None)
+        if user_lang:
             translation.set_lang(user_lang)
+            log.debug('set language to %s for user %s',
+                      user_lang, self._rhodecode_user)
 
     def _dispatch_redirect(self, with_url, environ, start_response):
         resp = HTTPFound(with_url)

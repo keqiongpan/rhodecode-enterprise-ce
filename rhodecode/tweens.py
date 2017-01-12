@@ -67,8 +67,7 @@ def pylons_compatibility_tween_factory(handler, registry):
         session_key = (
             config['pylons.environ_config'].get('session', 'beaker.session'))
         environ[session_key] = session
-        pylons.url._push_object(URLGenerator(config['routes.map'],
-                                             environ))
+        pylons.url._push_object(URLGenerator(config['routes.map'], environ))
 
         # TODO: Maybe we should use the language from pyramid.
         translator = _get_translator(config.get('lang'))
@@ -92,6 +91,8 @@ def pylons_compatibility_tween_factory(handler, registry):
 def includeme(config):
     config.add_subscriber('rhodecode.subscribers.add_renderer_globals',
                           'pyramid.events.BeforeRender')
+    config.add_subscriber('rhodecode.subscribers.set_user_lang',
+                          'pyramid.events.NewRequest')
     config.add_subscriber('rhodecode.subscribers.add_localizer',
                           'pyramid.events.NewRequest')
     config.add_tween('rhodecode.tweens.pylons_compatibility_tween_factory')
