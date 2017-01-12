@@ -134,7 +134,8 @@ def uptime():
     human_value = value.copy()
     human_value['boot_time'] = time_to_datetime(boot_time)
     human_value['uptime'] = age(time_to_datetime(boot_time), show_suffix=False)
-    human_value['text'] = 'Server started {}'.format(
+
+    human_value['text'] = u'Server started {}'.format(
         age(time_to_datetime(boot_time)))
 
     return SysInfoRes(value=value, human_value=human_value)

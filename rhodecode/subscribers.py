@@ -30,7 +30,6 @@ from threading import Thread
 
 from rhodecode.translation import _ as tsf
 
-
 log = logging.getLogger(__name__)
 
 
@@ -69,6 +68,7 @@ def set_user_lang(event):
     if cur_user:
         user_lang = cur_user.get_instance().user_data.get('language')
         if user_lang:
+            log.debug('lang: setting current user:%s language to: %s', cur_user, user_lang)
             event.request._LOCALE_ = user_lang
 
 
