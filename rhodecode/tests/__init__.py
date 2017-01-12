@@ -231,9 +231,11 @@ def assert_session_flash(response=None, msg=None, category=None):
     message_text = _eval_if_lazy(message.message)
 
     if msg not in message_text:
-        msg = u'msg `%s` not found in session flash: got `%s` instead' % (
-            msg, message_text)
-        pytest.fail(safe_str(msg))
+        fail_msg = u'msg `%s` not found in session ' \
+                   u'flash: got `%s` (type:%s) instead' % (
+            msg, message_text, type(message_text))
+
+        pytest.fail(safe_str(fail_msg))
     if category:
         assert category == message.category
 
