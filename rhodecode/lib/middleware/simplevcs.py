@@ -165,7 +165,7 @@ class SimpleVCS(object):
                 self.acl_repo_name = acl_repo_name
                 self.is_shadow_repo = True
 
-        log.debug('Repository names: %s', {
+        log.debug('Setting all VCS repository names: %s', {
             'acl_repo_name': self.acl_repo_name,
             'url_repo_name': self.url_repo_name,
             'vcs_repo_name': self.vcs_repo_name,

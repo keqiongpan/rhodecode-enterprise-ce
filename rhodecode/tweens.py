@@ -28,12 +28,16 @@ from pylons.util import ContextObj
 from routes.util import URLGenerator
 
 from rhodecode.lib.base import attach_context_attributes, get_auth_user
+from rhodecode.lib.middleware.vcs import (
+    detect_vcs_request, VCS_TYPE_KEY, VCS_TYPE_SKIP)
 from rhodecode.model import meta
+
 
 log = logging.getLogger(__name__)
 
 
 def pylons_compatibility_tween_factory(handler, registry):
+
     def pylons_compatibility_tween(request):
         """
         While migrating from pylons to pyramid we need to call some pylons code
@@ -43,13 +47,23 @@ def pylons_compatibility_tween_factory(handler, registry):
         config = rhodecode.CONFIG
         environ = request.environ
         session = request.session
-        session_key = (config['pylons.environ_config']
-                       .get('session', 'beaker.session'))
+
+        vcs_handler = detect_vcs_request(
+            request.environ, request.registry.settings.get('vcs.backends'))
+
+        if vcs_handler:
+            request.environ[VCS_TYPE_KEY] = vcs_handler.SCM
+            return handler(request)
+
+        request.environ[VCS_TYPE_KEY] = VCS_TYPE_SKIP
 
         # Setup pylons globals.
         pylons.config._push_object(config)
         pylons.request._push_object(request)
         pylons.session._push_object(session)
+
+        session_key = (
+            config['pylons.environ_config'].get('session', 'beaker.session'))
         environ[session_key] = session
         pylons.url._push_object(URLGenerator(config['routes.map'],
                                              environ))
