@@ -26,67 +26,22 @@ from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.translation import _
-from rhodecode.svn_support.utils import generate_mod_dav_svn_config
 
+from rhodecode.admin.views.base import AdminSettingsView
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
-from rhodecode.lib.utils import read_opensource_licenses
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.lib import system_info
 from rhodecode.lib import user_sessions
 
 
-from .navigation import navigation_list
+from rhodecode.admin.navigation import navigation_list
 
 
 log = logging.getLogger(__name__)
 
 
-class AdminSettingsView(object):
-
-    def __init__(self, context, request):
-        self.request = request
-        self.context = context
-        self.session = request.session
-        self._rhodecode_user = request.user
-
-    @LoginRequired()
-    @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_open_source', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
-    def open_source_licenses(self):
-        c.active = 'open_source'
-        c.navlist = navigation_list(self.request)
-        c.opensource_licenses = collections.OrderedDict(
-            sorted(read_opensource_licenses().items(), key=lambda t: t[0]))
-
-        return {}
-
-    @LoginRequired()
-    @CSRFRequired()
-    @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_vcs_svn_generate_cfg',
-        request_method='POST', renderer='json')
-    def vcs_svn_generate_config(self):
-        try:
-            generate_mod_dav_svn_config(self.request.registry)
-            msg = {
-                'message': _('Apache configuration for Subversion generated.'),
-                'level': 'success',
-            }
-        except Exception:
-            log.exception(
-                'Exception while generating the Apache '
-                'configuration for Subversion.')
-            msg = {
-                'message': _('Failed to generate the Apache configuration for Subversion.'),
-                'level': 'error',
-            }
-
-        data = {'message': msg}
-        return data
+class AdminSessionSettingsView(AdminSettingsView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
@@ -112,6 +67,7 @@ class AdminSettingsView(object):
         return {}
 
     @LoginRequired()
+    @CSRFRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
         route_name='admin_settings_sessions_cleanup', request_method='POST')
