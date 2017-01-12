@@ -22,7 +22,6 @@ import logging
 
 from pyramid.view import view_config
 
-from rhodecode.translation import _
 from rhodecode.svn_support.utils import generate_mod_dav_svn_config
 
 from rhodecode.admin.views.base import AdminSettingsView
@@ -41,6 +40,7 @@ class SvnConfigAdminSettingsView(AdminSettingsView):
         route_name='admin_settings_vcs_svn_generate_cfg',
         request_method='POST', renderer='json')
     def vcs_svn_generate_config(self):
+        _ = self.request.translate
         try:
             generate_mod_dav_svn_config(self.request.registry)
             msg = {
