@@ -275,9 +275,9 @@
 
 </%def>
 
-<%def name="usermenu()">
+<%def name="usermenu(active=False)">
     ## USER MENU
-    <li id="quick_login_li">
+    <li id="quick_login_li" class="${'active' if active else ''}">
       <a id="quick_login_link" class="menulink childs">
         ${gravatar(c.rhodecode_user.email, 20)}
         <span class="user">
@@ -425,7 +425,7 @@
       </li>
       % endif
       ## render extra user menu
-      ${usermenu()}
+      ${usermenu(active=(active=='my_account'))}
     </ul>
 
     <script type="text/javascript">

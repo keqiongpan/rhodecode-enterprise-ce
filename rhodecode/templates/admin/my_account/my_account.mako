@@ -13,7 +13,7 @@
 </%def>
 
 <%def name="menu_bar_nav()">
-    ${self.menu_items(active='admin')}
+    ${self.menu_items(active='my_account')}
 </%def>
 
 <%def name="main()">
