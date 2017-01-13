@@ -292,7 +292,8 @@ def is_valid_repo(repo_name, base_path, expect_scm=None, explicit_scm=None):
     :return True: if given path is a valid repository
     """
     full_path = os.path.join(safe_str(base_path), safe_str(repo_name))
-    log.debug('Checking if `%s` is a valid path for repository', repo_name)
+    log.debug('Checking if `%s` is a valid path for repository. '
+              'Explicit type: %s', repo_name, explicit_scm)
 
     try:
         if explicit_scm:
