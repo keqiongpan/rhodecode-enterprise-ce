@@ -39,7 +39,6 @@ from rhodecode.lib.exceptions import UserCreationError
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.model.db import User
 from rhodecode.model.forms import LoginForm, RegisterForm, PasswordResetForm
-from rhodecode.model.login_session import LoginSession
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel
 from rhodecode.model.user import UserModel
@@ -158,11 +157,11 @@ class LoginView(object):
         renderer='rhodecode:templates/login.mako')
     def login_post(self):
         came_from = get_came_from(self.request)
-        session = self.request.session
+
         login_form = LoginForm()()
 
         try:
-            session.invalidate()
+            self.session.invalidate()
             form_result = login_form.to_python(self.request.params)
             # form checks for username/password, now we're authenticated
             headers = _store_user_in_session(
@@ -187,13 +186,15 @@ class LoginView(object):
             # the fly can throw this exception signaling that there's issue
             # with user creation, explanation should be provided in
             # Exception itself
-            session.flash(e, queue='error')
+            self.session.flash(e, queue='error')
             return self._get_template_context()
 
     @CSRFRequired()
     @view_config(route_name='logout', request_method='POST')
     def logout(self):
-        LoginSession().destroy_user_session()
+        user = self.request.user
+        log.info('Deleting session for user: `%s`', user)
+        self.session.delete()
         return HTTPFound(url('home'))
 
     @HasPermissionAnyDecorator(
