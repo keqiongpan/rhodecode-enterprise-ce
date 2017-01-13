@@ -331,6 +331,13 @@ def includeme_first(config):
     config.add_view(favicon_redirect, route_name='favicon')
     config.add_route('favicon', '/favicon.ico')
 
+    def robots_redirect(context, request):
+        return HTTPFound(
+            request.static_path('rhodecode:public/robots.txt'))
+
+    config.add_view(robots_redirect, route_name='robots')
+    config.add_route('robots', '/robots.txt')
+
     config.add_static_view(
         '_static/deform', 'deform:static')
     config.add_static_view(
@@ -361,7 +368,6 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
     if settings['gzip_responses']:
         pyramid_app = make_gzip_middleware(
             pyramid_app, settings, compress_level=1)
-
 
     # this should be the outer most middleware in the wsgi stack since
     # middleware like Routes make database calls
