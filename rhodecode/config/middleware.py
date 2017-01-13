@@ -227,12 +227,18 @@ def error_handler(exception, request):
         log.exception('failed to fetch settings')
         rc_config = {}
 
-    log.exception(
-        'error occurred handling this request for path: %s', request.path)
     base_response = HTTPInternalServerError()
     # prefer original exception for the response since it may have headers set
     if isinstance(exception, HTTPError):
         base_response = exception
+
+    def is_http_error(response):
+        # error which should have traceback
+        return response.status_code > 499
+
+    if is_http_error(base_response):
+        log.exception(
+            'error occurred handling this request for path: %s', request.path)
 
     c = AttributeDict()
     c.error_message = base_response.status
