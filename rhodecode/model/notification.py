@@ -27,7 +27,6 @@ Model for notifications
 import logging
 import traceback
 
-from pylons import tmpl_context as c
 from pylons.i18n.translation import _, ungettext
 from sqlalchemy.sql.expression import false, true
 from mako import exceptions
@@ -318,6 +317,7 @@ class EmailNotificationModel(BaseModel):
 
         """
         super(EmailNotificationModel, self).__init__()
+        self.rhodecode_instance_name = None
 
     def _update_kwargs_for_render(self, kwargs):
         """
@@ -326,9 +326,18 @@ class EmailNotificationModel(BaseModel):
         :param kwargs:
         :return:
         """
+        rhodecode_name = self.rhodecode_instance_name
+        if not rhodecode_name:
+            try:
+                rc_config = SettingsModel().get_all_settings()
+            except Exception:
+                log.exception('failed to fetch settings')
+                rc_config = {}
+            rhodecode_name = rc_config.get('rhodecode_title', '')
+            kwargs['rhodecode_instance_name'] = rhodecode_name
+
         _kwargs = {
             'instance_url': h.url('home', qualified=True),
-            'rhodecode_instance_name': getattr(c, 'rhodecode_name', '')
         }
         _kwargs.update(kwargs)
         return _kwargs
