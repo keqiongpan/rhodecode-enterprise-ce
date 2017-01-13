@@ -34,3 +34,10 @@ class LazyString(object):
 def lazy_ugettext(*args, **kw):
     """ Lazily evaluated version of _() """
     return LazyString(*args, **kw)
+
+
+def _pluralize(msgid1, msgid2, n, mapping=None):
+    if n == 1:
+        return _(msgid1, mapping=mapping)
+    else:
+        return _(msgid2, mapping=mapping)

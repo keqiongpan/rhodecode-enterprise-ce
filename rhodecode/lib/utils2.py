@@ -44,6 +44,7 @@ import webob
 import routes.util
 
 import rhodecode
+from rhodecode.translation import _, _pluralize
 
 
 def md5(s):
@@ -380,7 +381,6 @@ def age(prevdate, now=None, show_short_version=False, show_suffix=True,
     :rtype: unicode
     :returns: unicode words describing age
     """
-    from pylons.i18n.translation import _, ungettext
 
     def _get_relative_delta(now, prevdate):
         base = dateutil.relativedelta.relativedelta(now, prevdate)
@@ -460,12 +460,12 @@ def age(prevdate, now=None, show_short_version=False, show_suffix=True,
         }
     else:
         fmt_funcs = {
-            'year': lambda d: ungettext(u'%d year', '%d years', d) % d,
-            'month': lambda d: ungettext(u'%d month', '%d months', d) % d,
-            'day': lambda d: ungettext(u'%d day', '%d days', d) % d,
-            'hour': lambda d: ungettext(u'%d hour', '%d hours', d) % d,
-            'minute': lambda d: ungettext(u'%d minute', '%d minutes', d) % d,
-            'second': lambda d: ungettext(u'%d second', '%d seconds', d) % d,
+            'year': lambda d: _pluralize(u'${num} year', u'${num} years', d, mapping={'num': d}).interpolate(),
+            'month': lambda d: _pluralize(u'${num} month', u'${num} months', d, mapping={'num': d}).interpolate(),
+            'day': lambda d: _pluralize(u'${num} day', u'${num} days', d, mapping={'num': d}).interpolate(),
+            'hour': lambda d: _pluralize(u'${num} hour', u'${num} hours', d, mapping={'num': d}).interpolate(),
+            'minute': lambda d: _pluralize(u'${num} minute', u'${num} minutes', d, mapping={'num': d}).interpolate(),
+            'second': lambda d: _pluralize(u'${num} second', u'${num} seconds', d, mapping={'num': d}).interpolate(),
         }
 
     i = 0
@@ -483,33 +483,34 @@ def age(prevdate, now=None, show_short_version=False, show_suffix=True,
                 _val = fmt_funcs[part](value)
                 if future:
                     if show_suffix:
-                        return _(u'in %s') % _val
+                        return _(u'in ${ago}', mapping={'ago': _val})
                     else:
-                        return _val
+                        return _(_val)
 
                 else:
                     if show_suffix:
-                        return _(u'%s ago') % _val
+                        return _(u'${ago} ago', mapping={'ago': _val})
                     else:
-                        return _val
+                        return _(_val)
 
             val = fmt_funcs[part](value)
             val_detail = fmt_funcs[sub_part](sub_value)
+            mapping = {'val': val, 'detail': val_detail}
 
             if short_format:
-                datetime_tmpl = u'%s, %s'
+                datetime_tmpl = _(u'${val}, ${detail}', mapping=mapping)
                 if show_suffix:
-                    datetime_tmpl = _(u'%s, %s ago')
+                    datetime_tmpl = _(u'${val}, ${detail} ago', mapping=mapping)
                     if future:
-                        datetime_tmpl = _(u'in %s, %s')
+                        datetime_tmpl = _(u'in ${val}, ${detail}', mapping=mapping)
             else:
-                datetime_tmpl = _(u'%s and %s')
+                datetime_tmpl = _(u'${val} and ${detail}', mapping=mapping)
                 if show_suffix:
-                    datetime_tmpl = _(u'%s and %s ago')
+                    datetime_tmpl = _(u'${val} and ${detail} ago', mapping=mapping)
                     if future:
-                        datetime_tmpl = _(u'in %s and %s')
+                        datetime_tmpl = _(u'in ${val} and ${detail}', mapping=mapping)
 
-            return datetime_tmpl % (val, val_detail)
+            return datetime_tmpl
         i += 1
     return _(u'just now')
 
