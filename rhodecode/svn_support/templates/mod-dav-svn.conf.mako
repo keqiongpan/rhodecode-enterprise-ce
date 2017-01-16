@@ -54,6 +54,7 @@ RequestHeader edit Destination ^https: http: early
     AuthName "${rhodecode_realm|n}"
     AuthBasicProvider anon
     Anonymous *
+    Anonymous_LogEmail off
     Require valid-user
 
     DAV svn
@@ -71,6 +72,7 @@ RequestHeader edit Destination ^https: http: early
     AuthName "${rhodecode_realm|n}"
     AuthBasicProvider anon
     Anonymous *
+    Anonymous_LogEmail off
     Require valid-user
 
     DAV svn
