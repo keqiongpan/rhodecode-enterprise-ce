@@ -180,7 +180,7 @@
     <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
 
     ## render comments
-    ${comment.generate_comments()}
+    ${comment.generate_comments(c.comments)}
 
     ## main comment form and it status
     ${comment.comments(h.url('changeset_comment', repo_name=c.repo_name, revision=c.commit.raw_id),

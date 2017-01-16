@@ -39,7 +39,7 @@ from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import extract_mentioned_users
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    ChangesetComment, User, Notification, PullRequest)
+    ChangesetComment, User, Notification, PullRequest, AttributeDict)
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import VcsSettingsModel
@@ -82,6 +82,52 @@ class CommentsModel(BaseModel):
         except Exception:
             log.error(traceback.format_exc())
         return global_renderer
+
+    def aggregate_comments(self, comments, versions, show_version, inline=False):
+        # group by versions, and count until, and display objects
+
+        comment_groups = collections.defaultdict(list)
+        [comment_groups[
+             _co.pull_request_version_id].append(_co) for _co in comments]
+
+        def yield_comments(pos):
+            for co in comment_groups[pos]:
+                yield co
+
+        comment_versions = collections.defaultdict(
+            lambda: collections.defaultdict(list))
+        prev_prvid = -1
+        # fake last entry with None, to aggregate on "latest" version which
+        # doesn't have an pull_request_version_id
+        for ver in versions + [AttributeDict({'pull_request_version_id': None})]:
+            prvid = ver.pull_request_version_id
+            if prev_prvid == -1:
+                prev_prvid = prvid
+
+            for co in yield_comments(prvid):
+                comment_versions[prvid]['at'].append(co)
+
+            # save until
+            current = comment_versions[prvid]['at']
+            prev_until = comment_versions[prev_prvid]['until']
+            cur_until = prev_until + current
+            comment_versions[prvid]['until'].extend(cur_until)
+
+            # save outdated
+            if inline:
+                outdated = [x for x in cur_until
+                            if x.outdated_at_version(show_version)]
+            else:
+                outdated = [x for x in cur_until
+                            if x.older_than_version(show_version)]
+            display = [x for x in cur_until if x not in outdated]
+
+            comment_versions[prvid]['outdated'] = outdated
+            comment_versions[prvid]['display'] = display
+
+            prev_prvid = prvid
+
+        return comment_versions
 
     def create(self, text, repo, user, commit_id=None, pull_request=None,
                f_path=None, line_no=None, status_change=None,
@@ -376,18 +422,14 @@ class CommentsModel(BaseModel):
         return self._group_comments_by_path_and_line_number(q)
 
     def get_inline_comments_count(self, inline_comments, skip_outdated=True,
-                                  version=None, include_aggregates=False):
-        version_aggregates = collections.defaultdict(list)
+                                  version=None):
         inline_cnt = 0
         for fname, per_line_comments in inline_comments.iteritems():
             for lno, comments in per_line_comments.iteritems():
                 for comm in comments:
-                    version_aggregates[comm.pull_request_version_id].append(comm)
                     if not comm.outdated_at_version(version) and skip_outdated:
                         inline_cnt += 1
 
-        if include_aggregates:
-            return inline_cnt, version_aggregates
         return inline_cnt
 
     def get_outdated_comments(self, repo_id, pull_request):
@@ -508,6 +550,13 @@ class CommentsModel(BaseModel):
         comments = Session().query(ChangesetComment)\
             .filter(ChangesetComment.line_no != None)\
             .filter(ChangesetComment.f_path != None)\
+            .filter(ChangesetComment.pull_request == pull_request)
+        return comments
+
+    def _all_general_comments_of_pull_request(self, pull_request):
+        comments = Session().query(ChangesetComment)\
+            .filter(ChangesetComment.line_no == None)\
+            .filter(ChangesetComment.f_path == None)\
             .filter(ChangesetComment.pull_request == pull_request)
         return comments
 

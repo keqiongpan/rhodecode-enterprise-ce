@@ -807,49 +807,43 @@ class PullrequestsController(BaseRepoController):
             c.approval_msg = _('Reviewer approval is pending.')
             c.pr_merge_status = False
 
-        # inline comments
-        inline_comments = cc_model.get_inline_comments(
-            c.rhodecode_db_repo.repo_id, pull_request=pull_request_id)
-
-        _inline_cnt, c.inline_versions = cc_model.get_inline_comments_count(
-            inline_comments, version=at_version, include_aggregates=True)
-
         c.versions = pull_request_display_obj.versions()
+        c.at_version = at_version
         c.at_version_num = at_version if at_version and at_version != 'latest' else None
         c.at_version_pos = ChangesetComment.get_index_from_version(
             c.at_version_num, c.versions)
 
-        is_outdated = lambda co: \
-            not c.at_version_num \
-            or co.pull_request_version_id <= c.at_version_num
+        # GENERAL COMMENTS with versions #
+        q = cc_model._all_general_comments_of_pull_request(pull_request_latest)
+        general_comments = q.order_by(ChangesetComment.pull_request_version_id.asc())
 
-        # inline_comments_until_version
-        if c.at_version_num:
-            # if we use version, then do not show later comments
-            # than current version
-            paths = collections.defaultdict(lambda: collections.defaultdict(list))
-            for fname, per_line_comments in inline_comments.iteritems():
-                for lno, comments in per_line_comments.iteritems():
-                    for co in comments:
-                        if co.pull_request_version_id and is_outdated(co):
-                            paths[co.f_path][co.line_no].append(co)
-            inline_comments = paths
+        # pick comments we want to render at current version
+        c.comment_versions = cc_model.aggregate_comments(
+            general_comments, c.versions, c.at_version_num)
+        c.comments = c.comment_versions[c.at_version_num]['until']
 
-        # outdated comments
-        c.outdated_cnt = 0
-        if CommentsModel.use_outdated_comments(pull_request_latest):
-            outdated_comments = cc_model.get_outdated_comments(
-                c.rhodecode_db_repo.repo_id,
-                pull_request=pull_request_at_ver)
+        # INLINE COMMENTS with versions  #
+        q = cc_model._all_inline_comments_of_pull_request(pull_request_latest)
+        inline_comments = q.order_by(ChangesetComment.pull_request_version_id.asc())
+        c.inline_versions = cc_model.aggregate_comments(
+            inline_comments, c.versions, c.at_version_num, inline=True)
 
-            # Count outdated comments and check for deleted files
-            is_outdated = lambda co: \
-                not c.at_version_num \
-                or co.pull_request_version_id < c.at_version_num
-            for file_name, lines in outdated_comments.iteritems():
-                for comments in lines.values():
-                    comments = [comm for comm in comments if is_outdated(comm)]
-                    c.outdated_cnt += len(comments)
+        # if we use version, then do not show later comments
+        # than current version
+        paths = collections.defaultdict(lambda: collections.defaultdict(list))
+        for co in inline_comments:
+            if c.at_version_num:
+                # pick comments that are at least UPTO given version, so we
+                # don't render comments for higher version
+                should_render = co.pull_request_version_id and \
+                                co.pull_request_version_id <= c.at_version_num
+            else:
+                # showing all, for 'latest'
+                should_render = True
+
+            if should_render:
+                paths[co.f_path][co.line_no].append(co)
+        inline_comments = paths
 
         # load compare data into template context
         self._load_compare_data(pull_request_at_ver, inline_comments)
@@ -859,10 +853,6 @@ class PullrequestsController(BaseRepoController):
         # compare_commits.mako renders links based on the target_repo.
         # We need to swap that here to generate it properly on the html side
         c.target_repo = c.source_repo
-
-        # general comments
-        c.comments = cc_model.get_comments(
-            c.rhodecode_db_repo.repo_id, pull_request=pull_request_id)
 
         if c.allowed_to_update:
             force_close = ('forced_closed', _('Close Pull Request'))
@@ -874,7 +864,6 @@ class PullrequestsController(BaseRepoController):
         c.ancestor = None  # TODO: add ancestor here
         c.pull_request = pull_request_display_obj
         c.pull_request_latest = pull_request_latest
-        c.at_version = at_version
 
         c.changes = None
         c.file_changes = None

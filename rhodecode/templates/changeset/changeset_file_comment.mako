@@ -6,8 +6,13 @@
 <%namespace name="base" file="/base/base.mako"/>
 
 <%def name="comment_block(comment, inline=False)">
-  <% outdated_at_ver = comment.outdated_at_version(getattr(c, 'at_version', None)) %>
   <% pr_index_ver = comment.get_index_version(getattr(c, 'versions', [])) %>
+  % if inline:
+      <% outdated_at_ver = comment.outdated_at_version(getattr(c, 'at_version_num', None)) %>
+  % else:
+      <% outdated_at_ver = comment.older_than_version(getattr(c, 'at_version_num', None)) %>
+  % endif
+
 
   <div class="comment
              ${'comment-inline' if inline else 'comment-general'}
@@ -83,16 +88,19 @@
           <div class="comment-links-block">
 
             % if inline:
-              % if outdated_at_ver:
                   <div class="pr-version-inline">
                     <a href="${h.url.current(version=comment.pull_request_version_id, anchor='comment-{}'.format(comment.comment_id))}">
-                    <code class="pr-version-num">
-                        outdated ${'v{}'.format(pr_index_ver)}
-                    </code>
+                    % if outdated_at_ver:
+                        <code class="pr-version-num" title="${_('Outdated comment from pull request version {0}').format(pr_index_ver)}">
+                            outdated ${'v{}'.format(pr_index_ver)} |
+                        </code>
+                    % elif pr_index_ver:
+                        <code class="pr-version-num" title="${_('Comment from pull request version {0}').format(pr_index_ver)}">
+                            ${'v{}'.format(pr_index_ver)} |
+                        </code>
+                    % endif
                     </a>
                   </div>
-                  |
-              % endif
             % else:
                 % if comment.pull_request_version_id and pr_index_ver:
                     |
@@ -102,7 +110,7 @@
                             ${_('Outdated comment from pull request version {}').format(pr_index_ver)}
                         </a>
                       % else:
-                        <div class="tooltip" title="${_('Comment from pull request version {0}').format(pr_index_ver)}">
+                        <div title="${_('Comment from pull request version {0}').format(pr_index_ver)}">
                             <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}">
                             <code class="pr-version-num">
                                 ${'v{}'.format(pr_index_ver)}
@@ -143,9 +151,9 @@
 </%def>
 
 ## generate main comments
-<%def name="generate_comments(include_pull_request=False, is_pull_request=False)">
+<%def name="generate_comments(comments, include_pull_request=False, is_pull_request=False)">
   <div id="comments">
-    %for comment in c.comments:
+    %for comment in comments:
         <div id="comment-tr-${comment.comment_id}">
           ## only render comments that are not from pull request, or from
           ## pull request and a status change

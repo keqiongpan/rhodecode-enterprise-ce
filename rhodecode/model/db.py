@@ -2959,6 +2959,15 @@ class ChangesetComment(Base, BaseModel):
         """
         return self.outdated and self.pull_request_version_id != version
 
+    def older_than_version(self, version):
+        """
+        Checks if comment is made from previous version than given
+        """
+        if version is None:
+            return self.pull_request_version_id is not None
+
+        return self.pull_request_version_id < version
+
     @property
     def resolved(self):
         return self.resolved_by[0] if self.resolved_by else None
@@ -2973,9 +2982,9 @@ class ChangesetComment(Base, BaseModel):
 
     def __repr__(self):
         if self.comment_id:
-            return '<DB:ChangesetComment #%s>' % self.comment_id
+            return '<DB:Comment #%s>' % self.comment_id
         else:
-            return '<DB:ChangesetComment at %#x>' % id(self)
+            return '<DB:Comment at %#x>' % id(self)
 
 
 class ChangesetStatus(Base, BaseModel):
