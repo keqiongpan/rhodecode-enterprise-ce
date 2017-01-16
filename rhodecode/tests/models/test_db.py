@@ -24,24 +24,24 @@ import random
 from rhodecode.model import db
 
 
-@pytest.mark.parametrize("DBModel, id_attr", [
-    (db.ChangesetComment, 'comment_id'),
-    (db.PullRequest, 'pull_request_id'),
-    (db.PullRequestVersion, 'pull_request_version_id'),
+@pytest.mark.parametrize("DBModel, klass, id_attr", [
+    (db.ChangesetComment, 'Comment', 'comment_id'),
+    (db.PullRequest, db.PullRequest.__name__, 'pull_request_id'),
+    (db.PullRequestVersion, db.PullRequestVersion.__name__, 'pull_request_version_id'),
 ])
-class TestModelReprImplementation:
+class TestModelReprImplementation(object):
 
-    def test_repr_without_id(self, DBModel, id_attr):
+    def test_repr_without_id(self, DBModel, klass, id_attr):
         instance = DBModel()
-        expected_repr = '<DB:%s at %#x>' % (DBModel.__name__, id(instance))
+        expected_repr = '<DB:%s at %#x>' % (klass, id(instance))
         assert repr(instance) == expected_repr
 
-    def test_repr_with_id(self, DBModel, id_attr):
+    def test_repr_with_id(self, DBModel, klass, id_attr):
         test_id = random.randint(1, 10)
         instance = DBModel()
         setattr(instance, id_attr, test_id)
         expected_repr = (
-            '<DB:%s #%d>' % (DBModel.__name__, test_id))
+            '<DB:%s #%d>' % (klass, test_id))
         assert repr(instance) == expected_repr
 
 
