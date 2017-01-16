@@ -633,6 +633,18 @@ class PullrequestsController(BaseRepoController):
             msg = _('Pull request reviewer approval is pending.')
             h.flash(msg, category='error')
             return False
+
+        todos = CommentsModel().get_unresolved_todos(pull_request)
+        if todos:
+            log.debug("Cannot merge, unresolved todos left.")
+            if len(todos) == 1:
+                msg = _('Cannot merge, {} todo still not resolved.').format(
+                    len(todos))
+            else:
+                msg = _('Cannot merge, {} todos still not resolved.').format(
+                    len(todos))
+            h.flash(msg, category='error')
+            return False
         return True
 
     def _merge_pull_request(self, pull_request, user, extras):
@@ -761,6 +773,7 @@ class PullrequestsController(BaseRepoController):
     def show(self, repo_name, pull_request_id):
         pull_request_id = safe_int(pull_request_id)
         version = request.GET.get('version')
+        merge_checks = request.GET.get('merge_checks')
 
         (pull_request_latest,
          pull_request_at_ver,
@@ -777,6 +790,10 @@ class PullrequestsController(BaseRepoController):
 
         c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
             pull_request_at_ver)
+
+        c.ancestor = None  # TODO: add ancestor here
+        c.pull_request = pull_request_display_obj
+        c.pull_request_latest = pull_request_latest
 
         pr_closed = pull_request_latest.is_closed()
         if at_version and not at_version == 'latest':
@@ -800,12 +817,6 @@ class PullrequestsController(BaseRepoController):
 
         c.pull_request_reviewers = pull_request_at_ver.reviewers_statuses()
         c.pull_request_review_status = pull_request_at_ver.calculated_review_status()
-        c.pr_merge_status, c.pr_merge_msg = PullRequestModel().merge_status(
-            pull_request_at_ver)
-        c.approval_msg = None
-        if c.pull_request_review_status != ChangesetStatus.STATUS_APPROVED:
-            c.approval_msg = _('Reviewer approval is pending.')
-            c.pr_merge_status = False
 
         c.versions = pull_request_display_obj.versions()
         c.at_version = at_version
@@ -830,7 +841,7 @@ class PullrequestsController(BaseRepoController):
 
         # if we use version, then do not show later comments
         # than current version
-        paths = collections.defaultdict(lambda: collections.defaultdict(list))
+        display_inline_comments = collections.defaultdict(lambda: collections.defaultdict(list))
         for co in inline_comments:
             if c.at_version_num:
                 # pick comments that are at least UPTO given version, so we
@@ -842,11 +853,32 @@ class PullrequestsController(BaseRepoController):
                 should_render = True
 
             if should_render:
-                paths[co.f_path][co.line_no].append(co)
-        inline_comments = paths
+                display_inline_comments[co.f_path][co.line_no].append(co)
+
+        c.pr_merge_checks = []
+        c.pr_merge_status, c.pr_merge_msg = PullRequestModel().merge_status(
+            pull_request_at_ver)
+        c.pr_merge_checks.append(['warning' if not c.pr_merge_status else 'success', c.pr_merge_msg])
+
+        if c.pull_request_review_status != ChangesetStatus.STATUS_APPROVED:
+            approval_msg = _('Reviewer approval is pending.')
+            c.pr_merge_status = False
+            c.pr_merge_checks.append(['warning', approval_msg])
+
+        todos = cc_model.get_unresolved_todos(pull_request_latest)
+        if todos:
+            c.pr_merge_status = False
+            if len(todos) == 1:
+                msg = _('{} todo still not resolved.').format(len(todos))
+            else:
+                msg = _('{} todos still not resolved.').format(len(todos))
+            c.pr_merge_checks.append(['warning', msg])
+
+        if merge_checks:
+            return render('/pullrequests/pullrequest_merge_checks.mako')
 
         # load compare data into template context
-        self._load_compare_data(pull_request_at_ver, inline_comments)
+        self._load_compare_data(pull_request_at_ver, display_inline_comments)
 
         # this is a hack to properly display links, when creating PR, the
         # compare view and others uses different notation, and
@@ -860,10 +892,6 @@ class PullrequestsController(BaseRepoController):
         else:
             statuses = ChangesetStatus.STATUSES
         c.commit_statuses = statuses
-
-        c.ancestor = None  # TODO: add ancestor here
-        c.pull_request = pull_request_display_obj
-        c.pull_request_latest = pull_request_latest
 
         c.changes = None
         c.file_changes = None

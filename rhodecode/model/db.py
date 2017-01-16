@@ -2972,6 +2972,10 @@ class ChangesetComment(Base, BaseModel):
     def resolved(self):
         return self.resolved_by[0] if self.resolved_by else None
 
+    @property
+    def is_todo(self):
+        return self.comment_type == self.COMMENT_TYPE_TODO
+
     def get_index_version(self, versions):
         return self.get_index_from_version(
             self.pull_request_version_id, versions)

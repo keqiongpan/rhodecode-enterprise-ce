@@ -170,29 +170,6 @@
 
 <%def name="comments(post_url, cur_status, is_pull_request=False, is_compare=False, change_status=True, form_extras=None)">
 
-## merge status, and merge action
-%if is_pull_request:
-<div class="pull-request-merge">
-    %if c.allowed_to_merge:
-    <div class="pull-request-wrap">
-        <div class="pull-right">
-          ${h.secure_form(url('pullrequest_merge', repo_name=c.repo_name, pull_request_id=c.pull_request.pull_request_id), id='merge_pull_request_form')}
-          <span data-role="merge-message">${c.pr_merge_msg} ${c.approval_msg if c.approval_msg else ''}</span>
-          <% merge_disabled = ' disabled' if c.pr_merge_status is False else '' %>
-          <input type="submit" id="merge_pull_request" value="${_('Merge Pull Request')}" class="btn${merge_disabled}"${merge_disabled}>
-          ${h.end_form()}
-        </div>
-    </div>
-    %else:
-    <div class="pull-request-wrap">
-        <div class="pull-right">
-          <span>${c.pr_merge_msg} ${c.approval_msg if c.approval_msg else ''}</span>
-        </div>
-    </div>
-    %endif
-</div>
-%endif
-
 <div class="comments">
     <%
       if is_pull_request:

@@ -482,23 +482,28 @@ Changed files:
 
       <div id="comment-tr-show">
           <div class="comment">
+            % if general_outdated_comm_count_ver:
             <div class="meta">
-                % if general_outdated_comm_count_ver:
-                    % if general_outdated_comm_count_ver == 1:
-                        ${_('there is {num} general comment from older versions').format(num=general_outdated_comm_count_ver)},
-                        <a href="#" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show it')}</a>
-                    % else:
-                        ${_('there are {num} general comments from older versions').format(num=general_outdated_comm_count_ver)},
-                        <a href="#" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show them')}</a>
-                    % endif
+                % if general_outdated_comm_count_ver == 1:
+                    ${_('there is {num} general comment from older versions').format(num=general_outdated_comm_count_ver)},
+                    <a href="#" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show it')}</a>
+                % else:
+                    ${_('there are {num} general comments from older versions').format(num=general_outdated_comm_count_ver)},
+                    <a href="#" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show them')}</a>
                 % endif
             </div>
+            % endif
           </div>
       </div>
 
       ${comment.generate_comments(c.comments, include_pull_request=True, is_pull_request=True)}
 
       % if not c.pull_request.is_closed():
+        ## merge status, and merge action
+        <div class="pull-request-merge">
+            <%include file="/pullrequests/pullrequest_merge_checks.mako"/>
+        </div>
+
         ## main comment form and it status
         ${comment.comments(h.url('pullrequest_comment', repo_name=c.repo_name,
                                   pull_request_id=c.pull_request.pull_request_id),
@@ -603,6 +608,16 @@ Changed files:
                 $('.showOutdatedComments').show();
             };
 
+            refreshMergeChecks = function(){
+                var loadUrl = "${h.url.current(merge_checks=1)}";
+                $('.pull-request-merge').css('opacity', 0.3);
+                $('.pull-request-merge').load(
+                    loadUrl,function() {
+                        $('.pull-request-merge').css('opacity', 1);
+                    }
+                );
+            };
+
             $('#show-outdated-comments').on('click', function(e){
                 var button = $(this);
                 var outdated = $('.comment-outdated');
@@ -683,6 +698,12 @@ Changed files:
                   button.addClass("comments-visible");
                 }
             });
+
+            // register submit callback on commentForm form to track TODOs
+            window.commentFormGlobalSubmitSuccessCallback = function(){
+                refreshMergeChecks();
+            };
+
         })
       </script>
 

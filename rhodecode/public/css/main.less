@@ -1610,19 +1610,53 @@ BIN_FILENODE = 7
 }
 
 .pull-request-merge {
-    padding: 10px 0;
+    border: 1px solid @grey5;
+    padding: 10px 0px 20px;
     margin-top: 10px;
     margin-bottom: 20px;
 }
 
+.pull-request-merge ul {
+    padding: 0px 0px;
+}
+
+.pull-request-merge li:before{
+    content:none;
+}
+
 .pull-request-merge .pull-request-wrap {
-    height: 25px;
-    padding: 5px 0;
+    height: auto;
+    padding: 0px 0px;
+    text-align: right;
 }
 
 .pull-request-merge span {
-    margin-right: 10px;
+    margin-right: 5px;
 }
+
+.pull-request-merge-actions {
+    height: 30px;
+    padding: 0px 0px;
+}
+
+.merge-message {
+    font-size: 1.2em
+}
+.merge-message li{
+    text-decoration: none;
+}
+
+.merge-message.success i {
+    color:@alert1;
+}
+.merge-message.warning i {
+  color: @alert3;
+}
+.merge-message.error i {
+    color:@alert2;
+}
+
+
 
 .pr-versions {
     position: relative;

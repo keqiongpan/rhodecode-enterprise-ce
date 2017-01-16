@@ -240,7 +240,12 @@ var bindToggleButtons = function() {
             $(this.statusChange).select2('readonly', false);
         };
 
-        this.globalSubmitSuccessCallback = function(){};
+        this.globalSubmitSuccessCallback = function(){
+            // default behaviour is to call GLOBAL hook, if it's registered.
+            if (window.commentFormGlobalSubmitSuccessCallback !== undefined){
+                commentFormGlobalSubmitSuccessCallback()
+            }
+        };
 
         this.submitAjaxPOST = function(url, postData, successHandler, failHandler) {
             failHandler = failHandler || function() {};
@@ -300,7 +305,8 @@ var bindToggleButtons = function() {
             }
 
             var submitSuccessCallback = function(o) {
-                if (status) {
+                // reload page if we change status for single commit.
+                if (status && self.commitId) {
                     location.reload(true);
                 } else {
                     $('#injected_page_comments').append(o.rendered_text);
