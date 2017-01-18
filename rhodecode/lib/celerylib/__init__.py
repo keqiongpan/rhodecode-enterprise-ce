@@ -76,6 +76,18 @@ class RhodecodeCeleryTask(Task):
 
         request = get_current_request()
 
+        if hasattr(request, 'user'):
+            ip_addr = request.user.ip_addr
+            user_id = request.user.user_id
+        elif hasattr(request, 'rpc_params'):
+            # TODO(marcink) remove when migration is finished
+            # api specific call on Pyramid.
+            ip_addr = request.rpc_params['apiuser'].ip_addr
+            user_id = request.rpc_params['apiuser'].user_id
+        else:
+            raise Exception('Unable to fetch data from request: {}'.format(
+                request))
+
         if request:
             # we hook into kwargs since it is the only way to pass our data to
             # the celery worker in celery 2.2
@@ -91,8 +103,8 @@ class RhodecodeCeleryTask(Task):
                         'wsgi.url_scheme': request.environ['wsgi.url_scheme'],
                     },
                     'auth_user': {
-                        'ip_addr': request.user.ip_addr,
-                        'user_id': request.user.user_id
+                        'ip_addr': ip_addr,
+                        'user_id': user_id
                     },
                 }
             })

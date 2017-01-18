@@ -256,7 +256,7 @@ def request_view(request):
     except JSONRPCBaseError:
         raise
     except Exception:
-        log.exception('Unhandled exception occured on api call: %s', func)
+        log.exception('Unhandled exception occurred on api call: %s', func)
         return jsonrpc_error(request, retid=request.rpc_id,
                              message='Internal server error')
 
