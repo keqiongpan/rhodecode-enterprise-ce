@@ -60,7 +60,7 @@ from rhodecode.model.db import (PullRequest, ChangesetStatus, ChangesetComment,
     Repository, PullRequestVersion)
 from rhodecode.model.forms import PullRequestForm
 from rhodecode.model.meta import Session
-from rhodecode.model.pull_request import PullRequestModel
+from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 
 log = logging.getLogger(__name__)
 
@@ -597,14 +597,20 @@ class PullrequestsController(BaseRepoController):
 
         Merge will perform a server-side merge of the specified
         pull request, if the pull request is approved and mergeable.
-        After succesfull merging, the pull request is automatically
+        After successful merging, the pull request is automatically
         closed, with a relevant comment.
         """
         pull_request_id = safe_int(pull_request_id)
         pull_request = PullRequest.get_or_404(pull_request_id)
         user = c.rhodecode_user
 
-        if self._meets_merge_pre_conditions(pull_request, user):
+        check = MergeCheck.validate(pull_request, user)
+        merge_possible = not check.failed
+
+        for err_type, error_msg in check.errors:
+            h.flash(error_msg, category=err_type)
+
+        if merge_possible:
             log.debug("Pre-conditions checked, trying to merge.")
             extras = vcs_operation_context(
                 request.environ, repo_name=pull_request.target_repo.repo_name,
@@ -616,36 +622,6 @@ class PullrequestsController(BaseRepoController):
             'pullrequest_show',
             repo_name=pull_request.target_repo.repo_name,
             pull_request_id=pull_request.pull_request_id))
-
-    def _meets_merge_pre_conditions(self, pull_request, user):
-        if not PullRequestModel().check_user_merge(pull_request, user):
-            raise HTTPForbidden()
-
-        merge_status, msg = PullRequestModel().merge_status(pull_request)
-        if not merge_status:
-            log.debug("Cannot merge, not mergeable.")
-            h.flash(msg, category='error')
-            return False
-
-        if (pull_request.calculated_review_status()
-            is not ChangesetStatus.STATUS_APPROVED):
-            log.debug("Cannot merge, approval is pending.")
-            msg = _('Pull request reviewer approval is pending.')
-            h.flash(msg, category='error')
-            return False
-
-        todos = CommentsModel().get_unresolved_todos(pull_request)
-        if todos:
-            log.debug("Cannot merge, unresolved todos left.")
-            if len(todos) == 1:
-                msg = _('Cannot merge, {} todo still not resolved.').format(
-                    len(todos))
-            else:
-                msg = _('Cannot merge, {} todos still not resolved.').format(
-                    len(todos))
-            h.flash(msg, category='error')
-            return False
-        return True
 
     def _merge_pull_request(self, pull_request, user, extras):
         merge_resp = PullRequestModel().merge(
@@ -855,24 +831,11 @@ class PullrequestsController(BaseRepoController):
             if should_render:
                 display_inline_comments[co.f_path][co.line_no].append(co)
 
-        c.pr_merge_checks = []
-        c.pr_merge_status, c.pr_merge_msg = PullRequestModel().merge_status(
-            pull_request_at_ver)
-        c.pr_merge_checks.append(['warning' if not c.pr_merge_status else 'success', c.pr_merge_msg])
-
-        if c.pull_request_review_status != ChangesetStatus.STATUS_APPROVED:
-            approval_msg = _('Reviewer approval is pending.')
-            c.pr_merge_status = False
-            c.pr_merge_checks.append(['warning', approval_msg])
-
-        todos = cc_model.get_unresolved_todos(pull_request_latest)
-        if todos:
-            c.pr_merge_status = False
-            if len(todos) == 1:
-                msg = _('{} todo still not resolved.').format(len(todos))
-            else:
-                msg = _('{} todos still not resolved.').format(len(todos))
-            c.pr_merge_checks.append(['warning', msg])
+        _merge_check = MergeCheck.validate(
+            pull_request_latest, user=c.rhodecode_user)
+        c.pr_merge_errors = _merge_check.errors
+        c.pr_merge_possible = not _merge_check.failed
+        c.pr_merge_message = _merge_check.merge_msg
 
         if merge_checks:
             return render('/pullrequests/pullrequest_merge_checks.mako')

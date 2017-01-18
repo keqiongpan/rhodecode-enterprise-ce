@@ -32,7 +32,7 @@ from rhodecode.lib.utils2 import str2bool
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import Session, ChangesetStatus
-from rhodecode.model.pull_request import PullRequestModel
+from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 from rhodecode.model.settings import SettingsModel
 
 log = logging.getLogger(__name__)
@@ -270,13 +270,14 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
             raise JSONRPCError('userid is not the same as your user')
 
     pull_request = get_pull_request_or_error(pullrequestid)
-    if not PullRequestModel().check_user_merge(
-            pull_request, apiuser, api=True):
-        raise JSONRPCError('repository `%s` does not exist' % (repoid,))
-    if pull_request.is_closed():
+
+    check = MergeCheck.validate(pull_request, user=apiuser)
+    merge_possible = not check.failed
+
+    if not merge_possible:
+        reasons = ','.join([msg for _e, msg in check.errors])
         raise JSONRPCError(
-            'pull request `%s` merge failed, pull request is closed' % (
-                pullrequestid,))
+            'merge not possible for following reasons: {}'.format(reasons))
 
     target_repo = pull_request.target_repo
     extras = vcs_operation_context(

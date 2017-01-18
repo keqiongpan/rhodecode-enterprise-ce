@@ -1,16 +1,24 @@
 
 <div class="pull-request-wrap">
 
+
+    % if c.pr_merge_possible:
+        <h2 class="merge-status">
+            <span class="merge-icon success"><i class="icon-true"></i></span>
+            ${_('This pull request can be merged automatically.')}
+        </h2>
+    % else:
+        <h2 class="merge-status">
+            <span class="merge-icon warning"><i class="icon-false"></i></span>
+            ${_('Merge is not currently possible because of below failed checks.')}
+        </h2>
+    % endif
+
     <ul>
-        % for pr_check_type, pr_check_msg in c.pr_merge_checks:
+        % for pr_check_type, pr_check_msg in c.pr_merge_errors:
             <li>
                 <span class="merge-message ${pr_check_type}" data-role="merge-message">
-                    % if pr_check_type in ['success']:
-                        <i class="icon-true"></i>
-                    % else:
-                        <i class="icon-false"></i>
-                    % endif
-                    ${pr_check_msg}
+                    - ${pr_check_msg}
                 </span>
             </li>
         % endfor
@@ -20,7 +28,7 @@
         % if c.allowed_to_merge:
         <div class="pull-right">
           ${h.secure_form(url('pullrequest_merge', repo_name=c.repo_name, pull_request_id=c.pull_request.pull_request_id), id='merge_pull_request_form')}
-          <% merge_disabled = ' disabled' if c.pr_merge_status is False else '' %>
+          <% merge_disabled = ' disabled' if c.pr_merge_possible is False else '' %>
           <a class="btn" href="#" onclick="refreshMergeChecks(); return false;">${_('refresh checks')}</a>
           <input type="submit" id="merge_pull_request" value="${_('Merge Pull Request')}" class="btn${merge_disabled}"${merge_disabled}>
           ${h.end_form()}
@@ -32,6 +40,5 @@
           <input type="submit" value="${_('Login to Merge this Pull Request')}" class="btn disabled" disabled="disabled">
         % endif
     </div>
-
 </div>
 

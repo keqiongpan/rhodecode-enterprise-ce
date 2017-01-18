@@ -1311,6 +1311,86 @@ class PullRequestModel(BaseModel):
             pull_request.target_repo)
 
 
+class MergeCheck(object):
+    """
+    Perform Merge Checks and returns a check object which stores information
+    about merge errors, and merge conditions
+    """
+
+    def __init__(self):
+        self.merge_possible = None
+        self.merge_msg = ''
+        self.failed = None
+        self.errors = []
+
+    def push_error(self, error_type, message):
+        self.failed = True
+        self.errors.append([error_type, message])
+
+    @classmethod
+    def validate(cls, pull_request, user, fail_early=False, translator=None):
+        # if migrated to pyramid...
+        # _ = lambda: translator or _  # use passed in translator if any
+
+        merge_check = cls()
+
+        # permissions
+        user_allowed_to_merge = PullRequestModel().check_user_merge(
+            pull_request, user)
+        if not user_allowed_to_merge:
+            log.debug("MergeCheck: cannot merge, approval is pending.")
+
+            msg = _('User `{}` not allowed to perform merge').format(user)
+            merge_check.push_error('error', msg)
+            if fail_early:
+                return merge_check
+
+        # review status
+        review_status = pull_request.calculated_review_status()
+        status_approved = review_status == ChangesetStatus.STATUS_APPROVED
+        if not status_approved:
+            log.debug("MergeCheck: cannot merge, approval is pending.")
+
+            msg = _('Pull request reviewer approval is pending.')
+
+            merge_check.push_error('warning', msg)
+
+            if fail_early:
+                return merge_check
+
+        # left over TODOs
+        todos = CommentsModel().get_unresolved_todos(pull_request)
+        if todos:
+            log.debug("MergeCheck: cannot merge, {} "
+                      "unresolved todos left.".format(len(todos)))
+
+            if len(todos) == 1:
+                msg = _('Cannot merge, {} TODO still not resolved.').format(
+                    len(todos))
+            else:
+                msg = _('Cannot merge, {} TODOs still not resolved.').format(
+                    len(todos))
+
+            merge_check.push_error('warning', msg)
+
+            if fail_early:
+                return merge_check
+
+        # merge possible
+        merge_status, msg = PullRequestModel().merge_status(pull_request)
+        merge_check.merge_possible = merge_status
+        merge_check.merge_msg = msg
+        if not merge_status:
+            log.debug(
+                "MergeCheck: cannot merge, pull request merge not possible.")
+            merge_check.push_error('warning', msg)
+
+            if fail_early:
+                return merge_check
+
+        return merge_check
+
+
 ChangeTuple = namedtuple('ChangeTuple',
                          ['added', 'common', 'removed'])
 

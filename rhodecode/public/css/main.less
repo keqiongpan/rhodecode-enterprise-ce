@@ -1639,24 +1639,28 @@ BIN_FILENODE = 7
     padding: 0px 0px;
 }
 
+.merge-status {
+  margin-right: 5px;
+}
+
 .merge-message {
     font-size: 1.2em
 }
-.merge-message li{
-    text-decoration: none;
-}
 
-.merge-message.success i {
+.merge-message.success i,
+.merge-icon.success i {
     color:@alert1;
 }
-.merge-message.warning i {
+
+.merge-message.warning i,
+.merge-icon.warning i {
   color: @alert3;
 }
-.merge-message.error i {
+
+.merge-message.error i,
+.merge-icon.error i  {
     color:@alert2;
 }
-
-
 
 .pr-versions {
     position: relative;
