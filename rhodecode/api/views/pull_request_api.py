@@ -364,6 +364,7 @@ def comment_pull_request(
         request, apiuser, repoid, pullrequestid, message=Optional(None),
         commit_id=Optional(None), status=Optional(None),
         comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
+        resolves_comment_id=Optional(None),
         userid=Optional(OAttr('apiuser'))):
     """
     Comment on the pull request specified with the `pullrequestid`,
@@ -422,6 +423,7 @@ def comment_pull_request(
     status = Optional.extract(status)
     commit_id = Optional.extract(commit_id)
     comment_type = Optional.extract(comment_type)
+    resolves_comment_id = Optional.extract(resolves_comment_id)
 
     if not message and not status:
         raise JSONRPCError(
@@ -446,6 +448,17 @@ def comment_pull_request(
         if commit_idx != 0:
             allowed_to_change_status = False
 
+    if resolves_comment_id:
+        comment = ChangesetComment.get(resolves_comment_id)
+        if not comment:
+            raise JSONRPCError(
+                'Invalid resolves_comment_id `%s` for this pull request.'
+                % resolves_comment_id)
+        if comment.comment_type != ChangesetComment.COMMENT_TYPE_TODO:
+            raise JSONRPCError(
+                'Comment `%s` is wrong type for setting status to resolved.'
+                % resolves_comment_id)
+
     text = message
     status_label = ChangesetStatus.get_status_lbl(status)
     if status and allowed_to_change_status:
@@ -468,7 +481,8 @@ def comment_pull_request(
         status_change_type=(status if status_change else None),
         closing_pr=False,
         renderer=renderer,
-        comment_type=comment_type
+        comment_type=comment_type,
+        resolves_comment_id=resolves_comment_id
     )
 
     if allowed_to_change_status and status:

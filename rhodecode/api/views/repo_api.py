@@ -1385,6 +1385,7 @@ def lock(request, apiuser, repoid, locked=Optional(None),
 def comment_commit(
         request, apiuser, repoid, commit_id, message, status=Optional(None),
         comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
+        resolves_comment_id=Optional(None),
         userid=Optional(OAttr('apiuser'))):
     """
     Set a commit comment, and optionally change the status of the commit.
@@ -1431,11 +1432,23 @@ def comment_commit(
     user = get_user_or_error(userid)
     status = Optional.extract(status)
     comment_type = Optional.extract(comment_type)
+    resolves_comment_id = Optional.extract(resolves_comment_id)
 
     allowed_statuses = [x[0] for x in ChangesetStatus.STATUSES]
     if status and status not in allowed_statuses:
         raise JSONRPCError('Bad status, must be on '
                            'of %s got %s' % (allowed_statuses, status,))
+
+    if resolves_comment_id:
+        comment = ChangesetComment.get(resolves_comment_id)
+        if not comment:
+            raise JSONRPCError(
+                'Invalid resolves_comment_id `%s` for this commit.'
+                % resolves_comment_id)
+        if comment.comment_type != ChangesetComment.COMMENT_TYPE_TODO:
+            raise JSONRPCError(
+                'Comment `%s` is wrong type for setting status to resolved.'
+                % resolves_comment_id)
 
     try:
         rc_config = SettingsModel().get_all_settings()
@@ -1446,7 +1459,8 @@ def comment_commit(
             status_change=status_change_label,
             status_change_type=status,
             renderer=renderer,
-            comment_type=comment_type
+            comment_type=comment_type,
+            resolves_comment_id=resolves_comment_id
         )
         if status:
             # also do a status change
