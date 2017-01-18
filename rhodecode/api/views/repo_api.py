@@ -36,7 +36,8 @@ from rhodecode.lib.ext_json import json
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    Session, ChangesetStatus, RepositoryField, Repository, RepoGroup)
+    Session, ChangesetStatus, RepositoryField, Repository, RepoGroup,
+    ChangesetComment)
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel, RepoList
 from rhodecode.model.settings import SettingsModel, VcsSettingsModel
@@ -1382,8 +1383,9 @@ def lock(request, apiuser, repoid, locked=Optional(None),
 
 @jsonrpc_method()
 def comment_commit(
-        request, apiuser, repoid, commit_id, message,
-        userid=Optional(OAttr('apiuser')), status=Optional(None)):
+        request, apiuser, repoid, commit_id, message, status=Optional(None),
+        comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
+        userid=Optional(OAttr('apiuser'))):
     """
     Set a commit comment, and optionally change the status of the commit.
 
@@ -1395,15 +1397,17 @@ def comment_commit(
     :type commit_id: str
     :param message: The comment text.
     :type message: str
+    :param status: (**Optional**) status of commit, one of: 'not_reviewed',
+        'approved', 'rejected', 'under_review'
+    :type status: str
+    :param comment_type: Comment type, one of: 'note', 'todo'
+    :type comment_type: Optional(str), default: 'note'
     :param userid: Set the user name of the comment creator.
     :type userid: Optional(str or int)
-    :param status: status, one of 'not_reviewed', 'approved', 'rejected',
-       'under_review'
-    :type status: str
 
     Example error output:
 
-    .. code-block:: json
+    .. code-block:: bash
 
         {
             "id" : <id_given_in_input>,
@@ -1426,6 +1430,7 @@ def comment_commit(
 
     user = get_user_or_error(userid)
     status = Optional.extract(status)
+    comment_type = Optional.extract(comment_type)
 
     allowed_statuses = [x[0] for x in ChangesetStatus.STATUSES]
     if status and status not in allowed_statuses:
@@ -1440,7 +1445,9 @@ def comment_commit(
             message, repo, user, commit_id=commit_id,
             status_change=status_change_label,
             status_change_type=status,
-            renderer=renderer)
+            renderer=renderer,
+            comment_type=comment_type
+        )
         if status:
             # also do a status change
             try:

@@ -31,7 +31,7 @@ from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
-from rhodecode.model.db import Session, ChangesetStatus
+from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 from rhodecode.model.settings import SettingsModel
 
@@ -360,10 +360,11 @@ def close_pull_request(request, apiuser, repoid, pullrequestid,
 
 
 @jsonrpc_method()
-def comment_pull_request(request, apiuser, repoid, pullrequestid,
-                         message=Optional(None), status=Optional(None),
-                         commit_id=Optional(None),
-                         userid=Optional(OAttr('apiuser'))):
+def comment_pull_request(
+        request, apiuser, repoid, pullrequestid, message=Optional(None),
+        commit_id=Optional(None), status=Optional(None),
+        comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
+        userid=Optional(OAttr('apiuser'))):
     """
     Comment on the pull request specified with the `pullrequestid`,
     in the |repo| specified by the `repoid`, and optionally change the
@@ -375,19 +376,18 @@ def comment_pull_request(request, apiuser, repoid, pullrequestid,
     :type repoid: str or int
     :param pullrequestid: The pull request ID.
     :type pullrequestid: int
-    :param message: The text content of the comment.
-    :type message: str
-    :param status: (**Optional**) Set the approval status of the pull
-        request. Valid options are:
-        * not_reviewed
-        * approved
-        * rejected
-        * under_review
-    :type status: str
     :param commit_id: Specify the commit_id for which to set a comment. If
         given commit_id is different than latest in the PR status
         change won't be performed.
     :type commit_id: str
+    :param message: The text content of the comment.
+    :type message: str
+    :param status: (**Optional**) Set the approval status of the pull
+        request. One of: 'not_reviewed', 'approved', 'rejected',
+        'under_review'
+    :type status: str
+    :param comment_type: Comment type, one of: 'note', 'todo'
+    :type comment_type: Optional(str), default: 'note'
     :param userid: Comment on the pull request as this user
     :type userid: Optional(str or int)
 
@@ -421,6 +421,7 @@ def comment_pull_request(request, apiuser, repoid, pullrequestid,
     message = Optional.extract(message)
     status = Optional.extract(status)
     commit_id = Optional.extract(commit_id)
+    comment_type = Optional.extract(comment_type)
 
     if not message and not status:
         raise JSONRPCError(
@@ -466,7 +467,8 @@ def comment_pull_request(request, apiuser, repoid, pullrequestid,
         status_change=(status_label if status_change else None),
         status_change_type=(status if status_change else None),
         closing_pr=False,
-        renderer=renderer
+        renderer=renderer,
+        comment_type=comment_type
     )
 
     if allowed_to_change_status and status:
