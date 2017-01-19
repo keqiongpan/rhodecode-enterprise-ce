@@ -80,7 +80,7 @@ class PullRequestModel(BaseModel):
             'This pull request cannot be merged because of an unhandled'
             ' exception.'),
         MergeFailureReason.MERGE_FAILED: lazy_ugettext(
-            'This pull request cannot be merged because of conflicts.'),
+            'This pull request cannot be merged because of merge conflicts.'),
         MergeFailureReason.PUSH_FAILED: lazy_ugettext(
             'This pull request could not be merged because push to target'
             ' failed.'),

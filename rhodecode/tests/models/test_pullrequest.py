@@ -183,7 +183,7 @@ class TestPullRequestModel:
         assert status is False
         assert (
             msg.eval() ==
-            'This pull request cannot be merged because of conflicts.')
+            'This pull request cannot be merged because of merge conflicts.')
         self.merge_mock.assert_called_once_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
@@ -200,7 +200,7 @@ class TestPullRequestModel:
         assert status is False
         assert (
             msg.eval() ==
-            'This pull request cannot be merged because of conflicts.')
+            'This pull request cannot be merged because of merge conflicts.')
         assert self.merge_mock.called is False
 
     def test_merge_status_unknown_failure(self, pull_request):
