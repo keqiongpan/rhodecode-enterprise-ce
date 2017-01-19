@@ -136,10 +136,13 @@
                <button class="btn-link" disabled="disabled"> ${_('Delete')}</button>
             %endif
 
-            %if not outdated_at_ver:
+            % if outdated_at_ver:
+               | <a onclick="return Rhodecode.comments.prevOutdatedComment(this);" class="prev-comment"> ${_('Prev')}</a>
+               | <a onclick="return Rhodecode.comments.nextOutdatedComment(this);" class="next-comment"> ${_('Next')}</a>
+            % else:
                | <a onclick="return Rhodecode.comments.prevComment(this);" class="prev-comment"> ${_('Prev')}</a>
                | <a onclick="return Rhodecode.comments.nextComment(this);" class="next-comment"> ${_('Next')}</a>
-            %endif
+            % endif
 
           </div>
       </div>
@@ -152,7 +155,7 @@
 
 ## generate main comments
 <%def name="generate_comments(comments, include_pull_request=False, is_pull_request=False)">
-  <div id="comments">
+  <div class="general-comments" id="comments">
     %for comment in comments:
         <div id="comment-tr-${comment.comment_id}">
           ## only render comments that are not from pull request, or from
