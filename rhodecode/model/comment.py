@@ -129,15 +129,20 @@ class CommentsModel(BaseModel):
 
         return comment_versions
 
-    def get_unresolved_todos(self, pull_request):
+    def get_unresolved_todos(self, pull_request, show_outdated=True):
 
         todos = Session().query(ChangesetComment) \
             .filter(ChangesetComment.pull_request == pull_request) \
             .filter(ChangesetComment.resolved_by == None) \
             .filter(ChangesetComment.comment_type
-                    == ChangesetComment.COMMENT_TYPE_TODO) \
-            .filter(coalesce(ChangesetComment.display_state, '') !=
-                    ChangesetComment.COMMENT_OUTDATED).all()
+                    == ChangesetComment.COMMENT_TYPE_TODO)
+
+        if not show_outdated:
+            todos = todos.filter(
+                coalesce(ChangesetComment.display_state, '') !=
+                ChangesetComment.COMMENT_OUTDATED)
+
+        todos = todos.all()
 
         return todos
 
