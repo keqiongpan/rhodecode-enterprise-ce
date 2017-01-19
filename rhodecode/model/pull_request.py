@@ -1316,16 +1316,26 @@ class MergeCheck(object):
     Perform Merge Checks and returns a check object which stores information
     about merge errors, and merge conditions
     """
+    TODO_CHECK = 'todo'
+    PERM_CHECK = 'perm'
+    REVIEW_CHECK = 'review'
+    MERGE_CHECK = 'merge'
 
     def __init__(self):
         self.merge_possible = None
         self.merge_msg = ''
         self.failed = None
         self.errors = []
+        self.error_details = OrderedDict()
 
-    def push_error(self, error_type, message):
+    def push_error(self, error_type, message, error_key, details):
         self.failed = True
         self.errors.append([error_type, message])
+        self.error_details[error_key] = dict(
+            details=details,
+            error_type=error_type,
+            message=message
+        )
 
     @classmethod
     def validate(cls, pull_request, user, fail_early=False, translator=None):
@@ -1341,7 +1351,7 @@ class MergeCheck(object):
             log.debug("MergeCheck: cannot merge, approval is pending.")
 
             msg = _('User `{}` not allowed to perform merge').format(user)
-            merge_check.push_error('error', msg)
+            merge_check.push_error('error', msg, cls.PERM_CHECK, user.username)
             if fail_early:
                 return merge_check
 
@@ -1353,7 +1363,8 @@ class MergeCheck(object):
 
             msg = _('Pull request reviewer approval is pending.')
 
-            merge_check.push_error('warning', msg)
+            merge_check.push_error(
+                'warning', msg, cls.REVIEW_CHECK, review_status)
 
             if fail_early:
                 return merge_check
@@ -1371,7 +1382,7 @@ class MergeCheck(object):
                 msg = _('Cannot merge, {} TODOs still not resolved.').format(
                     len(todos))
 
-            merge_check.push_error('warning', msg)
+            merge_check.push_error('warning', msg, cls.TODO_CHECK, todos)
 
             if fail_early:
                 return merge_check
@@ -1383,7 +1394,7 @@ class MergeCheck(object):
         if not merge_status:
             log.debug(
                 "MergeCheck: cannot merge, pull request merge not possible.")
-            merge_check.push_error('warning', msg)
+            merge_check.push_error('warning', msg, cls.MERGE_CHECK, None)
 
             if fail_early:
                 return merge_check
