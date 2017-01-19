@@ -15,10 +15,16 @@
     % endif
 
     <ul>
-        % for pr_check_type, pr_check_msg in c.pr_merge_errors:
+        % for pr_check_key, pr_check_details in c.pr_merge_errors.items():
+            <% pr_check_type = pr_check_details['error_type'] %>
             <li>
                 <span class="merge-message ${pr_check_type}" data-role="merge-message">
-                    - ${pr_check_msg}
+                    - ${pr_check_details['message']}
+                    % if pr_check_key == 'todo':
+                        % for co in pr_check_details['details']:
+                            <a class="permalink" href="#comment-${co.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${co.comment_id}'))"> #${co.comment_id}</a>${'' if loop.last else ','}
+                        % endfor
+                    % endif
                 </span>
             </li>
         % endfor

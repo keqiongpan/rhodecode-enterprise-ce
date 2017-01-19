@@ -833,7 +833,7 @@ class PullrequestsController(BaseRepoController):
 
         _merge_check = MergeCheck.validate(
             pull_request_latest, user=c.rhodecode_user)
-        c.pr_merge_errors = _merge_check.errors
+        c.pr_merge_errors = _merge_check.error_details
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
 

@@ -116,7 +116,7 @@ var bindToggleButtons = function() {
             }, 10);
 
             var resolvedInfo = (
-                '<li class="">' +
+                '<li class="resolve-action">' +
                 '<input type="hidden" id="resolve_comment_{0}" name="resolve_comment_{0}" value="{0}">' +
                 '<button id="resolve_comment_action_{0}" class="resolve-text btn btn-sm" onclick="return Rhodecode.comments.submitResolution({0})">{1} #{0}</button>' +
                 '</li>'
@@ -470,8 +470,14 @@ var CommentsController = function() {
         node = $('comment-current')
       }
     }
+    $wrapper = $(node).closest('div.comment');
     $comment = $(node).closest(klass);
     $comments = $(klass);
+
+    // show hidden comment when referenced.
+    if (!$wrapper.is(':visible')){
+        $wrapper.show();
+    }
 
     $('.comment-selected').removeClass('comment-selected');
 
