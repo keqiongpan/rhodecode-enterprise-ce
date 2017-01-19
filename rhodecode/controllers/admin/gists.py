@@ -202,7 +202,7 @@ class GistsController(BaseController):
 
     @LoginRequired()
     @NotAnonymous()
-    def new(self, format='html'):
+    def new(self):
         """GET /admin/gists/new: Form to create a new item"""
         # url('new_gist')
         self.__load_defaults()
@@ -322,7 +322,9 @@ class GistsController(BaseController):
 
     @LoginRequired()
     @NotAnonymous()
-    def edit_form(self, gist_id, format='html'):
+    def edit_form(self, gist_id):
+        translate = _ = c.pyramid_request.translate
+
         """GET /admin/gists/gist_id/edit: Form to edit an existing item"""
         # url('edit_gist', gist_id=ID)
         self._add_gist_to_context(gist_id)
@@ -342,6 +344,8 @@ class GistsController(BaseController):
         else:
             # this cannot use timeago, since it's used in select2 as a value
             expiry = h.age(h.time_to_datetime(c.gist.gist_expires))
+
+        expiry = translate(expiry)
         self.__load_defaults(
             extra_values=(0, _('%(expiry)s - current value') % {'expiry': expiry}))
         return render('admin/gists/edit.mako')
