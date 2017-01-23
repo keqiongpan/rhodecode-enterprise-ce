@@ -50,10 +50,6 @@ from rhodecode.lib.helpers import flash, link_to
 from rhodecode.lib.utils2 import safe_unicode, safe_str
 from rhodecode.tests.utils import get_session_from_response
 
-# TODO: johbo: Solve time zone related issues and remove this tweak
-os.environ['TZ'] = 'UTC'
-if not is_windows:
-    time.tzset()
 
 log = logging.getLogger(__name__)
 
