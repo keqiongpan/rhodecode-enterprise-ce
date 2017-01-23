@@ -747,6 +747,9 @@ class GitRepository(BaseRepository):
 
         return heads
 
+    def _get_shadow_instance(self, shadow_repository_path, enable_hooks=False):
+        return GitRepository(shadow_repository_path)
+
     def _local_pull(self, repository_path, branch_name):
         """
         Pull a branch from a local repository.

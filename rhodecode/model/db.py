@@ -3328,6 +3328,18 @@ class PullRequest(Base, _PullRequestBase):
         from rhodecode.model.changeset_status import ChangesetStatusModel
         return ChangesetStatusModel().reviewers_statuses(self)
 
+    @property
+    def workspace_id(self):
+        from rhodecode.model.pull_request import PullRequestModel
+        return PullRequestModel()._workspace_id(self)
+
+    def get_shadow_repo(self):
+        workspace_id = self.workspace_id
+        vcs_obj = self.target_repo.scm_instance()
+        shadow_repository_path = vcs_obj._get_shadow_repository_path(
+            workspace_id)
+        return vcs_obj._get_shadow_instance(shadow_repository_path)
+
 
 class PullRequestVersion(Base, _PullRequestBase):
     __tablename__ = 'pull_request_versions'
