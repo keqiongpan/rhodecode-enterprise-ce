@@ -29,6 +29,7 @@ import socket
 import subprocess32
 import time
 import uuid
+import dateutil.tz
 
 import mock
 import pyramid.testing
@@ -1814,3 +1815,11 @@ def root_repos_integration_stub(request, StubIntegrationType,
         IntegrationModel().delete(integration)
 
     return integration
+
+
+@pytest.fixture
+def local_dt_to_utc():
+    def _factory(dt):
+        return dt.replace(tzinfo=dateutil.tz.tzlocal()).astimezone(
+            dateutil.tz.tzutc()).replace(tzinfo=None)
+    return _factory

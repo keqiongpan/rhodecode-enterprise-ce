@@ -320,7 +320,7 @@ class TestInMemoryCommit(BackendTestMixin):
         repo = self.Backend(self.repo_path)
         assert len(repo.commit_ids) == N
 
-    def test_date_attr(self):
+    def test_date_attr(self, local_dt_to_utc):
         node = FileNode('foobar.txt', content='Foobared!')
         self.imc.add(node)
         date = datetime.datetime(1985, 1, 30, 1, 45)
@@ -328,7 +328,7 @@ class TestInMemoryCommit(BackendTestMixin):
             u"Committed at time when I was born ;-)",
             author=u'lb', date=date)
 
-        assert commit.date == date
+        assert commit.date == local_dt_to_utc(date)
 
     def assert_succesful_commit(self, added_nodes):
         newtip = self.repo.get_commit()

@@ -321,16 +321,13 @@ class TestCommits(BackendTestMixin):
     def test_get_file_annotate(self):
         file_added_commit = self.repo.get_commit(commit_idx=3)
         annotations = list(file_added_commit.get_file_annotate('file_3.txt'))
+
         line_no, commit_id, commit_loader, line = annotations[0]
+
         assert line_no == 1
         assert commit_id == file_added_commit.raw_id
         assert commit_loader() == file_added_commit
-
-        # git annotation is generated differently thus different results
-        if self.repo.alias == 'git':
-            assert line == '(Joe Doe 2010-01-03 08:00:00 +0000 1) Foobar 3'
-        else:
-            assert line == 'Foobar 3'
+        assert 'Foobar 3' in line
 
     def test_get_file_annotate_does_not_exist(self):
         file_added_commit = self.repo.get_commit(commit_idx=2)
@@ -519,7 +516,7 @@ class TestCommitsChanges(BackendTestMixin):
             },
         ]
 
-    def test_initial_commit(self):
+    def test_initial_commit(self, local_dt_to_utc):
         commit = self.repo.get_commit(commit_idx=0)
         assert set(commit.added) == set([
             commit.get_node('foo/bar'),
@@ -531,7 +528,8 @@ class TestCommitsChanges(BackendTestMixin):
         assert set(commit.removed) == set()
         assert set(commit.affected_files) == set(
             ['foo/bar', 'foo/bał', 'foobar', 'qwe'])
-        assert commit.date == datetime.datetime(2010, 1, 1, 20, 0)
+        assert commit.date == local_dt_to_utc(
+            datetime.datetime(2010, 1, 1, 20, 0))
 
     def test_head_added(self):
         commit = self.repo.get_commit()

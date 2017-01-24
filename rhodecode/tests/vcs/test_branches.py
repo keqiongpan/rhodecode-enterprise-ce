@@ -28,34 +28,6 @@ from rhodecode.tests.vcs.base import BackendTestMixin
 
 class TestBranches(BackendTestMixin):
 
-    @classmethod
-    def _get_commits(cls):
-        commits = [
-            {
-                'message': 'Initial commit',
-                'author': 'Joe Doe <joe.doe@example.com>',
-                'date': datetime.datetime(2010, 1, 1, 20),
-                'added': [
-                    FileNode('foobar', content='Foobar'),
-                    FileNode('foobar2', content='Foobar II'),
-                    FileNode('foo/bar/baz', content='baz here!'),
-                ],
-            },
-            {
-                'message': 'Changes...',
-                'author': 'Jane Doe <jane.doe@example.com>',
-                'date': datetime.datetime(2010, 1, 1, 21),
-                'added': [
-                    FileNode('some/new.txt', content='news...'),
-                ],
-                'changed': [
-                    FileNode('foobar', 'Foobar I'),
-                ],
-                'removed': [],
-            },
-        ]
-        return commits
-
     def test_empty_repository_has_no_branches(self, vcsbackend):
         empty_repo = vcsbackend.create_repo()
         assert empty_repo.branches == {}
@@ -71,9 +43,10 @@ class TestBranches(BackendTestMixin):
     def test_closed_branches(self):
         assert len(self.repo.branches_closed) == 0
 
-    def test_simple(self):
+    def test_simple(self, local_dt_to_utc):
         tip = self.repo.get_commit()
-        assert tip.date == datetime.datetime(2010, 1, 1, 21)
+        assert tip.message == 'Changes...'
+        assert tip.date == local_dt_to_utc(datetime.datetime(2010, 1, 1, 21))
 
     @pytest.mark.backends("git", "hg")
     def test_new_branch(self):
@@ -145,7 +118,7 @@ class TestBranches(BackendTestMixin):
         assert '123' in self.repo.branches
 
 
-class TestSvnBranches:
+class TestSvnBranches(object):
 
     def test_empty_repository_has_no_tags_and_branches(self, vcsbackend_svn):
         empty_repo = vcsbackend_svn.create_repo()
