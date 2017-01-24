@@ -51,6 +51,14 @@ class MarkupRenderer(object):
     RST_PAT = re.compile(r'\.re?st$', re.IGNORECASE)
     PLAIN_PAT = re.compile(r'^readme$', re.IGNORECASE)
 
+    extensions = ['codehilite', 'extra', 'def_list', 'sane_lists']
+    markdown_renderer = markdown.Markdown(
+        extensions, safe_mode=True, enable_attributes=False)
+
+    markdown_renderer_flavored = markdown.Markdown(
+        extensions + [GithubFlavoredMarkdownExtension()], safe_mode=True,
+        enable_attributes=False)
+
     # extension together with weights. Lower is first means we control how
     # extensions are attached to readme names with those.
     PLAIN_EXTS = [
@@ -188,9 +196,11 @@ class MarkupRenderer(object):
         # It does not allow to insert inline HTML. In presence of HTML tags, it
         # will replace them instead with [HTML_REMOVED]. This is controlled by
         # the safe_mode=True parameter of the markdown method.
-        extensions = ['codehilite', 'extra', 'def_list', 'sane_lists']
+
         if flavored:
-            extensions.append(GithubFlavoredMarkdownExtension())
+            markdown_renderer = cls.markdown_renderer_flavored
+        else:
+            markdown_renderer = cls.markdown_renderer
 
         if mentions:
             mention_pat = re.compile(MENTIONS_REGEX)
@@ -207,8 +217,7 @@ class MarkupRenderer(object):
         try:
             if flavored:
                 source = cls._flavored_markdown(source)
-            return markdown.markdown(
-                source, extensions, safe_mode=True, enable_attributes=False)
+            return markdown_renderer.convert(source)
         except Exception:
             log.exception('Error when rendering Markdown')
             if safe:
