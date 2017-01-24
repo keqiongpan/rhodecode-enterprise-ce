@@ -722,11 +722,10 @@ hide_credentials = lambda x: ''.join(credentials_filter(x))
 
 def age_component(datetime_iso, value=None, time_is_local=False):
     title = value or format_date(datetime_iso)
+    tzinfo = '+00:00'
 
     # detect if we have a timezone info, otherwise, add it
     if isinstance(datetime_iso, datetime) and not datetime_iso.tzinfo:
-        tzinfo = '+00:00'
-
         if time_is_local:
             tzinfo = time.strftime("+%H:%M",
                 time.gmtime(
