@@ -59,21 +59,21 @@
           % if inline:
               <span></span>
           % else:
-          <div class="status-change">
-              % if comment.pull_request:
-                  <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
+              <div class="status-change">
+                  % if comment.pull_request:
+                      <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
+                          % if comment.status_change:
+                              ${_('pull request #%s') % comment.pull_request.pull_request_id}:
+                          % else:
+                              ${_('pull request #%s') % comment.pull_request.pull_request_id}
+                          % endif
+                      </a>
+                  % else:
                       % if comment.status_change:
-                          ${_('pull request #%s') % comment.pull_request.pull_request_id}:
-                      % else:
-                          ${_('pull request #%s') % comment.pull_request.pull_request_id}
+                          ${_('Status change on commit')}:
                       % endif
-                  </a>
-              % else:
-                  % if comment.status_change:
-                      ${_('Status change on commit')}:
                   % endif
-              % endif
-          </div>
+              </div>
           % endif
 
           % if comment.status_change:
@@ -81,6 +81,12 @@
             <div title="${_('Commit status')}" class="changeset-status-lbl">
                  ${comment.status_change[0].status_lbl}
             </div>
+          % endif
+
+          % if comment.resolved_comment:
+            <a class="has-spacer-before" href="#comment-${comment.resolved_comment.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${comment.resolved_comment.comment_id}'))">
+                ${_('resolves comment #{}').format(comment.resolved_comment.comment_id)}
+            </a>
           % endif
 
           <a class="permalink" href="#comment-${comment.comment_id}"> &para;</a>
