@@ -229,6 +229,8 @@ def _date_from_svn_properties(properties):
 
     :return: :class:`datetime.datetime` instance. The object is naive.
     """
+
     aware_date = dateutil.parser.parse(properties.get('svn:date'))
-    local_date = aware_date.astimezone(dateutil.tz.tzlocal())
-    return local_date.replace(tzinfo=None)
+    # final_date = aware_date.astimezone(dateutil.tz.tzlocal())
+    final_date = aware_date
+    return final_date.replace(tzinfo=None)

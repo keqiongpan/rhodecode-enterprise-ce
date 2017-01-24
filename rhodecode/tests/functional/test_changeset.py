@@ -288,7 +288,6 @@ Added a symlink
                          'Hide comments']:
                 response.mustcontain(elem)
 
-
     def _check_new_diff_menus(self, response, right_menu=False,):
         # diff menus
         for elem in ['Show file before', 'Show file after',
