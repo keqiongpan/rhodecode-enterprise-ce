@@ -26,12 +26,12 @@ import logging
 import os
 import re
 import shutil
-import time
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode.lib.compat import OrderedDict
-from rhodecode.lib.datelib import makedate, utcdate_fromtimestamp
+from rhodecode.lib.datelib import (
+    utcdate_fromtimestamp, makedate, date_astimestamp)
 from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.vcs import connection, path as vcspath
 from rhodecode.lib.vcs.backends.base import (
@@ -269,20 +269,21 @@ class GitRepository(BaseRepository):
         Returns last change made on this repository as
         `datetime.datetime` object.
         """
-        return utcdate_fromtimestamp(self._get_mtime(), makedate()[1])
-
-    def _get_mtime(self):
         try:
-            return time.mktime(self.get_commit().date.timetuple())
+            return self.get_commit().date
         except RepositoryError:
-            idx_loc = '' if self.bare else '.git'
-            # fallback to filesystem
-            in_path = os.path.join(self.path, idx_loc, "index")
-            he_path = os.path.join(self.path, idx_loc, "HEAD")
-            if os.path.exists(in_path):
-                return os.stat(in_path).st_mtime
-            else:
-                return os.stat(he_path).st_mtime
+            tzoffset = makedate()[1]
+            return utcdate_fromtimestamp(self._get_fs_mtime(), tzoffset)
+
+    def _get_fs_mtime(self):
+        idx_loc = '' if self.bare else '.git'
+        # fallback to filesystem
+        in_path = os.path.join(self.path, idx_loc, "index")
+        he_path = os.path.join(self.path, idx_loc, "HEAD")
+        if os.path.exists(in_path):
+            return os.stat(in_path).st_mtime
+        else:
+            return os.stat(he_path).st_mtime
 
     @LazyProperty
     def description(self):
