@@ -172,13 +172,13 @@
     };
   };
   Pygments = super.buildPythonPackage {
-    name = "Pygments-2.1.3";
+    name = "Pygments-2.2.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/b8/67/ab177979be1c81bc99c8d0592ef22d547e70bb4c6815c383286ed5dec504/Pygments-2.1.3.tar.gz";
-      md5 = "ed3fba2467c8afcda4d317e4ef2c6150";
+      url = "https://pypi.python.org/packages/71/2a/2e4e77803a8bd6408a2903340ac498cb0a2181811af7c9ec92cb70b0308a/Pygments-2.2.0.tar.gz";
+      md5 = "13037baca42f16917cbd5ad2fab50844";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
