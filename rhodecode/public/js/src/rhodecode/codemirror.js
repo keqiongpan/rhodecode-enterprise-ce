@@ -249,14 +249,15 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
      */
 
     var filterActions = function(actions, context){
+
       var MAX_LIMIT = 10;
-      var filtered_actions= [];
+      var filtered_actions = [];
       var curWord = context.string;
 
       cmLog.debug('Filtering actions based on query:', curWord);
       $.each(actions, function(i) {
         var match = actions[i];
-        var searchText = match.displayText;
+        var searchText = match.searchText;
 
         if (!curWord ||
           searchText.toLowerCase().lastIndexOf(curWord) !== -1) {
@@ -276,6 +277,7 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
             return false;
         }
       });
+
       return filtered_actions;
     };
 
@@ -284,17 +286,24 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
       return CodeMirror.Pass;
     };
 
-    var completeActions = function(cm, pred) {
-      var cur = cm.getCursor();
-      var options = {
-        closeOnUnfocus: true
-      };
-      setTimeout(function() {
-        if (!cm.state.completionActive) {
-          cmLog.debug('Trigger actions hinting');
-          CodeMirror.showHint(cm, CodeMirror.hint.actions, options);
+    var completeActions = function(actions){
+
+        return function(cm, pred) {
+            var cur = cm.getCursor();
+            var options = {
+                closeOnUnfocus: true
+            };
+            setTimeout(function() {
+                if (!cm.state.completionActive) {
+                    cmLog.debug('Trigger actions hinting');
+                    CodeMirror.showHint(cm, CodeMirror.hint.actions, options);
+                }
+            }, 100);
+
+            // tell CodeMirror we didn't handle the key
+            // trick to trigger on a char but still complete it
+            return CodeMirror.Pass;
         }
-      }, 100);
     };
 
     var extraKeys = {
@@ -314,7 +323,8 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
     }
 
     if (triggerActions) {
-      extraKeys["Ctrl-Space"] = completeActions;
+      // register triggerActions for this instance
+      extraKeys["'/'"] = completeActions(triggerActions);
     }
 
     var cm = CodeMirror.fromTextArea($(textAreaId).get(0), {
@@ -349,15 +359,16 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
       var cur = editor.getCursor();
       var curLine = editor.getLine(cur.line).slice(0, cur.ch);
 
-      var tokenMatch = new RegExp('[a-zA-Z]{1}[a-zA-Z]*$').exec(curLine);
+      // match  only on /+1 character minimum
+      var tokenMatch = new RegExp('(^/\|/\)([a-zA-Z]*)$').exec(curLine);
 
       var tokenStr = '';
       if (tokenMatch !== null && tokenMatch.length > 0){
-        tokenStr = tokenMatch[0].strip();
+        tokenStr = tokenMatch[2].strip();
       }
 
       var context = {
-        start: cur.ch - tokenStr.length,
+        start: (cur.ch - tokenStr.length) - 1,
         end: cur.ch,
         string: tokenStr,
         type: null
@@ -366,6 +377,7 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
       var actions = [
         {
           text: "approve",
+          searchText: "status approved",
           displayText: _gettext('Set status to Approved'),
           hint: function(CodeMirror, data, completion) {
             CodeMirror.replaceRange("", completion.from || data.from,
@@ -384,6 +396,7 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
         },
         {
           text: "reject",
+          searchText: "status rejected",
           displayText: _gettext('Set status to Rejected'),
           hint: function(CodeMirror, data, completion) {
               CodeMirror.replaceRange("", completion.from || data.from,
@@ -399,6 +412,44 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
               el.innerHTML = completion.displayText;
               elt.appendChild(el);
           }
+        },
+        {
+          text: "as_todo",
+          searchText: "todo comment",
+          displayText: _gettext('TODO comment'),
+          hint: function(CodeMirror, data, completion) {
+              CodeMirror.replaceRange("", completion.from || data.from,
+                          completion.to || data.to, "complete");
+              $('#comment_type_general').val('todo')
+          },
+          render: function(elt, data, completion) {
+              var el = document.createElement('div');
+              el.className = "pull-left";
+              elt.appendChild(el);
+
+              el = document.createElement('span');
+              el.innerHTML = completion.displayText;
+              elt.appendChild(el);
+          }
+        },
+        {
+          text: "as_note",
+          searchText: "note comment",
+          displayText: _gettext('Note Comment'),
+          hint: function(CodeMirror, data, completion) {
+              CodeMirror.replaceRange("", completion.from || data.from,
+                          completion.to || data.to, "complete");
+              $('#comment_type_general').val('note')
+          },
+          render: function(elt, data, completion) {
+              var el = document.createElement('div');
+              el.className = "pull-left";
+              elt.appendChild(el);
+
+              el = document.createElement('span');
+              el.innerHTML = completion.displayText;
+              elt.appendChild(el);
+          }
         }
       ];
 
@@ -407,6 +458,7 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
         from: CodeMirror.Pos(cur.line, context.start),
         to: CodeMirror.Pos(cur.line, context.end)
       };
+
     };
     CodeMirror.registerHelper("hint", "mentions", CodeMirrorMentionHint);
     CodeMirror.registerHelper("hint", "actions", actionHint);
