@@ -3028,7 +3028,7 @@ class ChangesetStatus(Base, BaseModel):
     pull_request = relationship('PullRequest', lazy='joined')
 
     def __unicode__(self):
-        return u"<%s('%s[%s]:%s')>" % (
+        return u"<%s('%s[v%s]:%s')>" % (
             self.__class__.__name__,
             self.status, self.version, self.author
         )
@@ -3254,7 +3254,6 @@ class PullRequest(Base, _PullRequestBase):
                             cascade="all, delete, delete-orphan",
                             lazy='dynamic')
 
-
     @classmethod
     def get_pr_display_object(cls, pull_request_obj, org_pull_request_obj,
                               internal_methods=None):
@@ -3289,6 +3288,10 @@ class PullRequest(Base, _PullRequestBase):
 
             def is_closed(self):
                 return pull_request_obj.is_closed()
+
+            @property
+            def pull_request_version_id(self):
+                return getattr(pull_request_obj, 'pull_request_version_id', None)
 
         attrs = StrictAttributeDict(pull_request_obj.get_api_data())
 

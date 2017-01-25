@@ -37,6 +37,7 @@ import time
 import string
 import hashlib
 import pygments
+import itertools
 
 from datetime import datetime
 from functools import partial

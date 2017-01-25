@@ -1393,6 +1393,14 @@ table.integrations {
   }
 }
 
+.subtitle-compare {
+  margin: -15px 0px 0px 0px;
+}
+
+.comments-summary-td {
+  border-top: 1px dashed @grey5;
+}
+
 // new entry in group_members
 .td-author-new-entry {
   background-color: rgba(red(@alert1), green(@alert1), blue(@alert1), 0.3);
@@ -1420,6 +1428,57 @@ table.integrations {
 }
 .compare_view_commits .author {
     margin-left: 5px;
+}
+
+.compare_view_commits {
+  .color-a {
+    color: @alert1;
+  }
+
+  .color-c {
+    color: @color3;
+  }
+
+  .color-r {
+    color: @color5;
+  }
+
+  .color-a-bg {
+    background-color: @alert1;
+  }
+
+  .color-c-bg {
+    background-color: @alert3;
+  }
+
+  .color-r-bg {
+    background-color: @alert2;
+  }
+
+  .color-a-border {
+    border: 1px solid @alert1;
+  }
+
+  .color-c-border {
+    border: 1px solid @alert3;
+  }
+
+  .color-r-border {
+    border: 1px solid @alert2;
+  }
+
+  .commit-change-indicator {
+    width: 15px;
+    height: 15px;
+    position: relative;
+    left: 15px;
+  }
+
+  .commit-change-content {
+    text-align: center;
+    vertical-align: middle;
+    line-height: 15px;
+  }
 }
 
 .compare_view_files {
@@ -1663,9 +1722,26 @@ BIN_FILENODE = 7
 }
 
 .pr-versions {
-    position: relative;
-    top: 6px;
+    font-size: 1.1em;
+
+    table {
+      padding: 0px 5px;
+    }
+
+    td {
+      line-height: 15px;
+    }
+
+    .flag_status {
+        margin: 0;
+    }
+
+    .compare-radio-button {
+      position: relative;
+      top: -3px;
+    }
 }
+
 
 #close_pull_request {
     margin-right: 0px;

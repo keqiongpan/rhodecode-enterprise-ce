@@ -235,7 +235,7 @@ class NotificationModel(BaseModel):
             .filter(UserNotification.notification == notification)\
             .filter(UserNotification.user == user).scalar()
 
-    def make_description(self, notification, show_age=True):
+    def make_description(self, notification, show_age=True, translate=None):
         """
         Creates a human readable description based on properties
         of notification object
@@ -273,6 +273,8 @@ class NotificationModel(BaseModel):
         if show_age:
             template = templates[0]
             date_or_age = h.age(notification.created_on)
+            if translate:
+                date_or_age = translate(date_or_age)
         else:
             template = templates[1]
             date_or_age = h.format_date(notification.created_on)

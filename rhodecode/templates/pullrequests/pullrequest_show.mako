@@ -1,4 +1,5 @@
 <%inherit file="/base/base.mako"/>
+<%namespace name="base" file="/base/base.mako"/>
 
 <%def name="title()">
     ${_('%s Pull Request #%s') % (c.repo_name, c.pull_request.pull_request_id)}
@@ -165,47 +166,23 @@
            </div>
 
            <div class="field">
-                <div class="label-summary">
-                    <label>${_('Versions')} (${len(c.versions)+1}):</label>
-                </div>
+               <div class="label-summary">
+                   <label>${_('Versions')}:</label>
+               </div>
+
+               <% outdated_comm_count_ver = len(c.inline_versions[None]['outdated']) %>
+               <% general_outdated_comm_count_ver = len(c.comment_versions[None]['outdated']) %>
 
                <div class="pr-versions">
                % if c.show_version_changes:
+                   <% outdated_comm_count_ver = len(c.inline_versions[c.at_version_num]['outdated']) %>
+                   <% general_outdated_comm_count_ver = len(c.comment_versions[c.at_version_num]['outdated']) %>
+                   <div id="show-pr-versions" class="input btn btn-link" onclick="return versionController.toggleVersionView(this)"
+                        data-toggle-on="${ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}"
+                        data-toggle-off="${_('Hide all versions of this pull request')}">
+                       ${ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}
+                   </div>
                    <table>
-                       ## CURRENTLY SELECT PR VERSION
-                       <tr class="version-pr" style="display: ${'' if c.at_version_num is None else 'none'}">
-                           <td>
-                               % if c.at_version_num is None:
-                                <i class="icon-ok link"></i>
-                               % else:
-                                <i class="icon-comment"></i>
-                                   <code>
-                                   ${len(c.comment_versions[None]['at'])}/${len(c.inline_versions[None]['at'])}
-                                   </code>
-                               % endif
-                           </td>
-                           <td>
-                               <code>
-                               % if c.versions:
-                                <a href="${h.url.current(version='latest')}">${_('latest')}</a>
-                               % else:
-                                ${_('initial')}
-                               % endif
-                               </code>
-                           </td>
-                           <td>
-                               <code>${c.pull_request_latest.source_ref_parts.commit_id[:6]}</code>
-                           </td>
-                           <td>
-                               ${_('created')} ${h.age_component(c.pull_request_latest.updated_on)}
-                           </td>
-                           <td align="right">
-                               % if c.versions and c.at_version_num in [None, 'latest']:
-                               <span id="show-pr-versions" class="btn btn-link" onclick="$('.version-pr').show(); $(this).hide(); return false">${_('Show all versions')}</span>
-                               % endif
-                           </td>
-                       </tr>
-
                        ## SHOW ALL VERSIONS OF PR
                        <% ver_pr = None %>
 
@@ -213,46 +190,52 @@
                            <% ver_pos = data[0] %>
                            <% ver = data[1] %>
                            <% ver_pr = ver.pull_request_version_id %>
+                           <% display_row = '' if c.at_version and (c.at_version_num == ver_pr or c.from_version_num == ver_pr) else 'none' %>
 
-                           <tr class="version-pr" style="display: ${'' if c.at_version_num == ver_pr else 'none'}">
+                           <tr class="version-pr" style="display: ${display_row}">
                                <td>
-                                   % if c.at_version_num == ver_pr:
-                                    <i class="icon-ok link"></i>
-                                   % else:
+                                    <code>
+                                        <a href="${h.url.current(version=ver_pr or 'latest')}">v${ver_pos}</a>
+                                    </code>
+                               </td>
+                               <td>
+                                   <input ${'checked="checked"' if c.from_version_num == ver_pr else ''} class="compare-radio-button" type="radio" name="ver_source" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
+                                   <input ${'checked="checked"' if c.at_version_num == ver_pr else ''} class="compare-radio-button" type="radio" name="ver_target" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
+                               </td>
+                               <td>
+                                <% review_status = c.review_versions[ver_pr].status if ver_pr in c.review_versions else 'not_reviewed' %>
+                                <div class="${'flag_status %s' % review_status} tooltip pull-left" title="${_('Your review status at this version')}">
+                                </div>
+                               </td>
+                               <td>
+                                   % if c.at_version_num != ver_pr:
                                     <i class="icon-comment"></i>
-                                       <code class="tooltip" title="${_('Comment from pull request version {0}, general:{1} inline{2}').format(ver_pos, len(c.comment_versions[ver_pr]['at']), len(c.inline_versions[ver_pr]['at']))}">
+                                       <code class="tooltip" title="${_('Comment from pull request version {0}, general:{1} inline:{2}').format(ver_pos, len(c.comment_versions[ver_pr]['at']), len(c.inline_versions[ver_pr]['at']))}">
                                            ${len(c.comment_versions[ver_pr]['at'])}/${len(c.inline_versions[ver_pr]['at'])}
                                        </code>
                                    % endif
                                </td>
                                <td>
-                                    <code>
-                                        <a href="${h.url.current(version=ver_pr)}">v${ver_pos}</a>
-                                    </code>
+                                   ##<code>${ver.source_ref_parts.commit_id[:6]}</code>
                                </td>
                                <td>
-                                   <code>${ver.source_ref_parts.commit_id[:6]}</code>
-                               </td>
-                               <td>
-                                   ${_('created')} ${h.age_component(ver.updated_on)}
-                               </td>
-                               <td align="right">
-                                   % if c.at_version_num == ver_pr:
-                                   <span id="show-pr-versions" class="btn btn-link" onclick="$('.version-pr').show(); $(this).hide(); return false">${_('Show all versions')}</span>
-                                   % endif
+                                   ${h.age_component(ver.updated_on)}
                                </td>
                            </tr>
                        % endfor
 
-                       ## show comment/inline comments summary
                        <tr>
-                           <td>
+                           <td colspan="5">
+                               <button id="show-version-diff" onclick="return versionController.showVersionDiff()" class="btn btn-sm" style="display: none" data-label-text="${_('show changes between versions')}">
+                                   ${_('show changes between versions')}
+                               </button>
                            </td>
+                       </tr>
 
-                           <td colspan="4" style="border-top: 1px dashed #dbd9da">
-                            <% outdated_comm_count_ver = len(c.inline_versions[c.at_version_num]['outdated']) %>
-                            <% general_outdated_comm_count_ver = len(c.comment_versions[c.at_version_num]['outdated']) %>
-
+                       ## show comment/inline comments summary
+                       <%def name="comments_summary()">
+                       <tr>
+                           <td colspan="6" class="comments-summary-td">
 
                             % if c.at_version:
                                 <% inline_comm_count_ver = len(c.inline_versions[c.at_version_num]['display']) %>
@@ -263,6 +246,7 @@
                                 <% general_comm_count_ver = len(c.comment_versions[c.at_version_num]['until']) %>
                                 ${_('Comments for this pull request')}:
                             % endif
+
 
                             %if general_comm_count_ver:
                                 <a href="#comments">${_("%d General ") % general_comm_count_ver}</a>
@@ -285,37 +269,18 @@
                             %endif
                            </td>
                        </tr>
-
-                       <tr>
-                           <td></td>
-                           <td colspan="4">
-                           % if c.at_version:
-<pre>
-Changed commits:
- * added: ${len(c.changes.added)}
- * removed: ${len(c.changes.removed)}
-
-% if not (c.file_changes.added+c.file_changes.modified+c.file_changes.removed):
-No file changes found
-% else:
-Changed files:
- %for file_name in c.file_changes.added:
- * A <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
- %endfor
- %for file_name in c.file_changes.modified:
- * M <a href="#${'a_' + h.FID('', file_name)}">${file_name}</a>
- %endfor
- %for file_name in c.file_changes.removed:
- * R ${file_name}
- %endfor
-% endif
-</pre>
-                           % endif
-                           </td>
-                       </tr>
+                       </%def>
+                       ${comments_summary()}
                    </table>
                % else:
+                   <div class="input">
                    ${_('Pull request versions not available')}.
+                   </div>
+                   <div>
+                      <table>
+                        ${comments_summary()}
+                      </table>
+                   </div>
                % endif
                </div>
            </div>
@@ -426,7 +391,15 @@ Changed files:
                   </div>
                 </div>
               % endif
-                <div class="compare_view_commits_title">
+
+              <div class="compare_view_commits_title">
+                  % if not c.compare_mode:
+
+                    % if c.at_version_pos:
+                        <h4>
+                        ${_('Showing changes at v%d, commenting is disabled.') % c.at_version_pos}
+                        </h4>
+                    % endif
 
                     <div class="pull-left">
                       <div class="btn-group">
@@ -453,11 +426,113 @@ Changed files:
                         % endif
 
                     </div>
-
-                </div>
+                  % endif
+              </div>
 
               % if not c.missing_commits:
-                <%include file="/compare/compare_commits.mako" />
+                % if c.compare_mode:
+                    % if c.at_version:
+                    <h4>
+                        ${_('Commits and changes between v{ver_from} and {ver_to} of this pull request, commenting is disabled').format(ver_from=c.from_version_pos, ver_to=c.at_version_pos if c.at_version_pos else 'latest')}:
+                    </h4>
+
+                    <div class="subtitle-compare">
+                        ${_('commits added: {}, removed: {}').format(len(c.commit_changes_summary.added), len(c.commit_changes_summary.removed))}
+                    </div>
+
+                    <div class="container">
+                        <table class="rctable compare_view_commits">
+                            <tr>
+                                <th></th>
+                                <th>${_('Time')}</th>
+                                <th>${_('Author')}</th>
+                                <th>${_('Commit')}</th>
+                                <th></th>
+                                <th>${_('Description')}</th>
+                            </tr>
+
+                            % for c_type, commit in c.commit_changes:
+                              % if c_type in ['a', 'r']:
+                                <%
+                                    if c_type == 'a':
+                                        cc_title = _('Commit added in displayed changes')
+                                    elif c_type == 'r':
+                                        cc_title = _('Commit removed in displayed changes')
+                                    else:
+                                        cc_title = ''
+                                %>
+                                <tr id="row-${commit.raw_id}" commit_id="${commit.raw_id}" class="compare_select">
+                                <td>
+                                    <div class="commit-change-indicator color-${c_type}-border">
+                                      <div class="commit-change-content color-${c_type} tooltip" title="${cc_title}">
+                                        ${c_type.upper()}
+                                      </div>
+                                    </div>
+                                </td>
+                                <td class="td-time">
+                                    ${h.age_component(commit.date)}
+                                </td>
+                                <td class="td-user">
+                                    ${base.gravatar_with_user(commit.author, 16)}
+                                </td>
+                                <td class="td-hash">
+                                    <code>
+                                        <a href="${h.url('changeset_home', repo_name=c.target_repo.repo_name, revision=commit.raw_id)}">
+                                            r${commit.revision}:${h.short_id(commit.raw_id)}
+                                        </a>
+                                        ${h.hidden('revisions', commit.raw_id)}
+                                    </code>
+                                </td>
+                                <td class="expand_commit" data-commit-id="${commit.raw_id}" title="${_( 'Expand commit message')}">
+                                    <div class="show_more_col">
+                                    <i class="show_more"></i>
+                                    </div>
+                                </td>
+                                <td class="mid td-description">
+                                    <div class="log-container truncate-wrap">
+                                        <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">
+                                            ${h.urlify_commit_message(commit.message, c.repo_name)}
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                              % endif
+                            % endfor
+                        </table>
+                    </div>
+
+                    <script>
+                    $('.expand_commit').on('click',function(e){
+                      var target_expand = $(this);
+                      var cid = target_expand.data('commitId');
+
+                      if (target_expand.hasClass('open')){
+                        $('#c-'+cid).css({
+                            'height': '1.5em',
+                            'white-space': 'nowrap',
+                            'text-overflow': 'ellipsis',
+                            'overflow':'hidden'
+                        });
+                        target_expand.removeClass('open');
+                      }
+                      else {
+                        $('#c-'+cid).css({
+                            'height': 'auto',
+                            'white-space': 'pre-line',
+                            'text-overflow': 'initial',
+                            'overflow':'visible'
+                        });
+                        target_expand.addClass('open');
+                      }
+                    });
+                    </script>
+
+                    % endif
+
+                % else:
+                    <%include file="/compare/compare_commits.mako" />
+                % endif
+
                 <div class="cs_files">
                     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
                     ${cbdiffs.render_diffset_menu()}
@@ -527,6 +602,107 @@ Changed files:
                 offsetScroll(line, 70);
             }
         }
+
+        VersionController = function() {
+            var self = this;
+            this.$verSource = $('input[name=ver_source]');
+            this.$verTarget = $('input[name=ver_target]');
+
+            this.adjustRadioSelectors = function (curNode) {
+                var getVal = function(item) {
+                    if (item == 'latest'){
+                        return Number.MAX_SAFE_INTEGER
+                    }
+                    else {
+                        return parseInt(item)
+                    }
+                };
+
+                var curVal = getVal($(curNode).val());
+                $.each(self.$verSource, function(index, value){
+                    var elVal = getVal($(value).val());
+                    if(elVal > curVal){
+                        $(value).attr('disabled', 'disabled');
+                        $(value).removeAttr('checked');
+                    }
+                    else{
+                        $(value).removeAttr('disabled');
+                    }
+                });
+
+                self.setLockAction(false, $(curNode).data('verPos'));
+            };
+
+
+            this.attachVersionListener = function () {
+                self.$verTarget.change(function(e){
+                    self.adjustRadioSelectors(this)
+                });
+                self.$verSource.change(function(e){
+                    self.adjustRadioSelectors(self.$verTarget.filter(':checked'))
+                });
+            };
+
+            this.init = function () {
+
+                var curNode = self.$verTarget.filter(':checked');
+                self.adjustRadioSelectors(curNode);
+                self.setLockAction(true);
+                self.attachVersionListener();
+
+            };
+
+            this.setLockAction = function (state, selectedVersion) {
+                if(state){
+                    $('#show-version-diff').attr('disabled','disabled')
+                    $('#show-version-diff').addClass('disabled')
+                    $('#show-version-diff').html($('#show-version-diff').data('labelText'));
+                }
+                else{
+                    $('#show-version-diff').removeAttr('disabled');
+                    $('#show-version-diff').removeClass('disabled')
+                    //$('#show-version-diff').html(_gettext('show changes for v') + selectedVersion)
+                }
+
+            };
+
+            this.showVersionDiff = function(){
+                var target = self.$verTarget.filter(':checked');
+                var source = self.$verSource.filter(':checked');
+
+                if (target.val() && source.val()) {
+                    var params = {
+                        'pull_request_id': ${c.pull_request.pull_request_id},
+                        'repo_name': templateContext.repo_name,
+                        'version': target.val(),
+                        'from_version': source.val()
+                    };
+                    window.location = pyroutes.url('pullrequest_show', params)
+                }
+
+                return false;
+            };
+
+            this.toggleVersionView = function (elem) {
+
+                if ($('#show-version-diff').is(':visible')) {
+                    $('.version-pr').hide();
+                    $('#show-version-diff').hide();
+                    $(elem).html($(elem).data('toggleOn'))
+                } else {
+                    $('.version-pr').show();
+                    $('#show-version-diff').show();
+                    $(elem).html($(elem).data('toggleOff'))
+                }
+
+                return false
+            }
+
+        };
+
+        versionController = new VersionController();
+        versionController.init();
+
 
         $(function(){
             ReviewerAutoComplete('user');

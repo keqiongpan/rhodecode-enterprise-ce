@@ -382,6 +382,7 @@ class DiffSet(object):
             lines_deleted=0,
             changed_files=0,
             files=[],
+            file_stats={},
             limited_diff=isinstance(patchset, LimitedDiffContainer),
             repo_name=self.repo_name,
             source_repo_name=self.source_repo_name,
@@ -389,6 +390,7 @@ class DiffSet(object):
             target_ref=target_ref,
         ))
         for patch in patchset:
+            diffset.file_stats[patch['filename']] = patch['stats']
             filediff = self.render_patch(patch)
             filediff.diffset = diffset
             diffset.files.append(filediff)

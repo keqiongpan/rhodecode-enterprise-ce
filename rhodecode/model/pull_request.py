@@ -50,7 +50,7 @@ from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     PullRequest, PullRequestReviewers, ChangesetStatus,
-    PullRequestVersion, ChangesetComment)
+    PullRequestVersion, ChangesetComment, Repository)
 from rhodecode.model.meta import Session
 from rhodecode.model.notification import NotificationModel, \
     EmailNotificationModel
@@ -728,13 +728,23 @@ class PullRequestModel(BaseModel):
         return version
 
     def _generate_update_diffs(self, pull_request, pull_request_version):
+
         diff_context = (
             self.DIFF_CONTEXT +
             CommentsModel.needed_extra_diff_context())
+
+        source_repo = pull_request_version.source_repo
+        source_ref_id = pull_request_version.source_ref_parts.commit_id
+        target_ref_id = pull_request_version.target_ref_parts.commit_id
         old_diff = self._get_diff_from_pr_or_version(
-            pull_request_version, context=diff_context)
+            source_repo, source_ref_id, target_ref_id, context=diff_context)
+
+        source_repo = pull_request.source_repo
+        source_ref_id = pull_request.source_ref_parts.commit_id
+        target_ref_id = pull_request.target_ref_parts.commit_id
+
         new_diff = self._get_diff_from_pr_or_version(
-            pull_request, context=diff_context)
+            source_repo, source_ref_id, target_ref_id, context=diff_context)
 
         old_diff_data = diffs.DiffProcessor(old_diff)
         old_diff_data.prepare()
@@ -768,10 +778,11 @@ class PullRequestModel(BaseModel):
             Session().add(comment)
 
     def _calculate_commit_id_changes(self, old_ids, new_ids):
-        added = new_ids.difference(old_ids)
-        common = old_ids.intersection(new_ids)
-        removed = old_ids.difference(new_ids)
-        return ChangeTuple(added, common, removed)
+        added = [x for x in new_ids if x not in old_ids]
+        common = [x for x in new_ids if x in old_ids]
+        removed = [x for x in old_ids if x not in new_ids]
+        total = new_ids
+        return ChangeTuple(added, common, removed, total)
 
     def _calculate_file_changes(self, old_diff_data, new_diff_data):
 
@@ -1261,20 +1272,20 @@ class PullRequestModel(BaseModel):
                 raise EmptyRepositoryError()
         return groups, selected
 
-    def get_diff(self, pull_request, context=DIFF_CONTEXT):
-        pull_request = self.__get_pull_request(pull_request)
-        return self._get_diff_from_pr_or_version(pull_request, context=context)
+    def get_diff(self, source_repo, source_ref_id, target_ref_id, context=DIFF_CONTEXT):
+        return self._get_diff_from_pr_or_version(
+            source_repo, source_ref_id, target_ref_id, context=context)
 
-    def _get_diff_from_pr_or_version(self, pr_or_version, context):
-        source_repo = pr_or_version.source_repo
-
-        # we swap org/other ref since we run a simple diff on one repo
-        target_ref_id = pr_or_version.target_ref_parts.commit_id
-        source_ref_id = pr_or_version.source_ref_parts.commit_id
+    def _get_diff_from_pr_or_version(
+            self, source_repo, source_ref_id, target_ref_id, context):
         target_commit = source_repo.get_commit(
             commit_id=safe_str(target_ref_id))
-        source_commit = source_repo.get_commit(commit_id=safe_str(source_ref_id))
-        vcs_repo = source_repo.scm_instance()
+        source_commit = source_repo.get_commit(
+            commit_id=safe_str(source_ref_id))
+        if isinstance(source_repo, Repository):
+            vcs_repo = source_repo.scm_instance()
+        else:
+            vcs_repo = source_repo
 
         # TODO: johbo: In the context of an update, we cannot reach
         # the old commit anymore with our normal mechanisms. It needs
@@ -1403,7 +1414,7 @@ class MergeCheck(object):
 
 
 ChangeTuple = namedtuple('ChangeTuple',
-                         ['added', 'common', 'removed'])
+                         ['added', 'common', 'removed', 'total'])
 
 FileChangeTuple = namedtuple('FileChangeTuple',
                              ['added', 'modified', 'removed'])

@@ -310,20 +310,42 @@
                 }
             }
 
-            $('.expand_commit').on('click',function(e){
-              var target_expand = $(this);
-              var cid = target_expand.data('commitId');
+            $('.expand_commit').on('click', function (e) {
+                var target_expand = $(this);
+                var cid = target_expand.data('commitId');
 
-              if (target_expand.hasClass('open')){
-                $('#c-'+cid).css({'height': '1.5em', 'white-space': 'nowrap', 'text-overflow': 'ellipsis', 'overflow':'hidden'});
-                $('#t-'+cid).css({'height': 'auto', 'line-height': '.9em', 'text-overflow': 'ellipsis', 'overflow':'hidden', 'white-space':'nowrap'});
-                target_expand.removeClass('open');
-              }
-              else {
-                $('#c-'+cid).css({'height': 'auto', 'white-space': 'pre-line', 'text-overflow': 'initial', 'overflow':'visible'});
-                $('#t-'+cid).css({'height': 'auto', 'max-height': 'none', 'text-overflow': 'initial', 'overflow':'visible', 'white-space':'normal'});
-                target_expand.addClass('open');
-              }
+                if (target_expand.hasClass('open')) {
+                    $('#c-' + cid).css({
+                        'height': '1.5em',
+                        'white-space': 'nowrap',
+                        'text-overflow': 'ellipsis',
+                        'overflow': 'hidden'
+                    });
+                    $('#t-' + cid).css({
+                        'height': 'auto',
+                        'line-height': '.9em',
+                        'text-overflow': 'ellipsis',
+                        'overflow': 'hidden',
+                        'white-space': 'nowrap'
+                    });
+                    target_expand.removeClass('open');
+                }
+                else {
+                    $('#c-' + cid).css({
+                        'height': 'auto',
+                        'white-space': 'pre-line',
+                        'text-overflow': 'initial',
+                        'overflow': 'visible'
+                    });
+                    $('#t-' + cid).css({
+                        'height': 'auto',
+                        'max-height': 'none',
+                        'text-overflow': 'initial',
+                        'overflow': 'visible',
+                        'white-space': 'normal'
+                    });
+                    target_expand.addClass('open');
+                }
                 // redraw the graph
                 graph_options.height = $("#changesets").height();
                 $("canvas").remove();

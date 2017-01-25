@@ -66,112 +66,9 @@ log = logging.getLogger(__name__)
 
 
 class PullrequestsController(BaseRepoController):
+
     def __before__(self):
         super(PullrequestsController, self).__before__()
-
-    def _load_compare_data(self, pull_request, inline_comments):
-        """
-        Load context data needed for generating compare diff
-
-        :param pull_request: object related to the request
-        :param enable_comments: flag to determine if comments are included
-        """
-        source_repo = pull_request.source_repo
-        source_ref_id = pull_request.source_ref_parts.commit_id
-
-        target_repo = pull_request.target_repo
-        target_ref_id = pull_request.target_ref_parts.commit_id
-
-        # despite opening commits for bookmarks/branches/tags, we always
-        # convert this to rev to prevent changes after bookmark or branch change
-        c.source_ref_type = 'rev'
-        c.source_ref = source_ref_id
-
-        c.target_ref_type = 'rev'
-        c.target_ref = target_ref_id
-
-        c.source_repo = source_repo
-        c.target_repo = target_repo
-
-        c.fulldiff = bool(request.GET.get('fulldiff'))
-
-        # diff_limit is the old behavior, will cut off the whole diff
-        # if the limit is applied  otherwise will just hide the
-        # big files from the front-end
-        diff_limit = self.cut_off_limit_diff
-        file_limit = self.cut_off_limit_file
-
-        pre_load = ["author", "branch", "date", "message"]
-
-        c.commit_ranges = []
-        source_commit = EmptyCommit()
-        target_commit = EmptyCommit()
-        c.missing_requirements = False
-        try:
-            c.commit_ranges = [
-                source_repo.get_commit(commit_id=rev, pre_load=pre_load)
-                for rev in pull_request.revisions]
-
-            c.statuses = source_repo.statuses(
-                [x.raw_id for x in c.commit_ranges])
-
-            target_commit = source_repo.get_commit(
-                commit_id=safe_str(target_ref_id))
-            source_commit = source_repo.get_commit(
-                commit_id=safe_str(source_ref_id))
-        except RepositoryRequirementError:
-            c.missing_requirements = True
-
-        # auto collapse if we have more than limit
-        collapse_limit = diffs.DiffProcessor._collapse_commits_over
-        c.collapse_all_commits = len(c.commit_ranges) > collapse_limit
-
-        c.changes = {}
-        c.missing_commits = False
-        if (c.missing_requirements or
-                isinstance(source_commit, EmptyCommit) or
-                    source_commit == target_commit):
-            _parsed = []
-            c.missing_commits = True
-        else:
-            vcs_diff = PullRequestModel().get_diff(pull_request)
-            diff_processor = diffs.DiffProcessor(
-                vcs_diff, format='newdiff', diff_limit=diff_limit,
-                file_limit=file_limit, show_full_diff=c.fulldiff)
-
-            _parsed = diff_processor.prepare()
-            c.limited_diff = isinstance(_parsed, diffs.LimitedDiffContainer)
-
-            included_files = {}
-            for f in _parsed:
-                included_files[f['filename']] = f['stats']
-
-            c.deleted_files = [fname for fname in inline_comments if
-                               fname not in included_files]
-
-            c.deleted_files_comments = collections.defaultdict(dict)
-            for fname, per_line_comments in inline_comments.items():
-                if fname in c.deleted_files:
-                    c.deleted_files_comments[fname]['stats'] = 0
-                    c.deleted_files_comments[fname]['comments'] = list()
-                    for lno, comments in per_line_comments.items():
-                        c.deleted_files_comments[fname]['comments'].extend(comments)
-
-            def _node_getter(commit):
-                def get_node(fname):
-                    try:
-                        return commit.get_node(fname)
-                    except NodeDoesNotExistError:
-                        return None
-                return get_node
-
-            c.diffset = codeblocks.DiffSet(
-                repo_name=c.repo_name,
-                source_repo_name=c.source_repo.repo_name,
-                source_node_getter=_node_getter(target_commit),
-                target_node_getter=_node_getter(source_commit),
-                comments=inline_comments
-            ).render_patchset(_parsed, target_commit.raw_id, source_commit.raw_id)
 
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
@@ -693,55 +590,9 @@ class PullrequestsController(BaseRepoController):
 
         pull_request_display_obj = PullRequest.get_pr_display_object(
             pull_request_obj, _org_pull_request_obj)
+
         return _org_pull_request_obj, pull_request_obj, \
                pull_request_display_obj, at_version
-
-    def _get_pr_version_changes(self, version, pull_request_latest):
-        """
-        Generate changes commits, and diff data based on the current pr version
-        """
-
-        #TODO(marcink): save those changes as JSON metadata for chaching later.
-
-        # fake the version to add the "initial" state object
-        pull_request_initial = PullRequest.get_pr_display_object(
-            pull_request_latest, pull_request_latest,
-            internal_methods=['get_commit', 'versions'])
-        pull_request_initial.revisions = []
-        pull_request_initial.source_repo.get_commit = types.MethodType(
-            lambda *a, **k: EmptyCommit(), pull_request_initial)
-        pull_request_initial.source_repo.scm_instance = types.MethodType(
-            lambda *a, **k: EmptyRepository(), pull_request_initial)
-
-        _changes_versions = [pull_request_latest] + \
-                            list(reversed(c.versions)) + \
-                            [pull_request_initial]
-
-        if version == 'latest':
-            index = 0
-        else:
-            for pos, prver in enumerate(_changes_versions):
-                ver = getattr(prver, 'pull_request_version_id', -1)
-                if ver == safe_int(version):
-                    index = pos
-                    break
-            else:
-                index = 0
-
-        cur_obj = _changes_versions[index]
-        prev_obj = _changes_versions[index + 1]
-
-        old_commit_ids = set(prev_obj.revisions)
-        new_commit_ids = set(cur_obj.revisions)
-
-        changes = PullRequestModel()._calculate_commit_id_changes(
-            old_commit_ids, new_commit_ids)
-
-        old_diff_data, new_diff_data = PullRequestModel()._generate_update_diffs(
-            cur_obj, prev_obj)
-        file_changes = PullRequestModel()._calculate_file_changes(
-            old_diff_data, new_diff_data)
-        return changes, file_changes
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
@@ -749,15 +600,43 @@ class PullrequestsController(BaseRepoController):
     def show(self, repo_name, pull_request_id):
         pull_request_id = safe_int(pull_request_id)
         version = request.GET.get('version')
+        from_version = request.GET.get('from_version') or version
         merge_checks = request.GET.get('merge_checks')
+        c.fulldiff = str2bool(request.GET.get('fulldiff'))
+
+        # register for JS templates
+        c.template_context['pull_request_data']['pull_request_id'] = \
+            pull_request_id
 
         (pull_request_latest,
          pull_request_at_ver,
          pull_request_display_obj,
-         at_version) = self._get_pr_version(pull_request_id, version=version)
+         at_version) = self._get_pr_version(
+            pull_request_id, version=version)
+        versions = pull_request_display_obj.versions()
 
-        c.template_context['pull_request_data']['pull_request_id'] = \
-            pull_request_id
+        c.at_version = at_version
+        c.at_version_num = (at_version
+                            if at_version and at_version != 'latest'
+                            else None)
+        c.at_version_pos = ChangesetComment.get_index_from_version(
+            c.at_version_num, versions)
+
+        (prev_pull_request_latest,
+         prev_pull_request_at_ver,
+         prev_pull_request_display_obj,
+         prev_at_version) = self._get_pr_version(
+            pull_request_id, version=from_version)
+
+        c.from_version = prev_at_version
+        c.from_version_num = (prev_at_version
+                              if prev_at_version and prev_at_version != 'latest'
+                              else None)
+        c.from_version_pos = ChangesetComment.get_index_from_version(
+            c.from_version_num, versions)
+
+        # define if we're in COMPARE mode or VIEW at version mode
+        compare = at_version != prev_at_version
 
         # pull_requests repo_name we opened it against
         # ie. target_repo must match
@@ -767,12 +646,12 @@ class PullrequestsController(BaseRepoController):
         c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
             pull_request_at_ver)
 
-        c.ancestor = None  # TODO: add ancestor here
+        c.ancestor = None  # empty ancestor hidden in display
         c.pull_request = pull_request_display_obj
         c.pull_request_latest = pull_request_latest
 
         pr_closed = pull_request_latest.is_closed()
-        if at_version and not at_version == 'latest':
+        if compare or (at_version and not at_version == 'latest'):
             c.allowed_to_change_status = False
             c.allowed_to_update = False
             c.allowed_to_merge = False
@@ -789,35 +668,50 @@ class PullrequestsController(BaseRepoController):
                 pull_request_latest, c.rhodecode_user) and not pr_closed
             c.allowed_to_comment = not pr_closed
 
-        cc_model = CommentsModel()
+        # check merge capabilities
+        _merge_check = MergeCheck.validate(
+            pull_request_latest, user=c.rhodecode_user)
+        c.pr_merge_errors = _merge_check.error_details
+        c.pr_merge_possible = not _merge_check.failed
+        c.pr_merge_message = _merge_check.merge_msg
 
+        if merge_checks:
+            return render('/pullrequests/pullrequest_merge_checks.mako')
+
+        comments_model = CommentsModel()
+
+        # reviewers and statuses
         c.pull_request_reviewers = pull_request_at_ver.reviewers_statuses()
+        allowed_reviewers = [x[0].user_id for x in c.pull_request_reviewers]
         c.pull_request_review_status = pull_request_at_ver.calculated_review_status()
 
-        c.versions = pull_request_display_obj.versions()
-        c.at_version = at_version
-        c.at_version_num = at_version if at_version and at_version != 'latest' else None
-        c.at_version_pos = ChangesetComment.get_index_from_version(
-            c.at_version_num, c.versions)
-
         # GENERAL COMMENTS with versions #
-        q = cc_model._all_general_comments_of_pull_request(pull_request_latest)
+        q = comments_model._all_general_comments_of_pull_request(pull_request_latest)
+        q = q.order_by(ChangesetComment.comment_id.asc())
         general_comments = q.order_by(ChangesetComment.pull_request_version_id.asc())
 
         # pick comments we want to render at current version
-        c.comment_versions = cc_model.aggregate_comments(
-            general_comments, c.versions, c.at_version_num)
+        c.comment_versions = comments_model.aggregate_comments(
+            general_comments, versions, c.at_version_num)
         c.comments = c.comment_versions[c.at_version_num]['until']
 
         # INLINE COMMENTS with versions  #
-        q = cc_model._all_inline_comments_of_pull_request(pull_request_latest)
+        q = comments_model._all_inline_comments_of_pull_request(pull_request_latest)
+        q = q.order_by(ChangesetComment.comment_id.asc())
         inline_comments = q.order_by(ChangesetComment.pull_request_version_id.asc())
-        c.inline_versions = cc_model.aggregate_comments(
-            inline_comments, c.versions, c.at_version_num, inline=True)
+        c.inline_versions = comments_model.aggregate_comments(
+            inline_comments, versions, c.at_version_num, inline=True)
+
+        # inject latest version
+        latest_ver = PullRequest.get_pr_display_object(
+            pull_request_latest, pull_request_latest)
+
+        c.versions = versions + [latest_ver]
 
         # if we use version, then do not show later comments
         # than current version
-        display_inline_comments = collections.defaultdict(lambda: collections.defaultdict(list))
+        display_inline_comments = collections.defaultdict(
+            lambda: collections.defaultdict(list))
         for co in inline_comments:
             if c.at_version_num:
                 # pick comments that are at least UPTO given version, so we
@@ -831,17 +725,126 @@ class PullrequestsController(BaseRepoController):
             if should_render:
                 display_inline_comments[co.f_path][co.line_no].append(co)
 
-        _merge_check = MergeCheck.validate(
-            pull_request_latest, user=c.rhodecode_user)
-        c.pr_merge_errors = _merge_check.error_details
-        c.pr_merge_possible = not _merge_check.failed
-        c.pr_merge_message = _merge_check.merge_msg
+        # load diff data into template context, if we use compare mode then
+        # diff is calculated based on changes between versions of PR
 
-        if merge_checks:
-            return render('/pullrequests/pullrequest_merge_checks.mako')
+        source_repo = pull_request_at_ver.source_repo
+        source_ref_id = pull_request_at_ver.source_ref_parts.commit_id
 
-        # load compare data into template context
-        self._load_compare_data(pull_request_at_ver, display_inline_comments)
+        target_repo = pull_request_at_ver.target_repo
+        target_ref_id = pull_request_at_ver.target_ref_parts.commit_id
+
+        if compare:
+            # in compare switch the diff base to latest commit from prev version
+            target_ref_id = prev_pull_request_display_obj.revisions[0]
+
+        # despite opening commits for bookmarks/branches/tags, we always
+        # convert this to rev to prevent changes after bookmark or branch change
+        c.source_ref_type = 'rev'
+        c.source_ref = source_ref_id
+
+        c.target_ref_type = 'rev'
+        c.target_ref = target_ref_id
+
+        c.source_repo = source_repo
+        c.target_repo = target_repo
+
+        # diff_limit is the old behavior, will cut off the whole diff
+        # if the limit is applied  otherwise will just hide the
+        # big files from the front-end
+        diff_limit = self.cut_off_limit_diff
+        file_limit = self.cut_off_limit_file
+
+        c.commit_ranges = []
+        source_commit = EmptyCommit()
+        target_commit = EmptyCommit()
+        c.missing_requirements = False
+
+        # try first shadow repo, fallback to regular repo
+        try:
+            commits_source_repo = pull_request_latest.get_shadow_repo()
+        except Exception:
+            log.debug('Failed to get shadow repo', exc_info=True)
+            commits_source_repo = source_repo.scm_instance()
+
+        c.commits_source_repo = commits_source_repo
+        commit_cache = {}
+        try:
+            pre_load = ["author", "branch", "date", "message"]
+            show_revs = pull_request_at_ver.revisions
+            for rev in show_revs:
+                comm = commits_source_repo.get_commit(
+                    commit_id=rev, pre_load=pre_load)
+                c.commit_ranges.append(comm)
+                commit_cache[comm.raw_id] = comm
+
+            target_commit = commits_source_repo.get_commit(
+                commit_id=safe_str(target_ref_id))
+            source_commit = commits_source_repo.get_commit(
+                commit_id=safe_str(source_ref_id))
+        except CommitDoesNotExistError:
+            pass
+        except RepositoryRequirementError:
+            log.warning(
+                'Failed to get all required data from repo', exc_info=True)
+            c.missing_requirements = True
+
+        c.statuses = source_repo.statuses(
+            [x.raw_id for x in c.commit_ranges])
+
+        # auto collapse if we have more than limit
+        collapse_limit = diffs.DiffProcessor._collapse_commits_over
+        c.collapse_all_commits = len(c.commit_ranges) > collapse_limit
+        c.compare_mode = compare
+
+        c.missing_commits = False
+        if (c.missing_requirements or isinstance(source_commit, EmptyCommit)
+            or source_commit == target_commit):
+
+            c.missing_commits = True
+        else:
+            vcs_diff = PullRequestModel().get_diff(
+                commits_source_repo, source_ref_id, target_ref_id)
+
+            diff_processor = diffs.DiffProcessor(
+                vcs_diff, format='newdiff', diff_limit=diff_limit,
+                file_limit=file_limit, show_full_diff=c.fulldiff)
+
+            _parsed = diff_processor.prepare()
+            c.limited_diff = isinstance(_parsed, diffs.LimitedDiffContainer)
+
+            def _node_getter(commit):
+                def get_node(fname):
+                    try:
+                        return commit.get_node(fname)
+                    except NodeDoesNotExistError:
+                        return None
+
+                return get_node
+
+            diffset = codeblocks.DiffSet(
+                repo_name=c.repo_name,
+                source_repo_name=c.source_repo.repo_name,
+                source_node_getter=_node_getter(target_commit),
+                target_node_getter=_node_getter(source_commit),
+                comments=display_inline_comments
+            )
+            c.diffset = diffset.render_patchset(
+                _parsed, target_commit.raw_id, source_commit.raw_id)
+
+            # calculate removed files that are bound to comments
+            comment_deleted_files = [
+                fname for fname in display_inline_comments
+                if fname not in c.diffset.file_stats]
+
+            c.deleted_files_comments = collections.defaultdict(dict)
+            for fname, per_line_comments in display_inline_comments.items():
+                if fname in comment_deleted_files:
+                    c.deleted_files_comments[fname]['stats'] = 0
+                    c.deleted_files_comments[fname]['comments'] = list()
+                    for lno, comments in per_line_comments.items():
+                        c.deleted_files_comments[fname]['comments'].extend(
+                            comments)
 
         # this is a hack to properly display links, when creating PR, the
         # compare view and others uses different notation, and
@@ -856,21 +859,55 @@ class PullrequestsController(BaseRepoController):
             statuses = ChangesetStatus.STATUSES
         c.commit_statuses = statuses
 
-        c.changes = None
-        c.file_changes = None
+        c.show_version_changes = not pr_closed
+        if c.show_version_changes:
+            cur_obj = pull_request_at_ver
+            prev_obj = prev_pull_request_at_ver
 
-        c.show_version_changes = 1  # control flag, not used yet
+            old_commit_ids = prev_obj.revisions
+            new_commit_ids = cur_obj.revisions
+            commit_changes = PullRequestModel()._calculate_commit_id_changes(
+                old_commit_ids, new_commit_ids)
+            c.commit_changes_summary = commit_changes
 
-        if at_version and c.show_version_changes:
-            c.changes, c.file_changes = self._get_pr_version_changes(
-                version, pull_request_latest)
+            # calculate the diff for commits between versions
+            c.commit_changes = []
+            mark = lambda cs, fw: list(
+                h.itertools.izip_longest([], cs, fillvalue=fw))
+            for c_type, raw_id in mark(commit_changes.added, 'a') \
+                                + mark(commit_changes.removed, 'r') \
+                                + mark(commit_changes.common, 'c'):
+
+                if raw_id in commit_cache:
+                    commit = commit_cache[raw_id]
+                else:
+                    try:
+                        commit = commits_source_repo.get_commit(raw_id)
+                    except CommitDoesNotExistError:
+                        # in case we fail extracting still use "dummy" commit
+                        # for display in commit diff
+                        commit = h.AttributeDict(
+                            {'raw_id': raw_id,
+                             'message': 'EMPTY or MISSING COMMIT'})
+                c.commit_changes.append([c_type, commit])
+
+            # current user review statuses for each version
+            c.review_versions = {}
+            if c.rhodecode_user.user_id in allowed_reviewers:
+                for co in general_comments:
+                    if co.author.user_id == c.rhodecode_user.user_id:
+                        # each comment has a status change
+                        status = co.status_change
+                        if status:
+                            _ver_pr = status[0].comment.pull_request_version_id
+                            c.review_versions[_ver_pr] = status[0]
 
         return render('/pullrequests/pullrequest_show.mako')
 
     @LoginRequired()
     @NotAnonymous()
-    @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
-                                   'repository.admin')
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
     @auth.CSRFRequired()
     @jsonify
     def comment(self, repo_name, pull_request_id):
