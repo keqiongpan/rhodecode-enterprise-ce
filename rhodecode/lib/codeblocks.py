@@ -40,8 +40,10 @@ log = logging.getLogger()
 
 
 def filenode_as_lines_tokens(filenode, lexer=None):
+    org_lexer = lexer
     lexer = lexer or get_lexer_for_filenode(filenode)
-    log.debug('Generating file node pygment tokens for %s, %s', lexer, filenode)
+    log.debug('Generating file node pygment tokens for %s, %s, org_lexer:%s',
+              lexer, filenode, org_lexer)
     tokens = tokenize_string(filenode.content, lexer)
     lines = split_token_stream(tokens, split_string='\n')
     rv = list(lines)
@@ -398,10 +400,14 @@ class DiffSet(object):
         return diffset
 
     _lexer_cache = {}
-    def _get_lexer_for_filename(self, filename):
+    def _get_lexer_for_filename(self, filename, filenode=None):
         # cached because we might need to call it twice for source/target
         if filename not in self._lexer_cache:
-            self._lexer_cache[filename] = get_lexer_safe(filepath=filename)
+            if filenode:
+                lexer = filenode.lexer
+            else:
+                lexer = get_lexer_safe(filepath=filename)
+            self._lexer_cache[filename] = lexer
         return self._lexer_cache[filename]
 
     def render_patch(self, patch):
@@ -439,10 +445,15 @@ class DiffSet(object):
         # done can allow caching a lexer for a filenode to avoid the file lookup
         if isinstance(source_file, FileNode):
             source_filenode = source_file
-            source_lexer = source_file.lexer
+            #source_lexer = source_file.lexer
+            source_lexer = self._get_lexer_for_filename(source_filename)
+            source_file.lexer = source_lexer
+
         if isinstance(target_file, FileNode):
             target_filenode = target_file
-            target_lexer = target_file.lexer
+            #target_lexer = target_file.lexer
+            target_lexer = self._get_lexer_for_filename(target_filename)
+            target_file.lexer = target_lexer
 
         source_file_path, target_file_path = None, None
 
@@ -619,8 +630,11 @@ class DiffSet(object):
             filename = file.unicode_path
 
         if self.highlight_mode == self.HL_REAL and filenode:
-            if line_number and file.size < self.max_file_size_limit:
-                return self.get_tokenized_filenode_line(file, line_number)
+            lexer = self._get_lexer_for_filename(filename)
+            file_size_allowed = file.size < self.max_file_size_limit
+            if line_number and file_size_allowed:
+                return self.get_tokenized_filenode_line(
+                    file, line_number, lexer)
 
         if self.highlight_mode in (self.HL_REAL, self.HL_FAST) and filename:
             lexer = self._get_lexer_for_filename(filename)
@@ -628,10 +642,10 @@ class DiffSet(object):
 
         return list(tokenize_string(line_text, plain_text_lexer))
 
-    def get_tokenized_filenode_line(self, filenode, line_number):
+    def get_tokenized_filenode_line(self, filenode, line_number, lexer=None):
 
         if filenode not in self.highlighted_filenodes:
-            tokenized_lines = filenode_as_lines_tokens(filenode, filenode.lexer)
+            tokenized_lines = filenode_as_lines_tokens(filenode, lexer)
             self.highlighted_filenodes[filenode] = tokenized_lines
         return self.highlighted_filenodes[filenode][line_number - 1]
 
