@@ -177,11 +177,11 @@
                % if c.show_version_changes:
                    <% outdated_comm_count_ver = len(c.inline_versions[c.at_version_num]['outdated']) %>
                    <% general_outdated_comm_count_ver = len(c.comment_versions[c.at_version_num]['outdated']) %>
-                   <div id="show-pr-versions" class="input btn btn-link" onclick="return versionController.toggleVersionView(this)"
+                   <a id="show-pr-versions" class="input" onclick="return versionController.toggleVersionView(this)" href="#show-pr-versions"
                         data-toggle-on="${ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}"
                         data-toggle-off="${_('Hide all versions of this pull request')}">
                        ${ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}
-                   </div>
+                   </a>
                    <table>
                        ## SHOW ALL VERSIONS OF PR
                        <% ver_pr = None %>
@@ -561,10 +561,10 @@
             <div class="meta">
                 % if general_outdated_comm_count_ver == 1:
                     ${_('there is {num} general comment from older versions').format(num=general_outdated_comm_count_ver)},
-                    <a href="#" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show it')}</a>
+                    <a href="#show-hidden-comments" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show it')}</a>
                 % else:
                     ${_('there are {num} general comments from older versions').format(num=general_outdated_comm_count_ver)},
-                    <a href="#" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show them')}</a>
+                    <a href="#show-hidden-comments" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show them')}</a>
                 % endif
             </div>
             % endif
