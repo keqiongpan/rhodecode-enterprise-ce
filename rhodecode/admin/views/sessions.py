@@ -53,7 +53,7 @@ class AdminSessionSettingsView(AdminSettingsView):
         c.navlist = navigation_list(self.request)
 
         c.cleanup_older_days = 60
-        older_than_seconds = 24 * 60 * 60 * 24 * c.cleanup_older_days
+        older_than_seconds = 60 * 60 * 24 * c.cleanup_older_days
 
         config = system_info.rhodecode_config().get_value()['value']['config']
         c.session_model = user_sessions.get_session_handler(
@@ -78,7 +78,7 @@ class AdminSessionSettingsView(AdminSettingsView):
         if expire_days is None:
             expire_days = 60
 
-        older_than_seconds = 24 * 60 * 60 * 24 * expire_days
+        older_than_seconds = 60 * 60 * 24 * expire_days
 
         config = system_info.rhodecode_config().get_value()['value']['config']
         session_model = user_sessions.get_session_handler(
