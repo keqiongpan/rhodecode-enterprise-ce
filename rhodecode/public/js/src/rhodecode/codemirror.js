@@ -230,7 +230,7 @@ var initCodeMirror = function(textAreadId, resetUrl, focus, options) {
   return myCodeMirror;
 };
 
-var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
+var initCommentBoxCodeMirror = function(CommentForm, textAreaId, triggerActions){
   var initialHeight = 100;
 
   if (typeof userHintsCache === "undefined") {
@@ -288,10 +288,100 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
 
     var completeActions = function(actions){
 
+        var registeredActions = [];
+        var allActions = [
+        {
+          text: "approve",
+          searchText: "status approved",
+          displayText: _gettext('Set status to Approved'),
+          hint: function(CodeMirror, data, completion) {
+            CodeMirror.replaceRange("", completion.from || data.from,
+                        completion.to || data.to, "complete");
+            $(CommentForm.statusChange).select2("val", 'approved').trigger('change');
+          },
+          render: function(elt, data, completion) {
+            var el = document.createElement('div');
+            el.className = "flag_status flag_status_comment_box approved pull-left";
+            elt.appendChild(el);
+
+            el = document.createElement('span');
+            el.innerHTML = completion.displayText;
+            elt.appendChild(el);
+          }
+        },
+        {
+          text: "reject",
+          searchText: "status rejected",
+          displayText: _gettext('Set status to Rejected'),
+          hint: function(CodeMirror, data, completion) {
+              CodeMirror.replaceRange("", completion.from || data.from,
+                          completion.to || data.to, "complete");
+              $(CommentForm.statusChange).select2("val", 'rejected').trigger('change');
+          },
+          render: function(elt, data, completion) {
+              var el = document.createElement('div');
+              el.className = "flag_status flag_status_comment_box rejected pull-left";
+              elt.appendChild(el);
+
+              el = document.createElement('span');
+              el.innerHTML = completion.displayText;
+              elt.appendChild(el);
+          }
+        },
+        {
+          text: "as_todo",
+          searchText: "todo comment",
+          displayText: _gettext('TODO comment'),
+          hint: function(CodeMirror, data, completion) {
+              CodeMirror.replaceRange("", completion.from || data.from,
+                          completion.to || data.to, "complete");
+
+              $(CommentForm.commentType).val('todo');
+          },
+          render: function(elt, data, completion) {
+              var el = document.createElement('div');
+              el.className = "pull-left";
+              elt.appendChild(el);
+
+              el = document.createElement('span');
+              el.innerHTML = completion.displayText;
+              elt.appendChild(el);
+          }
+        },
+        {
+          text: "as_note",
+          searchText: "note comment",
+          displayText: _gettext('Note Comment'),
+          hint: function(CodeMirror, data, completion) {
+              CodeMirror.replaceRange("", completion.from || data.from,
+                          completion.to || data.to, "complete");
+
+              $(CommentForm.commentType).val('note');
+          },
+          render: function(elt, data, completion) {
+              var el = document.createElement('div');
+              el.className = "pull-left";
+              elt.appendChild(el);
+
+              el = document.createElement('span');
+              el.innerHTML = completion.displayText;
+              elt.appendChild(el);
+          }
+        }
+        ];
+
+        $.each(allActions, function(index, value){
+            var actionData = allActions[index];
+            if (actions.indexOf(actionData['text']) != -1) {
+                registeredActions.push(actionData);
+            }
+        });
+
         return function(cm, pred) {
             var cur = cm.getCursor();
             var options = {
-                closeOnUnfocus: true
+                closeOnUnfocus: true,
+                registeredActions: registeredActions
             };
             setTimeout(function() {
                 if (!cm.state.completionActive) {
@@ -356,6 +446,7 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
     });
 
     var actionHint = function(editor, options) {
+
       var cur = editor.getCursor();
       var curLine = editor.getLine(cur.line).slice(0, cur.ch);
 
@@ -374,87 +465,8 @@ var initCommentBoxCodeMirror = function(textAreaId, triggerActions){
         type: null
       };
 
-      var actions = [
-        {
-          text: "approve",
-          searchText: "status approved",
-          displayText: _gettext('Set status to Approved'),
-          hint: function(CodeMirror, data, completion) {
-            CodeMirror.replaceRange("", completion.from || data.from,
-                        completion.to || data.to, "complete");
-            $('#change_status_general').select2("val", 'approved').trigger('change');
-          },
-          render: function(elt, data, completion) {
-            var el = document.createElement('div');
-            el.className = "flag_status flag_status_comment_box approved pull-left";
-            elt.appendChild(el);
-
-            el = document.createElement('span');
-            el.innerHTML = completion.displayText;
-            elt.appendChild(el);
-          }
-        },
-        {
-          text: "reject",
-          searchText: "status rejected",
-          displayText: _gettext('Set status to Rejected'),
-          hint: function(CodeMirror, data, completion) {
-              CodeMirror.replaceRange("", completion.from || data.from,
-                          completion.to || data.to, "complete");
-              $('#change_status_general').select2("val", 'rejected').trigger('change');
-          },
-          render: function(elt, data, completion) {
-              var el = document.createElement('div');
-              el.className = "flag_status flag_status_comment_box rejected pull-left";
-              elt.appendChild(el);
-
-              el = document.createElement('span');
-              el.innerHTML = completion.displayText;
-              elt.appendChild(el);
-          }
-        },
-        {
-          text: "as_todo",
-          searchText: "todo comment",
-          displayText: _gettext('TODO comment'),
-          hint: function(CodeMirror, data, completion) {
-              CodeMirror.replaceRange("", completion.from || data.from,
-                          completion.to || data.to, "complete");
-              $('#comment_type_general').val('todo')
-          },
-          render: function(elt, data, completion) {
-              var el = document.createElement('div');
-              el.className = "pull-left";
-              elt.appendChild(el);
-
-              el = document.createElement('span');
-              el.innerHTML = completion.displayText;
-              elt.appendChild(el);
-          }
-        },
-        {
-          text: "as_note",
-          searchText: "note comment",
-          displayText: _gettext('Note Comment'),
-          hint: function(CodeMirror, data, completion) {
-              CodeMirror.replaceRange("", completion.from || data.from,
-                          completion.to || data.to, "complete");
-              $('#comment_type_general').val('note')
-          },
-          render: function(elt, data, completion) {
-              var el = document.createElement('div');
-              el.className = "pull-left";
-              elt.appendChild(el);
-
-              el = document.createElement('span');
-              el.innerHTML = completion.displayText;
-              elt.appendChild(el);
-          }
-        }
-      ];
-
       return {
-        list: filterActions(actions, context),
+        list: filterActions(options.registeredActions, context),
         from: CodeMirror.Pos(cur.line, context.start),
         to: CodeMirror.Pos(cur.line, context.end)
       };

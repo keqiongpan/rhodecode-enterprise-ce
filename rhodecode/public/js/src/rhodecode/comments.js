@@ -93,7 +93,7 @@ var bindToggleButtons = function() {
         this.resolvesActionId = null;
 
         this.cmBox = this.withLineNo('#text');
-        this.cm = initCommentBoxCodeMirror(this.cmBox, this.initAutocompleteActions);
+        this.cm = initCommentBoxCodeMirror(this, this.cmBox, this.initAutocompleteActions);
 
         this.statusChange = this.withLineNo('#change_status');
 
@@ -627,8 +627,9 @@ var CommentsController = function() {
       $formPlaceholder.append($form);
 
       var _form = $($form[0]);
+      var autocompleteActions = ['approve', 'reject', 'as_note', 'as_todo'];
       var commentForm = this.createCommentForm(
-          _form, lineNo, placeholderText, true, resolvesCommentId);
+          _form, lineNo, placeholderText, autocompleteActions, resolvesCommentId);
       commentForm.initStatusChangeSelector();
 
       return commentForm;
@@ -662,9 +663,9 @@ var CommentsController = function() {
 
           var placeholderText = _gettext('Leave a comment on line {0}.').format(lineno);
           var _form = $($form[0]).find('form');
-
+          var autocompleteActions = ['as_note', 'as_todo'];
           var commentForm = this.createCommentForm(
-              _form, lineno, placeholderText, false, resolvesCommentId);
+              _form, lineno, placeholderText, autocompleteActions, resolvesCommentId);
 
           $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
               form: _form,
