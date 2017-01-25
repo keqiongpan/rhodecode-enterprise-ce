@@ -140,7 +140,7 @@ class SubversionCommit(base.BaseCommit):
                 lambda: self.repository.get_commit(commit_id=commit_id),
                 content)
 
-    def get_node(self, path):
+    def get_node(self, path, pre_load=None):
         path = self._fix_path(path)
         if path not in self.nodes:
 
@@ -152,7 +152,7 @@ class SubversionCommit(base.BaseCommit):
                 if node_type == 'dir':
                     node = nodes.DirNode(path, commit=self)
                 elif node_type == 'file':
-                    node = nodes.FileNode(path, commit=self)
+                    node = nodes.FileNode(path, commit=self, pre_load=pre_load)
                 else:
                     raise NodeDoesNotExistError(self.no_node_at_path(path))
 

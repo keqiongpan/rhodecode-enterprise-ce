@@ -290,8 +290,9 @@ class FileNode(Node):
     :attribute: commit: if given, first time content is accessed, callback
     :attribute: mode: stat mode for a node. Default is `FILEMODE_DEFAULT`.
     """
+    _filter_pre_load = []
 
-    def __init__(self, path, content=None, commit=None, mode=None):
+    def __init__(self, path, content=None, commit=None, mode=None, pre_load=None):
         """
         Only one of ``content`` and ``commit`` may be given. Passing both
         would raise ``NodeError`` exception.
@@ -307,6 +308,22 @@ class FileNode(Node):
         self.commit = commit
         self._content = content
         self._mode = mode or FILEMODE_DEFAULT
+
+        self._set_bulk_properties(pre_load)
+
+    def _set_bulk_properties(self, pre_load):
+        if not pre_load:
+            return
+        pre_load = [entry for entry in pre_load
+                    if entry not in self._filter_pre_load]
+        if not pre_load:
+            return
+
+        for attr_name in pre_load:
+            result = getattr(self, attr_name)
+            if callable(result):
+                result = result()
+            self.__dict__[attr_name] = result
 
     @LazyProperty
     def mode(self):

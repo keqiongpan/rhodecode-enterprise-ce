@@ -393,7 +393,7 @@ class GitCommit(base.BaseCommit):
         nodes.sort()
         return nodes
 
-    def get_node(self, path):
+    def get_node(self, path, pre_load=None):
         if isinstance(path, unicode):
             path = path.encode('utf-8')
         path = self._fix_path(path)
@@ -415,7 +415,7 @@ class GitCommit(base.BaseCommit):
                 else:
                     node = DirNode(path, commit=self)
             elif type_ == 'blob':
-                node = FileNode(path, commit=self)
+                node = FileNode(path, commit=self, pre_load=pre_load)
             else:
                 raise self.no_node_at_path(path)
 
