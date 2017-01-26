@@ -211,7 +211,7 @@
                                    % if c.at_version_num != ver_pr:
                                     <i class="icon-comment"></i>
                                        <code class="tooltip" title="${_('Comment from pull request version {0}, general:{1} inline:{2}').format(ver_pos, len(c.comment_versions[ver_pr]['at']), len(c.inline_versions[ver_pr]['at']))}">
-                                           ${len(c.comment_versions[ver_pr]['at'])}/${len(c.inline_versions[ver_pr]['at'])}
+                                           G:${len(c.comment_versions[ver_pr]['at'])} / I:${len(c.inline_versions[ver_pr]['at'])}
                                        </code>
                                    % endif
                                </td>
@@ -225,9 +225,13 @@
                        % endfor
 
                        <tr>
-                           <td colspan="5">
-                               <button id="show-version-diff" onclick="return versionController.showVersionDiff()" class="btn btn-sm" style="display: none" data-label-text="${_('show changes between versions')}">
-                                   ${_('show changes between versions')}
+                           <td colspan="6">
+                               <button id="show-version-diff" onclick="return versionController.showVersionDiff()" class="btn btn-sm" style="display: none"
+                                       data-label-text-locked="${_('select versions to show changes')}"
+                                       data-label-text-diff="${_('show changes between versions')}"
+                                       data-label-text-show="${_('show pull request for this version')}"
+                               >
+                                   ${_('select versions to show changes')}
                                </button>
                            </td>
                        </tr>
@@ -619,18 +623,35 @@
                 };
 
                 var curVal = getVal($(curNode).val());
+                var cleared = false;
+
                 $.each(self.$verSource, function(index, value){
                     var elVal = getVal($(value).val());
+
                     if(elVal > curVal){
+                        if ($(value).is(':checked')) {
+                            cleared = true;
+                        }
                         $(value).attr('disabled', 'disabled');
                         $(value).removeAttr('checked');
+                        $(value).css({'opacity': 0.1});
                     }
                     else{
+                        $(value).css({'opacity': 1});
                         $(value).removeAttr('disabled');
                     }
                 });
 
-                self.setLockAction(false, $(curNode).data('verPos'));
+                if (cleared) {
+                    // if we unchecked an active, set the next one to same loc.
+                    $(this.$verSource).filter('[value={0}]'.format(
+                            curVal)).attr('checked', 'checked');
+                }
+
+                self.setLockAction(false,
+                        $(curNode).data('verPos'),
+                        $(this.$verSource).filter(':checked').data('verPos')
+                );
             };
 
 
@@ -652,16 +673,21 @@
 
             };
 
-            this.setLockAction = function (state, selectedVersion) {
-                if(state){
-                    $('#show-version-diff').attr('disabled','disabled')
-                    $('#show-version-diff').addClass('disabled')
-                    $('#show-version-diff').html($('#show-version-diff').data('labelText'));
+            this.setLockAction = function (state, selectedVersion, otherVersion) {
+                if (state) {
+                    $('#show-version-diff').attr('disabled', 'disabled');
+                    $('#show-version-diff').addClass('disabled');
+                    $('#show-version-diff').html($('#show-version-diff').data('labelTextLocked'));
                 }
-                else{
+                else {
                     $('#show-version-diff').removeAttr('disabled');
-                    $('#show-version-diff').removeClass('disabled')
-                    //$('#show-version-diff').html(_gettext('show changes for v') + selectedVersion)
+                    $('#show-version-diff').removeClass('disabled');
+
+                    if (selectedVersion == otherVersion) {
+                        $('#show-version-diff').html($('#show-version-diff').data('labelTextShow'));
+                    } else {
+                        $('#show-version-diff').html($('#show-version-diff').data('labelTextDiff'));
+                    }
                 }
 
             };
