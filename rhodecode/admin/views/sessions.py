@@ -18,7 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import collections
 import logging
 
 from pylons import tmpl_context as c

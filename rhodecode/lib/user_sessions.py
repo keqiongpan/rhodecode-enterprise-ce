@@ -18,6 +18,8 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import os
+import time
 import datetime
 import dateutil
 from rhodecode.model.db import DbSession, Session
@@ -29,6 +31,7 @@ class CleanupCommand(Exception):
 
 class BaseAuthSessions(object):
     SESSION_TYPE = None
+    NOT_AVAILABLE = 'NOT AVAILABLE'
 
     def __init__(self, config):
         session_conf = {}
@@ -70,28 +73,74 @@ class DbAuthSessions(BaseAuthSessions):
 class FileAuthSessions(BaseAuthSessions):
     SESSION_TYPE = 'file sessions'
 
-    def get_count(self):
-        return 'NOT AVAILABLE'
-
-    def get_expired_count(self, older_than_seconds=None):
-        return self.get_count()
-
-    def clean_sessions(self, older_than_seconds=None):
+    def _get_sessions_dir(self):
         data_dir = self.config.get('beaker.session.data_dir')
-        raise CleanupCommand(
-            'Please execute this command: '
-            '`find . -mtime +60 -exec rm {{}} \;` inside {} directory'.format(
-                data_dir))
+        return data_dir
+
+    def _count_on_filesystem(self, path, older_than=0, callback=None):
+        value = dict(percent=0, used=0, total=0, items=0, path=path, text='')
+        items_count = 0
+        used = 0
+        cur_time = time.time()
+        for root, dirs, files in os.walk(path):
+            for f in files:
+                final_path = os.path.join(root, f)
+                try:
+                    mtime = os.stat(final_path).st_mtime
+                    if (cur_time - mtime) > older_than:
+                        items_count += 1
+                        if callback:
+                            callback_res = callback(final_path)
+                        else:
+                            used += os.path.getsize(final_path)
+                except OSError:
+                    pass
+        value.update({
+            'percent': 100,
+            'used': used,
+            'total': used,
+            'items': items_count
+        })
+        return value
+
+    def get_count(self):
+        try:
+            sessions_dir = self._get_sessions_dir()
+            items_count = self._count_on_filesystem(sessions_dir)['items']
+        except Exception:
+            items_count = self.NOT_AVAILABLE
+        return items_count
+
+    def get_expired_count(self, older_than_seconds=0):
+        try:
+            sessions_dir = self._get_sessions_dir()
+            items_count = self._count_on_filesystem(
+                sessions_dir, older_than=older_than_seconds)['items']
+        except Exception:
+            items_count = self.NOT_AVAILABLE
+        return items_count
+
+    def clean_sessions(self, older_than_seconds=0):
+        # find . -mtime +60 -exec rm {} \;
+
+        sessions_dir = self._get_sessions_dir()
+
+        def remove_item(path):
+            os.remove(path)
+
+        return self._count_on_filesystem(
+            sessions_dir, older_than=older_than_seconds,
+            callback=remove_item)['items']
 
 
 class MemcachedAuthSessions(BaseAuthSessions):
     SESSION_TYPE = 'ext:memcached'
 
     def get_count(self):
-        return 'NOT AVAILABLE'
+        return self.NOT_AVAILABLE
 
     def get_expired_count(self, older_than_seconds=None):
-        return self.get_count()
+        return self.NOT_AVAILABLE
 
     def clean_sessions(self, older_than_seconds=None):
         raise CleanupCommand('Cleanup for this session type not yet available')
@@ -101,10 +150,10 @@ class MemoryAuthSessions(BaseAuthSessions):
     SESSION_TYPE = 'memory'
 
     def get_count(self):
-        return 'NOT AVAILABLE'
+        return self.NOT_AVAILABLE
 
     def get_expired_count(self, older_than_seconds=None):
-        return self.get_count()
+        return self.NOT_AVAILABLE
 
     def clean_sessions(self, older_than_seconds=None):
         raise CleanupCommand('Cleanup for this session type not yet available')
