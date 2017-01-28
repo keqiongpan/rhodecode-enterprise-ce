@@ -473,7 +473,7 @@ class TestUserSessions(object):
         response = self.app.post(
             self._get_url('admin_settings_sessions_cleanup'), params=post_data,
             status=302)
-        assert_session_flash(response, 'Please execute this command')
+        assert_session_flash(response, 'Cleaned up old sessions')
 
 
 @pytest.mark.usefixtures('app')

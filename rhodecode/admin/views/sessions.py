@@ -71,7 +71,7 @@ class AdminSessionSettingsView(AdminSettingsView):
     @view_config(
         route_name='admin_settings_sessions_cleanup', request_method='POST')
     def settings_sessions_cleanup(self):
-
+        _ = self.request.translate
         expire_days = safe_int(self.request.params.get('expire_days'))
 
         if expire_days is None:
