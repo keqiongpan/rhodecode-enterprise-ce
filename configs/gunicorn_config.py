@@ -1,4 +1,17 @@
-"""gunicorn config hooks"""
+"""
+gunicorn config extension and hooks. Sets additional configuration that is
+available post the .ini config.
+
+- workers = ${cpu_number}
+- threads = 1
+- proc_name = ${gunicorn_proc_name}
+- worker_class = sync
+- worker_connections = 10
+- max_requests = 1000
+- max_requests_jitter = 30
+- timeout = 21600
+
+"""
 
 import multiprocessing
 import sys
@@ -6,50 +19,31 @@ import threading
 import traceback
 
 
-# GLOBAL #
+# GLOBAL
 errorlog = '-'
 accesslog = '-'
 loglevel = 'debug'
 
-# SECURITY #
+# SECURITY
 limit_request_line = 4094
 limit_request_fields = 100
 limit_request_field_size = 8190
 
-# SERVER MECHANICS #
-# None == system temp dir #
+# SERVER MECHANICS
+# None == system temp dir
 worker_tmp_dir = None
 tmp_upload_dir = None
-#proc_name =
 
-# self adjust workers based on CPU #
-#workers = multiprocessing.cpu_count() * 2 + 1
-
-access_log_format = '[%(p)s] %(h)15s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" request_time:%(L)s'
-
-# For the gevent worker classes #
-# this limits the maximum number of simultaneous clients that #
-# a single process can handle. #
-#worker_connections = 10
-
-# Max requests to handle by each worker before restarting it, #
-# could prevent memory leaks #
-#max_requests = 1000
-#max_requests_jitter = 30
-
-
-# If a worker does not notify the master process in this #
-# number of seconds it is killed and a new worker is spawned #
-# to replace it. #
-#timeout = 3600
-
+# Custom log format
 access_log_format = (
-    '[%(p)-10s] %(h)s time:%(L)s %(l)s %(u)s '
-    '%(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"')
+    '%(t)s GNCRN %(p)-8s %(h)-15s rqt:%(L)s %(s)s %(b)s "%(m)s:%(U)s %(q)s" usr:%(u)s "%(f)s" "%(a)s"')
+
+# self adjust workers based on CPU count
+# workers = multiprocessing.cpu_count() * 2 + 1
 
 
 def post_fork(server, worker):
-    server.log.info("[<%s>] worker spawned", worker.pid)
+    server.log.info("[<%-10s>] WORKER spawned", worker.pid)
 
 
 def pre_fork(server, worker):
@@ -67,7 +61,7 @@ def when_ready(server):
 def worker_int(worker):
     worker.log.info("[<%-10s>] worker received INT or QUIT signal", worker.pid)
 
-    # get traceback info
+    # get traceback info, on worker crash
     id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
     code = []
     for thread_id, stack in sys._current_frames().items():
