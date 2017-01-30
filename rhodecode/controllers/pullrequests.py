@@ -604,10 +604,6 @@ class PullrequestsController(BaseRepoController):
         merge_checks = request.GET.get('merge_checks')
         c.fulldiff = str2bool(request.GET.get('fulldiff'))
 
-        # register for JS templates
-        c.template_context['pull_request_data']['pull_request_id'] = \
-            pull_request_id
-
         (pull_request_latest,
          pull_request_at_ver,
          pull_request_display_obj,
