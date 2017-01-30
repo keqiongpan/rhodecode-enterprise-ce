@@ -142,6 +142,8 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     %endif
 
     <div class="filediffs">
+    ## initial value could be marked as False later on
+    <% over_lines_changed_limit = False %>
     %for i, filediff in enumerate(diffset.files):
 
         <%
