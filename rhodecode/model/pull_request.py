@@ -630,7 +630,7 @@ class PullRequestModel(BaseModel):
                 old=pull_request, new=None, changes=None)
 
         # re-compute commit ids
-        old_commit_ids = set(pull_request.revisions)
+        old_commit_ids = pull_request.revisions
         pre_load = ["author", "branch", "date", "message"]
         commit_ranges = target_repo.compare(
             target_commit.raw_id, source_commit.raw_id, source_repo, merge=True,
@@ -647,7 +647,7 @@ class PullRequestModel(BaseModel):
             commit.raw_id for commit in reversed(commit_ranges)]
         pull_request.updated_on = datetime.datetime.now()
         Session().add(pull_request)
-        new_commit_ids = set(pull_request.revisions)
+        new_commit_ids = pull_request.revisions
 
         changes = self._calculate_commit_id_changes(
             old_commit_ids, new_commit_ids)
