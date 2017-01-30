@@ -66,8 +66,10 @@ class DbAuthSessions(BaseAuthSessions):
 
     def clean_sessions(self, older_than_seconds=None):
         expiry_date = self._seconds_to_date(older_than_seconds)
+        to_remove = DbSession.query().filter(DbSession.accessed < expiry_date).count()
         DbSession.query().filter(DbSession.accessed < expiry_date).delete()
         Session().commit()
+        return to_remove
 
 
 class FileAuthSessions(BaseAuthSessions):
@@ -78,9 +80,11 @@ class FileAuthSessions(BaseAuthSessions):
         return data_dir
 
     def _count_on_filesystem(self, path, older_than=0, callback=None):
-        value = dict(percent=0, used=0, total=0, items=0, path=path, text='')
+        value = dict(percent=0, used=0, total=0, items=0, callbacks=0,
+                     path=path, text='')
         items_count = 0
         used = 0
+        callbacks = 0
         cur_time = time.time()
         for root, dirs, files in os.walk(path):
             for f in files:
@@ -91,6 +95,7 @@ class FileAuthSessions(BaseAuthSessions):
                         items_count += 1
                         if callback:
                             callback_res = callback(final_path)
+                            callbacks += 1
                         else:
                             used += os.path.getsize(final_path)
                 except OSError:
@@ -99,7 +104,8 @@ class FileAuthSessions(BaseAuthSessions):
             'percent': 100,
             'used': used,
             'total': used,
-            'items': items_count
+            'items': items_count,
+            'callbacks': callbacks
         })
         return value
 
@@ -128,9 +134,10 @@ class FileAuthSessions(BaseAuthSessions):
         def remove_item(path):
             os.remove(path)
 
-        return self._count_on_filesystem(
+        stats = self._count_on_filesystem(
             sessions_dir, older_than=older_than_seconds,
-            callback=remove_item)['items']
+            callback=remove_item)
+        return stats['callbacks']
 
 
 class MemcachedAuthSessions(BaseAuthSessions):

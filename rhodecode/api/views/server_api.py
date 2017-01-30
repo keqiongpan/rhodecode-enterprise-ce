@@ -26,6 +26,8 @@ from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCForbidden
 from rhodecode.api.utils import (
     Optional, OAttr, has_superadmin_permission, get_user_or_error)
 from rhodecode.lib.utils import repo2db_mapper
+from rhodecode.lib import system_info
+from rhodecode.lib import user_sessions
 from rhodecode.model.db import UserIpMap
 from rhodecode.model.scm import ScmModel
 
@@ -176,3 +178,67 @@ def rescan_repos(request, apiuser, remove_obsolete=Optional(False)):
             'Error occurred during rescan repositories action'
         )
 
+
+@jsonrpc_method()
+def cleanup_sessions(request, apiuser, older_then=Optional(60)):
+    """
+    Triggers a session cleanup action.
+
+    If the ``older_then`` option is set, only sessions that hasn't been
+    accessed in the given number of days will be removed.
+
+    This command can only be run using an |authtoken| with admin rights to
+    the specified repository.
+
+    This command takes the following options:
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param older_then: Deletes session that hasn't been accessed
+        in given number of days.
+    :type older_then: Optional(int)
+
+    Example output:
+
+    .. code-block:: bash
+
+      id : <id_given_in_input>
+      result: {
+        "backend": "<type of backend>",
+        "sessions_removed": <number_of_removed_sessions>
+      }
+      error :  null
+
+    Example error output:
+
+    .. code-block:: bash
+
+      id : <id_given_in_input>
+      result : null
+      error :  {
+        'Error occurred during session cleanup'
+      }
+
+    """
+    if not has_superadmin_permission(apiuser):
+        raise JSONRPCForbidden()
+
+    older_then = Optional.extract(older_then)
+    older_than_seconds = 60 * 60 * 24 * older_then
+
+    config = system_info.rhodecode_config().get_value()['value']['config']
+    session_model = user_sessions.get_session_handler(
+        config.get('beaker.session.type', 'memory'))(config)
+
+    backend = session_model.SESSION_TYPE
+    try:
+        cleaned = session_model.clean_sessions(
+            older_than_seconds=older_than_seconds)
+        return {'sessions_removed': cleaned, 'backend': backend}
+    except user_sessions.CleanupCommand as msg:
+        return {'cleanup_command': msg.message, 'backend': backend}
+    except Exception as e:
+        log.exception('Failed session cleanup')
+        raise JSONRPCError(
+            'Error occurred during session cleanup'
+        )
