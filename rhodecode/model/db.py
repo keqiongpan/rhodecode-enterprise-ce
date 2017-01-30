@@ -2920,7 +2920,7 @@ class ChangesetComment(Base, BaseModel):
     resolved_comment = relationship('ChangesetComment', remote_side=comment_id, backref='resolved_by')
     author = relationship('User', lazy='joined')
     repo = relationship('Repository')
-    status_change = relationship('ChangesetStatus', cascade="all, delete, delete-orphan")
+    status_change = relationship('ChangesetStatus', cascade="all, delete, delete-orphan", lazy='joined')
     pull_request = relationship('PullRequest', lazy='joined')
     pull_request_version = relationship('PullRequestVersion')
 
