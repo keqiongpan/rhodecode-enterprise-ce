@@ -24,7 +24,8 @@ from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.model.db import User
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.tests import TEST_USER_ADMIN_LOGIN
-from rhodecode.api.tests.utils import (build_data, api_call)
+from rhodecode.api.tests.utils import (
+    build_data, api_call, assert_ok, assert_error)
 
 
 @pytest.mark.usefixtures("testuser_api", "app")
@@ -74,8 +75,7 @@ class TestUpdatePullRequest(object):
         expected = 'pull request `{}` update failed, pull request ' \
                    'is closed'.format(pull_request.pull_request_id)
 
-        response_json = response.json['error']
-        assert response_json == expected
+        assert_error(id_, expected, response.body)
 
     @pytest.mark.backends("git", "hg")
     def test_api_update_update_commits(
@@ -90,9 +90,11 @@ class TestUpdatePullRequest(object):
         pr_util.update_source_repository(head='c')
         repo = pull_request.source_repo.scm_instance()
         commits = [x for x in repo.get_commits()]
+        print commits
 
         added_commit_id = commits[-1].raw_id  # c commit
-        common_commits = commits[1].raw_id  # b commit is common ancestor
+        common_commit_id = commits[1].raw_id  # b commit is common ancestor
+        total_commits = [added_commit_id, common_commit_id]
 
         id_, params = build_data(
             self.apikey, 'update_pull_request',
@@ -107,12 +109,13 @@ class TestUpdatePullRequest(object):
                 pull_request.pull_request_id),
             "pull_request": response.json['result']['pull_request'],
             "updated_commits": {"added": [added_commit_id],
-                                "common": [common_commits], "removed": []},
+                                "common": [common_commit_id],
+                                "total": total_commits,
+                                "removed": []},
             "updated_reviewers": {"added": [], "removed": []},
         }
 
-        response_json = response.json['result']
-        assert response_json == expected
+        assert_ok(id_, expected, response.body)
 
     @pytest.mark.backends("git", "hg")
     def test_api_update_change_reviewers(
@@ -139,8 +142,7 @@ class TestUpdatePullRequest(object):
             "updated_reviewers": {"added": added, "removed": removed},
         }
 
-        response_json = response.json['result']
-        assert response_json == expected
+        assert_ok(id_, expected, response.body)
 
     @pytest.mark.backends("git", "hg")
     def test_api_update_bad_user_in_reviewers(self, pr_util):
@@ -155,8 +157,7 @@ class TestUpdatePullRequest(object):
 
         expected = 'user `bad_name` does not exist'
 
-        response_json = response.json['error']
-        assert response_json == expected
+        assert_error(id_, expected, response.body)
 
     @pytest.mark.backends("git", "hg")
     def test_api_update_repo_error(self, pr_util):
@@ -184,9 +185,7 @@ class TestUpdatePullRequest(object):
         response = api_call(self.app, params)
 
         expected = 'pull request `999999` does not exist'
-
-        response_json = response.json['error']
-        assert response_json == expected
+        assert_error(id_, expected, response.body)
 
     @pytest.mark.backends("git", "hg")
     def test_api_update_pull_request_no_perms_to_update(
@@ -203,5 +202,4 @@ class TestUpdatePullRequest(object):
         expected = ('pull request `%s` update failed, '
                     'no permission to update.') % pull_request.pull_request_id
 
-        response_json = response.json['error']
-        assert response_json == expected
+        assert_error(id_, expected, response.body)

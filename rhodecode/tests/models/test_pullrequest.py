@@ -356,8 +356,11 @@ class TestPullRequestModel:
         assert commit_ids == pull_request.revisions + [pull_request.merge_rev]
 
     def test_get_diff_from_pr_version(self, pull_request):
+        source_repo = pull_request.source_repo
+        source_ref_id = pull_request.source_ref_parts.commit_id
+        target_ref_id = pull_request.target_ref_parts.commit_id
         diff = PullRequestModel()._get_diff_from_pr_or_version(
-            pull_request, context=6)
+            source_repo, source_ref_id, target_ref_id, context=6)
         assert 'file_1' in diff.raw
 
     def test_generate_title_returns_unicode(self):
@@ -803,10 +806,13 @@ def test_link_comments_to_version_only_updates_unlinked_comments(pr_util):
 
 
 def test_calculate_commits():
-    change = PullRequestModel()._calculate_commit_id_changes(
-        set([1, 2, 3]), set([1, 3, 4, 5]))
-    assert (set([4, 5]), set([1, 3]), set([2])) == (
-        change.added, change.common, change.removed)
+    old_ids = [1, 2, 3]
+    new_ids = [1, 3, 4, 5]
+    change = PullRequestModel()._calculate_commit_id_changes(old_ids, new_ids)
+    assert change.added == [4, 5]
+    assert change.common == [1, 3]
+    assert change.removed == [2]
+    assert change.total == [1, 3, 4, 5]
 
 
 def assert_inline_comments(pull_request, visible=None, outdated=None):
