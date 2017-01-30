@@ -155,7 +155,7 @@ class PullRequestModel(BaseModel):
 
     def check_user_delete(self, pull_request, user):
         owner = user.user_id == pull_request.user_id
-        _perms = ('repository.admin')
+        _perms = ('repository.admin',)
         return self._check_perms(_perms, pull_request, user) or owner
 
     def check_user_change_status(self, pull_request, user, api=False):
