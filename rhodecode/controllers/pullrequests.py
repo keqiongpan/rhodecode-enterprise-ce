@@ -594,6 +594,39 @@ class PullrequestsController(BaseRepoController):
         return _org_pull_request_obj, pull_request_obj, \
                pull_request_display_obj, at_version
 
+    def _get_diffset(
+            self, source_repo, source_ref_id, target_ref_id, target_commit,
+            source_commit, diff_limit, file_limit, display_inline_comments):
+        vcs_diff = PullRequestModel().get_diff(
+            source_repo, source_ref_id, target_ref_id)
+
+        diff_processor = diffs.DiffProcessor(
+            vcs_diff, format='newdiff', diff_limit=diff_limit,
+            file_limit=file_limit, show_full_diff=c.fulldiff)
+
+        _parsed = diff_processor.prepare()
+
+        def _node_getter(commit):
+            def get_node(fname):
+                try:
+                    return commit.get_node(fname)
+                except NodeDoesNotExistError:
+                    return None
+
+            return get_node
+
+        diffset = codeblocks.DiffSet(
+            repo_name=c.repo_name,
+            source_repo_name=c.source_repo.repo_name,
+            source_node_getter=_node_getter(target_commit),
+            target_node_getter=_node_getter(source_commit),
+            comments=display_inline_comments
+        )
+        diffset = diffset.render_patchset(
+            _parsed, target_commit.raw_id, source_commit.raw_id)
+
+        return diffset
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
                                    'repository.admin')
@@ -799,34 +832,13 @@ class PullrequestsController(BaseRepoController):
 
             c.missing_commits = True
         else:
-            vcs_diff = PullRequestModel().get_diff(
-                commits_source_repo, source_ref_id, target_ref_id)
 
-            diff_processor = diffs.DiffProcessor(
-                vcs_diff, format='newdiff', diff_limit=diff_limit,
-                file_limit=file_limit, show_full_diff=c.fulldiff)
+            c.diffset = self._get_diffset(
+                commits_source_repo, source_ref_id, target_ref_id,
+                target_commit, source_commit,
+                diff_limit, file_limit, display_inline_comments)
 
-            _parsed = diff_processor.prepare()
-            c.limited_diff = isinstance(_parsed, diffs.LimitedDiffContainer)
-
-            def _node_getter(commit):
-                def get_node(fname):
-                    try:
-                        return commit.get_node(fname)
-                    except NodeDoesNotExistError:
-                        return None
-
-                return get_node
-
-            diffset = codeblocks.DiffSet(
-                repo_name=c.repo_name,
-                source_repo_name=c.source_repo.repo_name,
-                source_node_getter=_node_getter(target_commit),
-                target_node_getter=_node_getter(source_commit),
-                comments=display_inline_comments
-            )
-            c.diffset = diffset.render_patchset(
-                _parsed, target_commit.raw_id, source_commit.raw_id)
+            c.limited_diff = c.diffset.limited_diff
 
             # calculate removed files that are bound to comments
             comment_deleted_files = [
