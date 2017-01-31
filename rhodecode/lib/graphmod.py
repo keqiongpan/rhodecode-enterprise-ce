@@ -21,7 +21,7 @@
 """
 Modified mercurial DAG graph functions that re-uses VCS structure
 
-It allows to have a shared codebase for DAG generation for hg and git repos
+It allows to have a shared codebase for DAG generation for hg, git, svn repos
 """
 
 nullrev = -1
@@ -51,36 +51,30 @@ def _dagwalker(repo, commits):
     if not commits:
         return
 
-    # TODO: johbo: Use some sort of vcs api here
-    if repo.alias == 'hg':
-        def get_parent_indexes(idx):
-            return repo._remote.ctx_parents(idx)
+    def get_parent_indexes(idx):
+        return [commit.idx for commit in repo[idx].parents]
 
-    elif repo.alias in ['git', 'svn']:
-        def get_parent_indexes(idx):
-            return [commit.idx for commit in repo[idx].parents]
-
-    indexes = [commit.idx for commit in commits]
+    indexes = [commit['idx'] for commit in commits]
     lowest_idx = min(indexes)
     known_indexes = set(indexes)
 
-    gpcache = {}
+    grandparnet_cache = {}
     for commit in commits:
-        parents = sorted(set([p.idx for p in commit.parents
-                              if p.idx in known_indexes]))
-        mpars = [p.idx for p in commit.parents if
-                 p.idx != nullrev and p.idx not in parents]
+        parents = sorted(set([p['idx'] for p in commit['parents']
+                              if p['idx'] in known_indexes]))
+        mpars = [p['idx'] for p in commit['parents'] if
+                 p['idx'] != nullrev and p['idx'] not in parents]
         for mpar in mpars:
-            gp = gpcache.get(mpar)
+            gp = grandparnet_cache.get(mpar)
             if gp is None:
-                gp = gpcache[mpar] = grandparent(
+                gp = grandparnet_cache[mpar] = grandparent(
                     get_parent_indexes, lowest_idx, indexes, mpar)
             if not gp:
                 parents.append(mpar)
             else:
                 parents.extend(g for g in gp if g not in parents)
 
-        yield (commit.idx, parents)
+        yield (commit['raw_id'], commit['idx'], parents, commit['branch'])
 
 
 def _colored(dag):
@@ -100,7 +94,7 @@ def _colored(dag):
     colors = {}
     newcolor = 1
 
-    for commit_idx, parents in dag:
+    for commit_id, commit_idx, parents, branch in dag:
 
         # Compute seen and next_
         if commit_idx not in seen:
@@ -137,7 +131,7 @@ def _colored(dag):
                     for p in parents])
 
         # Yield and move on
-        yield ((col, color), edges)
+        yield (commit_id, (col, color), edges, branch)
         seen = next_
 
 

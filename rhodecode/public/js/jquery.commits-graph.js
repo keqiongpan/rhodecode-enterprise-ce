@@ -21,7 +21,7 @@ function Route( commit, data, options ) {
   self.branch = data[2];
 }
 
-Route.prototype.drawRoute = function ( ctx ) {
+Route.prototype.drawRoute = function ( commit, ctx ) {
   var self = this;
 
   if (self.options.orientation === "horizontal") {
@@ -52,12 +52,13 @@ Route.prototype.drawRoute = function ( ctx ) {
 	
   } else {
 	var from_x = self.options.width * self.options.scaleFactor - (self.from + 1) * self.options.x_step * self.options.scaleFactor;
-    var row = $("#chg_"+(self.commit.idx+1))
+    var row = $("#sha_" + commit.sha);
     if (row.length) {
         var from_y = (row.offset().top + row.height() / 2 - self.options.relaOffset) * self.options.scaleFactor;
     }
 	var to_x = self.options.width * self.options.scaleFactor - (self.to + 1) * self.options.x_step * self.options.scaleFactor;
-    var next_row = $("#chg_"+(self.commit.idx+2))
+    var next_row = $("#sha_" + commit.sha).next('tr');
+
     if (next_row.length) {
         var to_y = ((next_row.offset().top + next_row.height() / 2 - self.options.relaOffset) + 0.2) * self.options.scaleFactor;
     }
@@ -108,7 +109,8 @@ Commit.prototype.drawDot = function ( ctx ) {
 
   } else {
 	var x = self.options.width * self.options.scaleFactor - (self.dot_offset + 1) * self.options.x_step * self.options.scaleFactor;
-    var row = $("#chg_"+(self.idx+1))
+    var row = $("#sha_" + self.sha);
+
     var y = (row.offset().top + row.height() / 2 - self.options.relaOffset) * self.options.scaleFactor;
     ctx.fillStyle = self.graph.get_color(self.dot_branch);
     ctx.beginPath();
@@ -218,7 +220,7 @@ GraphCanvas.prototype.draw = function () {
 
   ctx.lineWidth = self.options.lineWidth;
 
-  self.options.relaOffset = $("#chg_1").offset().top;
+  self.options.relaOffset = $(".changelogRow").first().offset().top;
 
   var n_commits = self.data.length;
   for (var i=0; i<n_commits; i++) {
@@ -226,7 +228,7 @@ GraphCanvas.prototype.draw = function () {
 
     for (var j=0; j<commit.routes.length; j++) {
       var route = commit.routes[j];
-      route.drawRoute(ctx);
+      route.drawRoute(commit, ctx);
     }
     commit.drawDot(ctx);
   }

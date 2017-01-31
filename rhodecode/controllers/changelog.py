@@ -30,7 +30,8 @@ from pylons.i18n.translation import _
 from webob.exc import HTTPNotFound, HTTPBadRequest
 
 import rhodecode.lib.helpers as h
-from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
+from rhodecode.lib.auth import (
+    LoginRequired, HasRepoPermissionAnyDecorator, XHRRequired)
 from rhodecode.lib.base import BaseRepoController, render
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.graphmod import _colored, _dagwalker
@@ -98,7 +99,7 @@ class ChangelogController(BaseRepoController):
                 redirect(h.url('changelog_home', repo_name=repo.repo_name))
             raise HTTPBadRequest()
 
-    def _graph(self, repo, commits):
+    def _graph(self, repo, commits, prev_data=None, next_data=None):
         """
         Generates a DAG graph for repo
 
@@ -106,12 +107,30 @@ class ChangelogController(BaseRepoController):
         :param commits: list of commits
         """
         if not commits:
-            c.jsdata = json.dumps([])
-            return
+            return json.dumps([])
+
+        def serialize(commit, parents=True):
+            data = dict(
+                raw_id=commit.raw_id,
+                idx=commit.idx,
+                branch=commit.branch,
+            )
+            if parents:
+                data['parents'] = [
+                    serialize(x, parents=False) for x in commit.parents]
+            return data
+
+        prev_data = prev_data or []
+        next_data = next_data or []
+
+        current = [serialize(x) for x in commits]
+        commits = prev_data + current + next_data
 
         dag = _dagwalker(repo, commits)
-        data = [['', vtx, edges] for vtx, edges in _colored(dag)]
-        c.jsdata = json.dumps(data)
+
+        data = [[commit_id, vtx, edges, branch]
+                for commit_id, vtx, edges, branch in _colored(dag)]
+        return json.dumps(data), json.dumps(current)
 
     def _check_if_valid_branch(self, branch_name, repo_name, f_path):
         if branch_name not in c.rhodecode_repo.branches_all:
@@ -120,26 +139,37 @@ class ChangelogController(BaseRepoController):
             redirect(url('changelog_file_home', repo_name=repo_name,
                          revision=branch_name, f_path=f_path or ''))
 
+    def _load_changelog_data(self, collection, page, chunk_size, branch_name=None, dynamic=False):
+        c.total_cs = len(collection)
+        c.showing_commits = min(chunk_size, c.total_cs)
+        c.pagination = RepoPage(collection, page=page, item_count=c.total_cs,
+                                items_per_page=chunk_size, branch=branch_name)
+
+        c.next_page = c.pagination.next_page
+        c.prev_page = c.pagination.previous_page
+
+        if dynamic:
+            if request.GET.get('chunk') != 'next':
+                c.next_page = None
+            if request.GET.get('chunk') != 'prev':
+                c.prev_page = None
+
+        page_commit_ids = [x.raw_id for x in c.pagination]
+        c.comments = c.rhodecode_db_repo.get_comments(page_commit_ids)
+        c.statuses = c.rhodecode_db_repo.statuses(page_commit_ids)
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
                                    'repository.admin')
     def index(self, repo_name, revision=None, f_path=None):
         commit_id = revision
-        limit = 100
-        hist_limit = safe_int(request.GET.get('limit')) or None
-        if request.GET.get('size'):
-            c.size = safe_int(request.GET.get('size'), 1)
-            session['changelog_size'] = c.size
-            session.save()
-        else:
-            c.size = int(session.get('changelog_size', DEFAULT_CHANGELOG_SIZE))
+        chunk_size = 20
 
-        # min size must be 1 and less than limit
-        c.size = max(c.size, 1) if c.size <= limit else limit
-
-        p = safe_int(request.GET.get('page', 1), 1)
         c.branch_name = branch_name = request.GET.get('branch', None)
         c.book_name = book_name = request.GET.get('bookmark', None)
+        hist_limit = safe_int(request.GET.get('limit')) or None
+
+        p = safe_int(request.GET.get('page', 1), 1)
 
         c.selected_name = branch_name or book_name
         if not commit_id and branch_name:
@@ -147,6 +177,8 @@ class ChangelogController(BaseRepoController):
 
         c.changelog_for_path = f_path
         pre_load = ['author', 'branch', 'date', 'message', 'parents']
+        commit_ids = []
+
         try:
             if f_path:
                 log.debug('generating changelog for path %s', f_path)
@@ -174,13 +206,9 @@ class ChangelogController(BaseRepoController):
                 collection = c.rhodecode_repo.get_commits(
                     branch_name=branch_name, pre_load=pre_load)
 
-            c.total_cs = len(collection)
-            c.showing_commits = min(c.size, c.total_cs)
-            c.pagination = RepoPage(collection, page=p, item_count=c.total_cs,
-                                    items_per_page=c.size, branch=branch_name)
-            page_commit_ids = [x.raw_id for x in c.pagination]
-            c.comments = c.rhodecode_db_repo.get_comments(page_commit_ids)
-            c.statuses = c.rhodecode_db_repo.statuses(page_commit_ids)
+            self._load_changelog_data(
+                collection, p, chunk_size, c.branch_name, dynamic=f_path)
+
         except EmptyRepositoryError as e:
             h.flash(safe_str(e), category='warning')
             return redirect(url('summary_home', repo_name=repo_name))
@@ -195,22 +223,62 @@ class ChangelogController(BaseRepoController):
             # loading from ajax, we don't want the first result, it's popped
             return render('changelog/changelog_file_history.mako')
 
-        if f_path:
-            revs = []
-        else:
-            revs = c.pagination
-        self._graph(c.rhodecode_repo, revs)
+        if not f_path:
+            commit_ids = c.pagination
+
+        c.graph_data, c.graph_commits = self._graph(
+            c.rhodecode_repo, commit_ids)
 
         return render('changelog/changelog.mako')
 
     @LoginRequired()
-    @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
-                                   'repository.admin')
-    def changelog_details(self, commit_id):
-        if request.environ.get('HTTP_X_PARTIAL_XHR'):
-            c.commit = c.rhodecode_repo.get_commit(commit_id=commit_id)
-            return render('changelog/changelog_details.mako')
-        raise HTTPNotFound()
+    @XHRRequired()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    def changelog_elements(self, repo_name):
+        commit_id = None
+        chunk_size = 20
+
+        def wrap_for_error(err):
+            return '<tr><td colspan="9" class="alert alert-error">ERROR: {}</td></tr>'.format(err)
+
+        c.branch_name = branch_name = request.GET.get('branch', None)
+        c.book_name = book_name = request.GET.get('bookmark', None)
+
+        p = safe_int(request.GET.get('page', 1), 1)
+
+        c.selected_name = branch_name or book_name
+        if not commit_id and branch_name:
+            if branch_name not in c.rhodecode_repo.branches_all:
+                return wrap_for_error(
+                    safe_str('Missing branch: {}'.format(branch_name)))
+
+        pre_load = ['author', 'branch', 'date', 'message', 'parents']
+        collection = c.rhodecode_repo.get_commits(
+            branch_name=branch_name, pre_load=pre_load)
+
+        try:
+            self._load_changelog_data(collection, p, chunk_size, dynamic=True)
+        except EmptyRepositoryError as e:
+            return wrap_for_error(safe_str(e))
+        except (RepositoryError, CommitDoesNotExistError, Exception) as e:
+            log.exception('Failed to fetch commits')
+            return wrap_for_error(safe_str(e))
+
+        prev_data = None
+        next_data = None
+
+        prev_graph = json.loads(request.POST.get('graph', ''))
+
+        if request.GET.get('chunk') == 'prev':
+            next_data = prev_graph
+        elif request.GET.get('chunk') == 'next':
+            prev_data = prev_graph
+
+        c.graph_data, c.graph_commits = self._graph(
+            c.rhodecode_repo, c.pagination,
+            prev_data=prev_data, next_data=next_data)
+        return render('changelog/changelog_elements.mako')
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',

@@ -14,12 +14,6 @@
             </td>
             <td class="td-message">
                 <div class="log-container">
-
-                    %if cs.merge:
-                        <span class="mergetag">
-                         <i class="icon-merge"></i>${_('merge')}
-                        </span>
-                    %endif
                     <div class="message_history" title="${cs.message}">
                         <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=cs.raw_id)}">
                             ${h.shorter(cs.message, 75)}

@@ -68,6 +68,7 @@
         "<%= dirs.js.src %>/rhodecode/utils/os.js",
         "<%= dirs.js.src %>/rhodecode/utils/topics.js",
         "<%= dirs.js.src %>/rhodecode/init.js",
+        "<%= dirs.js.src %>/rhodecode/changelog.js",
         "<%= dirs.js.src %>/rhodecode/codemirror.js",
         "<%= dirs.js.src %>/rhodecode/comments.js",
         "<%= dirs.js.src %>/rhodecode/constants.js",

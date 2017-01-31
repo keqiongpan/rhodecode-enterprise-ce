@@ -997,10 +997,10 @@ def make_map(config):
                  conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
-    rmap.connect('changelog_details', '/{repo_name}/changelog_details/{cs}',
-                 controller='changelog', action='changelog_details',
+    rmap.connect('changelog_elements', '/{repo_name}/changelog_details',
+                 controller='changelog', action='changelog_elements',
                  conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('files_home',  '/{repo_name}/files/{revision}/{f_path}',
                  controller='files', revision='tip', f_path='',

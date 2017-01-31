@@ -16,7 +16,6 @@
     %if c.changelog_for_path:
      /${c.changelog_for_path}
     %endif
-      ${ungettext('showing %d out of %d commit', 'showing %d out of %d commits', c.showing_commits) % (c.showing_commits, c.total_cs)}
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -74,6 +73,7 @@
     </div>
 
     % if c.pagination:
+        <script type="text/javascript" src="${h.asset('js/jquery.commits-graph.js')}"></script>
 
         <div class="graph-header">
             <div id="filter_changelog">
@@ -85,134 +85,53 @@
                 %endif
             </div>
             ${self.breadcrumbs('breadcrumbs_light')}
+            <div id="commit-counter" data-total=${c.total_cs} class="pull-right">
+                ${ungettext('showing %d out of %d commit', 'showing %d out of %d commits', c.showing_commits) % (c.showing_commits, c.total_cs)}
+            </div>
         </div>
 
-    <div id="graph">
-        <div class="graph-col-wrapper">
-          <div id="graph_nodes">
-            <div id="graph_canvas" data-graph='${c.jsdata|n}'></div>
+        <div id="graph">
+            <div class="graph-col-wrapper">
+              <div id="graph_nodes">
+                <div id="graph_canvas"></div>
+            </div>
+            <div id="graph_content" class="main-content graph_full_width">
+
+              <div class="table">
+                <table id="changesets" class="rctable">
+                    <tr>
+                      ## checkbox
+                      <th></th>
+                      <th colspan="2"></th>
+
+                      <th>${_('Commit')}</th>
+                      ## commit message expand arrow
+                      <th></th>
+                      <th>${_('Commit Message')}</th>
+
+                      <th>${_('Age')}</th>
+                      <th>${_('Author')}</th>
+
+                      <th>${_('Refs')}</th>
+                    </tr>
+
+                    <tbody class="commits-range">
+                        <%include file='changelog_elements.mako'/>
+                    </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="pagination-wh pagination-left">
+            ${c.pagination.pager('$link_previous ~2~ $link_next')}
+            </div>
         </div>
-        <div id="graph_content" class="main-content graph_full_width">
 
-          <div class="table">
-            <table id="changesets" class="rctable">
-                <tr>
-                  ## checkbox
-                  <th></th>
-                  <th colspan="2"></th>
-
-                  <th>${_('Commit')}</th>
-                  ## commit message expand arrow
-                  <th></th>
-                  <th>${_('Commit Message')}</th>
-
-                  <th>${_('Age')}</th>
-                  <th>${_('Author')}</th>
-
-                  <th>${_('Refs')}</th>
-                </tr>
-              <tbody>
-              %for cnt,commit in enumerate(c.pagination):
-                <tr id="chg_${cnt+1}" class="container ${'tablerow%s' % (cnt%2)}">
-
-                    <td class="td-checkbox">
-                        ${h.checkbox(commit.raw_id,class_="commit-range")}
-                    </td>
-                    <td class="td-status">
-
-                    %if c.statuses.get(commit.raw_id):
-                      <div class="changeset-status-ico">
-                        %if c.statuses.get(commit.raw_id)[2]:
-                          <a class="tooltip" title="${_('Commit status: %s\nClick to open associated pull request #%s') % (h.commit_status_lbl(c.statuses.get(commit.raw_id)[0]), c.statuses.get(commit.raw_id)[2])}" href="${h.url('pullrequest_show',repo_name=c.statuses.get(commit.raw_id)[3],pull_request_id=c.statuses.get(commit.raw_id)[2])}">
-                            <div class="${'flag_status %s' % c.statuses.get(commit.raw_id)[0]}"></div>
-                          </a>
-                        %else:
-                          <a class="tooltip" title="${_('Commit status: %s') % h.commit_status_lbl(c.statuses.get(commit.raw_id)[0])}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id,anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
-                            <div class="${'flag_status %s' % c.statuses.get(commit.raw_id)[0]}"></div>
-                          </a>
-                        %endif
-                      </div>
-                    %else:
-                        <div class="tooltip flag_status not_reviewed" title="${_('Commit status: Not Reviewed')}"></div>
-                    %endif
-                    </td>
-                    <td class="td-comments comments-col">
-                    %if c.comments.get(commit.raw_id):
-                      <a title="${_('Commit has comments')}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id,anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
-                          <i class="icon-comment"></i> ${len(c.comments[commit.raw_id])}
-                      </a>
-                    %endif
-                    </td>
-                    <td class="td-hash">
-                    <code>
-                      <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id)}">
-                        <span class="commit_hash">${h.show_id(commit)}</span>
-                      </a>
-                    </code>
-                    </td>
-                    <td class="td-message expand_commit" data-commit-id="${commit.raw_id}" title="${_('Expand commit message')}">
-                      <div class="show_more_col">
-                        <i class="show_more"></i>&nbsp;
-                      </div>
-                    </td>
-                    <td class="td-description mid">
-                      <div class="log-container truncate-wrap">
-                          <div class="message truncate" id="c-${commit.raw_id}">${h.urlify_commit_message(commit.message, c.repo_name)}</div>
-                      </div>
-                    </td>
-
-                    <td class="td-time">
-                        ${h.age_component(commit.date)}
-                    </td>
-                    <td class="td-user">
-                        ${self.gravatar_with_user(commit.author)}
-                    </td>
-
-                    <td class="td-tags tags-col">
-                    <div id="t-${commit.raw_id}">
-                        ## branch
-                        %if commit.branch:
-                          <span class="branchtag tag" title="${_('Branch %s') % commit.branch}">
-                             <a href="${h.url('changelog_home',repo_name=c.repo_name,branch=commit.branch)}"><i class="icon-code-fork"></i>${h.shorter(commit.branch)}</a>
-                          </span>
-                        %endif
-
-                        ## bookmarks
-                        %if h.is_hg(c.rhodecode_repo):
-                            %for book in commit.bookmarks:
-                                <span class="tag booktag" title="${_('Bookmark %s') % book}">
-                                  <a href="${h.url('files_home',repo_name=c.repo_name,revision=commit.raw_id)}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
-                                </span>
-                            %endfor
-                        %endif
-
-                        ## tags
-                        %for tag in commit.tags:
-                          <span class="tagtag tag"  title="${_('Tag %s') % tag}">
-                            <a href="${h.url('files_home',repo_name=c.repo_name,revision=commit.raw_id)}"><i class="icon-tag"></i>${h.shorter(tag)}</a>
-                          </span>
-                        %endfor
-
-                      </div>
-                    </td>
-                </tr>
-              %endfor
-              </tbody>
-            </table>
-          </div>
-        </div>
-    </div>
-    <div class="pagination-wh pagination-left">
-        ${c.pagination.pager('$link_previous ~2~ $link_next')}
-    </div>
-
-    <script type="text/javascript" src="${h.asset('js/jquery.commits-graph.js')}"></script>
-    <script type="text/javascript">
+        <script type="text/javascript">
         var cache = {};
         $(function(){
 
             // Create links to commit ranges when range checkboxes are selected
-             var $commitCheckboxes = $('.commit-range');
+            var $commitCheckboxes = $('.commit-range');
             // cache elements
             var $commitRangeContainer = $('#rev_range_container');
             var $commitRangeClear = $('#rev_range_clear');
@@ -293,7 +212,6 @@
             // make sure the buttons are consistent when navigate back and forth
             checkboxRangeSelector();
 
-
             var msgs = $('.message');
             // get first element height
             var el = $('#graph_content .container')[0];
@@ -309,48 +227,6 @@
                     $(m.nextElementSibling).css('margin-top',offset+'px');
                 }
             }
-
-            $('.expand_commit').on('click', function (e) {
-                var target_expand = $(this);
-                var cid = target_expand.data('commitId');
-
-                if (target_expand.hasClass('open')) {
-                    $('#c-' + cid).css({
-                        'height': '1.5em',
-                        'white-space': 'nowrap',
-                        'text-overflow': 'ellipsis',
-                        'overflow': 'hidden'
-                    });
-                    $('#t-' + cid).css({
-                        'height': 'auto',
-                        'line-height': '.9em',
-                        'text-overflow': 'ellipsis',
-                        'overflow': 'hidden',
-                        'white-space': 'nowrap'
-                    });
-                    target_expand.removeClass('open');
-                }
-                else {
-                    $('#c-' + cid).css({
-                        'height': 'auto',
-                        'white-space': 'pre-line',
-                        'text-overflow': 'initial',
-                        'overflow': 'visible'
-                    });
-                    $('#t-' + cid).css({
-                        'height': 'auto',
-                        'max-height': 'none',
-                        'text-overflow': 'initial',
-                        'overflow': 'visible',
-                        'white-space': 'normal'
-                    });
-                    target_expand.addClass('open');
-                }
-                // redraw the graph
-                graph_options.height = $("#changesets").height();
-                $("canvas").remove();
-                $("[data-graph]").commits(graph_options);
-            });
 
             $("#clear_filter").on("click", function() {
                 var filter = {'repo_name': '${c.repo_name}'};
@@ -394,7 +270,6 @@
                   }
                 }
             });
-
             $('#branch_filter').on('change', function(e){
                 var data = $('#branch_filter').select2('data');
                 var selected = data.text;
@@ -408,33 +283,17 @@
                 window.location = pyroutes.url('changelog_home', filter);
             });
 
-            // Determine max number of edges per row in graph
-            var jsdata = $.parseJSON($("[data-graph]").attr('data-graph'));
-            var edgeCount = 1;
-            $.each(jsdata, function(i, item){
-                $.each(item[2], function(key, value) {
-                    if (value[1] > edgeCount){
-                        edgeCount = value[1];
-                    }
-                });
-            });
-            var x_step = Math.min(18, Math.floor(86 / edgeCount));
-            var graph_options = {
-                width: 100,
-                height: $("#changesets").height(),
-                x_step: x_step,
-                y_step: 42,
-                dotRadius: 3.5,
-                lineWidth: 2.5
-            };
-            $("[data-graph]").commits(graph_options);
+            commitsController = new CommitsController();
+            % if not c.changelog_for_path:
+                commitsController.reloadGraph();
+            % endif
 
         });
 
     </script>
-    %else:
+        </div>
+    % else:
         ${_('There are no changes yet')}
-    %endif
-    </div>
+    % endif
 </div>
 </%def>

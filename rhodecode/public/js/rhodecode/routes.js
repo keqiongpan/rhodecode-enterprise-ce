@@ -44,6 +44,7 @@ function registerRCRoutes() {
     pyroutes.register('pullrequest_comment_delete', '/%(repo_name)s/pull-request-comment/%(comment_id)s/delete', ['repo_name', 'comment_id']);
     pyroutes.register('changelog_home', '/%(repo_name)s/changelog', ['repo_name']);
     pyroutes.register('changelog_file_home', '/%(repo_name)s/changelog/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
+    pyroutes.register('changelog_elements', '/%(repo_name)s/changelog_details', ['repo_name']);
     pyroutes.register('files_home', '/%(repo_name)s/files/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_history_home', '/%(repo_name)s/history/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_authors_home', '/%(repo_name)s/authors/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
