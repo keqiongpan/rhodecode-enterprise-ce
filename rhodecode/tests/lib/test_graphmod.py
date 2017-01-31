@@ -42,36 +42,44 @@ def test_get_edge_color_single_parent():
 
 
 def test_colored_linear():
-    dag = [('node3', ['node2']), ('node2', ['node1']), ('node1', [])]
+    dag = [
+        ('hash', 'node3', ['node2'], 'master'),
+        ('hash', 'node2', ['node1'], 'master'),
+        ('hash', 'node1', [], 'master')
+    ]
     expected_result = [
-        ((0, 1), [(0, 0, 1)]),
-        ((0, 1), [(0, 0, 1)]),
-        ((0, 1), []),
+        ('hash', (0, 1), [(0, 0, 1)], 'master'),
+        ('hash', (0, 1), [(0, 0, 1)], 'master'),
+        ('hash', (0, 1), [], 'master'),
     ]
     assert list(graphmod._colored(dag)) == expected_result
 
 
 def test_colored_diverging_branch():
-    dag = [('node3', ['node1']), ('node2', ['node1']), ('node1', [])]
+    dag = [
+        ('hash', 'node3', ['node1'], 'stable'),
+        ('hash', 'node2', ['node1'], 'stable'),
+        ('hash', 'node1', [], 'stable')
+    ]
     expected_result = [
-        ((0, 1), [(0, 0, 1)]),
-        ((1, 2), [(0, 0, 1), (1, 0, 2)]),
-        ((0, 1), []),
+        ('hash', (0, 1), [(0, 0, 1)], 'stable'),
+        ('hash', (1, 2), [(0, 0, 1), (1, 0, 2)], 'stable'),
+        ('hash', (0, 1), [], 'stable'),
     ]
     assert list(graphmod._colored(dag)) == expected_result
 
 
 def test_colored_merged_branch():
     dag = [
-        ('node4', ['node2', 'node3']),
-        ('node3', ['node1']),
-        ('node2', ['node1']),
-        ('node1', []),
+        ('hash', 'node4', ['node2', 'node3'], 'stable'),
+        ('hash', 'node3', ['node1'], 'stable'),
+        ('hash', 'node2', ['node1'], 'stable'),
+        ('hash', 'node1', [], 'stable'),
     ]
     expected_result = [
-        ((0, 1), [(0, 0, 1), (0, 1, 2)]),
-        ((1, 2), [(0, 0, 1), (1, 1, 2)]),
-        ((0, 1), [(0, 0, 1), (1, 0, 2)]),
-        ((0, 2), []),
+        ('hash', (0, 1), [(0, 0, 1), (0, 1, 2)], 'stable'),
+        ('hash', (1, 2), [(0, 0, 1), (1, 1, 2)], 'stable'),
+        ('hash', (0, 1), [(0, 0, 1), (1, 0, 2)], 'stable'),
+        ('hash', (0, 2), [], 'stable'),
     ]
     assert list(graphmod._colored(dag)) == expected_result
