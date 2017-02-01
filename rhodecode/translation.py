@@ -16,7 +16,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-from pyramid.i18n import TranslationStringFactory
+from pyramid.i18n import TranslationStringFactory, TranslationString
 
 # Create a translation string factory for the 'rhodecode' domain.
 _ = TranslationStringFactory('rhodecode')

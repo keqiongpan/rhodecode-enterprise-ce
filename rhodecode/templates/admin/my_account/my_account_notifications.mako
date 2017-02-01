@@ -53,7 +53,6 @@
             <button class="btn" id="test-notification-live" on-tap="testNotificationsLive">Test live notification</button>
         </div>
             <h4 id="test-response"></h4>
-        </div>
 
   </div>
 

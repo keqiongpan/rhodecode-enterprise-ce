@@ -38,6 +38,7 @@ from rhodecode.model import BaseModel
 from rhodecode.model.db import Notification, User, UserNotification
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel
+from rhodecode.translation import TranslationString
 
 log = logging.getLogger(__name__)
 
@@ -275,6 +276,10 @@ class NotificationModel(BaseModel):
             date_or_age = h.age(notification.created_on)
             if translate:
                 date_or_age = translate(date_or_age)
+
+            if isinstance(date_or_age, TranslationString):
+                date_or_age = date_or_age.interpolate()
+
         else:
             template = templates[1]
             date_or_age = h.format_date(notification.created_on)
