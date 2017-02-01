@@ -461,7 +461,9 @@ var CommentsController = function() {
   };
 
   this.scrollToComment = function(node, offset, outdated) {
-    var offset = offset || 1;
+    if (offset === undefined) {
+      offset = 0;
+    }
     var outdated = outdated || false;
     var klass = outdated ? 'div.comment-outdated' : 'div.comment-current';
 
