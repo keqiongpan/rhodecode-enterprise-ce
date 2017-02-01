@@ -241,6 +241,9 @@ function scrollToElement(element, percent, time) {
     time = (time === undefined ? 100 : time);
 
     var $element = $(element);
+    if ($element.length == 0) {
+        throw('Cannot scroll to {0}'.format(element))
+    }
     var elOffset = $element.offset().top;
     var elHeight = $element.height();
     var windowHeight = $(window).height();

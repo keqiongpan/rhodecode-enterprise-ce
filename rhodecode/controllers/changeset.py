@@ -208,6 +208,7 @@ class ChangesetController(BaseRepoController):
 
         c.statuses = []
         c.comments = []
+        c.unresolved_comments = []
         if len(c.commit_ranges) == 1:
             commit = c.commit_ranges[0]
             c.comments = CommentsModel().get_comments(
@@ -225,6 +226,9 @@ class ChangesetController(BaseRepoController):
             # show comments from them
             for pr in prs:
                 c.comments.extend(pr.comments)
+
+            c.unresolved_comments = CommentsModel()\
+                .get_commit_unresolved_todos(commit.raw_id)
 
         # Iterate over ranges (default commit view is always one commit)
         for commit in c.commit_ranges:
@@ -274,7 +278,6 @@ class ChangesetController(BaseRepoController):
 
         # sort comments by how they were generated
         c.comments = sorted(c.comments, key=lambda x: x.comment_id)
-
 
         if len(c.commit_ranges) == 1:
             c.commit = c.commit_ranges[0]

@@ -155,6 +155,23 @@
         </div>
       </div>
 
+      <div class="fieldset">
+        <div class="left-label">
+          ${_('Unresolved TODOs')}:
+        </div>
+        <div class="right-content">
+            <div class="comments-number">
+                % if c.unresolved_comments:
+                    % for co in c.unresolved_comments:
+                        <a class="permalink" href="#comment-${co.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${co.comment_id}'))"> #${co.comment_id}</a>${'' if loop.last else ','}
+                    % endfor
+                % else:
+                    ${_('There are no unresolved TODOs')}
+                % endif
+            </div>
+        </div>
+      </div>
+
     </div> <!-- end summary-detail -->
 
     <div id="commit-stats" class="sidebar-right">

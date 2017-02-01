@@ -461,6 +461,7 @@ var CommentsController = function() {
   };
 
   this.scrollToComment = function(node, offset, outdated) {
+    var offset = offset || 1;
     var outdated = outdated || false;
     var klass = outdated ? 'div.comment-outdated' : 'div.comment-current';
 
@@ -486,6 +487,7 @@ var CommentsController = function() {
       nextIdx = 0;
     }
     var $next = $(klass).eq(nextIdx);
+
     var $cb = $next.closest('.cb');
     $cb.removeClass('cb-collapsed');
 

@@ -146,6 +146,23 @@ class CommentsModel(BaseModel):
 
         return todos
 
+    def get_commit_unresolved_todos(self, commit_id, show_outdated=True):
+
+        todos = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.revision == commit_id) \
+            .filter(ChangesetComment.resolved_by == None) \
+            .filter(ChangesetComment.comment_type
+                    == ChangesetComment.COMMENT_TYPE_TODO)
+
+        if not show_outdated:
+            todos = todos.filter(
+                coalesce(ChangesetComment.display_state, '') !=
+                ChangesetComment.COMMENT_OUTDATED)
+
+        todos = todos.all()
+
+        return todos
+
     def create(self, text, repo, user, commit_id=None, pull_request=None,
                f_path=None, line_no=None, status_change=None,
                status_change_type=None, comment_type=None,
