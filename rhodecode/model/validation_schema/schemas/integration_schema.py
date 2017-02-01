@@ -135,7 +135,7 @@ class IntegrationScopeType(colander.SchemaType):
                 return {
                     'repo': repo,
                     'repo_group': None,
-                    'child_repos_only': None,
+                    'child_repos_only': False,
                 }
         elif cstruct.startswith('repogroup-recursive:'):
             repo_group = RepoGroup.get_by_group_name(cstruct.split(':')[1])

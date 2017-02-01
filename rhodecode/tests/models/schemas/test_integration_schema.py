@@ -47,7 +47,7 @@ class TestIntegrationSchema(object):
             (
                 'repo:%s' % repo.repo_name,
                 {
-                    'child_repos_only': None,
+                    'child_repos_only': False,
                     'repo_group': None,
                     'repo': repo,
                 },

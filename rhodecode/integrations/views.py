@@ -142,7 +142,6 @@ class IntegrationSettingsViewBase(object):
             permissions=self.request.user.permissions,
             no_scope=not self.admin_view)
 
-
     def _form_defaults(self):
         defaults = {}
 
@@ -284,7 +283,6 @@ class IntegrationSettingsViewBase(object):
             child_repos_only=scope['child_repos_only'],
         )
 
-
         self.integration.settings = valid_data['settings']
         Session().commit()
         # Display success message and redirect.
@@ -292,7 +290,6 @@ class IntegrationSettingsViewBase(object):
             _('Integration {integration_name} updated successfully.').format(
                 integration_name=self.IntegrationType.display_name),
             queue='success')
-
 
         # if integration scope changes, we must redirect to the right place
         # keeping in mind if the original view was for /repo/ or /_admin/
@@ -347,8 +344,8 @@ class IntegrationSettingsViewBase(object):
         assert sort_field in ('name', 'integration_type', 'enabled', 'scope')
 
         integrations.sort(
-            key=lambda x: getattr(x[1], sort_field), reverse=(sort_dir=='desc'))
-
+            key=lambda x: getattr(x[1], sort_field),
+            reverse=(sort_dir == 'desc'))
 
         page_url = webhelpers.paginate.PageURL(
             self.request.path, self.request.GET)
@@ -374,6 +371,7 @@ class IntegrationSettingsViewBase(object):
             'c': self._template_c_context(),
         }
         return template_context
+
 
 class GlobalIntegrationsView(IntegrationSettingsViewBase):
     def perm_check(self, user):
