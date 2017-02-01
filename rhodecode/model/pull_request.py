@@ -1361,7 +1361,7 @@ class MergeCheck(object):
         if not user_allowed_to_merge:
             log.debug("MergeCheck: cannot merge, approval is pending.")
 
-            msg = _('User `{}` not allowed to perform merge').format(user)
+            msg = _('User `{}` not allowed to perform merge.').format(user.username)
             merge_check.push_error('error', msg, cls.PERM_CHECK, user.username)
             if fail_early:
                 return merge_check
