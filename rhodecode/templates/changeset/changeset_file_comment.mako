@@ -84,7 +84,7 @@
           % endif
 
           % if comment.resolved_comment:
-            <a class="has-spacer-before" href="#comment-${comment.resolved_comment.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${comment.resolved_comment.comment_id}'))">
+            <a class="has-spacer-before" href="#comment-${comment.resolved_comment.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${comment.resolved_comment.comment_id}'), 0, ${h.json.dumps(comment.resolved_comment.outdated)})">
                 ${_('resolves comment #{}').format(comment.resolved_comment.comment_id)}
             </a>
           % endif

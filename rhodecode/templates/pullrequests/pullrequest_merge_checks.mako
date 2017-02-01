@@ -22,7 +22,7 @@
                     - ${pr_check_details['message']}
                     % if pr_check_key == 'todo':
                         % for co in pr_check_details['details']:
-                            <a class="permalink" href="#comment-${co.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${co.comment_id}'))"> #${co.comment_id}</a>${'' if loop.last else ','}
+                            <a class="permalink" href="#comment-${co.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${co.comment_id}'), 0, ${h.json.dumps(co.outdated)})"> #${co.comment_id}</a>${'' if loop.last else ','}
                         % endfor
                     % endif
                 </span>
