@@ -18,11 +18,12 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
+import datetime
 import logging
 import pylons
 import Queue
 import subprocess32
+import os
 
 from pyramid.i18n import get_localizer
 from pyramid.threadlocal import get_current_request
@@ -132,6 +133,40 @@ def scan_repositories_if_enabled(event):
     if vcs_server_enabled and import_on_startup:
         repositories = ScmModel().repo_scan(get_rhodecode_base_path())
         repo2db_mapper(repositories, remove_obsolete=False)
+
+
+def write_metadata_if_needed(event):
+    """
+    Writes upgrade metadata
+    """
+    import rhodecode
+    from rhodecode.lib import system_info
+    from rhodecode.lib import ext_json
+
+    def write():
+        fname = '.rcmetadata.json'
+        ini_loc = os.path.dirname(rhodecode.CONFIG.get('__file__'))
+        metadata_destination = os.path.join(ini_loc, fname)
+
+        dbinfo = system_info.SysInfo(system_info.database_info)()['value']
+        del dbinfo['url']
+        metadata = dict(
+            desc='upgrade metadata info',
+            created_on=datetime.datetime.utcnow().isoformat(),
+            usage=system_info.SysInfo(system_info.usage_info)()['value'],
+            platform=system_info.SysInfo(system_info.platform_type)()['value'],
+            database=dbinfo,
+            cpu=system_info.SysInfo(system_info.cpu)()['value'],
+            memory=system_info.SysInfo(system_info.memory)()['value'],
+        )
+
+        with open(metadata_destination, 'wb') as f:
+            f.write(ext_json.json.dumps(metadata))
+
+    try:
+        write()
+    except Exception:
+        pass
 
 
 class Subscriber(object):
