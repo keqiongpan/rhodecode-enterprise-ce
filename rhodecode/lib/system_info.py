@@ -609,11 +609,30 @@ def server_info(environ):
     return SysInfoRes(value=value)
 
 
+def usage_info():
+    from rhodecode.model.db import User, Repository
+    value = {
+        'users': User.query().count(),
+        'users_active': User.query().filter(User.active == True).count(),
+        'repositories': Repository.query().count(),
+        'repository_types': {
+            'hg': Repository.query().filter(
+                Repository.repo_type == 'hg').count(),
+            'git': Repository.query().filter(
+                Repository.repo_type == 'git').count(),
+            'svn': Repository.query().filter(
+                Repository.repo_type == 'svn').count(),
+        },
+    }
+    return SysInfoRes(value=value)
+
+
 def get_system_info(environ):
     environ = environ or {}
     return {
         'rhodecode_app': SysInfo(rhodecode_app_info)(),
         'rhodecode_config': SysInfo(rhodecode_config)(),
+        'rhodecode_usage': SysInfo(usage_info)(),
         'python': SysInfo(python_info)(),
         'py_modules': SysInfo(py_modules)(),
 
