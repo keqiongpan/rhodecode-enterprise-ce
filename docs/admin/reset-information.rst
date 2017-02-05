@@ -12,6 +12,7 @@ it somehow becomes unavailable you can use ``ishell`` inside your |RCE|
    Logging into the |RCE| database with ``iShell`` should only be done by an
    experienced and knowledgeable database administrator.
 
+
 Reset Admin Account Privileges
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -31,6 +32,7 @@ account permissions.
     In [2]: adminuser.admin = True
     In [3]: Session().add(adminuser);Session().commit()
     In [4]: exit()
+
 
 Set to read global ``.hgrc`` file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -56,6 +58,7 @@ following example to make changes to this table.
   In [4]: new_option.ui_value='*'
   In [5]: Session().add(new_option);Session().commit()
   In [6]: exit()
+
 
 Manually Reset Password
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -88,7 +91,6 @@ Use the following code example to carry out these steps.
     In [8]: exit()
 
 
-
 Change user details
 ^^^^^^^^^^^^^^^^^^^
 
@@ -113,3 +115,37 @@ Use the following code example to carry out these steps.
     In [3]: my_user.username = 'SomeUser'
     In [4]: Session().add(my_user);Session().commit()
     In [5]: exit()
+
+
+Change user login type
+^^^^^^^^^^^^^^^^^^^^^^
+
+Sometimes it's required to change account type from RhodeCode to LDAP or
+other external authentication type.
+If you need to manually change the method of login, use the following steps.
+
+1. Navigate to your |RCE| install location.
+2. Run the interactive ``ishell`` prompt.
+3. Set a new arguments for users.
+
+Use the following code example to carry out these steps.
+Available values for new_extern_type can be found when browsing available
+authentication types in RhodeCode admin interface for authentication.
+Use the text which is shown after '#' sign, eg.
+` LDAP (egg:rhodecode-enterprise-ce#ldap)` it's type is 'ldap'
+
+.. code-block:: bash
+
+    # starts the ishell interactive prompt
+    $ rccontrol ishell enterprise-1
+
+.. code-block:: mysql
+
+    # Use this example to change users from authentication
+    # using rhodecode internal to ldap
+    In [1]: new_extern_type = 'ldap'
+    In [2]: my_user = User.get_by_username('some_username')
+    In [3]: my_user.extern_type = new_extern_type
+    In [4]: my_user.extern_name = new_extern_type
+    In [5]: Session().add(my_user);Session().commit()
+    In [6]: exit()
