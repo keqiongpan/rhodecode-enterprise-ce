@@ -185,7 +185,7 @@
     };
   };
   Pylons = super.buildPythonPackage {
-    name = "Pylons-1.0.2.dev20161213";
+    name = "Pylons-1.0.2.dev20170205";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [Routes WebHelpers Beaker Paste PasteDeploy PasteScript FormEncode simplejson decorator nose Mako WebError WebTest Tempita MarkupSafe WebOb];
