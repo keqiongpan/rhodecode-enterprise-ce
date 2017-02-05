@@ -1,5 +1,5 @@
 ## -*- coding: utf-8 -*-
-<%namespace name="base" file="/base/base.html"/>
+<%namespace name="base" file="/base/base.mako"/>
 <%inherit file="/debug_style/index.html"/>
 
 <%def name="breadcrumbs_links()">
@@ -9,11 +9,9 @@
 </%def>
 
 <%def name="js_extra()">
-<script type="text/javascript" src="${h.asset('js/mergerly.js', ver=c.rhodecode_version_hash)}"></script>
 </%def>
 
 <%def name="css_extra()">
-<link rel="stylesheet" type="text/css" href="${h.asset('css/mergerly.css', ver=c.rhodecode_version_hash)}"/>
 </%def>
 
 
@@ -1142,7 +1140,7 @@ $(document).ready(function () {
         var val = e.currentTarget.checked;
         $('#compare').mergely('options', {ignorews: val});
         $('#compare').mergely('update');
-    })
+    });
     $('#edit_mode').change(function(e){
         var val = !e.currentTarget.checked;
         $('#compare').mergely('cm', 'lhs').setOption('readOnly', val);

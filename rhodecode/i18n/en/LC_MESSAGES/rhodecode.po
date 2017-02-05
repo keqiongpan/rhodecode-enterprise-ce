@@ -1,5 +1,5 @@
 # Translations template for rhodecode-enterprise-ce.
-# Copyright (C) 2016 RhodeCode GmbH
+# Copyright (C) 2017 RhodeCode GmbH
 # This file is distributed under the same license as the rhodecode-enterprise-ce project.
 #
 # Translators:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2016  RhodeCode GmbH
+# Copyright (C) 2016-2017  RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -66,6 +66,15 @@ class NavEntry(object):
         else:
             return url(self.view_name)
 
+    def get_localized_name(self, request):
+        if hasattr(request, 'translate'):
+            return request.translate(self.name)
+        else:
+            # TODO(marcink): Remove this after migrating to pyramid
+            from pyramid.threadlocal import get_current_request
+            pyramid_request = get_current_request()
+            return pyramid_request.translate(self.name)
+
 
 @implementer(IAdminNavigationRegistry)
 class NavigationRegistry(object):
@@ -80,18 +89,22 @@ class NavigationRegistry(object):
         NavEntry('email', _('Email'), 'admin_settings_email'),
         NavEntry('hooks', _('Hooks'), 'admin_settings_hooks'),
         NavEntry('search', _('Full Text Search'), 'admin_settings_search'),
+
         NavEntry('integrations', _('Integrations'),
                  'global_integrations_home', pyramid=True),
-        NavEntry('system', _('System Info'), 'admin_settings_system'),
+        NavEntry('system', _('System Info'),
+                 'admin_settings_system', pyramid=True),
+        NavEntry('sessions', _('User Sessions'),
+                 'admin_settings_sessions', pyramid=True),
         NavEntry('open_source', _('Open Source Licenses'),
                  'admin_settings_open_source', pyramid=True),
+
         # TODO: marcink: we disable supervisor now until the supervisor stats
         # page is fixed in the nix configuration
         # NavEntry('supervisor', _('Supervisor'), 'admin_settings_supervisor'),
     ]
 
-    _labs_entry = NavEntry('labs', _('Labs'),
-                           'admin_settings_labs')
+    _labs_entry = NavEntry('labs', _('Labs'), 'admin_settings_labs')
 
     def __init__(self, labs_active=False):
         self._registered_entries = collections.OrderedDict([
@@ -105,7 +118,8 @@ class NavigationRegistry(object):
         self._registered_entries[entry.key] = entry
 
     def get_navlist(self, request):
-        navlist = [NavListEntry(i.key, i.name, i.generate_url(request))
+        navlist = [NavListEntry(i.key, i.get_localized_name(request),
+                                i.generate_url(request))
                    for i in self._registered_entries.values()]
         return navlist
 

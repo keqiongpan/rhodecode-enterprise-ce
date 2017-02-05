@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2016  RhodeCode GmbH
+# Copyright (C) 2016-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -39,7 +39,6 @@ from rhodecode.lib.exceptions import UserCreationError
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.model.db import User
 from rhodecode.model.forms import LoginForm, RegisterForm, PasswordResetForm
-from rhodecode.model.login_session import LoginSession
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel
 from rhodecode.model.user import UserModel
@@ -69,8 +68,10 @@ def _store_user_in_session(session, username, remember=False):
 
     session.save()
 
+    safe_cs = cs.copy()
+    safe_cs['password'] = '****'
     log.info('user %s is now authenticated and stored in '
-             'session, session attrs %s', username, cs)
+             'session, session attrs %s', username, safe_cs)
 
     # dumps session attrs back to cookie
     session._update_cookie_out()
@@ -127,7 +128,7 @@ class LoginView(object):
 
     @view_config(
         route_name='login', request_method='GET',
-        renderer='rhodecode:templates/login.html')
+        renderer='rhodecode:templates/login.mako')
     def login(self):
         came_from = get_came_from(self.request)
         user = self.request.user
@@ -153,14 +154,14 @@ class LoginView(object):
 
     @view_config(
         route_name='login', request_method='POST',
-        renderer='rhodecode:templates/login.html')
+        renderer='rhodecode:templates/login.mako')
     def login_post(self):
         came_from = get_came_from(self.request)
-        session = self.request.session
+
         login_form = LoginForm()()
 
         try:
-            session.invalidate()
+            self.session.invalidate()
             form_result = login_form.to_python(self.request.params)
             # form checks for username/password, now we're authenticated
             headers = _store_user_in_session(
@@ -185,20 +186,22 @@ class LoginView(object):
             # the fly can throw this exception signaling that there's issue
             # with user creation, explanation should be provided in
             # Exception itself
-            session.flash(e, queue='error')
+            self.session.flash(e, queue='error')
             return self._get_template_context()
 
     @CSRFRequired()
     @view_config(route_name='logout', request_method='POST')
     def logout(self):
-        LoginSession().destroy_user_session()
+        user = self.request.user
+        log.info('Deleting session for user: `%s`', user)
+        self.session.delete()
         return HTTPFound(url('home'))
 
     @HasPermissionAnyDecorator(
         'hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')
     @view_config(
         route_name='register', request_method='GET',
-        renderer='rhodecode:templates/register.html',)
+        renderer='rhodecode:templates/register.mako',)
     def register(self, defaults=None, errors=None):
         defaults = defaults or {}
         errors = errors or {}
@@ -224,7 +227,7 @@ class LoginView(object):
         'hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')
     @view_config(
         route_name='register', request_method='POST',
-        renderer='rhodecode:templates/register.html')
+        renderer='rhodecode:templates/register.mako')
     def register_post(self):
         captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
@@ -275,7 +278,7 @@ class LoginView(object):
 
     @view_config(
         route_name='reset_password', request_method=('GET', 'POST'),
-        renderer='rhodecode:templates/password_reset.html')
+        renderer='rhodecode:templates/password_reset.mako')
     def password_reset(self):
         captcha = self._get_captcha_data()
 

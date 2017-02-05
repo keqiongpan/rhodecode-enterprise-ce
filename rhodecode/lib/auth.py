@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -35,6 +35,7 @@ import traceback
 from functools import wraps
 
 import ipaddress
+from pyramid.httpexceptions import HTTPForbidden
 from pylons import url, request
 from pylons.controllers.util import abort, redirect
 from pylons.i18n.translation import _
@@ -846,24 +847,24 @@ class AuthUser(object):
         Fills in user data and propagates values to this instance. Maps fetched
         user attributes to this class instance attributes
         """
-
+        log.debug('starting data propagation for new potential AuthUser')
         user_model = UserModel()
         anon_user = self.anonymous_user = User.get_default_user(cache=True)
         is_user_loaded = False
 
         # lookup by userid
         if self.user_id is not None and self.user_id != anon_user.user_id:
-            log.debug('Trying Auth User lookup by USER ID %s' % self.user_id)
+            log.debug('Trying Auth User lookup by USER ID: `%s`' % self.user_id)
             is_user_loaded = user_model.fill_data(self, user_id=self.user_id)
 
         # try go get user by api key
         elif self._api_key and self._api_key != anon_user.api_key:
-            log.debug('Trying Auth User lookup by API KEY %s' % self._api_key)
+            log.debug('Trying Auth User lookup by API KEY: `%s`' % self._api_key)
             is_user_loaded = user_model.fill_data(self, api_key=self._api_key)
 
         # lookup by username
         elif self.username:
-            log.debug('Trying Auth User lookup by USER NAME %s' % self.username)
+            log.debug('Trying Auth User lookup by USER NAME: `%s`' % self.username)
             is_user_loaded = user_model.fill_data(self, username=self.username)
         else:
             log.debug('No data in %s that could been used to log in' % self)
@@ -1159,7 +1160,7 @@ class CSRFRequired(object):
                  'REMOTE_ADDR:%s, HEADERS:%s' % (
                      request, reason, request.remote_addr, request.headers))
 
-        abort(403, detail=csrf_message)
+        raise HTTPForbidden(explanation=csrf_message)
 
 
 class LoginRequired(object):

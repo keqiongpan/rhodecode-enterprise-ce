@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -38,7 +38,6 @@ from pylons.i18n.translation import _get_translator
 from pylons.util import ContextObj
 
 from routes.util import URLGenerator
-from webtest import TestApp
 from nose.plugins.skip import SkipTest
 import pytest
 
@@ -51,10 +50,6 @@ from rhodecode.lib.helpers import flash, link_to
 from rhodecode.lib.utils2 import safe_unicode, safe_str
 from rhodecode.tests.utils import get_session_from_response
 
-# TODO: johbo: Solve time zone related issues and remove this tweak
-os.environ['TZ'] = 'UTC'
-if not is_windows:
-    time.tzset()
 
 log = logging.getLogger(__name__)
 
@@ -232,9 +227,11 @@ def assert_session_flash(response=None, msg=None, category=None):
     message_text = _eval_if_lazy(message.message)
 
     if msg not in message_text:
-        msg = u'msg `%s` not found in session flash: got `%s` instead' % (
-            msg, message_text)
-        pytest.fail(safe_str(msg))
+        fail_msg = u'msg `%s` not found in session ' \
+                   u'flash: got `%s` (type:%s) instead' % (
+            msg, message_text, type(message_text))
+
+        pytest.fail(safe_str(fail_msg))
     if category:
         assert category == message.category
 

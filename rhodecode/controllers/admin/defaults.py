@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -57,7 +57,7 @@ class DefaultsController(BaseController):
         defaults = SettingsModel().get_default_repo_settings()
 
         return htmlfill.render(
-            render('admin/defaults/defaults.html'),
+            render('admin/defaults/defaults.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
@@ -88,7 +88,7 @@ class DefaultsController(BaseController):
             defaults = errors.value
 
             return htmlfill.render(
-                render('admin/defaults/defaults.html'),
+                render('admin/defaults/defaults.mako'),
                 defaults=defaults,
                 errors=errors.error_dict or {},
                 prefix_error=False,

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -145,7 +145,12 @@ def test_age(age_args, expected, kw, pylonsapp):
     from dateutil import relativedelta
     n = datetime.datetime(year=2012, month=5, day=17)
     delt = lambda *args, **kwargs: relativedelta.relativedelta(*args, **kwargs)
-    assert age(n + delt(**age_args), now=n, **kw) == expected
+
+    def translate(elem):
+        return elem.interpolate()
+
+    assert translate(age(n + delt(**age_args), now=n, **kw)) == expected
+
 
 @pytest.mark.parametrize("age_args, expected, kw", [
     ({}, u'just now', {}),
@@ -172,7 +177,11 @@ def test_age_in_future(age_args, expected, kw, pylonsapp):
     from dateutil import relativedelta
     n = datetime.datetime(year=2012, month=5, day=17)
     delt = lambda *args, **kwargs: relativedelta.relativedelta(*args, **kwargs)
-    assert age(n + delt(**age_args), now=n, **kw) == expected
+
+    def translate(elem):
+        return elem.interpolate()
+
+    assert translate(age(n + delt(**age_args), now=n, **kw)) == expected
 
 
 def test_tag_exctrator():

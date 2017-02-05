@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -26,6 +26,7 @@ Should only contain utilities to be shared in the controller layer.
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib.vcs.exceptions import RepositoryError
+
 
 def parse_path_ref(ref, default_path=None):
     """
@@ -76,8 +77,8 @@ def get_commit_from_ref_name(repo, ref_name, ref_type=None):
     }
 
     commit_id = ref_name
-    if repo_scm.alias != 'svn': # pass svn refs straight to backend until
-                                # the branch issue with svn is fixed
+    if repo_scm.alias != 'svn':  # pass svn refs straight to backend until
+                                 # the branch issue with svn is fixed
         if ref_type and ref_type in ref_type_mapping:
             try:
                 commit_id = ref_type_mapping[ref_type][ref_name]

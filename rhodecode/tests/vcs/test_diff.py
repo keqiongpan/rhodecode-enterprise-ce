@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -359,14 +359,15 @@ class TestSvnGetDiff:
     ], ids=['file', 'dir'])
     def test_diff_to_tagged_version(self, vcsbackend_svn, path, path1):
         repo = vcsbackend_svn['svn-simple-layout']
-        commit = repo[-1]
-        diff = repo.get_diff(commit, commit, path=path, path1=path1)
+        commit1 = repo[-2]
+        commit2 = repo[-1]
+        diff = repo.get_diff(commit1, commit2, path=path, path1=path1)
         assert diff.raw == self.expected_diff_v_0_2
 
     expected_diff_v_0_2 = '''Index: example.py
 ===================================================================
 diff --git a/example.py b/example.py
---- a/example.py\t(revision 26)
+--- a/example.py\t(revision 25)
 +++ b/example.py\t(revision 26)
 @@ -7,8 +7,12 @@
  

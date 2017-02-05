@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2013-2016  RhodeCode GmbH
+# Copyright (C) 2013-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -147,7 +147,7 @@ class ReposController(BaseRepoController):
         # json used to render the grid
         c.data = json.dumps(repos_data)
 
-        return render('admin/repos/repos.html')
+        return render('admin/repos/repos.mako')
 
     # perms check inside
     @NotAnonymous()
@@ -175,7 +175,7 @@ class ReposController(BaseRepoController):
                 task_id = task.task_id
         except formencode.Invalid as errors:
             return htmlfill.render(
-                render('admin/repos/repo_add.html'),
+                render('admin/repos/repo_add.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -235,7 +235,7 @@ class ReposController(BaseRepoController):
         defaults.update({'repo_group': parent_group_choice})
 
         return htmlfill.render(
-            render('admin/repos/repo_add.html'),
+            render('admin/repos/repo_add.mako'),
             defaults=defaults,
             errors={},
             prefix_error=False,
@@ -249,7 +249,7 @@ class ReposController(BaseRepoController):
         c.task_id = request.GET.get('task_id')
         if not c.repo:
             raise HTTPNotFound()
-        return render('admin/repos/repo_creating.html')
+        return render('admin/repos/repo_creating.mako')
 
     @NotAnonymous()
     @jsonify
@@ -334,7 +334,7 @@ class ReposController(BaseRepoController):
             defaults = self.__load_data(repo_name)
             defaults.update(errors.value)
             return htmlfill.render(
-                render('admin/repos/repo_edit.html'),
+                render('admin/repos/repo_edit.mako'),
                 defaults=defaults,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -410,7 +410,7 @@ class ReposController(BaseRepoController):
         c.personal_repo_group = c.rhodecode_user.personal_repo_group
         c.active = 'settings'
         return htmlfill.render(
-            render('admin/repos/repo_edit.html'),
+            render('admin/repos/repo_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -424,7 +424,7 @@ class ReposController(BaseRepoController):
         defaults = RepoModel()._get_defaults(repo_name)
 
         return htmlfill.render(
-            render('admin/repos/repo_edit.html'),
+            render('admin/repos/repo_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -454,7 +454,7 @@ class ReposController(BaseRepoController):
         if request.POST:
 
             return redirect(url('repo_edit_fields'))
-        return render('admin/repos/repo_edit.html')
+        return render('admin/repos/repo_edit.mako')
 
     @HasRepoPermissionAllDecorator('repository.admin')
     @auth.CSRFRequired()
@@ -509,7 +509,7 @@ class ReposController(BaseRepoController):
 
         if request.POST:
             return redirect(url('repo_edit_advanced'))
-        return render('admin/repos/repo_edit.html')
+        return render('admin/repos/repo_edit.mako')
 
     @HasRepoPermissionAllDecorator('repository.admin')
     @auth.CSRFRequired()
@@ -642,7 +642,7 @@ class ReposController(BaseRepoController):
         c.repo_info = self._load_repo(repo_name)
         c.active = 'caches'
 
-        return render('admin/repos/repo_edit.html')
+        return render('admin/repos/repo_edit.mako')
 
     @HasRepoPermissionAllDecorator('repository.admin')
     @auth.CSRFRequired()
@@ -664,7 +664,7 @@ class ReposController(BaseRepoController):
         c.repo_info = self._load_repo(repo_name)
         c.active = 'remote'
 
-        return render('admin/repos/repo_edit.html')
+        return render('admin/repos/repo_edit.mako')
 
     @HasRepoPermissionAllDecorator('repository.admin')
     @auth.CSRFRequired()
@@ -702,7 +702,7 @@ class ReposController(BaseRepoController):
 
         c.active = 'statistics'
 
-        return render('admin/repos/repo_edit.html')
+        return render('admin/repos/repo_edit.mako')
 
     @HasRepoPermissionAllDecorator('repository.admin')
     @auth.CSRFRequired()
@@ -771,7 +771,7 @@ class ReposController(BaseRepoController):
         c.global_patterns = c.settings_model.get_global_settings()
         c.repo_patterns = c.settings_model.get_repo_settings()
 
-        return render('admin/repos/repo_edit.html')
+        return render('admin/repos/repo_edit.mako')
 
     @HasRepoPermissionAllDecorator('repository.admin')
     def repo_settings_vcs(self, repo_name):
@@ -791,7 +791,7 @@ class ReposController(BaseRepoController):
             rhodecode.CONFIG.get('labs_settings_active', 'true'))
 
         return htmlfill.render(
-            render('admin/repos/repo_edit.html'),
+            render('admin/repos/repo_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -819,7 +819,7 @@ class ReposController(BaseRepoController):
                 _("Some form inputs contain invalid data."),
                 category='error')
             return htmlfill.render(
-                render('admin/repos/repo_edit.html'),
+                render('admin/repos/repo_edit.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -842,7 +842,7 @@ class ReposController(BaseRepoController):
             return redirect(url('repo_vcs_settings', repo_name=repo_name))
 
         return htmlfill.render(
-            render('admin/repos/repo_edit.html'),
+            render('admin/repos/repo_edit.mako'),
             defaults=self._vcs_form_defaults(repo_name),
             encoding="UTF-8",
             force_defaults=False)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -34,8 +34,8 @@ log = logging.getLogger(__name__)
 
 class BranchesController(BaseReferencesController):
 
-    partials_template = 'branches/branches_data.html'
-    template = 'branches/branches.html'
+    partials_template = 'branches/branches_data.mako'
+    template = 'branches/branches.mako'
 
     def __before__(self):
         super(BranchesController, self).__before__()

@@ -34,8 +34,8 @@ performance boost.
 
 .. code-block:: bash
 
-    # mount tmp to memory with 2GB limit and 755 write permissions
-    mount -t tmpfs -o size=2G,mode=0755 tmpfs /tmp
+    # mount tmp to memory with 2GB limit and 1777 write permissions
+    mount -t tmpfs -o size=2G,mode=1777 tmpfs /tmp
 
 For more information about TMPFS, see the documentation `here`_.
 

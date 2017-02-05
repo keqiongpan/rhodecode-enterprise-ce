@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -22,16 +22,13 @@ import mock
 import pytest
 import lxml.html
 
-from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
-from rhodecode.model.db import Repository
-from rhodecode.model.scm import ScmModel
-from rhodecode.tests import url, TEST_USER_ADMIN_LOGIN, assert_session_flash
-from rhodecode.tests.utils import AssertResponse
+from rhodecode.tests import url, assert_session_flash
+from rhodecode.tests.utils import AssertResponse, commit_change
 
 
 @pytest.mark.usefixtures("autologin_user", "app")
-class TestCompareController:
+class TestCompareController(object):
 
     @pytest.mark.xfail_backends("svn", reason="Requires pull")
     def test_compare_remote_with_different_commit_indexes(self, backend):
@@ -53,23 +50,23 @@ class TestCompareController:
         fork = backend.create_repo()
 
         # prepare fork
-        commit0 = _commit_change(
+        commit0 = commit_change(
             fork.repo_name, filename='file1', content='A',
             message='A', vcs_type=backend.alias, parent=None, newfile=True)
 
-        commit1 = _commit_change(
+        commit1 = commit_change(
             fork.repo_name, filename='file1', content='B',
             message='B, child of A', vcs_type=backend.alias, parent=commit0)
 
-        _commit_change(  # commit 2
+        commit_change(  # commit 2
             fork.repo_name, filename='file1', content='C',
             message='C, child of B', vcs_type=backend.alias, parent=commit1)
 
-        commit3 = _commit_change(
+        commit3 = commit_change(
             fork.repo_name, filename='file1', content='D',
             message='D, child of A', vcs_type=backend.alias, parent=commit0)
 
-        commit4 = _commit_change(
+        commit4 = commit_change(
             fork.repo_name, filename='file1', content='E',
             message='E, child of D', vcs_type=backend.alias, parent=commit3)
 
@@ -105,7 +102,7 @@ class TestCompareController:
         repo1 = backend.create_repo()
 
         # commit something !
-        commit0 = _commit_change(
+        commit0 = commit_change(
             repo1.repo_name, filename='file1', content='line1\n',
             message='commit1', vcs_type=backend.alias, parent=None,
             newfile=True)
@@ -114,11 +111,11 @@ class TestCompareController:
         repo2 = backend.create_fork()
 
         # add two extra commit into fork
-        commit1 = _commit_change(
+        commit1 = commit_change(
             repo2.repo_name, filename='file1', content='line1\nline2\n',
             message='commit2', vcs_type=backend.alias, parent=commit0)
 
-        commit2 = _commit_change(
+        commit2 = commit_change(
             repo2.repo_name, filename='file1', content='line1\nline2\nline3\n',
             message='commit3', vcs_type=backend.alias, parent=commit1)
 
@@ -156,7 +153,7 @@ class TestCompareController:
         repo1 = backend.create_repo()
 
         # commit something !
-        commit0 = _commit_change(
+        commit0 = commit_change(
             repo1.repo_name, filename='file1', content='line1\n',
             message='commit1', vcs_type=backend.alias, parent=None,
             newfile=True)
@@ -165,17 +162,17 @@ class TestCompareController:
         repo2 = backend.create_fork()
 
         # now commit something to origin repo
-        _commit_change(
+        commit_change(
             repo1.repo_name, filename='file2', content='line1file2\n',
             message='commit2', vcs_type=backend.alias, parent=commit0,
             newfile=True)
 
         # add two extra commit into fork
-        commit1 = _commit_change(
+        commit1 = commit_change(
             repo2.repo_name, filename='file1', content='line1\nline2\n',
             message='commit2', vcs_type=backend.alias, parent=commit0)
 
-        commit2 = _commit_change(
+        commit2 = commit_change(
             repo2.repo_name, filename='file1', content='line1\nline2\nline3\n',
             message='commit3', vcs_type=backend.alias, parent=commit1)
 
@@ -207,9 +204,9 @@ class TestCompareController:
         compare_page.swap_is_hidden()
         compare_page.target_source_are_disabled()
 
-    @pytest.mark.xfail_backends("svn", "git")
+    @pytest.mark.xfail_backends("svn")
+    # TODO(marcink): no svn support for compare two seperate repos
     def test_compare_of_unrelated_forks(self, backend):
-        # TODO: johbo: Fails for git due to some other issue it seems
         orig = backend.create_repo(number_of_commits=1)
         fork = backend.create_repo(number_of_commits=1)
 
@@ -245,11 +242,11 @@ class TestCompareController:
         repo1 = backend.create_repo()
 
         # commit something !
-        commit0 = _commit_change(
+        commit0 = commit_change(
             repo1.repo_name, filename='file1', content='line1\n',
             message='commit1', vcs_type=backend.alias, parent=None,
             newfile=True)
-        commit1 = _commit_change(
+        commit1 = commit_change(
             repo1.repo_name, filename='file1', content='line1\nline2\n',
             message='commit2', vcs_type=backend.alias, parent=commit0)
 
@@ -257,18 +254,18 @@ class TestCompareController:
         repo2 = backend.create_fork()
 
         # now make commit3-6
-        commit2 = _commit_change(
+        commit2 = commit_change(
             repo1.repo_name, filename='file1', content='line1\nline2\nline3\n',
             message='commit3', vcs_type=backend.alias, parent=commit1)
-        commit3 = _commit_change(
+        commit3 = commit_change(
             repo1.repo_name, filename='file1',
             content='line1\nline2\nline3\nline4\n', message='commit4',
             vcs_type=backend.alias, parent=commit2)
-        commit4 = _commit_change(
+        commit4 = commit_change(
             repo1.repo_name, filename='file1',
             content='line1\nline2\nline3\nline4\nline5\n', message='commit5',
             vcs_type=backend.alias, parent=commit3)
-        _commit_change(  # commit 5
+        commit_change(  # commit 5
             repo1.repo_name, filename='file1',
             content='line1\nline2\nline3\nline4\nline5\nline6\n',
             message='commit6', vcs_type=backend.alias, parent=commit4)
@@ -311,11 +308,11 @@ class TestCompareController:
         repo1 = backend.create_repo()
 
         # commit something !
-        commit0 = _commit_change(
+        commit0 = commit_change(
             repo1.repo_name, filename='file1', content='line1\n',
             message='commit1', vcs_type=backend.alias, parent=None,
             newfile=True)
-        commit1 = _commit_change(
+        commit1 = commit_change(
             repo1.repo_name, filename='file1', content='line1\nline2\n',
             message='commit2', vcs_type=backend.alias, parent=commit0)
 
@@ -323,18 +320,18 @@ class TestCompareController:
         backend.create_fork()
 
         # now make commit3-6
-        commit2 = _commit_change(
+        commit2 = commit_change(
             repo1.repo_name, filename='file1', content='line1\nline2\nline3\n',
             message='commit3', vcs_type=backend.alias, parent=commit1)
-        commit3 = _commit_change(
+        commit3 = commit_change(
             repo1.repo_name, filename='file1',
             content='line1\nline2\nline3\nline4\n', message='commit4',
             vcs_type=backend.alias, parent=commit2)
-        commit4 = _commit_change(
+        commit4 = commit_change(
             repo1.repo_name, filename='file1',
             content='line1\nline2\nline3\nline4\nline5\n', message='commit5',
             vcs_type=backend.alias, parent=commit3)
-        commit5 = _commit_change(
+        commit5 = commit_change(
             repo1.repo_name, filename='file1',
             content='line1\nline2\nline3\nline4\nline5\nline6\n',
             message='commit6', vcs_type=backend.alias, parent=commit4)
@@ -400,7 +397,7 @@ class TestCompareController:
         repo1 = backend.create_repo()
         r1_name = repo1.repo_name
 
-        commit0 = _commit_change(
+        commit0 = commit_change(
             repo=r1_name, filename='file1',
             content='line1', message='commit1', vcs_type=backend.alias,
             newfile=True)
@@ -413,19 +410,19 @@ class TestCompareController:
         self.r2_id = repo2.repo_id
         r2_name = repo2.repo_name
 
-        commit1 = _commit_change(
+        commit1 = commit_change(
             repo=r2_name, filename='file1-fork',
             content='file1-line1-from-fork', message='commit1-fork',
             vcs_type=backend.alias, parent=repo2.scm_instance()[-1],
             newfile=True)
 
-        commit2 = _commit_change(
+        commit2 = commit_change(
             repo=r2_name, filename='file2-fork',
             content='file2-line1-from-fork', message='commit2-fork',
             vcs_type=backend.alias, parent=commit1,
             newfile=True)
 
-        _commit_change(  # commit 3
+        commit_change(  # commit 3
             repo=r2_name, filename='file3-fork',
             content='file3-line1-from-fork', message='commit3-fork',
             vcs_type=backend.alias, parent=commit2, newfile=True)
@@ -447,9 +444,9 @@ class TestCompareController:
         response.mustcontain('%s@%s' % (r2_name, commit_id1))
         response.mustcontain('%s@%s' % (r1_name, commit_id2))
         response.mustcontain('No files')
-        response.mustcontain('No Commits')
+        response.mustcontain('No commits in this compare')
 
-        commit0 = _commit_change(
+        commit0 = commit_change(
             repo=r1_name, filename='file2',
             content='line1-added-after-fork', message='commit2-parent',
             vcs_type=backend.alias, parent=None, newfile=True)
@@ -558,7 +555,7 @@ class TestCompareController:
 
 
 @pytest.mark.usefixtures("autologin_user")
-class TestCompareControllerSvn:
+class TestCompareControllerSvn(object):
 
     def test_supports_references_with_path(self, app, backend_svn):
         repo = backend_svn['svn-simple-layout']
@@ -574,7 +571,7 @@ class TestCompareControllerSvn:
             status=200)
 
         # Expecting no commits, since both paths are at the same revision
-        response.mustcontain('No Commits')
+        response.mustcontain('No commits in this compare')
 
         # Should find only one file changed when comparing those two tags
         response.mustcontain('example.py')
@@ -596,7 +593,7 @@ class TestCompareControllerSvn:
             status=200)
 
         # It should show commits
-        assert 'No Commits' not in response.body
+        assert 'No commits in this compare' not in response.body
 
         # Should find only one file changed when comparing those two tags
         response.mustcontain('example.py')
@@ -660,36 +657,3 @@ class ComparePage(AssertResponse):
     def target_source_are_enabled(self):
         response = self.response
         response.mustcontain("var enable_fields = true;")
-
-
-def _commit_change(
-        repo, filename, content, message, vcs_type, parent=None,
-        newfile=False):
-    repo = Repository.get_by_repo_name(repo)
-    _commit = parent
-    if not parent:
-        _commit = EmptyCommit(alias=vcs_type)
-
-    if newfile:
-        nodes = {
-            filename: {
-                'content': content
-            }
-        }
-        commit = ScmModel().create_nodes(
-            user=TEST_USER_ADMIN_LOGIN, repo=repo,
-            message=message,
-            nodes=nodes,
-            parent_commit=_commit,
-            author=TEST_USER_ADMIN_LOGIN,
-        )
-    else:
-        commit = ScmModel().commit_change(
-            repo=repo.scm_instance(), repo_name=repo.repo_name,
-            commit=parent, user=TEST_USER_ADMIN_LOGIN,
-            author=TEST_USER_ADMIN_LOGIN,
-            message=message,
-            content=content,
-            f_path=filename
-        )
-    return commit

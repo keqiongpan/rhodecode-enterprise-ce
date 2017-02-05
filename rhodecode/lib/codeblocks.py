@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2016  RhodeCode GmbH
+# Copyright (C) 2011-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -25,7 +25,7 @@ from itertools import groupby
 from pygments import lex
 from pygments.formatters.html import _get_ttype_class as pygment_token_class
 from rhodecode.lib.helpers import (
-    get_lexer_for_filenode, get_lexer_safe, html_escape)
+    get_lexer_for_filenode, html_escape)
 from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib.diff_match_patch import diff_match_patch
@@ -40,8 +40,10 @@ log = logging.getLogger()
 
 
 def filenode_as_lines_tokens(filenode, lexer=None):
+    org_lexer = lexer
     lexer = lexer or get_lexer_for_filenode(filenode)
-    log.debug('Generating file node pygment tokens for %s, %s', lexer, filenode)
+    log.debug('Generating file node pygment tokens for %s, %s, org_lexer:%s',
+              lexer, filenode, org_lexer)
     tokens = tokenize_string(filenode.content, lexer)
     lines = split_token_stream(tokens, split_string='\n')
     rv = list(lines)
@@ -353,6 +355,7 @@ class DiffSet(object):
     HL_NONE = 'NONE' # no highlighting, fastest
 
     def __init__(self, highlight_mode=HL_REAL, repo_name=None,
+                 source_repo_name=None,
                  source_node_getter=lambda filename: None,
                  target_node_getter=lambda filename: None,
                  source_nodes=None, target_nodes=None,
@@ -368,7 +371,9 @@ class DiffSet(object):
         self.source_nodes = source_nodes or {}
         self.target_nodes = target_nodes or {}
         self.repo_name = repo_name
+        self.source_repo_name = source_repo_name or repo_name
         self.comments = comments or {}
+        self.comments_store = self.comments.copy()
         self.max_file_size_limit = max_file_size_limit
 
     def render_patchset(self, patchset, source_ref=None, target_ref=None):
@@ -377,12 +382,15 @@ class DiffSet(object):
             lines_deleted=0,
             changed_files=0,
             files=[],
+            file_stats={},
             limited_diff=isinstance(patchset, LimitedDiffContainer),
             repo_name=self.repo_name,
+            source_repo_name=self.source_repo_name,
             source_ref=source_ref,
             target_ref=target_ref,
         ))
         for patch in patchset:
+            diffset.file_stats[patch['filename']] = patch['stats']
             filediff = self.render_patch(patch)
             filediff.diffset = diffset
             diffset.files.append(filediff)
@@ -394,10 +402,14 @@ class DiffSet(object):
         return diffset
 
     _lexer_cache = {}
-    def _get_lexer_for_filename(self, filename):
+    def _get_lexer_for_filename(self, filename, filenode=None):
         # cached because we might need to call it twice for source/target
         if filename not in self._lexer_cache:
-            self._lexer_cache[filename] = get_lexer_safe(filepath=filename)
+            if filenode:
+                lexer = filenode.lexer
+            else:
+                lexer = FileNode.get_lexer(filename=filename)
+            self._lexer_cache[filename] = lexer
         return self._lexer_cache[filename]
 
     def render_patch(self, patch):
@@ -435,10 +447,15 @@ class DiffSet(object):
         # done can allow caching a lexer for a filenode to avoid the file lookup
         if isinstance(source_file, FileNode):
             source_filenode = source_file
-            source_lexer = source_file.lexer
+            #source_lexer = source_file.lexer
+            source_lexer = self._get_lexer_for_filename(source_filename)
+            source_file.lexer = source_lexer
+
         if isinstance(target_file, FileNode):
             target_filenode = target_file
-            target_lexer = target_file.lexer
+            #target_lexer = target_file.lexer
+            target_lexer = self._get_lexer_for_filename(target_filename)
+            target_file.lexer = target_lexer
 
         source_file_path, target_file_path = None, None
 
@@ -472,6 +489,18 @@ class DiffSet(object):
             hunkbit = self.parse_hunk(hunk, source_file, target_file)
             hunkbit.filediff = filediff
             filediff.hunks.append(hunkbit)
+
+        left_comments = {}
+
+        if source_file_path in self.comments_store:
+            for lineno, comments in self.comments_store[source_file_path].items():
+                left_comments[lineno] = comments
+
+        if target_file_path in self.comments_store:
+            for lineno, comments in self.comments_store[target_file_path].items():
+                left_comments[lineno] = comments
+
+        filediff.left_comments = left_comments
         return filediff
 
     def parse_hunk(self, hunk, source_file, target_file):
@@ -504,6 +533,7 @@ class DiffSet(object):
             self.parse_lines(before, after, source_file, target_file))
         result.unified = self.as_unified(result.lines)
         result.sideside = result.lines
+
         return result
 
     def parse_lines(self, before_lines, after_lines, source_file, target_file):
@@ -586,7 +616,10 @@ class DiffSet(object):
             'new': 'n',
         }[version] + str(line_number)
 
-        return self.comments.get(file, {}).get(line_key)
+        if file in self.comments_store:
+            file_comments = self.comments_store[file]
+            if line_key in file_comments:
+                return file_comments.pop(line_key)
 
     def get_line_tokens(self, line_text, line_number, file=None):
         filenode = None
@@ -599,8 +632,11 @@ class DiffSet(object):
             filename = file.unicode_path
 
         if self.highlight_mode == self.HL_REAL and filenode:
-            if line_number and file.size < self.max_file_size_limit:
-                return self.get_tokenized_filenode_line(file, line_number)
+            lexer = self._get_lexer_for_filename(filename)
+            file_size_allowed = file.size < self.max_file_size_limit
+            if line_number and file_size_allowed:
+                return self.get_tokenized_filenode_line(
+                    file, line_number, lexer)
 
         if self.highlight_mode in (self.HL_REAL, self.HL_FAST) and filename:
             lexer = self._get_lexer_for_filename(filename)
@@ -608,10 +644,10 @@ class DiffSet(object):
 
         return list(tokenize_string(line_text, plain_text_lexer))
 
-    def get_tokenized_filenode_line(self, filenode, line_number):
+    def get_tokenized_filenode_line(self, filenode, line_number, lexer=None):
 
         if filenode not in self.highlighted_filenodes:
-            tokenized_lines = filenode_as_lines_tokens(filenode, filenode.lexer)
+            tokenized_lines = filenode_as_lines_tokens(filenode, lexer)
             self.highlighted_filenodes[filenode] = tokenized_lines
         return self.highlighted_filenodes[filenode][line_number - 1]
 
@@ -625,7 +661,9 @@ class DiffSet(object):
         }.get(action, action)
 
     def as_unified(self, lines):
-        """ Return a generator that yields the lines of a diff in unified order """
+        """
+        Return a generator that yields the lines of a diff in unified order
+        """
         def generator():
             buf = []
             for line in lines:

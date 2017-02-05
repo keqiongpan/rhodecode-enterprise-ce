@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2013-2016  RhodeCode GmbH
+# Copyright (C) 2013-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -35,6 +35,13 @@ sys.path.append(rc_path)
 
 log = logging.getLogger(__name__)
 
+welcome_banner = """Welcome to RhodeCode iShell.
+Type `exit` to exit the shell.
+iShell is interactive shell to interact directly with the
+internal RhodeCode APIs. You can rescue your lost password,
+or reset some user/system settings.
+"""
+
 
 class Command(BasePasterCommand):
 
@@ -61,12 +68,12 @@ class Command(BasePasterCommand):
 
         try:
             from IPython import embed
-            from IPython.config.loader import Config
+            from traitlets.config import Config
             cfg = Config()
             cfg.InteractiveShellEmbed.confirm_exit = False
-            embed(config=cfg, banner1="RhodeCode IShell.")
+            embed(config=cfg, banner1=welcome_banner)
         except ImportError:
-            print 'ipython installation required for ishell'
+            print('ipython installation required for ishell')
             sys.exit(-1)
 
     def update_parser(self):

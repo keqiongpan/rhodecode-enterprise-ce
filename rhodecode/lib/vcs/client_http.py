@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2016  RhodeCode GmbH
+# Copyright (C) 2016-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -218,6 +218,12 @@ def _remote_call(url, payload, exceptions_map, session):
             exc._vcs_kind = error['_vcs_kind']
         except KeyError:
             pass
+
+        try:
+            exc._vcs_server_traceback = error['traceback']
+        except KeyError:
+            pass
+
         raise exc
     return response.get('result')
 

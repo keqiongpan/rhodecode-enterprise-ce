@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2016  RhodeCode GmbH
+# Copyright (C) 2014-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -185,10 +185,10 @@ def map_vcs_exceptions(func):
             # The error middleware adds information if it finds
             # __traceback_info__ in a frame object. This way the remote
             # traceback information is made available in error reports.
-            remote_tb = getattr(e, '_pyroTraceback', None)
+            remote_tb = getattr(e, '_vcs_server_traceback', None)
             if remote_tb:
                 __traceback_info__ = (
-                    'Found Pyro4 remote traceback information:\n\n' +
+                    'Found VCSServer remote traceback information:\n\n' +
                     '\n'.join(remote_tb))
 
                 # Avoid that remote_tb also appears in the frame

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2016  RhodeCode GmbH
+# Copyright (C) 2011-2017  RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -132,7 +132,7 @@ def exception_view(exc, request):
         log.debug('json-rpc error rpc_id:%s "%s"', rpc_id, fault_message)
     elif isinstance(exc, JSONRPCValidationError):
         colander_exc = exc.colander_exception
-        #TODO: think maybe of nicer way to serialize errors ?
+        # TODO(marcink): think maybe of nicer way to serialize errors ?
         fault_message = colander_exc.asdict()
         log.debug('json-rpc error rpc_id:%s "%s"', rpc_id, fault_message)
     elif isinstance(exc, JSONRPCForbidden):
@@ -240,7 +240,7 @@ def request_view(request):
                 message=('Missing non optional `%s` arg in JSON DATA' % arg)
             )
 
-    # sanitze extra passed arguments
+    # sanitize extra passed arguments
     for k in request.rpc_params.keys()[:]:
         if k not in func_kwargs:
             del request.rpc_params[k]
@@ -256,7 +256,7 @@ def request_view(request):
     except JSONRPCBaseError:
         raise
     except Exception:
-        log.exception('Unhandled exception occured on api call: %s', func)
+        log.exception('Unhandled exception occurred on api call: %s', func)
         return jsonrpc_error(request, retid=request.rpc_id,
                              message='Internal server error')
 
@@ -269,9 +269,10 @@ def setup_request(request):
     We need to raise JSONRPCError here if we want to return some errors back to
     user.
     """
+
     log.debug('Executing setup request: %r', request)
     request.rpc_ip_addr = get_ip_addr(request.environ)
-    # TODO: marcink, deprecate GET at some point
+    # TODO(marcink): deprecate GET at some point
     if request.method not in ['POST', 'GET']:
         log.debug('unsupported request method "%s"', request.method)
         raise JSONRPCError(
@@ -307,6 +308,8 @@ def setup_request(request):
 
         if not api_key:
             raise KeyError('api_key or auth_token')
+
+        # TODO(marcink): support passing in token in request header
 
         request.rpc_api_key = api_key
         request.rpc_id = json_body['id']
@@ -485,8 +488,7 @@ def includeme(config):
         config.registry.jsonrpc_methods = OrderedDict()
 
     # match filter by given method only
-    config.add_view_predicate(
-        'jsonrpc_method', MethodPredicate)
+    config.add_view_predicate('jsonrpc_method', MethodPredicate)
 
     config.add_renderer(DEFAULT_RENDERER, ExtJsonRenderer(
         serializer=json.dumps, indent=4))

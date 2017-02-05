@@ -16,7 +16,7 @@
 # `Include` directive. See the following example snippet of a virtual host how
 # to include this configuration file.
 #
-#     <VirtualHost *:8080>
+#     <VirtualHost *:8090>
 #         ServerAdmin webmaster@localhost
 #         DocumentRoot /var/www/html
 #         ErrorLog ${'${APACHE_LOG_DIR}'}/error.log
@@ -38,7 +38,11 @@
 
 # fix https -> http downgrade with DAV. It requires an header downgrade for
 # https -> http reverse proxy to work properly
+% if use_https:
 RequestHeader edit Destination ^https: http: early
+% else:
+#RequestHeader edit Destination ^https: http: early
+% endif
 
 <Location "${location_root|n}">
     # The mod_dav_svn module takes the username from the apache request object.
@@ -50,6 +54,7 @@ RequestHeader edit Destination ^https: http: early
     AuthName "${rhodecode_realm|n}"
     AuthBasicProvider anon
     Anonymous *
+    Anonymous_LogEmail off
     Require valid-user
 
     DAV svn
@@ -67,6 +72,7 @@ RequestHeader edit Destination ^https: http: early
     AuthName "${rhodecode_realm|n}"
     AuthBasicProvider anon
     Anonymous *
+    Anonymous_LogEmail off
     Require valid-user
 
     DAV svn

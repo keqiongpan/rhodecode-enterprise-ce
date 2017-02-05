@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -82,7 +82,7 @@ class UsersController(BaseController):
         # url('users')
 
         from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
 
         def username(user_id, username):
             return _render("user_name", user_id, username)
@@ -119,7 +119,7 @@ class UsersController(BaseController):
 
 
         c.data = json.dumps(users_data)
-        return render('admin/users/users.html')
+        return render('admin/users/users.mako')
 
     def _get_personal_repo_group_template_vars(self):
         DummyUser = AttributeDict({
@@ -156,7 +156,7 @@ class UsersController(BaseController):
         except formencode.Invalid as errors:
             self._get_personal_repo_group_template_vars()
             return htmlfill.render(
-                render('admin/users/user_add.html'),
+                render('admin/users/user_add.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -176,7 +176,7 @@ class UsersController(BaseController):
         # url('new_user')
         c.default_extern_type = auth_rhodecode.RhodeCodeAuthPlugin.name
         self._get_personal_repo_group_template_vars()
-        return render('admin/users/user_add.html')
+        return render('admin/users/user_add.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
@@ -218,7 +218,7 @@ class UsersController(BaseController):
             e = errors.error_dict or {}
 
             return htmlfill.render(
-                render('admin/users/user_edit.html'),
+                render('admin/users/user_edit.mako'),
                 defaults=defaults,
                 errors=e,
                 prefix_error=False,
@@ -414,7 +414,7 @@ class UsersController(BaseController):
         defaults = c.user.get_dict()
         defaults.update({'language': c.user.user_data.get('language')})
         return htmlfill.render(
-            render('admin/users/user_edit.html'),
+            render('admin/users/user_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -446,7 +446,7 @@ class UsersController(BaseController):
             '"inactive" instead of deleting it.') if has_review else ''
 
         return htmlfill.render(
-            render('admin/users/user_edit.html'),
+            render('admin/users/user_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -476,7 +476,7 @@ class UsersController(BaseController):
             c.user.user_id, show_expired=show_expired)
         defaults = c.user.get_dict()
         return htmlfill.render(
-            render('admin/users/user_edit.html'),
+            render('admin/users/user_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -539,7 +539,7 @@ class UsersController(BaseController):
         defaults.update(c.user.get_default_perms())
 
         return htmlfill.render(
-            render('admin/users/user_edit.html'),
+            render('admin/users/user_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -584,7 +584,7 @@ class UsersController(BaseController):
             defaults = errors.value
             c.user = user
             return htmlfill.render(
-                render('admin/users/user_edit.html'),
+                render('admin/users/user_edit.mako'),
                 defaults=defaults,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -607,7 +607,7 @@ class UsersController(BaseController):
         c.active = 'perms_summary'
         c.perm_user = AuthUser(user_id=user_id, ip_addr=self.ip_addr)
 
-        return render('admin/users/user_edit.html')
+        return render('admin/users/user_edit.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     def edit_emails(self, user_id):
@@ -623,7 +623,7 @@ class UsersController(BaseController):
 
         defaults = c.user.get_dict()
         return htmlfill.render(
-            render('admin/users/user_edit.html'),
+            render('admin/users/user_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -685,7 +685,7 @@ class UsersController(BaseController):
 
         defaults = c.user.get_dict()
         return htmlfill.render(
-            render('admin/users/user_edit.html'),
+            render('admin/users/user_edit.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)

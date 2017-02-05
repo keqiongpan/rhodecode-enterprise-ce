@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2016  RhodeCode GmbH
+# Copyright (C) 2011-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -27,7 +27,6 @@ Model for notifications
 import logging
 import traceback
 
-from pylons import tmpl_context as c
 from pylons.i18n.translation import _, ungettext
 from sqlalchemy.sql.expression import false, true
 from mako import exceptions
@@ -39,6 +38,7 @@ from rhodecode.model import BaseModel
 from rhodecode.model.db import Notification, User, UserNotification
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel
+from rhodecode.translation import TranslationString
 
 log = logging.getLogger(__name__)
 
@@ -236,7 +236,7 @@ class NotificationModel(BaseModel):
             .filter(UserNotification.notification == notification)\
             .filter(UserNotification.user == user).scalar()
 
-    def make_description(self, notification, show_age=True):
+    def make_description(self, notification, show_age=True, translate=None):
         """
         Creates a human readable description based on properties
         of notification object
@@ -274,6 +274,12 @@ class NotificationModel(BaseModel):
         if show_age:
             template = templates[0]
             date_or_age = h.age(notification.created_on)
+            if translate:
+                date_or_age = translate(date_or_age)
+
+            if isinstance(date_or_age, TranslationString):
+                date_or_age = date_or_age.interpolate()
+
         else:
             template = templates[1]
             date_or_age = h.format_date(notification.created_on)
@@ -318,6 +324,7 @@ class EmailNotificationModel(BaseModel):
 
         """
         super(EmailNotificationModel, self).__init__()
+        self.rhodecode_instance_name = None
 
     def _update_kwargs_for_render(self, kwargs):
         """
@@ -326,9 +333,18 @@ class EmailNotificationModel(BaseModel):
         :param kwargs:
         :return:
         """
+        rhodecode_name = self.rhodecode_instance_name
+        if not rhodecode_name:
+            try:
+                rc_config = SettingsModel().get_all_settings()
+            except Exception:
+                log.exception('failed to fetch settings')
+                rc_config = {}
+            rhodecode_name = rc_config.get('rhodecode_title', '')
+            kwargs['rhodecode_instance_name'] = rhodecode_name
+
         _kwargs = {
             'instance_url': h.url('home', qualified=True),
-            'rhodecode_instance_name': getattr(c, 'rhodecode_name', '')
         }
         _kwargs.update(kwargs)
         return _kwargs

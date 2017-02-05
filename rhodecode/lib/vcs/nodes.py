@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2016  RhodeCode GmbH
+# Copyright (C) 2014-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -290,8 +290,9 @@ class FileNode(Node):
     :attribute: commit: if given, first time content is accessed, callback
     :attribute: mode: stat mode for a node. Default is `FILEMODE_DEFAULT`.
     """
+    _filter_pre_load = []
 
-    def __init__(self, path, content=None, commit=None, mode=None):
+    def __init__(self, path, content=None, commit=None, mode=None, pre_load=None):
         """
         Only one of ``content`` and ``commit`` may be given. Passing both
         would raise ``NodeError`` exception.
@@ -307,6 +308,22 @@ class FileNode(Node):
         self.commit = commit
         self._content = content
         self._mode = mode or FILEMODE_DEFAULT
+
+        self._set_bulk_properties(pre_load)
+
+    def _set_bulk_properties(self, pre_load):
+        if not pre_load:
+            return
+        pre_load = [entry for entry in pre_load
+                    if entry not in self._filter_pre_load]
+        if not pre_load:
+            return
+
+        for attr_name in pre_load:
+            result = getattr(self, attr_name)
+            if callable(result):
+                result = result()
+            self.__dict__[attr_name] = result
 
     @LazyProperty
     def mode(self):
@@ -429,25 +446,23 @@ class FileNode(Node):
     def mimetype_main(self):
         return self.mimetype.split('/')[0]
 
-    @LazyProperty
-    def lexer(self):
-        """
-        Returns pygment's lexer class. Would try to guess lexer taking file's
-        content, name and mimetype.
-        """
+    @classmethod
+    def get_lexer(cls, filename, content=None):
         from pygments import lexers
 
+        extension = filename.split('.')[-1]
         lexer = None
+
         try:
             lexer = lexers.guess_lexer_for_filename(
-                self.name, self.content, stripnl=False)
+                filename, content, stripnl=False)
         except lexers.ClassNotFound:
             lexer = None
 
         # try our EXTENSION_MAP
         if not lexer:
             try:
-                lexer_class = LANGUAGES_EXTENSIONS_MAP.get(self.extension)
+                lexer_class = LANGUAGES_EXTENSIONS_MAP.get(extension)
                 if lexer_class:
                     lexer = lexers.get_lexer_by_name(lexer_class[0])
             except lexers.ClassNotFound:
@@ -457,6 +472,14 @@ class FileNode(Node):
             lexer = lexers.TextLexer(stripnl=False)
 
         return lexer
+
+    @LazyProperty
+    def lexer(self):
+        """
+        Returns pygment's lexer class. Would try to guess lexer taking file's
+        content, name and mimetype.
+        """
+        return self.get_lexer(self.name, self.content)
 
     @LazyProperty
     def lexer_alias(self):

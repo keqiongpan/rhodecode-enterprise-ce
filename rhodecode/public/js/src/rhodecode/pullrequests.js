@@ -1,4 +1,4 @@
-// # Copyright (C) 2010-2016  RhodeCode GmbH
+// # Copyright (C) 2010-2017 RhodeCode GmbH
 // #
 // # This program is free software: you can redistribute it and/or modify
 // # it under the terms of the GNU Affero General Public License, version 3
@@ -216,4 +216,127 @@ var ReviewerAutoComplete = function(input_id) {
       $('#'+input_id).val('');
     }
   });
+};
+
+
+VersionController = function () {
+    var self = this;
+    this.$verSource = $('input[name=ver_source]');
+    this.$verTarget = $('input[name=ver_target]');
+    this.$showVersionDiff = $('#show-version-diff');
+
+    this.adjustRadioSelectors = function (curNode) {
+        var getVal = function (item) {
+            if (item == 'latest') {
+                return Number.MAX_SAFE_INTEGER
+            }
+            else {
+                return parseInt(item)
+            }
+        };
+
+        var curVal = getVal($(curNode).val());
+        var cleared = false;
+
+        $.each(self.$verSource, function (index, value) {
+            var elVal = getVal($(value).val());
+
+            if (elVal > curVal) {
+                if ($(value).is(':checked')) {
+                    cleared = true;
+                }
+                $(value).attr('disabled', 'disabled');
+                $(value).removeAttr('checked');
+                $(value).css({'opacity': 0.1});
+            }
+            else {
+                $(value).css({'opacity': 1});
+                $(value).removeAttr('disabled');
+            }
+        });
+
+        if (cleared) {
+            // if we unchecked an active, set the next one to same loc.
+            $(this.$verSource).filter('[value={0}]'.format(
+                curVal)).attr('checked', 'checked');
+        }
+
+        self.setLockAction(false,
+            $(curNode).data('verPos'),
+            $(this.$verSource).filter(':checked').data('verPos')
+        );
+    };
+
+
+    this.attachVersionListener = function () {
+        self.$verTarget.change(function (e) {
+            self.adjustRadioSelectors(this)
+        });
+        self.$verSource.change(function (e) {
+            self.adjustRadioSelectors(self.$verTarget.filter(':checked'))
+        });
+    };
+
+    this.init = function () {
+
+        var curNode = self.$verTarget.filter(':checked');
+        self.adjustRadioSelectors(curNode);
+        self.setLockAction(true);
+        self.attachVersionListener();
+
+    };
+
+    this.setLockAction = function (state, selectedVersion, otherVersion) {
+        var $showVersionDiff = this.$showVersionDiff;
+
+        if (state) {
+            $showVersionDiff.attr('disabled', 'disabled');
+            $showVersionDiff.addClass('disabled');
+            $showVersionDiff.html($showVersionDiff.data('labelTextLocked'));
+        }
+        else {
+            $showVersionDiff.removeAttr('disabled');
+            $showVersionDiff.removeClass('disabled');
+
+            if (selectedVersion == otherVersion) {
+                $showVersionDiff.html($showVersionDiff.data('labelTextShow'));
+            } else {
+                $showVersionDiff.html($showVersionDiff.data('labelTextDiff'));
+            }
+        }
+
+    };
+
+    this.showVersionDiff = function () {
+        var target = self.$verTarget.filter(':checked');
+        var source = self.$verSource.filter(':checked');
+
+        if (target.val() && source.val()) {
+            var params = {
+                'pull_request_id': templateContext.pull_request_data.pull_request_id,
+                'repo_name': templateContext.repo_name,
+                'version': target.val(),
+                'from_version': source.val()
+            };
+            window.location = pyroutes.url('pullrequest_show', params)
+        }
+
+        return false;
+    };
+
+    this.toggleVersionView = function (elem) {
+
+        if (this.$showVersionDiff.is(':visible')) {
+            $('.version-pr').hide();
+            this.$showVersionDiff.hide();
+            $(elem).html($(elem).data('toggleOn'))
+        } else {
+            $('.version-pr').show();
+            this.$showVersionDiff.show();
+            $(elem).html($(elem).data('toggleOff'))
+        }
+
+        return false
+    }
+
 };

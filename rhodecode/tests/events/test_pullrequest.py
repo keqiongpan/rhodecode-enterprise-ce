@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -22,7 +22,7 @@ import pytest
 
 from rhodecode.tests.events.conftest import EventCatcher
 
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.events import (
     PullRequestCreateEvent,
@@ -61,7 +61,7 @@ def test_create_pull_request_events(pr_util):
 @pytest.mark.backends("git", "hg")
 def test_pullrequest_comment_events_serialized(pr_util):
     pr = pr_util.create_pull_request()
-    comment = ChangesetCommentsModel().get_comments(
+    comment = CommentsModel().get_comments(
         pr.target_repo.repo_id, pull_request=pr)[0]
     event = PullRequestCommentEvent(pr, comment)
     data = event.as_dict()

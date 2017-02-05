@@ -27,6 +27,7 @@ Once installed you need to enable ``dav_svn``:
 
     $ sudo a2enmod dav_svn
     $ sudo a2enmod headers
+    $ sudo a2enmod authn_anon
 
 
 Configuring Apache Setup
@@ -55,7 +56,7 @@ permission issues could occur. To do this edit the ``/etc/apache2/envvars``
       export APACHE_RUN_GROUP=rhodecode
 
 1. To configure Apache, create and edit a virtual hosts file, for example
-   :file:`/etc/apache2/sites-available/default.conf`. Below is an example
+   :file:`/etc/apache2/sites-enabled/default.conf`. Below is an example
    how to use one with auto-generated config ```mod_dav_svn.conf```
    from configured |RCE| instance.
 

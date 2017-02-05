@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -108,4 +108,4 @@ class SearchController(BaseRepoController):
         c.cur_query = search_query
         c.search_type = search_type
         # Return a rendered template
-        return render('/search/search.html')
+        return render('/search/search.mako')

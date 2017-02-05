@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -165,7 +165,7 @@ class SummaryController(BaseRepoController):
             c.repo_name, c.rhodecode_user.user_id)
 
         if c.repository_requirements_missing:
-            return render('summary/missing_requirements.html')
+            return render('summary/missing_requirements.mako')
 
         c.readme_data, c.readme_file = \
             self.__get_readme_data(c.rhodecode_db_repo)
@@ -173,9 +173,9 @@ class SummaryController(BaseRepoController):
         _load_changelog_summary()
 
         if request.is_xhr:
-            return render('changelog/changelog_summary_data.html')
+            return render('changelog/changelog_summary_data.mako')
 
-        return render('summary/summary.html')
+        return render('summary/summary.mako')
 
     @LoginRequired()
     @XHRRequired()

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -31,8 +31,8 @@ log = logging.getLogger(__name__)
 
 class TagsController(BaseReferencesController):
 
-    partials_template = 'tags/tags_data.html'
-    template = 'tags/tags.html'
+    partials_template = 'tags/tags_data.mako'
+    template = 'tags/tags.mako'
 
     def _get_reference_items(self, repo):
         return repo.tags.items()

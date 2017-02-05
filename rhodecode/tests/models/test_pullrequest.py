@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -29,7 +29,7 @@ from rhodecode.lib.vcs.backends.base import (
     MergeResponse, MergeFailureReason, Reference)
 from rhodecode.lib.vcs.exceptions import RepositoryError
 from rhodecode.lib.vcs.nodes import FileNode
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import PullRequest, Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
@@ -183,7 +183,7 @@ class TestPullRequestModel:
         assert status is False
         assert (
             msg.eval() ==
-            'This pull request cannot be merged because of conflicts.')
+            'This pull request cannot be merged because of merge conflicts.')
         self.merge_mock.assert_called_once_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
@@ -200,7 +200,7 @@ class TestPullRequestModel:
         assert status is False
         assert (
             msg.eval() ==
-            'This pull request cannot be merged because of conflicts.')
+            'This pull request cannot be merged because of merge conflicts.')
         assert self.merge_mock.called is False
 
     def test_merge_status_unknown_failure(self, pull_request):
@@ -356,8 +356,11 @@ class TestPullRequestModel:
         assert commit_ids == pull_request.revisions + [pull_request.merge_rev]
 
     def test_get_diff_from_pr_version(self, pull_request):
+        source_repo = pull_request.source_repo
+        source_ref_id = pull_request.source_ref_parts.commit_id
+        target_ref_id = pull_request.target_ref_parts.commit_id
         diff = PullRequestModel()._get_diff_from_pr_or_version(
-            pull_request, context=6)
+            source_repo, source_ref_id, target_ref_id, context=6)
         assert 'file_1' in diff.raw
 
     def test_generate_title_returns_unicode(self):
@@ -722,7 +725,7 @@ def test_update_adds_a_comment_to_the_pull_request_about_the_change(pr_util):
     # Expect to find a new comment about the change
     expected_message = textwrap.dedent(
         """\
-        Auto status change to |under_review|
+        Pull request updated. Auto status change to |under_review|
 
         .. role:: added
         .. role:: removed
@@ -803,21 +806,24 @@ def test_link_comments_to_version_only_updates_unlinked_comments(pr_util):
 
 
 def test_calculate_commits():
-    change = PullRequestModel()._calculate_commit_id_changes(
-        set([1, 2, 3]), set([1, 3, 4, 5]))
-    assert (set([4, 5]), set([1, 3]), set([2])) == (
-        change.added, change.common, change.removed)
+    old_ids = [1, 2, 3]
+    new_ids = [1, 3, 4, 5]
+    change = PullRequestModel()._calculate_commit_id_changes(old_ids, new_ids)
+    assert change.added == [4, 5]
+    assert change.common == [1, 3]
+    assert change.removed == [2]
+    assert change.total == [1, 3, 4, 5]
 
 
 def assert_inline_comments(pull_request, visible=None, outdated=None):
     if visible is not None:
-        inline_comments = ChangesetCommentsModel().get_inline_comments(
+        inline_comments = CommentsModel().get_inline_comments(
             pull_request.target_repo.repo_id, pull_request=pull_request)
-        inline_cnt = ChangesetCommentsModel().get_inline_comments_count(
+        inline_cnt = CommentsModel().get_inline_comments_count(
             inline_comments)
         assert inline_cnt == visible
     if outdated is not None:
-        outdated_comments = ChangesetCommentsModel().get_outdated_comments(
+        outdated_comments = CommentsModel().get_outdated_comments(
             pull_request.target_repo.repo_id, pull_request)
         assert len(outdated_comments) == outdated
 
@@ -842,5 +848,5 @@ def assert_pr_file_changes(
 
 def outdated_comments_patcher(use_outdated=True):
     return mock.patch.object(
-        ChangesetCommentsModel, 'use_outdated_comments',
+        CommentsModel, 'use_outdated_comments',
         return_value=use_outdated)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -90,7 +90,7 @@ class BaseModel(object):
         """
         Gets instance of given cls using some simple lookup mechanism.
 
-        :param cls: class to fetch
+        :param cls: classes to fetch
         :param instance: int or Instance
         :param callback: callback to call if all lookups failed
         """
@@ -98,6 +98,9 @@ class BaseModel(object):
         if isinstance(instance, cls):
             return instance
         elif isinstance(instance, (int, long)):
+            if isinstance(cls, tuple):
+                # if we pass multi instances we pick first to .get()
+                cls = cls[0]
             return cls.get(instance)
         else:
             if instance:

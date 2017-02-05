@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -53,7 +53,7 @@ from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
-    glob2re)
+    glob2re, StrictAttributeDict)
 from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
@@ -600,6 +600,12 @@ class User(Base, BaseModel):
             tokens = tokens.filter(or_(UserApiKeys.role == role,
                                        UserApiKeys.role == UserApiKeys.ROLE_ALL))
         return tokens.all()
+
+    @property
+    def builtin_token_roles(self):
+        return map(UserApiKeys._get_role_name, [
+            UserApiKeys.ROLE_API, UserApiKeys.ROLE_FEED, UserApiKeys.ROLE_HTTP
+        ])
 
     @property
     def ip_addresses(self):
@@ -2796,7 +2802,7 @@ class CacheKey(Base, BaseModel):
         """
         get suffix that might have been used in _get_cache_key to
         generate self.cache_key. Only used for informational purposes
-        in repo_edit.html.
+        in repo_edit.mako.
         """
         # prefix, repo_name, suffix
         return self._cache_key_partition()[2]
@@ -2890,6 +2896,9 @@ class ChangesetComment(Base, BaseModel):
     )
 
     COMMENT_OUTDATED = u'comment_outdated'
+    COMMENT_TYPE_NOTE = u'note'
+    COMMENT_TYPE_TODO = u'todo'
+    COMMENT_TYPES = [COMMENT_TYPE_NOTE, COMMENT_TYPE_TODO]
 
     comment_id = Column('comment_id', Integer(), nullable=False, primary_key=True)
     repo_id = Column('repo_id', Integer(), ForeignKey('repositories.repo_id'), nullable=False)
@@ -2906,9 +2915,12 @@ class ChangesetComment(Base, BaseModel):
     renderer = Column('renderer', Unicode(64), nullable=True)
     display_state = Column('display_state',  Unicode(128), nullable=True)
 
+    comment_type = Column('comment_type',  Unicode(128), nullable=True, default=COMMENT_TYPE_NOTE)
+    resolved_comment_id = Column('resolved_comment_id', Integer(), ForeignKey('changeset_comments.comment_id'), nullable=True)
+    resolved_comment = relationship('ChangesetComment', remote_side=comment_id, backref='resolved_by')
     author = relationship('User', lazy='joined')
     repo = relationship('Repository')
-    status_change = relationship('ChangesetStatus', cascade="all, delete, delete-orphan")
+    status_change = relationship('ChangesetStatus', cascade="all, delete, delete-orphan", lazy='joined')
     pull_request = relationship('PullRequest', lazy='joined')
     pull_request_version = relationship('PullRequestVersion')
 
@@ -2929,9 +2941,44 @@ class ChangesetComment(Base, BaseModel):
             q = q.filter(cls.pull_request_id == pull_request_id)
         return q.all()
 
+    @classmethod
+    def get_index_from_version(cls, pr_version, versions):
+        num_versions = [x.pull_request_version_id for x in versions]
+        try:
+            return num_versions.index(pr_version) +1
+        except (IndexError, ValueError):
+            return
+
     @property
     def outdated(self):
         return self.display_state == self.COMMENT_OUTDATED
+
+    def outdated_at_version(self, version):
+        """
+        Checks if comment is outdated for given pull request version
+        """
+        return self.outdated and self.pull_request_version_id != version
+
+    def older_than_version(self, version):
+        """
+        Checks if comment is made from previous version than given
+        """
+        if version is None:
+            return self.pull_request_version_id is not None
+
+        return self.pull_request_version_id < version
+
+    @property
+    def resolved(self):
+        return self.resolved_by[0] if self.resolved_by else None
+
+    @property
+    def is_todo(self):
+        return self.comment_type == self.COMMENT_TYPE_TODO
+
+    def get_index_version(self, versions):
+        return self.get_index_from_version(
+            self.pull_request_version_id, versions)
 
     def render(self, mentions=False):
         from rhodecode.lib import helpers as h
@@ -2939,9 +2986,9 @@ class ChangesetComment(Base, BaseModel):
 
     def __repr__(self):
         if self.comment_id:
-            return '<DB:ChangesetComment #%s>' % self.comment_id
+            return '<DB:Comment #%s>' % self.comment_id
         else:
-            return '<DB:ChangesetComment at %#x>' % id(self)
+            return '<DB:Comment at %#x>' % id(self)
 
 
 class ChangesetStatus(Base, BaseModel):
@@ -2981,7 +3028,7 @@ class ChangesetStatus(Base, BaseModel):
     pull_request = relationship('PullRequest', lazy='joined')
 
     def __unicode__(self):
-        return u"<%s('%s[%s]:%s')>" % (
+        return u"<%s('%s[v%s]:%s')>" % (
             self.__class__.__name__,
             self.status, self.version, self.author
         )
@@ -3117,34 +3164,6 @@ class _PullRequestBase(BaseModel):
         else:
             return None
 
-
-class PullRequest(Base, _PullRequestBase):
-    __tablename__ = 'pull_requests'
-    __table_args__ = (
-        {'extend_existing': True, 'mysql_engine': 'InnoDB',
-         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
-    )
-
-    pull_request_id = Column(
-        'pull_request_id', Integer(), nullable=False, primary_key=True)
-
-    def __repr__(self):
-        if self.pull_request_id:
-            return '<DB:PullRequest #%s>' % self.pull_request_id
-        else:
-            return '<DB:PullRequest at %#x>' % id(self)
-
-    reviewers = relationship('PullRequestReviewers',
-                             cascade="all, delete, delete-orphan")
-    statuses = relationship('ChangesetStatus')
-    comments = relationship('ChangesetComment',
-                            cascade="all, delete, delete-orphan")
-    versions = relationship('PullRequestVersion',
-                            cascade="all, delete, delete-orphan")
-
-    def is_closed(self):
-        return self.status == self.STATUS_CLOSED
-
     def get_api_data(self):
         from rhodecode.model.pull_request import PullRequestModel
         pull_request = self
@@ -3209,6 +3228,96 @@ class PullRequest(Base, _PullRequestBase):
 
         return data
 
+
+class PullRequest(Base, _PullRequestBase):
+    __tablename__ = 'pull_requests'
+    __table_args__ = (
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
+    )
+
+    pull_request_id = Column(
+        'pull_request_id', Integer(), nullable=False, primary_key=True)
+
+    def __repr__(self):
+        if self.pull_request_id:
+            return '<DB:PullRequest #%s>' % self.pull_request_id
+        else:
+            return '<DB:PullRequest at %#x>' % id(self)
+
+    reviewers = relationship('PullRequestReviewers',
+                             cascade="all, delete, delete-orphan")
+    statuses = relationship('ChangesetStatus')
+    comments = relationship('ChangesetComment',
+                            cascade="all, delete, delete-orphan")
+    versions = relationship('PullRequestVersion',
+                            cascade="all, delete, delete-orphan",
+                            lazy='dynamic')
+
+    @classmethod
+    def get_pr_display_object(cls, pull_request_obj, org_pull_request_obj,
+                              internal_methods=None):
+
+        class PullRequestDisplay(object):
+            """
+            Special object wrapper for showing PullRequest data via Versions
+            It mimics PR object as close as possible. This is read only object
+            just for display
+            """
+
+            def __init__(self, attrs, internal=None):
+                self.attrs = attrs
+                # internal have priority over the given ones via attrs
+                self.internal = internal or ['versions']
+
+            def __getattr__(self, item):
+                if item in self.internal:
+                    return getattr(self, item)
+                try:
+                    return self.attrs[item]
+                except KeyError:
+                    raise AttributeError(
+                        '%s object has no attribute %s' % (self, item))
+
+            def __repr__(self):
+                return '<DB:PullRequestDisplay #%s>' % self.attrs.get('pull_request_id')
+
+            def versions(self):
+                return pull_request_obj.versions.order_by(
+                    PullRequestVersion.pull_request_version_id).all()
+
+            def is_closed(self):
+                return pull_request_obj.is_closed()
+
+            @property
+            def pull_request_version_id(self):
+                return getattr(pull_request_obj, 'pull_request_version_id', None)
+
+        attrs = StrictAttributeDict(pull_request_obj.get_api_data())
+
+        attrs.author = StrictAttributeDict(
+            pull_request_obj.author.get_api_data())
+        if pull_request_obj.target_repo:
+            attrs.target_repo = StrictAttributeDict(
+                pull_request_obj.target_repo.get_api_data())
+            attrs.target_repo.clone_url = pull_request_obj.target_repo.clone_url
+
+        if pull_request_obj.source_repo:
+            attrs.source_repo = StrictAttributeDict(
+                pull_request_obj.source_repo.get_api_data())
+            attrs.source_repo.clone_url = pull_request_obj.source_repo.clone_url
+
+        attrs.source_ref_parts = pull_request_obj.source_ref_parts
+        attrs.target_ref_parts = pull_request_obj.target_ref_parts
+        attrs.revisions = pull_request_obj.revisions
+
+        attrs.shadow_merge_ref = org_pull_request_obj.shadow_merge_ref
+
+        return PullRequestDisplay(attrs, internal=internal_methods)
+
+    def is_closed(self):
+        return self.status == self.STATUS_CLOSED
+
     def __json__(self):
         return {
             'revisions': self.revisions,
@@ -3221,6 +3330,18 @@ class PullRequest(Base, _PullRequestBase):
     def reviewers_statuses(self):
         from rhodecode.model.changeset_status import ChangesetStatusModel
         return ChangesetStatusModel().reviewers_statuses(self)
+
+    @property
+    def workspace_id(self):
+        from rhodecode.model.pull_request import PullRequestModel
+        return PullRequestModel()._workspace_id(self)
+
+    def get_shadow_repo(self):
+        workspace_id = self.workspace_id
+        vcs_obj = self.target_repo.scm_instance()
+        shadow_repository_path = vcs_obj._get_shadow_repository_path(
+            workspace_id)
+        return vcs_obj._get_shadow_instance(shadow_repository_path)
 
 
 class PullRequestVersion(Base, _PullRequestBase):
@@ -3242,6 +3363,24 @@ class PullRequestVersion(Base, _PullRequestBase):
             return '<DB:PullRequestVersion #%s>' % self.pull_request_version_id
         else:
             return '<DB:PullRequestVersion at %#x>' % id(self)
+
+    @property
+    def reviewers(self):
+        return self.pull_request.reviewers
+
+    @property
+    def versions(self):
+        return self.pull_request.versions
+
+    def is_closed(self):
+        # calculate from original
+        return self.pull_request.status == self.STATUS_CLOSED
+
+    def calculated_review_status(self):
+        return self.pull_request.calculated_review_status()
+
+    def reviewers_statuses(self):
+        return self.pull_request.reviewers_statuses()
 
 
 class PullRequestReviewers(Base, BaseModel):
@@ -3462,17 +3601,6 @@ class Gist(Base, BaseModel):
         full_repo_path = os.path.join(self.base_path(), self.gist_access_id)
         return get_vcs_instance(
             repo_path=safe_str(full_repo_path), create=False)
-
-
-class DbMigrateVersion(Base, BaseModel):
-    __tablename__ = 'db_migrate_version'
-    __table_args__ = (
-        {'extend_existing': True, 'mysql_engine': 'InnoDB',
-         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
-    )
-    repository_id = Column('repository_id', String(250), primary_key=True)
-    repository_path = Column('repository_path', Text)
-    version = Column('version', Integer)
 
 
 class ExternalIdentity(Base, BaseModel):
@@ -3703,3 +3831,31 @@ class RepoReviewRule(Base, BaseModel):
     def __repr__(self):
         return '<RepoReviewerRule(id=%r, repo=%r)>' % (
             self.repo_review_rule_id, self.repo)
+
+
+class DbMigrateVersion(Base, BaseModel):
+    __tablename__ = 'db_migrate_version'
+    __table_args__ = (
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
+    )
+    repository_id = Column('repository_id', String(250), primary_key=True)
+    repository_path = Column('repository_path', Text)
+    version = Column('version', Integer)
+
+
+class DbSession(Base, BaseModel):
+    __tablename__ = 'db_session'
+    __table_args__ = (
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
+    )
+
+    def __repr__(self):
+        return '<DB:DbSession({})>'.format(self.id)
+
+    id = Column('id', Integer())
+    namespace = Column('namespace', String(255), primary_key=True)
+    accessed = Column('accessed', DateTime, nullable=False)
+    created = Column('created', DateTime, nullable=False)
+    data = Column('data', PickleType, nullable=False)

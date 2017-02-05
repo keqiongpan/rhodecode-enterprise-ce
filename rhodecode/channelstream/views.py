@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -62,7 +62,7 @@ class ChannelstreamView(object):
         registry = request.registry
         self.channelstream_config = registry.rhodecode_plugins['channelstream']
         if not self.channelstream_config.get('enabled'):
-            log.exception('Channelstream plugin is disabled')
+            log.error('Channelstream plugin is disabled')
             raise HTTPBadRequest()
 
     @NotAnonymous()

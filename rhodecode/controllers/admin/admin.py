@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -153,11 +153,11 @@ class AdminController(BaseController):
 
         c.users_log = Page(users_log, page=p, items_per_page=10,
                            url=url_generator)
-        c.log_data = render('admin/admin_log.html')
+        c.log_data = render('admin/admin_log.mako')
 
         if request.is_xhr:
             return c.log_data
-        return render('admin/admin.html')
+        return render('admin/admin.mako')
 
     # global redirect doesn't need permissions
     def pull_requests(self, pull_request_id):

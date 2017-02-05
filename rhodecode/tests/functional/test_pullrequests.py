@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -541,7 +541,9 @@ class TestPullrequestsController:
             params={'csrf_token': csrf_token}).follow()
 
         assert response.status_int == 200
-        assert 'Server-side pull request merging is disabled.' in response.body
+        response.mustcontain(
+            'Merge is not currently possible because of below failed checks.')
+        response.mustcontain('Server-side pull request merging is disabled.')
 
     @pytest.mark.skip_backends('svn')
     def test_merge_pull_request_not_approved(self, pr_util, csrf_token):
@@ -556,10 +558,11 @@ class TestPullrequestsController:
                 pull_request_id=str(pull_request_id)),
             params={'csrf_token': csrf_token}).follow()
 
-        pull_request = PullRequest.get(pull_request_id)
-
         assert response.status_int == 200
-        assert ' Reviewer approval is pending.' in response.body
+
+        response.mustcontain(
+            'Merge is not currently possible because of below failed checks.')
+        response.mustcontain('Pull request reviewer approval is pending.')
 
     def test_update_source_revision(self, backend, csrf_token):
         commits = [

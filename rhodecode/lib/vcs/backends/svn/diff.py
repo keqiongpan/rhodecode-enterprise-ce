@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2016  RhodeCode GmbH
+# Copyright (C) 2014-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -29,6 +29,10 @@ from rhodecode.lib.vcs.backends import base
 
 
 class SubversionDiff(base.Diff):
+
+    _meta_re = re.compile(r"""
+        (?:^(?P<svn_bin_patch>Cannot[ ]display:[ ]file[ ]marked[ ]as[ ]a[ ]binary[ ]type.)(?:\n|$))?
+    """, re.VERBOSE | re.MULTILINE)
 
     _header_re = re.compile(r"""
         #^diff[ ]--git

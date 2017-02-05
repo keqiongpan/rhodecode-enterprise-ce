@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,22 +23,91 @@ import time
 import logging
 import os.path
 import subprocess32
+import tempfile
 import urllib2
 from urlparse import urlparse, parse_qsl
 from urllib import unquote_plus
 
+from webtest.app import (
+    Request, TestResponse, TestApp, print_stderr, string_types)
+
 import pytest
 import rc_testdata
-from lxml.html import fromstring, tostring
-from lxml.cssselect import CSSSelector
 
-from rhodecode.model.db import User
+from rhodecode.model.db import User, Repository
 from rhodecode.model.meta import Session
 from rhodecode.model.scm import ScmModel
 from rhodecode.lib.vcs.backends.svn.repository import SubversionRepository
+from rhodecode.lib.vcs.backends.base import EmptyCommit
 
 
 log = logging.getLogger(__name__)
+
+
+class CustomTestResponse(TestResponse):
+    def _save_output(self, out):
+        f = tempfile.NamedTemporaryFile(
+            delete=False, prefix='rc-test-', suffix='.html')
+        f.write(out)
+        return f.name
+
+    def mustcontain(self, *strings, **kw):
+        """
+        Assert that the response contains all of the strings passed
+        in as arguments.
+
+        Equivalent to::
+
+            assert string in res
+        """
+        if 'no' in kw:
+            no = kw['no']
+            del kw['no']
+            if isinstance(no, string_types):
+                no = [no]
+        else:
+            no = []
+        if kw:
+            raise TypeError(
+                "The only keyword argument allowed is 'no'")
+
+        f = self._save_output(str(self))
+
+        for s in strings:
+            if not s in self:
+                print_stderr("Actual response (no %r):" % s)
+                print_stderr(str(self))
+                raise IndexError(
+                    "Body does not contain string %r, output saved as %s" % (
+                    s, f))
+
+        for no_s in no:
+            if no_s in self:
+                print_stderr("Actual response (has %r)" % no_s)
+                print_stderr(str(self))
+                raise IndexError(
+                    "Body contains bad string %r, output saved as %s" % (
+                    no_s, f))
+
+    def assert_response(self):
+        return AssertResponse(self)
+
+
+class TestRequest(Request):
+
+    # for py.test
+    disabled = True
+    ResponseClass = CustomTestResponse
+
+
+class CustomTestApp(TestApp):
+    """
+    Custom app to make mustcontain more usefull
+    """
+    RequestClass = TestRequest
+
+
+
 
 
 def set_anonymous_access(enabled):
@@ -134,6 +203,11 @@ class AssertResponse(object):
     def __init__(self, response):
         self.response = response
 
+    def get_imports(self):
+        from lxml.html import fromstring, tostring
+        from lxml.cssselect import CSSSelector
+        return fromstring, tostring, CSSSelector
+
     def one_element_exists(self, css_selector):
         self.get_element(css_selector)
 
@@ -154,6 +228,7 @@ class AssertResponse(object):
         assert expected_content in element.value
 
     def contains_one_link(self, link_text, href):
+        fromstring, tostring, CSSSelector = self.get_imports()
         doc = fromstring(self.response.body)
         sel = CSSSelector('a[href]')
         elements = [
@@ -162,6 +237,7 @@ class AssertResponse(object):
         self._ensure_url_equal(elements[0].attrib.get('href'), href)
 
     def contains_one_anchor(self, anchor_id):
+        fromstring, tostring, CSSSelector = self.get_imports()
         doc = fromstring(self.response.body)
         sel = CSSSelector('#' + anchor_id)
         elements = sel(doc)
@@ -179,12 +255,14 @@ class AssertResponse(object):
         return self._get_elements(css_selector)
 
     def _get_elements(self, css_selector):
+        fromstring, tostring, CSSSelector = self.get_imports()
         doc = fromstring(self.response.body)
         sel = CSSSelector(css_selector)
         elements = sel(doc)
         return elements
 
     def _element_to_string(self, element):
+        fromstring, tostring, CSSSelector = self.get_imports()
         return tostring(element)
 
 
@@ -230,7 +308,7 @@ def run_test_concurrently(times, raise_catched_exc=True):
             def call_test_func():
                 try:
                     test_func(*args, **kwargs)
-                except Exception, e:
+                except Exception as e:
                     exceptions.append(e)
                     if raise_catched_exc:
                         raise
@@ -260,11 +338,11 @@ def wait_for_url(url, timeout=10):
     last = 0
     wait = 0.1
 
-    while (timeout > last):
+    while timeout > last:
         last = time.time()
         if is_url_reachable(url):
             break
-        elif ((last + wait) > time.time()):
+        elif (last + wait) > time.time():
             # Go to sleep because not enough time has passed since last check.
             time.sleep(wait)
     else:
@@ -295,3 +373,37 @@ def repo_on_filesystem(repo_name):
     repo = vcs.get_vcs_instance(
         os.path.join(TESTS_TMP_PATH, repo_name), create=False)
     return repo is not None
+
+
+def commit_change(
+        repo, filename, content, message, vcs_type, parent=None, newfile=False):
+    from rhodecode.tests import TEST_USER_ADMIN_LOGIN
+
+    repo = Repository.get_by_repo_name(repo)
+    _commit = parent
+    if not parent:
+        _commit = EmptyCommit(alias=vcs_type)
+
+    if newfile:
+        nodes = {
+            filename: {
+                'content': content
+            }
+        }
+        commit = ScmModel().create_nodes(
+            user=TEST_USER_ADMIN_LOGIN, repo=repo,
+            message=message,
+            nodes=nodes,
+            parent_commit=_commit,
+            author=TEST_USER_ADMIN_LOGIN,
+        )
+    else:
+        commit = ScmModel().commit_change(
+            repo=repo.scm_instance(), repo_name=repo.repo_name,
+            commit=parent, user=TEST_USER_ADMIN_LOGIN,
+            author=TEST_USER_ADMIN_LOGIN,
+            message=message,
+            content=content,
+            f_path=filename
+        )
+    return commit

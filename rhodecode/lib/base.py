@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -56,7 +56,7 @@ from rhodecode.lib.utils2 import (
     str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist)
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import meta
-from rhodecode.model.db import Repository, User
+from rhodecode.model.db import Repository, User, ChangesetComment
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
@@ -299,6 +299,7 @@ def attach_context_attributes(context, request):
     context.visual.gravatar_url = rc_config.get('rhodecode_gravatar_url')
     context.visual.default_renderer = rc_config.get(
         'rhodecode_markup_renderer', 'rst')
+    context.visual.comment_types = ChangesetComment.COMMENT_TYPES
     context.visual.rhodecode_support_url = \
         rc_config.get('rhodecode_support_url') or url('rhodecode_support')
 
@@ -393,7 +394,8 @@ def get_auth_user(environ):
                    request.GET.get('api_key', ''))
 
     if _auth_token:
-        # when using API_KEY we are sure user exists.
+        # when using API_KEY we assume user exists, and
+        # doesn't need auth based on cookies.
         auth_user = AuthUser(api_key=_auth_token, ip_addr=ip_addr)
         authenticated = False
     else:
@@ -412,8 +414,7 @@ def get_auth_user(environ):
 
         if password_changed(auth_user, session):
             session.invalidate()
-            cookie_store = CookieStoreWrapper(
-                session.get('rhodecode_user'))
+            cookie_store = CookieStoreWrapper(session.get('rhodecode_user'))
             auth_user = AuthUser(ip_addr=ip_addr)
 
         authenticated = cookie_store.get('is_authenticated')
@@ -443,20 +444,12 @@ class BaseController(WSGIController):
         self.sa = meta.Session
         self.scm_model = ScmModel(self.sa)
 
-        default_lang = c.language
-        user_lang = c.language
-        try:
-            user_obj = self._rhodecode_user.get_instance()
-            if user_obj:
-                user_lang = user_obj.user_data.get('language')
-        except Exception:
-            log.exception('Failed to fetch user language for user %s',
-                          self._rhodecode_user)
-
-        if user_lang and user_lang != default_lang:
-            log.debug('set language to %s for user %s', user_lang,
-                      self._rhodecode_user)
+        # set user language
+        user_lang = getattr(c.pyramid_request, '_LOCALE_', None)
+        if user_lang:
             translation.set_lang(user_lang)
+            log.debug('set language to %s for user %s',
+                      user_lang, self._rhodecode_user)
 
     def _dispatch_redirect(self, with_url, environ, start_response):
         resp = HTTPFound(with_url)

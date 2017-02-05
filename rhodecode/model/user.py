@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -555,7 +555,7 @@ class UserModel(BaseModel):
 
                 Session().add(user)
                 Session().commit()
-                log.info('change password for %s', user_email)
+                log.info('successfully reset password for `%s`', user_email)
             if new_passwd is None:
                 raise Exception('unable to generate new password')
 

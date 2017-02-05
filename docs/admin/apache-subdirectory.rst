@@ -7,7 +7,8 @@ Use the following example to configure Apache to use a URL prefix.
 
 .. code-block:: apache
 
-    <Location /<someprefix>/ # Change <someprefix> into your chosen prefix
+    # Change someprefix into your chosen prefix
+    <Location /someprefix >
       ProxyPreserveHost On
       ProxyPass "http://127.0.0.1:5000/"
       ProxyPassReverse "http://127.0.0.1:5000/"

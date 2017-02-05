@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -49,6 +49,8 @@ class SimpleSvnApp(object):
         if environ['REQUEST_METHOD'] == 'MKCOL' or 'CONTENT_LENGTH' in environ:
             data = data.read()
 
+        log.debug('Calling: %s method via `%s`', environ['REQUEST_METHOD'],
+                  self._get_url(environ['PATH_INFO']))
         response = requests.request(
             environ['REQUEST_METHOD'], self._get_url(environ['PATH_INFO']),
             data=data, headers=request_headers)

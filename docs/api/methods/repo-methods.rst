@@ -28,7 +28,7 @@ add_field_to_repo
 comment_commit 
 --------------
 
-.. py:function:: comment_commit(apiuser, repoid, commit_id, message, userid=<Optional:<OptionalAttr:apiuser>>, status=<Optional:None>)
+.. py:function:: comment_commit(apiuser, repoid, commit_id, message, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, userid=<Optional:<OptionalAttr:apiuser>>)
 
    Set a commit comment, and optionally change the status of the commit.
 
@@ -40,15 +40,17 @@ comment_commit
    :type commit_id: str
    :param message: The comment text.
    :type message: str
+   :param status: (**Optional**) status of commit, one of: 'not_reviewed',
+       'approved', 'rejected', 'under_review'
+   :type status: str
+   :param comment_type: Comment type, one of: 'note', 'todo'
+   :type comment_type: Optional(str), default: 'note'
    :param userid: Set the user name of the comment creator.
    :type userid: Optional(str or int)
-   :param status: status, one of 'not_reviewed', 'approved', 'rejected',
-      'under_review'
-   :type status: str
 
    Example error output:
 
-   .. code-block:: json
+   .. code-block:: bash
 
        {
            "id" : <id_given_in_input>,
@@ -539,7 +541,7 @@ get_repo_settings
 get_repos 
 ---------
 
-.. py:function:: get_repos(apiuser)
+.. py:function:: get_repos(apiuser, root=<Optional:None>, traverse=<Optional:True>)
 
    Lists all existing repositories.
 
@@ -548,6 +550,14 @@ get_repos
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
+   :param root: specify root repository group to fetch repositories.
+       filters the returned repositories to be members of given root group.
+   :type root: Optional(None)
+   :param traverse: traverse given root into subrepositories. With this flag
+       set to False, it will only return top-level repositories from `root`.
+       if root is empty it will return just top-level repositories.
+   :type traverse: Optional(True)
+
 
    Example output:
 

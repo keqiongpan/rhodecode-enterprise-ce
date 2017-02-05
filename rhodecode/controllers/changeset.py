@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -46,7 +46,7 @@ from rhodecode.lib.vcs.exceptions import (
     RepositoryError, CommitDoesNotExistError, NodeDoesNotExistError)
 from rhodecode.model.db import ChangesetComment, ChangesetStatus
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 
@@ -198,15 +198,20 @@ class ChangesetController(BaseRepoController):
         c.lines_added = 0
         c.lines_deleted = 0
 
+        # auto collapse if we have more than limit
+        collapse_limit = diffs.DiffProcessor._collapse_commits_over
+        c.collapse_all_commits = len(c.commit_ranges) > collapse_limit
+
         c.commit_statuses = ChangesetStatus.STATUSES
         c.inline_comments = []
         c.files = []
 
         c.statuses = []
         c.comments = []
+        c.unresolved_comments = []
         if len(c.commit_ranges) == 1:
             commit = c.commit_ranges[0]
-            c.comments = ChangesetCommentsModel().get_comments(
+            c.comments = CommentsModel().get_comments(
                 c.rhodecode_db_repo.repo_id,
                 revision=commit.raw_id)
             c.statuses.append(ChangesetStatusModel().get_status(
@@ -221,6 +226,9 @@ class ChangesetController(BaseRepoController):
             # show comments from them
             for pr in prs:
                 c.comments.extend(pr.comments)
+
+            c.unresolved_comments = CommentsModel()\
+                .get_commit_unresolved_todos(commit.raw_id)
 
         # Iterate over ranges (default commit view is always one commit)
         for commit in c.commit_ranges:
@@ -251,9 +259,9 @@ class ChangesetController(BaseRepoController):
                             return None
                     return get_node
 
-                inline_comments = ChangesetCommentsModel().get_inline_comments(
+                inline_comments = CommentsModel().get_inline_comments(
                     c.rhodecode_db_repo.repo_id, revision=commit.raw_id)
-                c.inline_cnt = ChangesetCommentsModel().get_inline_comments_count(
+                c.inline_cnt = CommentsModel().get_inline_comments_count(
                     inline_comments)
 
                 diffset = codeblocks.DiffSet(
@@ -271,7 +279,6 @@ class ChangesetController(BaseRepoController):
         # sort comments by how they were generated
         c.comments = sorted(c.comments, key=lambda x: x.comment_id)
 
-
         if len(c.commit_ranges) == 1:
             c.commit = c.commit_ranges[0]
             c.parent_tmpl = ''.join(
@@ -284,17 +291,17 @@ class ChangesetController(BaseRepoController):
         elif method == 'patch':
             response.content_type = 'text/plain'
             c.diff = safe_unicode(diff)
-            return render('changeset/patch_changeset.html')
+            return render('changeset/patch_changeset.mako')
         elif method == 'raw':
             response.content_type = 'text/plain'
             return diff
         elif method == 'show':
             if len(c.commit_ranges) == 1:
-                return render('changeset/changeset.html')
+                return render('changeset/changeset.mako')
             else:
                 c.ancestor = None
                 c.target_repo = c.rhodecode_db_repo
-                return render('changeset/changeset_range.html')
+                return render('changeset/changeset_range.mako')
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
@@ -330,29 +337,39 @@ class ChangesetController(BaseRepoController):
         commit_id = revision
         status = request.POST.get('changeset_status', None)
         text = request.POST.get('text')
+        comment_type = request.POST.get('comment_type')
+        resolves_comment_id = request.POST.get('resolves_comment_id', None)
+
         if status:
             text = text or (_('Status change %(transition_icon)s %(status)s')
                             % {'transition_icon': '>',
                                'status': ChangesetStatus.get_status_lbl(status)})
 
-        multi_commit_ids = filter(
-            lambda s: s not in ['', None],
-            request.POST.get('commit_ids', '').split(','),)
+        multi_commit_ids = []
+        for _commit_id in request.POST.get('commit_ids', '').split(','):
+            if _commit_id not in ['', None, EmptyCommit.raw_id]:
+                if _commit_id not in multi_commit_ids:
+                    multi_commit_ids.append(_commit_id)
 
         commit_ids = multi_commit_ids or [commit_id]
+
         comment = None
         for current_id in filter(None, commit_ids):
-            c.co = comment = ChangesetCommentsModel().create(
+            c.co = comment = CommentsModel().create(
                 text=text,
                 repo=c.rhodecode_db_repo.repo_id,
                 user=c.rhodecode_user.user_id,
-                revision=current_id,
+                commit_id=current_id,
                 f_path=request.POST.get('f_path'),
                 line_no=request.POST.get('line'),
                 status_change=(ChangesetStatus.get_status_lbl(status)
                                if status else None),
-                status_change_type=status
+                status_change_type=status,
+                comment_type=comment_type,
+                resolves_comment_id=resolves_comment_id
             )
+            c.inline_comment = True if comment.line_no else False
+
             # get status if set !
             if status:
                 # if latest status was from pull request and it's closed
@@ -386,7 +403,7 @@ class ChangesetController(BaseRepoController):
         if comment:
             data.update(comment.get_dict())
             data.update({'rendered_text':
-                         render('changeset/changeset_comment_block.html')})
+                         render('changeset/changeset_comment_block.mako')})
 
         return data
 
@@ -417,10 +434,15 @@ class ChangesetController(BaseRepoController):
     @jsonify
     def delete_comment(self, repo_name, comment_id):
         comment = ChangesetComment.get(comment_id)
+        if not comment:
+            log.debug('Comment with id:%s not found, skipping', comment_id)
+            # comment already deleted in another call probably
+            return True
+
         owner = (comment.author.user_id == c.rhodecode_user.user_id)
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(c.repo_name)
         if h.HasPermissionAny('hg.admin')() or is_repo_admin or owner:
-            ChangesetCommentsModel().delete(comment=comment)
+            CommentsModel().delete(comment=comment)
             Session().commit()
             return True
         else:

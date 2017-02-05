@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -143,6 +143,19 @@ class RepoModel(BaseModel):
 
         return None
 
+    def get_repos_for_root(self, root, traverse=False):
+        if traverse:
+            like_expression = u'{}%'.format(safe_unicode(root))
+            repos = Repository.query().filter(
+                Repository.repo_name.like(like_expression)).all()
+        else:
+            if root and not isinstance(root, RepoGroup):
+                raise ValueError(
+                    'Root must be an instance '
+                    'of RepoGroup, got:{} instead'.format(type(root)))
+            repos = Repository.query().filter(Repository.group == root).all()
+        return repos
+
     def get_url(self, repo):
         return h.url('summary_home', repo_name=safe_str(repo.repo_name),
             qualified=True)
@@ -228,7 +241,7 @@ class RepoModel(BaseModel):
                           super_user_actions=False):
 
         from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
         c = _render.c
 
         def quick_menu(repo_name):

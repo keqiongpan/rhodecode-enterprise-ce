@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -332,14 +332,14 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         config.add_view(
             'rhodecode.authentication.views.AuthnPluginViewBase',
             attr='settings_get',
-            renderer='rhodecode:templates/admin/auth/plugin_settings.html',
+            renderer='rhodecode:templates/admin/auth/plugin_settings.mako',
             request_method='GET',
             route_name='auth_home',
             context=LdapAuthnResource)
         config.add_view(
             'rhodecode.authentication.views.AuthnPluginViewBase',
             attr='settings_post',
-            renderer='rhodecode:templates/admin/auth/plugin_settings.html',
+            renderer='rhodecode:templates/admin/auth/plugin_settings.mako',
             request_method='POST',
             route_name='auth_home',
             context=LdapAuthnResource)

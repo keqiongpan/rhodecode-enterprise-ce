@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -90,7 +90,7 @@ class TestGistsController(TestController):
 
         # Expiration information should be visible
         expires_tag = '%s' % h.age_component(
-            h.time_to_datetime(g2.gist_expires))
+            h.time_to_utcdatetime(g2.gist_expires))
         response.mustcontain(expires_tag.replace('"', '\\"'))
 
     def test_index_private_gists(self, create_gist):

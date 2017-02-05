@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -32,11 +32,11 @@ from rhodecode.tests.utils import AssertResponse
 
 
 UPDATE_DATA_QUALNAME = (
-    'rhodecode.controllers.admin.settings.SettingsController.get_update_data')
+    'rhodecode.admin.views.system_info.AdminSystemInfoSettingsView.get_update_data')
 
 
 @pytest.mark.usefixtures('autologin_user', 'app')
-class TestAdminSettingsController:
+class TestAdminSettingsController(object):
 
     @pytest.mark.parametrize('urlname', [
         'admin_settings_vcs',
@@ -46,7 +46,6 @@ class TestAdminSettingsController:
         'admin_settings_email',
         'admin_settings_hooks',
         'admin_settings_search',
-        'admin_settings_system',
     ])
     def test_simple_get(self, urlname, app):
         app.get(url(urlname))
@@ -85,46 +84,9 @@ class TestAdminSettingsController:
         response.mustcontain(no=['test_hooks_2'])
         response.mustcontain(no=['cd /tmp2'])
 
-    def test_system_update_new_version(self):
-        update_data = {
-            'versions': [
-                {
-                    'version': '100.3.1415926535',
-                    'general': 'The latest version we are ever going to ship'
-                },
-                {
-                    'version': '0.0.0',
-                    'general': 'The first version we ever shipped'
-                }
-            ]
-        }
-        with mock.patch(UPDATE_DATA_QUALNAME, return_value=update_data):
-            response = self.app.get(url('admin_settings_system_update'))
-            response.mustcontain('A <b>new version</b> is available')
-
-    def test_system_update_nothing_new(self):
-        update_data = {
-            'versions': [
-                {
-                    'version': '0.0.0',
-                    'general': 'The first version we ever shipped'
-                }
-            ]
-        }
-        with mock.patch(UPDATE_DATA_QUALNAME, return_value=update_data):
-            response = self.app.get(url('admin_settings_system_update'))
-            response.mustcontain(
-                'You already have the <b>latest</b> stable version.')
-
-    def test_system_update_bad_response(self):
-        with mock.patch(UPDATE_DATA_QUALNAME, side_effect=ValueError('foo')):
-            response = self.app.get(url('admin_settings_system_update'))
-            response.mustcontain(
-                'Bad data sent from update server')
-
 
 @pytest.mark.usefixtures('autologin_user', 'app')
-class TestAdminSettingsGlobal:
+class TestAdminSettingsGlobal(object):
 
     def test_pre_post_code_code_active(self, csrf_token):
         pre_code = 'rc-pre-code-187652122'
@@ -211,7 +173,7 @@ class TestAdminSettingsGlobal:
 
 
 @pytest.mark.usefixtures('autologin_user', 'app')
-class TestAdminSettingsVcs:
+class TestAdminSettingsVcs(object):
 
     def test_contains_svn_default_patterns(self, app):
         response = app.get(url('admin_settings_vcs'))
@@ -463,7 +425,7 @@ class TestOpenSourceLicenses(object):
             }
         }
         read_licenses_patch = mock.patch(
-            'rhodecode.admin.views.read_opensource_licenses',
+            'rhodecode.admin.views.open_source_licenses.read_opensource_licenses',
             return_value=sample_licenses)
         with read_licenses_patch:
             response = self.app.get(self._get_url(), status=200)
@@ -486,8 +448,90 @@ class TestOpenSourceLicenses(object):
         self.app.get(self._get_url(), status=403)
 
 
+@pytest.mark.usefixtures('app')
+class TestUserSessions(object):
+
+    def _get_url(self, name='admin_settings_sessions'):
+        return {
+            'admin_settings_sessions': ADMIN_PREFIX + '/settings/sessions',
+            'admin_settings_sessions_cleanup': ADMIN_PREFIX + '/settings/sessions/cleanup'
+        }[name]
+
+    def test_forbidden_when_normal_user(self, autologin_regular_user):
+        self.app.get(self._get_url(), status=403)
+
+    def test_show_sessions_page(self, autologin_user):
+        response = self.app.get(self._get_url(), status=200)
+        response.mustcontain('file')
+
+    def test_cleanup_old_sessions(self, autologin_user, csrf_token):
+
+        post_data = {
+            'csrf_token': csrf_token,
+            'expire_days': '60'
+        }
+        response = self.app.post(
+            self._get_url('admin_settings_sessions_cleanup'), params=post_data,
+            status=302)
+        assert_session_flash(response, 'Cleaned up old sessions')
+
+
+@pytest.mark.usefixtures('app')
+class TestAdminSystemInfo(object):
+    def _get_url(self, name='admin_settings_system'):
+        return {
+            'admin_settings_system': ADMIN_PREFIX + '/settings/system',
+            'admin_settings_system_update': ADMIN_PREFIX + '/settings/system/updates',
+        }[name]
+
+    def test_forbidden_when_normal_user(self, autologin_regular_user):
+        self.app.get(self._get_url(), status=403)
+
+    def test_system_info_page(self, autologin_user):
+        response = self.app.get(self._get_url())
+        response.mustcontain('RhodeCode Community Edition, version {}'.format(
+            rhodecode.__version__))
+
+    def test_system_update_new_version(self, autologin_user):
+        update_data = {
+            'versions': [
+                {
+                    'version': '100.3.1415926535',
+                    'general': 'The latest version we are ever going to ship'
+                },
+                {
+                    'version': '0.0.0',
+                    'general': 'The first version we ever shipped'
+                }
+            ]
+        }
+        with mock.patch(UPDATE_DATA_QUALNAME, return_value=update_data):
+            response = self.app.get(self._get_url('admin_settings_system_update'))
+            response.mustcontain('A <b>new version</b> is available')
+
+    def test_system_update_nothing_new(self, autologin_user):
+        update_data = {
+            'versions': [
+                {
+                    'version': '0.0.0',
+                    'general': 'The first version we ever shipped'
+                }
+            ]
+        }
+        with mock.patch(UPDATE_DATA_QUALNAME, return_value=update_data):
+            response = self.app.get(self._get_url('admin_settings_system_update'))
+            response.mustcontain(
+                'You already have the <b>latest</b> stable version.')
+
+    def test_system_update_bad_response(self, autologin_user):
+        with mock.patch(UPDATE_DATA_QUALNAME, side_effect=ValueError('foo')):
+            response = self.app.get(self._get_url('admin_settings_system_update'))
+            response.mustcontain(
+                'Bad data sent from update server')
+
+
 @pytest.mark.usefixtures("app")
-class TestAdminSettingsIssueTracker:
+class TestAdminSettingsIssueTracker(object):
     RC_PREFIX = 'rhodecode_'
     SHORT_PATTERN_KEY = 'issuetracker_pat_'
     PATTERN_KEY = RC_PREFIX + SHORT_PATTERN_KEY

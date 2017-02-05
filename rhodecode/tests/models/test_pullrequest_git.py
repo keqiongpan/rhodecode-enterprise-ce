@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -55,8 +55,11 @@ class TestGetDiffForPrOrVersion(object):
         return pull_request
 
     def assert_diff_can_be_fetched(self, pr_or_version):
+        source_repo = pr_or_version.source_repo
+        source_ref_id = pr_or_version.source_ref_parts.commit_id
+        target_ref_id = pr_or_version.target_ref_parts.commit_id
         diff = PullRequestModel()._get_diff_from_pr_or_version(
-            pr_or_version, context=6)
+            source_repo, source_ref_id, target_ref_id, context=6)
         assert 'file_b' in diff.raw
 
     def assert_commit_cannot_be_accessed(

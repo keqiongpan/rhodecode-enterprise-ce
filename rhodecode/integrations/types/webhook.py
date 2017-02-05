@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2016  RhodeCode GmbH
+# Copyright (C) 2012-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -173,6 +173,18 @@ class WebhookSettingsSchema(colander.Schema):
             placeholder='secret_token'
         ),
     )
+    method_type = colander.SchemaNode(
+        colander.String(),
+        title=_('Call Method'),
+        description=_('Select if the webhook call should be made '
+                      'with POST or GET.'),
+        default='post',
+        missing='',
+        widget=deform.widget.RadioChoiceWidget(
+            values=[('get', 'GET'), ('post', 'POST')],
+            inline=True
+        ),
+    )
 
 
 class WebhookIntegrationType(IntegrationTypeBase):
@@ -225,11 +237,11 @@ class WebhookIntegrationType(IntegrationTypeBase):
         url_calls = handler(event, data)
         log.debug('webhook: calling following urls: %s',
                   [x[0] for x in url_calls])
-        post_to_webhook(url_calls)
+        post_to_webhook(url_calls, self.settings)
 
 
 @task(ignore_result=True)
-def post_to_webhook(url_calls):
+def post_to_webhook(url_calls, settings):
     max_retries = 3
     for url, token, data in url_calls:
         # retry max N times
@@ -241,8 +253,13 @@ def post_to_webhook(url_calls):
         req_session.mount(
             'http://', requests.adapters.HTTPAdapter(max_retries=retries))
 
-        resp = req_session.post(url, json={
+        method = settings.get('method_type') or 'post'
+        call_method = getattr(req_session, method)
+
+        log.debug('calling WEBHOOK with method: %s', call_method)
+        resp = call_method(url, json={
             'token': token,
             'event': data
         })
+        log.debug('Got WEBHOOK response: %s', resp)
         resp.raise_for_status()  # raise exception on a failed request

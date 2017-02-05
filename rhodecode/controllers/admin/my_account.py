@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2013-2016  RhodeCode GmbH
+# Copyright (C) 2013-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -24,13 +24,16 @@ my account controller for RhodeCode admin
 """
 
 import logging
+import datetime
 
 import formencode
 from formencode import htmlfill
+from pyramid.threadlocal import get_current_registry
 from pylons import request, tmpl_context as c, url, session
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 from sqlalchemy.orm import joinedload
+from webob.exc import HTTPBadGateway
 
 from rhodecode import forms
 from rhodecode.lib import helpers as h
@@ -41,6 +44,8 @@ from rhodecode.lib.base import BaseController, render
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_int, md5, str2bool
 from rhodecode.lib.ext_json import json
+from rhodecode.lib.channelstream import channelstream_request, \
+    ChannelstreamException
 
 from rhodecode.model.validation_schema.schemas import user_schema
 from rhodecode.model.db import (
@@ -52,7 +57,7 @@ from rhodecode.model.repo import RepoModel
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 
 log = logging.getLogger(__name__)
 
@@ -75,6 +80,9 @@ class MyAccountController(BaseController):
             h.flash(_("You can't edit this user since it's"
                       " crucial for entire application"), category='warning')
             return redirect(url('users'))
+
+        c.auth_user = AuthUser(
+            user_id=c.rhodecode_user.user_id, ip_addr=self.ip_addr)
 
     def _load_my_repos_data(self, watched=False):
         if watched:
@@ -104,8 +112,7 @@ class MyAccountController(BaseController):
         # url('my_account')
         c.active = 'profile_edit'
         self.__load_data()
-        c.perm_user = AuthUser(user_id=c.rhodecode_user.user_id,
-                               ip_addr=self.ip_addr)
+        c.perm_user = c.auth_user
         c.extern_type = c.user.extern_type
         c.extern_name = c.user.extern_name
 
@@ -137,7 +144,7 @@ class MyAccountController(BaseController):
 
         except formencode.Invalid as errors:
             return htmlfill.render(
-                render('admin/my_account/my_account.html'),
+                render('admin/my_account/my_account.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -152,7 +159,7 @@ class MyAccountController(BaseController):
             return redirect('my_account')
 
         return htmlfill.render(
-            render('admin/my_account/my_account.html'),
+            render('admin/my_account/my_account.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
@@ -168,7 +175,7 @@ class MyAccountController(BaseController):
 
         defaults = c.user.get_dict()
         return htmlfill.render(
-            render('admin/my_account/my_account.html'),
+            render('admin/my_account/my_account.mako'),
             defaults=defaults, encoding="UTF-8", force_defaults=False)
 
     def my_account_edit(self):
@@ -177,14 +184,13 @@ class MyAccountController(BaseController):
         """
         c.active = 'profile_edit'
         self.__load_data()
-        c.perm_user = AuthUser(user_id=c.rhodecode_user.user_id,
-                               ip_addr=self.ip_addr)
+        c.perm_user = c.auth_user
         c.extern_type = c.user.extern_type
         c.extern_name = c.user.extern_name
 
         defaults = c.user.get_dict()
         return htmlfill.render(
-            render('admin/my_account/my_account.html'),
+            render('admin/my_account/my_account.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
@@ -194,6 +200,7 @@ class MyAccountController(BaseController):
     def my_account_password(self):
         c.active = 'password'
         self.__load_data()
+        c.extern_type = c.user.extern_type
 
         schema = user_schema.ChangePasswordSchema().bind(
             username=c.rhodecode_user.username)
@@ -201,7 +208,7 @@ class MyAccountController(BaseController):
         form = forms.Form(schema,
             buttons=(forms.buttons.save, forms.buttons.reset))
 
-        if request.method == 'POST':
+        if request.method == 'POST' and c.extern_type == 'rhodecode':
             controls = request.POST.items()
             try:
                 valid_data = form.validate(controls)
@@ -228,7 +235,7 @@ class MyAccountController(BaseController):
                 return redirect(url('my_account_password'))
 
         c.form = form
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     def my_account_repos(self):
         c.active = 'repos'
@@ -236,7 +243,7 @@ class MyAccountController(BaseController):
 
         # json used to render the grid
         c.data = self._load_my_repos_data()
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     def my_account_watched(self):
         c.active = 'watched'
@@ -244,15 +251,14 @@ class MyAccountController(BaseController):
 
         # json used to render the grid
         c.data = self._load_my_repos_data(watched=True)
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     def my_account_perms(self):
         c.active = 'perms'
         self.__load_data()
-        c.perm_user = AuthUser(user_id=c.rhodecode_user.user_id,
-                               ip_addr=self.ip_addr)
+        c.perm_user = c.auth_user
 
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     def my_account_emails(self):
         c.active = 'emails'
@@ -260,7 +266,7 @@ class MyAccountController(BaseController):
 
         c.user_email_map = UserEmailMap.query()\
             .filter(UserEmailMap.user == c.user).all()
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     @auth.CSRFRequired()
     def my_account_emails_add(self):
@@ -312,11 +318,11 @@ class MyAccountController(BaseController):
             user_id=c.rhodecode_user.user_id, statuses=statuses)
 
         from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
         data = []
         for pr in pull_requests:
             repo_id = pr.target_repo_id
-            comments = ChangesetCommentsModel().get_all_comments(
+            comments = CommentsModel().get_all_comments(
                 repo_id, pull_request=pr)
             owned = pr.user_id == c.rhodecode_user.user_id
             status = pr.calculated_review_status()
@@ -366,7 +372,7 @@ class MyAccountController(BaseController):
         if not request.is_xhr:
             c.data_participate = json.dumps(data['data'])
             c.records_total_participate = data['recordsTotal']
-            return render('admin/my_account/my_account.html')
+            return render('admin/my_account/my_account.mako')
         else:
             return json.dumps(data)
 
@@ -387,7 +393,7 @@ class MyAccountController(BaseController):
         c.role_options = [(c.role_values, _("Role"))]
         c.user_auth_tokens = AuthTokenModel().get_auth_tokens(
             c.rhodecode_user.user_id, show_expired=show_expired)
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     @auth.CSRFRequired()
     def my_account_auth_tokens_add(self):
@@ -420,7 +426,7 @@ class MyAccountController(BaseController):
 
     def my_notifications(self):
         c.active = 'notifications'
-        return render('admin/my_account/my_account.html')
+        return render('admin/my_account/my_account.mako')
 
     @auth.CSRFRequired()
     @jsonify
@@ -430,3 +436,33 @@ class MyAccountController(BaseController):
         user.update_userdata(notification_status=new_status)
         Session().commit()
         return user.user_data['notification_status']
+
+    @auth.CSRFRequired()
+    @jsonify
+    def my_account_notifications_test_channelstream(self):
+        message = 'Test message sent via Channelstream by user: {}, on {}'.format(
+            c.rhodecode_user.username, datetime.datetime.now())
+        payload = {
+            'type': 'message',
+            'timestamp': datetime.datetime.utcnow(),
+            'user': 'system',
+            #'channel': 'broadcast',
+            'pm_users': [c.rhodecode_user.username],
+            'message': {
+                'message': message,
+                'level': 'info',
+                'topic': '/notifications'
+            }
+        }
+
+        registry = get_current_registry()
+        rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
+        channelstream_config = rhodecode_plugins.get('channelstream', {})
+
+        try:
+            channelstream_request(channelstream_config, [payload], '/message')
+        except ChannelstreamException as e:
+            log.exception('Failed to send channelstream data')
+            return {"response": 'ERROR: {}'.format(e.__class__.__name__)}
+        return {"response": 'Channelstream data sent. '
+                            'You should see a new live message now.'}

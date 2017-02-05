@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2016  RhodeCode GmbH
+# Copyright (C) 2014-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -367,21 +367,22 @@ class MercurialRepository(BaseRepository):
     def last_change(self):
         """
         Returns last change made on this repository as
-        `datetime.datetime` object
+        `datetime.datetime` object.
         """
-        return utcdate_fromtimestamp(self._get_mtime(), makedate()[1])
-
-    def _get_mtime(self):
         try:
-            return date_astimestamp(self.get_commit().date)
+            return self.get_commit().date
         except RepositoryError:
-            # fallback to filesystem
-            cl_path = os.path.join(self.path, '.hg', "00changelog.i")
-            st_path = os.path.join(self.path, '.hg', "store")
-            if os.path.exists(cl_path):
-                return os.stat(cl_path).st_mtime
-            else:
-                return os.stat(st_path).st_mtime
+            tzoffset = makedate()[1]
+            return utcdate_fromtimestamp(self._get_fs_mtime(), tzoffset)
+
+    def _get_fs_mtime(self):
+        # fallback to filesystem
+        cl_path = os.path.join(self.path, '.hg', "00changelog.i")
+        st_path = os.path.join(self.path, '.hg', "store")
+        if os.path.exists(cl_path):
+            return os.stat(cl_path).st_mtime
+        else:
+            return os.stat(st_path).st_mtime
 
     def _sanitize_commit_idx(self, idx):
         # Note: Mercurial has ``int(-1)`` reserved as not existing id_or_idx

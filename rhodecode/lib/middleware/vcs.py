@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -34,6 +34,9 @@ from rhodecode.lib.middleware.simplesvn import SimpleSvn
 from rhodecode.model.settings import VcsSettingsModel
 
 log = logging.getLogger(__name__)
+
+VCS_TYPE_KEY = '_rc_vcs_type'
+VCS_TYPE_SKIP = '_rc_vcs_skip'
 
 
 def is_git(environ):
@@ -126,6 +129,43 @@ class GunzipMiddleware(object):
         return self.app(environ, start_response)
 
 
+def is_vcs_call(environ):
+    if VCS_TYPE_KEY in environ:
+        raw_type = environ[VCS_TYPE_KEY]
+        return raw_type and raw_type != VCS_TYPE_SKIP
+    return False
+
+
+def detect_vcs_request(environ, backends):
+    checks = {
+        'hg': (is_hg, SimpleHg),
+        'git': (is_git, SimpleGit),
+        'svn': (is_svn, SimpleSvn),
+    }
+    handler = None
+
+    if VCS_TYPE_KEY in environ:
+        raw_type = environ[VCS_TYPE_KEY]
+        if raw_type == VCS_TYPE_SKIP:
+            log.debug('got `skip` marker for vcs detection, skipping...')
+            return handler
+
+        _check, handler = checks.get(raw_type) or [None, None]
+        if handler:
+            log.debug('got handler:%s from environ', handler)
+
+    if not handler:
+        log.debug('checking if request is of VCS type in order: %s', backends)
+        for vcs_type in backends:
+            vcs_check, _handler = checks[vcs_type]
+            if vcs_check(environ):
+                log.debug('vcs handler found %s', _handler)
+                handler = _handler
+                break
+
+    return handler
+
+
 class VCSMiddleware(object):
 
     def __init__(self, app, config, appenlight_client, registry):
@@ -136,11 +176,6 @@ class VCSMiddleware(object):
         self.use_gzip = True
         # order in which we check the middlewares, based on vcs.backends config
         self.check_middlewares = config['vcs.backends']
-        self.checks = {
-            'hg': (is_hg, SimpleHg),
-            'git': (is_git, SimpleGit),
-            'svn': (is_svn, SimpleSvn),
-        }
 
     def vcs_config(self, repo_name=None):
         """
@@ -155,14 +190,10 @@ class VCSMiddleware(object):
 
     def _get_handler_app(self, environ):
         app = None
-        log.debug('Checking vcs types in order: %r', self.check_middlewares)
-        for vcs_type in self.check_middlewares:
-            vcs_check, handler = self.checks[vcs_type]
-            if vcs_check(environ):
-                log.debug(
-                    'Found VCS Middleware to handle the request %s', handler)
-                app = handler(self.application, self.config, self.registry)
-                break
+        log.debug('VCSMiddleware: detecting vcs type.')
+        handler = detect_vcs_request(environ, self.check_middlewares)
+        if handler:
+            app = handler(self.application, self.config, self.registry)
 
         return app
 

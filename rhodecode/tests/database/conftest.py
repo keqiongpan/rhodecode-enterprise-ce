@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -141,7 +141,9 @@ class DBBackend(object):
         return self.stdout, self.stderr
 
     def assert_returncode_success(self):
-        assert self.p.returncode == 0, self.stderr
+        if not self.p.returncode == 0:
+            print(self.stderr)
+            raise AssertionError('non 0 retcode:{}'.format(self.p.returncode))
 
     def setup_rhodecode_db(self, ini_params=None, env=None):
         if not ini_params:

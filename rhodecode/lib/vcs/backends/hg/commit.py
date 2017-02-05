@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2016  RhodeCode GmbH
+# Copyright (C) 2014-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -289,7 +289,7 @@ class MercurialCommit(base.BaseCommit):
 
         return nodes
 
-    def get_node(self, path):
+    def get_node(self, path, pre_load=None):
         """
         Returns `Node` object from the given `path`. If there is no node at
         the given `path`, `NodeDoesNotExistError` would be raised.
@@ -298,7 +298,7 @@ class MercurialCommit(base.BaseCommit):
 
         if path not in self.nodes:
             if path in self._file_paths:
-                node = FileNode(path, commit=self)
+                node = FileNode(path, commit=self, pre_load=pre_load)
             elif path in self._dir_paths:
                 if path == '':
                     node = RootNode(commit=self)

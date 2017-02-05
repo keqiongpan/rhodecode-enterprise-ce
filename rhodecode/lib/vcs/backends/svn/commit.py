@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2016  RhodeCode GmbH
+# Copyright (C) 2014-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -140,7 +140,7 @@ class SubversionCommit(base.BaseCommit):
                 lambda: self.repository.get_commit(commit_id=commit_id),
                 content)
 
-    def get_node(self, path):
+    def get_node(self, path, pre_load=None):
         path = self._fix_path(path)
         if path not in self.nodes:
 
@@ -152,7 +152,7 @@ class SubversionCommit(base.BaseCommit):
                 if node_type == 'dir':
                     node = nodes.DirNode(path, commit=self)
                 elif node_type == 'file':
-                    node = nodes.FileNode(path, commit=self)
+                    node = nodes.FileNode(path, commit=self, pre_load=pre_load)
                 else:
                     raise NodeDoesNotExistError(self.no_node_at_path(path))
 
@@ -229,6 +229,8 @@ def _date_from_svn_properties(properties):
 
     :return: :class:`datetime.datetime` instance. The object is naive.
     """
+
     aware_date = dateutil.parser.parse(properties.get('svn:date'))
-    local_date = aware_date.astimezone(dateutil.tz.tzlocal())
-    return local_date.replace(tzinfo=None)
+    # final_date = aware_date.astimezone(dateutil.tz.tzlocal())
+    final_date = aware_date
+    return final_date.replace(tzinfo=None)

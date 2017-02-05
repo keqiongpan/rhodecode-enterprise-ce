@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -25,15 +25,13 @@ settings controller for rhodecode admin
 
 import collections
 import logging
-import urllib2
 
 import datetime
 import formencode
 from formencode import htmlfill
-import packaging.version
 from pylons import request, tmpl_context as c, url, config
 from pylons.controllers.util import redirect
-from pylons.i18n.translation import _, lazy_ugettext
+from pylons.i18n.translation import _
 from pyramid.threadlocal import get_current_registry
 from webob.exc import HTTPBadRequest
 
@@ -48,7 +46,6 @@ from rhodecode.lib.utils import repo2db_mapper
 from rhodecode.lib.utils2 import (
     str2bool, safe_unicode, AttributeDict, safe_int)
 from rhodecode.lib.compat import OrderedDict
-from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils import jsonify
 
 from rhodecode.model.db import RhodeCodeUi, Repository
@@ -150,7 +147,7 @@ class SettingsController(BaseController):
                 _("Some form inputs contain invalid data."),
                 category='error')
             return htmlfill.render(
-                render('admin/settings/settings.html'),
+                render('admin/settings/settings.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -179,7 +176,7 @@ class SettingsController(BaseController):
             return redirect(url('admin_settings_vcs'))
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -198,7 +195,7 @@ class SettingsController(BaseController):
         c.svn_proxy_generate_config = pyramid_settings[generate_config]
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -235,7 +232,7 @@ class SettingsController(BaseController):
         c.active = 'mapping'
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -253,7 +250,7 @@ class SettingsController(BaseController):
             form_result = application_form.to_python(dict(request.POST))
         except formencode.Invalid as errors:
             return htmlfill.render(
-                render('admin/settings/settings.html'),
+                render('admin/settings/settings.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -296,7 +293,7 @@ class SettingsController(BaseController):
             .get_personal_group_name_pattern()
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -312,7 +309,7 @@ class SettingsController(BaseController):
             form_result = application_form.to_python(dict(request.POST))
         except formencode.Invalid as errors:
             return htmlfill.render(
-                render('admin/settings/settings.html'),
+                render('admin/settings/settings.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -360,7 +357,7 @@ class SettingsController(BaseController):
         c.active = 'visual'
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -406,7 +403,7 @@ class SettingsController(BaseController):
                 'desc': defaults.get('rhodecode_issuetracker_desc_' + uid),
             })
 
-        return render('admin/settings/settings.html')
+        return render('admin/settings/settings.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
@@ -469,7 +466,7 @@ class SettingsController(BaseController):
         c.rhodecode_ini = rhodecode.CONFIG
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -526,7 +523,7 @@ class SettingsController(BaseController):
         c.custom_hooks = model.get_custom_hooks()
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding="UTF-8",
             force_defaults=False)
@@ -541,154 +538,7 @@ class SettingsController(BaseController):
         searcher = searcher_from_config(config)
         c.statistics = searcher.statistics()
 
-        return render('admin/settings/settings.html')
-
-    @HasPermissionAllDecorator('hg.admin')
-    def settings_system(self):
-        """GET /admin/settings/system: All items in the collection"""
-        # url('admin_settings_system')
-        snapshot = str2bool(request.GET.get('snapshot'))
-        defaults = self._form_defaults()
-
-        c.active = 'system'
-        c.rhodecode_update_url = defaults.get('rhodecode_update_url')
-        server_info = ScmModel().get_server_info(request.environ)
-
-        for key, val in server_info.iteritems():
-            setattr(c, key, val)
-
-        def val(name, subkey='human_value'):
-            return server_info[name][subkey]
-
-        def state(name):
-            return server_info[name]['state']
-
-        def val2(name):
-            val = server_info[name]['human_value']
-            state = server_info[name]['state']
-            return val, state
-
-        c.data_items = [
-            # update info
-            (_('Update info'), h.literal(
-                '<span class="link" id="check_for_update" >%s.</span>' % (
-                _('Check for updates')) +
-                '<br/> <span >%s.</span>' % (_('Note: please make sure this server can access `%s` for the update link to work') % c.rhodecode_update_url)
-            ), ''),
-
-            # RhodeCode specific
-            (_('RhodeCode Version'), val('rhodecode_app')['text'], state('rhodecode_app')),
-            (_('RhodeCode Server IP'), val('server')['server_ip'], state('server')),
-            (_('RhodeCode Server ID'), val('server')['server_id'], state('server')),
-            (_('RhodeCode Configuration'), val('rhodecode_config')['path'], state('rhodecode_config')),
-            ('', '', ''),  # spacer
-
-            # Database
-            (_('Database'), val('database')['url'], state('database')),
-            (_('Database version'), val('database')['version'], state('database')),
-            ('', '', ''),  # spacer
-
-            # Platform/Python
-            (_('Platform'), val('platform')['name'], state('platform')),
-            (_('Platform UUID'), val('platform')['uuid'], state('platform')),
-            (_('Python version'), val('python')['version'], state('python')),
-            (_('Python path'), val('python')['executable'], state('python')),
-            ('', '', ''),  # spacer
-
-            # Systems stats
-            (_('CPU'), val('cpu'), state('cpu')),
-            (_('Load'), val('load')['text'], state('load')),
-            (_('Memory'), val('memory')['text'], state('memory')),
-            (_('Uptime'), val('uptime')['text'], state('uptime')),
-            ('', '', ''),  # spacer
-
-            # Repo storage
-            (_('Storage location'), val('storage')['path'], state('storage')),
-            (_('Storage info'), val('storage')['text'], state('storage')),
-            (_('Storage inodes'), val('storage_inodes')['text'], state('storage_inodes')),
-
-            (_('Gist storage location'), val('storage_gist')['path'], state('storage_gist')),
-            (_('Gist storage info'), val('storage_gist')['text'], state('storage_gist')),
-
-            (_('Archive cache storage location'), val('storage_archive')['path'], state('storage_archive')),
-            (_('Archive cache info'), val('storage_archive')['text'], state('storage_archive')),
-
-            (_('Temp storage location'), val('storage_temp')['path'], state('storage_temp')),
-            (_('Temp storage info'), val('storage_temp')['text'], state('storage_temp')),
-
-            (_('Search info'), val('search')['text'], state('search')),
-            (_('Search location'), val('search')['location'], state('search')),
-            ('', '', ''),  # spacer
-
-            # VCS specific
-            (_('VCS Backends'), val('vcs_backends'), state('vcs_backends')),
-            (_('VCS Server'), val('vcs_server')['text'], state('vcs_server')),
-            (_('GIT'), val('git'), state('git')),
-            (_('HG'), val('hg'), state('hg')),
-            (_('SVN'), val('svn'), state('svn')),
-
-        ]
-
-        # TODO: marcink, figure out how to allow only selected users to do this
-        c.allowed_to_snapshot = c.rhodecode_user.admin
-
-        if snapshot:
-            if c.allowed_to_snapshot:
-                c.data_items.pop(0)  # remove server info
-                return render('admin/settings/settings_system_snapshot.html')
-            else:
-                h.flash('You are not allowed to do this', category='warning')
-
-        return htmlfill.render(
-            render('admin/settings/settings.html'),
-            defaults=defaults,
-            encoding="UTF-8",
-            force_defaults=False)
-
-    @staticmethod
-    def get_update_data(update_url):
-        """Return the JSON update data."""
-        ver = rhodecode.__version__
-        log.debug('Checking for upgrade on `%s` server', update_url)
-        opener = urllib2.build_opener()
-        opener.addheaders = [('User-agent', 'RhodeCode-SCM/%s' % ver)]
-        response = opener.open(update_url)
-        response_data = response.read()
-        data = json.loads(response_data)
-
-        return data
-
-    @HasPermissionAllDecorator('hg.admin')
-    def settings_system_update(self):
-        """GET /admin/settings/system/updates: All items in the collection"""
-        # url('admin_settings_system_update')
-        defaults = self._form_defaults()
-        update_url = defaults.get('rhodecode_update_url', '')
-
-        _err = lambda s: '<div style="color:#ff8888; padding:4px 0px">%s</div>' % (s)
-        try:
-            data = self.get_update_data(update_url)
-        except urllib2.URLError as e:
-            log.exception("Exception contacting upgrade server")
-            return _err('Failed to contact upgrade server: %r' % e)
-        except ValueError as e:
-            log.exception("Bad data sent from update server")
-            return _err('Bad data sent from update server')
-
-        latest = data['versions'][0]
-
-        c.update_url = update_url
-        c.latest_data = latest
-        c.latest_ver = latest['version']
-        c.cur_ver = rhodecode.__version__
-        c.should_upgrade = False
-
-        if (packaging.version.Version(c.latest_ver) >
-                packaging.version.Version(c.cur_ver)):
-            c.should_upgrade = True
-        c.important_notices = latest['general']
-
-        return render('admin/settings/settings_system_update.html')
+        return render('admin/settings/settings.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     def settings_supervisor(self):
@@ -710,7 +560,7 @@ class SettingsController(BaseController):
         except Exception as e:
             c.connection_error = str(e)
             log.exception("Exception reading supervisor data")
-            return render('admin/settings/settings.html')
+            return render('admin/settings/settings.mako')
 
         groupid = c.rhodecode_ini.get('supervisor.group_id')
 
@@ -734,7 +584,7 @@ class SettingsController(BaseController):
                 log.exception("Exception reading supervisor data")
                 c.supervisor_procs[k] = {'_rhodecode_error': str(e)}
 
-        return render('admin/settings/settings.html')
+        return render('admin/settings/settings.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     def settings_supervisor_log(self, procid):
@@ -751,7 +601,7 @@ class SettingsController(BaseController):
         offset = abs(safe_int(request.GET.get('offset', c.log_size))) * -1
         c.log = supervisor.read_process_log(_connection, procid, offset, 0)
 
-        return render('admin/settings/settings.html')
+        return render('admin/settings/settings.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
@@ -768,7 +618,7 @@ class SettingsController(BaseController):
                 _('Some form inputs contain invalid data.'),
                 category='error')
             return htmlfill.render(
-                render('admin/settings/settings.html'),
+                render('admin/settings/settings.mako'),
                 defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -795,7 +645,7 @@ class SettingsController(BaseController):
             return redirect(url('admin_settings_labs'))
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding='UTF-8',
             force_defaults=False)
@@ -811,7 +661,7 @@ class SettingsController(BaseController):
         c.lab_settings = _LAB_SETTINGS
 
         return htmlfill.render(
-            render('admin/settings/settings.html'),
+            render('admin/settings/settings.mako'),
             defaults=self._form_defaults(),
             encoding='UTF-8',
             force_defaults=False)

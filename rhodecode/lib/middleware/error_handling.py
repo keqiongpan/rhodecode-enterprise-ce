@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2016  RhodeCode GmbH
+# Copyright (C) 2016-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -76,7 +76,6 @@ class PylonsErrorHandlingMiddleware(object):
         except HTTPError as e:  # pyramid type exceptions
             return self.error_view(e, request)
         except Exception as e:
-            log.exception(e)
 
             if self.reraise():
                 raise

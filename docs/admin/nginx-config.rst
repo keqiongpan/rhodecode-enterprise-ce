@@ -1,7 +1,7 @@
 .. _nginx-ws-ref:
 
-Nginx Configuration
-===================
+Nginx HTTP Server Configuration
+-------------------------------
 
 To set up your Nginx Web Server for optimal performance and security, use
 the information in the following sections.

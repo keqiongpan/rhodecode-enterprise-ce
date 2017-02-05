@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -244,7 +244,8 @@ class TestCommitCommentsController(TestController):
         ('markdown', '# header', '<h1>header</h1>'),
         ('markdown', '*italics*', '<em>italics</em>'),
         ('markdown', '**bold**', '<strong>bold</strong>'),
-    ])
+    ], ids=['rst-plain', 'rst-header', 'rst-italics', 'rst-bold', 'md-plain',
+            'md-header', 'md-italics', 'md-bold', ])
     def test_preview(self, renderer, input, output, backend):
         self.log_user()
         params = {

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2016  RhodeCode GmbH
+# Copyright (C) 2014-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -26,12 +26,12 @@ import logging
 import os
 import re
 import shutil
-import time
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode.lib.compat import OrderedDict
-from rhodecode.lib.datelib import makedate, utcdate_fromtimestamp
+from rhodecode.lib.datelib import (
+    utcdate_fromtimestamp, makedate, date_astimestamp)
 from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.vcs import connection, path as vcspath
 from rhodecode.lib.vcs.backends.base import (
@@ -107,7 +107,8 @@ class GitRepository(BaseRepository):
             raise ValueError('cmd must be a list, got %s instead' % type(cmd))
 
         out, err = self._remote.run_git_command(cmd, **opts)
-        log.debug('Stderr output of git command "%s":\n%s', cmd, err)
+        if err:
+            log.debug('Stderr output of git command "%s":\n%s', cmd, err)
         return out, err
 
     @staticmethod
@@ -268,20 +269,21 @@ class GitRepository(BaseRepository):
         Returns last change made on this repository as
         `datetime.datetime` object.
         """
-        return utcdate_fromtimestamp(self._get_mtime(), makedate()[1])
-
-    def _get_mtime(self):
         try:
-            return time.mktime(self.get_commit().date.timetuple())
+            return self.get_commit().date
         except RepositoryError:
-            idx_loc = '' if self.bare else '.git'
-            # fallback to filesystem
-            in_path = os.path.join(self.path, idx_loc, "index")
-            he_path = os.path.join(self.path, idx_loc, "HEAD")
-            if os.path.exists(in_path):
-                return os.stat(in_path).st_mtime
-            else:
-                return os.stat(he_path).st_mtime
+            tzoffset = makedate()[1]
+            return utcdate_fromtimestamp(self._get_fs_mtime(), tzoffset)
+
+    def _get_fs_mtime(self):
+        idx_loc = '' if self.bare else '.git'
+        # fallback to filesystem
+        in_path = os.path.join(self.path, idx_loc, "index")
+        he_path = os.path.join(self.path, idx_loc, "HEAD")
+        if os.path.exists(in_path):
+            return os.stat(in_path).st_mtime
+        else:
+            return os.stat(he_path).st_mtime
 
     @LazyProperty
     def description(self):
@@ -744,6 +746,9 @@ class GitRepository(BaseRepository):
                 heads.append(line)
 
         return heads
+
+    def _get_shadow_instance(self, shadow_repository_path, enable_hooks=False):
+        return GitRepository(shadow_repository_path)
 
     def _local_pull(self, repository_path, branch_name):
         """

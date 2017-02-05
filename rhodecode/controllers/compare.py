@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2016  RhodeCode GmbH
+# Copyright (C) 2012-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -79,6 +79,7 @@ class CompareController(BaseRepoController):
     def index(self, repo_name):
         c.compare_home = True
         c.commit_ranges = []
+        c.collapse_all_commits = False
         c.diffset = None
         c.limited_diff = False
         source_repo = c.rhodecode_db_repo.repo_name
@@ -90,7 +91,8 @@ class CompareController(BaseRepoController):
         c.target_ref_type = ""
         c.commit_statuses = ChangesetStatus.STATUSES
         c.preview_mode = False
-        return render('compare/compare_diff.html')
+        c.file_path = None
+        return render('compare/compare_diff.mako')
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
@@ -103,8 +105,10 @@ class CompareController(BaseRepoController):
 
         # target_ref will be evaluated in target_repo
         target_repo_name = request.GET.get('target_repo', source_repo_name)
-        target_path, target_id = parse_path_ref(target_ref)
+        target_path, target_id = parse_path_ref(
+            target_ref, default_path=request.GET.get('f_path', ''))
 
+        c.file_path = target_path
         c.commit_statuses = ChangesetStatus.STATUSES
 
         # if merge is True
@@ -114,7 +118,6 @@ class CompareController(BaseRepoController):
         merge = str2bool(request.GET.get('merge'))
         # if merge is False
         #   Show a raw diff of source/target refs even if no ancestor exists
-
 
         # c.fulldiff disables cut_off_limit
         c.fulldiff = str2bool(request.GET.get('fulldiff'))
@@ -131,7 +134,8 @@ class CompareController(BaseRepoController):
             target_repo=source_repo_name,
             target_ref_type=source_ref_type,
             target_ref=source_ref,
-            merge=merge and '1' or '')
+            merge=merge and '1' or '',
+            f_path=target_path)
 
         source_repo = Repository.get_by_repo_name(source_repo_name)
         target_repo = Repository.get_by_repo_name(target_repo_name)
@@ -151,8 +155,11 @@ class CompareController(BaseRepoController):
             h.flash(msg, category='error')
             return redirect(url('compare_home', repo_name=c.repo_name))
 
-        source_alias = source_repo.scm_instance().alias
-        target_alias = target_repo.scm_instance().alias
+        source_scm = source_repo.scm_instance()
+        target_scm = target_repo.scm_instance()
+
+        source_alias = source_scm.alias
+        target_alias = target_scm.alias
         if source_alias != target_alias:
             msg = _('The comparison of two different kinds of remote repos '
                     'is not available')
@@ -175,34 +182,42 @@ class CompareController(BaseRepoController):
         c.source_ref_type = source_ref_type
         c.target_ref_type = target_ref_type
 
-        source_scm = source_repo.scm_instance()
-        target_scm = target_repo.scm_instance()
-
         pre_load = ["author", "branch", "date", "message"]
         c.ancestor = None
-        try:
-            c.commit_ranges = source_scm.compare(
-                source_commit.raw_id, target_commit.raw_id,
-                target_scm, merge, pre_load=pre_load)
-            if merge:
-                c.ancestor = source_scm.get_common_ancestor(
-                    source_commit.raw_id, target_commit.raw_id, target_scm)
-        except RepositoryRequirementError:
-            msg = _('Could not compare repos with different '
-                    'large file settings')
-            log.error(msg)
-            if partial:
-                return msg
-            h.flash(msg, category='error')
-            return redirect(url('compare_home', repo_name=c.repo_name))
+
+        if c.file_path:
+            if source_commit == target_commit:
+                c.commit_ranges = []
+            else:
+                c.commit_ranges = [target_commit]
+        else:
+            try:
+                c.commit_ranges = source_scm.compare(
+                    source_commit.raw_id, target_commit.raw_id,
+                    target_scm, merge, pre_load=pre_load)
+                if merge:
+                    c.ancestor = source_scm.get_common_ancestor(
+                        source_commit.raw_id, target_commit.raw_id, target_scm)
+            except RepositoryRequirementError:
+                msg = _('Could not compare repos with different '
+                        'large file settings')
+                log.error(msg)
+                if partial:
+                    return msg
+                h.flash(msg, category='error')
+                return redirect(url('compare_home', repo_name=c.repo_name))
 
         c.statuses = c.rhodecode_db_repo.statuses(
             [x.raw_id for x in c.commit_ranges])
 
-        if partial: # for PR ajax commits loader
+        # auto collapse if we have more than limit
+        collapse_limit = diffs.DiffProcessor._collapse_commits_over
+        c.collapse_all_commits = len(c.commit_ranges) > collapse_limit
+
+        if partial:  # for PR ajax commits loader
             if not c.ancestor:
-                return '' # cannot merge if there is no ancestor
-            return render('compare/compare_commits.html')
+                return ''  # cannot merge if there is no ancestor
+            return render('compare/compare_commits.mako')
 
         if c.ancestor:
             # case we want a simple diff without incoming commits,
@@ -238,7 +253,8 @@ class CompareController(BaseRepoController):
 
         txtdiff = source_repo.scm_instance().get_diff(
             commit1=source_commit, commit2=target_commit,
-            path1=source_path, path=target_path)
+            path=target_path, path1=source_path)
+
         diff_processor = diffs.DiffProcessor(
             txtdiff, format='newdiff', diff_limit=diff_limit,
             file_limit=file_limit, show_full_diff=c.fulldiff)
@@ -260,5 +276,7 @@ class CompareController(BaseRepoController):
         ).render_patchset(_parsed, source_ref, target_ref)
 
         c.preview_mode = merge
+        c.source_commit = source_commit
+        c.target_commit = target_commit
 
-        return render('compare/compare_diff.html')
+        return render('compare/compare_diff.mako')

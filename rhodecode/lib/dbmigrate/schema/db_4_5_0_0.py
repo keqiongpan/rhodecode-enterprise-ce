@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -2788,7 +2788,7 @@ class CacheKey(Base, BaseModel):
         """
         get suffix that might have been used in _get_cache_key to
         generate self.cache_key. Only used for informational purposes
-        in repo_edit.html.
+        in repo_edit.mako.
         """
         # prefix, repo_name, suffix
         return self._cache_key_partition()[2]

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2016  RhodeCode GmbH
+# Copyright (C) 2011-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -30,9 +30,9 @@ from rhodecode.lib.auth import (HasRepoPermissionAnyApi)
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
-from rhodecode.model.db import Session, ChangesetStatus
-from rhodecode.model.pull_request import PullRequestModel
+from rhodecode.model.comment import CommentsModel
+from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment
+from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 from rhodecode.model.settings import SettingsModel
 
 log = logging.getLogger(__name__)
@@ -270,13 +270,14 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
             raise JSONRPCError('userid is not the same as your user')
 
     pull_request = get_pull_request_or_error(pullrequestid)
-    if not PullRequestModel().check_user_merge(
-            pull_request, apiuser, api=True):
-        raise JSONRPCError('repository `%s` does not exist' % (repoid,))
-    if pull_request.is_closed():
+
+    check = MergeCheck.validate(pull_request, user=apiuser)
+    merge_possible = not check.failed
+
+    if not merge_possible:
+        reasons = ','.join([msg for _e, msg in check.errors])
         raise JSONRPCError(
-            'pull request `%s` merge failed, pull request is closed' % (
-                pullrequestid,))
+            'merge not possible for following reasons: {}'.format(reasons))
 
     target_repo = pull_request.target_repo
     extras = vcs_operation_context(
@@ -359,9 +360,12 @@ def close_pull_request(request, apiuser, repoid, pullrequestid,
 
 
 @jsonrpc_method()
-def comment_pull_request(request, apiuser, repoid, pullrequestid,
-                         message=Optional(None), status=Optional(None),
-                         userid=Optional(OAttr('apiuser'))):
+def comment_pull_request(
+        request, apiuser, repoid, pullrequestid, message=Optional(None),
+        commit_id=Optional(None), status=Optional(None),
+        comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
+        resolves_comment_id=Optional(None),
+        userid=Optional(OAttr('apiuser'))):
     """
     Comment on the pull request specified with the `pullrequestid`,
     in the |repo| specified by the `repoid`, and optionally change the
@@ -373,15 +377,18 @@ def comment_pull_request(request, apiuser, repoid, pullrequestid,
     :type repoid: str or int
     :param pullrequestid: The pull request ID.
     :type pullrequestid: int
+    :param commit_id: Specify the commit_id for which to set a comment. If
+        given commit_id is different than latest in the PR status
+        change won't be performed.
+    :type commit_id: str
     :param message: The text content of the comment.
     :type message: str
     :param status: (**Optional**) Set the approval status of the pull
-        request. Valid options are:
-        * not_reviewed
-        * approved
-        * rejected
-        * under_review
+        request. One of: 'not_reviewed', 'approved', 'rejected',
+        'under_review'
     :type status: str
+    :param comment_type: Comment type, one of: 'note', 'todo'
+    :type comment_type: Optional(str), default: 'note'
     :param userid: Comment on the pull request as this user
     :type userid: Optional(str or int)
 
@@ -393,7 +400,9 @@ def comment_pull_request(request, apiuser, repoid, pullrequestid,
       result :
         {
             "pull_request_id":  "<Integer>",
-            "comment_id":       "<Integer>"
+            "comment_id":       "<Integer>",
+            "status": {"given": <given_status>,
+                       "was_changed": <bool status_was_actually_changed> },
         }
       error :  null
     """
@@ -412,37 +421,68 @@ def comment_pull_request(request, apiuser, repoid, pullrequestid,
         raise JSONRPCError('repository `%s` does not exist' % (repoid,))
     message = Optional.extract(message)
     status = Optional.extract(status)
+    commit_id = Optional.extract(commit_id)
+    comment_type = Optional.extract(comment_type)
+    resolves_comment_id = Optional.extract(resolves_comment_id)
+
     if not message and not status:
-        raise JSONRPCError('message and status parameter missing')
+        raise JSONRPCError(
+            'Both message and status parameters are missing. '
+            'At least one is required.')
 
     if (status not in (st[0] for st in ChangesetStatus.STATUSES) and
             status is not None):
-        raise JSONRPCError('unknown comment status`%s`' % status)
+        raise JSONRPCError('Unknown comment status: `%s`' % status)
+
+    if commit_id and commit_id not in pull_request.revisions:
+        raise JSONRPCError(
+            'Invalid commit_id `%s` for this pull request.' % commit_id)
 
     allowed_to_change_status = PullRequestModel().check_user_change_status(
         pull_request, apiuser)
+
+    # if commit_id is passed re-validated if user is allowed to change status
+    # based on latest commit_id from the PR
+    if commit_id:
+        commit_idx = pull_request.revisions.index(commit_id)
+        if commit_idx != 0:
+            allowed_to_change_status = False
+
+    if resolves_comment_id:
+        comment = ChangesetComment.get(resolves_comment_id)
+        if not comment:
+            raise JSONRPCError(
+                'Invalid resolves_comment_id `%s` for this pull request.'
+                % resolves_comment_id)
+        if comment.comment_type != ChangesetComment.COMMENT_TYPE_TODO:
+            raise JSONRPCError(
+                'Comment `%s` is wrong type for setting status to resolved.'
+                % resolves_comment_id)
+
     text = message
+    status_label = ChangesetStatus.get_status_lbl(status)
     if status and allowed_to_change_status:
-        st_message = (('Status change %(transition_icon)s %(status)s')
-                      % {'transition_icon': '>',
-                         'status': ChangesetStatus.get_status_lbl(status)})
+        st_message = ('Status change %(transition_icon)s %(status)s'
+                      % {'transition_icon': '>', 'status': status_label})
         text = message or st_message
 
     rc_config = SettingsModel().get_all_settings()
     renderer = rc_config.get('rhodecode_markup_renderer', 'rst')
-    comment = ChangesetCommentsModel().create(
+
+    status_change = status and allowed_to_change_status
+    comment = CommentsModel().create(
         text=text,
         repo=pull_request.target_repo.repo_id,
         user=apiuser.user_id,
         pull_request=pull_request.pull_request_id,
         f_path=None,
         line_no=None,
-        status_change=(ChangesetStatus.get_status_lbl(status)
-                       if status and allowed_to_change_status else None),
-        status_change_type=(status
-                            if status and allowed_to_change_status else None),
+        status_change=(status_label if status_change else None),
+        status_change_type=(status if status_change else None),
         closing_pr=False,
-        renderer=renderer
+        renderer=renderer,
+        comment_type=comment_type,
+        resolves_comment_id=resolves_comment_id
     )
 
     if allowed_to_change_status and status:
@@ -458,8 +498,8 @@ def comment_pull_request(request, apiuser, repoid, pullrequestid,
     Session().commit()
     data = {
         'pull_request_id': pull_request.pull_request_id,
-        'comment_id': comment.comment_id,
-        'status': status
+        'comment_id': comment.comment_id if comment else None,
+        'status': {'given': status, 'was_changed': status_change},
     }
     return data
 

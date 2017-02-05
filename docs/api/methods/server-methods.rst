@@ -3,6 +3,49 @@
 server methods
 ==============
 
+cleanup_sessions 
+----------------
+
+.. py:function:: cleanup_sessions(apiuser, older_then=<Optional:60>)
+
+   Triggers a session cleanup action.
+
+   If the ``older_then`` option is set, only sessions that hasn't been
+   accessed in the given number of days will be removed.
+
+   This command can only be run using an |authtoken| with admin rights to
+   the specified repository.
+
+   This command takes the following options:
+
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+   :param older_then: Deletes session that hasn't been accessed
+       in given number of days.
+   :type older_then: Optional(int)
+
+   Example output:
+
+   .. code-block:: bash
+
+     id : <id_given_in_input>
+     result: {
+       "backend": "<type of backend>",
+       "sessions_removed": <number_of_removed_sessions>
+     }
+     error :  null
+
+   Example error output:
+
+   .. code-block:: bash
+
+     id : <id_given_in_input>
+     result : null
+     error :  {
+       'Error occurred during session cleanup'
+     }
+
+
 get_ip 
 ------
 

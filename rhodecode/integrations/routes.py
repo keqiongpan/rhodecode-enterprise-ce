@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2016  RhodeCode GmbH
+# Copyright (C) 2012-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -36,7 +36,7 @@ def includeme(config):
                      ADMIN_PREFIX + '/integrations/new')
     config.add_view('rhodecode.integrations.views.GlobalIntegrationsView',
                     attr='new_integration',
-                    renderer='rhodecode:templates/admin/integrations/new.html',
+                    renderer='rhodecode:templates/admin/integrations/new.mako',
                     request_method='GET',
                     route_name='global_integrations_new')
 
@@ -47,7 +47,7 @@ def includeme(config):
     for route_name in ['global_integrations_home', 'global_integrations_list']:
         config.add_view('rhodecode.integrations.views.GlobalIntegrationsView',
                         attr='index',
-                        renderer='rhodecode:templates/admin/integrations/list.html',
+                        renderer='rhodecode:templates/admin/integrations/list.mako',
                         request_method='GET',
                         route_name=route_name)
 
@@ -62,12 +62,12 @@ def includeme(config):
     for route_name in ['global_integrations_create', 'global_integrations_edit']:
         config.add_view('rhodecode.integrations.views.GlobalIntegrationsView',
                         attr='settings_get',
-                        renderer='rhodecode:templates/admin/integrations/form.html',
+                        renderer='rhodecode:templates/admin/integrations/form.mako',
                         request_method='GET',
                         route_name=route_name)
         config.add_view('rhodecode.integrations.views.GlobalIntegrationsView',
                         attr='settings_post',
-                        renderer='rhodecode:templates/admin/integrations/form.html',
+                        renderer='rhodecode:templates/admin/integrations/form.mako',
                         request_method='POST',
                         route_name=route_name)
 
@@ -89,7 +89,7 @@ def includeme(config):
     for route_name in ['repo_group_integrations_home', 'repo_group_integrations_list']:
         config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
                         attr='index',
-                        renderer='rhodecode:templates/admin/integrations/list.html',
+                        renderer='rhodecode:templates/admin/integrations/list.mako',
                         request_method='GET',
                         route_name=route_name)
 
@@ -101,7 +101,7 @@ def includeme(config):
                      custom_predicates=(valid_repo_group,))
     config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
                     attr='new_integration',
-                    renderer='rhodecode:templates/admin/integrations/new.html',
+                    renderer='rhodecode:templates/admin/integrations/new.mako',
                     request_method='GET',
                     route_name='repo_group_integrations_new')
 
@@ -120,12 +120,12 @@ def includeme(config):
     for route_name in ['repo_group_integrations_edit', 'repo_group_integrations_create']:
         config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
                         attr='settings_get',
-                        renderer='rhodecode:templates/admin/integrations/form.html',
+                        renderer='rhodecode:templates/admin/integrations/form.mako',
                         request_method='GET',
                         route_name=route_name)
         config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
                         attr='settings_post',
-                        renderer='rhodecode:templates/admin/integrations/form.html',
+                        renderer='rhodecode:templates/admin/integrations/form.mako',
                         request_method='POST',
                         route_name=route_name)
 
@@ -147,7 +147,7 @@ def includeme(config):
         config.add_view('rhodecode.integrations.views.RepoIntegrationsView',
                         attr='index',
                         request_method='GET',
-                        renderer='rhodecode:templates/admin/integrations/list.html',
+                        renderer='rhodecode:templates/admin/integrations/list.mako',
                         route_name=route_name)
 
     config.add_route('repo_integrations_new',
@@ -158,7 +158,7 @@ def includeme(config):
                      custom_predicates=(valid_repo,))
     config.add_view('rhodecode.integrations.views.RepoIntegrationsView',
                     attr='new_integration',
-                    renderer='rhodecode:templates/admin/integrations/new.html',
+                    renderer='rhodecode:templates/admin/integrations/new.mako',
                     request_method='GET',
                     route_name='repo_integrations_new')
 
@@ -177,12 +177,12 @@ def includeme(config):
     for route_name in ['repo_integrations_edit', 'repo_integrations_create']:
         config.add_view('rhodecode.integrations.views.RepoIntegrationsView',
                         attr='settings_get',
-                        renderer='rhodecode:templates/admin/integrations/form.html',
+                        renderer='rhodecode:templates/admin/integrations/form.mako',
                         request_method='GET',
                         route_name=route_name)
         config.add_view('rhodecode.integrations.views.RepoIntegrationsView',
                         attr='settings_post',
-                        renderer='rhodecode:templates/admin/integrations/form.html',
+                        renderer='rhodecode:templates/admin/integrations/form.mako',
                         request_method='POST',
                         route_name=route_name)
 

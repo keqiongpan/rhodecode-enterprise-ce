@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2016  RhodeCode GmbH
+# Copyright (C) 2016-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -135,7 +135,7 @@ class IntegrationScopeType(colander.SchemaType):
                 return {
                     'repo': repo,
                     'repo_group': None,
-                    'child_repos_only': None,
+                    'child_repos_only': False,
                 }
         elif cstruct.startswith('repogroup-recursive:'):
             repo_group = RepoGroup.get_by_group_name(cstruct.split(':')[1])

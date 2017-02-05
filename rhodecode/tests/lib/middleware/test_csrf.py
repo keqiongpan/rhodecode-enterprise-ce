@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -21,15 +21,15 @@
 import wsgiref.simple_server
 
 import pytest
-import webtest
 
+from rhodecode.tests.utils import CustomTestApp
 from rhodecode.lib.middleware import csrf
 
 
 def test_origin_checker_no_origin():
     app = csrf.OriginChecker(
         wsgiref.simple_server.demo_app, 'https://safe.org')
-    app = webtest.TestApp(app)
+    app = CustomTestApp(app)
 
     app.post('/foo')
 
@@ -37,7 +37,7 @@ def test_origin_checker_no_origin():
 def test_origin_checker_null_origin():
     app = csrf.OriginChecker(
         wsgiref.simple_server.demo_app, 'https://safe.org')
-    app = webtest.TestApp(app)
+    app = CustomTestApp(app)
 
     app.post('/foo', headers={'Origin': 'null'})
 
@@ -50,7 +50,7 @@ def test_origin_checker_null_origin():
 def test_origin_checker_valid_origin(origin):
     app = csrf.OriginChecker(
         wsgiref.simple_server.demo_app, 'http://safe.org')
-    app = webtest.TestApp(app)
+    app = CustomTestApp(app)
 
     app.post('/foo', headers={'Origin': origin})
 
@@ -63,7 +63,7 @@ def test_origin_checker_valid_origin(origin):
 def test_origin_checker_valid_origin_https(origin):
     app = csrf.OriginChecker(
         wsgiref.simple_server.demo_app, 'https://safe.org')
-    app = webtest.TestApp(app)
+    app = CustomTestApp(app)
 
     app.post('/foo', headers={'Origin': origin})
 
@@ -76,7 +76,7 @@ def test_origin_checker_valid_origin_https(origin):
 def test_origin_checker_invalid_origin(origin):
     app = csrf.OriginChecker(
         wsgiref.simple_server.demo_app, 'https://safe.org')
-    app = webtest.TestApp(app)
+    app = CustomTestApp(app)
 
     app.post('/foo', headers={'Origin': origin}, status=403)
 
@@ -84,6 +84,6 @@ def test_origin_checker_invalid_origin(origin):
 def test_origin_checker_invalid_origin_skipped_url():
     app = csrf.OriginChecker(
         wsgiref.simple_server.demo_app, 'https://safe.org', skip_urls=['/foo'])
-    app = webtest.TestApp(app)
+    app = CustomTestApp(app)
 
     app.post('/foo', headers={'Origin': 'http://www.evil.org'})

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2016  RhodeCode GmbH
+# Copyright (C) 2014-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -165,7 +165,7 @@ class SimpleVCS(object):
                 self.acl_repo_name = acl_repo_name
                 self.is_shadow_repo = True
 
-        log.debug('Repository names: %s', {
+        log.debug('Setting all VCS repository names: %s', {
             'acl_repo_name': self.acl_repo_name,
             'url_repo_name': self.url_repo_name,
             'vcs_repo_name': self.vcs_repo_name,

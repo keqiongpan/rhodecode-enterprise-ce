@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2016  RhodeCode GmbH
+# Copyright (C) 2011-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -34,9 +34,10 @@ from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 from rhodecode.lib.utils2 import str2bool, time_to_datetime
 from rhodecode.lib.ext_json import json
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    Session, ChangesetStatus, RepositoryField, Repository)
+    Session, ChangesetStatus, RepositoryField, Repository, RepoGroup,
+    ChangesetComment)
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel, RepoList
 from rhodecode.model.settings import SettingsModel, VcsSettingsModel
@@ -217,7 +218,7 @@ def get_repo(request, apiuser, repoid, cache=Optional(True)):
 
 
 @jsonrpc_method()
-def get_repos(request, apiuser):
+def get_repos(request, apiuser, root=Optional(None), traverse=Optional(True)):
     """
     Lists all existing repositories.
 
@@ -226,6 +227,14 @@ def get_repos(request, apiuser):
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
+    :param root: specify root repository group to fetch repositories.
+        filters the returned repositories to be members of given root group.
+    :type root: Optional(None)
+    :param traverse: traverse given root into subrepositories. With this flag
+        set to False, it will only return top-level repositories from `root`.
+        if root is empty it will return just top-level repositories.
+    :type traverse: Optional(True)
+
 
     Example output:
 
@@ -257,8 +266,28 @@ def get_repos(request, apiuser):
     _perms = ('repository.read', 'repository.write', 'repository.admin',)
     extras = {'user': apiuser}
 
-    repo_list = RepoList(
-        RepoModel().get_all(), perm_set=_perms, extra_kwargs=extras)
+    root = Optional.extract(root)
+    traverse = Optional.extract(traverse, binary=True)
+
+    if root:
+        # verify parent existance, if it's empty return an error
+        parent = RepoGroup.get_by_group_name(root)
+        if not parent:
+            raise JSONRPCError(
+                'Root repository group `{}` does not exist'.format(root))
+
+        if traverse:
+            repos = RepoModel().get_repos_for_root(root=root, traverse=traverse)
+        else:
+            repos = RepoModel().get_repos_for_root(root=parent)
+    else:
+        if traverse:
+            repos = RepoModel().get_all()
+        else:
+            # return just top-level
+            repos = RepoModel().get_repos_for_root(root=None)
+
+    repo_list = RepoList(repos, perm_set=_perms, extra_kwargs=extras)
     return [repo.get_api_data(include_secrets=include_secrets)
             for repo in repo_list]
 
@@ -1354,8 +1383,10 @@ def lock(request, apiuser, repoid, locked=Optional(None),
 
 @jsonrpc_method()
 def comment_commit(
-        request, apiuser, repoid, commit_id, message,
-        userid=Optional(OAttr('apiuser')), status=Optional(None)):
+        request, apiuser, repoid, commit_id, message, status=Optional(None),
+        comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
+        resolves_comment_id=Optional(None),
+        userid=Optional(OAttr('apiuser'))):
     """
     Set a commit comment, and optionally change the status of the commit.
 
@@ -1367,15 +1398,17 @@ def comment_commit(
     :type commit_id: str
     :param message: The comment text.
     :type message: str
+    :param status: (**Optional**) status of commit, one of: 'not_reviewed',
+        'approved', 'rejected', 'under_review'
+    :type status: str
+    :param comment_type: Comment type, one of: 'note', 'todo'
+    :type comment_type: Optional(str), default: 'note'
     :param userid: Set the user name of the comment creator.
     :type userid: Optional(str or int)
-    :param status: status, one of 'not_reviewed', 'approved', 'rejected',
-       'under_review'
-    :type status: str
 
     Example error output:
 
-    .. code-block:: json
+    .. code-block:: bash
 
         {
             "id" : <id_given_in_input>,
@@ -1398,21 +1431,37 @@ def comment_commit(
 
     user = get_user_or_error(userid)
     status = Optional.extract(status)
+    comment_type = Optional.extract(comment_type)
+    resolves_comment_id = Optional.extract(resolves_comment_id)
 
     allowed_statuses = [x[0] for x in ChangesetStatus.STATUSES]
     if status and status not in allowed_statuses:
         raise JSONRPCError('Bad status, must be on '
                            'of %s got %s' % (allowed_statuses, status,))
 
+    if resolves_comment_id:
+        comment = ChangesetComment.get(resolves_comment_id)
+        if not comment:
+            raise JSONRPCError(
+                'Invalid resolves_comment_id `%s` for this commit.'
+                % resolves_comment_id)
+        if comment.comment_type != ChangesetComment.COMMENT_TYPE_TODO:
+            raise JSONRPCError(
+                'Comment `%s` is wrong type for setting status to resolved.'
+                % resolves_comment_id)
+
     try:
         rc_config = SettingsModel().get_all_settings()
         renderer = rc_config.get('rhodecode_markup_renderer', 'rst')
         status_change_label = ChangesetStatus.get_status_lbl(status)
-        comm = ChangesetCommentsModel().create(
-            message, repo, user, revision=commit_id,
+        comm = CommentsModel().create(
+            message, repo, user, commit_id=commit_id,
             status_change=status_change_label,
             status_change_type=status,
-            renderer=renderer)
+            renderer=renderer,
+            comment_type=comment_type,
+            resolves_comment_id=resolves_comment_id
+        )
         if status:
             # also do a status change
             try:

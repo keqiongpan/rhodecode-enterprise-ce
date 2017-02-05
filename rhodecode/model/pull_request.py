@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2016  RhodeCode GmbH
+# Copyright (C) 2012-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -47,10 +47,10 @@ from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError)
 from rhodecode.model import BaseModel
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     PullRequest, PullRequestReviewers, ChangesetStatus,
-    PullRequestVersion, ChangesetComment)
+    PullRequestVersion, ChangesetComment, Repository)
 from rhodecode.model.meta import Session
 from rhodecode.model.notification import NotificationModel, \
     EmailNotificationModel
@@ -80,7 +80,7 @@ class PullRequestModel(BaseModel):
             'This pull request cannot be merged because of an unhandled'
             ' exception.'),
         MergeFailureReason.MERGE_FAILED: lazy_ugettext(
-            'This pull request cannot be merged because of conflicts.'),
+            'This pull request cannot be merged because of merge conflicts.'),
         MergeFailureReason.PUSH_FAILED: lazy_ugettext(
             'This pull request could not be merged because push to target'
             ' failed.'),
@@ -130,7 +130,8 @@ class PullRequestModel(BaseModel):
     }
 
     def __get_pull_request(self, pull_request):
-        return self._get_instance(PullRequest, pull_request)
+        return self._get_instance((
+            PullRequest, PullRequestVersion), pull_request)
 
     def _check_perms(self, perms, pull_request, user, api=False):
         if not api:
@@ -154,7 +155,7 @@ class PullRequestModel(BaseModel):
 
     def check_user_delete(self, pull_request, user):
         owner = user.user_id == pull_request.user_id
-        _perms = ('repository.admin')
+        _perms = ('repository.admin',)
         return self._check_perms(_perms, pull_request, user) or owner
 
     def check_user_change_status(self, pull_request, user, api=False):
@@ -551,7 +552,7 @@ class PullRequestModel(BaseModel):
         pull_request.merge_rev = merge_state.merge_ref.commit_id
         pull_request.updated_on = datetime.datetime.now()
 
-        ChangesetCommentsModel().create(
+        CommentsModel().create(
             text=unicode(_('Pull request merged and closed')),
             repo=pull_request.target_repo.repo_id,
             user=user.user_id,
@@ -629,7 +630,7 @@ class PullRequestModel(BaseModel):
                 old=pull_request, new=None, changes=None)
 
         # re-compute commit ids
-        old_commit_ids = set(pull_request.revisions)
+        old_commit_ids = pull_request.revisions
         pre_load = ["author", "branch", "date", "message"]
         commit_ranges = target_repo.compare(
             target_commit.raw_id, source_commit.raw_id, source_repo, merge=True,
@@ -646,7 +647,7 @@ class PullRequestModel(BaseModel):
             commit.raw_id for commit in reversed(commit_ranges)]
         pull_request.updated_on = datetime.datetime.now()
         Session().add(pull_request)
-        new_commit_ids = set(pull_request.revisions)
+        new_commit_ids = pull_request.revisions
 
         changes = self._calculate_commit_id_changes(
             old_commit_ids, new_commit_ids)
@@ -654,7 +655,7 @@ class PullRequestModel(BaseModel):
         old_diff_data, new_diff_data = self._generate_update_diffs(
             pull_request, pull_request_version)
 
-        ChangesetCommentsModel().outdate_comments(
+        CommentsModel().outdate_comments(
             pull_request, old_diff_data=old_diff_data,
             new_diff_data=new_diff_data)
 
@@ -662,7 +663,7 @@ class PullRequestModel(BaseModel):
             old_diff_data, new_diff_data)
 
         # Add an automatic comment to the pull request
-        update_comment = ChangesetCommentsModel().create(
+        update_comment = CommentsModel().create(
             text=self._render_update_message(changes, file_changes),
             repo=pull_request.target_repo,
             user=pull_request.author,
@@ -727,13 +728,23 @@ class PullRequestModel(BaseModel):
         return version
 
     def _generate_update_diffs(self, pull_request, pull_request_version):
+
         diff_context = (
             self.DIFF_CONTEXT +
-            ChangesetCommentsModel.needed_extra_diff_context())
+            CommentsModel.needed_extra_diff_context())
+
+        source_repo = pull_request_version.source_repo
+        source_ref_id = pull_request_version.source_ref_parts.commit_id
+        target_ref_id = pull_request_version.target_ref_parts.commit_id
         old_diff = self._get_diff_from_pr_or_version(
-            pull_request_version, context=diff_context)
+            source_repo, source_ref_id, target_ref_id, context=diff_context)
+
+        source_repo = pull_request.source_repo
+        source_ref_id = pull_request.source_ref_parts.commit_id
+        target_ref_id = pull_request.target_ref_parts.commit_id
+
         new_diff = self._get_diff_from_pr_or_version(
-            pull_request, context=diff_context)
+            source_repo, source_ref_id, target_ref_id, context=diff_context)
 
         old_diff_data = diffs.DiffProcessor(old_diff)
         old_diff_data.prepare()
@@ -767,10 +778,11 @@ class PullRequestModel(BaseModel):
             Session().add(comment)
 
     def _calculate_commit_id_changes(self, old_ids, new_ids):
-        added = new_ids.difference(old_ids)
-        common = old_ids.intersection(new_ids)
-        removed = old_ids.difference(new_ids)
-        return ChangeTuple(added, common, removed)
+        added = [x for x in new_ids if x not in old_ids]
+        common = [x for x in new_ids if x in old_ids]
+        removed = [x for x in old_ids if x not in new_ids]
+        total = new_ids
+        return ChangeTuple(added, common, removed, total)
 
     def _calculate_file_changes(self, old_diff_data, new_diff_data):
 
@@ -1000,7 +1012,7 @@ class PullRequestModel(BaseModel):
 
         internal_message = _('Closing with') + ' ' + message
 
-        comm = ChangesetCommentsModel().create(
+        comm = CommentsModel().create(
             text=internal_message,
             repo=repo.repo_id,
             user=user.user_id,
@@ -1260,20 +1272,20 @@ class PullRequestModel(BaseModel):
                 raise EmptyRepositoryError()
         return groups, selected
 
-    def get_diff(self, pull_request, context=DIFF_CONTEXT):
-        pull_request = self.__get_pull_request(pull_request)
-        return self._get_diff_from_pr_or_version(pull_request, context=context)
+    def get_diff(self, source_repo, source_ref_id, target_ref_id, context=DIFF_CONTEXT):
+        return self._get_diff_from_pr_or_version(
+            source_repo, source_ref_id, target_ref_id, context=context)
 
-    def _get_diff_from_pr_or_version(self, pr_or_version, context):
-        source_repo = pr_or_version.source_repo
-
-        # we swap org/other ref since we run a simple diff on one repo
-        target_ref_id = pr_or_version.target_ref_parts.commit_id
-        source_ref_id = pr_or_version.source_ref_parts.commit_id
+    def _get_diff_from_pr_or_version(
+            self, source_repo, source_ref_id, target_ref_id, context):
         target_commit = source_repo.get_commit(
             commit_id=safe_str(target_ref_id))
-        source_commit = source_repo.get_commit(commit_id=safe_str(source_ref_id))
-        vcs_repo = source_repo.scm_instance()
+        source_commit = source_repo.get_commit(
+            commit_id=safe_str(source_ref_id))
+        if isinstance(source_repo, Repository):
+            vcs_repo = source_repo.scm_instance()
+        else:
+            vcs_repo = source_repo
 
         # TODO: johbo: In the context of an update, we cannot reach
         # the old commit anymore with our normal mechanisms. It needs
@@ -1310,8 +1322,99 @@ class PullRequestModel(BaseModel):
             pull_request.target_repo)
 
 
+class MergeCheck(object):
+    """
+    Perform Merge Checks and returns a check object which stores information
+    about merge errors, and merge conditions
+    """
+    TODO_CHECK = 'todo'
+    PERM_CHECK = 'perm'
+    REVIEW_CHECK = 'review'
+    MERGE_CHECK = 'merge'
+
+    def __init__(self):
+        self.merge_possible = None
+        self.merge_msg = ''
+        self.failed = None
+        self.errors = []
+        self.error_details = OrderedDict()
+
+    def push_error(self, error_type, message, error_key, details):
+        self.failed = True
+        self.errors.append([error_type, message])
+        self.error_details[error_key] = dict(
+            details=details,
+            error_type=error_type,
+            message=message
+        )
+
+    @classmethod
+    def validate(cls, pull_request, user, fail_early=False, translator=None):
+        # if migrated to pyramid...
+        # _ = lambda: translator or _  # use passed in translator if any
+
+        merge_check = cls()
+
+        # permissions
+        user_allowed_to_merge = PullRequestModel().check_user_merge(
+            pull_request, user)
+        if not user_allowed_to_merge:
+            log.debug("MergeCheck: cannot merge, approval is pending.")
+
+            msg = _('User `{}` not allowed to perform merge.').format(user.username)
+            merge_check.push_error('error', msg, cls.PERM_CHECK, user.username)
+            if fail_early:
+                return merge_check
+
+        # review status
+        review_status = pull_request.calculated_review_status()
+        status_approved = review_status == ChangesetStatus.STATUS_APPROVED
+        if not status_approved:
+            log.debug("MergeCheck: cannot merge, approval is pending.")
+
+            msg = _('Pull request reviewer approval is pending.')
+
+            merge_check.push_error(
+                'warning', msg, cls.REVIEW_CHECK, review_status)
+
+            if fail_early:
+                return merge_check
+
+        # left over TODOs
+        todos = CommentsModel().get_unresolved_todos(pull_request)
+        if todos:
+            log.debug("MergeCheck: cannot merge, {} "
+                      "unresolved todos left.".format(len(todos)))
+
+            if len(todos) == 1:
+                msg = _('Cannot merge, {} TODO still not resolved.').format(
+                    len(todos))
+            else:
+                msg = _('Cannot merge, {} TODOs still not resolved.').format(
+                    len(todos))
+
+            merge_check.push_error('warning', msg, cls.TODO_CHECK, todos)
+
+            if fail_early:
+                return merge_check
+
+        # merge possible
+        merge_status, msg = PullRequestModel().merge_status(pull_request)
+        merge_check.merge_possible = merge_status
+        merge_check.merge_msg = msg
+        if not merge_status:
+            log.debug(
+                "MergeCheck: cannot merge, pull request merge not possible.")
+            merge_check.push_error('warning', msg, cls.MERGE_CHECK, None)
+
+            if fail_early:
+                return merge_check
+
+        return merge_check
+
+
 ChangeTuple = namedtuple('ChangeTuple',
-                         ['added', 'common', 'removed'])
+                         ['added', 'common', 'removed', 'total'])
 
 FileChangeTuple = namedtuple('FileChangeTuple',
                              ['added', 'modified', 'removed'])

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2016  RhodeCode GmbH
+# Copyright (C) 2011-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -25,24 +25,15 @@ Model for integrations
 
 
 import logging
-import traceback
 
-from pylons import tmpl_context as c
-from pylons.i18n.translation import _, ungettext
 from sqlalchemy import or_, and_
-from sqlalchemy.sql.expression import false, true
-from mako import exceptions
 
 import rhodecode
 from rhodecode import events
-from rhodecode.lib import helpers as h
 from rhodecode.lib.caching_query import FromCache
-from rhodecode.lib.utils import PartialRenderer
 from rhodecode.model import BaseModel
-from rhodecode.model.db import Integration, User, Repository, RepoGroup
-from rhodecode.model.meta import Session
+from rhodecode.model.db import Integration, Repository, RepoGroup
 from rhodecode.integrations import integration_type_registry
-from rhodecode.integrations.types.base import IntegrationTypeBase
 
 log = logging.getLogger(__name__)
 

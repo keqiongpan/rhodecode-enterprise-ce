@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2016  RhodeCode GmbH
+# Copyright (C) 2016-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -186,3 +186,11 @@ class UserType(UserOrUserGroupType):
 
 class UserGroupType(UserOrUserGroupType):
     scopes = ('usergroup',)
+
+
+class StrOrIntType(colander.String):
+    def deserialize(self, node, cstruct):
+        if isinstance(node, basestring):
+            return super(StrOrIntType, self).deserialize(node, cstruct)
+        else:
+            return colander.Integer().deserialize(node, cstruct)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import sys
 import logging
 
 
@@ -73,16 +74,35 @@ class Pyro4AwareFormatter(logging.Formatter):
 
     def formatException(self, ei):
         ex_type, ex_value, ex_tb = ei
-        if hasattr(ex_value, '_pyroTraceback'):
-            # johbo: Avoiding to import pyro4 until we get an exception
-            # which actually has a remote traceback. This avoids issues
-            # when gunicorn is used with gevent, since the logging would
-            # trigger an import of Pyro4 before the patches of gevent
-            # are applied.
-            import Pyro4.util
-            return ''.join(
-                Pyro4.util.getPyroTraceback(ex_type, ex_value, ex_tb))
-        return logging.Formatter.formatException(self, ei)
+
+        local_tb = logging.Formatter.formatException(self, ei)
+        if hasattr(ex_value, '_vcs_server_traceback'):
+
+            def formatRemoteTraceback(remote_tb_lines):
+                result = ["\n +--- This exception occured remotely on VCSServer - Remote traceback:\n\n"]
+                result.append(remote_tb_lines)
+                result.append("\n +--- End of remote traceback\n")
+                return result
+
+            try:
+                if ex_type is not None and ex_value is None and ex_tb is None:
+                    # possible old (3.x) call syntax where caller is only providing exception object
+                    if type(ex_type) is not type:
+                        raise TypeError(
+                            "invalid argument: ex_type should be an exception type, or just supply no arguments at all")
+                if ex_type is None and ex_tb is None:
+                    ex_type, ex_value, ex_tb = sys.exc_info()
+
+                remote_tb = getattr(ex_value, "_vcs_server_traceback", None)
+
+                if remote_tb:
+                    remote_tb = formatRemoteTraceback(remote_tb)
+                    return local_tb + ''.join(remote_tb)
+            finally:
+                # clean up cycle to traceback, to allow proper GC
+                del ex_type, ex_value, ex_tb
+
+        return local_tb
 
 
 class ColorFormatter(Pyro4AwareFormatter):

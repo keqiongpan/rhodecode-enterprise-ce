@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -90,22 +90,24 @@ class TestRepositoryBase(BackendTestMixin):
             self.Backend.check_url(self.repo.path + "invalid", config)
 
     def test_get_contact(self):
-        self.repo.contact
+        assert self.repo.contact
 
     def test_get_description(self):
-        self.repo.description
+        assert self.repo.description
 
     def test_get_hook_location(self):
         assert len(self.repo.get_hook_location()) != 0
 
-    def test_last_change(self):
-        assert self.repo.last_change >= datetime.datetime(2010, 1, 1, 21, 0)
+    def test_last_change(self, local_dt_to_utc):
+        assert self.repo.last_change >= local_dt_to_utc(
+            datetime.datetime(2010, 1, 1, 21, 0))
 
-    def test_last_change_in_empty_repository(self, vcsbackend):
+    def test_last_change_in_empty_repository(self, vcsbackend, local_dt_to_utc):
         delta = datetime.timedelta(seconds=1)
-        start = datetime.datetime.now()
+
+        start = local_dt_to_utc(datetime.datetime.now())
         empty_repo = vcsbackend.create_repo()
-        now = datetime.datetime.now()
+        now = local_dt_to_utc(datetime.datetime.now())
         assert empty_repo.last_change >= start - delta
         assert empty_repo.last_change <= now + delta
 

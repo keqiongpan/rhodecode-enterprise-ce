@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -33,13 +33,13 @@ from rhodecode.lib.markup_renderer import MarkupRenderer, RstTemplateRenderer
         ('readme.Rst', 'rst'),
         ('readme.rest', 'rst'),
         ('readme.rest', 'rst'),
-        ('readme', 'rst'),
-        ('README', 'rst'),
 
         ('markdown.xml', 'plain'),
         ('rest.xml', 'plain'),
         ('readme.xml', 'plain'),
 
+        ('readme', 'plain'),
+        ('README', 'plain'),
         ('readme.mdx', 'plain'),
         ('readme.rstx', 'plain'),
         ('readmex', 'plain'),
@@ -95,7 +95,7 @@ def test_rst_xss_raw_directive():
 
 def test_render_rst_template_without_files():
     expected = u'''\
-Auto status change to |under_review|
+Pull request updated. Auto status change to |under_review|
 
 .. role:: added
 .. role:: removed
@@ -125,7 +125,7 @@ Auto status change to |under_review|
 
 def test_render_rst_template_with_files():
     expected = u'''\
-Auto status change to |under_review|
+Pull request updated. Auto status change to |under_review|
 
 .. role:: added
 .. role:: removed

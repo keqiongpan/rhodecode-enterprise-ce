@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2016  RhodeCode GmbH
+# Copyright (C) 2012-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -134,7 +134,7 @@ class AuthSettingsView(object):
             'available_plugins': authn_registry.get_plugins(),
             'enabled_plugins': enabled_plugins,
         }
-        html = render('rhodecode:templates/admin/auth/auth_settings.html',
+        html = render('rhodecode:templates/admin/auth/auth_settings.mako',
                       template_context,
                       request=self.request)
 

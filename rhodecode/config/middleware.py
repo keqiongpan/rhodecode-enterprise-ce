@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -52,7 +52,8 @@ from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
 from rhodecode.lib.utils2 import aslist as rhodecode_aslist
-from rhodecode.subscribers import scan_repositories_if_enabled
+from rhodecode.subscribers import (
+    scan_repositories_if_enabled, write_metadata_if_needed)
 
 
 log = logging.getLogger(__name__)
@@ -232,6 +233,14 @@ def error_handler(exception, request):
     if isinstance(exception, HTTPError):
         base_response = exception
 
+    def is_http_error(response):
+        # error which should have traceback
+        return response.status_code > 499
+
+    if is_http_error(base_response):
+        log.exception(
+            'error occurred handling this request for path: %s', request.path)
+
     c = AttributeDict()
     c.error_message = base_response.status
     c.error_explanation = base_response.explanation or str(base_response)
@@ -251,7 +260,7 @@ def error_handler(exception, request):
         c.causes = base_response.causes
 
     response = render_to_response(
-        '/errors/error_document.html', {'c': c}, request=request,
+        '/errors/error_document.mako', {'c': c}, request=request,
         response=base_response)
 
     return response
@@ -283,8 +292,12 @@ def includeme(config):
     config.add_route(
         'rhodecode_support', 'https://rhodecode.com/help/', static=True)
 
+    config.add_translation_dirs('rhodecode:i18n/')
+    settings['default_locale_name'] = settings.get('lang', 'en')
+
     # Add subscribers.
     config.add_subscriber(scan_repositories_if_enabled, ApplicationCreated)
+    config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
 
     # Set the authorization policy.
     authz_policy = ACLAuthorizationPolicy()
@@ -320,6 +333,13 @@ def includeme_first(config):
     config.add_view(favicon_redirect, route_name='favicon')
     config.add_route('favicon', '/favicon.ico')
 
+    def robots_redirect(context, request):
+        return HTTPFound(
+            request.static_path('rhodecode:public/robots.txt'))
+
+    config.add_view(robots_redirect, route_name='robots')
+    config.add_route('robots', '/robots.txt')
+
     config.add_static_view(
         '_static/deform', 'deform:static')
     config.add_static_view(
@@ -350,7 +370,6 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
     if settings['gzip_responses']:
         pyramid_app = make_gzip_middleware(
             pyramid_app, settings, compress_level=1)
-
 
     # this should be the outer most middleware in the wsgi stack since
     # middleware like Routes make database calls

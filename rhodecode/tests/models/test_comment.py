@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -72,7 +72,7 @@ def test_diff_to_comment_line_number(old, new, expected):
     (DiffLineNumber(old=12, new=None), DiffLineNumber(old=21, new=None)),
 ])
 def test_choose_closest_diff_line_normal(diff_line, expected):
-    comment_model = comment.ChangesetCommentsModel()
+    comment_model = comment.CommentsModel()
     candidates = [
         DiffLineNumber(old=2, new=None),
         DiffLineNumber(old=21, new=None),
@@ -82,7 +82,7 @@ def test_choose_closest_diff_line_normal(diff_line, expected):
 
 
 def test_revision_comments_are_sorted():
-    comment_model = comment.ChangesetCommentsModel()
+    comment_model = comment.CommentsModel()
     query = comment_model._get_inline_comments_query(
         repo_id='fake_repo_name',
         revision='fake_revision',
@@ -92,15 +92,15 @@ def test_revision_comments_are_sorted():
 
 @pytest.mark.parametrize('use_outdated', [True, False])
 def test_pull_request_comments_are_sorted(use_outdated):
-    comment_model = comment.ChangesetCommentsModel()
+    comment_model = comment.CommentsModel()
     pull_request = mock.Mock()
     # TODO: johbo: Had to do this since we have an inline call to
     # self.__get_pull_request. Should be moved out at some point.
     get_instance_patcher = mock.patch.object(
-        comment.ChangesetCommentsModel, '_get_instance',
+        comment.CommentsModel, '_get_instance',
         return_value=pull_request)
     config_patcher = mock.patch.object(
-        comment.ChangesetCommentsModel, 'use_outdated_comments',
+        comment.CommentsModel, 'use_outdated_comments',
         return_value=use_outdated)
 
     with get_instance_patcher, config_patcher as config_mock:
@@ -123,7 +123,7 @@ def assert_inline_comments_order(query):
 
 
 def test_get_renderer():
-    model = comment.ChangesetCommentsModel()
+    model = comment.CommentsModel()
     renderer = model._get_renderer()
     assert renderer == "rst"
 
@@ -137,7 +137,7 @@ class TestUseOutdatedComments(object):
             'rhodecode_use_outdated_comments': use_outdated
         }
         with self._patch_settings(general_settings) as settings_mock:
-            result = comment.ChangesetCommentsModel.use_outdated_comments(
+            result = comment.CommentsModel.use_outdated_comments(
                 pull_request)
         settings_mock.assert_called_once_with(repo=pull_request.target_repo)
         assert result == use_outdated
@@ -147,7 +147,7 @@ class TestUseOutdatedComments(object):
 
         general_settings = {}
         with self._patch_settings(general_settings) as settings_mock:
-            result = comment.ChangesetCommentsModel.use_outdated_comments(
+            result = comment.CommentsModel.use_outdated_comments(
                 pull_request)
         settings_mock.assert_called_once_with(repo=pull_request.target_repo)
         assert result is False

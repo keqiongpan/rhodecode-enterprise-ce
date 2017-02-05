@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -37,6 +37,7 @@ import time
 import string
 import hashlib
 import pygments
+import itertools
 
 from datetime import datetime
 from functools import partial
@@ -722,11 +723,10 @@ hide_credentials = lambda x: ''.join(credentials_filter(x))
 
 def age_component(datetime_iso, value=None, time_is_local=False):
     title = value or format_date(datetime_iso)
+    tzinfo = '+00:00'
 
     # detect if we have a timezone info, otherwise, add it
     if isinstance(datetime_iso, datetime) and not datetime_iso.tzinfo:
-        tzinfo = '+00:00'
-
         if time_is_local:
             tzinfo = time.strftime("+%H:%M",
                 time.gmtime(
@@ -914,7 +914,7 @@ def person_by_id(id_, show_attr="username_and_name"):
 
 def gravatar_with_user(author, show_disabled=False):
     from rhodecode.lib.utils import PartialRenderer
-    _render = PartialRenderer('base/base.html')
+    _render = PartialRenderer('base/base.mako')
     return _render('gravatar_with_user', author, show_disabled=show_disabled)
 
 

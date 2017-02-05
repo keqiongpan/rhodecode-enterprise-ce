@@ -1,4 +1,4 @@
-// # Copyright (C) 2010-2016  RhodeCode GmbH
+// # Copyright (C) 2010-2017 RhodeCode GmbH
 // #
 // # This program is free software: you can redistribute it and/or modify
 // # it under the terms of the GNU Affero General Public License, version 3
@@ -182,6 +182,12 @@ var showRepoStats = function(target, data){
 
 };
 
+// returns a node from given html;
+var fromHTML = function(html){
+  var _html = document.createElement('element');
+  _html.innerHTML = html;
+  return _html;
+};
 
 // Toggle Collapsable Content
 function collapsableContent() {
@@ -235,6 +241,9 @@ function scrollToElement(element, percent, time) {
     time = (time === undefined ? 100 : time);
 
     var $element = $(element);
+    if ($element.length == 0) {
+        throw('Cannot scroll to {0}'.format(element))
+    }
     var elOffset = $element.offset().top;
     var elHeight = $element.height();
     var windowHeight = $(window).height();

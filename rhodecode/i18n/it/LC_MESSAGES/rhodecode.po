@@ -1,9 +1,9 @@
 # Translations template for rhodecode-enterprise-ce.
-# Copyright (C) 2016 RhodeCode GmbH
+# Copyright (C) 2017 RhodeCode GmbH
 # This file is distributed under the same license as the rhodecode-enterprise-ce project.
 # 
 # Translators:
-# Alessandro sauzher Ceglie, 2014-2016
+# Alessandro sauzher Ceglie, 2014-2017
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2014
 msgid ""
 msgstr ""

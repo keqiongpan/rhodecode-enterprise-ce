@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2016  RhodeCode GmbH
+# Copyright (C) 2011-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -39,16 +39,18 @@ from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import extract_mentioned_users
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    ChangesetComment, User, Notification, PullRequest)
+    ChangesetComment, User, Notification, PullRequest, AttributeDict)
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import VcsSettingsModel
 from rhodecode.model.notification import EmailNotificationModel
+from rhodecode.model.validation_schema.schemas import comment_schema
+
 
 log = logging.getLogger(__name__)
 
 
-class ChangesetCommentsModel(BaseModel):
+class CommentsModel(BaseModel):
 
     cls = ChangesetComment
 
@@ -81,10 +83,91 @@ class ChangesetCommentsModel(BaseModel):
             log.error(traceback.format_exc())
         return global_renderer
 
-    def create(self, text, repo, user, revision=None, pull_request=None,
+    def aggregate_comments(self, comments, versions, show_version, inline=False):
+        # group by versions, and count until, and display objects
+
+        comment_groups = collections.defaultdict(list)
+        [comment_groups[
+             _co.pull_request_version_id].append(_co) for _co in comments]
+
+        def yield_comments(pos):
+            for co in comment_groups[pos]:
+                yield co
+
+        comment_versions = collections.defaultdict(
+            lambda: collections.defaultdict(list))
+        prev_prvid = -1
+        # fake last entry with None, to aggregate on "latest" version which
+        # doesn't have an pull_request_version_id
+        for ver in versions + [AttributeDict({'pull_request_version_id': None})]:
+            prvid = ver.pull_request_version_id
+            if prev_prvid == -1:
+                prev_prvid = prvid
+
+            for co in yield_comments(prvid):
+                comment_versions[prvid]['at'].append(co)
+
+            # save until
+            current = comment_versions[prvid]['at']
+            prev_until = comment_versions[prev_prvid]['until']
+            cur_until = prev_until + current
+            comment_versions[prvid]['until'].extend(cur_until)
+
+            # save outdated
+            if inline:
+                outdated = [x for x in cur_until
+                            if x.outdated_at_version(show_version)]
+            else:
+                outdated = [x for x in cur_until
+                            if x.older_than_version(show_version)]
+            display = [x for x in cur_until if x not in outdated]
+
+            comment_versions[prvid]['outdated'] = outdated
+            comment_versions[prvid]['display'] = display
+
+            prev_prvid = prvid
+
+        return comment_versions
+
+    def get_unresolved_todos(self, pull_request, show_outdated=True):
+
+        todos = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.pull_request == pull_request) \
+            .filter(ChangesetComment.resolved_by == None) \
+            .filter(ChangesetComment.comment_type
+                    == ChangesetComment.COMMENT_TYPE_TODO)
+
+        if not show_outdated:
+            todos = todos.filter(
+                coalesce(ChangesetComment.display_state, '') !=
+                ChangesetComment.COMMENT_OUTDATED)
+
+        todos = todos.all()
+
+        return todos
+
+    def get_commit_unresolved_todos(self, commit_id, show_outdated=True):
+
+        todos = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.revision == commit_id) \
+            .filter(ChangesetComment.resolved_by == None) \
+            .filter(ChangesetComment.comment_type
+                    == ChangesetComment.COMMENT_TYPE_TODO)
+
+        if not show_outdated:
+            todos = todos.filter(
+                coalesce(ChangesetComment.display_state, '') !=
+                ChangesetComment.COMMENT_OUTDATED)
+
+        todos = todos.all()
+
+        return todos
+
+    def create(self, text, repo, user, commit_id=None, pull_request=None,
                f_path=None, line_no=None, status_change=None,
-               status_change_type=None, closing_pr=False,
-               send_email=True, renderer=None):
+               status_change_type=None, comment_type=None,
+               resolves_comment_id=None, closing_pr=False, send_email=True,
+               renderer=None):
         """
         Creates new comment for commit or pull request.
         IF status_change is not none this comment is associated with a
@@ -93,14 +176,16 @@ class ChangesetCommentsModel(BaseModel):
         :param text:
         :param repo:
         :param user:
-        :param revision:
+        :param commit_id:
         :param pull_request:
         :param f_path:
         :param line_no:
         :param status_change: Label for status change
+        :param comment_type: Type of comment
         :param status_change_type: type of status change
         :param closing_pr:
         :param send_email:
+        :param renderer: pick renderer for this comment
         """
         if not text:
             log.warning('Missing text for comment, skipping...')
@@ -111,16 +196,32 @@ class ChangesetCommentsModel(BaseModel):
 
         repo = self._get_repo(repo)
         user = self._get_user(user)
+
+        schema = comment_schema.CommentSchema()
+        validated_kwargs = schema.deserialize(dict(
+            comment_body=text,
+            comment_type=comment_type,
+            comment_file=f_path,
+            comment_line=line_no,
+            renderer_type=renderer,
+            status_change=status_change_type,
+            resolves_comment_id=resolves_comment_id,
+            repo=repo.repo_id,
+            user=user.user_id,
+        ))
+
         comment = ChangesetComment()
-        comment.renderer = renderer
+        comment.renderer = validated_kwargs['renderer_type']
+        comment.text = validated_kwargs['comment_body']
+        comment.f_path = validated_kwargs['comment_file']
+        comment.line_no = validated_kwargs['comment_line']
+        comment.comment_type = validated_kwargs['comment_type']
+
         comment.repo = repo
         comment.author = user
-        comment.text = text
-        comment.f_path = f_path
-        comment.line_no = line_no
+        comment.resolved_comment = self.__get_commit_comment(
+            validated_kwargs['resolves_comment_id'])
 
-        #TODO (marcink): fix this and remove revision as param
-        commit_id = revision
         pull_request_id = pull_request
 
         commit_obj = None
@@ -359,9 +460,10 @@ class ChangesetCommentsModel(BaseModel):
         inline_cnt = 0
         for fname, per_line_comments in inline_comments.iteritems():
             for lno, comments in per_line_comments.iteritems():
-                inline_cnt += len(
-                    [comm for comm in comments
-                     if (not comm.outdated and skip_outdated)])
+                for comm in comments:
+                    if not comm.outdated_at_version(version) and skip_outdated:
+                        inline_cnt += 1
+
         return inline_cnt
 
     def get_outdated_comments(self, repo_id, pull_request):
@@ -387,7 +489,7 @@ class ChangesetCommentsModel(BaseModel):
 
         elif pull_request:
             pull_request = self.__get_pull_request(pull_request)
-            if not ChangesetCommentsModel.use_outdated_comments(pull_request):
+            if not CommentsModel.use_outdated_comments(pull_request):
                 q = self._visible_inline_comments_of_pull_request(pull_request)
             else:
                 q = self._all_inline_comments_of_pull_request(pull_request)
@@ -409,7 +511,7 @@ class ChangesetCommentsModel(BaseModel):
         return max(cls.DIFF_CONTEXT_BEFORE, cls.DIFF_CONTEXT_AFTER)
 
     def outdate_comments(self, pull_request, old_diff_data, new_diff_data):
-        if not ChangesetCommentsModel.use_outdated_comments(pull_request):
+        if not CommentsModel.use_outdated_comments(pull_request):
             return
 
         comments = self._visible_inline_comments_of_pull_request(pull_request)
@@ -482,6 +584,13 @@ class ChangesetCommentsModel(BaseModel):
         comments = Session().query(ChangesetComment)\
             .filter(ChangesetComment.line_no != None)\
             .filter(ChangesetComment.f_path != None)\
+            .filter(ChangesetComment.pull_request == pull_request)
+        return comments
+
+    def _all_general_comments_of_pull_request(self, pull_request):
+        comments = Session().query(ChangesetComment)\
+            .filter(ChangesetComment.line_no == None)\
+            .filter(ChangesetComment.f_path == None)\
             .filter(ChangesetComment.pull_request == pull_request)
         return comments
 

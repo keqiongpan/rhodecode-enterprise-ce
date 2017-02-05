@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -82,9 +82,9 @@ class NotificationsController(BaseController):
             c.current_filter = 'comment'
 
         if request.is_xhr:
-            return render('admin/notifications/notifications_data.html')
+            return render('admin/notifications/notifications_data.mako')
 
-        return render('admin/notifications/notifications.html')
+        return render('admin/notifications/notifications.mako')
 
 
     @auth.CSRFRequired()
@@ -102,7 +102,7 @@ class NotificationsController(BaseController):
                 url('notifications'), request.GET)
             c.notifications = Page(notif, page=1, items_per_page=10,
                                    url=notifications_url)
-            return render('admin/notifications/notifications_data.html')
+            return render('admin/notifications/notifications_data.mako')
 
     def _has_permissions(self, notification):
         def is_owner():
@@ -173,6 +173,6 @@ class NotificationsController(BaseController):
                     Session().commit()
                 c.notification = no
 
-                return render('admin/notifications/show_notification.html')
+                return render('admin/notifications/show_notification.mako')
 
         return abort(403)

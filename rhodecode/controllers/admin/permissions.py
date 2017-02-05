@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -80,7 +80,7 @@ class PermissionsController(BaseController):
         defaults.update(c.user.get_default_perms())
 
         return htmlfill.render(
-            render('admin/permissions/permissions.html'),
+            render('admin/permissions/permissions.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -116,7 +116,7 @@ class PermissionsController(BaseController):
             defaults = errors.value
 
             return htmlfill.render(
-                render('admin/permissions/permissions.html'),
+                render('admin/permissions/permissions.mako'),
                 defaults=defaults,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -137,7 +137,7 @@ class PermissionsController(BaseController):
         defaults = {}
         defaults.update(c.user.get_default_perms())
         return htmlfill.render(
-            render('admin/permissions/permissions.html'),
+            render('admin/permissions/permissions.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -165,7 +165,7 @@ class PermissionsController(BaseController):
             defaults = errors.value
 
             return htmlfill.render(
-                render('admin/permissions/permissions.html'),
+                render('admin/permissions/permissions.mako'),
                 defaults=defaults,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -188,7 +188,7 @@ class PermissionsController(BaseController):
         defaults.update(c.user.get_default_perms())
 
         return htmlfill.render(
-            render('admin/permissions/permissions.html'),
+            render('admin/permissions/permissions.mako'),
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
@@ -219,7 +219,7 @@ class PermissionsController(BaseController):
             defaults = errors.value
 
             return htmlfill.render(
-                render('admin/permissions/permissions.html'),
+                render('admin/permissions/permissions.mako'),
                 defaults=defaults,
                 errors=errors.error_dict or {},
                 prefix_error=False,
@@ -239,11 +239,11 @@ class PermissionsController(BaseController):
         c.user_ip_map = (
             UserIpMap.query().filter(UserIpMap.user == c.user).all())
 
-        return render('admin/permissions/permissions.html')
+        return render('admin/permissions/permissions.mako')
 
     @HasPermissionAllDecorator('hg.admin')
     def permission_perms(self):
         c.active = 'perms'
         c.user = User.get_default_user()
         c.perm_user = c.user.AuthUser
-        return render('admin/permissions/permissions.html')
+        return render('admin/permissions/permissions.mako')

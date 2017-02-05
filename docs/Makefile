@@ -49,6 +49,12 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
+cleanup:
+	@echo "cleaning build dir"
+	rm -rf $(BUILDDIR)/*
+	@echo "cleaning result symlink"
+	rm -v result
+
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo

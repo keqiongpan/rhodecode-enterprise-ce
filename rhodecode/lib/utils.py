@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -292,7 +292,8 @@ def is_valid_repo(repo_name, base_path, expect_scm=None, explicit_scm=None):
     :return True: if given path is a valid repository
     """
     full_path = os.path.join(safe_str(base_path), safe_str(repo_name))
-    log.debug('Checking if `%s` is a valid path for repository', repo_name)
+    log.debug('Checking if `%s` is a valid path for repository. '
+              'Explicit type: %s', repo_name, explicit_scm)
 
     try:
         if explicit_scm:
@@ -903,7 +904,7 @@ class PartialRenderer(object):
     Partial renderer used to render chunks of html used in datagrids
     use like::
 
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
         _render('quick_menu', args, kwargs)
         PartialRenderer.h,
                         c,

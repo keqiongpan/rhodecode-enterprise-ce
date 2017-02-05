@@ -47,6 +47,17 @@ Followed by::
    nix-channel --update
 
 
+Install required binaries
+-------------------------
+
+We need some handy tools first.
+
+run::
+
+    nix-env -i nix-prefetch-hg
+    nix-env -i nix-prefetch-git
+
+
 Clone the required repositories
 -------------------------------
 
@@ -63,6 +74,21 @@ To do this, use the following example::
    If you cannot clone the repository, please request read permissions
    via support@rhodecode.com
 
+
+Install some required libraries
+-------------------------------
+
+There are some required drivers that we need to install to test RhodeCode
+under different types of databases. For example in Ubuntu we need to install
+the following.
+
+required libraries::
+
+    sudo apt-get install libapr1-dev libaprutil1-dev
+    sudo apt-get install libsvn-dev
+    sudo apt-get install mysql-server libmysqlclient-dev
+    sudo apt-get install postgresql postgresql-contrib libpq-dev
+    sudo apt-get install libcurl4-openssl-dev
 
 
 Enter the Development Shell

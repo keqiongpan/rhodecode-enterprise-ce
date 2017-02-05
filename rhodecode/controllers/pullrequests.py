@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2016  RhodeCode GmbH
+# Copyright (C) 2012-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -21,10 +21,12 @@
 """
 pull requests controller for rhodecode for initializing pull requests
 """
+import types
 
 import peppercorn
 import formencode
 import logging
+import collections
 
 from webob.exc import HTTPNotFound, HTTPForbidden, HTTPBadRequest
 from pylons import request, tmpl_context as c, url
@@ -43,124 +45,30 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous,
     HasAcceptedRepoType, XHRRequired)
 from rhodecode.lib.channelstream import channelstream_request
-from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.utils import jsonify
-from rhodecode.lib.utils2 import safe_int, safe_str, str2bool, safe_unicode
-from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
+from rhodecode.lib.utils2 import (
+    safe_int, safe_str, str2bool, safe_unicode)
+from rhodecode.lib.vcs.backends.base import (
+    EmptyCommit, UpdateFailureReason, EmptyRepository)
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, CommitDoesNotExistError, RepositoryRequirementError,
     NodeDoesNotExistError)
-from rhodecode.lib.diffs import LimitedDiffContainer
+
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.comment import ChangesetCommentsModel
-from rhodecode.model.db import PullRequest, ChangesetStatus, ChangesetComment, \
-    Repository
+from rhodecode.model.comment import CommentsModel
+from rhodecode.model.db import (PullRequest, ChangesetStatus, ChangesetComment,
+    Repository, PullRequestVersion)
 from rhodecode.model.forms import PullRequestForm
 from rhodecode.model.meta import Session
-from rhodecode.model.pull_request import PullRequestModel
+from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 
 log = logging.getLogger(__name__)
 
 
 class PullrequestsController(BaseRepoController):
+
     def __before__(self):
         super(PullrequestsController, self).__before__()
-
-    def _load_compare_data(self, pull_request, inline_comments, enable_comments=True):
-        """
-        Load context data needed for generating compare diff
-
-        :param pull_request: object related to the request
-        :param enable_comments: flag to determine if comments are included
-        """
-        source_repo = pull_request.source_repo
-        source_ref_id = pull_request.source_ref_parts.commit_id
-
-        target_repo = pull_request.target_repo
-        target_ref_id = pull_request.target_ref_parts.commit_id
-
-        # despite opening commits for bookmarks/branches/tags, we always
-        # convert this to rev to prevent changes after bookmark or branch change
-        c.source_ref_type = 'rev'
-        c.source_ref = source_ref_id
-
-        c.target_ref_type = 'rev'
-        c.target_ref = target_ref_id
-
-        c.source_repo = source_repo
-        c.target_repo = target_repo
-
-        c.fulldiff = bool(request.GET.get('fulldiff'))
-
-        # diff_limit is the old behavior, will cut off the whole diff
-        # if the limit is applied  otherwise will just hide the
-        # big files from the front-end
-        diff_limit = self.cut_off_limit_diff
-        file_limit = self.cut_off_limit_file
-
-        pre_load = ["author", "branch", "date", "message"]
-
-        c.commit_ranges = []
-        source_commit = EmptyCommit()
-        target_commit = EmptyCommit()
-        c.missing_requirements = False
-        try:
-            c.commit_ranges = [
-                source_repo.get_commit(commit_id=rev, pre_load=pre_load)
-                for rev in pull_request.revisions]
-
-            c.statuses = source_repo.statuses(
-                [x.raw_id for x in c.commit_ranges])
-
-            target_commit = source_repo.get_commit(
-                commit_id=safe_str(target_ref_id))
-            source_commit = source_repo.get_commit(
-                commit_id=safe_str(source_ref_id))
-        except RepositoryRequirementError:
-            c.missing_requirements = True
-
-        c.changes = {}
-        c.missing_commits = False
-        if (c.missing_requirements or
-                isinstance(source_commit, EmptyCommit) or
-                    source_commit == target_commit):
-            _parsed = []
-            c.missing_commits = True
-        else:
-            vcs_diff = PullRequestModel().get_diff(pull_request)
-            diff_processor = diffs.DiffProcessor(
-                vcs_diff, format='newdiff', diff_limit=diff_limit,
-                file_limit=file_limit, show_full_diff=c.fulldiff)
-            _parsed = diff_processor.prepare()
-
-            commit_changes = OrderedDict()
-            _parsed = diff_processor.prepare()
-            c.limited_diff = isinstance(_parsed, diffs.LimitedDiffContainer)
-
-            _parsed = diff_processor.prepare()
-
-            def _node_getter(commit):
-                def get_node(fname):
-                    try:
-                        return commit.get_node(fname)
-                    except NodeDoesNotExistError:
-                        return None
-                return get_node
-
-            c.diffset = codeblocks.DiffSet(
-                repo_name=c.repo_name,
-                source_node_getter=_node_getter(target_commit),
-                target_node_getter=_node_getter(source_commit),
-                comments=inline_comments
-            ).render_patchset(_parsed, target_commit.raw_id, source_commit.raw_id)
-
-        c.included_files = []
-        c.deleted_files = []
-
-        for f in _parsed:
-            st = f['stats']
-            fid = h.FID('', f['filename'])
-            c.included_files.append(f['filename'])
 
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
@@ -205,7 +113,7 @@ class PullrequestsController(BaseRepoController):
         if not request.is_xhr:
             c.data = json.dumps(data['data'])
             c.records_total = data['recordsTotal']
-            return render('/pullrequests/pullrequests.html')
+            return render('/pullrequests/pullrequests.mako')
         else:
             return json.dumps(data)
 
@@ -244,10 +152,10 @@ class PullrequestsController(BaseRepoController):
                 opened_by=opened_by)
 
         from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
         data = []
         for pr in pull_requests:
-            comments = ChangesetCommentsModel().get_all_comments(
+            comments = CommentsModel().get_all_comments(
                 c.rhodecode_db_repo.repo_id, pull_request=pr)
 
             data.append({
@@ -336,7 +244,7 @@ class PullrequestsController(BaseRepoController):
         }
         c.default_source_ref = selected_source_ref
 
-        return render('/pullrequests/pullrequest.html')
+        return render('/pullrequests/pullrequest.mako')
 
     @LoginRequired()
     @NotAnonymous()
@@ -586,14 +494,20 @@ class PullrequestsController(BaseRepoController):
 
         Merge will perform a server-side merge of the specified
         pull request, if the pull request is approved and mergeable.
-        After succesfull merging, the pull request is automatically
+        After successful merging, the pull request is automatically
         closed, with a relevant comment.
         """
         pull_request_id = safe_int(pull_request_id)
         pull_request = PullRequest.get_or_404(pull_request_id)
         user = c.rhodecode_user
 
-        if self._meets_merge_pre_conditions(pull_request, user):
+        check = MergeCheck.validate(pull_request, user)
+        merge_possible = not check.failed
+
+        for err_type, error_msg in check.errors:
+            h.flash(error_msg, category=err_type)
+
+        if merge_possible:
             log.debug("Pre-conditions checked, trying to merge.")
             extras = vcs_operation_context(
                 request.environ, repo_name=pull_request.target_repo.repo_name,
@@ -605,24 +519,6 @@ class PullrequestsController(BaseRepoController):
             'pullrequest_show',
             repo_name=pull_request.target_repo.repo_name,
             pull_request_id=pull_request.pull_request_id))
-
-    def _meets_merge_pre_conditions(self, pull_request, user):
-        if not PullRequestModel().check_user_merge(pull_request, user):
-            raise HTTPForbidden()
-
-        merge_status, msg = PullRequestModel().merge_status(pull_request)
-        if not merge_status:
-            log.debug("Cannot merge, not mergeable.")
-            h.flash(msg, category='error')
-            return False
-
-        if (pull_request.calculated_review_status()
-            is not ChangesetStatus.STATUS_APPROVED):
-            log.debug("Cannot merge, approval is pending.")
-            msg = _('Pull request reviewer approval is pending.')
-            h.flash(msg, category='error')
-            return False
-        return True
 
     def _merge_pull_request(self, pull_request, user, extras):
         merge_resp = PullRequestModel().merge(
@@ -675,81 +571,294 @@ class PullrequestsController(BaseRepoController):
             return redirect(url('my_account_pullrequests'))
         raise HTTPForbidden()
 
+    def _get_pr_version(self, pull_request_id, version=None):
+        pull_request_id = safe_int(pull_request_id)
+        at_version = None
+
+        if version and version == 'latest':
+            pull_request_ver = PullRequest.get(pull_request_id)
+            pull_request_obj = pull_request_ver
+            _org_pull_request_obj = pull_request_obj
+            at_version = 'latest'
+        elif version:
+            pull_request_ver = PullRequestVersion.get_or_404(version)
+            pull_request_obj = pull_request_ver
+            _org_pull_request_obj = pull_request_ver.pull_request
+            at_version = pull_request_ver.pull_request_version_id
+        else:
+            _org_pull_request_obj = pull_request_obj = PullRequest.get_or_404(pull_request_id)
+
+        pull_request_display_obj = PullRequest.get_pr_display_object(
+            pull_request_obj, _org_pull_request_obj)
+
+        return _org_pull_request_obj, pull_request_obj, \
+               pull_request_display_obj, at_version
+
+    def _get_diffset(
+            self, source_repo, source_ref_id, target_ref_id, target_commit,
+            source_commit, diff_limit, file_limit, display_inline_comments):
+        vcs_diff = PullRequestModel().get_diff(
+            source_repo, source_ref_id, target_ref_id)
+
+        diff_processor = diffs.DiffProcessor(
+            vcs_diff, format='newdiff', diff_limit=diff_limit,
+            file_limit=file_limit, show_full_diff=c.fulldiff)
+
+        _parsed = diff_processor.prepare()
+
+        def _node_getter(commit):
+            def get_node(fname):
+                try:
+                    return commit.get_node(fname)
+                except NodeDoesNotExistError:
+                    return None
+
+            return get_node
+
+        diffset = codeblocks.DiffSet(
+            repo_name=c.repo_name,
+            source_repo_name=c.source_repo.repo_name,
+            source_node_getter=_node_getter(target_commit),
+            target_node_getter=_node_getter(source_commit),
+            comments=display_inline_comments
+        )
+        diffset = diffset.render_patchset(
+            _parsed, target_commit.raw_id, source_commit.raw_id)
+
+        return diffset
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
                                    'repository.admin')
     def show(self, repo_name, pull_request_id):
         pull_request_id = safe_int(pull_request_id)
-        c.pull_request = PullRequest.get_or_404(pull_request_id)
+        version = request.GET.get('version')
+        from_version = request.GET.get('from_version') or version
+        merge_checks = request.GET.get('merge_checks')
+        c.fulldiff = str2bool(request.GET.get('fulldiff'))
 
-        c.template_context['pull_request_data']['pull_request_id'] = \
-            pull_request_id
+        (pull_request_latest,
+         pull_request_at_ver,
+         pull_request_display_obj,
+         at_version) = self._get_pr_version(
+            pull_request_id, version=version)
+        versions = pull_request_display_obj.versions()
+
+        c.at_version = at_version
+        c.at_version_num = (at_version
+                            if at_version and at_version != 'latest'
+                            else None)
+        c.at_version_pos = ChangesetComment.get_index_from_version(
+            c.at_version_num, versions)
+
+        (prev_pull_request_latest,
+         prev_pull_request_at_ver,
+         prev_pull_request_display_obj,
+         prev_at_version) = self._get_pr_version(
+            pull_request_id, version=from_version)
+
+        c.from_version = prev_at_version
+        c.from_version_num = (prev_at_version
+                              if prev_at_version and prev_at_version != 'latest'
+                              else None)
+        c.from_version_pos = ChangesetComment.get_index_from_version(
+            c.from_version_num, versions)
+
+        # define if we're in COMPARE mode or VIEW at version mode
+        compare = at_version != prev_at_version
 
         # pull_requests repo_name we opened it against
         # ie. target_repo must match
-        if repo_name != c.pull_request.target_repo.repo_name:
+        if repo_name != pull_request_at_ver.target_repo.repo_name:
             raise HTTPNotFound
 
-        c.allowed_to_change_status = PullRequestModel(). \
-            check_user_change_status(c.pull_request, c.rhodecode_user)
-        c.allowed_to_update = PullRequestModel().check_user_update(
-            c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
-        c.allowed_to_merge = PullRequestModel().check_user_merge(
-            c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
         c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
-            c.pull_request)
-        c.allowed_to_delete = PullRequestModel().check_user_delete(
-            c.pull_request, c.rhodecode_user) and not c.pull_request.is_closed()
+            pull_request_at_ver)
 
-        cc_model = ChangesetCommentsModel()
+        c.ancestor = None  # empty ancestor hidden in display
+        c.pull_request = pull_request_display_obj
+        c.pull_request_latest = pull_request_latest
 
-        c.pull_request_reviewers = c.pull_request.reviewers_statuses()
+        pr_closed = pull_request_latest.is_closed()
+        if compare or (at_version and not at_version == 'latest'):
+            c.allowed_to_change_status = False
+            c.allowed_to_update = False
+            c.allowed_to_merge = False
+            c.allowed_to_delete = False
+            c.allowed_to_comment = False
+        else:
+            c.allowed_to_change_status = PullRequestModel(). \
+                check_user_change_status(pull_request_at_ver, c.rhodecode_user)
+            c.allowed_to_update = PullRequestModel().check_user_update(
+                pull_request_latest, c.rhodecode_user) and not pr_closed
+            c.allowed_to_merge = PullRequestModel().check_user_merge(
+                pull_request_latest, c.rhodecode_user) and not pr_closed
+            c.allowed_to_delete = PullRequestModel().check_user_delete(
+                pull_request_latest, c.rhodecode_user) and not pr_closed
+            c.allowed_to_comment = not pr_closed
 
-        c.pull_request_review_status = c.pull_request.calculated_review_status()
-        c.pr_merge_status, c.pr_merge_msg = PullRequestModel().merge_status(
-            c.pull_request)
-        c.approval_msg = None
-        if c.pull_request_review_status != ChangesetStatus.STATUS_APPROVED:
-            c.approval_msg = _('Reviewer approval is pending.')
-            c.pr_merge_status = False
-        # load compare data into template context
-        enable_comments = not c.pull_request.is_closed()
+        # check merge capabilities
+        _merge_check = MergeCheck.validate(
+            pull_request_latest, user=c.rhodecode_user)
+        c.pr_merge_errors = _merge_check.error_details
+        c.pr_merge_possible = not _merge_check.failed
+        c.pr_merge_message = _merge_check.merge_msg
 
+        if merge_checks:
+            return render('/pullrequests/pullrequest_merge_checks.mako')
 
-        # inline comments
-        c.inline_comments = cc_model.get_inline_comments(
-            c.rhodecode_db_repo.repo_id,
-            pull_request=pull_request_id)
+        comments_model = CommentsModel()
 
-        c.inline_cnt = cc_model.get_inline_comments_count(c.inline_comments)
+        # reviewers and statuses
+        c.pull_request_reviewers = pull_request_at_ver.reviewers_statuses()
+        allowed_reviewers = [x[0].user_id for x in c.pull_request_reviewers]
+        c.pull_request_review_status = pull_request_at_ver.calculated_review_status()
 
-        self._load_compare_data(
-            c.pull_request, c.inline_comments, enable_comments=enable_comments)
+        # GENERAL COMMENTS with versions #
+        q = comments_model._all_general_comments_of_pull_request(pull_request_latest)
+        q = q.order_by(ChangesetComment.comment_id.asc())
+        general_comments = q.order_by(ChangesetComment.pull_request_version_id.asc())
 
-        # outdated comments
-        c.outdated_comments = {}
-        c.outdated_cnt = 0
-        if ChangesetCommentsModel.use_outdated_comments(c.pull_request):
-            c.outdated_comments = cc_model.get_outdated_comments(
-                c.rhodecode_db_repo.repo_id,
-                pull_request=c.pull_request)
-            # Count outdated comments and check for deleted files
-            for file_name, lines in c.outdated_comments.iteritems():
-                for comments in lines.values():
-                    c.outdated_cnt += len(comments)
-                if file_name not in c.included_files:
-                    c.deleted_files.append(file_name)
+        # pick comments we want to render at current version
+        c.comment_versions = comments_model.aggregate_comments(
+            general_comments, versions, c.at_version_num)
+        c.comments = c.comment_versions[c.at_version_num]['until']
 
+        # INLINE COMMENTS with versions  #
+        q = comments_model._all_inline_comments_of_pull_request(pull_request_latest)
+        q = q.order_by(ChangesetComment.comment_id.asc())
+        inline_comments = q.order_by(ChangesetComment.pull_request_version_id.asc())
+        c.inline_versions = comments_model.aggregate_comments(
+            inline_comments, versions, c.at_version_num, inline=True)
+
+        # inject latest version
+        latest_ver = PullRequest.get_pr_display_object(
+            pull_request_latest, pull_request_latest)
+
+        c.versions = versions + [latest_ver]
+
+        # if we use version, then do not show later comments
+        # than current version
+        display_inline_comments = collections.defaultdict(
+            lambda: collections.defaultdict(list))
+        for co in inline_comments:
+            if c.at_version_num:
+                # pick comments that are at least UPTO given version, so we
+                # don't render comments for higher version
+                should_render = co.pull_request_version_id and \
+                                co.pull_request_version_id <= c.at_version_num
+            else:
+                # showing all, for 'latest'
+                should_render = True
+
+            if should_render:
+                display_inline_comments[co.f_path][co.line_no].append(co)
+
+        # load diff data into template context, if we use compare mode then
+        # diff is calculated based on changes between versions of PR
+
+        source_repo = pull_request_at_ver.source_repo
+        source_ref_id = pull_request_at_ver.source_ref_parts.commit_id
+
+        target_repo = pull_request_at_ver.target_repo
+        target_ref_id = pull_request_at_ver.target_ref_parts.commit_id
+
+        if compare:
+            # in compare switch the diff base to latest commit from prev version
+            target_ref_id = prev_pull_request_display_obj.revisions[0]
+
+        # despite opening commits for bookmarks/branches/tags, we always
+        # convert this to rev to prevent changes after bookmark or branch change
+        c.source_ref_type = 'rev'
+        c.source_ref = source_ref_id
+
+        c.target_ref_type = 'rev'
+        c.target_ref = target_ref_id
+
+        c.source_repo = source_repo
+        c.target_repo = target_repo
+
+        # diff_limit is the old behavior, will cut off the whole diff
+        # if the limit is applied  otherwise will just hide the
+        # big files from the front-end
+        diff_limit = self.cut_off_limit_diff
+        file_limit = self.cut_off_limit_file
+
+        c.commit_ranges = []
+        source_commit = EmptyCommit()
+        target_commit = EmptyCommit()
+        c.missing_requirements = False
+
+        # try first shadow repo, fallback to regular repo
+        try:
+            commits_source_repo = pull_request_latest.get_shadow_repo()
+        except Exception:
+            log.debug('Failed to get shadow repo', exc_info=True)
+            commits_source_repo = source_repo.scm_instance()
+
+        c.commits_source_repo = commits_source_repo
+        commit_cache = {}
+        try:
+            pre_load = ["author", "branch", "date", "message"]
+            show_revs = pull_request_at_ver.revisions
+            for rev in show_revs:
+                comm = commits_source_repo.get_commit(
+                    commit_id=rev, pre_load=pre_load)
+                c.commit_ranges.append(comm)
+                commit_cache[comm.raw_id] = comm
+
+            target_commit = commits_source_repo.get_commit(
+                commit_id=safe_str(target_ref_id))
+            source_commit = commits_source_repo.get_commit(
+                commit_id=safe_str(source_ref_id))
+        except CommitDoesNotExistError:
+            pass
+        except RepositoryRequirementError:
+            log.warning(
+                'Failed to get all required data from repo', exc_info=True)
+            c.missing_requirements = True
+
+        c.statuses = source_repo.statuses(
+            [x.raw_id for x in c.commit_ranges])
+
+        # auto collapse if we have more than limit
+        collapse_limit = diffs.DiffProcessor._collapse_commits_over
+        c.collapse_all_commits = len(c.commit_ranges) > collapse_limit
+        c.compare_mode = compare
+
+        c.missing_commits = False
+        if (c.missing_requirements or isinstance(source_commit, EmptyCommit)
+            or source_commit == target_commit):
+
+            c.missing_commits = True
+        else:
+
+            c.diffset = self._get_diffset(
+                commits_source_repo, source_ref_id, target_ref_id,
+                target_commit, source_commit,
+                diff_limit, file_limit, display_inline_comments)
+
+            c.limited_diff = c.diffset.limited_diff
+
+            # calculate removed files that are bound to comments
+            comment_deleted_files = [
+                fname for fname in display_inline_comments
+                if fname not in c.diffset.file_stats]
+
+            c.deleted_files_comments = collections.defaultdict(dict)
+            for fname, per_line_comments in display_inline_comments.items():
+                if fname in comment_deleted_files:
+                    c.deleted_files_comments[fname]['stats'] = 0
+                    c.deleted_files_comments[fname]['comments'] = list()
+                    for lno, comments in per_line_comments.items():
+                        c.deleted_files_comments[fname]['comments'].extend(
+                            comments)
 
         # this is a hack to properly display links, when creating PR, the
         # compare view and others uses different notation, and
-        # compare_commits.html renders links based on the target_repo.
+        # compare_commits.mako renders links based on the target_repo.
         # We need to swap that here to generate it properly on the html side
         c.target_repo = c.source_repo
-
-        # comments
-        c.comments = cc_model.get_comments(c.rhodecode_db_repo.repo_id,
-                                           pull_request=pull_request_id)
 
         if c.allowed_to_update:
             force_close = ('forced_closed', _('Close Pull Request'))
@@ -758,14 +867,55 @@ class PullrequestsController(BaseRepoController):
             statuses = ChangesetStatus.STATUSES
         c.commit_statuses = statuses
 
-        c.ancestor = None # TODO: add ancestor here
+        c.show_version_changes = not pr_closed
+        if c.show_version_changes:
+            cur_obj = pull_request_at_ver
+            prev_obj = prev_pull_request_at_ver
 
-        return render('/pullrequests/pullrequest_show.html')
+            old_commit_ids = prev_obj.revisions
+            new_commit_ids = cur_obj.revisions
+            commit_changes = PullRequestModel()._calculate_commit_id_changes(
+                old_commit_ids, new_commit_ids)
+            c.commit_changes_summary = commit_changes
+
+            # calculate the diff for commits between versions
+            c.commit_changes = []
+            mark = lambda cs, fw: list(
+                h.itertools.izip_longest([], cs, fillvalue=fw))
+            for c_type, raw_id in mark(commit_changes.added, 'a') \
+                                + mark(commit_changes.removed, 'r') \
+                                + mark(commit_changes.common, 'c'):
+
+                if raw_id in commit_cache:
+                    commit = commit_cache[raw_id]
+                else:
+                    try:
+                        commit = commits_source_repo.get_commit(raw_id)
+                    except CommitDoesNotExistError:
+                        # in case we fail extracting still use "dummy" commit
+                        # for display in commit diff
+                        commit = h.AttributeDict(
+                            {'raw_id': raw_id,
+                             'message': 'EMPTY or MISSING COMMIT'})
+                c.commit_changes.append([c_type, commit])
+
+            # current user review statuses for each version
+            c.review_versions = {}
+            if c.rhodecode_user.user_id in allowed_reviewers:
+                for co in general_comments:
+                    if co.author.user_id == c.rhodecode_user.user_id:
+                        # each comment has a status change
+                        status = co.status_change
+                        if status:
+                            _ver_pr = status[0].comment.pull_request_version_id
+                            c.review_versions[_ver_pr] = status[0]
+
+        return render('/pullrequests/pullrequest_show.mako')
 
     @LoginRequired()
     @NotAnonymous()
-    @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
-                                   'repository.admin')
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
     @auth.CSRFRequired()
     @jsonify
     def comment(self, repo_name, pull_request_id):
@@ -778,6 +928,9 @@ class PullrequestsController(BaseRepoController):
         # as a changeset status, still we want to send it in one value.
         status = request.POST.get('changeset_status', None)
         text = request.POST.get('text')
+        comment_type = request.POST.get('comment_type')
+        resolves_comment_id = request.POST.get('resolves_comment_id', None)
+
         if status and '_closed' in status:
             close_pr = True
             status = status.replace('_closed', '')
@@ -798,7 +951,7 @@ class PullrequestsController(BaseRepoController):
             if close_pr:
                 message = _('Closing with') + ' ' + message
             text = text or message
-        comm = ChangesetCommentsModel().create(
+        comm = CommentsModel().create(
             text=text,
             repo=c.rhodecode_db_repo.repo_id,
             user=c.rhodecode_user.user_id,
@@ -809,10 +962,10 @@ class PullrequestsController(BaseRepoController):
                            if status and allowed_to_change_status else None),
             status_change_type=(status
                                 if status and allowed_to_change_status else None),
-            closing_pr=close_pr
+            closing_pr=close_pr,
+            comment_type=comment_type,
+            resolves_comment_id=resolves_comment_id
         )
-
-
 
         if allowed_to_change_status:
             old_calculated_status = pull_request.calculated_review_status()
@@ -863,9 +1016,10 @@ class PullrequestsController(BaseRepoController):
         }
         if comm:
             c.co = comm
+            c.inline_comment = True if comm.line_no else False
             data.update(comm.get_dict())
             data.update({'rendered_text':
-                             render('changeset/changeset_comment_block.html')})
+                             render('changeset/changeset_comment_block.mako')})
 
         return data
 
@@ -889,7 +1043,7 @@ class PullrequestsController(BaseRepoController):
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(c.repo_name)
         if h.HasPermissionAny('hg.admin')() or is_repo_admin or is_owner:
             old_calculated_status = co.pull_request.calculated_review_status()
-            ChangesetCommentsModel().delete(comment=co)
+            CommentsModel().delete(comment=co)
             Session().commit()
             calculated_status = co.pull_request.calculated_review_status()
             if old_calculated_status != calculated_status:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2013-2016  RhodeCode GmbH
+# Copyright (C) 2013-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -114,7 +114,7 @@ class GistsController(BaseController):
             c.active = 'public'
 
         from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.html')
+        _render = PartialRenderer('data_table/_dt_elements.mako')
 
         data = []
 
@@ -130,7 +130,7 @@ class GistsController(BaseController):
                 'description': _render('gist_description', gist.gist_description)
             })
         c.data = json.dumps(data)
-        return render('admin/gists/index.html')
+        return render('admin/gists/index.mako')
 
     @LoginRequired()
     @NotAnonymous()
@@ -186,7 +186,7 @@ class GistsController(BaseController):
                 del errors['nodes.0.filename']
 
             return formencode.htmlfill.render(
-                render('admin/gists/new.html'),
+                render('admin/gists/new.mako'),
                 defaults=defaults,
                 errors=errors,
                 prefix_error=False,
@@ -202,11 +202,11 @@ class GistsController(BaseController):
 
     @LoginRequired()
     @NotAnonymous()
-    def new(self, format='html'):
+    def new(self):
         """GET /admin/gists/new: Form to create a new item"""
         # url('new_gist')
         self.__load_defaults()
-        return render('admin/gists/new.html')
+        return render('admin/gists/new.mako')
 
     @LoginRequired()
     @NotAnonymous()
@@ -266,7 +266,7 @@ class GistsController(BaseController):
                                    if (f_path is None or f.path == f_path)])
             response.content_type = 'text/plain'
             return content
-        return render('admin/gists/show.html')
+        return render('admin/gists/show.mako')
 
     @LoginRequired()
     @NotAnonymous()
@@ -322,7 +322,9 @@ class GistsController(BaseController):
 
     @LoginRequired()
     @NotAnonymous()
-    def edit_form(self, gist_id, format='html'):
+    def edit_form(self, gist_id):
+        translate = _ = c.pyramid_request.translate
+
         """GET /admin/gists/gist_id/edit: Form to edit an existing item"""
         # url('edit_gist', gist_id=ID)
         self._add_gist_to_context(gist_id)
@@ -342,9 +344,11 @@ class GistsController(BaseController):
         else:
             # this cannot use timeago, since it's used in select2 as a value
             expiry = h.age(h.time_to_datetime(c.gist.gist_expires))
+
+        expiry = translate(expiry)
         self.__load_defaults(
             extra_values=(0, _('%(expiry)s - current value') % {'expiry': expiry}))
-        return render('admin/gists/edit.html')
+        return render('admin/gists/edit.mako')
 
     @LoginRequired()
     @NotAnonymous()

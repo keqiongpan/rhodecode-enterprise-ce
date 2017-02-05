@@ -1,5 +1,5 @@
 ## -*- coding: utf-8 -*-
-Auto status change to |under_review|
+Pull request updated. Auto status change to |under_review|
 
 .. role:: added
 .. role:: removed

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -97,7 +97,7 @@ class HomeController(BaseController):
         c.repos_data = json.dumps(repo_data)
         c.repo_groups_data = json.dumps(repo_group_data)
 
-        return render('/index.html')
+        return render('/index.mako')
 
     @LoginRequired()
     @HasRepoGroupPermissionAnyDecorator('group.read', 'group.write',
@@ -112,7 +112,7 @@ class HomeController(BaseController):
         c.repos_data = json.dumps(repo_data)
         c.repo_groups_data = json.dumps(repo_group_data)
 
-        return render('index_repo_group.html')
+        return render('index_repo_group.mako')
 
     def _get_repo_list(self, name_contains=None, repo_type=None, limit=20):
         query = Repository.query()\

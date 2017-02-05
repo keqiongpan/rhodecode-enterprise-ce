@@ -37,15 +37,18 @@ function registerRCRoutes() {
     pyroutes.register('pullrequest', '/%(repo_name)s/pull-request/new', ['repo_name']);
     pyroutes.register('pullrequest_repo_refs', '/%(repo_name)s/pull-request/refs/%(target_repo_name)s', ['repo_name', 'target_repo_name']);
     pyroutes.register('pullrequest_repo_destinations', '/%(repo_name)s/pull-request/repo-destinations', ['repo_name']);
+    pyroutes.register('pullrequest_show', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_update', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_show_all', '/%(repo_name)s/pull-request', ['repo_name']);
     pyroutes.register('pullrequest_comment', '/%(repo_name)s/pull-request-comment/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_comment_delete', '/%(repo_name)s/pull-request-comment/%(comment_id)s/delete', ['repo_name', 'comment_id']);
     pyroutes.register('changelog_home', '/%(repo_name)s/changelog', ['repo_name']);
     pyroutes.register('changelog_file_home', '/%(repo_name)s/changelog/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
+    pyroutes.register('changelog_elements', '/%(repo_name)s/changelog_details', ['repo_name']);
     pyroutes.register('files_home', '/%(repo_name)s/files/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_history_home', '/%(repo_name)s/history/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_authors_home', '/%(repo_name)s/authors/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
+    pyroutes.register('files_annotate_home', '/%(repo_name)s/annotate/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_archive_home', '/%(repo_name)s/archive/%(fname)s', ['repo_name', 'fname']);
     pyroutes.register('files_nodelist_home', '/%(repo_name)s/nodelist/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_nodetree_full', '/%(repo_name)s/nodetree_full/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);

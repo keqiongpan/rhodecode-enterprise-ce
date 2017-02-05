@@ -1,0 +1,652 @@
+===================================================================
+Cannot display: file marked as a binary type.
+svn:mime-type = image/png
+Index: trunk/doc/images/SettingsOverlay.png
+===================================================================
+diff --git a/trunk/doc/images/SettingsOverlay.png b/trunk/doc/images/SettingsOverlay.png
+GIT binary patch
+--- a/trunk/doc/images/SettingsOverlay.png	(revision 1487)
++++ b/trunk/doc/images/SettingsOverlay.png	(revision 1488)
+Index: trunk/doc/source/de/tsvn_ch04.xml
+===================================================================
+diff --git a/trunk/doc/source/de/tsvn_ch04.xml b/trunk/doc/source/de/tsvn_ch04.xml
+--- a/trunk/doc/source/de/tsvn_ch04.xml	(revision 1487)
++++ b/trunk/doc/source/de/tsvn_ch04.xml	(revision 1488)
+@@ -1561,39 +1561,49 @@
+ 				</figure>
+ 			Abgesehen von der bevorzugten Sprache erlaubt dieser Dialog es Ihnen,
+ 			(fast) alle Einstellungen von TortoiseSVN zu ändern.
+-### Translate ###
+ 			<variablelist>
+ 				<varlistentry>
+-					<term>Language</term>
+-					<listitem>
+-					<para>Selects your user interface language. What did you expect?</para>
++					<term>Sprache</term>
++					<listitem>
++					<para>Wählt die Sprache für die Dialoge/Meldungen aus. Was
++					haben Sie anderes erwartet?</para>
+ 					</listitem>
+ 				</varlistentry>
+
+ 				<varlistentry>
+-					<term>Exclude pattern</term>
++					<term>Ausschliessen</term>
+ 					<listitem>
+ 					<para>
+ 					<indexterm>
+-						<primary>exclude pattern</primary>
++						<primary>ausschliessen</primary>
+ 					</indexterm>
+-					Exclude files or directories by typing in the names or extensions. Patterns are separated by spaces
+-					e.g.  <literal>bin obj *.bak *.~?? *.jar *.[Tt]mp</literal>. The first two entries refer to directories, the
+-					other four to files.
+-					</para>
+-					<para>
+-					This exclude pattern will affect all your projects. It is not versioned, so it
+-					will not affect other users. In contrast you can also use the versioned svn:ignore
+-					property to exclude files or directories from version control. You can set the svn:ignore
+-					property using the
++					Ausgeschlossene, unversionierte Dateien werden nicht angezeigt
++					in z.B. dem Übertragen Dialog. Ausserdem werden solche Dateien
++					beim Importieren in ein Projektarchiv ignoriert.
++					Schliessen Sie Dateien oder Ordner aus durch Angabe von
++					Dateinamen oder Erweiterungen. Die einzelnen Muster werden
++					durch Leerzeichen voneinander getrennt. Zum Beispiel
++					<literal>bin obj *.bak *.~?? *.jar *.[Tt]mp</literal>.
++					Die ersten beiden Muster beziehen sich auf Ordner, die
++					restlichen vier auf Dateien.
++					</para>
++					<para>
++					Diese Auschluss-Muster beziehen sich auf alle Ihre Projekte.
++					Sie werden nicht versioniert, d.h. andere Benutzer werden davon
++					nichts mitbekommen. Im Gegensatz dazu können Sie jedoch auch
++					die versionierte Eigenschaft svn:ignore verwenden, um Dateien
++					und/oder Ordner von der Versionskontrolle auszuschliessen.
++					Sie können die svn:ignore Eigenschaft setzen durch den
+ 					<menuchoice>
+-						<guimenuitem>Add to Ignore List</guimenuitem>
++						<guimenuitem>Ignorieren</guimenuitem>
+ 					</menuchoice>
+-					command. After commiting every other user will have the same
+-					svn:ignore property set for this project / directory as you.
++					Befehl. Nach dem Übertragen wird jeder Benutzer dieselbe
++					svn:ignore Eigenschaft für das Projekt oder den Ordner
++					haben wie Sie.
+ 					</para>
+ 					</listitem>
+ 				</varlistentry>
++### Translate ###
+
+ 				<varlistentry>
+ 					<term>Default number of log messages</term>
+@@ -1608,16 +1618,36 @@
+ 				</varlistentry>
+
+ 				<varlistentry>
+-					<term>Short date / time format in log messages</term>
+-					<listitem>
+-					<para>If the standard long messages use up too much space on your sceen use the short format.</para>
++					<term>Edit...</term>
++					<listitem>
++					<para>... the subversion configuration file directly. Some settings cannot be modified by TortoiseSVN.</para>
+ 					</listitem>
+ 				</varlistentry>
+
+ 				<varlistentry>
+-					<term>Edit...</term>
+-					<listitem>
+-					<para>... the subversion configuration file directly. Some settings cannot be modified by TortoiseSVN.</para>
++					<term>Short date / time format in log messages</term>
++					<listitem>
++					<para>If the standard long messages use up too much space on your sceen use the short format.</para>
++					</listitem>
++				</varlistentry>
++
++				<varlistentry>
++					<term>Set filedates to "last commit time"</term>
++					<listitem>
++					<para>
++					This option tells TortoiseSVN to set the filedates to the last commit time
++					when doing a checkout or an update. Otherwise TortoiseSVN will use
++					the current date.
++					</para>
++					</listitem>
++				</varlistentry>
++
++				<varlistentry>
++					<term>Close windows automatically</term>
++					<listitem>
++					<para>
++					TortoiseSVN will automatically close all progress dialogs when the action is finished.
++					</para>
+ 					</listitem>
+ 				</varlistentry>
+
+@@ -1629,15 +1659,15 @@
+ 				</varlistentry>
+
+ 				<varlistentry>
+-					<term>Set filedates to "last commit time"</term>
+-					<listitem>
+-					<para>
+-					This option tells TortoiseSVN to set the filedates to the last commit time
+-					when doing a checkout or an update. Otherwise TortoiseSVN will use
+-					the current date.
++					<term>Minimum logsize in chars</term>
++					<listitem>
++					<para>
++					The minimum length of a log message for a commit. If you enter
++					a shorter message than specified here, the commit is disabled.
+ 					</para>
+ 					</listitem>
+ 				</varlistentry>
++
+ 				<varlistentry>
+ 					<term>Don't remove log messages when cancelling a commit</term>
+ 					<listitem>
+@@ -1648,11 +1678,14 @@
+ 					</para>
+ 					</listitem>
+ 				</varlistentry>
++
+ 				<varlistentry>
+-					<term>Close windows automatically</term>
+-					<listitem>
+-					<para>
+-					TortoiseSVN will automatically close all progress dialogs when the action is finished.
++					<term>Show BugID/Issue-Nr. Box</term>
++					<listitem>
++					<para>
++					Shows a textbox in the commit dialog where you can enter
++					a BugID or Issue-Nr. from a bugtracker to associate the
++					commit with that ID/number.
+ 					</para>
+ 					</listitem>
+ 				</varlistentry>
+@@ -1673,10 +1706,32 @@
+ 				Sie können auch alle überlagerten Icons deaktivieren, aber wo liegt der Spaß darin?
+ 			</para>
+ 			<para>
++				Die <term>Ausschluss Pfade</term> sagen TortoiseSVN für welche
++				Pfade die überlagerten Icons <emphasis>nicht</emphasis> gezeichnet
++				werden sollen. Dies ist nützlich wenn Sie zum Beispiel sehr grosse
++				Arbeitskopien haben, welche grosse externe Bibliotheken, welche Sie
++				selbst nie ändern werden enthalten. Sie können dann diese Pfade
++				ausschliessen. Zum Beispiel:
++			</para>
++			<para>
++				<filename>f:\development\SVN\Subversion</filename> deaktiviert
++				die überlagerten Icons <emphasis>nur</emphasis> für diesen speziellen
++				Ordner. Sie können die Icons noch immer für alle Dateien und Ordner
++				innerhalb sehen.
++			</para>
++			<para>
++				<filename>f:\development\SVN\Subversion*</filename> deaktiviert die
++				überlagerten Icons für <emphasis>alle</emphasis> Dateien und Ordner
++				welcher Pfad mit <filename>f:\development\SVN\Subversion</filename>
++				beginnt. Das bedeutet dass auch für alle Dateien und Ordner innerhalb
++				keine überlagerten Icons angezeigt werden.
++			</para>
++			<para>
+ 				Ausserdem können Sie angeben, welche Befehle im
+ 				Hauptkontextmenu des Explorer angezeigt werden sollen und welche
+ 				Sie lieber im Untermenu haben wollen.
+ 			</para>
++		</sect2>
+ 		<sect2 id="tsvn-DUG-settings-network">
+ 		<?dbhh topicname="HIDD_SETTINGSPROXY"?>
+ 			<title>Der Einstellungsdialog, Netzwerkseite</title>
+Index: trunk/doc/source/en/tsvn_ch04.xml
+===================================================================
+diff --git a/trunk/doc/source/en/tsvn_ch04.xml b/trunk/doc/source/en/tsvn_ch04.xml
+--- a/trunk/doc/source/en/tsvn_ch04.xml	(revision 1487)
++++ b/trunk/doc/source/en/tsvn_ch04.xml	(revision 1488)
+@@ -1457,7 +1457,7 @@
+ 				<varlistentry>
+ 					<term>Language</term>
+ 					<listitem>
+-					<para>Selects your user interface language. What did you expect?</para>
++					<para>Selects your user interface language. What else did you expect?</para>
+ 					</listitem>
+ 				</varlistentry>
+
+@@ -1468,6 +1468,9 @@
+ 					<indexterm>
+ 						<primary>exclude pattern</primary>
+ 					</indexterm>
++					Exclude patterns are used to prevent unversioned files from
++					showing up e.g. in the commit dialog. Files matching the
++					patterns are also ignored by an import.
+ 					Exclude files or directories by typing in the names or extensions. Patterns are separated by spaces
+ 					e.g.  <literal>bin obj *.bak *.~?? *.jar *.[Tt]mp</literal>. The first two entries refer to directories, the
+ 					other four to files.
+@@ -1499,23 +1502,16 @@
+ 				</varlistentry>
+
+ 				<varlistentry>
++					<term>Edit...</term>
++					<listitem>
++					<para>... the subversion configuration file directly. Some settings cannot be modified by TortoiseSVN.</para>
++					</listitem>
++				</varlistentry>
++
++				<varlistentry>
+ 					<term>Short date / time format in log messages</term>
+ 					<listitem>
+ 					<para>If the standard long messages use up too much space on your sceen use the short format.</para>
+-					</listitem>
+-				</varlistentry>
+-
+-				<varlistentry>
+-					<term>Edit...</term>
+-					<listitem>
+-					<para>... the subversion configuration file directly. Some settings cannot be modified by TortoiseSVN.</para>
+-					</listitem>
+-				</varlistentry>
+-
+-				<varlistentry>
+-					<term>Check for newer versions</term>
+-					<listitem>
+-					<para>If checked, TortoiseSVN will check once a week if an update is available</para>
+ 					</listitem>
+ 				</varlistentry>
+
+@@ -1529,6 +1525,33 @@
+ 					</para>
+ 					</listitem>
+ 				</varlistentry>
++
++				<varlistentry>
++					<term>Close windows automatically</term>
++					<listitem>
++					<para>
++					TortoiseSVN will automatically close all progress dialogs when the action is finished.
++					</para>
++					</listitem>
++				</varlistentry>
++
++				<varlistentry>
++					<term>Check for newer versions</term>
++					<listitem>
++					<para>If checked, TortoiseSVN will check once a week if an update is available</para>
++					</listitem>
++				</varlistentry>
++
++				<varlistentry>
++					<term>Minimum logsize in chars</term>
++					<listitem>
++					<para>
++					The minimum length of a log message for a commit. If you enter
++					a shorter message than specified here, the commit is disabled.
++					</para>
++					</listitem>
++				</varlistentry>
++
+ 				<varlistentry>
+ 					<term>Don't remove log messages when cancelling a commit</term>
+ 					<listitem>
+@@ -1539,11 +1562,14 @@
+ 					</para>
+ 					</listitem>
+ 				</varlistentry>
++
+ 				<varlistentry>
+-					<term>Close windows automatically</term>
+-					<listitem>
+-					<para>
+-					TortoiseSVN will automatically close all progress dialogs when the action is finished.
++					<term>Show BugID/Issue-Nr. Box</term>
++					<listitem>
++					<para>
++					Shows a textbox in the commit dialog where you can enter
++					a BugID or Issue-Nr. from a bugtracker to associate the
++					commit with that ID/number.
+ 					</para>
+ 					</listitem>
+ 				</varlistentry>
+@@ -1552,7 +1578,7 @@
+ 		</sect2>
+ 		<sect2 id="tsvn-DUG-settings-overlay">
+ 			<?dbhh topicname="HIDD_SETTINGSOVERLAY"?>
+-			<title>The Settings Dialog, Overlay Tab</title>
++			<title>The Settings Dialog, Look and Feel Tab</title>
+ 			<para>
+ 				<figure id="tsvn-DUG-settings-dia-2">
+ 					<title>The Settings Dialog, Overlay Tab</title>
+@@ -1560,8 +1586,27 @@
+ 				</figure>
+ 				This tab allows you to choose, for which items TortoiseSVN shall
+ 				display icon overlays. If you feel that your icon overlays are very
+-				slow (explore is not responsive), uncheck the "show changed directories" box.
++				slow (explorer is not responsive), uncheck the "show changed directories" box.
+ 				You can even disable all icon overlays, but where's the fun in that?
++			</para>
++			<para>
++				The <term>Exclude Paths</term> are used to tell TortoiseSVN for which
++				paths <emphasis>not</emphasis> to show icon overlays and status columns.
++				This is useful if you have some very big working copies containing
++				only libraries which you won't change at all and therefore don't
++				need the overlays. For example:
++			</para>
++			<para>
++				<filename>f:\development\SVN\Subversion</filename> will disable
++				the overlays on <emphasis>only</emphasis> that specific folder. You
++				still can see the overlays on all files and folder inside that folder.
++			</para>
++			<para>
++				<filename>f:\development\SVN\Subversion*</filename> will disable the
++				overlays on <emphasis>all</emphasis> files and folders which path
++				starts with <filename>f:\development\SVN\Subversion</filename>. That
++				means you won't see overlays for all files and folder below that
++				path.
+ 			</para>
+ 			<para>
+ 				You can also specifiy here which of the TortoiseSVN contex menu
+Index: trunk/src/Changelog.txt
+===================================================================
+diff --git a/trunk/src/Changelog.txt b/trunk/src/Changelog.txt
+--- a/trunk/src/Changelog.txt	(revision 1487)
++++ b/trunk/src/Changelog.txt	(revision 1488)
+@@ -1,3 +1,5 @@
++- ADD: Option to exclude specific paths from showing
++       icon overlays. (Stefan)
+ - ADD: On Win2k and later, the authentication data is now
+        encrypted before saved. The encryption is not available
+        for the other OS's. (Stefan)
+Index: trunk/src/Resources/TortoiseProcENG.rc
+===================================================================
+diff --git a/trunk/src/Resources/TortoiseProcENG.rc b/trunk/src/Resources/TortoiseProcENG.rc
+--- a/trunk/src/Resources/TortoiseProcENG.rc	(revision 1487)
++++ b/trunk/src/Resources/TortoiseProcENG.rc	(revision 1488)
+@@ -398,27 +398,31 @@
+ BEGIN
+     CONTROL         "&Indicate folders with changed contents",
+                     IDC_CHANGEDDIRS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,
+-                    20,145,10
++                    20,206,10
+     CONTROL         "&Removable drives",IDC_REMOVABLE,"Button",
+-                    BS_AUTOCHECKBOX | WS_TABSTOP,18,66,130,10
++                    BS_AUTOCHECKBOX | WS_TABSTOP,18,58,130,10
+     CONTROL         "&Network drives",IDC_NETWORK,"Button",BS_AUTOCHECKBOX |
+-                    WS_TABSTOP,18,76,130,10
++                    WS_TABSTOP,18,68,130,10
+     CONTROL         "&Fixed drives",IDC_FIXED,"Button",BS_AUTOCHECKBOX |
+-                    WS_TABSTOP,18,87,127,10
++                    WS_TABSTOP,18,79,127,10
+     CONTROL         "&CD-ROM",IDC_CDROM,"Button",BS_AUTOCHECKBOX |
+-                    WS_TABSTOP,159,66,118,10
+-    GROUPBOX        "Drive Types",IDC_DRIVEGROUP,12,52,274,50
++                    WS_TABSTOP,166,58,118,10
++    GROUPBOX        "Drive Types",IDC_DRIVEGROUP,12,44,274,50
+     CONTROL         "RAM drives",IDC_RAM,"Button",BS_AUTOCHECKBOX |
+-                    WS_TABSTOP,159,76,119,10
++                    WS_TABSTOP,166,68,119,10
+     CONTROL         "Unknown drives",IDC_UNKNOWN,"Button",BS_AUTOCHECKBOX |
+-                    WS_TABSTOP,159,86,118,10
++                    WS_TABSTOP,166,78,118,10
+     CONTROL         "Show overlays only in explorer",IDC_ONLYEXPLORER,"Button",
+-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,33,122,10
+-    GROUPBOX        "Icon Overlays / Status Columns",IDC_STATIC,7,7,286,103
+-    GROUPBOX        "Context Menu",IDC_STATIC,7,113,286,97
++                    BS_AUTOCHECKBOX | WS_TABSTOP,12,33,190,10
++    GROUPBOX        "Icon Overlays / Status Columns",IDC_STATIC,7,7,286,118
++    GROUPBOX        "Context Menu",IDC_STATIC,7,130,286,80
+     CONTROL         "",IDC_MENULIST,"SysListView32",LVS_REPORT |
+                     LVS_SINGLESEL | LVS_ALIGNLEFT | LVS_NOCOLUMNHEADER |
+-                    WS_BORDER | WS_TABSTOP,12,125,274,78
++                    WS_BORDER | WS_TABSTOP,12,140,274,63
++    LTEXT           "Exclude paths:",IDC_STATIC,12,106,85,8
++    EDITTEXT        IDC_EXCLUDEPATHS,102,96,184,25,ES_MULTILINE |
++                    ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN |
++                    WS_VSCROLL
+ END
+
+ IDD_SETTINGSPROXY DIALOGEX 0, 0, 300, 217
+@@ -860,7 +864,7 @@
+         RIGHTMARGIN, 293
+         VERTGUIDE, 12
+         VERTGUIDE, 18
+-        VERTGUIDE, 159
++        VERTGUIDE, 166
+         VERTGUIDE, 286
+         TOPMARGIN, 7
+         BOTTOMMARGIN, 210
+@@ -1377,6 +1381,8 @@
+                             "If activated, prevents the overlays from showing in ""save as.."" or ""open"" dialogs"
+     IDS_SETTINGS_MENULAYOUT_TT
+                             "Check those menu entries you want to appear in the top context menu instead of the submenu"
++    IDS_SETTINGS_EXCLUDELIST_TT
++                            "A newline separated list of paths for which no icon overlays are shown.\nIf you add an ""*"" char at the end of a path, then all files and subdirs inside that path are excluded too.\nAn empty list will allow overlays on all paths."
+ END
+
+ STRINGTABLE
+Index: trunk/src/TortoiseProc/SetOverlayPage.cpp
+===================================================================
+diff --git a/trunk/src/TortoiseProc/SetOverlayPage.cpp b/trunk/src/TortoiseProc/SetOverlayPage.cpp
+--- a/trunk/src/TortoiseProc/SetOverlayPage.cpp	(revision 1487)
++++ b/trunk/src/TortoiseProc/SetOverlayPage.cpp	(revision 1488)
+@@ -20,6 +20,7 @@
+ #include "TortoiseProc.h"
+ #include "SetOverlayPage.h"
+ #include "Globals.h"
++#include ".\setoverlaypage.h"
+
+
+ // CSetOverlayPage dialog
+@@ -35,6 +36,7 @@
+ 	, m_bRAM(FALSE)
+ 	, m_bUnknown(FALSE)
+ 	, m_bOnlyExplorer(FALSE)
++	, m_sExcludePaths(_T(""))
+ {
+ 	m_regShowChangedDirs = CRegDWORD(_T("Software\\TortoiseSVN\\RecursiveOverlay"));
+ 	m_regOnlyExplorer = CRegDWORD(_T("Software\\TortoiseSVN\\OverlaysOnlyInExplorer"), FALSE);
+@@ -45,6 +47,7 @@
+ 	m_regDriveMaskRAM = CRegDWORD(_T("Software\\TortoiseSVN\\DriveMaskRAM"));
+ 	m_regDriveMaskUnknown = CRegDWORD(_T("Software\\TortoiseSVN\\DriveMaskUnknown"));
+ 	m_regTopmenu = CRegDWORD(_T("Software\\TortoiseSVN\\ContextMenuEntries"), MENUCHECKOUT | MENUUPDATE | MENUCOMMIT);
++	m_regExcludePaths = CRegString(_T("Software\\TortoiseSVN\\OverlayExcludeList"));
+
+ 	m_bShowChangedDirs = m_regShowChangedDirs;
+ 	m_bOnlyExplorer = m_regOnlyExplorer;
+@@ -55,6 +58,8 @@
+ 	m_bRAM = m_regDriveMaskRAM;
+ 	m_bUnknown = m_regDriveMaskUnknown;
+ 	m_topmenu = m_regTopmenu;
++	m_sExcludePaths = m_regExcludePaths;
++	m_sExcludePaths.Replace(_T("\n"), _T("\r\n"));
+ }
+
+ CSetOverlayPage::~CSetOverlayPage()
+@@ -74,6 +79,7 @@
+ 	DDX_Control(pDX, IDC_DRIVEGROUP, m_cDriveGroup);
+ 	DDX_Check(pDX, IDC_ONLYEXPLORER, m_bOnlyExplorer);
+ 	DDX_Control(pDX, IDC_MENULIST, m_cMenuList);
++	DDX_Text(pDX, IDC_EXCLUDEPATHS, m_sExcludePaths);
+ }
+
+
+@@ -87,6 +93,7 @@
+ 	ON_BN_CLICKED(IDC_RAM, OnBnClickedRam)
+ 	ON_BN_CLICKED(IDC_ONLYEXPLORER, OnBnClickedOnlyexplorer)
+ 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_MENULIST, OnLvnItemchangedMenulist)
++	ON_EN_CHANGE(IDC_EXCLUDEPATHS, OnEnChangeExcludepaths)
+ END_MESSAGE_MAP()
+
+
+@@ -103,6 +110,9 @@
+ 		m_regDriveMaskRAM = m_bRAM;
+ 		m_regDriveMaskUnknown = m_bUnknown;
+ 		m_regTopmenu = m_topmenu;
++		m_sExcludePaths.Replace(_T("\r"), _T(""));
++		m_regExcludePaths = m_sExcludePaths;
++		m_sExcludePaths.Replace(_T("\n"), _T("\r\n"));
+ 	}
+ }
+
+@@ -116,7 +126,7 @@
+ 	m_tooltips.AddTool(IDC_CHANGEDDIRS, IDS_SETTINGS_CHANGEDDIRS_TT);
+ 	m_tooltips.AddTool(IDC_ONLYEXPLORER, IDS_SETTINGS_ONLYEXPLORER_TT);
+ 	m_tooltips.AddTool(IDC_MENULIST, IDS_SETTINGS_MENULAYOUT_TT);
+-
++	m_tooltips.AddTool(IDC_EXCLUDEPATHS, IDS_SETTINGS_EXCLUDELIST_TT);
+
+ 	m_cMenuList.SetExtendedStyle(LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+
+@@ -280,3 +290,8 @@
+ 	} // if (m_cMenuList.GetItemCount() > 0)
+ 	*pResult = 0;
+ }
++
++void CSetOverlayPage::OnEnChangeExcludepaths()
++{
++	SetModified();
++}
+Index: trunk/src/TortoiseProc/SetOverlayPage.h
+===================================================================
+diff --git a/trunk/src/TortoiseProc/SetOverlayPage.h b/trunk/src/TortoiseProc/SetOverlayPage.h
+--- a/trunk/src/TortoiseProc/SetOverlayPage.h	(revision 1487)
++++ b/trunk/src/TortoiseProc/SetOverlayPage.h	(revision 1488)
+@@ -92,6 +92,8 @@
+ 	CIconStatic		m_cDriveGroup;
+ 	BOOL			m_bInitialized;
+ 	CRegDWORD		m_regTopmenu;
++	CRegString		m_regExcludePaths;
++	CString			m_sExcludePaths;
+
+ 	CImageList		m_imgList;
+ 	CListCtrl		m_cMenuList;
+@@ -110,4 +112,5 @@
+ 	virtual BOOL OnApply();
+ 	afx_msg void OnBnClickedOnlyexplorer();
+ 	afx_msg void OnLvnItemchangedMenulist(NMHDR *pNMHDR, LRESULT *pResult);
++	afx_msg void OnEnChangeExcludepaths();
+ };
+Index: trunk/src/TortoiseProc/resource.h
+===================================================================
+diff --git a/trunk/src/TortoiseProc/resource.h b/trunk/src/TortoiseProc/resource.h
+--- a/trunk/src/TortoiseProc/resource.h	(revision 1487)
++++ b/trunk/src/TortoiseProc/resource.h	(revision 1488)
+@@ -179,6 +179,7 @@
+ #define IDC_MINLOGSIZE                  1077
+ #define IDC_BUGID                       1077
+ #define IDC_WCURL                       1077
++#define IDC_EXCLUDEPATHS                1077
+ #define IDC_DRIVEGROUP                  1079
+ #define IDC_PROXYGROUP                  1080
+ #define IDC_SSHGROUP                    1081
+@@ -427,6 +428,7 @@
+ #define IDS_SETTINGS_CHECKNEWER_TT      3100
+ #define IDS_SETTINGS_ONLYEXPLORER_TT    3101
+ #define IDS_SETTINGS_MENULAYOUT_TT      3102
++#define IDS_SETTINGS_EXCLUDELIST_TT     3103
+ #define IDS_CHECKNEWER_YOURVERSION      3200
+ #define IDS_CHECKNEWER_CURRENTVERSION   3201
+ #define IDS_CHECKNEWER_YOURUPTODATE     3202
+Index: trunk/src/TortoiseShell/ShellCache.h
+===================================================================
+diff --git a/trunk/src/TortoiseShell/ShellCache.h b/trunk/src/TortoiseShell/ShellCache.h
+--- a/trunk/src/TortoiseShell/ShellCache.h	(revision 1487)
++++ b/trunk/src/TortoiseShell/ShellCache.h	(revision 1488)
+@@ -21,9 +21,11 @@
+ #include "globals.h"
+ #include <tchar.h>
+ #include <string>
++#include <vector>
+ #include "registry.h"
+
+ #define REGISTRYTIMEOUT 2000
++#define EXCLUDELISTTIMEOUT 5000
+ #define DRIVETYPETIMEOUT 300000		// 5 min
+ #define NUMBERFMTTIMEOUT 300000
+ class ShellCache
+@@ -39,12 +41,14 @@
+ 		driveremove = CRegStdWORD(_T("Software\\TortoiseSVN\\DriveMaskRemovable"));
+ 		driveram = CRegStdWORD(_T("Software\\TortoiseSVN\\DriveMaskRAM"));
+ 		driveunknown = CRegStdWORD(_T("Software\\TortoiseSVN\\DriveMaskUnknown"));
++		excludelist = CRegStdString(_T("Software\\TortoiseSVN\\OverlayExcludeList"));
+ 		recursiveticker = GetTickCount();
+ 		folderoverlayticker = GetTickCount();
+ 		driveticker = recursiveticker;
+ 		drivetypeticker = recursiveticker;
+ 		langticker = recursiveticker;
+-		columnrevformatticker = langticker;
++		columnrevformatticker = recursiveticker;
++		excludelistticker = recursiveticker;
+ 		menulayout = CRegStdWORD(_T("Software\\TortoiseSVN\\ContextMenuEntries"), MENUCHECKOUT | MENUUPDATE | MENUCOMMIT);
+ 		langid = CRegStdWORD(_T("Software\\TortoiseSVN\\LanguageID"), 1033);
+ 		blockstatus = CRegStdWORD(_T("Software\\TortoiseSVN\\BlockStatus"), 0);
+@@ -177,6 +181,21 @@
+ 			return FALSE;
+ 		if ((drivetype == DRIVE_UNKNOWN)&&(IsUnknown()))
+ 			return FALSE;
++
++		ExcludeListValid();
++		for (std::vector<stdstring>::iterator I = exvector.begin(); I != exvector.end(); ++I)
++		{
++			if (I->empty())
++				continue;
++			if (I->at(I->size()-1)=='*')
++			{
++				stdstring str = I->substr(0, I->size()-1);
++				if (_tcsnicmp(str.c_str(), path, str.size())==0)
++					return FALSE;
++			}
++			else if (_tcsicmp(I->c_str(), path)==0)
++				return FALSE;
++		}
+ 		return TRUE;
+ 	}
+ 	DWORD GetLangID()
+@@ -218,6 +237,32 @@
+ 			driveremove.read();
+ 		}
+ 	}
++	void ExcludeListValid()
++	{
++		if ((GetTickCount() - EXCLUDELISTTIMEOUT)>excludelistticker)
++		{
++			excludelistticker = GetTickCount();
++			excludelist.read();
++			if (excludeliststr.compare((stdstring)excludelist)==0)
++				return;
++			excludeliststr = (stdstring)excludelist;
++			exvector.clear();
++			int pos = 0, pos_ant = 0;
++			pos = excludeliststr.find(_T("\n"), pos_ant);
++			while (pos != stdstring::npos)
++			{
++				stdstring token = excludeliststr.substr(pos_ant, pos-pos_ant);
++				exvector.push_back(token);
++				pos_ant = pos+1;
++				pos = excludeliststr.find(_T("\n"), pos_ant);
++			}
++			if (!excludeliststr.empty())
++			{
++				exvector.push_back(excludeliststr.substr(pos_ant, excludeliststr.size()-1));
++			}
++			excludeliststr = (stdstring)excludelist;
++		}
++	}
+ 	CRegStdWORD blockstatus;
+ 	CRegStdWORD langid;
+ 	CRegStdWORD showrecursive;
+@@ -229,6 +274,9 @@
+ 	CRegStdWORD driveram;
+ 	CRegStdWORD driveunknown;
+ 	CRegStdWORD menulayout;
++	CRegStdString excludelist;
++	stdstring excludeliststr;
++	std::vector<stdstring> exvector;
+ 	DWORD recursiveticker;
+ 	DWORD folderoverlayticker;
+ 	DWORD driveticker;
+@@ -237,6 +285,7 @@
+ 	DWORD langticker;
+ 	DWORD blockstatusticker;
+ 	DWORD columnrevformatticker;
++	DWORD excludelistticker;
+ 	UINT  drivetypecache[27];
+ 	TCHAR drivetypepathcache[MAX_PATH];
+ 	NUMBERFMT columnrevformat;

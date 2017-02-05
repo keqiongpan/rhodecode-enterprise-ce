@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -287,7 +287,6 @@ Added a symlink
             for elem in ['Ignore whitespace', 'Increase context',
                          'Hide comments']:
                 response.mustcontain(elem)
-
 
     def _check_new_diff_menus(self, response, right_menu=False,):
         # diff menus

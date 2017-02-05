@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2016  RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -503,12 +503,6 @@ def make_map(config):
         m.connect('admin_settings_search', '/settings/search',
                   action='settings_search', conditions={'method': ['GET']})
 
-        m.connect('admin_settings_system', '/settings/system',
-                  action='settings_system', conditions={'method': ['GET']})
-
-        m.connect('admin_settings_system_update', '/settings/system/updates',
-                  action='settings_system_update', conditions={'method': ['GET']})
-
         m.connect('admin_settings_supervisor', '/settings/supervisor',
                   action='settings_supervisor', conditions={'method': ['GET']})
         m.connect('admin_settings_supervisor_log', '/settings/supervisor/{procid}/log',
@@ -566,6 +560,10 @@ def make_map(config):
                   '/my_account/toggle_visibility',
                   action='my_notifications_toggle_visibility',
                   conditions={'method': ['POST']})
+    m.connect('my_account_notifications_test_channelstream',
+              '/my_account/test_channelstream',
+              action='my_account_notifications_test_channelstream',
+              conditions={'method': ['POST']})
 
     # NOTIFICATION REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
@@ -624,9 +622,11 @@ def make_map(config):
             'pull_requests_global_0', '/pull_requests/{pull_request_id:[0-9]+}',
             action='pull_requests')
         m.connect(
-            'pull_requests_global', '/pull-requests/{pull_request_id:[0-9]+}',
+            'pull_requests_global_1', '/pull-requests/{pull_request_id:[0-9]+}',
             action='pull_requests')
-
+        m.connect(
+            'pull_requests_global', '/pull-request/{pull_request_id:[0-9]+}',
+            action='pull_requests')
 
     # USER JOURNAL
     rmap.connect('journal', '%s/journal' % (ADMIN_PREFIX,),
@@ -694,8 +694,8 @@ def make_map(config):
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('repo_refs_data', '/{repo_name}/refs-data',
-                 controller='summary', action='repo_refs_data', jsroute=True,
-                 requirements=URL_NAME_REQUIREMENTS)
+                 controller='summary', action='repo_refs_data',
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
     rmap.connect('repo_refs_changelog_data', '/{repo_name}/refs-data-changelog',
                  controller='summary', action='repo_refs_changelog_data',
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
@@ -704,9 +704,9 @@ def make_map(config):
                  jsroute=True, requirements=URL_NAME_REQUIREMENTS)
 
     rmap.connect('changeset_home', '/{repo_name}/changeset/{revision}',
-                 controller='changeset', revision='tip', jsroute=True,
+                 controller='changeset', revision='tip',
                  conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
     rmap.connect('changeset_children', '/{repo_name}/changeset_children/{revision}',
                  controller='changeset', revision='tip', action='changeset_children',
                  conditions={'function': check_repo},
@@ -923,7 +923,7 @@ def make_map(config):
                  controller='pullrequests',
                  action='show', conditions={'function': check_repo,
                                             'method': ['GET']},
-                 requirements=URL_NAME_REQUIREMENTS)
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('pullrequest_update',
                  '/{repo_name}/pull-request/{pull_request_id}',
@@ -997,10 +997,10 @@ def make_map(config):
                  conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
-    rmap.connect('changelog_details', '/{repo_name}/changelog_details/{cs}',
-                 controller='changelog', action='changelog_details',
+    rmap.connect('changelog_elements', '/{repo_name}/changelog_details',
+                 controller='changelog', action='changelog_elements',
                  conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('files_home',  '/{repo_name}/files/{revision}/{f_path}',
                  controller='files', revision='tip', f_path='',
@@ -1064,7 +1064,7 @@ def make_map(config):
                  '/{repo_name}/annotate/{revision}/{f_path}',
                  controller='files', action='index', revision='tip',
                  f_path='', annotate=True, conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('files_edit',
                  '/{repo_name}/edit/{revision}/{f_path}',
