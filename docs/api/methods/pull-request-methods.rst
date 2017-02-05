@@ -36,7 +36,7 @@ close_pull_request
 comment_pull_request 
 --------------------
 
-.. py:function:: comment_pull_request(apiuser, repoid, pullrequestid, message=<Optional:None>, status=<Optional:None>, userid=<Optional:<OptionalAttr:apiuser>>)
+.. py:function:: comment_pull_request(apiuser, repoid, pullrequestid, message=<Optional:None>, commit_id=<Optional:None>, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, userid=<Optional:<OptionalAttr:apiuser>>)
 
    Comment on the pull request specified with the `pullrequestid`,
    in the |repo| specified by the `repoid`, and optionally change the
@@ -48,15 +48,18 @@ comment_pull_request
    :type repoid: str or int
    :param pullrequestid: The pull request ID.
    :type pullrequestid: int
+   :param commit_id: Specify the commit_id for which to set a comment. If
+       given commit_id is different than latest in the PR status
+       change won't be performed.
+   :type commit_id: str
    :param message: The text content of the comment.
    :type message: str
    :param status: (**Optional**) Set the approval status of the pull
-       request. Valid options are:
-       * not_reviewed
-       * approved
-       * rejected
-       * under_review
+       request. One of: 'not_reviewed', 'approved', 'rejected',
+       'under_review'
    :type status: str
+   :param comment_type: Comment type, one of: 'note', 'todo'
+   :type comment_type: Optional(str), default: 'note'
    :param userid: Comment on the pull request as this user
    :type userid: Optional(str or int)
 
@@ -68,7 +71,9 @@ comment_pull_request
      result :
        {
            "pull_request_id":  "<Integer>",
-           "comment_id":       "<Integer>"
+           "comment_id":       "<Integer>",
+           "status": {"given": <given_status>,
+                      "was_changed": <bool status_was_actually_changed> },
        }
      error :  null
 
