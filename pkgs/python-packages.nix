@@ -1199,13 +1199,13 @@
     };
   };
   pyramid = super.buildPythonPackage {
-    name = "pyramid-1.6.1";
+    name = "pyramid-1.7.4";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools WebOb repoze.lru zope.interface zope.deprecation venusian translationstring PasteDeploy];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/30/b3/fcc4a2a4800cbf21989e00454b5828cf1f7fe35c63e0810b350e56d4c475/pyramid-1.6.1.tar.gz";
-      md5 = "b18688ff3cc33efdbb098a35b45dd122";
+      url = "https://pypi.python.org/packages/33/91/55f5c661f8923902cd1f68d75f2b937c45e7682857356cf18f0be5493899/pyramid-1.7.4.tar.gz";
+      md5 = "6ef1dfdcff9136d04490410757c4c446";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
@@ -1225,13 +1225,13 @@
     };
   };
   pyramid-debugtoolbar = super.buildPythonPackage {
-    name = "pyramid-debugtoolbar-2.4.2";
+    name = "pyramid-debugtoolbar-3.0.5";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pyramid pyramid-mako repoze.lru Pygments];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/89/00/ed5426ee41ed747ba3ffd30e8230841a6878286ea67d480b1444d24f06a2/pyramid_debugtoolbar-2.4.2.tar.gz";
-      md5 = "073ea67086cc4bd5decc3a000853642d";
+      url = "https://pypi.python.org/packages/64/0e/df00bfb55605900e7a2f7e4a18dd83575a6651688e297d5a0aa4c208fd7d/pyramid_debugtoolbar-3.0.5.tar.gz";
+      md5 = "aebab8c3bfdc6f89e4d3adc1d126538e";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } pkgs.lib.licenses.bsdOriginal ];
@@ -1498,7 +1498,7 @@
     };
   };
   rhodecode-enterprise-ce = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.6.0";
+    name = "rhodecode-enterprise-ce-4.7.0";
     buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage cssselect lxml configobj];
     doCheck = true;
     propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Pyro4 Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu msgpack-python packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
