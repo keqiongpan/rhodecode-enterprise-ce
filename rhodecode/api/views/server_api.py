@@ -28,6 +28,7 @@ from rhodecode.api.utils import (
 from rhodecode.lib.utils import repo2db_mapper
 from rhodecode.lib import system_info
 from rhodecode.lib import user_sessions
+from rhodecode.lib.utils2 import safe_int
 from rhodecode.model.db import UserIpMap
 from rhodecode.model.scm import ScmModel
 
@@ -223,7 +224,7 @@ def cleanup_sessions(request, apiuser, older_then=Optional(60)):
     if not has_superadmin_permission(apiuser):
         raise JSONRPCForbidden()
 
-    older_then = Optional.extract(older_then)
+    older_then = safe_int(Optional.extract(older_then)) or 60
     older_than_seconds = 60 * 60 * 24 * older_then
 
     config = system_info.rhodecode_config().get_value()['value']['config']
