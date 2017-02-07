@@ -60,12 +60,12 @@ FRAGMENTER = ContextFragmenter(200)
 log = logging.getLogger(__name__)
 
 
-
 class Search(BaseSearch):
 
     name = 'whoosh'
 
     def __init__(self, config):
+        super(Search, self).__init__()
         self.config = config
         if not os.path.isdir(self.config['location']):
             os.makedirs(self.config['location'])
@@ -99,8 +99,9 @@ class Search(BaseSearch):
             query = u'(%s) OR %s' % (query, hashes_or_query)
         return query
 
-    def search(self, query, document_type, search_user, repo_name=None,
-        requested_page=1, page_limit=10, sort=None):
+    def search(self, query, document_type, search_user,
+               repo_name=None, requested_page=1, page_limit=10, sort=None,
+               raise_on_exc=True):
 
         original_query = query
         query = self._extend_query(query)

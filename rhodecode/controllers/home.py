@@ -178,7 +178,8 @@ class HomeController(BaseController):
             user_id=c.rhodecode_user.user_id, ip_addr=self.ip_addr)
         searcher = searcher_from_config(config)
         result = searcher.search(
-            'commit_id:%s*' % commit_hash_prefix, 'commit', auth_user)
+            'commit_id:%s*' % commit_hash_prefix, 'commit', auth_user,
+            raise_on_exc=False)
 
         return [
             {
@@ -187,7 +188,8 @@ class HomeController(BaseController):
                 'type': 'commit',
                 'obj': {'repo': entry['repository']},
                 'url': url('changeset_home',
-                    repo_name=entry['repository'], revision=entry['commit_id'])
+                           repo_name=entry['repository'],
+                           revision=entry['commit_id'])
             }
             for entry in result['results']]
 
