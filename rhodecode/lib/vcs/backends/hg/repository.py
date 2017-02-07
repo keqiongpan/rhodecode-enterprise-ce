@@ -565,8 +565,7 @@ class MercurialRepository(BaseRepository):
         """
         Return the common ancestor of the two revisions.
         """
-        return self._remote.ancestor(
-            revision1, revision2).strip().split(':')[-1]
+        return self._remote.ancestor(revision1, revision2)
 
     def _local_push(
             self, revision, repository_path, push_branches=False,
