@@ -969,17 +969,6 @@ table.cb {
     tr {
         &.cb-annotate {
             border-top: 1px solid #eee;
-
-            &+ .cb-line {
-                border-top: 1px solid #eee;
-            }
-
-            &:first-child {
-                border-top: none;
-                &+ .cb-line {
-                    border-top: none;
-                }
-            }
         }
 
         &.cb-hunk {
@@ -1114,7 +1103,9 @@ table.cb {
                 background: #ffdddd;
             }
         }
-
+        &.cb-annotate-message-spacer {
+             width:8px;
+        }
         &.cb-annotate-info {
             width: 320px;
             min-width: 320px;
@@ -1122,22 +1113,23 @@ table.cb {
             padding: 5px 2px;
             font-size: 13px;
 
-            strong.cb-annotate-message {
-                padding: 5px 0;
+            .cb-annotate-message {
+                padding: 2px 0px 0px 0px;
                 white-space: pre-line;
-                display: inline-block;
+                overflow: hidden;
             }
             .rc-user {
                 float: none;
                 padding: 0 6px 0 17px;
-                min-width: auto;
-                min-height: auto;
+                min-width: unset;
+                min-height: unset;
             }
         }
 
         &.cb-annotate-revision {
             cursor: pointer;
             text-align: right;
+            padding: 1px 3px 0px 3px;
         }
     }
 }
