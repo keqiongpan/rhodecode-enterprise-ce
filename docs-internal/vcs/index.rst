@@ -17,7 +17,6 @@ implemented in :mod:`rhodecode.lib.middleware`.
 .. toctree::
    :maxdepth: 2
 
-   http-transition
    middleware
    vcsserver
    subversion

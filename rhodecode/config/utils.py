@@ -20,28 +20,10 @@
 
 import os
 import shlex
-import Pyro4
 import platform
 
 from rhodecode.model import init_model
 
-
-def configure_pyro4(config):
-    """
-    Configure Pyro4 based on `config`.
-
-    This will mainly set the different configuration parameters of the Pyro4
-    library based on the settings in our INI files. The Pyro4 documentation
-    lists more details about the specific settings and their meaning.
-    """
-    Pyro4.config.COMMTIMEOUT = float(config['vcs.connection_timeout'])
-    Pyro4.config.SERIALIZER = 'pickle'
-    Pyro4.config.SERIALIZERS_ACCEPTED.add('pickle')
-
-    # Note: We need server configuration in the WSGI processes
-    # because we provide a callback server in certain vcs operations.
-    Pyro4.config.SERVERTYPE = "multiplex"
-    Pyro4.config.POLLTIMEOUT = 0.01
 
 
 def configure_vcs(config):

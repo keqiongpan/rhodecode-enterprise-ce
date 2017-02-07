@@ -94,7 +94,3 @@ def test_connect_passes_in_the_same_session(
     session_factory.return_value = stub_session
 
     vcs.connect_http('server_and_port')
-
-    assert connection.Hg._session_factory() == stub_session
-    assert connection.Svn._session_factory() == stub_session
-    assert connection.Git._session_factory() == stub_session

@@ -216,8 +216,6 @@ class VCSMiddleware(object):
                     vcs_handler.SCM):
                 return HTTPNotFound()(environ, start_response)
 
-            # TODO: johbo: Needed for the Pyro4 backend and Mercurial only.
-            # Remove once we fully switched to the HTTP backend.
             environ['REPO_NAME'] = vcs_handler.url_repo_name
 
             # register repo config back to the handler

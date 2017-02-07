@@ -123,9 +123,5 @@ https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.11.0.tar.gz?md5=e5fd0a8
 ## appenlight
 appenlight-client==0.6.14
 
-# Pyro/Deprecated TODO(Marcink): remove in 4.7 release.
-Pyro4==4.41
-serpent==1.15
-
 ## test related requirements
 -r requirements_test.txt

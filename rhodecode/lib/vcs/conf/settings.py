@@ -52,27 +52,6 @@ ARCHIVE_SPECS = {
 HOOKS_PROTOCOL = None
 HOOKS_DIRECT_CALLS = False
 
-PYRO_PORT = 9900
-
-PYRO_GIT = 'git_remote'
-PYRO_HG = 'hg_remote'
-PYRO_SVN = 'svn_remote'
-PYRO_VCSSERVER = 'vcs_server'
-PYRO_GIT_REMOTE_WSGI = 'git_remote_wsgi'
-PYRO_HG_REMOTE_WSGI = 'hg_remote_wsgi'
-
-PYRO_RECONNECT_TRIES = 15
-"""
-How many retries to reconnect will be performed if the connection was lost.
-
-Each try takes 2s. Doing 15 means that we will give it up to 30s for a
-connection to be re-established.
-"""
-
-
-def pyro_remote(object_id, server_and_port):
-    return "PYRO:%s@%s" % (object_id, server_and_port)
-
 
 def available_aliases():
     """

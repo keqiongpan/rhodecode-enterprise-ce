@@ -171,71 +171,6 @@ class ThreadedHookCallbackDaemon(object):
         assert daemon_context == daemon
 
 
-class TestPyro4HooksCallbackDaemon(object):
-    def test_prepare_inits_pyro4_and_registers_hooks(self, caplog):
-        pyro4_daemon = mock.Mock()
-
-        with self._pyro4_patcher(pyro4_daemon), caplog.at_level(logging.DEBUG):
-            daemon = hooks_daemon.Pyro4HooksCallbackDaemon()
-
-        assert daemon._daemon == pyro4_daemon
-
-        assert pyro4_daemon.register.call_count == 1
-        args, kwargs = pyro4_daemon.register.call_args
-        assert len(args) == 1
-        assert isinstance(args[0], hooks_daemon.Hooks)
-
-        assert_message_in_log(
-            caplog.records,
-            'Preparing callback daemon and registering hook object',
-            levelno=logging.DEBUG, module='hooks_daemon')
-
-    def test_run_creates_a_thread(self):
-        thread = mock.Mock()
-        pyro4_daemon = mock.Mock()
-
-        with self._pyro4_patcher(pyro4_daemon):
-            daemon = hooks_daemon.Pyro4HooksCallbackDaemon()
-
-        with self._thread_patcher(thread) as thread_mock:
-            daemon._run()
-
-        assert thread_mock.call_count == 1
-        args, kwargs = thread_mock.call_args
-        assert args == ()
-        assert kwargs['target'] == pyro4_daemon.requestLoop
-        assert kwargs['kwargs']['loopCondition']() is True
-
-    def test_stop_cleans_up_the_connection(self, caplog):
-        thread = mock.Mock()
-        pyro4_daemon = mock.Mock()
-
-        with self._pyro4_patcher(pyro4_daemon):
-            daemon = hooks_daemon.Pyro4HooksCallbackDaemon()
-
-        with self._thread_patcher(thread), caplog.at_level(logging.DEBUG):
-            with daemon:
-                assert daemon._daemon == pyro4_daemon
-                assert daemon._callback_thread == thread
-
-        assert daemon._daemon is None
-        assert daemon._callback_thread is None
-        pyro4_daemon.close.assert_called_with()
-        thread.join.assert_called_once_with()
-
-        assert_message_in_log(
-            caplog.records, 'Waiting for background thread to finish.',
-            levelno=logging.DEBUG, module='hooks_daemon')
-
-    def _pyro4_patcher(self, daemon):
-        return mock.patch.object(
-            hooks_daemon.Pyro4, 'Daemon', return_value=daemon)
-
-    def _thread_patcher(self, thread):
-        return mock.patch.object(
-            hooks_daemon.threading, 'Thread', return_value=thread)
-
-
 class TestHttpHooksCallbackDaemon(object):
     def test_prepare_inits_daemon_variable(self, tcp_server, caplog):
         with self._tcp_patcher(tcp_server), caplog.at_level(logging.DEBUG):
@@ -318,7 +253,7 @@ class TestHttpHooksCallbackDaemon(object):
 
 
 class TestPrepareHooksDaemon(object):
-    @pytest.mark.parametrize('protocol', ('http', 'pyro4'))
+    @pytest.mark.parametrize('protocol', ('http',))
     def test_returns_dummy_hooks_callback_daemon_when_using_direct_calls(
             self, protocol):
         expected_extras = {'extra1': 'value1'}
@@ -329,8 +264,7 @@ class TestPrepareHooksDaemon(object):
         assert extras == expected_extras
 
     @pytest.mark.parametrize('protocol, expected_class', (
-        ('pyro4', hooks_daemon.Pyro4HooksCallbackDaemon),
-        ('http', hooks_daemon.HttpHooksCallbackDaemon)
+        ('http', hooks_daemon.HttpHooksCallbackDaemon),
     ))
     def test_returns_real_hooks_callback_daemon_when_protocol_is_specified(
             self, protocol, expected_class):
@@ -343,12 +277,9 @@ class TestPrepareHooksDaemon(object):
         assert isinstance(callback, expected_class)
         hooks_uri = extras.pop('hooks_uri')
         assert extras == expected_extras
-        if protocol.lower() == 'pyro4':
-            assert hooks_uri.startswith('PYRO')
 
     @pytest.mark.parametrize('protocol', (
         'invalid',
-        'Pyro4',
         'Http',
         'HTTP',
     ))

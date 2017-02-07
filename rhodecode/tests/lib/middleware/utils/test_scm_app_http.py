@@ -18,8 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import mock
-import Pyro4
 import pytest
 
 from rhodecode.tests.utils import CustomTestApp
@@ -81,50 +79,5 @@ def test_create_app_per_request_with_data(
         data, repeat, vcsserver_http_echo_app):
     for x in xrange(repeat / 10):
         app = vcs_http_app(vcsserver_http_echo_app)
-        response = app.post('/', params=data)
-        assert response.status_code == 200
-
-
-@pytest.fixture(scope='module')
-def vcsserver_pyro_echo_app(request, vcsserver_factory):
-    """
-    A running VCSServer with the EchoApp activated via Pyro4.
-    """
-    vcsserver = vcsserver_factory(
-        request=request,
-        use_http=False,
-        overrides=[{'DEFAULT': {'dev.use_echo_app': 'true'}}])
-    return vcsserver
-
-
-def vcs_pyro4_app(vcsserver_pyro_echo_app):
-    """
-    Pyro4 based Vcs proxy wrapped in WebTest
-    """
-    stub_config = {
-        'git_update_server_info': 'stub',
-    }
-    server_and_port = vcsserver_pyro_echo_app.server_and_port
-    GIT_REMOTE_WSGI = Pyro4.Proxy(
-        settings.pyro_remote(
-            settings.PYRO_GIT_REMOTE_WSGI, server_and_port))
-    with mock.patch('rhodecode.lib.middleware.utils.scm_app.GIT_REMOTE_WSGI',
-                    GIT_REMOTE_WSGI):
-        pyro4_app = scm_app.create_git_wsgi_app(
-            'stub_path', 'stub_name', stub_config)
-    app = CustomTestApp(pyro4_app)
-    return app
-
-
-def test_pyro4_no_data(repeat, pylonsapp, vcsserver_pyro_echo_app):
-    for x in xrange(repeat / 10):
-        app = vcs_pyro4_app(vcsserver_pyro_echo_app)
-        response = app.post('/')
-        assert response.status_code == 200
-
-
-def test_pyro4_with_data(repeat, pylonsapp, vcsserver_pyro_echo_app, data):
-    for x in xrange(repeat / 10):
-        app = vcs_pyro4_app(vcsserver_pyro_echo_app)
         response = app.post('/', params=data)
         assert response.status_code == 200

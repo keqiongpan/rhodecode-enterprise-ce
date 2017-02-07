@@ -26,7 +26,6 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 from SocketServer import TCPServer
 from routes.util import URLGenerator
 
-import Pyro4
 import pylons
 import rhodecode
 
@@ -73,7 +72,7 @@ class HooksHttpHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         """
-        This is an overriden method of BaseHTTPRequestHandler which logs using
+        This is an overridden method of BaseHTTPRequestHandler which logs using
         logging library instead of writing directly to stderr.
         """
 
@@ -123,38 +122,6 @@ class ThreadedHookCallbackDaemon(object):
         raise NotImplementedError()
 
 
-class Pyro4HooksCallbackDaemon(ThreadedHookCallbackDaemon):
-    """
-    Context manager which will run a callback daemon in a background thread.
-    """
-
-    hooks_uri = None
-
-    def _prepare(self):
-        log.debug("Preparing callback daemon and registering hook object")
-        self._daemon = Pyro4.Daemon()
-        hooks_interface = Hooks()
-        self.hooks_uri = str(self._daemon.register(hooks_interface))
-        log.debug("Hooks uri is: %s", self.hooks_uri)
-
-    def _run(self):
-        log.debug("Running event loop of callback daemon in background thread")
-        callback_thread = threading.Thread(
-            target=self._daemon.requestLoop,
-            kwargs={'loopCondition': lambda: not self._done})
-        callback_thread.daemon = True
-        callback_thread.start()
-        self._callback_thread = callback_thread
-
-    def _stop(self):
-        log.debug("Waiting for background thread to finish.")
-        self._done = True
-        self._callback_thread.join()
-        self._daemon.close()
-        self._daemon = None
-        self._callback_thread = None
-
-
 class HttpHooksCallbackDaemon(ThreadedHookCallbackDaemon):
     """
     Context manager which will run a callback daemon in a background thread.
@@ -202,9 +169,7 @@ def prepare_callback_daemon(extras, protocol, use_direct_calls):
         callback_daemon = DummyHooksCallbackDaemon()
         extras['hooks_module'] = callback_daemon.hooks_module
     else:
-        if protocol == 'pyro4':
-            callback_daemon = Pyro4HooksCallbackDaemon()
-        elif protocol == 'http':
+        if protocol == 'http':
             callback_daemon = HttpHooksCallbackDaemon()
         else:
             log.error('Unsupported callback daemon protocol "%s"', protocol)
@@ -221,27 +186,22 @@ class Hooks(object):
     Exposes the hooks for remote call backs
     """
 
-    @Pyro4.callback
     def repo_size(self, extras):
         log.debug("Called repo_size of Hooks object")
         return self._call_hook(hooks_base.repo_size, extras)
 
-    @Pyro4.callback
     def pre_pull(self, extras):
         log.debug("Called pre_pull of Hooks object")
         return self._call_hook(hooks_base.pre_pull, extras)
 
-    @Pyro4.callback
     def post_pull(self, extras):
         log.debug("Called post_pull of Hooks object")
         return self._call_hook(hooks_base.post_pull, extras)
 
-    @Pyro4.callback
     def pre_push(self, extras):
         log.debug("Called pre_push of Hooks object")
         return self._call_hook(hooks_base.pre_push, extras)
 
-    @Pyro4.callback
     def post_push(self, extras):
         log.debug("Called post_push of Hooks object")
         return self._call_hook(hooks_base.post_push, extras)

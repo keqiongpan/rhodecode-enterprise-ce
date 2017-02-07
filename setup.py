@@ -84,7 +84,6 @@ install_requirements = [
     'Pygments',
     'pygments-markdown-lexer',
     'Pylons',
-    'Pyro4',
     'Routes',
     'SQLAlchemy',
     'Tempita',

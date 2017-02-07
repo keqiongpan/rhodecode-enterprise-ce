@@ -123,9 +123,6 @@ class TestMercurialRemoteRepoInvalidation(object):
         """
         from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 
-        if pylonsapp.config['vcs.server.protocol'] == 'pyro4':
-            pytest.skip('Test is intended for the HTTP protocol only.')
-
         pull_request = pr_util.create_pull_request()
         target_vcs = pull_request.target_repo.scm_instance()
         source_vcs = pull_request.source_repo.scm_instance()
@@ -163,8 +160,6 @@ class TestMercurialRemoteRepoInvalidation(object):
         Without correct cache invalidation this leads to an error when
         retrieving the pulled commits afterwards.
         """
-        if pylonsapp.config['vcs.server.protocol'] == 'pyro4':
-            pytest.skip('Test is intended for the HTTP protocol only.')
 
         pull_request = pr_util.create_pull_request()
         target_vcs = pull_request.target_repo.scm_instance()

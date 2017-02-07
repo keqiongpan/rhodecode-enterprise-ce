@@ -30,10 +30,6 @@ class VCSCommunicationError(Exception):
     pass
 
 
-class PyroVCSCommunicationError(VCSCommunicationError):
-    pass
-
-
 class HttpVCSCommunicationError(VCSCommunicationError):
     pass
 

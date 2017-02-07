@@ -42,7 +42,7 @@ def create_git_wsgi_app(repo_path, repo_name, config):
     """
     factory = GIT_REMOTE_WSGI
     if not factory:
-        log.error('Pyro server has not been initialized yet')
+        log.error('VCSServer has not been initialized yet')
 
     return wsgi_app_caller_client.RemoteAppCaller(
         factory, repo_path, repo_name, config)
@@ -57,7 +57,7 @@ def create_hg_wsgi_app(repo_path, repo_name, config):
     """
     factory = HG_REMOTE_WSGI
     if not factory:
-        log.error('Pyro server has not been initialized yet')
+        log.error('VCSServer has not been initialized yet')
 
     return wsgi_app_caller_client.RemoteAppCaller(
         factory, repo_path, repo_name, config)

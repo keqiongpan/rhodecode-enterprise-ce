@@ -20,13 +20,6 @@
 
 """
 Client for the VCSServer implemented based on HTTP.
-
-
-Status
-------
-
-This client implementation shall eventually replace the Pyro4 based
-implementation.
 """
 
 import copy

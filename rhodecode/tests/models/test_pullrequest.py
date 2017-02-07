@@ -375,7 +375,6 @@ class TestPullRequestModel:
 class TestIntegrationMerge(object):
     @pytest.mark.parametrize('extra_config', (
         {'vcs.hooks.protocol': 'http', 'vcs.hooks.direct_calls': False},
-        {'vcs.hooks.protocol': 'Pyro4', 'vcs.hooks.direct_calls': False},
     ))
     def test_merge_triggers_push_hooks(
             self, pr_util, user_admin, capture_rcextensions, merge_extras,
