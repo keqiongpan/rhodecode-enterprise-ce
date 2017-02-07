@@ -196,10 +196,15 @@ def _remote_call(url, payload, exceptions_map, session):
     except pycurl.error as e:
         raise exceptions.HttpVCSCommunicationError(e)
 
+    if response.status_code >= 400:
+        log.error('Call to %s returned non 200 HTTP code: %s',
+                  url, response.status_code)
+        raise exceptions.HttpVCSCommunicationError(repr(response.content))
+
     try:
         response = msgpack.unpackb(response.content)
     except Exception:
-        log.exception('Failed to decode repsponse %r', response.content)
+        log.exception('Failed to decode response %r', response.content)
         raise
 
     error = response.get('error')

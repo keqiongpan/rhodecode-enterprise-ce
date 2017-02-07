@@ -216,7 +216,9 @@ class CurlSession(object):
         curl.setopt(curl.WRITEDATA, response_buffer)
         curl.perform()
 
-        return CurlResponse(response_buffer)
+        status_code = curl.getinfo(pycurl.HTTP_CODE)
+
+        return CurlResponse(response_buffer, status_code)
 
 
 class CurlResponse(object):
@@ -228,12 +230,17 @@ class CurlResponse(object):
     `requests` as a drop in replacement for benchmarking purposes.
     """
 
-    def __init__(self, response_buffer):
+    def __init__(self, response_buffer, status_code):
         self._response_buffer = response_buffer
+        self._status_code = status_code
 
     @property
     def content(self):
         return self._response_buffer.getvalue()
+
+    @property
+    def status_code(self):
+        return self._status_code
 
 
 def _create_http_rpc_session():
