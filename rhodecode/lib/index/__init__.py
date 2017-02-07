@@ -39,8 +39,10 @@ class BaseSearch(object):
     def cleanup(self):
         pass
 
-    def search(self, query, document_type, search_user, repo_name=None):
+    def search(self, query, document_type, search_user, repo_name=None,
+               raise_on_exc=True):
         raise Exception('NotImplemented')
+
 
 def searcher_from_config(config, prefix='search.'):
     _config = {}
