@@ -111,7 +111,7 @@ def filenode_as_annotated_lines_tokens(filenode):
     ]
     """
 
-    commit_cache = {} # cache commit_getter lookups
+    commit_cache = {}  # cache commit_getter lookups
 
     def _get_annotation(commit_id, commit_getter):
         if commit_id not in commit_cache:
