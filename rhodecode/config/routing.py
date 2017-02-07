@@ -1066,6 +1066,12 @@ def make_map(config):
                  f_path='', annotate=True, conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
+    rmap.connect('files_annotate_previous',
+                 '/{repo_name}/annotate-previous/{revision}/{f_path}',
+                 controller='files', action='annotate_previous', revision='tip',
+                 f_path='', annotate=True, conditions={'function': check_repo},
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
+
     rmap.connect('files_edit',
                  '/{repo_name}/edit/{revision}/{f_path}',
                  controller='files', action='edit', revision='tip',

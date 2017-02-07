@@ -260,6 +260,32 @@ class FilesController(BaseRepoController):
         return render('files/files.mako')
 
     @LoginRequired()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    def annotate_previous(self, repo_name, revision, f_path):
+
+        commit_id = revision
+        commit = self.__get_commit_or_redirect(commit_id, repo_name)
+        prev_commit_id = commit.raw_id
+
+        f_path = f_path
+        is_file = False
+        try:
+            _file = commit.get_node(f_path)
+            is_file = _file.is_file()
+        except (NodeDoesNotExistError, CommitDoesNotExistError, VCSError):
+            pass
+
+        if is_file:
+            history = commit.get_file_history(f_path)
+            prev_commit_id = history[1].raw_id \
+                if len(history) > 1 else prev_commit_id
+
+        return redirect(h.url(
+            'files_annotate_home', repo_name=repo_name,
+            revision=prev_commit_id, f_path=f_path))
+
+    @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
                                    'repository.admin')
     @jsonify
