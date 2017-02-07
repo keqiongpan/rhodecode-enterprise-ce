@@ -71,9 +71,9 @@ class SmtpMailer(object):
         smtplib.stderr = StderrLogger()
         return smtplib
 
-    def send(self, recipients=[], subject='', body='', html='',
+    def send(self, recipients=None, subject='', body='', html='',
              attachment_files=None):
-
+        recipients = recipients or []
         if isinstance(recipients, basestring):
             recipients = [recipients]
         headers = {
