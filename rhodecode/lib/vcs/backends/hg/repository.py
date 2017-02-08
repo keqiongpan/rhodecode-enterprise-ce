@@ -445,7 +445,12 @@ class MercurialRepository(BaseRepository):
         if isinstance(commit_id, unicode):
             commit_id = safe_str(commit_id)
 
-        raw_id, idx = self._remote.lookup(commit_id, both=True)
+        try:
+            raw_id, idx = self._remote.lookup(commit_id, both=True)
+        except CommitDoesNotExistError:
+            msg = "Commit %s does not exist for %s" % (
+                commit_id, self)
+            raise CommitDoesNotExistError(msg)
 
         return MercurialCommit(self, raw_id, idx, pre_load=pre_load)
 
