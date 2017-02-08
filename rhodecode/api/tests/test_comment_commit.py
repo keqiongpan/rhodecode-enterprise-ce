@@ -33,8 +33,28 @@ class TestCommentCommit(object):
             self.apikey, 'comment_commit', repoid=repo.repo_name,
             commit_id='tip', message='message', status_change=None)
         response = api_call(self.app, params)
-        expected = 'failed to set comment on repository `%s`' % repo.repo_name
+        expected = 'There are no commits yet'
         assert_error(id_, expected, given=response.body)
+
+    @pytest.mark.parametrize("commit_id, expected_err", [
+        ('abcabca', {'hg': 'Commit {commit} does not exist for {repo}',
+                     'git': 'Commit {commit} does not exist for {repo}',
+                     'svn': 'Commit id {commit} not understood.'}),
+        ('idontexist', {'hg': 'Commit {commit} does not exist for {repo}',
+                        'git': 'Commit {commit} does not exist for {repo}',
+                        'svn': 'Commit id {commit} not understood.'}),
+    ])
+    def test_api_comment_commit_wrong_hash(self, backend, commit_id, expected_err):
+        repo_name = backend.repo.repo_name
+        id_, params = build_data(
+            self.apikey, 'comment_commit', repoid=repo_name,
+            commit_id=commit_id, message='message', status_change=None)
+        response = api_call(self.app, params)
+
+        expected_err = expected_err[backend.alias]
+        expected_err = expected_err.format(
+            repo=backend.repo.scm_instance(), commit=commit_id)
+        assert_error(id_, expected_err, given=response.body)
 
     @pytest.mark.parametrize("status_change, message, commit_id", [
         (None, 'Hallo', 'tip'),
@@ -44,6 +64,9 @@ class TestCommentCommit(object):
     def test_api_comment_commit(
             self, backend, status_change, message, commit_id,
             no_notifications):
+
+        commit_id = backend.repo.scm_instance().get_changeset(commit_id).raw_id
+
         id_, params = build_data(
             self.apikey, 'comment_commit', repoid=backend.repo_name,
             commit_id=commit_id, message=message, status=status_change)
