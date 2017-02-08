@@ -30,9 +30,9 @@ from rhodecode.api.utils import (
     get_perm_or_error, parse_args, get_origin, build_commit_data,
     validate_set_owner_permissions)
 from rhodecode.lib.auth import HasPermissionAnyApi, HasUserGroupPermissionAnyApi
-from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 from rhodecode.lib.utils2 import str2bool, time_to_datetime
 from rhodecode.lib.ext_json import json
+from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
@@ -1425,6 +1425,12 @@ def comment_commit(
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.read', 'repository.write', 'repository.admin')
         validate_repo_permissions(apiuser, repoid, repo, _perms)
+
+    try:
+        commit_id = repo.scm_instance().get_commit(commit_id=commit_id).raw_id
+    except Exception as e:
+        log.exception('Failed to fetch commit')
+        raise JSONRPCError(e.message)
 
     if isinstance(userid, Optional):
         userid = apiuser.user_id
