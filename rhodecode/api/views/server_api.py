@@ -18,10 +18,12 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
+import inspect
 import logging
+import itertools
 
-from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCForbidden
+from rhodecode.api import (
+    jsonrpc_method, JSONRPCError, JSONRPCForbidden, find_methods)
 
 from rhodecode.api.utils import (
     Optional, OAttr, has_superadmin_permission, get_user_or_error)
@@ -243,3 +245,77 @@ def cleanup_sessions(request, apiuser, older_then=Optional(60)):
         raise JSONRPCError(
             'Error occurred during session cleanup'
         )
+
+
+@jsonrpc_method()
+def get_method(request, apiuser, pattern=Optional('*')):
+    """
+    Returns list of all available API methods. By default match pattern
+    os "*" but any other pattern can be specified. eg *comment* will return
+    all methods with comment inside them. If just single method is matched
+    returned data will also include method specification
+
+    This command can only be run using an |authtoken| with admin rights to
+    the specified repository.
+
+    This command takes the following options:
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param pattern: pattern to match method names against
+    :type older_then: Optional("*")
+
+    Example output:
+
+    .. code-block:: bash
+
+      id : <id_given_in_input>
+      "result": [
+        "changeset_comment",
+        "comment_pull_request",
+        "comment_commit"
+      ]
+      error :  null
+
+    .. code-block:: bash
+
+      id : <id_given_in_input>
+      "result": [
+        "comment_commit",
+        {
+          "apiuser": "<RequiredType>",
+          "comment_type": "<Optional:u'note'>",
+          "commit_id": "<RequiredType>",
+          "message": "<RequiredType>",
+          "repoid": "<RequiredType>",
+          "request": "<RequiredType>",
+          "resolves_comment_id": "<Optional:None>",
+          "status": "<Optional:None>",
+          "userid": "<Optional:<OptionalAttr:apiuser>>"
+        }
+      ]
+      error :  null
+    """
+    if not has_superadmin_permission(apiuser):
+        raise JSONRPCForbidden()
+
+    pattern = Optional.extract(pattern)
+
+    matches = find_methods(request.registry.jsonrpc_methods, pattern)
+
+    args_desc = []
+    if len(matches) == 1:
+        func = matches[matches.keys()[0]]
+
+        argspec = inspect.getargspec(func)
+        arglist = argspec[0]
+        defaults = map(repr, argspec[3] or [])
+
+        default_empty = '<RequiredType>'
+
+        # kw arguments required by this method
+        func_kwargs = dict(itertools.izip_longest(
+            reversed(arglist), reversed(defaults), fillvalue=default_empty))
+        args_desc.append(func_kwargs)
+
+    return matches.keys() + args_desc

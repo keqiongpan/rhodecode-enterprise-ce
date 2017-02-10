@@ -22,6 +22,7 @@ import inspect
 import itertools
 import logging
 import types
+import fnmatch
 
 import decorator
 import venusian
@@ -45,6 +46,18 @@ log = logging.getLogger(__name__)
 
 DEFAULT_RENDERER = 'jsonrpc_renderer'
 DEFAULT_URL = '/_admin/apiv2'
+
+
+def find_methods(jsonrpc_methods, pattern):
+    matches = OrderedDict()
+    if not isinstance(pattern, (list, tuple)):
+        pattern = [pattern]
+
+    for single_pattern in pattern:
+        for method_name, method in jsonrpc_methods.items():
+            if fnmatch.fnmatch(method_name, single_pattern):
+                matches[method_name] = method
+    return matches
 
 
 class ExtJsonRenderer(object):
@@ -143,7 +156,19 @@ def exception_view(exc, request):
         log.debug('json-rpc method `%s` not found in list of '
                   'api calls: %s, rpc_id:%s',
                   method, request.registry.jsonrpc_methods.keys(), rpc_id)
-        fault_message = "No such method: {}".format(method)
+
+        similar = 'none'
+        try:
+            similar_paterns = ['*{}*'.format(x) for x in method.split('_')]
+            similar_found = find_methods(
+                request.registry.jsonrpc_methods, similar_paterns)
+            similar = ', '.join(similar_found.keys()) or similar
+        except Exception:
+            # make the whole above block safe
+            pass
+
+        fault_message = "No such method: {}. Similar methods: {}".format(
+            method, similar)
 
     return jsonrpc_error(request, fault_message, rpc_id)
 
@@ -348,9 +373,10 @@ class RoutePredicate(object):
 class NotFoundPredicate(object):
     def __init__(self, val, config):
         self.val = val
+        self.methods = config.registry.jsonrpc_methods
 
     def text(self):
-        return 'jsonrpc method not found = %s' % self.val
+        return 'jsonrpc method not found = {}.'.format(self.val)
 
     phash = text
 
