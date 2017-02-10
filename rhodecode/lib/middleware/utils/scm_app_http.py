@@ -93,7 +93,6 @@ class VcsHttpProxy(object):
             'X-RC-Locked-Status-Code': rhodecode.CONFIG.get('lock_ret_code')
         })
 
-        data = environ['wsgi.input'].read()
         method = environ['REQUEST_METHOD']
 
         # Preserve the query string
@@ -104,7 +103,7 @@ class VcsHttpProxy(object):
 
         response = session.request(
             method, url,
-            data=data,
+            data=_maybe_stream_request(environ),
             headers=request_headers,
             stream=True)
 
@@ -120,10 +119,17 @@ class VcsHttpProxy(object):
             reason_phrase=response.reason)
 
         start_response(status, response_headers)
-        return _maybe_stream(response)
+        return _maybe_stream_response(response)
 
 
-def _maybe_stream(response):
+def _maybe_stream_request(environ):
+    if environ.get('HTTP_TRANSFER_ENCODING', '') == 'chunked':
+        return environ['wsgi.input']
+    else:
+        return environ['wsgi.input'].read()
+
+
+def _maybe_stream_response(response):
     """
     Try to generate chunks from the response if it is chunked.
     """
