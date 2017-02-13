@@ -443,14 +443,15 @@ class TestLoginController:
         ('fake_number', '123456'),
         ('proper_auth_token', None)
     ])
-    def test_access_not_whitelisted_page_via_auth_token(self, test_name,
-                                                        auth_token):
+    def test_access_not_whitelisted_page_via_auth_token(
+            self, test_name, auth_token, user_admin):
+
         whitelist = self._get_api_whitelist([])
         with mock.patch.dict('rhodecode.CONFIG', whitelist):
             assert [] == whitelist['api_access_controllers_whitelist']
             if test_name == 'proper_auth_token':
                 # use builtin if api_key is None
-                auth_token = User.get_first_super_admin().api_key
+                auth_token = user_admin.api_key
 
             with fixture.anon_access(False):
                 self.app.get(url(controller='changeset',
@@ -465,15 +466,17 @@ class TestLoginController:
         ('fake_number', '123456', 302),
         ('proper_auth_token', None, 200)
     ])
-    def test_access_whitelisted_page_via_auth_token(self, test_name,
-                                                    auth_token, code):
-        whitelist = self._get_api_whitelist(
-            ['ChangesetController:changeset_raw'])
+    def test_access_whitelisted_page_via_auth_token(
+            self, test_name, auth_token, code, user_admin):
+
+        whitelist_entry = ['ChangesetController:changeset_raw']
+        whitelist = self._get_api_whitelist(whitelist_entry)
+
         with mock.patch.dict('rhodecode.CONFIG', whitelist):
-            assert ['ChangesetController:changeset_raw'] == \
-                whitelist['api_access_controllers_whitelist']
+            assert whitelist_entry == whitelist['api_access_controllers_whitelist']
+
             if test_name == 'proper_auth_token':
-                auth_token = User.get_first_super_admin().api_key
+                auth_token = user_admin.api_key
 
             with fixture.anon_access(False):
                 self.app.get(url(controller='changeset',

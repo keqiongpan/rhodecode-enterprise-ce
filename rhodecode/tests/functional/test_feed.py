@@ -17,7 +17,7 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
+from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import User
 from rhodecode.tests import *
 
@@ -32,14 +32,35 @@ class TestFeedController(TestController):
         assert response.content_type == "application/rss+xml"
         assert """<rss version="2.0">""" in response
 
-    def test_rss_with_auth_token(self, backend):
-        auth_token = User.get_first_super_admin().feed_token
+    def test_rss_with_auth_token(self, backend, user_admin):
+        auth_token = user_admin.feed_token
         assert auth_token != ''
-        response = self.app.get(url(controller='feed', action='rss',
-                                    repo_name=backend.repo_name, auth_token=auth_token))
+        response = self.app.get(
+            url(controller='feed', action='rss',
+                repo_name=backend.repo_name, auth_token=auth_token,
+            status=200))
 
         assert response.content_type == "application/rss+xml"
         assert """<rss version="2.0">""" in response
+
+    def test_rss_with_auth_token_of_wrong_type(self, backend, user_util):
+        user = user_util.create_user()
+        auth_token = AuthTokenModel().create(
+            user.user_id, 'test-token', -1, AuthTokenModel.cls.ROLE_API)
+        auth_token = auth_token.api_key
+
+        self.app.get(
+            url(controller='feed', action='rss',
+                repo_name=backend.repo_name, auth_token=auth_token),
+            status=302)
+
+        auth_token = AuthTokenModel().create(
+            user.user_id, 'test-token', -1, AuthTokenModel.cls.ROLE_FEED)
+        auth_token = auth_token.api_key
+        self.app.get(
+            url(controller='feed', action='rss',
+                repo_name=backend.repo_name, auth_token=auth_token),
+            status=200)
 
     def test_atom(self, backend):
         self.log_user()

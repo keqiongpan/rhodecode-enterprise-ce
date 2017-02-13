@@ -26,6 +26,7 @@ from mock import patch
 
 from rhodecode.lib import auth
 from rhodecode.lib.utils2 import md5
+from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import User
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.user import UserModel
@@ -580,3 +581,28 @@ class TestGenerateAuthToken(object):
             result = auth.generate_auth_token(user_name)
         expected_result = sha1(user_name + random_salt).hexdigest()
         assert result == expected_result
+
+
+@pytest.mark.parametrize("test_token, test_roles, auth_result, expected_tokens", [
+    ('', None, False,
+     []),
+    ('wrongtoken', None, False,
+     []),
+    ('abracadabra_vcs', [AuthTokenModel.cls.ROLE_API], False,
+     [('abracadabra_api', AuthTokenModel.cls.ROLE_API, -1)]),
+    ('abracadabra_api', [AuthTokenModel.cls.ROLE_API], True,
+     [('abracadabra_api', AuthTokenModel.cls.ROLE_API, -1)]),
+    ('abracadabra_api', [AuthTokenModel.cls.ROLE_API], True,
+     [('abracadabra_api', AuthTokenModel.cls.ROLE_API, -1),
+      ('abracadabra_http', AuthTokenModel.cls.ROLE_HTTP, -1)]),
+])
+def test_auth_by_token(test_token, test_roles, auth_result, expected_tokens,
+                       user_util):
+    user = user_util.create_user()
+    user_id = user.user_id
+    for token, role, expires in expected_tokens:
+        new_token = AuthTokenModel().create(user_id, 'test-token', expires, role)
+        new_token.api_key = token  # inject known name for testing...
+
+    assert auth_result == user.authenticate_by_token(
+        test_token, roles=test_roles, include_builtin_token=True)

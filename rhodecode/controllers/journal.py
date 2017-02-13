@@ -35,7 +35,7 @@ from pylons import request, tmpl_context as c, response, url
 from pylons.i18n.translation import _
 
 from rhodecode.controllers.admin.admin import _journal_filter
-from rhodecode.model.db import UserLog, UserFollowing, User
+from rhodecode.model.db import UserLog, UserFollowing, User, UserApiKeys
 from rhodecode.model.meta import Session
 import rhodecode.lib.helpers as h
 from rhodecode.lib.helpers import Page
@@ -211,7 +211,7 @@ class JournalController(BaseController):
 
         return render('journal/journal.mako')
 
-    @LoginRequired(auth_token_access=True)
+    @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
     @NotAnonymous()
     def journal_atom(self):
         """
@@ -223,7 +223,7 @@ class JournalController(BaseController):
             .all()
         return self._atom_feed(following, public=False)
 
-    @LoginRequired(auth_token_access=True)
+    @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
     @NotAnonymous()
     def journal_rss(self):
         """
@@ -281,7 +281,7 @@ class JournalController(BaseController):
             return c.journal_data
         return render('journal/public_journal.mako')
 
-    @LoginRequired(auth_token_access=True)
+    @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
     def public_journal_atom(self):
         """
         Produce an atom-1.0 feed via feedgenerator module
@@ -293,7 +293,7 @@ class JournalController(BaseController):
 
         return self._atom_feed(c.following)
 
-    @LoginRequired(auth_token_access=True)
+    @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
     def public_journal_rss(self):
         """
         Produce an rss2 feed via feedgenerator module

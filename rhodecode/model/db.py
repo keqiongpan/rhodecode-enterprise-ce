@@ -581,15 +581,16 @@ class User(Base, BaseModel):
 
     @property
     def feed_token(self):
+        return self.get_feed_token()
+
+    def get_feed_token(self):
         feed_tokens = UserApiKeys.query()\
             .filter(UserApiKeys.user == self)\
             .filter(UserApiKeys.role == UserApiKeys.ROLE_FEED)\
             .all()
         if feed_tokens:
             return feed_tokens[0].api_key
-        else:
-            # use the main token so we don't end up with nothing...
-            return self.api_key
+        return 'NO_FEED_TOKEN_AVAILABLE'
 
     @classmethod
     def extra_valid_auth_tokens(cls, user, role=None):
@@ -601,11 +602,57 @@ class User(Base, BaseModel):
                                        UserApiKeys.role == UserApiKeys.ROLE_ALL))
         return tokens.all()
 
+    def authenticate_by_token(self, auth_token, roles=None,
+                              include_builtin_token=False):
+        from rhodecode.lib import auth
+
+        log.debug('Trying to authenticate user: %s via auth-token, '
+                  'and roles: %s', self, roles)
+
+        if not auth_token:
+            return False
+
+        crypto_backend = auth.crypto_backend()
+
+        roles = (roles or []) + [UserApiKeys.ROLE_ALL]
+        tokens_q = UserApiKeys.query()\
+            .filter(UserApiKeys.user_id == self.user_id)\
+            .filter(or_(UserApiKeys.expires == -1,
+                        UserApiKeys.expires >= time.time()))
+
+        tokens_q = tokens_q.filter(UserApiKeys.role.in_(roles))
+
+        maybe_builtin = []
+        if include_builtin_token:
+            maybe_builtin = [AttributeDict({'api_key': self.api_key})]
+
+        plain_tokens = []
+        hash_tokens = []
+
+        for token in tokens_q.all() + maybe_builtin:
+            if token.api_key.startswith(crypto_backend.ENC_PREF):
+                hash_tokens.append(token.api_key)
+            else:
+                plain_tokens.append(token.api_key)
+
+        is_plain_match = auth_token in plain_tokens
+        if is_plain_match:
+            return True
+
+        for hashed in hash_tokens:
+            # marcink: this is expensive to calculate, but the most secure
+            match = crypto_backend.hash_check(auth_token, hashed)
+            if match:
+                return True
+
+        return False
+
     @property
     def builtin_token_roles(self):
-        return map(UserApiKeys._get_role_name, [
+        roles = [
             UserApiKeys.ROLE_API, UserApiKeys.ROLE_FEED, UserApiKeys.ROLE_HTTP
-        ])
+        ]
+        return map(UserApiKeys._get_role_name, roles)
 
     @property
     def ip_addresses(self):

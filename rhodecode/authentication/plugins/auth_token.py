@@ -122,10 +122,10 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
 
         log.debug('Authenticating user with args %s', user_attrs)
         if userobj.active:
-            role = UserApiKeys.ROLE_VCS
-            active_tokens = [x.api_key for x in
-                             User.extra_valid_auth_tokens(userobj, role=role)]
-            if userobj.username == username and password in active_tokens:
+            token_match = userobj.authenticate_by_token(
+                password, roles=[UserApiKeys.ROLE_VCS])
+
+            if userobj.username == username and token_match:
                 log.info(
                     'user `%s` successfully authenticated via %s',
                     user_attrs['username'], self.name)

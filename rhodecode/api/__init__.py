@@ -209,18 +209,18 @@ def request_view(request):
         request.rpc_user = auth_u
 
         # now check if token is valid for API
-        role = UserApiKeys.ROLE_API
-        extra_auth_tokens = [
-            x.api_key for x in User.extra_valid_auth_tokens(api_user, role=role)]
-        active_tokens = [api_user.api_key] + extra_auth_tokens
+        auth_token = request.rpc_api_key
+        token_match = api_user.authenticate_by_token(
+            auth_token, roles=[UserApiKeys.ROLE_API], include_builtin_token=True)
+        invalid_token = not token_match
 
-        log.debug('Checking if API key has proper role')
-        if request.rpc_api_key not in active_tokens:
+        log.debug('Checking if API KEY is valid with proper role')
+        if invalid_token:
             return jsonrpc_error(
                 request, retid=request.rpc_id,
-                message='API KEY has bad role for an API call')
+                message='API KEY invalid or, has bad role for an API call')
 
-    except Exception as e:
+    except Exception:
         log.exception('Error on API AUTH')
         return jsonrpc_error(
             request, retid=request.rpc_id, message='Invalid API KEY')

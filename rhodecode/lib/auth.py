@@ -99,6 +99,7 @@ class PasswordGenerator(object):
 
 
 class _RhodeCodeCryptoBase(object):
+    ENC_PREF = None
 
     def hash_create(self, str_):
         """
@@ -139,6 +140,7 @@ class _RhodeCodeCryptoBase(object):
 
 
 class _RhodeCodeCryptoBCrypt(_RhodeCodeCryptoBase):
+    ENC_PREF = '$2a$10'
 
     def hash_create(self, str_):
         self._assert_bytes(str_)
@@ -194,6 +196,7 @@ class _RhodeCodeCryptoBCrypt(_RhodeCodeCryptoBase):
 
 
 class _RhodeCodeCryptoSha256(_RhodeCodeCryptoBase):
+    ENC_PREF = '_'
 
     def hash_create(self, str_):
         self._assert_bytes(str_)
@@ -211,6 +214,7 @@ class _RhodeCodeCryptoSha256(_RhodeCodeCryptoBase):
 
 
 class _RhodeCodeCryptoMd5(_RhodeCodeCryptoBase):
+    ENC_PREF = '_'
 
     def hash_create(self, str_):
         self._assert_bytes(str_)
@@ -831,10 +835,6 @@ class AuthUser(object):
             self._permissions_scoped_cache[cache_key] = res
         return self._permissions_scoped_cache[cache_key]
 
-    @property
-    def auth_tokens(self):
-        return self.get_auth_tokens()
-
     def get_instance(self):
         return User.get(self.user_id)
 
@@ -924,16 +924,6 @@ class AuthUser(object):
 
         log.debug('PERMISSION tree computed %s' % (result_repr,))
         return result
-
-    def get_auth_tokens(self):
-        auth_tokens = [self.api_key]
-        for api_key in UserApiKeys.query()\
-                .filter(UserApiKeys.user_id == self.user_id)\
-                .filter(or_(UserApiKeys.expires == -1,
-                            UserApiKeys.expires >= time.time())).all():
-            auth_tokens.append(api_key.api_key)
-
-        return auth_tokens
 
     @property
     def is_default(self):
@@ -1171,7 +1161,7 @@ class LoginRequired(object):
     :param api_access: if enabled this checks only for valid auth token
         and grants access based on valid token
     """
-    def __init__(self, auth_token_access=False):
+    def __init__(self, auth_token_access=None):
         self.auth_token_access = auth_token_access
 
     def __call__(self, func):
@@ -1191,7 +1181,7 @@ class LoginRequired(object):
             ip_access_valid = False
 
         # check if we used an APIKEY and it's a valid one
-        # defined whitelist of controllers which API access will be enabled
+        # defined white-list of controllers which API access will be enabled
         _auth_token = request.GET.get(
             'auth_token', '') or request.GET.get('api_key', '')
         auth_token_access_valid = allowed_auth_token_access(
@@ -1200,8 +1190,20 @@ class LoginRequired(object):
         # explicit controller is enabled or API is in our whitelist
         if self.auth_token_access or auth_token_access_valid:
             log.debug('Checking AUTH TOKEN access for %s' % (cls,))
+            db_user = user.get_instance()
 
-            if _auth_token and _auth_token in user.auth_tokens:
+            if db_user:
+                if self.auth_token_access:
+                    roles = self.auth_token_access
+                else:
+                    roles = [UserApiKeys.ROLE_HTTP]
+                token_match = db_user.authenticate_by_token(
+                    _auth_token, roles=roles, include_builtin_token=True)
+            else:
+                log.debug('Unable to fetch db instance for auth user: %s', user)
+                token_match = False
+
+            if _auth_token and token_match:
                 auth_token_access_valid = True
                 log.debug('AUTH TOKEN ****%s is VALID' % (_auth_token[-4:],))
             else:
