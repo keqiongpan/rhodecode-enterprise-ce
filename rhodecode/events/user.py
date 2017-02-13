@@ -34,6 +34,7 @@ class UserRegistered(RhodecodeEvent):
     display_name = lazy_ugettext('user registered')
 
     def __init__(self, user, session):
+        super(UserRegistered, self).__init__()
         self.user = user
         self.session = session
 
@@ -48,6 +49,7 @@ class UserPreCreate(RhodecodeEvent):
     display_name = lazy_ugettext('user pre create')
 
     def __init__(self, user_data):
+        super(UserPreCreate, self).__init__()
         self.user_data = user_data
 
 
@@ -61,6 +63,7 @@ class UserPostCreate(RhodecodeEvent):
     display_name = lazy_ugettext('user post create')
 
     def __init__(self, user_data):
+        super(UserPostCreate, self).__init__()
         self.user_data = user_data
 
 
@@ -74,5 +77,6 @@ class UserPreUpdate(RhodecodeEvent):
     display_name = lazy_ugettext('user pre update')
 
     def __init__(self, user, user_data):
+        super(UserPreUpdate, self).__init__()
         self.user = user
         self.user_data = user_data
