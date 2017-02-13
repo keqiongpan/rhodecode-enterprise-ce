@@ -16,10 +16,13 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import logging
 
 from rhodecode.translation import lazy_ugettext
 from rhodecode.events.repo import (
     RepoEvent, _commits_as_dict, _issues_as_dict)
+
+log = logging.getLogger(__name__)
 
 
 class PullRequestEvent(RepoEvent):

@@ -15,6 +15,7 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
+import logging
 
 from datetime import datetime
 from pyramid.threadlocal import get_current_request
@@ -25,6 +26,8 @@ from rhodecode.lib.utils2 import AttributeDict
 SYSTEM_USER = AttributeDict(dict(
     username='__SYSTEM__'
 ))
+
+log = logging.getLogger(__name__)
 
 
 class RhodecodeEvent(object):
@@ -66,10 +69,16 @@ class RhodecodeEvent(object):
 
     @property
     def server_url(self):
+        default = '<no server_url available>'
         if self.request:
             from rhodecode.lib import helpers as h
-            return h.url('home', qualified=True)
-        return '<no server_url available>'
+            try:
+                return h.url('home', qualified=True)
+            except Exception:
+                log.exception('Failed to fetch URL for server')
+                return default
+
+        return default
 
     def as_dict(self):
         data = {
