@@ -283,30 +283,34 @@ class TestMyAccountController(TestController):
                 Session().delete(auth_token)
                 Session().commit()
 
-    def test_my_account_remove_auth_token(self):
-        # TODO: without this cleanup it fails when run with the whole
-        # test suite, so there must be some interference with other tests.
-        UserApiKeys.query().delete()
+    def test_my_account_remove_auth_token(self, user_util):
+        user = user_util.create_user(password=self.test_user_1_password)
+        user_id = user.user_id
+        self.log_user(user.username, self.test_user_1_password)
 
-        usr = self.log_user('test_regular2', 'test12')
-        User.get(usr['user_id'])
+        user = User.get(user_id)
+        keys = user.extra_auth_tokens
+        assert 1 == len(keys)
+
         response = self.app.post(url('my_account_auth_tokens'),
                                  {'description': 'desc', 'lifetime': -1,
                                   'csrf_token': self.csrf_token})
         assert_session_flash(response, 'Auth token successfully created')
-        response = response.follow()
+        response.follow()
 
-        # now delete our key
-        keys = UserApiKeys.query().all()
-        assert 1 == len(keys)
+        user = User.get(user_id)
+        keys = user.extra_auth_tokens
+        assert 2 == len(keys)
 
         response = self.app.post(
             url('my_account_auth_tokens'),
             {'_method': 'delete', 'del_auth_token': keys[0].api_key,
                 'csrf_token': self.csrf_token})
         assert_session_flash(response, 'Auth token successfully deleted')
-        keys = UserApiKeys.query().all()
-        assert 0 == len(keys)
+
+        user = User.get(user_id)
+        keys = user.extra_auth_tokens
+        assert 1 == len(keys)
 
     def test_my_account_reset_main_auth_token(self):
         usr = self.log_user('test_regular2', 'test12')
