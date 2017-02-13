@@ -15,6 +15,7 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
+import logging
 
 from zope.interface import implementer
 
@@ -22,6 +23,8 @@ from rhodecode.translation import lazy_ugettext
 from rhodecode.events.base import RhodecodeEvent
 from rhodecode.events.interfaces import (
     IUserRegistered, IUserPreCreate, IUserPreUpdate)
+
+log = logging.getLogger(__name__)
 
 
 @implementer(IUserRegistered)
