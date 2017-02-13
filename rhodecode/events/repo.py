@@ -25,6 +25,7 @@ from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 
 log = logging.getLogger(__name__)
 
+
 def _commits_as_dict(commit_ids, repos):
     """
     Helper function to serialize commit_ids
@@ -101,6 +102,7 @@ def _issues_as_dict(commits):
         for issue in commit['issues']:
             issues[issue['id']] = issue
     return issues
+
 
 class RepoEvent(RhodecodeEvent):
     """
