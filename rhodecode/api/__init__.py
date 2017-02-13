@@ -158,33 +158,36 @@ def request_view(request):
     # search not expired tokens only
 
     try:
-        u = User.get_by_auth_token(request.rpc_api_key)
+        api_user = User.get_by_auth_token(request.rpc_api_key)
 
-        if u is None:
+        if api_user is None:
             return jsonrpc_error(
                 request, retid=request.rpc_id, message='Invalid API KEY')
 
-        if not u.active:
+        if not api_user.active:
             return jsonrpc_error(
                 request, retid=request.rpc_id,
                 message='Request from this user not allowed')
 
         # check if we are allowed to use this IP
         auth_u = AuthUser(
-            u.user_id, request.rpc_api_key, ip_addr=request.rpc_ip_addr)
+            api_user.user_id, request.rpc_api_key, ip_addr=request.rpc_ip_addr)
         if not auth_u.ip_allowed:
             return jsonrpc_error(
                 request, retid=request.rpc_id,
                 message='Request from IP:%s not allowed' % (
-                request.rpc_ip_addr,))
+                    request.rpc_ip_addr,))
         else:
             log.info('Access for IP:%s allowed' % (request.rpc_ip_addr,))
+
+        # register our auth-user
+        request.rpc_user = auth_u
 
         # now check if token is valid for API
         role = UserApiKeys.ROLE_API
         extra_auth_tokens = [
-            x.api_key for x in User.extra_valid_auth_tokens(u, role=role)]
-        active_tokens = [u.api_key] + extra_auth_tokens
+            x.api_key for x in User.extra_valid_auth_tokens(api_user, role=role)]
+        active_tokens = [api_user.api_key] + extra_auth_tokens
 
         log.debug('Checking if API key has proper role')
         if request.rpc_api_key not in active_tokens:
