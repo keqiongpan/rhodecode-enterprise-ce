@@ -32,7 +32,7 @@ following commands:
 
 .. tip::
 
-   Update your channels frequently by running ``nix-channel --upgrade``.
+   Update your channels frequently by running ``nix-channel --update``.
 
 
 Switch nix to the latest STABLE channel
@@ -63,7 +63,10 @@ Clone the required repositories
 
 After Nix is set up, clone the RhodeCode Enterprise Community Edition and
 RhodeCode VCSServer repositories into the same directory.
-To do this, use the following example::
+RhodeCode currently is using Mercurial Version Control System, please make sure
+you have it installed before continuing.
+
+To obtain the required sources, use the following commands:
 
     mkdir rhodecode-develop && cd rhodecode-develop
     hg clone https://code.rhodecode.com/rhodecode-enterprise-ce
@@ -71,8 +74,7 @@ To do this, use the following example::
 
 .. note::
 
-   If you cannot clone the repository, please request read permissions
-   via support@rhodecode.com
+   If you cannot clone the repository, please contact us via support@rhodecode.com
 
 
 Install some required libraries
@@ -94,9 +96,14 @@ required libraries::
 Enter the Development Shell
 ---------------------------
 
-The final step is to start the development shell. To do this, run the
+The final step is to start the development shells. To do this, run the
 following command from inside the cloned repository::
 
+   #first, the vcsserver
+   cd ~/rhodecode-vcsserver
+   nix-shell
+
+   # then enterprise sources
    cd ~/rhodecode-enterprise-ce
    nix-shell
 
@@ -114,19 +121,22 @@ Creating a Development Configuration
 To create a development environment for RhodeCode Enterprise,
 use the following steps:
 
-1. Create a copy of `~/rhodecode-enterprise-ce/configs/development.ini`
-2. Adjust the configuration settings to your needs
+1. Create a copy of vcsserver config:
+    `cp ~/rhodecode-vcsserver/configs/development.ini ~/rhodecode-vcsserver/configs/dev.ini`
+2. Create a copy of rhodocode config:
+    `cp ~/rhodecode-enterprise-ce/configs/development.ini ~/rhodecode-enterprise-ce/configs/dev.ini`
+3. Adjust the configuration settings to your needs if needed.
 
 .. note::
 
-  It is recommended to use the name `dev.ini`.
+  It is recommended to use the name `dev.ini` since it's included in .hgignore file.
 
 
 Setup the Development Database
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To create a development database, use the following example. This is a one
-time operation::
+time operation executed from the nix-shell of rhodecode-enterprise-ce sources ::
 
     paster setup-rhodecode dev.ini \
         --user=admin --password=secret \
@@ -150,24 +160,23 @@ changes made to the CSS or JavaScript files when developing the code::
 
 This prepares the development (with comments/whitespace) versions of files.
 
-Start the Development Server
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Start the Development Servers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 From the rhodecode-vcsserver directory, start the development server in another
 nix-shell, using the following command::
 
-      pserve configs/development.ini http_port=9900
+      pserve configs/dev.ini
 
 In the adjacent nix-shell which you created for your development server, you may
 now start CE with the following command::
 
 
-      rcserver dev.ini
+      pserve --reload configs/dev.ini
 
 .. note::
 
-  To automatically refresh - and recompile the frontend assets - when changes
-  are made in the source code, you can use the option `--reload`.
+  `--reload` flag will automatically reload the server when source file changes.
 
 
 Run the Environment Tests
