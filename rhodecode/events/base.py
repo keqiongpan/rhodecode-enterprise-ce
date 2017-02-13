@@ -38,15 +38,30 @@ class RhodecodeEvent(object):
         self.utc_timestamp = datetime.utcnow()
 
     @property
+    def auth_user(self):
+        if not self.request:
+            return
+
+        user = getattr(self.request, 'user', None)
+        if user:
+            return user
+
+        api_user = getattr(self.request, 'rpc_user', None)
+        if api_user:
+            return api_user
+
+    @property
     def actor(self):
-        if self.request:
-            return self.request.user.get_instance()
+        auth_user = self.auth_user
+        if auth_user:
+            return auth_user.get_instance()
         return SYSTEM_USER
 
     @property
     def actor_ip(self):
-        if self.request:
-            return self.request.user.ip_addr
+        auth_user = self.auth_user
+        if auth_user:
+            return auth_user.ip_addr
         return '<no ip available>'
 
     @property
