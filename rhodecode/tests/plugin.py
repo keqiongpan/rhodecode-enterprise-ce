@@ -1170,11 +1170,14 @@ class UserUtility(object):
         user_group = self.create_user_group(members=[user])
         return user, user_group
 
-    def create_user_group(self, members=None, auto_cleanup=True, **kwargs):
+    def create_user_group(self, owner=TEST_USER_ADMIN_LOGIN, members=None,
+                          auto_cleanup=True, **kwargs):
         group_name = "{prefix}_usergroup_{count}".format(
             prefix=self._test_name,
             count=len(self.user_group_ids))
-        user_group = self.fixture.create_user_group(group_name, **kwargs)
+        user_group = self.fixture.create_user_group(
+            group_name, cur_user=owner, **kwargs)
+
         if auto_cleanup:
             self.user_group_ids.append(user_group.users_group_id)
         if members:

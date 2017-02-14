@@ -241,14 +241,14 @@ class AssertResponse(object):
         doc = fromstring(self.response.body)
         sel = CSSSelector('#' + anchor_id)
         elements = sel(doc)
-        assert len(elements) == 1
+        assert len(elements) == 1, 'cannot find 1 element {}'.format(anchor_id)
 
     def _ensure_url_equal(self, found, expected):
         assert _Url(found) == _Url(expected)
 
     def get_element(self, css_selector):
         elements = self._get_elements(css_selector)
-        assert len(elements) == 1
+        assert len(elements) == 1, 'cannot find 1 element {}'.format(css_selector)
         return elements[0]
 
     def get_elements(self, css_selector):
