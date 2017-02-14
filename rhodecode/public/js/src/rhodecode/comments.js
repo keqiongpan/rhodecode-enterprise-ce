@@ -354,9 +354,9 @@ var bindToggleButtons = function() {
             }
 
             var submitState = state;
-            if (!submitEvent && this.getCommentStatus() && !this.lineNo) {
+            if (!submitEvent && this.getCommentStatus() && !self.isInline()) {
                 // if the value of commit review status is set, we allow
-                // submit button, but only on Main form, lineNo means inline
+                // submit button, but only on Main form, isInline means inline
                 submitState = false
             }
             $(this.submitButton).prop('disabled', submitState);
