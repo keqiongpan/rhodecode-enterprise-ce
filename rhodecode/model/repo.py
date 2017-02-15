@@ -28,7 +28,7 @@ import re
 import shutil
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import true, or_
@@ -252,6 +252,9 @@ class RepoModel(BaseModel):
                            short_name=not admin, admin=False)
 
         def last_change(last_change):
+            if isinstance(last_change, datetime) and not last_change.tzinfo:
+                last_change = last_change + timedelta(seconds=
+                    (datetime.now() - datetime.utcnow()).seconds)
             return _render("last_change", last_change)
 
         def rss_lnk(repo_name):
