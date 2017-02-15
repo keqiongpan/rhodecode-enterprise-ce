@@ -142,13 +142,13 @@
 <%def name="admin_menu_simple(repositories=None, repository_groups=None, user_groups=None)">
   <ul class="submenu">
    %if repositories:
-      <li><a href="${h.url('repos')}">${_('Repositories')}</a></li>
+      <li class="local-admin-repos"><a href="${h.url('repos')}">${_('Repositories')}</a></li>
    %endif
    %if repository_groups:
-      <li><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
+      <li class="local-admin-repo-groups"><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
    %endif
    %if user_groups:
-      <li><a href="${h.url('users_groups')}">${_('User groups')}</a></li>
+      <li class="local-admin-user-groups"><a href="${h.url('users_groups')}">${_('User groups')}</a></li>
    %endif
   </ul>
 </%def>

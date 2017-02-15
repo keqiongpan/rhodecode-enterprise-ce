@@ -571,8 +571,14 @@ class PermissionCalculator(object):
         # on given user group
         for perm in self.default_user_group_perms:
             u_k = perm.UserUserGroupToPerm.user_group.users_group_name
-            p = perm.Permission.permission_name
             o = PermOrigin.USERGROUP_DEFAULT
+            if perm.UserGroup.user_id == self.user_id:
+                # set admin if owner
+                p = 'usergroup.admin'
+                o = PermOrigin.USERGROUP_OWNER
+            else:
+                p = perm.Permission.permission_name
+
             # if we decide this user isn't inheriting permissions from default
             # user we set him to .none so only explicit permissions work
             if not user_inherit_object_permissions:
@@ -651,7 +657,7 @@ class PermissionCalculator(object):
             multiple_counter[g_k] += 1
             p = perm.Permission.permission_name
             if perm.RepoGroup.user_id == self.user_id:
-                # set admin if owner
+                # set admin if owner, even for member of other user group
                 p = 'group.admin'
                 o = PermOrigin.REPOGROUP_OWNER
             else:
@@ -687,7 +693,7 @@ class PermissionCalculator(object):
         # user group for user group permissions
         user_group_from_user_group = Permission\
             .get_default_user_group_perms_from_user_group(
-                self.user_id, self.scope_repo_group_id)
+                self.user_id, self.scope_user_group_id)
 
         multiple_counter = collections.defaultdict(int)
         for perm in user_group_from_user_group:
@@ -698,9 +704,15 @@ class PermissionCalculator(object):
             o = PermOrigin.USERGROUP_USERGROUP % u_k
             multiple_counter[g_k] += 1
             p = perm.Permission.permission_name
-            if multiple_counter[g_k] > 1:
-                cur_perm = self.permissions_user_groups[g_k]
-                p = self._choose_permission(p, cur_perm)
+
+            if perm.UserGroup.user_id == self.user_id:
+                # set admin if owner, even for member of other user group
+                p = 'usergroup.admin'
+                o = PermOrigin.USERGROUP_OWNER
+            else:
+                if multiple_counter[g_k] > 1:
+                    cur_perm = self.permissions_user_groups[g_k]
+                    p = self._choose_permission(p, cur_perm)
             self.permissions_user_groups[g_k] = p, o
 
         # user explicit permission for user groups
@@ -709,12 +721,18 @@ class PermissionCalculator(object):
         for perm in user_user_groups_perms:
             ug_k = perm.UserUserGroupToPerm.user_group.users_group_name
             u_k = perm.UserUserGroupToPerm.user.username
-            p = perm.Permission.permission_name
             o = PermOrigin.USERGROUP_USER % u_k
-            if not self.explicit:
-                cur_perm = self.permissions_user_groups.get(
-                    ug_k, 'usergroup.none')
-                p = self._choose_permission(p, cur_perm)
+
+            if perm.UserGroup.user_id == self.user_id:
+                # set admin if owner
+                p = 'usergroup.admin'
+                o = PermOrigin.USERGROUP_OWNER
+            else:
+                p = perm.Permission.permission_name
+                if not self.explicit:
+                    cur_perm = self.permissions_user_groups.get(
+                        ug_k, 'usergroup.none')
+                    p = self._choose_permission(p, cur_perm)
             self.permissions_user_groups[ug_k] = p, o
 
     def _choose_permission(self, new_perm, cur_perm):
@@ -942,25 +960,27 @@ class AuthUser(object):
         """
         Returns list of repositories you're an admin of
         """
-        return [x[0] for x in self.permissions['repositories'].iteritems()
-                if x[1] == 'repository.admin']
+        return [
+            x[0] for x in self.permissions['repositories'].iteritems()
+            if x[1] == 'repository.admin']
 
     @property
     def repository_groups_admin(self):
         """
         Returns list of repository groups you're an admin of
         """
-        return [x[0]
-                for x in self.permissions['repositories_groups'].iteritems()
-                if x[1] == 'group.admin']
+        return [
+            x[0] for x in self.permissions['repositories_groups'].iteritems()
+            if x[1] == 'group.admin']
 
     @property
     def user_groups_admin(self):
         """
         Returns list of user groups you're an admin of
         """
-        return [x[0] for x in self.permissions['user_groups'].iteritems()
-                if x[1] == 'usergroup.admin']
+        return [
+            x[0] for x in self.permissions['user_groups'].iteritems()
+            if x[1] == 'usergroup.admin']
 
     @property
     def ip_allowed(self):
