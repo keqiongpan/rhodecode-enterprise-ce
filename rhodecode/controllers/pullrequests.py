@@ -644,6 +644,13 @@ class PullrequestsController(BaseRepoController):
          pull_request_display_obj,
          at_version) = self._get_pr_version(
             pull_request_id, version=version)
+        pr_closed = pull_request_latest.is_closed()
+
+        if pr_closed and (version or from_version):
+            # not allow to browse versions
+            return redirect(h.url('pullrequest_show', repo_name=repo_name,
+                                  pull_request_id=pull_request_id))
+
         versions = pull_request_display_obj.versions()
 
         c.at_version = at_version
@@ -681,7 +688,6 @@ class PullrequestsController(BaseRepoController):
         c.pull_request = pull_request_display_obj
         c.pull_request_latest = pull_request_latest
 
-        pr_closed = pull_request_latest.is_closed()
         if compare or (at_version and not at_version == 'latest'):
             c.allowed_to_change_status = False
             c.allowed_to_update = False
