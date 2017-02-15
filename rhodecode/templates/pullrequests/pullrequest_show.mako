@@ -694,11 +694,31 @@
             refreshMergeChecks = function(){
                 var loadUrl = "${h.url.current(merge_checks=1)}";
                 $('.pull-request-merge').css('opacity', 0.3);
+                $('.action-buttons-extra').css('opacity', 0.3);
+
                 $('.pull-request-merge').load(
-                    loadUrl,function() {
+                    loadUrl, function() {
                         $('.pull-request-merge').css('opacity', 1);
+
+                        $('.action-buttons-extra').css('opacity', 1);
+                        injectCloseAction();
                     }
                 );
+            };
+
+            injectCloseAction =  function() {
+                var closeAction = $('#close-pull-request-action').html();
+                var $actionButtons = $('.action-buttons-extra');
+                // clear the action before
+                $actionButtons.html("");
+                $actionButtons.html(closeAction);
+            };
+
+            closePullRequest = function (status) {
+                // inject closing flag
+                $('.action-buttons-extra').append('<input type="hidden" class="close-pr-input" id="close_pull_request" value="1">');
+                $(generalCommentForm.statusChange).select2("val", status).trigger('change');
+                $(generalCommentForm.submitForm).submit();
             };
 
             $('#show-outdated-comments').on('click', function(e){
@@ -786,6 +806,8 @@
             window.commentFormGlobalSubmitSuccessCallback = function(){
                 refreshMergeChecks();
             };
+            // initial injection
+            injectCloseAction();
 
         })
       </script>

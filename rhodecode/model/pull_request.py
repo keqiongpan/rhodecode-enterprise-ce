@@ -1333,6 +1333,7 @@ class MergeCheck(object):
     MERGE_CHECK = 'merge'
 
     def __init__(self):
+        self.review_status = None
         self.merge_possible = None
         self.merge_msg = ''
         self.failed = None
@@ -1355,7 +1356,7 @@ class MergeCheck(object):
 
         merge_check = cls()
 
-        # permissions
+        # permissions to merge
         user_allowed_to_merge = PullRequestModel().check_user_merge(
             pull_request, user)
         if not user_allowed_to_merge:
@@ -1366,8 +1367,10 @@ class MergeCheck(object):
             if fail_early:
                 return merge_check
 
-        # review status
+        # review status, must be always present
         review_status = pull_request.calculated_review_status()
+        merge_check.review_status = review_status
+
         status_approved = review_status == ChangesetStatus.STATUS_APPROVED
         if not status_approved:
             log.debug("MergeCheck: cannot merge, approval is pending.")

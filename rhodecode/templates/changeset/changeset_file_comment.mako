@@ -385,6 +385,11 @@
                 ${_('Cancel')}
                 </button>
             % endif
+
+            % if form_type != 'inline':
+                <div class="action-buttons-extra"></div>
+            % endif
+
             ${h.submit('save', _('Comment'), class_='btn btn-success comment-button-input')}
 
         </div>

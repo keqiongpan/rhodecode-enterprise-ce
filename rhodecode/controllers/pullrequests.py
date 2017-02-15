@@ -69,6 +69,8 @@ class PullrequestsController(BaseRepoController):
 
     def __before__(self):
         super(PullrequestsController, self).__before__()
+        c.REVIEW_STATUS_APPROVED = ChangesetStatus.STATUS_APPROVED
+        c.REVIEW_STATUS_REJECTED = ChangesetStatus.STATUS_REJECTED
 
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
@@ -686,9 +688,12 @@ class PullrequestsController(BaseRepoController):
             c.allowed_to_merge = False
             c.allowed_to_delete = False
             c.allowed_to_comment = False
+            c.allowed_to_close = False
         else:
             c.allowed_to_change_status = PullRequestModel(). \
-                check_user_change_status(pull_request_at_ver, c.rhodecode_user)
+                check_user_change_status(pull_request_at_ver, c.rhodecode_user) \
+                                         and not pr_closed
+
             c.allowed_to_update = PullRequestModel().check_user_update(
                 pull_request_latest, c.rhodecode_user) and not pr_closed
             c.allowed_to_merge = PullRequestModel().check_user_merge(
@@ -696,6 +701,7 @@ class PullrequestsController(BaseRepoController):
             c.allowed_to_delete = PullRequestModel().check_user_delete(
                 pull_request_latest, c.rhodecode_user) and not pr_closed
             c.allowed_to_comment = not pr_closed
+            c.allowed_to_close = c.allowed_to_change_status and not pr_closed
 
         # check merge capabilities
         _merge_check = MergeCheck.validate(
@@ -704,6 +710,7 @@ class PullrequestsController(BaseRepoController):
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
 
+        c.pull_request_review_status = _merge_check.review_status
         if merge_checks:
             return render('/pullrequests/pullrequest_merge_checks.mako')
 
@@ -712,7 +719,6 @@ class PullrequestsController(BaseRepoController):
         # reviewers and statuses
         c.pull_request_reviewers = pull_request_at_ver.reviewers_statuses()
         allowed_reviewers = [x[0].user_id for x in c.pull_request_reviewers]
-        c.pull_request_review_status = pull_request_at_ver.calculated_review_status()
 
         # GENERAL COMMENTS with versions #
         q = comments_model._all_general_comments_of_pull_request(pull_request_latest)
@@ -860,12 +866,7 @@ class PullrequestsController(BaseRepoController):
         # We need to swap that here to generate it properly on the html side
         c.target_repo = c.source_repo
 
-        if c.allowed_to_update:
-            force_close = ('forced_closed', _('Close Pull Request'))
-            statuses = ChangesetStatus.STATUSES + [force_close]
-        else:
-            statuses = ChangesetStatus.STATUSES
-        c.commit_statuses = statuses
+        c.commit_statuses = ChangesetStatus.STATUSES
 
         c.show_version_changes = not pr_closed
         if c.show_version_changes:
@@ -924,22 +925,21 @@ class PullrequestsController(BaseRepoController):
         if pull_request.is_closed():
             raise HTTPForbidden()
 
-        # TODO: johbo: Re-think this bit, "approved_closed" does not exist
-        # as a changeset status, still we want to send it in one value.
         status = request.POST.get('changeset_status', None)
         text = request.POST.get('text')
         comment_type = request.POST.get('comment_type')
         resolves_comment_id = request.POST.get('resolves_comment_id', None)
+        close_pull_request = request.POST.get('close_pull_request')
 
-        if status and '_closed' in status:
+        close_pr = False
+        if close_pull_request:
             close_pr = True
-            status = status.replace('_closed', '')
-        else:
-            close_pr = False
-
-        forced = (status == 'forced')
-        if forced:
-            status = 'rejected'
+            pull_request_review_status = pull_request.calculated_review_status()
+            if pull_request_review_status == ChangesetStatus.STATUS_APPROVED:
+                # approved only if we have voting consent
+                status = ChangesetStatus.STATUS_APPROVED
+            else:
+                status = ChangesetStatus.STATUS_REJECTED
 
         allowed_to_change_status = PullRequestModel().check_user_change_status(
             pull_request, c.rhodecode_user)
@@ -995,7 +995,7 @@ class PullrequestsController(BaseRepoController):
                 status_completed = (
                     calculated_status in [ChangesetStatus.STATUS_APPROVED,
                                           ChangesetStatus.STATUS_REJECTED])
-                if forced or status_completed:
+                if close_pull_request or status_completed:
                     PullRequestModel().close_pull_request(
                         pull_request_id, c.rhodecode_user)
                 else:
