@@ -252,7 +252,7 @@ class RepoModel(BaseModel):
                            short_name=not admin, admin=False)
 
         def last_change(last_change):
-            if isinstance(last_change, datetime) and not last_change.tzinfo:
+            if admin and isinstance(last_change, datetime) and not last_change.tzinfo:
                 last_change = last_change + timedelta(seconds=
                     (datetime.now() - datetime.utcnow()).seconds)
             return _render("last_change", last_change)
