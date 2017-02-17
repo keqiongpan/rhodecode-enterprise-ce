@@ -219,7 +219,7 @@
                                    ##<code>${ver.source_ref_parts.commit_id[:6]}</code>
                                </td>
                                <td>
-                                   ${h.age_component(ver.updated_on)}
+                                   ${h.age_component(ver.updated_on, time_is_local=True)}
                                </td>
                            </tr>
                        % endfor
