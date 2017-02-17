@@ -2,6 +2,7 @@
 <%inherit file="base.mako"/>
 <%namespace name="base" file="base.mako"/>
 
+## EMAIL SUBJECT
 <%def name="subject()" filter="n,trim">
 <%
 data = {
@@ -11,22 +12,24 @@ data = {
     'status': status_change,
     'comment_file': comment_file,
     'comment_line': comment_line,
+    'comment_type': comment_type,
 }
 %>
 ${_('[mention]') if mention else ''} \
 
 % if comment_file:
-    ${_('%(user)s commented on commit `%(commit_id)s` (file: `%(comment_file)s`)') % data} ${_('in the %(repo_name)s repository') % data |n}
+    ${_('%(user)s left %(comment_type)s on commit `%(commit_id)s` (file: `%(comment_file)s`)') % data} ${_('in the %(repo_name)s repository') % data |n}
 % else:
     % if status_change:
-    ${_('%(user)s commented on commit `%(commit_id)s` (status: %(status)s)') % data |n} ${_('in the %(repo_name)s repository') % data |n}
+    ${_('%(user)s left %(comment_type)s on commit `%(commit_id)s` (status: %(status)s)') % data |n} ${_('in the %(repo_name)s repository') % data |n}
     % else:
-    ${_('%(user)s commented on commit `%(commit_id)s`') % data |n} ${_('in the %(repo_name)s repository') % data |n}
+    ${_('%(user)s left %(comment_type)s on commit `%(commit_id)s`') % data |n} ${_('in the %(repo_name)s repository') % data |n}
     % endif
 % endif
 
 </%def>
 
+## PLAINTEXT VERSION OF BODY
 <%def name="body_plaintext()" filter="n,trim">
 <%
 data = {
@@ -36,6 +39,7 @@ data = {
     'status': status_change,
     'comment_file': comment_file,
     'comment_line': comment_line,
+    'comment_type': comment_type,
 }
 %>
 ${self.subject()}
@@ -45,7 +49,7 @@ ${self.subject()}
 * ${_('Commit')}: ${h.show_id(commit)}
 
 %if comment_file:
-* ${_('File: %(comment_file)s on line %(comment_line)s') % {'comment_file': comment_file, 'comment_line': comment_line}}
+* ${_('File: %(comment_file)s on line %(comment_line)s') % data}
 %endif
 
 ---
@@ -63,26 +67,39 @@ ${self.plaintext_footer()}
 <%
 data = {
     'user': h.person(user),
-    'comment_file': comment_file,
-    'comment_line': comment_line,
     'repo': commit_target_repo,
     'repo_name': repo_name,
     'commit_id': h.show_id(commit),
+    'comment_file': comment_file,
+    'comment_line': comment_line,
+    'comment_type': comment_type,
 }
 %>
 <table style="text-align:left;vertical-align:middle;">
     <tr><td colspan="2" style="width:100%;padding-bottom:15px;border-bottom:1px solid #dbd9da;">
+
     % if comment_file:
         <h4><a href="${commit_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('%(user)s commented on commit `%(commit_id)s` (file:`%(comment_file)s`)') % data}</a> ${_('in the %(repo)s repository') % data |n}</h4>
     % else:
         <h4><a href="${commit_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('%(user)s commented on commit `%(commit_id)s`') % data |n}</a> ${_('in the %(repo)s repository') % data |n}</h4>
     % endif
     </td></tr>
+
     <tr><td style="padding-right:20px;padding-top:15px;">${_('Commit')}</td><td style="padding-top:15px;"><a href="${commit_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${h.show_id(commit)}</a></td></tr>
     <tr><td style="padding-right:20px;">${_('Description')}</td><td style="white-space:pre-wrap">${h.urlify_commit_message(commit.message, repo_name)}</td></tr>
 
     % if status_change:
-        <tr><td style="padding-right:20px;">${_('Status')}</td><td>${_('The commit status was changed to')}: ${base.status_text(status_change, tag_type=status_change_type)}</td></tr>
+        <tr><td style="padding-right:20px;">${_('Status')}</td>
+            <td>${_('The commit status was changed to')}: ${base.status_text(status_change, tag_type=status_change_type)}</td>
+        </tr>
     % endif
-    <tr><td style="padding-right:20px;">${(_('Comment on line: %(comment_line)s') if comment_file else _('Comment')) % data}</td><td style="line-height:1.2em;white-space:pre-wrap">${h.render(comment_body, renderer=renderer_type, mentions=True)}</td></tr>
+    <tr>
+        <td style="padding-right:20px;">
+            % if comment_type == 'todo':
+                ${(_('TODO comment on line: %(comment_line)s') if comment_file else _('TODO comment')) % data}
+            % else:
+                ${(_('Note comment on line: %(comment_line)s') if comment_file else _('Note comment')) % data}
+            % endif
+        </td>
+        <td style="line-height:1.2em;white-space:pre-wrap">${h.render(comment_body, renderer=renderer_type, mentions=True)}</td></tr>
 </table>
