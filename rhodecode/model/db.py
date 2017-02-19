@@ -53,7 +53,7 @@ from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
-    glob2re, StrictAttributeDict)
+    glob2re, StrictAttributeDict, cleaned_uri)
 from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
@@ -1822,7 +1822,7 @@ class Repository(Base, BaseModel):
         clone_uri = self.clone_uri
         if clone_uri:
             import urlobject
-            url_obj = urlobject.URLObject(clone_uri)
+            url_obj = urlobject.URLObject(cleaned_uri(clone_uri))
             if url_obj.password:
                 clone_uri = url_obj.with_password('*****')
         return clone_uri

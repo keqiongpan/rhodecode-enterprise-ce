@@ -515,6 +515,16 @@ def age(prevdate, now=None, show_short_version=False, show_suffix=True,
     return _(u'just now')
 
 
+def cleaned_uri(uri):
+    """
+    Quotes '[' and ']' from uri if there is only one of them.
+        according to RFC3986 we cannot use such chars in uri
+    :param uri:
+    :return: uri without this chars
+    """
+    return urllib.quote(uri, safe='@$:/')
+
+
 def uri_filter(uri):
     """
     Removes user:password from given url string
