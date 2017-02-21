@@ -111,6 +111,7 @@ $(document).ready(function() {
     $("#tls_kind").select2(select2Options);
     $("#tls_reqcert").select2(select2Options);
     $("#search_scope").select2(select2Options);
+    $("#group_extraction_type").select2(select2Options);
 });
 </script>
 </%def>

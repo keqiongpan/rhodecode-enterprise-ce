@@ -17,6 +17,7 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
+
 """
 RhodeCode authentication library for PAM
 """
@@ -29,10 +30,9 @@ import pwd
 import re
 import socket
 
-from pylons.i18n.translation import lazy_ugettext as _
-from sqlalchemy.ext.hybrid import hybrid_property
-
-from rhodecode.authentication.base import RhodeCodeExternalAuthPlugin
+from rhodecode.translation import _
+from rhodecode.authentication.base import (
+    RhodeCodeExternalAuthPlugin, hybrid_property)
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.authentication.routes import AuthnPluginResourceBase
 from rhodecode.lib.colander_utils import strip_whitespace

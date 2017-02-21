@@ -24,10 +24,9 @@ RhodeCode authentication token plugin for built in internal auth
 
 import logging
 
-from sqlalchemy.ext.hybrid import hybrid_property
-
 from rhodecode.translation import _
-from rhodecode.authentication.base import RhodeCodeAuthPluginBase, VCS_TYPE
+from rhodecode.authentication.base import (
+    RhodeCodeAuthPluginBase, VCS_TYPE, hybrid_property)
 from rhodecode.authentication.routes import AuthnPluginResourceBase
 from rhodecode.model.db import User, UserApiKeys
 

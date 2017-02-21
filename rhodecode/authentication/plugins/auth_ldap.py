@@ -27,10 +27,9 @@ import colander
 import logging
 import traceback
 
-from pylons.i18n.translation import lazy_ugettext as _
-from sqlalchemy.ext.hybrid import hybrid_property
-
-from rhodecode.authentication.base import RhodeCodeExternalAuthPlugin
+from rhodecode.translation import _
+from rhodecode.authentication.base import (
+    RhodeCodeExternalAuthPlugin, chop_at, hybrid_property)
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.authentication.routes import AuthnPluginResourceBase
 from rhodecode.lib.colander_utils import strip_whitespace
@@ -72,14 +71,15 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
     host = colander.SchemaNode(
         colander.String(),
         default='',
-        description=_('Host of the LDAP Server'),
+        description=_('Host of the LDAP Server \n'
+                      '(e.g., 192.168.2.154, or ldap-server.domain.com'),
         preparer=strip_whitespace,
         title=_('LDAP Host'),
         widget='string')
     port = colander.SchemaNode(
         colander.Int(),
         default=389,
-        description=_('Port that the LDAP server is listening on'),
+        description=_('Custom port that the LDAP server is listening on. Default: 389'),
         preparer=strip_whitespace,
         title=_('Port'),
         validator=colander.Range(min=0, max=65536),
@@ -87,7 +87,9 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
     dn_user = colander.SchemaNode(
         colander.String(),
         default='',
-        description=_('User to connect to LDAP'),
+        description=_('Optional user DN/account to connect to LDAP if authentication is required. \n'
+                      'e.g., cn=admin,dc=mydomain,dc=com, or '
+                      'uid=root,cn=users,dc=mydomain,dc=com, or admin@mydomain.com'),
         missing='',
         preparer=strip_whitespace,
         title=_('Account'),
@@ -95,7 +97,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
     dn_pass = colander.SchemaNode(
         colander.String(),
         default='',
-        description=_('Password to connect to LDAP'),
+        description=_('Password to authenticate for given user DN.'),
         missing='',
         preparer=strip_whitespace,
         title=_('Password'),
@@ -117,7 +119,9 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
     base_dn = colander.SchemaNode(
         colander.String(),
         default='',
-        description=_('Base DN to search (e.g., dc=mydomain,dc=com)'),
+        description=_('Base DN to search. Dynamic bind is supported. Add `$login` marker '
+                      'in it to be replaced with current user credentials \n'
+                      '(e.g., dc=mydomain,dc=com, or ou=Users,dc=mydomain,dc=com)'),
         missing='',
         preparer=strip_whitespace,
         title=_('Base DN'),
@@ -125,22 +129,25 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
     filter = colander.SchemaNode(
         colander.String(),
         default='',
-        description=_('Filter to narrow results (e.g., ou=Users, etc)'),
+        description=_('Filter to narrow results \n'
+                      '(e.g., (&(objectCategory=Person)(objectClass=user)), or \n'
+                      '(memberof=cn=rc-login,ou=groups,ou=company,dc=mydomain,dc=com)))'),
         missing='',
         preparer=strip_whitespace,
         title=_('LDAP Search Filter'),
         widget='string')
+
     search_scope = colander.SchemaNode(
         colander.String(),
-        default=search_scope_choices[0],
-        description=_('How deep to search LDAP'),
+        default=search_scope_choices[2],
+        description=_('How deep to search LDAP. If unsure set to SUBTREE'),
         title=_('LDAP Search Scope'),
         validator=colander.OneOf(search_scope_choices),
         widget='select')
     attr_login = colander.SchemaNode(
         colander.String(),
-        default='',
-        description=_('LDAP Attribute to map to user name'),
+        default='uid',
+        description=_('LDAP Attribute to map to user name (e.g., uid, or sAMAccountName)'),
         preparer=strip_whitespace,
         title=_('Login Attribute'),
         missing_msg=_('The LDAP Login attribute of the CN must be specified'),
@@ -148,7 +155,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
     attr_firstname = colander.SchemaNode(
         colander.String(),
         default='',
-        description=_('LDAP Attribute to map to first name'),
+        description=_('LDAP Attribute to map to first name (e.g., givenName)'),
         missing='',
         preparer=strip_whitespace,
         title=_('First Name Attribute'),
@@ -156,7 +163,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
     attr_lastname = colander.SchemaNode(
         colander.String(),
         default='',
-        description=_('LDAP Attribute to map to last name'),
+        description=_('LDAP Attribute to map to last name (e.g., sn)'),
         missing='',
         preparer=strip_whitespace,
         title=_('Last Name Attribute'),
@@ -164,7 +171,9 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
     attr_email = colander.SchemaNode(
         colander.String(),
         default='',
-        description=_('LDAP Attribute to map to email address'),
+        description=_('LDAP Attribute to map to email address (e.g., mail).\n'
+                      'Emails are a crucial part of RhodeCode. \n'
+                      'If possible add a valid email attribute to ldap users.'),
         missing='',
         preparer=strip_whitespace,
         title=_('Email Attribute'),
@@ -182,7 +191,7 @@ class AuthLdap(object):
     def __init__(self, server, base_dn, port=389, bind_dn='', bind_pass='',
                  tls_kind='PLAIN', tls_reqcert='DEMAND', ldap_version=3,
                  search_scope='SUBTREE', attr_login='uid',
-                 ldap_filter='(&(objectClass=user)(!(objectClass=computer)))'):
+                 ldap_filter=None):
         if ldap == Missing:
             raise LdapImportError("Missing or incompatible ldap library")
 
@@ -236,14 +245,13 @@ class AuthLdap(object):
             server.start_tls_s()
 
         if self.LDAP_BIND_DN and self.LDAP_BIND_PASS:
-            log.debug('Trying simple_bind with password and given DN: %s',
+            log.debug('Trying simple_bind with password and given login DN: %s',
                       self.LDAP_BIND_DN)
             server.simple_bind_s(self.LDAP_BIND_DN, self.LDAP_BIND_PASS)
 
         return server
 
     def get_uid(self, username):
-        from rhodecode.lib.helpers import chop_at
         uid = username
         for server_addr in self.SERVER_ADDRESSES:
             uid = chop_at(username, "@%s" % server_addr)
@@ -292,8 +300,11 @@ class AuthLdap(object):
                 self.BASE_DN, self.SEARCH_SCOPE, filter_)
 
             if not lobjects:
+                log.debug("No matching LDAP objects for authentication "
+                          "of UID:'%s' username:(%s)", uid, username)
                 raise ldap.NO_SUCH_OBJECT()
 
+            log.debug('Found matching ldap object, trying to authenticate')
             for (dn, _attrs) in lobjects:
                 if dn is None:
                     continue
@@ -304,15 +315,13 @@ class AuthLdap(object):
                     break
 
             else:
-                log.debug("No matching LDAP objects for authentication "
-                          "of '%s' (%s)", uid, username)
                 raise LdapPasswordError('Failed to authenticate user '
                                         'with given password')
 
         except ldap.NO_SUCH_OBJECT:
             log.debug("LDAP says no such user '%s' (%s), org_exc:",
                       uid, username, exc_info=True)
-            raise LdapUsernameError()
+            raise LdapUsernameError('Unable to find user')
         except ldap.SERVER_DOWN:
             org_exc = traceback.format_exc()
             raise LdapConnectionError(
@@ -447,7 +456,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
                 'email': get_ldap_attr('attr_email') or email,
                 'admin': admin,
                 'active': active,
-                "active_from_extern": None,
+                'active_from_extern': None,
                 'extern_name': user_dn,
                 'extern_type': extern_type,
             }

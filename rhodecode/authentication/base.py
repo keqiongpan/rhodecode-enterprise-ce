@@ -627,3 +627,21 @@ def authenticate(username, password, environ=None, auth_type=None,
         log.debug("User `%s` failed to authenticate against %s",
                   display_user, plugin.get_id())
     return None
+
+
+def chop_at(s, sub, inclusive=False):
+    """Truncate string ``s`` at the first occurrence of ``sub``.
+
+    If ``inclusive`` is true, truncate just after ``sub`` rather than at it.
+
+    >>> chop_at("plutocratic brats", "rat")
+    'plutoc'
+    >>> chop_at("plutocratic brats", "rat", True)
+    'plutocrat'
+    """
+    pos = s.find(sub)
+    if pos == -1:
+        return s
+    if inclusive:
+        return s[:pos+len(sub)]
+    return s[:pos]

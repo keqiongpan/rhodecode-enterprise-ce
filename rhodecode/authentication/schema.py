@@ -40,10 +40,11 @@ class AuthnPluginSettingsSchemaBase(colander.MappingSchema):
     cache_ttl = colander.SchemaNode(
         colander.Int(),
         default=0,
-        description=_('Amount of seconds to cache the authentication '
-                      'call for this plugin. Useful for long calls like '
-                      'LDAP to improve the responsiveness of the '
-                      'authentication system (0 means disabled).'),
+        description=_('Amount of seconds to cache the authentication response'
+                      'call for this plugin. \n'
+                      'Useful for long calls like LDAP to improve the '
+                      'performance of the authentication system '
+                      '(0 means disabled).'),
         missing=0,
         title=_('Auth Cache TTL'),
         validator=colander.Range(min=0, max=None),
