@@ -25,6 +25,7 @@ Set of hooks run by RhodeCode Enterprise
 
 import os
 import collections
+import logging
 
 import rhodecode
 from rhodecode import events
@@ -33,6 +34,8 @@ from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.lib.exceptions import HTTPLockedRC, UserCreationError
 from rhodecode.model.db import Repository, User
+
+log = logging.getLogger(__name__)
 
 
 HookResponse = collections.namedtuple('HookResponse', ('status', 'output'))
@@ -91,7 +94,6 @@ def pre_push(extras):
     It bans pushing when the repository is locked.
     """
     usr = User.get_by_username(extras.username)
-
     output = ''
     if extras.locked_by[0] and usr.user_id != int(extras.locked_by[0]):
         locked_by = User.get(extras.locked_by[0]).username
@@ -251,10 +253,14 @@ class ExtensionCallback(object):
         self._kwargs_keys = set(kwargs_keys)
 
     def __call__(self, *args, **kwargs):
+        log.debug('Calling extension callback for %s', self._hook_name)
+
         kwargs_to_pass = dict((key, kwargs[key]) for key in self._kwargs_keys)
         callback = self._get_callback()
         if callback:
             return callback(**kwargs_to_pass)
+        else:
+            log.debug('extensions callback not found skipping...')
 
     def is_active(self):
         return hasattr(rhodecode.EXTENSIONS, self._hook_name)
