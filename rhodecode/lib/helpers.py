@@ -736,7 +736,7 @@ def age_component(datetime_iso, value=None, time_is_local=False):
 
     return literal(
         '<time class="timeago tooltip" '
-        'title="{1}" datetime="{0}{2}">{1}</time>'.format(
+        'title="{1}{2}" datetime="{0}{2}">{1}</time>'.format(
             datetime_iso, title, tzinfo))
 
 
