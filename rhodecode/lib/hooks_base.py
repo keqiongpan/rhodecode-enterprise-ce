@@ -93,6 +93,7 @@ def pre_push(extras):
 
     It bans pushing when the repository is locked.
     """
+
     usr = User.get_by_username(extras.username)
     output = ''
     if extras.locked_by[0] and usr.user_id != int(extras.locked_by[0]):
@@ -287,7 +288,7 @@ pre_push_extension = ExtensionCallback(
     hook_name='PRE_PUSH_HOOK',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
-        'repository', 'repo_store_path'))
+        'repository', 'repo_store_path', 'commit_ids'))
 
 
 post_push_extension = ExtensionCallback(

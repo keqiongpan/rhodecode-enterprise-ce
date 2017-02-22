@@ -69,7 +69,7 @@ def load_extension(filename, async=False):
 # used for building stats
 # format is {'ext':['Names']} eg. {'py':['Python']} note: there can be
 # more than one name for extension
-# NOTE: that this will overide any mappings in LANGUAGES_EXTENSIONS_MAP
+# NOTE: that this will override any mappings in LANGUAGES_EXTENSIONS_MAP
 # build by pygments
 EXTRA_MAPPINGS = {}
 
@@ -348,7 +348,7 @@ def _prepushhook(*args, **kwargs):
 
     expected_parameters = (
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
-        'repository', 'repo_store_path')
+        'repository', 'repo_store_path', 'commit_ids')
     _verify_kwargs(expected_parameters, kwargs)
 
     return 0
@@ -516,5 +516,5 @@ def _verify_kwargs(expected_parameters, kwargs):
         missing_kwargs = expected_parameters - kwargs_keys
         unexpected_kwargs = kwargs_keys - expected_parameters
         raise AssertionError(
-            "Missing parameters: %r, unexpected parameters: %s" %
+            "rcextensions: Missing parameters: %r, unexpected parameters: %s" %
             (missing_kwargs, unexpected_kwargs))
