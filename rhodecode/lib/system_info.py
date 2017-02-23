@@ -206,14 +206,20 @@ def machine_load():
 
 
 def cpu():
-    value = 0
+    value = {'cpu': 0, 'cpu_count': 0, 'cpu_usage': []}
     state = STATE_OK_DEFAULT
 
     if not psutil:
         return SysInfoRes(value=value, state=state)
 
-    value = psutil.cpu_percent(0.5)
-    human_value = '{} %'.format(value)
+    value['cpu'] = psutil.cpu_percent(0.5)
+    value['cpu_usage'] = psutil.cpu_percent(0.5, percpu=True)
+    value['cpu_count'] = psutil.cpu_count()
+
+    human_value = value.copy()
+    human_value['text'] = '{} cores at {} %'.format(
+        value['cpu_count'], value['cpu'])
+
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 

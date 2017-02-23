@@ -124,7 +124,7 @@ class AdminSystemInfoSettingsView(AdminSettingsView):
             ('', '', ''),  # spacer
 
             # Systems stats
-            (_('CPU'), val('cpu'), state('cpu')),
+            (_('CPU'), val('cpu')['text'], state('cpu')),
             (_('Load'), val('load')['text'], state('load')),
             (_('Memory'), val('memory')['text'], state('memory')),
             (_('Uptime'), val('uptime')['text'], state('uptime')),
