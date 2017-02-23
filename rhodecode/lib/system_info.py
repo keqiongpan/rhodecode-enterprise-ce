@@ -476,16 +476,24 @@ def vcs_backends():
 
 def vcs_server():
     import rhodecode
-    from rhodecode.lib.vcs.backends import get_vcsserver_version
+    from rhodecode.lib.vcs.backends import get_vcsserver_service_data
 
     server_url = rhodecode.CONFIG.get('vcs.server')
     enabled = rhodecode.CONFIG.get('vcs.server.enable')
     protocol = rhodecode.CONFIG.get('vcs.server.protocol') or 'http'
     state = STATE_OK_DEFAULT
     version = None
+    workers = 0
 
     try:
-        version = get_vcsserver_version()
+        data = get_vcsserver_service_data()
+        if data and 'version' in data:
+            version = data['version']
+
+        if data and 'config' in data:
+            conf = data['config']
+            workers = conf.get('workers', '?')
+
         connection = 'connected'
     except Exception as e:
         connection = 'failed'
@@ -502,8 +510,9 @@ def vcs_server():
 
     human_value = value.copy()
     human_value['text'] = \
-        '{url}@ver:{ver} via {mode} mode, connection:{conn}'.format(
-            url=server_url, ver=version, mode=protocol, conn=connection)
+        '{url}@ver:{ver} via {mode} mode[workers:{workers}], connection:{conn}'.format(
+            url=server_url, ver=version, workers=workers, mode=protocol,
+            conn=connection)
 
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
@@ -526,12 +535,12 @@ def rhodecode_app_info():
 
 def rhodecode_config():
     import rhodecode
-    import ConfigParser
+    import ConfigParser as configparser
     path = rhodecode.CONFIG.get('__file__')
     rhodecode_ini_safe = rhodecode.CONFIG.copy()
 
     try:
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read(path)
         parsed_ini = config
         if parsed_ini.has_section('server:main'):
