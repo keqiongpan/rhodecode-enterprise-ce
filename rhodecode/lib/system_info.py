@@ -121,6 +121,7 @@ def platform_type():
 
 def uptime():
     from rhodecode.lib.helpers import age, time_to_datetime
+    from rhodecode.translation import TranslationString
 
     value = dict(boot_time=0, uptime=0, text='')
     state = STATE_OK_DEFAULT
@@ -131,13 +132,15 @@ def uptime():
     value['boot_time'] = boot_time
     value['uptime'] = time.time() - boot_time
 
+    date_or_age = age(time_to_datetime(boot_time))
+    if isinstance(date_or_age, TranslationString):
+        date_or_age = date_or_age.interpolate()
+
     human_value = value.copy()
     human_value['boot_time'] = time_to_datetime(boot_time)
     human_value['uptime'] = age(time_to_datetime(boot_time), show_suffix=False)
 
-    human_value['text'] = u'Server started {}'.format(
-        age(time_to_datetime(boot_time)))
-
+    human_value['text'] = u'Server started {}'.format(date_or_age)
     return SysInfoRes(value=value, human_value=human_value)
 
 
