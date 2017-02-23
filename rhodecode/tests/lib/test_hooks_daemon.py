@@ -109,11 +109,13 @@ class TestHooksHttpHandler(object):
         with read_patcher, hooks_patcher:
             server = MockServer(hooks_daemon.HooksHttpHandler, request)
 
-        expected_result = json.dumps({
+        org_exc = json.loads(server.request.output_stream.buflist[-1])
+        expected_result = {
             'exception': 'Exception',
-            'exception_args': ('Test exception', )
-        })
-        assert server.request.output_stream.buflist[-1] == expected_result
+            'exception_traceback': org_exc['exception_traceback'],
+            'exception_args': ['Test exception']
+        }
+        assert org_exc == expected_result
 
     def test_log_message_writes_to_debug_log(self, caplog):
         ip_port = ('0.0.0.0', 8888)
