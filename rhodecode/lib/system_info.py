@@ -520,8 +520,21 @@ def rhodecode_app_info():
 
 def rhodecode_config():
     import rhodecode
+    import ConfigParser
     path = rhodecode.CONFIG.get('__file__')
     rhodecode_ini_safe = rhodecode.CONFIG.copy()
+
+    try:
+        config = ConfigParser.ConfigParser()
+        config.read(path)
+        parsed_ini = config
+        if parsed_ini.has_section('server:main'):
+            parsed_ini = dict(parsed_ini.items('server:main'))
+    except Exception:
+        log.exception('Failed to read .ini file for display')
+        parsed_ini = {}
+
+    rhodecode_ini_safe['server:main'] = parsed_ini
 
     blacklist = [
         'rhodecode_license_key',
