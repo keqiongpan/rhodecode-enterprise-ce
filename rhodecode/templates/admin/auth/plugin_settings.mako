@@ -112,6 +112,7 @@ $(document).ready(function() {
     $("#tls_reqcert").select2(select2Options);
     $("#search_scope").select2(select2Options);
     $("#group_extraction_type").select2(select2Options);
+    $("#admin_groups_sync").select2(select2Options);
 });
 </script>
 </%def>
