@@ -20,11 +20,10 @@
 
 import json
 import logging
-import urlparse
+import traceback
 import threading
 from BaseHTTPServer import BaseHTTPRequestHandler
 from SocketServer import TCPServer
-from routes.util import URLGenerator
 
 import pylons
 import rhodecode
@@ -44,8 +43,10 @@ class HooksHttpHandler(BaseHTTPRequestHandler):
         try:
             result = self._call_hook(method, extras)
         except Exception as e:
+            exc_tb = traceback.format_exc()
             result = {
                 'exception': e.__class__.__name__,
+                'exception_traceback': exc_tb,
                 'exception_args': e.args
             }
         self._write_response(result)
@@ -214,12 +215,14 @@ class Hooks(object):
         try:
             result = hook(extras)
         except Exception as error:
+            exc_tb = traceback.format_exc()
             log.exception('Exception when handling hook %s', hook)
             error_args = error.args
             return {
                 'status': 128,
                 'output': '',
                 'exception': type(error).__name__,
+                'exception_traceback': exc_tb,
                 'exception_args': error_args,
             }
         finally:
