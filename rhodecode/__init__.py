@@ -51,7 +51,7 @@ PYRAMID_SETTINGS = {}
 EXTENSIONS = {}
 
 __version__ = ('.'.join((str(each) for each in VERSION[:3])))
-__dbversion__ = 64  # defines current db version for migrations
+__dbversion__ = 65  # defines current db version for migrations
 __platform__ = platform.system()
 __license__ = 'AGPLv3, and Commercial License'
 __author__ = 'RhodeCode GmbH'

@@ -411,6 +411,7 @@ def config_data_from_db(clear_session=True, repo=None):
         skip_entries.append(('hooks', RhodeCodeUi.HOOK_PRE_PULL))
     if 'push' not in enabled_hook_classes:
         skip_entries.append(('hooks', RhodeCodeUi.HOOK_PRE_PUSH))
+        skip_entries.append(('hooks', RhodeCodeUi.HOOK_PRETX_PUSH))
 
     config = [entry for entry in config if entry[:2] not in skip_entries]
 
