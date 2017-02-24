@@ -34,10 +34,9 @@ def _commits_as_dict(commit_ids, repos):
     :param repos: list of repos to check
     """
     from rhodecode.lib.utils2 import extract_mentioned_users
-    from rhodecode.model.db import Repository
     from rhodecode.lib import helpers as h
-    from rhodecode.lib.helpers import process_patterns
-    from rhodecode.lib.helpers import urlify_commit_message
+    from rhodecode.lib.helpers import (
+        urlify_commit_message, process_patterns, chop_at_smart)
 
     if not repos:
         raise Exception('no repo defined')
@@ -78,14 +77,15 @@ def _commits_as_dict(commit_ids, repos):
                 cs_data['issues'] = issues_data
                 cs_data['message_html'] = urlify_commit_message(cs_data['message'],
                     repo.repo_name)
+                cs_data['message_html_title'] = chop_at_smart(cs_data['message'], '\n', suffix_if_chopped='...')
                 commits.append(cs_data)
 
                 needed_commits.remove(commit_id)
 
         except Exception as e:
             log.exception(e)
-            # we don't send any commits when crash happens, only full list matters
-            # we short circuit then.
+            # we don't send any commits when crash happens, only full list
+            # matters we short circuit then.
             return []
 
     missing_commits = set(commit_ids) - set(c['raw_id'] for c in commits)
