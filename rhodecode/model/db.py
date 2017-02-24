@@ -955,6 +955,17 @@ class UserApiKeys(Base, BaseModel):
     role = Column('role', String(255), nullable=True)
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
 
+    # scope columns
+    repo_id = Column(
+        'repo_id', Integer(), ForeignKey('repositories.repo_id'),
+        nullable=True, unique=None, default=None)
+    repo = relationship('Repository', lazy='joined')
+
+    repo_group_id = Column(
+        'repo_group_id', Integer(), ForeignKey('groups.group_id'),
+        nullable=True, unique=None, default=None)
+    repo_group = relationship('RepoGroup', lazy='joined')
+
     user = relationship('User', lazy='joined')
 
     @classmethod
