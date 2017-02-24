@@ -86,9 +86,9 @@
                 </div>
                 <div class="pr-pullinfo">
                      %if h.is_hg(c.pull_request.source_repo):
-                        <input type="text"  value="hg pull -r ${h.short_id(c.source_ref)} ${c.pull_request.source_repo.clone_url()}" readonly="readonly">
+                        <input type="text" class="input-monospace" value="hg pull -r ${h.short_id(c.source_ref)} ${c.pull_request.source_repo.clone_url()}" readonly="readonly">
                      %elif h.is_git(c.pull_request.source_repo):
-                        <input type="text"  value="git pull ${c.pull_request.source_repo.clone_url()} ${c.pull_request.source_ref_parts.name}" readonly="readonly">
+                        <input type="text" class="input-monospace" value="git pull ${c.pull_request.source_repo.clone_url()} ${c.pull_request.source_ref_parts.name}" readonly="readonly">
                      %endif
                 </div>
             </div>
@@ -123,9 +123,9 @@
                     % if not c.pull_request.is_closed() and c.pull_request.shadow_merge_ref:
                     <div class="pr-mergeinfo">
                         %if h.is_hg(c.pull_request.target_repo):
-                            <input type="text"  value="hg clone -u ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                            <input type="text" class="input-monospace" value="hg clone -u ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
                         %elif h.is_git(c.pull_request.target_repo):
-                            <input type="text"  value="git clone --branch ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                            <input type="text" class="input-monospace" value="git clone --branch ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
                         %endif
                     </div>
                     % else:

@@ -49,8 +49,8 @@
               ${_('Read-only url')}:
             </div>
             <div class="right-content disabled">
-                <input type="text" id="clone_url" disabled value="${c.clone_repo_url}"/>
-                <input type="text" id="clone_url_id" disabled value="${c.clone_repo_url_id}" style="display: none;"/>
+                <input type="text" class="input-monospace" id="clone_url" disabled value="${c.clone_repo_url}"/>
+                <input type="text" class="input-monospace" id="clone_url_id" disabled value="${c.clone_repo_url_id}" style="display: none;"/>
                 <a id="clone_by_name" class="clone" style="display: none;">${_('Show by Name')}</a>
                 <a id="clone_by_id" class="clone">${_('Show by ID')}</a>
                 <p class="help-block">${_('SVN Protocol is disabled. To enable it, see the')} <a href="${h.url('enterprise_svn_setup')}" target="_blank">${_('documentation here')}</a>.</p>
@@ -60,8 +60,8 @@
               ${_('Clone url')}:
             </div>
             <div class="right-content">
-                <input type="text" id="clone_url" readonly="readonly" value="${c.clone_repo_url}"/>
-                <input type="text" id="clone_url_id" readonly="readonly" value="${c.clone_repo_url_id}" style="display: none;"/>
+                <input type="text" class="input-monospace" id="clone_url" readonly="readonly" value="${c.clone_repo_url}"/>
+                <input type="text" class="input-monospace" id="clone_url_id" readonly="readonly" value="${c.clone_repo_url_id}" style="display: none;"/>
                 <a id="clone_by_name" class="clone" style="display: none;">${_('Show by Name')}</a>
                 <a id="clone_by_id" class="clone">${_('Show by ID')}</a>
             </div>
