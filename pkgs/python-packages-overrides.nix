@@ -61,6 +61,14 @@ self: super: {
     ];
   });
 
+  celery = super.celery.override (attrs: {
+    # The current version of kombu needs some patching to work with the
+    # other libs. Should be removed once we update celery and kombu.
+    patches = [
+      ./patch-celery-dateutil.diff
+    ];
+  });
+
   kombu = super.kombu.override (attrs: {
     # The current version of kombu needs some patching to work with the
     # other libs. Should be removed once we update celery and kombu.
