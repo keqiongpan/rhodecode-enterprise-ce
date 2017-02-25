@@ -1821,15 +1821,48 @@ def markdown(source, mentions=False):
                    MarkupRenderer.markdown(source, flavored=True,
                                            mentions=mentions))
 
+
 def renderer_from_filename(filename, exclude=None):
-    return MarkupRenderer.renderer_from_filename(filename, exclude=exclude)
+    """
+    choose a renderer based on filename
+    """
+
+    # images
+
+    # ipython
+    if filename.endswith('.ipynb'):
+        return 'ipython'
+
+    is_markup = MarkupRenderer.renderer_from_filename(filename, exclude=exclude)
+    if is_markup:
+        return is_markup
+    return None
 
 
 def render(source, renderer='rst', mentions=False):
     if renderer == 'rst':
         return rst(source, mentions=mentions)
-    if renderer == 'markdown':
+    elif renderer == 'markdown':
         return markdown(source, mentions=mentions)
+    elif renderer == 'ipython':
+        def ipython_renderer(source):
+            import nbformat
+            from nbconvert import HTMLExporter
+            notebook = nbformat.reads(source, as_version=4)
+
+            # 2. Instantiate the exporter. We use the `basic` template for now; we'll get into more details
+            # later about how to customize the exporter further.
+            html_exporter = HTMLExporter()
+            html_exporter.template_file = 'basic'
+
+            # 3. Process the notebook we loaded earlier
+            (body, resources) = html_exporter.from_notebook_node(notebook)
+
+            return body
+
+        return ipython_renderer(source)
+    # None means just show the file-source
+    return None
 
 
 def commit_status(repo, commit_id):

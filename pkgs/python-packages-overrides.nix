@@ -48,6 +48,13 @@ self: super: {
     ];
   });
 
+  nbconvert = super.nbconvert.override (attrs: {
+    propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
+      # marcink: plug in jupyter-client for notebook rendering
+      self.jupyter-client
+    ];
+  });
+
   ipython = super.ipython.override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
       self.gnureadline

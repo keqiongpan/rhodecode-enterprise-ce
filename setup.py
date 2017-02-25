@@ -113,6 +113,7 @@ install_requirements = [
     'iso8601',
     'kombu',
     'msgpack-python',
+    'nbconvert',
     'packaging',
     'psycopg2',
     'py-gfm',
