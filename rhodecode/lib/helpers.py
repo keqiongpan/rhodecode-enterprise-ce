@@ -117,7 +117,7 @@ def url_replace(**qargs):
     return url('', **new_args)
 
 
-def asset(path, ver=None):
+def asset(path, ver=None, **kwargs):
     """
     Helper to generate a static asset file path for rhodecode assets
 
@@ -128,6 +128,7 @@ def asset(path, ver=None):
     """
     request = get_current_request()
     query = {}
+    query.update(kwargs)
     if ver:
         query = {'ver': ver}
     return request.static_path(
