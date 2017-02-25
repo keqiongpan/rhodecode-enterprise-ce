@@ -69,8 +69,7 @@
                             % endif
                             ${_('an administrator if you need help.')}
                         </p>
-                            %endif
-                    
+                    %endif
 
                     ${h.submit('sign_in', _('Sign In'), class_="btn sign-in")}
 

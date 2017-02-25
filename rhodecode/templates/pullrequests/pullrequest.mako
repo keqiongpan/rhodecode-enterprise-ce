@@ -48,9 +48,7 @@
                             </div>
                             <div class="textarea text-area editor">
                                 ${h.textarea('pullrequest_desc',size=30, )}
-                                <span class="help-block">
-                                    ${_('Write a short description on this pull request')}
-                                </span>
+                                <span class="help-block">${_('Write a short description on this pull request')}</span>
                             </div>
                         </div>
 

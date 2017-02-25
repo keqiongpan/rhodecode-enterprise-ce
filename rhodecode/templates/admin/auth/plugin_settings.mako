@@ -72,7 +72,7 @@
                           <span class="error-message">${errors.get(node.name)}</span>
                           <br />
                         %endif
-                        <p class="help-block">${node.description}</p>
+                        <p class="help-block pre-formatting">${node.description}</p>
                       </div>
                     </div>
                   %endfor

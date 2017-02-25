@@ -10,9 +10,7 @@
                     </div>
                     <div class="checkboxes">
                         ${h.checkbox('inherit_global_settings',value=True)}
-                        <span class="help-block">
-                          ${h.literal(_('Select to inherit global vcs settings.'))}
-                        </span>
+                        <span class="help-block">${h.literal(_('Select to inherit global vcs settings.'))}</span>
                     </div>
                 </div>
             </div>
