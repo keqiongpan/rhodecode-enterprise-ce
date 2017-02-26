@@ -943,6 +943,8 @@ class UserApiKeys(Base, BaseModel):
     ROLE_VCS = 'token_role_vcs'
     ROLE_API = 'token_role_api'
     ROLE_FEED = 'token_role_feed'
+    ROLE_PASSWORD_RESET = 'token_password_reset'
+
     ROLES = [ROLE_ALL, ROLE_HTTP, ROLE_VCS, ROLE_API, ROLE_FEED]
 
     user_api_key_id = Column("user_api_key_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)

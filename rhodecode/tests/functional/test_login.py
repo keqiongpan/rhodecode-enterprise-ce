@@ -25,15 +25,13 @@ import pytest
 
 from rhodecode.config.routing import ADMIN_PREFIX
 from rhodecode.tests import (
-    TestController, assert_session_flash, clear_all_caches, url,
-    HG_REPO, TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
+    assert_session_flash, url, HG_REPO, TEST_USER_ADMIN_LOGIN)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import AssertResponse, get_session_from_response
-from rhodecode.lib.auth import check_password, generate_auth_token
-from rhodecode.lib import helpers as h
+from rhodecode.lib.auth import check_password
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model import validators
-from rhodecode.model.db import User, Notification
+from rhodecode.model.db import User, Notification, UserApiKeys
 from rhodecode.model.meta import Session
 
 fixture = Fixture()
@@ -49,7 +47,7 @@ pwd_reset_confirm_url = ADMIN_PREFIX + '/password_reset_confirmation'
 
 
 @pytest.mark.usefixtures('app')
-class TestLoginController:
+class TestLoginController(object):
     destroy_users = set()
 
     @classmethod
@@ -374,54 +372,42 @@ class TestLoginController:
     def test_forgot_password_wrong_mail(self):
         bad_email = 'marcin@wrongmail.org'
         response = self.app.post(
-            pwd_reset_url,
-            {'email': bad_email, }
+            pwd_reset_url, {'email': bad_email, }
         )
+        assert_session_flash(response,
+            'If such email exists, a password reset link was sent to it.')
 
-        msg = validators.ValidSystemEmail()._messages['non_existing_email']
-        msg = h.html_escape(msg % {'email': bad_email})
-        response.mustcontain()
-
-    def test_forgot_password(self):
+    def test_forgot_password(self, user_util):
         response = self.app.get(pwd_reset_url)
         assert response.status == '200 OK'
 
-        username = 'test_password_reset_1'
-        password = 'qweqwe'
-        email = 'marcin@python-works.com'
-        name = 'passwd'
-        lastname = 'reset'
+        user = user_util.create_user()
+        user_id = user.user_id
+        email = user.email
 
-        new = User()
-        new.username = username
-        new.password = password
-        new.email = email
-        new.name = name
-        new.lastname = lastname
-        new.api_key = generate_auth_token(username)
-        Session().add(new)
-        Session().commit()
+        response = self.app.post(pwd_reset_url, {'email': email, })
 
-        response = self.app.post(pwd_reset_url,
-                                 {'email': email, })
-
-        assert_session_flash(
-            response, 'Your password reset link was sent')
-
-        response = response.follow()
+        assert_session_flash(response,
+            'If such email exists, a password reset link was sent to it.')
 
         # BAD KEY
-
-        key = "bad"
-        confirm_url = '{}?key={}'.format(pwd_reset_confirm_url, key)
+        confirm_url = '{}?key={}'.format(pwd_reset_confirm_url, 'badkey')
         response = self.app.get(confirm_url)
         assert response.status == '302 Found'
         assert response.location.endswith(pwd_reset_url)
+        assert_session_flash(response, 'Given reset token is invalid')
+
+        response.follow()  # cleanup flash
 
         # GOOD KEY
+        key = UserApiKeys.query()\
+            .filter(UserApiKeys.user_id == user_id)\
+            .filter(UserApiKeys.role == UserApiKeys.ROLE_PASSWORD_RESET)\
+            .first()
 
-        key = User.get_by_username(username).api_key
-        confirm_url = '{}?key={}'.format(pwd_reset_confirm_url, key)
+        assert key
+
+        confirm_url = '{}?key={}'.format(pwd_reset_confirm_url, key.api_key)
         response = self.app.get(confirm_url)
         assert response.status == '302 Found'
         assert response.location.endswith(login_url)
@@ -431,7 +417,7 @@ class TestLoginController:
             'Your password reset was successful, '
             'a new password has been sent to your email')
 
-        response = response.follow()
+        response.follow()
 
     def _get_api_whitelist(self, values=None):
         config = {'api_access_controllers_whitelist': values or []}
@@ -522,70 +508,3 @@ class TestLoginController:
                                  repo_name=HG_REPO, revision='tip',
                                  api_key=new_auth_token.api_key),
                              status=302)
-
-
-class TestPasswordReset(TestController):
-
-    @pytest.mark.parametrize(
-        'pwd_reset_setting, show_link, show_reset', [
-            ('hg.password_reset.enabled', True, True),
-            ('hg.password_reset.hidden', False, True),
-            ('hg.password_reset.disabled', False, False),
-        ])
-    def test_password_reset_settings(
-            self, pwd_reset_setting, show_link, show_reset):
-        clear_all_caches()
-        self.log_user(TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
-        params = {
-            'csrf_token': self.csrf_token,
-            'anonymous': 'True',
-            'default_register': 'hg.register.auto_activate',
-            'default_register_message': '',
-            'default_password_reset': pwd_reset_setting,
-            'default_extern_activate': 'hg.extern_activate.auto',
-        }
-        resp = self.app.post(url('admin_permissions_application'), params=params)
-        self.logout_user()
-
-        login_page = self.app.get(login_url)
-        asr_login = AssertResponse(login_page)
-        index_page = self.app.get(index_url)
-        asr_index = AssertResponse(index_page)
-
-        if show_link:
-            asr_login.one_element_exists('a.pwd_reset')
-            asr_index.one_element_exists('a.pwd_reset')
-        else:
-            asr_login.no_element_exists('a.pwd_reset')
-            asr_index.no_element_exists('a.pwd_reset')
-
-        pwdreset_page = self.app.get(pwd_reset_url)
-        
-        asr_reset = AssertResponse(pwdreset_page)
-        if show_reset:
-            assert 'Send password reset email' in pwdreset_page
-            asr_reset.one_element_exists('#email')
-            asr_reset.one_element_exists('#send')
-        else:
-            assert 'Password reset is disabled.' in pwdreset_page
-            asr_reset.no_element_exists('#email')
-            asr_reset.no_element_exists('#send')
-
-    def test_password_form_disabled(self):
-        self.log_user(TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
-        params = {
-            'csrf_token': self.csrf_token,
-            'anonymous': 'True',
-            'default_register': 'hg.register.auto_activate',
-            'default_register_message': '',
-            'default_password_reset': 'hg.password_reset.disabled',
-            'default_extern_activate': 'hg.extern_activate.auto',
-        }
-        self.app.post(url('admin_permissions_application'), params=params)
-        self.logout_user()
-
-        pwdreset_page = self.app.post(
-            pwd_reset_url,
-            {'email': 'lisa@rhodecode.com',}
-        )
-        assert 'Password reset is disabled.' in pwdreset_page

@@ -16,6 +16,7 @@ There was a request to reset your password using the email address ${email} on $
 You can continue, and generate new password by clicking following URL:
 ${password_reset_url}
 
+This link will be active for 10 minutes.
 ${self.plaintext_footer()}
 </%def>
 
@@ -28,4 +29,5 @@ There was a request to reset your password using the email address ${email} on $
 <strong>If you did not request a password reset, please contact your RhodeCode administrator.</strong>
 </p><p>
 <a href="${password_reset_url}">${_('Generate new password here')}.</a>
+This link will be active for 10 minutes.
 </p>

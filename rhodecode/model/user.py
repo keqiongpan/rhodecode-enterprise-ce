@@ -538,7 +538,7 @@ class UserModel(BaseModel):
 
         return True
 
-    def reset_password(self, data, pwd_reset_url):
+    def reset_password(self, data):
         from rhodecode.lib.celerylib import tasks, run_task
         from rhodecode.model.notification import EmailNotificationModel
         from rhodecode.lib import auth
@@ -554,8 +554,15 @@ class UserModel(BaseModel):
                 user.update_userdata(force_password_change=True)
 
                 Session().add(user)
+
+                # now delete the token in question
+                UserApiKeys = AuthTokenModel.cls
+                UserApiKeys().query().filter(
+                    UserApiKeys.api_key == data['token']).delete()
+
                 Session().commit()
                 log.info('successfully reset password for `%s`', user_email)
+
             if new_passwd is None:
                 raise Exception('unable to generate new password')
 
@@ -563,7 +570,6 @@ class UserModel(BaseModel):
 
             email_kwargs = {
                 'new_password': new_passwd,
-                'password_reset_url': pwd_reset_url,
                 'user': user,
                 'email': user_email,
                 'date': datetime.datetime.now()
@@ -571,7 +577,8 @@ class UserModel(BaseModel):
 
             (subject, headers, email_body,
              email_body_plaintext) = EmailNotificationModel().render_email(
-                EmailNotificationModel.TYPE_PASSWORD_RESET_CONFIRMATION, **email_kwargs)
+                EmailNotificationModel.TYPE_PASSWORD_RESET_CONFIRMATION,
+                **email_kwargs)
 
             recipients = [user_email]
 

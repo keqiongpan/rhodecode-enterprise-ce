@@ -41,7 +41,7 @@ class AuthTokenModel(BaseModel):
         """
         :param user: user or user_id
         :param description: description of ApiKey
-        :param lifetime: expiration time in seconds
+        :param lifetime: expiration time in minutes
         :param role: role for the apikey
         """
         from rhodecode.lib.auth import generate_auth_token
@@ -85,3 +85,13 @@ class AuthTokenModel(BaseModel):
                 .filter(or_(UserApiKeys.expires == -1,
                             UserApiKeys.expires >= time.time()))
         return user_auth_tokens
+
+    def get_auth_token(self, auth_token):
+        auth_token = UserApiKeys.query().filter(
+            UserApiKeys.api_key == auth_token)
+        auth_token = auth_token \
+            .filter(or_(UserApiKeys.expires == -1,
+                        UserApiKeys.expires >= time.time()))\
+            .first()
+
+        return auth_token

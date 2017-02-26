@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import time
 import collections
 import datetime
 import formencode
@@ -37,9 +38,10 @@ from rhodecode.lib.auth import (
 from rhodecode.lib.base import get_ip_addr
 from rhodecode.lib.exceptions import UserCreationError
 from rhodecode.lib.utils2 import safe_str
-from rhodecode.model.db import User
+from rhodecode.model.db import User, UserApiKeys
 from rhodecode.model.forms import LoginForm, RegisterForm, PasswordResetForm
 from rhodecode.model.meta import Session
+from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.settings import SettingsModel
 from rhodecode.model.user import UserModel
 from rhodecode.translation import _
@@ -289,17 +291,24 @@ class LoginView(object):
             'errors': {},
         }
 
+        # always send implicit message to prevent from discovery of
+        # matching emails
+        msg = _('If such email exists, a password reset link was sent to it.')
+
         if self.request.POST:
+            if h.HasPermissionAny('hg.password_reset.disabled')():
+                _email = self.request.POST.get('email', '')
+                log.error('Failed attempt to reset password for `%s`.', _email)
+                self.session.flash(_('Password reset has been disabled.'),
+                                   queue='error')
+                return HTTPFound(self.request.route_path('reset_password'))
+
             password_reset_form = PasswordResetForm()()
             try:
                 form_result = password_reset_form.to_python(
                     self.request.params)
-                if h.HasPermissionAny('hg.password_reset.disabled')():
-                    log.error('Failed attempt to reset password for %s.', form_result['email'] )
-                    self.session.flash(
-                        _('Password reset has been disabled.'),
-                        queue='error')
-                    return HTTPFound(self.request.route_path('reset_password'))
+                user_email = form_result['email']
+
                 if captcha.active:
                     response = submit(
                         self.request.params.get('recaptcha_challenge_field'),
@@ -310,43 +319,66 @@ class LoginView(object):
                         _value = form_result
                         _msg = _('Bad captcha')
                         error_dict = {'recaptcha_field': _msg}
-                        raise formencode.Invalid(_msg, _value, None,
-                                                 error_dict=error_dict)
-
+                        raise formencode.Invalid(
+                            _msg, _value, None, error_dict=error_dict)
                 # Generate reset URL and send mail.
-                user_email = form_result['email']
                 user = User.get_by_email(user_email)
+
+                # generate password reset token that expires in 10minutes
+                desc = 'Generated token for password reset from {}'.format(
+                    datetime.datetime.now().isoformat())
+                reset_token = AuthTokenModel().create(
+                    user, lifetime=10,
+                    description=desc,
+                    role=UserApiKeys.ROLE_PASSWORD_RESET)
+                Session().commit()
+
+                log.debug('Successfully created password recovery token')
                 password_reset_url = self.request.route_url(
                     'reset_password_confirmation',
-                    _query={'key': user.api_key})
+                    _query={'key': reset_token.api_key})
                 UserModel().reset_password_link(
                     form_result, password_reset_url)
-
                 # Display success message and redirect.
-                self.session.flash(
-                    _('Your password reset link was sent'),
-                    queue='success')
-                return HTTPFound(self.request.route_path('login'))
+                self.session.flash(msg, queue='success')
+                return HTTPFound(self.request.route_path('reset_password'))
 
             except formencode.Invalid as errors:
                 render_ctx.update({
                     'defaults': errors.value,
-                    'errors': errors.error_dict,
                 })
+            log.debug('faking response on invalid password reset')
+            # make this take 2s, to prevent brute forcing.
+            time.sleep(2)
+            self.session.flash(msg, queue='success')
+            return HTTPFound(self.request.route_path('reset_password'))
 
         return render_ctx
 
     @view_config(route_name='reset_password_confirmation',
                  request_method='GET')
     def password_reset_confirmation(self):
+
         if self.request.GET and self.request.GET.get('key'):
+            # make this take 2s, to prevent brute forcing.
+            time.sleep(2)
+
+            token = AuthTokenModel().get_auth_token(
+                self.request.GET.get('key'))
+
+            # verify token is the correct role
+            if token is None or token.role != UserApiKeys.ROLE_PASSWORD_RESET:
+                log.debug('Got token with role:%s expected is %s',
+                          getattr(token, 'role', 'EMPTY_TOKEN'),
+                          UserApiKeys.ROLE_PASSWORD_RESET)
+                self.session.flash(
+                    _('Given reset token is invalid'), queue='error')
+                return HTTPFound(self.request.route_path('reset_password'))
+
             try:
-                user = User.get_by_auth_token(self.request.GET.get('key'))
-                password_reset_url = self.request.route_url(
-                    'reset_password_confirmation',
-                    _query={'key': user.api_key})
-                data = {'email': user.email}
-                UserModel().reset_password(data, password_reset_url)
+                owner = token.user
+                data = {'email': owner.email, 'token': token.api_key}
+                UserModel().reset_password(data)
                 self.session.flash(
                     _('Your password reset was successful, '
                       'a new password has been sent to your email'),
