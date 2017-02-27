@@ -53,7 +53,8 @@ class AuthTokenModel(BaseModel):
         new_auth_token.user_id = user.user_id
         new_auth_token.description = description
         new_auth_token.role = role
-        new_auth_token.expires = time.time() + (lifetime * 60) if lifetime != -1 else -1
+        new_auth_token.expires = time.time() + (lifetime * 60) \
+            if lifetime != -1 else -1
         Session().add(new_auth_token)
 
         return new_auth_token

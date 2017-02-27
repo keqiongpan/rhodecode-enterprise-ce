@@ -974,6 +974,17 @@ class UserApiKeys(Base, BaseModel):
     def role_humanized(self):
         return self._get_role_name(self.role)
 
+    def _get_scope(self):
+        if self.repo:
+            return repr(self.repo)
+        if self.repo_group:
+            return repr(self.repo_group) + ' (recursive)'
+        return 'global'
+
+    @property
+    def scope_humanized(self):
+        return self._get_scope()
+
 
 class UserEmailMap(Base, BaseModel):
     __tablename__ = 'user_email_map'
@@ -1037,6 +1048,7 @@ class UserIpMap(Base, BaseModel):
     def __unicode__(self):
         return u"<%s('user_id:%s=>%s')>" % (self.__class__.__name__,
                                             self.user_id, self.ip_addr)
+
 
 class UserLog(Base, BaseModel):
     __tablename__ = 'user_logs'
