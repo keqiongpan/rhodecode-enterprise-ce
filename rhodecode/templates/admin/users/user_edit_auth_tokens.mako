@@ -5,30 +5,6 @@
     <div class="panel-body">
         <div class="apikeys_wrap">
           <table class="rctable auth_tokens">
-            <tr>
-                <td class="truncate-wrap td-authtoken"><div class="user_auth_tokens truncate autoexpand"><code>${c.user.api_key}</code></div></td>
-                <td class="td-tags">
-                    <span class="tag disabled">${_('Built-in')}</span>
-                </td>
-                <td class="td-tags">
-                    % for token in c.user.builtin_token_roles:
-                    <span class="tag disabled">
-                        ${token}
-                    </span>
-                    % endfor
-                </td>
-                <td class="td-exp">${_('expires')}: ${_('never')}</td>
-                <td class="td-action">
-                    ${h.secure_form(url('edit_user_auth_tokens', user_id=c.user.user_id),method='delete')}
-                        ${h.hidden('del_auth_token',c.user.api_key)}
-                        ${h.hidden('del_auth_token_builtin',1)}
-                        <button class="btn btn-link btn-danger" type="submit"
-                                onclick="return confirm('${_('Confirm to reset this auth token: %s') % c.user.api_key}');">
-                            ${_('Reset')}
-                        </button>
-                    ${h.end_form()}
-                </td>
-            </tr>
             %if c.user_auth_tokens:
                 %for auth_token in c.user_auth_tokens:
                   <tr class="${'expired' if auth_token.expired else ''}">

@@ -649,13 +649,6 @@ class User(Base, BaseModel):
         return False
 
     @property
-    def builtin_token_roles(self):
-        roles = [
-            UserApiKeys.ROLE_API, UserApiKeys.ROLE_FEED, UserApiKeys.ROLE_HTTP
-        ]
-        return map(UserApiKeys._get_role_name, roles)
-
-    @property
     def ip_addresses(self):
         ret = UserIpMap.query().filter(UserIpMap.user == self).all()
         return [x.ip_addr for x in ret]

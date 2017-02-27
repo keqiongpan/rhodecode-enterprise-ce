@@ -625,20 +625,3 @@ class TestAdminUsersController(TestController):
         assert_session_flash(response, 'Auth token successfully deleted')
         keys = UserApiKeys.query().filter(UserApiKeys.user_id == user_id).all()
         assert 0 == len(keys)
-
-    def test_reset_main_auth_token(self):
-        self.log_user()
-        user = User.get_by_username(TEST_USER_REGULAR_LOGIN)
-        user_id = user.user_id
-        api_key = user.api_key
-        response = self.app.get(url('edit_user_auth_tokens', user_id=user_id))
-        response.mustcontain(api_key)
-        response.mustcontain('expires: never')
-
-        response = self.app.post(
-            url('edit_user_auth_tokens', user_id=user_id),
-            {'_method': 'delete', 'del_auth_token_builtin': api_key,
-             'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully reset')
-        response = response.follow()
-        response.mustcontain(no=[api_key])

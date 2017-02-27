@@ -507,16 +507,9 @@ class UsersController(BaseController):
             h.flash(_("You can't edit this user"), category='warning')
             return redirect(url('users'))
 
-        auth_token = request.POST.get('del_auth_token')
-        if request.POST.get('del_auth_token_builtin'):
-            user = User.get(c.user.user_id)
-            if user:
-                user.api_key = generate_auth_token(user.username)
-                Session().add(user)
-                Session().commit()
-                h.flash(_("Auth token successfully reset"), category='success')
-        elif auth_token:
-            AuthTokenModel().delete(auth_token, c.user.user_id)
+        del_auth_token = request.POST.get('del_auth_token')
+        if del_auth_token:
+            AuthTokenModel().delete(del_auth_token, c.user.user_id)
             Session().commit()
             h.flash(_("Auth token successfully deleted"), category='success')
 

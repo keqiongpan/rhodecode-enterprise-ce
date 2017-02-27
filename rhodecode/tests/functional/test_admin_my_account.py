@@ -312,22 +312,6 @@ class TestMyAccountController(TestController):
         keys = user.extra_auth_tokens
         assert 1 == len(keys)
 
-    def test_my_account_reset_main_auth_token(self):
-        usr = self.log_user('test_regular2', 'test12')
-        user = User.get(usr['user_id'])
-        api_key = user.api_key
-        response = self.app.get(url('my_account_auth_tokens'))
-        response.mustcontain(api_key)
-        response.mustcontain('expires: never')
-
-        response = self.app.post(
-            url('my_account_auth_tokens'),
-            {'_method': 'delete', 'del_auth_token_builtin': api_key,
-                'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully reset')
-        response = response.follow()
-        response.mustcontain(no=[api_key])
-
     def test_valid_change_password(self, user_util):
         new_password = 'my_new_valid_password'
         user = user_util.create_user(password=self.test_user_1_password)

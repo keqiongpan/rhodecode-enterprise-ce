@@ -408,17 +408,10 @@ class MyAccountController(BaseController):
 
     @auth.CSRFRequired()
     def my_account_auth_tokens_delete(self):
-        auth_token = request.POST.get('del_auth_token')
-        user_id = c.rhodecode_user.user_id
-        if request.POST.get('del_auth_token_builtin'):
-            user = User.get(user_id)
-            if user:
-                user.api_key = generate_auth_token(user.username)
-                Session().add(user)
-                Session().commit()
-                h.flash(_("Auth token successfully reset"), category='success')
-        elif auth_token:
-            AuthTokenModel().delete(auth_token, c.rhodecode_user.user_id)
+        del_auth_token = request.POST.get('del_auth_token')
+
+        if del_auth_token:
+            AuthTokenModel().delete(del_auth_token, c.rhodecode_user.user_id)
             Session().commit()
             h.flash(_("Auth token successfully deleted"), category='success')
 
