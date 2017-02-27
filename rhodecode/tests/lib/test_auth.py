@@ -605,4 +605,4 @@ def test_auth_by_token(test_token, test_roles, auth_result, expected_tokens,
         new_token.api_key = token  # inject known name for testing...
 
     assert auth_result == user.authenticate_by_token(
-        test_token, roles=test_roles, include_builtin_token=True)
+        test_token, roles=test_roles)

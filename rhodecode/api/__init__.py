@@ -211,7 +211,7 @@ def request_view(request):
         # now check if token is valid for API
         auth_token = request.rpc_api_key
         token_match = api_user.authenticate_by_token(
-            auth_token, roles=[UserApiKeys.ROLE_API], include_builtin_token=True)
+            auth_token, roles=[UserApiKeys.ROLE_API])
         invalid_token = not token_match
 
         log.debug('Checking if API KEY is valid with proper role')

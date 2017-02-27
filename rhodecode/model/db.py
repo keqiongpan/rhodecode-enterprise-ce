@@ -603,8 +603,7 @@ class User(Base, BaseModel):
                                        UserApiKeys.role == UserApiKeys.ROLE_ALL))
         return tokens.all()
 
-    def authenticate_by_token(self, auth_token, roles=None,
-                              include_builtin_token=False):
+    def authenticate_by_token(self, auth_token, roles=None):
         from rhodecode.lib import auth
 
         log.debug('Trying to authenticate user: %s via auth-token, '
@@ -623,14 +622,10 @@ class User(Base, BaseModel):
 
         tokens_q = tokens_q.filter(UserApiKeys.role.in_(roles))
 
-        maybe_builtin = []
-        if include_builtin_token:
-            maybe_builtin = [AttributeDict({'api_key': self.api_key})]
-
         plain_tokens = []
         hash_tokens = []
 
-        for token in tokens_q.all() + maybe_builtin:
+        for token in tokens_q.all():
             if token.api_key.startswith(crypto_backend.ENC_PREF):
                 hash_tokens.append(token.api_key)
             else:

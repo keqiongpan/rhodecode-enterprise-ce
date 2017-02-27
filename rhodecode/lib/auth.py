@@ -1218,7 +1218,7 @@ class LoginRequired(object):
                 else:
                     roles = [UserApiKeys.ROLE_HTTP]
                 token_match = db_user.authenticate_by_token(
-                    _auth_token, roles=roles, include_builtin_token=True)
+                    _auth_token, roles=roles)
             else:
                 log.debug('Unable to fetch db instance for auth user: %s', user)
                 token_match = False
