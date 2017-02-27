@@ -510,7 +510,7 @@ class User(Base, BaseModel):
     last_login = Column("last_login", DateTime(timezone=False), nullable=True, unique=None, default=None)
     extern_type = Column("extern_type", String(255), nullable=True, unique=None, default=None)
     extern_name = Column("extern_name", String(255), nullable=True, unique=None, default=None)
-    api_key = Column("api_key", String(255), nullable=True, unique=None, default=None)
+    _api_key = Column("api_key", String(255), nullable=True, unique=None, default=None)
     inherit_default_permissions = Column("inherit_default_permissions", Boolean(), nullable=False, unique=None, default=True)
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     _user_data = Column("user_data", LargeBinary(), nullable=True)  # JSON data
@@ -562,6 +562,23 @@ class User(Base, BaseModel):
     def email(self, val):
         self._email = val.lower() if val else None
 
+    @hybrid_property
+    def api_key(self):
+        """
+        Fetch if exist an auth-token with role ALL connected to this user
+        """
+        user_auth_token = UserApiKeys.query()\
+            .filter(UserApiKeys.user_id == self.user_id)\
+            .filter(or_(UserApiKeys.expires == -1,
+                            UserApiKeys.expires >= time.time()))\
+            .filter(UserApiKeys.role == UserApiKeys.ROLE_ALL).first()
+        return user_auth_token
+
+    @api_key.setter
+    def api_key(self, val):
+        # don't allow to set API key this is deprecated for now
+        self._api_key = None
+
     @property
     def firstname(self):
         # alias for future
@@ -574,7 +591,7 @@ class User(Base, BaseModel):
 
     @property
     def auth_tokens(self):
-        return [self.api_key] + [x.api_key for x in self.extra_auth_tokens]
+        return [x.api_key for x in self.extra_auth_tokens]
 
     @property
     def extra_auth_tokens(self):
@@ -684,8 +701,7 @@ class User(Base, BaseModel):
         Returns instance of AuthUser for this user
         """
         from rhodecode.lib.auth import AuthUser
-        return AuthUser(user_id=self.user_id, api_key=self.api_key,
-                        username=self.username)
+        return AuthUser(user_id=self.user_id, username=self.username)
 
     @hybrid_property
     def user_data(self):
@@ -730,24 +746,18 @@ class User(Base, BaseModel):
         return q.scalar()
 
     @classmethod
-    def get_by_auth_token(cls, auth_token, cache=False, fallback=True):
-        q = cls.query().filter(cls.api_key == auth_token)
-
+    def get_by_auth_token(cls, auth_token, cache=False):
+        q = UserApiKeys.query()\
+            .filter(UserApiKeys.api_key == auth_token)\
+            .filter(or_(UserApiKeys.expires == -1,
+                        UserApiKeys.expires >= time.time()))
         if cache:
             q = q.options(FromCache("sql_cache_short",
                                     "get_auth_token_%s" % auth_token))
-        res = q.scalar()
 
-        if fallback and not res:
-            #fallback to additional keys
-            _res = UserApiKeys.query()\
-                .filter(UserApiKeys.api_key == auth_token)\
-                .filter(or_(UserApiKeys.expires == -1,
-                            UserApiKeys.expires >= time.time()))\
-                .first()
-            if _res:
-                res = _res.user
-        return res
+        match = q.first()
+        if match:
+            return match.user
 
     @classmethod
     def get_by_email(cls, email, case_insensitive=False, cache=False):
@@ -884,7 +894,6 @@ class User(Base, BaseModel):
         api_key_replacement = '*' * api_key_length
 
         extras = {
-            'api_key': api_key_replacement,
             'api_keys': [api_key_replacement],
             'active': user.active,
             'admin': user.admin,
@@ -897,7 +906,6 @@ class User(Base, BaseModel):
         data.update(extras)
 
         if include_secrets:
-            data['api_key'] = user.api_key
             data['api_keys'] = user.auth_tokens
         return data
 
