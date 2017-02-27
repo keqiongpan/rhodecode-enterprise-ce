@@ -308,9 +308,6 @@ class UserModel(BaseModel):
             new_user.name = firstname
             new_user.lastname = lastname
 
-            if not edit:
-                new_user.api_key = generate_auth_token(username)
-
             # set password only if creating an user or password is changed
             if not edit or _password_change(new_user, password):
                 reason = 'new password' if edit else 'new user'

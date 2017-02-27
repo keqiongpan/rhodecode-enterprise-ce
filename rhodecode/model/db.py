@@ -828,12 +828,10 @@ class User(Base, BaseModel):
         Session().add(usr)
         log.debug('updated user %s lastactivity', usr.username)
 
-    def update_password(self, new_password, change_api_key=False):
-        from rhodecode.lib.auth import get_crypt_password,generate_auth_token
+    def update_password(self, new_password):
+        from rhodecode.lib.auth import get_crypt_password
 
         self.password = get_crypt_password(new_password)
-        if change_api_key:
-            self.api_key = generate_auth_token(self.username)
         Session().add(self)
 
     @classmethod
