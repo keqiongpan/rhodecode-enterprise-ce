@@ -38,6 +38,7 @@ import string
 import hashlib
 import pygments
 import itertools
+import fnmatch
 
 from datetime import datetime
 from functools import partial
@@ -1811,27 +1812,15 @@ def urlify_commit_message(commit_text, repository=None):
     return literal(newtext)
 
 
-def rst(source, mentions=False):
-    return literal('<div class="rst-block">%s</div>' %
-                   MarkupRenderer.rst(source, mentions=mentions))
-
-
-def markdown(source, mentions=False):
-    return literal('<div class="markdown-block">%s</div>' %
-                   MarkupRenderer.markdown(source, flavored=True,
-                                           mentions=mentions))
-
-
 def renderer_from_filename(filename, exclude=None):
     """
     choose a renderer based on filename
     """
 
-    # images
-
     # ipython
-    if filename.endswith('.ipynb'):
-        return 'ipython'
+    for ext in ['*.ipynb']:
+        if fnmatch.fnmatch(filename, pat=ext):
+            return 'jupyter'
 
     is_markup = MarkupRenderer.renderer_from_filename(filename, exclude=exclude)
     if is_markup:
@@ -1841,26 +1830,18 @@ def renderer_from_filename(filename, exclude=None):
 
 def render(source, renderer='rst', mentions=False):
     if renderer == 'rst':
-        return rst(source, mentions=mentions)
+        return literal(
+            '<div class="rst-block">%s</div>' %
+            MarkupRenderer.rst(source, mentions=mentions))
     elif renderer == 'markdown':
-        return markdown(source, mentions=mentions)
-    elif renderer == 'ipython':
-        def ipython_renderer(source):
-            import nbformat
-            from nbconvert import HTMLExporter
-            notebook = nbformat.reads(source, as_version=4)
+        return literal(
+            '<div class="markdown-block">%s</div>' %
+            MarkupRenderer.markdown(source, flavored=True, mentions=mentions))
+    elif renderer == 'jupyter':
+        return literal(
+            '<div class="ipynb">%s</div>' %
+            MarkupRenderer.jupyter(source))
 
-            # 2. Instantiate the exporter. We use the `basic` template for now; we'll get into more details
-            # later about how to customize the exporter further.
-            html_exporter = HTMLExporter()
-            html_exporter.template_file = 'basic'
-
-            # 3. Process the notebook we loaded earlier
-            (body, resources) = html_exporter.from_notebook_node(notebook)
-
-            return body
-
-        return ipython_renderer(source)
     # None means just show the file-source
     return None
 

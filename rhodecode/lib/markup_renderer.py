@@ -29,6 +29,7 @@ import logging
 import itertools
 
 from mako.lookup import TemplateLookup
+from mako.template import Template as MakoTemplate
 
 from docutils.core import publish_parts
 from docutils.parsers.rst import directives
@@ -49,6 +50,7 @@ class MarkupRenderer(object):
 
     MARKDOWN_PAT = re.compile(r'\.(md|mkdn?|mdown|markdown)$', re.IGNORECASE)
     RST_PAT = re.compile(r'\.re?st$', re.IGNORECASE)
+    JUPYTER_PAT = re.compile(r'\.(ipynb)$', re.IGNORECASE)
     PLAIN_PAT = re.compile(r'^readme$', re.IGNORECASE)
 
     extensions = ['codehilite', 'extra', 'def_list', 'sane_lists']
@@ -95,6 +97,8 @@ class MarkupRenderer(object):
             detected_renderer = 'markdown'
         elif MarkupRenderer.RST_PAT.findall(filename):
             detected_renderer = 'rst'
+        elif MarkupRenderer.JUPYTER_PAT.findall(filename):
+            detected_renderer = 'jupyter'
         elif MarkupRenderer.PLAIN_PAT.findall(filename):
             detected_renderer = 'plain'
         else:
@@ -262,6 +266,78 @@ class MarkupRenderer(object):
                 return cls.plain(source)
             else:
                 raise
+
+    @classmethod
+    def jupyter(cls, source):
+        from rhodecode.lib import helpers
+        import nbformat
+        from nbconvert import HTMLExporter
+        from traitlets.config import Config
+
+        class CustomHTMLExporter(HTMLExporter):
+            def _template_file_default(self):
+                return 'basic'
+
+        def _sanitize_resources(resources):
+            """
+            Skip/sanitize some of the CSS generated and included in jupyter
+            so it doesn't messes up UI so much
+            """
+
+            # TODO(marcink): probably we should replace this with whole custom
+            # CSS set that doesn't screw up, but jupyter generated html has some
+            # special markers, so it requires Custom HTML exporter template with
+            # _default_template_path_default, to achieve that
+
+            # strip the reset CSS
+            resources[0] = resources[0][resources[0].find('/*! Source'):]
+            return resources
+
+        def as_html(notebook):
+            conf = Config()
+            html_exporter = CustomHTMLExporter(config=conf)
+
+            (body, resources) = html_exporter.from_notebook_node(notebook)
+            header = '<!-- ## IPYTHON NOTEBOOK RENDERING ## -->'
+            js = MakoTemplate(r'''
+            <!-- Load mathjax -->
+                <!-- MathJax configuration -->
+                <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    jax: ["input/TeX","output/HTML-CSS", "output/PreviewHTML"],
+                    extensions: ["tex2jax.js","MathMenu.js","MathZoom.js", "fast-preview.js", "AssistiveMML.js", "[Contrib]/a11y/accessibility-menu.js"],
+                    TeX: {
+                        extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js"]
+                    },
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true,
+                        processEnvironments: true
+                    },
+                    // Center justify equations in code and markdown cells. Elsewhere
+                    // we use CSS to left justify single line equations in code cells.
+                    displayAlign: 'center',
+                    "HTML-CSS": {
+                        styles: {'.MathJax_Display': {"margin": 0}},
+                        linebreaks: { automatic: true }
+                    },
+                    showMathMenu: false
+                });
+                </script>
+                <!-- End of mathjax configuration -->
+                <script src="${h.asset('js/src/math_jax/MathJax.js')}"></script>
+            ''').render(h=helpers)
+
+            css = '<style>{}</style>'.format(
+                ''.join(_sanitize_resources(resources['inlining']['css'])))
+
+            body = '\n'.join([header, css, js, body])
+            return body, resources
+
+        notebook = nbformat.reads(source, as_version=4)
+        (body, resources) = as_html(notebook)
+        return body
 
 
 class RstTemplateRenderer(object):
