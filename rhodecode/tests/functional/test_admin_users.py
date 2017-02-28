@@ -418,9 +418,6 @@ class TestAdminUsersController(TestController):
         msg = 'Deleted 1 user groups'
         assert_session_flash(response, msg)
 
-    def test_show(self):
-        self.app.get(url('user', user_id=1))
-
     def test_edit(self):
         self.log_user()
         user = User.get_by_username(TEST_USER_ADMIN_LOGIN)

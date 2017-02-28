@@ -42,6 +42,7 @@ from paste.script.command import Command, BadCommand
 from webhelpers.text import collapse, remove_formatting, strip_tags
 from mako import exceptions
 from pyramid.threadlocal import get_current_registry
+from pyramid.request import Request
 
 from rhodecode.lib.fakemod import create_module
 from rhodecode.lib.vcs.backends.base import Config
@@ -95,28 +96,43 @@ def repo_name_slug(value):
 # PERM DECORATOR HELPERS FOR EXTRACTING NAMES FOR PERM CHECKS
 #==============================================================================
 def get_repo_slug(request):
-    _repo = request.environ['pylons.routes_dict'].get('repo_name')
+    if isinstance(request, Request) and getattr(request, 'matchdict', None):
+        # pyramid
+        _repo = request.matchdict.get('repo_name')
+    else:
+        _repo = request.environ['pylons.routes_dict'].get('repo_name')
+
     if _repo:
         _repo = _repo.rstrip('/')
     return _repo
 
 
 def get_repo_group_slug(request):
-    _group = request.environ['pylons.routes_dict'].get('group_name')
+    if isinstance(request, Request) and getattr(request, 'matchdict', None):
+        # pyramid
+        _group = request.matchdict.get('group_name')
+    else:
+        _group = request.environ['pylons.routes_dict'].get('group_name')
+
     if _group:
         _group = _group.rstrip('/')
     return _group
 
 
 def get_user_group_slug(request):
-    _group = request.environ['pylons.routes_dict'].get('user_group_id')
+    if isinstance(request, Request) and getattr(request, 'matchdict', None):
+        # pyramid
+        _group = request.matchdict.get('user_group_id')
+    else:
+        _group = request.environ['pylons.routes_dict'].get('user_group_id')
+
     try:
         _group = UserGroup.get(_group)
         if _group:
             _group = _group.users_group_name
     except Exception:
         log.debug(traceback.format_exc())
-        #catch all failures here
+        # catch all failures here
         pass
 
     return _group

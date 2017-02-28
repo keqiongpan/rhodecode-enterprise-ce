@@ -22,24 +22,22 @@
 authentication and permission libraries
 """
 
+import os
 import inspect
 import collections
 import fnmatch
 import hashlib
 import itertools
 import logging
-import os
 import random
-import time
 import traceback
 from functools import wraps
 
 import ipaddress
-from pyramid.httpexceptions import HTTPForbidden
+from pyramid.httpexceptions import HTTPForbidden, HTTPFound
 from pylons import url, request
 from pylons.controllers.util import abort, redirect
 from pylons.i18n.translation import _
-from sqlalchemy import or_
 from sqlalchemy.orm.exc import ObjectDeletedError
 from sqlalchemy.orm import joinedload
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -1256,7 +1254,6 @@ class LoginRequired(object):
                    auth_token_access_valid))
             # we preserve the get PARAM
             came_from = request.path_qs
-
             log.debug('redirecting to login page with %s' % (came_from,))
             return redirect(
                 h.route_path('login', _query={'came_from': came_from}))
@@ -1348,6 +1345,20 @@ class PermsDecorator(object):
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
 
+    def _get_request(self):
+        from pyramid.threadlocal import get_current_request
+        pyramid_request = get_current_request()
+        if not pyramid_request:
+            # return global request of pylons incase pyramid one isn't available
+            return request
+        return pyramid_request
+
+    def _get_came_from(self):
+        _request = self._get_request()
+
+        # both pylons/pyramid has this attribute
+        return _request.path_qs
+
     def __wrapper(self, func, *fargs, **fkwargs):
         cls = fargs[0]
         _user = cls._rhodecode_user
@@ -1364,17 +1375,16 @@ class PermsDecorator(object):
             anonymous = _user.username == User.DEFAULT_USER
 
             if anonymous:
-                came_from = request.path_qs
-
                 import rhodecode.lib.helpers as h
+                came_from = self._get_came_from()
                 h.flash(_('You need to be signed in to view this page'),
                         category='warning')
-                return redirect(
+                raise HTTPFound(
                     h.route_path('login', _query={'came_from': came_from}))
 
             else:
                 # redirect with forbidden ret code
-                return abort(403)
+                raise HTTPForbidden()
 
     def check_permissions(self, user):
         """Dummy function for overriding"""
@@ -1413,10 +1423,13 @@ class HasRepoPermissionAllDecorator(PermsDecorator):
     Checks for access permission for all given predicates for specific
     repository. All of them have to be meet in order to fulfill the request
     """
+    def _get_repo_name(self):
+        _request = self._get_request()
+        return get_repo_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        repo_name = get_repo_slug(request)
+        repo_name = self._get_repo_name()
         try:
             user_perms = set([perms['repositories'][repo_name]])
         except KeyError:
@@ -1431,10 +1444,13 @@ class HasRepoPermissionAnyDecorator(PermsDecorator):
     Checks for access permission for any of given predicates for specific
     repository. In order to fulfill the request any of predicates must be meet
     """
+    def _get_repo_name(self):
+        _request = self._get_request()
+        return get_repo_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        repo_name = get_repo_slug(request)
+        repo_name = self._get_repo_name()
         try:
             user_perms = set([perms['repositories'][repo_name]])
         except KeyError:
@@ -1451,10 +1467,13 @@ class HasRepoGroupPermissionAllDecorator(PermsDecorator):
     repository group. All of them have to be meet in order to
     fulfill the request
     """
+    def _get_repo_group_name(self):
+        _request = self._get_request()
+        return get_repo_group_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        group_name = get_repo_group_slug(request)
+        group_name = self._get_repo_group_name()
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
@@ -1471,10 +1490,13 @@ class HasRepoGroupPermissionAnyDecorator(PermsDecorator):
     repository group. In order to fulfill the request any
     of predicates must be met
     """
+    def _get_repo_group_name(self):
+        _request = self._get_request()
+        return get_repo_group_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        group_name = get_repo_group_slug(request)
+        group_name = self._get_repo_group_name()
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
@@ -1490,10 +1512,13 @@ class HasUserGroupPermissionAllDecorator(PermsDecorator):
     Checks for access permission for all given predicates for specific
     user group. All of them have to be meet in order to fulfill the request
     """
+    def _get_user_group_name(self):
+        _request = self._get_request()
+        return get_user_group_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        group_name = get_user_group_slug(request)
+        group_name = self._get_user_group_name()
         try:
             user_perms = set([perms['user_groups'][group_name]])
         except KeyError:
@@ -1509,10 +1534,13 @@ class HasUserGroupPermissionAnyDecorator(PermsDecorator):
     Checks for access permission for any of given predicates for specific
     user group. In order to fulfill the request any of predicates must be meet
     """
+    def _get_user_group_name(self):
+        _request = self._get_request()
+        return get_user_group_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        group_name = get_user_group_slug(request)
+        group_name = self._get_user_group_name()
         try:
             user_perms = set([perms['user_groups'][group_name]])
         except KeyError:
@@ -1575,6 +1603,14 @@ class PermsFunction(object):
                       check_scope, user, check_location)
             return False
 
+    def _get_request(self):
+        from pyramid.threadlocal import get_current_request
+        pyramid_request = get_current_request()
+        if not pyramid_request:
+            # return global request of pylons incase pyramid one isn't available
+            return request
+        return pyramid_request
+
     def _get_check_scope(self, cls_name):
         return {
             'HasPermissionAll':          'GLOBAL',
@@ -1613,10 +1649,14 @@ class HasRepoPermissionAll(PermsFunction):
         self.repo_name = repo_name
         return super(HasRepoPermissionAll, self).__call__(check_location, user)
 
-    def check_permissions(self, user):
+    def _get_repo_name(self):
         if not self.repo_name:
-            self.repo_name = get_repo_slug(request)
+            _request = self._get_request()
+            self.repo_name = get_repo_slug(_request)
+        return self.repo_name
 
+    def check_permissions(self, user):
+        self.repo_name = self._get_repo_name()
         perms = user.permissions
         try:
             user_perms = set([perms['repositories'][self.repo_name]])
@@ -1632,10 +1672,13 @@ class HasRepoPermissionAny(PermsFunction):
         self.repo_name = repo_name
         return super(HasRepoPermissionAny, self).__call__(check_location, user)
 
-    def check_permissions(self, user):
+    def _get_repo_name(self):
         if not self.repo_name:
             self.repo_name = get_repo_slug(request)
+        return self.repo_name
 
+    def check_permissions(self, user):
+        self.repo_name = self._get_repo_name()
         perms = user.permissions
         try:
             user_perms = set([perms['repositories'][self.repo_name]])
