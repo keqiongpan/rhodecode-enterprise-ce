@@ -320,7 +320,8 @@ class MarkupRenderer(object):
                     displayAlign: 'center',
                     "HTML-CSS": {
                         styles: {'.MathJax_Display': {"margin": 0}},
-                        linebreaks: { automatic: true }
+                        linebreaks: { automatic: true },
+                        availableFonts: ["STIX", "TeX"]
                     },
                     showMathMenu: false
                 });
