@@ -321,6 +321,7 @@ class LoginView(object):
                         error_dict = {'recaptcha_field': _msg}
                         raise formencode.Invalid(
                             _msg, _value, None, error_dict=error_dict)
+
                 # Generate reset URL and send mail.
                 user = User.get_by_email(user_email)
 
@@ -346,7 +347,16 @@ class LoginView(object):
             except formencode.Invalid as errors:
                 render_ctx.update({
                     'defaults': errors.value,
+                    'errors': errors.error_dict,
                 })
+                if not self.request.params.get('email'):
+                    # case of empty email, we want to report that
+                    return render_ctx
+
+                if 'recaptcha_field' in errors.error_dict:
+                    # case of failed captcha
+                    return render_ctx
+
             log.debug('faking response on invalid password reset')
             # make this take 2s, to prevent brute forcing.
             time.sleep(2)
