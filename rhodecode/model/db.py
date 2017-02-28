@@ -572,6 +572,9 @@ class User(Base, BaseModel):
             .filter(or_(UserApiKeys.expires == -1,
                             UserApiKeys.expires >= time.time()))\
             .filter(UserApiKeys.role == UserApiKeys.ROLE_ALL).first()
+        if user_auth_token:
+            user_auth_token = user_auth_token.api_key
+
         return user_auth_token
 
     @api_key.setter
@@ -961,6 +964,9 @@ class UserApiKeys(Base, BaseModel):
     repo_group = relationship('RepoGroup', lazy='joined')
 
     user = relationship('User', lazy='joined')
+
+    def __unicode__(self):
+        return u"<%s('%s')>" % (self.__class__.__name__, self.role)
 
     @classmethod
     def _get_role_name(cls, role):

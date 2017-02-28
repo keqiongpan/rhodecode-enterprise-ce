@@ -22,14 +22,19 @@ import pytest
 
 from rhodecode.model.meta import Session
 from rhodecode.model.user import UserModel
+from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.tests import TEST_USER_ADMIN_LOGIN
 
 
 @pytest.fixture(scope="class")
 def testuser_api(request, pylonsapp):
     cls = request.cls
+
+    # ADMIN USER
     cls.usr = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
     cls.apikey = cls.usr.api_key
+
+    # REGULAR USER
     cls.test_user = UserModel().create_or_update(
         username='test-api',
         password='test',
@@ -37,6 +42,11 @@ def testuser_api(request, pylonsapp):
         firstname='first',
         lastname='last'
     )
+    # create TOKEN for user, if he doesn't have one
+    if not cls.test_user.api_key:
+        AuthTokenModel().create(
+            user=cls.test_user, description='TEST_USER_TOKEN')
+
     Session().commit()
     cls.TEST_USER_LOGIN = cls.test_user.username
     cls.apikey_regular = cls.test_user.api_key

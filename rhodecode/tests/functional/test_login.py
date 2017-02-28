@@ -366,7 +366,7 @@ class TestLoginController(object):
         assert ret.email == email
         assert ret.name == name
         assert ret.lastname == lastname
-        assert ret.api_key is not None
+        assert ret.auth_tokens is not None
         assert not ret.admin
 
     def test_forgot_password_wrong_mail(self):
@@ -463,6 +463,7 @@ class TestLoginController(object):
 
             if test_name == 'proper_auth_token':
                 auth_token = user_admin.api_key
+                assert auth_token
 
             with fixture.anon_access(False):
                 self.app.get(url(controller='changeset',

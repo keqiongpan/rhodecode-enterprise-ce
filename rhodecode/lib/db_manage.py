@@ -292,13 +292,13 @@ class DbManage(object):
             TEST_USER_REGULAR2_PASS, TEST_USER_REGULAR2_EMAIL
 
         self.create_user(TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS,
-                         TEST_USER_ADMIN_EMAIL, True)
+                         TEST_USER_ADMIN_EMAIL, True, api_key=True)
 
         self.create_user(TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS,
-                         TEST_USER_REGULAR_EMAIL, False)
+                         TEST_USER_REGULAR_EMAIL, False, api_key=True)
 
         self.create_user(TEST_USER_REGULAR2_LOGIN, TEST_USER_REGULAR2_PASS,
-                         TEST_USER_REGULAR2_EMAIL, False)
+                         TEST_USER_REGULAR2_EMAIL, False, api_key=True)
 
     def create_ui_settings(self, repo_store_path):
         """
@@ -561,7 +561,9 @@ class DbManage(object):
 
         if api_key:
             log.info('setting a provided api key for the user %s', username)
-            user.api_key = api_key
+            from rhodecode.model.auth_token import AuthTokenModel
+            AuthTokenModel().create(
+                user=user, description='BUILTIN TOKEN')
 
     def create_default_user(self):
         log.info('creating default user')

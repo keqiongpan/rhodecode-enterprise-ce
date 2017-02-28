@@ -258,39 +258,38 @@ class TestMyAccountController(TestController):
         usr = self.log_user('test_regular2', 'test12')
         user = User.get(usr['user_id'])
         response = self.app.get(url('my_account_auth_tokens'))
-        response.mustcontain(user.api_key)
-        response.mustcontain('expires: never')
+        for token in user.auth_tokens:
+            response.mustcontain(token)
+            response.mustcontain('never')
 
     @pytest.mark.parametrize("desc, lifetime", [
         ('forever', -1),
         ('5mins', 60*5),
         ('30days', 60*60*24*30),
     ])
-    def test_my_account_add_auth_tokens(self, desc, lifetime):
-        usr = self.log_user('test_regular2', 'test12')
-        user = User.get(usr['user_id'])
+    def test_my_account_add_auth_tokens(self, desc, lifetime, user_util):
+        user = user_util.create_user(password='qweqwe')
+        user_id = user.user_id
+        self.log_user(user.username, 'qweqwe')
+
         response = self.app.post(url('my_account_auth_tokens'),
                                  {'description': desc, 'lifetime': lifetime,
                                   'csrf_token': self.csrf_token})
         assert_session_flash(response, 'Auth token successfully created')
-        try:
-            response = response.follow()
-            user = User.get(usr['user_id'])
-            for auth_token in user.auth_tokens:
-                response.mustcontain(auth_token)
-        finally:
-            for auth_token in UserApiKeys.query().all():
-                Session().delete(auth_token)
-                Session().commit()
+
+        response = response.follow()
+        user = User.get(user_id)
+        for auth_token in user.auth_tokens:
+            response.mustcontain(auth_token)
 
     def test_my_account_remove_auth_token(self, user_util):
-        user = user_util.create_user(password=self.test_user_1_password)
+        user = user_util.create_user(password='qweqwe')
         user_id = user.user_id
-        self.log_user(user.username, self.test_user_1_password)
+        self.log_user(user.username, 'qweqwe')
 
         user = User.get(user_id)
         keys = user.extra_auth_tokens
-        assert 1 == len(keys)
+        assert 2 == len(keys)
 
         response = self.app.post(url('my_account_auth_tokens'),
                                  {'description': 'desc', 'lifetime': -1,
@@ -300,7 +299,7 @@ class TestMyAccountController(TestController):
 
         user = User.get(user_id)
         keys = user.extra_auth_tokens
-        assert 2 == len(keys)
+        assert 3 == len(keys)
 
         response = self.app.post(
             url('my_account_auth_tokens'),
@@ -310,7 +309,7 @@ class TestMyAccountController(TestController):
 
         user = User.get(user_id)
         keys = user.extra_auth_tokens
-        assert 1 == len(keys)
+        assert 2 == len(keys)
 
     def test_valid_change_password(self, user_util):
         new_password = 'my_new_valid_password'
@@ -327,7 +326,7 @@ class TestMyAccountController(TestController):
         response = self.app.post(url('my_account_password'), form_data).follow()
         assert 'Successfully updated password' in response
 
-         # check_password depends on user being in session
+        # check_password depends on user being in session
         Session().add(user)
         try:
             assert check_password(new_password, user.password)

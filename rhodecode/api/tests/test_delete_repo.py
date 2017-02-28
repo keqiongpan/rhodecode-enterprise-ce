@@ -53,11 +53,10 @@ class TestApiDeleteRepo(object):
         }
         assert_ok(id_, expected, given=response.body)
 
-    def test_api_delete_repo_by_non_admin_no_permission(
-            self, backend, user_regular):
+    def test_api_delete_repo_by_non_admin_no_permission(self, backend):
         repo = backend.create_repo()
         id_, params = build_data(
-            user_regular.api_key, 'delete_repo', repoid=repo.repo_name, )
+            self.apikey_regular, 'delete_repo', repoid=repo.repo_name, )
         response = api_call(self.app, params)
         expected = 'repository `%s` does not exist' % (repo.repo_name)
         assert_error(id_, expected, given=response.body)

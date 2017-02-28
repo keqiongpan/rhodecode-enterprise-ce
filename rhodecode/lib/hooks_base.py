@@ -257,6 +257,11 @@ class ExtensionCallback(object):
         log.debug('Calling extension callback for %s', self._hook_name)
 
         kwargs_to_pass = dict((key, kwargs[key]) for key in self._kwargs_keys)
+        # backward compat for removed api_key for old hooks. THis was it works
+        # with older rcextensions that require api_key present
+        if self._hook_name in ['CREATE_USER_HOOK', 'DELETE_USER_HOOK']:
+            kwargs_to_pass['api_key'] = '_DEPRECATED_'
+
         callback = self._get_callback()
         if callback:
             return callback(**kwargs_to_pass)
@@ -356,7 +361,7 @@ log_create_user = ExtensionCallback(
         'username', 'full_name_or_username', 'full_contact', 'user_id',
         'name', 'firstname', 'short_contact', 'admin', 'lastname',
         'ip_addresses', 'extern_type', 'extern_name',
-        'email', 'api_key', 'api_keys', 'last_login',
+        'email', 'api_keys', 'last_login',
         'full_name', 'active', 'password', 'emails',
         'inherit_default_permissions', 'created_by', 'created_on'))
 
@@ -367,7 +372,7 @@ log_delete_user = ExtensionCallback(
         'username', 'full_name_or_username', 'full_contact', 'user_id',
         'name', 'firstname', 'short_contact', 'admin', 'lastname',
         'ip_addresses',
-        'email', 'api_key', 'last_login',
+        'email', 'last_login',
         'full_name', 'active', 'password', 'emails',
         'inherit_default_permissions', 'deleted_by'))
 
