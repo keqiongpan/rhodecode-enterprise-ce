@@ -14,11 +14,28 @@ Polymer({
         hasToasts: {
             type: Boolean,
             computed: '_computeHasToasts(toasts.*)'
+        },
+        keyEventTarget: {
+            type: Object,
+            value: function() {
+              return document.body;
+            }
         }
     },
+    behaviors: [
+        Polymer.IronA11yKeysBehavior
+    ],
     observers: [
         '_changedToasts(toasts.splices)'
     ],
+
+    keyBindings: {
+      'esc:keyup': '_hideOnEsc'
+    },
+
+    _hideOnEsc: function (event) {
+        return this.dismissNotifications();
+    },
 
     _computeHasToasts: function(){
         return this.toasts.length > 0;
