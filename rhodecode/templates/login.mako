@@ -24,6 +24,7 @@
     </div>
 
     <div class="loginwrapper">
+        <rhodecode-toast id="notifications"></rhodecode-toast>
         <div class="left-column">
             <img class="sign-in-image" src="${h.asset('images/sign-in.png')}" alt="RhodeCode"/>
         </div>
