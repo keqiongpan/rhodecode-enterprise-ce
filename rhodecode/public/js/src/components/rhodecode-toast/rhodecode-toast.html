@@ -6,7 +6,7 @@
         <style include="shared-styles"></style>
         <link rel="stylesheet" href="rhodecode-toast.css">
         <template is="dom-if" if="[[hasToasts]]">
-            <div class$="container toast-message-holder [[conditionalClass(isFixed)]]" >
+            <div class$="container toast-message-holder [[conditionalClass(isFixed)]]">
                 <template is="dom-repeat" items="[[toasts]]">
                     <div class$="alert alert-[[item.level]]">
                         <rhodecode-unsafe-html text="[[item.message]]"></rhodecode-unsafe-html>

@@ -7,16 +7,22 @@
 
 .toast-close{
     text-align: right;
+    .btn {
+        margin: 0;
+    }
 }
 
 .toast-message-holder{
-    background-color: #ffffff;
+    background: fade(#fff, 25%);
 
     &.fixed{
         position: fixed;
-        padding: 10px;
+        padding: 10px 0;
+        margin-left: 10px;
+        margin-right: 10px;
         top: 0;
-        width: 1200px;
-        z-index: 1;
+        left: 0;
+        right:0;
+        z-index: 100;
     }
 }
