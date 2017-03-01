@@ -23,6 +23,9 @@
 
   <!-- CONTENT -->
   <div id="content" class="wrapper">
+
+      <rhodecode-toast id="notifications"></rhodecode-toast>
+
       <div class="main">
           ${next.main()}
       </div>

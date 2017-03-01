@@ -5,25 +5,19 @@
     <template>
         <style include="shared-styles"></style>
         <link rel="stylesheet" href="rhodecode-toast.css">
-
-        <paper-toast id="p-toast"
-                     duration="0"
-                     horizontal-offset="100"
-                     horizontal-align="auto"
-                     vertical-align="top"
-                     on-iron-overlay-closed="handleClosed"
-                     always-on-top>
-            <div class="toast-message-holder">
-                <template is="dom-repeat" items="{{toasts}}">
-                    <div class$="alert alert-{{item.level}}">
-                    <rhodecode-unsafe-html text="{{item.message}}"></rhodecode-unsafe-html>
+        <template is="dom-if" if="[[hasToasts]]">
+            <div class$="container toast-message-holder [[conditionalClass(isFixed)]]" >
+                <template is="dom-repeat" items="[[toasts]]">
+                    <div class$="alert alert-[[item.level]]">
+                        <rhodecode-unsafe-html text="[[item.message]]"></rhodecode-unsafe-html>
                     </div>
                 </template>
+
+                <div class="toast-close">
+                    <button on-tap="dismissNotifications" class="btn btn-default">[[_gettext('Close')]]</button>
+                </div>
             </div>
-            <div class="toast-close">
-                <button on-tap="dismissNotifications" class="btn btn-default">{{_gettext('Close')}}</button>
-            </div>
-        </paper-toast>
+        </template>
     </template>
 
     <script src="rhodecode-toast.js"></script>

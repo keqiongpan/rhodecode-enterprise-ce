@@ -1,29 +1,22 @@
 @import '../../../../css/variables';
 @import '../../../../css/mixins';
 
-paper-toast{
-    width: 100%;
-    min-width: 400px;
-    padding: 0px;
-    --paper-toast-background-color: transparent;
-    --paper-toast-color: #000000;
-    .box-shadow(none);
-}
-paper-toast a{
-    font-weight: bold
+.alert{
+    margin: 10px 0;
 }
 
-.toast-message-holder {
+.toast-close{
+    text-align: right;
 }
-.toast-close {
-    right: -5px;
-    position: absolute;
-    bottom: -45px;
-    paper-button{
-        .box-shadow(0 2px 5px 0 rgba(0, 0, 0, 0.15));
+
+.toast-message-holder{
+    background-color: #ffffff;
+
+    &.fixed{
+        position: fixed;
+        padding: 10px;
+        top: 0;
+        width: 1200px;
+        z-index: 1;
     }
-}
-paper-toast .alert{
-    margin: @padding 0 0 0;
-    .box-shadow(0 2px 5px 0 rgba(0, 0, 0, 0.15));
 }
