@@ -268,15 +268,30 @@ class MarkupRenderer(object):
                 raise
 
     @classmethod
-    def jupyter(cls, source):
+    def jupyter(cls, source, safe=True):
         from rhodecode.lib import helpers
+
+        from traitlets.config import Config
         import nbformat
         from nbconvert import HTMLExporter
-        from traitlets.config import Config
+        from nbconvert.preprocessors import Preprocessor
 
         class CustomHTMLExporter(HTMLExporter):
             def _template_file_default(self):
                 return 'basic'
+
+        class Sandbox(Preprocessor):
+
+            def preprocess(self, nb, resources):
+                sandbox_text = 'SandBoxed(IPython.core.display.Javascript object)'
+                for cell in nb['cells']:
+                    if safe and 'outputs' in cell:
+                        for cell_output in cell['outputs']:
+                            if 'data' in cell_output:
+                                if 'application/javascript' in cell_output['data']:
+                                    cell_output['data']['text/plain'] = sandbox_text
+                                    cell_output['data'].pop('application/javascript', None)
+                return nb, resources
 
         def _sanitize_resources(resources):
             """
@@ -295,6 +310,7 @@ class MarkupRenderer(object):
 
         def as_html(notebook):
             conf = Config()
+            conf.CustomHTMLExporter.preprocessors = [Sandbox]
             html_exporter = CustomHTMLExporter(config=conf)
 
             (body, resources) = html_exporter.from_notebook_node(notebook)
