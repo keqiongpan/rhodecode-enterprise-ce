@@ -124,6 +124,7 @@ let
       name = "rhodecode-enterprise-ce-${version}";
       releaseName = "RhodeCodeEnterpriseCE-${version}";
       src = rhodecode-enterprise-ce-src;
+      dontStrip = true; # prevent strip, we don't need it.
 
       buildInputs =
         attrs.buildInputs ++
