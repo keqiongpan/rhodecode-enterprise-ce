@@ -18,10 +18,11 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-from rhodecode.model.meta import Session
+import pytest
+
 from rhodecode.model.db import User
 from rhodecode.tests import (
-    TestController, url, TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS,
+    TestController, TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS,
     TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import AssertResponse
@@ -29,23 +30,20 @@ from rhodecode.tests.utils import AssertResponse
 fixture = Fixture()
 
 
+def route_path(name, **kwargs):
+    return '/_profiles/{username}'.format(**kwargs)
+
+
 class TestUsersController(TestController):
-    test_user_1 = 'testme'
-    destroy_users = set()
 
-    @classmethod
-    def teardown_class(cls):
-        fixture.destroy_users(cls.destroy_users)
-
-    def test_user_profile(self):
+    def test_user_profile(self, user_util):
         edit_link_css = '.user-profile .panel-edit'
         self.log_user(TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
-        user = fixture.create_user(
-            self.test_user_1, password='qweqwe', email='testme@rhodecode.org')
-        Session().commit()
-        self.destroy_users.add(self.test_user_1)
+        user = user_util.create_user(
+            'test-my-user', password='qweqwe', email='testme@rhodecode.org')
+        username = user.username
 
-        response = self.app.get(url('user_profile', username=user.username))
+        response = self.app.get(route_path('user_profile', username=username))
         response.mustcontain('testme')
         response.mustcontain('testme@rhodecode.org')
         assert_response = AssertResponse(response)
@@ -54,21 +52,24 @@ class TestUsersController(TestController):
         # edit should be available to superadmin users
         self.logout_user()
         self.log_user(TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
-        response = self.app.get(url('user_profile', username=user.username))
+        response = self.app.get(route_path('user_profile', username=username))
         assert_response = AssertResponse(response)
         assert_response.element_contains(edit_link_css, 'Edit')
 
-    def test_user_profile_not_available(self):
-        user = fixture.create_user(
-            self.test_user_1, password='qweqwe', email='testme@rhodecode.org')
-        Session().commit()
-        self.destroy_users.add(self.test_user_1)
+    def test_user_profile_not_available(self, user_util):
+        user = user_util.create_user()
+        username = user.username
 
-        self.app.get(url('user_profile', username=user.username), status=302)
+        # not logged in, redirect
+        self.app.get(route_path('user_profile', username=username), status=302)
 
         self.log_user()
-        # default user
+        # after log-in show
+        self.app.get(route_path('user_profile', username=username), status=200)
+
+        # default user, not allowed to show it
         self.app.get(
-            url('user_profile', username=User.DEFAULT_USER), status=404)
+            route_path('user_profile', username=User.DEFAULT_USER), status=404)
+
         # actual 404
-        self.app.get(url('user_profile', username='unknown'), status=404)
+        self.app.get(route_path('user_profile', username='unknown'), status=404)

@@ -92,7 +92,7 @@ class JSRoutesMapper(Mapper):
     def _extract_route_information(self, route):
         """
         Convert a route into tuple(name, path, args), eg:
-            ('user_profile', '/profile/%(username)s', ['username'])
+            ('show_user', '/profile/%(username)s', ['username'])
         """
         routepath = route.routepath
         def replace(matchobj):
@@ -197,10 +197,6 @@ def make_map(config):
                  action='user_autocomplete_data', jsroute=True)
     rmap.connect('user_group_autocomplete_data', '/_user_groups', controller='home',
                  action='user_group_autocomplete_data', jsroute=True)
-
-    rmap.connect(
-        'user_profile', '/_profiles/{username}', controller='users',
-        action='user_profile')
 
     # TODO: johbo: Static links, to be replaced by our redirection mechanism
     rmap.connect('rst_help',

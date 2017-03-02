@@ -871,7 +871,7 @@ def link_to_user(author, length=0, **kwargs):
     if user:
         return link_to(
             escape(display_person),
-            url('user_profile', username=user.username),
+            route_path('user_profile', username=user.username),
             **kwargs)
     else:
         return escape(display_person)

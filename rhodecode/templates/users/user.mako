@@ -12,7 +12,7 @@
 </%def>
 
 <%def name="menu_bar_nav()">
-    ${self.menu_items(active='admin')}
+    ${self.menu_items(active='my_account')}
 </%def>
 
 <%def name="main()">
@@ -26,7 +26,7 @@
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
           <li class="${'active' if c.active=='user_profile' else ''}">
-              <a href="${h.url('user_profile', username=c.user.username)}">${_('Profile')}</a></li>
+              <a href="${h.route_path('user_profile', username=c.user.username)}">${_('Profile')}</a></li>
           ## These placeholders are here only for styling purposes. For every new item added to the list, you should remove one placeholder
           <li class="placeholder"><a href="#" style="visibility: hidden;">placeholder</a></li>
           <li class="placeholder"><a href="#" style="visibility: hidden;">placeholder</a></li>
