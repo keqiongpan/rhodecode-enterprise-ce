@@ -85,4 +85,6 @@ def includeme(config):
     config.add_route(
         name='channelstream_proxy',
         pattern=settings.get('channelstream.proxy_path') or '/_channelstream')
-    config.scan('rhodecode.channelstream')
+
+    # Scan module for configuration decorators.
+    config.scan()

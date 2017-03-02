@@ -278,12 +278,12 @@ def includeme(config):
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
 
-    config.include('rhodecode.channelstream')
     config.include('rhodecode.authentication')
     config.include('rhodecode.integrations')
 
     # apps
     config.include('rhodecode.apps.admin')
+    config.include('rhodecode.apps.channelstream')
     config.include('rhodecode.apps.login')
     config.include('rhodecode.apps.user_profile')
 
