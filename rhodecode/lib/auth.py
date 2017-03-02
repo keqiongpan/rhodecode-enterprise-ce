@@ -1268,6 +1268,7 @@ class NotAnonymous(object):
         return get_cython_compat_decorator(self.__wrapper, func)
 
     def __wrapper(self, func, *fargs, **fkwargs):
+        import rhodecode.lib.helpers as h
         cls = fargs[0]
         self.user = cls._rhodecode_user
 
@@ -1277,8 +1278,6 @@ class NotAnonymous(object):
 
         if anonymous:
             came_from = request.path_qs
-
-            import rhodecode.lib.helpers as h
             h.flash(_('You need to be a registered user to '
                       'perform this action'),
                     category='warning')
@@ -1315,6 +1314,7 @@ class HasAcceptedRepoType(object):
         return get_cython_compat_decorator(self.__wrapper, func)
 
     def __wrapper(self, func, *fargs, **fkwargs):
+        import rhodecode.lib.helpers as h
         cls = fargs[0]
         rhodecode_repo = cls.rhodecode_repo
 
@@ -1325,7 +1325,6 @@ class HasAcceptedRepoType(object):
         if rhodecode_repo.alias in self.repo_type_list:
             return func(*fargs, **fkwargs)
         else:
-            import rhodecode.lib.helpers as h
             h.flash(h.literal(
                 _('Action not supported for %s.' % rhodecode_repo.alias)),
                 category='warning')
@@ -1349,7 +1348,7 @@ class PermsDecorator(object):
         from pyramid.threadlocal import get_current_request
         pyramid_request = get_current_request()
         if not pyramid_request:
-            # return global request of pylons incase pyramid one isn't available
+            # return global request of pylons in case pyramid isn't available
             return request
         return pyramid_request
 
@@ -1360,6 +1359,7 @@ class PermsDecorator(object):
         return _request.path_qs
 
     def __wrapper(self, func, *fargs, **fkwargs):
+        import rhodecode.lib.helpers as h
         cls = fargs[0]
         _user = cls._rhodecode_user
 
@@ -1375,10 +1375,9 @@ class PermsDecorator(object):
             anonymous = _user.username == User.DEFAULT_USER
 
             if anonymous:
-                import rhodecode.lib.helpers as h
                 came_from = self._get_came_from()
                 h.flash(_('You need to be signed in to view this page'),
-                        category='warning')
+                               category='warning')
                 raise HTTPFound(
                     h.route_path('login', _query={'came_from': came_from}))
 
@@ -1970,3 +1969,5 @@ def get_cython_compat_decorator(wrapper, func):
         return wrapper(func, *args, **kwds)
     local_wrapper.__wrapped__ = func
     return local_wrapper
+
+

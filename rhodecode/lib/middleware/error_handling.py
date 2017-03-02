@@ -21,7 +21,8 @@
 
 import logging
 from pyramid import httpexceptions
-from pyramid.httpexceptions import HTTPError, HTTPInternalServerError
+from pyramid.httpexceptions import (
+    HTTPRedirection, HTTPError, HTTPInternalServerError)
 from pyramid.threadlocal import get_current_request
 
 from rhodecode.lib.exceptions import VCSServerUnavailable
@@ -53,7 +54,7 @@ class PylonsErrorHandlingMiddleware(object):
 
     def is_http_error(self, response):
         # webob type error responses
-        return (400 <= response.status_int <= 599)
+        return 400 <= response.status_int <= 599
 
     def reraise(self):
         return self._reraise
@@ -73,9 +74,16 @@ class PylonsErrorHandlingMiddleware(object):
             if self.is_http_error(response):
                 response = webob_to_pyramid_http_response(response)
                 return self.error_view(response, request)
-        except HTTPError as e:  # pyramid type exceptions
+        except HTTPRedirection as e:
+            # pyramid type redirection, with status codes in the 300s
+            log.debug('Handling pyramid HTTPRedirection: %s', e)
+            return e
+        except HTTPError as e:
+            # pyramid type exceptions, with status codes in the 400s and 500s
+            log.debug('Handling pyramid HTTPError: %s', e)
             return self.error_view(e, request)
         except Exception as e:
+            log.debug('Handling general error: %s', e)
 
             if self.reraise():
                 raise
@@ -89,6 +97,8 @@ class PylonsErrorHandlingMiddleware(object):
 
 
 def webob_to_pyramid_http_response(webob_response):
+    log.debug('response is webob http error[%s], handling now...',
+              webob_response.status_int)
     ResponseClass = httpexceptions.status_map[webob_response.status_int]
     pyramid_response = ResponseClass(webob_response.status)
     pyramid_response.status = webob_response.status

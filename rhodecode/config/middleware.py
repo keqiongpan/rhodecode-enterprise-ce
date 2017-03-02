@@ -32,7 +32,7 @@ from pyramid.config import Configurator
 from pyramid.settings import asbool, aslist
 from pyramid.wsgi import wsgiapp
 from pyramid.httpexceptions import (
-    HTTPError, HTTPInternalServerError, HTTPFound)
+    HTTPException, HTTPError, HTTPInternalServerError, HTTPFound)
 from pyramid.events import ApplicationCreated
 from pyramid.renderers import render_to_response
 from routes.middleware import RoutesMiddleware
@@ -226,7 +226,7 @@ def error_handler(exception, request):
 
     base_response = HTTPInternalServerError()
     # prefer original exception for the response since it may have headers set
-    if isinstance(exception, HTTPError):
+    if isinstance(exception, HTTPException):
         base_response = exception
 
     def is_http_error(response):
