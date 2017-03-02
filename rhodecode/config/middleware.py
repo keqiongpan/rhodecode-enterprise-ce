@@ -219,14 +219,10 @@ def add_pylons_compat_data(registry, global_config, settings):
 
 
 def error_handler(exception, request):
-    from rhodecode.model.settings import SettingsModel
+    import rhodecode
     from rhodecode.lib.utils2 import AttributeDict
 
-    try:
-        rc_config = SettingsModel().get_all_settings()
-    except Exception:
-        log.exception('failed to fetch settings')
-        rc_config = {}
+    rhodecode_title = rhodecode.CONFIG.get('rhodecode_title') or 'RhodeCode'
 
     base_response = HTTPInternalServerError()
     # prefer original exception for the response since it may have headers set
@@ -251,7 +247,7 @@ def error_handler(exception, request):
         request.route_url('rhodecode_support')
     )
     c.redirect_time = 0
-    c.rhodecode_name = rc_config.get('rhodecode_title', '')
+    c.rhodecode_name = rhodecode_title
     if not c.rhodecode_name:
         c.rhodecode_name = 'Rhodecode'
 
