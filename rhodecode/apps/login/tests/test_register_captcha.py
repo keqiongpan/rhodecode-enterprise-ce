@@ -22,8 +22,8 @@
 import mock
 import pytest
 
+from rhodecode.apps.login.views import LoginView, CaptchaData
 from rhodecode.config.routing import ADMIN_PREFIX
-from rhodecode.login.views import LoginView, CaptchaData
 from rhodecode.model.settings import SettingsModel
 from rhodecode.tests.utils import AssertResponse
 
@@ -92,7 +92,7 @@ class TestRegisterCaptcha(object):
             assertr.no_element_exists('#recaptcha_field')
 
     @pytest.mark.parametrize('valid', [False, True])
-    @mock.patch('rhodecode.login.views.submit')
+    @mock.patch('rhodecode.apps.login.views.submit')
     @mock.patch.object(LoginView, '_get_captcha_data')
     def test_register_with_active_captcha(
             self, m_get_captcha_data, m_submit, valid, app, csrf_token):

@@ -281,7 +281,7 @@ def includeme(config):
     config.include('rhodecode.admin')
     config.include('rhodecode.authentication')
     config.include('rhodecode.integrations')
-    config.include('rhodecode.login')
+    config.include('rhodecode.apps.login')
     config.include('rhodecode.tweens')
     config.include('rhodecode.api')
     config.include('rhodecode.svn_support')
