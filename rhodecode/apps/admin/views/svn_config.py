@@ -24,7 +24,7 @@ from pyramid.view import view_config
 
 from rhodecode.svn_support.utils import generate_mod_dav_svn_config
 
-from rhodecode.admin.views.base import AdminSettingsView
+from rhodecode.apps.admin.views.base import AdminSettingsView
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 

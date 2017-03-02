@@ -24,8 +24,8 @@ import logging
 from pylons import tmpl_context as c
 from pyramid.view import view_config
 
-from rhodecode.admin.views.base import AdminSettingsView
-from rhodecode.admin.navigation import navigation_list
+from rhodecode.apps.admin.views.base import AdminSettingsView
+from rhodecode.apps.admin.navigation import navigation_list
 from rhodecode.lib.auth import (LoginRequired, HasPermissionAllDecorator)
 from rhodecode.lib.utils import read_opensource_licenses
 

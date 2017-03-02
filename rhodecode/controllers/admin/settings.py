@@ -36,7 +36,7 @@ from pyramid.threadlocal import get_current_registry
 from webob.exc import HTTPBadRequest
 
 import rhodecode
-from rhodecode.admin.navigation import navigation_list
+from rhodecode.apps.admin.navigation import navigation_list
 from rhodecode.lib import auth
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator

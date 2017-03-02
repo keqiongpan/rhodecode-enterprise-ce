@@ -277,18 +277,20 @@ def includeme(config):
     # Includes which are required. The application would fail without them.
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
+
     config.include('rhodecode.channelstream')
-    config.include('rhodecode.admin')
     config.include('rhodecode.authentication')
     config.include('rhodecode.integrations')
 
     # apps
+    config.include('rhodecode.apps.admin')
     config.include('rhodecode.apps.login')
     config.include('rhodecode.apps.user_profile')
 
     config.include('rhodecode.tweens')
     config.include('rhodecode.api')
     config.include('rhodecode.svn_support')
+
     config.add_route(
         'rhodecode_support', 'https://rhodecode.com/help/', static=True)
 

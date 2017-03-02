@@ -25,7 +25,7 @@ import collections
 from pylons import url
 from zope.interface import implementer
 
-from rhodecode.admin.interfaces import IAdminNavigationRegistry
+from rhodecode.apps.admin.interfaces import IAdminNavigationRegistry
 from rhodecode.lib.utils import get_registry
 from rhodecode.translation import _
 

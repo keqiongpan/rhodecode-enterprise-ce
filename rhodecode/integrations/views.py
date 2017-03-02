@@ -29,6 +29,7 @@ from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPBadRequest
 from pyramid.renderers import render
 from pyramid.response import Response
 
+from rhodecode.apps.admin.navigation import navigation_list
 from rhodecode.lib import auth
 from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
 from rhodecode.lib.utils2 import safe_int
@@ -36,7 +37,6 @@ from rhodecode.lib.helpers import Page
 from rhodecode.model.db import Repository, RepoGroup, Session, Integration
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.integration import IntegrationModel
-from rhodecode.admin.navigation import navigation_list
 from rhodecode.translation import _
 from rhodecode.integrations import integration_type_registry
 from rhodecode.model.validation_schema.schemas.integration_schema import (
@@ -75,10 +75,9 @@ class IntegrationSettingsViewBase(object):
             repo_name = request.matchdict['repo_name']
             self.repo = Repository.get_by_repo_name(repo_name)
 
-        if 'repo_group_name' in request.matchdict: # in group settings context
+        if 'repo_group_name' in request.matchdict:  # in group settings context
             repo_group_name = request.matchdict['repo_group_name']
             self.repo_group = RepoGroup.get_by_group_name(repo_group_name)
-
 
         if 'integration' in request.matchdict:  # integration type context
             integration_type = request.matchdict['integration']
@@ -380,12 +379,12 @@ class GlobalIntegrationsView(IntegrationSettingsViewBase):
 
 class RepoIntegrationsView(IntegrationSettingsViewBase):
     def perm_check(self, user):
-        return auth.HasRepoPermissionAll('repository.admin'
-            )(repo_name=self.repo.repo_name, user=user)
+        return auth.HasRepoPermissionAll('repository.admin')(
+            repo_name=self.repo.repo_name, user=user)
 
 
 class RepoGroupIntegrationsView(IntegrationSettingsViewBase):
     def perm_check(self, user):
-        return auth.HasRepoGroupPermissionAll('group.admin'
-            )(group_name=self.repo_group.group_name, user=user)
+        return auth.HasRepoGroupPermissionAll('group.admin')(
+            group_name=self.repo_group.group_name, user=user)
 

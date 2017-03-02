@@ -32,7 +32,7 @@ from rhodecode.tests.utils import AssertResponse
 
 
 UPDATE_DATA_QUALNAME = (
-    'rhodecode.admin.views.system_info.AdminSystemInfoSettingsView.get_update_data')
+    'rhodecode.apps.admin.views.system_info.AdminSystemInfoSettingsView.get_update_data')
 
 
 @pytest.mark.usefixtures('autologin_user', 'app')
@@ -425,7 +425,7 @@ class TestOpenSourceLicenses(object):
             }
         }
         read_licenses_patch = mock.patch(
-            'rhodecode.admin.views.open_source_licenses.read_opensource_licenses',
+            'rhodecode.apps.admin.views.open_source_licenses.read_opensource_licenses',
             return_value=sample_licenses)
         with read_licenses_patch:
             response = self.app.get(self._get_url(), status=200)

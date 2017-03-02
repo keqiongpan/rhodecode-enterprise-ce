@@ -26,15 +26,13 @@ from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.translation import _
 
-from rhodecode.admin.views.base import AdminSettingsView
+from rhodecode.apps.admin.views.base import AdminSettingsView
+from rhodecode.apps.admin.navigation import navigation_list
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.lib import system_info
 from rhodecode.lib import user_sessions
-
-
-from rhodecode.admin.navigation import navigation_list
 
 
 log = logging.getLogger(__name__)

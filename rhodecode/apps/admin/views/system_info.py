@@ -26,14 +26,13 @@ from pylons import tmpl_context as c
 from pyramid.view import view_config
 
 import rhodecode
+from rhodecode.apps.admin.views.base import AdminSettingsView
+from rhodecode.apps.admin.navigation import navigation_list
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (LoginRequired, HasPermissionAllDecorator)
 from rhodecode.lib.utils2 import str2bool
 from rhodecode.lib import system_info
 from rhodecode.lib.ext_json import json
-
-from rhodecode.admin.views.base import AdminSettingsView
-from rhodecode.admin.navigation import navigation_list
 from rhodecode.model.settings import SettingsModel
 
 log = logging.getLogger(__name__)
