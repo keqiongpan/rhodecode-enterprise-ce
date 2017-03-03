@@ -332,6 +332,8 @@ class RhodeCodeAuthPluginBase(object):
             log.debug('provided username:`%s` is empty skipping...', username)
         if not user:
             log.debug('User `%s` not found in database', username)
+        else:
+            log.debug('Got DB user:%s', user)
         return user
 
     def user_activation_state(self):
