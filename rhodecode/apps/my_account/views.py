@@ -34,13 +34,18 @@ log = logging.getLogger(__name__)
 
 
 class MyAccountView(BaseAppView):
+    ALLOW_SCOPED_TOKENS = False
+    """
+    This view has alternative version inside EE, if modified please take a look
+    in there as well.
+    """
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
         c.auth_user = self.request.user
         c.user = c.auth_user.get_instance()
-
+        c.allow_scoped_tokens = self.ALLOW_SCOPED_TOKENS
         self._register_global_c(c)
         return c
 
@@ -55,8 +60,6 @@ class MyAccountView(BaseAppView):
         c = self.load_default_context()
         c.active = 'auth_tokens'
 
-        show_expired = True
-
         c.lifetime_values = [
             (str(-1), _('forever')),
             (str(5), _('5 minutes')),
@@ -70,8 +73,12 @@ class MyAccountView(BaseAppView):
             for x in AuthTokenModel.cls.ROLES]
         c.role_options = [(c.role_values, _("Role"))]
         c.user_auth_tokens = AuthTokenModel().get_auth_tokens(
-            c.user.user_id, show_expired=show_expired)
+            c.user.user_id, show_expired=True)
         return self._get_template_context(c)
+
+    def maybe_attach_token_scope(self, token):
+        # implemented in EE edition
+        pass
 
     @LoginRequired()
     @NotAnonymous()
@@ -86,10 +93,12 @@ class MyAccountView(BaseAppView):
         description = self.request.POST.get('description')
         role = self.request.POST.get('role')
 
-        AuthTokenModel().create(c.user.user_id, description, lifetime, role)
+        token = AuthTokenModel().create(
+            c.user.user_id, description, lifetime, role)
+        self.maybe_attach_token_scope(token)
         Session().commit()
-        h.flash(_("Auth token successfully created"), category='success')
 
+        h.flash(_("Auth token successfully created"), category='success')
         return HTTPFound(h.route_path('my_account_auth_tokens'))
 
     @LoginRequired()

@@ -6,7 +6,6 @@
       <p>
          ${_('Each token can have a role. Token with a role can be used only in given context, '
          'e.g. VCS tokens can be used together with the authtoken auth plugin for git/hg/svn operations only.')}
-          ${_('Additionally scope for VCS type token can narrow the use to chosen repository.')}
       </p>
       <table class="rctable auth_tokens">
         %if c.user_auth_tokens:
@@ -70,7 +69,16 @@
                             ${h.text('description', placeholder=_('Description'))}
                             ${h.select('lifetime', '', c.lifetime_options)}
                             ${h.select('role', '', c.role_options)}
+
+                            % if c.allow_scoped_tokens:
+                                ${h.hidden('scope_repo_id')}
+                            % else:
+                                ${h.select('scope_repo_id_disabled', '', ['Scopes available in EE edition'], disabled='disabled')}
+                            % endif
                         </div>
+                         <p class="help-block">
+                             ${_('Repository scope works only with tokens with VCS type.')}
+                         </p>
                      </div>
                     <div class="buttons">
                       ${h.submit('save',_('Add'),class_="btn")}
@@ -82,14 +90,69 @@
         </div>
     </div>
 </div>
-    <script>
-        $(document).ready(function(){
-            var select2Options = {
-                'containerCssClass': "drop-menu",
-                'dropdownCssClass': "drop-menu-dropdown",
-                'dropdownAutoWidth': true
-            };
-            $("#lifetime").select2(select2Options);
-            $("#role").select2(select2Options);
-        });
-    </script>
+<script>
+$(document).ready(function(){
+
+var select2Options = {
+    'containerCssClass': "drop-menu",
+    'dropdownCssClass': "drop-menu-dropdown",
+    'dropdownAutoWidth': true
+};
+$("#lifetime").select2(select2Options);
+$("#role").select2(select2Options);
+
+var repoFilter = function(data) {
+    var results = [];
+
+    if (!data.results[0]) {
+        return data
+    }
+
+    $.each(data.results[0].children, function() {
+        // replace name to ID for submision
+        this.id = this.obj.repo_id;
+        results.push(this);
+    });
+
+    data.results[0].children = results;
+    return data;
+};
+
+$("#scope_repo_id_disabled").select2(select2Options);
+
+$("#scope_repo_id").select2({
+    cachedDataSource: {},
+    minimumInputLength: 2,
+    placeholder: "${_('repository scope')}",
+    dropdownAutoWidth: true,
+    containerCssClass: "drop-menu",
+    dropdownCssClass: "drop-menu-dropdown",
+    formatResult: formatResult,
+    query: $.debounce(250, function(query){
+        self = this;
+        var cacheKey = query.term;
+        var cachedData = self.cachedDataSource[cacheKey];
+
+        if (cachedData) {
+            query.callback({results: cachedData.results});
+        } else {
+            $.ajax({
+                url: "${h.url('repo_list_data')}",
+                data: {'query': query.term},
+                dataType: 'json',
+                type: 'GET',
+                success: function(data) {
+                    data = repoFilter(data);
+                    self.cachedDataSource[cacheKey] = data;
+                    query.callback({results: data.results});
+                },
+                error: function(data, textStatus, errorThrown) {
+                    alert("Error while fetching entries.\nError code {0} ({1}).".format(data.status, data.statusText));
+                }
+            })
+        }
+    })
+});
+
+});
+</script>
