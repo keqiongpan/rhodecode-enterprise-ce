@@ -254,63 +254,6 @@ class TestMyAccountController(TestController):
         msg = h.html_escape(msg % {'username': 'test_admin'})
         response.mustcontain(u"%s" % msg)
 
-    def test_my_account_auth_tokens(self):
-        usr = self.log_user('test_regular2', 'test12')
-        user = User.get(usr['user_id'])
-        response = self.app.get(url('my_account_auth_tokens'))
-        for token in user.auth_tokens:
-            response.mustcontain(token)
-            response.mustcontain('never')
-
-    @pytest.mark.parametrize("desc, lifetime", [
-        ('forever', -1),
-        ('5mins', 60*5),
-        ('30days', 60*60*24*30),
-    ])
-    def test_my_account_add_auth_tokens(self, desc, lifetime, user_util):
-        user = user_util.create_user(password='qweqwe')
-        user_id = user.user_id
-        self.log_user(user.username, 'qweqwe')
-
-        response = self.app.post(url('my_account_auth_tokens'),
-                                 {'description': desc, 'lifetime': lifetime,
-                                  'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully created')
-
-        response = response.follow()
-        user = User.get(user_id)
-        for auth_token in user.auth_tokens:
-            response.mustcontain(auth_token)
-
-    def test_my_account_remove_auth_token(self, user_util):
-        user = user_util.create_user(password='qweqwe')
-        user_id = user.user_id
-        self.log_user(user.username, 'qweqwe')
-
-        user = User.get(user_id)
-        keys = user.extra_auth_tokens
-        assert 2 == len(keys)
-
-        response = self.app.post(url('my_account_auth_tokens'),
-                                 {'description': 'desc', 'lifetime': -1,
-                                  'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully created')
-        response.follow()
-
-        user = User.get(user_id)
-        keys = user.extra_auth_tokens
-        assert 3 == len(keys)
-
-        response = self.app.post(
-            url('my_account_auth_tokens'),
-            {'_method': 'delete', 'del_auth_token': keys[0].api_key,
-                'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully deleted')
-
-        user = User.get(user_id)
-        keys = user.extra_auth_tokens
-        assert 2 == len(keys)
-
     def test_valid_change_password(self, user_util):
         new_password = 'my_new_valid_password'
         user = user_util.create_user(password=self.test_user_1_password)

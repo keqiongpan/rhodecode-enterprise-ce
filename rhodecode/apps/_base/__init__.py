@@ -26,6 +26,10 @@ from rhodecode.lib.utils2 import StrictAttributeDict
 log = logging.getLogger(__name__)
 
 
+ADMIN_PREFIX = '/_admin'
+STATIC_FILE_PREFIX = '/_static'
+
+
 class TemplateArgs(StrictAttributeDict):
     pass
 
@@ -41,10 +45,17 @@ class BaseAppView(object):
     def _get_local_tmpl_context(self):
         return TemplateArgs()
 
-    def _get_template_context(self, tmpl_args):
-
+    def _register_global_c(self, tmpl_args):
+        """
+        Registers attributes to pylons global `c`
+        """
+        # TODO(marcink): remove once pyramid migration is finished
         for k, v in tmpl_args.items():
             setattr(c, k, v)
+
+    def _get_template_context(self, tmpl_args):
+
+        self._register_global_c(tmpl_args)
 
         return {
             'defaults': {},

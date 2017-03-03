@@ -543,12 +543,6 @@ def make_map(config):
         m.connect('my_account_emails', '/my_account/emails',
                   action='my_account_emails_delete', conditions={'method': ['DELETE']})
 
-        m.connect('my_account_auth_tokens', '/my_account/auth_tokens',
-                  action='my_account_auth_tokens', conditions={'method': ['GET']})
-        m.connect('my_account_auth_tokens', '/my_account/auth_tokens',
-                  action='my_account_auth_tokens_add', conditions={'method': ['POST']})
-        m.connect('my_account_auth_tokens', '/my_account/auth_tokens',
-                  action='my_account_auth_tokens_delete', conditions={'method': ['DELETE']})
         m.connect('my_account_notifications', '/my_account/notifications',
                   action='my_notifications',
                   conditions={'method': ['GET']})
