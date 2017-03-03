@@ -85,6 +85,8 @@ class AuthTokenModel(BaseModel):
             user_auth_tokens = user_auth_tokens\
                 .filter(or_(UserApiKeys.expires == -1,
                             UserApiKeys.expires >= time.time()))
+        user_auth_tokens = user_auth_tokens.order_by(
+            UserApiKeys.user_api_key_id)
         return user_auth_tokens
 
     def get_auth_token(self, auth_token):
