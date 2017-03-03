@@ -28,7 +28,7 @@ from rhodecode.translation import _
 from rhodecode.authentication.base import (
     RhodeCodeAuthPluginBase, VCS_TYPE, hybrid_property)
 from rhodecode.authentication.routes import AuthnPluginResourceBase
-from rhodecode.model.db import User, UserApiKeys
+from rhodecode.model.db import User, UserApiKeys, Repository
 
 
 log = logging.getLogger(__name__)
@@ -121,8 +121,15 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
 
         log.debug('Authenticating user with args %s', user_attrs)
         if userobj.active:
+            # calling context repo for token scopes
+            scope_repo_id = None
+            if self.acl_repo_name:
+                repo = Repository.get_by_repo_name(self.acl_repo_name)
+                scope_repo_id = repo.repo_id if repo else None
+
             token_match = userobj.authenticate_by_token(
-                password, roles=[UserApiKeys.ROLE_VCS])
+                password, roles=[UserApiKeys.ROLE_VCS],
+                scope_repo_id=scope_repo_id)
 
             if userobj.username == username and token_match:
                 log.info(

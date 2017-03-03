@@ -623,7 +623,7 @@ class User(Base, BaseModel):
                                        UserApiKeys.role == UserApiKeys.ROLE_ALL))
         return tokens.all()
 
-    def authenticate_by_token(self, auth_token, roles=None):
+    def authenticate_by_token(self, auth_token, roles=None, scope_repo_id=None):
         from rhodecode.lib import auth
 
         log.debug('Trying to authenticate user: %s via auth-token, '
@@ -646,6 +646,17 @@ class User(Base, BaseModel):
         hash_tokens = []
 
         for token in tokens_q.all():
+            # verify scope first
+            if token.repo_id:
+                # token has a scope, we need to verify it
+                if scope_repo_id != token.repo_id:
+                    log.debug(
+                        'Scope mismatch: token has a set repo scope: %s, '
+                        'and calling scope is:%s, skipping further checks',
+                         token.repo, scope_repo_id)
+                    # token has a scope, and it doesn't match, skip token
+                    continue
+
             if token.api_key.startswith(crypto_backend.ENC_PREF):
                 hash_tokens.append(token.api_key)
             else:
@@ -656,7 +667,7 @@ class User(Base, BaseModel):
             return True
 
         for hashed in hash_tokens:
-            # marcink: this is expensive to calculate, but the most secure
+            # TODO(marcink): this is expensive to calculate, but most secure
             match = crypto_backend.hash_check(auth_token, hashed)
             if match:
                 return True

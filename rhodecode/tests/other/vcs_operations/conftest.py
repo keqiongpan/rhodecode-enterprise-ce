@@ -132,11 +132,14 @@ def repos(request, pylonsapp):
 
 
 @pytest.fixture(scope="module")
-def rc_web_server_config(pylons_config):
+def rc_web_server_config(testini_factory):
     """
     Configuration file used for the fixture `rc_web_server`.
     """
-    return pylons_config
+    CUSTOM_PARAMS = [
+        {'handler_console': {'level': 'DEBUG'}},
+    ]
+    return testini_factory(CUSTOM_PARAMS)
 
 
 @pytest.fixture(scope="module")
@@ -150,7 +153,8 @@ def rc_web_server(
     env = os.environ.copy()
     env['RC_NO_TMP_PATH'] = '1'
 
-    server_out = open(RC_LOG, 'w')
+    rc_log = RC_LOG
+    server_out = open(rc_log, 'w')
 
     # TODO: Would be great to capture the output and err of the subprocess
     # and make it available in a section of the py.test report in case of an
@@ -158,11 +162,11 @@ def rc_web_server(
 
     host_url = 'http://' + get_host_url(rc_web_server_config)
     assert_no_running_instance(host_url)
-    command = ['rcserver', rc_web_server_config]
+    command = ['pserve', rc_web_server_config]
 
     print('Starting rcserver: {}'.format(host_url))
     print('Command: {}'.format(command))
-    print('Logfile: {}'.format(RC_LOG))
+    print('Logfile: {}'.format(rc_log))
 
     proc = subprocess32.Popen(
         command, bufsize=0, env=env, stdout=server_out, stderr=server_out)
@@ -173,8 +177,9 @@ def rc_web_server(
     def stop_web_server():
         # TODO: Find out how to integrate with the reporting of py.test to
         # make this information available.
-        print "\nServer log file written to %s" % (RC_LOG, )
+        print("\nServer log file written to %s" % (rc_log, ))
         proc.kill()
+        server_out.flush()
         server_out.close()
 
     return RcWebServer(rc_web_server_config)
@@ -210,12 +215,17 @@ def enable_auth_plugins(request, pylonsapp, csrf_token):
         override = override or {}
         params = {
             'auth_plugins': ','.join(plugins_list),
-            'csrf_token': csrf_token,
+        }
+
+        # helper translate some names to others
+        name_map = {
+            'token': 'authtoken'
         }
 
         for module in plugins_list:
-            plugin = rhodecode.authentication.base.loadplugin(module)
-            plugin_name = plugin.name
+            plugin_name = module.partition('#')[-1]
+            if plugin_name in name_map:
+                plugin_name = name_map[plugin_name]
             enabled_plugin = 'auth_%s_enabled' % plugin_name
             cache_ttl = 'auth_%s_cache_ttl' % plugin_name
 

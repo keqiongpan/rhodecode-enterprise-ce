@@ -209,11 +209,12 @@ def vcs_operation_context(
 class BasicAuth(AuthBasicAuthenticator):
 
     def __init__(self, realm, authfunc, registry, auth_http_code=None,
-                 initial_call_detection=False):
+                 initial_call_detection=False, acl_repo_name=None):
         self.realm = realm
         self.initial_call = initial_call_detection
         self.authfunc = authfunc
         self.registry = registry
+        self.acl_repo_name = acl_repo_name
         self._rc_auth_http_code = auth_http_code
 
     def _get_response_from_code(self, http_code):
@@ -247,7 +248,7 @@ class BasicAuth(AuthBasicAuthenticator):
             username, password = _parts
             if self.authfunc(
                     username, password, environ, VCS_TYPE,
-                    registry=self.registry):
+                    registry=self.registry, acl_repo_name=self.acl_repo_name):
                 return username
             if username and password:
                 # we mark that we actually executed authentication once, at

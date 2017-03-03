@@ -360,12 +360,15 @@ class SimpleVCS(object):
                 # try to auth based on environ, container auth methods
                 log.debug('Running PRE-AUTH for container based authentication')
                 pre_auth = authenticate(
-                    '', '', environ, VCS_TYPE, registry=self.registry)
+                    '', '', environ, VCS_TYPE, registry=self.registry,
+                    acl_repo_name=self.acl_repo_name)
                 if pre_auth and pre_auth.get('username'):
                     username = pre_auth['username']
                 log.debug('PRE-AUTH got %s as username', username)
 
                 # If not authenticated by the container, running basic auth
+                # before inject the calling repo_name for special scope checks
+                self.authenticate.acl_repo_name = self.acl_repo_name
                 if not username:
                     self.authenticate.realm = get_rhodecode_realm()
 
