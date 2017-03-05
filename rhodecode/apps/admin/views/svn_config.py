@@ -22,16 +22,15 @@ import logging
 
 from pyramid.view import view_config
 
+from rhodecode.apps._base import BaseAppView
 from rhodecode.svn_support.utils import generate_mod_dav_svn_config
-
-from rhodecode.apps.admin.views.base import AdminSettingsView
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 
 log = logging.getLogger(__name__)
 
 
-class SvnConfigAdminSettingsView(AdminSettingsView):
+class SvnConfigAdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @CSRFRequired()

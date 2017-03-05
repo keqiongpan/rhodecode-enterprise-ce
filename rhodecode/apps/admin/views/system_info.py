@@ -26,7 +26,7 @@ from pylons import tmpl_context as c
 from pyramid.view import view_config
 
 import rhodecode
-from rhodecode.apps.admin.views.base import AdminSettingsView
+from rhodecode.apps._base import BaseAppView
 from rhodecode.apps.admin.navigation import navigation_list
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (LoginRequired, HasPermissionAllDecorator)
@@ -38,7 +38,7 @@ from rhodecode.model.settings import SettingsModel
 log = logging.getLogger(__name__)
 
 
-class AdminSystemInfoSettingsView(AdminSettingsView):
+class AdminSystemInfoSettingsView(BaseAppView):
 
     @staticmethod
     def get_update_data(update_url):
