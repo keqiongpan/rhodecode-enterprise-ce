@@ -36,6 +36,20 @@ from rhodecode.tests.utils import AssertResponse
 fixture = Fixture()
 
 
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
+
+    base_url = {
+        'users_data':
+            ADMIN_PREFIX + '/users_data',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
+
 class TestAdminUsersController(TestController):
     test_user_1 = 'testme'
     destroy_users = set()
@@ -44,7 +58,7 @@ class TestAdminUsersController(TestController):
     def teardown_method(cls, method):
         fixture.destroy_users(cls.destroy_users)
 
-    def test_create(self):
+    def test_create(self, xhr_header):
         self.log_user()
         username = 'newtestuser'
         password = 'test12'
@@ -53,7 +67,7 @@ class TestAdminUsersController(TestController):
         lastname = 'lastname'
         email = 'mail@mail.com'
 
-        response = self.app.get(url('new_user'))
+        self.app.get(url('new_user'))
 
         response = self.app.post(url('users'), params={
             'username': username,
@@ -81,8 +95,8 @@ class TestAdminUsersController(TestController):
         assert new_user.lastname == lastname
         assert new_user.email == email
 
-        response.follow()
-        response = response.follow()
+        response = self.app.get(route_path('users_data'),
+                                extra_environ=xhr_header)
         response.mustcontain(username)
 
     def test_create_err(self):
@@ -93,7 +107,7 @@ class TestAdminUsersController(TestController):
         lastname = 'lastname'
         email = 'errmail.com'
 
-        response = self.app.get(url('new_user'))
+        self.app.get(url('new_user'))
 
         response = self.app.post(url('users'), params={
             'username': username,

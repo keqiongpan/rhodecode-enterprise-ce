@@ -292,8 +292,6 @@ def make_map(config):
                         controller='admin/users') as m:
         m.connect('users', '/users',
                   action='create', conditions={'method': ['POST']})
-        m.connect('users', '/users',
-                  action='index', conditions={'method': ['GET']})
         m.connect('new_user', '/users/new',
                   action='new', conditions={'method': ['GET']})
         m.connect('update_user', '/users/{user_id}',

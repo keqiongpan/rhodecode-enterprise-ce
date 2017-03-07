@@ -22,18 +22,18 @@ import pytest
 
 from rhodecode.model.db import User, UserApiKeys
 
-from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.tests import (
     TestController, TEST_USER_REGULAR_LOGIN, assert_session_flash)
 from rhodecode.tests.fixture import Fixture
-from rhodecode.tests.utils import AssertResponse
 
 fixture = Fixture()
 
 
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
 
-def route_path(name, **kwargs):
-    return {
+    base_url = {
         'users':
             ADMIN_PREFIX + '/users',
         'users_data':
@@ -46,8 +46,36 @@ def route_path(name, **kwargs):
             ADMIN_PREFIX + '/users/{user_id}/edit/auth_tokens/delete',
     }[name].format(**kwargs)
 
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
 
 class TestAdminUsersView(TestController):
+
+    def test_show_users(self):
+        self.log_user()
+        self.app.get(route_path('users'))
+
+    def test_show_users_data(self, xhr_header):
+        self.log_user()
+        response = self.app.get(route_path(
+            'users_data'), extra_environ=xhr_header)
+
+        all_users = User.query().filter(
+            User.username != User.DEFAULT_USER).count()
+        assert response.json['recordsTotal'] == all_users
+
+    def test_show_users_data_filtered(self, xhr_header):
+        self.log_user()
+        response = self.app.get(route_path(
+            'users_data', params={'search[value]': 'empty_search'}),
+            extra_environ=xhr_header)
+
+        all_users = User.query().filter(
+            User.username != User.DEFAULT_USER).count()
+        assert response.json['recordsTotal'] == all_users
+        assert response.json['recordsFiltered'] == 0
 
     def test_auth_tokens_default_user(self):
         self.log_user()

@@ -28,9 +28,9 @@ from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h
 from rhodecode.lib.utils import PartialRenderer
-from rhodecode.lib.utils2 import safe_int
+from rhodecode.lib.utils2 import safe_int, safe_unicode
 from rhodecode.model.auth_token import AuthTokenModel
-from rhodecode.model.db import User
+from rhodecode.model.db import User, or_
 from rhodecode.model.meta import Session
 
 log = logging.getLogger(__name__)
@@ -57,6 +57,105 @@ class AdminUsersView(BaseAppView):
             # TODO(marcink): redirect to 'users' admin panel once this
             # is a pyramid view
             raise HTTPFound('/')
+
+    def _extract_ordering(self, request):
+        column_index = safe_int(request.GET.get('order[0][column]'))
+        order_dir = request.GET.get(
+            'order[0][dir]', 'desc')
+        order_by = request.GET.get(
+            'columns[%s][data][sort]' % column_index, 'name_raw')
+
+        # translate datatable to DB columns
+        order_by = {
+            'first_name': 'name',
+            'last_name': 'lastname',
+            'last_activity': ''
+        }.get(order_by) or order_by
+
+        search_q = request.GET.get('search[value]')
+        return search_q, order_by, order_dir
+
+    def _extract_chunk(self, request):
+        start = safe_int(request.GET.get('start'), 0)
+        length = safe_int(request.GET.get('length'), 25)
+        draw = safe_int(request.GET.get('draw'))
+        return draw, start, length
+
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='users', request_method='GET',
+        renderer='rhodecode:templates/admin/users/users.mako')
+    def users_list(self):
+        c = self.load_default_context()
+        return self._get_template_context(c)
+
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        # renderer defined below
+        route_name='users_data', request_method='GET', renderer='json',
+        xhr=True)
+    def users_list_data(self):
+        draw, start, limit = self._extract_chunk(self.request)
+        search_q, order_by, order_dir = self._extract_ordering(self.request)
+
+        _render = PartialRenderer('data_table/_dt_elements.mako')
+
+        def user_actions(user_id, username):
+            return _render("user_actions", user_id, username)
+
+        users_data_total_count = User.query()\
+            .filter(User.username != User.DEFAULT_USER) \
+            .count()
+
+        # json generate
+        base_q = User.query().filter(User.username != User.DEFAULT_USER)
+
+        if search_q:
+            like_expression = u'{}%'.format(safe_unicode(search_q))
+            base_q = base_q.filter(or_(
+                User.username.ilike(like_expression),
+                User._email.ilike(like_expression),
+                User.name.ilike(like_expression),
+                User.lastname.ilike(like_expression),
+            ))
+
+        users_data_total_filtered_count = base_q.count()
+
+        sort_col = getattr(User, order_by, None)
+        if sort_col and order_dir == 'asc':
+            base_q = base_q.order_by(sort_col.asc())
+        elif sort_col:
+            base_q = base_q.order_by(sort_col.desc())
+
+        base_q = base_q.offset(start).limit(limit)
+        users_list = base_q.all()
+
+        users_data = []
+        for user in users_list:
+            users_data.append({
+                "username": h.gravatar_with_user(user.username),
+                "email": user.email,
+                "first_name": h.escape(user.name),
+                "last_name": h.escape(user.lastname),
+                "last_login": h.format_date(user.last_login),
+                "last_activity": h.format_date(
+                    h.time_to_datetime(user.user_data.get('last_activity', 0))),
+                "active": h.bool2icon(user.active),
+                "active_raw": user.active,
+                "admin": h.bool2icon(user.admin),
+                "extern_type": user.extern_type,
+                "extern_name": user.extern_name,
+                "action": user_actions(user.user_id, user.username),
+            })
+
+        data = ({
+            'draw': draw,
+            'data': users_data,
+            'recordsTotal': users_data_total_count,
+            'recordsFiltered': users_data_total_filtered_count,
+        })
+
+        return data
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')

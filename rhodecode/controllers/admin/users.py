@@ -50,7 +50,6 @@ from rhodecode.model.user import UserModel
 from rhodecode.model.meta import Session
 from rhodecode.model.permission import PermissionModel
 from rhodecode.lib.utils import action_logger
-from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils2 import datetime_to_time, safe_int, AttributeDict
 
 log = logging.getLogger(__name__)
@@ -76,51 +75,6 @@ class UsersController(BaseController):
         ]
         PermissionModel().set_global_permission_choices(c, gettext_translator=_)
 
-    @HasPermissionAllDecorator('hg.admin')
-    def index(self):
-        """GET /users: All items in the collection"""
-        # url('users')
-
-        from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.mako')
-
-        def username(user_id, username):
-            return _render("user_name", user_id, username)
-
-        def user_actions(user_id, username):
-            return _render("user_actions", user_id, username)
-
-        # json generate
-        c.users_list = User.query()\
-            .filter(User.username != User.DEFAULT_USER) \
-            .all()
-
-        users_data = []
-        for user in c.users_list:
-            users_data.append({
-                "username": h.gravatar_with_user(user.username),
-                "username_raw": user.username,
-                "email": user.email,
-                "first_name": h.escape(user.name),
-                "last_name": h.escape(user.lastname),
-                "last_login": h.format_date(user.last_login),
-                "last_login_raw": datetime_to_time(user.last_login),
-                "last_activity": h.format_date(
-                    h.time_to_datetime(user.user_data.get('last_activity', 0))),
-                "last_activity_raw": user.user_data.get('last_activity', 0),
-                "active": h.bool2icon(user.active),
-                "active_raw": user.active,
-                "admin": h.bool2icon(user.admin),
-                "admin_raw": user.admin,
-                "extern_type": user.extern_type,
-                "extern_name": user.extern_name,
-                "action": user_actions(user.user_id, user.username),
-            })
-
-
-        c.data = json.dumps(users_data)
-        return render('admin/users/users.mako')
-
     def _get_personal_repo_group_template_vars(self):
         DummyUser = AttributeDict({
             'username': '${username}',
@@ -135,7 +89,6 @@ class UsersController(BaseController):
     @auth.CSRFRequired()
     def create(self):
         """POST /users: Create a new item"""
-        # url('users')
         c.default_extern_type = auth_rhodecode.RhodeCodeAuthPlugin.name
         user_model = UserModel()
         user_form = UserForm()()
@@ -168,7 +121,7 @@ class UsersController(BaseController):
             log.exception("Exception creation of user")
             h.flash(_('Error occurred during creation of user %s')
                     % request.POST.get('username'), category='error')
-        return redirect(url('users'))
+        return redirect(h.route_path('users'))
 
     @HasPermissionAllDecorator('hg.admin')
     def new(self):
@@ -312,7 +265,7 @@ class UsersController(BaseController):
             log.exception("Exception during deletion of user")
             h.flash(_('An error occurred during deletion of user'),
                     category='error')
-        return redirect(url('users'))
+        return redirect(h.route_path('users'))
 
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
@@ -404,7 +357,7 @@ class UsersController(BaseController):
         c.user = User.get_or_404(user_id)
         if c.user.username == User.DEFAULT_USER:
             h.flash(_("You can't edit this user"), category='warning')
-            return redirect(url('users'))
+            return redirect(h.route_path('users'))
 
         c.active = 'profile'
         c.extern_type = c.user.extern_type
@@ -425,7 +378,7 @@ class UsersController(BaseController):
         user = c.user = User.get_or_404(user_id)
         if user.username == User.DEFAULT_USER:
             h.flash(_("You can't edit this user"), category='warning')
-            return redirect(url('users'))
+            return redirect(h.route_path('users'))
 
         c.active = 'advanced'
         c.perm_user = AuthUser(user_id=user_id, ip_addr=self.ip_addr)
@@ -457,7 +410,7 @@ class UsersController(BaseController):
         c.user = User.get_or_404(user_id)
         if c.user.username == User.DEFAULT_USER:
             h.flash(_("You can't edit this user"), category='warning')
-            return redirect(url('users'))
+            return redirect(h.route_path('users'))
 
         c.active = 'global_perms'
 
@@ -531,7 +484,7 @@ class UsersController(BaseController):
         c.user = User.get_or_404(user_id)
         if c.user.username == User.DEFAULT_USER:
             h.flash(_("You can't edit this user"), category='warning')
-            return redirect(url('users'))
+            return redirect(h.route_path('users'))
 
         c.active = 'perms_summary'
         c.perm_user = AuthUser(user_id=user_id, ip_addr=self.ip_addr)
@@ -544,7 +497,7 @@ class UsersController(BaseController):
         c.user = User.get_or_404(user_id)
         if c.user.username == User.DEFAULT_USER:
             h.flash(_("You can't edit this user"), category='warning')
-            return redirect(url('users'))
+            return redirect(h.route_path('users'))
 
         c.active = 'emails'
         c.user_email_map = UserEmailMap.query() \
@@ -602,7 +555,7 @@ class UsersController(BaseController):
         c.user = User.get_or_404(user_id)
         if c.user.username == User.DEFAULT_USER:
             h.flash(_("You can't edit this user"), category='warning')
-            return redirect(url('users'))
+            return redirect(h.route_path('users'))
 
         c.active = 'ips'
         c.user_ip_map = UserIpMap.query() \

@@ -77,7 +77,7 @@ class MyAccountController(BaseController):
         if c.user.username == User.DEFAULT_USER:
             h.flash(_("You can't edit this user since it's"
                       " crucial for entire application"), category='warning')
-            return redirect(url('users'))
+            return redirect(h.route_path('users'))
 
         c.auth_user = AuthUser(
             user_id=c.rhodecode_user.user_id, ip_addr=self.ip_addr)

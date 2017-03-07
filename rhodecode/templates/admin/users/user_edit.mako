@@ -11,7 +11,7 @@
 <%def name="breadcrumbs_links()">
     ${h.link_to(_('Admin'),h.url('admin_home'))}
     &raquo;
-    ${h.link_to(_('Users'),h.url('users'))}
+    ${h.link_to(_('Users'),h.route_path('users'))}
     &raquo;
     ${c.user.username}
 </%def>

@@ -53,6 +53,15 @@ def includeme(config):
         name='admin_settings_sessions_cleanup',
         pattern=ADMIN_PREFIX + '/settings/sessions/cleanup')
 
+    # users admin
+    config.add_route(
+        name='users',
+        pattern=ADMIN_PREFIX + '/users')
+
+    config.add_route(
+        name='users_data',
+        pattern=ADMIN_PREFIX + '/users_data')
+
     # user auth tokens
     config.add_route(
         name='edit_user_auth_tokens',

@@ -34,60 +34,31 @@
     </div>
 </div>
 
-<script>
+<script type="text/javascript">
+
 $(document).ready(function() {
 
-    var get_datatable_count = function(){
-      var datatable = $('#user_list_table').dataTable();
-      var api = datatable.api();
-      var total = api.page.info().recordsDisplay;
-      var active = datatable.fnGetFilteredData();
-      var _text = _gettext("{0} active out of {1} users").format(active, total);
+    var getDatatableCount = function(){
+      var table = $('#user_list_table').dataTable();
+      var page = table.api().page.info();
+      var  active = page.recordsDisplay;
+      var  total = page.recordsTotal;
+
+      var _text = _gettext("{0} out of {1} users").format(active, total);
       $('#user_count').text(_text);
-    };
-
-    // custom filter that filters by username OR email
-    $.fn.dataTable.ext.search.push(
-        function( settings, data, dataIndex ) {
-            var query = $('#q_filter').val();
-
-            var username = data[0];
-            var email = data[1];
-            var first_name = data[2];
-            var last_name = data[3];
-
-            var query_str = username + " " +
-                            email + " " +
-                            first_name + " " +
-                            last_name;
-
-            if ((query_str).indexOf(query) !== -1) {
-                return true;
-            }
-            return false;
-        }
-    );
-    // filtered data plugin
-    $.fn.dataTableExt.oApi.fnGetFilteredData = function ( oSettings ) {
-        var res = [];
-        for ( var i=0, iLen=oSettings.fnRecordsDisplay() ; i<iLen ; i++ ) {
-            var record = oSettings.aoData[i]._aData;
-            if(record['active_raw']){
-                res.push(record);
-            }
-        }
-        return res.length;
     };
 
     // user list
     $('#user_list_table').DataTable({
-      data: ${c.data|n},
+      processing: false,
+      serverSide: true,
+      ajax: "${h.route_path('users_data')}",
       dom: 'rtp',
       pageLength: ${c.visual.admin_grid_items},
-      order: [[ 1, "asc" ]],
+      order: [[ 0, "asc" ]],
       columns: [
          { data: {"_": "username",
-                  "sort": "username_raw"}, title: "${_('Username')}", className: "td-user" },
+                  "sort": "username"}, title: "${_('Username')}", className: "td-user" },
          { data: {"_": "email",
                   "sort": "email"}, title: "${_('Email')}", className: "td-email"  },
          { data: {"_": "first_name",
@@ -95,12 +66,12 @@ $(document).ready(function() {
          { data: {"_": "last_name",
                   "sort": "last_name"}, title: "${_('Last Name')}", className: "td-user" },
          { data: {"_": "last_activity",
-                  "sort": "last_activity_raw",
-                  "type": Number}, title: "${_('Last activity')}", className: "td-time" },
+                  "sort": "last_activity",
+                  "type": Number}, title: "${_('Last activity')}", className: "td-time", orderable: false },
          { data: {"_": "active",
-                  "sort": "active_raw"}, title: "${_('Active')}", className: "td-active" },
+                  "sort": "active"}, title: "${_('Active')}", className: "td-active" },
          { data: {"_": "admin",
-                  "sort": "admin_raw"}, title: "${_('Admin')}", className: "td-admin" },
+                  "sort": "admin"}, title: "${_('Admin')}", className: "td-admin" },
          { data: {"_": "extern_type",
                   "sort": "extern_type"}, title: "${_('Auth type')}", className: "td-type"  },
          { data: {"_": "action",
@@ -110,9 +81,7 @@ $(document).ready(function() {
           paginate: DEFAULT_GRID_PAGINATION,
           emptyTable: _gettext("No users available yet.")
       },
-      "initComplete": function( settings, json ) {
-          get_datatable_count();
-      },
+
       "createdRow": function ( row, data, index ) {
           if (!data['active_raw']){
             $(row).addClass('closed')
@@ -120,23 +89,29 @@ $(document).ready(function() {
       }
     });
 
-    // update the counter when doing search
-    $('#user_list_table').on( 'search.dt', function (e,settings) {
-      get_datatable_count();
+    $('#user_list_table').on('xhr.dt', function(e, settings, json, xhr){
+        $('#user_list_table').css('opacity', 1);
     });
 
-    // filter, filter both grids
-    $('#q_filter').on( 'keyup', function () {
-      var user_api = $('#user_list_table').dataTable().api();
-      user_api
-        .draw();
+    $('#user_list_table').on('preXhr.dt', function(e, settings, data){
+        $('#user_list_table').css('opacity', 0.3);
     });
 
-    // refilter table if page load via back button
-    $("#q_filter").trigger('keyup');
+    // refresh counters on draw
+    $('#user_list_table').on('draw.dt', function(){
+        getDatatableCount();
+    });
+
+    // filter
+    $('#q_filter').on('keyup',
+        $.debounce(250, function() {
+            $('#user_list_table').DataTable().search(
+                $('#q_filter').val()
+            ).draw();
+        })
+    );
 
   });
-
 </script>
 
 </%def>

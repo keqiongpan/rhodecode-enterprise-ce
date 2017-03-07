@@ -75,7 +75,7 @@
       <li><a href="${h.url('admin_home')}">${_('Admin journal')}</a></li>
       <li><a href="${h.url('repos')}">${_('Repositories')}</a></li>
       <li><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
-      <li><a href="${h.url('users')}">${_('Users')}</a></li>
+      <li><a href="${h.route_path('users')}">${_('Users')}</a></li>
       <li><a href="${h.url('users_groups')}">${_('User groups')}</a></li>
       <li><a href="${h.url('admin_permissions_application')}">${_('Permissions')}</a></li>
       <li><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
