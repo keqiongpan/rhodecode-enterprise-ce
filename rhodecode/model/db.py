@@ -42,7 +42,6 @@ from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
 from sqlalchemy.sql.expression import true
 from beaker.cache import cache_region
-from webob.exc import HTTPNotFound
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from pylons import url
@@ -207,7 +206,14 @@ class BaseModel(object):
             return cls.query().get(id_)
 
     @classmethod
-    def get_or_404(cls, id_):
+    def get_or_404(cls, id_, pyramid_exc=False):
+        if pyramid_exc:
+            # NOTE(marcink): backward compat, once migration to pyramid
+            # this should only use pyramid exceptions
+            from pyramid.httpexceptions import HTTPNotFound
+        else:
+            from webob.exc import HTTPNotFound
+
         try:
             id_ = int(id_)
         except (TypeError, ValueError):
@@ -3624,7 +3630,13 @@ class Gist(Base, BaseModel):
         return '<Gist:[%s]%s>' % (self.gist_type, self.gist_access_id)
 
     @classmethod
-    def get_or_404(cls, id_):
+    def get_or_404(cls, id_, pyramid_exc=False):
+
+        if pyramid_exc:
+            from pyramid.httpexceptions import HTTPNotFound
+        else:
+            from webob.exc import HTTPNotFound
+
         res = cls.query().filter(cls.gist_access_id == id_).scalar()
         if not res:
             raise HTTPNotFound
