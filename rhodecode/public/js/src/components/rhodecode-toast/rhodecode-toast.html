@@ -10,13 +10,12 @@
             <div class$="container toast-message-holder [[conditionalClass(isFixed)]]">
                 <template is="dom-repeat" items="[[toasts]]">
                     <div class$="alert alert-[[item.level]]">
+                        <div on-tap="dismissNotification" class="toast-close"  index-pos="[[index]]">
+                            <span>[[_gettext('Close')]]</span>
+                        </div>
                         <rhodecode-unsafe-html text="[[item.message]]"></rhodecode-unsafe-html>
                     </div>
                 </template>
-
-                <div class="toast-close">
-                    <button on-tap="dismissNotifications" class="btn btn-default">[[_gettext('Close')]]</button>
-                </div>
             </div>
         </template>
     </template>

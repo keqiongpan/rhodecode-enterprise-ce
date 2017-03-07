@@ -74,6 +74,12 @@ Polymer({
     _changedToasts: function(newValue, oldValue){
         $.Topic('/favicon/update').publish({count: this.toasts.length});
     },
+    dismissNotification: function(e) {
+        $.Topic('/favicon/update').publish({count: this.toasts.length-1});
+        var idx = e.target.parentNode.indexPos
+        this.splice('toasts', idx, 1);
+
+    },
     dismissNotifications: function(){
         $.Topic('/favicon/update').publish({count: 0});
         this.splice('toasts', 0);
