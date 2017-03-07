@@ -3,20 +3,21 @@
     <h3 class="panel-title">${_('Authentication Tokens')}</h3>
   </div>
   <div class="panel-body">
+    <div class="apikeys_wrap">
       <p>
          ${_('Each token can have a role. Token with a role can be used only in given context, '
          'e.g. VCS tokens can be used together with the authtoken auth plugin for git/hg/svn operations only.')}
       </p>
       <table class="rctable auth_tokens">
+        <tr>
+            <th>${_('Token')}</th>
+            <th>${_('Scope')}</th>
+            <th>${_('Description')}</th>
+            <th>${_('Role')}</th>
+            <th>${_('Expiration')}</th>
+            <th>${_('Action')}</th>
+        </tr>
         %if c.user_auth_tokens:
-            <tr>
-                <th>${_('Token')}</th>
-                <th>${_('Scope')}</th>
-                <th>${_('Description')}</th>
-                <th>${_('Role')}</th>
-                <th>${_('Expiration')}</th>
-                <th>${_('Action')}</th>
-            </tr>
             %for auth_token in c.user_auth_tokens:
               <tr class="${'expired' if auth_token.expired else ''}">
                 <td class="truncate-wrap td-authtoken">
@@ -52,9 +53,10 @@
               </tr>
             %endfor
         %else:
-        <tr><td><div class="ip">${_('No additional auth token specified')}</div></td></tr>
+        <tr><td><div class="ip">${_('No additional auth tokens specified')}</div></td></tr>
         %endif
       </table>
+    </div>
 
         <div class="user_auth_tokens">
             ${h.secure_form(h.route_path('my_account_auth_tokens_add'), method='post')}
@@ -66,7 +68,7 @@
                             <label for="new_email">${_('New authentication token')}:</label>
                         </div>
                         <div class="input">
-                            ${h.text('description', placeholder=_('Description'))}
+                            ${h.text('description', class_='medium', placeholder=_('Description'))}
                             ${h.select('lifetime', '', c.lifetime_options)}
                             ${h.select('role', '', c.role_options)}
 
@@ -76,9 +78,9 @@
                                 ${h.select('scope_repo_id_disabled', '', ['Scopes available in EE edition'], disabled='disabled')}
                             % endif
                         </div>
-                         <p class="help-block">
-                             ${_('Repository scope works only with tokens with VCS type.')}
-                         </p>
+                        <p class="help-block">
+                          ${_('Repository scope works only with tokens with VCS type.')}
+                        </p>
                      </div>
                     <div class="buttons">
                       ${h.submit('save',_('Add'),class_="btn")}

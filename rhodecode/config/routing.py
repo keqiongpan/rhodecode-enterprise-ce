@@ -315,13 +315,6 @@ def make_map(config):
         m.connect('edit_user_advanced', '/users/{user_id}/edit/advanced',
                   action='update_advanced', conditions={'method': ['PUT']})
 
-        m.connect('edit_user_auth_tokens', '/users/{user_id}/edit/auth_tokens',
-                  action='edit_auth_tokens', conditions={'method': ['GET']})
-        m.connect('edit_user_auth_tokens', '/users/{user_id}/edit/auth_tokens',
-                  action='add_auth_token', conditions={'method': ['PUT']})
-        m.connect('edit_user_auth_tokens', '/users/{user_id}/edit/auth_tokens',
-                  action='delete_auth_token', conditions={'method': ['DELETE']})
-
         m.connect('edit_user_global_perms', '/users/{user_id}/edit/global_permissions',
                   action='edit_global_perms', conditions={'method': ['GET']})
         m.connect('edit_user_global_perms', '/users/{user_id}/edit/global_permissions',
