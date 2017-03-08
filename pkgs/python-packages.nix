@@ -588,16 +588,16 @@
     };
   };
   decorator = super.buildPythonPackage {
-    name = "decorator-3.4.2";
+    name = "decorator-4.0.11";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/35/3a/42566eb7a2cbac774399871af04e11d7ae3fc2579e7dae85213b8d1d1c57/decorator-3.4.2.tar.gz";
-      md5 = "9e0536870d2b83ae27d58dbf22582f4d";
+      url = "https://pypi.python.org/packages/cc/ac/5a16f1fc0506ff72fcc8fd4e858e3a1c231f224ab79bb7c4c9b2094cc570/decorator-4.0.11.tar.gz";
+      md5 = "73644c8f0bd4983d1b6a34b49adec0ae";
     };
     meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
+      license = [ pkgs.lib.licenses.bsdOriginal { fullName = "new BSD License"; } ];
     };
   };
   deform = super.buildPythonPackage {

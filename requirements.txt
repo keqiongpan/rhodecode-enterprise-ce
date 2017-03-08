@@ -14,7 +14,7 @@ channelstream==0.5.2
 click==5.1
 colander==1.2
 configobj==5.0.6
-decorator==3.4.2
+decorator==4.0.11
 deform==2.0a2
 docutils==0.12
 dogpile.cache==0.6.1
