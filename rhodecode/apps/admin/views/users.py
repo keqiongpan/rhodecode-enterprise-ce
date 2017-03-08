@@ -111,7 +111,7 @@ class AdminUsersView(BaseAppView):
         base_q = User.query().filter(User.username != User.DEFAULT_USER)
 
         if search_q:
-            like_expression = u'{}%'.format(safe_unicode(search_q))
+            like_expression = u'%{}%'.format(safe_unicode(search_q))
             base_q = base_q.filter(or_(
                 User.username.ilike(like_expression),
                 User._email.ilike(like_expression),
