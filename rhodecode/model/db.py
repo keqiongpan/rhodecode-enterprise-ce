@@ -915,6 +915,7 @@ class User(Base, BaseModel):
 
         extras = {
             'api_keys': [api_key_replacement],
+            'auth_tokens': [api_key_replacement],
             'active': user.active,
             'admin': user.admin,
             'extern_type': user.extern_type,
@@ -927,6 +928,7 @@ class User(Base, BaseModel):
 
         if include_secrets:
             data['api_keys'] = user.auth_tokens
+            data['auth_tokens'] = user.extra_auth_tokens
         return data
 
     def __json__(self):
@@ -985,6 +987,21 @@ class UserApiKeys(Base, BaseModel):
     def __unicode__(self):
         return u"<%s('%s')>" % (self.__class__.__name__, self.role)
 
+    def __json__(self):
+        data = {
+            'auth_token': self.api_key,
+            'role': self.role,
+            'scope': self.scope_humanized,
+            'expired': self.expired
+        }
+        return data
+
+    @property
+    def expired(self):
+        if self.expires == -1:
+            return False
+        return time.time() > self.expires
+
     @classmethod
     def _get_role_name(cls, role):
         return {
@@ -994,12 +1011,6 @@ class UserApiKeys(Base, BaseModel):
             cls.ROLE_API: _('api calls'),
             cls.ROLE_FEED: _('feed access'),
         }.get(role, role)
-
-    @property
-    def expired(self):
-        if self.expires == -1:
-            return False
-        return time.time() > self.expires
 
     @property
     def role_humanized(self):

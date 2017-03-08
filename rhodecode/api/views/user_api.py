@@ -63,6 +63,7 @@ def get_user(request, apiuser, userid=Optional(OAttr('apiuser'))):
             "active": true,
             "admin": false,
             "api_keys": [ list of keys ],
+            "auth_tokens": [ list of tokens with details ],
             "email": "user@example.com",
             "emails": [
               "user@example.com"
