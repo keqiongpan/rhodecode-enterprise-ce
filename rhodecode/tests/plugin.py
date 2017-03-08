@@ -212,8 +212,6 @@ def http_environ(http_host_stub):
 
 @pytest.fixture(scope='function')
 def app(request, pylonsapp, http_environ):
-
-
     app = CustomTestApp(
         pylonsapp,
         extra_environ=http_environ)

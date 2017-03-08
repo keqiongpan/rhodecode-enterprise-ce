@@ -44,10 +44,6 @@ class TestAdminUsersController(TestController):
     def teardown_method(cls, method):
         fixture.destroy_users(cls.destroy_users)
 
-    def test_index(self):
-        self.log_user()
-        self.app.get(url('users'))
-
     def test_create(self):
         self.log_user()
         username = 'newtestuser'
@@ -563,58 +559,3 @@ class TestAdminUsersController(TestController):
         response.mustcontain('All IP addresses are allowed')
         response.mustcontain(no=[ip])
         response.mustcontain(no=[ip_range])
-
-    def test_auth_tokens(self):
-        self.log_user()
-
-        user = User.get_by_username(TEST_USER_REGULAR_LOGIN)
-        response = self.app.get(
-            url('edit_user_auth_tokens', user_id=user.user_id))
-        for token in user.auth_tokens:
-            response.mustcontain(token)
-            response.mustcontain('never')
-
-    @pytest.mark.parametrize("desc, lifetime", [
-        ('forever', -1),
-        ('5mins', 60*5),
-        ('30days', 60*60*24*30),
-    ])
-    def test_add_auth_token(self, desc, lifetime, user_util):
-        self.log_user()
-        user = user_util.create_user()
-        user_id = user.user_id
-
-        response = self.app.post(
-            url('edit_user_auth_tokens', user_id=user_id),
-            {'_method': 'put', 'description': desc, 'lifetime': lifetime,
-             'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully created')
-
-        response = response.follow()
-        user = User.get(user_id)
-        for auth_token in user.auth_tokens:
-            response.mustcontain(auth_token)
-
-    def test_remove_auth_token(self, user_util):
-        self.log_user()
-        user = user_util.create_user()
-        user_id = user.user_id
-
-        response = self.app.post(
-            url('edit_user_auth_tokens', user_id=user_id),
-            {'_method': 'put', 'description': 'desc', 'lifetime': -1,
-             'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully created')
-        response = response.follow()
-
-        # now delete our key
-        keys = UserApiKeys.query().filter(UserApiKeys.user_id == user_id).all()
-        assert 3 == len(keys)
-
-        response = self.app.post(
-            url('edit_user_auth_tokens', user_id=user_id),
-            {'_method': 'delete', 'del_auth_token': keys[0].api_key,
-             'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully deleted')
-        keys = UserApiKeys.query().filter(UserApiKeys.user_id == user_id).all()
-        assert 2 == len(keys)
