@@ -978,13 +978,13 @@
     };
   };
   lxml = super.buildPythonPackage {
-    name = "lxml-3.4.4";
+    name = "lxml-3.7.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/63/c7/4f2a2a4ad6c6fa99b14be6b3c1cece9142e2d915aa7c43c908677afc8fa4/lxml-3.4.4.tar.gz";
-      md5 = "a9a65972afc173ec7a39c585f4eea69c";
+      url = "https://pypi.python.org/packages/39/e8/a8e0b1fa65dd021d48fe21464f71783655f39a41f218293c1c590d54eb82/lxml-3.7.3.tar.gz";
+      md5 = "075692ce442e69bbd604d44e21c02753";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1642,9 +1642,9 @@
   };
   rhodecode-enterprise-ce = super.buildPythonPackage {
     name = "rhodecode-enterprise-ce-4.7.0";
-    buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage cssselect lxml configobj];
+    buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage cssselect configobj];
     doCheck = true;
-    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
+    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu lxml msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
     src = ./.;
     meta = {
       license = [ { fullName = "Affero GNU General Public License v3 or later (AGPLv3+)"; } { fullName = "AGPLv3, and Commercial License"; } ];

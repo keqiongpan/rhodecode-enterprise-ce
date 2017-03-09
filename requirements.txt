@@ -29,6 +29,7 @@ iso8601==0.1.11
 itsdangerous==0.24
 Jinja2==2.7.3
 kombu==1.5.1
+lxml==3.7.3
 Mako==1.0.6
 Markdown==2.6.7
 MarkupSafe==0.23

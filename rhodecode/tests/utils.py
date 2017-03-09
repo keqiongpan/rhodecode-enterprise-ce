@@ -25,6 +25,8 @@ import os.path
 import subprocess32
 import tempfile
 import urllib2
+from lxml.html import fromstring, tostring
+from lxml.cssselect import CSSSelector
 from urlparse import urlparse, parse_qsl
 from urllib import unquote_plus
 
@@ -204,8 +206,6 @@ class AssertResponse(object):
         self.response = response
 
     def get_imports(self):
-        from lxml.html import fromstring, tostring
-        from lxml.cssselect import CSSSelector
         return fromstring, tostring, CSSSelector
 
     def one_element_exists(self, css_selector):

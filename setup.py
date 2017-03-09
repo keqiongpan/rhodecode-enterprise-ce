@@ -112,6 +112,7 @@ install_requirements = [
     'ipython',
     'iso8601',
     'kombu',
+    'lxml',
     'msgpack-python',
     'nbconvert',
     'packaging',
