@@ -148,10 +148,14 @@ def write_metadata_if_needed(event):
         ini_loc = os.path.dirname(rhodecode.CONFIG.get('__file__'))
         metadata_destination = os.path.join(ini_loc, fname)
 
+        configuration = system_info.SysInfo(
+            system_info.rhodecode_config)()['value']
+        license_token = configuration['config']['license_token']
         dbinfo = system_info.SysInfo(system_info.database_info)()['value']
         del dbinfo['url']
         metadata = dict(
             desc='upgrade metadata info',
+            license_token=license_token,
             created_on=datetime.datetime.utcnow().isoformat(),
             usage=system_info.SysInfo(system_info.usage_info)()['value'],
             platform=system_info.SysInfo(system_info.platform_type)()['value'],
