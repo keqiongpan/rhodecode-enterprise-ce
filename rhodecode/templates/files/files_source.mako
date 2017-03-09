@@ -53,7 +53,7 @@
        %else:
         % if c.file.size < c.cut_off_limit:
             %if c.renderer and not c.annotate:
-                ${h.render(c.file.content, renderer=c.renderer)}
+                ${h.render(c.file.content, renderer=c.renderer, relative_url=h.url('files_raw_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path))}
             %else:
                 <table class="cb codehilite">
                 %if c.annotate:

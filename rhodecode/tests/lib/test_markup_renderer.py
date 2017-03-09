@@ -20,7 +20,8 @@
 
 import pytest
 
-from rhodecode.lib.markup_renderer import MarkupRenderer, RstTemplateRenderer
+from rhodecode.lib.markup_renderer import (
+    MarkupRenderer, RstTemplateRenderer, relative_path, relative_links)
 
 
 @pytest.mark.parametrize(
@@ -177,3 +178,78 @@ Auto status change to |new_status|
     renderer = RstTemplateRenderer()
     rendered = renderer.render('auto_status_change.mako', **params)
     assert expected == rendered
+
+
+@pytest.mark.parametrize(
+    "src_path, server_path, is_path, expected",
+    [
+        ('source.png', '/repo/files/path', lambda p: False,
+         '/repo/files/path/source.png'),
+
+        ('source.png', 'mk/git/blob/master/README.md', lambda p: True,
+         '/mk/git/blob/master/source.png'),
+
+        ('./source.png', 'mk/git/blob/master/README.md', lambda p: True,
+         '/mk/git/blob/master/source.png'),
+
+        ('/source.png', 'mk/git/blob/master/README.md', lambda p: True,
+         '/mk/git/blob/master/source.png'),
+
+        ('./source.png', 'repo/files/path/source.md', lambda p: True,
+         '/repo/files/path/source.png'),
+
+        ('./source.png', '/repo/files/path/file.md', lambda p: True,
+         '/repo/files/path/source.png'),
+
+        ('../source.png', '/repo/files/path/file.md', lambda p: True,
+         '/repo/files/source.png'),
+
+        ('./../source.png', '/repo/files/path/file.md', lambda p: True,
+         '/repo/files/source.png'),
+
+        ('./source.png', '/repo/files/path/file.md', lambda p: True,
+         '/repo/files/path/source.png'),
+
+        ('../../../source.png', 'path/file.md', lambda p: True,
+         '/source.png'),
+
+        ('../../../../../source.png', '/path/file.md', None,
+         '/source.png'),
+
+        ('../../../../../source.png', 'files/path/file.md', None,
+         '/source.png'),
+
+        ('../../../../../https://google.com/image.png', 'files/path/file.md', None,
+         '/https://google.com/image.png'),
+
+        ('https://google.com/image.png', 'files/path/file.md', None,
+         'https://google.com/image.png'),
+
+        ('://foo', '/files/path/file.md', None,
+         '://foo'),
+
+        (u'한글.png', '/files/path/file.md', None,
+         u'/files/path/한글.png'),
+
+        ('my custom image.png', '/files/path/file.md', None,
+         '/files/path/my custom image.png'),
+    ])
+def test_relative_path(src_path, server_path, is_path, expected):
+    path = relative_path(src_path, server_path, is_path)
+    assert path == expected
+
+
+@pytest.mark.parametrize(
+    "src_html, expected_html",
+    [
+        ('<div></div>', '<div></div>'),
+        ('<img src="/file.png"></img>', '<img src="/path/raw/file.png">'),
+        ('<img src="data:abcd"/>', '<img src="data:abcd">'),
+        ('<a href="/file.png"></a>', '<a href="/path/raw/file.png"></a>'),
+        ('<a href="#anchor"></a>', '<a href="#anchor"></a>'),
+        ('<a href="./README.md"></a>', '<a href="/path/raw/README.md"></a>'),
+        ('<a href="../README.md"></a>', '<a href="/path/README.md"></a>'),
+
+    ])
+def test_relative_links(src_html, expected_html):
+    assert relative_links(src_html, '/path/raw/file.md') == expected_html

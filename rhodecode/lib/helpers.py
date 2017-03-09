@@ -75,7 +75,7 @@ from rhodecode.lib.utils import repo_name_slug, get_custom_lexer
 from rhodecode.lib.utils2 import str2bool, safe_unicode, safe_str, \
     get_commit_safe, datetime_to_time, time_to_datetime, time_to_utcdatetime, \
     AttributeDict, safe_int, md5, md5_safe
-from rhodecode.lib.markup_renderer import MarkupRenderer
+from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 from rhodecode.lib.vcs.backends.base import BaseChangeset, EmptyCommit
 from rhodecode.config.conf import DATE_FORMAT, DATETIME_FORMAT
@@ -1828,19 +1828,29 @@ def renderer_from_filename(filename, exclude=None):
     return None
 
 
-def render(source, renderer='rst', mentions=False):
+def render(source, renderer='rst', mentions=False, relative_url=None):
+
+    def maybe_convert_relative_links(html_source):
+        if relative_url:
+            return relative_links(html_source, relative_url)
+        return html_source
+
     if renderer == 'rst':
         return literal(
             '<div class="rst-block">%s</div>' %
-            MarkupRenderer.rst(source, mentions=mentions))
+            maybe_convert_relative_links(
+                MarkupRenderer.rst(source, mentions=mentions)))
     elif renderer == 'markdown':
         return literal(
             '<div class="markdown-block">%s</div>' %
-            MarkupRenderer.markdown(source, flavored=True, mentions=mentions))
+            maybe_convert_relative_links(
+                MarkupRenderer.markdown(source, flavored=True,
+                                        mentions=mentions)))
     elif renderer == 'jupyter':
         return literal(
             '<div class="ipynb">%s</div>' %
-            MarkupRenderer.jupyter(source))
+            maybe_convert_relative_links(
+                MarkupRenderer.jupyter(source)))
 
     # None means just show the file-source
     return None

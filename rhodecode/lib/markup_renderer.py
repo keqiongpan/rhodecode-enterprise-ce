@@ -25,8 +25,10 @@ Renderer for markup languages with ability to parse using rst or markdown
 
 import re
 import os
+import lxml
 import logging
-import itertools
+import urlparse
+import urllib
 
 from mako.lookup import TemplateLookup
 from mako.template import Template as MakoTemplate
@@ -35,14 +37,92 @@ from docutils.core import publish_parts
 from docutils.parsers.rst import directives
 import markdown
 
-from rhodecode.lib.markdown_ext import (
-    UrlizeExtension, GithubFlavoredMarkdownExtension)
-from rhodecode.lib.utils2 import safe_unicode, md5_safe, MENTIONS_REGEX
+from rhodecode.lib.markdown_ext import GithubFlavoredMarkdownExtension
+from rhodecode.lib.utils2 import (
+    safe_str, safe_unicode, md5_safe, MENTIONS_REGEX)
 
 log = logging.getLogger(__name__)
 
 # default renderer used to generate automated comments
 DEFAULT_COMMENTS_RENDERER = 'rst'
+
+
+def relative_links(html_source, server_path):
+    doc = lxml.html.fromstring(html_source)
+    for el in doc.cssselect('img, video'):
+        src = el.attrib['src']
+        if src:
+            el.attrib['src'] = relative_path(src, server_path)
+
+    for el in doc.cssselect('a:not(.gfm)'):
+        src = el.attrib['href']
+        if src:
+            el.attrib['href'] = relative_path(src, server_path)
+
+    return lxml.html.tostring(doc)
+
+
+def relative_path(path, request_path, is_repo_file=None):
+    """
+    relative link support, path is a rel path, and request_path is current
+    server path (not absolute)
+
+    e.g.
+
+    path = '../logo.png'
+    request_path= '/repo/files/path/file.md'
+    produces: '/repo/files/logo.png'
+    """
+    # TODO(marcink): unicode/str support ?
+    # maybe=> safe_unicode(urllib.quote(safe_str(final_path), '/:'))
+
+    def dummy_check(p):
+        return True  # assume default is a valid file path
+
+    is_repo_file = is_repo_file or dummy_check
+    if not path:
+        return request_path
+
+    path = safe_unicode(path)
+    request_path = safe_unicode(request_path)
+
+    if path.startswith((u'data:', u'#', u':')):
+        # skip data, anchor, invalid links
+        return path
+
+    is_absolute = bool(urlparse.urlparse(path).netloc)
+    if is_absolute:
+        return path
+
+    if not request_path:
+        return path
+
+    if path.startswith(u'/'):
+        path = path[1:]
+
+    if path.startswith(u'./'):
+        path = path[2:]
+
+    parts = request_path.split('/')
+    # compute how deep we need to traverse the request_path
+    depth = 0
+
+    if is_repo_file(request_path):
+        # if request path is a VALID file, we use a relative path with
+        # one level up
+        depth += 1
+
+    while path.startswith(u'../'):
+        depth += 1
+        path = path[3:]
+
+    if depth > 0:
+        parts = parts[:-depth]
+
+    parts.append(path)
+    final_path = u'/'.join(parts).lstrip(u'/')
+
+    return u'/' + final_path
 
 
 class MarkupRenderer(object):
