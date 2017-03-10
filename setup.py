@@ -100,6 +100,7 @@ install_requirements = [
     'appenlight-client',
     'authomatic',
     'backport_ipaddress',
+    'cssselect',
     'celery',
     'channelstream',
     'colander',
