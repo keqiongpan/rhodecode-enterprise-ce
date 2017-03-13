@@ -1124,11 +1124,6 @@ def make_map(config):
                  conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('repo_followers_home', '/{repo_name}/followers',
-                 controller='followers', action='followers',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     # must be here for proper group/repo catching pattern
     _connect_with_slash(
         rmap, 'repo_group_home', '/{group_name}',
