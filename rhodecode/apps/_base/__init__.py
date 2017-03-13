@@ -40,7 +40,7 @@ class BaseAppView(object):
         self.request = request
         self.context = context
         self.session = request.session
-        self._rhodecode_user = request.user
+        self._rhodecode_user = request.user  # auth user
 
     def _get_local_tmpl_context(self):
         c = TemplateArgs()
@@ -63,4 +63,16 @@ class BaseAppView(object):
             'defaults': {},
             'errors': {},
         }
+
+    def load_default_context(self):
+        """
+        example:
+
+        def load_default_context(self):
+            c = self._get_local_tmpl_context()
+            c.custom_var = 'foobar'
+            self._register_global_c(c)
+            return c
+        """
+        raise NotImplementedError('Needs implementation in view class')
 
