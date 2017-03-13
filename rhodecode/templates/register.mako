@@ -1,4 +1,4 @@
-=## -*- coding: utf-8 -*-
+## -*- coding: utf-8 -*-
 <%inherit file="base/root.mako"/>
 
 <%def name="title()">
