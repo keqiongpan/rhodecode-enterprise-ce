@@ -45,7 +45,6 @@ class AdminUsersView(BaseAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-        c.auth_user = self.request.user
         c.allow_scoped_tokens = self.ALLOW_SCOPED_TOKENS
         self._register_global_c(c)
         return c

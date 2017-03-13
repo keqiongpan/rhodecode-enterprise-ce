@@ -43,7 +43,9 @@ class BaseAppView(object):
         self._rhodecode_user = request.user
 
     def _get_local_tmpl_context(self):
-        return TemplateArgs()
+        c = TemplateArgs()
+        c.auth_user = self.request.user
+        return c
 
     def _register_global_c(self, tmpl_args):
         """
