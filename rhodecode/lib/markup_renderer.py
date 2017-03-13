@@ -28,7 +28,6 @@ import os
 import lxml
 import logging
 import urlparse
-import urllib
 
 from mako.lookup import TemplateLookup
 from mako.template import Template as MakoTemplate
@@ -48,7 +47,14 @@ DEFAULT_COMMENTS_RENDERER = 'rst'
 
 
 def relative_links(html_source, server_path):
-    doc = lxml.html.fromstring(html_source)
+    if not html_source:
+        return html_source
+
+    try:
+        doc = lxml.html.fromstring(html_source)
+    except Exception:
+        return html_source
+
     for el in doc.cssselect('img, video'):
         src = el.attrib['src']
         if src:
@@ -86,7 +92,7 @@ def relative_path(path, request_path, is_repo_file=None):
     path = safe_unicode(path)
     request_path = safe_unicode(request_path)
 
-    if path.startswith((u'data:', u'#', u':')):
+    if path.startswith((u'data:', u'javascript:', u'#', u':')):
         # skip data, anchor, invalid links
         return path
 
