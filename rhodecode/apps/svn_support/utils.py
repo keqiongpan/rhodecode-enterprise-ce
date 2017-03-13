@@ -81,7 +81,7 @@ def _render_mod_dav_svn_config(
     }
 
     # Render the configuration template to string.
-    template = 'rhodecode:svn_support/templates/mod-dav-svn.conf.mako'
+    template = 'rhodecode:apps/svn_support/templates/mod-dav-svn.conf.mako'
     return render(template, context)
 
 

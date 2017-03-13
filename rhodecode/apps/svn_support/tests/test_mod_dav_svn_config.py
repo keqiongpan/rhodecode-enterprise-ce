@@ -25,7 +25,7 @@ import re
 
 from pyramid import testing
 
-from rhodecode.svn_support import utils
+from rhodecode.apps.svn_support import utils
 
 
 class TestModDavSvnConfig(object):

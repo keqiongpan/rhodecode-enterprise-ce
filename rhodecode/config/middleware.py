@@ -287,10 +287,10 @@ def includeme(config):
     config.include('rhodecode.apps.login')
     config.include('rhodecode.apps.user_profile')
     config.include('rhodecode.apps.my_account')
+    config.include('rhodecode.apps.svn_support')
 
     config.include('rhodecode.tweens')
     config.include('rhodecode.api')
-    config.include('rhodecode.svn_support')
 
     config.add_route(
         'rhodecode_support', 'https://rhodecode.com/help/', static=True)

@@ -37,6 +37,7 @@ from webob.exc import HTTPBadRequest
 
 import rhodecode
 from rhodecode.apps.admin.navigation import navigation_list
+from rhodecode.apps.svn_support.config_keys import generate_config
 from rhodecode.lib import auth
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
@@ -62,7 +63,6 @@ from rhodecode.model.settings import (
     SettingsModel)
 
 from rhodecode.model.supervisor import SupervisorModel, SUPERVISOR_MASTER
-from rhodecode.svn_support.config_keys import generate_config
 
 
 log = logging.getLogger(__name__)
