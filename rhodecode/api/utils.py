@@ -213,15 +213,19 @@ def get_user_or_error(userid):
     :param userid:
     """
     from rhodecode.model.user import UserModel
-
     user_model = UserModel()
-    try:
-        user = user_model.get_user(int(userid))
-    except ValueError:
+
+    if isinstance(userid, (int, long)):
+        try:
+            user = user_model.get_user(userid)
+        except ValueError:
+            user = None
+    else:
         user = user_model.get_by_username(userid)
 
     if user is None:
-        raise JSONRPCError("user `%s` does not exist" % (userid,))
+        raise JSONRPCError(
+            'user `%s` does not exist' % (userid,))
     return user
 
 
@@ -232,10 +236,19 @@ def get_repo_or_error(repoid):
     :param repoid:
     """
     from rhodecode.model.repo import RepoModel
+    repo_model = RepoModel()
 
-    repo = RepoModel().get_repo(repoid)
+    if isinstance(repoid, (int, long)):
+        try:
+            repo = repo_model.get_repo(repoid)
+        except ValueError:
+            repo = None
+    else:
+        repo = repo_model.get_by_repo_name(repoid)
+
     if repo is None:
-        raise JSONRPCError('repository `%s` does not exist' % (repoid,))
+        raise JSONRPCError(
+            'repository `%s` does not exist' % (repoid,))
     return repo
 
 
@@ -246,8 +259,16 @@ def get_repo_group_or_error(repogroupid):
     :param repogroupid:
     """
     from rhodecode.model.repo_group import RepoGroupModel
+    repo_group_model = RepoGroupModel()
 
-    repo_group = RepoGroupModel()._get_repo_group(repogroupid)
+    if isinstance(repogroupid, (int, long)):
+        try:
+            repo_group = repo_group_model._get_repo_group(repogroupid)
+        except ValueError:
+            repo_group = None
+    else:
+        repo_group = repo_group_model.get_by_group_name(repogroupid)
+
     if repo_group is None:
         raise JSONRPCError(
             'repository group `%s` does not exist' % (repogroupid,))
@@ -261,10 +282,19 @@ def get_user_group_or_error(usergroupid):
     :param usergroupid:
     """
     from rhodecode.model.user_group import UserGroupModel
+    user_group_model = UserGroupModel()
 
-    user_group = UserGroupModel().get_group(usergroupid)
+    if isinstance(usergroupid, (int, long)):
+        try:
+            user_group = user_group_model.get_group(usergroupid)
+        except ValueError:
+            user_group = None
+    else:
+        user_group = user_group_model.get_by_name(usergroupid)
+
     if user_group is None:
-        raise JSONRPCError('user group `%s` does not exist' % (usergroupid,))
+        raise JSONRPCError(
+            'user group `%s` does not exist' % (usergroupid,))
     return user_group
 
 
