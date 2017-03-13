@@ -56,13 +56,14 @@ class BaseAppView(object):
             setattr(c, k, v)
 
     def _get_template_context(self, tmpl_args):
-
         self._register_global_c(tmpl_args)
 
-        return {
+        local_tmpl_args = {
             'defaults': {},
             'errors': {},
         }
+        local_tmpl_args.update(tmpl_args)
+        return local_tmpl_args
 
     def load_default_context(self):
         """

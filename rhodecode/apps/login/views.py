@@ -30,6 +30,7 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 from recaptcha.client.captcha import submit
 
+from rhodecode.apps._base import BaseAppView
 from rhodecode.authentication.base import authenticate, HTTP_TYPE
 from rhodecode.events import UserRegistered
 from rhodecode.lib import helpers as h
@@ -105,20 +106,13 @@ def get_came_from(request):
     return came_from or url('home')
 
 
-class LoginView(object):
+class LoginView(BaseAppView):
 
-    def __init__(self, context, request):
-        self.request = request
-        self.context = context
-        self.session = request.session
-        self._rhodecode_user = request.user
-
-    def _get_template_context(self):
-        return {
-            'came_from': get_came_from(self.request),
-            'defaults': {},
-            'errors': {},
-        }
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+        c.came_from = get_came_from(self.request)
+        self._register_global_c(c)
+        return c
 
     def _get_captcha_data(self):
         settings = SettingsModel().get_all_settings()
@@ -132,12 +126,13 @@ class LoginView(object):
         route_name='login', request_method='GET',
         renderer='rhodecode:templates/login.mako')
     def login(self):
-        came_from = get_came_from(self.request)
-        user = self.request.user
+        c = self.load_default_context()
+        auth_user = self._rhodecode_user
 
         # redirect if already logged in
-        if user.is_authenticated and not user.is_default and user.ip_allowed:
-            raise HTTPFound(came_from)
+        if (auth_user.is_authenticated and
+                not auth_user.is_default and auth_user.ip_allowed):
+            raise HTTPFound(c.came_from)
 
         # check if we use headers plugin, and try to login using it.
         try:
@@ -147,18 +142,18 @@ class LoginView(object):
             if auth_info:
                 headers = _store_user_in_session(
                     self.session, auth_info.get('username'))
-                raise HTTPFound(came_from, headers=headers)
+                raise HTTPFound(c.came_from, headers=headers)
         except UserCreationError as e:
             log.error(e)
             self.session.flash(e, queue='error')
 
-        return self._get_template_context()
+        return self._get_template_context(c)
 
     @view_config(
         route_name='login', request_method='POST',
         renderer='rhodecode:templates/login.mako')
     def login_post(self):
-        came_from = get_came_from(self.request)
+        c = self.load_default_context()
 
         login_form = LoginForm()()
 
@@ -170,13 +165,13 @@ class LoginView(object):
                 self.session,
                 username=form_result['username'],
                 remember=form_result['remember'])
-            log.debug('Redirecting to "%s" after login.', came_from)
-            raise HTTPFound(came_from, headers=headers)
+            log.debug('Redirecting to "%s" after login.', c.came_from)
+            raise HTTPFound(c.came_from, headers=headers)
         except formencode.Invalid as errors:
             defaults = errors.value
             # remove password from filling in form again
             defaults.pop('password', None)
-            render_ctx = self._get_template_context()
+            render_ctx = self._get_template_context(c)
             render_ctx.update({
                 'errors': errors.error_dict,
                 'defaults': defaults,
@@ -189,13 +184,13 @@ class LoginView(object):
             # with user creation, explanation should be provided in
             # Exception itself
             self.session.flash(e, queue='error')
-            return self._get_template_context()
+            return self._get_template_context(c)
 
     @CSRFRequired()
     @view_config(route_name='logout', request_method='POST')
     def logout(self):
-        user = self.request.user
-        log.info('Deleting session for user: `%s`', user)
+        auth_user = self._rhodecode_user
+        log.info('Deleting session for user: `%s`', auth_user)
         self.session.delete()
         return HTTPFound(url('home'))
 
@@ -205,6 +200,7 @@ class LoginView(object):
         route_name='register', request_method='GET',
         renderer='rhodecode:templates/register.mako',)
     def register(self, defaults=None, errors=None):
+        c = self.load_default_context()
         defaults = defaults or {}
         errors = errors or {}
 
@@ -214,7 +210,7 @@ class LoginView(object):
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
             .AuthUser.permissions['global']
 
-        render_ctx = self._get_template_context()
+        render_ctx = self._get_template_context(c)
         render_ctx.update({
             'defaults': defaults,
             'errors': errors,
