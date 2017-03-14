@@ -24,11 +24,14 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
+from rhodecode import forms
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
-from rhodecode.lib.utils2 import safe_int
 from rhodecode.lib import helpers as h
+from rhodecode.lib.utils2 import safe_int, md5
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.meta import Session
+from rhodecode.model.user import UserModel
+from rhodecode.model.validation_schema.schemas import user_schema
 
 log = logging.getLogger(__name__)
 
@@ -42,11 +45,73 @@ class MyAccountView(BaseAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
         c.user = c.auth_user.get_instance()
         c.allow_scoped_tokens = self.ALLOW_SCOPED_TOKENS
         self._register_global_c(c)
         return c
+
+    @LoginRequired()
+    @NotAnonymous()
+    @view_config(
+        route_name='my_account_password', request_method='GET',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_password(self):
+        c = self.load_default_context()
+        c.active = 'password'
+        c.extern_type = c.user.extern_type
+
+        schema = user_schema.ChangePasswordSchema().bind(
+            username=c.user.username)
+
+        form = forms.Form(
+            schema, buttons=(forms.buttons.save, forms.buttons.reset))
+
+        c.form = form
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    @view_config(
+        route_name='my_account_password', request_method='POST',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_password_update(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.active = 'password'
+        c.extern_type = c.user.extern_type
+
+        schema = user_schema.ChangePasswordSchema().bind(
+            username=c.user.username)
+
+        form = forms.Form(
+            schema, buttons=(forms.buttons.save, forms.buttons.reset))
+
+        if c.extern_type != 'rhodecode':
+            raise HTTPFound(self.request.route_path('my_account_password'))
+
+        controls = self.request.POST.items()
+        try:
+            valid_data = form.validate(controls)
+            UserModel().update_user(c.user.user_id, **valid_data)
+            c.user.update_userdata(force_password_change=False)
+            Session().commit()
+        except forms.ValidationFailure as e:
+            c.form = e
+            return self._get_template_context(c)
+
+        except Exception:
+            log.exception("Exception updating password")
+            h.flash(_('Error occurred during update of user password'),
+                    category='error')
+        else:
+            instance = c.auth_user.get_instance()
+            self.session.setdefault('rhodecode_user', {}).update(
+                {'password': md5(instance.password)})
+            self.session.save()
+            h.flash(_("Successfully updated password"), category='success')
+
+        raise HTTPFound(self.request.route_path('my_account_password'))
 
     @LoginRequired()
     @NotAnonymous()

@@ -23,6 +23,15 @@ from rhodecode.apps._base import ADMIN_PREFIX
 
 
 def includeme(config):
+
+    config.add_route(
+        name='my_account_password',
+        pattern=ADMIN_PREFIX + '/my_account/password')
+
+    config.add_route(
+        name='my_account_password_update',
+        pattern=ADMIN_PREFIX + '/my_account/password')
+
     config.add_route(
         name='my_account_auth_tokens',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens')

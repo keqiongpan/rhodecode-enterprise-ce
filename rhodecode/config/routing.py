@@ -512,8 +512,10 @@ def make_map(config):
         m.connect('my_account', '/my_account',
                   action='my_account_update', conditions={'method': ['POST']})
 
+        # NOTE(marcink): this needs to be kept for password force flag to be
+        # handler, remove after migration to pyramid
         m.connect('my_account_password', '/my_account/password',
-                  action='my_account_password', conditions={'method': ['GET', 'POST']})
+                  action='my_account_password', conditions={'method': ['GET']})
 
         m.connect('my_account_repos', '/my_account/repos',
                   action='my_account_repos', conditions={'method': ['GET']})

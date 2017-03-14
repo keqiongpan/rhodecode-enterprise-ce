@@ -20,6 +20,7 @@
 
 import logging
 from pylons import tmpl_context as c
+from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.lib.utils2 import StrictAttributeDict
 
@@ -41,6 +42,7 @@ class BaseAppView(object):
         self.context = context
         self.session = request.session
         self._rhodecode_user = request.user  # auth user
+        self._rhodecode_db_user = self._rhodecode_user.get_instance()
 
     def _get_local_tmpl_context(self):
         c = TemplateArgs()

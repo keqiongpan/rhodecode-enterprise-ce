@@ -34,19 +34,17 @@ from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 from sqlalchemy.orm import joinedload
 
-from rhodecode import forms
 from rhodecode.lib import helpers as h
 from rhodecode.lib import auth
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, AuthUser)
 from rhodecode.lib.base import BaseController, render
 from rhodecode.lib.utils import jsonify
-from rhodecode.lib.utils2 import safe_int, md5, str2bool
+from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.channelstream import channelstream_request, \
     ChannelstreamException
 
-from rhodecode.model.validation_schema.schemas import user_schema
 from rhodecode.model.db import (
     Repository, PullRequest, UserEmailMap, User, UserFollowing)
 from rhodecode.model.forms import UserForm
@@ -193,47 +191,6 @@ class MyAccountController(BaseController):
             encoding="UTF-8",
             force_defaults=False
         )
-
-    @auth.CSRFRequired(except_methods=['GET'])
-    def my_account_password(self):
-        c.active = 'password'
-        self.__load_data()
-        c.extern_type = c.user.extern_type
-
-        schema = user_schema.ChangePasswordSchema().bind(
-            username=c.rhodecode_user.username)
-
-        form = forms.Form(schema,
-            buttons=(forms.buttons.save, forms.buttons.reset))
-
-        if request.method == 'POST' and c.extern_type == 'rhodecode':
-            controls = request.POST.items()
-            try:
-                valid_data = form.validate(controls)
-                UserModel().update_user(c.rhodecode_user.user_id, **valid_data)
-                instance = c.rhodecode_user.get_instance()
-                instance.update_userdata(force_password_change=False)
-                Session().commit()
-            except forms.ValidationFailure as e:
-                request.session.flash(
-                    _('Error occurred during update of user password'),
-                    queue='error')
-                form = e
-            except Exception:
-                log.exception("Exception updating password")
-                request.session.flash(
-                    _('Error occurred during update of user password'),
-                    queue='error')
-            else:
-                session.setdefault('rhodecode_user', {}).update(
-                    {'password': md5(instance.password)})
-                session.save()
-                request.session.flash(
-                    _("Successfully updated password"), queue='success')
-                return redirect(url('my_account_password'))
-
-        c.form = form
-        return render('admin/my_account/my_account.mako')
 
     def my_account_repos(self):
         c.active = 'repos'
