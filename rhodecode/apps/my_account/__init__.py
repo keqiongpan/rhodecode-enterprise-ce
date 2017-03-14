@@ -25,6 +25,10 @@ from rhodecode.apps._base import ADMIN_PREFIX
 def includeme(config):
 
     config.add_route(
+        name='my_account_profile',
+        pattern=ADMIN_PREFIX + '/my_account/profile')
+
+    config.add_route(
         name='my_account_password',
         pattern=ADMIN_PREFIX + '/my_account/password')
 

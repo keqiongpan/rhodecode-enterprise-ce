@@ -505,11 +505,9 @@ def make_map(config):
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/my_account') as m:
 
-        m.connect('my_account', '/my_account',
-                  action='my_account', conditions={'method': ['GET']})
         m.connect('my_account_edit', '/my_account/edit',
                   action='my_account_edit', conditions={'method': ['GET']})
-        m.connect('my_account', '/my_account',
+        m.connect('my_account', '/my_account/update',
                   action='my_account_update', conditions={'method': ['POST']})
 
         # NOTE(marcink): this needs to be kept for password force flag to be

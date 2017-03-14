@@ -40,15 +40,8 @@ class TestMyAccountController(TestController):
     def teardown_class(cls):
         fixture.destroy_users(cls.destroy_users)
 
-    def test_my_account(self):
-        self.log_user()
-        response = self.app.get(url('my_account'))
-
-        response.mustcontain('test_admin')
-        response.mustcontain('href="/_admin/my_account/edit"')
-
     def test_logout_form_contains_csrf(self, autologin_user, csrf_token):
-        response = self.app.get(url('my_account'))
+        response = self.app.get(url('home'))
         assert_response = AssertResponse(response)
         element = assert_response.get_element('.logout #csrf_token')
         assert element.value == csrf_token

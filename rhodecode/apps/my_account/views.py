@@ -53,6 +53,16 @@ class MyAccountView(BaseAppView):
     @LoginRequired()
     @NotAnonymous()
     @view_config(
+        route_name='my_account_profile', request_method='GET',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_profile(self):
+        c = self.load_default_context()
+        c.active = 'profile'
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @view_config(
         route_name='my_account_password', request_method='GET',
         renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_password(self):

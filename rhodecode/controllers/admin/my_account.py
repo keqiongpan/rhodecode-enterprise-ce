@@ -29,7 +29,9 @@ import datetime
 import formencode
 from formencode import htmlfill
 from pyramid.threadlocal import get_current_registry
-from pylons import request, tmpl_context as c, url, session
+from pyramid.httpexceptions import HTTPFound
+
+from pylons import request, tmpl_context as c, url
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 from sqlalchemy.orm import joinedload
@@ -152,7 +154,7 @@ class MyAccountController(BaseController):
                     % form_result.get('username'), category='error')
 
         if update:
-            return redirect('my_account')
+            raise HTTPFound(h.route_path('my_account_profile'))
 
         return htmlfill.render(
             render('admin/my_account/my_account.mako'),
@@ -160,19 +162,6 @@ class MyAccountController(BaseController):
             encoding="UTF-8",
             force_defaults=False
         )
-
-    def my_account(self):
-        """
-        GET /_admin/my_account Displays info about my account
-        """
-        # url('my_account')
-        c.active = 'profile'
-        self.__load_data()
-
-        defaults = c.user.get_dict()
-        return htmlfill.render(
-            render('admin/my_account/my_account.mako'),
-            defaults=defaults, encoding="UTF-8", force_defaults=False)
 
     def my_account_edit(self):
         """

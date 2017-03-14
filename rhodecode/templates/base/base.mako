@@ -340,7 +340,7 @@
             </div>
             <div class="">
             <ol class="links">
-              <li>${h.link_to(_(u'My account'),h.url('my_account'))}</li>
+              <li>${h.link_to(_(u'My account'),h.route_path('my_account_profile'))}</li>
               % if c.rhodecode_user.personal_repo_group:
                 <li>${h.link_to(_(u'My personal group'), h.url('repo_group_home', group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
               % endif
