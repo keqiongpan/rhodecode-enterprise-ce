@@ -17,7 +17,8 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
+import io
+import re
 import datetime
 import logging
 import pylons
@@ -27,9 +28,13 @@ import os
 
 from pyramid.i18n import get_localizer
 from pyramid.threadlocal import get_current_request
+from pyramid.interfaces import IRoutesMapper
+from pyramid.settings import asbool
+from pyramid.path import AssetResolver
 from threading import Thread
 
 from rhodecode.translation import _ as tsf
+from rhodecode.config.jsroutes import generate_jsroutes_content
 
 import rhodecode
 
@@ -171,6 +176,57 @@ def write_metadata_if_needed(event):
         write()
     except Exception:
         pass
+
+
+def write_js_routes_if_enabled(event):
+    registry = event.app.registry
+
+    mapper = registry.queryUtility(IRoutesMapper)
+    _argument_prog = re.compile('\{(.*?)\}|:\((.*)\)')
+
+    def _extract_route_information(route):
+        """
+        Convert a route into tuple(name, path, args), eg:
+            ('show_user', '/profile/%(username)s', ['username'])
+        """
+
+        routepath = route.pattern
+        pattern = route.pattern
+
+        def replace(matchobj):
+            if matchobj.group(1):
+                return "%%(%s)s" % matchobj.group(1).split(':')[0]
+            else:
+                return "%%(%s)s" % matchobj.group(2)
+
+        routepath = _argument_prog.sub(replace, routepath)
+
+        return (
+            route.name,
+            routepath,
+            [(arg[0].split(':')[0] if arg[0] != '' else arg[1])
+              for arg in _argument_prog.findall(pattern)]
+        )
+
+    def get_routes():
+        # pylons routes
+        for route in rhodecode.CONFIG['routes.map'].jsroutes():
+            yield route
+
+        # pyramid routes
+        for route in mapper.get_routes():
+            if not route.name.startswith('__'):
+                yield _extract_route_information(route)
+
+    if asbool(registry.settings.get('generate_js_files', 'false')):
+        static_path = AssetResolver().resolve('rhodecode:public').abspath()
+        jsroutes = get_routes()
+        jsroutes_file_content = generate_jsroutes_content(jsroutes)
+        jsroutes_file_path = os.path.join(
+            static_path, 'js', 'rhodecode', 'routes.js')
+
+        with io.open(jsroutes_file_path, 'w', encoding='utf-8') as f:
+            f.write(jsroutes_file_content)
 
 
 class Subscriber(object):

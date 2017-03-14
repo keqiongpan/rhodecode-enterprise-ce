@@ -87,15 +87,6 @@ def load_environment(global_conf, app_conf, initial=False,
 
     config['routes.map'] = make_map(config)
 
-    if asbool(config.get('generate_js_files', 'false')):
-        jsroutes = config['routes.map'].jsroutes()
-        jsroutes_file_content = generate_jsroutes_content(jsroutes)
-        jsroutes_file_path = os.path.join(
-            paths['static_files'], 'js', 'rhodecode', 'routes.js')
-
-        with io.open(jsroutes_file_path, 'w', encoding='utf-8') as f:
-            f.write(jsroutes_file_content)
-
     config['pylons.app_globals'] = app_globals.Globals(config)
     config['pylons.h'] = helpers
     rhodecode.CONFIG = config
