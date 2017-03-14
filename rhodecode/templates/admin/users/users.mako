@@ -18,6 +18,7 @@
 </%def>
 
 <%def name="main()">
+
 <div class="box">
 
     <div class="title">
@@ -50,7 +51,7 @@ $(document).ready(function() {
 
     // user list
     $('#user_list_table').DataTable({
-      processing: false,
+      processing: true,
       serverSide: true,
       ajax: "${h.route_path('users_data')}",
       dom: 'rtp',
@@ -79,6 +80,7 @@ $(document).ready(function() {
       ],
       language: {
           paginate: DEFAULT_GRID_PAGINATION,
+          sProcessing: _gettext('loading...'),
           emptyTable: _gettext("No users available yet.")
       },
 

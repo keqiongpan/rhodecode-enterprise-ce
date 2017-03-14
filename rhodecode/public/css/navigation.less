@@ -555,6 +555,11 @@ ul#context-pages {
     }
 }
 
+.dataTables_processing {
+    text-align: center;
+    font-size: 1.1em;
+}
+
 .dataTables_paginate, .pagination-wh {
     text-align: left;
     display: inline-block;
@@ -578,6 +583,15 @@ ul#context-pages {
     .disabled {
         color: @grey3;
         cursor: default;
+    }
+
+    .ellipsis {
+        display: inline-block;
+        text-align: left;
+        padding: @menupadding/4 @menupadding;
+        border: 1px solid @rcblue;
+        border-left: 0;
+        float: left;
     }
 }
 
