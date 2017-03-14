@@ -24,6 +24,7 @@ import pytest
 
 from rhodecode.apps.login.views import LoginView, CaptchaData
 from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.settings import SettingsModel
 from rhodecode.tests.utils import AssertResponse
 
@@ -40,7 +41,7 @@ class RhodeCodeSetting(object):
         model.create_or_update_setting(name=self.name, val=self.value)
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         model = SettingsModel()
         if self.old_setting:
             model.create_or_update_setting(
@@ -57,8 +58,12 @@ class TestRegisterCaptcha(object):
         ('privkey', '',       CaptchaData(True,  'privkey', '')),
         ('privkey', 'pubkey', CaptchaData(True,  'privkey', 'pubkey')),
     ])
-    def test_get_captcha_data(self, private_key, public_key, expected, db):
-        login_view = LoginView(mock.Mock(), mock.Mock())
+    def test_get_captcha_data(self, private_key, public_key, expected, db,
+                              request_stub, user_util):
+        request_stub.user = user_util.create_user().AuthUser
+        request_stub.matched_route = AttributeDict({'name': 'login'})
+        login_view = LoginView(mock.Mock(), request_stub)
+
         with RhodeCodeSetting('captcha_private_key', private_key):
             with RhodeCodeSetting('captcha_public_key', public_key):
                 captcha = login_view._get_captcha_data()

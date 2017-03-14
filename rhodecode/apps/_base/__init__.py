@@ -18,11 +18,14 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import time
 import logging
 from pylons import tmpl_context as c
 from pyramid.httpexceptions import HTTPFound
 
-from rhodecode.lib.utils2 import StrictAttributeDict
+from rhodecode.lib import helpers as h
+from rhodecode.lib.utils2 import StrictAttributeDict, safe_int
+from rhodecode.model.db import User
 
 log = logging.getLogger(__name__)
 
@@ -43,6 +46,34 @@ class BaseAppView(object):
         self.session = request.session
         self._rhodecode_user = request.user  # auth user
         self._rhodecode_db_user = self._rhodecode_user.get_instance()
+        self._maybe_needs_password_change(
+            request.matched_route.name, self._rhodecode_db_user)
+
+    def _maybe_needs_password_change(self, view_name, user_obj):
+        log.debug('Checking if user %s needs password change on view %s',
+                  user_obj, view_name)
+        skip_user_views = [
+            'logout', 'login',
+            'my_account_password', 'my_account_password_update'
+        ]
+
+        if not user_obj:
+            return
+
+        if user_obj.username == User.DEFAULT_USER:
+            return
+
+        now = time.time()
+        should_change = user_obj.user_data.get('force_password_change')
+        change_after = safe_int(should_change) or 0
+        if should_change and now > change_after:
+            log.debug('User %s requires password change', user_obj)
+            h.flash('You are required to change your password', 'warning',
+                    ignore_duplicate=True)
+
+            if view_name not in skip_user_views:
+                raise HTTPFound(
+                    self.request.route_path('my_account_password'))
 
     def _get_local_tmpl_context(self):
         c = TemplateArgs()

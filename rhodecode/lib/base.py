@@ -489,21 +489,12 @@ class BaseController(WSGIController):
             _route_name)
         )
 
-        # TODO: Maybe this should be move to pyramid to cover all views.
-        # check user attributes for password change flag
         user_obj = auth_user.get_instance()
         if user_obj and user_obj.user_data.get('force_password_change'):
             h.flash('You are required to change your password', 'warning',
                     ignore_duplicate=True)
-
-            skip_user_check_urls = [
-                'error.document', 'login.logout', 'login.index',
-                'admin/my_account.my_account_password',
-                'admin/my_account.my_account_password_update'
-            ]
-            if _route_name not in skip_user_check_urls:
-                return self._dispatch_redirect(
-                    url('my_account_password'), environ, start_response)
+            return self._dispatch_redirect(
+                url('my_account_password'), environ, start_response)
 
         return WSGIController.__call__(self, environ, start_response)
 
