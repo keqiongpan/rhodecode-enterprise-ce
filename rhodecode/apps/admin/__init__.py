@@ -24,6 +24,53 @@ from rhodecode.config.routing import ADMIN_PREFIX
 from rhodecode.lib.utils2 import str2bool
 
 
+def admin_routes(config):
+    """
+    Admin prefixed routes
+    """
+
+    config.add_route(
+        name='admin_settings_open_source',
+        pattern='/settings/open_source')
+    config.add_route(
+        name='admin_settings_vcs_svn_generate_cfg',
+        pattern='/settings/vcs/svn_generate_cfg')
+
+    config.add_route(
+        name='admin_settings_system',
+        pattern='/settings/system')
+    config.add_route(
+        name='admin_settings_system_update',
+        pattern='/settings/system/updates')
+
+    config.add_route(
+        name='admin_settings_sessions',
+        pattern='/settings/sessions')
+    config.add_route(
+        name='admin_settings_sessions_cleanup',
+        pattern='/settings/sessions/cleanup')
+
+    # users admin
+    config.add_route(
+        name='users',
+        pattern='/users')
+
+    config.add_route(
+        name='users_data',
+        pattern='/users_data')
+
+    # user auth tokens
+    config.add_route(
+        name='edit_user_auth_tokens',
+        pattern='/users/{user_id:\d+}/edit/auth_tokens')
+    config.add_route(
+        name='edit_user_auth_tokens_add',
+        pattern='/users/{user_id:\d+}/edit/auth_tokens/new')
+    config.add_route(
+        name='edit_user_auth_tokens_delete',
+        pattern='/users/{user_id:\d+}/edit/auth_tokens/delete')
+
+
 def includeme(config):
     settings = config.get_settings()
 
@@ -32,46 +79,7 @@ def includeme(config):
     navigation_registry = NavigationRegistry(labs_active=labs_active)
     config.registry.registerUtility(navigation_registry)
 
-    config.add_route(
-        name='admin_settings_open_source',
-        pattern=ADMIN_PREFIX + '/settings/open_source')
-    config.add_route(
-        name='admin_settings_vcs_svn_generate_cfg',
-        pattern=ADMIN_PREFIX + '/settings/vcs/svn_generate_cfg')
-
-    config.add_route(
-        name='admin_settings_system',
-        pattern=ADMIN_PREFIX + '/settings/system')
-    config.add_route(
-        name='admin_settings_system_update',
-        pattern=ADMIN_PREFIX + '/settings/system/updates')
-
-    config.add_route(
-        name='admin_settings_sessions',
-        pattern=ADMIN_PREFIX + '/settings/sessions')
-    config.add_route(
-        name='admin_settings_sessions_cleanup',
-        pattern=ADMIN_PREFIX + '/settings/sessions/cleanup')
-
-    # users admin
-    config.add_route(
-        name='users',
-        pattern=ADMIN_PREFIX + '/users')
-
-    config.add_route(
-        name='users_data',
-        pattern=ADMIN_PREFIX + '/users_data')
-
-    # user auth tokens
-    config.add_route(
-        name='edit_user_auth_tokens',
-        pattern=ADMIN_PREFIX + '/users/{user_id:\d+}/edit/auth_tokens')
-    config.add_route(
-        name='edit_user_auth_tokens_add',
-        pattern=ADMIN_PREFIX + '/users/{user_id:\d+}/edit/auth_tokens/new')
-    config.add_route(
-        name='edit_user_auth_tokens_delete',
-        pattern=ADMIN_PREFIX + '/users/{user_id:\d+}/edit/auth_tokens/delete')
+    config.include(admin_routes, route_prefix=ADMIN_PREFIX)
 
     # Scan module for configuration decorators.
     config.scan()
