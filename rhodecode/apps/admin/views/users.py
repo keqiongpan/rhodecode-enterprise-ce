@@ -137,8 +137,7 @@ class AdminUsersView(BaseAppView):
                 "first_name": h.escape(user.name),
                 "last_name": h.escape(user.lastname),
                 "last_login": h.format_date(user.last_login),
-                "last_activity": h.format_date(
-                    h.time_to_datetime(user.user_data.get('last_activity', 0))),
+                "last_activity": h.format_date(user.last_activity),
                 "active": h.bool2icon(user.active),
                 "active_raw": user.active,
                 "admin": h.bool2icon(user.admin),
