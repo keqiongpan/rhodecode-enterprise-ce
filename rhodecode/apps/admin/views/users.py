@@ -121,9 +121,9 @@ class AdminUsersView(BaseAppView):
 
         sort_col = getattr(User, order_by, None)
         if sort_col and order_dir == 'asc':
-            base_q = base_q.order_by(sort_col.asc())
+            base_q = base_q.order_by(sort_col.asc().nullslast())
         elif sort_col:
-            base_q = base_q.order_by(sort_col.desc())
+            base_q = base_q.order_by(sort_col.desc().nullslast())
 
         base_q = base_q.offset(start).limit(limit)
         users_list = base_q.all()
