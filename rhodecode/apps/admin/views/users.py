@@ -68,7 +68,6 @@ class AdminUsersView(BaseAppView):
         order_by = {
             'first_name': 'name',
             'last_name': 'lastname',
-            'last_activity': ''
         }.get(order_by) or order_by
 
         search_q = request.GET.get('search[value]')

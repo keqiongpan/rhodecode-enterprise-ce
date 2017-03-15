@@ -68,7 +68,7 @@ $(document).ready(function() {
                   "sort": "last_name"}, title: "${_('Last Name')}", className: "td-user" },
          { data: {"_": "last_activity",
                   "sort": "last_activity",
-                  "type": Number}, title: "${_('Last activity')}", className: "td-time", orderable: false },
+                  "type": Number}, title: "${_('Last activity')}", className: "td-time" },
          { data: {"_": "active",
                   "sort": "active"}, title: "${_('Active')}", className: "td-active" },
          { data: {"_": "admin",
