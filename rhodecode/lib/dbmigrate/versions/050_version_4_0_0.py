@@ -28,7 +28,7 @@ def downgrade(migrate_engine):
 def fixups(models, Session):
     for repo in models.Repository.get_all():
         if repo.clone_uri:
-            print 'Encrypting clone uri in repo %s' % repo
+            log.info('Encrypting clone uri in repo %s', repo)
             flag_modified(repo, 'clone_uri')
             Session().add(repo)
 

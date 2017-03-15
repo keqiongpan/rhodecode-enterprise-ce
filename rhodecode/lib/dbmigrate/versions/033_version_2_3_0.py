@@ -39,7 +39,7 @@ def fixups(models, _SESSION):
     notify('Fixing auth tokens roles')
     _role = models.UserApiKeys.ROLE_ALL
     for token in models.UserApiKeys.get_all():
-        print 'setting key %s role to "%s"' % (token, _role)
+        log.info('setting key %s role to "%s"', token, _role)
         token.role = _role
         _SESSION().add(token)
         _SESSION().commit()

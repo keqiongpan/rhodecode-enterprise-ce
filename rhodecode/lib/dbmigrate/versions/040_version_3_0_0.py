@@ -43,5 +43,5 @@ def fixups(models, _SESSION):
 
     res = PermissionModel(_SESSION()).create_default_user_permissions(
         models.User.DEFAULT_USER)
-    print res
+    log.info('created default permission %s', res)
     _SESSION().commit()

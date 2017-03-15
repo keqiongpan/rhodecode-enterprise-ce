@@ -39,7 +39,7 @@ def fixups(models, _SESSION):
     notify('Creating repository states')
     _state = models.Repository.STATE_CREATED
     for repo in models.Repository.get_all():
-        print 'setting repo %s state to "%s"' % (repo, _state)
+        log.info('setting repo %s state to "%s"', repo, _state)
         repo.repo_state = _state
         _SESSION().add(repo)
         _SESSION().commit()
