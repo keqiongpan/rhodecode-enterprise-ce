@@ -57,6 +57,10 @@ session = requests.Session()
 # Requests speedup, avoid reading .netrc and similar
 session.trust_env = False
 
+# prevent urllib3 spawning our logs.
+logging.getLogger("requests.packages.urllib3.connectionpool").setLevel(
+    logging.WARNING)
+
 
 class VcsHttpProxy(object):
     """
