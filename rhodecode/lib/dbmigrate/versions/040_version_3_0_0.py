@@ -1,20 +1,11 @@
 import logging
-import datetime
 
 from sqlalchemy import *
-from sqlalchemy.exc import DatabaseError
-from sqlalchemy.orm import relation, backref, class_mapper, joinedload
-from sqlalchemy.orm.session import Session
-from sqlalchemy.ext.declarative import declarative_base
 
-from rhodecode.lib.dbmigrate.migrate import *
-from rhodecode.lib.dbmigrate.migrate.changeset import *
-from rhodecode.lib.utils2 import str2bool
-
-from rhodecode.model.meta import Base
 from rhodecode.model import meta
 from rhodecode.lib.dbmigrate.versions import _reset_base, notify
-
+from rhodecode.lib.dbmigrate.utils import (
+    create_default_object_permission, create_default_permissions)
 log = logging.getLogger(__name__)
 
 
@@ -36,12 +27,13 @@ def downgrade(migrate_engine):
 
 
 def fixups(models, _SESSION):
-    # ** create default permissions ** #
-    from rhodecode.model.permission import PermissionModel
-    PermissionModel(_SESSION()).create_permissions()
+    # create default permissions
+    create_default_permissions(_SESSION, models)
+    log.info('created default global permissions definitions')
     _SESSION().commit()
 
-    res = PermissionModel(_SESSION()).create_default_user_permissions(
-        models.User.DEFAULT_USER)
-    log.info('created default permission %s', res)
+    # fix default object permissions
+    create_default_object_permission(_SESSION, models)
+
+    log.info('created default permission')
     _SESSION().commit()
