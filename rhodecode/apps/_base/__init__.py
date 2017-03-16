@@ -25,7 +25,9 @@ from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib.utils2 import StrictAttributeDict, safe_int
+from rhodecode.model import repo
 from rhodecode.model.db import User
+from rhodecode.model.scm import ScmModel
 
 log = logging.getLogger(__name__)
 
@@ -110,3 +112,52 @@ class BaseAppView(object):
         """
         raise NotImplementedError('Needs implementation in view class')
 
+
+class RepoAppView(BaseAppView):
+
+    def __init__(self, context, request):
+        super(RepoAppView, self).__init__(context, request)
+        self.db_repo = request.db_repo
+        self.db_repo_name = self.db_repo.repo_name
+        self.db_repo_pull_requests = ScmModel().get_pull_requests(self.db_repo)
+
+    def _get_local_tmpl_context(self):
+        c = super(RepoAppView, self)._get_local_tmpl_context()
+        # register common vars for this type of view
+        c.rhodecode_db_repo = self.db_repo
+        c.repo_name = self.db_repo_name
+        c.repository_pull_requests = self.db_repo_pull_requests
+        return c
+
+
+class RepoRoutePredicate(object):
+    def __init__(self, val, config):
+        self.val = val
+
+    def text(self):
+        return 'repo_route = %s' % self.val
+
+    phash = text
+
+    def __call__(self, info, request):
+        repo_name = info['match']['repo_name']
+        repo_model = repo.RepoModel()
+        by_name_match = repo_model.get_by_repo_name(repo_name, cache=True)
+        # if we match quickly from database, short circuit the operation,
+        # and validate repo based on the type.
+        if by_name_match:
+            # register this as request object we can re-use later
+            request.db_repo = by_name_match
+            return True
+
+        by_id_match = repo_model.get_repo_by_id(repo_name)
+        if by_id_match:
+            request.db_repo = by_id_match
+            return True
+
+        return False
+
+
+def includeme(config):
+    config.add_route_predicate(
+        'repo_route', RepoRoutePredicate)
