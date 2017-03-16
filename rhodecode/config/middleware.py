@@ -288,6 +288,7 @@ def includeme(config):
     config.include('rhodecode.apps.admin')
     config.include('rhodecode.apps.channelstream')
     config.include('rhodecode.apps.login')
+    config.include('rhodecode.apps.repository')
     config.include('rhodecode.apps.user_profile')
     config.include('rhodecode.apps.my_account')
     config.include('rhodecode.apps.svn_support')
