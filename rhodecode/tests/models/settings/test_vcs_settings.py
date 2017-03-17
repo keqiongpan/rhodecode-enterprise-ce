@@ -566,6 +566,7 @@ class TestUpdateGlobalPathSetting(object):
 class TestCreateOrUpdateGlobalHgSettings(object):
     FORM_DATA = {
         'extensions_largefiles': False,
+        'largefiles_usercache': '/example/largefiles-store',
         'phases_publish': False,
         'extensions_hgsubversion': False
     }
@@ -577,6 +578,8 @@ class TestCreateOrUpdateGlobalHgSettings(object):
         expected_calls = [
             mock.call(model.global_settings, 'extensions', 'largefiles',
                       active=False, value=''),
+            mock.call(model.global_settings, 'largefiles', 'usercache',
+                      value='/example/largefiles-store'),
             mock.call(model.global_settings, 'phases', 'publish',
                       value='False'),
             mock.call(model.global_settings, 'extensions', 'hgsubversion',
@@ -638,6 +641,7 @@ class TestFilterUiSettings(object):
                 'test_tag', True),
         ]
         non_repo_settings = [
+            UiSetting('largefiles', 'usercache', '/example/largefiles-store', True),
             UiSetting('test', 'outgoing.pull_logger', 'hook', True),
             UiSetting('hooks', 'test2', 'hook', True),
             UiSetting(
@@ -928,6 +932,7 @@ class TestCreateOrUpdateRepoSettings(object):
         'hooks_changegroup_push_logger': False,
         'hooks_outgoing_pull_logger': False,
         'extensions_largefiles': False,
+        'largefiles_usercache': '/example/largefiles-store',
         'phases_publish': 'false',
         'rhodecode_pr_merge_enabled': False,
         'rhodecode_use_outdated_comments': False,

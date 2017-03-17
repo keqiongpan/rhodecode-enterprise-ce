@@ -416,6 +416,7 @@ class VcsSettingsModel(object):
         ('phases', 'publish'))
     GLOBAL_HG_SETTINGS = (
         ('extensions', 'largefiles'),
+        ('largefiles', 'usercache'),
         ('phases', 'publish'),
         ('extensions', 'hgsubversion'))
     GLOBAL_SVN_SETTINGS = (
@@ -543,12 +544,17 @@ class VcsSettingsModel(object):
             self.repo_settings, *phases, value=safe_str(data[phases_key]))
 
     def create_or_update_global_hg_settings(self, data):
-        largefiles, phases, hgsubversion = self.GLOBAL_HG_SETTINGS
-        largefiles_key, phases_key, subversion_key = self._get_settings_keys(
-            self.GLOBAL_HG_SETTINGS, data)
+        largefiles, largefiles_store, phases, hgsubversion \
+            = self.GLOBAL_HG_SETTINGS
+        largefiles_key, largefiles_store_key, phases_key, subversion_key \
+            = self._get_settings_keys(self.GLOBAL_HG_SETTINGS, data)
+
         self._create_or_update_ui(
             self.global_settings, *largefiles, value='',
             active=data[largefiles_key])
+        self._create_or_update_ui(
+            self.global_settings, *largefiles_store,
+            value=data[largefiles_store_key])
         self._create_or_update_ui(
             self.global_settings, *phases, value=safe_str(data[phases_key]))
         self._create_or_update_ui(

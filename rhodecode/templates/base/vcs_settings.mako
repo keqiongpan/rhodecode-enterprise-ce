@@ -96,8 +96,24 @@
                     <label for="extensions_largefiles${suffix}">${_('Enable largefiles extension')}</label>
                 </div>
                 <div class="label">
-                    <span class="help-block">${_('Enable Largefiles extensions for all repositories.')}</span>
+                    % if display_globals:
+                        <span class="help-block">${_('Enable Largefiles extensions for all repositories.')}</span>
+                    % else:
+                        <span class="help-block">${_('Enable Largefiles extensions for this repository.')}</span>
+                    % endif
                 </div>
+
+                % if display_globals:
+                <div class="field">
+                    <div class="input">
+                        ${h.text('largefiles_usercache' + suffix, size=59)}
+                    </div>
+                </div>
+                <div class="label">
+                    <span class="help-block">${_('Filesystem location where Mercurial largefile objects should be stored.')}</span>
+                </div>
+                % endif
+
                 <div class="checkbox">
                     ${h.checkbox('phases_publish' + suffix, 'True', **kwargs)}
                     <label for="phases_publish${suffix}">${_('Set repositories as publishing') if display_globals else _('Set repository as publishing')}</label>

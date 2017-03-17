@@ -396,6 +396,10 @@ def ApplicationUiSettingsForm():
             v.ValidPath(),
             v.UnicodeString(strip=True, min=1, not_empty=True)
         )
+        largefiles_usercache = All(
+            v.ValidPath(),
+            v.UnicodeString(strip=True, min=2, not_empty=True)
+        )
         extensions_hgsubversion = v.StringBoolean(if_missing=False)
         extensions_hggit = v.StringBoolean(if_missing=False)
         new_svn_branch = v.ValidSvnPattern(section='vcs_svn_branch')
