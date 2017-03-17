@@ -21,6 +21,7 @@
 """
 HG module
 """
+import os
 import logging
 
 from rhodecode.lib.vcs import connection
@@ -46,3 +47,10 @@ def discover_hg_version(raise_on_exc=False):
         if raise_on_exc:
             raise
         return ''
+
+
+def largefiles_store(base_location):
+    """
+    Return a largefile store relative to base_location
+    """
+    return os.path.join(base_location, '.cache', 'largefiles')

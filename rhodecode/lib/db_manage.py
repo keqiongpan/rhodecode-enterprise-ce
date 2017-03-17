@@ -306,6 +306,7 @@ class DbManage(object):
         and disables dotencode
         """
         settings_model = SettingsModel(sa=self.sa)
+        from rhodecode.lib.vcs.backends.hg import largefiles_store
 
         # Build HOOKS
         hooks = [
@@ -336,12 +337,12 @@ class DbManage(object):
         self.sa.add(largefiles)
 
         # set default largefiles cache dir, defaults to
-        # /repo location/.cache/largefiles
+        # /repo_store_location/.cache/largefiles
         largefiles = RhodeCodeUi()
         largefiles.ui_section = 'largefiles'
         largefiles.ui_key = 'usercache'
-        largefiles.ui_value = os.path.join(repo_store_path, '.cache',
-                                           'largefiles')
+        largefiles.ui_value = largefiles_store(repo_store_path)
+
         self.sa.add(largefiles)
 
         # enable hgsubversion disabled by default
