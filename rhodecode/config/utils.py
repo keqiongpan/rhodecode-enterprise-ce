@@ -60,11 +60,14 @@ def initialize_test_environment(settings, test_env=None):
         create_test_index)
     from rhodecode.tests import TESTS_TMP_PATH
     from rhodecode.lib.vcs.backends.hg import largefiles_store
+    from rhodecode.lib.vcs.backends.git import lfs_store
+
     # test repos
     if test_env:
         create_test_directory(TESTS_TMP_PATH)
         # large object stores
         create_test_directory(largefiles_store(TESTS_TMP_PATH))
+        create_test_directory(lfs_store(TESTS_TMP_PATH))
 
         create_test_database(TESTS_TMP_PATH, settings)
         create_test_repositories(TESTS_TMP_PATH, settings)

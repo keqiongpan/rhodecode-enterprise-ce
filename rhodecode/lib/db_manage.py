@@ -307,6 +307,7 @@ class DbManage(object):
         """
         settings_model = SettingsModel(sa=self.sa)
         from rhodecode.lib.vcs.backends.hg import largefiles_store
+        from rhodecode.lib.vcs.backends.git import lfs_store
 
         # Build HOOKS
         hooks = [
@@ -344,6 +345,15 @@ class DbManage(object):
         largefiles.ui_value = largefiles_store(repo_store_path)
 
         self.sa.add(largefiles)
+
+        # set default lfs cache dir, defaults to
+        # /repo_store_location/.cache/lfs_store
+        lfsstore = RhodeCodeUi()
+        lfsstore.ui_section = 'vcs_git_lfs'
+        lfsstore.ui_key = 'store_location'
+        lfsstore.ui_value = lfs_store(repo_store_path)
+
+        self.sa.add(lfsstore)
 
         # enable hgsubversion disabled by default
         hgsubversion = RhodeCodeUi()
