@@ -28,6 +28,7 @@ import logging
 import urlparse
 
 import rhodecode
+from rhodecode.lib import utils
 from rhodecode.lib import utils2
 from rhodecode.lib.middleware import simplevcs
 
@@ -145,9 +146,10 @@ class SimpleGit(simplevcs.SimpleVCS):
         extras['git_update_server_info'] = utils2.str2bool(
             rhodecode.CONFIG.get('git_update_server_info'))
 
-        # TODO(marcink): controll this via DB settings, store and enabled-per
-        # repo settings
+        config = utils.make_db_config(repo=repo_name)
+        custom_store = config.get('vcs_git_lfs', 'store_location')
 
-        extras['git_lfs_enabled'] = True
-        extras['git_lfs_store_path'] = default_lfs_store()
+        extras['git_lfs_enabled'] = utils2.str2bool(
+            config.get('vcs_git_lfs', 'enabled'))
+        extras['git_lfs_store_path'] = custom_store or default_lfs_store()
         return extras
