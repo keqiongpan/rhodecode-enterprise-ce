@@ -23,7 +23,7 @@ import pytest
 
 from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
-from rhodecode.tests import TEST_USER_REGULAR_LOGIN
+from rhodecode.tests import TEST_USER_ADMIN_EMAIL
 from rhodecode.api.tests.utils import (
     build_data, api_call, assert_error, assert_ok, crash, jsonify)
 
@@ -33,7 +33,8 @@ class TestUpdateUserGroup(object):
     @pytest.mark.parametrize("changing_attr, updates", [
         ('group_name', {'group_name': 'new_group_name'}),
         ('group_name', {'group_name': 'test_group_for_update'}),
-        ('owner', {'owner': TEST_USER_REGULAR_LOGIN}),
+        # ('owner', {'owner': TEST_USER_REGULAR_LOGIN}),
+        ('owner_email', {'owner_email': TEST_USER_ADMIN_EMAIL}),
         ('active', {'active': False}),
         ('active', {'active': True})
     ])
@@ -59,7 +60,8 @@ class TestUpdateUserGroup(object):
         # TODO: mikhail: decide if we need to test against the commented params
         # ('group_name', {'group_name': 'new_group_name'}),
         # ('group_name', {'group_name': 'test_group_for_update'}),
-        ('owner', {'owner': TEST_USER_REGULAR_LOGIN}),
+        # ('owner', {'owner': TEST_USER_REGULAR_LOGIN}),
+        ('owner_email', {'owner_email': TEST_USER_ADMIN_EMAIL}),
         ('active', {'active': False}),
         ('active', {'active': True})
     ])

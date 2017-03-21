@@ -260,8 +260,9 @@ class TestGetUserGroups(object):
                 user_util.create_user_group(users_group_active=True))
 
         group_filter = created_groups[-1].users_group_name[-2:]
-        with self._patch_user_group_list():
-            groups = RepoModel().get_user_groups(group_filter)
+        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
+            with self._patch_user_group_list():
+                groups = RepoModel().get_user_groups(group_filter)
 
         fake_groups = [
             u for u in groups if u['value'].startswith('test_returns')]
@@ -275,9 +276,9 @@ class TestGetUserGroups(object):
         for i in range(3):
             created_groups.append(
                 user_util.create_user_group(users_group_active=True))
-
-        with self._patch_user_group_list():
-            groups = RepoModel().get_user_groups('test_returns')
+        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
+            with self._patch_user_group_list():
+                groups = RepoModel().get_user_groups('test_returns')
 
         fake_groups = [
             u for u in groups if u['value'].startswith('test_returns')]
@@ -287,9 +288,9 @@ class TestGetUserGroups(object):
         for i in range(4):
             is_active = i % 2 == 0
             user_util.create_user_group(users_group_active=is_active)
-
-        with self._patch_user_group_list():
-            groups = RepoModel().get_user_groups()
+        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
+            with self._patch_user_group_list():
+                groups = RepoModel().get_user_groups()
         expected = ('id', 'icon_link', 'value_display', 'value', 'value_type')
         for group in groups:
             assert group['value_type'] is 'user_group'

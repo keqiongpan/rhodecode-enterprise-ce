@@ -70,6 +70,15 @@ def admin_routes(config):
         name='edit_user_auth_tokens_delete',
         pattern='/users/{user_id:\d+}/edit/auth_tokens/delete')
 
+    # user groups management
+    config.add_route(
+        name='edit_user_groups_management',
+        pattern='/users/{user_id:\d+}/edit/groups_management')
+
+    config.add_route(
+        name='edit_user_groups_management_updates',
+        pattern='/users/{user_id:\d+}/edit/edit_user_groups_management/updates')
+
 
 def includeme(config):
     settings = config.get_settings()

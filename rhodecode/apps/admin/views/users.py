@@ -22,6 +22,7 @@ import logging
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
+from rhodecode_tools.lib.ext_json import json
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib.auth import (
@@ -30,6 +31,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.utils import PartialRenderer
 from rhodecode.lib.utils2 import safe_int, safe_unicode
 from rhodecode.model.auth_token import AuthTokenModel
+from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model.db import User, or_
 from rhodecode.model.meta import Session
 
@@ -235,3 +237,49 @@ class AdminUsersView(BaseAppView):
             h.flash(_("Auth token successfully deleted"), category='success')
 
         return HTTPFound(h.route_path('edit_user_auth_tokens', user_id=user_id))
+
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_groups_management', request_method='GET',
+        renderer='rhodecode:templates/admin/users/user_edit.mako')
+    def groups_management(self):
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.data = c.user.group_member
+        self._redirect_for_default_user(c.user.username)
+        groups = [UserGroupModel.get_user_groups_as_dict(group.users_group) for group in c.user.group_member]
+        c.groups = json.dumps(groups)
+        c.active = 'groups'
+
+        return self._get_template_context(c)
+
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_groups_management_updates', request_method='POST')
+    def groups_management_updates(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        self._redirect_for_default_user(c.user.username)
+
+        users_groups = set(self.request.POST.getall('users_group_id'))
+        users_groups_model = []
+
+        for ugid in users_groups:
+            users_groups_model.append(UserGroupModel().get_group(safe_int(ugid)))
+        user_group_model = UserGroupModel()
+        user_group_model.change_groups(c.user, users_groups_model)
+
+        Session().commit()
+        c.active = 'user_groups_management'
+        h.flash(_("Groups successfully changed"), category='success')
+
+        return HTTPFound(h.route_path('edit_user_groups_management', user_id=user_id))

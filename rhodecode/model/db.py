@@ -1261,14 +1261,15 @@ class UserGroup(Base, BaseModel):
 
         """
         user_group = self
-
         data = {
             'users_group_id': user_group.users_group_id,
             'group_name': user_group.users_group_name,
             'group_description': user_group.user_group_description,
             'active': user_group.users_group_active,
             'owner': user_group.user.username,
+            'owner_email': user_group.user.email,
         }
+
         if with_group_members:
             users = []
             for user in user_group.members:
