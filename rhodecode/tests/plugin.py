@@ -1145,13 +1145,14 @@ class UserUtility(object):
             self.repo_group_ids.append(repo_group.group_id)
         return repo_group
 
-    def create_repo(self, owner=TEST_USER_ADMIN_LOGIN, parent=None, auto_cleanup=True):
+    def create_repo(self, owner=TEST_USER_ADMIN_LOGIN, parent=None,
+                    auto_cleanup=True, repo_type='hg'):
         repo_name = "{prefix}_repository_{count}".format(
             prefix=self._test_name,
             count=len(self.repos_ids))
 
         repository = self.fixture.create_repo(
-            repo_name, cur_user=owner, repo_group=parent)
+            repo_name, cur_user=owner, repo_group=parent, repo_type=repo_type)
         if auto_cleanup:
             self.repos_ids.append(repository.repo_id)
         return repository
