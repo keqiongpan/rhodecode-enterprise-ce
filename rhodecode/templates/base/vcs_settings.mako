@@ -154,6 +154,39 @@
 
     % endif
 
+    % if display_globals or repo_type in ['git']:
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">${_('Git Settings')}</h3>
+            </div>
+            <div class="panel-body">
+                <div class="checkbox">
+                    ${h.checkbox('vcs_git_lfs_enabled' + suffix, 'True', **kwargs)}
+                    <label for="vcs_git_lfs_enabled${suffix}">${_('Enable lfs extension')}</label>
+                </div>
+                <div class="label">
+                    % if display_globals:
+                        <span class="help-block">${_('Enable lfs extensions for all repositories.')}</span>
+                    % else:
+                        <span class="help-block">${_('Enable lfs extensions for this repository.')}</span>
+                    % endif
+                </div>
+
+                % if display_globals:
+                <div class="field">
+                    <div class="input">
+                        ${h.text('vcs_git_lfs_store_location' + suffix, size=59)}
+                    </div>
+                </div>
+                <div class="label">
+                    <span class="help-block">${_('Filesystem location where Git lfs objects should be stored.')}</span>
+                </div>
+                % endif
+            </div>
+        </div>
+    % endif
+
+
     % if display_globals:
         <div class="panel panel-default">
             <div class="panel-heading">

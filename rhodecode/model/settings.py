@@ -410,15 +410,21 @@ class VcsSettingsModel(object):
     HOOKS_SETTINGS = (
         ('hooks', 'changegroup.repo_size'),
         ('hooks', 'changegroup.push_logger'),
-        ('hooks', 'outgoing.pull_logger'))
+        ('hooks', 'outgoing.pull_logger'),)
     HG_SETTINGS = (
         ('extensions', 'largefiles'),
-        ('phases', 'publish'))
+        ('phases', 'publish'),)
+    GIT_SETTINGS = (
+        ('vcs_git_lfs', 'enabled'),)
+
     GLOBAL_HG_SETTINGS = (
         ('extensions', 'largefiles'),
         ('largefiles', 'usercache'),
         ('phases', 'publish'),
         ('extensions', 'hgsubversion'))
+    GLOBAL_GIT_SETTINGS = (
+        ('vcs_git_lfs', 'enabled'),
+        ('vcs_git_lfs', 'store_location'))
     GLOBAL_SVN_SETTINGS = (
         ('vcs_svn_proxy', 'http_requests_enabled'),
         ('vcs_svn_proxy', 'http_server_url'))
@@ -431,7 +437,8 @@ class VcsSettingsModel(object):
     def __init__(self, sa=None, repo=None):
         self.global_settings = SettingsModel(sa=sa)
         self.repo_settings = SettingsModel(sa=sa, repo=repo) if repo else None
-        self._ui_settings = self.HG_SETTINGS + self.HOOKS_SETTINGS
+        self._ui_settings = (
+            self.HG_SETTINGS + self.GIT_SETTINGS + self.HOOKS_SETTINGS)
         self._svn_sections = (self.SVN_BRANCH_SECTION, self.SVN_TAG_SECTION)
 
     @property
@@ -485,6 +492,9 @@ class VcsSettingsModel(object):
             if repo.repo_type == 'hg':
                 self.create_or_update_repo_hg_settings(data)
 
+            if repo.repo_type == 'git':
+                self.create_or_update_repo_git_settings(data)
+
         ScmModel().mark_for_invalidation(repo.repo_name, delete=True)
 
     @assert_repo_settings
@@ -534,9 +544,11 @@ class VcsSettingsModel(object):
 
     @assert_repo_settings
     def create_or_update_repo_hg_settings(self, data):
-        largefiles, phases = self.HG_SETTINGS
-        largefiles_key, phases_key = self._get_settings_keys(
-            self.HG_SETTINGS, data)
+        largefiles, phases = \
+            self.HG_SETTINGS
+        largefiles_key, phases_key = \
+            self._get_settings_keys(self.HG_SETTINGS, data)
+
         self._create_or_update_ui(
             self.repo_settings, *largefiles, value='',
             active=data[largefiles_key])
@@ -548,7 +560,6 @@ class VcsSettingsModel(object):
             = self.GLOBAL_HG_SETTINGS
         largefiles_key, largefiles_store_key, phases_key, subversion_key \
             = self._get_settings_keys(self.GLOBAL_HG_SETTINGS, data)
-
         self._create_or_update_ui(
             self.global_settings, *largefiles, value='',
             active=data[largefiles_key])
@@ -559,6 +570,31 @@ class VcsSettingsModel(object):
             self.global_settings, *phases, value=safe_str(data[phases_key]))
         self._create_or_update_ui(
             self.global_settings, *hgsubversion, active=data[subversion_key])
+
+    def create_or_update_repo_git_settings(self, data):
+        # NOTE(marcink): # comma make unpack work properly
+        lfs_enabled, \
+            = self.GIT_SETTINGS
+
+        lfs_enabled_key, \
+            = self._get_settings_keys(self.GIT_SETTINGS, data)
+
+        self._create_or_update_ui(
+            self.repo_settings, *lfs_enabled, value=data[lfs_enabled_key],
+            active=data[lfs_enabled_key])
+
+    def create_or_update_global_git_settings(self, data):
+        lfs_enabled, lfs_store_location \
+            = self.GLOBAL_GIT_SETTINGS
+        lfs_enabled_key, lfs_store_location_key \
+            = self._get_settings_keys(self.GLOBAL_GIT_SETTINGS, data)
+
+        self._create_or_update_ui(
+            self.global_settings, *lfs_enabled, value=data[lfs_enabled_key],
+            active=data[lfs_enabled_key])
+        self._create_or_update_ui(
+            self.global_settings, *lfs_store_location,
+            value=data[lfs_store_location_key])
 
     def create_or_update_global_svn_settings(self, data):
         # branch/tags patterns
@@ -677,8 +713,11 @@ class VcsSettingsModel(object):
         for section, key in self._ui_settings:
             ui = settings.get_ui_by_section_and_key(section, key)
             result_key = self._get_form_ui_key(section, key)
+
             if ui:
                 if section in ('hooks', 'extensions'):
+                    result[result_key] = ui.ui_active
+                elif result_key in ['vcs_git_lfs_enabled']:
                     result[result_key] = ui.ui_active
                 else:
                     result[result_key] = ui.ui_value

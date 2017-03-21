@@ -20,7 +20,10 @@
 
 import pytest
 import urlparse
+import mock
+import simplejson as json
 
+from rhodecode.lib.vcs.backends.base import Config
 from rhodecode.tests.lib.middleware import mock_scm_app
 import rhodecode.lib.middleware.simplegit as simplegit
 
@@ -107,22 +110,24 @@ def test_get_repository_name(url, expected_repo_name, request_method, pylonsapp)
         get_environ(url, request_method))
 
 
-def test_get_config(pylonsapp):
+def test_get_config(pylonsapp, user_util):
+    repo = user_util.create_repo(repo_type='git')
     app = simplegit.SimpleGit(application=None,
                               config={'auth_ret_code': '', 'base_path': ''},
                               registry=None)
     extras = {'foo': 'FOO', 'bar': 'BAR'}
 
     # We copy the extras as the method below will change the contents.
-    config = app._create_config(dict(extras), repo_name='test-repo')
+    git_config = app._create_config(dict(extras), repo_name=repo.repo_name)
+
     expected_config = dict(extras)
     expected_config.update({
         'git_update_server_info': False,
-        'git_lfs_enabled': True,
-        'git_lfs_store_path': simplegit.default_lfs_store()
+        'git_lfs_enabled': False,
+        'git_lfs_store_path': git_config['git_lfs_store_path']
     })
 
-    assert config == expected_config
+    assert git_config == expected_config
 
 
 def test_create_wsgi_app_uses_scm_app_from_simplevcs(pylonsapp):

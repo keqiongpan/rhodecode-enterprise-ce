@@ -176,7 +176,7 @@ class TestVcsSettingsModel(object):
             settings_mock.get_setting_by_name.return_value = result_mock
             result = model._collect_all_settings(global_=global_)
 
-        ui_settings = model.HG_SETTINGS + model.HOOKS_SETTINGS
+        ui_settings = model.HG_SETTINGS + model.GIT_SETTINGS + model.HOOKS_SETTINGS
         self._assert_get_settings_calls(
             settings_mock, ui_settings, model.GENERAL_SETTINGS)
         self._assert_collect_all_settings_result(
@@ -230,7 +230,13 @@ class TestVcsSettingsModel(object):
         expected_result = {}
         for section, key in ui_settings:
             key = '{}_{}'.format(section, key.replace('.', '_'))
-            value = True if section in ('extensions', 'hooks') else 'ui_value'
+
+            if section in ('extensions', 'hooks'):
+                value = True
+            elif key in ['vcs_git_lfs_enabled']:
+                value = True
+            else:
+                value = 'ui_value'
             expected_result[key] = value
 
         for name in general_settings:
@@ -599,6 +605,25 @@ class TestCreateOrUpdateGlobalHgSettings(object):
         assert exc_info.value.message == expected_message
 
 
+class TestCreateOrUpdateGlobalGitSettings(object):
+    FORM_DATA = {
+        'vcs_git_lfs_enabled': False,
+        'vcs_git_lfs_store_location': '/example/lfs-store',
+    }
+
+    def test_creates_repo_hg_settings_when_data_is_correct(self):
+        model = VcsSettingsModel()
+        with mock.patch.object(model, '_create_or_update_ui') as create_mock:
+            model.create_or_update_global_git_settings(self.FORM_DATA)
+        expected_calls = [
+            mock.call(model.global_settings, 'vcs_git_lfs', 'enabled',
+                      active=False, value=False),
+            mock.call(model.global_settings, 'vcs_git_lfs', 'store_location',
+                      value='/example/lfs-store'),
+        ]
+        assert expected_calls == create_mock.call_args_list
+
+
 class TestDeleteRepoSvnPattern(object):
     def test_success_when_repo_is_set(self, backend_svn):
         repo_name = backend_svn.repo_name
@@ -933,6 +958,8 @@ class TestCreateOrUpdateRepoSettings(object):
         'hooks_outgoing_pull_logger': False,
         'extensions_largefiles': False,
         'largefiles_usercache': '/example/largefiles-store',
+        'vcs_git_lfs_enabled': False,
+        'vcs_git_lfs_store_location': '/',
         'phases_publish': 'False',
         'rhodecode_pr_merge_enabled': False,
         'rhodecode_use_outdated_comments': False,

@@ -82,7 +82,7 @@ class SettingsController(BaseController):
             rhodecode.CONFIG.get('labs_settings_active', 'true'))
         c.navlist = navigation_list(request)
 
-    def _get_hg_ui_settings(self):
+    def _get_ui_settings(self):
         ret = RhodeCodeUi.query().all()
 
         if not ret:
@@ -94,7 +94,7 @@ class SettingsController(BaseController):
             if k == '/':
                 k = 'root_path'
 
-            if k in ['push_ssl', 'publish']:
+            if k in ['push_ssl', 'publish', 'enabled']:
                 v = str2bool(v)
 
             if k.find('.') != -1:
@@ -165,6 +165,7 @@ class SettingsController(BaseController):
 
             model.create_or_update_global_svn_settings(form_result)
             model.create_or_update_global_hg_settings(form_result)
+            model.create_or_update_global_git_settings(form_result)
             model.create_or_update_global_pr_settings(form_result)
         except Exception:
             log.exception("Exception while updating settings")
@@ -668,7 +669,8 @@ class SettingsController(BaseController):
 
     def _form_defaults(self):
         defaults = SettingsModel().get_all_settings()
-        defaults.update(self._get_hg_ui_settings())
+        defaults.update(self._get_ui_settings())
+
         defaults.update({
             'new_svn_branch': '',
             'new_svn_tag': '',
