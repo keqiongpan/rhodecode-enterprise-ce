@@ -628,7 +628,7 @@ class TestVcsSettings(object):
         'hooks_changegroup_push_logger': False,
         'hooks_outgoing_pull_logger': False,
         'extensions_largefiles': False,
-        'phases_publish': 'false',
+        'phases_publish': 'False',
         'rhodecode_pr_merge_enabled': False,
         'rhodecode_use_outdated_comments': False,
         'new_svn_branch': '',

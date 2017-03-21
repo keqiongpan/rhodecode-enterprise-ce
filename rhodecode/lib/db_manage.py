@@ -518,12 +518,12 @@ class DbManage(object):
         self.create_ui_settings(path)
 
         ui_config = [
-            ('web', 'push_ssl', 'false'),
+            ('web', 'push_ssl', 'False'),
             ('web', 'allow_archive', 'gz zip bz2'),
             ('web', 'allow_push', '*'),
             ('web', 'baseurl', '/'),
             ('paths', '/', path),
-            ('phases', 'publish', 'true')
+            ('phases', 'publish', 'True')
         ]
         for section, key, value in ui_config:
             ui_conf = RhodeCodeUi()
