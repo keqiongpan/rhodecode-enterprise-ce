@@ -207,6 +207,8 @@ def http_environ(http_host_stub):
         'SERVER_NAME': http_host_stub.split(':')[0],
         'SERVER_PORT': http_host_stub.split(':')[1],
         'HTTP_HOST': http_host_stub,
+        'HTTP_USER_AGENT': 'rc-test-agent',
+        'REQUEST_METHOD': 'GET'
     }
 
 
