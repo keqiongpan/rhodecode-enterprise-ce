@@ -6,14 +6,16 @@
       <h3 class="panel-title">${_('User groups administration')}</h3>
     </div>
     <div class="panel-body">
-        <div class="field">
-            <div class="label label-checkbox">
-                <label for="users_group_active">${_('Add user to group')}:</label>
-            </div>
-            <div class="input">
-                ${h.text('add_user_to_group', placeholder="user group name", class_="medium")}
-            </div>
+        <div class="fields">
+            <div class="field">
+                <div class="label label-checkbox">
+                    <label for="users_group_active">${_('Add `%s` to user group') % c.user.username}:</label>
+                </div>
+                <div class="input">
+                    ${h.text('add_user_to_group', placeholder="user group name", class_="medium")}
+                </div>
 
+            </div>
         </div>
 
         <div class="groups_management">
