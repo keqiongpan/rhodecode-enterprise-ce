@@ -20,3 +20,10 @@ authentication.
     Last Name Attribute  = user_surname
     # Set the Active Directory user email
     E-mail Attribute     = userEmail
+
+
+Below is example setup that can be used with Active Directory and ldap groups.
+
+.. image:: ../images/ldap-groups-example.png
+   :alt: LDAP/AD setup example
+   :scale: 50 %

@@ -104,4 +104,10 @@ The following are optional when enabling LDAP on |RCM|
    following directory: `/etc/openldap/cacerts`
 
 
+Below is example setup that can be used with Active Directory and ldap groups.
+
+.. image:: ../images/ldap-groups-example.png
+   :alt: LDAP/AD setup example
+   :scale: 50 %
+
 .. _RFC 2254: http://www.rfc-base.org/rfc-2254.html
