@@ -639,6 +639,14 @@ def database_info():
         version=db_version,
         url=repr(db_url_obj)
     )
+    current_version = db_migrate.version
+    expected_version = rhodecode.__dbversion__
+    if state['type'] == STATE_OK and current_version != expected_version:
+        msg = 'Critical: database schema mismatch, ' \
+              'expected version {}, got {}. ' \
+              'Please run migrations on your database.'.format(
+            expected_version, current_version)
+        state = {'message': msg, 'type': STATE_ERR}
 
     human_value = db_info.copy()
     human_value['url'] = "{} @ migration version: {}".format(
