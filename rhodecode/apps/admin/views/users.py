@@ -22,6 +22,8 @@ import logging
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
+
+from rhodecode.lib.helpers import Page
 from rhodecode_tools.lib.ext_json import json
 
 from rhodecode.apps._base import BaseAppView
@@ -31,6 +33,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.utils import PartialRenderer
 from rhodecode.lib.utils2 import safe_int, safe_unicode
 from rhodecode.model.auth_token import AuthTokenModel
+from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model.db import User, or_
 from rhodecode.model.meta import Session
@@ -238,7 +241,6 @@ class AdminUsersView(BaseAppView):
 
         return HTTPFound(h.route_path('edit_user_auth_tokens', user_id=user_id))
 
-
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
@@ -256,7 +258,6 @@ class AdminUsersView(BaseAppView):
         c.active = 'groups'
 
         return self._get_template_context(c)
-
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
@@ -282,4 +283,35 @@ class AdminUsersView(BaseAppView):
         c.active = 'user_groups_management'
         h.flash(_("Groups successfully changed"), category='success')
 
-        return HTTPFound(h.route_path('edit_user_groups_management', user_id=user_id))
+        return HTTPFound(h.route_path(
+            'edit_user_groups_management', user_id=user_id))
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_audit_logs', request_method='GET',
+        renderer='rhodecode:templates/admin/users/user_edit.mako')
+    def user_audit_logs(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        self._redirect_for_default_user(c.user.username)
+        c.active = 'audit'
+
+        p = safe_int(self.request.GET.get('page', 1), 1)
+
+        filter_term = self.request.GET.get('filter')
+        c.user_log = UserModel().get_user_log(c.user, filter_term)
+
+        def url_generator(**kw):
+            if filter_term:
+                kw['filter'] = filter_term
+            return self.request.current_route_path(_query=kw)
+
+        c.user_log = Page(c.user_log, page=p, items_per_page=10,
+                          url=url_generator)
+        c.filter_term = filter_term
+        return self._get_template_context(c)
+

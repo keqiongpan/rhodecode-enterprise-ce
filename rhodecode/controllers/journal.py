@@ -34,7 +34,7 @@ from webob.exc import HTTPBadRequest
 from pylons import request, tmpl_context as c, response, url
 from pylons.i18n.translation import _
 
-from rhodecode.controllers.admin.admin import _journal_filter
+from rhodecode.controllers.admin.admin import user_log_filter
 from rhodecode.model.db import UserLog, UserFollowing, User, UserApiKeys
 from rhodecode.model.meta import Session
 import rhodecode.lib.helpers as h
@@ -89,7 +89,7 @@ class JournalController(BaseController):
                 .options(joinedload(UserLog.repository))
             #filter
             try:
-                journal = _journal_filter(journal, c.search_term)
+                journal = user_log_filter(journal, c.search_term)
             except Exception:
                 # we want this to crash for now
                 raise

@@ -37,11 +37,8 @@
           <li class="${'active' if c.active=='perms_summary' else ''}"><a href="${h.url('edit_user_perms_summary', user_id=c.user.user_id)}">${_('Permissions summary')}</a></li>
           <li class="${'active' if c.active=='emails' else ''}"><a href="${h.url('edit_user_emails', user_id=c.user.user_id)}">${_('Emails')}</a></li>
           <li class="${'active' if c.active=='ips' else ''}"><a href="${h.url('edit_user_ips', user_id=c.user.user_id)}">${_('Ip Whitelist')}</a></li>
-
-            <li class="${'active' if c.active=='groups' else ''}">
-                <a href="${h.route_path('edit_user_groups_management', user_id=c.user.user_id)}">${_('User Groups Management')}</a>
-            </li>
-
+          <li class="${'active' if c.active=='groups' else ''}"><a href="${h.route_path('edit_user_groups_management', user_id=c.user.user_id)}">${_('User Groups Management')}</a></li>
+          <li class="${'active' if c.active=='audit' else ''}"><a href="${h.route_path('edit_user_audit_logs', user_id=c.user.user_id)}">${_('User audit')}</a></li>
         </ul>
     </div>
 

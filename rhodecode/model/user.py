@@ -33,6 +33,7 @@ from sqlalchemy.exc import DatabaseError
 from sqlalchemy.sql.expression import true, false
 
 from rhodecode import events
+from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.utils2 import (
     safe_unicode, get_current_rhodecode_user, action_logger_generic,
     AttributeDict, str2bool)
@@ -40,7 +41,7 @@ from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import (
-    User, UserToPerm, UserEmailMap, UserIpMap)
+    or_, joinedload, User, UserToPerm, UserEmailMap, UserIpMap, UserLog)
 from rhodecode.lib.exceptions import (
     DefaultUserException, UserOwnsReposException, UserOwnsRepoGroupsException,
     UserOwnsUserGroupsException, NotAllowedToCreateUserError)
@@ -847,3 +848,14 @@ class UserModel(BaseModel):
             Session().commit()
 
         return
+
+    def get_user_log(self, user, filter_term):
+        user_log = UserLog.query()\
+            .filter(or_(UserLog.user_id == user.user_id,
+                        UserLog.username == user.username))\
+            .options(joinedload(UserLog.user))\
+            .options(joinedload(UserLog.repository))\
+            .order_by(UserLog.action_date.desc())
+
+        user_log = user_log_filter(user_log, filter_term)
+        return user_log

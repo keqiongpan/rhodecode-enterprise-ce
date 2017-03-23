@@ -79,6 +79,11 @@ def admin_routes(config):
         name='edit_user_groups_management_updates',
         pattern='/users/{user_id:\d+}/edit/edit_user_groups_management/updates')
 
+    # user audit logs
+    config.add_route(
+        name='edit_user_audit_logs',
+        pattern='/users/{user_id:\d+}/edit/audit')
+
 
 def includeme(config):
     settings = config.get_settings()
