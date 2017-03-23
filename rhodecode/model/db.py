@@ -920,6 +920,7 @@ class User(Base, BaseModel):
             'extern_type': user.extern_type,
             'extern_name': user.extern_name,
             'last_login': user.last_login,
+            'last_activity': user.last_activity,
             'ip_addresses': user.ip_addresses,
             'language': user_data.get('language')
         }

@@ -74,6 +74,7 @@ def get_user(request, apiuser, userid=Optional(OAttr('apiuser'))):
             "ip_addresses": [],
             "language": null,
             "last_login": "Timestamp",
+            "last_activity": "Timestamp",
             "lastname": "surnae",
             "permissions": {
               "global": [

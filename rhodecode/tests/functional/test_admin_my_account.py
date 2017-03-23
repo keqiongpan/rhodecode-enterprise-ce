@@ -185,6 +185,7 @@ class TestMyAccountController(TestController):
         updated_params.update({'new_password': ''})
 
         params['last_login'] = updated_params['last_login']
+        params['last_activity'] = updated_params['last_activity']
         # my account page cannot set language param yet, only for admins
         # but we get this info from API anyway
         params['language'] = updated_params['language']
