@@ -138,7 +138,8 @@ class RemoteRepo(object):
         return _remote_call(self.url, payload, EXCEPTIONS_MAP, self._session)
 
     def _call_with_logging(self, name, *args, **kwargs):
-        log.debug('Calling %s@%s', self.url, name)
+
+        log.debug('Calling %s@%s with args:%r', self.url, name, args)
         return RemoteRepo._call(self, name, *args, **kwargs)
 
     def __getitem__(self, key):
