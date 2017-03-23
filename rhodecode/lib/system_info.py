@@ -513,7 +513,7 @@ def vcs_server():
 
         if data and 'config' in data:
             conf = data['config']
-            workers = conf.get('workers', '?')
+            workers = conf.get('workers', 'NOT AVAILABLE')
 
         connection = 'connected'
     except Exception as e:
