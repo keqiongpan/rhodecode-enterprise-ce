@@ -387,20 +387,22 @@ class TestRepoContainer(object):
         self._fixture = Fixture()
         self._repos = {}
 
-    def __call__(self, dump_name, backend_alias):
+    def __call__(self, dump_name, backend_alias, config=None):
         key = (dump_name, backend_alias)
         if key not in self._repos:
-            repo = self._create_repo(dump_name, backend_alias)
+            repo = self._create_repo(dump_name, backend_alias, config)
             self._repos[key] = repo.repo_id
         return Repository.get(self._repos[key])
 
-    def _create_repo(self, dump_name, backend_alias):
+    def _create_repo(self, dump_name, backend_alias, config):
         repo_name = '%s-%s' % (backend_alias, dump_name)
         backend_class = get_backend(backend_alias)
         dump_extractor = self.dump_extractors[backend_alias]
         repo_path = dump_extractor(dump_name, repo_name)
-        vcs_repo = backend_class(repo_path)
+
+        vcs_repo = backend_class(repo_path, config=config)
         repo2db_mapper({repo_name: vcs_repo})
+
         repo = RepoModel().get_by_repo_name(repo_name)
         self._cleanup_repos.append(repo_name)
         return repo
@@ -514,6 +516,9 @@ class Backend(object):
 
     def __getitem__(self, key):
         return self._test_repo_container(key, self.alias)
+
+    def create_test_repo(self, key, config=None):
+        return self._test_repo_container(key, self.alias, config)
 
     @property
     def repo(self):

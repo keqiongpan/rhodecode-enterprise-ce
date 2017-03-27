@@ -22,7 +22,7 @@
 Module holding everything related to vcs nodes, with vcs2 architecture.
 """
 
-
+import os
 import stat
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -547,9 +547,8 @@ class FileNode(Node):
         create special instance of LargeFileNode which can get content from
         LF store.
         """
-        if self.commit and self.path.startswith(LARGEFILE_PREFIX):
-            largefile_path = self.path.split(LARGEFILE_PREFIX)[-1].lstrip('/')
-            return self.commit.get_largefile_node(largefile_path)
+        if self.commit:
+            return self.commit.get_largefile_node(self.path)
 
     def lines(self, count_empty=False):
         all_lines, empty_lines = 0, 0
@@ -765,11 +764,26 @@ class SubModuleNode(Node):
 
 class LargeFileNode(FileNode):
 
+    def __init__(self, path, url=None, commit=None, alias=None, org_path=None):
+        self.path = path
+        self.org_path = org_path
+        self.kind = NodeKind.LARGEFILE
+        self.alias = alias
+
     def _validate_path(self, path):
         """
         we override check since the LargeFileNode path is system absolute
         """
+        pass
 
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.path)
+
+    @LazyProperty
+    def size(self):
+        return os.stat(self.path).st_size
+
+    @LazyProperty
     def raw_bytes(self):
         if self.commit:
             with open(self.path, 'rb') as f:
@@ -777,3 +791,10 @@ class LargeFileNode(FileNode):
         else:
             content = self._content
         return content
+
+    @LazyProperty
+    def name(self):
+        """
+        Overwrites name to be the org lf path
+        """
+        return self.org_path

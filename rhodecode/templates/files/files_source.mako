@@ -4,6 +4,9 @@
     <div class="codeblock-header">
       <div class="stats">
             <span> <strong>${c.file}</strong></span>
+            % if c.lf_node:
+            <span title="${_('This file is a pointer to large binary file')}"> | ${_('LargeFile')} ${h.format_byte_size_binary(c.lf_node.size)} </span>
+            % endif
             <span> | ${c.file.lines()[0]} ${ungettext('line', 'lines', c.file.lines()[0])}</span>
             <span> | ${h.format_byte_size_binary(c.file.size)}</span>
             <span> | ${c.file.mimetype} </span>
@@ -22,9 +25,16 @@
           ${h.link_to(_('Annotation'), h.url('files_annotate_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path))}
         %endif
          | ${h.link_to(_('Raw'), h.url('files_raw_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path))}
-         | <a href="${h.url('files_rawfile_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path)}">
-          ${_('Download')}
-        </a>
+         |
+          % if c.lf_node:
+              <a href="${h.url('files_rawfile_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path, lf=1)}">
+              ${_('Download largefile')}
+              </a>
+          % else:
+              <a href="${h.url('files_rawfile_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path)}">
+              ${_('Download')}
+              </a>
+          % endif
 
         %if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name):
            |
@@ -46,11 +56,11 @@
     </div>
     <div id="file_history_container"></div>
     <div class="code-body">
-       %if c.file.is_binary:
+     %if c.file.is_binary:
            <div>
            ${_('Binary file (%s)') % c.file.mimetype}
            </div>
-       %else:
+     %else:
         % if c.file.size < c.cut_off_limit:
             %if c.renderer and not c.annotate:
                 ${h.render(c.file.content, renderer=c.renderer, relative_url=h.url('files_raw_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path))}
@@ -67,7 +77,6 @@
                   %endfor
                 %endif
                 </table>
-              </div>
             %endif
         %else:
             ${_('File is too big to display')} ${h.link_to(_('Show as raw'),

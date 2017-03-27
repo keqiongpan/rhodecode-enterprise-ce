@@ -223,6 +223,8 @@ class FilesController(BaseRepoController):
             c.file_author = True
             c.file_tree = ''
             if c.file.is_file():
+                c.lf_node = c.file.get_largefile_node()
+
                 c.file_source_page = 'true'
                 c.file_last_commit = c.file.last_commit
                 if c.file.size < self.cut_off_limit_file:
@@ -342,6 +344,14 @@ class FilesController(BaseRepoController):
         """
         commit = self.__get_commit_or_redirect(revision, repo_name)
         file_node = self.__get_filenode_or_redirect(repo_name, commit, f_path)
+
+        if request.GET.get('lf'):
+            # only if lf get flag is passed, we download this file
+            # as LFS/Largefile
+            lf_node = file_node.get_largefile_node()
+            if lf_node:
+                # overwrite our pointer with the REAL large-file
+                file_node = lf_node
 
         response.content_disposition = 'attachment; filename=%s' % \
             safe_str(f_path.split(Repository.NAME_SEP)[-1])
