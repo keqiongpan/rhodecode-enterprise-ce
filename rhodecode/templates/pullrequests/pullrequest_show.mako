@@ -362,7 +362,7 @@
                <div id="reviewers_container"></div>
             </div>
             <div>
-             <span id="update_pull_request" class="btn btn-small">${_('Save Changes')}</span>
+             <button id="update_pull_request" class="btn btn-small">${_('Save Changes')}</button>
             </div>
             %endif
           </div>
@@ -766,6 +766,9 @@
             });
 
             $('#update_pull_request').on('click', function(e){
+                $(this).attr('disabled', 'disabled');
+                $(this).addClass('disabled');
+                $(this).html(_gettext('saving...'));
                 updateReviewers(undefined, "${c.repo_name}", "${c.pull_request.pull_request_id}");
             });
 

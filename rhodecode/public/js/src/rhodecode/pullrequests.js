@@ -28,11 +28,12 @@ var removeReviewMember = function(reviewer_id, mark_delete){
 
     if(mark_delete === true){
         if (reviewer){
-            // mark as to-remove
-            var obj = $('#reviewer_{0}_name'.format(reviewer_id));
-            obj.addClass('to-delete');
             // now delete the input
             $('#reviewer_{0} input'.format(reviewer_id)).remove();
+            // mark as to-delete
+            var obj = $('#reviewer_{0}_name'.format(reviewer_id));
+            obj.addClass('to-delete');
+            obj.css({"text-decoration":"line-through", "opacity": 0.5});
         }
     }
     else{

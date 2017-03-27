@@ -886,20 +886,22 @@ class PullRequestModel(BaseModel):
             reviewer = PullRequestReviewers(_usr, pull_request, reasons)
             Session().add(reviewer)
 
-        self.notify_reviewers(pull_request, ids_to_add)
-
         for uid in ids_to_remove:
             changed = True
-            reviewer = PullRequestReviewers.query()\
+            reviewers = PullRequestReviewers.query()\
                 .filter(PullRequestReviewers.user_id == uid,
                         PullRequestReviewers.pull_request == pull_request)\
-                .scalar()
-            if reviewer:
-                Session().delete(reviewer)
+                .all()
+            # use .all() in case we accidentally added the same person twice
+            # this CAN happen due to the lack of DB checks
+            for obj in reviewers:
+                Session().delete(obj)
+
         if changed:
             pull_request.updated_on = datetime.datetime.now()
             Session().add(pull_request)
 
+        self.notify_reviewers(pull_request, ids_to_add)
         return ids_to_add, ids_to_remove
 
     def get_url(self, pull_request):
