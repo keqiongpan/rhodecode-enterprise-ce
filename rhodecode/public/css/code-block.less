@@ -820,7 +820,6 @@ input.filediff-collapse-state {
     .pill {
         &[op="name"] {
             background: none;
-            color: @grey2;
             opacity: 1;
             color: white;
         }
@@ -837,6 +836,10 @@ input.filediff-collapse-state {
             color: white;
         }
         &[op="renamed"] {
+            background: @color4;
+            color: white;
+        }
+        &[op="copied"] {
             background: @color4;
             color: white;
         }
