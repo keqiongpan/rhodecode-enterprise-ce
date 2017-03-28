@@ -1108,9 +1108,19 @@ class UserLog(Base, BaseModel):
     action_date = Column("action_date", DateTime(timezone=False), nullable=True, unique=None, default=None)
 
     def __unicode__(self):
-        return u"<%s('id:%s:%s')>" % (self.__class__.__name__,
-                                      self.repository_name,
-                                      self.action)
+        return u"<%s('id:%s:%s')>" % (
+            self.__class__.__name__, self.repository_name, self.action)
+
+    def __json__(self):
+        return {
+            'user_id': self.user_id,
+            'username': self.username,
+            'repository_id': self.repository_id,
+            'repository_name': self.repository_name,
+            'user_ip': self.user_ip,
+            'action_date': self.action_date,
+            'action': self.action,
+        }
 
     @property
     def action_as_day(self):
