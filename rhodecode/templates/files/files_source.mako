@@ -57,9 +57,14 @@
     <div id="file_history_container"></div>
     <div class="code-body">
      %if c.file.is_binary:
-           <div>
-           ${_('Binary file (%s)') % c.file.mimetype}
-           </div>
+           <% rendered_binary = h.render_binary(c.repo_name, c.file)%>
+           % if rendered_binary:
+               ${rendered_binary}
+           % else:
+               <div>
+                ${_('Binary file (%s)') % c.file.mimetype}
+               </div>
+           % endif
      %else:
         % if c.file.size < c.cut_off_limit:
             %if c.renderer and not c.annotate:
