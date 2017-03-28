@@ -388,6 +388,7 @@ class FilesController(BaseRepoController):
             'image/png': ('image/png', 'inline'),
             'image/gif': ('image/gif', 'inline'),
             'image/jpeg': ('image/jpeg', 'inline'),
+            'application/pdf': ('application/pdf', 'inline'),
         }
 
         mimetype = file_node.mimetype
