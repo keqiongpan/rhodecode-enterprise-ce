@@ -728,6 +728,11 @@ def get_custom_lexer(extension):
     """
     import rhodecode
     from pygments import lexers
+
+    # custom override made by RhodeCode
+    if extension in ['mako']:
+        return lexers.get_lexer_by_name('Mako')
+
     # check if we didn't define this extension as other lexer
     extensions = rhodecode.EXTENSIONS and getattr(rhodecode.EXTENSIONS, 'EXTRA_LEXERS', None)
     if extensions and extension in rhodecode.EXTENSIONS.EXTRA_LEXERS:
