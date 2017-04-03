@@ -19,7 +19,9 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
+import urllib
 from urlparse import urljoin
+
 
 import requests
 from webob.exc import HTTPNotAcceptable
@@ -55,6 +57,14 @@ class SimpleSvnApp(object):
             environ['REQUEST_METHOD'], self._get_url(environ['PATH_INFO']),
             data=data, headers=request_headers)
 
+        if response.status_code not in [200, 401]:
+            if response.status_code >= 500:
+                log.error('Got SVN response:%s with text:`%s`',
+                          response, response.text)
+            else:
+                log.debug('Got SVN response:%s with text:`%s`',
+                          response, response.text)
+
         response_headers = self._get_response_headers(response.headers)
         start_response(
             '{} {}'.format(response.status_code, response.reason),
@@ -62,8 +72,10 @@ class SimpleSvnApp(object):
         return response.iter_content(chunk_size=1024)
 
     def _get_url(self, path):
-        return urljoin(
+        url_path = urljoin(
             self.config.get('subversion_http_server_url', ''), path)
+        url_path = urllib.quote(url_path, safe="/:=~+!$,;'")
+        return url_path
 
     def _get_request_headers(self, environ):
         headers = {}
