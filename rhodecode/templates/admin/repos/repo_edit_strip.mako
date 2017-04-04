@@ -23,7 +23,7 @@
                 </div>
             <div id="results" style="display:none; padding: 10px 0px;"></div>
                 <div class="buttons">
-                    <button class="btn btn-small btn-primary" onclick="check_changsets();return false">
+                    <button class="btn btn-small btn-primary" onclick="checkCommits();return false">
                    ${_('Check commits')}
                    </button>
                 </div>
@@ -34,10 +34,7 @@
             <p>
                <h4>${_('Sorry this functionality is not available for SVN repository')}</h4>
             </p>
-
-
         %endif
-
     </div>
 </div>
 
@@ -63,9 +60,9 @@ addNew = function(number){
             '</div>';
     $('#change_body').append(input);
     plus_leaf++;
-}
+};
 
-function re_index(number){
+reIndex = function(number){
     for(var i=number;i<=plus_leaf;i++){
         var check = $('#box-'+i);
         if (check.length == 0){
@@ -87,7 +84,7 @@ function re_index(number){
             i_minus.attr('onclick','delOld('+i+');return false');
         }
     }
-}
+};
 
 delOld = function(number){
     $('#box-'+number).remove();
@@ -101,13 +98,13 @@ delOld = function(number){
         box.append(plus);
         box.append(minus);
     }
-    re_index(number+1);
+    reIndex(number+1);
 
-}
+};
 
 var result_data;
 
-check_changsets = function() {
+checkCommits = function() {
     var postData = $('form').serialize();
     $('#results').show();
     $('#results').html('<h4>${_('Checking commits')}...</h4>');
