@@ -1,12 +1,10 @@
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Strip')}</h3>
+        <h3 class="panel-title">${_('Strip commits from repository')}</h3>
     </div>
     <div class="panel-body">
         %if c.repo_info.repo_type != 'svn':
-            <p>
-               <h4>${_('Please provide up to %s commits commits to strip')%c.strip_limit}</h4>
-            </p>
+            <h4>${_('Please provide up to %d commits commits to strip') % c.strip_limit}</h4>
             <p>
                 ${_('In the first step commits will be verified for existance in the repository')}. </br>
                 ${_('In the second step, correct commits will be available for stripping')}.
@@ -14,26 +12,25 @@
             ${h.secure_form(h.route_path('strip_check', repo_name=c.repo_info.repo_name), method='post')}
                 <div id="change_body" class="field">
                     <div id="box-1" class="inputx locked_input">
-                        <input class="text" id="changeset_id-1" name="changeset_id-1"  size="59"
-                              placeholder="${_('Enter full 40 character commit sha')}"  type="text" value="">
-                                        <div id = "plus_icon-1" class="btn btn-default plus_input_button">
-                                            <i class="icon-plus" onclick="addNew(1);return false">${_('Add another commit')}</i>
-                                        </div>
+                        <input class="text" id="changeset_id-1" name="changeset_id-1" size="59"
+                              placeholder="${_('Enter full 40 character commit sha')}" type="text" value="">
+                        <div id="plus_icon-1" class="btn btn-default plus_input_button" onclick="addNew(1);return false">
+                            <i class="icon-plus">${_('Add another commit')}</i>
+                        </div>
                     </div>
                 </div>
-            <div id="results" style="display:none; padding: 10px 0px;"></div>
+
+                <div id="results" style="display:none; padding: 10px 0px;"></div>
+
                 <div class="buttons">
-                    <button class="btn btn-small btn-primary" onclick="checkCommits();return false">
+                   <button class="btn btn-small btn-primary" onclick="checkCommits();return false">
                    ${_('Check commits')}
                    </button>
                 </div>
-                <div id="results" style="display:none; padding: 10px 0px;"></div>
 
             ${h.end_form()}
         %else:
-            <p>
-               <h4>${_('Sorry this functionality is not available for SVN repository')}</h4>
-            </p>
+           <h4>${_('Sorry this functionality is not available for SVN repository')}</h4>
         %endif
     </div>
 </div>
@@ -46,15 +43,16 @@ addNew = function(number){
     if (number >= ${c.strip_limit}){
         return;
     }
-    var minus = '<i id="i_minus_icon-'+(number+1)+'" class="icon-minus" onclick="delOld('+(number+1)+');return false">${_('Remove')}</i>';
+    var minus = '<i id="i_minus_icon-'+(number+1)+'" class="icon-minus">${_('Remove')}</i>';
     $('#plus_icon-'+number).detach();
     number++;
+
     var input = '<div id="box-'+number+'" class="inputx locked_input">'+
                '<input class="text" id="changeset_id-'+number+'" name="changeset_id-'+number+'"  size="59" type="text" value="">'+
-                '<div  id="plus_icon-'+number+'" class="btn btn-default plus_input_button">'+
-                   '<i id="i_plus_icon-'+(number)+'" class="icon-plus" onclick="addNew('+number+');return false">${_('Add another commit')}</i>'+
+               '<div  id="plus_icon-'+number+'" class="btn btn-default plus_input_button" onclick="addNew('+number+');return false">'+
+                   '<i id="i_plus_icon-'+(number)+'" class="icon-plus">${_('Add another commit')}</i>'+
                '</div>'+
-                '<div  id="minus_icon-'+number+'" class="btn btn-default minus_input_button">'+
+               '<div  id="minus_icon-'+number+'" class="btn btn-default minus_input_button" onclick="delOld('+(number)+');return false">'+
                 minus +
                '</div>' +
             '</div>';
@@ -90,8 +88,8 @@ delOld = function(number){
     $('#box-'+number).remove();
     number = number - 1;
     var box = $('#box-'+number);
-    var plus =  '<div  id="plus_icon-'+number+'" class="btn btn-default plus_input_button">'+
-            '<i id="i_plus_icon-'+number+'" class="icon-plus" onclick="addNew('+number +');return false">${_('Add another commit')}</i></div>';
+    var plus =  '<div  id="plus_icon-'+number+'" class="btn btn-default plus_input_button" onclick="addNew('+number +');return false">'+
+            '<i id="i_plus_icon-'+number+'" class="icon-plus">${_('Add another commit')}</i></div>';
     var minus = $('#minus_icon-'+number);
     if(number +1 == plus_leaf){
         minus.detach();
@@ -123,10 +121,10 @@ checkCommits = function() {
             if (value.rev){
                 result_data[index] = JSON.stringify(value);
                 msg = '${_("author")}: ' + value.author + ' ${_("comment")}: ' + value.comment;
-                result += '<h4>' +value.rev+ '${_(' commit verified positive')}</br> '+ msg + '</h4>';
+                result += '<h4><code>' +value.rev+ '</code>${_(' commit verified positive')}</br> '+ msg + '</h4>';
             }
             else{
-                result += '<h4>' +value.commit+ '${_('commit verified negative')}' + '</h4>';
+                result += '<h4><code>' +value.commit+ '</code>${_(' commit verified negative')}' + '</h4>';
             }
             box.remove();
         });
