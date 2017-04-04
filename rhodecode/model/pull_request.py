@@ -584,6 +584,10 @@ class PullRequestModel(BaseModel):
         source_ref_name = pull_request.source_ref_parts.name
         source_ref_id = pull_request.source_ref_parts.commit_id
 
+        target_ref_type = pull_request.target_ref_parts.type
+        target_ref_name = pull_request.target_ref_parts.name
+        target_ref_id = pull_request.target_ref_parts.commit_id
+
         if not self.has_valid_update_type(pull_request):
             log.debug(
                 "Skipping update of pull request %s due to ref type: %s",
@@ -593,6 +597,7 @@ class PullRequestModel(BaseModel):
                 reason=UpdateFailureReason.WRONG_REF_TPYE,
                 old=pull_request, new=None, changes=None)
 
+        # source repo
         source_repo = pull_request.source_repo.scm_instance()
         try:
             source_commit = source_repo.get_commit(commit_id=source_ref_name)
@@ -602,21 +607,40 @@ class PullRequestModel(BaseModel):
                 reason=UpdateFailureReason.MISSING_SOURCE_REF,
                 old=pull_request, new=None, changes=None)
 
-        if source_ref_id == source_commit.raw_id:
+        source_changed = source_ref_id != source_commit.raw_id
+
+        # target repo
+        target_repo = pull_request.target_repo.scm_instance()
+        try:
+            target_commit = target_repo.get_commit(commit_id=target_ref_name)
+        except CommitDoesNotExistError:
+            return UpdateResponse(
+                executed=False,
+                reason=UpdateFailureReason.MISSING_TARGET_REF,
+                old=pull_request, new=None, changes=None)
+        target_changed = target_ref_id != target_commit.raw_id
+
+        if not (source_changed or target_changed):
             log.debug("Nothing changed in pull request %s", pull_request)
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.NO_CHANGE,
                 old=pull_request, new=None, changes=None)
 
-        # Finally there is a need for an update
-        pull_request_version = self._create_version_from_snapshot(pull_request)
-        self._link_comments_to_version(pull_request_version)
+        change_in_found = 'target repo' if target_changed else 'source repo'
+        log.debug('Updating pull request because of change in %s detected',
+                  change_in_found)
 
-        target_ref_type = pull_request.target_ref_parts.type
-        target_ref_name = pull_request.target_ref_parts.name
-        target_ref_id = pull_request.target_ref_parts.commit_id
-        target_repo = pull_request.target_repo.scm_instance()
+        # Finally there is a need for an update, in case of source change
+        # we create a new version, else just an update
+        if source_changed:
+            pull_request_version = self._create_version_from_snapshot(pull_request)
+            self._link_comments_to_version(pull_request_version)
+        else:
+            ver = pull_request.versions[-1]
+            pull_request.pull_request_version_id = \
+                ver.pull_request_version_id if ver else None
+            pull_request_version = pull_request
 
         try:
             if target_ref_type in ('tag', 'branch', 'book'):
@@ -643,6 +667,7 @@ class PullRequestModel(BaseModel):
             source_ref_type, source_ref_name, source_commit.raw_id)
         pull_request.target_ref = '%s:%s:%s' % (
             target_ref_type, target_ref_name, ancestor)
+
         pull_request.revisions = [
             commit.raw_id for commit in reversed(commit_ranges)]
         pull_request.updated_on = datetime.datetime.now()

@@ -773,18 +773,19 @@
             $('#update_pull_request').on('click', function(e){
                 $(this).attr('disabled', 'disabled');
                 $(this).addClass('disabled');
-                $(this).html(_gettext('saving...'));
+                $(this).html(_gettext('Saving...'));
                 updateReviewers(undefined, "${c.repo_name}", "${c.pull_request.pull_request_id}");
             });
 
             $('#update_commits').on('click', function(e){
                 var isDisabled = !$(e.currentTarget).attr('disabled');
-                $(e.currentTarget).text(_gettext('Updating...'));
                 $(e.currentTarget).attr('disabled', 'disabled');
+                $(e.currentTarget).addClass('disabled');
+                $(e.currentTarget).removeClass('btn-primary');
+                $(e.currentTarget).text(_gettext('Updating...'));
                 if(isDisabled){
                     updateCommits("${c.repo_name}", "${c.pull_request.pull_request_id}");
                 }
-
             });
             // fixing issue with caches on firefox
             $('#update_commits').removeAttr("disabled");
