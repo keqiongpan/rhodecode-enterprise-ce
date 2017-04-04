@@ -684,7 +684,6 @@ class PullrequestsController(BaseRepoController):
         c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
             pull_request_at_ver)
 
-        c.ancestor = None  # empty ancestor hidden in display
         c.pull_request = pull_request_display_obj
         c.pull_request_latest = pull_request_latest
 
@@ -801,12 +800,15 @@ class PullrequestsController(BaseRepoController):
         target_commit = EmptyCommit()
         c.missing_requirements = False
 
+        source_scm = source_repo.scm_instance()
+        target_scm = target_repo.scm_instance()
+
         # try first shadow repo, fallback to regular repo
         try:
             commits_source_repo = pull_request_latest.get_shadow_repo()
         except Exception:
             log.debug('Failed to get shadow repo', exc_info=True)
-            commits_source_repo = source_repo.scm_instance()
+            commits_source_repo = source_scm
 
         c.commits_source_repo = commits_source_repo
         commit_cache = {}
@@ -829,6 +831,15 @@ class PullrequestsController(BaseRepoController):
             log.warning(
                 'Failed to get all required data from repo', exc_info=True)
             c.missing_requirements = True
+
+        c.ancestor = None  # set it to None, to hide it from PR view
+
+        try:
+            ancestor_id = source_scm.get_common_ancestor(
+                source_commit.raw_id, target_commit.raw_id, target_scm)
+            c.ancestor_commit = source_scm.get_commit(ancestor_id)
+        except Exception:
+            c.ancestor_commit = None
 
         c.statuses = source_repo.statuses(
             [x.raw_id for x in c.commit_ranges])

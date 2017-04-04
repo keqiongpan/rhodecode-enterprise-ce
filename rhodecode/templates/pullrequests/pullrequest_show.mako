@@ -83,6 +83,11 @@
                     <span class="clone-url">
                         <a href="${h.url('summary_home', repo_name=c.pull_request.source_repo.repo_name)}">${c.pull_request.source_repo.clone_url()}</a>
                     </span>
+                    <br/>
+                    % if c.ancestor_commit:
+                        ${_('Common ancestor')}:
+                        <code><a href="${h.url('changeset_home', repo_name=c.target_repo.repo_name, revision=c.ancestor_commit.raw_id)}">${h.show_id(c.ancestor_commit)}</a></code>
+                    % endif
                 </div>
                 <div class="pr-pullinfo">
                      %if h.is_hg(c.pull_request.source_repo):
