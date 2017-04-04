@@ -731,7 +731,7 @@ def get_custom_lexer(extension):
 
     # custom override made by RhodeCode
     if extension in ['mako']:
-        return lexers.get_lexer_by_name('Mako')
+        return lexers.get_lexer_by_name('html+mako')
 
     # check if we didn't define this extension as other lexer
     extensions = rhodecode.EXTENSIONS and getattr(rhodecode.EXTENSIONS, 'EXTRA_LEXERS', None)
