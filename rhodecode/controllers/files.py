@@ -241,7 +241,11 @@ class FilesController(BaseRepoController):
 
                 c.on_branch_head = self._is_valid_head(
                     commit_id, c.rhodecode_repo)
-                c.branch_or_raw_id = c.commit.branch or c.commit.raw_id
+
+                branch = c.commit.branch if (
+                    c.commit.branch and '/' not in c.commit.branch) else None
+                c.branch_or_raw_id = branch or c.commit.raw_id
+                c.branch_name = c.commit.branch or h.short_id(c.commit.raw_id)
 
                 author = c.file_last_commit.author
                 c.authors = [(h.email(author),

@@ -40,7 +40,7 @@
            |
          %if c.on_branch_head and c.branch_or_raw_id and not c.file.is_binary:
             <a href="${h.url('files_edit_home',repo_name=c.repo_name,revision=c.branch_or_raw_id,f_path=c.f_path, anchor='edit')}">
-              ${_('Edit on Branch:%s') % c.branch_or_raw_id}
+              ${_('Edit on Branch:%s') % c.branch_name}
             </a>
             | <a class="btn-danger btn-link" href="${h.url('files_delete_home',repo_name=c.repo_name,revision=c.branch_or_raw_id,f_path=c.f_path, anchor='edit')}">${_('Delete')}
             </a>
