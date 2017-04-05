@@ -95,6 +95,7 @@ delOld = function(number){
         minus.detach();
         box.append(plus);
         box.append(minus);
+        plus_leaf --;
     }
     reIndex(number+1);
 
