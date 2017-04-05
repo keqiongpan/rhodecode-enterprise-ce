@@ -442,13 +442,25 @@ class PullrequestsController(BaseRepoController):
         resp = PullRequestModel().update_commits(pull_request)
 
         if resp.executed:
+
+            if resp.target_changed and resp.source_changed:
+                changed = 'target and source repositories'
+            elif resp.target_changed and not resp.source_changed:
+                changed = 'target repository'
+            elif not resp.target_changed and resp.source_changed:
+                changed = 'source repository'
+            else:
+                changed = 'nothing'
+
             msg = _(
                 u'Pull request updated to "{source_commit_id}" with '
-                u'{count_added} added, {count_removed} removed commits.')
+                u'{count_added} added, {count_removed} removed commits. '
+                u'Source of changes: {change_source}')
             msg = msg.format(
                 source_commit_id=pull_request.source_ref_parts.commit_id,
                 count_added=len(resp.changes.added),
-                count_removed=len(resp.changes.removed))
+                count_removed=len(resp.changes.removed),
+                change_source=changed)
             h.flash(msg, category='success')
 
             registry = get_current_registry()

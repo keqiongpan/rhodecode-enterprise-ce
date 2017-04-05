@@ -63,8 +63,9 @@ log = logging.getLogger(__name__)
 
 # Data structure to hold the response data when updating commits during a pull
 # request update.
-UpdateResponse = namedtuple(
-    'UpdateResponse', 'executed, reason, new, old, changes')
+UpdateResponse = namedtuple('UpdateResponse', [
+    'executed', 'reason', 'new', 'old', 'changes',
+    'source_changed', 'target_changed'])
 
 
 class PullRequestModel(BaseModel):
@@ -116,8 +117,7 @@ class PullRequestModel(BaseModel):
         UpdateFailureReason.UNKNOWN: lazy_ugettext(
             'Pull request update failed because of an unknown error.'),
         UpdateFailureReason.NO_CHANGE: lazy_ugettext(
-            'No update needed because the source reference is already '
-            'up to date.'),
+            'No update needed because the source and target have not changed.'),
         UpdateFailureReason.WRONG_REF_TPYE: lazy_ugettext(
             'Pull request cannot be updated because the reference type is '
             'not supported for an update.'),
@@ -595,7 +595,8 @@ class PullRequestModel(BaseModel):
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.WRONG_REF_TPYE,
-                old=pull_request, new=None, changes=None)
+                old=pull_request, new=None, changes=None,
+                source_changed=False, target_changed=False)
 
         # source repo
         source_repo = pull_request.source_repo.scm_instance()
@@ -605,7 +606,8 @@ class PullRequestModel(BaseModel):
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.MISSING_SOURCE_REF,
-                old=pull_request, new=None, changes=None)
+                old=pull_request, new=None, changes=None,
+                source_changed=False, target_changed=False)
 
         source_changed = source_ref_id != source_commit.raw_id
 
@@ -617,7 +619,8 @@ class PullRequestModel(BaseModel):
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.MISSING_TARGET_REF,
-                old=pull_request, new=None, changes=None)
+                old=pull_request, new=None, changes=None,
+                source_changed=False, target_changed=False)
         target_changed = target_ref_id != target_commit.raw_id
 
         if not (source_changed or target_changed):
@@ -625,7 +628,8 @@ class PullRequestModel(BaseModel):
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.NO_CHANGE,
-                old=pull_request, new=None, changes=None)
+                old=pull_request, new=None, changes=None,
+                source_changed=target_changed, target_changed=source_changed)
 
         change_in_found = 'target repo' if target_changed else 'source repo'
         log.debug('Updating pull request because of change in %s detected',
@@ -655,7 +659,8 @@ class PullRequestModel(BaseModel):
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.MISSING_TARGET_REF,
-                old=pull_request, new=None, changes=None)
+                old=pull_request, new=None, changes=None,
+                source_changed=source_changed, target_changed=target_changed)
 
         # re-compute commit ids
         old_commit_ids = pull_request.revisions
@@ -678,43 +683,52 @@ class PullRequestModel(BaseModel):
         Session().add(pull_request)
         new_commit_ids = pull_request.revisions
 
-        changes = self._calculate_commit_id_changes(
-            old_commit_ids, new_commit_ids)
-
         old_diff_data, new_diff_data = self._generate_update_diffs(
             pull_request, pull_request_version)
 
+        # calculate commit and file changes
+        changes = self._calculate_commit_id_changes(
+            old_commit_ids, new_commit_ids)
+        file_changes = self._calculate_file_changes(
+            old_diff_data, new_diff_data)
+
+        # set comments as outdated if DIFFS changed
         CommentsModel().outdate_comments(
             pull_request, old_diff_data=old_diff_data,
             new_diff_data=new_diff_data)
 
-        file_changes = self._calculate_file_changes(
-            old_diff_data, new_diff_data)
+        commit_changes = (changes.added or changes.removed)
+        file_node_changes = (
+            file_changes.added or file_changes.modified or file_changes.removed)
+        pr_has_changes = commit_changes or file_node_changes
 
-        # Add an automatic comment to the pull request
-        update_comment = CommentsModel().create(
-            text=self._render_update_message(changes, file_changes),
-            repo=pull_request.target_repo,
-            user=pull_request.author,
-            pull_request=pull_request,
-            send_email=False, renderer=DEFAULT_COMMENTS_RENDERER)
-
-        # Update status to "Under Review" for added commits
-        for commit_id in changes.added:
-            ChangesetStatusModel().set_status(
-                repo=pull_request.source_repo,
-                status=ChangesetStatus.STATUS_UNDER_REVIEW,
-                comment=update_comment,
+        # Add an automatic comment to the pull request, in case
+        # anything has changed
+        if pr_has_changes:
+            update_comment = CommentsModel().create(
+                text=self._render_update_message(changes, file_changes),
+                repo=pull_request.target_repo,
                 user=pull_request.author,
                 pull_request=pull_request,
-                revision=commit_id)
+                send_email=False, renderer=DEFAULT_COMMENTS_RENDERER)
+
+            # Update status to "Under Review" for added commits
+            for commit_id in changes.added:
+                ChangesetStatusModel().set_status(
+                    repo=pull_request.source_repo,
+                    status=ChangesetStatus.STATUS_UNDER_REVIEW,
+                    comment=update_comment,
+                    user=pull_request.author,
+                    pull_request=pull_request,
+                    revision=commit_id)
 
         log.debug(
             'Updated pull request %s, added_ids: %s, common_ids: %s, '
             'removed_ids: %s', pull_request.pull_request_id,
             changes.added, changes.common, changes.removed)
-        log.debug('Updated pull request with the following file changes: %s',
-                  file_changes)
+        log.debug(
+            'Updated pull request with the following file changes: %s',
+            file_changes)
 
         log.info(
             "Updated pull request %s from commit %s to commit %s, "
@@ -723,12 +737,13 @@ class PullRequestModel(BaseModel):
             pull_request.source_ref_parts.commit_id,
             pull_request_version.pull_request_version_id)
         Session().commit()
-        self._trigger_pull_request_hook(pull_request, pull_request.author,
-                                        'update')
+        self._trigger_pull_request_hook(
+            pull_request, pull_request.author, 'update')
 
         return UpdateResponse(
             executed=True, reason=UpdateFailureReason.NONE,
-            old=pull_request, new=pull_request_version, changes=changes)
+            old=pull_request, new=pull_request_version, changes=changes,
+            source_changed=source_changed, target_changed=target_changed)
 
     def _create_version_from_snapshot(self, pull_request):
         version = PullRequestVersion()
