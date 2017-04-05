@@ -637,7 +637,11 @@ class PullRequestModel(BaseModel):
             pull_request_version = self._create_version_from_snapshot(pull_request)
             self._link_comments_to_version(pull_request_version)
         else:
-            ver = pull_request.versions[-1]
+            try:
+                ver = pull_request.versions[-1]
+            except IndexError:
+                ver = None
+
             pull_request.pull_request_version_id = \
                 ver.pull_request_version_id if ver else None
             pull_request_version = pull_request
