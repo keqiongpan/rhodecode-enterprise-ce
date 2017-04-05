@@ -12,6 +12,7 @@ then please send a request to support@rhodecode.com
 
    deploy-from-host
    hg-large-ext
+   git-lfs-ext
    multi-instance-setup
    scaling-best-practices
    squash-commits
