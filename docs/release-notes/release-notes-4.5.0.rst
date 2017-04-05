@@ -21,7 +21,7 @@ New Features
 - Pull request reviewers (EE only): added new default reviewers functionality.
   Allows picking users or user groups defined as reviewers for new pull request.
   Picking reviewers can be based on branch name, changed file name patterns or
-  original author of changed source code. eg *.css -> design team.
+  original author of changed source code. eg \*.css -> design team.
   Master branch -> repo owner, fixes #1131.
 - Pull request reviewers: store and show reasons why given person is a reviewer.
   Manually adding reviewers after creating a PR will now be also indicated
@@ -85,7 +85,7 @@ General
   input for text box.
 - Api: WARNING DEPRECATION, refactor repository group schemas. Fixes #4133.
   When using create_repo, create_repo_group, update_repo, update_repo_group
-  the *_name parameter now takes full path including sub repository groups.
+  the \*_name parameter now takes full path including sub repository groups.
   This is the only way to add resource under another repository group.
   Furthermore giving non-existing path will no longer create the missing
   structure. This change makes the api more consistent, it better validates
