@@ -244,9 +244,8 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
 
     .. code-block:: bash
 
-      "id": <id_given_in_input>,
-      "result":
-        {
+        "id": <id_given_in_input>,
+        "result": {
             "executed":         "<bool>",
             "failure_reason":   "<int>",
             "merge_commit_id":  "<merge_commit_id>",
@@ -257,8 +256,7 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
                                     "name":      "<name>"
                                 }
         },
-      "error": null
-
+        "error": null
     """
     repo = get_repo_or_error(repoid)
     if not isinstance(userid, Optional):
@@ -321,13 +319,12 @@ def close_pull_request(request, apiuser, repoid, pullrequestid,
 
     .. code-block:: bash
 
-      "id": <id_given_in_input>,
-      "result":
-        {
+        "id": <id_given_in_input>,
+        "result": {
             "pull_request_id":  "<int>",
             "closed":           "<bool>"
         },
-      "error": null
+        "error": null
 
     """
     repo = get_repo_or_error(repoid)
@@ -396,15 +393,14 @@ def comment_pull_request(
 
     .. code-block:: bash
 
-      id : <id_given_in_input>
-      result :
-        {
+        id : <id_given_in_input>
+        result : {
             "pull_request_id":  "<Integer>",
             "comment_id":       "<Integer>",
             "status": {"given": <given_status>,
                        "was_changed": <bool status_was_actually_changed> },
-        }
-      error :  null
+        },
+        error :  null
     """
     repo = get_repo_or_error(repoid)
     if not isinstance(userid, Optional):
@@ -535,9 +531,8 @@ def create_pull_request(
     :param reviewers: Set the new pull request reviewers list.
     :type reviewers: Optional(list)
         Accepts username strings or objects of the format:
-        {
-            'username': 'nick', 'reasons': ['original author']
-        }
+
+            {'username': 'nick', 'reasons': ['original author']}
     """
 
     source = get_repo_or_error(source_repo)
@@ -633,9 +628,8 @@ def update_pull_request(
 
     .. code-block:: bash
 
-      id : <id_given_in_input>
-      result :
-        {
+        id : <id_given_in_input>
+        result : {
             "msg": "Updated pull request `63`",
             "pull_request": <pull_request_object>,
             "updated_reviewers": {
@@ -655,7 +649,7 @@ def update_pull_request(
               "removed": []
             }
         }
-      error :  null
+        error :  null
     """
 
     repo = get_repo_or_error(repoid)

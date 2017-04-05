@@ -133,7 +133,7 @@ def get_users(request, apiuser):
     .. code-block:: bash
 
         id : <id_given_in_input>
-            result: [<user_object>, ...]
+        result: [<user_object>, ...]
         error:  null
     """
 
@@ -191,15 +191,16 @@ def create_user(request, apiuser, username, email, password=Optional(''),
     :type force_password_change: Optional(``True`` | ``False``)
     :param create_personal_repo_group: Create personal repo group for this user
     :type create_personal_repo_group: Optional(``True`` | ``False``)
+
     Example output:
 
     .. code-block:: bash
 
         id : <id_given_in_input>
         result: {
-                  "msg" : "created new user `<username>`",
-                  "user": <user_obj>
-                }
+            "msg" : "created new user `<username>`",
+            "user": <user_obj>
+        }
         error:  null
 
     Example error output:
@@ -305,9 +306,9 @@ def update_user(request, apiuser, userid, username=Optional(None),
 
         id : <id_given_in_input>
         result: {
-                  "msg" : "updated user ID:<userid> <username>",
-                  "user": <user_object>,
-                }
+            "msg" : "updated user ID:<userid> <username>",
+            "user": <user_object>,
+        }
         error:  null
 
     Example error output:
@@ -384,9 +385,9 @@ def delete_user(request, apiuser, userid):
 
         id : <id_given_in_input>
         result: {
-                  "msg" : "deleted user ID:<userid> <username>",
-                  "user": null
-                }
+            "msg" : "deleted user ID:<userid> <username>",
+            "user": null
+        }
         error:  null
 
     Example error output:

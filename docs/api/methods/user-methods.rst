@@ -41,15 +41,16 @@ create_user
    :type force_password_change: Optional(``True`` | ``False``)
    :param create_personal_repo_group: Create personal repo group for this user
    :type create_personal_repo_group: Optional(``True`` | ``False``)
+
    Example output:
 
    .. code-block:: bash
 
        id : <id_given_in_input>
        result: {
-                 "msg" : "created new user `<username>`",
-                 "user": <user_obj>
-               }
+           "msg" : "created new user `<username>`",
+           "user": <user_obj>
+       }
        error:  null
 
    Example error output:
@@ -98,9 +99,9 @@ delete_user
 
        id : <id_given_in_input>
        result: {
-                 "msg" : "deleted user ID:<userid> <username>",
-                 "user": null
-               }
+           "msg" : "deleted user ID:<userid> <username>",
+           "user": null
+       }
        error:  null
 
    Example error output:
@@ -145,8 +146,8 @@ get_user
          "result": {
            "active": true,
            "admin": false,
-           "api_key": "api-key",
            "api_keys": [ list of keys ],
+           "auth_tokens": [ list of tokens with details ],
            "email": "user@example.com",
            "emails": [
              "user@example.com"
@@ -157,6 +158,7 @@ get_user
            "ip_addresses": [],
            "language": null,
            "last_login": "Timestamp",
+           "last_activity": "Timestamp",
            "lastname": "surnae",
            "permissions": {
              "global": [
@@ -181,6 +183,32 @@ get_user
            "username": "username"
          }
        }
+
+
+get_user_audit_logs 
+-------------------
+
+.. py:function:: get_user_audit_logs(apiuser, userid=<Optional:<OptionalAttr:apiuser>>)
+
+   Fetches all action logs made by the specified user.
+
+   This command takes the following options:
+
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+   :param userid: Sets the userid whose list of locked |repos| will be
+       displayed.
+   :type userid: Optional(str or int)
+
+   Example output:
+
+   .. code-block:: bash
+
+       id : <id_given_in_input>
+       result : {
+           [action, action,...]
+       }
+       error :  null
 
 
 get_user_locks 
@@ -232,7 +260,7 @@ get_users
    .. code-block:: bash
 
        id : <id_given_in_input>
-           result: [<user_object>, ...]
+       result: [<user_object>, ...]
        error:  null
 
 
@@ -279,9 +307,9 @@ update_user
 
        id : <id_given_in_input>
        result: {
-                 "msg" : "updated user ID:<userid> <username>",
-                 "user": <user_object>,
-               }
+           "msg" : "updated user ID:<userid> <username>",
+           "user": <user_object>,
+       }
        error:  null
 
    Example error output:
