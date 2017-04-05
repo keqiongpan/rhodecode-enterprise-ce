@@ -374,6 +374,10 @@ def make_map(config):
                   '/user_groups/{user_group_id}/edit/advanced',
                   action='edit_advanced', conditions={'method': ['GET']})
 
+        m.connect('edit_user_group_advanced_sync',
+                  '/user_groups/{user_group_id}/edit/advanced/sync',
+                  action='edit_advanced_set_synchronization', conditions={'method': ['POST']})
+
         m.connect('edit_user_group_members',
                   '/user_groups/{user_group_id}/edit/members', jsroute=True,
                   action='user_group_members', conditions={'method': ['GET']})

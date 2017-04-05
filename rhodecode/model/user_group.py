@@ -501,8 +501,8 @@ class UserGroupModel(BaseModel):
             if not existing_group:
                 desc = 'Automatically created from plugin:%s' % extern_type
                 # we use first admin account to set the owner of the group
-                existing_group = UserGroupModel().create(gr, desc, owner,
-                                        group_data={'extern_type': extern_type})
+                existing_group = UserGroupModel().create(
+                    gr, desc, owner, group_data={'extern_type': extern_type})
 
             # we can only add users to special groups created via plugins
             managed = 'extern_type' in existing_group.group_data
@@ -511,8 +511,7 @@ class UserGroupModel(BaseModel):
                 UserGroupModel().add_user_to_group(existing_group, user)
             else:
                 log.debug('Skipping addition to group %s since it is '
-                          'not managed by auth plugins' % gr)
-
+                          'not set to be automatically synchronized' % gr)
 
     def change_groups(self, user, groups):
         """
