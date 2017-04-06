@@ -43,14 +43,15 @@ addNew = function(number){
     if (number >= ${c.strip_limit}){
         return;
     }
-    var minus = '<i id="i_minus_icon-'+(number+1)+'" class="icon-minus">${_('Remove')}</i>';
+    var minus = '<i class="icon-minus">${_('Remove')}</i>';
     $('#plus_icon-'+number).detach();
     number++;
 
     var input = '<div id="box-'+number+'" class="inputx locked_input">'+
-               '<input class="text" id="changeset_id-'+number+'" name="changeset_id-'+number+'"  size="59" type="text" value="">'+
+               '<input class="text" id="changeset_id-'+number+'" name="changeset_id-'+number+'"  size="59" type="text" value=""' +
+            'placeholder="${_('Enter full 40 character commit sha')}">'+
                '<div  id="plus_icon-'+number+'" class="btn btn-default plus_input_button" onclick="addNew('+number+');return false">'+
-                   '<i id="i_plus_icon-'+(number)+'" class="icon-plus">${_('Add another commit')}</i>'+
+                   '<i class="icon-plus">${_('Add another commit')}</i>'+
                '</div>'+
                '<div  id="minus_icon-'+number+'" class="btn btn-default minus_input_button" onclick="delOld('+(number)+');return false">'+
                 minus +
@@ -65,21 +66,23 @@ reIndex = function(number){
         var check = $('#box-'+i);
         if (check.length == 0){
             var change = $('#box-'+(i+1));
-
             change.attr('id','box-'+i);
             var plus = $('#plus_icon-'+(i+1));
-            var i_plus = $('#i_plus_icon-'+(i+1));
+
             if (plus.length != 0){
                 plus.attr('id','plus_icon-'+i);
-                i_plus.attr('id','i_plus_icon-'+i);
-                i_plus.attr('onclick','addNew('+i+');return false');
+                plus.attr('onclick','addNew('+i+');return false');
                 plus_leaf--;
             }
             var minus = $('#minus_icon-'+(i+1));
-            var i_minus = $('#i_minus_icon-'+(i+1));
+
             minus.attr('id','minus_icon-'+i);
-            i_minus.attr('id','i_minus_icon-'+i);
-            i_minus.attr('onclick','delOld('+i+');return false');
+
+            minus.attr('onclick','delOld('+i+');re' +
+            'turn false');
+            var input = $('input#changeset_id-'+(i+1));
+            input.attr('name','changeset_id-'+i);
+            input.attr('id','changeset_id-'+i);
         }
     }
 };
