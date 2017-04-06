@@ -576,13 +576,21 @@ class PullrequestsController(BaseRepoController):
     def delete(self, repo_name, pull_request_id):
         pull_request_id = safe_int(pull_request_id)
         pull_request = PullRequest.get_or_404(pull_request_id)
+
+        pr_closed = pull_request.is_closed()
+        allowed_to_delete = PullRequestModel().check_user_delete(
+            pull_request, c.rhodecode_user) and not pr_closed
+
         # only owner can delete it !
-        if pull_request.author.user_id == c.rhodecode_user.user_id:
+        if allowed_to_delete:
             PullRequestModel().delete(pull_request)
             Session().commit()
             h.flash(_('Successfully deleted pull request'),
                     category='success')
             return redirect(url('my_account_pullrequests'))
+
+        h.flash(_('Your are not allowed to delete this pull request'),
+                category='error')
         raise HTTPForbidden()
 
     def _get_pr_version(self, pull_request_id, version=None):
