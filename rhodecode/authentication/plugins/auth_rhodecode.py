@@ -25,9 +25,8 @@ RhodeCode authentication plugin for built in internal auth
 import logging
 
 from pylons.i18n.translation import lazy_ugettext as _
-from sqlalchemy.ext.hybrid import hybrid_property
 
-from rhodecode.authentication.base import RhodeCodeAuthPluginBase
+from rhodecode.authentication.base import RhodeCodeAuthPluginBase, hybrid_property
 from rhodecode.authentication.routes import AuthnPluginResourceBase
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.model.db import User

@@ -92,6 +92,10 @@ class DBBackend(object):
     def __init__(
             self, config_file, db_name=None, basetemp=None,
             connection_string=None):
+
+        from rhodecode.lib.vcs.backends.hg import largefiles_store
+        from rhodecode.lib.vcs.backends.git import lfs_store
+
         self.fixture_store = os.path.join(self._store, self._type)
         self.db_name = db_name or self._base_db_name
         self._base_ini_file = config_file
@@ -99,6 +103,8 @@ class DBBackend(object):
         self.stdout = ''
         self._basetemp = basetemp or tempfile.gettempdir()
         self._repos_location = os.path.join(self._basetemp, 'rc_test_repos')
+        self._repos_hg_largefiles_store = largefiles_store(self._basetemp)
+        self._repos_git_lfs_store = lfs_store(self._basetemp)
         self.connection_string = connection_string
 
     @property
@@ -152,8 +158,14 @@ class DBBackend(object):
         ini_params.extend(self._db_url)
         with TestINI(self._base_ini_file, ini_params,
                      self._type, destroy=True) as _ini_file:
+
             if not os.path.isdir(self._repos_location):
                 os.makedirs(self._repos_location)
+            if not os.path.isdir(self._repos_hg_largefiles_store):
+                os.makedirs(self._repos_hg_largefiles_store)
+            if not os.path.isdir(self._repos_git_lfs_store):
+                os.makedirs(self._repos_git_lfs_store)
+
             self.execute(
                 "paster setup-rhodecode {0} --user=marcink "
                 "--email=marcin@rhodeocode.com --password={1} "

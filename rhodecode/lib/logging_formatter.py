@@ -67,9 +67,9 @@ def format_sql(sql):
     return sql
 
 
-class Pyro4AwareFormatter(logging.Formatter):
+class ExceptionAwareFormatter(logging.Formatter):
     """
-    Extended logging formatter which prints out Pyro4 remote tracebacks.
+    Extended logging formatter which prints out remote tracebacks.
     """
 
     def formatException(self, ei):
@@ -86,10 +86,12 @@ class Pyro4AwareFormatter(logging.Formatter):
 
             try:
                 if ex_type is not None and ex_value is None and ex_tb is None:
-                    # possible old (3.x) call syntax where caller is only providing exception object
+                    # possible old (3.x) call syntax where caller is only
+                    # providing exception object
                     if type(ex_type) is not type:
                         raise TypeError(
-                            "invalid argument: ex_type should be an exception type, or just supply no arguments at all")
+                            "invalid argument: ex_type should be an exception "
+                            "type, or just supply no arguments at all")
                 if ex_type is None and ex_tb is None:
                     ex_type, ex_value, ex_tb = sys.exc_info()
 
@@ -105,7 +107,7 @@ class Pyro4AwareFormatter(logging.Formatter):
         return local_tb
 
 
-class ColorFormatter(Pyro4AwareFormatter):
+class ColorFormatter(ExceptionAwareFormatter):
 
     def format(self, record):
         """
@@ -134,3 +136,6 @@ class ColorFormatterSql(logging.Formatter):
 
         colored_record = ''.join([start, def_record, end])
         return colored_record
+
+# marcink: needs to stay with this name for backward .ini compatability
+Pyro4AwareFormatter = ExceptionAwareFormatter

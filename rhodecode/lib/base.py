@@ -209,11 +209,12 @@ def vcs_operation_context(
 class BasicAuth(AuthBasicAuthenticator):
 
     def __init__(self, realm, authfunc, registry, auth_http_code=None,
-                 initial_call_detection=False):
+                 initial_call_detection=False, acl_repo_name=None):
         self.realm = realm
         self.initial_call = initial_call_detection
         self.authfunc = authfunc
         self.registry = registry
+        self.acl_repo_name = acl_repo_name
         self._rc_auth_http_code = auth_http_code
 
     def _get_response_from_code(self, http_code):
@@ -247,7 +248,7 @@ class BasicAuth(AuthBasicAuthenticator):
             username, password = _parts
             if self.authfunc(
                     username, password, environ, VCS_TYPE,
-                    registry=self.registry):
+                    registry=self.registry, acl_repo_name=self.acl_repo_name):
                 return username
             if username and password:
                 # we mark that we actually executed authentication once, at
@@ -488,21 +489,12 @@ class BaseController(WSGIController):
             _route_name)
         )
 
-        # TODO: Maybe this should be move to pyramid to cover all views.
-        # check user attributes for password change flag
         user_obj = auth_user.get_instance()
         if user_obj and user_obj.user_data.get('force_password_change'):
             h.flash('You are required to change your password', 'warning',
                     ignore_duplicate=True)
-
-            skip_user_check_urls = [
-                'error.document', 'login.logout', 'login.index',
-                'admin/my_account.my_account_password',
-                'admin/my_account.my_account_password_update'
-            ]
-            if _route_name not in skip_user_check_urls:
-                return self._dispatch_redirect(
-                    url('my_account_password'), environ, start_response)
+            return self._dispatch_redirect(
+                url('my_account_password'), environ, start_response)
 
         return WSGIController.__call__(self, environ, start_response)
 

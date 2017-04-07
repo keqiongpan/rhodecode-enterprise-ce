@@ -232,7 +232,7 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
     ### LOGGING CONFIGURATION   ####
     ################################
     [loggers]
-    keys = root, vcsserver, pyro4, beaker
+    keys = root, vcsserver, beaker
 
     [handlers]
     keys = console
@@ -257,12 +257,6 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
     level = DEBUG
     handlers =
     qualname = beaker
-    propagate = 1
-
-    [logger_pyro4]
-    level = DEBUG
-    handlers =
-    qualname = Pyro4
     propagate = 1
 
 

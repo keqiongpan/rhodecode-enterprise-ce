@@ -199,7 +199,6 @@ div.diffblock {
     // BEGIN CODE-BODY STYLES
 
     .code-body {
-        background: white;
         padding: 0;
         background-color: #ffffff;
         position: relative;
@@ -491,6 +490,11 @@ div.codeblock {
         // to have the intended size and to scroll. Should be simplified.
         width: 100%;
         overflow-x: auto;
+
+        img.rendered-binary {
+            height: auto;
+            width: 100%;
+        }
     }
 }
 
@@ -816,7 +820,6 @@ input.filediff-collapse-state {
     .pill {
         &[op="name"] {
             background: none;
-            color: @grey2;
             opacity: 1;
             color: white;
         }
@@ -833,6 +836,10 @@ input.filediff-collapse-state {
             color: white;
         }
         &[op="renamed"] {
+            background: @color4;
+            color: white;
+        }
+        &[op="copied"] {
             background: @color4;
             color: white;
         }
@@ -1005,7 +1012,7 @@ table.cb {
                 display: block;
                 white-space: pre-wrap;
                 font-family: @font-family-monospace;
-                word-break: break-word;
+                word-break: break-all;
                 .nonl {
                     color: @color5;
                 }
@@ -1105,6 +1112,7 @@ table.cb {
         }
         &.cb-annotate-message-spacer {
              width:8px;
+             padding: 1px 0px 0px 3px;
         }
         &.cb-annotate-info {
             width: 320px;

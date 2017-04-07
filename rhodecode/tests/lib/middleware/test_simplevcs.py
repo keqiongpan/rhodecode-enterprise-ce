@@ -326,8 +326,6 @@ class TestShadowRepoExposure(object):
 
 
 @pytest.mark.usefixtures('db')
-@mock.patch.multiple(
-    'Pyro4.config', SERVERTYPE='multiplex', POLLTIMEOUT=0.01)
 class TestGenerateVcsResponse:
 
     def test_ensures_that_start_response_is_called_early_enough(self):

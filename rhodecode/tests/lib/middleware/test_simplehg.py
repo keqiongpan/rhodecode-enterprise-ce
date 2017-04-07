@@ -78,30 +78,42 @@ def test_get_repository_name(url, expected_repo_name):
     assert expected_repo_name == app._get_repository_name(get_environ(url))
 
 
-def test_get_config():
+def test_get_config(pylonsapp, user_util):
+    repo = user_util.create_repo(repo_type='git')
     app = simplehg.SimpleHg(application=None,
                             config={'auth_ret_code': '', 'base_path': ''},
                             registry=None)
     extras = {'foo': 'FOO', 'bar': 'BAR'}
 
-    mock_config = Config()
-    mock_config.set('a1', 'b1', 'c1')
-    mock_config.set('a2', 'b2', 'c2')
-    # We mock the call to make_db_config, otherwise we need to wait for the
-    # pylonsaspp
-    with mock.patch('rhodecode.lib.utils.make_db_config',
-                    return_value=mock_config) as make_db_config_mock:
-        hg_config = app._create_config(extras, repo_name='test-repo')
+    hg_config = app._create_config(extras, repo_name=repo.repo_name)
 
-    make_db_config_mock.assert_called_once_with(repo='test-repo')
-    assert isinstance(hg_config, list)
+    config = simplehg.utils.make_db_config(repo=repo.repo_name)
+    config.set('rhodecode', 'RC_SCM_DATA', json.dumps(extras))
+    hg_config_org = config
 
-    # Remove the entries from the mock_config so to get only the extras
-    hg_config.remove(('a1', 'b1', 'c1'))
-    hg_config.remove(('a2', 'b2', 'c2'))
-
-    assert hg_config[0][:2] == ('rhodecode', 'RC_SCM_DATA')
-    assert json.loads(hg_config[0][-1]) == extras
+    expected_config = [
+        ('vcs_svn_tag', 'ff89f8c714d135d865f44b90e5413b88de19a55f', '/tags/*'),
+        ('web', 'push_ssl', 'False'),
+        ('web', 'allow_push', '*'),
+        ('web', 'allow_archive', 'gz zip bz2'),
+        ('web', 'baseurl', '/'),
+        ('vcs_git_lfs', 'store_location', hg_config_org.get('vcs_git_lfs', 'store_location')),
+        ('vcs_svn_branch', '9aac1a38c3b8a0cdc4ae0f960a5f83332bc4fa5e', '/branches/*'),
+        ('vcs_svn_branch', 'c7e6a611c87da06529fd0dd733308481d67c71a8', '/trunk'),
+        ('largefiles', 'usercache', hg_config_org.get('largefiles', 'usercache')),
+        ('hooks', 'preoutgoing.pre_pull', 'python:vcsserver.hooks.pre_pull'),
+        ('hooks', 'prechangegroup.pre_push', 'python:vcsserver.hooks.pre_push'),
+        ('hooks', 'outgoing.pull_logger', 'python:vcsserver.hooks.log_pull_action'),
+        ('hooks', 'pretxnchangegroup.pre_push', 'python:vcsserver.hooks.pre_push'),
+        ('hooks', 'changegroup.push_logger', 'python:vcsserver.hooks.log_push_action'),
+        ('hooks', 'changegroup.repo_size', 'python:vcsserver.hooks.repo_size'),
+        ('phases', 'publish', 'True'),
+        ('extensions', 'largefiles', ''),
+        ('paths', '/', hg_config_org.get('paths', '/')),
+        ('rhodecode', 'RC_SCM_DATA', '{"foo": "FOO", "bar": "BAR"}')
+    ]
+    for entry in expected_config:
+        assert entry in hg_config
 
 
 def test_create_wsgi_app_uses_scm_app_from_simplevcs():

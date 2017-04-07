@@ -292,13 +292,13 @@ class DbManage(object):
             TEST_USER_REGULAR2_PASS, TEST_USER_REGULAR2_EMAIL
 
         self.create_user(TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS,
-                         TEST_USER_ADMIN_EMAIL, True)
+                         TEST_USER_ADMIN_EMAIL, True, api_key=True)
 
         self.create_user(TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS,
-                         TEST_USER_REGULAR_EMAIL, False)
+                         TEST_USER_REGULAR_EMAIL, False, api_key=True)
 
         self.create_user(TEST_USER_REGULAR2_LOGIN, TEST_USER_REGULAR2_PASS,
-                         TEST_USER_REGULAR2_EMAIL, False)
+                         TEST_USER_REGULAR2_EMAIL, False, api_key=True)
 
     def create_ui_settings(self, repo_store_path):
         """
@@ -306,6 +306,8 @@ class DbManage(object):
         and disables dotencode
         """
         settings_model = SettingsModel(sa=self.sa)
+        from rhodecode.lib.vcs.backends.hg import largefiles_store
+        from rhodecode.lib.vcs.backends.git import lfs_store
 
         # Build HOOKS
         hooks = [
@@ -315,6 +317,7 @@ class DbManage(object):
             (RhodeCodeUi.HOOK_PRE_PULL, 'python:vcsserver.hooks.pre_pull'),
             (RhodeCodeUi.HOOK_PULL, 'python:vcsserver.hooks.log_pull_action'),
             (RhodeCodeUi.HOOK_PRE_PUSH, 'python:vcsserver.hooks.pre_push'),
+            (RhodeCodeUi.HOOK_PRETX_PUSH, 'python:vcsserver.hooks.pre_push'),
             (RhodeCodeUi.HOOK_PUSH, 'python:vcsserver.hooks.log_push_action'),
 
         ]
@@ -335,13 +338,22 @@ class DbManage(object):
         self.sa.add(largefiles)
 
         # set default largefiles cache dir, defaults to
-        # /repo location/.cache/largefiles
+        # /repo_store_location/.cache/largefiles
         largefiles = RhodeCodeUi()
         largefiles.ui_section = 'largefiles'
         largefiles.ui_key = 'usercache'
-        largefiles.ui_value = os.path.join(repo_store_path, '.cache',
-                                           'largefiles')
+        largefiles.ui_value = largefiles_store(repo_store_path)
+
         self.sa.add(largefiles)
+
+        # set default lfs cache dir, defaults to
+        # /repo_store_location/.cache/lfs_store
+        lfsstore = RhodeCodeUi()
+        lfsstore.ui_section = 'vcs_git_lfs'
+        lfsstore.ui_key = 'store_location'
+        lfsstore.ui_value = lfs_store(repo_store_path)
+
+        self.sa.add(lfsstore)
 
         # enable hgsubversion disabled by default
         hgsubversion = RhodeCodeUi()
@@ -506,12 +518,12 @@ class DbManage(object):
         self.create_ui_settings(path)
 
         ui_config = [
-            ('web', 'push_ssl', 'false'),
+            ('web', 'push_ssl', 'False'),
             ('web', 'allow_archive', 'gz zip bz2'),
             ('web', 'allow_push', '*'),
             ('web', 'baseurl', '/'),
             ('paths', '/', path),
-            ('phases', 'publish', 'true')
+            ('phases', 'publish', 'True')
         ]
         for section, key, value in ui_config:
             ui_conf = RhodeCodeUi()
@@ -560,7 +572,9 @@ class DbManage(object):
 
         if api_key:
             log.info('setting a provided api key for the user %s', username)
-            user.api_key = api_key
+            from rhodecode.model.auth_token import AuthTokenModel
+            AuthTokenModel().create(
+                user=user, description='BUILTIN TOKEN')
 
     def create_default_user(self):
         log.info('creating default user')

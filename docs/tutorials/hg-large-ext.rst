@@ -9,6 +9,36 @@ has a large files extension which tracks their revisions by checksums. This
 means that the large files are only downloaded when they are needed as part
 of the current revision. This saves both disk space and bandwidth.
 
+
+Enabling HG Largefiles
+++++++++++++++++++++++
+
+Mercurial Largefiles extension is disabled by default within |RC| Server.
+
+To enable Mercurial Largefiles Globally:
+
+    - Go to :menuselection:`Admin --> Settings --> VCS`
+
+    - Scroll down into `Mercurial settings`
+
+    - Tick `Enable largefiles extension`
+
+    - Save your settings.
+
+Those settings apply globally to each repository that inherits from the defaults
+You can leave `largefiles extension` disabled globally, and only enable it per
+repository that would use the largefiles.
+
+
+.. note::
+
+    You might want to adjust the global storage location at that point, however
+    we recommend leaving the default one created.
+
+
+Installing and using the |hg| Largefiles
+++++++++++++++++++++++++++++++++++++++++
+
 To find out more, see the |hg| `Large Files Extensions Documentation`_.
 
 To configure the large files extension, you need to set up your

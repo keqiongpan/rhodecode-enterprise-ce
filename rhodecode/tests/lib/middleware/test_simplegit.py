@@ -20,82 +20,114 @@
 
 import pytest
 import urlparse
+import mock
+import simplejson as json
 
+from rhodecode.lib.vcs.backends.base import Config
 from rhodecode.tests.lib.middleware import mock_scm_app
 import rhodecode.lib.middleware.simplegit as simplegit
 
 
-def get_environ(url):
+def get_environ(url, request_method):
     """Construct a minimum WSGI environ based on the URL."""
     parsed_url = urlparse.urlparse(url)
     environ = {
         'PATH_INFO': parsed_url.path,
         'QUERY_STRING': parsed_url.query,
+        'REQUEST_METHOD': request_method,
     }
 
     return environ
 
 
 @pytest.mark.parametrize(
-    'url, expected_action',
+    'url, expected_action, request_method',
     [
-        ('/foo/bar/info/refs?service=git-upload-pack', 'pull'),
-        ('/foo/bar/info/refs?service=git-receive-pack', 'push'),
-        ('/foo/bar/git-upload-pack', 'pull'),
-        ('/foo/bar/git-receive-pack', 'push'),
+        ('/foo/bar/info/refs?service=git-upload-pack', 'pull', 'GET'),
+        ('/foo/bar/info/refs?service=git-receive-pack', 'push', 'GET'),
+        ('/foo/bar/git-upload-pack', 'pull', 'GET'),
+        ('/foo/bar/git-receive-pack', 'push', 'GET'),
         # Edge case: missing data for info/refs
-        ('/foo/info/refs?service=', 'pull'),
-        ('/foo/info/refs', 'pull'),
+        ('/foo/info/refs?service=', 'pull', 'GET'),
+        ('/foo/info/refs', 'pull', 'GET'),
         # Edge case: git command comes with service argument
-        ('/foo/git-upload-pack?service=git-receive-pack', 'pull'),
-        ('/foo/git-receive-pack?service=git-upload-pack', 'push'),
+        ('/foo/git-upload-pack?service=git-receive-pack', 'pull', 'GET'),
+        ('/foo/git-receive-pack?service=git-upload-pack', 'push', 'GET'),
         # Edge case: repo name conflicts with git commands
-        ('/git-receive-pack/git-upload-pack', 'pull'),
-        ('/git-receive-pack/git-receive-pack', 'push'),
-        ('/git-upload-pack/git-upload-pack', 'pull'),
-        ('/git-upload-pack/git-receive-pack', 'push'),
-        ('/foo/git-receive-pack', 'push'),
+        ('/git-receive-pack/git-upload-pack', 'pull', 'GET'),
+        ('/git-receive-pack/git-receive-pack', 'push', 'GET'),
+        ('/git-upload-pack/git-upload-pack', 'pull', 'GET'),
+        ('/git-upload-pack/git-receive-pack', 'push', 'GET'),
+        ('/foo/git-receive-pack', 'push', 'GET'),
         # Edge case: not a smart protocol url
-        ('/foo/bar', 'pull'),
+        ('/foo/bar', 'pull', 'GET'),
+        # GIT LFS cases, batch
+        ('/foo/bar/info/lfs/objects/batch', 'push', 'GET'),
+        ('/foo/bar/info/lfs/objects/batch', 'pull', 'POST'),
+        # GIT LFS oid, dl/upl
+        ('/foo/bar/info/lfs/abcdeabcde', 'pull', 'GET'),
+        ('/foo/bar/info/lfs/abcdeabcde', 'push', 'PUT'),
+        ('/foo/bar/info/lfs/abcdeabcde', 'push', 'POST'),
+        # Edge case: repo name conflicts with git commands
+        ('/info/lfs/info/lfs/objects/batch', 'push', 'GET'),
+        ('/info/lfs/info/lfs/objects/batch', 'pull', 'POST'),
+
     ])
-def test_get_action(url, expected_action, pylonsapp):
+def test_get_action(url, expected_action, request_method, pylonsapp):
     app = simplegit.SimpleGit(application=None,
                               config={'auth_ret_code': '', 'base_path': ''},
                               registry=None)
-    assert expected_action == app._get_action(get_environ(url))
+    assert expected_action == app._get_action(get_environ(url, request_method))
 
 
 @pytest.mark.parametrize(
-    'url, expected_repo_name',
+    'url, expected_repo_name, request_method',
     [
-        ('/foo/info/refs?service=git-upload-pack', 'foo'),
-        ('/foo/bar/info/refs?service=git-receive-pack', 'foo/bar'),
-        ('/foo/git-upload-pack', 'foo'),
-        ('/foo/git-receive-pack', 'foo'),
-        ('/foo/bar/git-upload-pack', 'foo/bar'),
-        ('/foo/bar/git-receive-pack', 'foo/bar'),
+        ('/foo/info/refs?service=git-upload-pack', 'foo', 'GET'),
+        ('/foo/bar/info/refs?service=git-receive-pack', 'foo/bar', 'GET'),
+        ('/foo/git-upload-pack', 'foo', 'GET'),
+        ('/foo/git-receive-pack', 'foo', 'GET'),
+        ('/foo/bar/git-upload-pack', 'foo/bar', 'GET'),
+        ('/foo/bar/git-receive-pack', 'foo/bar', 'GET'),
+
+        # GIT LFS cases, batch
+        ('/foo/bar/info/lfs/objects/batch', 'foo/bar', 'GET'),
+        ('/example-git/info/lfs/objects/batch', 'example-git', 'POST'),
+        # GIT LFS oid, dl/upl
+        ('/foo/info/lfs/abcdeabcde', 'foo', 'GET'),
+        ('/foo/bar/info/lfs/abcdeabcde', 'foo/bar', 'PUT'),
+        ('/my-git-repo/info/lfs/abcdeabcde', 'my-git-repo', 'POST'),
+        # Edge case: repo name conflicts with git commands
+        ('/info/lfs/info/lfs/objects/batch', 'info/lfs', 'GET'),
+        ('/info/lfs/info/lfs/objects/batch', 'info/lfs', 'POST'),
+
     ])
-def test_get_repository_name(url, expected_repo_name, pylonsapp):
+def test_get_repository_name(url, expected_repo_name, request_method, pylonsapp):
     app = simplegit.SimpleGit(application=None,
                               config={'auth_ret_code': '', 'base_path': ''},
                               registry=None)
-    assert expected_repo_name == app._get_repository_name(get_environ(url))
+    assert expected_repo_name == app._get_repository_name(
+        get_environ(url, request_method))
 
 
-def test_get_config(pylonsapp):
+def test_get_config(pylonsapp, user_util):
+    repo = user_util.create_repo(repo_type='git')
     app = simplegit.SimpleGit(application=None,
                               config={'auth_ret_code': '', 'base_path': ''},
                               registry=None)
     extras = {'foo': 'FOO', 'bar': 'BAR'}
 
     # We copy the extras as the method below will change the contents.
-    config = app._create_config(dict(extras), repo_name='test-repo')
+    git_config = app._create_config(dict(extras), repo_name=repo.repo_name)
+
     expected_config = dict(extras)
     expected_config.update({
         'git_update_server_info': False,
+        'git_lfs_enabled': False,
+        'git_lfs_store_path': git_config['git_lfs_store_path']
     })
 
-    assert config == expected_config
+    assert git_config == expected_config
 
 
 def test_create_wsgi_app_uses_scm_app_from_simplevcs(pylonsapp):

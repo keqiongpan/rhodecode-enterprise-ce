@@ -86,7 +86,7 @@ $(document).ready(function() {
     // object list
     $('#pull_request_list_table').DataTable({
       data: ${c.data|n},
-      processing: true,
+      processing: false,
       serverSide: true,
       deferLoading: ${c.records_total},
       ajax: "",

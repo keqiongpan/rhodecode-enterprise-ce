@@ -501,8 +501,8 @@ class UserGroupModel(BaseModel):
             if not existing_group:
                 desc = 'Automatically created from plugin:%s' % extern_type
                 # we use first admin account to set the owner of the group
-                existing_group = UserGroupModel().create(gr, desc, owner,
-                                        group_data={'extern_type': extern_type})
+                existing_group = UserGroupModel().create(
+                    gr, desc, owner, group_data={'extern_type': extern_type})
 
             # we can only add users to special groups created via plugins
             managed = 'extern_type' in existing_group.group_data
@@ -511,4 +511,49 @@ class UserGroupModel(BaseModel):
                 UserGroupModel().add_user_to_group(existing_group, user)
             else:
                 log.debug('Skipping addition to group %s since it is '
-                          'not managed by auth plugins' % gr)
+                          'not set to be automatically synchronized' % gr)
+
+    def change_groups(self, user, groups):
+        """
+        This method changes user group assignment
+        :param user:  User
+        :param groups: array of UserGroupModel
+        :return:
+        """
+        user = self._get_user(user)
+        log.debug('Changing user(%s) assignment to groups(%s)', user, groups)
+        current_groups = user.group_member
+        current_groups = [x.users_group for x in current_groups]
+
+        # calculate from what groups user should be removed/add
+        groups = set(groups)
+        current_groups = set(current_groups)
+
+        groups_to_remove = current_groups - groups
+        groups_to_add = groups - current_groups
+
+        for gr in groups_to_remove:
+            log.debug('Removing user %s from user group %s', user.username, gr.users_group_name)
+            self.remove_user_from_group(gr.users_group_name, user.username)
+        for gr in groups_to_add:
+            log.debug('Adding user %s to user group %s', user.username, gr.users_group_name)
+            UserGroupModel().add_user_to_group(gr.users_group_name, user.username)
+
+    @staticmethod
+    def get_user_groups_as_dict(user_group):
+        import rhodecode.lib.helpers as h
+
+        data = {
+            'users_group_id': user_group.users_group_id,
+            'group_name': user_group.users_group_name,
+            'group_description': user_group.user_group_description,
+            'active': user_group.users_group_active,
+            "owner": user_group.user.username,
+            'owner_icon': h.gravatar_url(user_group.user.email, 30),
+            "owner_data": {'owner': user_group.user.username, 'owner_icon': h.gravatar_url(user_group.user.email, 30)}
+            }
+        return data
+
+
+
+

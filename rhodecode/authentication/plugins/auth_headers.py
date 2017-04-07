@@ -21,15 +21,14 @@
 import colander
 import logging
 
-from sqlalchemy.ext.hybrid import hybrid_property
-
-from rhodecode.authentication.base import RhodeCodeExternalAuthPlugin
+from rhodecode.translation import _
+from rhodecode.authentication.base import (
+    RhodeCodeExternalAuthPlugin, hybrid_property)
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.authentication.routes import AuthnPluginResourceBase
 from rhodecode.lib.colander_utils import strip_whitespace
 from rhodecode.lib.utils2 import str2bool, safe_unicode
 from rhodecode.model.db import User
-from rhodecode.translation import _
 
 
 log = logging.getLogger(__name__)

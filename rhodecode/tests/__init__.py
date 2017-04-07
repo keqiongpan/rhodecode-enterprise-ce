@@ -164,13 +164,6 @@ class TestController(object):
     def _get_logged_user(self):
         return User.get_by_username(self._logged_username)
 
-    # TODO: remove, use plain assert in tests
-    def assertEqual(self, a, b, msg=None):
-        if msg:
-            assert a == b, msg
-        else:
-            assert a == b
-
 
 def login_user_session(
         app, username=TEST_USER_ADMIN_LOGIN, password=TEST_USER_ADMIN_PASS):

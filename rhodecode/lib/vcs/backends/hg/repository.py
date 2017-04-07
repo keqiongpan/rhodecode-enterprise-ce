@@ -267,6 +267,12 @@ class MercurialRepository(BaseRepository):
         self.commit_ids = self._get_all_commit_ids()
         self._rebuild_cache(self.commit_ids)
 
+    def verify(self):
+        verify = self._remote.verify()
+
+        self._remote.invalidate_vcs_cache()
+        return verify
+
     def get_common_ancestor(self, commit_id1, commit_id2, repo2):
         if commit_id1 == commit_id2:
             return commit_id1
@@ -570,8 +576,7 @@ class MercurialRepository(BaseRepository):
         """
         Return the common ancestor of the two revisions.
         """
-        return self._remote.ancestor(
-            revision1, revision2).strip().split(':')[-1]
+        return self._remote.ancestor(revision1, revision2)
 
     def _local_push(
             self, revision, repository_path, push_branches=False,

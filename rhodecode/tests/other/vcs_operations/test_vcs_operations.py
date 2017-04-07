@@ -35,6 +35,7 @@ import pytest
 
 from rhodecode.lib.vcs.backends.git.repository import GitRepository
 from rhodecode.lib.vcs.nodes import FileNode
+from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import Repository, UserIpMap, CacheKey
 from rhodecode.model.meta import Session
 from rhodecode.model.user import UserModel
@@ -46,7 +47,7 @@ from rhodecode.tests.other.vcs_operations import (
 
 
 @pytest.mark.usefixtures("disable_locking")
-class TestVCSOperations:
+class TestVCSOperations(object):
 
     def test_clone_hg_repo_by_admin(self, rc_web_server, tmpdir):
         clone_url = rc_web_server.repo_clone_url(HG_REPO)
@@ -321,6 +322,115 @@ class TestVCSOperations:
         stdout, stderr = cmd.execute('git clone', clone_url, tmpdir.strpath)
         cmd.assert_returncode_success()
         _check_proper_clone(stdout, stderr, 'git')
+
+    def test_clone_by_auth_token(
+            self, rc_web_server, tmpdir, user_util, enable_auth_plugins):
+        enable_auth_plugins(['egg:rhodecode-enterprise-ce#token',
+                             'egg:rhodecode-enterprise-ce#rhodecode'])
+
+        user = user_util.create_user()
+        token = user.auth_tokens[1]
+
+        clone_url = rc_web_server.repo_clone_url(
+            HG_REPO, user=user.username, passwd=token)
+
+        stdout, stderr = Command('/tmp').execute(
+            'hg clone', clone_url, tmpdir.strpath)
+        _check_proper_clone(stdout, stderr, 'hg')
+
+    def test_clone_by_auth_token_expired(
+            self, rc_web_server, tmpdir, user_util, enable_auth_plugins):
+        enable_auth_plugins(['egg:rhodecode-enterprise-ce#token',
+                             'egg:rhodecode-enterprise-ce#rhodecode'])
+
+        user = user_util.create_user()
+        auth_token = AuthTokenModel().create(
+            user.user_id, 'test-token', -10, AuthTokenModel.cls.ROLE_VCS)
+        token = auth_token.api_key
+
+        clone_url = rc_web_server.repo_clone_url(
+            HG_REPO, user=user.username, passwd=token)
+
+        stdout, stderr = Command('/tmp').execute(
+            'hg clone', clone_url, tmpdir.strpath)
+        assert 'abort: authorization failed' in stderr
+
+    def test_clone_by_auth_token_bad_role(
+            self, rc_web_server, tmpdir, user_util, enable_auth_plugins):
+        enable_auth_plugins(['egg:rhodecode-enterprise-ce#token',
+                             'egg:rhodecode-enterprise-ce#rhodecode'])
+
+        user = user_util.create_user()
+        auth_token = AuthTokenModel().create(
+            user.user_id, 'test-token', -1, AuthTokenModel.cls.ROLE_API)
+        token = auth_token.api_key
+
+        clone_url = rc_web_server.repo_clone_url(
+            HG_REPO, user=user.username, passwd=token)
+
+        stdout, stderr = Command('/tmp').execute(
+            'hg clone', clone_url, tmpdir.strpath)
+        assert 'abort: authorization failed' in stderr
+
+    def test_clone_by_auth_token_user_disabled(
+            self, rc_web_server, tmpdir, user_util, enable_auth_plugins):
+        enable_auth_plugins(['egg:rhodecode-enterprise-ce#token',
+                             'egg:rhodecode-enterprise-ce#rhodecode'])
+        user = user_util.create_user()
+        user.active = False
+        Session().add(user)
+        Session().commit()
+        token = user.auth_tokens[1]
+
+        clone_url = rc_web_server.repo_clone_url(
+            HG_REPO, user=user.username, passwd=token)
+
+        stdout, stderr = Command('/tmp').execute(
+            'hg clone', clone_url, tmpdir.strpath)
+        assert 'abort: authorization failed' in stderr
+
+
+    def test_clone_by_auth_token_with_scope(
+            self, rc_web_server, tmpdir, user_util, enable_auth_plugins):
+        enable_auth_plugins(['egg:rhodecode-enterprise-ce#token',
+                             'egg:rhodecode-enterprise-ce#rhodecode'])
+        user = user_util.create_user()
+        auth_token = AuthTokenModel().create(
+            user.user_id, 'test-token', -1, AuthTokenModel.cls.ROLE_VCS)
+        token = auth_token.api_key
+
+        # manually set scope
+        auth_token.repo = Repository.get_by_repo_name(HG_REPO)
+        Session().add(auth_token)
+        Session().commit()
+
+        clone_url = rc_web_server.repo_clone_url(
+            HG_REPO, user=user.username, passwd=token)
+
+        stdout, stderr = Command('/tmp').execute(
+            'hg clone', clone_url, tmpdir.strpath)
+        _check_proper_clone(stdout, stderr, 'hg')
+
+    def test_clone_by_auth_token_with_wrong_scope(
+            self, rc_web_server, tmpdir, user_util, enable_auth_plugins):
+        enable_auth_plugins(['egg:rhodecode-enterprise-ce#token',
+                             'egg:rhodecode-enterprise-ce#rhodecode'])
+        user = user_util.create_user()
+        auth_token = AuthTokenModel().create(
+            user.user_id, 'test-token', -1, AuthTokenModel.cls.ROLE_VCS)
+        token = auth_token.api_key
+
+        # manually set scope
+        auth_token.repo = Repository.get_by_repo_name(GIT_REPO)
+        Session().add(auth_token)
+        Session().commit()
+
+        clone_url = rc_web_server.repo_clone_url(
+            HG_REPO, user=user.username, passwd=token)
+
+        stdout, stderr = Command('/tmp').execute(
+            'hg clone', clone_url, tmpdir.strpath)
+        assert 'abort: authorization failed' in stderr
 
 
 def test_git_sets_default_branch_if_not_master(

@@ -21,10 +21,7 @@
   </div>
   <div class="right-content">
     <div class="tags tags-main">
-      <code>
-          <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=c.commit.raw_id)}">${h.show_id(c.commit)}</a>
-      </code>
-
+      <code><a href="${h.url('changeset_home',repo_name=c.repo_name,revision=c.commit.raw_id)}">${h.show_id(c.commit)}</a></code>
       ${file_base.refs(c.commit)}
     </div>
   </div>
@@ -36,9 +33,7 @@
   </div>
   <div class="right-content">
     <div class="tags">
-      <code>
-          <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=c.file_last_commit.raw_id)}">${h.show_id(c.file_last_commit)}</a>
-      </code>
+      <code><a href="${h.url('changeset_home',repo_name=c.repo_name,revision=c.file_last_commit.raw_id)}">${h.show_id(c.file_last_commit)}</a></code>
 
       ${file_base.refs(c.file_last_commit)}
     </div>

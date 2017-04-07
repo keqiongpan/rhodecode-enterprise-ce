@@ -42,7 +42,7 @@ from rhodecode.lib.exceptions import (
     NotAllowedToCreateUserError)
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.middleware import appenlight
-from rhodecode.lib.middleware.utils import scm_app, scm_app_http
+from rhodecode.lib.middleware.utils import scm_app_http
 from rhodecode.lib.utils import (
     is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path, SLUG_RE)
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool, safe_unicode
@@ -177,9 +177,6 @@ class SimpleVCS(object):
         if custom_implementation == 'http':
             log.info('Using HTTP implementation of scm app.')
             scm_app_impl = scm_app_http
-        elif custom_implementation == 'pyro4':
-            log.info('Using Pyro implementation of scm app.')
-            scm_app_impl = scm_app
         else:
             log.info('Using custom implementation of scm_app: "{}"'.format(
                 custom_implementation))
@@ -363,12 +360,15 @@ class SimpleVCS(object):
                 # try to auth based on environ, container auth methods
                 log.debug('Running PRE-AUTH for container based authentication')
                 pre_auth = authenticate(
-                    '', '', environ, VCS_TYPE, registry=self.registry)
+                    '', '', environ, VCS_TYPE, registry=self.registry,
+                    acl_repo_name=self.acl_repo_name)
                 if pre_auth and pre_auth.get('username'):
                     username = pre_auth['username']
                 log.debug('PRE-AUTH got %s as username', username)
 
                 # If not authenticated by the container, running basic auth
+                # before inject the calling repo_name for special scope checks
+                self.authenticate.acl_repo_name = self.acl_repo_name
                 if not username:
                     self.authenticate.realm = get_rhodecode_realm()
 
@@ -512,7 +512,7 @@ class SimpleVCS(object):
         raise NotImplementedError()
 
     def _create_config(self, extras, repo_name):
-        """Create a Pyro safe config representation."""
+        """Create a safe config representation."""
         raise NotImplementedError()
 
     def _prepare_callback_daemon(self, extras):

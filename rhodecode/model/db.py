@@ -42,7 +42,6 @@ from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
 from sqlalchemy.sql.expression import true
 from beaker.cache import cache_region
-from webob.exc import HTTPNotFound
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from pylons import url
@@ -53,7 +52,7 @@ from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
-    glob2re, StrictAttributeDict)
+    glob2re, StrictAttributeDict, cleaned_uri)
 from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
@@ -207,7 +206,14 @@ class BaseModel(object):
             return cls.query().get(id_)
 
     @classmethod
-    def get_or_404(cls, id_):
+    def get_or_404(cls, id_, pyramid_exc=False):
+        if pyramid_exc:
+            # NOTE(marcink): backward compat, once migration to pyramid
+            # this should only use pyramid exceptions
+            from pyramid.httpexceptions import HTTPNotFound
+        else:
+            from webob.exc import HTTPNotFound
+
         try:
             id_ = int(id_)
         except (TypeError, ValueError):
@@ -350,6 +356,7 @@ class RhodeCodeUi(Base, BaseModel):
     HOOK_PRE_PULL = 'preoutgoing.pre_pull'
     HOOK_PULL = 'outgoing.pull_logger'
     HOOK_PRE_PUSH = 'prechangegroup.pre_push'
+    HOOK_PRETX_PUSH = 'pretxnchangegroup.pre_push'
     HOOK_PUSH = 'changegroup.push_logger'
 
     # TODO: johbo: Unify way how hooks are configured for git and hg,
@@ -507,9 +514,11 @@ class User(Base, BaseModel):
     lastname = Column("lastname", String(255), nullable=True, unique=None, default=None)
     _email = Column("email", String(255), nullable=True, unique=None, default=None)
     last_login = Column("last_login", DateTime(timezone=False), nullable=True, unique=None, default=None)
+    last_activity = Column('last_activity', DateTime(timezone=False), nullable=True, unique=None, default=datetime.datetime.now)
+
     extern_type = Column("extern_type", String(255), nullable=True, unique=None, default=None)
     extern_name = Column("extern_name", String(255), nullable=True, unique=None, default=None)
-    api_key = Column("api_key", String(255), nullable=True, unique=None, default=None)
+    _api_key = Column("api_key", String(255), nullable=True, unique=None, default=None)
     inherit_default_permissions = Column("inherit_default_permissions", Boolean(), nullable=False, unique=None, default=True)
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     _user_data = Column("user_data", LargeBinary(), nullable=True)  # JSON data
@@ -561,6 +570,26 @@ class User(Base, BaseModel):
     def email(self, val):
         self._email = val.lower() if val else None
 
+    @hybrid_property
+    def api_key(self):
+        """
+        Fetch if exist an auth-token with role ALL connected to this user
+        """
+        user_auth_token = UserApiKeys.query()\
+            .filter(UserApiKeys.user_id == self.user_id)\
+            .filter(or_(UserApiKeys.expires == -1,
+                            UserApiKeys.expires >= time.time()))\
+            .filter(UserApiKeys.role == UserApiKeys.ROLE_ALL).first()
+        if user_auth_token:
+            user_auth_token = user_auth_token.api_key
+
+        return user_auth_token
+
+    @api_key.setter
+    def api_key(self, val):
+        # don't allow to set API key this is deprecated for now
+        self._api_key = None
+
     @property
     def firstname(self):
         # alias for future
@@ -573,7 +602,7 @@ class User(Base, BaseModel):
 
     @property
     def auth_tokens(self):
-        return [self.api_key] + [x.api_key for x in self.extra_auth_tokens]
+        return [x.api_key for x in self.extra_auth_tokens]
 
     @property
     def extra_auth_tokens(self):
@@ -581,15 +610,16 @@ class User(Base, BaseModel):
 
     @property
     def feed_token(self):
+        return self.get_feed_token()
+
+    def get_feed_token(self):
         feed_tokens = UserApiKeys.query()\
             .filter(UserApiKeys.user == self)\
             .filter(UserApiKeys.role == UserApiKeys.ROLE_FEED)\
             .all()
         if feed_tokens:
             return feed_tokens[0].api_key
-        else:
-            # use the main token so we don't end up with nothing...
-            return self.api_key
+        return 'NO_FEED_TOKEN_AVAILABLE'
 
     @classmethod
     def extra_valid_auth_tokens(cls, user, role=None):
@@ -601,11 +631,56 @@ class User(Base, BaseModel):
                                        UserApiKeys.role == UserApiKeys.ROLE_ALL))
         return tokens.all()
 
-    @property
-    def builtin_token_roles(self):
-        return map(UserApiKeys._get_role_name, [
-            UserApiKeys.ROLE_API, UserApiKeys.ROLE_FEED, UserApiKeys.ROLE_HTTP
-        ])
+    def authenticate_by_token(self, auth_token, roles=None, scope_repo_id=None):
+        from rhodecode.lib import auth
+
+        log.debug('Trying to authenticate user: %s via auth-token, '
+                  'and roles: %s', self, roles)
+
+        if not auth_token:
+            return False
+
+        crypto_backend = auth.crypto_backend()
+
+        roles = (roles or []) + [UserApiKeys.ROLE_ALL]
+        tokens_q = UserApiKeys.query()\
+            .filter(UserApiKeys.user_id == self.user_id)\
+            .filter(or_(UserApiKeys.expires == -1,
+                        UserApiKeys.expires >= time.time()))
+
+        tokens_q = tokens_q.filter(UserApiKeys.role.in_(roles))
+
+        plain_tokens = []
+        hash_tokens = []
+
+        for token in tokens_q.all():
+            # verify scope first
+            if token.repo_id:
+                # token has a scope, we need to verify it
+                if scope_repo_id != token.repo_id:
+                    log.debug(
+                        'Scope mismatch: token has a set repo scope: %s, '
+                        'and calling scope is:%s, skipping further checks',
+                         token.repo, scope_repo_id)
+                    # token has a scope, and it doesn't match, skip token
+                    continue
+
+            if token.api_key.startswith(crypto_backend.ENC_PREF):
+                hash_tokens.append(token.api_key)
+            else:
+                plain_tokens.append(token.api_key)
+
+        is_plain_match = auth_token in plain_tokens
+        if is_plain_match:
+            return True
+
+        for hashed in hash_tokens:
+            # TODO(marcink): this is expensive to calculate, but most secure
+            match = crypto_backend.hash_check(auth_token, hashed)
+            if match:
+                return True
+
+        return False
 
     @property
     def ip_addresses(self):
@@ -648,8 +723,7 @@ class User(Base, BaseModel):
         Returns instance of AuthUser for this user
         """
         from rhodecode.lib.auth import AuthUser
-        return AuthUser(user_id=self.user_id, api_key=self.api_key,
-                        username=self.username)
+        return AuthUser(user_id=self.user_id, username=self.username)
 
     @hybrid_property
     def user_data(self):
@@ -694,24 +768,18 @@ class User(Base, BaseModel):
         return q.scalar()
 
     @classmethod
-    def get_by_auth_token(cls, auth_token, cache=False, fallback=True):
-        q = cls.query().filter(cls.api_key == auth_token)
-
+    def get_by_auth_token(cls, auth_token, cache=False):
+        q = UserApiKeys.query()\
+            .filter(UserApiKeys.api_key == auth_token)\
+            .filter(or_(UserApiKeys.expires == -1,
+                        UserApiKeys.expires >= time.time()))
         if cache:
             q = q.options(FromCache("sql_cache_short",
                                     "get_auth_token_%s" % auth_token))
-        res = q.scalar()
 
-        if fallback and not res:
-            #fallback to additional keys
-            _res = UserApiKeys.query()\
-                .filter(UserApiKeys.api_key == auth_token)\
-                .filter(or_(UserApiKeys.expires == -1,
-                            UserApiKeys.expires >= time.time()))\
-                .first()
-            if _res:
-                res = _res.user
-        return res
+        match = q.first()
+        if match:
+            return match.user
 
     @classmethod
     def get_by_email(cls, email, case_insensitive=False, cache=False):
@@ -778,19 +846,14 @@ class User(Base, BaseModel):
 
     def update_lastactivity(self):
         """Update user lastactivity"""
-        usr = self
-        old = usr.user_data
-        old.update({'last_activity': time.time()})
-        usr.user_data = old
-        Session().add(usr)
-        log.debug('updated user %s lastactivity', usr.username)
+        self.last_activity = datetime.datetime.now()
+        Session().add(self)
+        log.debug('updated user %s lastactivity', self.username)
 
-    def update_password(self, new_password, change_api_key=False):
-        from rhodecode.lib.auth import get_crypt_password,generate_auth_token
+    def update_password(self, new_password):
+        from rhodecode.lib.auth import get_crypt_password
 
         self.password = get_crypt_password(new_password)
-        if change_api_key:
-            self.api_key = generate_auth_token(self.username)
         Session().add(self)
 
     @classmethod
@@ -850,21 +913,22 @@ class User(Base, BaseModel):
         api_key_replacement = '*' * api_key_length
 
         extras = {
-            'api_key': api_key_replacement,
             'api_keys': [api_key_replacement],
+            'auth_tokens': [api_key_replacement],
             'active': user.active,
             'admin': user.admin,
             'extern_type': user.extern_type,
             'extern_name': user.extern_name,
             'last_login': user.last_login,
+            'last_activity': user.last_activity,
             'ip_addresses': user.ip_addresses,
             'language': user_data.get('language')
         }
         data.update(extras)
 
         if include_secrets:
-            data['api_key'] = user.api_key
             data['api_keys'] = user.auth_tokens
+            data['auth_tokens'] = user.extra_auth_tokens
         return data
 
     def __json__(self):
@@ -895,6 +959,8 @@ class UserApiKeys(Base, BaseModel):
     ROLE_VCS = 'token_role_vcs'
     ROLE_API = 'token_role_api'
     ROLE_FEED = 'token_role_feed'
+    ROLE_PASSWORD_RESET = 'token_password_reset'
+
     ROLES = [ROLE_ALL, ROLE_HTTP, ROLE_VCS, ROLE_API, ROLE_FEED]
 
     user_api_key_id = Column("user_api_key_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
@@ -905,7 +971,36 @@ class UserApiKeys(Base, BaseModel):
     role = Column('role', String(255), nullable=True)
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
 
+    # scope columns
+    repo_id = Column(
+        'repo_id', Integer(), ForeignKey('repositories.repo_id'),
+        nullable=True, unique=None, default=None)
+    repo = relationship('Repository', lazy='joined')
+
+    repo_group_id = Column(
+        'repo_group_id', Integer(), ForeignKey('groups.group_id'),
+        nullable=True, unique=None, default=None)
+    repo_group = relationship('RepoGroup', lazy='joined')
+
     user = relationship('User', lazy='joined')
+
+    def __unicode__(self):
+        return u"<%s('%s')>" % (self.__class__.__name__, self.role)
+
+    def __json__(self):
+        data = {
+            'auth_token': self.api_key,
+            'role': self.role,
+            'scope': self.scope_humanized,
+            'expired': self.expired
+        }
+        return data
+
+    @property
+    def expired(self):
+        if self.expires == -1:
+            return False
+        return time.time() > self.expires
 
     @classmethod
     def _get_role_name(cls, role):
@@ -918,14 +1013,19 @@ class UserApiKeys(Base, BaseModel):
         }.get(role, role)
 
     @property
-    def expired(self):
-        if self.expires == -1:
-            return False
-        return time.time() > self.expires
-
-    @property
     def role_humanized(self):
         return self._get_role_name(self.role)
+
+    def _get_scope(self):
+        if self.repo:
+            return repr(self.repo)
+        if self.repo_group:
+            return repr(self.repo_group) + ' (recursive)'
+        return 'global'
+
+    @property
+    def scope_humanized(self):
+        return self._get_scope()
 
 
 class UserEmailMap(Base, BaseModel):
@@ -991,6 +1091,7 @@ class UserIpMap(Base, BaseModel):
         return u"<%s('user_id:%s=>%s')>" % (self.__class__.__name__,
                                             self.user_id, self.ip_addr)
 
+
 class UserLog(Base, BaseModel):
     __tablename__ = 'user_logs'
     __table_args__ = (
@@ -1007,9 +1108,19 @@ class UserLog(Base, BaseModel):
     action_date = Column("action_date", DateTime(timezone=False), nullable=True, unique=None, default=None)
 
     def __unicode__(self):
-        return u"<%s('id:%s:%s')>" % (self.__class__.__name__,
-                                      self.repository_name,
-                                      self.action)
+        return u"<%s('id:%s:%s')>" % (
+            self.__class__.__name__, self.repository_name, self.action)
+
+    def __json__(self):
+        return {
+            'user_id': self.user_id,
+            'username': self.username,
+            'repository_id': self.repository_id,
+            'repository_name': self.repository_name,
+            'user_ip': self.user_ip,
+            'action_date': self.action_date,
+            'action': self.action,
+        }
 
     @property
     def action_as_day(self):
@@ -1161,14 +1272,15 @@ class UserGroup(Base, BaseModel):
 
         """
         user_group = self
-
         data = {
             'users_group_id': user_group.users_group_id,
             'group_name': user_group.users_group_name,
             'group_description': user_group.user_group_description,
             'active': user_group.users_group_active,
             'owner': user_group.user.username,
+            'owner_email': user_group.user.email,
         }
+
         if with_group_members:
             users = []
             for user in user_group.members:
@@ -1775,7 +1887,7 @@ class Repository(Base, BaseModel):
         clone_uri = self.clone_uri
         if clone_uri:
             import urlobject
-            url_obj = urlobject.URLObject(clone_uri)
+            url_obj = urlobject.URLObject(cleaned_uri(clone_uri))
             if url_obj.password:
                 clone_uri = url_obj.with_password('*****')
         return clone_uri
@@ -3540,7 +3652,13 @@ class Gist(Base, BaseModel):
         return '<Gist:[%s]%s>' % (self.gist_type, self.gist_access_id)
 
     @classmethod
-    def get_or_404(cls, id_):
+    def get_or_404(cls, id_, pyramid_exc=False):
+
+        if pyramid_exc:
+            from pyramid.httpexceptions import HTTPNotFound
+        else:
+            from webob.exc import HTTPNotFound
+
         res = cls.query().filter(cls.gist_access_id == id_).scalar()
         if not res:
             raise HTTPNotFound

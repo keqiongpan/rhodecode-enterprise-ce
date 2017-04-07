@@ -25,18 +25,20 @@ Renderer for markup languages with ability to parse using rst or markdown
 
 import re
 import os
+import lxml
 import logging
-import itertools
+import urlparse
 
 from mako.lookup import TemplateLookup
+from mako.template import Template as MakoTemplate
 
 from docutils.core import publish_parts
 from docutils.parsers.rst import directives
 import markdown
 
-from rhodecode.lib.markdown_ext import (
-    UrlizeExtension, GithubFlavoredMarkdownExtension)
-from rhodecode.lib.utils2 import safe_unicode, md5_safe, MENTIONS_REGEX
+from rhodecode.lib.markdown_ext import GithubFlavoredMarkdownExtension
+from rhodecode.lib.utils2 import (
+    safe_str, safe_unicode, md5_safe, MENTIONS_REGEX)
 
 log = logging.getLogger(__name__)
 
@@ -44,11 +46,97 @@ log = logging.getLogger(__name__)
 DEFAULT_COMMENTS_RENDERER = 'rst'
 
 
+def relative_links(html_source, server_path):
+    if not html_source:
+        return html_source
+
+    try:
+        doc = lxml.html.fromstring(html_source)
+    except Exception:
+        return html_source
+
+    for el in doc.cssselect('img, video'):
+        src = el.attrib['src']
+        if src:
+            el.attrib['src'] = relative_path(src, server_path)
+
+    for el in doc.cssselect('a:not(.gfm)'):
+        src = el.attrib['href']
+        if src:
+            el.attrib['href'] = relative_path(src, server_path)
+
+    return lxml.html.tostring(doc)
+
+
+def relative_path(path, request_path, is_repo_file=None):
+    """
+    relative link support, path is a rel path, and request_path is current
+    server path (not absolute)
+
+    e.g.
+
+    path = '../logo.png'
+    request_path= '/repo/files/path/file.md'
+    produces: '/repo/files/logo.png'
+    """
+    # TODO(marcink): unicode/str support ?
+    # maybe=> safe_unicode(urllib.quote(safe_str(final_path), '/:'))
+
+    def dummy_check(p):
+        return True  # assume default is a valid file path
+
+    is_repo_file = is_repo_file or dummy_check
+    if not path:
+        return request_path
+
+    path = safe_unicode(path)
+    request_path = safe_unicode(request_path)
+
+    if path.startswith((u'data:', u'javascript:', u'#', u':')):
+        # skip data, anchor, invalid links
+        return path
+
+    is_absolute = bool(urlparse.urlparse(path).netloc)
+    if is_absolute:
+        return path
+
+    if not request_path:
+        return path
+
+    if path.startswith(u'/'):
+        path = path[1:]
+
+    if path.startswith(u'./'):
+        path = path[2:]
+
+    parts = request_path.split('/')
+    # compute how deep we need to traverse the request_path
+    depth = 0
+
+    if is_repo_file(request_path):
+        # if request path is a VALID file, we use a relative path with
+        # one level up
+        depth += 1
+
+    while path.startswith(u'../'):
+        depth += 1
+        path = path[3:]
+
+    if depth > 0:
+        parts = parts[:-depth]
+
+    parts.append(path)
+    final_path = u'/'.join(parts).lstrip(u'/')
+
+    return u'/' + final_path
+
+
 class MarkupRenderer(object):
     RESTRUCTUREDTEXT_DISALLOWED_DIRECTIVES = ['include', 'meta', 'raw']
 
     MARKDOWN_PAT = re.compile(r'\.(md|mkdn?|mdown|markdown)$', re.IGNORECASE)
     RST_PAT = re.compile(r'\.re?st$', re.IGNORECASE)
+    JUPYTER_PAT = re.compile(r'\.(ipynb)$', re.IGNORECASE)
     PLAIN_PAT = re.compile(r'^readme$', re.IGNORECASE)
 
     extensions = ['codehilite', 'extra', 'def_list', 'sane_lists']
@@ -95,6 +183,8 @@ class MarkupRenderer(object):
             detected_renderer = 'markdown'
         elif MarkupRenderer.RST_PAT.findall(filename):
             detected_renderer = 'rst'
+        elif MarkupRenderer.JUPYTER_PAT.findall(filename):
+            detected_renderer = 'jupyter'
         elif MarkupRenderer.PLAIN_PAT.findall(filename):
             detected_renderer = 'plain'
         else:
@@ -262,6 +352,95 @@ class MarkupRenderer(object):
                 return cls.plain(source)
             else:
                 raise
+
+    @classmethod
+    def jupyter(cls, source, safe=True):
+        from rhodecode.lib import helpers
+
+        from traitlets.config import Config
+        import nbformat
+        from nbconvert import HTMLExporter
+        from nbconvert.preprocessors import Preprocessor
+
+        class CustomHTMLExporter(HTMLExporter):
+            def _template_file_default(self):
+                return 'basic'
+
+        class Sandbox(Preprocessor):
+
+            def preprocess(self, nb, resources):
+                sandbox_text = 'SandBoxed(IPython.core.display.Javascript object)'
+                for cell in nb['cells']:
+                    if safe and 'outputs' in cell:
+                        for cell_output in cell['outputs']:
+                            if 'data' in cell_output:
+                                if 'application/javascript' in cell_output['data']:
+                                    cell_output['data']['text/plain'] = sandbox_text
+                                    cell_output['data'].pop('application/javascript', None)
+                return nb, resources
+
+        def _sanitize_resources(resources):
+            """
+            Skip/sanitize some of the CSS generated and included in jupyter
+            so it doesn't messes up UI so much
+            """
+
+            # TODO(marcink): probably we should replace this with whole custom
+            # CSS set that doesn't screw up, but jupyter generated html has some
+            # special markers, so it requires Custom HTML exporter template with
+            # _default_template_path_default, to achieve that
+
+            # strip the reset CSS
+            resources[0] = resources[0][resources[0].find('/*! Source'):]
+            return resources
+
+        def as_html(notebook):
+            conf = Config()
+            conf.CustomHTMLExporter.preprocessors = [Sandbox]
+            html_exporter = CustomHTMLExporter(config=conf)
+
+            (body, resources) = html_exporter.from_notebook_node(notebook)
+            header = '<!-- ## IPYTHON NOTEBOOK RENDERING ## -->'
+            js = MakoTemplate(r'''
+            <!-- Load mathjax -->
+                <!-- MathJax configuration -->
+                <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    jax: ["input/TeX","output/HTML-CSS", "output/PreviewHTML"],
+                    extensions: ["tex2jax.js","MathMenu.js","MathZoom.js", "fast-preview.js", "AssistiveMML.js", "[Contrib]/a11y/accessibility-menu.js"],
+                    TeX: {
+                        extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js"]
+                    },
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true,
+                        processEnvironments: true
+                    },
+                    // Center justify equations in code and markdown cells. Elsewhere
+                    // we use CSS to left justify single line equations in code cells.
+                    displayAlign: 'center',
+                    "HTML-CSS": {
+                        styles: {'.MathJax_Display': {"margin": 0}},
+                        linebreaks: { automatic: true },
+                        availableFonts: ["STIX", "TeX"]
+                    },
+                    showMathMenu: false
+                });
+                </script>
+                <!-- End of mathjax configuration -->
+                <script src="${h.asset('js/src/math_jax/MathJax.js')}"></script>
+            ''').render(h=helpers)
+
+            css = '<style>{}</style>'.format(
+                ''.join(_sanitize_resources(resources['inlining']['css'])))
+
+            body = '\n'.join([header, css, js, body])
+            return body, resources
+
+        notebook = nbformat.reads(source, as_version=4)
+        (body, resources) = as_html(notebook)
+        return body
 
 
 class RstTemplateRenderer(object):

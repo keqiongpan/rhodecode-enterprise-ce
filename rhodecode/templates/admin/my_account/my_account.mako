@@ -26,20 +26,20 @@
     ##main
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
-          <li class="${'active' if c.active=='profile' or c.active=='profile_edit' else ''}"><a href="${h.url('my_account')}">${_('My Profile')}</a></li>
-          <li class="${'active' if c.active=='password' else ''}"><a href="${h.url('my_account_password')}">${_('Password')}</a></li>
-          <li class="${'active' if c.active=='auth_tokens' else ''}"><a href="${h.url('my_account_auth_tokens')}">${_('Auth Tokens')}</a></li>
+          <li class="${'active' if c.active=='profile' or c.active=='profile_edit' else ''}"><a href="${h.route_path('my_account_profile')}">${_('Profile')}</a></li>
+          <li class="${'active' if c.active=='password' else ''}"><a href="${h.route_path('my_account_password')}">${_('Password')}</a></li>
+          <li class="${'active' if c.active=='auth_tokens' else ''}"><a href="${h.route_path('my_account_auth_tokens')}">${_('Auth Tokens')}</a></li>
           ## TODO: Find a better integration of oauth views into navigation.
           <% my_account_oauth_url = h.route_path_or_none('my_account_oauth') %>
           % if my_account_oauth_url:
           <li class="${'active' if c.active=='oauth' else ''}"><a href="${my_account_oauth_url}">${_('OAuth Identities')}</a></li>
           % endif
-          <li class="${'active' if c.active=='emails' else ''}"><a href="${h.url('my_account_emails')}">${_('My Emails')}</a></li>
-          <li class="${'active' if c.active=='repos' else ''}"><a href="${h.url('my_account_repos')}">${_('My Repositories')}</a></li>
+          <li class="${'active' if c.active=='emails' else ''}"><a href="${h.url('my_account_emails')}">${_('Emails')}</a></li>
+          <li class="${'active' if c.active=='repos' else ''}"><a href="${h.url('my_account_repos')}">${_('Repositories')}</a></li>
           <li class="${'active' if c.active=='watched' else ''}"><a href="${h.url('my_account_watched')}">${_('Watched')}</a></li>
           <li class="${'active' if c.active=='pullrequests' else ''}"><a href="${h.url('my_account_pullrequests')}">${_('Pull Requests')}</a></li>
-          <li class="${'active' if c.active=='perms' else ''}"><a href="${h.url('my_account_perms')}">${_('My Permissions')}</a></li>
-          <li class="${'active' if c.active=='my_notifications' else ''}"><a href="${h.url('my_account_notifications')}">${_('My Live Notifications')}</a></li>
+          <li class="${'active' if c.active=='perms' else ''}"><a href="${h.url('my_account_perms')}">${_('Permissions')}</a></li>
+          <li class="${'active' if c.active=='my_notifications' else ''}"><a href="${h.url('my_account_notifications')}">${_('Live Notifications')}</a></li>
         </ul>
     </div>
 

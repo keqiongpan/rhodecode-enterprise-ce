@@ -33,6 +33,7 @@ from sqlalchemy.exc import DatabaseError
 from sqlalchemy.sql.expression import true, false
 
 from rhodecode import events
+from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.utils2 import (
     safe_unicode, get_current_rhodecode_user, action_logger_generic,
     AttributeDict, str2bool)
@@ -40,7 +41,7 @@ from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import (
-    User, UserToPerm, UserEmailMap, UserIpMap)
+    or_, joinedload, User, UserToPerm, UserEmailMap, UserIpMap, UserLog)
 from rhodecode.lib.exceptions import (
     DefaultUserException, UserOwnsReposException, UserOwnsRepoGroupsException,
     UserOwnsUserGroupsException, NotAllowedToCreateUserError)
@@ -308,9 +309,6 @@ class UserModel(BaseModel):
             new_user.name = firstname
             new_user.lastname = lastname
 
-            if not edit:
-                new_user.api_key = generate_auth_token(username)
-
             # set password only if creating an user or password is changed
             if not edit or _password_change(new_user, password):
                 reason = 'new password' if edit else 'new user'
@@ -538,7 +536,7 @@ class UserModel(BaseModel):
 
         return True
 
-    def reset_password(self, data, pwd_reset_url):
+    def reset_password(self, data):
         from rhodecode.lib.celerylib import tasks, run_task
         from rhodecode.model.notification import EmailNotificationModel
         from rhodecode.lib import auth
@@ -554,8 +552,15 @@ class UserModel(BaseModel):
                 user.update_userdata(force_password_change=True)
 
                 Session().add(user)
+
+                # now delete the token in question
+                UserApiKeys = AuthTokenModel.cls
+                UserApiKeys().query().filter(
+                    UserApiKeys.api_key == data['token']).delete()
+
                 Session().commit()
                 log.info('successfully reset password for `%s`', user_email)
+
             if new_passwd is None:
                 raise Exception('unable to generate new password')
 
@@ -563,7 +568,6 @@ class UserModel(BaseModel):
 
             email_kwargs = {
                 'new_password': new_passwd,
-                'password_reset_url': pwd_reset_url,
                 'user': user,
                 'email': user_email,
                 'date': datetime.datetime.now()
@@ -571,7 +575,8 @@ class UserModel(BaseModel):
 
             (subject, headers, email_body,
              email_body_plaintext) = EmailNotificationModel().render_email(
-                EmailNotificationModel.TYPE_PASSWORD_RESET_CONFIRMATION, **email_kwargs)
+                EmailNotificationModel.TYPE_PASSWORD_RESET_CONFIRMATION,
+                **email_kwargs)
 
             recipients = [user_email]
 
@@ -843,3 +848,14 @@ class UserModel(BaseModel):
             Session().commit()
 
         return
+
+    def get_user_log(self, user, filter_term):
+        user_log = UserLog.query()\
+            .filter(or_(UserLog.user_id == user.user_id,
+                        UserLog.username == user.username))\
+            .options(joinedload(UserLog.user))\
+            .options(joinedload(UserLog.repository))\
+            .order_by(UserLog.action_date.desc())
+
+        user_log = user_log_filter(user_log, filter_term)
+        return user_log

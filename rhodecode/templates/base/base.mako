@@ -23,6 +23,9 @@
 
   <!-- CONTENT -->
   <div id="content" class="wrapper">
+
+      <rhodecode-toast id="notifications"></rhodecode-toast>
+
       <div class="main">
           ${next.main()}
       </div>
@@ -72,7 +75,7 @@
       <li><a href="${h.url('admin_home')}">${_('Admin journal')}</a></li>
       <li><a href="${h.url('repos')}">${_('Repositories')}</a></li>
       <li><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
-      <li><a href="${h.url('users')}">${_('Users')}</a></li>
+      <li><a href="${h.route_path('users')}">${_('Users')}</a></li>
       <li><a href="${h.url('users_groups')}">${_('User groups')}</a></li>
       <li><a href="${h.url('admin_permissions_application')}">${_('Permissions')}</a></li>
       <li><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
@@ -142,13 +145,13 @@
 <%def name="admin_menu_simple(repositories=None, repository_groups=None, user_groups=None)">
   <ul class="submenu">
    %if repositories:
-      <li><a href="${h.url('repos')}">${_('Repositories')}</a></li>
+      <li class="local-admin-repos"><a href="${h.url('repos')}">${_('Repositories')}</a></li>
    %endif
    %if repository_groups:
-      <li><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
+      <li class="local-admin-repo-groups"><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
    %endif
    %if user_groups:
-      <li><a href="${h.url('users_groups')}">${_('User groups')}</a></li>
+      <li class="local-admin-user-groups"><a href="${h.url('users_groups')}">${_('User groups')}</a></li>
    %endif
   </ul>
 </%def>
@@ -337,7 +340,7 @@
             </div>
             <div class="">
             <ol class="links">
-              <li>${h.link_to(_(u'My account'),h.url('my_account'))}</li>
+              <li>${h.link_to(_(u'My account'),h.route_path('my_account_profile'))}</li>
               % if c.rhodecode_user.personal_repo_group:
                 <li>${h.link_to(_(u'My personal group'), h.url('repo_group_home', group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
               % endif

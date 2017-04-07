@@ -312,18 +312,18 @@ class MercurialCommit(base.BaseCommit):
         return self.nodes[path]
 
     def get_largefile_node(self, path):
-        path = os.path.join(LARGEFILE_PREFIX, path)
 
         if self._remote.is_large_file(path):
             # content of that file regular FileNode is the hash of largefile
             file_id = self.get_file_content(path).strip()
-            if self._remote.in_store(file_id):
-                path = self._remote.store_path(file_id)
-                return LargeFileNode(path, commit=self)
+
+            if self._remote.in_largefiles_store(file_id):
+                lf_path = self._remote.store_path(file_id)
+                return LargeFileNode(lf_path, commit=self, org_path=path)
             elif self._remote.in_user_cache(file_id):
-                path = self._remote.store_path(file_id)
+                lf_path = self._remote.store_path(file_id)
                 self._remote.link(file_id, path)
-                return LargeFileNode(path, commit=self)
+                return LargeFileNode(lf_path, commit=self, org_path=path)
 
     @LazyProperty
     def _submodules(self):

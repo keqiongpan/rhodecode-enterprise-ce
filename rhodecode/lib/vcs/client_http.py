@@ -20,13 +20,6 @@
 
 """
 Client for the VCSServer implemented based on HTTP.
-
-
-Status
-------
-
-This client implementation shall eventually replace the Pyro4 based
-implementation.
 """
 
 import copy
@@ -145,7 +138,8 @@ class RemoteRepo(object):
         return _remote_call(self.url, payload, EXCEPTIONS_MAP, self._session)
 
     def _call_with_logging(self, name, *args, **kwargs):
-        log.debug('Calling %s@%s', self.url, name)
+
+        log.debug('Calling %s@%s with args:%r', self.url, name, args)
         return RemoteRepo._call(self, name, *args, **kwargs)
 
     def __getitem__(self, key):
@@ -203,10 +197,15 @@ def _remote_call(url, payload, exceptions_map, session):
     except pycurl.error as e:
         raise exceptions.HttpVCSCommunicationError(e)
 
+    if response.status_code >= 400:
+        log.error('Call to %s returned non 200 HTTP code: %s',
+                  url, response.status_code)
+        raise exceptions.HttpVCSCommunicationError(repr(response.content))
+
     try:
         response = msgpack.unpackb(response.content)
     except Exception:
-        log.exception('Failed to decode repsponse %r', response.content)
+        log.exception('Failed to decode response %r', response.content)
         raise
 
     error = response.get('error')

@@ -83,12 +83,17 @@
                     <span class="clone-url">
                         <a href="${h.url('summary_home', repo_name=c.pull_request.source_repo.repo_name)}">${c.pull_request.source_repo.clone_url()}</a>
                     </span>
+                    <br/>
+                    % if c.ancestor_commit:
+                        ${_('Common ancestor')}:
+                        <code><a href="${h.url('changeset_home', repo_name=c.target_repo.repo_name, revision=c.ancestor_commit.raw_id)}">${h.show_id(c.ancestor_commit)}</a></code>
+                    % endif
                 </div>
                 <div class="pr-pullinfo">
                      %if h.is_hg(c.pull_request.source_repo):
-                        <input type="text"  value="hg pull -r ${h.short_id(c.source_ref)} ${c.pull_request.source_repo.clone_url()}" readonly="readonly">
+                        <input type="text" class="input-monospace" value="hg pull -r ${h.short_id(c.source_ref)} ${c.pull_request.source_repo.clone_url()}" readonly="readonly">
                      %elif h.is_git(c.pull_request.source_repo):
-                        <input type="text"  value="git pull ${c.pull_request.source_repo.clone_url()} ${c.pull_request.source_ref_parts.name}" readonly="readonly">
+                        <input type="text" class="input-monospace" value="git pull ${c.pull_request.source_repo.clone_url()} ${c.pull_request.source_ref_parts.name}" readonly="readonly">
                      %endif
                 </div>
             </div>
@@ -123,9 +128,9 @@
                     % if not c.pull_request.is_closed() and c.pull_request.shadow_merge_ref:
                     <div class="pr-mergeinfo">
                         %if h.is_hg(c.pull_request.target_repo):
-                            <input type="text"  value="hg clone -u ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                            <input type="text" class="input-monospace" value="hg clone -u ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
                         %elif h.is_git(c.pull_request.target_repo):
-                            <input type="text"  value="git clone --branch ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                            <input type="text" class="input-monospace" value="git clone --branch ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
                         %endif
                     </div>
                     % else:
@@ -219,7 +224,7 @@
                                    ##<code>${ver.source_ref_parts.commit_id[:6]}</code>
                                </td>
                                <td>
-                                   ${h.age_component(ver.updated_on)}
+                                   ${h.age_component(ver.updated_on, time_is_local=True)}
                                </td>
                            </tr>
                        % endfor
@@ -362,7 +367,7 @@
                <div id="reviewers_container"></div>
             </div>
             <div>
-             <span id="update_pull_request" class="btn btn-small">${_('Save Changes')}</span>
+             <button id="update_pull_request" class="btn btn-small">${_('Save Changes')}</button>
             </div>
             %endif
           </div>
@@ -694,11 +699,31 @@
             refreshMergeChecks = function(){
                 var loadUrl = "${h.url.current(merge_checks=1)}";
                 $('.pull-request-merge').css('opacity', 0.3);
+                $('.action-buttons-extra').css('opacity', 0.3);
+
                 $('.pull-request-merge').load(
-                    loadUrl,function() {
+                    loadUrl, function() {
                         $('.pull-request-merge').css('opacity', 1);
+
+                        $('.action-buttons-extra').css('opacity', 1);
+                        injectCloseAction();
                     }
                 );
+            };
+
+            injectCloseAction =  function() {
+                var closeAction = $('#close-pull-request-action').html();
+                var $actionButtons = $('.action-buttons-extra');
+                // clear the action before
+                $actionButtons.html("");
+                $actionButtons.html(closeAction);
+            };
+
+            closePullRequest = function (status) {
+                // inject closing flag
+                $('.action-buttons-extra').append('<input type="hidden" class="close-pr-input" id="close_pull_request" value="1">');
+                $(generalCommentForm.statusChange).select2("val", status).trigger('change');
+                $(generalCommentForm.submitForm).submit();
             };
 
             $('#show-outdated-comments').on('click', function(e){
@@ -746,17 +771,21 @@
             });
 
             $('#update_pull_request').on('click', function(e){
+                $(this).attr('disabled', 'disabled');
+                $(this).addClass('disabled');
+                $(this).html(_gettext('Saving...'));
                 updateReviewers(undefined, "${c.repo_name}", "${c.pull_request.pull_request_id}");
             });
 
             $('#update_commits').on('click', function(e){
                 var isDisabled = !$(e.currentTarget).attr('disabled');
-                $(e.currentTarget).text(_gettext('Updating...'));
                 $(e.currentTarget).attr('disabled', 'disabled');
+                $(e.currentTarget).addClass('disabled');
+                $(e.currentTarget).removeClass('btn-primary');
+                $(e.currentTarget).text(_gettext('Updating...'));
                 if(isDisabled){
                     updateCommits("${c.repo_name}", "${c.pull_request.pull_request_id}");
                 }
-
             });
             // fixing issue with caches on firefox
             $('#update_commits').removeAttr("disabled");
@@ -786,6 +815,8 @@
             window.commentFormGlobalSubmitSuccessCallback = function(){
                 refreshMergeChecks();
             };
+            // initial injection
+            injectCloseAction();
 
         })
       </script>

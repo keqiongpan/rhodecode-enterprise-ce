@@ -29,7 +29,6 @@ from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.model.db import Session, User, Repository
 from rhodecode.model.user import UserModel
 
-
 log = logging.getLogger(__name__)
 
 
@@ -62,8 +61,8 @@ def get_user(request, apiuser, userid=Optional(OAttr('apiuser'))):
           "result": {
             "active": true,
             "admin": false,
-            "api_key": "api-key",
             "api_keys": [ list of keys ],
+            "auth_tokens": [ list of tokens with details ],
             "email": "user@example.com",
             "emails": [
               "user@example.com"
@@ -74,6 +73,7 @@ def get_user(request, apiuser, userid=Optional(OAttr('apiuser'))):
             "ip_addresses": [],
             "language": null,
             "last_login": "Timestamp",
+            "last_activity": "Timestamp",
             "lastname": "surnae",
             "permissions": {
               "global": [
@@ -133,7 +133,7 @@ def get_users(request, apiuser):
     .. code-block:: bash
 
         id : <id_given_in_input>
-            result: [<user_object>, ...]
+        result: [<user_object>, ...]
         error:  null
     """
 
@@ -191,15 +191,16 @@ def create_user(request, apiuser, username, email, password=Optional(''),
     :type force_password_change: Optional(``True`` | ``False``)
     :param create_personal_repo_group: Create personal repo group for this user
     :type create_personal_repo_group: Optional(``True`` | ``False``)
+
     Example output:
 
     .. code-block:: bash
 
         id : <id_given_in_input>
         result: {
-                  "msg" : "created new user `<username>`",
-                  "user": <user_obj>
-                }
+            "msg" : "created new user `<username>`",
+            "user": <user_obj>
+        }
         error:  null
 
     Example error output:
@@ -305,9 +306,9 @@ def update_user(request, apiuser, userid, username=Optional(None),
 
         id : <id_given_in_input>
         result: {
-                  "msg" : "updated user ID:<userid> <username>",
-                  "user": <user_object>,
-                }
+            "msg" : "updated user ID:<userid> <username>",
+            "user": <user_object>,
+        }
         error:  null
 
     Example error output:
@@ -384,9 +385,9 @@ def delete_user(request, apiuser, userid):
 
         id : <id_given_in_input>
         result: {
-                  "msg" : "deleted user ID:<userid> <username>",
-                  "user": null
-                }
+            "msg" : "deleted user ID:<userid> <username>",
+            "user": null
+        }
         error:  null
 
     Example error output:
@@ -469,4 +470,46 @@ def get_user_locks(request, apiuser, userid=Optional(OAttr('apiuser'))):
             if safe_int(_user_id) == user.user_id:
                 ret.append(_api_data)
 
+    return ret
+
+
+@jsonrpc_method()
+def get_user_audit_logs(request, apiuser, userid=Optional(OAttr('apiuser'))):
+    """
+    Fetches all action logs made by the specified user.
+
+    This command takes the following options:
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param userid: Sets the userid whose list of locked |repos| will be
+        displayed.
+    :type userid: Optional(str or int)
+
+    Example output:
+
+    .. code-block:: bash
+
+        id : <id_given_in_input>
+        result : {
+            [action, action,...]
+        }
+        error :  null
+    """
+
+    if not has_superadmin_permission(apiuser):
+        # make sure normal user does not pass someone else userid,
+        # he is not allowed to do that
+        if not isinstance(userid, Optional) and userid != apiuser.user_id:
+            raise JSONRPCError('userid is not the same as your user')
+
+    userid = Optional.extract(userid, evaluate_locals=locals())
+    userid = getattr(userid, 'user_id', userid)
+    user = get_user_or_error(userid)
+
+    ret = []
+
+    # show all user actions
+    for entry in UserModel().get_user_log(user, filter_term=None):
+        ret.append(entry)
     return ret

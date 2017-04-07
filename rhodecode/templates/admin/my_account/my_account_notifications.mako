@@ -80,9 +80,33 @@
     ctrlr.testNotifications = function(event){
         var levels = ['info', 'error', 'warning', 'success'];
         var level = levels[Math.floor(Math.random()*levels.length)];
+        function getRandomArbitrary(min, max) {
+          return parseInt(Math.random() * (max - min) + min);
+        }
+        function shuffle(a) {
+            var j, x, i;
+            for (i = a.length; i; i--) {
+                j = Math.floor(Math.random() * i);
+                x = a[i - 1];
+                a[i - 1] = a[j];
+                a[j] = x;
+            }
+        }
+        var wordDb = [
+            "Leela,", "Bender,", "we are", "going", "grave", "robbing.",
+            "Oh,", "I", "think", "we", "should", "just", "stay", "friends.",
+            "got", "to", "find", "a", "way", "to", "escape", "the", "horrible",
+            "ravages", "of", "youth.", "Suddenly,", "going", "to",
+            "the", "bathroom", "like", "clockwork,", "every", "three",
+            "hours.", "And", "those", "jerks", "at", "Social", "Security",
+            "stopped", "sending", "me", "checks.", "Now", "have", "to", "pay"
+        ];
+        shuffle(wordDb);
+        wordDb = wordDb.slice(0, getRandomArbitrary(3, wordDb.length));
+        var randomMessage = wordDb.join(" ");
         var payload = {
             message: {
-                message: 'This is a test notification. ' + new Date(),
+                message: randomMessage + " " + new Date(),
                 level: level,
                 force: true
             }

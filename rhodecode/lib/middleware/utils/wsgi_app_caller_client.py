@@ -24,8 +24,6 @@ Utility to call a WSGI app wrapped in a WSGIAppCaller object.
 
 import logging
 
-from Pyro4.errors import ConnectionClosedError
-
 
 log = logging.getLogger(__name__)
 
@@ -83,14 +81,8 @@ class RemoteAppCaller(object):
         input_data = environ['wsgi.input'].read()
         clean_environ = _get_clean_environ(environ)
 
-        try:
-            data, status, headers = self._remote_wsgi.handle(
-                clean_environ, input_data, *self._args, **self._kwargs)
-        except ConnectionClosedError:
-            log.debug('Remote Pyro Server ConnectionClosedError')
-            self._remote_wsgi._pyroReconnect(tries=15)
-            data, status, headers = self._remote_wsgi.handle(
-                clean_environ, input_data, *self._args, **self._kwargs)
+        data, status, headers = self._remote_wsgi.handle(
+            clean_environ, input_data, *self._args, **self._kwargs)
 
         log.debug("Got result from proxy, returning to WSGI container")
         start_response(status, headers)

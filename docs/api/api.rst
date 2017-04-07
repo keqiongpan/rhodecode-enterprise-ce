@@ -75,7 +75,7 @@ Example call for auto pulling from remote repositories using curl:
 .. code-block:: bash
 
     curl https://server.com/_admin/api -X POST -H 'content-type:text/plain' --data-binary '{"id":1,
-    "auth_token":"xe7cdb2v278e4evbdf5vs04v832v0efvcbcve4a3","method":"pull", "args":{"repo":"CPython"}}'
+    "auth_token":"xe7cdb2v278e4evbdf5vs04v832v0efvcbcve4a3","method":"pull", "args":{"repoid":"CPython"}}'
 
 Provide those parameters:
  - **id** A value of any type, which is used to match the response with the

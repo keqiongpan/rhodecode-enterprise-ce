@@ -24,7 +24,18 @@ ${h.secure_form(url('repos'))}
             </div>
             <div class="input">
                 ${h.text('clone_uri', class_="medium")}
-                <span class="help-block">${_('Optional http[s] URL from which to clone a repository.')}</span>
+                <span class="help-block">
+                    <pre>
+- The repository must be accessible over http:// or https://
+- For Git projects it's recommended appending .git to the end of clone url.
+- Make sure to select proper repository type from the below selector before importing it.
+- If your HTTP[S] repository is not publicly accessible,
+  add authentication information to the URL: https://username:password@server.company.com/repo-name.
+- The Git LFS/Mercurial Largefiles objects will not be imported.
+- For very large repositories, it's recommended to manually copy them into the
+  RhodeCode <a href="${h.url('admin_settings_vcs', anchor='vcs-storage-options')}">storage location</a> and run <a href="${h.url('admin_settings_mapping')}">Remap and Rescan</a>.
+                    </pre>
+                </span>
             </div>
         </div>
         <div class="field">

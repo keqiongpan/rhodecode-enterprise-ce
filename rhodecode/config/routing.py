@@ -92,7 +92,7 @@ class JSRoutesMapper(Mapper):
     def _extract_route_information(self, route):
         """
         Convert a route into tuple(name, path, args), eg:
-            ('user_profile', '/profile/%(username)s', ['username'])
+            ('show_user', '/profile/%(username)s', ['username'])
         """
         routepath = route.routepath
         def replace(matchobj):
@@ -198,10 +198,6 @@ def make_map(config):
     rmap.connect('user_group_autocomplete_data', '/_user_groups', controller='home',
                  action='user_group_autocomplete_data', jsroute=True)
 
-    rmap.connect(
-        'user_profile', '/_profiles/{username}', controller='users',
-        action='user_profile')
-
     # TODO: johbo: Static links, to be replaced by our redirection mechanism
     rmap.connect('rst_help',
                  'http://docutils.sourceforge.net/docs/user/rst/quickref.html',
@@ -296,8 +292,6 @@ def make_map(config):
                         controller='admin/users') as m:
         m.connect('users', '/users',
                   action='create', conditions={'method': ['POST']})
-        m.connect('users', '/users',
-                  action='index', conditions={'method': ['GET']})
         m.connect('new_user', '/users/new',
                   action='new', conditions={'method': ['GET']})
         m.connect('update_user', '/users/{user_id}',
@@ -318,13 +312,6 @@ def make_map(config):
                   action='edit_advanced', conditions={'method': ['GET']})
         m.connect('edit_user_advanced', '/users/{user_id}/edit/advanced',
                   action='update_advanced', conditions={'method': ['PUT']})
-
-        m.connect('edit_user_auth_tokens', '/users/{user_id}/edit/auth_tokens',
-                  action='edit_auth_tokens', conditions={'method': ['GET']})
-        m.connect('edit_user_auth_tokens', '/users/{user_id}/edit/auth_tokens',
-                  action='add_auth_token', conditions={'method': ['PUT']})
-        m.connect('edit_user_auth_tokens', '/users/{user_id}/edit/auth_tokens',
-                  action='delete_auth_token', conditions={'method': ['DELETE']})
 
         m.connect('edit_user_global_perms', '/users/{user_id}/edit/global_permissions',
                   action='edit_global_perms', conditions={'method': ['GET']})
@@ -386,6 +373,10 @@ def make_map(config):
         m.connect('edit_user_group_advanced',
                   '/user_groups/{user_group_id}/edit/advanced',
                   action='edit_advanced', conditions={'method': ['GET']})
+
+        m.connect('edit_user_group_advanced_sync',
+                  '/user_groups/{user_group_id}/edit/advanced/sync',
+                  action='edit_advanced_set_synchronization', conditions={'method': ['POST']})
 
         m.connect('edit_user_group_members',
                   '/user_groups/{user_group_id}/edit/members', jsroute=True,
@@ -518,15 +509,15 @@ def make_map(config):
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/my_account') as m:
 
-        m.connect('my_account', '/my_account',
-                  action='my_account', conditions={'method': ['GET']})
         m.connect('my_account_edit', '/my_account/edit',
                   action='my_account_edit', conditions={'method': ['GET']})
-        m.connect('my_account', '/my_account',
+        m.connect('my_account', '/my_account/update',
                   action='my_account_update', conditions={'method': ['POST']})
 
+        # NOTE(marcink): this needs to be kept for password force flag to be
+        # handler, remove after migration to pyramid
         m.connect('my_account_password', '/my_account/password',
-                  action='my_account_password', conditions={'method': ['GET', 'POST']})
+                  action='my_account_password', conditions={'method': ['GET']})
 
         m.connect('my_account_repos', '/my_account/repos',
                   action='my_account_repos', conditions={'method': ['GET']})
@@ -547,12 +538,6 @@ def make_map(config):
         m.connect('my_account_emails', '/my_account/emails',
                   action='my_account_emails_delete', conditions={'method': ['DELETE']})
 
-        m.connect('my_account_auth_tokens', '/my_account/auth_tokens',
-                  action='my_account_auth_tokens', conditions={'method': ['GET']})
-        m.connect('my_account_auth_tokens', '/my_account/auth_tokens',
-                  action='my_account_auth_tokens_add', conditions={'method': ['POST']})
-        m.connect('my_account_auth_tokens', '/my_account/auth_tokens',
-                  action='my_account_auth_tokens_delete', conditions={'method': ['DELETE']})
         m.connect('my_account_notifications', '/my_account/notifications',
                   action='my_notifications',
                   conditions={'method': ['GET']})
@@ -1066,6 +1051,12 @@ def make_map(config):
                  f_path='', annotate=True, conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
+    rmap.connect('files_annotate_previous',
+                 '/{repo_name}/annotate-previous/{revision}/{f_path}',
+                 controller='files', action='annotate_previous', revision='tip',
+                 f_path='', annotate=True, conditions={'function': check_repo},
+                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
+
     rmap.connect('files_edit',
                  '/{repo_name}/edit/{revision}/{f_path}',
                  controller='files', action='edit', revision='tip',
@@ -1134,11 +1125,6 @@ def make_map(config):
 
     rmap.connect('repo_forks_home', '/{repo_name}/forks',
                  controller='forks', action='forks',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('repo_followers_home', '/{repo_name}/followers',
-                 controller='followers', action='followers',
                  conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 

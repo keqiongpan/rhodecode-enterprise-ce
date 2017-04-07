@@ -25,7 +25,7 @@ from itertools import groupby
 from pygments import lex
 from pygments.formatters.html import _get_ttype_class as pygment_token_class
 from rhodecode.lib.helpers import (
-    get_lexer_for_filenode, html_escape)
+    get_lexer_for_filenode, html_escape, get_custom_lexer)
 from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib.diff_match_patch import diff_match_patch
@@ -407,8 +407,12 @@ class DiffSet(object):
         if filename not in self._lexer_cache:
             if filenode:
                 lexer = filenode.lexer
+                extension = filenode.extension
             else:
                 lexer = FileNode.get_lexer(filename=filename)
+                extension = filename.split('.')[-1]
+
+            lexer = get_custom_lexer(extension) or lexer
             self._lexer_cache[filename] = lexer
         return self._lexer_cache[filename]
 

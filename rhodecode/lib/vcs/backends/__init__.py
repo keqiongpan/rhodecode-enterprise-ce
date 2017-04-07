@@ -89,10 +89,7 @@ def get_supported_backends():
     return settings.BACKENDS.keys()
 
 
-def get_vcsserver_version():
+def get_vcsserver_service_data():
     from rhodecode.lib.vcs import connection
-    data = connection.Service.get_vcsserver_service_data()
-    if data and 'version' in data:
-        return data['version']
+    return connection.Service.get_vcsserver_service_data()
 
-    return None

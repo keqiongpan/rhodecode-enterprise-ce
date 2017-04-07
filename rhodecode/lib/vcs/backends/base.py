@@ -893,9 +893,10 @@ class BaseCommit(object):
 
     def get_largefile_node(self, path):
         """
-        Returns the path to largefile from Mercurial storage.
+        Returns the path to largefile from Mercurial/Git-lfs storage.
+        or None if it's not a largefile node
         """
-        raise NotImplementedError
+        return None
 
     def archive_repo(self, file_path, kind='tgz', subrepos=None,
                      prefix=None, write_metadata=False, mtime=None):

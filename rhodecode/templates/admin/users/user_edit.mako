@@ -11,7 +11,7 @@
 <%def name="breadcrumbs_links()">
     ${h.link_to(_('Admin'),h.url('admin_home'))}
     &raquo;
-    ${h.link_to(_('Users'),h.url('users'))}
+    ${h.link_to(_('Users'),h.route_path('users'))}
     &raquo;
     ${c.user.username}
 </%def>
@@ -31,12 +31,14 @@
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
           <li class="${'active' if c.active=='profile' else ''}"><a href="${h.url('edit_user', user_id=c.user.user_id)}">${_('User Profile')}</a></li>
-          <li class="${'active' if c.active=='auth_tokens' else ''}"><a href="${h.url('edit_user_auth_tokens', user_id=c.user.user_id)}">${_('Auth tokens')}</a></li>
+          <li class="${'active' if c.active=='auth_tokens' else ''}"><a href="${h.route_path('edit_user_auth_tokens', user_id=c.user.user_id)}">${_('Auth tokens')}</a></li>
           <li class="${'active' if c.active=='advanced' else ''}"><a href="${h.url('edit_user_advanced', user_id=c.user.user_id)}">${_('Advanced')}</a></li>
           <li class="${'active' if c.active=='global_perms' else ''}"><a href="${h.url('edit_user_global_perms', user_id=c.user.user_id)}">${_('Global permissions')}</a></li>
           <li class="${'active' if c.active=='perms_summary' else ''}"><a href="${h.url('edit_user_perms_summary', user_id=c.user.user_id)}">${_('Permissions summary')}</a></li>
           <li class="${'active' if c.active=='emails' else ''}"><a href="${h.url('edit_user_emails', user_id=c.user.user_id)}">${_('Emails')}</a></li>
           <li class="${'active' if c.active=='ips' else ''}"><a href="${h.url('edit_user_ips', user_id=c.user.user_id)}">${_('Ip Whitelist')}</a></li>
+          <li class="${'active' if c.active=='groups' else ''}"><a href="${h.route_path('edit_user_groups_management', user_id=c.user.user_id)}">${_('User Groups Management')}</a></li>
+          <li class="${'active' if c.active=='audit' else ''}"><a href="${h.route_path('edit_user_audit_logs', user_id=c.user.user_id)}">${_('User audit')}</a></li>
         </ul>
     </div>
 

@@ -56,8 +56,15 @@ class RhodecodeEvent(object):
     @property
     def actor(self):
         auth_user = self.auth_user
+
         if auth_user:
-            return auth_user.get_instance()
+            instance = auth_user.get_instance()
+            if not instance:
+                return AttributeDict(dict(
+                    username=auth_user.username
+                ))
+            return instance
+
         return SYSTEM_USER
 
     @property

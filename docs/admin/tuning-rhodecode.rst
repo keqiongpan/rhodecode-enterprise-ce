@@ -17,5 +17,6 @@ may find some of the following methods useful.
    tuning-mount-cache-memory
    tuning-change-encoding
    tuning-change-large-file-dir
+   tuning-change-lfs-dir
    tuning-hg-auth-loop
 

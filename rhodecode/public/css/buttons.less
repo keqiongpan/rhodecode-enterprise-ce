@@ -86,7 +86,7 @@ input[type="button"] {
     }
     &:disabled {
         .border ( @border-thickness-buttons, @grey4 );
-        background-color: none;
+        background-color: transparent;
     }
 }
 
@@ -172,6 +172,19 @@ input[type="button"] {
         background-color: white;
         color: @alert2;
     }
+}
+
+.btn-approved-status {
+    .border ( @border-thickness, @alert1 );
+    background-color: white;
+    color: @alert1;
+
+}
+
+.btn-rejected-status {
+    .border ( @border-thickness, @alert2 );
+    background-color: white;
+    color: @alert2;
 }
 
 .btn-sm,

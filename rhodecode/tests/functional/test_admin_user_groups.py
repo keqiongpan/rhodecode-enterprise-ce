@@ -21,7 +21,7 @@
 import pytest
 
 from rhodecode.tests import (
-    TestController, url, assert_session_flash, link_to)
+    TestController, url, assert_session_flash, link_to, TEST_USER_ADMIN_LOGIN)
 from rhodecode.model.db import User, UserGroup
 from rhodecode.model.meta import Session
 from rhodecode.tests.fixture import Fixture
@@ -56,6 +56,41 @@ class TestAdminUsersGroupsController(TestController):
             response,
             'Created user group %s' % user_group_link)
 
+    def test_set_synchronization(self):
+        self.log_user()
+        users_group_name = TEST_USER_GROUP + 'sync'
+        response = self.app.post(url('users_groups'), {
+            'users_group_name': users_group_name,
+            'user_group_description': 'DESC',
+            'active': True,
+            'csrf_token': self.csrf_token})
+
+        group = Session().query(UserGroup).filter(
+            UserGroup.users_group_name == users_group_name).one()
+
+        assert group.group_data.get('extern_type') is None
+
+        # enable
+        self.app.post(
+            url('edit_user_group_advanced_sync', user_group_id=group.users_group_id),
+            params={'csrf_token': self.csrf_token}, status=302)
+
+        group = Session().query(UserGroup).filter(
+            UserGroup.users_group_name == users_group_name).one()
+        assert group.group_data.get('extern_type') == 'manual'
+        assert group.group_data.get('extern_type_set_by') == TEST_USER_ADMIN_LOGIN
+
+        # disable
+        self.app.post(
+            url('edit_user_group_advanced_sync',
+                user_group_id=group.users_group_id),
+            params={'csrf_token': self.csrf_token}, status=302)
+
+        group = Session().query(UserGroup).filter(
+            UserGroup.users_group_name == users_group_name).one()
+        assert group.group_data.get('extern_type') is None
+        assert group.group_data.get('extern_type_set_by') == TEST_USER_ADMIN_LOGIN
+
     def test_delete(self):
         self.log_user()
         users_group_name = TEST_USER_GROUP + 'another'
@@ -77,7 +112,7 @@ class TestAdminUsersGroupsController(TestController):
         group = Session().query(UserGroup).filter(
             UserGroup.users_group_name == users_group_name).one()
 
-        response = self.app.post(
+        self.app.post(
             url('delete_users_group', user_group_id=group.users_group_id),
             params={'_method': 'delete', 'csrf_token': self.csrf_token})
 

@@ -40,10 +40,7 @@
   }, 
   "python2.7-Pylons-1.0.1-patch1": {
     "BSD 4-clause \"Original\" or \"Old\" License": "http://spdx.org/licenses/BSD-4-Clause"
-  }, 
-  "python2.7-Pyro4-4.35": {
-    "MIT License": "http://spdx.org/licenses/MIT"
-  }, 
+  },
   "python2.7-Routes-1.13": {
     "BSD 4-clause \"Original\" or \"Old\" License": "http://spdx.org/licenses/BSD-4-Clause"
   }, 
@@ -214,10 +211,7 @@
   }, 
   "python2.7-requests-2.9.1": {
     "Apache License 2.0": "http://spdx.org/licenses/Apache-2.0"
-  }, 
-  "python2.7-serpent-1.12": {
-    "MIT License": "http://spdx.org/licenses/MIT"
-  }, 
+  },
   "python2.7-setuptools-19.4": {
     "Python Software Foundation License version 2": "http://spdx.org/licenses/Python-2.0", 
     "Zope Public License 2.0": "http://spdx.org/licenses/ZPL-2.0"

@@ -114,6 +114,30 @@ following command from inside the cloned repository::
    fine on both MacOS and Linux platforms.
 
 
+Create config.nix for development
+---------------------------------
+
+In order to run proper tests and setup linking across projects, a config.nix
+file needs to be setup::
+
+    # create config
+    mkdir -p ~/.nixpkgs
+    touch ~/.nixpkgs/config.nix
+
+    # put the below content into the ~/.nixpkgs/config.nix file
+    # adjusts, the path to where you cloned your repositories.
+
+    {
+      rc = {
+       sources = {
+        rhodecode-vcsserver = "/home/dev/rhodecode-vcsserver";
+        rhodecode-enterprise-ce = "/home/dev/rhodecode-enterprise-ce";
+        rhodecode-enterprise-ee = "/home/dev/rhodecode-enterprise-ee";
+       };
+      };
+    }
+
+
 
 Creating a Development Configuration
 ------------------------------------

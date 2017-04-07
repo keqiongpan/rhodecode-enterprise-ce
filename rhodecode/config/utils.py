@@ -20,28 +20,10 @@
 
 import os
 import shlex
-import Pyro4
 import platform
 
 from rhodecode.model import init_model
 
-
-def configure_pyro4(config):
-    """
-    Configure Pyro4 based on `config`.
-
-    This will mainly set the different configuration parameters of the Pyro4
-    library based on the settings in our INI files. The Pyro4 documentation
-    lists more details about the specific settings and their meaning.
-    """
-    Pyro4.config.COMMTIMEOUT = float(config['vcs.connection_timeout'])
-    Pyro4.config.SERIALIZER = 'pickle'
-    Pyro4.config.SERIALIZERS_ACCEPTED.add('pickle')
-
-    # Note: We need server configuration in the WSGI processes
-    # because we provide a callback server in certain vcs operations.
-    Pyro4.config.SERVERTYPE = "multiplex"
-    Pyro4.config.POLLTIMEOUT = 0.01
 
 
 def configure_vcs(config):
@@ -77,9 +59,16 @@ def initialize_test_environment(settings, test_env=None):
         create_test_directory, create_test_database, create_test_repositories,
         create_test_index)
     from rhodecode.tests import TESTS_TMP_PATH
+    from rhodecode.lib.vcs.backends.hg import largefiles_store
+    from rhodecode.lib.vcs.backends.git import lfs_store
+
     # test repos
     if test_env:
         create_test_directory(TESTS_TMP_PATH)
+        # large object stores
+        create_test_directory(largefiles_store(TESTS_TMP_PATH))
+        create_test_directory(lfs_store(TESTS_TMP_PATH))
+
         create_test_database(TESTS_TMP_PATH, settings)
         create_test_repositories(TESTS_TMP_PATH, settings)
         create_test_index(TESTS_TMP_PATH, settings)

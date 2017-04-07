@@ -251,6 +251,7 @@ class CommentsModel(BaseModel):
             'comment_body': text,
             'comment_file': f_path,
             'comment_line': line_no,
+            'comment_type': comment_type or 'note'
         }
 
         if commit_obj:

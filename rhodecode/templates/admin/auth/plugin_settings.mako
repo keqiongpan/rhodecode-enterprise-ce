@@ -72,7 +72,7 @@
                           <span class="error-message">${errors.get(node.name)}</span>
                           <br />
                         %endif
-                        <p class="help-block">${node.description}</p>
+                        <p class="help-block pre-formatting">${node.description}</p>
                       </div>
                     </div>
                   %endfor
@@ -111,6 +111,8 @@ $(document).ready(function() {
     $("#tls_kind").select2(select2Options);
     $("#tls_reqcert").select2(select2Options);
     $("#search_scope").select2(select2Options);
+    $("#group_extraction_type").select2(select2Options);
+    $("#admin_groups_sync").select2(select2Options);
 });
 </script>
 </%def>

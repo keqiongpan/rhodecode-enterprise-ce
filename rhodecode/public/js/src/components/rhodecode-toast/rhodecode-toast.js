@@ -6,24 +6,83 @@ Polymer({
             value: function(){
                 return []
             }
+        },
+        isFixed: {
+            type: Boolean,
+            value: false
+        },
+        hasToasts: {
+            type: Boolean,
+            computed: '_computeHasToasts(toasts.*)'
+        },
+        keyEventTarget: {
+            type: Object,
+            value: function() {
+              return document.body;
+            }
         }
     },
+    behaviors: [
+        Polymer.IronA11yKeysBehavior
+    ],
     observers: [
         '_changedToasts(toasts.splices)'
     ],
+
+    keyBindings: {
+      'esc:keyup': '_hideOnEsc'
+    },
+
+    _hideOnEsc: function (event) {
+        return this.dismissNotifications();
+    },
+
+    _computeHasToasts: function(){
+        return this.toasts.length > 0;
+    },
+
+    _debouncedCalc: function(){
+        // calculate once in a while
+        this.debounce('debouncedCalc', this.toastInWindow, 25);
+    },
+
+    conditionalClass: function(){
+      return this.isFixed ? 'fixed': '';
+    },
+
+    toastInWindow: function() {
+        if (!this._headerNode){
+            return true
+        }
+        var headerHeight = this._headerNode.offsetHeight;
+        var scrollPosition = window.scrollY;
+
+        if (this.isFixed){
+            this.isFixed = 1 <= scrollPosition;
+        }
+        else{
+            this.isFixed = headerHeight <= scrollPosition;
+        }
+    },
+
+    attached: function(){
+        this._headerNode = document.querySelector('.header', document);
+        this.listen(window,'scroll', '_debouncedCalc');
+        this.listen(window,'resize', '_debouncedCalc');
+        this._debouncedCalc();
+    },
     _changedToasts: function(newValue, oldValue){
-        this.$['p-toast'].notifyResize();
         $.Topic('/favicon/update').publish({count: this.toasts.length});
     },
+    dismissNotification: function(e) {
+        $.Topic('/favicon/update').publish({count: this.toasts.length-1});
+        var idx = e.target.parentNode.indexPos
+        this.splice('toasts', idx, 1);
+
+    },
     dismissNotifications: function(){
-        this.$['p-toast'].close();
         $.Topic('/favicon/update').publish({count: 0});
-    },
-    handleClosed: function(){
         this.splice('toasts', 0);
-    },
-    open: function(){
-        this.$['p-toast'].open();
     },
     handleNotification: function(data){
         if (!templateContext.rhodecode_user.notification_status && !data.message.force) {
@@ -34,7 +93,6 @@ Polymer({
             level: data.message.level,
             message: data.message.message
         });
-        this.open();
     },
     _gettext: _gettext
 });

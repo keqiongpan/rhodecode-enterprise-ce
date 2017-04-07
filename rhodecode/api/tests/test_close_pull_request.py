@@ -29,6 +29,7 @@ from rhodecode.api.tests.utils import (
 
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestClosePullRequest(object):
+
     @pytest.mark.backends("git", "hg")
     def test_api_close_pull_request(self, pr_util):
         pull_request = pr_util.create_pull_request()

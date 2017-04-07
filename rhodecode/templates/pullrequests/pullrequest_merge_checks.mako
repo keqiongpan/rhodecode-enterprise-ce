@@ -1,7 +1,6 @@
 
 <div class="pull-request-wrap">
 
-
     % if c.pr_merge_possible:
         <h2 class="merge-status">
             <span class="merge-icon success"><i class="icon-true"></i></span>
@@ -46,5 +45,19 @@
           <input type="submit" value="${_('Login to Merge this Pull Request')}" class="btn disabled" disabled="disabled">
         % endif
     </div>
-</div>
 
+    % if c.allowed_to_close:
+        ## close PR action, injected later next to COMMENT button
+        <div id="close-pull-request-action" style="display: none">
+        % if c.pull_request_review_status == c.REVIEW_STATUS_APPROVED:
+        <a class="btn btn-approved-status" href="#close-as-approved" onclick="closePullRequest('${c.REVIEW_STATUS_APPROVED}'); return false;">
+            ${_('Close with status {}').format(h.commit_status_lbl(c.REVIEW_STATUS_APPROVED))}
+        </a>
+        % else:
+        <a class="btn btn-rejected-status" href="#close-as-rejected" onclick="closePullRequest('${c.REVIEW_STATUS_REJECTED}'); return false;">
+            ${_('Close with status {}').format(h.commit_status_lbl(c.REVIEW_STATUS_REJECTED))}
+        </a>
+        % endif
+        </div>
+    % endif
+</div>

@@ -48,9 +48,24 @@ self: super: {
     ];
   });
 
+  nbconvert = super.nbconvert.override (attrs: {
+    propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
+      # marcink: plug in jupyter-client for notebook rendering
+      self.jupyter-client
+    ];
+  });
+
   ipython = super.ipython.override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
       self.gnureadline
+    ];
+  });
+
+  celery = super.celery.override (attrs: {
+    # The current version of kombu needs some patching to work with the
+    # other libs. Should be removed once we update celery and kombu.
+    patches = [
+      ./patch-celery-dateutil.diff
     ];
   });
 

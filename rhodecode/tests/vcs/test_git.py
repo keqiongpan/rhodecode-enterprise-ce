@@ -22,15 +22,16 @@ import datetime
 import mock
 import os
 import sys
+import shutil
 
 import pytest
 
+from rhodecode.lib.utils import make_db_config
 from rhodecode.lib.vcs.backends.base import Reference
 from rhodecode.lib.vcs.backends.git import (
     GitRepository, GitCommit, discover_git_version)
 from rhodecode.lib.vcs.exceptions import (
-    RepositoryError, VCSError, NodeDoesNotExistError
-)
+    RepositoryError, VCSError, NodeDoesNotExistError)
 from rhodecode.lib.vcs.nodes import (
     NodeKind, FileNode, DirNode, NodeState, SubModuleNode)
 from rhodecode.tests import TEST_GIT_REPO, TEST_GIT_REPO_CLONE, get_new_dir
@@ -1001,6 +1002,32 @@ class TestGitCommit(object):
     def test_author_username(self, author, commit_id):
         commit = self.repo.get_commit(commit_id)
         assert author == commit.author_name
+
+
+class TestLargeFileRepo(object):
+
+    def test_large_file(self, backend_git):
+        conf = make_db_config()
+        repo = backend_git.create_test_repo('largefiles', conf)
+
+        tip = repo.scm_instance().get_commit()
+
+        # extract stored LF node into the origin cache
+        lfs_store = os.path.join(repo.repo_path, repo.repo_name, 'lfs_store')
+
+        oid = '7b331c02e313c7599d5a90212e17e6d3cb729bd2e1c9b873c302a63c95a2f9bf'
+        oid_path = os.path.join(lfs_store, oid)
+        oid_destination = os.path.join(
+            conf.get('vcs_git_lfs', 'store_location'), oid)
+        shutil.copy(oid_path, oid_destination)
+
+        node = tip.get_node('1MB.zip')
+
+        lf_node = node.get_largefile_node()
+
+        assert lf_node.is_largefile() is True
+        assert lf_node.size == 1024000
+        assert lf_node.name == '1MB.zip'
 
 
 class TestGitSpecificWithRepo(BackendTestMixin):

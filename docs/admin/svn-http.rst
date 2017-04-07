@@ -114,8 +114,20 @@ permission issues could occur. To do this edit the ``/etc/apache2/envvars``
 
 This would create a special template file called ```mod_dav_svn.conf```. We
 used that file path in the apache config above inside the Include statement.
-It's also possible to generate the config from the
-:menuselection:`Admin --> Settings --> VCS` page.
+It's also possible to manually generate the config from the
+:menuselection:`Admin --> Settings --> VCS` page by clicking a
+`Generate Apache Config` button.
+
+5. Now only things left is to enable svn support, and generate the initial
+   configuration.
+
+   - Select `Proxy subversion HTTP requests` checkbox
+   - Enter http://localhost:8090 into `Subversion HTTP Server URL`
+   - Click the `Generate Apache Config` button.
+
+This config will be automatically re-generated once an user-groups is added
+to properly map the additional paths generated.
+
 
 
 Using |svn|

@@ -25,6 +25,8 @@ import os.path
 import subprocess32
 import tempfile
 import urllib2
+from lxml.html import fromstring, tostring
+from lxml.cssselect import CSSSelector
 from urlparse import urlparse, parse_qsl
 from urllib import unquote_plus
 
@@ -204,8 +206,6 @@ class AssertResponse(object):
         self.response = response
 
     def get_imports(self):
-        from lxml.html import fromstring, tostring
-        from lxml.cssselect import CSSSelector
         return fromstring, tostring, CSSSelector
 
     def one_element_exists(self, css_selector):
@@ -241,14 +241,14 @@ class AssertResponse(object):
         doc = fromstring(self.response.body)
         sel = CSSSelector('#' + anchor_id)
         elements = sel(doc)
-        assert len(elements) == 1
+        assert len(elements) == 1, 'cannot find 1 element {}'.format(anchor_id)
 
     def _ensure_url_equal(self, found, expected):
         assert _Url(found) == _Url(expected)
 
     def get_element(self, css_selector):
         elements = self._get_elements(css_selector)
-        assert len(elements) == 1
+        assert len(elements) == 1, 'cannot find 1 element {}'.format(css_selector)
         return elements[0]
 
     def get_elements(self, css_selector):

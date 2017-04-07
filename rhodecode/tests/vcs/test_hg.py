@@ -23,14 +23,13 @@ import os
 import mock
 import pytest
 
-import rhodecode.lib.vcs.conf.settings
+from rhodecode.lib.utils import make_db_config
 from rhodecode.lib.vcs import backends
 from rhodecode.lib.vcs.backends.base import (
     Reference, MergeResponse, MergeFailureReason)
 from rhodecode.lib.vcs.backends.hg import MercurialRepository, MercurialCommit
 from rhodecode.lib.vcs.exceptions import (
-    CommitError, RepositoryError, VCSError, NodeDoesNotExistError,
-    CommitDoesNotExistError)
+    RepositoryError, VCSError, NodeDoesNotExistError, CommitDoesNotExistError)
 from rhodecode.lib.vcs.nodes import FileNode, NodeKind, NodeState
 from rhodecode.tests import TEST_HG_REPO, TEST_HG_REPO_CLONE
 
@@ -1095,12 +1094,6 @@ class TestMercurialCommit(object):
         with pytest.raises(VCSError):
             self.repo.get_commit().get_node(path)
 
-    def test_large_file(self):
-        # TODO: valid large file
-        tip = self.repo.get_commit()
-        with pytest.raises(CommitError):
-            tip.get_largefile_node("invalid")
-
     def test_author_email(self):
         assert 'marcin@python-blog.com' == \
             self.repo.get_commit('b986218ba1c9').author_email
@@ -1115,6 +1108,21 @@ class TestMercurialCommit(object):
             self.repo.get_commit('3803844fdbd3').author_name
         assert 'marcink' == \
             self.repo.get_commit('84478366594b').author_name
+
+
+class TestLargeFileRepo(object):
+
+    def test_large_file(self, backend_hg):
+        repo = backend_hg.create_test_repo('largefiles', make_db_config())
+
+        tip = repo.scm_instance().get_commit()
+        node = tip.get_node('.hglf/thisfileislarge')
+
+        lf_node = node.get_largefile_node()
+
+        assert lf_node.is_largefile() is True
+        assert lf_node.size == 1024000
+        assert lf_node.name == '.hglf/thisfileislarge'
 
 
 class TestGetBranchName(object):

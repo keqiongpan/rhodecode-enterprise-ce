@@ -209,7 +209,7 @@ ${h.end_form()}
 <%text filter="h">
 <script>
 // Server announcement displayed on the top of the page.
-// This can be used to send a global maintainance messages or other
+// This can be used to send a global maintenance messages or other
 // important messages to all users of the RhodeCode Enterprise system.
 
 $(document).ready(function(e){

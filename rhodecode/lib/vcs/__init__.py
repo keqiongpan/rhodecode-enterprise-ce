@@ -40,8 +40,6 @@ import time
 import urlparse
 from cStringIO import StringIO
 
-import Pyro4
-from Pyro4.errors import CommunicationError
 
 from rhodecode.lib.vcs.conf import settings
 from rhodecode.lib.vcs.backends import get_vcs_instance, get_backend
@@ -70,36 +68,6 @@ def get_version():
     Returns shorter version (digit parts only) as string.
     """
     return '.'.join((str(each) for each in VERSION[:3]))
-
-
-def connect_pyro4(server_and_port):
-    from rhodecode.lib.vcs import connection, client
-    from rhodecode.lib.middleware.utils import scm_app
-
-    git_remote = client.RequestScopeProxyFactory(
-        settings.pyro_remote(settings.PYRO_GIT, server_and_port))
-    hg_remote = client.RequestScopeProxyFactory(
-        settings.pyro_remote(settings.PYRO_HG, server_and_port))
-    svn_remote = client.RequestScopeProxyFactory(
-        settings.pyro_remote(settings.PYRO_SVN, server_and_port))
-
-    connection.Git = client.RepoMaker(proxy_factory=git_remote)
-    connection.Hg = client.RepoMaker(proxy_factory=hg_remote)
-    connection.Svn = client.RepoMaker(proxy_factory=svn_remote)
-
-    scm_app.GIT_REMOTE_WSGI = Pyro4.Proxy(
-        settings.pyro_remote(
-            settings.PYRO_GIT_REMOTE_WSGI, server_and_port))
-    scm_app.HG_REMOTE_WSGI = Pyro4.Proxy(
-        settings.pyro_remote(
-            settings.PYRO_HG_REMOTE_WSGI, server_and_port))
-
-    @atexit.register
-    def free_connection_resources():
-        connection.Git = None
-        connection.Hg = None
-        connection.Svn = None
-        connection.Service = None
 
 
 def connect_http(server_and_port):
@@ -135,11 +103,9 @@ def connect_vcs(server_and_port, protocol):
     Initializes the connection to the vcs server.
 
     :param server_and_port: str, e.g. "localhost:9900"
-    :param protocol: str, "pyro4" or "http"
+    :param protocol: str or "http"
     """
-    if protocol == 'pyro4':
-        connect_pyro4(server_and_port)
-    elif protocol == 'http':
+    if protocol == 'http':
         connect_http(server_and_port)
     else:
         raise Exception('Invalid vcs server protocol "{}"'.format(protocol))
@@ -154,29 +120,8 @@ def start_vcs_server(server_and_port, protocol, log_level=None):
     log.info('Starting VCSServer as a sub process with %s protocol', protocol)
     if protocol == 'http':
         return _start_http_vcs_server(server_and_port, log_level)
-    elif protocol == 'pyro4':
-        return _start_pyro4_vcs_server(server_and_port, log_level)
     else:
         raise Exception('Invalid vcs server protocol "{}"'.format(protocol))
-
-
-def _start_pyro4_vcs_server(server_and_port, log_level=None):
-    _try_to_shutdown_running_server(server_and_port, protocol='pyro4')
-    host, port = server_and_port.rsplit(":", 1)
-    host = host.strip('[]')
-    args = [
-        'vcsserver', '--port', port, '--host', host, '--locale', 'en_US.UTF-8',
-        '--threadpool', '32']
-    if log_level:
-        args += ['--log-level', log_level]
-    proc = subprocess32.Popen(args)
-
-    def cleanup_server_process():
-        proc.kill()
-    atexit.register(cleanup_server_process)
-
-    server = create_vcsserver_proxy(server_and_port, protocol='pyro4')
-    _wait_until_vcs_server_is_reachable(server)
 
 
 def _start_http_vcs_server(server_and_port, log_level=None):
@@ -202,7 +147,7 @@ def _wait_until_vcs_server_is_reachable(server, timeout=40):
         try:
             server.ping()
             return
-        except (VCSCommunicationError, CommunicationError, pycurl.error):
+        except (VCSCommunicationError, pycurl.error):
             log.debug('VCSServer not started yet, retry to connect.')
         time.sleep(0.5)
     raise Exception(
@@ -214,7 +159,7 @@ def _try_to_shutdown_running_server(server_and_port, protocol):
     server = create_vcsserver_proxy(server_and_port, protocol)
     try:
         server.shutdown()
-    except (CommunicationError, pycurl.error):
+    except pycurl.error:
         return
 
     # TODO: Not sure why this is important, but without it the following start
@@ -224,18 +169,10 @@ def _try_to_shutdown_running_server(server_and_port, protocol):
 
 
 def create_vcsserver_proxy(server_and_port, protocol):
-    if protocol == 'pyro4':
-        return _create_vcsserver_proxy_pyro4(server_and_port)
-    elif protocol == 'http':
+    if protocol == 'http':
         return _create_vcsserver_proxy_http(server_and_port)
     else:
         raise Exception('Invalid vcs server protocol "{}"'.format(protocol))
-
-
-def _create_vcsserver_proxy_pyro4(server_and_port):
-    server = Pyro4.Proxy(
-        settings.pyro_remote(settings.PYRO_VCSSERVER, server_and_port))
-    return server
 
 
 def _create_vcsserver_proxy_http(server_and_port):
@@ -279,7 +216,9 @@ class CurlSession(object):
         curl.setopt(curl.WRITEDATA, response_buffer)
         curl.perform()
 
-        return CurlResponse(response_buffer)
+        status_code = curl.getinfo(pycurl.HTTP_CODE)
+
+        return CurlResponse(response_buffer, status_code)
 
 
 class CurlResponse(object):
@@ -291,12 +230,17 @@ class CurlResponse(object):
     `requests` as a drop in replacement for benchmarking purposes.
     """
 
-    def __init__(self, response_buffer):
+    def __init__(self, response_buffer, status_code):
         self._response_buffer = response_buffer
+        self._status_code = status_code
 
     @property
     def content(self):
         return self._response_buffer.getvalue()
+
+    @property
+    def status_code(self):
+        return self._status_code
 
 
 def _create_http_rpc_session():

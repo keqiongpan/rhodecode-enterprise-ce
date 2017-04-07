@@ -25,6 +25,7 @@ Set of hooks run by RhodeCode Enterprise
 
 import os
 import collections
+import logging
 
 import rhodecode
 from rhodecode import events
@@ -33,6 +34,8 @@ from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.lib.exceptions import HTTPLockedRC, UserCreationError
 from rhodecode.model.db import Repository, User
+
+log = logging.getLogger(__name__)
 
 
 HookResponse = collections.namedtuple('HookResponse', ('status', 'output'))
@@ -90,8 +93,8 @@ def pre_push(extras):
 
     It bans pushing when the repository is locked.
     """
-    usr = User.get_by_username(extras.username)
 
+    usr = User.get_by_username(extras.username)
     output = ''
     if extras.locked_by[0] and usr.user_id != int(extras.locked_by[0]):
         locked_by = User.get(extras.locked_by[0]).username
@@ -251,10 +254,19 @@ class ExtensionCallback(object):
         self._kwargs_keys = set(kwargs_keys)
 
     def __call__(self, *args, **kwargs):
+        log.debug('Calling extension callback for %s', self._hook_name)
+
         kwargs_to_pass = dict((key, kwargs[key]) for key in self._kwargs_keys)
+        # backward compat for removed api_key for old hooks. THis was it works
+        # with older rcextensions that require api_key present
+        if self._hook_name in ['CREATE_USER_HOOK', 'DELETE_USER_HOOK']:
+            kwargs_to_pass['api_key'] = '_DEPRECATED_'
+
         callback = self._get_callback()
         if callback:
             return callback(**kwargs_to_pass)
+        else:
+            log.debug('extensions callback not found skipping...')
 
     def is_active(self):
         return hasattr(rhodecode.EXTENSIONS, self._hook_name)
@@ -281,7 +293,7 @@ pre_push_extension = ExtensionCallback(
     hook_name='PRE_PUSH_HOOK',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
-        'repository', 'repo_store_path'))
+        'repository', 'repo_store_path', 'commit_ids'))
 
 
 post_push_extension = ExtensionCallback(
@@ -349,7 +361,7 @@ log_create_user = ExtensionCallback(
         'username', 'full_name_or_username', 'full_contact', 'user_id',
         'name', 'firstname', 'short_contact', 'admin', 'lastname',
         'ip_addresses', 'extern_type', 'extern_name',
-        'email', 'api_key', 'api_keys', 'last_login',
+        'email', 'api_keys', 'last_login',
         'full_name', 'active', 'password', 'emails',
         'inherit_default_permissions', 'created_by', 'created_on'))
 
@@ -360,7 +372,7 @@ log_delete_user = ExtensionCallback(
         'username', 'full_name_or_username', 'full_contact', 'user_id',
         'name', 'firstname', 'short_contact', 'admin', 'lastname',
         'ip_addresses',
-        'email', 'api_key', 'last_login',
+        'email', 'last_login',
         'full_name', 'active', 'password', 'emails',
         'inherit_default_permissions', 'deleted_by'))
 

@@ -25,7 +25,11 @@ var rhodeCodeApp = Polymer({
     },
 
     handleNotifications: function (data) {
-        this.$['notifications'].handleNotification(data);
+        var elem = document.getElementById('notifications');
+        if(elem){
+            elem.handleNotification(data);
+        }
+
     },
 
     faviconUpdate: function (data) {

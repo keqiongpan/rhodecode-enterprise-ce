@@ -25,20 +25,7 @@ import msgpack
 import pytest
 
 from rhodecode.lib import vcs
-from rhodecode.lib.vcs import client_http
-
-
-def test_uses_persistent_http_connections(caplog, vcsbackend_hg):
-    repo = vcsbackend_hg.repo
-    remote_call = repo._remote.branches
-
-    with caplog.at_level(logging.INFO):
-        for x in range(5):
-            remote_call(normal=True, closed=False)
-
-    new_connections = [
-        r for r in caplog.record_tuples if is_new_connection(*r)]
-    assert len(new_connections) <= 1
+from rhodecode.lib.vcs import client_http, exceptions
 
 
 def is_new_connection(logger, level, message):
@@ -53,7 +40,24 @@ def stub_session():
     Stub of `requests.Session()`.
     """
     session = mock.Mock()
-    session.post().content = msgpack.packb({})
+    post = session.post()
+    post.content = msgpack.packb({})
+    post.status_code = 200
+
+    session.reset_mock()
+    return session
+
+
+@pytest.fixture
+def stub_fail_session():
+    """
+    Stub of `requests.Session()`.
+    """
+    session = mock.Mock()
+    post = session.post()
+    post.content = msgpack.packb({'error': '500'})
+    post.status_code = 500
+
     session.reset_mock()
     return session
 
@@ -66,6 +70,29 @@ def stub_session_factory(stub_session):
     session_factory = mock.Mock()
     session_factory.return_value = stub_session
     return session_factory
+
+
+@pytest.fixture
+def stub_session_failing_factory(stub_fail_session):
+    """
+    Stub of `rhodecode.lib.vcs.client_http.ThreadlocalSessionFactory`.
+    """
+    session_factory = mock.Mock()
+    session_factory.return_value = stub_fail_session
+    return session_factory
+
+
+def test_uses_persistent_http_connections(caplog, vcsbackend_hg):
+    repo = vcsbackend_hg.repo
+    remote_call = repo._remote.branches
+
+    with caplog.at_level(logging.INFO):
+        for x in range(5):
+            remote_call(normal=True, closed=False)
+
+    new_connections = [
+        r for r in caplog.record_tuples if is_new_connection(*r)]
+    assert len(new_connections) <= 1
 
 
 def test_repo_maker_uses_session_for_classmethods(stub_session_factory):
@@ -95,6 +122,12 @@ def test_connect_passes_in_the_same_session(
 
     vcs.connect_http('server_and_port')
 
-    assert connection.Hg._session_factory() == stub_session
-    assert connection.Svn._session_factory() == stub_session
-    assert connection.Git._session_factory() == stub_session
+
+def test_repo_maker_uses_session_that_throws_error(
+        stub_session_failing_factory, config):
+    repo_maker = client_http.RepoMaker(
+        'server_and_port', 'endpoint', 'test_dummy_scm', stub_session_failing_factory)
+    repo = repo_maker('stub_path', config)
+
+    with pytest.raises(exceptions.HttpVCSCommunicationError):
+        repo.example_call()

@@ -32,7 +32,7 @@ from pyramid.config import Configurator
 from pyramid.settings import asbool, aslist
 from pyramid.wsgi import wsgiapp
 from pyramid.httpexceptions import (
-    HTTPError, HTTPInternalServerError, HTTPFound)
+    HTTPException, HTTPError, HTTPInternalServerError, HTTPFound)
 from pyramid.events import ApplicationCreated
 from pyramid.renderers import render_to_response
 from routes.middleware import RoutesMiddleware
@@ -53,7 +53,8 @@ from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
 from rhodecode.lib.utils2 import aslist as rhodecode_aslist
 from rhodecode.subscribers import (
-    scan_repositories_if_enabled, write_metadata_if_needed)
+    scan_repositories_if_enabled, write_metadata_if_needed,
+    write_js_routes_if_enabled)
 
 
 log = logging.getLogger(__name__)
@@ -219,18 +220,14 @@ def add_pylons_compat_data(registry, global_config, settings):
 
 
 def error_handler(exception, request):
-    from rhodecode.model.settings import SettingsModel
+    import rhodecode
     from rhodecode.lib.utils2 import AttributeDict
 
-    try:
-        rc_config = SettingsModel().get_all_settings()
-    except Exception:
-        log.exception('failed to fetch settings')
-        rc_config = {}
+    rhodecode_title = rhodecode.CONFIG.get('rhodecode_title') or 'RhodeCode'
 
     base_response = HTTPInternalServerError()
     # prefer original exception for the response since it may have headers set
-    if isinstance(exception, HTTPError):
+    if isinstance(exception, HTTPException):
         base_response = exception
 
     def is_http_error(response):
@@ -251,7 +248,7 @@ def error_handler(exception, request):
         request.route_url('rhodecode_support')
     )
     c.redirect_time = 0
-    c.rhodecode_name = rc_config.get('rhodecode_title', '')
+    c.rhodecode_name = rhodecode_title
     if not c.rhodecode_name:
         c.rhodecode_name = 'Rhodecode'
 
@@ -281,14 +278,24 @@ def includeme(config):
     # Includes which are required. The application would fail without them.
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
-    config.include('rhodecode.channelstream')
-    config.include('rhodecode.admin')
+
     config.include('rhodecode.authentication')
     config.include('rhodecode.integrations')
-    config.include('rhodecode.login')
+
+    # apps
+    config.include('rhodecode.apps._base')
+
+    config.include('rhodecode.apps.admin')
+    config.include('rhodecode.apps.channelstream')
+    config.include('rhodecode.apps.login')
+    config.include('rhodecode.apps.repository')
+    config.include('rhodecode.apps.user_profile')
+    config.include('rhodecode.apps.my_account')
+    config.include('rhodecode.apps.svn_support')
+
     config.include('rhodecode.tweens')
     config.include('rhodecode.api')
-    config.include('rhodecode.svn_support')
+
     config.add_route(
         'rhodecode_support', 'https://rhodecode.com/help/', static=True)
 
@@ -298,6 +305,7 @@ def includeme(config):
     # Add subscribers.
     config.add_subscriber(scan_repositories_if_enabled, ApplicationCreated)
     config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
+    config.add_subscriber(write_js_routes_if_enabled, ApplicationCreated)
 
     # Set the authorization policy.
     authz_policy = ACLAuthorizationPolicy()

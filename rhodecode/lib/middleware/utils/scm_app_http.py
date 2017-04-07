@@ -57,6 +57,10 @@ session = requests.Session()
 # Requests speedup, avoid reading .netrc and similar
 session.trust_env = False
 
+# prevent urllib3 spawning our logs.
+logging.getLogger("requests.packages.urllib3.connectionpool").setLevel(
+    logging.WARNING)
+
 
 class VcsHttpProxy(object):
     """
@@ -123,17 +127,32 @@ class VcsHttpProxy(object):
 
 
 def _maybe_stream_request(environ):
-    if environ.get('HTTP_TRANSFER_ENCODING', '') == 'chunked':
+    path = environ['PATH_INFO']
+    stream = _is_request_chunked(environ)
+    log.debug('handling request `%s` with stream support: %s', path, stream)
+
+    if stream:
         return environ['wsgi.input']
     else:
         return environ['wsgi.input'].read()
+
+
+def _is_request_chunked(environ):
+    stream = environ.get('HTTP_TRANSFER_ENCODING', '') == 'chunked'
+    if not stream:
+        # git lfs should stream for PUT requests which are upload
+        stream = ('git-lfs' in environ.get('HTTP_USER_AGENT', '')
+                  and environ['REQUEST_METHOD'] == 'PUT')
+    return stream
 
 
 def _maybe_stream_response(response):
     """
     Try to generate chunks from the response if it is chunked.
     """
-    if _is_chunked(response):
+    stream = _is_chunked(response)
+    log.debug('returning response with stream: %s', stream)
+    if stream:
         return response.raw.read_chunked()
     else:
         return [response.content]

@@ -29,32 +29,30 @@ import datetime
 import formencode
 from formencode import htmlfill
 from pyramid.threadlocal import get_current_registry
-from pylons import request, tmpl_context as c, url, session
+from pyramid.httpexceptions import HTTPFound
+
+from pylons import request, tmpl_context as c, url
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 from sqlalchemy.orm import joinedload
-from webob.exc import HTTPBadGateway
 
-from rhodecode import forms
 from rhodecode.lib import helpers as h
 from rhodecode.lib import auth
 from rhodecode.lib.auth import (
-    LoginRequired, NotAnonymous, AuthUser, generate_auth_token)
+    LoginRequired, NotAnonymous, AuthUser)
 from rhodecode.lib.base import BaseController, render
 from rhodecode.lib.utils import jsonify
-from rhodecode.lib.utils2 import safe_int, md5, str2bool
+from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.channelstream import channelstream_request, \
     ChannelstreamException
 
-from rhodecode.model.validation_schema.schemas import user_schema
 from rhodecode.model.db import (
     Repository, PullRequest, UserEmailMap, User, UserFollowing)
 from rhodecode.model.forms import UserForm
 from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
 from rhodecode.model.repo import RepoModel
-from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.comment import CommentsModel
@@ -79,7 +77,7 @@ class MyAccountController(BaseController):
         if c.user.username == User.DEFAULT_USER:
             h.flash(_("You can't edit this user since it's"
                       " crucial for entire application"), category='warning')
-            return redirect(url('users'))
+            return redirect(h.route_path('users'))
 
         c.auth_user = AuthUser(
             user_id=c.rhodecode_user.user_id, ip_addr=self.ip_addr)
@@ -156,7 +154,7 @@ class MyAccountController(BaseController):
                     % form_result.get('username'), category='error')
 
         if update:
-            return redirect('my_account')
+            raise HTTPFound(h.route_path('my_account_profile'))
 
         return htmlfill.render(
             render('admin/my_account/my_account.mako'),
@@ -164,19 +162,6 @@ class MyAccountController(BaseController):
             encoding="UTF-8",
             force_defaults=False
         )
-
-    def my_account(self):
-        """
-        GET /_admin/my_account Displays info about my account
-        """
-        # url('my_account')
-        c.active = 'profile'
-        self.__load_data()
-
-        defaults = c.user.get_dict()
-        return htmlfill.render(
-            render('admin/my_account/my_account.mako'),
-            defaults=defaults, encoding="UTF-8", force_defaults=False)
 
     def my_account_edit(self):
         """
@@ -195,47 +180,6 @@ class MyAccountController(BaseController):
             encoding="UTF-8",
             force_defaults=False
         )
-
-    @auth.CSRFRequired(except_methods=['GET'])
-    def my_account_password(self):
-        c.active = 'password'
-        self.__load_data()
-        c.extern_type = c.user.extern_type
-
-        schema = user_schema.ChangePasswordSchema().bind(
-            username=c.rhodecode_user.username)
-
-        form = forms.Form(schema,
-            buttons=(forms.buttons.save, forms.buttons.reset))
-
-        if request.method == 'POST' and c.extern_type == 'rhodecode':
-            controls = request.POST.items()
-            try:
-                valid_data = form.validate(controls)
-                UserModel().update_user(c.rhodecode_user.user_id, **valid_data)
-                instance = c.rhodecode_user.get_instance()
-                instance.update_userdata(force_password_change=False)
-                Session().commit()
-            except forms.ValidationFailure as e:
-                request.session.flash(
-                    _('Error occurred during update of user password'),
-                    queue='error')
-                form = e
-            except Exception:
-                log.exception("Exception updating password")
-                request.session.flash(
-                    _('Error occurred during update of user password'),
-                    queue='error')
-            else:
-                session.setdefault('rhodecode_user', {}).update(
-                    {'password': md5(instance.password)})
-                session.save()
-                request.session.flash(
-                    _("Successfully updated password"), queue='success')
-                return redirect(url('my_account_password'))
-
-        c.form = form
-        return render('admin/my_account/my_account.mako')
 
     def my_account_repos(self):
         c.active = 'repos'
@@ -375,54 +319,6 @@ class MyAccountController(BaseController):
             return render('admin/my_account/my_account.mako')
         else:
             return json.dumps(data)
-
-    def my_account_auth_tokens(self):
-        c.active = 'auth_tokens'
-        self.__load_data()
-        show_expired = True
-        c.lifetime_values = [
-            (str(-1), _('forever')),
-            (str(5), _('5 minutes')),
-            (str(60), _('1 hour')),
-            (str(60 * 24), _('1 day')),
-            (str(60 * 24 * 30), _('1 month')),
-        ]
-        c.lifetime_options = [(c.lifetime_values, _("Lifetime"))]
-        c.role_values = [(x, AuthTokenModel.cls._get_role_name(x))
-                         for x in AuthTokenModel.cls.ROLES]
-        c.role_options = [(c.role_values, _("Role"))]
-        c.user_auth_tokens = AuthTokenModel().get_auth_tokens(
-            c.rhodecode_user.user_id, show_expired=show_expired)
-        return render('admin/my_account/my_account.mako')
-
-    @auth.CSRFRequired()
-    def my_account_auth_tokens_add(self):
-        lifetime = safe_int(request.POST.get('lifetime'), -1)
-        description = request.POST.get('description')
-        role = request.POST.get('role')
-        AuthTokenModel().create(c.rhodecode_user.user_id, description, lifetime,
-                                role)
-        Session().commit()
-        h.flash(_("Auth token successfully created"), category='success')
-        return redirect(url('my_account_auth_tokens'))
-
-    @auth.CSRFRequired()
-    def my_account_auth_tokens_delete(self):
-        auth_token = request.POST.get('del_auth_token')
-        user_id = c.rhodecode_user.user_id
-        if request.POST.get('del_auth_token_builtin'):
-            user = User.get(user_id)
-            if user:
-                user.api_key = generate_auth_token(user.username)
-                Session().add(user)
-                Session().commit()
-                h.flash(_("Auth token successfully reset"), category='success')
-        elif auth_token:
-            AuthTokenModel().delete(auth_token, c.rhodecode_user.user_id)
-            Session().commit()
-            h.flash(_("Auth token successfully deleted"), category='success')
-
-        return redirect(url('my_account_auth_tokens'))
 
     def my_notifications(self):
         c.active = 'notifications'

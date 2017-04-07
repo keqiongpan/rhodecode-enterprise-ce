@@ -47,7 +47,7 @@ the ``debug`` level.
     ### LOGGING CONFIGURATION   ####
     ################################
     [loggers]
-    keys = root, routes, rhodecode, sqlalchemy, beaker, pyro4, templates
+    keys = root, routes, rhodecode, sqlalchemy, beaker, templates
 
     [handlers]
     keys = console, console_sql, file, file_rotating
@@ -73,12 +73,6 @@ the ``debug`` level.
     level = DEBUG
     handlers =
     qualname = beaker.container
-    propagate = 1
-
-    [logger_pyro4]
-    level = DEBUG
-    handlers =
-    qualname = Pyro4
     propagate = 1
 
     [logger_templates]

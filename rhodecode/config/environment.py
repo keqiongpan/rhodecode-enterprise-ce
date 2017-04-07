@@ -87,15 +87,6 @@ def load_environment(global_conf, app_conf, initial=False,
 
     config['routes.map'] = make_map(config)
 
-    if asbool(config.get('generate_js_files', 'false')):
-        jsroutes = config['routes.map'].jsroutes()
-        jsroutes_file_content = generate_jsroutes_content(jsroutes)
-        jsroutes_file_path = os.path.join(
-            paths['static_files'], 'js', 'rhodecode', 'routes.js')
-
-        with io.open(jsroutes_file_path, 'w', encoding='utf-8') as f:
-            f.write(jsroutes_file_content)
-
     config['pylons.app_globals'] = app_globals.Globals(config)
     config['pylons.h'] = helpers
     rhodecode.CONFIG = config
@@ -184,7 +175,6 @@ def load_pyramid_environment(global_config, settings):
                          protocol=utils.get_vcs_server_protocol(settings),
                          log_level=settings['vcs.server.log_level'])
 
-    utils.configure_pyro4(settings)
     utils.configure_vcs(settings)
     if vcs_server_enabled:
         connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(settings))

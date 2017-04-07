@@ -7,7 +7,7 @@
     % if display_globals:
         <div class="panel panel-default">
             <div class="panel-heading" id="general">
-                <h3 class="panel-title">${_('General')}</h3>
+                <h3 class="panel-title">${_('General')}<a class="permalink" href="#general"> ¶</a></h3>
             </div>
             <div class="panel-body">
                 <div class="field">
@@ -25,8 +25,8 @@
 
     % if display_globals:
         <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">${_('Main Storage Location')}</h3>
+            <div class="panel-heading" id="vcs-storage-options">
+                <h3 class="panel-title">${_('Main Storage Location')}<a class="permalink" href="#vcs-storage-options"> ¶</a></h3>
             </div>
             <div class="panel-body">
                 <div class="field">
@@ -53,8 +53,8 @@
 
     % if display_globals or repo_type in ['git', 'hg']:
         <div class="panel panel-default">
-            <div class="panel-heading" id="general">
-                <h3 class="panel-title">${_('Internal Hooks')}</h3>
+            <div class="panel-heading" id="vcs-hooks-options">
+                <h3 class="panel-title">${_('Internal Hooks')}<a class="permalink" href="#vcs-hooks-options"> ¶</a></h3>
             </div>
             <div class="panel-body">
                 <div class="field">
@@ -87,8 +87,8 @@
 
     % if display_globals or repo_type in ['hg']:
         <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">${_('Mercurial Settings')}</h3>
+            <div class="panel-heading" id="vcs-hg-options">
+                <h3 class="panel-title">${_('Mercurial Settings')}<a class="permalink" href="#vcs-hg-options"> ¶</a></h3>
             </div>
             <div class="panel-body">
                 <div class="checkbox">
@@ -96,8 +96,24 @@
                     <label for="extensions_largefiles${suffix}">${_('Enable largefiles extension')}</label>
                 </div>
                 <div class="label">
-                    <span class="help-block">${_('Enable Largefiles extensions for all repositories.')}</span>
+                    % if display_globals:
+                        <span class="help-block">${_('Enable Largefiles extensions for all repositories.')}</span>
+                    % else:
+                        <span class="help-block">${_('Enable Largefiles extensions for this repository.')}</span>
+                    % endif
                 </div>
+
+                % if display_globals:
+                <div class="field">
+                    <div class="input">
+                        ${h.text('largefiles_usercache' + suffix, size=59)}
+                    </div>
+                </div>
+                <div class="label">
+                    <span class="help-block">${_('Filesystem location where Mercurial largefile objects should be stored.')}</span>
+                </div>
+                % endif
+
                 <div class="checkbox">
                     ${h.checkbox('phases_publish' + suffix, 'True', **kwargs)}
                     <label for="phases_publish${suffix}">${_('Set repositories as publishing') if display_globals else _('Set repository as publishing')}</label>
@@ -138,10 +154,43 @@
 
     % endif
 
+    % if display_globals or repo_type in ['git']:
+        <div class="panel panel-default">
+            <div class="panel-heading" id="vcs-git-options">
+                <h3 class="panel-title">${_('Git Settings')}<a class="permalink" href="#vcs-git-options"> ¶</a></h3>
+            </div>
+            <div class="panel-body">
+                <div class="checkbox">
+                    ${h.checkbox('vcs_git_lfs_enabled' + suffix, 'True', **kwargs)}
+                    <label for="vcs_git_lfs_enabled${suffix}">${_('Enable lfs extension')}</label>
+                </div>
+                <div class="label">
+                    % if display_globals:
+                        <span class="help-block">${_('Enable lfs extensions for all repositories.')}</span>
+                    % else:
+                        <span class="help-block">${_('Enable lfs extensions for this repository.')}</span>
+                    % endif
+                </div>
+
+                % if display_globals:
+                <div class="field">
+                    <div class="input">
+                        ${h.text('vcs_git_lfs_store_location' + suffix, size=59)}
+                    </div>
+                </div>
+                <div class="label">
+                    <span class="help-block">${_('Filesystem location where Git lfs objects should be stored.')}</span>
+                </div>
+                % endif
+            </div>
+        </div>
+    % endif
+
+
     % if display_globals:
         <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">${_('Global Subversion Settings')}</h3>
+            <div class="panel-heading" id="vcs-global-svn-options">
+                <h3 class="panel-title">${_('Global Subversion Settings')}<a class="permalink" href="#vcs-global-svn-options"> ¶</a></h3>
             </div>
             <div class="panel-body">
                 <div class="field">
@@ -175,8 +224,8 @@
 
     % if display_globals or repo_type in ['svn']:
         <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">${_('Subversion Settings')}</h3>
+            <div class="panel-heading" id="vcs-svn-options">
+                <h3 class="panel-title">${_('Subversion Settings')}<a class="permalink" href="#vcs-svn-options"> ¶</a></h3>
             </div>
             <div class="panel-body">
                 <div class="field">
@@ -246,12 +295,10 @@
     % endif
 
 
-
-
     % if display_globals or repo_type in ['hg', 'git']:
         <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">${_('Pull Request Settings')}</h3>
+            <div class="panel-heading" id="vcs-pull-requests-options">
+                <h3 class="panel-title">${_('Pull Request Settings')}<a class="permalink" href="#vcs-pull-requests-options"> ¶</a></h3>
             </div>
             <div class="panel-body">
                 <div class="checkbox">

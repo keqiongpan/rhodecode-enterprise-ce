@@ -28,7 +28,7 @@ import re
 import shutil
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import true, or_
@@ -197,6 +197,7 @@ class RepoModel(BaseModel):
         return _users
 
     def get_user_groups(self, name_contains=None, limit=20, only_active=True):
+
         # TODO: mikhail: move this method to the UserGroupModel.
         query = self.sa.query(UserGroup)
         if only_active:
@@ -223,6 +224,12 @@ class RepoModel(BaseModel):
                 'value_display': 'Group: %s (%d members)' % (
                     group.users_group_name, len(group.members),),
                 'value': group.users_group_name,
+                'description': group.user_group_description,
+                'owner': group.user.username,
+
+                'owner_icon': h.gravatar_url(group.user.email, 30),
+                'value_display_owner': h.person(group.user.email),
+
                 'value_type': 'user_group',
                 'active': group.users_group_active,
             }
@@ -252,6 +259,9 @@ class RepoModel(BaseModel):
                            short_name=not admin, admin=False)
 
         def last_change(last_change):
+            if admin and isinstance(last_change, datetime) and not last_change.tzinfo:
+                last_change = last_change + timedelta(seconds=
+                    (datetime.now() - datetime.utcnow()).seconds)
             return _render("last_change", last_change)
 
         def rss_lnk(repo_name):

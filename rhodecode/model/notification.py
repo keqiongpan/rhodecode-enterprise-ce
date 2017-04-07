@@ -324,24 +324,15 @@ class EmailNotificationModel(BaseModel):
 
         """
         super(EmailNotificationModel, self).__init__()
-        self.rhodecode_instance_name = None
+        self.rhodecode_instance_name = rhodecode.CONFIG.get('rhodecode_title')
 
     def _update_kwargs_for_render(self, kwargs):
         """
         Inject params required for Mako rendering
 
         :param kwargs:
-        :return:
         """
-        rhodecode_name = self.rhodecode_instance_name
-        if not rhodecode_name:
-            try:
-                rc_config = SettingsModel().get_all_settings()
-            except Exception:
-                log.exception('failed to fetch settings')
-                rc_config = {}
-            rhodecode_name = rc_config.get('rhodecode_title', '')
-            kwargs['rhodecode_instance_name'] = rhodecode_name
+        kwargs['rhodecode_instance_name'] = self.rhodecode_instance_name
 
         _kwargs = {
             'instance_url': h.url('home', qualified=True),

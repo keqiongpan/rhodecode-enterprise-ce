@@ -21,9 +21,7 @@
 import pytest
 
 from rhodecode.lib import helpers as h
-from rhodecode.lib.auth import check_password
-from rhodecode.model.db import User, UserFollowing, Repository, UserApiKeys
-from rhodecode.model.meta import Session
+from rhodecode.model.db import User, UserFollowing, Repository
 from rhodecode.tests import (
     TestController, url, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_EMAIL,
     assert_session_flash)
@@ -42,15 +40,8 @@ class TestMyAccountController(TestController):
     def teardown_class(cls):
         fixture.destroy_users(cls.destroy_users)
 
-    def test_my_account(self):
-        self.log_user()
-        response = self.app.get(url('my_account'))
-
-        response.mustcontain('test_admin')
-        response.mustcontain('href="/_admin/my_account/edit"')
-
     def test_logout_form_contains_csrf(self, autologin_user, csrf_token):
-        response = self.app.get(url('my_account'))
+        response = self.app.get(url('home'))
         assert_response = AssertResponse(response)
         element = assert_response.get_element('.logout #csrf_token')
         assert element.value == csrf_token
@@ -194,6 +185,7 @@ class TestMyAccountController(TestController):
         updated_params.update({'new_password': ''})
 
         params['last_login'] = updated_params['last_login']
+        params['last_activity'] = updated_params['last_activity']
         # my account page cannot set language param yet, only for admins
         # but we get this info from API anyway
         params['language'] = updated_params['language']
@@ -253,144 +245,3 @@ class TestMyAccountController(TestController):
             edit=False, old_data={})._messages['username_exists']
         msg = h.html_escape(msg % {'username': 'test_admin'})
         response.mustcontain(u"%s" % msg)
-
-    def test_my_account_auth_tokens(self):
-        usr = self.log_user('test_regular2', 'test12')
-        user = User.get(usr['user_id'])
-        response = self.app.get(url('my_account_auth_tokens'))
-        response.mustcontain(user.api_key)
-        response.mustcontain('expires: never')
-
-    @pytest.mark.parametrize("desc, lifetime", [
-        ('forever', -1),
-        ('5mins', 60*5),
-        ('30days', 60*60*24*30),
-    ])
-    def test_my_account_add_auth_tokens(self, desc, lifetime):
-        usr = self.log_user('test_regular2', 'test12')
-        user = User.get(usr['user_id'])
-        response = self.app.post(url('my_account_auth_tokens'),
-                                 {'description': desc, 'lifetime': lifetime,
-                                  'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully created')
-        try:
-            response = response.follow()
-            user = User.get(usr['user_id'])
-            for auth_token in user.auth_tokens:
-                response.mustcontain(auth_token)
-        finally:
-            for auth_token in UserApiKeys.query().all():
-                Session().delete(auth_token)
-                Session().commit()
-
-    def test_my_account_remove_auth_token(self):
-        # TODO: without this cleanup it fails when run with the whole
-        # test suite, so there must be some interference with other tests.
-        UserApiKeys.query().delete()
-
-        usr = self.log_user('test_regular2', 'test12')
-        User.get(usr['user_id'])
-        response = self.app.post(url('my_account_auth_tokens'),
-                                 {'description': 'desc', 'lifetime': -1,
-                                  'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully created')
-        response = response.follow()
-
-        # now delete our key
-        keys = UserApiKeys.query().all()
-        assert 1 == len(keys)
-
-        response = self.app.post(
-            url('my_account_auth_tokens'),
-            {'_method': 'delete', 'del_auth_token': keys[0].api_key,
-                'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully deleted')
-        keys = UserApiKeys.query().all()
-        assert 0 == len(keys)
-
-    def test_my_account_reset_main_auth_token(self):
-        usr = self.log_user('test_regular2', 'test12')
-        user = User.get(usr['user_id'])
-        api_key = user.api_key
-        response = self.app.get(url('my_account_auth_tokens'))
-        response.mustcontain(api_key)
-        response.mustcontain('expires: never')
-
-        response = self.app.post(
-            url('my_account_auth_tokens'),
-            {'_method': 'delete', 'del_auth_token_builtin': api_key,
-                'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully reset')
-        response = response.follow()
-        response.mustcontain(no=[api_key])
-
-    def test_valid_change_password(self, user_util):
-        new_password = 'my_new_valid_password'
-        user = user_util.create_user(password=self.test_user_1_password)
-        session = self.log_user(user.username, self.test_user_1_password)
-        form_data = [
-            ('current_password', self.test_user_1_password),
-            ('__start__', 'new_password:mapping'),
-            ('new_password', new_password),
-            ('new_password-confirm', new_password),
-            ('__end__', 'new_password:mapping'),
-            ('csrf_token', self.csrf_token),
-        ]
-        response = self.app.post(url('my_account_password'), form_data).follow()
-        assert 'Successfully updated password' in response
-
-         # check_password depends on user being in session
-        Session().add(user)
-        try:
-            assert check_password(new_password, user.password)
-        finally:
-            Session().expunge(user)
-
-    @pytest.mark.parametrize('current_pw,new_pw,confirm_pw', [
-        ('', 'abcdef123', 'abcdef123'),
-        ('wrong_pw', 'abcdef123', 'abcdef123'),
-        (test_user_1_password, test_user_1_password, test_user_1_password),
-        (test_user_1_password, '', ''),
-        (test_user_1_password, 'abcdef123', ''),
-        (test_user_1_password, '', 'abcdef123'),
-        (test_user_1_password, 'not_the', 'same_pw'),
-        (test_user_1_password, 'short', 'short'),
-    ])
-    def test_invalid_change_password(self, current_pw, new_pw, confirm_pw,
-                                     user_util):
-        user = user_util.create_user(password=self.test_user_1_password)
-        session = self.log_user(user.username, self.test_user_1_password)
-        old_password_hash = session['password']
-        form_data = [
-            ('current_password', current_pw),
-            ('__start__', 'new_password:mapping'),
-            ('new_password', new_pw),
-            ('new_password-confirm', confirm_pw),
-            ('__end__', 'new_password:mapping'),
-            ('csrf_token', self.csrf_token),
-        ]
-        response = self.app.post(url('my_account_password'), form_data)
-        assert 'Error occurred' in response
-
-    def test_password_is_updated_in_session_on_password_change(self, user_util):
-        old_password = 'abcdef123'
-        new_password = 'abcdef124'
-
-        user = user_util.create_user(password=old_password)
-        session = self.log_user(user.username, old_password)
-        old_password_hash = session['password']
-
-        form_data = [
-            ('current_password', old_password),
-            ('__start__', 'new_password:mapping'),
-            ('new_password', new_password),
-            ('new_password-confirm', new_password),
-            ('__end__', 'new_password:mapping'),
-            ('csrf_token', self.csrf_token),
-        ]
-        self.app.post(url('my_account_password'), form_data)
-
-        response = self.app.get(url('home'))
-        new_password_hash = response.session['rhodecode_user']['password']
-
-        assert old_password_hash != new_password_hash

@@ -36,7 +36,7 @@ tmp_upload_dir = None
 
 # Custom log format
 access_log_format = (
-    '%(t)s GNCRN %(p)-8s %(h)-15s rqt:%(L)s %(s)s %(b)s "%(m)s:%(U)s %(q)s" usr:%(u)s "%(f)s" "%(a)s"')
+    '%(t)s GNCRN %(p)-8s %(h)-15s rqt:%(L)s %(s)s %(b)-6s "%(m)s:%(U)s %(q)s" usr:%(u)s "%(f)s" "%(a)s"')
 
 # self adjust workers based on CPU count
 # workers = multiprocessing.cpu_count() * 2 + 1

@@ -124,6 +124,7 @@ let
       name = "rhodecode-enterprise-ce-${version}";
       releaseName = "RhodeCodeEnterpriseCE-${version}";
       src = rhodecode-enterprise-ce-src;
+      dontStrip = true; # prevent strip, we don't need it.
 
       buildInputs =
         attrs.buildInputs ++
@@ -225,8 +226,8 @@ let
   rhodecode-testdata-src = sources.rhodecode-testdata or (
     pkgs.fetchhg {
       url = "https://code.rhodecode.com/upstream/rc_testdata";
-      rev = "v0.9.0";
-      sha256 = "0k0ccb7cncd6mmzwckfbr6l7fsymcympwcm948qc3i0f0m6bbg1y";
+      rev = "v0.10.0";
+      sha256 = "0zn9swwvx4vgw4qn8q3ri26vvzgrxn15x6xnjrysi1bwmz01qjl0";
   });
 
   # Apply all overrides and fix the final package set

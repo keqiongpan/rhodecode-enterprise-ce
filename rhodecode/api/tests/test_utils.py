@@ -181,29 +181,56 @@ class TestGetRefHash(object):
 class TestUserByNameOrError(object):
     def test_user_found_by_id(self):
         fake_user = Mock(id=123)
+
         patcher = patch('rhodecode.model.user.UserModel.get_user')
         with patcher as get_user:
             get_user.return_value = fake_user
-            result = utils.get_user_or_error('123')
-            assert result == fake_user
+
+            patcher = patch('rhodecode.model.user.UserModel.get_by_username')
+            with patcher as get_by_username:
+                result = utils.get_user_or_error(123)
+                assert result == fake_user
+
+    def test_user_not_found_by_id_as_str(self):
+        fake_user = Mock(id=123)
+
+        patcher = patch('rhodecode.model.user.UserModel.get_user')
+        with patcher as get_user:
+            get_user.return_value = fake_user
+            patcher = patch('rhodecode.model.user.UserModel.get_by_username')
+            with patcher as get_by_username:
+                get_by_username.return_value = None
+
+                with pytest.raises(JSONRPCError):
+                    utils.get_user_or_error('123')
 
     def test_user_found_by_name(self):
         fake_user = Mock(id=123)
-        patcher = patch('rhodecode.model.user.UserModel.get_by_username')
-        with patcher as get_by_username:
-            get_by_username.return_value = fake_user
-            result = utils.get_user_or_error('test')
-            assert result == fake_user
+
+        patcher = patch('rhodecode.model.user.UserModel.get_user')
+        with patcher as get_user:
+            get_user.return_value = None
+
+            patcher = patch('rhodecode.model.user.UserModel.get_by_username')
+            with patcher as get_by_username:
+                get_by_username.return_value = fake_user
+
+                result = utils.get_user_or_error('test')
+                assert result == fake_user
 
     def test_user_not_found_by_id(self):
         patcher = patch('rhodecode.model.user.UserModel.get_user')
         with patcher as get_user:
             get_user.return_value = None
-            with pytest.raises(JSONRPCError) as excinfo:
-                utils.get_user_or_error('123')
+            patcher = patch('rhodecode.model.user.UserModel.get_by_username')
+            with patcher as get_by_username:
+                get_by_username.return_value = None
 
-        expected_message = 'user `123` does not exist'
-        assert excinfo.value.message == expected_message
+                with pytest.raises(JSONRPCError) as excinfo:
+                    utils.get_user_or_error(123)
+
+                expected_message = 'user `123` does not exist'
+                assert excinfo.value.message == expected_message
 
     def test_user_not_found_by_name(self):
         patcher = patch('rhodecode.model.user.UserModel.get_by_username')
@@ -216,8 +243,7 @@ class TestUserByNameOrError(object):
         assert excinfo.value.message == expected_message
 
 
-class TestGetCommitDict:
-
+class TestGetCommitDict(object):
     @pytest.mark.parametrize('filename, expected', [
         (b'sp\xc3\xa4cial', u'sp\xe4cial'),
         (b'sp\xa4cial', u'sp\ufffdcial'),

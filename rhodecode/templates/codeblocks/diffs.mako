@@ -324,13 +324,17 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 <%
 stats = filediff['patch']['stats']
 from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
-    MOD_FILENODE, RENAMED_FILENODE, CHMOD_FILENODE, BIN_FILENODE
+    MOD_FILENODE, RENAMED_FILENODE, CHMOD_FILENODE, BIN_FILENODE, COPIED_FILENODE
 %>
     <span class="pill">
         %if filediff.source_file_path and filediff.target_file_path:
             %if filediff.source_file_path != filediff.target_file_path:
-                 ## file was renamed
-                 <strong>${filediff.target_file_path}</strong> ⬅ <del>${filediff.source_file_path}</del>
+                 ## file was renamed, or copied
+                %if RENAMED_FILENODE in stats['ops']:
+                    <strong>${filediff.target_file_path}</strong> ⬅ <del>${filediff.source_file_path}</del>
+                %elif COPIED_FILENODE in stats['ops']:
+                    <strong>${filediff.target_file_path}</strong> ⬅ ${filediff.source_file_path}
+                %endif
             %else:
                 ## file was modified
                 <strong>${filediff.source_file_path}</strong>
@@ -349,8 +353,13 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         %if filediff.patch['is_limited_diff']:
         <span class="pill tooltip" op="limited" title="The stats for this diff are not complete">limited diff</span>
         %endif
+
         %if RENAMED_FILENODE in stats['ops']:
         <span class="pill" op="renamed">renamed</span>
+        %endif
+
+        %if COPIED_FILENODE in stats['ops']:
+        <span class="pill" op="copied">copied</span>
         %endif
 
         %if NEW_FILENODE in stats['ops']:

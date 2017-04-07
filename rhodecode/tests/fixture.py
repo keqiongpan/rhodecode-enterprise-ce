@@ -37,6 +37,7 @@ from rhodecode.model.user import UserModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model.gist import GistModel
+from rhodecode.model.auth_token import AuthTokenModel
 
 dn = os.path.dirname
 FIXTURES = os.path.join(dn(dn(os.path.abspath(__file__))), 'tests', 'fixtures')
@@ -260,6 +261,11 @@ class Fixture(object):
                 return user
         form_data = self._get_user_create_params(name, **kwargs)
         user = UserModel().create(form_data)
+
+        # create token for user
+        AuthTokenModel().create(
+                user=user, description='TEST_USER_TOKEN')
+
         Session().commit()
         user = User.get_by_username(user.username)
         return user

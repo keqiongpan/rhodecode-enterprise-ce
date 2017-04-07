@@ -130,14 +130,36 @@ class TestPermissions(object):
         assert group_perms(self.a1) == {
             'test1': 'group.admin', 'test2': 'group.admin'}
 
-    def test_default_owner_group_perms(self):
-        # "u1" shall be owner without any special permission assigned
-        self.g1 = fixture.create_repo_group('test1')
-        assert group_perms(self.u1) == {'test1': 'group.read'}
+    def test_default_owner_repo_perms(self, backend, user_util, test_repo):
+        user = user_util.create_user()
+        repo = test_repo('minimal', backend.alias)
+        org_owner = repo.user
+        assert repo_perms(user)[repo.repo_name] == 'repository.read'
 
-        # Make him owner, but do not add any special permissions
-        self.g1.user = self.u1
-        assert group_perms(self.u1) == {'test1': 'group.admin'}
+        repo.user = user
+        assert repo_perms(user)[repo.repo_name] == 'repository.admin'
+        repo.user = org_owner
+
+    def test_default_owner_repo_group_perms(self, user_util, test_repo_group):
+        user = user_util.create_user()
+        org_owner = test_repo_group.user
+
+        assert group_perms(user)[test_repo_group.group_name] == 'group.read'
+
+        test_repo_group.user = user
+        assert group_perms(user)[test_repo_group.group_name] == 'group.admin'
+        test_repo_group.user = org_owner
+
+    def test_default_owner_user_group_perms(self, user_util, test_user_group):
+        user = user_util.create_user()
+        org_owner = test_user_group.user
+
+        assert user_group_perms(user)[test_user_group.users_group_name] == 'usergroup.read'
+
+        test_user_group.user = user
+        assert user_group_perms(user)[test_user_group.users_group_name] == 'usergroup.admin'
+
+        test_user_group.user = org_owner
 
     def test_propagated_permission_from_users_group_by_explicit_perms_exist(
             self, repo_name):

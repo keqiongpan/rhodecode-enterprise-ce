@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2017-2017 RhodeCode GmbH
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License, version 3
+# (only), as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This program is dual-licensed. If you wish to learn more about the
+# RhodeCode Enterprise Edition, including its added features, Support services,
+# and proprietary license terms, please see https://rhodecode.com/licenses/
+
+
 import os
 import sys
 import time
@@ -121,6 +142,7 @@ def platform_type():
 
 def uptime():
     from rhodecode.lib.helpers import age, time_to_datetime
+    from rhodecode.translation import TranslationString
 
     value = dict(boot_time=0, uptime=0, text='')
     state = STATE_OK_DEFAULT
@@ -131,13 +153,15 @@ def uptime():
     value['boot_time'] = boot_time
     value['uptime'] = time.time() - boot_time
 
+    date_or_age = age(time_to_datetime(boot_time))
+    if isinstance(date_or_age, TranslationString):
+        date_or_age = date_or_age.interpolate()
+
     human_value = value.copy()
     human_value['boot_time'] = time_to_datetime(boot_time)
     human_value['uptime'] = age(time_to_datetime(boot_time), show_suffix=False)
 
-    human_value['text'] = u'Server started {}'.format(
-        age(time_to_datetime(boot_time)))
-
+    human_value['text'] = u'Server started {}'.format(date_or_age)
     return SysInfoRes(value=value, human_value=human_value)
 
 
@@ -203,14 +227,20 @@ def machine_load():
 
 
 def cpu():
-    value = 0
+    value = {'cpu': 0, 'cpu_count': 0, 'cpu_usage': []}
     state = STATE_OK_DEFAULT
 
     if not psutil:
         return SysInfoRes(value=value, state=state)
 
-    value = psutil.cpu_percent(0.5)
-    human_value = '{} %'.format(value)
+    value['cpu'] = psutil.cpu_percent(0.5)
+    value['cpu_usage'] = psutil.cpu_percent(0.5, percpu=True)
+    value['cpu_count'] = psutil.cpu_count()
+
+    human_value = value.copy()
+    human_value['text'] = '{} cores at {} %'.format(
+        value['cpu_count'], value['cpu'])
+
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
@@ -467,16 +497,24 @@ def vcs_backends():
 
 def vcs_server():
     import rhodecode
-    from rhodecode.lib.vcs.backends import get_vcsserver_version
+    from rhodecode.lib.vcs.backends import get_vcsserver_service_data
 
     server_url = rhodecode.CONFIG.get('vcs.server')
     enabled = rhodecode.CONFIG.get('vcs.server.enable')
     protocol = rhodecode.CONFIG.get('vcs.server.protocol') or 'http'
     state = STATE_OK_DEFAULT
     version = None
+    workers = 0
 
     try:
-        version = get_vcsserver_version()
+        data = get_vcsserver_service_data()
+        if data and 'version' in data:
+            version = data['version']
+
+        if data and 'config' in data:
+            conf = data['config']
+            workers = conf.get('workers', 'NOT AVAILABLE')
+
         connection = 'connected'
     except Exception as e:
         connection = 'failed'
@@ -493,8 +531,9 @@ def vcs_server():
 
     human_value = value.copy()
     human_value['text'] = \
-        '{url}@ver:{ver} via {mode} mode, connection:{conn}'.format(
-            url=server_url, ver=version, mode=protocol, conn=connection)
+        '{url}@ver:{ver} via {mode} mode[workers:{workers}], connection:{conn}'.format(
+            url=server_url, ver=version, workers=workers, mode=protocol,
+            conn=connection)
 
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
@@ -517,8 +556,21 @@ def rhodecode_app_info():
 
 def rhodecode_config():
     import rhodecode
+    import ConfigParser as configparser
     path = rhodecode.CONFIG.get('__file__')
     rhodecode_ini_safe = rhodecode.CONFIG.copy()
+
+    try:
+        config = configparser.ConfigParser()
+        config.read(path)
+        parsed_ini = config
+        if parsed_ini.has_section('server:main'):
+            parsed_ini = dict(parsed_ini.items('server:main'))
+    except Exception:
+        log.exception('Failed to read .ini file for display')
+        parsed_ini = {}
+
+    rhodecode_ini_safe['server:main'] = parsed_ini
 
     blacklist = [
         'rhodecode_license_key',
@@ -587,6 +639,14 @@ def database_info():
         version=db_version,
         url=repr(db_url_obj)
     )
+    current_version = db_migrate.version
+    expected_version = rhodecode.__dbversion__
+    if state['type'] == STATE_OK and current_version != expected_version:
+        msg = 'Critical: database schema mismatch, ' \
+              'expected version {}, got {}. ' \
+              'Please run migrations on your database.'.format(
+            expected_version, current_version)
+        state = {'message': msg, 'type': STATE_ERR}
 
     human_value = db_info.copy()
     human_value['url'] = "{} @ migration version: {}".format(

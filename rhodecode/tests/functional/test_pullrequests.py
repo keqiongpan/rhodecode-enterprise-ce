@@ -115,8 +115,10 @@ class TestPullrequestsController:
             repo_name=pull_request.target_repo.scm_instance().name,
             pull_request_id=str(pull_request.pull_request_id)))
 
-        assert 'Server-side pull request merging is disabled.' in response
-        assert 'value="forced_closed"' in response
+        response.mustcontain('Server-side pull request merging is disabled.')
+
+        assert_response = response.assert_response()
+        assert_response.one_element_exists('#close-pull-request-action')
 
     def test_show_invalid_commit_id(self, pr_util):
         # Simulating invalid revisions which will cause a lookup error
@@ -242,10 +244,9 @@ class TestPullrequestsController:
                 repo_name=pull_request.target_repo.scm_instance().name,
                 pull_request_id=str(pull_request_id)),
             params={
-                'changeset_status':
-                    ChangesetStatus.STATUS_APPROVED + '_closed',
-                'change_changeset_status': 'on',
-                'text': '',
+                'changeset_status': ChangesetStatus.STATUS_APPROVED,
+                'close_pull_request': '1',
+                'text': 'Closing a PR',
                 'csrf_token': csrf_token},
             status=302)
 
@@ -256,6 +257,14 @@ class TestPullrequestsController:
             .filter(UserLog.action == action)\
             .all()
         assert len(journal) == 1
+
+        pull_request = PullRequest.get(pull_request_id)
+        assert pull_request.is_closed()
+
+        # check only the latest status, not the review status
+        status = ChangesetStatusModel().get_status(
+            pull_request.source_repo, pull_request=pull_request)
+        assert status == ChangesetStatus.STATUS_APPROVED
 
     def test_reject_and_close_pull_request(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request()
@@ -291,7 +300,8 @@ class TestPullrequestsController:
                 repo_name=pull_request.target_repo.scm_instance().name,
                 pull_request_id=str(pull_request_id)),
             params={
-                'changeset_status': 'forced_closed',
+                'changeset_status': 'rejected',
+                'close_pull_request': '1',
                 'csrf_token': csrf_token},
             status=302)
 

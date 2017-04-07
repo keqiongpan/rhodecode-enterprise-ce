@@ -128,6 +128,9 @@ class PullRequestCommentEvent(PullRequestEvent):
             'comment': {
                 'status': status,
                 'text': self.comment.text,
+                'type': self.comment.comment_type,
+                'file': self.comment.f_path,
+                'line': self.comment.line_no,
                 'url': CommentsModel().get_url(self.comment)
             }
         })

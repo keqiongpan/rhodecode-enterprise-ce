@@ -39,7 +39,7 @@ from rhodecode.lib.vcs.exceptions import CommitError, NodeDoesNotExistError
 from rhodecode.lib.vcs.nodes import (
     FileNode, DirNode, NodeKind, RootNode, SubModuleNode,
     ChangedFileNodesGenerator, AddedFileNodesGenerator,
-    RemovedFileNodesGenerator)
+    RemovedFileNodesGenerator, LargeFileNode)
 
 
 class GitCommit(base.BaseCommit):
@@ -422,6 +422,17 @@ class GitCommit(base.BaseCommit):
             # cache node
             self.nodes[path] = node
         return self.nodes[path]
+
+    def get_largefile_node(self, path):
+        id_, _ = self._get_id_for_path(path)
+        pointer_spec = self._remote.is_large_file(id_)
+
+        if pointer_spec:
+            # content of that file regular FileNode is the hash of largefile
+            file_id = pointer_spec.get('oid_hash')
+            if self._remote.in_largefiles_store(file_id):
+                lf_path = self._remote.store_path(file_id)
+                return LargeFileNode(lf_path, commit=self, org_path=path)
 
     @LazyProperty
     def affected_files(self):

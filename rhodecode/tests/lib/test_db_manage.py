@@ -71,16 +71,22 @@ def test_create_admin_and_prompt_sets_the_api_key(db_manage):
     assert create_user.call_args[1]['api_key'] == 'testkey'
 
 
-def test_create_user_sets_the_api_key(db_manage):
+@pytest.mark.parametrize('add_keys', [True, False])
+def test_create_user_sets_the_api_key(db_manage, add_keys):
+    username = 'test_add_keys_{}'.format(add_keys)
     db_manage.create_user(
-        'test', 'testpassword', 'test@example.com',
-        api_key='testkey')
+        username, 'testpassword', 'test@example.com',
+        api_key=add_keys)
 
-    user = db.User.get_by_username('test')
-    assert user.api_key == 'testkey'
+    user = db.User.get_by_username(username)
+    if add_keys:
+        assert 2 == len(user.auth_tokens)
+    else:
+        # only feed token
+        assert 1 == len(user.auth_tokens)
 
 
 def test_create_user_without_api_key(db_manage):
     db_manage.create_user('test', 'testpassword', 'test@example.com')
     user = db.User.get_by_username('test')
-    assert user.api_key
+    assert user.api_key is None

@@ -69,7 +69,7 @@
            <div class="radios">
                ${h.radio('default_user_group_create' + suffix, c.user_group_create_choices[1][0], label=c.user_group_create_choices[1][1], **kwargs)}
                ${h.radio('default_user_group_create' + suffix, c.user_group_create_choices[0][0], label=c.user_group_create_choices[0][1], **kwargs)}
-               <span class="help-block">${_('Permission to allow user group creation. When disabled, user group admins can still create subgroups within their user groups.')}</span>
+               <span class="help-block">${_('Permission to allow user group creation.')}</span>
            </div>
         </div>
 

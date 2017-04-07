@@ -137,8 +137,7 @@ class _BaseTest(TestController):
         assert new_repo_group.group_name == repo_group_name_unicode
         assert new_repo_group.group_description == description
 
-        #
-        # # test if the repository is visible in the list ?
+        # test if the repository is visible in the list ?
         response = self.app.get(
             url('repo_group_home', group_name=repo_group_name))
         response.mustcontain(repo_group_name)

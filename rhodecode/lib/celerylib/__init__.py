@@ -226,7 +226,6 @@ def vcsconnection(func):
             for alias in rhodecode.BACKENDS.keys():
                 if alias not in backends:
                     del rhodecode.BACKENDS[alias]
-            utils.configure_pyro4(settings)
             utils.configure_vcs(settings)
             connect_vcs(
                 settings['vcs.server'],

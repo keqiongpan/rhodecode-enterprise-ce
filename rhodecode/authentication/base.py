@@ -91,6 +91,11 @@ class RhodeCodeAuthPluginBase(object):
     # set on authenticate() method and via set_auth_type func.
     auth_type = None
 
+    # set on authenticate() method and via set_calling_scope_repo, this is a
+    # calling scope repository when doing authentication most likely on VCS
+    # operations
+    acl_repo_name = None
+
     # List of setting names to store encrypted. Plugins may override this list
     # to store settings encrypted.
     _settings_encrypted = []
@@ -268,6 +273,9 @@ class RhodeCodeAuthPluginBase(object):
     def set_auth_type(self, auth_type):
         self.auth_type = auth_type
 
+    def set_calling_scope_repo(self, acl_repo_name):
+        self.acl_repo_name = acl_repo_name
+
     def allows_authentication_from(
             self, user, allows_non_existing_user=True,
             allowed_auth_plugins=None, allowed_auth_sources=None):
@@ -332,6 +340,8 @@ class RhodeCodeAuthPluginBase(object):
             log.debug('provided username:`%s` is empty skipping...', username)
         if not user:
             log.debug('User `%s` not found in database', username)
+        else:
+            log.debug('Got DB user:%s', user)
         return user
 
     def user_activation_state(self):
@@ -518,7 +528,7 @@ def get_auth_cache_manager(custom_ttl=None):
 
 
 def authenticate(username, password, environ=None, auth_type=None,
-                 skip_missing=False, registry=None):
+                 skip_missing=False, registry=None, acl_repo_name=None):
     """
     Authentication function used for access control,
     It tries to authenticate based on enabled authentication modules.
@@ -538,6 +548,7 @@ def authenticate(username, password, environ=None, auth_type=None,
     authn_registry = get_authn_registry(registry)
     for plugin in authn_registry.get_plugins_for_authentication():
         plugin.set_auth_type(auth_type)
+        plugin.set_calling_scope_repo(acl_repo_name)
         user = plugin.get_user(username)
         display_user = user.username if user else username
 
@@ -627,3 +638,21 @@ def authenticate(username, password, environ=None, auth_type=None,
         log.debug("User `%s` failed to authenticate against %s",
                   display_user, plugin.get_id())
     return None
+
+
+def chop_at(s, sub, inclusive=False):
+    """Truncate string ``s`` at the first occurrence of ``sub``.
+
+    If ``inclusive`` is true, truncate just after ``sub`` rather than at it.
+
+    >>> chop_at("plutocratic brats", "rat")
+    'plutoc'
+    >>> chop_at("plutocratic brats", "rat", True)
+    'plutocrat'
+    """
+    pos = s.find(sub)
+    if pos == -1:
+        return s
+    if inclusive:
+        return s[:pos+len(sub)]
+    return s[:pos]

@@ -71,6 +71,12 @@
           <li class="${'active' if c.active=='integrations' else ''}">
               <a href="${h.route_path('repo_integrations_home', repo_name=c.repo_name)}">${_('Integrations')}</a>
           </li>
+          <li class="${'active' if c.active=='maintenance' else ''}">
+              <a href="${h.route_path('repo_maintenance', repo_name=c.repo_name)}">${_('Maintenance')}</a>
+          </li>
+          <li class="${'active' if c.active=='strip' else ''}">
+              <a href="${h.route_path('strip', repo_name=c.repo_name)}">${_('Strip')}</a>
+          </li>
           ## TODO: dan: replace repo navigation with navlist registry like with
           ## admin menu. First must find way to allow runtime configuration
           ## it to account for the c.repo_info.repo_type != 'svn' call above

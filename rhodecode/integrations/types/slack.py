@@ -19,12 +19,14 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 from __future__ import unicode_literals
-import deform
 import re
+import time
+import textwrap
 import logging
+
+import deform
 import requests
 import colander
-import textwrap
 from celery.task import task
 from mako.template import Template
 
@@ -85,17 +87,6 @@ class SlackSettingsSchema(colander.Schema):
     )
 
 
-repo_push_template = Template(r'''
-*${data['actor']['username']}* pushed to repo <${data['repo']['url']}|${data['repo']['repo_name']}>:
-%for branch, branch_commits in branches_commits.items():
-branch: <${branch_commits['branch']['url']}|${branch_commits['branch']['name']}>
-    %for commit in branch_commits['commits']:
-> <${commit['url']}|${commit['short_id']}> - ${commit['message_html']|html_to_slack_links}
-    %endfor
-%endfor
-''')
-
-
 class SlackIntegrationType(IntegrationTypeBase):
     key = 'slack'
     display_name = _('Slack')
@@ -124,25 +115,31 @@ class SlackIntegrationType(IntegrationTypeBase):
 
         data = event.as_dict()
 
+        # defaults
+        title = '*%s* caused a *%s* event' % (
+            data['actor']['username'], event.name)
         text = '*%s* caused a *%s* event' % (
             data['actor']['username'], event.name)
+        fields = None
+        overrides = None
 
         log.debug('handling slack event for %s' % event.name)
 
         if isinstance(event, events.PullRequestCommentEvent):
-            text = self.format_pull_request_comment_event(event, data)
+            (title, text, fields, overrides) \
+                = self.format_pull_request_comment_event(event, data)
         elif isinstance(event, events.PullRequestReviewEvent):
-            text = self.format_pull_request_review_event(event, data)
+            title, text = self.format_pull_request_review_event(event, data)
         elif isinstance(event, events.PullRequestEvent):
-            text = self.format_pull_request_event(event, data)
+            title, text = self.format_pull_request_event(event, data)
         elif isinstance(event, events.RepoPushEvent):
-            text = self.format_repo_push_event(data)
+            title, text = self.format_repo_push_event(data)
         elif isinstance(event, events.RepoCreateEvent):
-            text = self.format_repo_create_event(data)
+            title, text = self.format_repo_create_event(data)
         else:
             log.error('unhandled event type: %r' % event)
 
-        run_task(post_text_to_slack, self.settings, text)
+        run_task(post_text_to_slack, self.settings, title, text, fields, overrides)
 
     def settings_schema(self):
         schema = SlackSettingsSchema()
@@ -167,37 +164,60 @@ class SlackIntegrationType(IntegrationTypeBase):
                 comment_url=data['comment']['url'],
             )
 
-        comment_status = ''
-        if data['comment']['status']:
-            comment_status = '[{}]: '.format(data['comment']['status'])
+        fields = None
+        overrides = None
+        status_text = None
 
-        return (textwrap.dedent(
-            '''
-            *{user}* commented on pull request <{pr_url}|#{number}> - {pr_title}:
-            >>> {comment_status}{comment_text}
-            ''').format(
-                comment_status=comment_status,
-                user=data['actor']['username'],
-                number=data['pullrequest']['pull_request_id'],
-                pr_url=data['pullrequest']['url'],
-                pr_status=data['pullrequest']['status'],
-                pr_title=data['pullrequest']['title'],
-                comment_text=comment_text
-            )
-        )
+        if data['comment']['status']:
+            status_color = {
+                'approved': '#0ac878',
+                'rejected': '#e85e4d'}.get(data['comment']['status'])
+
+            if status_color:
+                overrides = {"color": status_color}
+
+            status_text = data['comment']['status']
+
+        if data['comment']['file']:
+            fields = [
+                {
+                    "title": "file",
+                    "value": data['comment']['file']
+                },
+                {
+                    "title": "line",
+                    "value": data['comment']['line']
+                }
+            ]
+
+        title = Template(textwrap.dedent(r'''
+        *${data['actor']['username']}* left ${data['comment']['type']} on pull request <${data['pullrequest']['url']}|#${data['pullrequest']['pull_request_id']}>:
+        ''')).render(data=data, comment=event.comment)
+
+        text = Template(textwrap.dedent(r'''
+        *pull request title*: ${pr_title}
+        % if status_text:
+        *submitted status*: `${status_text}`
+        % endif
+        >>> ${comment_text}
+        ''')).render(comment_text=comment_text,
+                     pr_title=data['pullrequest']['title'],
+                     status_text=status_text)
+
+        return title, text, fields, overrides
 
     def format_pull_request_review_event(self, event, data):
-        return (textwrap.dedent(
-            '''
-            Status changed to {pr_status} for pull request <{pr_url}|#{number}> - {pr_title}
-            ''').format(
-                user=data['actor']['username'],
-                number=data['pullrequest']['pull_request_id'],
-                pr_url=data['pullrequest']['url'],
-                pr_status=data['pullrequest']['status'],
-                pr_title=data['pullrequest']['title'],
-            )
+        title = Template(textwrap.dedent(r'''
+        *${data['actor']['username']}* changed status of pull request <${data['pullrequest']['url']}|#${data['pullrequest']['pull_request_id']} to `${data['pullrequest']['status']}`>:
+        ''')).render(data=data)
+
+        text = Template(textwrap.dedent(r'''
+        *pull request title*: ${pr_title}
+        ''')).render(
+            pr_title=data['pullrequest']['title'],
         )
+
+        return title, text
 
     def format_pull_request_event(self, event, data):
         action = {
@@ -207,14 +227,21 @@ class SlackIntegrationType(IntegrationTypeBase):
             events.PullRequestCreateEvent: 'created',
         }.get(event.__class__, str(event.__class__))
 
-        return ('Pull request <{url}|#{number}> - {title} '
-                '`{action}` by *{user}*').format(
-            user=data['actor']['username'],
-            number=data['pullrequest']['pull_request_id'],
-            url=data['pullrequest']['url'],
-            title=data['pullrequest']['title'],
-            action=action
+        title = Template(textwrap.dedent(r'''
+        *${data['actor']['username']}* `${action}` pull request <${data['pullrequest']['url']}|#${data['pullrequest']['pull_request_id']}>:
+        ''')).render(data=data, action=action)
+
+        text = Template(textwrap.dedent(r'''
+        *pull request title*: ${pr_title}
+        %if data['pullrequest']['commits']:
+        *commits*: ${len(data['pullrequest']['commits'])}
+        %endif
+        ''')).render(
+            pr_title=data['pullrequest']['title'],
+            data=data
         )
+
+        return title, text
 
     def format_repo_push_event(self, data):
         branch_data = {branch['name']: branch
@@ -230,20 +257,38 @@ class SlackIntegrationType(IntegrationTypeBase):
             branch_commits = branches_commits[commit['branch']]
             branch_commits['commits'].append(commit)
 
-        result = repo_push_template.render(
+        title = Template(r'''
+        *${data['actor']['username']}* pushed to repo <${data['repo']['url']}|${data['repo']['repo_name']}>:
+        ''').render(data=data)
+
+        repo_push_template = Template(textwrap.dedent(r'''
+        %for branch, branch_commits in branches_commits.items():
+        ${len(branch_commits['commits'])} ${'commit' if len(branch_commits['commits']) == 1 else 'commits'} on branch: <${branch_commits['branch']['url']}|${branch_commits['branch']['name']}>
+        %for commit in branch_commits['commits']:
+        `<${commit['url']}|${commit['short_id']}>` - ${commit['message_html_title']|html_to_slack_links}
+        %endfor
+        %endfor
+        '''))
+
+        text = repo_push_template.render(
             data=data,
             branches_commits=branches_commits,
             html_to_slack_links=html_to_slack_links,
         )
-        return result
+
+        return title, text
 
     def format_repo_create_event(self, data):
-        return '<{}|{}> ({}) repository created by *{}*'.format(
-            data['repo']['url'],
-            data['repo']['repo_name'],
-            data['repo']['repo_type'],
-            data['actor']['username'],
-        )
+        title = Template(r'''
+        *${data['actor']['username']}* created new repository ${data['repo']['repo_name']}:
+        ''').render(data=data)
+
+        text = Template(textwrap.dedent(r'''
+        repo_url: ${data['repo']['url']}
+        repo_type: ${data['repo']['repo_type']}
+        ''')).render(data=data)
+
+        return title, text
 
 
 def html_to_slack_links(message):
@@ -252,12 +297,38 @@ def html_to_slack_links(message):
 
 
 @task(ignore_result=True)
-def post_text_to_slack(settings, text):
-    log.debug('sending %s to slack %s' % (text, settings['service']))
-    resp = requests.post(settings['service'], json={
+def post_text_to_slack(settings, title, text, fields=None, overrides=None):
+    log.debug('sending %s (%s) to slack %s' % (
+        title, text, settings['service']))
+
+    fields = fields or []
+    overrides = overrides or {}
+
+    message_data = {
+                "fallback": text,
+                "color": "#427cc9",
+                "pretext": title,
+                #"author_name": "Bobby Tables",
+                #"author_link": "http://flickr.com/bobby/",
+                #"author_icon": "http://flickr.com/icons/bobby.jpg",
+                #"title": "Slack API Documentation",
+                #"title_link": "https://api.slack.com/",
+                "text": text,
+                "fields": fields,
+                #"image_url": "http://my-website.com/path/to/image.jpg",
+                #"thumb_url": "http://example.com/path/to/thumb.png",
+                "footer": "RhodeCode",
+                #"footer_icon": "",
+                "ts": time.time(),
+                "mrkdwn_in": ["pretext", "text"]
+    }
+    message_data.update(overrides)
+    json_message = {
+        "icon_emoji": settings.get('icon_emoji', ':studio_microphone:'),
         "channel": settings.get('channel', ''),
         "username": settings.get('username', 'Rhodecode'),
-        "text": text,
-        "icon_emoji": settings.get('icon_emoji', ':studio_microphone:')
-    })
+        "attachments": [message_data]
+    }
+
+    resp = requests.post(settings['service'], json=json_message)
     resp.raise_for_status()  # raise exception on a failed request

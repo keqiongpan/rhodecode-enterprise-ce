@@ -52,13 +52,15 @@ class TestCommitCommentsController(TestController):
             Session().delete(x)
         Session().commit()
 
-    def test_create(self, backend):
+    @pytest.mark.parametrize('comment_type', ChangesetComment.COMMENT_TYPES)
+    def test_create(self, comment_type, backend):
         self.log_user()
         commit = backend.repo.get_commit('300')
         commit_id = commit.raw_id
         text = u'CommentOnCommit'
 
-        params = {'text': text, 'csrf_token': self.csrf_token}
+        params = {'text': text, 'csrf_token': self.csrf_token,
+                  'comment_type': comment_type}
         self.app.post(
             url(controller='changeset', action='comment',
                 repo_name=backend.repo_name, revision=commit_id), params=params)
@@ -79,15 +81,16 @@ class TestCommitCommentsController(TestController):
         comment_id = ChangesetComment.query().first().comment_id
         assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
 
-        sbj = 'commented on commit `{0}` in the {1} repository'.format(
-            h.show_id(commit), backend.repo_name)
+        sbj = 'left {0} on commit `{1}` in the {2} repository'.format(
+            comment_type, h.show_id(commit), backend.repo_name)
         assert sbj in notification.subject
 
         lnk = (u'/{0}/changeset/{1}#comment-{2}'.format(
             backend.repo_name, commit_id, comment_id))
         assert lnk in notification.body
 
-    def test_create_inline(self, backend):
+    @pytest.mark.parametrize('comment_type', ChangesetComment.COMMENT_TYPES)
+    def test_create_inline(self, comment_type, backend):
         self.log_user()
         commit = backend.repo.get_commit('300')
         commit_id = commit.raw_id
@@ -96,6 +99,7 @@ class TestCommitCommentsController(TestController):
         line = 'n1'
 
         params = {'text': text, 'f_path': f_path, 'line': line,
+                  'comment_type': comment_type,
                   'csrf_token': self.csrf_token}
 
         self.app.post(
@@ -129,10 +133,11 @@ class TestCommitCommentsController(TestController):
         assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
 
         assert comment.revision == commit_id
-        sbj = 'commented on commit `{commit}` ' \
+        sbj = 'left {comment_type} on commit `{commit}` ' \
               '(file: `{f_path}`) in the {repo} repository'.format(
             commit=h.show_id(commit),
-            f_path=f_path, line=line, repo=backend.repo_name)
+            f_path=f_path, line=line, repo=backend.repo_name,
+            comment_type=comment_type)
         assert sbj in notification.subject
 
         lnk = (u'/{0}/changeset/{1}#comment-{2}'.format(
@@ -197,7 +202,7 @@ class TestCommitCommentsController(TestController):
         comment_id = ChangesetComment.query().first().comment_id
         assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
 
-        sbj = 'commented on commit `{0}` (status: Approved) ' \
+        sbj = 'left note on commit `{0}` (status: Approved) ' \
               'in the {1} repository'.format(
             h.show_id(commit), backend.repo_name)
         assert sbj in notification.subject

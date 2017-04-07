@@ -38,12 +38,10 @@ def test_vcs_unavailable_returns_vcs_error_page(app, backend, app_settings):
 
     # Depending on the used VCSServer protocol we have to patch a different
     # RemoteRepo class to raise an exception. For the test it doesn't matter
-    # if http or pyro4 is used, it just requires the exception to be raised.
+    # if http is used, it just requires the exception to be raised.
     vcs_protocol = app_settings['vcs.server.protocol']
     if vcs_protocol == 'http':
         from rhodecode.lib.vcs.client_http import RemoteRepo
-    elif vcs_protocol == 'pyro4':
-        from rhodecode.lib.vcs.client import RemoteRepo
     else:
         pytest.fail('Unknown VCS server protocol: "{}"'.format(vcs_protocol))
 

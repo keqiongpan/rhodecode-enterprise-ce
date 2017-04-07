@@ -69,6 +69,8 @@ class PullrequestsController(BaseRepoController):
 
     def __before__(self):
         super(PullrequestsController, self).__before__()
+        c.REVIEW_STATUS_APPROVED = ChangesetStatus.STATUS_APPROVED
+        c.REVIEW_STATUS_REJECTED = ChangesetStatus.STATUS_REJECTED
 
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
@@ -440,13 +442,25 @@ class PullrequestsController(BaseRepoController):
         resp = PullRequestModel().update_commits(pull_request)
 
         if resp.executed:
+
+            if resp.target_changed and resp.source_changed:
+                changed = 'target and source repositories'
+            elif resp.target_changed and not resp.source_changed:
+                changed = 'target repository'
+            elif not resp.target_changed and resp.source_changed:
+                changed = 'source repository'
+            else:
+                changed = 'nothing'
+
             msg = _(
                 u'Pull request updated to "{source_commit_id}" with '
-                u'{count_added} added, {count_removed} removed commits.')
+                u'{count_added} added, {count_removed} removed commits. '
+                u'Source of changes: {change_source}')
             msg = msg.format(
                 source_commit_id=pull_request.source_ref_parts.commit_id,
                 count_added=len(resp.changes.added),
-                count_removed=len(resp.changes.removed))
+                count_removed=len(resp.changes.removed),
+                change_source=changed)
             h.flash(msg, category='success')
 
             registry = get_current_registry()
@@ -562,13 +576,21 @@ class PullrequestsController(BaseRepoController):
     def delete(self, repo_name, pull_request_id):
         pull_request_id = safe_int(pull_request_id)
         pull_request = PullRequest.get_or_404(pull_request_id)
+
+        pr_closed = pull_request.is_closed()
+        allowed_to_delete = PullRequestModel().check_user_delete(
+            pull_request, c.rhodecode_user) and not pr_closed
+
         # only owner can delete it !
-        if pull_request.author.user_id == c.rhodecode_user.user_id:
+        if allowed_to_delete:
             PullRequestModel().delete(pull_request)
             Session().commit()
             h.flash(_('Successfully deleted pull request'),
                     category='success')
             return redirect(url('my_account_pullrequests'))
+
+        h.flash(_('Your are not allowed to delete this pull request'),
+                category='error')
         raise HTTPForbidden()
 
     def _get_pr_version(self, pull_request_id, version=None):
@@ -642,6 +664,13 @@ class PullrequestsController(BaseRepoController):
          pull_request_display_obj,
          at_version) = self._get_pr_version(
             pull_request_id, version=version)
+        pr_closed = pull_request_latest.is_closed()
+
+        if pr_closed and (version or from_version):
+            # not allow to browse versions
+            return redirect(h.url('pullrequest_show', repo_name=repo_name,
+                                  pull_request_id=pull_request_id))
+
         versions = pull_request_display_obj.versions()
 
         c.at_version = at_version
@@ -675,20 +704,21 @@ class PullrequestsController(BaseRepoController):
         c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
             pull_request_at_ver)
 
-        c.ancestor = None  # empty ancestor hidden in display
         c.pull_request = pull_request_display_obj
         c.pull_request_latest = pull_request_latest
 
-        pr_closed = pull_request_latest.is_closed()
         if compare or (at_version and not at_version == 'latest'):
             c.allowed_to_change_status = False
             c.allowed_to_update = False
             c.allowed_to_merge = False
             c.allowed_to_delete = False
             c.allowed_to_comment = False
+            c.allowed_to_close = False
         else:
             c.allowed_to_change_status = PullRequestModel(). \
-                check_user_change_status(pull_request_at_ver, c.rhodecode_user)
+                check_user_change_status(pull_request_at_ver, c.rhodecode_user) \
+                                         and not pr_closed
+
             c.allowed_to_update = PullRequestModel().check_user_update(
                 pull_request_latest, c.rhodecode_user) and not pr_closed
             c.allowed_to_merge = PullRequestModel().check_user_merge(
@@ -696,6 +726,7 @@ class PullrequestsController(BaseRepoController):
             c.allowed_to_delete = PullRequestModel().check_user_delete(
                 pull_request_latest, c.rhodecode_user) and not pr_closed
             c.allowed_to_comment = not pr_closed
+            c.allowed_to_close = c.allowed_to_change_status and not pr_closed
 
         # check merge capabilities
         _merge_check = MergeCheck.validate(
@@ -704,6 +735,7 @@ class PullrequestsController(BaseRepoController):
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
 
+        c.pull_request_review_status = _merge_check.review_status
         if merge_checks:
             return render('/pullrequests/pullrequest_merge_checks.mako')
 
@@ -712,7 +744,6 @@ class PullrequestsController(BaseRepoController):
         # reviewers and statuses
         c.pull_request_reviewers = pull_request_at_ver.reviewers_statuses()
         allowed_reviewers = [x[0].user_id for x in c.pull_request_reviewers]
-        c.pull_request_review_status = pull_request_at_ver.calculated_review_status()
 
         # GENERAL COMMENTS with versions #
         q = comments_model._all_general_comments_of_pull_request(pull_request_latest)
@@ -789,12 +820,15 @@ class PullrequestsController(BaseRepoController):
         target_commit = EmptyCommit()
         c.missing_requirements = False
 
+        source_scm = source_repo.scm_instance()
+        target_scm = target_repo.scm_instance()
+
         # try first shadow repo, fallback to regular repo
         try:
             commits_source_repo = pull_request_latest.get_shadow_repo()
         except Exception:
             log.debug('Failed to get shadow repo', exc_info=True)
-            commits_source_repo = source_repo.scm_instance()
+            commits_source_repo = source_scm
 
         c.commits_source_repo = commits_source_repo
         commit_cache = {}
@@ -817,6 +851,15 @@ class PullrequestsController(BaseRepoController):
             log.warning(
                 'Failed to get all required data from repo', exc_info=True)
             c.missing_requirements = True
+
+        c.ancestor = None  # set it to None, to hide it from PR view
+
+        try:
+            ancestor_id = source_scm.get_common_ancestor(
+                source_commit.raw_id, target_commit.raw_id, target_scm)
+            c.ancestor_commit = source_scm.get_commit(ancestor_id)
+        except Exception:
+            c.ancestor_commit = None
 
         c.statuses = source_repo.statuses(
             [x.raw_id for x in c.commit_ranges])
@@ -860,12 +903,7 @@ class PullrequestsController(BaseRepoController):
         # We need to swap that here to generate it properly on the html side
         c.target_repo = c.source_repo
 
-        if c.allowed_to_update:
-            force_close = ('forced_closed', _('Close Pull Request'))
-            statuses = ChangesetStatus.STATUSES + [force_close]
-        else:
-            statuses = ChangesetStatus.STATUSES
-        c.commit_statuses = statuses
+        c.commit_statuses = ChangesetStatus.STATUSES
 
         c.show_version_changes = not pr_closed
         if c.show_version_changes:
@@ -924,22 +962,21 @@ class PullrequestsController(BaseRepoController):
         if pull_request.is_closed():
             raise HTTPForbidden()
 
-        # TODO: johbo: Re-think this bit, "approved_closed" does not exist
-        # as a changeset status, still we want to send it in one value.
         status = request.POST.get('changeset_status', None)
         text = request.POST.get('text')
         comment_type = request.POST.get('comment_type')
         resolves_comment_id = request.POST.get('resolves_comment_id', None)
+        close_pull_request = request.POST.get('close_pull_request')
 
-        if status and '_closed' in status:
+        close_pr = False
+        if close_pull_request:
             close_pr = True
-            status = status.replace('_closed', '')
-        else:
-            close_pr = False
-
-        forced = (status == 'forced')
-        if forced:
-            status = 'rejected'
+            pull_request_review_status = pull_request.calculated_review_status()
+            if pull_request_review_status == ChangesetStatus.STATUS_APPROVED:
+                # approved only if we have voting consent
+                status = ChangesetStatus.STATUS_APPROVED
+            else:
+                status = ChangesetStatus.STATUS_REJECTED
 
         allowed_to_change_status = PullRequestModel().check_user_change_status(
             pull_request, c.rhodecode_user)
@@ -995,7 +1032,7 @@ class PullrequestsController(BaseRepoController):
                 status_completed = (
                     calculated_status in [ChangesetStatus.STATUS_APPROVED,
                                           ChangesetStatus.STATUS_REJECTED])
-                if forced or status_completed:
+                if close_pull_request or status_completed:
                     PullRequestModel().close_pull_request(
                         pull_request_id, c.rhodecode_user)
                 else:

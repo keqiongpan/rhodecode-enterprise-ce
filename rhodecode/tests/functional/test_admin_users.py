@@ -36,6 +36,20 @@ from rhodecode.tests.utils import AssertResponse
 fixture = Fixture()
 
 
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
+
+    base_url = {
+        'users_data':
+            ADMIN_PREFIX + '/users_data',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
+
 class TestAdminUsersController(TestController):
     test_user_1 = 'testme'
     destroy_users = set()
@@ -44,11 +58,7 @@ class TestAdminUsersController(TestController):
     def teardown_method(cls, method):
         fixture.destroy_users(cls.destroy_users)
 
-    def test_index(self):
-        self.log_user()
-        self.app.get(url('users'))
-
-    def test_create(self):
+    def test_create(self, xhr_header):
         self.log_user()
         username = 'newtestuser'
         password = 'test12'
@@ -57,7 +67,7 @@ class TestAdminUsersController(TestController):
         lastname = 'lastname'
         email = 'mail@mail.com'
 
-        response = self.app.get(url('new_user'))
+        self.app.get(url('new_user'))
 
         response = self.app.post(url('users'), params={
             'username': username,
@@ -85,8 +95,8 @@ class TestAdminUsersController(TestController):
         assert new_user.lastname == lastname
         assert new_user.email == email
 
-        response.follow()
-        response = response.follow()
+        response = self.app.get(route_path('users_data'),
+                                extra_environ=xhr_header)
         response.mustcontain(username)
 
     def test_create_err(self):
@@ -97,7 +107,7 @@ class TestAdminUsersController(TestController):
         lastname = 'lastname'
         email = 'errmail.com'
 
-        response = self.app.get(url('new_user'))
+        self.app.get(url('new_user'))
 
         response = self.app.post(url('users'), params={
             'username': username,
@@ -418,9 +428,6 @@ class TestAdminUsersController(TestController):
         msg = 'Deleted 1 user groups'
         assert_session_flash(response, msg)
 
-    def test_show(self):
-        self.app.get(url('user', user_id=1))
-
     def test_edit(self):
         self.log_user()
         user = User.get_by_username(TEST_USER_ADMIN_LOGIN)
@@ -566,79 +573,3 @@ class TestAdminUsersController(TestController):
         response.mustcontain('All IP addresses are allowed')
         response.mustcontain(no=[ip])
         response.mustcontain(no=[ip_range])
-
-    def test_auth_tokens(self):
-        self.log_user()
-
-        user = User.get_by_username(TEST_USER_REGULAR_LOGIN)
-        response = self.app.get(
-            url('edit_user_auth_tokens', user_id=user.user_id))
-        response.mustcontain(user.api_key)
-        response.mustcontain('expires: never')
-
-    @pytest.mark.parametrize("desc, lifetime", [
-        ('forever', -1),
-        ('5mins', 60*5),
-        ('30days', 60*60*24*30),
-    ])
-    def test_add_auth_token(self, desc, lifetime):
-        self.log_user()
-        user = User.get_by_username(TEST_USER_REGULAR_LOGIN)
-        user_id = user.user_id
-
-        response = self.app.post(
-            url('edit_user_auth_tokens', user_id=user_id),
-            {'_method': 'put', 'description': desc, 'lifetime': lifetime,
-             'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully created')
-        try:
-            response = response.follow()
-            user = User.get(user_id)
-            for auth_token in user.auth_tokens:
-                response.mustcontain(auth_token)
-        finally:
-            for api_key in UserApiKeys.query().filter(
-                    UserApiKeys.user_id == user_id).all():
-                Session().delete(api_key)
-                Session().commit()
-
-    def test_remove_auth_token(self):
-        self.log_user()
-        user = User.get_by_username(TEST_USER_REGULAR_LOGIN)
-        user_id = user.user_id
-
-        response = self.app.post(
-            url('edit_user_auth_tokens', user_id=user_id),
-            {'_method': 'put', 'description': 'desc', 'lifetime': -1,
-             'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully created')
-        response = response.follow()
-
-        # now delete our key
-        keys = UserApiKeys.query().filter(UserApiKeys.user_id == user_id).all()
-        assert 1 == len(keys)
-
-        response = self.app.post(
-            url('edit_user_auth_tokens', user_id=user_id),
-            {'_method': 'delete', 'del_auth_token': keys[0].api_key,
-             'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully deleted')
-        keys = UserApiKeys.query().filter(UserApiKeys.user_id == user_id).all()
-        assert 0 == len(keys)
-
-    def test_reset_main_auth_token(self):
-        self.log_user()
-        user = User.get_by_username(TEST_USER_REGULAR_LOGIN)
-        user_id = user.user_id
-        api_key = user.api_key
-        response = self.app.get(url('edit_user_auth_tokens', user_id=user_id))
-        response.mustcontain(api_key)
-        response.mustcontain('expires: never')
-
-        response = self.app.post(
-            url('edit_user_auth_tokens', user_id=user_id),
-            {'_method': 'delete', 'del_auth_token_builtin': api_key,
-             'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Auth token successfully reset')
-        response = response.follow()
-        response.mustcontain(no=[api_key])

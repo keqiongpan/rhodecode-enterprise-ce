@@ -30,10 +30,9 @@ import rhodecode
 import urllib
 import urllib2
 
-from pylons.i18n.translation import lazy_ugettext as _
-from sqlalchemy.ext.hybrid import hybrid_property
-
-from rhodecode.authentication.base import RhodeCodeExternalAuthPlugin
+from rhodecode.translation import _
+from rhodecode.authentication.base import (
+    RhodeCodeExternalAuthPlugin, hybrid_property)
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.authentication.routes import AuthnPluginResourceBase
 from rhodecode.lib.colander_utils import strip_whitespace

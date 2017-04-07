@@ -223,6 +223,8 @@ class FilesController(BaseRepoController):
             c.file_author = True
             c.file_tree = ''
             if c.file.is_file():
+                c.lf_node = c.file.get_largefile_node()
+
                 c.file_source_page = 'true'
                 c.file_last_commit = c.file.last_commit
                 if c.file.size < self.cut_off_limit_file:
@@ -239,7 +241,11 @@ class FilesController(BaseRepoController):
 
                 c.on_branch_head = self._is_valid_head(
                     commit_id, c.rhodecode_repo)
-                c.branch_or_raw_id = c.commit.branch or c.commit.raw_id
+
+                branch = c.commit.branch if (
+                    c.commit.branch and '/' not in c.commit.branch) else None
+                c.branch_or_raw_id = branch or c.commit.raw_id
+                c.branch_name = c.commit.branch or h.short_id(c.commit.raw_id)
 
                 author = c.file_last_commit.author
                 c.authors = [(h.email(author),
@@ -258,6 +264,32 @@ class FilesController(BaseRepoController):
             return render('files/files_pjax.mako')
 
         return render('files/files.mako')
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    def annotate_previous(self, repo_name, revision, f_path):
+
+        commit_id = revision
+        commit = self.__get_commit_or_redirect(commit_id, repo_name)
+        prev_commit_id = commit.raw_id
+
+        f_path = f_path
+        is_file = False
+        try:
+            _file = commit.get_node(f_path)
+            is_file = _file.is_file()
+        except (NodeDoesNotExistError, CommitDoesNotExistError, VCSError):
+            pass
+
+        if is_file:
+            history = commit.get_file_history(f_path)
+            prev_commit_id = history[1].raw_id \
+                if len(history) > 1 else prev_commit_id
+
+        return redirect(h.url(
+            'files_annotate_home', repo_name=repo_name,
+            revision=prev_commit_id, f_path=f_path))
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
@@ -317,6 +349,14 @@ class FilesController(BaseRepoController):
         commit = self.__get_commit_or_redirect(revision, repo_name)
         file_node = self.__get_filenode_or_redirect(repo_name, commit, f_path)
 
+        if request.GET.get('lf'):
+            # only if lf get flag is passed, we download this file
+            # as LFS/Largefile
+            lf_node = file_node.get_largefile_node()
+            if lf_node:
+                # overwrite our pointer with the REAL large-file
+                file_node = lf_node
+
         response.content_disposition = 'attachment; filename=%s' % \
             safe_str(f_path.split(Repository.NAME_SEP)[-1])
 
@@ -352,6 +392,7 @@ class FilesController(BaseRepoController):
             'image/png': ('image/png', 'inline'),
             'image/gif': ('image/gif', 'inline'),
             'image/jpeg': ('image/jpeg', 'inline'),
+            'application/pdf': ('application/pdf', 'inline'),
         }
 
         mimetype = file_node.mimetype

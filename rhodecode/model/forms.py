@@ -378,13 +378,19 @@ class _BaseVcsSettingsForm(formencode.Schema):
     hooks_changegroup_push_logger = v.StringBoolean(if_missing=False)
     hooks_outgoing_pull_logger = v.StringBoolean(if_missing=False)
 
-    extensions_largefiles = v.StringBoolean(if_missing=False)
-    phases_publish = v.StringBoolean(if_missing=False)
-
+    # PR/Code-review
     rhodecode_pr_merge_enabled = v.StringBoolean(if_missing=False)
     rhodecode_use_outdated_comments = v.StringBoolean(if_missing=False)
+
+    # hg
+    extensions_largefiles = v.StringBoolean(if_missing=False)
+    phases_publish = v.StringBoolean(if_missing=False)
     rhodecode_hg_use_rebase_for_merging = v.StringBoolean(if_missing=False)
 
+    # git
+    vcs_git_lfs_enabled = v.StringBoolean(if_missing=False)
+
+    # svn
     vcs_svn_proxy_http_requests_enabled = v.StringBoolean(if_missing=False)
     vcs_svn_proxy_http_server_url = v.UnicodeString(strip=True, if_missing=None)
 
@@ -396,6 +402,12 @@ def ApplicationUiSettingsForm():
             v.ValidPath(),
             v.UnicodeString(strip=True, min=1, not_empty=True)
         )
+        largefiles_usercache = All(
+            v.ValidPath(),
+            v.UnicodeString(strip=True, min=2, not_empty=True))
+        vcs_git_lfs_store_location = All(
+            v.ValidPath(),
+            v.UnicodeString(strip=True, min=2, not_empty=True))
         extensions_hgsubversion = v.StringBoolean(if_missing=False)
         extensions_hggit = v.StringBoolean(if_missing=False)
         new_svn_branch = v.ValidSvnPattern(section='vcs_svn_branch')

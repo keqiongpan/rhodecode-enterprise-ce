@@ -6,7 +6,7 @@
     (_('Source of Record'), c.user.extern_type, '', ''),
 
     (_('Last login'), c.user.last_login or '-', '', ''),
-    (_('Last activity'), h.format_date(h.time_to_datetime(c.user.user_data.get('last_activity', 0))), '', ''),
+    (_('Last activity'), c.user.last_activity, '', ''),
 
     (_('Repositories'), len(c.user.repositories), '', [x.repo_name for x in c.user.repositories]),
     (_('Repository groups'), len(c.user.repository_groups), '', [x.group_name for x in c.user.repository_groups]),

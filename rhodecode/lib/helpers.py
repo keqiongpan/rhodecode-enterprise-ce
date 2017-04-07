@@ -38,6 +38,7 @@ import string
 import hashlib
 import pygments
 import itertools
+import fnmatch
 
 from datetime import datetime
 from functools import partial
@@ -74,7 +75,7 @@ from rhodecode.lib.utils import repo_name_slug, get_custom_lexer
 from rhodecode.lib.utils2 import str2bool, safe_unicode, safe_str, \
     get_commit_safe, datetime_to_time, time_to_datetime, time_to_utcdatetime, \
     AttributeDict, safe_int, md5, md5_safe
-from rhodecode.lib.markup_renderer import MarkupRenderer
+from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 from rhodecode.lib.vcs.backends.base import BaseChangeset, EmptyCommit
 from rhodecode.config.conf import DATE_FORMAT, DATETIME_FORMAT
@@ -117,7 +118,7 @@ def url_replace(**qargs):
     return url('', **new_args)
 
 
-def asset(path, ver=None):
+def asset(path, ver=None, **kwargs):
     """
     Helper to generate a static asset file path for rhodecode assets
 
@@ -128,6 +129,7 @@ def asset(path, ver=None):
     """
     request = get_current_request()
     query = {}
+    query.update(kwargs)
     if ver:
         query = {'ver': ver}
     return request.static_path(
@@ -736,7 +738,7 @@ def age_component(datetime_iso, value=None, time_is_local=False):
 
     return literal(
         '<time class="timeago tooltip" '
-        'title="{1}" datetime="{0}{2}">{1}</time>'.format(
+        'title="{1}{2}" datetime="{0}{2}">{1}</time>'.format(
             datetime_iso, title, tzinfo))
 
 
@@ -869,7 +871,7 @@ def link_to_user(author, length=0, **kwargs):
     if user:
         return link_to(
             escape(display_person),
-            url('user_profile', username=user.username),
+            route_path('user_profile', username=user.username),
             **kwargs)
     else:
         return escape(display_person)
@@ -1547,99 +1549,6 @@ def format_byte_size_binary(file_size):
     return formatted_size
 
 
-def fancy_file_stats(stats):
-    """
-    Displays a fancy two colored bar for number of added/deleted
-    lines of code on file
-
-    :param stats: two element list of added/deleted lines of code
-    """
-    from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
-        MOD_FILENODE, RENAMED_FILENODE, CHMOD_FILENODE, BIN_FILENODE
-
-    def cgen(l_type, a_v, d_v):
-        mapping = {'tr': 'top-right-rounded-corner-mid',
-                   'tl': 'top-left-rounded-corner-mid',
-                   'br': 'bottom-right-rounded-corner-mid',
-                   'bl': 'bottom-left-rounded-corner-mid'}
-        map_getter = lambda x: mapping[x]
-
-        if l_type == 'a' and d_v:
-            #case when added and deleted are present
-            return ' '.join(map(map_getter, ['tl', 'bl']))
-
-        if l_type == 'a' and not d_v:
-            return ' '.join(map(map_getter, ['tr', 'br', 'tl', 'bl']))
-
-        if l_type == 'd' and a_v:
-            return ' '.join(map(map_getter, ['tr', 'br']))
-
-        if l_type == 'd' and not a_v:
-            return ' '.join(map(map_getter, ['tr', 'br', 'tl', 'bl']))
-
-    a, d = stats['added'], stats['deleted']
-    width = 100
-
-    if stats['binary']:  # binary operations like chmod/rename etc
-        lbl = []
-        bin_op = 0  # undefined
-
-        # prefix with bin for binary files
-        if BIN_FILENODE in stats['ops']:
-            lbl += ['bin']
-
-        if NEW_FILENODE in stats['ops']:
-            lbl += [_('new file')]
-            bin_op = NEW_FILENODE
-        elif MOD_FILENODE in stats['ops']:
-            lbl += [_('mod')]
-            bin_op = MOD_FILENODE
-        elif DEL_FILENODE in stats['ops']:
-            lbl += [_('del')]
-            bin_op = DEL_FILENODE
-        elif RENAMED_FILENODE in stats['ops']:
-            lbl += [_('rename')]
-            bin_op = RENAMED_FILENODE
-
-        # chmod can go with other operations, so we add a + to lbl if needed
-        if CHMOD_FILENODE in stats['ops']:
-            lbl += [_('chmod')]
-            if bin_op == 0:
-                bin_op = CHMOD_FILENODE
-
-        lbl = '+'.join(lbl)
-        b_a = '<div class="bin bin%s %s" style="width:100%%">%s</div>' \
-              % (bin_op, cgen('a', a_v='', d_v=0), lbl)
-        b_d = '<div class="bin bin1" style="width:0%%"></div>'
-        return literal('<div style="width:%spx">%s%s</div>' % (width, b_a, b_d))
-
-    t = stats['added'] + stats['deleted']
-    unit = float(width) / (t or 1)
-
-    # needs > 9% of width to be visible or 0 to be hidden
-    a_p = max(9, unit * a) if a > 0 else 0
-    d_p = max(9, unit * d) if d > 0 else 0
-    p_sum = a_p + d_p
-
-    if p_sum > width:
-        #adjust the percentage to be == 100% since we adjusted to 9
-        if a_p > d_p:
-            a_p = a_p - (p_sum - width)
-        else:
-            d_p = d_p - (p_sum - width)
-
-    a_v = a if a > 0 else ''
-    d_v = d if d > 0 else ''
-
-    d_a = '<div class="added %s" style="width:%s%%">%s</div>' % (
-        cgen('a', a_v, d_v), a_p, a_v
-    )
-    d_d = '<div class="deleted %s" style="width:%s%%">%s</div>' % (
-        cgen('d', a_v, d_v), d_p, d_v
-    )
-    return literal('<div style="width:%spx">%s%s</div>' % (width, d_a, d_d))
-
-
 def urlify_text(text_, safe=True):
     """
     Extrac urls from text and make html links out of them
@@ -1810,25 +1719,63 @@ def urlify_commit_message(commit_text, repository=None):
     return literal(newtext)
 
 
-def rst(source, mentions=False):
-    return literal('<div class="rst-block">%s</div>' %
-                   MarkupRenderer.rst(source, mentions=mentions))
+def render_binary(repo_name, file_obj):
+    """
+    Choose how to render a binary file
+    """
+    filename = file_obj.name
 
+    # images
+    for ext in ['*.png', '*.jpg', '*.ico', '*.gif']:
+        if fnmatch.fnmatch(filename, pat=ext):
+            alt = filename
+            src = url('files_raw_home', repo_name=repo_name,
+                      revision=file_obj.commit.raw_id, f_path=file_obj.path)
+            return literal('<img class="rendered-binary" alt="{}" src="{}">'.format(alt, src))
 
-def markdown(source, mentions=False):
-    return literal('<div class="markdown-block">%s</div>' %
-                   MarkupRenderer.markdown(source, flavored=True,
-                                           mentions=mentions))
 
 def renderer_from_filename(filename, exclude=None):
-    return MarkupRenderer.renderer_from_filename(filename, exclude=exclude)
+    """
+    choose a renderer based on filename, this works only for text based files
+    """
+
+    # ipython
+    for ext in ['*.ipynb']:
+        if fnmatch.fnmatch(filename, pat=ext):
+            return 'jupyter'
+
+    is_markup = MarkupRenderer.renderer_from_filename(filename, exclude=exclude)
+    if is_markup:
+        return is_markup
+    return None
 
 
-def render(source, renderer='rst', mentions=False):
+def render(source, renderer='rst', mentions=False, relative_url=None):
+
+    def maybe_convert_relative_links(html_source):
+        if relative_url:
+            return relative_links(html_source, relative_url)
+        return html_source
+
     if renderer == 'rst':
-        return rst(source, mentions=mentions)
-    if renderer == 'markdown':
-        return markdown(source, mentions=mentions)
+        return literal(
+            '<div class="rst-block">%s</div>' %
+            maybe_convert_relative_links(
+                MarkupRenderer.rst(source, mentions=mentions)))
+    elif renderer == 'markdown':
+        return literal(
+            '<div class="markdown-block">%s</div>' %
+            maybe_convert_relative_links(
+                MarkupRenderer.markdown(source, flavored=True,
+                                        mentions=mentions)))
+    elif renderer == 'jupyter':
+        return literal(
+            '<div class="ipynb">%s</div>' %
+            maybe_convert_relative_links(
+                MarkupRenderer.jupyter(source)))
+
+    # None means just show the file-source
+    return None
 
 
 def commit_status(repo, commit_id):
@@ -1965,6 +1912,16 @@ def get_last_path_part(file_node):
 
     path = safe_unicode(file_node.path.split('/')[-1])
     return u'../' + path
+
+
+def route_url(*args, **kwds):
+    """
+    Wrapper around pyramids `route_url` function. It is used to generate
+    URLs from within pylons views or templates. This will be removed when
+    pyramid migration if finished.
+    """
+    req = get_current_request()
+    return req.route_url(*args, **kwds)
 
 
 def route_path(*args, **kwds):

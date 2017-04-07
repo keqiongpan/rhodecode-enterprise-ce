@@ -207,13 +207,13 @@ def http_environ(http_host_stub):
         'SERVER_NAME': http_host_stub.split(':')[0],
         'SERVER_PORT': http_host_stub.split(':')[1],
         'HTTP_HOST': http_host_stub,
+        'HTTP_USER_AGENT': 'rc-test-agent',
+        'REQUEST_METHOD': 'GET'
     }
 
 
 @pytest.fixture(scope='function')
 def app(request, pylonsapp, http_environ):
-
-
     app = CustomTestApp(
         pylonsapp,
         extra_environ=http_environ)
@@ -321,27 +321,6 @@ def tests_tmp_path(request):
     return TESTS_TMP_PATH
 
 
-@pytest.fixture(scope='session', autouse=True)
-def patch_pyro_request_scope_proxy_factory(request):
-    """
-    Patch the pyro proxy factory to always use the same dummy request object
-    when under test. This will return the same pyro proxy on every call.
-    """
-    dummy_request = pyramid.testing.DummyRequest()
-
-    def mocked_call(self, request=None):
-        return self.getProxy(request=dummy_request)
-
-    patcher = mock.patch(
-        'rhodecode.lib.vcs.client.RequestScopeProxyFactory.__call__',
-        new=mocked_call)
-    patcher.start()
-
-    @request.addfinalizer
-    def undo_patching():
-        patcher.stop()
-
-
 @pytest.fixture
 def test_repo_group(request):
     """
@@ -408,20 +387,22 @@ class TestRepoContainer(object):
         self._fixture = Fixture()
         self._repos = {}
 
-    def __call__(self, dump_name, backend_alias):
+    def __call__(self, dump_name, backend_alias, config=None):
         key = (dump_name, backend_alias)
         if key not in self._repos:
-            repo = self._create_repo(dump_name, backend_alias)
+            repo = self._create_repo(dump_name, backend_alias, config)
             self._repos[key] = repo.repo_id
         return Repository.get(self._repos[key])
 
-    def _create_repo(self, dump_name, backend_alias):
+    def _create_repo(self, dump_name, backend_alias, config):
         repo_name = '%s-%s' % (backend_alias, dump_name)
         backend_class = get_backend(backend_alias)
         dump_extractor = self.dump_extractors[backend_alias]
         repo_path = dump_extractor(dump_name, repo_name)
-        vcs_repo = backend_class(repo_path)
+
+        vcs_repo = backend_class(repo_path, config=config)
         repo2db_mapper({repo_name: vcs_repo})
+
         repo = RepoModel().get_by_repo_name(repo_name)
         self._cleanup_repos.append(repo_name)
         return repo
@@ -535,6 +516,9 @@ class Backend(object):
 
     def __getitem__(self, key):
         return self._test_repo_container(key, self.alias)
+
+    def create_test_repo(self, key, config=None):
+        return self._test_repo_container(key, self.alias, config)
 
     @property
     def repo(self):
@@ -1166,13 +1150,14 @@ class UserUtility(object):
             self.repo_group_ids.append(repo_group.group_id)
         return repo_group
 
-    def create_repo(self, owner=TEST_USER_ADMIN_LOGIN, parent=None, auto_cleanup=True):
+    def create_repo(self, owner=TEST_USER_ADMIN_LOGIN, parent=None,
+                    auto_cleanup=True, repo_type='hg'):
         repo_name = "{prefix}_repository_{count}".format(
             prefix=self._test_name,
             count=len(self.repos_ids))
 
         repository = self.fixture.create_repo(
-            repo_name, cur_user=owner, repo_group=parent)
+            repo_name, cur_user=owner, repo_group=parent, repo_type=repo_type)
         if auto_cleanup:
             self.repos_ids.append(repository.repo_id)
         return repository
@@ -1191,11 +1176,14 @@ class UserUtility(object):
         user_group = self.create_user_group(members=[user])
         return user, user_group
 
-    def create_user_group(self, members=None, auto_cleanup=True, **kwargs):
+    def create_user_group(self, owner=TEST_USER_ADMIN_LOGIN, members=None,
+                          auto_cleanup=True, **kwargs):
         group_name = "{prefix}_usergroup_{count}".format(
             prefix=self._test_name,
             count=len(self.user_group_ids))
-        user_group = self.fixture.create_user_group(group_name, **kwargs)
+        user_group = self.fixture.create_user_group(
+            group_name, cur_user=owner, **kwargs)
+
         if auto_cleanup:
             self.user_group_ids.append(user_group.users_group_id)
         if members:
@@ -1350,7 +1338,7 @@ def pytest_runtest_makereport(item, call):
     """
     Adding the remote traceback if the exception has this information.
 
-    Pyro4 attaches this information as the attribute `_vcs_server_traceback`
+    VCSServer attaches this information as the attribute `_vcs_server_traceback`
     to the exception instance.
     """
     outcome = yield
@@ -1411,7 +1399,8 @@ def collect_appenlight_stats(request, testrun):
     })
 
     server_and_port = pylonsapp.config['vcs.server']
-    server = create_vcsserver_proxy(server_and_port)
+    protocol = pylonsapp.config['vcs.server.protocol']
+    server = create_vcsserver_proxy(server_and_port, protocol)
     with server:
         vcs_pid = server.get_pid()
         server.run_gc()

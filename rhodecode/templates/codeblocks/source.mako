@@ -20,7 +20,11 @@
               ${h.gravatar_with_user(annotation.author, 16) | n}
               <div class="cb-annotate-message truncate-wrap">${h.chop_at_smart(annotation.message, '\n', suffix_if_chopped='...')}</div>
             </td>
-            <td class="cb-annotate-message-spacer"></td>
+            <td class="cb-annotate-message-spacer">
+                <a class="tooltip" href="#show-previous-annotation" onclick="return annotationController.previousAnnotation('${annotation.raw_id}', '${c.f_path}')" title="${_('view annotation from before this change')}">
+                    <i class="icon-left"></i>
+                </a>
+            </td>
             <td
               class="cb-annotate-revision"
               data-revision="${annotation.revision}"
@@ -67,5 +71,20 @@
       annotation=annotation, show_annotation=loop.first
       )}
   % endfor
+<script>
+var AnnotationController = function() {
+  var self = this;
 
+  this.previousAnnotation = function(commitId, fPath) {
+      var params = {
+          'repo_name': templateContext.repo_name,
+          'revision': commitId,
+          'f_path': fPath
+      };
+      window.location = pyroutes.url('files_annotate_previous', params);
+      return false;
+  };
+};
+var annotationController = new AnnotationController();
+</script>
 </%def>

@@ -28,12 +28,11 @@ import pytz
 from pylons import url, response, tmpl_context as c
 from pylons.i18n.translation import _
 
-from beaker.cache import cache_region, region_invalidate
+from beaker.cache import cache_region
 from webhelpers.feedgenerator import Atom1Feed, Rss201rev2Feed
 
-from rhodecode.model.db import CacheKey
+from rhodecode.model.db import CacheKey, UserApiKeys
 from rhodecode.lib import helpers as h
-from rhodecode.lib import caches
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
 from rhodecode.lib.base import BaseRepoController
 from rhodecode.lib.diffs import DiffProcessor, LimitedDiffContainer
@@ -62,7 +61,7 @@ class FeedController(BaseRepoController):
                 safe_int(config.get('rss_cut_off_limit', 32 * 1024)),
         }
 
-    @LoginRequired(auth_token_access=True)
+    @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
     def __before__(self):
         super(FeedController, self).__before__()
         config = self._get_config()

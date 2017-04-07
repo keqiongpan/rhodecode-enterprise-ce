@@ -92,6 +92,8 @@ var bindToggleButtons = function() {
         this.resolvesId = null;
         this.resolvesActionId = null;
 
+        this.closesPr = '#close_pull_request';
+
         this.cmBox = this.withLineNo('#text');
         this.cm = initCommentBoxCodeMirror(this, this.cmBox, this.initAutocompleteActions);
 
@@ -175,6 +177,11 @@ var bindToggleButtons = function() {
         this.getResolvesId = function() {
             return $(this.submitForm).find(this.resolvesId).val() || null;
         };
+
+        this.getClosePr = function() {
+            return $(this.submitForm).find(this.closesPr).val() || null;
+        };
+
         this.markCommentResolved = function(resolvedCommentId){
             $('#comment-label-{0}'.format(resolvedCommentId)).find('.resolved').show();
             $('#comment-label-{0}'.format(resolvedCommentId)).find('.resolve').hide();
@@ -209,6 +216,7 @@ var bindToggleButtons = function() {
             });
             $(this.submitForm).find(this.statusChange).on('change', function() {
                 var status = self.getCommentStatus();
+
                 if (status && !self.isInline()) {
                     $(self.submitButton).prop('disabled', false);
                 }
@@ -236,6 +244,8 @@ var bindToggleButtons = function() {
                 // destroy the resolve action
                 $(this.resolvesId).parent().remove();
             }
+            // reset closingPR flag
+            $('.close-pr-input').remove();
 
             $(this.statusChange).select2('readonly', false);
         };
@@ -284,6 +294,7 @@ var bindToggleButtons = function() {
             var status = self.getCommentStatus();
             var commentType = self.getCommentType();
             var resolvesCommentId = self.getResolvesId();
+            var closePullRequest = self.getClosePr();
 
             if (text === "" && !status) {
                 return;
@@ -300,8 +311,13 @@ var bindToggleButtons = function() {
                 'comment_type': commentType,
                 'csrf_token': CSRF_TOKEN
             };
-            if (resolvesCommentId){
+
+            if (resolvesCommentId) {
                 postData['resolves_comment_id'] = resolvesCommentId;
+            }
+
+            if (closePullRequest) {
+                postData['close_pull_request'] = true;
             }
 
             var submitSuccessCallback = function(o) {
@@ -354,11 +370,12 @@ var bindToggleButtons = function() {
             }
 
             var submitState = state;
-            if (!submitEvent && this.getCommentStatus() && !this.lineNo) {
+            if (!submitEvent && this.getCommentStatus() && !self.isInline()) {
                 // if the value of commit review status is set, we allow
-                // submit button, but only on Main form, lineNo means inline
+                // submit button, but only on Main form, isInline means inline
                 submitState = false
             }
+
             $(this.submitButton).prop('disabled', submitState);
             if (submitEvent) {
               $(this.submitButton).val(_gettext('Submitting...'));

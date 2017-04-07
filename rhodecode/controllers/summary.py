@@ -38,7 +38,7 @@ from rhodecode.lib.utils2 import safe_str
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous, XHRRequired)
 from rhodecode.lib.base import BaseRepoController, render
-from rhodecode.lib.markup_renderer import MarkupRenderer
+from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
@@ -70,7 +70,12 @@ class SummaryController(BaseRepoController):
                 log.debug("Searching for a README file.")
                 readme_node = ReadmeFinder(default_renderer).search(commit)
             if readme_node:
-                readme_data = self._render_readme_or_none(commit, readme_node)
+                relative_url = h.url('files_raw_home',
+                                     repo_name=repo_name,
+                                     revision=commit.raw_id,
+                                     f_path=readme_node.path)
+                readme_data = self._render_readme_or_none(
+                    commit, readme_node, relative_url)
                 readme_filename = readme_node.path
             return readme_data, readme_filename
 
@@ -95,13 +100,16 @@ class SummaryController(BaseRepoController):
             log.exception(
                 "Problem getting commit when trying to render the README.")
 
-    def _render_readme_or_none(self, commit, readme_node):
+    def _render_readme_or_none(self, commit, readme_node, relative_url):
         log.debug(
             'Found README file `%s` rendering...', readme_node.path)
         renderer = MarkupRenderer()
         try:
-            return renderer.render(
+            html_source = renderer.render(
                 readme_node.content, filename=readme_node.path)
+            if relative_url:
+                return relative_links(html_source, relative_url)
+            return html_source
         except Exception:
             log.exception(
                 "Exception while trying to render the README")

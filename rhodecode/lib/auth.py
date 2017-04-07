@@ -22,24 +22,22 @@
 authentication and permission libraries
 """
 
+import os
 import inspect
 import collections
 import fnmatch
 import hashlib
 import itertools
 import logging
-import os
 import random
-import time
 import traceback
 from functools import wraps
 
 import ipaddress
-from pyramid.httpexceptions import HTTPForbidden
+from pyramid.httpexceptions import HTTPForbidden, HTTPFound
 from pylons import url, request
 from pylons.controllers.util import abort, redirect
 from pylons.i18n.translation import _
-from sqlalchemy import or_
 from sqlalchemy.orm.exc import ObjectDeletedError
 from sqlalchemy.orm import joinedload
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -99,6 +97,7 @@ class PasswordGenerator(object):
 
 
 class _RhodeCodeCryptoBase(object):
+    ENC_PREF = None
 
     def hash_create(self, str_):
         """
@@ -139,6 +138,7 @@ class _RhodeCodeCryptoBase(object):
 
 
 class _RhodeCodeCryptoBCrypt(_RhodeCodeCryptoBase):
+    ENC_PREF = '$2a$10'
 
     def hash_create(self, str_):
         self._assert_bytes(str_)
@@ -194,6 +194,7 @@ class _RhodeCodeCryptoBCrypt(_RhodeCodeCryptoBase):
 
 
 class _RhodeCodeCryptoSha256(_RhodeCodeCryptoBase):
+    ENC_PREF = '_'
 
     def hash_create(self, str_):
         self._assert_bytes(str_)
@@ -211,6 +212,7 @@ class _RhodeCodeCryptoSha256(_RhodeCodeCryptoBase):
 
 
 class _RhodeCodeCryptoMd5(_RhodeCodeCryptoBase):
+    ENC_PREF = '_'
 
     def hash_create(self, str_):
         self._assert_bytes(str_)
@@ -567,8 +569,14 @@ class PermissionCalculator(object):
         # on given user group
         for perm in self.default_user_group_perms:
             u_k = perm.UserUserGroupToPerm.user_group.users_group_name
-            p = perm.Permission.permission_name
             o = PermOrigin.USERGROUP_DEFAULT
+            if perm.UserGroup.user_id == self.user_id:
+                # set admin if owner
+                p = 'usergroup.admin'
+                o = PermOrigin.USERGROUP_OWNER
+            else:
+                p = perm.Permission.permission_name
+
             # if we decide this user isn't inheriting permissions from default
             # user we set him to .none so only explicit permissions work
             if not user_inherit_object_permissions:
@@ -647,7 +655,7 @@ class PermissionCalculator(object):
             multiple_counter[g_k] += 1
             p = perm.Permission.permission_name
             if perm.RepoGroup.user_id == self.user_id:
-                # set admin if owner
+                # set admin if owner, even for member of other user group
                 p = 'group.admin'
                 o = PermOrigin.REPOGROUP_OWNER
             else:
@@ -683,7 +691,7 @@ class PermissionCalculator(object):
         # user group for user group permissions
         user_group_from_user_group = Permission\
             .get_default_user_group_perms_from_user_group(
-                self.user_id, self.scope_repo_group_id)
+                self.user_id, self.scope_user_group_id)
 
         multiple_counter = collections.defaultdict(int)
         for perm in user_group_from_user_group:
@@ -694,9 +702,15 @@ class PermissionCalculator(object):
             o = PermOrigin.USERGROUP_USERGROUP % u_k
             multiple_counter[g_k] += 1
             p = perm.Permission.permission_name
-            if multiple_counter[g_k] > 1:
-                cur_perm = self.permissions_user_groups[g_k]
-                p = self._choose_permission(p, cur_perm)
+
+            if perm.UserGroup.user_id == self.user_id:
+                # set admin if owner, even for member of other user group
+                p = 'usergroup.admin'
+                o = PermOrigin.USERGROUP_OWNER
+            else:
+                if multiple_counter[g_k] > 1:
+                    cur_perm = self.permissions_user_groups[g_k]
+                    p = self._choose_permission(p, cur_perm)
             self.permissions_user_groups[g_k] = p, o
 
         # user explicit permission for user groups
@@ -705,12 +719,18 @@ class PermissionCalculator(object):
         for perm in user_user_groups_perms:
             ug_k = perm.UserUserGroupToPerm.user_group.users_group_name
             u_k = perm.UserUserGroupToPerm.user.username
-            p = perm.Permission.permission_name
             o = PermOrigin.USERGROUP_USER % u_k
-            if not self.explicit:
-                cur_perm = self.permissions_user_groups.get(
-                    ug_k, 'usergroup.none')
-                p = self._choose_permission(p, cur_perm)
+
+            if perm.UserGroup.user_id == self.user_id:
+                # set admin if owner
+                p = 'usergroup.admin'
+                o = PermOrigin.USERGROUP_OWNER
+            else:
+                p = perm.Permission.permission_name
+                if not self.explicit:
+                    cur_perm = self.permissions_user_groups.get(
+                        ug_k, 'usergroup.none')
+                    p = self._choose_permission(p, cur_perm)
             self.permissions_user_groups[ug_k] = p, o
 
     def _choose_permission(self, new_perm, cur_perm):
@@ -831,10 +851,6 @@ class AuthUser(object):
             self._permissions_scoped_cache[cache_key] = res
         return self._permissions_scoped_cache[cache_key]
 
-    @property
-    def auth_tokens(self):
-        return self.get_auth_tokens()
-
     def get_instance(self):
         return User.get(self.user_id)
 
@@ -925,16 +941,6 @@ class AuthUser(object):
         log.debug('PERMISSION tree computed %s' % (result_repr,))
         return result
 
-    def get_auth_tokens(self):
-        auth_tokens = [self.api_key]
-        for api_key in UserApiKeys.query()\
-                .filter(UserApiKeys.user_id == self.user_id)\
-                .filter(or_(UserApiKeys.expires == -1,
-                            UserApiKeys.expires >= time.time())).all():
-            auth_tokens.append(api_key.api_key)
-
-        return auth_tokens
-
     @property
     def is_default(self):
         return self.username == User.DEFAULT_USER
@@ -952,25 +958,27 @@ class AuthUser(object):
         """
         Returns list of repositories you're an admin of
         """
-        return [x[0] for x in self.permissions['repositories'].iteritems()
-                if x[1] == 'repository.admin']
+        return [
+            x[0] for x in self.permissions['repositories'].iteritems()
+            if x[1] == 'repository.admin']
 
     @property
     def repository_groups_admin(self):
         """
         Returns list of repository groups you're an admin of
         """
-        return [x[0]
-                for x in self.permissions['repositories_groups'].iteritems()
-                if x[1] == 'group.admin']
+        return [
+            x[0] for x in self.permissions['repositories_groups'].iteritems()
+            if x[1] == 'group.admin']
 
     @property
     def user_groups_admin(self):
         """
         Returns list of user groups you're an admin of
         """
-        return [x[0] for x in self.permissions['user_groups'].iteritems()
-                if x[1] == 'usergroup.admin']
+        return [
+            x[0] for x in self.permissions['user_groups'].iteritems()
+            if x[1] == 'usergroup.admin']
 
     @property
     def ip_allowed(self):
@@ -1171,7 +1179,7 @@ class LoginRequired(object):
     :param api_access: if enabled this checks only for valid auth token
         and grants access based on valid token
     """
-    def __init__(self, auth_token_access=False):
+    def __init__(self, auth_token_access=None):
         self.auth_token_access = auth_token_access
 
     def __call__(self, func):
@@ -1191,7 +1199,7 @@ class LoginRequired(object):
             ip_access_valid = False
 
         # check if we used an APIKEY and it's a valid one
-        # defined whitelist of controllers which API access will be enabled
+        # defined white-list of controllers which API access will be enabled
         _auth_token = request.GET.get(
             'auth_token', '') or request.GET.get('api_key', '')
         auth_token_access_valid = allowed_auth_token_access(
@@ -1200,8 +1208,20 @@ class LoginRequired(object):
         # explicit controller is enabled or API is in our whitelist
         if self.auth_token_access or auth_token_access_valid:
             log.debug('Checking AUTH TOKEN access for %s' % (cls,))
+            db_user = user.get_instance()
 
-            if _auth_token and _auth_token in user.auth_tokens:
+            if db_user:
+                if self.auth_token_access:
+                    roles = self.auth_token_access
+                else:
+                    roles = [UserApiKeys.ROLE_HTTP]
+                token_match = db_user.authenticate_by_token(
+                    _auth_token, roles=roles)
+            else:
+                log.debug('Unable to fetch db instance for auth user: %s', user)
+                token_match = False
+
+            if _auth_token and token_match:
                 auth_token_access_valid = True
                 log.debug('AUTH TOKEN ****%s is VALID' % (_auth_token[-4:],))
             else:
@@ -1234,7 +1254,6 @@ class LoginRequired(object):
                    auth_token_access_valid))
             # we preserve the get PARAM
             came_from = request.path_qs
-
             log.debug('redirecting to login page with %s' % (came_from,))
             return redirect(
                 h.route_path('login', _query={'came_from': came_from}))
@@ -1249,6 +1268,7 @@ class NotAnonymous(object):
         return get_cython_compat_decorator(self.__wrapper, func)
 
     def __wrapper(self, func, *fargs, **fkwargs):
+        import rhodecode.lib.helpers as h
         cls = fargs[0]
         self.user = cls._rhodecode_user
 
@@ -1258,8 +1278,6 @@ class NotAnonymous(object):
 
         if anonymous:
             came_from = request.path_qs
-
-            import rhodecode.lib.helpers as h
             h.flash(_('You need to be a registered user to '
                       'perform this action'),
                     category='warning')
@@ -1296,6 +1314,7 @@ class HasAcceptedRepoType(object):
         return get_cython_compat_decorator(self.__wrapper, func)
 
     def __wrapper(self, func, *fargs, **fkwargs):
+        import rhodecode.lib.helpers as h
         cls = fargs[0]
         rhodecode_repo = cls.rhodecode_repo
 
@@ -1306,7 +1325,6 @@ class HasAcceptedRepoType(object):
         if rhodecode_repo.alias in self.repo_type_list:
             return func(*fargs, **fkwargs)
         else:
-            import rhodecode.lib.helpers as h
             h.flash(h.literal(
                 _('Action not supported for %s.' % rhodecode_repo.alias)),
                 category='warning')
@@ -1326,7 +1344,22 @@ class PermsDecorator(object):
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
 
+    def _get_request(self):
+        from pyramid.threadlocal import get_current_request
+        pyramid_request = get_current_request()
+        if not pyramid_request:
+            # return global request of pylons in case pyramid isn't available
+            return request
+        return pyramid_request
+
+    def _get_came_from(self):
+        _request = self._get_request()
+
+        # both pylons/pyramid has this attribute
+        return _request.path_qs
+
     def __wrapper(self, func, *fargs, **fkwargs):
+        import rhodecode.lib.helpers as h
         cls = fargs[0]
         _user = cls._rhodecode_user
 
@@ -1342,17 +1375,15 @@ class PermsDecorator(object):
             anonymous = _user.username == User.DEFAULT_USER
 
             if anonymous:
-                came_from = request.path_qs
-
-                import rhodecode.lib.helpers as h
+                came_from = self._get_came_from()
                 h.flash(_('You need to be signed in to view this page'),
-                        category='warning')
-                return redirect(
+                               category='warning')
+                raise HTTPFound(
                     h.route_path('login', _query={'came_from': came_from}))
 
             else:
                 # redirect with forbidden ret code
-                return abort(403)
+                raise HTTPForbidden()
 
     def check_permissions(self, user):
         """Dummy function for overriding"""
@@ -1391,10 +1422,13 @@ class HasRepoPermissionAllDecorator(PermsDecorator):
     Checks for access permission for all given predicates for specific
     repository. All of them have to be meet in order to fulfill the request
     """
+    def _get_repo_name(self):
+        _request = self._get_request()
+        return get_repo_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        repo_name = get_repo_slug(request)
+        repo_name = self._get_repo_name()
         try:
             user_perms = set([perms['repositories'][repo_name]])
         except KeyError:
@@ -1409,10 +1443,13 @@ class HasRepoPermissionAnyDecorator(PermsDecorator):
     Checks for access permission for any of given predicates for specific
     repository. In order to fulfill the request any of predicates must be meet
     """
+    def _get_repo_name(self):
+        _request = self._get_request()
+        return get_repo_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        repo_name = get_repo_slug(request)
+        repo_name = self._get_repo_name()
         try:
             user_perms = set([perms['repositories'][repo_name]])
         except KeyError:
@@ -1429,10 +1466,13 @@ class HasRepoGroupPermissionAllDecorator(PermsDecorator):
     repository group. All of them have to be meet in order to
     fulfill the request
     """
+    def _get_repo_group_name(self):
+        _request = self._get_request()
+        return get_repo_group_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        group_name = get_repo_group_slug(request)
+        group_name = self._get_repo_group_name()
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
@@ -1449,10 +1489,13 @@ class HasRepoGroupPermissionAnyDecorator(PermsDecorator):
     repository group. In order to fulfill the request any
     of predicates must be met
     """
+    def _get_repo_group_name(self):
+        _request = self._get_request()
+        return get_repo_group_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        group_name = get_repo_group_slug(request)
+        group_name = self._get_repo_group_name()
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
@@ -1468,10 +1511,13 @@ class HasUserGroupPermissionAllDecorator(PermsDecorator):
     Checks for access permission for all given predicates for specific
     user group. All of them have to be meet in order to fulfill the request
     """
+    def _get_user_group_name(self):
+        _request = self._get_request()
+        return get_user_group_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        group_name = get_user_group_slug(request)
+        group_name = self._get_user_group_name()
         try:
             user_perms = set([perms['user_groups'][group_name]])
         except KeyError:
@@ -1487,10 +1533,13 @@ class HasUserGroupPermissionAnyDecorator(PermsDecorator):
     Checks for access permission for any of given predicates for specific
     user group. In order to fulfill the request any of predicates must be meet
     """
+    def _get_user_group_name(self):
+        _request = self._get_request()
+        return get_user_group_slug(_request)
 
     def check_permissions(self, user):
         perms = user.permissions
-        group_name = get_user_group_slug(request)
+        group_name = self._get_user_group_name()
         try:
             user_perms = set([perms['user_groups'][group_name]])
         except KeyError:
@@ -1553,6 +1602,14 @@ class PermsFunction(object):
                       check_scope, user, check_location)
             return False
 
+    def _get_request(self):
+        from pyramid.threadlocal import get_current_request
+        pyramid_request = get_current_request()
+        if not pyramid_request:
+            # return global request of pylons incase pyramid one isn't available
+            return request
+        return pyramid_request
+
     def _get_check_scope(self, cls_name):
         return {
             'HasPermissionAll':          'GLOBAL',
@@ -1591,10 +1648,14 @@ class HasRepoPermissionAll(PermsFunction):
         self.repo_name = repo_name
         return super(HasRepoPermissionAll, self).__call__(check_location, user)
 
-    def check_permissions(self, user):
+    def _get_repo_name(self):
         if not self.repo_name:
-            self.repo_name = get_repo_slug(request)
+            _request = self._get_request()
+            self.repo_name = get_repo_slug(_request)
+        return self.repo_name
 
+    def check_permissions(self, user):
+        self.repo_name = self._get_repo_name()
         perms = user.permissions
         try:
             user_perms = set([perms['repositories'][self.repo_name]])
@@ -1610,10 +1671,13 @@ class HasRepoPermissionAny(PermsFunction):
         self.repo_name = repo_name
         return super(HasRepoPermissionAny, self).__call__(check_location, user)
 
-    def check_permissions(self, user):
+    def _get_repo_name(self):
         if not self.repo_name:
             self.repo_name = get_repo_slug(request)
+        return self.repo_name
 
+    def check_permissions(self, user):
+        self.repo_name = self._get_repo_name()
         perms = user.permissions
         try:
             user_perms = set([perms['repositories'][self.repo_name]])
@@ -1905,3 +1969,5 @@ def get_cython_compat_decorator(wrapper, func):
         return wrapper(func, *args, **kwds)
     local_wrapper.__wrapped__ = func
     return local_wrapper
+
+
