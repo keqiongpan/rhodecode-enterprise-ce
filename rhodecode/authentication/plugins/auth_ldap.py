@@ -334,6 +334,7 @@ class AuthLdap(object):
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
     # used to define dynamic binding in the
     DYNAMIC_BIND_VAR = '$login'
+    _settings_unsafe_keys = ['dn_pass']
 
     def includeme(self, config):
         config.add_authn_plugin(self)

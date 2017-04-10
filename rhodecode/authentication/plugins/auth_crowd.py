@@ -189,6 +189,7 @@ class CrowdServer(object):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
+    _settings_unsafe_keys = ['app_password']
 
     def includeme(self, config):
         config.add_authn_plugin(self)
