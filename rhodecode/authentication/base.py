@@ -23,6 +23,7 @@ Authentication modules
 """
 
 import colander
+import copy
 import logging
 import time
 import traceback
@@ -108,6 +109,10 @@ class RhodeCodeAuthPluginBase(object):
         colander.Boolean: 'bool',
         colander.List: 'list',
     }
+
+    # list of keys in settings that are unsafe to be logged, should be passwords
+    # or other crucial credentials
+    _settings_unsafe_keys = []
 
     def __init__(self, plugin_id):
         self._plugin_id = plugin_id
@@ -199,13 +204,23 @@ class RhodeCodeAuthPluginBase(object):
             settings[node.name] = self.get_setting_by_name(node.name)
         return settings
 
+    def log_safe_settings(self, settings):
+        """
+        returns a log safe representation of settings, without any secrets
+        """
+        settings_copy = copy.deepcopy(settings)
+        for k in self._settings_unsafe_keys:
+            if k in settings_copy:
+                del settings_copy[k]
+        return settings_copy
+
     @property
     def validators(self):
         """
         Exposes RhodeCode validators modules
         """
         # this is a hack to overcome issues with pylons threadlocals and
-        # translator object _() not beein registered properly.
+        # translator object _() not being registered properly.
         class LazyCaller(object):
             def __init__(self, name):
                 self.validator_name = name
@@ -559,7 +574,8 @@ def authenticate(username, password, environ=None, auth_type=None,
 
         # load plugin settings from RhodeCode database
         plugin_settings = plugin.get_settings()
-        log.debug('Plugin settings:%s', plugin_settings)
+        plugin_sanitized_settings = plugin.log_safe_settings(plugin_settings)
+        log.debug('Plugin settings:%s', plugin_sanitized_settings)
 
         log.debug('Trying authentication using ** %s **', plugin.get_id())
         # use plugin's method of user extraction.
