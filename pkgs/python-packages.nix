@@ -887,13 +887,13 @@
     };
   };
   ipython-genutils = super.buildPythonPackage {
-    name = "ipython-genutils-0.1.0";
+    name = "ipython-genutils-0.2.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/71/b7/a64c71578521606edbbce15151358598f3dfb72a3431763edc2baf19e71f/ipython_genutils-0.1.0.tar.gz";
-      md5 = "9a8afbe0978adbcbfcb3b35b2d015a56";
+      url = "https://pypi.python.org/packages/e8/69/fbeffffc05236398ebfcfb512b6d2511c622871dca1746361006da310399/ipython_genutils-0.2.0.tar.gz";
+      md5 = "5a4f9781f78466da0ea1a648f3e1f79f";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1004,13 +1004,13 @@
     };
   };
   mistune = super.buildPythonPackage {
-    name = "mistune-0.7.3";
+    name = "mistune-0.7.4";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/88/1e/be99791262b3a794332fda598a07c2749a433b9378586361ba9d8e824607/mistune-0.7.3.tar.gz";
-      md5 = "4eba50bd121b83716fa4be6a4049004b";
+      url = "https://pypi.python.org/packages/25/a4/12a584c0c59c9fed529f8b3c47ca8217c0cf8bcc5e1089d3256410cfbdbc/mistune-0.7.4.tar.gz";
+      md5 = "92d01cb717e9e74429e9bde9d29ac43b";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1186,13 +1186,13 @@
     };
   };
   prompt-toolkit = super.buildPythonPackage {
-    name = "prompt-toolkit-1.0.13";
+    name = "prompt-toolkit-1.0.14";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six wcwidth];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/23/be/4876b52d5cc159cbd4b0ff6e7aa419a26470849a43a8f647857a4a24467b/prompt_toolkit-1.0.13.tar.gz";
-      md5 = "427b496d2c147bd3819bc3a7f6e0d493";
+      url = "https://pypi.python.org/packages/55/56/8c39509b614bda53e638b7500f12577d663ac1b868aef53426fc6a26c3f5/prompt_toolkit-1.0.14.tar.gz";
+      md5 = "f24061ae133ed32c6b764e92bd48c496";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
