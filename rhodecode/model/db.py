@@ -1107,7 +1107,7 @@ class UserLog(Base, BaseModel):
     action = Column("action", Text().with_variant(Text(1200000), 'mysql'), nullable=True, unique=None, default=None)
     action_date = Column("action_date", DateTime(timezone=False), nullable=True, unique=None, default=None)
 
-    version = Column("version", String(255), nullable=True, default='v2')
+    version = Column("version", String(255), nullable=True, default='v1')
     user_data = Column('user_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
     action_data = Column('action_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
 
