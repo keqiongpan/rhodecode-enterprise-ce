@@ -785,11 +785,8 @@ class LargeFileNode(FileNode):
 
     @LazyProperty
     def raw_bytes(self):
-        if self.commit:
-            with open(self.path, 'rb') as f:
-                content = f.read()
-        else:
-            content = self._content
+        with open(self.path, 'rb') as f:
+            content = f.read()
         return content
 
     @LazyProperty
