@@ -514,7 +514,7 @@ class User(Base, BaseModel):
     lastname = Column("lastname", String(255), nullable=True, unique=None, default=None)
     _email = Column("email", String(255), nullable=True, unique=None, default=None)
     last_login = Column("last_login", DateTime(timezone=False), nullable=True, unique=None, default=None)
-    last_activity = Column('last_activity', DateTime(timezone=False), nullable=True, unique=None, default=datetime.datetime.now)
+    last_activity = Column('last_activity', DateTime(timezone=False), nullable=True, unique=None, default=None)
 
     extern_type = Column("extern_type", String(255), nullable=True, unique=None, default=None)
     extern_name = Column("extern_name", String(255), nullable=True, unique=None, default=None)
