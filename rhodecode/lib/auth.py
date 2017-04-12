@@ -138,7 +138,7 @@ class _RhodeCodeCryptoBase(object):
 
 
 class _RhodeCodeCryptoBCrypt(_RhodeCodeCryptoBase):
-    ENC_PREF = '$2a$10'
+    ENC_PREF = ('$2a$10', '$2b$10')
 
     def hash_create(self, str_):
         self._assert_bytes(str_)
