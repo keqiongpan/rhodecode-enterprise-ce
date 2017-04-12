@@ -19,9 +19,11 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
+import datetime
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
+from sqlalchemy.sql.functions import coalesce
 
 from rhodecode.lib.helpers import Page
 from rhodecode_tools.lib.ext_json import json
@@ -125,12 +127,21 @@ class AdminUsersView(BaseAppView):
         users_data_total_filtered_count = base_q.count()
 
         sort_col = getattr(User, order_by, None)
-        if sort_col and order_dir == 'asc':
-            base_q = base_q.order_by(sort_col.asc())
-        elif sort_col:
-            base_q = base_q.order_by(sort_col.desc())
+        if sort_col:
+            if order_dir == 'asc':
+                # handle null values properly to order by NULL last
+                if order_by in ['last_activity']:
+                    sort_col = coalesce(sort_col, datetime.date.max)
+                sort_col = sort_col.asc()
+            else:
+                # handle null values properly to order by NULL last
+                if order_by in ['last_activity']:
+                    sort_col = coalesce(sort_col, datetime.date.min)
+                sort_col = sort_col.desc()
 
+        base_q = base_q.order_by(sort_col)
         base_q = base_q.offset(start).limit(limit)
+
         users_list = base_q.all()
 
         users_data = []
