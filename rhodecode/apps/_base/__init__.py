@@ -135,7 +135,8 @@ class DataGridAppView(object):
     Common class to have re-usable grid rendering components
     """
 
-    def _extract_ordering(self, request):
+    def _extract_ordering(self, request, column_map=None):
+        column_map = column_map or {}
         column_index = safe_int(request.GET.get('order[0][column]'))
         order_dir = request.GET.get(
             'order[0][dir]', 'desc')
@@ -143,10 +144,7 @@ class DataGridAppView(object):
             'columns[%s][data][sort]' % column_index, 'name_raw')
 
         # translate datatable to DB columns
-        order_by = {
-            'first_name': 'name',
-            'last_name': 'lastname',
-        }.get(order_by) or order_by
+        order_by = column_map.get(order_by) or order_by
 
         search_q = request.GET.get('search[value]')
         return search_q, order_by, order_dir
