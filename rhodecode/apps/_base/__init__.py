@@ -130,6 +130,34 @@ class RepoAppView(BaseAppView):
         return c
 
 
+class DataGridAppView(object):
+    """
+    Common class to have re-usable grid rendering components
+    """
+
+    def _extract_ordering(self, request):
+        column_index = safe_int(request.GET.get('order[0][column]'))
+        order_dir = request.GET.get(
+            'order[0][dir]', 'desc')
+        order_by = request.GET.get(
+            'columns[%s][data][sort]' % column_index, 'name_raw')
+
+        # translate datatable to DB columns
+        order_by = {
+            'first_name': 'name',
+            'last_name': 'lastname',
+        }.get(order_by) or order_by
+
+        search_q = request.GET.get('search[value]')
+        return search_q, order_by, order_dir
+
+    def _extract_chunk(self, request):
+        start = safe_int(request.GET.get('start'), 0)
+        length = safe_int(request.GET.get('length'), 25)
+        draw = safe_int(request.GET.get('draw'))
+        return draw, start, length
+
+
 class RepoRoutePredicate(object):
     def __init__(self, val, config):
         self.val = val

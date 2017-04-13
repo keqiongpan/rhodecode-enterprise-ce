@@ -28,7 +28,7 @@ from sqlalchemy.sql.functions import coalesce
 from rhodecode.lib.helpers import Page
 from rhodecode_tools.lib.ext_json import json
 
-from rhodecode.apps._base import BaseAppView
+from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h
@@ -43,7 +43,7 @@ from rhodecode.model.meta import Session
 log = logging.getLogger(__name__)
 
 
-class AdminUsersView(BaseAppView):
+class AdminUsersViewData(BaseAppView, DataGridAppView):
     ALLOW_SCOPED_TOKENS = False
     """
     This view has alternative version inside EE, if modified please take a look
@@ -63,28 +63,6 @@ class AdminUsersView(BaseAppView):
             # TODO(marcink): redirect to 'users' admin panel once this
             # is a pyramid view
             raise HTTPFound('/')
-
-    def _extract_ordering(self, request):
-        column_index = safe_int(request.GET.get('order[0][column]'))
-        order_dir = request.GET.get(
-            'order[0][dir]', 'desc')
-        order_by = request.GET.get(
-            'columns[%s][data][sort]' % column_index, 'name_raw')
-
-        # translate datatable to DB columns
-        order_by = {
-            'first_name': 'name',
-            'last_name': 'lastname',
-        }.get(order_by) or order_by
-
-        search_q = request.GET.get('search[value]')
-        return search_q, order_by, order_dir
-
-    def _extract_chunk(self, request):
-        start = safe_int(request.GET.get('start'), 0)
-        length = safe_int(request.GET.get('length'), 25)
-        draw = safe_int(request.GET.get('draw'))
-        return draw, start, length
 
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
