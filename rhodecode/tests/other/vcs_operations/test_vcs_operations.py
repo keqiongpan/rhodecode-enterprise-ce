@@ -62,6 +62,13 @@ class TestVCSOperations(object):
         _check_proper_clone(stdout, stderr, 'git')
         cmd.assert_returncode_success()
 
+    def test_clone_git_repo_by_admin_with_git_suffix(self, rc_web_server, tmpdir):
+        clone_url = rc_web_server.repo_clone_url(GIT_REPO)
+        cmd = Command('/tmp')
+        stdout, stderr = cmd.execute('git clone', clone_url+".git", tmpdir.strpath)
+        _check_proper_clone(stdout, stderr, 'git')
+        cmd.assert_returncode_success()
+
     def test_clone_hg_repo_by_id_by_admin(self, rc_web_server, tmpdir):
         repo_id = Repository.get_by_repo_name(HG_REPO).repo_id
         clone_url = rc_web_server.repo_clone_url('_%s' % repo_id)
