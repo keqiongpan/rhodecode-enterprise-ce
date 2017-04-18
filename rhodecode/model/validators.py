@@ -574,6 +574,26 @@ def SlugifyName():
     return _validator
 
 
+def CannotHaveGitSuffix():
+    class _validator(formencode.validators.FancyValidator):
+        messages = {
+            'has_git_suffix':
+                _(u'Repository name cannot end with .git'),
+        }
+
+        def _to_python(self, value, state):
+            return value
+
+        def validate_python(self, value, state):
+            if value and value.endswith('.git'):
+                msg = M(
+                    self, 'has_git_suffix', state)
+                raise formencode.Invalid(
+                    msg, value, state, error_dict={'repo_name': msg})
+
+    return _validator
+
+
 def ValidCloneUri():
     class InvalidCloneUrl(Exception):
         allowed_prefixes = ()

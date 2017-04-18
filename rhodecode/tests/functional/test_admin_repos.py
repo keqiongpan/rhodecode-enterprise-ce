@@ -24,7 +24,7 @@ import mock
 import pytest
 
 from rhodecode.lib import auth
-from rhodecode.lib.utils2 import safe_str, str2bool
+from rhodecode.lib.utils2 import safe_str, str2bool, safe_unicode
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model.db import Repository, RepoGroup, UserRepoToPerm, User,\
     Permission
@@ -44,7 +44,7 @@ fixture = Fixture()
 
 
 @pytest.mark.usefixtures("app")
-class TestAdminRepos:
+class TestAdminRepos(object):
 
     def test_index(self):
         self.app.get(url('repos'))
@@ -63,13 +63,14 @@ class TestAdminRepos:
         assert_response.element_contains('#repo_type', 'svn')
         assert_response.element_contains('#repo_type', 'hg')
 
-    @pytest.mark.parametrize("suffix", [u'', u''], ids=['', 'non-ascii'])
+    @pytest.mark.parametrize("suffix",
+                             [u'', u'xxa'], ids=['', 'non-ascii'])
     def test_create(self, autologin_user, backend, suffix, csrf_token):
         repo_name_unicode = backend.new_repo_name(suffix=suffix)
         repo_name = repo_name_unicode.encode('utf8')
         description_unicode = u'description for newly created repo' + suffix
         description = description_unicode.encode('utf8')
-        self.app.post(
+        response = self.app.post(
             url('repos'),
             fixture._get_repo_create_params(
                 repo_private=False,
@@ -77,8 +78,7 @@ class TestAdminRepos:
                 repo_type=backend.alias,
                 repo_description=description,
                 csrf_token=csrf_token),
-            status=302
-            )
+            status=302)
 
         self.assert_repository_is_created_correctly(
             repo_name, description, backend)
@@ -368,6 +368,20 @@ class TestAdminRepos:
                 csrf_token=csrf_token))
         response.mustcontain('invalid clone url')
 
+    def test_create_with_git_suffix(
+            self, autologin_user, backend, csrf_token):
+        repo_name = backend.new_repo_name() + ".git"
+        description = 'description for newly created repo'
+        response = self.app.post(
+            url('repos'),
+            fixture._get_repo_create_params(
+                repo_private=False,
+                repo_name=repo_name,
+                repo_type=backend.alias,
+                repo_description=description,
+                csrf_token=csrf_token))
+        response.mustcontain('Repository name cannot end with .git')
+
     @pytest.mark.parametrize("suffix", [u'', u'ąęł'], ids=['', 'non-ascii'])
     def test_delete(self, autologin_user, backend, suffix, csrf_token):
         repo = backend.create_repo(name_suffix=suffix)
@@ -596,15 +610,15 @@ class TestAdminRepos:
 
     def assert_repository_is_created_correctly(
             self, repo_name, description, backend):
-        repo_name_utf8 = repo_name.encode('utf-8')
+        repo_name_utf8 = safe_str(repo_name)
 
         # run the check page that triggers the flash message
         response = self.app.get(url('repo_check_home', repo_name=repo_name))
         assert response.json == {u'result': True}
-        assert_session_flash(
-            response,
-            u'Created repository <a href="/%s">%s</a>'
-            % (urllib.quote(repo_name_utf8), repo_name))
+
+        flash_msg = u'Created repository <a href="/{}">{}</a>'.format(
+            urllib.quote(repo_name_utf8), repo_name)
+        assert_session_flash(response, flash_msg)
 
         # test if the repo was created in the database
         new_repo = RepoModel().get_by_repo_name(repo_name)

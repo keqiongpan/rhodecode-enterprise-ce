@@ -191,7 +191,12 @@ def deferred_unique_name_validator(node, kw):
 
 @colander.deferred
 def deferred_repo_name_validator(node, kw):
-    return validators.valid_name_validator
+    def no_git_suffix_validator(node, value):
+        if value.endswith('.git'):
+            msg = _('Repository name cannot end with .git')
+            raise colander.Invalid(node, msg)
+    return colander.All(
+        no_git_suffix_validator, validators.valid_name_validator)
 
 
 class GroupType(colander.Mapping):

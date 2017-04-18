@@ -242,7 +242,7 @@ def RepoForm(edit=False, old_data=None, repo_groups=None, landing_revs=None,
         allow_extra_fields = True
         filter_extra_fields = False
         repo_name = All(v.UnicodeString(strip=True, min=1, not_empty=True),
-                        v.SlugifyName())
+                        v.SlugifyName(), v.CannotHaveGitSuffix())
         repo_group = All(v.CanWriteGroup(old_data),
                          v.OneOf(repo_groups, hideList=True))
         repo_type = v.OneOf(supported_backends, required=False,
