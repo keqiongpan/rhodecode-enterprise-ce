@@ -1916,9 +1916,9 @@ def get_last_path_part(file_node):
 
 def route_url(*args, **kwds):
     """
-    Wrapper around pyramids `route_url` function. It is used to generate
-    URLs from within pylons views or templates. This will be removed when
-    pyramid migration if finished.
+    Wrapper around pyramids `route_url` (fully qualified url) function. 
+    It is used to generate URLs from within pylons views or templates. 
+    This will be removed when pyramid migration if finished.
     """
     req = get_current_request()
     return req.route_url(*args, **kwds)
