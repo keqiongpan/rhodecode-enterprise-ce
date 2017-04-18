@@ -229,6 +229,33 @@ def write_js_routes_if_enabled(event):
             f.write(jsroutes_file_content)
 
 
+def create_largeobjects_dirs_if_needed(event):
+    """
+    This is subscribed to the `pyramid.events.ApplicationCreated` event. It
+    does a repository scan if enabled in the settings.
+    """
+    from rhodecode.lib.utils import get_rhodecode_base_path
+    from rhodecode.lib.vcs.backends.hg import largefiles_store
+    from rhodecode.lib.vcs.backends.git import lfs_store
+
+    repo_store_path = get_rhodecode_base_path()
+
+    paths = [
+        largefiles_store(repo_store_path),
+        lfs_store(repo_store_path)]
+
+    for path in paths:
+        if os.path.isdir(path):
+            continue
+        if os.path.isfile(path):
+            continue
+        # not a file nor dir, we try to create it
+        try:
+            os.makedirs(path)
+        except Exception:
+            log.warning('Failed to create largefiles dir:%s', path)
+
+
 class Subscriber(object):
     """
     Base class for subscribers to the pyramid event system.

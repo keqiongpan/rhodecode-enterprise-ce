@@ -54,7 +54,7 @@ from rhodecode.lib.plugins.utils import register_rhodecode_plugin
 from rhodecode.lib.utils2 import aslist as rhodecode_aslist
 from rhodecode.subscribers import (
     scan_repositories_if_enabled, write_metadata_if_needed,
-    write_js_routes_if_enabled)
+    write_js_routes_if_enabled, create_largeobjects_dirs_if_needed)
 
 
 log = logging.getLogger(__name__)
@@ -303,6 +303,7 @@ def includeme(config):
     settings['default_locale_name'] = settings.get('lang', 'en')
 
     # Add subscribers.
+    config.add_subscriber(create_largeobjects_dirs_if_needed, ApplicationCreated)
     config.add_subscriber(scan_repositories_if_enabled, ApplicationCreated)
     config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
     config.add_subscriber(write_js_routes_if_enabled, ApplicationCreated)
