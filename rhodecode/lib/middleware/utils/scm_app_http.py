@@ -126,6 +126,11 @@ class VcsHttpProxy(object):
         return _maybe_stream_response(response)
 
 
+def _is_request_chunked(environ):
+    stream = environ.get('HTTP_TRANSFER_ENCODING', '') == 'chunked'
+    return stream
+
+
 def _maybe_stream_request(environ):
     path = environ['PATH_INFO']
     stream = _is_request_chunked(environ)
@@ -135,15 +140,6 @@ def _maybe_stream_request(environ):
         return environ['wsgi.input']
     else:
         return environ['wsgi.input'].read()
-
-
-def _is_request_chunked(environ):
-    stream = environ.get('HTTP_TRANSFER_ENCODING', '') == 'chunked'
-    if not stream:
-        # git lfs should stream for PUT requests which are upload
-        stream = ('git-lfs' in environ.get('HTTP_USER_AGENT', '')
-                  and environ['REQUEST_METHOD'] == 'PUT')
-    return stream
 
 
 def _maybe_stream_response(response):
