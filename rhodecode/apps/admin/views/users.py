@@ -43,7 +43,7 @@ from rhodecode.model.meta import Session
 log = logging.getLogger(__name__)
 
 
-class AdminUsersViewData(BaseAppView, DataGridAppView):
+class AdminUsersView(BaseAppView, DataGridAppView):
     ALLOW_SCOPED_TOKENS = False
     """
     This view has alternative version inside EE, if modified please take a look
