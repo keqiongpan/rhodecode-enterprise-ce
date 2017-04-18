@@ -344,6 +344,7 @@ def _prepushhook(*args, **kwargs):
       :param action: push
       :param repository: repository name
       :param repo_store_path: full path to where repositories are stored
+      :param commit_ids: list of pushed commit ids
     """
 
     expected_parameters = (
