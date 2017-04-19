@@ -115,7 +115,7 @@
                     <input type="hidden" name="__end__" value="review_members:sequence">
                     <div id="add_reviewer_input" class='ac'>
                         <div class="reviewer_ac">
-                            ${h.text('user', class_='ac-input', placeholder=_('Add reviewer'))}
+                            ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
                             <div id="reviewers_container"></div>
                         </div>
                     </div>
@@ -584,7 +584,7 @@ $(function(){
       loadDefaultReviewers();
   % endif
 
-  ReviewerAutoComplete('user');
+  ReviewerAutoComplete('#user');
 });
 </script>
 

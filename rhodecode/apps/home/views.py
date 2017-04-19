@@ -53,6 +53,7 @@ class HomeView(BaseAppView):
         query = self.request.GET.get('query')
         active = str2bool(self.request.GET.get('active') or True)
         include_groups = str2bool(self.request.GET.get('user_groups'))
+        expand_groups = str2bool(self.request.GET.get('user_groups_expand'))
 
         log.debug('generating user list, query:%s, active:%s, with_groups:%s',
                   query, active, include_groups)
@@ -63,7 +64,8 @@ class HomeView(BaseAppView):
         if include_groups:
             # extend with user groups
             _user_groups = UserGroupModel().get_user_groups(
-                name_contains=query, only_active=active)
+                name_contains=query, only_active=active,
+                expand_groups=expand_groups)
             _users = _users + _user_groups
 
         return {'suggestions': _users}
@@ -76,11 +78,14 @@ class HomeView(BaseAppView):
     def user_group_autocomplete_data(self):
         query = self.request.GET.get('query')
         active = str2bool(self.request.GET.get('active') or True)
+        expand_groups = str2bool(self.request.GET.get('user_groups_expand'))
+
         log.debug('generating user group list, query:%s, active:%s',
                   query, active)
 
         _user_groups = UserGroupModel().get_user_groups(
-            name_contains=query, only_active=active)
+            name_contains=query, only_active=active,
+            expand_groups=expand_groups)
         _user_groups = _user_groups
 
         return {'suggestions': _user_groups}

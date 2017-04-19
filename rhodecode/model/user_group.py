@@ -30,12 +30,14 @@ import traceback
 from rhodecode.lib.utils2 import safe_str, safe_unicode
 from rhodecode.model import BaseModel
 from rhodecode.model.scm import UserGroupList
-from rhodecode.model.db import true, func, UserGroupMember, UserGroup,\
-    UserGroupRepoToPerm, Permission, UserGroupToPerm, User, UserUserGroupToPerm,\
-    UserGroupUserGroupToPerm, UserGroupRepoGroupToPerm
-from rhodecode.lib.exceptions import UserGroupAssignedException,\
-    RepoGroupAssignmentError
-from rhodecode.lib.utils2 import get_current_rhodecode_user, action_logger_generic
+from rhodecode.model.db import (
+    true, func, User, UserGroupMember, UserGroup,
+    UserGroupRepoToPerm, Permission, UserGroupToPerm, UserUserGroupToPerm,
+    UserGroupUserGroupToPerm, UserGroupRepoGroupToPerm)
+from rhodecode.lib.exceptions import (
+    UserGroupAssignedException, RepoGroupAssignmentError)
+from rhodecode.lib.utils2 import (
+    get_current_rhodecode_user, action_logger_generic)
 
 log = logging.getLogger(__name__)
 
@@ -113,7 +115,7 @@ class UserGroupModel(BaseModel):
             if member_type == 'user':
                 self.revoke_user_permission(user_group=user_group, user=member_id)
             else:
-                #check if we have permissions to alter this usergroup
+                # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
                 if not check_perms or HasUserGroupPermissionAny(*req_perms)(member_name, user=cur_user):
                     self.revoke_user_group_permission(
@@ -540,10 +542,28 @@ class UserGroupModel(BaseModel):
             log.debug('Adding user %s to user group %s', user.username, gr.users_group_name)
             UserGroupModel().add_user_to_group(gr.users_group_name, user.username)
 
+    def _serialize_user_group(self, user_group):
+        import rhodecode.lib.helpers as h
+        return {
+                'id': user_group.users_group_id,
+                # TODO: marcink figure out a way to generate the url for the
+                # icon
+                'icon_link': '',
+                'value_display': 'Group: %s (%d members)' % (
+                    user_group.users_group_name, len(user_group.members),),
+                'value': user_group.users_group_name,
+                'description': user_group.user_group_description,
+                'owner': user_group.user.username,
+
+                'owner_icon': h.gravatar_url(user_group.user.email, 30),
+                'value_display_owner': h.person(user_group.user.email),
+
+                'value_type': 'user_group',
+                'active': user_group.users_group_active,
+            }
+
     def get_user_groups(self, name_contains=None, limit=20, only_active=True,
                         expand_groups=False):
-        import rhodecode.lib.helpers as h
-
         query = self.sa.query(UserGroup)
         if only_active:
             query = query.filter(UserGroup.users_group_active == true())
@@ -560,26 +580,19 @@ class UserGroupModel(BaseModel):
         perm_set = ['usergroup.read', 'usergroup.write', 'usergroup.admin']
         user_groups = UserGroupList(user_groups, perm_set=perm_set)
 
-        _groups = [
-            {
-                'id': group.users_group_id,
-                # TODO: marcink figure out a way to generate the url for the
-                # icon
-                'icon_link': '',
-                'value_display': 'Group: %s (%d members)' % (
-                    group.users_group_name, len(group.members),),
-                'value': group.users_group_name,
-                'description': group.user_group_description,
-                'owner': group.user.username,
+        # store same serialize method to extract data from User
+        from rhodecode.model.user import UserModel
+        serialize_user = UserModel()._serialize_user
 
-                'owner_icon': h.gravatar_url(group.user.email, 30),
-                'value_display_owner': h.person(group.user.email),
-
-                'value_type': 'user_group',
-                'active': group.users_group_active,
-            }
-            for group in user_groups
-        ]
+        _groups = []
+        for group in user_groups:
+            entry = self._serialize_user_group(group)
+            if expand_groups:
+                expanded_members = []
+                for member in group.members:
+                    expanded_members.append(serialize_user(member.user))
+                entry['members'] = expanded_members
+            _groups.append(entry)
         return _groups
 
     @staticmethod

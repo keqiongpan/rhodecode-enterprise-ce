@@ -363,7 +363,7 @@
           <div id="add_reviewer_input" class='ac' style="display: none;">
             %if c.allowed_to_update:
             <div class="reviewer_ac">
-               ${h.text('user', class_='ac-input', placeholder=_('Add reviewer'))}
+               ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
                <div id="reviewers_container"></div>
             </div>
             <div>
@@ -617,7 +617,7 @@
 
 
         $(function(){
-            ReviewerAutoComplete('user');
+            ReviewerAutoComplete('#user');
             // custom code mirror
             var codeMirrorInstance = initPullRequestsCodeMirror('#pr-description-input');
 

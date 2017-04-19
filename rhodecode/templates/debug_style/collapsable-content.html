@@ -886,7 +886,7 @@ $(document).ready(function() {
         AJAX_COMMENT_DELETE_URL = "/rhodecode-momentum/pull-request-comment/__COMMENT_ID__/delete";
 
         $(function(){
-            ReviewerAutoComplete('user');
+            ReviewerAutoComplete('#user');
 
             $('#open_edit_reviewers').on('click', function(e){
                 $('#open_edit_reviewers').hide();

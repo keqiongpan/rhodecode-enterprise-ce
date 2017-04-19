@@ -198,8 +198,8 @@ var initPullRequestsCodeMirror = function (textAreaId) {
 /**
  * Reviewer autocomplete
  */
-var ReviewerAutoComplete = function(input_id) {
-  $('#'+input_id).autocomplete({
+var ReviewerAutoComplete = function(inputId) {
+  $(inputId).autocomplete({
     serviceUrl: pyroutes.url('user_autocomplete_data'),
     minChars:2,
     maxHeight:400,
@@ -207,14 +207,26 @@ var ReviewerAutoComplete = function(input_id) {
     showNoSuggestionNotice: true,
     tabDisabled: true,
     autoSelectFirst: true,
+    params: { user_id: templateContext.rhodecode_user.user_id, user_groups:true, user_groups_expand:true },
     formatResult: autocompleteFormatResult,
     lookupFilter: autocompleteFilterResult,
-    onSelect: function(suggestion, data){
-      var msg = _gettext('added manually by "{0}"');
-      var reasons = [msg.format(templateContext.rhodecode_user.username)];
-      addReviewMember(data.id, data.first_name, data.last_name,
-                      data.username, data.icon_link, reasons);
-      $('#'+input_id).val('');
+    onSelect: function(element, data) {
+
+        var reasons = [_gettext('added manually by "{0}"').format(templateContext.rhodecode_user.username)];
+        if (data.value_type == 'user_group') {
+            reasons.push(_gettext('member of "{0}"').format(data.value_display));
+
+            $.each(data.members, function(index, member_data) {
+                addReviewMember(member_data.id, member_data.first_name, member_data.last_name,
+                                member_data.username, member_data.icon_link, reasons);
+            })
+
+        } else {
+          addReviewMember(data.id, data.first_name, data.last_name,
+                          data.username, data.icon_link, reasons);
+        }
+
+      $(inputId).val('');
     }
   });
 };
