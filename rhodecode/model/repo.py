@@ -30,7 +30,6 @@ import time
 import traceback
 from datetime import datetime, timedelta
 
-from sqlalchemy.sql.expression import true, or_
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode import events
@@ -156,42 +155,6 @@ class RepoModel(BaseModel):
     def get_url(self, repo):
         return h.url('summary_home', repo_name=safe_str(repo.repo_name),
             qualified=True)
-
-    def get_users(self, name_contains=None, limit=20, only_active=True):
-
-        # TODO: mikhail: move this method to the UserModel.
-        query = self.sa.query(User)
-        if only_active:
-            query = query.filter(User.active == true())
-
-        if name_contains:
-            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
-            query = query.filter(
-                or_(
-                    User.name.ilike(ilike_expression),
-                    User.lastname.ilike(ilike_expression),
-                    User.username.ilike(ilike_expression)
-                )
-            )
-            query = query.limit(limit)
-        users = query.all()
-
-        _users = [
-            {
-                'id': user.user_id,
-                'first_name': user.name,
-                'last_name': user.lastname,
-                'username': user.username,
-                'email': user.email,
-                'icon_link': h.gravatar_url(user.email, 30),
-                'value_display': h.person(user),
-                'value': user.username,
-                'value_type': 'user',
-                'active': user.active,
-            }
-            for user in users
-        ]
-        return _users
 
     @classmethod
     def update_repoinfo(cls, repositories=None):

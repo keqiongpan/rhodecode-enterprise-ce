@@ -31,6 +31,7 @@ from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.model.db import func, Repository, RepoGroup
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel
+from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
 
 log = logging.getLogger(__name__)
@@ -56,8 +57,7 @@ class HomeView(BaseAppView):
         log.debug('generating user list, query:%s, active:%s, with_groups:%s',
                   query, active, include_groups)
 
-        repo_model = RepoModel()
-        _users = repo_model.get_users(
+        _users = UserModel().get_users(
             name_contains=query, only_active=active)
 
         if include_groups:

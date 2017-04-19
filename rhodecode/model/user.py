@@ -65,6 +65,42 @@ class UserModel(BaseModel):
     def get_user(self, user):
         return self._get_user(user)
 
+    def get_users(self, name_contains=None, limit=20, only_active=True):
+        import rhodecode.lib.helpers as h
+
+        query = self.sa.query(User)
+        if only_active:
+            query = query.filter(User.active == true())
+
+        if name_contains:
+            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
+            query = query.filter(
+                or_(
+                    User.name.ilike(ilike_expression),
+                    User.lastname.ilike(ilike_expression),
+                    User.username.ilike(ilike_expression)
+                )
+            )
+            query = query.limit(limit)
+        users = query.all()
+
+        _users = [
+            {
+                'id': user.user_id,
+                'first_name': user.name,
+                'last_name': user.lastname,
+                'username': user.username,
+                'email': user.email,
+                'icon_link': h.gravatar_url(user.email, 30),
+                'value_display': h.person(user),
+                'value': user.username,
+                'value_type': 'user',
+                'active': user.active,
+            }
+            for user in users
+        ]
+        return _users
+
     def get_by_username(self, username, cache=False, case_insensitive=False):
 
         if case_insensitive:
