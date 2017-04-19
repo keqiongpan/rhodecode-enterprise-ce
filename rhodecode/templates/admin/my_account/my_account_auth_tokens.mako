@@ -139,7 +139,7 @@ $("#scope_repo_id").select2({
             query.callback({results: cachedData.results});
         } else {
             $.ajax({
-                url: "${h.url('repo_list_data')}",
+                url: pyroutes.url('repo_list_data'),
                 data: {'query': query.term},
                 dataType: 'json',
                 type: 'GET',

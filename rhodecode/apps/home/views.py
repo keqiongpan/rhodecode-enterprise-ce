@@ -23,9 +23,13 @@ import logging
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
+from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import LoginRequired, NotAnonymous
-from rhodecode.lib.utils2 import str2bool
+from rhodecode.lib.utils2 import safe_unicode, str2bool
+from rhodecode.model.db import func, Repository
 from rhodecode.model.repo import RepoModel
+from rhodecode.model.scm import ScmModel
+
 
 log = logging.getLogger(__name__)
 
@@ -79,3 +83,56 @@ class HomeView(BaseAppView):
         _user_groups = _user_groups
 
         return {'suggestions': _user_groups}
+
+    def _get_repo_list(self, name_contains=None, repo_type=None, limit=20):
+        query = Repository.query()\
+            .order_by(func.length(Repository.repo_name))\
+            .order_by(Repository.repo_name)
+
+        if repo_type:
+            query = query.filter(Repository.repo_type == repo_type)
+
+        if name_contains:
+            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
+            query = query.filter(
+                Repository.repo_name.ilike(ilike_expression))
+            query = query.limit(limit)
+
+        all_repos = query.all()
+        # permission checks are inside this function
+        repo_iter = ScmModel().get_repos(all_repos)
+        return [
+            {
+                'id': obj['name'],
+                'text': obj['name'],
+                'type': 'repo',
+                'obj': obj['dbrepo'],
+                'url': h.url('summary_home', repo_name=obj['name'])
+            }
+            for obj in repo_iter]
+
+    @LoginRequired()
+    @view_config(
+        route_name='repo_list_data', request_method='GET',
+        renderer='json_ext', xhr=True)
+    def repo_list_data(self):
+        _ = self.request.translate
+
+        query = self.request.GET.get('query')
+        repo_type = self.request.GET.get('repo_type')
+        log.debug('generating repo list, query:%s, repo_type:%s',
+                  query, repo_type)
+
+        res = []
+        repos = self._get_repo_list(query, repo_type=repo_type)
+        if repos:
+            res.append({
+                'text': _('Repositories'),
+                'children': repos
+            })
+
+        data = {
+            'more': False,
+            'results': res
+        }
+        return data

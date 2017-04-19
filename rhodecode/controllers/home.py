@@ -233,25 +233,3 @@ class HomeController(BaseController):
             'results': res
         }
         return data
-
-    @LoginRequired()
-    @XHRRequired()
-    @jsonify
-    def repo_list_data(self):
-        query = request.GET.get('query')
-        repo_type = request.GET.get('repo_type')
-        log.debug('generating repo list, query:%s', query)
-
-        res = []
-        repos = self._get_repo_list(query, repo_type=repo_type)
-        if repos:
-            res.append({
-                'text': _('Repositories'),
-                'children': repos
-            })
-
-        data = {
-            'more': False,
-            'results': res
-        }
-        return data

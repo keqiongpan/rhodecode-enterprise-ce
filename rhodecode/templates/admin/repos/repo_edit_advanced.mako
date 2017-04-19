@@ -191,7 +191,7 @@ $("#id_fork_of").select2({
             query.callback({results: cachedData.results});
         } else {
             $.ajax({
-                url: "${h.url('repo_list_data')}",
+                url: pyroutes.url('repo_list_data'),
                 data: {'query': query.term, repo_type: '${c.repo_info.repo_type}'},
                 dataType: 'json',
                 type: 'GET',

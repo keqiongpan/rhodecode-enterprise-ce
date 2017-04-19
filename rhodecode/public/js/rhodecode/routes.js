@@ -13,8 +13,6 @@
 function registerRCRoutes() {
     // routes registration
     pyroutes.register('home', '/', []);
-    pyroutes.register('user_autocomplete_data', '/_users', []);
-    pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('new_repo', '/_admin/create_repository', []);
     pyroutes.register('edit_user', '/_admin/users/%(user_id)s/edit', ['user_id']);
     pyroutes.register('edit_user_group_members', '/_admin/user_groups/%(user_group_id)s/edit/members', ['user_group_id']);
@@ -95,6 +93,9 @@ function registerRCRoutes() {
     pyroutes.register('register', '/_admin/register', []);
     pyroutes.register('reset_password', '/_admin/password_reset', []);
     pyroutes.register('reset_password_confirmation', '/_admin/password_reset_confirmation', []);
+    pyroutes.register('user_autocomplete_data', '/_users', []);
+    pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
+    pyroutes.register('repo_list_data', '/_repos', []);
     pyroutes.register('repo_maintenance', '/%(repo_name)s/maintenance', ['repo_name']);
     pyroutes.register('repo_maintenance_execute', '/%(repo_name)s/maintenance/execute', ['repo_name']);
     pyroutes.register('strip', '/%(repo_name)s/strip', ['repo_name']);

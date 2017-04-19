@@ -29,5 +29,9 @@ def includeme(config):
         name='user_group_autocomplete_data',
         pattern='/_user_groups')
 
+    config.add_route(
+        name='repo_list_data',
+        pattern='/_repos')
+
     # Scan module for configuration decorators.
     config.scan()
