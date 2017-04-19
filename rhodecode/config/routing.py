@@ -193,11 +193,6 @@ def make_map(config):
     rmap.connect('repo_list_data', '/_repos', controller='home',
                  action='repo_list_data')
 
-    rmap.connect('user_autocomplete_data', '/_users', controller='home',
-                 action='user_autocomplete_data', jsroute=True)
-    rmap.connect('user_group_autocomplete_data', '/_user_groups', controller='home',
-                 action='user_group_autocomplete_data', jsroute=True)
-
     # TODO: johbo: Static links, to be replaced by our redirection mechanism
     rmap.connect('rst_help',
                  'http://docutils.sourceforge.net/docs/user/rst/quickref.html',

@@ -286,6 +286,10 @@ class Fixture(object):
             gr = UserGroup.get_by_group_name(group_name=name)
             if gr:
                 return gr
+        # map active flag to the real attribute. For API consistency of fixtures
+        if 'active' in kwargs:
+            kwargs['users_group_active'] = kwargs['active']
+            del kwargs['active']
         form_data = self._get_user_group_create_params(name, **kwargs)
         owner = kwargs.get('cur_user', TEST_USER_ADMIN_LOGIN)
         user_group = UserGroupModel().create(

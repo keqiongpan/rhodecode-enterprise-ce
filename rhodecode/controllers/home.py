@@ -255,36 +255,3 @@ class HomeController(BaseController):
             'results': res
         }
         return data
-
-    @LoginRequired()
-    @XHRRequired()
-    @jsonify
-    def user_autocomplete_data(self):
-        query = request.GET.get('query')
-        active = str2bool(request.GET.get('active') or True)
-
-        repo_model = RepoModel()
-        _users = repo_model.get_users(
-            name_contains=query, only_active=active)
-
-        if request.GET.get('user_groups'):
-            # extend with user groups
-            _user_groups = repo_model.get_user_groups(
-                name_contains=query, only_active=active)
-            _users = _users + _user_groups
-
-        return {'suggestions': _users}
-
-    @LoginRequired()
-    @XHRRequired()
-    @jsonify
-    def user_group_autocomplete_data(self):
-        query = request.GET.get('query')
-        active = str2bool(request.GET.get('active') or True)
-
-        repo_model = RepoModel()
-        _user_groups = repo_model.get_user_groups(
-            name_contains=query, only_active=active)
-        _user_groups = _user_groups
-
-        return {'suggestions': _user_groups}
