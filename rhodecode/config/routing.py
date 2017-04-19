@@ -32,8 +32,6 @@ import os
 import re
 from routes import Mapper
 
-from rhodecode.config import routing_links
-
 # prefix for non repository related links needs to be prefixed with `/`
 ADMIN_PREFIX = '/_admin'
 STATIC_FILE_PREFIX = '/_static'
@@ -189,24 +187,7 @@ def make_map(config):
     # MAIN PAGE
     rmap.connect('home', '/', controller='home', action='index', jsroute=True)
 
-    # TODO: johbo: Static links, to be replaced by our redirection mechanism
-    rmap.connect('rst_help',
-                 'http://docutils.sourceforge.net/docs/user/rst/quickref.html',
-                 _static=True)
-    rmap.connect('markdown_help',
-                 'http://daringfireball.net/projects/markdown/syntax',
-                 _static=True)
-    rmap.connect('rhodecode_official', 'https://rhodecode.com', _static=True)
-    rmap.connect('rhodecode_support', 'https://rhodecode.com/help/', _static=True)
-    rmap.connect('rhodecode_translations', 'https://rhodecode.com/translate/enterprise', _static=True)
-    # TODO: anderson - making this a static link since redirect won't play
-    # nice with POST requests
-    rmap.connect('enterprise_license_convert_from_old',
-                 'https://rhodecode.com/u/license-upgrade',
-                 _static=True)
-
-    routing_links.connect_redirection_links(rmap)
-
+    # ping and pylons error test
     rmap.connect('ping', '%s/ping' % (ADMIN_PREFIX,), controller='home', action='ping')
     rmap.connect('error_test', '%s/error_test' % (ADMIN_PREFIX,), controller='home', action='error_test')
 

@@ -41,7 +41,7 @@
                % if c.visual.show_version:
                    RhodeCode Enterprise ${c.rhodecode_version} ${c.rhodecode_edition}
                % endif
-               &copy; 2010-${h.datetime.today().year}, <a href="${h.url('rhodecode_official')}" target="_blank">RhodeCode GmbH</a>. All rights reserved.
+               &copy; 2010-${h.datetime.today().year}, <a href="${h.route_url('rhodecode_official')}" target="_blank">RhodeCode GmbH</a>. All rights reserved.
                % if c.visual.rhodecode_support_url:
                   <a href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support')}</a>
                % endif

@@ -53,7 +53,7 @@
                 <input type="text" class="input-monospace" id="clone_url_id" disabled value="${c.clone_repo_url_id}" style="display: none;"/>
                 <a id="clone_by_name" class="clone" style="display: none;">${_('Show by Name')}</a>
                 <a id="clone_by_id" class="clone">${_('Show by ID')}</a>
-                <p class="help-block">${_('SVN Protocol is disabled. To enable it, see the')} <a href="${h.url('enterprise_svn_setup')}" target="_blank">${_('documentation here')}</a>.</p>
+                <p class="help-block">${_('SVN Protocol is disabled. To enable it, see the')} <a href="${h.route_url('enterprise_svn_setup')}" target="_blank">${_('documentation here')}</a>.</p>
             </div>
           %else:
             <div class="left-label">

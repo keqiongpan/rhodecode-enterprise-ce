@@ -18,23 +18,28 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import mock
-
+import pytest
+import requests
 from rhodecode.config import routing_links
 
 
+def check_connection():
+    try:
+        response = requests.get('https://rhodecode.com')
+        return response.status_code == 200
+    except Exception as e:
+        print(e)
+
+    return False
+
+
+connection_available = pytest.mark.skipif(
+    not check_connection(), reason="No outside internet connection available")
+
+
+@connection_available
 def test_connect_redirection_links():
-    link_config = [
-        {"name": "example_link",
-         "external_target": "http://example.com",
-         "target": "https://rhodecode.com/r/v1/enterprise/example",
-         },
-    ]
 
-    rmap = mock.Mock()
-    with mock.patch.object(routing_links, 'link_config', link_config):
-        routing_links.connect_redirection_links(rmap)
-
-    rmap.connect.assert_called_with(
-        link_config[0]['name'], link_config[0]['target'],
-        _static=True)
+    for link_data in routing_links.link_config:
+        response = requests.get(link_data['target'])
+        assert response.url == link_data['external_target']

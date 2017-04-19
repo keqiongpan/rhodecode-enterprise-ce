@@ -17,6 +17,7 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
+from rhodecode.config import routing_links
 
 
 def includeme(config):
@@ -36,6 +37,9 @@ def includeme(config):
     config.add_route(
         name='goto_switcher_data',
         pattern='/_goto_data')
+
+    # register our static links via redirection mechanismy
+    routing_links.connect_redirection_links(config)
 
     # Scan module for configuration decorators.
     config.scan()

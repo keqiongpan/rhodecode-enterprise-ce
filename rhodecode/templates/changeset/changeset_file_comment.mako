@@ -346,7 +346,7 @@
             <div class="toolbar">
                 <div class="toolbar-text">
                   ${(_('Comments parsed using %s syntax with %s, and %s actions support.') % (
-                           ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
+                           ('<a href="%s">%s</a>' % (h.route_url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
                            ('<span class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user')),
                            ('<span class="tooltip" title="%s">`/`</span>' % _('Start typing with / for certain actions to be triggered via text box.'))
                        )

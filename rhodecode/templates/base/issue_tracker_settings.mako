@@ -18,7 +18,7 @@
           <td class="td-regex issue-tracker-example">${'(?:#)(?P<issue_id>\d+)'}</td>
           <td class="td-url issue-tracker-example">${'https://myissueserver.com/${repo}/issue/${issue_id}'}</td>
           <td class="td-prefix issue-tracker-example">#</td>
-          <td class="issue-tracker-example"><a href="https://docs.rhodecode.com/RhodeCode-Enterprise/issue-trackers/issue-trackers.html" target="_blank">${_('Read more')}</a></td>
+          <td class="issue-tracker-example"><a href="${h.route_url('enterprise_issue_tracker_settings')}" target="_blank">${_('Read more')}</a></td>
       </tr>
       %for uid, entry in patterns:
         <tr id="entry_${uid}">

@@ -302,7 +302,7 @@ def attach_context_attributes(context, request):
         'rhodecode_markup_renderer', 'rst')
     context.visual.comment_types = ChangesetComment.COMMENT_TYPES
     context.visual.rhodecode_support_url = \
-        rc_config.get('rhodecode_support_url') or url('rhodecode_support')
+        rc_config.get('rhodecode_support_url') or h.route_url('rhodecode_support')
 
     context.pre_code = rc_config.get('rhodecode_pre_code')
     context.post_code = rc_config.get('rhodecode_post_code')

@@ -62,12 +62,12 @@
                 <div class="inner-column">
                     <h4>Support</h4>
                     <p>For support, go to <a href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support')}</a>.
-                       It may be useful to include your log file; see the log file locations <a href="${h.url('enterprise_log_file_locations')}">here</a>.
+                       It may be useful to include your log file; see the log file locations <a href="${h.route_url('enterprise_log_file_locations')}">here</a>.
                     </p>
                 </div>
                 <div class="inner-column">
                     <h4>Documentation</h4>
-                    <p>For more information, see <a href="${h.url('enterprise_docs')}">docs.rhodecode.com</a>.</p>
+                    <p>For more information, see <a href="${h.route_url('enterprise_docs')}">docs.rhodecode.com</a>.</p>
                 </div>
             </div>
         </div>

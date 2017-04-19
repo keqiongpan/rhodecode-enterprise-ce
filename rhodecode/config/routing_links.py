@@ -46,27 +46,56 @@ you can see it working.
 # flake8: noqa
 from __future__ import unicode_literals
 
-
 link_config = [
-    {"name": "enterprise_docs",
-     "target": "https://rhodecode.com/r1/enterprise/docs/",
-     "external_target": "https://docs.rhodecode.com/RhodeCode-Enterprise/",
-     },
-    {"name": "enterprise_log_file_locations",
-     "target": "https://rhodecode.com/r1/enterprise/docs/admin-system-overview/",
-     "external_target": "https://docs.rhodecode.com/RhodeCode-Enterprise/admin/system-overview.html#log-files",
-     },
-    {"name": "enterprise_issue_tracker_settings",
-     "target": "https://rhodecode.com/r1/enterprise/docs/issue-trackers-overview/",
-     "external_target": "https://docs.rhodecode.com/RhodeCode-Enterprise/issue-trackers/issue-trackers.html",
-     },
-    {"name": "enterprise_svn_setup",
-     "target": "https://rhodecode.com/r1/enterprise/docs/svn-setup/",
-     "external_target": "https://docs.rhodecode.com/RhodeCode-Enterprise/admin/svn-http.html",
-     },
+    {
+        "name": "enterprise_docs",
+        "target": "https://rhodecode.com/r1/enterprise/docs/",
+        "external_target": "https://docs.rhodecode.com/RhodeCode-Enterprise/",
+    },
+    {
+        "name": "enterprise_log_file_locations",
+        "target": "https://rhodecode.com/r1/enterprise/docs/admin-system-overview/",
+        "external_target": "https://docs.rhodecode.com/RhodeCode-Enterprise/admin/system-overview.html#log-files",
+    },
+    {
+        "name": "enterprise_issue_tracker_settings",
+        "target": "https://rhodecode.com/r1/enterprise/docs/issue-trackers-overview/",
+        "external_target": "https://docs.rhodecode.com/RhodeCode-Enterprise/issue-trackers/issue-trackers.html",
+    },
+    {
+        "name": "enterprise_svn_setup",
+        "target": "https://rhodecode.com/r1/enterprise/docs/svn-setup/",
+        "external_target": "https://docs.rhodecode.com/RhodeCode-Enterprise/admin/svn-http.html",
+    },
+    {
+        "name": "rst_help",
+        "target": "http://docutils.sourceforge.net/docs/user/rst/quickref.html",
+        "external_target": "http://docutils.sourceforge.net/docs/user/rst/quickref.html",
+    },
+    {
+        "name": "markdown_help",
+        "target": "http://daringfireball.net/projects/markdown/syntax",
+        "external_target": "http://daringfireball.net/projects/markdown/syntax",
+    },
+    {
+        "name": "rhodecode_official",
+        "target": "https://rhodecode.com",
+        "external_target": "https://rhodecode.com/",
+    },
+    {
+        "name": "rhodecode_support",
+        "target": "https://rhodecode.com/help/",
+        "external_target": "https://rhodecode.com/support",
+    },
+    {
+        "name": "rhodecode_translations",
+        "target": "https://rhodecode.com/translate/enterprise",
+        "external_target": "https://www.transifex.com/rhodecode/RhodeCode/",
+    },
+
 ]
 
 
-def connect_redirection_links(rmap):
+def connect_redirection_links(config):
     for link in link_config:
-        rmap.connect(link['name'], link['target'], _static=True)
+        config.add_route(link['name'], link['target'], static=True)
