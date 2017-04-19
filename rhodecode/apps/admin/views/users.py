@@ -75,8 +75,8 @@ class AdminUsersView(BaseAppView, DataGridAppView):
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
         # renderer defined below
-        route_name='users_data', request_method='GET', renderer='json',
-        xhr=True)
+        route_name='users_data', request_method='GET',
+        renderer='json_ext', xhr=True)
     def users_list_data(self):
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(self.request)
