@@ -24,20 +24,15 @@ Home controller for RhodeCode Enterprise
 
 import logging
 import time
-import re
 
-from pylons import tmpl_context as c, request, url, config
-from pylons.i18n.translation import _
-from sqlalchemy.sql import func
+from pylons import tmpl_context as c
 
 from rhodecode.lib.auth import (
-    LoginRequired, HasPermissionAllDecorator, AuthUser,
-    HasRepoGroupPermissionAnyDecorator, XHRRequired)
+    LoginRequired, HasPermissionAllDecorator,
+    HasRepoGroupPermissionAnyDecorator)
 from rhodecode.lib.base import BaseController, render
-from rhodecode.lib.index import searcher_from_config
+
 from rhodecode.lib.ext_json import json
-from rhodecode.lib.utils import jsonify
-from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.model.db import Repository, RepoGroup
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
@@ -113,123 +108,3 @@ class HomeController(BaseController):
         c.repo_groups_data = json.dumps(repo_group_data)
 
         return render('index_repo_group.mako')
-
-    def _get_repo_list(self, name_contains=None, repo_type=None, limit=20):
-        query = Repository.query()\
-            .order_by(func.length(Repository.repo_name))\
-            .order_by(Repository.repo_name)
-
-        if repo_type:
-            query = query.filter(Repository.repo_type == repo_type)
-
-        if name_contains:
-            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
-            query = query.filter(
-                Repository.repo_name.ilike(ilike_expression))
-            query = query.limit(limit)
-
-        all_repos = query.all()
-        repo_iter = self.scm_model.get_repos(all_repos)
-        return [
-            {
-                'id': obj['name'],
-                'text': obj['name'],
-                'type': 'repo',
-                'obj': obj['dbrepo'],
-                'url': url('summary_home', repo_name=obj['name'])
-            }
-            for obj in repo_iter]
-
-    def _get_repo_group_list(self, name_contains=None, limit=20):
-        query = RepoGroup.query()\
-            .order_by(func.length(RepoGroup.group_name))\
-            .order_by(RepoGroup.group_name)
-
-        if name_contains:
-            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
-            query = query.filter(
-                RepoGroup.group_name.ilike(ilike_expression))
-            query = query.limit(limit)
-
-        all_groups = query.all()
-        repo_groups_iter = self.scm_model.get_repo_groups(all_groups)
-        return [
-            {
-                'id': obj.group_name,
-                'text': obj.group_name,
-                'type': 'group',
-                'obj': {},
-                'url': url('repo_group_home', group_name=obj.group_name)
-            }
-            for obj in repo_groups_iter]
-
-    def _get_hash_commit_list(self, hash_starts_with=None, limit=20):
-        if not hash_starts_with or len(hash_starts_with) < 3:
-            return []
-
-        commit_hashes = re.compile('([0-9a-f]{2,40})').findall(hash_starts_with)
-
-        if len(commit_hashes) != 1:
-            return []
-
-        commit_hash_prefix = commit_hashes[0]
-
-        auth_user = AuthUser(
-            user_id=c.rhodecode_user.user_id, ip_addr=self.ip_addr)
-        searcher = searcher_from_config(config)
-        result = searcher.search(
-            'commit_id:%s*' % commit_hash_prefix, 'commit', auth_user,
-            raise_on_exc=False)
-
-        return [
-            {
-                'id': entry['commit_id'],
-                'text': entry['commit_id'],
-                'type': 'commit',
-                'obj': {'repo': entry['repository']},
-                'url': url('changeset_home',
-                           repo_name=entry['repository'],
-                           revision=entry['commit_id'])
-            }
-            for entry in result['results']]
-
-    @LoginRequired()
-    @XHRRequired()
-    @jsonify
-    def goto_switcher_data(self):
-        query = request.GET.get('query')
-        log.debug('generating goto switcher list, query %s', query)
-
-        res = []
-        repo_groups = self._get_repo_group_list(query)
-        if repo_groups:
-            res.append({
-                'text': _('Groups'),
-                'children': repo_groups
-            })
-
-        repos = self._get_repo_list(query)
-        if repos:
-            res.append({
-                'text': _('Repositories'),
-                'children': repos
-            })
-
-        commits = self._get_hash_commit_list(query)
-        if commits:
-            unique_repos = {}
-            for commit in commits:
-                unique_repos.setdefault(commit['obj']['repo'], []
-                    ).append(commit)
-
-            for repo in unique_repos:
-                res.append({
-                    'text': _('Commits in %(repo)s') % {'repo': repo},
-                    'children': unique_repos[repo]
-                })
-
-        data = {
-            'more': False,
-            'results': res
-        }
-        return data

@@ -96,6 +96,7 @@ function registerRCRoutes() {
     pyroutes.register('user_autocomplete_data', '/_users', []);
     pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('repo_list_data', '/_repos', []);
+    pyroutes.register('goto_switcher_data', '/_goto_data', []);
     pyroutes.register('repo_maintenance', '/%(repo_name)s/maintenance', ['repo_name']);
     pyroutes.register('repo_maintenance_execute', '/%(repo_name)s/maintenance/execute', ['repo_name']);
     pyroutes.register('strip', '/%(repo_name)s/strip', ['repo_name']);

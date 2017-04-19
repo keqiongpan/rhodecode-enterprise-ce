@@ -503,7 +503,7 @@
                     query.callback({results: cachedData.results});
                 } else {
                     $.ajax({
-                        url: "${h.url('goto_switcher_data')}",
+                        url: pyroutes.url('goto_switcher_data'),
                         data: {'query': query.term},
                         dataType: 'json',
                         type: 'GET',

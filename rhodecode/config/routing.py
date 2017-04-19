@@ -188,8 +188,6 @@ def make_map(config):
 
     # MAIN PAGE
     rmap.connect('home', '/', controller='home', action='index', jsroute=True)
-    rmap.connect('goto_switcher_data', '/_goto_data', controller='home',
-                 action='goto_switcher_data')
 
     # TODO: johbo: Static links, to be replaced by our redirection mechanism
     rmap.connect('rst_help',

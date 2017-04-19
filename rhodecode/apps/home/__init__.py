@@ -33,5 +33,9 @@ def includeme(config):
         name='repo_list_data',
         pattern='/_repos')
 
+    config.add_route(
+        name='goto_switcher_data',
+        pattern='/_goto_data')
+
     # Scan module for configuration decorators.
     config.scan()

@@ -18,20 +18,17 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import json
 
-from mock import patch
 import pytest
 from pylons import tmpl_context as c
 
 import rhodecode
-from rhodecode.lib.utils import map_groups
-from rhodecode.model.db import Repository, User, RepoGroup
+from rhodecode.model.db import Repository, User
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.settings import SettingsModel
-from rhodecode.tests import TestController, url, TEST_USER_ADMIN_LOGIN
+from rhodecode.tests import TestController, url
 from rhodecode.tests.fixture import Fixture
 
 
@@ -130,128 +127,3 @@ class TestHomeController(TestController):
             response.mustcontain(version_string)
         if state is False:
             response.mustcontain(no=[version_string])
-
-
-def assert_and_get_content(result):
-    repos = []
-    groups = []
-    commits = []
-    for data in result:
-        for data_item in data['children']:
-            assert data_item['id']
-            assert data_item['text']
-            assert data_item['url']
-            if data_item['type'] == 'repo':
-                repos.append(data_item)
-            elif data_item['type'] == 'group':
-                groups.append(data_item)
-            elif data_item['type'] == 'commit':
-                commits.append(data_item)
-            else:
-                raise Exception('invalid type %s' % data_item['type'])
-
-    return repos, groups, commits
-
-
-class TestGotoSwitcherData(TestController):
-    required_repos_with_groups = [
-        'abc',
-        'abc-fork',
-        'forks/abcd',
-        'abcd',
-        'abcde',
-        'a/abc',
-        'aa/abc',
-        'aaa/abc',
-        'aaaa/abc',
-        'repos_abc/aaa/abc',
-        'abc_repos/abc',
-        'abc_repos/abcd',
-        'xxx/xyz',
-        'forked-abc/a/abc'
-    ]
-
-    @pytest.fixture(autouse=True, scope='class')
-    def prepare(self, request, pylonsapp):
-        for repo_and_group in self.required_repos_with_groups:
-            # create structure of groups and return the last group
-
-            repo_group = map_groups(repo_and_group)
-
-            RepoModel()._create_repo(
-                repo_and_group, 'hg', 'test-ac', TEST_USER_ADMIN_LOGIN,
-                repo_group=getattr(repo_group, 'group_id', None))
-
-            Session().commit()
-
-        request.addfinalizer(self.cleanup)
-
-    def cleanup(self):
-        # first delete all repos
-        for repo_and_groups in self.required_repos_with_groups:
-            repo = Repository.get_by_repo_name(repo_and_groups)
-            if repo:
-                RepoModel().delete(repo)
-                Session().commit()
-
-        # then delete all empty groups
-        for repo_and_groups in self.required_repos_with_groups:
-            if '/' in repo_and_groups:
-                r_group = repo_and_groups.rsplit('/', 1)[0]
-                repo_group = RepoGroup.get_by_group_name(r_group)
-                if not repo_group:
-                    continue
-                parents = repo_group.parents
-                RepoGroupModel().delete(repo_group, force_delete=True)
-                Session().commit()
-
-                for el in reversed(parents):
-                    RepoGroupModel().delete(el, force_delete=True)
-                    Session().commit()
-
-    def test_returns_list_of_repos_and_groups(self):
-        self.log_user()
-
-        response = self.app.get(
-            url(controller='home', action='goto_switcher_data'),
-            headers={'X-REQUESTED-WITH': 'XMLHttpRequest', }, status=200)
-        result = json.loads(response.body)['results']
-
-        repos, groups, commits = assert_and_get_content(result)
-
-        assert len(repos) == len(Repository.get_all())
-        assert len(groups) == len(RepoGroup.get_all())
-        assert len(commits) == 0
-
-    def test_returns_list_of_repos_and_groups_filtered(self):
-        self.log_user()
-
-        response = self.app.get(
-            url(controller='home', action='goto_switcher_data'),
-            headers={'X-REQUESTED-WITH': 'XMLHttpRequest', },
-            params={'query': 'abc'}, status=200)
-        result = json.loads(response.body)['results']
-
-        repos, groups, commits = assert_and_get_content(result)
-
-        assert len(repos) == 13
-        assert len(groups) == 5
-        assert len(commits) == 0
-
-    def test_returns_list_of_properly_sorted_and_filtered(self):
-        self.log_user()
-
-        response = self.app.get(
-            url(controller='home', action='goto_switcher_data'),
-            headers={'X-REQUESTED-WITH': 'XMLHttpRequest', },
-            params={'query': 'abc'}, status=200)
-        result = json.loads(response.body)['results']
-
-        repos, groups, commits = assert_and_get_content(result)
-
-        test_repos = [x['text'] for x in repos[:4]]
-        assert ['abc', 'abcd', 'a/abc', 'abcde'] == test_repos
-
-        test_groups = [x['text'] for x in groups[:4]]
-        assert ['abc_repos', 'repos_abc',
-                'forked-abc', 'forked-abc/a'] == test_groups
