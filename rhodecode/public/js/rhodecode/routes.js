@@ -71,6 +71,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_integrations_new', '%(repo_name)s/settings/integrations/new', ['repo_name']);
     pyroutes.register('repo_integrations_create', '%(repo_name)s/settings/integrations/%(integration)s/new', ['repo_name', 'integration']);
     pyroutes.register('repo_integrations_edit', '%(repo_name)s/settings/integrations/%(integration)s/%(integration_id)s', ['repo_name', 'integration', 'integration_id']);
+    pyroutes.register('ops_ping', '_admin/ops/ping', []);
     pyroutes.register('admin_settings_open_source', '_admin/settings/open_source', []);
     pyroutes.register('admin_settings_vcs_svn_generate_cfg', '_admin/settings/vcs/svn_generate_cfg', []);
     pyroutes.register('admin_settings_system', '_admin/settings/system', []);

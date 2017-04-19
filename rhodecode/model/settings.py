@@ -207,6 +207,7 @@ class SettingsModel(BaseModel):
         caches.clear_cache_manager(cache_manager)
 
     def get_all_settings(self, cache=False):
+
         def _compute():
             q = self._get_settings_query()
             if not q:
