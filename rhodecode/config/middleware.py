@@ -315,6 +315,10 @@ def includeme(config):
     # Set the default renderer for HTML templates to mako.
     config.add_mako_renderer('.html')
 
+    config.add_renderer(
+        name='json_ext',
+        factory='rhodecode.lib.ext_json_renderer.pyramid_ext_json')
+
     # include RhodeCode plugins
     includes = aslist(settings.get('rhodecode.includes', []))
     for inc in includes:
