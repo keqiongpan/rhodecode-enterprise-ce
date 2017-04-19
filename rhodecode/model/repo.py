@@ -30,7 +30,6 @@ import time
 import traceback
 from datetime import datetime, timedelta
 
-from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import true, or_
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
@@ -40,19 +39,17 @@ from rhodecode.lib.auth import HasUserGroupPermissionAny
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.exceptions import AttachedForksError
 from rhodecode.lib.hooks_base import log_delete_repository
-from rhodecode.lib.markup_renderer import MarkupRenderer
 from rhodecode.lib.utils import make_db_config
 from rhodecode.lib.utils2 import (
     safe_str, safe_unicode, remove_prefix, obfuscate_url_pw,
     get_current_rhodecode_user, safe_int, datetime_to_time, action_logger_generic)
 from rhodecode.lib.vcs.backends import get_backend
-from rhodecode.lib.vcs.exceptions import NodeDoesNotExistError
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     Repository, UserRepoToPerm, UserGroupRepoToPerm, UserRepoGroupToPerm,
     UserGroupRepoGroupToPerm, User, Permission, Statistics, UserGroup,
     RepoGroup, RepositoryField)
-from rhodecode.model.scm import UserGroupList
+
 from rhodecode.model.settings import VcsSettingsModel
 
 
@@ -195,47 +192,6 @@ class RepoModel(BaseModel):
             for user in users
         ]
         return _users
-
-    def get_user_groups(self, name_contains=None, limit=20, only_active=True):
-
-        # TODO: mikhail: move this method to the UserGroupModel.
-        query = self.sa.query(UserGroup)
-        if only_active:
-            query = query.filter(UserGroup.users_group_active == true())
-
-        if name_contains:
-            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
-            query = query.filter(
-                UserGroup.users_group_name.ilike(ilike_expression))\
-                .order_by(func.length(UserGroup.users_group_name))\
-                .order_by(UserGroup.users_group_name)
-
-            query = query.limit(limit)
-        user_groups = query.all()
-        perm_set = ['usergroup.read', 'usergroup.write', 'usergroup.admin']
-        user_groups = UserGroupList(user_groups, perm_set=perm_set)
-
-        _groups = [
-            {
-                'id': group.users_group_id,
-                # TODO: marcink figure out a way to generate the url for the
-                # icon
-                'icon_link': '',
-                'value_display': 'Group: %s (%d members)' % (
-                    group.users_group_name, len(group.members),),
-                'value': group.users_group_name,
-                'description': group.user_group_description,
-                'owner': group.user.username,
-
-                'owner_icon': h.gravatar_url(group.user.email, 30),
-                'value_display_owner': h.person(group.user.email),
-
-                'value_type': 'user_group',
-                'active': group.users_group_active,
-            }
-            for group in user_groups
-        ]
-        return _groups
 
     @classmethod
     def update_repoinfo(cls, repositories=None):

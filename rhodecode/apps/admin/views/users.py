@@ -242,7 +242,8 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c.user = User.get_or_404(user_id, pyramid_exc=True)
         c.data = c.user.group_member
         self._redirect_for_default_user(c.user.username)
-        groups = [UserGroupModel.get_user_groups_as_dict(group.users_group) for group in c.user.group_member]
+        groups = [UserGroupModel.get_user_groups_as_dict(group.users_group)
+                  for group in c.user.group_member]
         c.groups = json.dumps(groups)
         c.active = 'groups'
 

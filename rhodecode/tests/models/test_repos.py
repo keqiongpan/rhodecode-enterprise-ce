@@ -29,10 +29,9 @@ from rhodecode.model.db import Repository
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel
-from rhodecode.lib.utils2 import safe_unicode
 
 
-class TestRepoModel:
+class TestRepoModel(object):
 
     def test_remove_repo(self, backend):
         repo = backend.create_repo()
@@ -251,60 +250,3 @@ class TestGetUsers(object):
         fake_users = [u for u in users if u['last_name'].startswith('Fake')]
         assert len(fake_users) == 3
 
-
-class TestGetUserGroups(object):
-    def test_returns_filtered_list(self, backend, user_util):
-        created_groups = []
-        for i in range(4):
-            created_groups.append(
-                user_util.create_user_group(users_group_active=True))
-
-        group_filter = created_groups[-1].users_group_name[-2:]
-        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
-            with self._patch_user_group_list():
-                groups = RepoModel().get_user_groups(group_filter)
-
-        fake_groups = [
-            u for u in groups if u['value'].startswith('test_returns')]
-        assert len(fake_groups) == 1
-        assert fake_groups[0]['value'] == created_groups[-1].users_group_name
-        assert fake_groups[0]['value_display'].startswith(
-            'Group: test_returns')
-
-    def test_returns_limited_list(self, backend, user_util):
-        created_groups = []
-        for i in range(3):
-            created_groups.append(
-                user_util.create_user_group(users_group_active=True))
-        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
-            with self._patch_user_group_list():
-                groups = RepoModel().get_user_groups('test_returns')
-
-        fake_groups = [
-            u for u in groups if u['value'].startswith('test_returns')]
-        assert len(fake_groups) == 3
-
-    def test_returns_active_user_groups(self, backend, user_util):
-        for i in range(4):
-            is_active = i % 2 == 0
-            user_util.create_user_group(users_group_active=is_active)
-        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
-            with self._patch_user_group_list():
-                groups = RepoModel().get_user_groups()
-        expected = ('id', 'icon_link', 'value_display', 'value', 'value_type')
-        for group in groups:
-            assert group['value_type'] is 'user_group'
-            for key in expected:
-                assert key in group
-
-        fake_groups = [
-            u for u in groups if u['value'].startswith('test_returns')]
-        assert len(fake_groups) == 2
-        for user in fake_groups:
-            assert user['value_display'].startswith('Group: test_returns')
-
-    def _patch_user_group_list(self):
-        def side_effect(group_list, perm_set):
-            return group_list
-        return mock.patch(
-            'rhodecode.model.repo.UserGroupList', side_effect=side_effect)

@@ -27,9 +27,10 @@ user group model for RhodeCode
 import logging
 import traceback
 
-from rhodecode.lib.utils2 import safe_str
+from rhodecode.lib.utils2 import safe_str, safe_unicode
 from rhodecode.model import BaseModel
-from rhodecode.model.db import UserGroupMember, UserGroup,\
+from rhodecode.model.scm import UserGroupList
+from rhodecode.model.db import true, func, UserGroupMember, UserGroup,\
     UserGroupRepoToPerm, Permission, UserGroupToPerm, User, UserUserGroupToPerm,\
     UserGroupUserGroupToPerm, UserGroupRepoGroupToPerm
 from rhodecode.lib.exceptions import UserGroupAssignedException,\
@@ -539,6 +540,48 @@ class UserGroupModel(BaseModel):
             log.debug('Adding user %s to user group %s', user.username, gr.users_group_name)
             UserGroupModel().add_user_to_group(gr.users_group_name, user.username)
 
+    def get_user_groups(self, name_contains=None, limit=20, only_active=True,
+                        expand_groups=False):
+        import rhodecode.lib.helpers as h
+
+        query = self.sa.query(UserGroup)
+        if only_active:
+            query = query.filter(UserGroup.users_group_active == true())
+
+        if name_contains:
+            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
+            query = query.filter(
+                UserGroup.users_group_name.ilike(ilike_expression))\
+                .order_by(func.length(UserGroup.users_group_name))\
+                .order_by(UserGroup.users_group_name)
+
+            query = query.limit(limit)
+        user_groups = query.all()
+        perm_set = ['usergroup.read', 'usergroup.write', 'usergroup.admin']
+        user_groups = UserGroupList(user_groups, perm_set=perm_set)
+
+        _groups = [
+            {
+                'id': group.users_group_id,
+                # TODO: marcink figure out a way to generate the url for the
+                # icon
+                'icon_link': '',
+                'value_display': 'Group: %s (%d members)' % (
+                    group.users_group_name, len(group.members),),
+                'value': group.users_group_name,
+                'description': group.user_group_description,
+                'owner': group.user.username,
+
+                'owner_icon': h.gravatar_url(group.user.email, 30),
+                'value_display_owner': h.person(group.user.email),
+
+                'value_type': 'user_group',
+                'active': group.users_group_active,
+            }
+            for group in user_groups
+        ]
+        return _groups
+
     @staticmethod
     def get_user_groups_as_dict(user_group):
         import rhodecode.lib.helpers as h
@@ -550,7 +593,9 @@ class UserGroupModel(BaseModel):
             'active': user_group.users_group_active,
             "owner": user_group.user.username,
             'owner_icon': h.gravatar_url(user_group.user.email, 30),
-            "owner_data": {'owner': user_group.user.username, 'owner_icon': h.gravatar_url(user_group.user.email, 30)}
+            "owner_data": {
+                'owner': user_group.user.username,
+                'owner_icon': h.gravatar_url(user_group.user.email, 30)}
             }
         return data
 
