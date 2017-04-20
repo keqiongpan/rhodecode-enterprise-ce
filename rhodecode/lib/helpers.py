@@ -1602,16 +1602,24 @@ def urlify_commits(text_, repository):
 
 
 def _process_url_func(match_obj, repo_name, uid, entry,
-                      return_raw_data=False):
+                      return_raw_data=False, link_format='html'):
     pref = ''
     if match_obj.group().startswith(' '):
         pref = ' '
 
     issue_id = ''.join(match_obj.groups())
-    tmpl = (
-        '%(pref)s<a class="%(cls)s" href="%(url)s">'
-        '%(issue-prefix)s%(id-repr)s'
-        '</a>')
+
+    if link_format == 'html':
+        tmpl = (
+            '%(pref)s<a class="%(cls)s" href="%(url)s">'
+            '%(issue-prefix)s%(id-repr)s'
+            '</a>')
+    elif link_format == 'rst':
+        tmpl = '`%(issue-prefix)s%(id-repr)s <%(url)s>`_'
+    elif link_format == 'markdown':
+        tmpl = '[%(issue-prefix)s%(id-repr)s](%(url)s)'
+    else:
+        raise ValueError('Bad link_format:{}'.format(link_format))
 
     (repo_name_cleaned,
      parent_group_name) = RepoGroupModel().\
@@ -1644,7 +1652,12 @@ def _process_url_func(match_obj, repo_name, uid, entry,
     return tmpl % data
 
 
-def process_patterns(text_string, repo_name, config=None):
+def process_patterns(text_string, repo_name, link_format='html'):
+    allowed_formats = ['html', 'rst', 'markdown']
+    if link_format not in allowed_formats:
+        raise ValueError('Link format can be only one of:{} got {}'.format(
+                         allowed_formats, link_format))
+
     repo = None
     if repo_name:
         # Retrieving repo_name to avoid invalid repo_name to explode on
@@ -1656,6 +1669,7 @@ def process_patterns(text_string, repo_name, config=None):
 
     issues_data = []
     newtext = text_string
+
     for uid, entry in active_entries.items():
         log.debug('found issue tracker entry with uid %s' % (uid,))
 
@@ -1682,7 +1696,8 @@ def process_patterns(text_string, repo_name, config=None):
             issues_data.append(data_func(match_obj))
 
         url_func = partial(
-            _process_url_func, repo_name=repo_name, entry=entry, uid=uid)
+            _process_url_func, repo_name=repo_name, entry=entry, uid=uid,
+            link_format=link_format)
 
         newtext = pattern.sub(url_func, newtext)
         log.debug('processed prefix:uid `%s`' % (uid,))
@@ -1750,7 +1765,8 @@ def renderer_from_filename(filename, exclude=None):
     return None
 
 
-def render(source, renderer='rst', mentions=False, relative_url=None):
+def render(source, renderer='rst', mentions=False, relative_url=None,
+           repo_name=None):
 
     def maybe_convert_relative_links(html_source):
         if relative_url:
@@ -1758,11 +1774,21 @@ def render(source, renderer='rst', mentions=False, relative_url=None):
         return html_source
 
     if renderer == 'rst':
+        if repo_name:
+            # process patterns on comments if we pass in repo name
+            source, issues = process_patterns(
+                source, repo_name, link_format='rst')
+
         return literal(
             '<div class="rst-block">%s</div>' %
             maybe_convert_relative_links(
                 MarkupRenderer.rst(source, mentions=mentions)))
     elif renderer == 'markdown':
+        if repo_name:
+            # process patterns on comments if we pass in repo name
+            source, issues = process_patterns(
+                source, repo_name, link_format='markdown')
+
         return literal(
             '<div class="markdown-block">%s</div>' %
             maybe_convert_relative_links(
