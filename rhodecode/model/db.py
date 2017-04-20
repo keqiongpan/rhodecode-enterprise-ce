@@ -3096,10 +3096,6 @@ class ChangesetComment(Base, BaseModel):
         return self.get_index_from_version(
             self.pull_request_version_id, versions)
 
-    def render(self, mentions=False):
-        from rhodecode.lib import helpers as h
-        return h.render(self.text, renderer=self.renderer, mentions=mentions)
-
     def __repr__(self):
         if self.comment_id:
             return '<DB:Comment #%s>' % self.comment_id

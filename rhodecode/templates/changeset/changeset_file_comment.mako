@@ -158,7 +158,7 @@
           </div>
       </div>
       <div class="text">
-          ${comment.render(mentions=True)|n}
+          ${h.render(comment.text, renderer=comment.renderer, mentions=True)}
       </div>
 
   </div>
