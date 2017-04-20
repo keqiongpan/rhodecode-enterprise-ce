@@ -130,12 +130,12 @@ def scan_repositories_if_enabled(event):
     This is subscribed to the `pyramid.events.ApplicationCreated` event. It
     does a repository scan if enabled in the settings.
     """
-    from rhodecode.model.scm import ScmModel
-    from rhodecode.lib.utils import repo2db_mapper, get_rhodecode_base_path
     settings = event.app.registry.settings
     vcs_server_enabled = settings['vcs.server.enable']
     import_on_startup = settings['startup.import_repos']
     if vcs_server_enabled and import_on_startup:
+        from rhodecode.model.scm import ScmModel
+        from rhodecode.lib.utils import repo2db_mapper, get_rhodecode_base_path
         repositories = ScmModel().repo_scan(get_rhodecode_base_path())
         repo2db_mapper(repositories, remove_obsolete=False)
 
@@ -227,33 +227,6 @@ def write_js_routes_if_enabled(event):
 
         with io.open(jsroutes_file_path, 'w', encoding='utf-8') as f:
             f.write(jsroutes_file_content)
-
-
-def create_largeobjects_dirs_if_needed(event):
-    """
-    This is subscribed to the `pyramid.events.ApplicationCreated` event. It
-    does a repository scan if enabled in the settings.
-    """
-    from rhodecode.lib.utils import get_rhodecode_base_path
-    from rhodecode.lib.vcs.backends.hg import largefiles_store
-    from rhodecode.lib.vcs.backends.git import lfs_store
-
-    repo_store_path = get_rhodecode_base_path()
-
-    paths = [
-        largefiles_store(repo_store_path),
-        lfs_store(repo_store_path)]
-
-    for path in paths:
-        if os.path.isdir(path):
-            continue
-        if os.path.isfile(path):
-            continue
-        # not a file nor dir, we try to create it
-        try:
-            os.makedirs(path)
-        except Exception:
-            log.warning('Failed to create largefiles dir:%s', path)
 
 
 class Subscriber(object):
