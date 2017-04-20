@@ -92,7 +92,12 @@
           <a class="permalink" href="#comment-${comment.comment_id}"> &para;</a>
 
           <div class="comment-links-block">
-
+              % if comment.pull_request and comment.pull_request.author.user_id == comment.author.user_id:
+                <span class="tag authortag tooltip" title="${_('Pull request author')}">
+                ${_('author')}
+                </span>
+                |
+              % endif
             % if inline:
                   <div class="pr-version-inline">
                     <a href="${h.url.current(version=comment.pull_request_version_id, anchor='comment-{}'.format(comment.comment_id))}">
