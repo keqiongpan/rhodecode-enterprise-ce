@@ -48,6 +48,11 @@
       <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id)}">
         <span class="commit_hash">${h.show_id(commit)}</span>
       </a>
+      % if hasattr(commit, 'phase'):
+          % if commit.phase != 'public':
+              <span class="tag phase-${commit.phase} tooltip" title="${_('commit phase')}">${commit.phase}</span>
+          % endif
+      % endif
     </code>
     </td>
     <td class="td-message expand_commit" data-commit-id="${commit.raw_id}" title="${_('Expand commit message')}" onclick="commitsController.expandCommit(this); return false">
