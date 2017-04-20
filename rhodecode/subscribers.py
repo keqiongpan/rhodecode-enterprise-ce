@@ -172,6 +172,10 @@ def write_metadata_if_needed(event):
         with open(metadata_destination, 'wb') as f:
             f.write(ext_json.json.dumps(metadata))
 
+    settings = event.app.registry.settings
+    if settings.get('metadata.skip'):
+        return
+
     try:
         write()
     except Exception:
