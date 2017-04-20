@@ -4,11 +4,12 @@
     </div>
     <div class="panel-body">
         <div class="ips_wrap">
+        <h5>${_('Current IP address')}: <code>${c.rhodecode_user.ip_addr}</code></h5>
   <table class="rctable ip-whitelist">
     <tr>
-      <th>IP Address</th>
-      <th>IP Range</th>
-      <th>Description</th>
+      <th>${_('IP Address')}</th>
+      <th>${_('IP Range')}</th>
+      <th>${_('Description')}</th>
       <th></th>
     </tr>
     %if c.default_user_ip_map and c.inherit_default_ips:
