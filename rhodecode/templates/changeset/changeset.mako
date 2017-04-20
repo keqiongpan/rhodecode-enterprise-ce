@@ -36,16 +36,21 @@
             <h4>${_('Commit')}
               <code>
                 ${h.show_id(c.commit)}
+                % if hasattr(c.commit, 'phase'):
+                      <span class="tag phase-${c.commit.phase} tooltip" title="${_('commit phase')}">${c.commit.phase}</span>
+                % endif
               </code>
             </h4>
           </span>
-          <span id="parent_link">
-            <a href="#" title="${_('Parent Commit')}">${_('Parent')}</a>
-          </span>
-           |
-          <span id="child_link">
-            <a href="#" title="${_('Child Commit')}">${_('Child')}</a>
-          </span>
+          <div class="pull-right">
+              <span id="parent_link">
+                <a href="#" title="${_('Parent Commit')}">${_('Parent')}</a>
+              </span>
+               |
+              <span id="child_link">
+                <a href="#" title="${_('Child Commit')}">${_('Child')}</a>
+              </span>
+          </div>
       </div>
 
       <div class="fieldset">
