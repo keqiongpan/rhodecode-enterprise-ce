@@ -107,5 +107,6 @@ class SearchController(BaseRepoController):
         c.runtime = execution_time
         c.cur_query = search_query
         c.search_type = search_type
+        c.searcher = searcher
         # Return a rendered template
         return render('/search/search.mako')

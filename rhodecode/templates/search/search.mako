@@ -63,6 +63,7 @@
             ${h.select('type',c.search_type,[('content',_('File contents')), ('commit',_('Commit messages')), ('path',_('File names')),],id='id_search_type')}
             <input type="submit" value="${_('Search')}" class="btn"/>
             <br/>
+
             <div class="search-feedback-items">
             % for error in c.errors:
               <span class="error-message">
@@ -71,10 +72,16 @@
                   % endfor
               </span>
             % endfor
+            <div class="field">
+                <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Example Queries')}</p>
+                <pre id="search-help" style="display: none">${h.tooltip(h.search_filter_help(c.searcher))}</pre>
+            </div>
+
             <div class="field">${c.runtime}</div>
             </div>
         </div>
     </div>
+
     ${h.end_form()}
     <div class="search">
     % if c.search_type == 'content':

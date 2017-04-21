@@ -1842,6 +1842,24 @@ def journal_filter_help():
     )
 
 
+def search_filter_help(searcher):
+
+    terms = ''
+    return _(
+        'Example filter terms for `{searcher}` search:\n' +
+        '{terms}\n' +
+        'Generate wildcards using \'*\' character:\n' +
+        '     "repo_name:vcs*" - search everything starting with \'vcs\'\n' +
+        '     "repo_name:*vcs*" - search for repository containing \'vcs\'\n' +
+        '\n' +
+        'Optional AND / OR operators in queries\n' +
+        '     "repo_name:vcs OR repo_name:test"\n' +
+        '     "owner:test AND repo_name:test*"\n' +
+        'More: {search_doc}'
+    ).format(searcher=searcher.name,
+             terms=terms, search_doc=searcher.query_lang_doc)
+
+
 def not_mapped_error(repo_name):
     flash(_('%s repository is not mapped to db perhaps'
             ' it was created or renamed from the filesystem'

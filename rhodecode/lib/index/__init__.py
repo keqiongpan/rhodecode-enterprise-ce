@@ -33,6 +33,8 @@ default_location = '%(here)s/data/index'
 
 
 class BaseSearch(object):
+    query_lang_doc = ''
+
     def __init__(self):
         pass
 
