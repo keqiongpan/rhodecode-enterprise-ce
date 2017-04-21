@@ -253,7 +253,7 @@
                    ${_('Compare fork')}</a></li>
               %endif
 
-              <li><a href="${h.url('search_repo_home',repo_name=c.repo_name)}">${_('Search')}</a></li>
+              <li><a href="${h.route_path('search_repo',repo_name=c.repo_name)}">${_('Search')}</a></li>
 
               %if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking:
                 %if c.rhodecode_db_repo.locked[0]:
@@ -399,7 +399,7 @@
           </a>
         </li>
       <li class="${is_active('search')}">
-          <a class="menulink" title="${_('Search in repositories you have access to')}" href="${h.url('search')}">
+          <a class="menulink" title="${_('Search in repositories you have access to')}" href="${h.route_path('search')}">
             <div class="menulabel">${_('Search')}</div>
           </a>
       </li>

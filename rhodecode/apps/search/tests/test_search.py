@@ -25,16 +25,27 @@ import pytest
 from whoosh import query
 
 from rhodecode.tests import (
-    TestController, url, SkipTest, HG_REPO,
+    TestController, SkipTest, HG_REPO,
     TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
 from rhodecode.tests.utils import AssertResponse
+
+
+def route_path(name, **kwargs):
+    from rhodecode.apps._base import ADMIN_PREFIX
+    return {
+        'search':
+            ADMIN_PREFIX + '/search',
+        'search_repo':
+            '/{repo_name}/search',
+
+    }[name].format(**kwargs)
 
 
 class TestSearchController(TestController):
 
     def test_index(self):
         self.log_user()
-        response = self.app.get(url(controller='search', action='index'))
+        response = self.app.get(route_path('search'))
         assert_response = AssertResponse(response)
         assert_response.one_element_exists('input#q')
 
@@ -43,17 +54,15 @@ class TestSearchController(TestController):
             raise SkipTest('skipped due to existing index')
         else:
             self.log_user()
-            response = self.app.get(url(controller='search', action='index'),
+            response = self.app.get(route_path('search'),
                                     {'q': HG_REPO})
             response.mustcontain('There is no index to search in. '
                                  'Please run whoosh indexer')
 
     def test_search_validation(self):
         self.log_user()
-        response = self.app.get(
-            url(controller='search', action='index'), {'q': query,
-                                                       'type': 'content',
-                                                       'page_limit': 1000})
+        response = self.app.get(route_path('search'),
+            {'q': query, 'type': 'content', 'page_limit': 1000})
 
         response.mustcontain(
             'page_limit - 1000 is greater than maximum value 500')
@@ -88,10 +97,8 @@ class TestSearchController(TestController):
     ])
     def test_search_files(self, query, expected_hits, expected_paths):
         self.log_user()
-        response = self.app.get(
-            url(controller='search', action='index'), {'q': query,
-                                                       'type': 'content',
-                                                       'page_limit': 500})
+        response = self.app.get(route_path('search'),
+            {'q': query, 'type': 'content', 'page_limit': 500})
 
         response.mustcontain('%s results' % expected_hits)
         for path in expected_paths:
@@ -137,10 +144,8 @@ class TestSearchController(TestController):
     def test_search_commit_messages(
             self, query, expected_hits, expected_commits, enabled_backends):
         self.log_user()
-        response = self.app.get(
-            url(controller='search', action='index'), {'q': query,
-                                                       'type': 'commit',
-                                                       'page_limit': 500})
+        response = self.app.get(route_path('search'),
+            {'q': query, 'type': 'commit', 'page_limit': 500})
 
         response.mustcontain('%s results' % expected_hits)
         for backend, commit_id in expected_commits:
@@ -156,10 +161,8 @@ class TestSearchController(TestController):
     ])
     def test_search_file_paths(self, query, expected_hits, expected_paths):
         self.log_user()
-        response = self.app.get(
-            url(controller='search', action='index'), {'q': query,
-                                                       'type': 'path',
-                                                       'page_limit': 500})
+        response = self.app.get(route_path('search'),
+            {'q': query, 'type': 'path', 'page_limit': 500})
 
         response.mustcontain('%s results' % expected_hits)
         for path in expected_paths:
@@ -168,8 +171,7 @@ class TestSearchController(TestController):
     def test_search_commit_message_specific_repo(self, backend):
         self.log_user()
         response = self.app.get(
-            url(controller='search', action='index',
-                repo_name=backend.repo_name),
+            route_path('search_repo',repo_name=backend.repo_name),
             {'q': 'bother to ask where to fetch repo during tests',
              'type': 'commit'})
 
@@ -178,8 +180,7 @@ class TestSearchController(TestController):
     def test_filters_are_not_applied_for_admin_user(self):
         self.log_user()
         with mock.patch('whoosh.searching.Searcher.search') as search_mock:
-            self.app.get(
-                url(controller='search', action='index'),
+            self.app.get(route_path('search'),
                 {'q': 'test query', 'type': 'commit'})
         assert search_mock.call_count == 1
         _, kwargs = search_mock.call_args
@@ -188,8 +189,7 @@ class TestSearchController(TestController):
     def test_filters_are_applied_for_normal_user(self, enabled_backends):
         self.log_user(TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
         with mock.patch('whoosh.searching.Searcher.search') as search_mock:
-            self.app.get(
-                url(controller='search', action='index'),
+            self.app.get(route_path('search'),
                 {'q': 'test query', 'type': 'commit'})
         assert search_mock.call_count == 1
         _, kwargs = search_mock.call_args

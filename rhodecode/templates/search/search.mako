@@ -45,7 +45,7 @@
         <div class="title">
             ${self.repo_page_title(c.rhodecode_db_repo)}
         </div>
-        ${h.form(h.url('search_repo_home',repo_name=c.repo_name),method='get')}
+        ${h.form(h.route_path('search_repo',repo_name=c.repo_name),method='get')}
     %else:
         <!-- box / title -->
         <div class="title">
@@ -53,7 +53,7 @@
             <ul class="links">&nbsp;</ul>
         </div>
         <!-- end box / title -->
-        ${h.form(h.url('search'),method='get')}
+        ${h.form(h.route_path('search'), method='get')}
     %endif
     <div class="form search-form">
         <div class="fields">

@@ -614,15 +614,6 @@ def make_map(config):
                  controller='journal', action='toggle_following', jsroute=True,
                  conditions={'method': ['POST']})
 
-    # FULL TEXT SEARCH
-    rmap.connect('search', '%s/search' % (ADMIN_PREFIX,),
-                 controller='search')
-    rmap.connect('search_repo_home', '/{repo_name}/search',
-                 controller='search',
-                 action='index',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     # FEEDS
     rmap.connect('rss_feed_home', '/{repo_name}/feed/rss',
                  controller='feed', action='rss',
