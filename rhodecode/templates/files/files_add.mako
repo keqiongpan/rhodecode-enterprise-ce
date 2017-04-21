@@ -56,11 +56,17 @@
         </div>
         <div id="upload_file_container" class="fieldset" style="display: none;">
             <div class="filename-label left-label">
+                ${_('Filename')}:
+            </div>
+            <div class="right-content">
+                <input class="input-small" type="text" value="" size="46" name="filename" id="filename_upload" placeholder="${_('No file selected')}">
+            </div>
+            <div class="filename-label left-label file-upload-label">
                 ${_('Upload file')}:
             </div>
             <div class="right-content file-upload-input">
                 <label for="upload_file" class="btn btn-default">Browse</label>
-                <span id="selected-file">${_('No file selected')}</span>
+
                 <input type="file" name="upload_file" id="upload_file">
                 <p>${_('or')} <a id="file_enable" href="#">${_('Create New File')}</a></p>
             </div>
@@ -155,10 +161,8 @@
     });
 
     $('#upload_file').on('change', function() {
-        if (detectIE() && detectIE() <= 9) {
-            if (this.files && this.files[0]) {
-                $('#selected-file').html(this.files[0].name);
-            }
+        if (this.files && this.files[0]) {
+            $('#filename_upload').val(this.files[0].name);
         }
     });
 

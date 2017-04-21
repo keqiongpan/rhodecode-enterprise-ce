@@ -660,7 +660,6 @@ class FilesController(BaseRepoController):
         file_obj = r_post.get('upload_file', None)
 
         if file_obj is not None and hasattr(file_obj, 'filename'):
-            filename = file_obj.filename
             content = file_obj.file
 
             if hasattr(content, 'file'):
