@@ -492,7 +492,7 @@ class PullrequestsController(BaseRepoController):
             msg = PullRequestModel.UPDATE_STATUS_MESSAGES[resp.reason]
             warning_reasons = [
                 UpdateFailureReason.NO_CHANGE,
-                UpdateFailureReason.WRONG_REF_TPYE,
+                UpdateFailureReason.WRONG_REF_TYPE,
             ]
             category = 'warning' if resp.reason in warning_reasons else 'error'
             h.flash(msg, category=category)

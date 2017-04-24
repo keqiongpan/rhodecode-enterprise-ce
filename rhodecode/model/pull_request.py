@@ -118,9 +118,9 @@ class PullRequestModel(BaseModel):
             'Pull request update failed because of an unknown error.'),
         UpdateFailureReason.NO_CHANGE: lazy_ugettext(
             'No update needed because the source and target have not changed.'),
-        UpdateFailureReason.WRONG_REF_TPYE: lazy_ugettext(
+        UpdateFailureReason.WRONG_REF_TYPE: lazy_ugettext(
             'Pull request cannot be updated because the reference type is '
-            'not supported for an update.'),
+            'not supported for an update. Only Branch, Tag or Bookmark is allowed.'),
         UpdateFailureReason.MISSING_TARGET_REF: lazy_ugettext(
             'This pull request cannot be updated because the target '
             'reference is missing.'),
@@ -594,7 +594,7 @@ class PullRequestModel(BaseModel):
                 pull_request, source_ref_type)
             return UpdateResponse(
                 executed=False,
-                reason=UpdateFailureReason.WRONG_REF_TPYE,
+                reason=UpdateFailureReason.WRONG_REF_TYPE,
                 old=pull_request, new=None, changes=None,
                 source_changed=False, target_changed=False)
 
