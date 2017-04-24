@@ -103,6 +103,8 @@ function registerRCRoutes() {
     pyroutes.register('strip', '/%(repo_name)s/strip', ['repo_name']);
     pyroutes.register('strip_check', '/%(repo_name)s/strip_check', ['repo_name']);
     pyroutes.register('strip_execute', '/%(repo_name)s/strip_execute', ['repo_name']);
+    pyroutes.register('search', '/_admin/search', []);
+    pyroutes.register('search_repo', '/%(repo_name)s/search', ['repo_name']);
     pyroutes.register('user_profile', '/_profiles/%(username)s', ['username']);
     pyroutes.register('my_account_profile', '/_admin/my_account/profile', []);
     pyroutes.register('my_account_password', '/_admin/my_account/password', []);
