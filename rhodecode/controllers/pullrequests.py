@@ -726,7 +726,7 @@ class PullrequestsController(BaseRepoController):
             c.allowed_to_delete = PullRequestModel().check_user_delete(
                 pull_request_latest, c.rhodecode_user) and not pr_closed
             c.allowed_to_comment = not pr_closed
-            c.allowed_to_close = c.allowed_to_change_status and not pr_closed
+            c.allowed_to_close = c.allowed_to_merge and not pr_closed
 
         # check merge capabilities
         _merge_check = MergeCheck.validate(
@@ -969,7 +969,11 @@ class PullrequestsController(BaseRepoController):
         close_pull_request = request.POST.get('close_pull_request')
 
         close_pr = False
-        if close_pull_request:
+        # only owner or admin or person with write permissions
+        allowed_to_close = PullRequestModel().check_user_update(
+            pull_request, c.rhodecode_user)
+
+        if close_pull_request and allowed_to_close:
             close_pr = True
             pull_request_review_status = pull_request.calculated_review_status()
             if pull_request_review_status == ChangesetStatus.STATUS_APPROVED:

@@ -31,7 +31,8 @@ from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
 from rhodecode.model.repo import RepoModel
-from rhodecode.tests import assert_session_flash, url, TEST_USER_ADMIN_LOGIN
+from rhodecode.tests import (
+    assert_session_flash, url, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN)
 from rhodecode.tests.utils import AssertResponse
 
 
@@ -97,7 +98,7 @@ class TestPullrequestsController:
             'Server-side pull request merging is disabled.'
             in response) != pr_merge_enabled
 
-    def test_close_status_visibility(self, pr_util, csrf_token):
+    def test_close_status_visibility(self, pr_util, user_util, csrf_token):
         from rhodecode.tests.functional.test_login import login_url, logut_url
         # Logout
         response = self.app.post(
@@ -105,10 +106,11 @@ class TestPullrequestsController:
             params={'csrf_token': csrf_token})
         # Login as regular user
         response = self.app.post(login_url,
-                                 {'username': 'test_regular',
+                                 {'username': TEST_USER_REGULAR_LOGIN,
                                   'password': 'test12'})
 
-        pull_request = pr_util.create_pull_request(author='test_regular')
+        pull_request = pr_util.create_pull_request(
+            author=TEST_USER_REGULAR_LOGIN)
 
         response = self.app.get(url(
             controller='pullrequests', action='show',
@@ -118,6 +120,22 @@ class TestPullrequestsController:
         response.mustcontain('Server-side pull request merging is disabled.')
 
         assert_response = response.assert_response()
+        # for regular user without a merge permissions, we don't see it
+        assert_response.no_element_exists('#close-pull-request-action')
+
+        user_util.grant_user_permission_to_repo(
+            pull_request.target_repo,
+            UserModel().get_by_username(TEST_USER_REGULAR_LOGIN),
+            'repository.write')
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=str(pull_request.pull_request_id)))
+
+        response.mustcontain('Server-side pull request merging is disabled.')
+
+        assert_response = response.assert_response()
+        # now regular user has a merge permissions, we have CLOSE button
         assert_response.one_element_exists('#close-pull-request-action')
 
     def test_show_invalid_commit_id(self, pr_util):
