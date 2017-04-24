@@ -59,7 +59,7 @@
                 ${_('Filename')}:
             </div>
             <div class="right-content">
-                <input class="input-small" type="text" value="" size="46" name="filename" id="filename_upload" placeholder="${_('No file selected')}">
+                <input class="input-small" type="text" value="" size="46" name="filename_upload" id="filename_upload" placeholder="${_('No file selected')}">
             </div>
             <div class="filename-label left-label file-upload-label">
                 ${_('Upload file')}:
