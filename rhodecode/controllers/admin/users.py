@@ -381,8 +381,7 @@ class UsersController(BaseController):
             return redirect(h.route_path('users'))
 
         c.active = 'advanced'
-        c.perm_user = AuthUser(user_id=user_id, ip_addr=self.ip_addr)
-        c.personal_repo_group = c.perm_user.personal_repo_group
+        c.personal_repo_group = RepoGroup.get_user_personal_repo_group(user_id)
         c.personal_repo_group_name = RepoGroupModel()\
             .get_personal_group_name(user)
         c.first_admin = User.get_first_super_admin()
