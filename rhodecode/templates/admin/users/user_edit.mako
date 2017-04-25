@@ -13,7 +13,12 @@
     &raquo;
     ${h.link_to(_('Users'),h.route_path('users'))}
     &raquo;
+    % if c.user.active:
     ${c.user.username}
+    % else:
+    <strike title="${_('This user is set as disabled')}">${c.user.username}</strike>
+    % endif
+
 </%def>
 
 <%def name="menu_bar_nav()">
