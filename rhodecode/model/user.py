@@ -669,7 +669,8 @@ class UserModel(BaseModel):
                     user_id, api_key, username)
                 return False
             if not dbuser.active:
-                log.debug('User `%s` is inactive, skipping fill data', username)
+                log.debug('User `%s:%s` is inactive, skipping fill data',
+                          username, user_id)
                 return False
 
             log.debug('filling user:%s data', dbuser)

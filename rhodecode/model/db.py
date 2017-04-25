@@ -2208,8 +2208,11 @@ class RepoGroup(Base, BaseModel):
     @classmethod
     def get_user_personal_repo_group(cls, user_id):
         user = User.get(user_id)
+        if user.username == User.DEFAULT_USER:
+            return None
+
         return cls.query()\
-            .filter(cls.personal == true())\
+            .filter(cls.personal == true()) \
             .filter(cls.user == user).scalar()
 
     @classmethod
