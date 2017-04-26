@@ -67,7 +67,7 @@ class AdminController(BaseController):
         def url_generator(**kw):
             return url.current(filter=c.search_term, **kw)
 
-        c.users_log = Page(users_log, page=p, items_per_page=10,
+        c.audit_logs = Page(users_log, page=p, items_per_page=10,
                            url=url_generator)
         c.log_data = render('admin/admin_log.mako')
 

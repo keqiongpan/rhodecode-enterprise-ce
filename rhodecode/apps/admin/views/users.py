@@ -293,14 +293,14 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         p = safe_int(self.request.GET.get('page', 1), 1)
 
         filter_term = self.request.GET.get('filter')
-        c.user_log = UserModel().get_user_log(c.user, filter_term)
+        user_log = UserModel().get_user_log(c.user, filter_term)
 
         def url_generator(**kw):
             if filter_term:
                 kw['filter'] = filter_term
             return self.request.current_route_path(_query=kw)
 
-        c.user_log = Page(c.user_log, page=p, items_per_page=10,
+        c.audit_logs = Page(user_log, page=p, items_per_page=10,
                           url=url_generator)
         c.filter_term = filter_term
         return self._get_template_context(c)

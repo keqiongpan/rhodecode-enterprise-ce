@@ -12,7 +12,7 @@
     ${h.form(None, id_="filter_form", method="get")}
         <input class="q_filter_box ${'' if c.search_term else 'initial'}" id="j_filter" size="15" type="text" name="filter" value="${c.search_term or ''}" placeholder="${_('journal filter...')}"/>
         <input type='submit' value="${_('filter')}" class="btn" />
-        ${_('Admin journal')} - ${ungettext('%s entry', '%s entries', c.users_log.item_count) % (c.users_log.item_count)}
+        ${_('Admin journal')} - ${ungettext('%s entry', '%s entries', c.audit_logs.item_count) % (c.audit_logs.item_count)}
     ${h.end_form()}
     <p class="tooltip filterexample" title="${h.tooltip(h.journal_filter_help())}">${_('Example Queries')}</p>
 </%def>
