@@ -36,6 +36,7 @@ ACTIONS = {
 
     'repo.add': {},
     'repo.edit': {},
+    'repo.commit.strip': {}
 }
 
 
