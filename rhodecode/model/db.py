@@ -1098,6 +1098,10 @@ class UserLog(Base, BaseModel):
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
+    VERSION_1 = 'v1'
+    VERSION_2 = 'v2'
+    VERSIONS = [VERSION_1, VERSION_2]
+
     user_log_id = Column("user_log_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=True, unique=None, default=None)
     username = Column("username", String(255), nullable=True, unique=None, default=None)
@@ -1107,7 +1111,7 @@ class UserLog(Base, BaseModel):
     action = Column("action", Text().with_variant(Text(1200000), 'mysql'), nullable=True, unique=None, default=None)
     action_date = Column("action_date", DateTime(timezone=False), nullable=True, unique=None, default=None)
 
-    version = Column("version", String(255), nullable=True, default='v1')
+    version = Column("version", String(255), nullable=True, default=VERSION_1)
     user_data = Column('user_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
     action_data = Column('action_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
 
