@@ -6,9 +6,10 @@
     <tr>
         <th>${_('Username')}</th>
         <th>${_('Action')}</th>
+        <th>${_('Action Data')}</th>
         <th>${_('Repository')}</th>
         <th>${_('Date')}</th>
-        <th>${_('From IP')}</th>
+        <th>${_('IP')}</th>
     </tr>
 
     %for cnt,l in enumerate(c.users_log):
@@ -20,10 +21,23 @@
               ${l.username}
             %endif
         </td>
-        <td class="td-journalaction">${h.action_parser(l)[0]()}
+        <td class="td-journalaction">
+            % if l.version == l.VERSION_1:
+                ${h.action_parser(l)[0]()}
+            % else:
+                ${h.literal(l.action)}
+            % endif
+
             <div class="journal_action_params">
-                ${h.literal(h.action_parser(l)[1]())}
+                % if l.version == l.VERSION_1:
+                    ${h.literal(h.action_parser(l)[1]())}
+                % endif
             </div>
+        </td>
+        <td>
+            % if l.version == l.VERSION_2:
+                ${l.action_data}
+            % endif
         </td>
         <td class="td-componentname">
             %if l.repository is not None:
