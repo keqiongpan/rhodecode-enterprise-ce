@@ -34,6 +34,7 @@ from rhodecode.apps._base import BaseAppView
 from rhodecode.authentication.base import authenticate, HTTP_TYPE
 from rhodecode.events import UserRegistered
 from rhodecode.lib import helpers as h
+from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     AuthUser, HasPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib.base import get_ip_addr
@@ -166,6 +167,13 @@ class LoginView(BaseAppView):
                 username=form_result['username'],
                 remember=form_result['remember'])
             log.debug('Redirecting to "%s" after login.', c.came_from)
+
+            audit_user = audit_logger.UserWrap(
+                username=self.request.params.get('username'),
+                ip_addr=self.request.remote_addr)
+            audit_logger.store(action='user.login.success', user=audit_user,
+                               commit=True)
+
             raise HTTPFound(c.came_from, headers=headers)
         except formencode.Invalid as errors:
             defaults = errors.value
@@ -176,6 +184,12 @@ class LoginView(BaseAppView):
                 'errors': errors.error_dict,
                 'defaults': defaults,
             })
+
+            audit_user = audit_logger.UserWrap(
+                username=self.request.params.get('username'),
+                ip_addr=self.request.remote_addr)
+            audit_logger.store(action='user.login.failure', user=audit_user,
+                               commit=True)
             return render_ctx
 
         except UserCreationError as e:
@@ -191,6 +205,8 @@ class LoginView(BaseAppView):
     def logout(self):
         auth_user = self._rhodecode_user
         log.info('Deleting session for user: `%s`', auth_user)
+        audit_logger.store(action='user.logout', user=auth_user,
+                           commit=True)
         self.session.delete()
         return HTTPFound(url('home'))
 
@@ -338,6 +354,10 @@ class LoginView(BaseAppView):
                     form_result, password_reset_url)
                 # Display success message and redirect.
                 self.session.flash(msg, queue='success')
+
+                audit_logger.store(action='user.password.reset_request',
+                                   action_data={'email': user_email},
+                                   user=self._rhodecode_user, commit=True)
                 return HTTPFound(self.request.route_path('reset_password'))
 
             except formencode.Invalid as errors:

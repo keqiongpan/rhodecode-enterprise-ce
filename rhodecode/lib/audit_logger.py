@@ -29,6 +29,11 @@ log = logging.getLogger(__name__)
 
 
 ACTIONS = {
+    'user.login.success': {},
+    'user.login.failure': {},
+    'user.logout': {},
+    'user.password.reset_request': {},
+
     'repo.add': {},
     'repo.edit': {},
 }
