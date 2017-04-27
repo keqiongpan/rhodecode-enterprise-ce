@@ -121,7 +121,10 @@ def store(
         if not user_data:
             # try to get this from the auth user
             if isinstance(user, AuthUser):
-                user_data = {}
+                user_data = {
+                    'username': user.username,
+                    'email': user.email,
+                }
 
         repository_id = getattr(repo, 'repo_id', None)
         repository_name = getattr(repo, 'repo_name', None)
