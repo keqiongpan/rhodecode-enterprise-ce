@@ -806,13 +806,15 @@ class PullRequestModel(BaseModel):
 
         """
         pull_request = pull_request_version.pull_request
-        comments = ChangesetComment.query().filter(
-            # TODO: johbo: Should we query for the repo at all here?
-            # Pending decision on how comments of PRs are to be related
-            # to either the source repo, the target repo or no repo at all.
-            ChangesetComment.repo_id == pull_request.target_repo.repo_id,
-            ChangesetComment.pull_request == pull_request,
-            ChangesetComment.pull_request_version == None)
+        comments = ChangesetComment.query()\
+            .filter(
+                # TODO: johbo: Should we query for the repo at all here?
+                # Pending decision on how comments of PRs are to be related
+                # to either the source repo, the target repo or no repo at all.
+                ChangesetComment.repo_id == pull_request.target_repo.repo_id,
+                ChangesetComment.pull_request == pull_request,
+                ChangesetComment.pull_request_version == None)\
+            .order_by(ChangesetComment.comment_id.asc())
 
         # TODO: johbo: Find out why this breaks if it is done in a bulk
         # operation.
