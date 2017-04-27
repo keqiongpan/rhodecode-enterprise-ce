@@ -79,7 +79,8 @@ class TestAdminController(TestController):
     def test_filter_all_entries(self):
         self.log_user()
         response = self.app.get(url(controller='admin/admin', action='index',))
-        response.mustcontain('2034 entries')
+        all_count = UserLog.query().count()
+        response.mustcontain('%s entries' % all_count)
 
     def test_filter_journal_filter_exact_match_on_repository(self):
         self.log_user()
@@ -139,7 +140,8 @@ class TestAdminController(TestController):
         self.log_user()
         response = self.app.get(url(controller='admin/admin', action='index',
                                     filter='username:*test*'))
-        response.mustcontain('100 entries')
+        entries_count = UserLog.query().filter(UserLog.username.ilike('%test%')).count()
+        response.mustcontain('{} entries'.format(entries_count))
 
     def test_filter_journal_filter_prefix_on_username(self):
         self.log_user()

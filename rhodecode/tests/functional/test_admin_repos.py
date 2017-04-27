@@ -797,13 +797,14 @@ class TestVcsSettings(object):
             self, backend, user_util, settings_util, csrf_token):
         repo = backend.create_repo()
         repo_name = repo.repo_name
-        user = UserModel().get_by_username(TEST_USER_REGULAR_LOGIN)
 
         logout_user_session(self.app, csrf_token)
         session = login_user_session(
             self.app, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
         new_csrf_token = auth.get_csrf_token(session)
 
+        user = UserModel().get_by_username(TEST_USER_REGULAR_LOGIN)
+        repo = Repository.get_by_repo_name(repo_name)
         user_util.grant_user_permission_to_repo(repo, user, 'repository.admin')
         data = self.FORM_DATA.copy()
         data['csrf_token'] = new_csrf_token
@@ -1179,11 +1180,14 @@ class TestVcsSettings(object):
             self, backend_svn, user_util, settings_util, csrf_token):
         repo = backend_svn.create_repo()
         repo_name = repo.repo_name
-        user = UserModel().get_by_username(TEST_USER_REGULAR_LOGIN)
+
         logout_user_session(self.app, csrf_token)
         session = login_user_session(
             self.app, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
         csrf_token = auth.get_csrf_token(session)
+
+        repo = Repository.get_by_repo_name(repo_name)
+        user = UserModel().get_by_username(TEST_USER_REGULAR_LOGIN)
         user_util.grant_user_permission_to_repo(repo, user, 'repository.admin')
         branch = settings_util.create_repo_rhodecode_ui(
             repo, VcsSettingsModel.SVN_BRANCH_SECTION, 'test_branch',
