@@ -171,8 +171,10 @@ class LoginView(BaseAppView):
             audit_user = audit_logger.UserWrap(
                 username=self.request.params.get('username'),
                 ip_addr=self.request.remote_addr)
-            audit_logger.store(action='user.login.success', user=audit_user,
-                               commit=True)
+            action_data = {'user_agent': self.request.user_agent}
+            audit_logger.store(
+                action='user.login.success', action_data=action_data,
+                user=audit_user, commit=True)
 
             raise HTTPFound(c.came_from, headers=headers)
         except formencode.Invalid as errors:
@@ -188,8 +190,10 @@ class LoginView(BaseAppView):
             audit_user = audit_logger.UserWrap(
                 username=self.request.params.get('username'),
                 ip_addr=self.request.remote_addr)
-            audit_logger.store(action='user.login.failure', user=audit_user,
-                               commit=True)
+            action_data = {'user_agent': self.request.user_agent}
+            audit_logger.store(
+                action='user.login.failure', action_data=action_data,
+                user=audit_user, commit=True)
             return render_ctx
 
         except UserCreationError as e:
@@ -205,8 +209,11 @@ class LoginView(BaseAppView):
     def logout(self):
         auth_user = self._rhodecode_user
         log.info('Deleting session for user: `%s`', auth_user)
-        audit_logger.store(action='user.logout', user=auth_user,
-                           commit=True)
+
+        action_data = {'user_agent': self.request.user_agent}
+        audit_logger.store(
+            action='user.logout', action_data=action_data,
+            user=auth_user, commit=True)
         self.session.delete()
         return HTTPFound(url('home'))
 
@@ -355,8 +362,10 @@ class LoginView(BaseAppView):
                 # Display success message and redirect.
                 self.session.flash(msg, queue='success')
 
+                action_data = {'email': user_email,
+                               'user_agent': self.request.user_agent}
                 audit_logger.store(action='user.password.reset_request',
-                                   action_data={'email': user_email},
+                                   action_data=action_data,
                                    user=self._rhodecode_user, commit=True)
                 return HTTPFound(self.request.route_path('reset_password'))
 
