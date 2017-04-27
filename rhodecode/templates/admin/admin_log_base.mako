@@ -35,7 +35,12 @@
         </td>
         <td>
             % if l.version == l.VERSION_2:
-                ${l.action_data}
+                <a href="#" onclick="$('#entry-'+${l.user_log_id}).toggle();return false">${_('toggle')}</a>
+                <div id="entry-${l.user_log_id}" style="display: none">
+                    <pre>${h.json.dumps(l.action_data, indent=4, sort_keys=True)}</pre>
+                </div>
+            % else:
+                ${_('not available in v1 type')}
             % endif
         </td>
         <td class="td-componentname">
