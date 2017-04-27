@@ -25,6 +25,7 @@ from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib.utils2 import StrictAttributeDict, safe_int
+from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import repo
 from rhodecode.model.db import User
 from rhodecode.model.scm import ScmModel
@@ -121,12 +122,25 @@ class RepoAppView(BaseAppView):
         self.db_repo_name = self.db_repo.repo_name
         self.db_repo_pull_requests = ScmModel().get_pull_requests(self.db_repo)
 
+    def _handle_missing_requirements(self, error):
+        log.error(
+            'Requirements are missing for repository %s: %s',
+            self.db_repo_name, error.message)
+
     def _get_local_tmpl_context(self):
         c = super(RepoAppView, self)._get_local_tmpl_context()
         # register common vars for this type of view
         c.rhodecode_db_repo = self.db_repo
         c.repo_name = self.db_repo_name
         c.repository_pull_requests = self.db_repo_pull_requests
+
+        c.repository_requirements_missing = False
+        try:
+            self.rhodecode_vcs_repo = self.db_repo.scm_instance()
+        except RepositoryRequirementError as e:
+            c.repository_requirements_missing = True
+            self._handle_missing_requirements(e)
+
         return c
 
 
