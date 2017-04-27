@@ -748,7 +748,7 @@ class PullrequestsController(BaseRepoController):
         # GENERAL COMMENTS with versions #
         q = comments_model._all_general_comments_of_pull_request(pull_request_latest)
         q = q.order_by(ChangesetComment.comment_id.asc())
-        general_comments = q.order_by(ChangesetComment.pull_request_version_id.asc())
+        general_comments = q
 
         # pick comments we want to render at current version
         c.comment_versions = comments_model.aggregate_comments(
@@ -758,7 +758,8 @@ class PullrequestsController(BaseRepoController):
         # INLINE COMMENTS with versions  #
         q = comments_model._all_inline_comments_of_pull_request(pull_request_latest)
         q = q.order_by(ChangesetComment.comment_id.asc())
-        inline_comments = q.order_by(ChangesetComment.pull_request_version_id.asc())
+        inline_comments = q
+
         c.inline_versions = comments_model.aggregate_comments(
             inline_comments, versions, c.at_version_num, inline=True)
 
