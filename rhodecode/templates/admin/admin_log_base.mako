@@ -40,7 +40,7 @@
                     <pre>${h.json.dumps(l.action_data, indent=4, sort_keys=True)}</pre>
                 </div>
             % else:
-                ${_('not available in v1 type')}
+                <pre title="${_('data not available for v1 entries type')}">-</pre>
             % endif
         </td>
         <td class="td-componentname">
