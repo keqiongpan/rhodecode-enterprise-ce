@@ -24,7 +24,8 @@ from rhodecode.lib.utils2 import AttributeDict
 
 # this is a user object to be used for events caused by the system (eg. shell)
 SYSTEM_USER = AttributeDict(dict(
-    username='__SYSTEM__'
+    username='__SYSTEM__',
+    user_id='__SYSTEM_ID__'
 ))
 
 log = logging.getLogger(__name__)
@@ -61,7 +62,8 @@ class RhodecodeEvent(object):
             instance = auth_user.get_instance()
             if not instance:
                 return AttributeDict(dict(
-                    username=auth_user.username
+                    username=auth_user.username,
+                    user_id=auth_user.user_id,
                 ))
             return instance
 
@@ -93,7 +95,8 @@ class RhodecodeEvent(object):
             'utc_timestamp': self.utc_timestamp,
             'actor_ip': self.actor_ip,
             'actor': {
-                'username': self.actor.username
+                'username': self.actor.username,
+                'user_id': self.actor.user_id
             },
             'server_url': self.server_url
         }

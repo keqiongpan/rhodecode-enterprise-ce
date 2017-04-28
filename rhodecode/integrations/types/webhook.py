@@ -35,7 +35,7 @@ from rhodecode.integrations.types.base import IntegrationTypeBase
 
 log = logging.getLogger(__name__)
 
-# updating this required to update the `base_vars` passed in url calling func
+# updating this required to update the `common_vars` passed in url calling func
 WEBHOOK_URL_VARS = [
     'repo_name',
     'repo_type',
@@ -49,6 +49,10 @@ WEBHOOK_URL_VARS = [
     # pr events vars
     'pull_request_id',
     'pull_request_url',
+
+    # user who triggers the call
+    'username',
+    'user_id',
 
 ]
 URL_VARS = ', '.join('${' + x + '}' for x in WEBHOOK_URL_VARS)
@@ -70,6 +74,8 @@ class WebhookHandler(object):
             'repo_type': data['repo']['repo_type'],
             'repo_id': data['repo']['repo_id'],
             'repo_url': data['repo']['url'],
+            'username': data['actor']['username'],
+            'user_id': data['actor']['user_id']
         }
 
         return string.Template(
