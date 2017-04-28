@@ -52,18 +52,29 @@
                </div>
                <div class="input">
                    %if c.rhodecode_db_repo.clone_uri:
-                    ## display
+                    ## display, if we don't have any errors
+                    % if not c.form['repo_clone_uri'].error:
                     <div id="clone_uri_hidden" class='text-as-placeholder'>
                         <span id="clone_uri_hidden_value">${c.rhodecode_db_repo.clone_uri_hidden}</span>
                         <span class="link" id="edit_clone_uri"><i class="icon-edit"></i>${_('edit')}</span>
                     </div>
+                    % endif
+
                     ## alter field
-                    <div id="alter_clone_uri" style="display: none">
+                    <div id="alter_clone_uri" style="${'' if c.form['repo_clone_uri'].error else 'display: none'}">
                         ${c.form['repo_clone_uri'].render(css_class='medium', oid='clone_uri', placeholder=_('enter new value, or leave empty to remove'))|n}
                         ${c.form.render_error(request, c.form['repo_clone_uri'])|n}
-                        ${h.hidden('repo_clone_uri_change', 'OLD')}
+                        % if c.form['repo_clone_uri'].error:
+                            ## we got error from form subit, means we modify the url
+                            ${h.hidden('repo_clone_uri_change', 'MOD')}
+                        % else:
+                            ${h.hidden('repo_clone_uri_change', 'OLD')}
+                        % endif
 
+                        % if not c.form['repo_clone_uri'].error:
                         <span class="link" id="cancel_edit_clone_uri">${_('cancel')}</span>
+                        % endif
+
                     </div>
                    %else:
                     ## not set yet, display form to set it

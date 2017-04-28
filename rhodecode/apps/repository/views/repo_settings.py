@@ -80,6 +80,7 @@ class RepoSettingsView(RepoAppView):
 
     def _get_schema(self, c, old_values=None):
         return repo_schema.RepoSettingsSchema().bind(
+            repo_type=self.db_repo.repo_type,
             repo_type_options=[self.db_repo.repo_type],
             repo_ref_options=c.landing_revs_choices,
             repo_ref_items=c.landing_revs,

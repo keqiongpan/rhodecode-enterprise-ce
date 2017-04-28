@@ -66,6 +66,13 @@ def deferred_landing_ref_validator(node, kw):
 
 
 @colander.deferred
+def deferred_clone_uri_validator(node, kw):
+    repo_type = kw.get('repo_type')
+    validator = validators.CloneUriValidator(repo_type)
+    return validator
+
+
+@colander.deferred
 def deferred_landing_ref_widget(node, kw):
     items = kw.get(
         'repo_ref_items', [(DEFAULT_LANDING_REF, DEFAULT_LANDING_REF)])
@@ -346,6 +353,53 @@ class RepoSchema(colander.MappingSchema):
         # first pass, to validate given data
         appstruct = super(RepoSchema, self).deserialize(cstruct)
         validated_name = appstruct['repo_name']
+
+        # second pass to validate permissions to repo_group
+        second = RepoGroupAccessSchema().bind(**self.bindings)
+        appstruct_second = second.deserialize({'repo_group': validated_name})
+        # save result
+        appstruct['repo_group'] = appstruct_second['repo_group']
+
+        # thirds to validate uniqueness
+        third = RepoNameUniqueSchema().bind(**self.bindings)
+        third.deserialize({'unique_repo_name': validated_name})
+
+        return appstruct
+
+
+class RepoSettingsSchema(RepoSchema):
+    repo_group = colander.SchemaNode(
+        colander.Integer(),
+        validator=deferred_repo_group_validator,
+        widget=deferred_repo_group_widget,
+        missing='')
+
+    repo_clone_uri_change = colander.SchemaNode(
+        colander.String(),
+        missing='NEW')
+
+    repo_clone_uri = colander.SchemaNode(
+        colander.String(),
+        preparers=[preparers.strip_preparer],
+        validator=deferred_clone_uri_validator,
+        missing='')
+
+    def deserialize(self, cstruct):
+        """
+        Custom deserialize that allows to chain validation, and verify
+        permissions, and as last step uniqueness
+        """
+
+        # first pass, to validate given data
+        appstruct = super(RepoSchema, self).deserialize(cstruct)
+        validated_name = appstruct['repo_name']
+        # because of repoSchema adds repo-group as an ID, we inject it as
+        # full name here because validators require it, it's unwrapped later
+        # so it's safe to use and final name is going to be without group anyway
+
+        group, separator = get_repo_group(appstruct['repo_group'])
+        if group:
+            validated_name = separator.join([group.group_name, validated_name])
 
         # second pass to validate permissions to repo_group
         second = RepoGroupAccessSchema().bind(**self.bindings)
