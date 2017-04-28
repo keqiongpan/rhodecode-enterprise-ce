@@ -41,7 +41,6 @@ class StripView(RepoAppView):
         return c
 
     @LoginRequired()
-    @NotAnonymous()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
         route_name='strip', request_method='GET',
@@ -54,7 +53,6 @@ class StripView(RepoAppView):
         return self._get_template_context(c)
 
     @LoginRequired()
-    @NotAnonymous()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
         route_name='strip_check', request_method='POST',
@@ -79,7 +77,6 @@ class StripView(RepoAppView):
         return data
 
     @LoginRequired()
-    @NotAnonymous()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
         route_name='strip_execute', request_method='POST',
