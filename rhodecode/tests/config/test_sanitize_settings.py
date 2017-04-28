@@ -21,6 +21,7 @@
 
 import pytest
 
+from rhodecode.tests import no_newline_id_generator
 from rhodecode.config.middleware import (
     _sanitize_vcs_settings, _bool_setting, _string_setting, _list_setting,
     _int_setting)
@@ -70,7 +71,7 @@ class TestHelperFunctions(object):
         (' hg\n git\n svn ', ['hg', 'git', 'svn']),
         (', hg , git , svn , ', ['', 'hg', 'git', 'svn', '']),
         ('cheese,free node,other', ['cheese', 'free node', 'other']),
-    ])
+    ], ids=no_newline_id_generator)
     def test_list_setting_helper(self, raw, expected):
         key = 'dummy-key'
         settings = {key: raw}

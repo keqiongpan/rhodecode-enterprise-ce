@@ -57,19 +57,20 @@ class TestRepoSchema(object):
         )
 
         schema_data = schema.deserialize(dict(
-            repo_name='dupa',
+            repo_name='my_schema_repo',
             repo_type='hg',
             repo_owner=user_admin.username
         ))
 
-        assert schema_data['repo_name'] == 'dupa'
+        assert schema_data['repo_name'] == u'my_schema_repo'
         assert schema_data['repo_group'] == {
             'repo_group_id': None,
             'repo_group_name': types.RootLocation,
-            'repo_name_without_group': 'dupa'}
+            'repo_name_with_group': u'my_schema_repo',
+            'repo_name_without_group': u'my_schema_repo'}
 
     @pytest.mark.parametrize('given, err_key, expected_exc', [
-        ('xxx/dupa','repo_group', 'Repository group `xxx` does not exist'),
+        ('xxx/my_schema_repo','repo_group', 'Repository group `xxx` does not exist'),
         ('', 'repo_name', 'Name must start with a letter or number. Got ``'),
     ])
     def test_deserialize_with_bad_group_name(
@@ -95,7 +96,7 @@ class TestRepoSchema(object):
             user=user_admin
         )
 
-        full_name = test_repo_group.group_name + '/dupa'
+        full_name = test_repo_group.group_name + u'/my_schema_repo'
         schema_data = schema.deserialize(dict(
             repo_name=full_name,
             repo_type='hg',
@@ -106,7 +107,8 @@ class TestRepoSchema(object):
         assert schema_data['repo_group'] == {
             'repo_group_id': test_repo_group.group_id,
             'repo_group_name': test_repo_group.group_name,
-            'repo_name_without_group': 'dupa'}
+            'repo_name_with_group': full_name,
+            'repo_name_without_group': u'my_schema_repo'}
 
     def test_deserialize_with_group_name_regular_user_no_perms(
             self, app, user_regular, test_repo_group):
@@ -115,7 +117,7 @@ class TestRepoSchema(object):
             user=user_regular
         )
 
-        full_name = test_repo_group.group_name + '/dupa'
+        full_name = test_repo_group.group_name + '/my_schema_repo'
         with pytest.raises(colander.Invalid) as excinfo:
             schema.deserialize(dict(
                 repo_name=full_name,

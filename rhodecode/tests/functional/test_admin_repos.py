@@ -400,67 +400,6 @@ class TestAdminRepos(object):
     def test_show(self, autologin_user, backend):
         self.app.get(url('repo', repo_name=backend.repo_name))
 
-    def test_edit(self, backend, autologin_user):
-        self.app.get(url('edit_repo', repo_name=backend.repo_name))
-
-    def test_edit_accessible_when_missing_requirements(
-            self, backend_hg, autologin_user):
-        scm_patcher = mock.patch.object(
-            Repository, 'scm_instance', side_effect=RepositoryRequirementError)
-        with scm_patcher:
-            self.app.get(url('edit_repo', repo_name=backend_hg.repo_name))
-
-    def test_set_private_flag_sets_default_to_none(
-            self, autologin_user, backend, csrf_token):
-        # initially repository perm should be read
-        perm = _get_permission_for_user(user='default', repo=backend.repo_name)
-        assert len(perm) == 1
-        assert perm[0].permission.permission_name == 'repository.read'
-        assert not backend.repo.private
-
-        response = self.app.post(
-            url('repo', repo_name=backend.repo_name),
-            fixture._get_repo_create_params(
-                repo_private=1,
-                repo_name=backend.repo_name,
-                repo_type=backend.alias,
-                user=TEST_USER_ADMIN_LOGIN,
-                _method='put',
-                csrf_token=csrf_token))
-        assert_session_flash(
-            response,
-            msg='Repository %s updated successfully' % (backend.repo_name))
-        assert backend.repo.private
-
-        # now the repo default permission should be None
-        perm = _get_permission_for_user(user='default', repo=backend.repo_name)
-        assert len(perm) == 1
-        assert perm[0].permission.permission_name == 'repository.none'
-
-        response = self.app.post(
-            url('repo', repo_name=backend.repo_name),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=backend.repo_name,
-                repo_type=backend.alias,
-                user=TEST_USER_ADMIN_LOGIN,
-                _method='put',
-                csrf_token=csrf_token))
-        assert_session_flash(
-            response,
-            msg='Repository %s updated successfully' % (backend.repo_name))
-        assert not backend.repo.private
-
-        # we turn off private now the repo default permission should stay None
-        perm = _get_permission_for_user(user='default', repo=backend.repo_name)
-        assert len(perm) == 1
-        assert perm[0].permission.permission_name == 'repository.none'
-
-        # update this permission back
-        perm[0].permission = Permission.get_by_key('repository.read')
-        Session().add(perm[0])
-        Session().commit()
-
     def test_default_user_cannot_access_private_repo_in_a_group(
             self, autologin_user, user_util, backend, csrf_token):
 

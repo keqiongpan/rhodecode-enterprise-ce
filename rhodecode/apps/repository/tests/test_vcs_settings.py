@@ -23,25 +23,24 @@ import pytest
 
 import rhodecode
 from rhodecode.model.settings import SettingsModel
-from rhodecode.tests import url, HG_REPO
+from rhodecode.tests import url
 from rhodecode.tests.utils import AssertResponse
 
 
+def route_path(name, params=None, **kwargs):
+    import urllib
+
+    base_url = {
+        'edit_repo': '/{repo_name}/settings',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
+
 @pytest.mark.usefixtures('autologin_user', 'app')
-class TestAdminRepoSettingsController:
-    @pytest.mark.parametrize('urlname', [
-        'edit_repo',
-        'edit_repo_perms',
-        'edit_repo_advanced',
-        'repo_vcs_settings',
-        'edit_repo_fields',
-        'repo_settings_issuetracker',
-        'edit_repo_caches',
-        'edit_repo_remote',
-        'edit_repo_statistics',
-    ])
-    def test_simple_get(self, urlname, app):
-        app.get(url(urlname, repo_name=HG_REPO))
+class TestAdminRepoVcsSettings(object):
 
     @pytest.mark.parametrize('setting_name, setting_backends', [
         ('hg_use_rebase_for_merging', ['hg']),

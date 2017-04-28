@@ -64,7 +64,7 @@ def test_repo_groups_load_defaults(
     personal_group = personal_group_with_parent
     controller._RepoGroupsController__load_defaults(True, personal_group)
 
-    expected_list = ['-1', personal_group.parent_group.group_id]
+    expected_list = [-1, personal_group.parent_group.group_id]
     returned_group_ids = [group[0] for group in c.repo_groups]
     assert returned_group_ids == expected_list
 
@@ -74,6 +74,6 @@ def test_repo_groups_load_defaults_with_missing_group(
     personal_group = personal_group_with_parent
     controller._RepoGroupsController__load_defaults(True)
 
-    expected_list = sorted(['-1', personal_group.group_id])
+    expected_list = sorted([-1, personal_group.group_id])
     returned_group_ids = sorted([group[0] for group in c.repo_groups])
     assert returned_group_ids == expected_list

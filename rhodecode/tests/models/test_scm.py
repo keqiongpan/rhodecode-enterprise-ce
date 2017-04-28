@@ -27,6 +27,7 @@ from mock import Mock, patch, DEFAULT
 
 import rhodecode
 from rhodecode.model import db, scm
+from rhodecode.tests import no_newline_id_generator
 
 
 def test_scm_instance_config(backend):
@@ -295,7 +296,7 @@ class TestCheckRhodecodeHook(object):
     @pytest.mark.parametrize("file_content, expected_result", [
         ("RC_HOOK_VER = '3.3.3'\n", True),
         ("RC_HOOK = '3.3.3'\n", False),
-    ])
+    ], ids=no_newline_id_generator)
     @patch('os.path.exists', Mock(return_value=True))
     def test_signatures(self, file_content, expected_result):
         hook_content_patcher = patch.object(
