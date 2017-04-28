@@ -98,6 +98,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_list_data', '/_repos', []);
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
     pyroutes.register('edit_repo', '/%(repo_name)s/settings', ['repo_name']);
+    pyroutes.register('edit_repo_caches', '/%(repo_name)s/settings/caches', ['repo_name']);
     pyroutes.register('repo_maintenance', '/%(repo_name)s/maintenance', ['repo_name']);
     pyroutes.register('repo_maintenance_execute', '/%(repo_name)s/maintenance/execute', ['repo_name']);
     pyroutes.register('strip', '/%(repo_name)s/strip', ['repo_name']);

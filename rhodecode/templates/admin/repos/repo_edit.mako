@@ -58,7 +58,7 @@
               <a href="${h.url('repo_settings_issuetracker', repo_name=c.repo_name)}">${_('Issue Tracker')}</a>
           </li>
           <li class="${'active' if c.active=='caches' else ''}">
-              <a href="${h.url('edit_repo_caches', repo_name=c.repo_name)}">${_('Caches')}</a>
+              <a href="${h.route_path('edit_repo_caches', repo_name=c.repo_name)}">${_('Caches')}</a>
           </li>
           %if c.repo_info.repo_type != 'svn':
           <li class="${'active' if c.active=='remote' else ''}">

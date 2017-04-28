@@ -541,30 +541,6 @@ class ReposController(BaseRepoController):
 
     @HasRepoPermissionAllDecorator('repository.admin')
     @auth.CSRFRequired()
-    def edit_caches(self, repo_name):
-        """PUT /{repo_name}/settings/caches: invalidate the repo caches."""
-        try:
-            ScmModel().mark_for_invalidation(repo_name, delete=True)
-            Session().commit()
-            h.flash(_('Cache invalidation successful'),
-                    category='success')
-        except Exception:
-            log.exception("Exception during cache invalidation")
-            h.flash(_('An error occurred during cache invalidation'),
-                    category='error')
-
-        return redirect(url('edit_repo_caches', repo_name=c.repo_name))
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    def edit_caches_form(self, repo_name):
-        """GET /repo_name/settings: Form to edit an existing item"""
-        c.repo_info = self._load_repo(repo_name)
-        c.active = 'caches'
-
-        return render('admin/repos/repo_edit.mako')
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    @auth.CSRFRequired()
     def edit_remote(self, repo_name):
         """PUT /{repo_name}/settings/remote: edit the repo remote."""
         try:

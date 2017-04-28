@@ -708,15 +708,6 @@ def make_map(config):
                  conditions={'method': ['PUT'], 'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('edit_repo_caches', '/{repo_name}/settings/caches',
-                 controller='admin/repos', action='edit_caches_form',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('edit_repo_caches', '/{repo_name}/settings/caches',
-                 controller='admin/repos', action='edit_caches',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     rmap.connect('edit_repo_remote', '/{repo_name}/settings/remote',
                  controller='admin/repos', action='edit_remote_form',
                  conditions={'method': ['GET'], 'function': check_repo},

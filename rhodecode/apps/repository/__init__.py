@@ -26,6 +26,12 @@ def includeme(config):
         name='edit_repo',
         pattern='/{repo_name:.*?[^/]}/settings', repo_route=True)
 
+    # Caches
+    config.add_route(
+        name='edit_repo_caches',
+        pattern='/{repo_name:.*?[^/]}/settings/caches', repo_route=True)
+
+    # Maintenance
     config.add_route(
         name='repo_maintenance',
         pattern='/{repo_name:.*?[^/]}/maintenance', repo_route=True)
