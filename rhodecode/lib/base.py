@@ -162,6 +162,10 @@ def get_access_path(environ):
     return path
 
 
+def get_user_agent(environ):
+    return environ.get('HTTP_USER_AGENT')
+
+
 def vcs_operation_context(
         environ, repo_name, username, action, scm, check_locking=True,
         is_shadow_repo=False):
@@ -200,6 +204,7 @@ def vcs_operation_context(
         'make_lock': make_lock,
         'locked_by': locked_by,
         'server_url': utils2.get_server_url(environ),
+        'user_agent': get_user_agent(environ),
         'hooks': get_enabled_hook_classes(ui_settings),
         'is_shadow_repo': is_shadow_repo,
     }

@@ -34,8 +34,9 @@ from rhodecode.model import db
     ('scm', 'stub_scm'),
     ('hooks', ['stub_hook']),
     ('config', 'stub_ini_filename'),
-    ('ip', 'fake_ip'),
+    ('ip', '1.2.3.4'),
     ('server_url', 'https://example.com'),
+    ('user_agent', 'client-text-v1.1'),
     # TODO: johbo: Commpare locking parameters with `_get_rc_scm_extras`
     # in hooks_utils.
     ('make_lock', None),
@@ -71,7 +72,6 @@ def test_vcs_operation_context_can_skip_locking_check(mock_get_locking_state):
 
 @patch.object(
     base, 'get_enabled_hook_classes', Mock(return_value=['stub_hook']))
-@patch.object(base, 'get_ip_addr', Mock(return_value="fake_ip"))
 @patch('rhodecode.lib.utils2.get_server_url',
        Mock(return_value='https://example.com'))
 def call_vcs_operation_context(**kwargs_override):
@@ -87,7 +87,9 @@ def call_vcs_operation_context(**kwargs_override):
         'rhodecode.CONFIG', {'__file__': 'stub_ini_filename'})
     settings_patch = patch.object(base, 'VcsSettingsModel')
     with config_file_patch, settings_patch as settings_mock:
-        result = base.vcs_operation_context(environ={}, **kwargs)
+        result = base.vcs_operation_context(
+            environ={'HTTP_USER_AGENT': 'client-text-v1.1',
+                     'REMOTE_ADDR': '1.2.3.4'}, **kwargs)
     settings_mock.assert_called_once_with(repo='stub_repo_name')
     return result
 

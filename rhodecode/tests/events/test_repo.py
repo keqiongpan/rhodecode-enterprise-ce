@@ -43,6 +43,7 @@ def scm_extras(user_regular, repo_stub):
         'config': '',
         'server_url': 'http://example.com',
         'make_lock': None,
+        'user-agent': 'some-client',
         'locked_by': [None],
         'commit_ids': ['a' * 40] * 3,
         'is_shadow_repo': False,
