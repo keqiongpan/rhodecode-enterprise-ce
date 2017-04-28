@@ -36,7 +36,6 @@
   </div>
 
   <div class="sidebar-col-wrapper scw-small">
-    ##main
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
           <li class="${'active' if c.active=='settings' else ''}">
@@ -71,28 +70,18 @@
           <li class="${'active' if c.active=='integrations' else ''}">
               <a href="${h.route_path('repo_integrations_home', repo_name=c.repo_name)}">${_('Integrations')}</a>
           </li>
+          %if c.repo_info.repo_type != 'svn':
+          <li class="${'active' if c.active=='reviewers' else ''}">
+              <a href="${h.route_path('repo_reviewers', repo_name=c.repo_name)}">${_('Reviewer Rules')}</a>
+          </li>
+          %endif
           <li class="${'active' if c.active=='maintenance' else ''}">
               <a href="${h.route_path('repo_maintenance', repo_name=c.repo_name)}">${_('Maintenance')}</a>
           </li>
           <li class="${'active' if c.active=='strip' else ''}">
               <a href="${h.route_path('strip', repo_name=c.repo_name)}">${_('Strip')}</a>
           </li>
-          ## TODO: dan: replace repo navigation with navlist registry like with
-          ## admin menu. First must find way to allow runtime configuration
-          ## it to account for the c.repo_info.repo_type != 'svn' call above
-          <%
-          reviewer_settings = False
-          try:
-            import rc_reviewers
-            reviewer_settings = True
-          except ImportError:
-            pass
-          %>
-          %if reviewer_settings:
-          <li class="${'active' if c.active=='reviewers' else ''}">
-              <a href="${h.route_path('repo_reviewers_home', repo_name=c.repo_name)}">${_('Reviewers')}</a>
-          </li>
-          %endif
+
         </ul>
     </div>
 
