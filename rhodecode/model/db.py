@@ -2184,7 +2184,7 @@ class RepoGroup(Base, BaseModel):
 
         repo_groups = []
         if show_empty_group:
-            repo_groups = [('-1', u'-- %s --' % _('No parent'))]
+            repo_groups = [(-1, u'-- %s --' % _('No parent'))]
 
         repo_groups.extend([cls._generate_choice(x) for x in groups])
 

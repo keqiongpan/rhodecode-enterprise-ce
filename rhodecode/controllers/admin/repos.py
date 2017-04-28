@@ -290,65 +290,6 @@ class ReposController(BaseRepoController):
 
     @HasRepoPermissionAllDecorator('repository.admin')
     @auth.CSRFRequired()
-    def update(self, repo_name):
-        """
-        PUT /repos/repo_name: Update an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        #    <input type="hidden" name="_method" value="PUT" />
-        # Or using helpers:
-        #    h.form(url('repo', repo_name=ID),
-        #           method='put')
-        # url('repo', repo_name=ID)
-
-        self.__load_data(repo_name)
-        c.active = 'settings'
-        c.repo_fields = RepositoryField.query()\
-            .filter(RepositoryField.repository == c.repo_info).all()
-
-        repo_model = RepoModel()
-        changed_name = repo_name
-
-        c.personal_repo_group = c.rhodecode_user.personal_repo_group
-        # override the choices with extracted revisions !
-        repo = Repository.get_by_repo_name(repo_name)
-        old_data = {
-            'repo_name': repo_name,
-            'repo_group': repo.group.get_dict() if repo.group else {},
-            'repo_type': repo.repo_type,
-        }
-        _form = RepoForm(
-            edit=True, old_data=old_data, repo_groups=c.repo_groups_choices,
-            landing_revs=c.landing_revs_choices, allow_disabled=True)()
-
-        try:
-            form_result = _form.to_python(dict(request.POST))
-            repo = repo_model.update(repo_name, **form_result)
-            ScmModel().mark_for_invalidation(repo_name)
-            h.flash(_('Repository %s updated successfully') % repo_name,
-                    category='success')
-            changed_name = repo.repo_name
-            action_logger(c.rhodecode_user, 'admin_updated_repo',
-                              changed_name, self.ip_addr, self.sa)
-            Session().commit()
-        except formencode.Invalid as errors:
-            defaults = self.__load_data(repo_name)
-            defaults.update(errors.value)
-            return htmlfill.render(
-                render('admin/repos/repo_edit.mako'),
-                defaults=defaults,
-                errors=errors.error_dict or {},
-                prefix_error=False,
-                encoding="UTF-8",
-                force_defaults=False)
-
-        except Exception:
-            log.exception("Exception during update of repository")
-            h.flash(_('Error occurred during update of repository %s') \
-                    % repo_name, category='error')
-        return redirect(url('edit_repo', repo_name=changed_name))
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    @auth.CSRFRequired()
     def delete(self, repo_name):
         """
         DELETE /repos/repo_name: Delete an existing item"""
@@ -398,27 +339,8 @@ class ReposController(BaseRepoController):
         # url('repo', repo_name=ID)
 
     @HasRepoPermissionAllDecorator('repository.admin')
-    def edit(self, repo_name):
-        """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
-        defaults = self.__load_data(repo_name)
-        if 'clone_uri' in defaults:
-            del defaults['clone_uri']
-
-        c.repo_fields = RepositoryField.query()\
-            .filter(RepositoryField.repository == c.repo_info).all()
-        c.personal_repo_group = c.rhodecode_user.personal_repo_group
-        c.active = 'settings'
-        return htmlfill.render(
-            render('admin/repos/repo_edit.mako'),
-            defaults=defaults,
-            encoding="UTF-8",
-            force_defaults=False)
-
-    @HasRepoPermissionAllDecorator('repository.admin')
     def edit_permissions(self, repo_name):
         """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
         c.repo_info = self._load_repo(repo_name)
         c.active = 'permissions'
         defaults = RepoModel()._get_defaults(repo_name)
@@ -446,7 +368,6 @@ class ReposController(BaseRepoController):
     @HasRepoPermissionAllDecorator('repository.admin')
     def edit_fields(self, repo_name):
         """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
         c.repo_info = self._load_repo(repo_name)
         c.repo_fields = RepositoryField.query()\
             .filter(RepositoryField.repository == c.repo_info).all()
@@ -493,7 +414,6 @@ class ReposController(BaseRepoController):
     @HasRepoPermissionAllDecorator('repository.admin')
     def edit_advanced(self, repo_name):
         """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
         c.repo_info = self._load_repo(repo_name)
         c.default_user_id = User.get_default_user().user_id
         c.in_public_journal = UserFollowing.query()\
@@ -638,7 +558,6 @@ class ReposController(BaseRepoController):
     @HasRepoPermissionAllDecorator('repository.admin')
     def edit_caches_form(self, repo_name):
         """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
         c.repo_info = self._load_repo(repo_name)
         c.active = 'caches'
 
@@ -660,7 +579,6 @@ class ReposController(BaseRepoController):
     @HasRepoPermissionAllDecorator('repository.admin')
     def edit_remote_form(self, repo_name):
         """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
         c.repo_info = self._load_repo(repo_name)
         c.active = 'remote'
 
@@ -682,7 +600,6 @@ class ReposController(BaseRepoController):
     @HasRepoPermissionAllDecorator('repository.admin')
     def edit_statistics_form(self, repo_name):
         """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
         c.repo_info = self._load_repo(repo_name)
         repo = c.repo_info.scm_instance()
 

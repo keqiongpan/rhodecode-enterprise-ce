@@ -42,7 +42,7 @@
     %>
   <div class="${'repo_state_pending' if rstate == 'repo_state_pending' else ''} truncate">
     ##NAME
-    <a href="${h.url('edit_repo' if admin else 'summary_home',repo_name=name)}">
+    <a href="${h.route_path('edit_repo',repo_name=name) if admin else h.url('summary_home',repo_name=name)}">
 
     ##TYPE OF REPO
     %if h.is_hg(rtype):
@@ -115,7 +115,7 @@
 <%def name="repo_actions(repo_name, super_user=True)">
   <div>
     <div class="grid_edit">
-      <a href="${h.url('edit_repo',repo_name=repo_name)}" title="${_('Edit')}">
+      <a href="${h.route_path('edit_repo',repo_name=repo_name)}" title="${_('Edit')}">
         <i class="icon-pencil"></i>Edit</a>
     </div>
     <div class="grid_delete">

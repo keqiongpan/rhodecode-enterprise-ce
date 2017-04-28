@@ -21,6 +21,11 @@
 
 def includeme(config):
 
+    # Settings
+    config.add_route(
+        name='edit_repo',
+        pattern='/{repo_name:.*?[^/]}/settings', repo_route=True)
+
     config.add_route(
         name='repo_maintenance',
         pattern='/{repo_name:.*?[^/]}/maintenance', repo_route=True)
@@ -28,7 +33,6 @@ def includeme(config):
     config.add_route(
         name='repo_maintenance_execute',
         pattern='/{repo_name:.*?[^/]}/maintenance/execute', repo_route=True)
-
 
     # Strip
     config.add_route(

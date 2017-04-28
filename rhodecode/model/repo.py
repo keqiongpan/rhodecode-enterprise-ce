@@ -333,12 +333,6 @@ class RepoModel(BaseModel):
                     val = kwargs[k]
                     if strip:
                         k = remove_prefix(k, 'repo_')
-                    if k == 'clone_uri':
-                        from rhodecode.model.validators import Missing
-                        _change = kwargs.get('clone_uri_change')
-                        if _change in [Missing, 'OLD']:
-                            # we don't change the value, so use original one
-                            val = cur_repo.clone_uri
 
                     setattr(cur_repo, k, val)
 

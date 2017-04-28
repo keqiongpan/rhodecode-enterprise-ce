@@ -246,7 +246,7 @@
           <a class="menulink" href="#" class="dropdown"><div class="menulabel">${_('Options')} <div class="show_more"></div></div></a>
           <ul class="submenu">
              %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
-                   <li><a href="${h.url('edit_repo',repo_name=c.repo_name)}">${_('Settings')}</a></li>
+                   <li><a href="${h.route_path('edit_repo',repo_name=c.repo_name)}">${_('Settings')}</a></li>
              %endif
               %if c.rhodecode_db_repo.fork:
                <li><a href="${h.url('compare_url',repo_name=c.rhodecode_db_repo.fork.repo_name,source_ref_type=c.rhodecode_db_repo.landing_rev[0],source_ref=c.rhodecode_db_repo.landing_rev[1], target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1], merge=1)}">

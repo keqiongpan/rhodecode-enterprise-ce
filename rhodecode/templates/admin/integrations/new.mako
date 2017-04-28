@@ -4,7 +4,7 @@
 
 <%def name="breadcrumbs_links()">
   %if c.repo:
-    ${h.link_to('Settings',h.url('edit_repo', repo_name=c.repo.repo_name))}
+    ${h.link_to('Settings',h.route_path('edit_repo', repo_name=c.repo.repo_name))}
     &raquo;
     ${h.link_to(_('Integrations'),request.route_url(route_name='repo_integrations_home', repo_name=c.repo.repo_name))}
   %elif c.repo_group:

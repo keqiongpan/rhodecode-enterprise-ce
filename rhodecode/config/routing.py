@@ -200,10 +200,6 @@ def make_map(config):
                   action='index', conditions={'method': ['GET']})
         m.connect('new_repo', '/create_repository', jsroute=True,
                   action='create_repository', conditions={'method': ['GET']})
-        m.connect('/repos/{repo_name}',
-                  action='update', conditions={'method': ['PUT'],
-                                               'function': check_repo},
-                  requirements=URL_NAME_REQUIREMENTS)
         m.connect('delete_repo', '/repos/{repo_name}',
                   action='delete', conditions={'method': ['DELETE']},
                   requirements=URL_NAME_REQUIREMENTS)
@@ -665,11 +661,6 @@ def make_map(config):
                  requirements=URL_NAME_REQUIREMENTS)
 
     # repo edit options
-    rmap.connect('edit_repo', '/{repo_name}/settings', jsroute=True,
-                 controller='admin/repos', action='edit',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     rmap.connect('edit_repo_perms', '/{repo_name}/settings/permissions',
                  jsroute=True,
                  controller='admin/repos', action='edit_permissions',

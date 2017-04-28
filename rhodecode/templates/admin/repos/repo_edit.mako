@@ -40,7 +40,7 @@
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
           <li class="${'active' if c.active=='settings' else ''}">
-              <a href="${h.url('edit_repo', repo_name=c.repo_name)}">${_('Settings')}</a>
+              <a href="${h.route_path('edit_repo', repo_name=c.repo_name)}">${_('Settings')}</a>
           </li>
           <li class="${'active' if c.active=='permissions' else ''}">
               <a href="${h.url('edit_repo_perms', repo_name=c.repo_name)}">${_('Permissions')}</a>
