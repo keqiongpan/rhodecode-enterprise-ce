@@ -36,7 +36,8 @@ from webob.exc import (
 import rhodecode
 from rhodecode.authentication.base import authenticate, VCS_TYPE
 from rhodecode.lib.auth import AuthUser, HasPermissionAnyMiddleware
-from rhodecode.lib.base import BasicAuth, get_ip_addr, vcs_operation_context
+from rhodecode.lib.base import (
+    BasicAuth, get_ip_addr, get_user_agent, vcs_operation_context)
 from rhodecode.lib.exceptions import (
     HTTPLockedRC, HTTPRequirementError, UserCreationError,
     NotAllowedToCreateUserError)
@@ -310,6 +311,7 @@ class SimpleVCS(object):
         log.debug('Extracted repo name is %s', self.url_repo_name)
 
         ip_addr = get_ip_addr(environ)
+        user_agent = get_user_agent(environ)
         username = None
 
         # skip passing error to error controller
@@ -429,9 +431,9 @@ class SimpleVCS(object):
         fix_PATH()
 
         log.info(
-            '%s action on %s repo "%s" by "%s" from %s',
+            '%s action on %s repo "%s" by "%s" from %s %s',
             action, self.SCM, safe_str(self.url_repo_name),
-            safe_str(username), ip_addr)
+            safe_str(username), ip_addr, user_agent)
 
         return self._generate_vcs_response(
             environ, start_response, repo_path, extras, action)
