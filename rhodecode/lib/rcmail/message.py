@@ -114,14 +114,18 @@ class Message(object):
 
         return response
 
+    def _get_headers(self):
+        headers = [self.subject, self.sender]
+        headers += list(self.send_to)
+        headers += self.extra_headers.values()
+        return headers
+
     def is_bad_headers(self):
         """
         Checks for bad headers i.e. newlines in subject, sender or recipients.
         """
 
-        headers = [self.subject, self.sender]
-        headers += list(self.send_to)
-        headers += self.extra_headers.values()
+        headers = self._get_headers()
 
         for val in headers:
             for c in '\r\n':
@@ -144,7 +148,8 @@ class Message(object):
             raise InvalidMessage("No sender address has been set")
 
         if self.is_bad_headers():
-            raise BadHeaders
+            headers = self._get_headers()
+            raise BadHeaders(headers)
 
     def add_recipient(self, recipient):
         """
