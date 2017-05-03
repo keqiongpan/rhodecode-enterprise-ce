@@ -2,7 +2,7 @@
 <%inherit file="base.mako"/>
 <%namespace name="base" file="base.mako"/>
 
-<%def name="subject()" filter="n,trim">
+<%def name="subject()" filter="n,trim,whitespace_filter">
 <%
 data = {
     'user': h.person(user),

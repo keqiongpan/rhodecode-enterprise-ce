@@ -1,7 +1,7 @@
 ## -*- coding: utf-8 -*-
 <%inherit file="base.mako"/>
 
-<%def name="subject()" filter="n,trim">
+<%def name="subject()" filter="n,trim,whitespace_filter">
 Your new RhodeCode password
 </%def>
 

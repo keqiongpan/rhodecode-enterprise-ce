@@ -332,13 +332,18 @@ class EmailNotificationModel(BaseModel):
 
         :param kwargs:
         """
+
         kwargs['rhodecode_instance_name'] = self.rhodecode_instance_name
 
         _kwargs = {
             'instance_url': h.url('home', qualified=True),
+            'whitespace_filter': self.whitespace_filter
         }
         _kwargs.update(kwargs)
         return _kwargs
+
+    def whitespace_filter(self, text):
+        return text.replace('\n', '').replace('\t', '')
 
     def get_renderer(self, type_):
         template_name = self.email_types[type_]

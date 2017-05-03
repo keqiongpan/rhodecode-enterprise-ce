@@ -3,7 +3,7 @@
 <%namespace name="base" file="base.mako"/>
 
 ## EMAIL SUBJECT
-<%def name="subject()" filter="n,trim">
+<%def name="subject()" filter="n,trim,whitespace_filter">
 <%
 data = {
     'user': h.person(user),
