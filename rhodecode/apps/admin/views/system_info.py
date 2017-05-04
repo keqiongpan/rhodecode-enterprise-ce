@@ -106,6 +106,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
             (_('RhodeCode Server IP'), val('server')['server_ip'], state('server')),
             (_('RhodeCode Server ID'), val('server')['server_id'], state('server')),
             (_('RhodeCode Configuration'), val('rhodecode_config')['path'], state('rhodecode_config')),
+            (_('RhodeCode Certificate'), val('rhodecode_config')['cert_path'], state('rhodecode_config')),
             (_('Workers'), val('rhodecode_config')['config']['server:main'].get('workers', '?'), state('rhodecode_config')),
             (_('Worker Type'), val('rhodecode_config')['config']['server:main'].get('worker_class', 'sync'), state('rhodecode_config')),
             ('', '', ''),  # spacer

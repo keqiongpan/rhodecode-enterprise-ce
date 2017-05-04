@@ -570,6 +570,10 @@ def rhodecode_config():
         log.exception('Failed to read .ini file for display')
         parsed_ini = {}
 
+    cert_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(path)))),
+        '.rccontrol-profile/etc/ca-bundle.crt')
+
     rhodecode_ini_safe['server:main'] = parsed_ini
 
     blacklist = [
@@ -608,7 +612,8 @@ def rhodecode_config():
             rhodecode_ini_safe.pop(k, None)
 
     # TODO: maybe put some CONFIG checks here ?
-    return SysInfoRes(value={'config': rhodecode_ini_safe, 'path': path})
+    return SysInfoRes(value={'config': rhodecode_ini_safe,
+                             'path': path, 'cert_path': cert_path})
 
 
 def database_info():
