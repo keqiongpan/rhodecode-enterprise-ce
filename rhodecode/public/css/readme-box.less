@@ -1,0 +1,252 @@
+/** README styling **/
+div.readme_box {
+    clear: both;
+    overflow: hidden;
+    margin: 0;
+    padding: 3px 15px 3px;
+}
+
+div.readme_box h1,
+div.readme_box h2,
+div.readme_box h3,
+div.readme_box h4,
+div.readme_box h5,
+div.readme_box h6 {
+    border-bottom: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
+div.readme_box h1 {
+    font-size: 32px;
+    margin: 15px 0 15px 0 !important;
+    padding-bottom: 5px !important;
+}
+
+div.readme_box h2 {
+    font-size: 24px !important;
+    margin: 34px 0 10px 0 !important;
+    border-top: 3px #e6e5e5 solid !important;
+    padding-top: 15px !important;
+    padding-bottom: 8px !important;
+}
+
+div.readme_box h3 {
+    font-size: 18px !important;
+    margin: 30px 0 8px 0 !important;
+    padding-bottom: 2px !important;
+}
+
+div.readme_box h4 {
+    font-size: 13px !important;
+    margin: 18px 0 3px 0 !important;
+}
+
+div.readme_box h5 {
+    font-size: 12px !important;
+    margin: 15px 0 3px 0 !important;
+}
+
+div.readme_box h6 {
+    font-size: 12px;
+    color: #777777;
+    margin: 15px 0 3px 0 !important;
+}
+
+div.readme_box hr {
+    border: 0;
+    color: #e6e5e5;
+    background-color: #e6e5e5;
+    height: 3px;
+    margin-bottom: 13px;
+}
+
+div.readme_box ol,
+div.readme_box ul,
+div.readme_box p,
+div.readme_box blockquote,
+div.readme_box dl,
+div.readme_box li,
+div.readme_box table {
+    margin: 3px 0px 13px 0px !important;
+    color: #424242 !important;
+    font-size: 13px !important;
+    font-family: "Helvetica" !important;
+    font-weight: normal  !important;
+    overflow: visible !important;
+    line-height: 140% !important;
+}
+
+div.readme_box pre {
+  margin: 3px 0px 13px 0px !important;
+  padding: .5em;
+  color: #424242 !important;
+  font-size: 13px !important;
+  overflow: visible !important;
+  line-height: 140% !important;
+  background-color: @grey7;
+}
+
+div.readme_box img {
+  border-style: none;
+  background-color: #fff;
+}
+
+
+div.readme_box strong {
+  font-weight: 600;
+  margin: 0;
+}
+
+div.readme_box ul,
+div.readme_box ol {
+    padding-left: 30px !important;
+    margin-top: 0px !important;
+    margin-bottom: 18px !important;
+}
+
+div.readme_box ul li,
+div.readme_box ol li {
+    list-style: bullet !important;
+    margin: 6px !important;
+    padding: 0 !important;
+}
+
+div.readme_box ol li {
+    list-style: decimal !important;
+}
+
+/*
+div.readme_box a,
+div.readme_box a:visited {
+    color: #4183C4 !important;
+    background-color: inherit;
+    text-decoration: none;
+}
+*/
+
+
+div.readme_box button {
+    font-size: @basefontsize;
+    padding: 4px 6px;
+    .border-radius(@border-radius);
+    border: @border-thickness solid @grey5;
+    background-color: @grey6;
+}
+
+div.readme_box code,
+div.readme_box pre {
+    font-family: Monaco;
+    font-size: 11px;
+    .border-radius(@border-radius);
+    background-color: white;
+    color: @grey3;
+}
+
+
+div.readme_box code {
+    border: @border-thickness solid @grey6;
+    margin: 0 2px;
+    padding: 0 5px;
+}
+
+div.readme_box pre {
+    border: @border-thickness solid @grey5;
+    overflow: auto;
+    padding: .5em;
+    background-color: @grey7;
+}
+
+div.readme_box pre > code {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/** RST STYLE **/
+div.rst-block {
+    clear: both;
+    overflow: hidden;
+    margin: 0;
+    padding: 3px 15px 3px;
+}
+
+div.rst-block h2 {
+    font-weight: normal;
+}
+
+div.rst-block  h1,
+div.rst-block  h2,
+div.rst-block  h3,
+div.rst-block  h4,
+div.rst-block  h5,
+div.rst-block  h6 {
+    border-bottom: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.5em !important;
+}
+
+
+div.rst-block  h1:first-child {
+    padding-top: .25em !important;
+}
+
+div.rst-block  h2,
+div.rst-block  h3 {
+    margin: 1em 0 !important;
+}
+
+div.rst-block  h2 {
+    margin-top: 1.5em !important;
+    border-top: 4px solid #e0e0e0 !important;
+    padding-top: .5em !important;
+}
+
+div.rst-block  p {
+    color: black !important;
+    margin: 1em 0 !important;
+    line-height: 1.5em !important;
+}
+
+div.rst-block  ul {
+    list-style: disc !important;
+    margin: 1em 0 1em 2em !important;
+    clear: both;
+}
+
+div.rst-block  ol {
+    list-style: decimal;
+    margin: 1em 0 1em 2em !important;
+}
+
+div.rst-block pre,
+div.rst-block code {
+    font: 12px "Bitstream Vera Sans Mono","Courier",monospace;
+}
+
+div.rst-block code {
+    font-size: 12px !important;
+    background-color: ghostWhite !important;
+    color: #444 !important;
+    padding: 0 .2em !important;
+    border: 1px solid #dedede !important;
+}
+
+div.rst-block pre code {
+    padding: 0 !important;
+    font-size: 12px !important;
+    background-color: #eee !important;
+    border: none !important;
+}
+
+div.rst-block pre {
+    margin: 1em 0;
+    padding: @padding;
+    border: 1px solid @grey6;
+    .border-radius(@border-radius);
+    overflow: auto;
+    font-size: 12px;
+    color: #444;
+    background-color: @grey7;
+}

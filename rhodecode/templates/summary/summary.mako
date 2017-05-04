@@ -50,7 +50,7 @@
         </h3>
     </div>
     <div class="readme codeblock">
-      <div class="readme_box markdown-block">
+      <div class="readme_box">
         ${c.readme_data|n}
       </div>
     </div>
