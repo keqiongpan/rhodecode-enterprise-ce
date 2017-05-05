@@ -111,7 +111,7 @@
                 <div class="input">
                     <div class="badge-input-container">
                         <div class="user-badge">
-                            ${base.gravatar_with_user(c.rhodecode_db_repo.user.email, show_disabled=not c.rhodecode_db_repo.user.active)}
+                            ${base.gravatar_with_user(c.rhodecode_db_repo.user.email or c.rhodecode_db_repo.user.username, show_disabled=not c.rhodecode_db_repo.user.active)}
                         </div>
                         <div class="badge-input-wrap">
                             ${c.form['repo_owner'].render(css_class='medium', oid='repo_owner')|n}
