@@ -39,6 +39,7 @@ def route_path(name, params=None, **kwargs):
     base_url = {
         'edit_repo': '/{repo_name}/settings',
         'edit_repo_caches': '/{repo_name}/settings/caches',
+        'edit_repo_perms': '/{repo_name}/settings/permissions',
     }[name].format(**kwargs)
 
     if params:
@@ -59,7 +60,8 @@ def _get_permission_for_user(user, repo):
 class TestAdminRepoSettings(object):
     @pytest.mark.parametrize('urlname', [
         'edit_repo',
-        'edit_repo_caches'
+        'edit_repo_caches',
+        'edit_repo_perms',
     ])
     def test_show_page(self, urlname, app, backend):
         app.get(route_path(urlname, repo_name=backend.repo_name), status=200)
@@ -72,7 +74,6 @@ class TestAdminRepoSettings(object):
             self.app.get(route_path('edit_repo', repo_name=backend_hg.repo_name))
 
     @pytest.mark.parametrize('urlname', [
-        'edit_repo_perms',
         'edit_repo_advanced',
         'repo_vcs_settings',
         'edit_repo_fields',

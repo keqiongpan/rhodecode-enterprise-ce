@@ -146,7 +146,7 @@
                     %if actions:
                     <td class="td-action">
                         %if section == 'repositories':
-                            <a href="${h.url('edit_repo_perms',repo_name=k,anchor='permissions_manage')}">${_('edit')}</a>
+                            <a href="${h.route_path('edit_repo_perms',repo_name=k,anchor='permissions_manage')}">${_('edit')}</a>
                         %elif section == 'repositories_groups':
                             <a href="${h.url('edit_repo_group_perms',group_name=k,anchor='permissions_manage')}">${_('edit')}</a>
                         %elif section == 'user_groups':

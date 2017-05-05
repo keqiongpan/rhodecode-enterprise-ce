@@ -661,16 +661,6 @@ def make_map(config):
                  requirements=URL_NAME_REQUIREMENTS)
 
     # repo edit options
-    rmap.connect('edit_repo_perms', '/{repo_name}/settings/permissions',
-                 jsroute=True,
-                 controller='admin/repos', action='edit_permissions',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('edit_repo_perms_update', '/{repo_name}/settings/permissions',
-                 controller='admin/repos', action='edit_permissions_update',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     rmap.connect('edit_repo_fields', '/{repo_name}/settings/fields',
                  controller='admin/repos', action='edit_fields',
                  conditions={'method': ['GET'], 'function': check_repo},

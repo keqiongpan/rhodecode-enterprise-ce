@@ -259,7 +259,7 @@ class RepoModel(BaseModel):
         defaults = repo_info.get_dict()
         defaults['repo_name'] = repo_info.just_name
 
-        groups  = repo_info.groups_with_parents
+        groups = repo_info.groups_with_parents
         parent_group = groups[-1] if groups else None
 
         # we use -1 as this is how in HTML, we mark an empty group
@@ -294,16 +294,6 @@ class RepoModel(BaseModel):
         else:
             replacement_user = User.get_first_super_admin().username
             defaults.update({'user': replacement_user})
-
-        # fill repository users
-        for p in repo_info.repo_to_perm:
-            defaults.update({'u_perm_%s' % p.user.user_id:
-                            p.permission.permission_name})
-
-        # fill repository groups
-        for p in repo_info.users_group_to_perm:
-            defaults.update({'g_perm_%s' % p.users_group.users_group_id:
-                            p.permission.permission_name})
 
         return defaults
 
@@ -507,10 +497,16 @@ class RepoModel(BaseModel):
 
         req_perms = ('usergroup.read', 'usergroup.write', 'usergroup.admin')
 
+        changes = {
+            'added': [],
+            'updated': [],
+            'deleted': []
+        }
         # update permissions
         for member_id, perm, member_type in perm_updates:
             member_id = int(member_id)
             if member_type == 'user':
+                member_name = User.get(member_id).username
                 # this updates also current one if found
                 self.grant_user_permission(
                     repo=repo, user=member_id, perm=perm)
@@ -522,10 +518,14 @@ class RepoModel(BaseModel):
                     self.grant_user_group_permission(
                         repo=repo, group_name=member_id, perm=perm)
 
+            changes['updated'].append({'type': member_type, 'id': member_id,
+                                       'name': member_name, 'new_perm': perm})
+
         # set new permissions
         for member_id, perm, member_type in perm_additions:
             member_id = int(member_id)
             if member_type == 'user':
+                member_name = User.get(member_id).username
                 self.grant_user_permission(
                     repo=repo, user=member_id, perm=perm)
             else:  # set for user group
@@ -535,11 +535,13 @@ class RepoModel(BaseModel):
                         *req_perms)(member_name, user=cur_user):
                     self.grant_user_group_permission(
                         repo=repo, group_name=member_id, perm=perm)
-
+            changes['added'].append({'type': member_type, 'id': member_id,
+                                     'name': member_name, 'new_perm': perm})
         # delete permissions
         for member_id, perm, member_type in perm_deletions:
             member_id = int(member_id)
             if member_type == 'user':
+                member_name = User.get(member_id).username
                 self.revoke_user_permission(repo=repo, user=member_id)
             else:  # set for user group
                 # check if we have permissions to alter this usergroup
@@ -548,6 +550,10 @@ class RepoModel(BaseModel):
                         *req_perms)(member_name, user=cur_user):
                     self.revoke_user_group_permission(
                         repo=repo, group_name=member_id)
+
+            changes['deleted'].append({'type': member_type, 'id': member_id,
+                                       'name': member_name, 'new_perm': perm})
+        return changes
 
     def create_fork(self, form_data, cur_user):
         """

@@ -339,33 +339,6 @@ class ReposController(BaseRepoController):
         # url('repo', repo_name=ID)
 
     @HasRepoPermissionAllDecorator('repository.admin')
-    def edit_permissions(self, repo_name):
-        """GET /repo_name/settings: Form to edit an existing item"""
-        c.repo_info = self._load_repo(repo_name)
-        c.active = 'permissions'
-        defaults = RepoModel()._get_defaults(repo_name)
-
-        return htmlfill.render(
-            render('admin/repos/repo_edit.mako'),
-            defaults=defaults,
-            encoding="UTF-8",
-            force_defaults=False)
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    @auth.CSRFRequired()
-    def edit_permissions_update(self, repo_name):
-        form = RepoPermsForm()().to_python(request.POST)
-        RepoModel().update_permissions(repo_name,
-            form['perm_additions'], form['perm_updates'], form['perm_deletions'])
-
-        #TODO: implement this
-        #action_logger(c.rhodecode_user, 'admin_changed_repo_permissions',
-        #              repo_name, self.ip_addr, self.sa)
-        Session().commit()
-        h.flash(_('Repository permissions updated'), category='success')
-        return redirect(url('edit_repo_perms', repo_name=repo_name))
-
-    @HasRepoPermissionAllDecorator('repository.admin')
     def edit_fields(self, repo_name):
         """GET /repo_name/settings: Form to edit an existing item"""
         c.repo_info = self._load_repo(repo_name)

@@ -31,6 +31,11 @@ def includeme(config):
         name='edit_repo_caches',
         pattern='/{repo_name:.*?[^/]}/settings/caches', repo_route=True)
 
+    # Permissions
+    config.add_route(
+        name='edit_repo_perms',
+        pattern='/{repo_name:.*?[^/]}/settings/permissions', repo_route=True)
+
     # Repo Review Rules
     config.add_route(
         name='repo_reviewers',

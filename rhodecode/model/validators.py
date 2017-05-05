@@ -784,7 +784,8 @@ def ValidPerms(type_='repo'):
                 del_member = perm_dict.get('id')
                 del_type = perm_dict.get('type')
                 if del_member and del_type:
-                    perm_deletions.add((del_member, None, del_type))
+                    perm_deletions.add(
+                        (del_member, None, del_type))
 
             # store additions in order of how they were added in web form
             for k in sorted(new_perms_group.keys()):
@@ -793,36 +794,48 @@ def ValidPerms(type_='repo'):
                 new_type = perm_dict.get('type')
                 new_perm = perm_dict.get('perm')
                 if new_member and new_perm and new_type:
-                    perm_additions.add((new_member, new_perm, new_type))
+                    perm_additions.add(
+                        (new_member, new_perm, new_type))
 
             # get updates of permissions
             # (read the existing radio button states)
+            default_user_id = User.get_default_user().user_id
             for k, update_value in value.iteritems():
                 if k.startswith('u_perm_') or k.startswith('g_perm_'):
                     member = k[7:]
                     update_type = {'u': 'user',
                                    'g': 'users_group'}[k[0]]
-                    if member == User.DEFAULT_USER:
-                        if str2bool(value.get('repo_private')):
-                            # set none for default when updating to
-                            # private repo protects agains form manipulation
-                            update_value = EMPTY_PERM
-                    perm_updates.add((member, update_value, update_type))
-            # check the deletes
 
-            value['perm_additions'] = list(perm_additions)
+                    if safe_int(member) == default_user_id:
+                        if str2bool(value.get('repo_private')):
+                            # prevent from updating default user permissions
+                            # when this repository is marked as private
+                            update_value = EMPTY_PERM
+
+                    perm_updates.add(
+                        (member, update_value, update_type))
+
+            value['perm_additions'] = []  # propagated later
             value['perm_updates'] = list(perm_updates)
             value['perm_deletions'] = list(perm_deletions)
 
-            # validate users they exist and they are active !
-            for member_id, _perm, member_type in perm_additions:
+            updates_map = dict(
+                (x[0], (x[1], x[2])) for x in value['perm_updates'])
+            # make sure Additions don't override updates.
+            for member_id, perm, member_type in list(perm_additions):
+                if member_id in updates_map:
+                    perm = updates_map[member_id][0]
+                value['perm_additions'].append((member_id, perm, member_type))
+
+                # on new entries validate users they exist and they are active !
+                # this leaves feedback to the form
                 try:
                     if member_type == 'user':
-                        self.user_db = User.query()\
+                        User.query()\
                             .filter(User.active == true())\
                             .filter(User.user_id == member_id).one()
                     if member_type == 'users_group':
-                        self.user_db = UserGroup.query()\
+                        UserGroup.query()\
                             .filter(UserGroup.users_group_active == true())\
                             .filter(UserGroup.users_group_id == member_id)\
                             .one()

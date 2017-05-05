@@ -42,7 +42,7 @@
               <a href="${h.route_path('edit_repo', repo_name=c.repo_name)}">${_('Settings')}</a>
           </li>
           <li class="${'active' if c.active=='permissions' else ''}">
-              <a href="${h.url('edit_repo_perms', repo_name=c.repo_name)}">${_('Permissions')}</a>
+              <a href="${h.route_path('edit_repo_perms', repo_name=c.repo_name)}">${_('Permissions')}</a>
           </li>
           <li class="${'active' if c.active=='advanced' else ''}">
               <a href="${h.url('edit_repo_advanced', repo_name=c.repo_name)}">${_('Advanced')}</a>

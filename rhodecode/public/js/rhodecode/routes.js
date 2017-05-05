@@ -24,7 +24,6 @@ function registerRCRoutes() {
     pyroutes.register('repo_refs_changelog_data', '/%(repo_name)s/refs-data-changelog', ['repo_name']);
     pyroutes.register('repo_default_reviewers_data', '/%(repo_name)s/default-reviewers', ['repo_name']);
     pyroutes.register('changeset_home', '/%(repo_name)s/changeset/%(revision)s', ['repo_name', 'revision']);
-    pyroutes.register('edit_repo_perms', '/%(repo_name)s/settings/permissions', ['repo_name']);
     pyroutes.register('changeset_comment', '/%(repo_name)s/changeset/%(revision)s/comment', ['repo_name', 'revision']);
     pyroutes.register('changeset_comment_preview', '/%(repo_name)s/changeset/comment/preview', ['repo_name']);
     pyroutes.register('changeset_comment_delete', '/%(repo_name)s/changeset/comment/%(comment_id)s/delete', ['repo_name', 'comment_id']);
@@ -99,6 +98,7 @@ function registerRCRoutes() {
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
     pyroutes.register('edit_repo', '/%(repo_name)s/settings', ['repo_name']);
     pyroutes.register('edit_repo_caches', '/%(repo_name)s/settings/caches', ['repo_name']);
+    pyroutes.register('edit_repo_perms', '/%(repo_name)s/settings/permissions', ['repo_name']);
     pyroutes.register('repo_reviewers', '/%(repo_name)s/settings/review/rules', ['repo_name']);
     pyroutes.register('repo_maintenance', '/%(repo_name)s/maintenance', ['repo_name']);
     pyroutes.register('repo_maintenance_execute', '/%(repo_name)s/maintenance/execute', ['repo_name']);
