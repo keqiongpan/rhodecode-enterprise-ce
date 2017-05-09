@@ -160,10 +160,11 @@ def post_pull(extras):
     audit_user = audit_logger.UserWrap(
         username=extras.username,
         ip_addr=extras.ip)
+    repo = audit_logger.RepoWrap(repo_name=extras.repository)
     audit_logger.store(
         action='user.pull', action_data={
             'user_agent': extras.user_agent},
-        user=audit_user, commit=True)
+        user=audit_user, repo=repo, commit=True)
 
     # Propagate to external components.
     if not is_shadow_repo(extras):
