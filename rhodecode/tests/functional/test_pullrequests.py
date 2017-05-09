@@ -537,7 +537,9 @@ class TestPullrequestsController:
             pull_request, ChangesetStatus.STATUS_APPROVED)
 
         # Check the relevant log entries were added
-        user_logs = UserLog.query().order_by('-user_log_id').limit(4)
+        user_logs = UserLog.query() \
+            .filter(UserLog.version == UserLog.VERSION_1) \
+            .order_by('-user_log_id').limit(4)
         actions = [log.action for log in user_logs]
         pr_commit_ids = PullRequestModel()._get_commit_ids(pull_request)
         expected_actions = [

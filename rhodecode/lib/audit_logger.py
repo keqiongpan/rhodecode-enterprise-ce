@@ -22,7 +22,7 @@ import logging
 import datetime
 
 from rhodecode.model import meta
-from rhodecode.model.db import User, UserLog
+from rhodecode.model.db import User, UserLog, Repository
 
 
 log = logging.getLogger(__name__)
@@ -33,6 +33,8 @@ ACTIONS = {
     'user.login.failure': {},
     'user.logout': {},
     'user.password.reset_request': {},
+    'user.push': {},
+    'user.pull': {},
 
     'repo.add': {},
     'repo.edit': {},
@@ -50,6 +52,16 @@ class UserWrap(object):
         self.user_id = user_id
         self.username = username
         self.ip_addr = ip_addr
+
+
+class RepoWrap(object):
+    """
+    Fake object used to imitate RepoObject that audit logger requires
+    """
+
+    def __init__(self, repo_id=None, repo_name=None):
+        self.repo_id = repo_id
+        self.repo_name = repo_name
 
 
 def _store_log(action_name, action_data, user_id, username, user_data,
@@ -127,8 +139,13 @@ def store(
                     'email': user.email,
                 }
 
-        repository_id = getattr(repo, 'repo_id', None)
         repository_name = getattr(repo, 'repo_name', None)
+        repository_id = getattr(repo, 'repo_id', None)
+        if not repository_id:
+            # maybe we have repo_name ? Try to figure repo_id from repo_name
+            if repository_name:
+                repository_id = getattr(
+                    Repository.get_by_repo_name(repository_name), 'repo_id', None)
 
         user_log = _store_log(
             action_name=safe_unicode(action),

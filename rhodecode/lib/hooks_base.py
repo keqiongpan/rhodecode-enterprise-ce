@@ -30,6 +30,7 @@ import logging
 import rhodecode
 from rhodecode import events
 from rhodecode.lib import helpers as h
+from rhodecode.lib import audit_logger
 from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.lib.exceptions import HTTPLockedRC, UserCreationError
@@ -156,6 +157,14 @@ def post_pull(extras):
     action = 'pull'
     action_logger(user, action, extras.repository, extras.ip, commit=True)
 
+    audit_user = audit_logger.UserWrap(
+        username=extras.username,
+        ip_addr=extras.ip)
+    audit_logger.store(
+        action='user.pull', action_data={
+            'user_agent': extras.user_agent},
+        user=audit_user, commit=True)
+
     # Propagate to external components.
     if not is_shadow_repo(extras):
         post_pull_extension(**extras)
@@ -191,6 +200,16 @@ def post_push(extras):
     action = action_tmpl % ','.join(commit_ids)
     action_logger(
         extras.username, action, extras.repository, extras.ip, commit=True)
+
+    audit_user = audit_logger.UserWrap(
+        username=extras.username,
+        ip_addr=extras.ip)
+    repo = audit_logger.RepoWrap(repo_name=extras.repository)
+    audit_logger.store(
+        action='user.push', action_data={
+            'user_agent': extras.user_agent,
+            'commit_ids': commit_ids[:10000]},
+        user=audit_user, repo=repo, commit=True)
 
     # Propagate to external components.
     if not is_shadow_repo(extras):
