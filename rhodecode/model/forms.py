@@ -384,6 +384,7 @@ class _BaseVcsSettingsForm(formencode.Schema):
 
     # hg
     extensions_largefiles = v.StringBoolean(if_missing=False)
+    extensions_evolve = v.StringBoolean(if_missing=False)
     phases_publish = v.StringBoolean(if_missing=False)
     rhodecode_hg_use_rebase_for_merging = v.StringBoolean(if_missing=False)
 

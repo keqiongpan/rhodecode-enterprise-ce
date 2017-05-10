@@ -37,8 +37,23 @@
               <code>
                 ${h.show_id(c.commit)}
                 % if hasattr(c.commit, 'phase'):
-                      <span class="tag phase-${c.commit.phase} tooltip" title="${_('commit phase')}">${c.commit.phase}</span>
+                      <span class="tag phase-${c.commit.phase} tooltip" title="${_('Commit phase')}">${c.commit.phase}</span>
                 % endif
+
+                ## obsolete commits
+                % if hasattr(c.commit, 'obsolete'):
+                  % if c.commit.obsolete:
+                      <span class="tag obsolete-${c.commit.obsolete} tooltip" title="${_('Evolve State')}">${_('obsolete')}</span>
+                  % endif
+                % endif
+
+                ## hidden commits
+                % if hasattr(c.commit, 'hidden'):
+                  % if c.commit.hidden:
+                      <span class="tag hidden-${c.commit.hidden} tooltip" title="${_('Evolve State')}">${_('hidden')}</span>
+                  % endif
+                % endif
+
               </code>
             </h4>
           </span>

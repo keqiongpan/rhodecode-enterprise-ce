@@ -171,6 +171,16 @@ class MercurialCommit(base.BaseCommit):
         return safe_unicode(phase_text)
 
     @LazyProperty
+    def obsolete(self):
+        obsolete = self._remote.ctx_obsolete(self.idx)
+        return obsolete
+
+    @LazyProperty
+    def hidden(self):
+        hidden = self._remote.ctx_hidden(self.idx)
+        return hidden
+
+    @LazyProperty
     def children(self):
         """
         Returns list of child commits.

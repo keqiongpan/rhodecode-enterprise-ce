@@ -275,6 +275,23 @@ class TestAdminSettingsVcs(object):
             'value="True" checked="checked" />')
         response.mustcontain(extensions_input)
 
+    def test_extensions_hgevolve(self, app, form_defaults, csrf_token):
+        form_defaults.update({
+            'csrf_token': csrf_token,
+            'extensions_evolve': 'True',
+        })
+        response = app.post(
+            url('admin_settings_vcs'),
+            params=form_defaults,
+            status=302)
+
+        response = response.follow()
+        extensions_input = (
+            '<input id="extensions_evolve" '
+            'name="extensions_evolve" type="checkbox" '
+            'value="True" checked="checked" />')
+        response.mustcontain(extensions_input)
+
     def test_has_a_section_for_pull_request_settings(self, app):
         response = app.get(url('admin_settings_vcs'))
         response.mustcontain('Pull Request Settings')

@@ -130,6 +130,19 @@
                         <span class="help-block">${_('Requires hgsubversion library to be installed. Allows cloning remote SVN repositories and migrates them to Mercurial type.')}</span>
                     </div>
                 % endif
+
+                <div class="checkbox">
+                    ${h.checkbox('extensions_evolve' + suffix, 'True', **kwargs)}
+                    <label for="extensions_evolve${suffix}">${_('Enable evolve extension')}</label>
+                </div>
+                <div class="label">
+                    % if display_globals:
+                        <span class="help-block">${_('Enable evolve extension for all repositories.')}</span>
+                    % else:
+                        <span class="help-block">${_('Enable evolve extension for this repository.')}</span>
+                    % endif
+                </div>
+
             </div>
         </div>
         ## LABS for HG

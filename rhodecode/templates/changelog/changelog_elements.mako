@@ -46,13 +46,28 @@
     <td class="td-hash">
     <code>
       <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id)}">
-        <span class="commit_hash">${h.show_id(commit)}</span>
+        <span class="${'commit_hash obsolete' if getattr(commit, 'obsolete', None) else 'commit_hash'}">${h.show_id(commit)}</span>
       </a>
       % if hasattr(commit, 'phase'):
           % if commit.phase != 'public':
-              <span class="tag phase-${commit.phase} tooltip" title="${_('commit phase')}">${commit.phase}</span>
+              <span class="tag phase-${commit.phase} tooltip" title="${_('Commit phase')}">${commit.phase}</span>
           % endif
       % endif
+
+      ## obsolete commits
+      % if hasattr(commit, 'obsolete'):
+          % if commit.obsolete:
+              <span class="tag obsolete-${commit.obsolete} tooltip" title="${_('Evolve State')}">${_('obsolete')}</span>
+          % endif
+      % endif
+
+      ## hidden commits
+      % if hasattr(commit, 'hidden'):
+          % if commit.hidden:
+              <span class="tag obsolete-${commit.hidden} tooltip" title="${_('Evolve State')}">${_('hidden')}</span>
+          % endif
+      % endif
+
     </code>
     </td>
     <td class="td-message expand_commit" data-commit-id="${commit.raw_id}" title="${_('Expand commit message')}" onclick="commitsController.expandCommit(this); return false">

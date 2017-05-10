@@ -363,6 +363,14 @@ class DbManage(object):
         hgsubversion.ui_active = False
         self.sa.add(hgsubversion)
 
+        # enable hgevolve disabled by default
+        hgevolve = RhodeCodeUi()
+        hgevolve.ui_section = 'extensions'
+        hgevolve.ui_key = 'evolve'
+        hgevolve.ui_value = ''
+        hgevolve.ui_active = False
+        self.sa.add(hgevolve)
+
         # enable hggit disabled by default
         hggit = RhodeCodeUi()
         hggit.ui_section = 'extensions'

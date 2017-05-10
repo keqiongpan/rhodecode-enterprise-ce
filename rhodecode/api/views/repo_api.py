@@ -1902,6 +1902,7 @@ def get_repo_settings(request, apiuser, repoid, key=Optional(None)):
             "id": 237,
             "result": {
                 "extensions_largefiles": true,
+                "extensions_evolve": true,
                 "hooks_changegroup_push_logger": true,
                 "hooks_changegroup_repo_size": false,
                 "hooks_outgoing_pull_logger": true,

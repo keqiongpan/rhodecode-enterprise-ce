@@ -415,15 +415,16 @@ class VcsSettingsModel(object):
         ('hooks', 'outgoing.pull_logger'),)
     HG_SETTINGS = (
         ('extensions', 'largefiles'),
-        ('phases', 'publish'),)
+        ('phases', 'publish'),
+        ('extensions', 'evolve'),)
     GIT_SETTINGS = (
         ('vcs_git_lfs', 'enabled'),)
-
     GLOBAL_HG_SETTINGS = (
         ('extensions', 'largefiles'),
         ('largefiles', 'usercache'),
         ('phases', 'publish'),
-        ('extensions', 'hgsubversion'))
+        ('extensions', 'hgsubversion'),
+        ('extensions', 'evolve'),)
     GLOBAL_GIT_SETTINGS = (
         ('vcs_git_lfs', 'enabled'),
         ('vcs_git_lfs', 'store_location'))
@@ -546,22 +547,26 @@ class VcsSettingsModel(object):
 
     @assert_repo_settings
     def create_or_update_repo_hg_settings(self, data):
-        largefiles, phases = \
+        largefiles, phases, evolve = \
             self.HG_SETTINGS
-        largefiles_key, phases_key = \
+        largefiles_key, phases_key, evolve_key = \
             self._get_settings_keys(self.HG_SETTINGS, data)
 
         self._create_or_update_ui(
             self.repo_settings, *largefiles, value='',
             active=data[largefiles_key])
         self._create_or_update_ui(
+            self.repo_settings, *evolve, value='',
+            active=data[evolve_key])
+        self._create_or_update_ui(
             self.repo_settings, *phases, value=safe_str(data[phases_key]))
 
     def create_or_update_global_hg_settings(self, data):
-        largefiles, largefiles_store, phases, hgsubversion \
+        largefiles, largefiles_store, phases, hgsubversion, evolve \
             = self.GLOBAL_HG_SETTINGS
-        largefiles_key, largefiles_store_key, phases_key, subversion_key \
+        largefiles_key, largefiles_store_key, phases_key, subversion_key, evolve_key \
             = self._get_settings_keys(self.GLOBAL_HG_SETTINGS, data)
+
         self._create_or_update_ui(
             self.global_settings, *largefiles, value='',
             active=data[largefiles_key])
@@ -572,6 +577,9 @@ class VcsSettingsModel(object):
             self.global_settings, *phases, value=safe_str(data[phases_key]))
         self._create_or_update_ui(
             self.global_settings, *hgsubversion, active=data[subversion_key])
+        self._create_or_update_ui(
+            self.global_settings, *evolve, value='',
+            active=data[evolve_key])
 
     def create_or_update_repo_git_settings(self, data):
         # NOTE(marcink): # comma make unpack work properly
