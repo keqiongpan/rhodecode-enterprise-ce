@@ -7,10 +7,10 @@
         <h4>${_('Manually invalidate the repository cache. On the next access a repository cache will be recreated.')}</h4>
 
         <p>
-            ${_('Cache purge can be automated by such api call called periodically (in crontab etc)')}
+            ${_('Cache purge can be automated by such api call. Can be called periodically in crontab etc.')}
             <br/>
             <code>
-                curl ${h.route_url('apiv2')} -X POST -H 'content-type:text/plain' --data-binary '{"id":1, "auth_token":"SECRET", "method":"invalidate_cache", "args":{"repoid":"${c.repo_info.repo_name}"}}'
+            ${h.api_call_example(method='invalidate_cache', args={"repoid": c.repo_info.repo_name})}
             </code>
         </p>
 
@@ -51,5 +51,3 @@
       </div>
     </div>
 </div>
-
-
