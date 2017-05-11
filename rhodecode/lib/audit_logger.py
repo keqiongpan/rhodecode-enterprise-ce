@@ -39,7 +39,8 @@ ACTIONS = {
     'repo.add': {},
     'repo.edit': {},
     'repo.edit.permissions': {},
-    'repo.commit.strip': {}
+    'repo.commit.strip': {},
+    'repo.archive.download': {},
 }
 
 
@@ -97,14 +98,31 @@ def store(
 
         from rhodecode.lib import audit_logger
 
-        audit_logger.store(action='repo.edit', user=self._rhodecode_user)
-        audit_logger.store(action='repo.delete', user=audit_logger.UserWrap(username='itried-to-login', ip_addr='8.8.8.8'))
+        audit_logger.store(
+            action='repo.edit', user=self._rhodecode_user)
+        audit_logger.store(
+            action='repo.delete',
+            user=audit_logger.UserWrap(username='itried-login', ip_addr='8.8.8.8'))
+
+        # repo action
+        audit_logger.store(
+            action='repo.delete',
+            user=audit_logger.UserWrap(username='itried-login', ip_addr='8.8.8.8'),
+            repo=audit_logger.RepoWrap(repo_name='some-repo'))
+
+        # repo action, when we know and have the repository object already
+        audit_logger.store(
+            action='repo.delete',
+            user=audit_logger.UserWrap(username='itried-login', ip_addr='8.8.8.8'),
+            repo=repo_object)
 
         # without an user ?
-        audit_user = audit_logger.UserWrap(
-            username=self.request.params.get('username'),
-            ip_addr=self.request.remote_addr)
-        audit_logger.store(action='user.login.failure', user=audit_user)
+        audit_logger.store(
+            action='user.login.failure',
+            user=audit_logger.UserWrap(
+                    username=self.request.params.get('username'),
+                    ip_addr=self.request.remote_addr))
+
     """
     from rhodecode.lib.utils2 import safe_unicode
     from rhodecode.lib.auth import AuthUser

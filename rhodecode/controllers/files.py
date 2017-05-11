@@ -35,7 +35,7 @@ from webob.exc import HTTPNotFound, HTTPBadRequest
 
 from rhodecode.controllers.utils import parse_path_ref
 from rhodecode.lib import diffs, helpers as h, caches
-from rhodecode.lib.compat import OrderedDict
+from rhodecode.lib import audit_logger
 from rhodecode.lib.codeblocks import (
     filenode_as_lines_tokens, filenode_as_annotated_lines_tokens)
 from rhodecode.lib.utils import jsonify, action_logger
@@ -813,6 +813,26 @@ class FilesController(BaseRepoController):
                 shutil.move(archive, cached_archive_path)
                 archive = cached_archive_path
 
+        # store download action
+        action_logger(user=c.rhodecode_user,
+                      action='user_downloaded_archive:%s' % archive_name,
+                      repo=repo_name, ipaddr=self.ip_addr, commit=True)
+
+        audit_logger.store(
+            action='repo.archive.download',
+            action_data={'user_agent': request.user_agent,
+                         'archive_name': archive_name,
+                         'archive_spec': fname,
+                         'archive_cached': use_cached_archive},
+            user=c.rhodecode_user,
+            repo=dbrepo,
+            commit=True
+        )
+
+        response.content_disposition = str(
+            'attachment; filename=%s' % archive_name)
+        response.content_type = str(content_type)
+
         def get_chunked_archive(archive):
             with open(archive, 'rb') as stream:
                 while True:
@@ -825,14 +845,6 @@ class FilesController(BaseRepoController):
                             os.remove(archive)
                         break
                     yield data
-
-        # store download action
-        action_logger(user=c.rhodecode_user,
-                      action='user_downloaded_archive:%s' % archive_name,
-                      repo=repo_name, ipaddr=self.ip_addr, commit=True)
-        response.content_disposition = str(
-            'attachment; filename=%s' % archive_name)
-        response.content_type = str(content_type)
 
         return get_chunked_archive(archive)
 
