@@ -36,6 +36,8 @@ import urlparse
 import time
 import string
 import hashlib
+from collections import OrderedDict
+
 import pygments
 import itertools
 import fnmatch
@@ -2003,3 +2005,23 @@ def resource_path(*args, **kwds):
     """
     req = get_current_request()
     return req.resource_path(*args, **kwds)
+
+
+def api_call_example(method, args):
+    """
+    Generates an API call example via CURL
+    """
+    args_json = json.dumps(OrderedDict([
+        ('id', 1),
+        ('auth_token', 'SECRET'),
+        ('method', method),
+        ('args', args)
+    ]))
+    return literal(
+        "curl {api_url} -X POST -H 'content-type:text/plain' --data-binary '{data}'"
+        "<br/><br/>SECRET can be found in <a href=\"{token_url}\">auth-tokens</a> page, "
+        "and needs to be of `api calls` role."
+        .format(
+            api_url=route_url('apiv2'),
+            token_url=route_url('my_account_auth_tokens'),
+            data=args_json))
