@@ -29,6 +29,7 @@ from rhodecode.api.utils import (
     get_user_group_or_error, get_user_or_error, validate_repo_permissions,
     get_perm_or_error, parse_args, get_origin, build_commit_data,
     validate_set_owner_permissions)
+from rhodecode.lib import repo_maintenance
 from rhodecode.lib.auth import HasPermissionAnyApi, HasUserGroupPermissionAnyApi
 from rhodecode.lib.utils2 import str2bool, time_to_datetime
 from rhodecode.lib.ext_json import json
@@ -1986,3 +1987,65 @@ def set_repo_settings(request, apiuser, repoid, settings):
 
     # Indicate success.
     return True
+
+
+@jsonrpc_method()
+def maintenance(request, apiuser, repoid):
+    """
+    Triggers a maintenance on the given repository.
+
+    This command can only be run using an |authtoken| with admin
+    rights to the specified repository. For more information,
+    see :ref:`config-token-ref`.
+
+    This command takes the following options:
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: The repository name or repository ID.
+    :type repoid: str or int
+
+    Example output:
+
+    .. code-block:: bash
+
+      id : <id_given_in_input>
+      result : {
+        "msg": "executed maintenance command",
+        "executed_actions": [
+           <action_message>, <action_message2>...
+        ],
+        "repository": "<repository name>"
+      }
+      error :  null
+
+    Example error output:
+
+    .. code-block:: bash
+
+      id : <id_given_in_input>
+      result : null
+      error :  {
+        "Unable to execute maintenance on `<reponame>`"
+      }
+
+    """
+
+    repo = get_repo_or_error(repoid)
+    if not has_superadmin_permission(apiuser):
+        _perms = ('repository.admin',)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
+
+    try:
+        maintenance = repo_maintenance.RepoMaintenance()
+        executed_actions = maintenance.execute(repo)
+
+        return {
+            'msg': 'executed maintenance command',
+            'executed_actions': executed_actions,
+            'repository': repo.repo_name
+        }
+    except Exception:
+        log.exception("Exception occurred while trying to run maintenance")
+        raise JSONRPCError(
+            'Unable to execute maintenance on `%s`' % repo.repo_name)
