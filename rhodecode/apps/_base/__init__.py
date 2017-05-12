@@ -24,8 +24,10 @@ from pylons import tmpl_context as c
 from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.lib import helpers as h
-from rhodecode.lib.utils2 import StrictAttributeDict, safe_int
+from rhodecode.lib.utils import PartialRenderer
+from rhodecode.lib.utils2 import StrictAttributeDict, safe_int, datetime_to_time
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
+from rhodecode.lib.ext_json import json
 from rhodecode.model import repo
 from rhodecode.model.db import User
 from rhodecode.model.scm import ScmModel
@@ -35,6 +37,24 @@ log = logging.getLogger(__name__)
 
 ADMIN_PREFIX = '/_admin'
 STATIC_FILE_PREFIX = '/_static'
+
+
+def get_format_ref_id(repo):
+    """Returns a `repo` specific reference formatter function"""
+    if h.is_svn(repo):
+        return _format_ref_id_svn
+    else:
+        return _format_ref_id
+
+
+def _format_ref_id(name, raw_id):
+    """Default formatting of a given reference `name`"""
+    return name
+
+
+def _format_ref_id_svn(name, raw_id):
+    """Special way of formatting a reference for Subversion including path"""
+    return '%s@%s' % (name, raw_id)
 
 
 class TemplateArgs(StrictAttributeDict):
@@ -168,6 +188,56 @@ class DataGridAppView(object):
         length = safe_int(request.GET.get('length'), 25)
         draw = safe_int(request.GET.get('draw'))
         return draw, start, length
+
+
+class BaseReferencesView(RepoAppView):
+    """
+    Base for reference view for branches, tags and bookmarks.
+    """
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+
+        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
+        c.repo_info = self.db_repo
+
+        self._register_global_c(c)
+        return c
+
+    def load_refs_context(self, ref_items, partials_template):
+        _render = PartialRenderer(partials_template)
+        _data = []
+        pre_load = ["author", "date", "message"]
+
+        is_svn = h.is_svn(self.rhodecode_vcs_repo)
+        format_ref_id = get_format_ref_id(self.rhodecode_vcs_repo)
+
+        for ref_name, commit_id in ref_items:
+            commit = self.rhodecode_vcs_repo.get_commit(
+                commit_id=commit_id, pre_load=pre_load)
+
+            # TODO: johbo: Unify generation of reference links
+            use_commit_id = '/' in ref_name or is_svn
+            files_url = h.url(
+                'files_home',
+                repo_name=c.repo_name,
+                f_path=ref_name if is_svn else '',
+                revision=commit_id if use_commit_id else ref_name,
+                at=ref_name)
+
+            _data.append({
+                "name": _render('name', ref_name, files_url),
+                "name_raw": ref_name,
+                "date": _render('date', commit.date),
+                "date_raw": datetime_to_time(commit.date),
+                "author": _render('author', commit.author),
+                "commit": _render(
+                    'commit', commit.message, commit.raw_id, commit.idx),
+                "commit_raw": commit.idx,
+                "compare": _render(
+                    'compare', format_ref_id(ref_name, commit.raw_id)),
+            })
+        c.has_references = bool(_data)
+        c.data = json.dumps(_data)
 
 
 class RepoRoutePredicate(object):

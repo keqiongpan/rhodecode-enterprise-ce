@@ -890,18 +890,6 @@ def make_map(config):
                  controller='summary', conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('branches_home', '/{repo_name}/branches',
-                 controller='branches', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('tags_home', '/{repo_name}/tags',
-                 controller='tags', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('bookmarks_home', '/{repo_name}/bookmarks',
-                 controller='bookmarks', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     rmap.connect('changelog_home', '/{repo_name}/changelog', jsroute=True,
                  controller='changelog', conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)

@@ -21,6 +21,21 @@
 
 def includeme(config):
 
+    # Tags
+    config.add_route(
+        name='tags_home',
+        pattern='/{repo_name:.*?[^/]}/tags', repo_route=True)
+
+    # Branches
+    config.add_route(
+        name='branches_home',
+        pattern='/{repo_name:.*?[^/]}/branches', repo_route=True)
+
+    # Bookmarks
+    config.add_route(
+        name='bookmarks_home',
+        pattern='/{repo_name:.*?[^/]}/bookmarks', repo_route=True)
+
     # Settings
     config.add_route(
         name='edit_repo',

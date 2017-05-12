@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2011-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,21 +18,28 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-Tags controller for rhodecode
-"""
-
 import logging
+from pyramid.view import view_config
 
-from rhodecode.controllers.base_references import BaseReferencesController
+from rhodecode.apps._base import BaseReferencesView
+from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator)
 
 log = logging.getLogger(__name__)
 
 
-class TagsController(BaseReferencesController):
+class RepoTagsView(BaseReferencesView):
 
-    partials_template = 'tags/tags_data.mako'
-    template = 'tags/tags.mako'
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @view_config(
+        route_name='tags_home', request_method='GET',
+        renderer='rhodecode:templates/tags/tags.mako')
+    def tags(self):
+        c = self.load_default_context()
 
-    def _get_reference_items(self, repo):
-        return repo.tags.items()
+        ref_items = self.rhodecode_vcs_repo.tags.items()
+        self.load_refs_context(
+            ref_items=ref_items, partials_template='tags/tags_data.mako')
+
+        return self._get_template_context(c)

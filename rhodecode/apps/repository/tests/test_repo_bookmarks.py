@@ -18,20 +18,35 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import pytest
 from rhodecode.model.db import Repository
-from rhodecode.tests import *
 
 
-class TestBranchesController(TestController):
+def route_path(name, params=None, **kwargs):
+    import urllib
+
+    base_url = {
+        'bookmarks_home': '/{repo_name}/bookmarks',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
+
+@pytest.mark.usefixtures('autologin_user', 'app')
+class TestBookmarks(object):
 
     def test_index(self, backend):
-        self.log_user()
-        response = self.app.get(url(controller='branches',
-                                    action='index',
-                                    repo_name=backend.repo_name))
+        if backend.alias == 'hg':
+            response = self.app.get(
+                route_path('bookmarks_home', repo_name=backend.repo_name))
 
-        repo = Repository.get_by_repo_name(backend.repo_name)
-
-        for commit_id, obj_name in repo.scm_instance().branches.items():
-            assert commit_id in response
-            assert obj_name in response
+            repo = Repository.get_by_repo_name(backend.repo_name)
+            for commit_id, obj_name in repo.scm_instance().bookmarks.items():
+                assert commit_id in response
+                assert obj_name in response
+        else:
+            self.app.get(
+                route_path('bookmarks_home', repo_name=backend.repo_name),
+                status=404)

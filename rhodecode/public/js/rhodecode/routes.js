@@ -96,6 +96,9 @@ function registerRCRoutes() {
     pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('repo_list_data', '/_repos', []);
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
+    pyroutes.register('tags_home', '/%(repo_name)s/tags', ['repo_name']);
+    pyroutes.register('branches_home', '/%(repo_name)s/branches', ['repo_name']);
+    pyroutes.register('bookmarks_home', '/%(repo_name)s/bookmarks', ['repo_name']);
     pyroutes.register('edit_repo', '/%(repo_name)s/settings', ['repo_name']);
     pyroutes.register('edit_repo_caches', '/%(repo_name)s/settings/caches', ['repo_name']);
     pyroutes.register('edit_repo_perms', '/%(repo_name)s/settings/permissions', ['repo_name']);

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2010-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -17,30 +17,31 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-"""
-Bookmarks controller for rhodecode
-"""
 
-import logging
-
-from pylons import tmpl_context as c
-from webob.exc import HTTPNotFound
-
-from rhodecode.controllers.base_references import BaseReferencesController
-from rhodecode.lib import helpers as h
-
-log = logging.getLogger(__name__)
+import pytest
+from rhodecode.model.db import Repository
 
 
-class BookmarksController(BaseReferencesController):
+def route_path(name, params=None, **kwargs):
+    import urllib
 
-    partials_template = 'bookmarks/bookmarks_data.mako'
-    template = 'bookmarks/bookmarks.mako'
+    base_url = {
+        'tags_home': '/{repo_name}/tags',
+    }[name].format(**kwargs)
 
-    def __before__(self):
-        super(BookmarksController, self).__before__()
-        if not h.is_hg(c.rhodecode_repo):
-            raise HTTPNotFound()
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
 
-    def _get_reference_items(self, repo):
-        return repo.bookmarks.items()
+
+@pytest.mark.usefixtures('autologin_user', 'app')
+class TestTagsController(object):
+    def test_index(self, backend):
+        response = self.app.get(
+            route_path('tags_home', repo_name=backend.repo_name))
+
+        repo = Repository.get_by_repo_name(backend.repo_name)
+
+        for commit_id, obj_name in repo.scm_instance().tags.items():
+            assert commit_id in response
+            assert obj_name in response

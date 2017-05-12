@@ -1,27 +1,27 @@
 <%def name="refs_counters(branches, closed_branches, tags, bookmarks)">
     <span class="branchtag tag">
-    <a href="${h.url('branches_home',repo_name=c.repo_name)}" class="childs">
+    <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
       <i class="icon-branch"></i>${ungettext(
       '%(num)s Branch','%(num)s Branches', len(branches)) % {'num': len(branches)}}</a>
     </span>
 
     %if closed_branches:
     <span class="branchtag tag">
-    <a href="${h.url('branches_home',repo_name=c.repo_name)}" class="childs">
+    <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
       <i class="icon-branch"></i>${ungettext(
       '%(num)s Closed Branch', '%(num)s Closed Branches', len(closed_branches)) % {'num': len(closed_branches)}}</a>
     </span>
     %endif
 
     <span class="tagtag tag">
-    <a href="${h.url('tags_home',repo_name=c.repo_name)}" class="childs">
+    <a href="${h.route_path('tags_home',repo_name=c.repo_name)}" class="childs">
         <i class="icon-tag"></i>${ungettext(
         '%(num)s Tag', '%(num)s Tags', len(tags)) % {'num': len(tags)}}</a>
     </span>
 
     %if bookmarks:
     <span class="booktag tag">
-    <a href="${h.url('bookmarks_home',repo_name=c.repo_name)}" class="childs">
+    <a href="${h.route_path('bookmarks_home',repo_name=c.repo_name)}" class="childs">
         <i class="icon-bookmark"></i>${ungettext(
         '%(num)s Bookmark', '%(num)s Bookmarks', len(bookmarks)) % {'num': len(bookmarks)}}</a>
     </span>
