@@ -100,11 +100,11 @@ function registerRCRoutes() {
     pyroutes.register('edit_repo_caches', '/%(repo_name)s/settings/caches', ['repo_name']);
     pyroutes.register('edit_repo_perms', '/%(repo_name)s/settings/permissions', ['repo_name']);
     pyroutes.register('repo_reviewers', '/%(repo_name)s/settings/review/rules', ['repo_name']);
-    pyroutes.register('repo_maintenance', '/%(repo_name)s/maintenance', ['repo_name']);
-    pyroutes.register('repo_maintenance_execute', '/%(repo_name)s/maintenance/execute', ['repo_name']);
-    pyroutes.register('strip', '/%(repo_name)s/strip', ['repo_name']);
-    pyroutes.register('strip_check', '/%(repo_name)s/strip_check', ['repo_name']);
-    pyroutes.register('strip_execute', '/%(repo_name)s/strip_execute', ['repo_name']);
+    pyroutes.register('repo_maintenance', '/%(repo_name)s/settings/maintenance', ['repo_name']);
+    pyroutes.register('repo_maintenance_execute', '/%(repo_name)s/settings/maintenance/execute', ['repo_name']);
+    pyroutes.register('strip', '/%(repo_name)s/settings/strip', ['repo_name']);
+    pyroutes.register('strip_check', '/%(repo_name)s/settings/strip_check', ['repo_name']);
+    pyroutes.register('strip_execute', '/%(repo_name)s/settings/strip_execute', ['repo_name']);
     pyroutes.register('search', '/_admin/search', []);
     pyroutes.register('search_repo', '/%(repo_name)s/search', ['repo_name']);
     pyroutes.register('user_profile', '/_profiles/%(username)s', ['username']);

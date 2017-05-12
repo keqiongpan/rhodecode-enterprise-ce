@@ -44,23 +44,23 @@ def includeme(config):
     # Maintenance
     config.add_route(
         name='repo_maintenance',
-        pattern='/{repo_name:.*?[^/]}/maintenance', repo_route=True)
+        pattern='/{repo_name:.*?[^/]}/settings/maintenance', repo_route=True)
 
     config.add_route(
         name='repo_maintenance_execute',
-        pattern='/{repo_name:.*?[^/]}/maintenance/execute', repo_route=True)
+        pattern='/{repo_name:.*?[^/]}/settings/maintenance/execute', repo_route=True)
 
     # Strip
     config.add_route(
         name='strip',
-        pattern='/{repo_name:.*?[^/]}/strip', repo_route=True)
+        pattern='/{repo_name:.*?[^/]}/settings/strip', repo_route=True)
 
     config.add_route(
         name='strip_check',
-        pattern='/{repo_name:.*?[^/]}/strip_check', repo_route=True)
+        pattern='/{repo_name:.*?[^/]}/settings/strip_check', repo_route=True)
 
     config.add_route(
         name='strip_execute',
-        pattern='/{repo_name:.*?[^/]}/strip_execute', repo_route=True)
+        pattern='/{repo_name:.*?[^/]}/settings/strip_execute', repo_route=True)
     # Scan module for configuration decorators.
     config.scan()
