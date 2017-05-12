@@ -112,7 +112,9 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
     tls_reqcert = colander.SchemaNode(
         colander.String(),
         default=tls_reqcert_choices[0],
-        description=_('Require Cert over TLS?'),
+        description=_('Require Cert over TLS?. Self-signed and custom '
+                      'certificates can be used when\n `RhodeCode Certificate` '
+                      'found in admin > settings > system info page is extended.'),
         title=_('Certificate Checks'),
         validator=colander.OneOf(tls_reqcert_choices),
         widget='select')
