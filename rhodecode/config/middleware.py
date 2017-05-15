@@ -222,6 +222,7 @@ def add_pylons_compat_data(registry, global_config, settings):
 def error_handler(exception, request):
     import rhodecode
     from rhodecode.lib.utils2 import AttributeDict
+    from rhodecode.lib import helpers
 
     rhodecode_title = rhodecode.CONFIG.get('rhodecode_title') or 'RhodeCode'
 
@@ -255,9 +256,9 @@ def error_handler(exception, request):
     c.causes = []
     if hasattr(base_response, 'causes'):
         c.causes = base_response.causes
-
+    c.messages = helpers.flash.pop_messages()
     response = render_to_response(
-        '/errors/error_document.mako', {'c': c}, request=request,
+        '/errors/error_document.mako', {'c': c, 'h': helpers}, request=request,
         response=base_response)
 
     return response

@@ -23,6 +23,10 @@ from rhodecode.config import routing_links
 def includeme(config):
 
     config.add_route(
+        name='home',
+        pattern='/')
+
+    config.add_route(
         name='user_autocomplete_data',
         pattern='/_users')
 
@@ -38,7 +42,7 @@ def includeme(config):
         name='goto_switcher_data',
         pattern='/_goto_data')
 
-    # register our static links via redirection mechanismy
+    # register our static links via redirection mechanism
     routing_links.connect_redirection_links(config)
 
     # Scan module for configuration decorators.
