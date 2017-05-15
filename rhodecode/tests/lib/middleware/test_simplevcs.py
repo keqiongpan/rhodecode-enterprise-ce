@@ -87,8 +87,8 @@ def vcscontroller(pylonsapp, config_stub):
 def _remove_default_user_from_query_cache():
     user = User.get_default_user(cache=True)
     query = Session().query(User).filter(User.username == user.username)
-    query = query.options(FromCache(
-        "sql_cache_short", "get_user_%s" % _hash_key(user.username)))
+    query = query.options(
+        FromCache("sql_cache_short", "get_user_%s" % _hash_key(user.username)))
     query.invalidate()
     Session().expire(user)
 

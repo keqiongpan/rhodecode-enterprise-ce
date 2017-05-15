@@ -35,7 +35,7 @@ from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode import events
 from rhodecode.model import BaseModel
-from rhodecode.model.db import (
+from rhodecode.model.db import (_hash_key,
     RepoGroup, UserRepoGroupToPerm, User, Permission, UserGroupRepoGroupToPerm,
     UserGroup, Repository)
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
@@ -73,8 +73,9 @@ class RepoGroupModel(BaseModel):
             .filter(RepoGroup.group_name == repo_group_name)
 
         if cache:
-            repo = repo.options(FromCache(
-                "sql_cache_short", "get_repo_group_%s" % repo_group_name))
+            name_key = _hash_key(repo_group_name)
+            repo = repo.options(
+                FromCache("sql_cache_short", "get_repo_group_%s" % name_key))
         return repo.scalar()
 
     def get_default_create_personal_repo_group(self):

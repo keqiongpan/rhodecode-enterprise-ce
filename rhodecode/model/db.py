@@ -761,9 +761,9 @@ class User(Base, BaseModel):
                 if val:
                     return val
             else:
+                cache_key = "get_user_by_name_%s" % _hash_key(username)
                 q = q.options(
-                    FromCache("sql_cache_short",
-                              "get_user_by_name_%s" % _hash_key(username)))
+                    FromCache("sql_cache_short", cache_key))
 
         return q.scalar()
 
@@ -774,8 +774,8 @@ class User(Base, BaseModel):
             .filter(or_(UserApiKeys.expires == -1,
                         UserApiKeys.expires >= time.time()))
         if cache:
-            q = q.options(FromCache("sql_cache_short",
-                                    "get_auth_token_%s" % auth_token))
+            q = q.options(
+                FromCache("sql_cache_short", "get_auth_token_%s" % auth_token))
 
         match = q.first()
         if match:
@@ -790,9 +790,10 @@ class User(Base, BaseModel):
         else:
             q = cls.query().filter(cls.email == email)
 
+        email_key = _hash_key(email)
         if cache:
-            q = q.options(FromCache("sql_cache_short",
-                                    "get_email_key_%s" % _hash_key(email)))
+            q = q.options(
+                FromCache("sql_cache_short", "get_email_key_%s" % email_key))
 
         ret = q.scalar()
         if ret is None:
@@ -804,8 +805,8 @@ class User(Base, BaseModel):
                 q = q.filter(UserEmailMap.email == email)
             q = q.options(joinedload(UserEmailMap.user))
             if cache:
-                q = q.options(FromCache("sql_cache_short",
-                                        "get_email_map_key_%s" % email))
+                q = q.options(
+                    FromCache("sql_cache_short", "get_email_map_key_%s" % email_key))
             ret = getattr(q.scalar(), 'user', None)
 
         return ret
@@ -1195,17 +1196,16 @@ class UserGroup(Base, BaseModel):
         else:
             q = cls.query().filter(cls.users_group_name == group_name)
         if cache:
-            q = q.options(FromCache(
-                            "sql_cache_short",
-                            "get_group_%s" % _hash_key(group_name)))
+            q = q.options(
+                FromCache("sql_cache_short", "get_group_%s" % _hash_key(group_name)))
         return q.scalar()
 
     @classmethod
     def get(cls, user_group_id, cache=False):
         user_group = cls.query()
         if cache:
-            user_group = user_group.options(FromCache("sql_cache_short",
-                                    "get_users_group_%s" % user_group_id))
+            user_group = user_group.options(
+                FromCache("sql_cache_short", "get_users_group_%s" % user_group_id))
         return user_group.get(user_group_id)
 
     def permissions(self, with_admins=True, with_owner=True):
@@ -1546,9 +1546,9 @@ class Repository(Base, BaseModel):
                 if val:
                     return val
             else:
+                cache_key = "get_repo_by_name_%s" % _hash_key(repo_name)
                 q = q.options(
-                    FromCache("sql_cache_short",
-                              "get_repo_by_name_%s" % _hash_key(repo_name)))
+                    FromCache("sql_cache_short", cache_key))
 
         return q.scalar()
 
@@ -2204,9 +2204,9 @@ class RepoGroup(Base, BaseModel):
         else:
             gr = cls.query().filter(cls.group_name == group_name)
         if cache:
-            gr = gr.options(FromCache(
-                            "sql_cache_short",
-                            "get_group_%s" % _hash_key(group_name)))
+            name_key = _hash_key(group_name)
+            gr = gr.options(
+                FromCache("sql_cache_short", "get_group_%s" % name_key))
         return gr.scalar()
 
     @classmethod

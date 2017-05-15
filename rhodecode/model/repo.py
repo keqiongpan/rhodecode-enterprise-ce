@@ -44,7 +44,7 @@ from rhodecode.lib.utils2 import (
     get_current_rhodecode_user, safe_int, datetime_to_time, action_logger_generic)
 from rhodecode.lib.vcs.backends import get_backend
 from rhodecode.model import BaseModel
-from rhodecode.model.db import (
+from rhodecode.model.db import (_hash_key,
     Repository, UserRepoToPerm, UserGroupRepoToPerm, UserRepoGroupToPerm,
     UserGroupRepoGroupToPerm, User, Permission, Statistics, UserGroup,
     RepoGroup, RepositoryField)
@@ -99,8 +99,8 @@ class RepoModel(BaseModel):
             .filter(Repository.repo_id == repo_id)
 
         if cache:
-            repo = repo.options(FromCache("sql_cache_short",
-                                          "get_repo_%s" % repo_id))
+            repo = repo.options(
+                FromCache("sql_cache_short", "get_repo_%s" % repo_id))
         return repo.scalar()
 
     def get_repo(self, repository):
@@ -111,8 +111,9 @@ class RepoModel(BaseModel):
             .filter(Repository.repo_name == repo_name)
 
         if cache:
-            repo = repo.options(FromCache("sql_cache_short",
-                                          "get_repo_%s" % repo_name))
+            name_key = _hash_key(repo_name)
+            repo = repo.options(
+                FromCache("sql_cache_short", "get_repo_%s" % name_key))
         return repo.scalar()
 
     def _extract_id_from_repo_name(self, repo_name):

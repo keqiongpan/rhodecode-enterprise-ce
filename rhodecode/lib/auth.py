@@ -1045,8 +1045,8 @@ class AuthUser(object):
             default_ips = UserIpMap.query().filter(
                 UserIpMap.user == User.get_default_user(cache=True))
             if cache:
-                default_ips = default_ips.options(FromCache("sql_cache_short",
-                                                  "get_user_ips_default"))
+                default_ips = default_ips.options(
+                    FromCache("sql_cache_short", "get_user_ips_default"))
 
             # populate from default user
             for ip in default_ips:
@@ -1059,8 +1059,8 @@ class AuthUser(object):
 
         user_ips = UserIpMap.query().filter(UserIpMap.user_id == user_id)
         if cache:
-            user_ips = user_ips.options(FromCache("sql_cache_short",
-                                                  "get_user_ips_%s" % user_id))
+            user_ips = user_ips.options(
+                FromCache("sql_cache_short", "get_user_ips_%s" % user_id))
 
         for ip in user_ips:
             try:

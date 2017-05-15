@@ -40,7 +40,7 @@ from rhodecode.lib.utils2 import (
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
 from rhodecode.model.auth_token import AuthTokenModel
-from rhodecode.model.db import (
+from rhodecode.model.db import (_hash_key,
     or_, joinedload, User, UserToPerm, UserEmailMap, UserIpMap, UserLog)
 from rhodecode.lib.exceptions import (
     DefaultUserException, UserOwnsReposException, UserOwnsRepoGroupsException,
@@ -58,8 +58,8 @@ class UserModel(BaseModel):
     def get(self, user_id, cache=False):
         user = self.sa.query(User)
         if cache:
-            user = user.options(FromCache("sql_cache_short",
-                                          "get_user_%s" % user_id))
+            user = user.options(
+                FromCache("sql_cache_short", "get_user_%s" % user_id))
         return user.get(user_id)
 
     def get_user(self, user):
@@ -112,8 +112,9 @@ class UserModel(BaseModel):
             user = self.sa.query(User)\
                 .filter(User.username == username)
         if cache:
-            user = user.options(FromCache("sql_cache_short",
-                                          "get_user_%s" % username))
+            name_key = _hash_key(username)
+            user = user.options(
+                FromCache("sql_cache_short", "get_user_%s" % name_key))
         return user.scalar()
 
     def get_by_email(self, email, cache=False, case_insensitive=False):
