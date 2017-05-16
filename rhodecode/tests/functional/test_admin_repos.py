@@ -382,21 +382,6 @@ class TestAdminRepos(object):
                 csrf_token=csrf_token))
         response.mustcontain('Repository name cannot end with .git')
 
-    @pytest.mark.parametrize("suffix", [u'', u'ąęł'], ids=['', 'non-ascii'])
-    def test_delete(self, autologin_user, backend, suffix, csrf_token):
-        repo = backend.create_repo(name_suffix=suffix)
-        repo_name = repo.repo_name
-
-        response = self.app.post(url('repo', repo_name=repo_name),
-                                 params={'_method': 'delete',
-                                         'csrf_token': csrf_token})
-        assert_session_flash(response, 'Deleted repository %s' % (repo_name))
-        response.follow()
-
-        # check if repo was deleted from db
-        assert RepoModel().get_by_repo_name(repo_name) is None
-        assert not repo_on_filesystem(repo_name)
-
     def test_show(self, autologin_user, backend):
         self.app.get(url('repo', repo_name=backend.repo_name))
 
@@ -413,82 +398,6 @@ class TestAdminRepos(object):
         assert len(permissions) == 1
         assert permissions[0].permission.permission_name == 'repository.none'
         assert permissions[0].repository.private is True
-
-    def test_set_repo_fork_has_no_self_id(self, autologin_user, backend):
-        repo = backend.repo
-        response = self.app.get(
-            url('edit_repo_advanced', repo_name=backend.repo_name))
-        opt = """<option value="%s">vcs_test_git</option>""" % repo.repo_id
-        response.mustcontain(no=[opt])
-
-    def test_set_fork_of_target_repo(
-            self, autologin_user, backend, csrf_token):
-        target_repo = 'target_%s' % backend.alias
-        fixture.create_repo(target_repo, repo_type=backend.alias)
-        repo2 = Repository.get_by_repo_name(target_repo)
-        response = self.app.post(
-            url('edit_repo_advanced_fork', repo_name=backend.repo_name),
-            params={'id_fork_of': repo2.repo_id, '_method': 'put',
-                    'csrf_token': csrf_token})
-        repo = Repository.get_by_repo_name(backend.repo_name)
-        repo2 = Repository.get_by_repo_name(target_repo)
-        assert_session_flash(
-            response,
-            'Marked repo %s as fork of %s' % (repo.repo_name, repo2.repo_name))
-
-        assert repo.fork == repo2
-        response = response.follow()
-        # check if given repo is selected
-
-        opt = 'This repository is a fork of <a href="%s">%s</a>' % (
-            url('summary_home', repo_name=repo2.repo_name), repo2.repo_name)
-
-        response.mustcontain(opt)
-
-        fixture.destroy_repo(target_repo, forks='detach')
-
-    @pytest.mark.backends("hg", "git")
-    def test_set_fork_of_other_type_repo(self, autologin_user, backend,
-                                         csrf_token):
-        TARGET_REPO_MAP = {
-            'git': {
-                'type': 'hg',
-                'repo_name': HG_REPO},
-            'hg': {
-                'type': 'git',
-                'repo_name': GIT_REPO},
-        }
-        target_repo = TARGET_REPO_MAP[backend.alias]
-
-        repo2 = Repository.get_by_repo_name(target_repo['repo_name'])
-        response = self.app.post(
-            url('edit_repo_advanced_fork', repo_name=backend.repo_name),
-            params={'id_fork_of': repo2.repo_id, '_method': 'put',
-                    'csrf_token': csrf_token})
-        assert_session_flash(
-            response,
-            'Cannot set repository as fork of repository with other type')
-
-    def test_set_fork_of_none(self, autologin_user, backend, csrf_token):
-        # mark it as None
-        response = self.app.post(
-            url('edit_repo_advanced_fork', repo_name=backend.repo_name),
-            params={'id_fork_of': None, '_method': 'put',
-                    'csrf_token': csrf_token})
-        assert_session_flash(
-            response,
-            'Marked repo %s as fork of %s'
-            % (backend.repo_name, "Nothing"))
-        assert backend.repo.fork is None
-
-    def test_set_fork_of_same_repo(self, autologin_user, backend, csrf_token):
-        repo = Repository.get_by_repo_name(backend.repo_name)
-        response = self.app.post(
-            url('edit_repo_advanced_fork', repo_name=backend.repo_name),
-            params={'id_fork_of': repo.repo_id, '_method': 'put',
-                    'csrf_token': csrf_token})
-        assert_session_flash(
-            response, 'An error occurred during this operation')
 
     def test_create_on_top_level_without_permissions(self, backend):
         session = login_user_session(

@@ -36,9 +36,10 @@ ACTIONS = {
     'user.push': {},
     'user.pull': {},
 
-    'repo.add': {},
+    'repo.create': {},
     'repo.edit': {},
     'repo.edit.permissions': {},
+    'repo.delete': {},
     'repo.commit.strip': {},
     'repo.archive.download': {},
 }
@@ -101,7 +102,7 @@ def store(
         audit_logger.store(
             action='repo.edit', user=self._rhodecode_user)
         audit_logger.store(
-            action='repo.delete',
+            action='repo.delete', action_data={'repo_data': repo_data},
             user=audit_logger.UserWrap(username='itried-login', ip_addr='8.8.8.8'))
 
         # repo action

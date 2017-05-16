@@ -106,9 +106,7 @@ class _BaseTest(TestController):
         )
 
         # remove this fork
-        response = self.app.post(
-            url('repo', repo_name=fork_name),
-            params={'_method': 'delete', 'csrf_token': self.csrf_token})
+        fixture.destroy_repo(fork_name)
 
     def test_fork_create_into_group(self):
         self.log_user()

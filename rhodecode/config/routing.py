@@ -185,7 +185,7 @@ def make_map(config):
     #==========================================================================
 
     # MAIN PAGE
-    rmap.connect('home', '/', controller='home', action='index', jsroute=True)
+    rmap.connect('home', '/', controller='home', action='index')
 
     # ping and pylons error test
     rmap.connect('ping', '%s/ping' % (ADMIN_PREFIX,), controller='home', action='ping')
@@ -674,28 +674,9 @@ def make_map(config):
                  conditions={'method': ['DELETE'], 'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('edit_repo_advanced', '/{repo_name}/settings/advanced',
-                 controller='admin/repos', action='edit_advanced',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('edit_repo_advanced_locking', '/{repo_name}/settings/advanced/locking',
-                 controller='admin/repos', action='edit_advanced_locking',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
     rmap.connect('toggle_locking', '/{repo_name}/settings/advanced/locking_toggle',
                  controller='admin/repos', action='toggle_locking',
                  conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('edit_repo_advanced_journal', '/{repo_name}/settings/advanced/journal',
-                 controller='admin/repos', action='edit_advanced_journal',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('edit_repo_advanced_fork', '/{repo_name}/settings/advanced/fork',
-                 controller='admin/repos', action='edit_advanced_fork',
-                 conditions={'method': ['PUT'], 'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
     rmap.connect('edit_repo_remote', '/{repo_name}/settings/remote',
