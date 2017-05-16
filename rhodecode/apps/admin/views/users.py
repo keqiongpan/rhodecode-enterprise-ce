@@ -26,7 +26,7 @@ from pyramid.view import view_config
 from sqlalchemy.sql.functions import coalesce
 
 from rhodecode.lib.helpers import Page
-from rhodecode_tools.lib.ext_json import json
+from rhodecode.lib.ext_json import json
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib.auth import (
