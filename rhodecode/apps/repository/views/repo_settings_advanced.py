@@ -97,13 +97,14 @@ class RepoSettingsView(RepoAppView):
             repo_data = self.db_repo.get_api_data()
             RepoModel().delete(self.db_repo, forks=handle_forks)
 
-            repo = audit_logger.RepoWrap(repo_id=self.db_repo.repo_id,
+            repo = audit_logger.RepoWrap(repo_id=None,
                                          repo_name=self.db_repo.repo_name)
             audit_logger.store(
-                action='repo.delete', action_data={'repo_data': repo_data},
+                action='repo.delete',
+                action_data={'repo_data': repo_data, 'source': 'web_action'},
                 user=self._rhodecode_user, repo=repo, commit=False)
 
-            ScmModel().mark_for_invalidation(self.db_repo_name)
+            ScmModel().mark_for_invalidation(self.db_repo_name, delete=True)
             h.flash(
                 _('Deleted repository `%s`') % self.db_repo_name,
                 category='success')

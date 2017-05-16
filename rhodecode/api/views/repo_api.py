@@ -29,6 +29,7 @@ from rhodecode.api.utils import (
     get_user_group_or_error, get_user_or_error, validate_repo_permissions,
     get_perm_or_error, parse_args, get_origin, build_commit_data,
     validate_set_owner_permissions)
+from rhodecode.lib import audit_logger
 from rhodecode.lib import repo_maintenance
 from rhodecode.lib.auth import HasPermissionAnyApi, HasUserGroupPermissionAnyApi
 from rhodecode.lib.utils2 import str2bool, time_to_datetime
@@ -1154,6 +1155,7 @@ def delete_repo(request, apiuser, repoid, forks=Optional('')):
     """
 
     repo = get_repo_or_error(repoid)
+    repo_name = repo.repo_name
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
@@ -1171,18 +1173,27 @@ def delete_repo(request, apiuser, repoid, forks=Optional('')):
                 'Cannot delete `%s` it still contains attached forks' %
                 (repo.repo_name,)
             )
-
+        repo_data = repo.get_api_data()
         RepoModel().delete(repo, forks=forks)
+
+        repo = audit_logger.RepoWrap(repo_id=None,
+                                     repo_name=repo.repo_name)
+
+        audit_logger.store(
+            action='repo.delete',
+            action_data={'repo_data': repo_data, 'source': 'api_call'},
+            user=apiuser, repo=repo, commit=False)
+
+        ScmModel().mark_for_invalidation(repo_name, delete=True)
         Session().commit()
         return {
-            'msg': 'Deleted repository `%s`%s' % (
-                repo.repo_name, _forks_msg),
+            'msg': 'Deleted repository `%s`%s' % (repo_name, _forks_msg),
             'success': True
         }
     except Exception:
         log.exception("Exception occurred while trying to delete repo")
         raise JSONRPCError(
-            'failed to delete repository `%s`' % (repo.repo_name,)
+            'failed to delete repository `%s`' % (repo_name,)
         )
 
 
