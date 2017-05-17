@@ -358,6 +358,7 @@ class RhodeCodeUi(Base, BaseModel):
     HOOK_PRE_PUSH = 'prechangegroup.pre_push'
     HOOK_PRETX_PUSH = 'pretxnchangegroup.pre_push'
     HOOK_PUSH = 'changegroup.push_logger'
+    HOOK_PUSH_KEY = 'pushkey.key_push'
 
     # TODO: johbo: Unify way how hooks are configured for git and hg,
     # git part is currently hardcoded.
