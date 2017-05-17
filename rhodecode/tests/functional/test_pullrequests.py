@@ -539,7 +539,7 @@ class TestPullrequestsController:
         # Check the relevant log entries were added
         user_logs = UserLog.query() \
             .filter(UserLog.version == UserLog.VERSION_1) \
-            .order_by('-user_log_id').limit(4)
+            .order_by('-user_log_id').limit(3)
         actions = [log.action for log in user_logs]
         pr_commit_ids = PullRequestModel()._get_commit_ids(pull_request)
         expected_actions = [
@@ -547,9 +547,15 @@ class TestPullrequestsController:
             u'user_merged_pull_request:%d' % pull_request_id,
             # The action below reflect that the post push actions were executed
             u'user_commented_pull_request:%d' % pull_request_id,
-            u'push:%s' % ','.join(pr_commit_ids),
         ]
         assert actions == expected_actions
+
+        user_logs = UserLog.query() \
+            .filter(UserLog.version == UserLog.VERSION_2) \
+            .order_by('-user_log_id').limit(1)
+        actions = [log.action for log in user_logs]
+        assert actions == ['user.push']
+        assert user_logs[0].action_data['commit_ids'] == pr_commit_ids
 
         # Check post_push rcextension was really executed
         push_calls = rhodecode.EXTENSIONS.calls['post_push']

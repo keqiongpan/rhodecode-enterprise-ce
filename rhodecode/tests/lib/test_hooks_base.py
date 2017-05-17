@@ -20,15 +20,10 @@
 
 import mock
 import pytest
-
+from rhodecode.model.db import Session, UserLog
 from rhodecode.lib import hooks_base, utils2
 
 
-@mock.patch.multiple(
-    hooks_base,
-    action_logger=mock.Mock(),
-    post_push_extension=mock.Mock(),
-    Repository=mock.Mock())
 def test_post_push_truncates_commits(user_regular, repo_stub):
     extras = {
         'ip': '127.0.0.1',
@@ -49,11 +44,13 @@ def test_post_push_truncates_commits(user_regular, repo_stub):
     hooks_base.post_push(extras)
 
     # Calculate appropriate action string here
-    expected_action = 'push_local:%s' % ','.join(extras.commit_ids[:29000])
+    commit_ids = extras.commit_ids[:10000]
 
-    hooks_base.action_logger.assert_called_with(
-        extras.username, expected_action, extras.repository, extras.ip,
-        commit=True)
+    entry = UserLog.query().order_by('-user_log_id').first()
+    assert entry.action == 'user.push'
+    assert entry.action_data['commit_ids'] == commit_ids
+    Session().delete(entry)
+    Session().commit()
 
 
 def assert_called_with_mock(callable_, expected_mock_name):
