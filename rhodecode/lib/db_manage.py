@@ -319,6 +319,7 @@ class DbManage(object):
             (RhodeCodeUi.HOOK_PRE_PUSH, 'python:vcsserver.hooks.pre_push'),
             (RhodeCodeUi.HOOK_PRETX_PUSH, 'python:vcsserver.hooks.pre_push'),
             (RhodeCodeUi.HOOK_PUSH, 'python:vcsserver.hooks.log_push_action'),
+            (RhodeCodeUi.HOOK_PUSH_KEY, 'python:vcsserver.hooks.key_push'),
 
         ]
 

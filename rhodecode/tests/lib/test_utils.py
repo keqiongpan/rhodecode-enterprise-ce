@@ -86,22 +86,24 @@ HOOK_PUSH = db.RhodeCodeUi.HOOK_PUSH
 HOOK_PRE_PULL = db.RhodeCodeUi.HOOK_PRE_PULL
 HOOK_PULL = db.RhodeCodeUi.HOOK_PULL
 HOOK_REPO_SIZE = db.RhodeCodeUi.HOOK_REPO_SIZE
+HOOK_PUSH_KEY = db.RhodeCodeUi.HOOK_PUSH_KEY
 
 HG_HOOKS = frozenset(
     (HOOK_PRE_PULL, HOOK_PULL, HOOK_PRE_PUSH, HOOK_PRETX_PUSH, HOOK_PUSH,
-     HOOK_REPO_SIZE))
+     HOOK_REPO_SIZE, HOOK_PUSH_KEY))
 
 
 @pytest.mark.parametrize('disabled_hooks,expected_hooks', [
     ([], HG_HOOKS),
     (HG_HOOKS, []),
 
-    ([HOOK_PRE_PUSH, HOOK_PRETX_PUSH, HOOK_REPO_SIZE], [HOOK_PRE_PULL, HOOK_PULL, HOOK_PUSH]),
+    ([HOOK_PRE_PUSH, HOOK_PRETX_PUSH, HOOK_REPO_SIZE, HOOK_PUSH_KEY], [HOOK_PRE_PULL, HOOK_PULL, HOOK_PUSH]),
 
     # When a pull/push hook is disabled, its pre-pull/push counterpart should
     # be disabled too.
     ([HOOK_PUSH], [HOOK_PRE_PULL, HOOK_PULL, HOOK_REPO_SIZE]),
-    ([HOOK_PULL], [HOOK_PRE_PUSH, HOOK_PRETX_PUSH, HOOK_PUSH, HOOK_REPO_SIZE]),
+    ([HOOK_PULL], [HOOK_PRE_PUSH, HOOK_PRETX_PUSH, HOOK_PUSH, HOOK_REPO_SIZE,
+                   HOOK_PUSH_KEY]),
 ])
 def test_make_db_config_hg_hooks(pylonsapp, request, disabled_hooks,
                                  expected_hooks):

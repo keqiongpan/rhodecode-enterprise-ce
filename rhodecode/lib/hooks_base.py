@@ -232,8 +232,20 @@ def post_push(extras):
             # 2xx Codes don't raise exceptions
             output += _http_ret.title
 
-    output += 'RhodeCode: push completed\n'
+    if extras.new_refs:
+        tmpl = \
+            extras.server_url + '/' + \
+            extras.repository + \
+            "/pull-request/new?{ref_type}={ref_name}"
+        for branch_name in extras.new_refs['branches']:
+            output += 'RhodeCode: open pull request link: {}\n'.format(
+                tmpl.format(ref_type='branch', ref_name=branch_name))
 
+        for book_name in extras.new_refs['bookmarks']:
+            output += 'RhodeCode: open pull request link: {}\n'.format(
+                tmpl.format(ref_type='bookmark', ref_name=book_name))
+
+    output += 'RhodeCode: push completed\n'
     return HookResponse(0, output)
 
 

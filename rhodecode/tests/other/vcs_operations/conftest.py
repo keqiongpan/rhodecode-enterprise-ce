@@ -84,6 +84,9 @@ class RcWebServer(object):
         _url = 'http://%(user)s:%(passwd)s@%(host)s/%(cloned_repo)s' % params
         return _url
 
+    def host_url(self):
+        return 'http://' + get_host_url(self.pylons_config)
+
 
 @pytest.fixture(scope="module")
 def rcextensions(request, pylonsapp, tmpdir_factory):

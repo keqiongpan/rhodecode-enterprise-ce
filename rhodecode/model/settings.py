@@ -52,7 +52,8 @@ class SettingsModel(BaseModel):
     BUILTIN_HOOKS = (
         RhodeCodeUi.HOOK_REPO_SIZE, RhodeCodeUi.HOOK_PUSH,
         RhodeCodeUi.HOOK_PRE_PUSH, RhodeCodeUi.HOOK_PRETX_PUSH,
-        RhodeCodeUi.HOOK_PULL, RhodeCodeUi.HOOK_PRE_PULL)
+        RhodeCodeUi.HOOK_PULL, RhodeCodeUi.HOOK_PRE_PULL,
+        RhodeCodeUi.HOOK_PUSH_KEY,)
     HOOKS_SECTION = 'hooks'
 
     def __init__(self, sa=None, repo=None):

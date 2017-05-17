@@ -34,6 +34,7 @@ import time
 import pytest
 
 from rhodecode.lib.vcs.backends.git.repository import GitRepository
+from rhodecode.lib.vcs.backends.hg.repository import MercurialRepository
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import Repository, UserIpMap, CacheKey
@@ -42,7 +43,8 @@ from rhodecode.model.user import UserModel
 from rhodecode.tests import (GIT_REPO, HG_REPO, TEST_USER_ADMIN_LOGIN)
 
 from rhodecode.tests.other.vcs_operations import (
-    Command, _check_proper_clone, _check_proper_git_push, _add_files_and_push,
+    Command, _check_proper_clone, _check_proper_git_push,
+    _check_proper_hg_push, _add_files_and_push,
     HG_REPO_WITH_GROUP, GIT_REPO_WITH_GROUP)
 
 
@@ -396,7 +398,6 @@ class TestVCSOperations(object):
             'hg clone', clone_url, tmpdir.strpath)
         assert 'abort: authorization failed' in stderr
 
-
     def test_clone_by_auth_token_with_scope(
             self, rc_web_server, tmpdir, user_util, enable_auth_plugins):
         enable_auth_plugins(['egg:rhodecode-enterprise-ce#token',
@@ -479,3 +480,176 @@ def test_git_fetches_from_remote_repository_with_annotated_tags(
     source_repo = backend_git['annotated-tag']
     target_vcs_repo = backend_git.create_repo().scm_instance()
     target_vcs_repo.fetch(rc_web_server.repo_clone_url(source_repo.repo_name))
+
+
+def test_git_push_shows_pull_request_refs(backend_git, rc_web_server, tmpdir):
+    """
+    test if remote info about refs is visible
+    """
+    empty_repo = backend_git.create_repo()
+
+    clone_url = rc_web_server.repo_clone_url(empty_repo.repo_name)
+
+    cmd = Command(tmpdir.strpath)
+    cmd.execute('git clone', clone_url)
+
+    repo = GitRepository(os.path.join(tmpdir.strpath, empty_repo.repo_name))
+    repo.in_memory_commit.add(FileNode('readme.md', content='## Hello'))
+    repo.in_memory_commit.commit(
+        message='Commit on branch Master',
+        author='Automatic test',
+        branch='master')
+
+    repo_cmd = Command(repo.path)
+    stdout, stderr = repo_cmd.execute('git push --verbose origin master')
+    _check_proper_git_push(stdout, stderr, branch='master')
+
+    ref = '{}/{}/pull-request/new?branch=master'.format(
+        rc_web_server.host_url(), empty_repo.repo_name)
+    assert 'remote: RhodeCode: open pull request link: {}'.format(ref) in stderr
+    assert 'remote: RhodeCode: push completed' in stderr
+
+    # push on the same branch
+    repo = GitRepository(os.path.join(tmpdir.strpath, empty_repo.repo_name))
+    repo.in_memory_commit.add(FileNode('setup.py', content='print\n'))
+    repo.in_memory_commit.commit(
+        message='Commit2 on branch Master',
+        author='Automatic test2',
+        branch='master')
+
+    repo_cmd = Command(repo.path)
+    stdout, stderr = repo_cmd.execute('git push --verbose origin master')
+    _check_proper_git_push(stdout, stderr, branch='master')
+
+    assert 'remote: RhodeCode: open pull request link: {}'.format(ref) in stderr
+    assert 'remote: RhodeCode: push completed' in stderr
+
+    # new Branch
+    repo = GitRepository(os.path.join(tmpdir.strpath, empty_repo.repo_name))
+    repo.in_memory_commit.add(FileNode('feature1.py', content='## Hello world'))
+    repo.in_memory_commit.commit(
+        message='Commit on branch feature',
+        author='Automatic test',
+        branch='feature')
+
+    repo_cmd = Command(repo.path)
+    stdout, stderr = repo_cmd.execute('git push --verbose origin feature')
+    _check_proper_git_push(stdout, stderr, branch='feature')
+
+    ref = '{}/{}/pull-request/new?branch=feature'.format(
+        rc_web_server.host_url(), empty_repo.repo_name)
+    assert 'remote: RhodeCode: open pull request link: {}'.format(ref) in stderr
+    assert 'remote: RhodeCode: push completed' in stderr
+
+
+def test_hg_push_shows_pull_request_refs(backend_hg, rc_web_server, tmpdir):
+    empty_repo = backend_hg.create_repo()
+
+    clone_url = rc_web_server.repo_clone_url(empty_repo.repo_name)
+
+    cmd = Command(tmpdir.strpath)
+    cmd.execute('hg clone', clone_url)
+
+    repo = MercurialRepository(os.path.join(tmpdir.strpath, empty_repo.repo_name))
+    repo.in_memory_commit.add(FileNode(u'readme.md', content=u'## Hello'))
+    repo.in_memory_commit.commit(
+        message=u'Commit on branch default',
+        author=u'Automatic test',
+        branch='default')
+
+    repo_cmd = Command(repo.path)
+    repo_cmd.execute('hg checkout default')
+
+    stdout, stderr = repo_cmd.execute('hg push --verbose', clone_url)
+    _check_proper_hg_push(stdout, stderr, branch='default')
+
+    ref = '{}/{}/pull-request/new?branch=default'.format(
+        rc_web_server.host_url(), empty_repo.repo_name)
+    assert 'remote: RhodeCode: open pull request link: {}'.format(ref) in stdout
+    assert 'remote: RhodeCode: push completed' in stdout
+
+    # push on the same branch
+    repo = MercurialRepository(os.path.join(tmpdir.strpath, empty_repo.repo_name))
+    repo.in_memory_commit.add(FileNode(u'setup.py', content=u'print\n'))
+    repo.in_memory_commit.commit(
+        message=u'Commit2 on branch default',
+        author=u'Automatic test2',
+        branch=u'default')
+
+    repo_cmd = Command(repo.path)
+    repo_cmd.execute('hg checkout default')
+
+    stdout, stderr = repo_cmd.execute('hg push --verbose', clone_url)
+    _check_proper_hg_push(stdout, stderr, branch='default')
+
+    assert 'remote: RhodeCode: open pull request link: {}'.format(ref) in stdout
+    assert 'remote: RhodeCode: push completed' in stdout
+
+    # new Branch
+    repo = MercurialRepository(os.path.join(tmpdir.strpath, empty_repo.repo_name))
+    repo.in_memory_commit.add(FileNode(u'feature1.py', content=u'## Hello world'))
+    repo.in_memory_commit.commit(
+        message=u'Commit on branch feature',
+        author=u'Automatic test',
+        branch=u'feature')
+
+    repo_cmd = Command(repo.path)
+    repo_cmd.execute('hg checkout feature')
+
+    stdout, stderr = repo_cmd.execute('hg push --new-branch --verbose', clone_url)
+    _check_proper_hg_push(stdout, stderr, branch='feature')
+
+    ref = '{}/{}/pull-request/new?branch=feature'.format(
+        rc_web_server.host_url(), empty_repo.repo_name)
+    assert 'remote: RhodeCode: open pull request link: {}'.format(ref) in stdout
+    assert 'remote: RhodeCode: push completed' in stdout
+
+
+def test_hg_push_shows_pull_request_refs_book(backend_hg, rc_web_server, tmpdir):
+    empty_repo = backend_hg.create_repo()
+
+    clone_url = rc_web_server.repo_clone_url(empty_repo.repo_name)
+
+    cmd = Command(tmpdir.strpath)
+    cmd.execute('hg clone', clone_url)
+
+    repo = MercurialRepository(os.path.join(tmpdir.strpath, empty_repo.repo_name))
+    repo.in_memory_commit.add(FileNode(u'readme.md', content=u'## Hello'))
+    repo.in_memory_commit.commit(
+        message=u'Commit on branch default',
+        author=u'Automatic test',
+        branch='default')
+
+    repo_cmd = Command(repo.path)
+    repo_cmd.execute('hg checkout default')
+
+    stdout, stderr = repo_cmd.execute('hg push --verbose', clone_url)
+    _check_proper_hg_push(stdout, stderr, branch='default')
+
+    ref = '{}/{}/pull-request/new?branch=default'.format(
+        rc_web_server.host_url(), empty_repo.repo_name)
+    assert 'remote: RhodeCode: open pull request link: {}'.format(ref) in stdout
+    assert 'remote: RhodeCode: push completed' in stdout
+
+    # add bookmark
+    repo = MercurialRepository(os.path.join(tmpdir.strpath, empty_repo.repo_name))
+    repo.in_memory_commit.add(FileNode(u'setup.py', content=u'print\n'))
+    repo.in_memory_commit.commit(
+        message=u'Commit2 on branch default',
+        author=u'Automatic test2',
+        branch=u'default')
+
+    repo_cmd = Command(repo.path)
+    repo_cmd.execute('hg checkout default')
+    repo_cmd.execute('hg bookmark feature2')
+    stdout, stderr = repo_cmd.execute('hg push -B feature2 --verbose', clone_url)
+    _check_proper_hg_push(stdout, stderr, branch='default')
+
+    ref = '{}/{}/pull-request/new?branch=default'.format(
+        rc_web_server.host_url(), empty_repo.repo_name)
+    assert 'remote: RhodeCode: open pull request link: {}'.format(ref) in stdout
+    ref = '{}/{}/pull-request/new?bookmark=feature2'.format(
+        rc_web_server.host_url(), empty_repo.repo_name)
+    assert 'remote: RhodeCode: open pull request link: {}'.format(ref) in stdout
+    assert 'remote: RhodeCode: push completed' in stdout
+    assert 'exporting bookmark feature2' in stdout
