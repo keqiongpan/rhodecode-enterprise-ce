@@ -814,10 +814,6 @@ class FilesController(BaseRepoController):
                 archive = cached_archive_path
 
         # store download action
-        action_logger(user=c.rhodecode_user,
-                      action='user_downloaded_archive:%s' % archive_name,
-                      repo=repo_name, ipaddr=self.ip_addr, commit=True)
-
         audit_logger.store(
             action='repo.archive.download',
             action_data={'user_agent': request.user_agent,
