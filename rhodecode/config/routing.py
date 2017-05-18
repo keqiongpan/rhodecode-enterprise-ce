@@ -513,10 +513,6 @@ def make_map(config):
                   '/my_account/toggle_visibility',
                   action='my_notifications_toggle_visibility',
                   conditions={'method': ['POST']})
-    m.connect('my_account_notifications_test_channelstream',
-              '/my_account/test_channelstream',
-              action='my_account_notifications_test_channelstream',
-              conditions={'method': ['POST']})
 
     # NOTIFICATION REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,

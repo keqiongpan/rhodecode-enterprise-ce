@@ -41,12 +41,15 @@ def includeme(config):
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens')
     config.add_route(
         name='my_account_auth_tokens_add',
-        pattern=ADMIN_PREFIX + '/my_account/auth_tokens/new',
-        )
+        pattern=ADMIN_PREFIX + '/my_account/auth_tokens/new')
     config.add_route(
         name='my_account_auth_tokens_delete',
-        pattern=ADMIN_PREFIX + '/my_account/auth_tokens/delete',
-        )
+        pattern=ADMIN_PREFIX + '/my_account/auth_tokens/delete')
+
+    # channelstream test
+    config.add_route(
+        name='my_account_notifications_test_channelstream',
+        pattern=ADMIN_PREFIX + '/my_account/test_channelstream')
 
     # Scan module for configuration decorators.
     config.scan()

@@ -19,14 +19,17 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
+import datetime
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode import forms
-from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
 from rhodecode.lib import helpers as h
+from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
+from rhodecode.lib.channelstream import channelstream_request, \
+    ChannelstreamException
 from rhodecode.lib.utils2 import safe_int, md5
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.meta import Session
@@ -192,3 +195,37 @@ class MyAccountView(BaseAppView):
             h.flash(_("Auth token successfully deleted"), category='success')
 
         return HTTPFound(h.route_path('my_account_auth_tokens'))
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    @view_config(
+        route_name='my_account_notifications_test_channelstream',
+        request_method='POST', renderer='json_ext')
+    def my_account_notifications_test_channelstream(self):
+        message = 'Test message sent via Channelstream by user: {}, on {}'.format(
+            self._rhodecode_user.username, datetime.datetime.now())
+        payload = {
+            # 'channel': 'broadcast',
+            'type': 'message',
+            'timestamp': datetime.datetime.utcnow(),
+            'user': 'system',
+            'pm_users': [self._rhodecode_user.username],
+            'message': {
+                'message': message,
+                'level': 'info',
+                'topic': '/notifications'
+            }
+        }
+
+        registry = self.request.registry
+        rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
+        channelstream_config = rhodecode_plugins.get('channelstream', {})
+
+        try:
+            channelstream_request(channelstream_config, [payload], '/message')
+        except ChannelstreamException as e:
+            log.exception('Failed to send channelstream data')
+            return {"response": 'ERROR: {}'.format(e.__class__.__name__)}
+        return {"response": 'Channelstream data sent. '
+                            'You should see a new live message now.'}

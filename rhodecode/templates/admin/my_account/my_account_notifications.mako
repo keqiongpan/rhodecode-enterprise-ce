@@ -10,7 +10,7 @@
 
 <iron-ajax id="sendTestNotification"
            method="post"
-           url="${url('my_account_notifications_test_channelstream')}"
+           url="${h.route_path('my_account_notifications_test_channelstream')}"
            content-type="application/json"
            on-response="handleTestNotification"
            handle-as="json">

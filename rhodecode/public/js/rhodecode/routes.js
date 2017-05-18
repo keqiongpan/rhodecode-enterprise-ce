@@ -123,5 +123,6 @@ function registerRCRoutes() {
     pyroutes.register('my_account_auth_tokens', '/_admin/my_account/auth_tokens', []);
     pyroutes.register('my_account_auth_tokens_add', '/_admin/my_account/auth_tokens/new', []);
     pyroutes.register('my_account_auth_tokens_delete', '/_admin/my_account/auth_tokens/delete', []);
+    pyroutes.register('my_account_notifications_test_channelstream', '/_admin/my_account/test_channelstream', []);
     pyroutes.register('apiv2', '/_admin/api', []);
 }
