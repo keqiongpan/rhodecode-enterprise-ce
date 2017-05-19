@@ -10,7 +10,7 @@
 
 <%def name="breadcrumbs_links()">
     <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-    ${h.link_to(_('Admin'),h.url('admin_home'))} &raquo; <span id="user_count">0</span>
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))} &raquo; <span id="user_count">0</span>
 </%def>
 
 <%def name="menu_bar_nav()">

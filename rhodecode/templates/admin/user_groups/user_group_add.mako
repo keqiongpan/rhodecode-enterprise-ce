@@ -8,7 +8,7 @@
     %endif
 </%def>
 <%def name="breadcrumbs_links()">
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('User groups'),h.url('users_groups'))}
     &raquo;

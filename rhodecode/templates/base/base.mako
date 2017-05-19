@@ -72,7 +72,7 @@
 
 <%def name="admin_menu()">
   <ul class="admin_menu submenu">
-      <li><a href="${h.url('admin_home')}">${_('Admin journal')}</a></li>
+      <li><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
       <li><a href="${h.url('repos')}">${_('Repositories')}</a></li>
       <li><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
       <li><a href="${h.route_path('users')}">${_('Users')}</a></li>

@@ -12,7 +12,7 @@
                         repo_name=c.repo.repo_name,
                         integration=current_IntegrationType.key))}
   %elif c.repo_group:
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('Repository Groups'),h.url('repo_groups'))}
     &raquo;
@@ -25,7 +25,7 @@
                         repo_group_name=c.repo_group.group_name,
                         integration=current_IntegrationType.key))}
   %else:
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('Settings'),h.url('admin_settings'))}
     &raquo;

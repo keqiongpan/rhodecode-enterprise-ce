@@ -41,6 +41,12 @@ def includeme(config):
         name='bookmarks_home',
         pattern='/{repo_name:.*?[^/]}/bookmarks', repo_route=True)
 
+    # Pull Requests
+    config.add_route(
+        name='pullrequest_show',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id}',
+        repo_route=True)
+
     # Settings
     config.add_route(
         name='edit_repo',

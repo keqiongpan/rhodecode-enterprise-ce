@@ -30,6 +30,20 @@ def admin_routes(config):
     """
 
     config.add_route(
+        name='admin_audit_logs',
+        pattern='/audit_logs')
+
+    config.add_route(
+        name='pull_requests_global_0',  # backward compat
+        pattern='/pull_requests/{pull_request_id:[0-9]+}')
+    config.add_route(
+        name='pull_requests_global_1',  # backward compat
+        pattern='/pull-requests/{pull_request_id:[0-9]+}')
+    config.add_route(
+        name='pull_requests_global',
+        pattern='/pull-request/{pull_request_id:[0-9]+}')
+
+    config.add_route(
         name='admin_settings_open_source',
         pattern='/settings/open_source')
     config.add_route(
@@ -93,6 +107,8 @@ def includeme(config):
     navigation_registry = NavigationRegistry(labs_active=labs_active)
     config.registry.registerUtility(navigation_registry)
 
+    # main admin routes
+    config.add_route(name='admin_home', pattern=ADMIN_PREFIX)
     config.include(admin_routes, route_prefix=ADMIN_PREFIX)
 
     # Scan module for configuration decorators.

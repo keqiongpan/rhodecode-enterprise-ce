@@ -53,19 +53,6 @@ class TestPullrequestsController:
             'pullrequest', repo_name=repo_name)
         response.mustcontain(create_pr_link)
 
-    def test_global_redirect_of_pr(self, backend, pr_util):
-        pull_request = pr_util.create_pull_request()
-
-        response = self.app.get(
-            url('pull_requests_global',
-                pull_request_id=pull_request.pull_request_id))
-
-        repo_name = pull_request.target_repo.repo_name
-        redirect_url = url('pullrequest_show', repo_name=repo_name,
-                           pull_request_id=pull_request.pull_request_id)
-        assert response.status == '302 Found'
-        assert redirect_url in response.location
-
     def test_create_pr_form_with_raw_commit_id(self, backend):
         repo = backend.repo
 

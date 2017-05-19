@@ -5,13 +5,13 @@
   %if c.repo:
     ${h.link_to('Settings',h.route_path('edit_repo', repo_name=c.repo.repo_name))}
   %elif c.repo_group:
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('Repository Groups'),h.url('repo_groups'))}
     &raquo;
     ${h.link_to(c.repo_group.group_name,h.url('edit_repo_group', group_name=c.repo_group.group_name))}
   %else:
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('Settings'),h.url('admin_settings'))}
   %endif

@@ -9,7 +9,7 @@
 </%def>
 
 <%def name="breadcrumbs_links()">
-  ${h.link_to(_('Admin'),h.url('admin_home'))}
+  ${h.link_to(_('Admin'),h.route_path('admin_home'))}
   &raquo;
   ${h.link_to(_('Authentication Plugins'),request.resource_path(resource.__parent__, route_name='auth_home'))}
   &raquo;

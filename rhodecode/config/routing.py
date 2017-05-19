@@ -561,22 +561,6 @@ def make_map(config):
                   action='show', conditions={'method': ['GET']},
                   requirements=URL_NAME_REQUIREMENTS)
 
-    # ADMIN MAIN PAGES
-    with rmap.submapper(path_prefix=ADMIN_PREFIX,
-                        controller='admin/admin') as m:
-        m.connect('admin_home', '', action='index')
-        m.connect('admin_add_repo', '/add_repo/{new_repo:[a-z0-9\. _-]*}',
-                  action='add_repo')
-        m.connect(
-            'pull_requests_global_0', '/pull_requests/{pull_request_id:[0-9]+}',
-            action='pull_requests')
-        m.connect(
-            'pull_requests_global_1', '/pull-requests/{pull_request_id:[0-9]+}',
-            action='pull_requests')
-        m.connect(
-            'pull_requests_global', '/pull-request/{pull_request_id:[0-9]+}',
-            action='pull_requests')
-
     # USER JOURNAL
     rmap.connect('journal', '%s/journal' % (ADMIN_PREFIX,),
                  controller='journal', action='index')

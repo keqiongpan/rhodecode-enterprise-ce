@@ -69,6 +69,11 @@ function registerRCRoutes() {
     pyroutes.register('repo_integrations_create', '%(repo_name)s/settings/integrations/%(integration)s/new', ['repo_name', 'integration']);
     pyroutes.register('repo_integrations_edit', '%(repo_name)s/settings/integrations/%(integration)s/%(integration_id)s', ['repo_name', 'integration', 'integration_id']);
     pyroutes.register('ops_ping', '_admin/ops/ping', []);
+    pyroutes.register('admin_home', '/_admin', []);
+    pyroutes.register('admin_audit_logs', '_admin/audit_logs', []);
+    pyroutes.register('pull_requests_global_0', '_admin/pull_requests/%(pull_request_id)s', ['pull_request_id']);
+    pyroutes.register('pull_requests_global_1', '_admin/pull-requests/%(pull_request_id)s', ['pull_request_id']);
+    pyroutes.register('pull_requests_global', '_admin/pull-request/%(pull_request_id)s', ['pull_request_id']);
     pyroutes.register('admin_settings_open_source', '_admin/settings/open_source', []);
     pyroutes.register('admin_settings_vcs_svn_generate_cfg', '_admin/settings/vcs/svn_generate_cfg', []);
     pyroutes.register('admin_settings_system', '_admin/settings/system', []);
@@ -100,6 +105,7 @@ function registerRCRoutes() {
     pyroutes.register('tags_home', '/%(repo_name)s/tags', ['repo_name']);
     pyroutes.register('branches_home', '/%(repo_name)s/branches', ['repo_name']);
     pyroutes.register('bookmarks_home', '/%(repo_name)s/bookmarks', ['repo_name']);
+    pyroutes.register('pullrequest_show', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('edit_repo', '/%(repo_name)s/settings', ['repo_name']);
     pyroutes.register('edit_repo_advanced', '/%(repo_name)s/settings/advanced', ['repo_name']);
     pyroutes.register('edit_repo_advanced_delete', '/%(repo_name)s/settings/advanced/delete', ['repo_name']);
