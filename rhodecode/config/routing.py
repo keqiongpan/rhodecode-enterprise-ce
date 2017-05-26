@@ -623,9 +623,6 @@ def make_map(config):
     rmap.connect('repo_refs_changelog_data', '/{repo_name}/refs-data-changelog',
                  controller='summary', action='repo_refs_changelog_data',
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-    rmap.connect('repo_default_reviewers_data', '/{repo_name}/default-reviewers',
-                 controller='summary', action='repo_default_reviewers_data',
-                 jsroute=True, requirements=URL_NAME_REQUIREMENTS)
 
     rmap.connect('changeset_home', '/{repo_name}/changeset/{revision}',
                  controller='changeset', revision='tip',

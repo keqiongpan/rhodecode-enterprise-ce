@@ -27,7 +27,7 @@ from string import lower
 
 from pylons import tmpl_context as c, request
 from pylons.i18n.translation import _
-from beaker.cache import cache_region, region_invalidate
+from beaker.cache import cache_region
 
 from rhodecode.config.conf import (LANGUAGES_EXTENSIONS_MAP)
 from rhodecode.controllers import utils
@@ -36,13 +36,12 @@ from rhodecode.lib import caches, helpers as h
 from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.lib.auth import (
-    LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous, XHRRequired)
+    LoginRequired, HasRepoPermissionAnyDecorator, XHRRequired)
 from rhodecode.lib.base import BaseRepoController, render
 from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs.backends.base import EmptyCommit
-from rhodecode.lib.vcs.exceptions import (
-    CommitError, EmptyRepositoryError, NodeDoesNotExistError)
+from rhodecode.lib.vcs.exceptions import CommitError, EmptyRepositoryError
 from rhodecode.model.db import Statistics, CacheKey, User
 from rhodecode.model.repo import ReadmeFinder
 
@@ -258,16 +257,6 @@ class SummaryController(BaseRepoController):
             'results': res
         }
         return data
-
-    @LoginRequired()
-    @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
-                                   'repository.admin')
-    @jsonify
-    def repo_default_reviewers_data(self, repo_name):
-        return {
-            'reviewers': [utils.reviewer_as_json(
-                user=c.rhodecode_db_repo.user, reasons=None)]
-        }
 
     @jsonify
     def repo_refs_changelog_data(self, repo_name):

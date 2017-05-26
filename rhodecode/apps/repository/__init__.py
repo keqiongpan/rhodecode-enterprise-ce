@@ -94,6 +94,10 @@ def includeme(config):
         name='repo_reviewers',
         pattern='/{repo_name:.*?[^/]}/settings/review/rules', repo_route=True)
 
+    config.add_route(
+        name='repo_default_reviewers_data',
+        pattern='/{repo_name:.*?[^/]}/settings/review/default-reviewers', repo_route=True)
+
     # Maintenance
     config.add_route(
         name='repo_maintenance',
