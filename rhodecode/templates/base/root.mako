@@ -16,6 +16,11 @@ if getattr(c, 'rhodecode_user', None) and c.rhodecode_user.user_id:
     c.template_context['rhodecode_user']['last_name'] = c.rhodecode_user.lastname
 
 c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default_renderer')
+c.template_context['default_user'] = {
+    'username': h.DEFAULT_USER,
+    'user_id': 1
+}
+
 %>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
