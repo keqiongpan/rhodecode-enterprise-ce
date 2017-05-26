@@ -874,10 +874,16 @@ class User(Base, BaseModel):
             .order_by(User.username.asc()).all()
 
     @classmethod
-    def get_default_user(cls, cache=False):
+    def get_default_user(cls, cache=False, refresh=False):
         user = User.get_by_username(User.DEFAULT_USER, cache=cache)
         if user is None:
             raise Exception('FATAL: Missing default account!')
+        if refresh:
+            # The default user might be based on outdated state which
+            # has been loaded from the cache.
+            # A call to refresh() ensures that the
+            # latest state from the database is used.
+            Session().refresh(user)
         return user
 
     def _get_default_perms(self, user, suffix=''):
