@@ -324,7 +324,7 @@
                         %if h.HasPermissionAny('hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')():
                          ${h.link_to(_("Don't have an account?"),h.route_path('register'))} <br/>
                         %endif
-                        ${h.link_to(_("Using external auth? Login here."),h.route_path('login'))}
+                        ${h.link_to(_("Using external auth? Sign In here."),h.route_path('login'))}
                         </div>
                         <div class="submit">
                             ${h.submit('sign_in',_('Sign In'),class_="btn btn-small",tabindex=3)}
