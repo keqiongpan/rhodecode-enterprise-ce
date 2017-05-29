@@ -54,12 +54,19 @@ class HomeView(BaseAppView):
         active = str2bool(self.request.GET.get('active') or True)
         include_groups = str2bool(self.request.GET.get('user_groups'))
         expand_groups = str2bool(self.request.GET.get('user_groups_expand'))
+        skip_default_user = str2bool(self.request.GET.get('skip_default_user'))
 
         log.debug('generating user list, query:%s, active:%s, with_groups:%s',
                   query, active, include_groups)
 
         _users = UserModel().get_users(
             name_contains=query, only_active=active)
+
+        def maybe_skip_default_user(usr):
+            if skip_default_user and usr['username'] == UserModel.cls.DEFAULT_USER:
+                return False
+            return True
+        _users = filter(maybe_skip_default_user, _users)
 
         if include_groups:
             # extend with user groups
