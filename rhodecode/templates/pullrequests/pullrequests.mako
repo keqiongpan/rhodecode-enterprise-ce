@@ -45,12 +45,12 @@
     ##main
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
-          <li class="${'active' if c.active=='open' else ''}"><a href="${h.url('pullrequest_show_all',repo_name=c.repo_name,source=0)}">${_('Opened')}</a></li>
-          <li class="${'active' if c.active=='my' else ''}"><a href="${h.url('pullrequest_show_all',repo_name=c.repo_name,source=0,my=1)}">${_('Opened by me')}</a></li>
-          <li class="${'active' if c.active=='awaiting' else ''}"><a href="${h.url('pullrequest_show_all',repo_name=c.repo_name,source=0,awaiting_review=1)}">${_('Awaiting review')}</a></li>
-          <li class="${'active' if c.active=='awaiting_my' else ''}"><a href="${h.url('pullrequest_show_all',repo_name=c.repo_name,source=0,awaiting_my_review=1)}">${_('Awaiting my review')}</a></li>
-          <li class="${'active' if c.active=='closed' else ''}"><a href="${h.url('pullrequest_show_all',repo_name=c.repo_name,source=0,closed=1)}">${_('Closed')}</a></li>
-          <li class="${'active' if c.active=='source' else ''}"><a href="${h.url('pullrequest_show_all',repo_name=c.repo_name,source=1)}">${_('From this repo')}</a></li>
+          <li class="${'active' if c.active=='open' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,         _query={'source':0})}">${_('Opened')}</a></li>
+          <li class="${'active' if c.active=='my' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,           _query={'source':0,'my':1})}">${_('Opened by me')}</a></li>
+          <li class="${'active' if c.active=='awaiting' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,     _query={'source':0,'awaiting_review':1})}">${_('Awaiting review')}</a></li>
+          <li class="${'active' if c.active=='awaiting_my' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,  _query={'source':0,'awaiting_my_review':1})}">${_('Awaiting my review')}</a></li>
+          <li class="${'active' if c.active=='closed' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':0,'closed':1})}">${_('Closed')}</a></li>
+          <li class="${'active' if c.active=='source' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':1})}">${_('From this repo')}</a></li>
         </ul>
     </div>
 
@@ -73,7 +73,7 @@
               %endif
           </h3>
         </div>
-        <div class="panel-body">
+        <div class="panel-body panel-body-min-height">
           <table id="pull_request_list_table" class="display"></table>
         </div>
       </div>
@@ -83,14 +83,24 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
+
+    var $pullRequestListTable = $('#pull_request_list_table');
+
     // object list
-    $('#pull_request_list_table').DataTable({
-      data: ${c.data|n},
-      processing: false,
+    $pullRequestListTable.DataTable({
+      processing: true,
       serverSide: true,
-      deferLoading: ${c.records_total},
-      ajax: "",
-      dom: 'tp',
+      ajax: {
+          "url": "${h.route_path('pullrequest_show_all_data', repo_name=c.repo_name)}",
+          "data": function (d) {
+              d.source = "${c.source}";
+              d.closed = "${c.closed}";
+              d.my = "${c.my}";
+              d.awaiting_review = "${c.awaiting_review}";
+              d.awaiting_my_review = "${c.awaiting_my_review}";
+          }
+      },
+      dom: 'rtp',
       pageLength: ${c.visual.dashboard_items},
       order: [[ 1, "desc" ]],
       columns: [
@@ -109,6 +119,7 @@ $(document).ready(function() {
       ],
       language: {
             paginate: DEFAULT_GRID_PAGINATION,
+            sProcessing: _gettext('loading...'),
             emptyTable: _gettext("No pull requests available yet.")
       },
       "drawCallback": function( settings, json ) {
@@ -120,13 +131,16 @@ $(document).ready(function() {
           }
       }
     });
-});
-$('#pull_request_list_table').on('xhr.dt', function(e, settings, json, xhr){
-    $('#pull_request_list_table').css('opacity', 1);
+
+    $pullRequestListTable.on('xhr.dt', function(e, settings, json, xhr){
+        $pullRequestListTable.css('opacity', 1);
+    });
+
+    $pullRequestListTable.on('preXhr.dt', function(e, settings, data){
+        $pullRequestListTable.css('opacity', 0.3);
+    });
+
 });
 
-$('#pull_request_list_table').on('preXhr.dt', function(e, settings, data){
-    $('#pull_request_list_table').css('opacity', 0.3);
-});
 </script>
 </%def>

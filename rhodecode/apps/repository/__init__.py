@@ -47,6 +47,16 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id}',
         repo_route=True)
 
+    config.add_route(
+        name='pullrequest_show_all',
+        pattern='/{repo_name:.*?[^/]}/pull-request',
+        repo_route=True, repo_accepted_types=['hg', 'git'])
+
+    config.add_route(
+        name='pullrequest_show_all_data',
+        pattern='/{repo_name:.*?[^/]}/pull-request-data',
+        repo_route=True, repo_accepted_types=['hg', 'git'])
+
     # Settings
     config.add_route(
         name='edit_repo',

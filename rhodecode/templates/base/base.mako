@@ -234,7 +234,7 @@
         ## TODO: anderson: ideally it would have a function on the scm_instance "enable_pullrequest() and enable_fork()"
         %if c.rhodecode_db_repo.repo_type in ['git','hg']:
           <li class="${is_active('showpullrequest')}">
-            <a class="menulink" href="${h.url('pullrequest_show_all',repo_name=c.repo_name)}" title="${_('Show Pull Requests for %s') % c.repo_name}">
+            <a class="menulink" href="${h.route_path('pullrequest_show_all', repo_name=c.repo_name)}" title="${_('Show Pull Requests for %s') % c.repo_name}">
               %if c.repository_pull_requests:
                 <span class="pr_notifications">${c.repository_pull_requests}</span>
               %endif

@@ -268,6 +268,34 @@ class RepoRoutePredicate(object):
         return False
 
 
+class RepoTypeRoutePredicate(object):
+    def __init__(self, val, config):
+        self.val = val or ['hg', 'git', 'svn']
+
+    def text(self):
+        return 'repo_accepted_type = %s' % self.val
+
+    phash = text
+
+    def __call__(self, info, request):
+
+        rhodecode_db_repo = request.db_repo
+
+        log.debug(
+            '%s checking repo type for %s in %s',
+            self.__class__.__name__, rhodecode_db_repo.repo_type, self.val)
+
+        if rhodecode_db_repo.repo_type in self.val:
+            return True
+        else:
+            log.warning('Current view is not supported for repo type:%s',
+                        rhodecode_db_repo.repo_type)
+            return False
+
+
+
 def includeme(config):
     config.add_route_predicate(
         'repo_route', RepoRoutePredicate)
+    config.add_route_predicate(
+        'repo_accepted_types', RepoTypeRoutePredicate)

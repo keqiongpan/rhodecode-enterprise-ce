@@ -34,7 +34,6 @@ function registerRCRoutes() {
     pyroutes.register('pullrequest_repo_destinations', '/%(repo_name)s/pull-request/repo-destinations', ['repo_name']);
     pyroutes.register('pullrequest_show', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_update', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
-    pyroutes.register('pullrequest_show_all', '/%(repo_name)s/pull-request', ['repo_name']);
     pyroutes.register('pullrequest_comment', '/%(repo_name)s/pull-request-comment/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_comment_delete', '/%(repo_name)s/pull-request-comment/%(comment_id)s/delete', ['repo_name', 'comment_id']);
     pyroutes.register('changelog_home', '/%(repo_name)s/changelog', ['repo_name']);
@@ -106,6 +105,8 @@ function registerRCRoutes() {
     pyroutes.register('branches_home', '/%(repo_name)s/branches', ['repo_name']);
     pyroutes.register('bookmarks_home', '/%(repo_name)s/bookmarks', ['repo_name']);
     pyroutes.register('pullrequest_show', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
+    pyroutes.register('pullrequest_show_all', '/%(repo_name)s/pull-request', ['repo_name']);
+    pyroutes.register('pullrequest_show_all_data', '/%(repo_name)s/pull-request-data', ['repo_name']);
     pyroutes.register('edit_repo', '/%(repo_name)s/settings', ['repo_name']);
     pyroutes.register('edit_repo_advanced', '/%(repo_name)s/settings/advanced', ['repo_name']);
     pyroutes.register('edit_repo_advanced_delete', '/%(repo_name)s/settings/advanced/delete', ['repo_name']);

@@ -827,13 +827,6 @@ def make_map(config):
                                               'method': ['DELETE']},
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('pullrequest_show_all',
-                 '/{repo_name}/pull-request',
-                 controller='pullrequests',
-                 action='show_all', conditions={'function': check_repo,
-                                                'method': ['GET']},
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-
     rmap.connect('pullrequest_comment',
                  '/{repo_name}/pull-request-comment/{pull_request_id}',
                  controller='pullrequests',
