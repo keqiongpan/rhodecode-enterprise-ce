@@ -74,8 +74,8 @@ link_config = [
     },
     {
         "name": "markdown_help",
-        "target": "http://daringfireball.net/projects/markdown/syntax",
-        "external_target": "http://daringfireball.net/projects/markdown/syntax",
+        "target": "https://daringfireball.net/projects/markdown/syntax",
+        "external_target": "https://daringfireball.net/projects/markdown/syntax",
     },
     {
         "name": "rhodecode_official",
