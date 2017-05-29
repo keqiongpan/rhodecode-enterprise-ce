@@ -33,6 +33,7 @@ def base_data():
             'repo_type': 'hg',
             'repo_id': '12',
             'url': 'http://repo.url/foo',
+            'extra_fields': {},
         },
         'actor': {
             'username': 'actor_name',

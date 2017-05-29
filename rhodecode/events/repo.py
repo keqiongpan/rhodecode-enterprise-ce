@@ -16,6 +16,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import collections
 import logging
 
 from rhodecode.translation import lazy_ugettext
@@ -75,9 +76,10 @@ def _commits_as_dict(commit_ids, repos):
                 urlified_message, issues_data = process_patterns(
                     cs_data['message'], repo.repo_name)
                 cs_data['issues'] = issues_data
-                cs_data['message_html'] = urlify_commit_message(cs_data['message'],
-                    repo.repo_name)
-                cs_data['message_html_title'] = chop_at_smart(cs_data['message'], '\n', suffix_if_chopped='...')
+                cs_data['message_html'] = urlify_commit_message(
+                    cs_data['message'], repo.repo_name)
+                cs_data['message_html_title'] = chop_at_smart(
+                    cs_data['message'], '\n', suffix_if_chopped='...')
                 commits.append(cs_data)
 
                 needed_commits.remove(commit_id)
@@ -118,12 +120,17 @@ class RepoEvent(RhodecodeEvent):
     def as_dict(self):
         from rhodecode.model.repo import RepoModel
         data = super(RepoEvent, self).as_dict()
+        extra_fields = collections.OrderedDict()
+        for field in self.repo.extra_fields:
+            extra_fields[field.field_key] = field.field_value
+
         data.update({
             'repo': {
                 'repo_id': self.repo.repo_id,
                 'repo_name': self.repo.repo_name,
                 'repo_type': self.repo.repo_type,
-                'url': RepoModel().get_url(self.repo)
+                'url': RepoModel().get_url(self.repo),
+                'extra_fields': extra_fields
             }
         })
         return data

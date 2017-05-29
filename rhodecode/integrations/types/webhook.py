@@ -41,6 +41,8 @@ WEBHOOK_URL_VARS = [
     'repo_type',
     'repo_id',
     'repo_url',
+    # extra repo fields
+    'extra:<extra_key_name>',
 
     # special attrs below that we handle, using multi-call
     'branch',
@@ -77,6 +79,10 @@ class WebhookHandler(object):
             'username': data['actor']['username'],
             'user_id': data['actor']['user_id']
         }
+        extra_vars = {}
+        for extra_key, extra_val in data['repo']['extra_fields'].items():
+            extra_vars['extra:{}'.format(extra_key)] = extra_val
+        common_vars.update(extra_vars)
 
         return string.Template(
             self.template_url).safe_substitute(**common_vars)
