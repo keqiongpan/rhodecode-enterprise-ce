@@ -273,7 +273,12 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
     merge_possible = not check.failed
 
     if not merge_possible:
-        reasons = ','.join([msg for _e, msg in check.errors])
+        error_messages = []
+        for err_type, error_msg in check.errors:
+            error_msg = request.translate(error_msg)
+            error_messages.append(error_msg)
+
+        reasons = ','.join(error_messages)
         raise JSONRPCError(
             'merge not possible for following reasons: {}'.format(reasons))
 
