@@ -62,7 +62,7 @@
 
                             ##ORG
                             <div class="content">
-                                <strong>${_('Origin repository')}:</strong>
+                                <strong>${_('Source repository')}:</strong>
                                 ${c.rhodecode_db_repo.description}
                             </div>
                             <div class="content">
@@ -102,6 +102,17 @@
                 </div>
             </div>
             <div>
+                ## REIEW RULES
+                <div id="review_rules" style="display: none" class="reviewers-title block-right">
+                    <div class="pr-details-title">
+                        ${_('Reviewer rules')}
+                    </div>
+                    <div class="pr-reviewer-rules">
+                        ## review rules will be appended here, by default reviewers logic
+                    </div>
+                </div>
+
+                ## REVIEWERS
                 <div class="reviewers-title block-right">
                     <div class="pr-details-title">
                         ${_('Pull request reviewers')}
@@ -137,13 +148,18 @@ $(function(){
   var defaultSourceRepoData = ${c.default_repo_data['source_refs_json']|n};
   var defaultTargetRepo = '${c.default_repo_data['target_repo_name']}';
   var defaultTargetRepoData = ${c.default_repo_data['target_refs_json']|n};
-  var targetRepoName = '${c.repo_name}';
 
   var $pullRequestForm = $('#pull_request_form');
   var $sourceRepo = $('#source_repo', $pullRequestForm);
   var $targetRepo = $('#target_repo', $pullRequestForm);
   var $sourceRef = $('#source_ref', $pullRequestForm);
   var $targetRef = $('#target_ref', $pullRequestForm);
+
+  var sourceRepo = function() { return $sourceRepo.eq(0).val() };
+  var sourceRef = function() { return $sourceRef.eq(0).val().split(':') };
+
+  var targetRepo = function() { return $targetRepo.eq(0).val() };
+  var targetRef = function() { return $targetRef.eq(0).val().split(':') };
 
   var calculateContainerWidth = function() {
       var maxWidth = 0;
@@ -204,6 +220,8 @@ $(function(){
   // custom code mirror
   var codeMirrorInstance = initPullRequestsCodeMirror('#pullrequest_desc');
 
+  reviewersController = new ReviewersController();
+
   var queryTargetRepo = function(self, query) {
       // cache ALL results if query is empty
       var cacheKey = query.term || '__';
@@ -213,7 +231,7 @@ $(function(){
           query.callback({results: cachedData.results});
       } else {
           $.ajax({
-              url: pyroutes.url('pullrequest_repo_destinations', {'repo_name': targetRepoName}),
+              url: pyroutes.url('pullrequest_repo_destinations', {'repo_name': templateContext.repo_name}),
               data: {query: query.term},
               dataType: 'json',
               type: 'GET',
@@ -246,55 +264,21 @@ $(function(){
       query.callback({results: data.results});
   };
 
-
-  var prButtonLockChecks = {
-      'compare': false,
-      'reviewers': false
-  };
-
-  var prButtonLock = function(lockEnabled, msg, scope) {
-      scope = scope || 'all';
-      if (scope == 'all'){
-          prButtonLockChecks['compare'] = !lockEnabled;
-          prButtonLockChecks['reviewers'] = !lockEnabled;
-      } else if (scope == 'compare') {
-          prButtonLockChecks['compare'] = !lockEnabled;
-      } else if (scope == 'reviewers'){
-          prButtonLockChecks['reviewers'] = !lockEnabled;
-      }
-      var checksMeet = prButtonLockChecks.compare && prButtonLockChecks.reviewers;
-      if (lockEnabled) {
-          $('#save').attr('disabled', 'disabled');
-      }
-      else if (checksMeet) {
-          $('#save').removeAttr('disabled');
-      }
-
-      if (msg) {
-          $('#pr_open_message').html(msg);
-      }
-  };
-
   var loadRepoRefDiffPreview = function() {
-      var sourceRepo = $sourceRepo.eq(0).val();
-      var sourceRef = $sourceRef.eq(0).val().split(':');
-
-      var targetRepo = $targetRepo.eq(0).val();
-      var targetRef = $targetRef.eq(0).val().split(':');
 
       var url_data = {
-          'repo_name': targetRepo,
-          'target_repo': sourceRepo,
-          'source_ref': targetRef[2],
+          'repo_name': targetRepo(),
+          'target_repo': sourceRepo(),
+          'source_ref': targetRef()[2],
           'source_ref_type': 'rev',
-          'target_ref': sourceRef[2],
+          'target_ref': sourceRef()[2],
           'target_ref_type': 'rev',
           'merge': true,
           '_': Date.now() // bypass browser caching
       }; // gather the source/target ref and repo here
 
-      if (sourceRef.length !== 3 || targetRef.length !== 3) {
-          prButtonLock(true, "${_('Please select origin and destination')}");
+      if (sourceRef().length !== 3 || targetRef().length !== 3) {
+          prButtonLock(true, "${_('Please select source and target')}");
           return;
       }
       var url = pyroutes.url('compare_url', url_data);
@@ -315,10 +299,11 @@ $(function(){
           .done(function(data) {
               loadRepoRefDiffPreview._currentRequest = null;
               $('#pull_request_overview').html(data);
+
               var commitElements = $(data).find('tr[commit_id]');
 
-              var prTitleAndDesc = getTitleAndDescription(sourceRef[1],
-                                                          commitElements, 5);
+              var prTitleAndDesc = getTitleAndDescription(
+                  sourceRef()[1], commitElements, 5);
 
               var title = prTitleAndDesc[0];
               var proposedDescription = prTitleAndDesc[1];
@@ -364,43 +349,6 @@ $(function(){
 
 
           });
-  };
-
-  /**
-   Generate Title and Description for a PullRequest.
-   In case of 1 commits, the title and description is that one commit
-   in case of multiple commits, we iterate on them with max N number of commits,
-   and build description in a form
-   - commitN
-   - commitN+1
-   ...
-
-   Title is then constructed from branch names, or other references,
-   replacing '-' and '_' into spaces
-
-   * @param sourceRef
-   * @param elements
-   * @param limit
-   * @returns {*[]}
-   */
-  var getTitleAndDescription = function(sourceRef, elements, limit) {
-      var title = '';
-      var desc = '';
-
-      $.each($(elements).get().reverse().slice(0, limit), function(idx, value) {
-          var rawMessage = $(value).find('td.td-description .message').data('messageRaw');
-          desc += '- ' + rawMessage.split('\n')[0].replace(/\n+$/, "") + '\n';
-      });
-      // only 1 commit, use commit message as title
-      if (elements.length == 1) {
-          title = $(elements[0]).find('td.td-description .message').data('messageRaw').split('\n')[0];
-      }
-      else {
-          // use reference name
-          title = sourceRef.replace(/-/g, ' ').replace(/_/g, ' ').capitalizeFirstLetter();
-      }
-
-      return [title, desc]
   };
 
   var Select2Box = function(element, overrides) {
@@ -459,7 +407,7 @@ $(function(){
   var targetRepoChanged = function(repoData) {
       // generate new DESC of target repo displayed next to select
       $('#target_repo_desc').html(
-          "<strong>${_('Destination repository')}</strong>: {0}".format(repoData['description'])
+          "<strong>${_('Target repository')}</strong>: {0}".format(repoData['description'])
       );
 
       // generate dynamic select2 for refs.
@@ -468,8 +416,7 @@ $(function(){
 
   };
 
-  var sourceRefSelect2 = Select2Box(
-    $sourceRef, {
+  var sourceRefSelect2 = Select2Box($sourceRef, {
       placeholder: "${_('Select commit reference')}",
       query: function(query) {
         var initialData = defaultSourceRepoData['refs']['select2_refs'];
@@ -499,12 +446,14 @@ $(function(){
 
   $sourceRef.on('change', function(e){
     loadRepoRefDiffPreview();
-    loadDefaultReviewers();
+    reviewersController.loadDefaultReviewers(
+        sourceRepo(), sourceRef(), targetRepo(), targetRef());
   });
 
   $targetRef.on('change', function(e){
     loadRepoRefDiffPreview();
-    loadDefaultReviewers();
+    reviewersController.loadDefaultReviewers(
+        sourceRepo(), sourceRef(), targetRepo(), targetRef());
   });
 
   $targetRepo.on('change', function(e){
@@ -515,7 +464,7 @@ $(function(){
 
       $.ajax({
           url: pyroutes.url('pullrequest_repo_refs',
-            {'repo_name': targetRepoName, 'target_repo_name':repoName}),
+            {'repo_name': templateContext.repo_name, 'target_repo_name':repoName}),
           data: {},
           dataType: 'json',
           type: 'GET',
@@ -531,43 +480,7 @@ $(function(){
 
   });
 
-  var loadDefaultReviewers = function() {
-    if (loadDefaultReviewers._currentRequest) {
-        loadDefaultReviewers._currentRequest.abort();
-    }
-    $('.calculate-reviewers').show();
-    prButtonLock(true, null, 'reviewers');
-
-    var url = pyroutes.url('repo_default_reviewers_data', {'repo_name': targetRepoName});
-
-    var sourceRepo = $sourceRepo.eq(0).val();
-    var sourceRef = $sourceRef.eq(0).val().split(':');
-    var targetRepo = $targetRepo.eq(0).val();
-    var targetRef = $targetRef.eq(0).val().split(':');
-    url += '?source_repo=' + sourceRepo;
-    url += '&source_ref=' + sourceRef[2];
-    url += '&target_repo=' + targetRepo;
-    url += '&target_ref=' + targetRef[2];
-
-    loadDefaultReviewers._currentRequest = $.get(url)
-        .done(function(data) {
-            loadDefaultReviewers._currentRequest = null;
-
-            // reset && add the reviewer based on selected repo
-            $('#review_members').html('');
-            for (var i = 0; i < data.reviewers.length; i++) {
-              var reviewer = data.reviewers[i];
-              addReviewMember(
-                  reviewer.user_id, reviewer.firstname,
-                  reviewer.lastname, reviewer.username,
-                  reviewer.gravatar_link, reviewer.reasons);
-            }
-            $('.calculate-reviewers').hide();
-            prButtonLock(false, null, 'reviewers');
-        });
-  };
-
-  prButtonLock(true, "${_('Please select origin and destination')}", 'all');
+  prButtonLock(true, "${_('Please select source and target')}", 'all');
 
   // auto-load on init, the target refs select2
   calculateContainerWidth();
@@ -578,10 +491,11 @@ $(function(){
   });
 
   % if c.default_source_ref:
-      // in case we have a pre-selected value, use it now
-      $sourceRef.select2('val', '${c.default_source_ref}');
-      loadRepoRefDiffPreview();
-      loadDefaultReviewers();
+  // in case we have a pre-selected value, use it now
+  $sourceRef.select2('val', '${c.default_source_ref}');
+  loadRepoRefDiffPreview();
+  reviewersController.loadDefaultReviewers(
+      sourceRepo(), sourceRef(), targetRepo(), targetRef());
   % endif
 
   ReviewerAutoComplete('#user');

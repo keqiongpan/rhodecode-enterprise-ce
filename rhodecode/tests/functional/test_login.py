@@ -25,7 +25,8 @@ import pytest
 
 from rhodecode.config.routing import ADMIN_PREFIX
 from rhodecode.tests import (
-    assert_session_flash, url, HG_REPO, TEST_USER_ADMIN_LOGIN)
+    assert_session_flash, url, HG_REPO, TEST_USER_ADMIN_LOGIN,
+    no_newline_id_generator)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import AssertResponse, get_session_from_response
 from rhodecode.lib.auth import check_password
@@ -122,7 +123,7 @@ class TestLoginController(object):
         'ftp://some.ftp.server',
         'http://other.domain',
         '/\r\nX-Forwarded-Host: http://example.org',
-    ])
+    ], ids=no_newline_id_generator)
     def test_login_bad_came_froms(self, url_came_from):
         _url = '{}?came_from={}'.format(login_url, url_came_from)
         response = self.app.post(

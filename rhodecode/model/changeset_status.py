@@ -80,7 +80,7 @@ class ChangesetStatusModel(BaseModel):
         """
         votes = defaultdict(int)
         reviewers_number = len(statuses_by_reviewers)
-        for user, reasons, statuses in statuses_by_reviewers:
+        for user, reasons, mandatory, statuses in statuses_by_reviewers:
             if statuses:
                 ver, latest = statuses[0]
                 votes[latest.status] += 1
@@ -248,13 +248,14 @@ class ChangesetStatusModel(BaseModel):
         for o in pull_request.reviewers:
             if not o.user:
                 continue
-            st = commit_statuses.get(o.user.username, None)
-            if st:
-                st = [(x, list(y)[0])
-                      for x, y in (itertools.groupby(sorted(st, key=version),
-                                                     version))]
+            statuses = commit_statuses.get(o.user.username, None)
+            if statuses:
+                statuses = [(x, list(y)[0])
+                      for x, y in (itertools.groupby(
+                        sorted(statuses, key=version),version))]
 
-            pull_request_reviewers.append((o.user, o.reasons, st))
+            pull_request_reviewers.append(
+                (o.user, o.reasons, o.mandatory, statuses))
         return pull_request_reviewers
 
     def calculated_review_status(self, pull_request, reviewers_statuses=None):

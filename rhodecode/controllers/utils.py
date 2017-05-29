@@ -87,23 +87,3 @@ def get_commit_from_ref_name(repo, ref_name, ref_type=None):
                     '%s "%s" does not exist' % (ref_type, ref_name))
 
     return repo_scm.get_commit(commit_id)
-
-
-def reviewer_as_json(user, reasons, mandatory):
-    """
-    Returns json struct of a reviewer for frontend
-
-    :param user: the reviewer
-    :param reasons: list of strings of why they are reviewers
-    :param mandatory: bool, to set user as mandatory
-    """
-
-    return {
-        'user_id': user.user_id,
-        'reasons': reasons,
-        'mandatory': mandatory,
-        'username': user.username,
-        'firstname': user.firstname,
-        'lastname': user.lastname,
-        'gravatar_link': h.gravatar_url(user.email, 14),
-    }

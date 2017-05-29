@@ -290,6 +290,13 @@ class RepoTypeRoutePredicate(object):
         else:
             log.warning('Current view is not supported for repo type:%s',
                         rhodecode_db_repo.repo_type)
+            #
+            # h.flash(h.literal(
+            #     _('Action not supported for %s.' % rhodecode_repo.alias)),
+            #     category='warning')
+            # return redirect(
+            #     url('summary_home', repo_name=cls.rhodecode_db_repo.repo_name))
+
             return False
 
 

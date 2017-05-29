@@ -295,8 +295,8 @@ class TestPullrequestsController:
     def test_comment_force_close_pull_request(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
-        reviewers_data = [(1, ['reason']), (2, ['reason2'])]
-        PullRequestModel().update_reviewers(pull_request_id, reviewers_data)
+        PullRequestModel().update_reviewers(
+            pull_request_id, [(1, ['reason'], False), (2, ['reason2'], False)])
         author = pull_request.user_id
         repo = pull_request.target_repo.repo_id
         self.app.post(
@@ -345,6 +345,7 @@ class TestPullrequestsController:
                 ('source_ref', 'branch:default:' + commit_ids['change2']),
                 ('target_repo', target.repo_name),
                 ('target_ref',  'branch:default:' + commit_ids['ancestor']),
+                ('common_ancestor', commit_ids['ancestor']),
                 ('pullrequest_desc', 'Description'),
                 ('pullrequest_title', 'Title'),
                 ('__start__', 'review_members:sequence'),
@@ -353,6 +354,7 @@ class TestPullrequestsController:
                         ('__start__', 'reasons:sequence'),
                             ('reason', 'Some reason'),
                         ('__end__', 'reasons:sequence'),
+                        ('mandatory', 'False'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
                 ('__start__', 'revisions:sequence'),
@@ -365,8 +367,9 @@ class TestPullrequestsController:
             status=302)
 
         location = response.headers['Location']
-        pull_request_id = int(location.rsplit('/', 1)[1])
-        pull_request = PullRequest.get(pull_request_id)
+        pull_request_id = location.rsplit('/', 1)[1]
+        assert pull_request_id != 'new'
+        pull_request = PullRequest.get(int(pull_request_id))
 
         # check that we have now both revisions
         assert pull_request.revisions == [commit_ids['change2'], commit_ids['change']]
@@ -403,6 +406,7 @@ class TestPullrequestsController:
                 ('source_ref', 'branch:default:' + commit_ids['change']),
                 ('target_repo', target.repo_name),
                 ('target_ref',  'branch:default:' + commit_ids['ancestor-child']),
+                ('common_ancestor', commit_ids['ancestor']),
                 ('pullrequest_desc', 'Description'),
                 ('pullrequest_title', 'Title'),
                 ('__start__', 'review_members:sequence'),
@@ -411,6 +415,7 @@ class TestPullrequestsController:
                         ('__start__', 'reasons:sequence'),
                             ('reason', 'Some reason'),
                         ('__end__', 'reasons:sequence'),
+                        ('mandatory', 'False'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
                 ('__start__', 'revisions:sequence'),
@@ -422,21 +427,22 @@ class TestPullrequestsController:
             status=302)
 
         location = response.headers['Location']
-        pull_request_id = int(location.rsplit('/', 1)[1])
-        pull_request = PullRequest.get(pull_request_id)
+
+        pull_request_id = location.rsplit('/', 1)[1]
+        assert pull_request_id != 'new'
+        pull_request = PullRequest.get(int(pull_request_id))
 
         # Check that a notification was made
         notifications = Notification.query()\
             .filter(Notification.created_by == pull_request.author.user_id,
                     Notification.type_ == Notification.TYPE_PULL_REQUEST,
-                    Notification.subject.contains("wants you to review "
-                                                  "pull request #%d"
-                                                  % pull_request_id))
+                    Notification.subject.contains(
+                        "wants you to review pull request #%s" % pull_request_id))
         assert len(notifications.all()) == 1
 
         # Change reviewers and check that a notification was made
         PullRequestModel().update_reviewers(
-            pull_request.pull_request_id, [(1, [])])
+            pull_request.pull_request_id, [(1, [], False)])
         assert len(notifications.all()) == 2
 
     def test_create_pull_request_stores_ancestor_commit_id(self, backend,
@@ -467,6 +473,7 @@ class TestPullrequestsController:
                 ('source_ref', 'branch:default:' + commit_ids['change']),
                 ('target_repo', target.repo_name),
                 ('target_ref',  'branch:default:' + commit_ids['ancestor-child']),
+                ('common_ancestor', commit_ids['ancestor']),
                 ('pullrequest_desc', 'Description'),
                 ('pullrequest_title', 'Title'),
                 ('__start__', 'review_members:sequence'),
@@ -475,6 +482,7 @@ class TestPullrequestsController:
                         ('__start__', 'reasons:sequence'),
                             ('reason', 'Some reason'),
                         ('__end__', 'reasons:sequence'),
+                        ('mandatory', 'False'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
                 ('__start__', 'revisions:sequence'),
@@ -486,8 +494,10 @@ class TestPullrequestsController:
             status=302)
 
         location = response.headers['Location']
-        pull_request_id = int(location.rsplit('/', 1)[1])
-        pull_request = PullRequest.get(pull_request_id)
+
+        pull_request_id = location.rsplit('/', 1)[1]
+        assert pull_request_id != 'new'
+        pull_request = PullRequest.get(int(pull_request_id))
 
         # target_ref has to point to the ancestor's commit_id in order to
         # show the correct diff
@@ -954,14 +964,7 @@ class TestPullrequestsController:
         assert target.text.strip() == 'tag: target'
         assert target.getchildren() == []
 
-    def test_description_is_escaped_on_index_page(self, backend, pr_util):
-        xss_description = "<script>alert('Hi!')</script>"
-        pull_request = pr_util.create_pull_request(description=xss_description)
-        response = self.app.get(url(
-            controller='pullrequests', action='show_all',
-            repo_name=pull_request.target_repo.repo_name))
-        response.mustcontain(
-            "&lt;script&gt;alert(&#39;Hi!&#39;)&lt;/script&gt;")
+
 
     @pytest.mark.parametrize('mergeable', [True, False])
     def test_shadow_repository_link(
@@ -1061,23 +1064,20 @@ def assert_pull_request_status(pull_request, expected_status):
     assert status == expected_status
 
 
-@pytest.mark.parametrize('action', ['show_all', 'index', 'create'])
+@pytest.mark.parametrize('action', ['index', 'create'])
 @pytest.mark.usefixtures("autologin_user")
-def test_redirects_to_repo_summary_for_svn_repositories(
-        backend_svn, app, action):
-    denied_actions = ['show_all', 'index', 'create']
-    for action in denied_actions:
-        response = app.get(url(
-            controller='pullrequests', action=action,
-            repo_name=backend_svn.repo_name))
-        assert response.status_int == 302
+def test_redirects_to_repo_summary_for_svn_repositories(backend_svn, app, action):
+    response = app.get(url(
+        controller='pullrequests', action=action,
+        repo_name=backend_svn.repo_name))
+    assert response.status_int == 302
 
-        # Not allowed, redirect to the summary
-        redirected = response.follow()
-        summary_url = url('summary_home', repo_name=backend_svn.repo_name)
+    # Not allowed, redirect to the summary
+    redirected = response.follow()
+    summary_url = url('summary_home', repo_name=backend_svn.repo_name)
 
-        # URL adds leading slash and path doesn't have it
-        assert redirected.req.path == summary_url
+    # URL adds leading slash and path doesn't have it
+    assert redirected.req.path == summary_url
 
 
 def test_delete_comment_returns_404_if_comment_does_not_exist(pylonsapp):

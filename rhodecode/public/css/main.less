@@ -359,9 +359,26 @@ ul.auth_plugins {
     }
 }
 
+.pr-mergeinfo {
+    clear: both;
+    margin: .5em 0;
+
+    input {
+      min-width: 100% !important;
+      padding: 0 !important;
+      border: 0;
+    }
+}
+
 .pr-pullinfo {
     clear: both;
     margin: .5em 0;
+
+    input {
+      min-width: 100% !important;
+      padding: 0 !important;
+      border: 0;
+    }
 }
 
 #pr-title-input {
@@ -1298,6 +1315,11 @@ table.integrations {
     width: 100%;
     margin-bottom: 8px;
 }
+
+.reviewer_entry {
+  min-height: 55px;
+}
+
 .reviewers_member {
     width: 100%;
     overflow: auto;
@@ -1332,6 +1354,8 @@ table.integrations {
     }
 }
 
+.reviewer_member_mandatory,
+.reviewer_member_mandatory_remove,
 .reviewer_member_remove {
     position: absolute;
     right: 0;
@@ -1341,6 +1365,15 @@ table.integrations {
     padding: 0;
     color: black;
 }
+
+.reviewer_member_mandatory_remove {
+  color: @grey4;
+}
+
+.reviewer_member_mandatory {
+  padding-top:20px;
+}
+
 .reviewer_member_status {
     margin-top: 5px;
 }
@@ -1370,6 +1403,11 @@ table.integrations {
 .pr-description {
     white-space:pre-wrap;
 }
+
+.pr-reviewer-rules {
+   padding: 10px 0px 20px 0px;
+}
+
 .group_members {
     margin-top: 0;
     padding: 0;

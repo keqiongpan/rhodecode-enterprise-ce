@@ -986,10 +986,9 @@ class PRTestUtility(object):
         return reference
 
     def _get_reviewers(self):
-        model = UserModel()
         return [
-            model.get_by_username(TEST_USER_REGULAR_LOGIN),
-            model.get_by_username(TEST_USER_REGULAR2_LOGIN),
+            (TEST_USER_REGULAR_LOGIN, ['default1'], False),
+            (TEST_USER_REGULAR2_LOGIN, ['default2'], False),
         ]
 
     def update_source_repository(self, head=None):

@@ -535,12 +535,13 @@ def PullRequestForm(repo_id):
     class ReviewerForm(formencode.Schema):
         user_id = v.Int(not_empty=True)
         reasons = All()
+        mandatory = v.StringBoolean()
 
     class _PullRequestForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
 
-        user = v.UnicodeString(strip=True, required=True)
+        common_ancestor = v.UnicodeString(strip=True, required=True)
         source_repo = v.UnicodeString(strip=True, required=True)
         source_ref = v.UnicodeString(strip=True, required=True)
         target_repo = v.UnicodeString(strip=True, required=True)

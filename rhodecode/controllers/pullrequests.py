@@ -228,8 +228,6 @@ class PullrequestsController(BaseRepoController):
         target_repo = _form['target_repo']
         target_ref = _form['target_ref']
         commit_ids = _form['revisions'][::-1]
-        reviewers = [
-            (r['user_id'], r['reasons']) for r in _form['review_members']]
 
         # find the ancestor for this pr
         source_db_repo = Repository.get_by_repo_name(_form['source_repo'])
@@ -257,17 +255,29 @@ class PullrequestsController(BaseRepoController):
             )
 
         description = _form['pullrequest_desc']
+
+        get_default_reviewers_data, validate_default_reviewers = \
+            PullRequestModel().get_reviewer_functions()
+
+        # recalculate reviewers logic, to make sure we can validate this
+        reviewer_rules = get_default_reviewers_data(
+            c.rhodecode_user, source_db_repo, source_commit, target_db_repo,
+            target_commit)
+
+        reviewers = validate_default_reviewers(
+            _form['review_members'], reviewer_rules)
+
         try:
             pull_request = PullRequestModel().create(
                 c.rhodecode_user.user_id, source_repo, source_ref, target_repo,
                 target_ref, commit_ids, reviewers, pullrequest_title,
-                description
+                description, reviewer_rules
             )
             Session().commit()
             h.flash(_('Successfully opened new pull request'),
                     category='success')
         except Exception as e:
-            msg = _('Error occurred during sending pull request')
+            msg = _('Error occurred during creation of this pull request.')
             log.exception(msg)
             h.flash(msg, category='error')
             return redirect(url('pullrequest_home', repo_name=repo_name))
@@ -292,7 +302,8 @@ class PullrequestsController(BaseRepoController):
 
             if 'review_members' in controls:
                 self._update_reviewers(
-                    pull_request_id, controls['review_members'])
+                    pull_request_id, controls['review_members'],
+                    pull_request.reviewer_data)
             elif str2bool(request.POST.get('update_commits', 'false')):
                 self._update_commits(pull_request)
             elif str2bool(request.POST.get('close_pull_request', 'false')):
@@ -435,10 +446,20 @@ class PullrequestsController(BaseRepoController):
                 merge_resp.failure_reason)
             h.flash(msg, category='error')
 
-    def _update_reviewers(self, pull_request_id, review_members):
-        reviewers = [
-            (int(r['user_id']), r['reasons']) for r in review_members]
+    def _update_reviewers(self, pull_request_id, review_members, reviewer_rules):
+
+        get_default_reviewers_data, validate_default_reviewers = \
+            PullRequestModel().get_reviewer_functions()
+
+        try:
+            reviewers = validate_default_reviewers(review_members, reviewer_rules)
+        except ValueError as e:
+            log.error('Reviewers Validation:{}'.format(e))
+            h.flash(e, category='error')
+            return
+
         PullRequestModel().update_reviewers(pull_request_id, reviewers)
+        h.flash(_('Pull request reviewers updated.'), category='success')
         Session().commit()
 
     def _reject_close(self, pull_request):
@@ -490,7 +511,8 @@ class PullrequestsController(BaseRepoController):
             _org_pull_request_obj = pull_request_ver.pull_request
             at_version = pull_request_ver.pull_request_version_id
         else:
-            _org_pull_request_obj = pull_request_obj = PullRequest.get_or_404(pull_request_id)
+            _org_pull_request_obj = pull_request_obj = PullRequest.get_or_404(
+                pull_request_id)
 
         pull_request_display_obj = PullRequest.get_pr_display_object(
             pull_request_obj, _org_pull_request_obj)
@@ -597,9 +619,9 @@ class PullrequestsController(BaseRepoController):
             c.allowed_to_comment = False
             c.allowed_to_close = False
         else:
-            c.allowed_to_change_status = PullRequestModel(). \
-                check_user_change_status(pull_request_at_ver, c.rhodecode_user) \
-                                         and not pr_closed
+            can_change_status = PullRequestModel().check_user_change_status(
+                pull_request_at_ver, c.rhodecode_user)
+            c.allowed_to_change_status = can_change_status and not pr_closed
 
             c.allowed_to_update = PullRequestModel().check_user_update(
                 pull_request_latest, c.rhodecode_user) and not pr_closed
@@ -609,6 +631,18 @@ class PullrequestsController(BaseRepoController):
                 pull_request_latest, c.rhodecode_user) and not pr_closed
             c.allowed_to_comment = not pr_closed
             c.allowed_to_close = c.allowed_to_merge and not pr_closed
+
+        c.forbid_adding_reviewers = False
+        c.forbid_author_to_review = False
+
+        if pull_request_latest.reviewer_data and \
+                        'rules' in pull_request_latest.reviewer_data:
+            rules = pull_request_latest.reviewer_data['rules'] or {}
+            try:
+                c.forbid_adding_reviewers = rules.get('forbid_adding_reviewers')
+                c.forbid_author_to_review = rules.get('forbid_author_to_review')
+            except Exception:
+                pass
 
         # check merge capabilities
         _merge_check = MergeCheck.validate(
@@ -724,12 +758,18 @@ class PullrequestsController(BaseRepoController):
                 c.commit_ranges.append(comm)
                 commit_cache[comm.raw_id] = comm
 
+            # Order here matters, we first need to get target, and then
+            # the source
             target_commit = commits_source_repo.get_commit(
                 commit_id=safe_str(target_ref_id))
+
             source_commit = commits_source_repo.get_commit(
                 commit_id=safe_str(source_ref_id))
+
         except CommitDoesNotExistError:
-            pass
+            log.warning(
+                'Failed to get commit from `{}` repo'.format(
+                    commits_source_repo), exc_info=True)
         except RepositoryRequirementError:
             log.warning(
                 'Failed to get all required data from repo', exc_info=True)

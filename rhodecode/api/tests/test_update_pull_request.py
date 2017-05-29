@@ -119,20 +119,28 @@ class TestUpdatePullRequest(object):
 
     @pytest.mark.backends("git", "hg")
     def test_api_update_change_reviewers(
-            self, pr_util, silence_action_logger, no_notifications):
+            self, user_util, pr_util, silence_action_logger, no_notifications):
+        a = user_util.create_user()
+        b = user_util.create_user()
+        c = user_util.create_user()
+        new_reviewers = [
+            {'username': b.username,'reasons': ['updated via API'],
+             'mandatory':False},
+            {'username': c.username, 'reasons': ['updated via API'],
+             'mandatory':False},
+        ]
 
-        users = [x.username for x in User.get_all()]
-        new = [users.pop(0)]
-        removed = sorted(new)
-        added = sorted(users)
+        added = [b.username, c.username]
+        removed = [a.username]
 
-        pull_request = pr_util.create_pull_request(reviewers=new)
+        pull_request = pr_util.create_pull_request(
+            reviewers=[(a.username, ['added via API'], False)])
 
         id_, params = build_data(
             self.apikey, 'update_pull_request',
             repoid=pull_request.target_repo.repo_name,
             pullrequestid=pull_request.pull_request_id,
-            reviewers=added)
+            reviewers=new_reviewers)
         response = api_call(self.app, params)
         expected = {
             "msg": "Updated pull request `{}`".format(
@@ -152,7 +160,7 @@ class TestUpdatePullRequest(object):
             self.apikey, 'update_pull_request',
             repoid=pull_request.target_repo.repo_name,
             pullrequestid=pull_request.pull_request_id,
-            reviewers=['bad_name'])
+            reviewers=[{'username': 'bad_name'}])
         response = api_call(self.app, params)
 
         expected = 'user `bad_name` does not exist'
@@ -165,7 +173,7 @@ class TestUpdatePullRequest(object):
             self.apikey, 'update_pull_request',
             repoid='fake',
             pullrequestid='fake',
-            reviewers=['bad_name'])
+            reviewers=[{'username': 'bad_name'}])
         response = api_call(self.app, params)
 
         expected = 'repository `fake` does not exist'
@@ -181,7 +189,7 @@ class TestUpdatePullRequest(object):
             self.apikey, 'update_pull_request',
             repoid=pull_request.target_repo.repo_name,
             pullrequestid=999999,
-            reviewers=['bad_name'])
+            reviewers=[{'username': 'bad_name'}])
         response = api_call(self.app, params)
 
         expected = 'pull request `999999` does not exist'

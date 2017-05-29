@@ -109,7 +109,8 @@ class TestGetPullRequest(object):
                     'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, reasons, st in pull_request.reviewers_statuses()
+                for reviewer, reasons, mandatory, st in
+                pull_request.reviewers_statuses()
             ]
         }
         assert_ok(id_, expected, response.body)

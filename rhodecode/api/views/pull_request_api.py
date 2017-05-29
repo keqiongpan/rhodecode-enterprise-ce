@@ -21,7 +21,7 @@
 
 import logging
 
-from rhodecode.api import jsonrpc_method, JSONRPCError
+from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCValidationError
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
     get_pull_request_or_error, get_commit_or_error, get_user_or_error,
@@ -34,6 +34,9 @@ from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 from rhodecode.model.settings import SettingsModel
+from rhodecode.model.validation_schema import Invalid
+from rhodecode.model.validation_schema.schemas.reviewer_schema import \
+    ReviewerListSchema
 
 log = logging.getLogger(__name__)
 
@@ -537,7 +540,7 @@ def create_pull_request(
     :type reviewers: Optional(list)
         Accepts username strings or objects of the format:
 
-            {'username': 'nick', 'reasons': ['original author']}
+            {'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}
     """
 
     source = get_repo_or_error(source_repo)
@@ -567,20 +570,19 @@ def create_pull_request(
         raise JSONRPCError('no common ancestor found')
 
     reviewer_objects = Optional.extract(reviewers) or []
-    if not isinstance(reviewer_objects, list):
-        raise JSONRPCError('reviewers should be specified as a list')
+    if reviewer_objects:
+        schema = ReviewerListSchema()
+        try:
+            reviewer_objects = schema.deserialize(reviewer_objects)
+        except Invalid as err:
+            raise JSONRPCValidationError(colander_exc=err)
 
-    reviewers_reasons = []
+    reviewers = []
     for reviewer_object in reviewer_objects:
-        reviewer_reasons = []
-        if isinstance(reviewer_object, (basestring, int)):
-            reviewer_username = reviewer_object
-        else:
-            reviewer_username = reviewer_object['username']
-            reviewer_reasons = reviewer_object.get('reasons', [])
-
-        user = get_user_or_error(reviewer_username)
-        reviewers_reasons.append((user.user_id, reviewer_reasons))
+        user = get_user_or_error(reviewer_object['username'])
+        reasons = reviewer_object['reasons']
+        mandatory = reviewer_object['mandatory']
+        reviewers.append((user.user_id, reasons, mandatory))
 
     pull_request_model = PullRequestModel()
     pull_request = pull_request_model.create(
@@ -591,7 +593,7 @@ def create_pull_request(
         target_ref=full_target_ref,
         revisions=reversed(
             [commit.raw_id for commit in reversed(commit_ranges)]),
-        reviewers=reviewers_reasons,
+        reviewers=reviewers,
         title=title,
         description=Optional.extract(description)
     )
@@ -624,6 +626,10 @@ def update_pull_request(
     :type description: Optional(str)
     :param reviewers: Update pull request reviewers list with new value.
     :type reviewers: Optional(list)
+        Accepts username strings or objects of the format:
+
+            {'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}
+
     :param update_commits: Trigger update of commits for this pull request
     :type: update_commits: Optional(bool)
     :param close_pull_request: Close this pull request with rejected state
@@ -669,23 +675,21 @@ def update_pull_request(
             'pull request `%s` update failed, pull request is closed' % (
                 pullrequestid,))
 
+
     reviewer_objects = Optional.extract(reviewers) or []
-    if not isinstance(reviewer_objects, list):
-        raise JSONRPCError('reviewers should be specified as a list')
+    if reviewer_objects:
+        schema = ReviewerListSchema()
+        try:
+            reviewer_objects = schema.deserialize(reviewer_objects)
+        except Invalid as err:
+            raise JSONRPCValidationError(colander_exc=err)
 
-    reviewers_reasons = []
-    reviewer_ids = set()
+    reviewers = []
     for reviewer_object in reviewer_objects:
-        reviewer_reasons = []
-        if isinstance(reviewer_object, (int, basestring)):
-            reviewer_username = reviewer_object
-        else:
-            reviewer_username = reviewer_object['username']
-            reviewer_reasons = reviewer_object.get('reasons', [])
-
-        user = get_user_or_error(reviewer_username)
-        reviewer_ids.add(user.user_id)
-        reviewers_reasons.append((user.user_id, reviewer_reasons))
+        user = get_user_or_error(reviewer_object['username'])
+        reasons = reviewer_object['reasons']
+        mandatory = reviewer_object['mandatory']
+        reviewers.append((user.user_id, reasons, mandatory))
 
     title = Optional.extract(title)
     description = Optional.extract(description)
@@ -704,9 +708,9 @@ def update_pull_request(
         Session().commit()
 
     reviewers_changes = {"added": [], "removed": []}
-    if reviewer_ids:
+    if reviewers:
         added_reviewers, removed_reviewers = \
-            PullRequestModel().update_reviewers(pull_request, reviewers_reasons)
+            PullRequestModel().update_reviewers(pull_request, reviewers)
 
         reviewers_changes['added'] = sorted(
             [get_user_or_error(n).username for n in added_reviewers])

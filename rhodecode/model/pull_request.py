@@ -415,7 +415,9 @@ class PullRequestModel(BaseModel):
             .all()
 
     def create(self, created_by, source_repo, source_ref, target_repo,
-        target_ref, revisions, reviewers, title, description=None):
+               target_ref, revisions, reviewers, title, description=None,
+               reviewer_data=None):
+
         created_by_user = self._get_user(created_by)
         source_repo = self._get_repo(source_repo)
         target_repo = self._get_repo(target_repo)
@@ -429,6 +431,7 @@ class PullRequestModel(BaseModel):
         pull_request.title = title
         pull_request.description = description
         pull_request.author = created_by_user
+        pull_request.reviewer_data = reviewer_data
 
         Session().add(pull_request)
         Session().flush()
@@ -436,15 +439,16 @@ class PullRequestModel(BaseModel):
         reviewer_ids = set()
         # members / reviewers
         for reviewer_object in reviewers:
-            if isinstance(reviewer_object, tuple):
-                user_id, reasons = reviewer_object
-            else:
-                user_id, reasons = reviewer_object, []
+            user_id, reasons, mandatory = reviewer_object
 
             user = self._get_user(user_id)
             reviewer_ids.add(user.user_id)
 
-            reviewer = PullRequestReviewers(user, pull_request, reasons)
+            reviewer = PullRequestReviewers()
+            reviewer.user = user
+            reviewer.pull_request = pull_request
+            reviewer.reasons = reasons
+            reviewer.mandatory = mandatory
             Session().add(reviewer)
 
         # Set approval status to "Under Review" for all commits which are
@@ -763,6 +767,7 @@ class PullRequestModel(BaseModel):
         version._last_merge_status = pull_request._last_merge_status
         version.shadow_merge_ref = pull_request.shadow_merge_ref
         version.merge_rev = pull_request.merge_rev
+        version.reviewer_data = pull_request.reviewer_data
 
         version.revisions = pull_request.revisions
         version.pull_request = pull_request
@@ -903,16 +908,18 @@ class PullRequestModel(BaseModel):
         Update the reviewers in the pull request
 
         :param pull_request: the pr to update
-        :param reviewer_data: list of tuples [(user, ['reason1', 'reason2'])]
+        :param reviewer_data: list of tuples
+            [(user, ['reason1', 'reason2'], mandatory_flag)]
         """
 
-        reviewers_reasons = {}
-        for user_id, reasons in reviewer_data:
+        reviewers = {}
+        for user_id, reasons, mandatory in reviewer_data:
             if isinstance(user_id, (int, basestring)):
                 user_id = self._get_user(user_id).user_id
-            reviewers_reasons[user_id] = reasons
+            reviewers[user_id] = {
+                'reasons': reasons, 'mandatory': mandatory}
 
-        reviewers_ids = set(reviewers_reasons.keys())
+        reviewers_ids = set(reviewers.keys())
         pull_request = self.__get_pull_request(pull_request)
         current_reviewers = PullRequestReviewers.query()\
             .filter(PullRequestReviewers.pull_request ==
@@ -928,8 +935,12 @@ class PullRequestModel(BaseModel):
         for uid in ids_to_add:
             changed = True
             _usr = self._get_user(uid)
-            reasons = reviewers_reasons[uid]
-            reviewer = PullRequestReviewers(_usr, pull_request, reasons)
+            reviewer = PullRequestReviewers()
+            reviewer.user = _usr
+            reviewer.pull_request = pull_request
+            reviewer.reasons = reviewers[uid]['reasons']
+            # NOTE(marcink): mandatory shouldn't be changed now
+            #reviewer.mandatory = reviewers[uid]['reasons']
             Session().add(reviewer)
 
         for uid in ids_to_remove:
@@ -1368,6 +1379,23 @@ class PullRequestModel(BaseModel):
             '{action}:{pr_id}'.format(
                 action=action, pr_id=pull_request.pull_request_id),
             pull_request.target_repo)
+
+    def get_reviewer_functions(self):
+        """
+        Fetches functions for validation and fetching default reviewers.
+        If available we use the EE package, else we fallback to CE
+        package functions
+        """
+        try:
+            from rc_reviewers.utils import get_default_reviewers_data
+            from rc_reviewers.utils import validate_default_reviewers
+        except ImportError:
+            from rhodecode.apps.repository.utils import \
+                get_default_reviewers_data
+            from rhodecode.apps.repository.utils import \
+                validate_default_reviewers
+
+        return get_default_reviewers_data, validate_default_reviewers
 
 
 class MergeCheck(object):

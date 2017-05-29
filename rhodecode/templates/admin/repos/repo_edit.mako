@@ -24,7 +24,11 @@
 </%def>
 
 <%def name="main_content()">
-  <%include file="/admin/repos/repo_edit_${c.active}.mako"/>
+  % if hasattr(c, 'repo_edit_template'):
+    <%include file="${c.repo_edit_template}"/>
+  % else:
+    <%include file="/admin/repos/repo_edit_${c.active}.mako"/>
+  % endif
 </%def>
 
 

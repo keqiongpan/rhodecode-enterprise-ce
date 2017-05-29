@@ -3229,6 +3229,14 @@ class _PullRequestBase(BaseModel):
     _last_merge_status = Column('merge_status', Integer(), nullable=True)
     merge_rev = Column('merge_rev', String(40), nullable=True)
 
+    reviewer_data = Column(
+        'reviewer_data_json', MutationObj.as_mutable(
+            JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
+
+    @property
+    def reviewer_data_json(self):
+        return json.dumps(self.reviewer_data)
+
     @hybrid_property
     def revisions(self):
         return self._revisions.split(':') if self._revisions else []
@@ -3348,7 +3356,8 @@ class _PullRequestBase(BaseModel):
                     'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, reasons, st in pull_request.reviewers_statuses()
+                for reviewer, reasons, mandatory, st in
+                pull_request.reviewers_statuses()
             ]
         }
 
@@ -3438,6 +3447,8 @@ class PullRequest(Base, _PullRequestBase):
         attrs.revisions = pull_request_obj.revisions
 
         attrs.shadow_merge_ref = org_pull_request_obj.shadow_merge_ref
+        attrs.reviewer_data = org_pull_request_obj.reviewer_data
+        attrs.reviewer_data_json = org_pull_request_obj.reviewer_data_json
 
         return PullRequestDisplay(attrs, internal=internal_methods)
 
@@ -3516,11 +3527,6 @@ class PullRequestReviewers(Base, BaseModel):
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
-    def __init__(self, user=None, pull_request=None, reasons=None):
-        self.user = user
-        self.pull_request = pull_request
-        self.reasons = reasons or []
-
     @hybrid_property
     def reasons(self):
         if not self._reasons:
@@ -3545,7 +3551,7 @@ class PullRequestReviewers(Base, BaseModel):
     _reasons = Column(
         'reason', MutationList.as_mutable(
             JsonType('list', dialect_map=dict(mysql=UnicodeText(16384)))))
-
+    mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
     user = relationship('User')
     pull_request = relationship('PullRequest')
 
@@ -3849,13 +3855,16 @@ class RepoReviewRuleUser(Base, BaseModel):
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
-    repo_review_rule_user_id = Column(
-        'repo_review_rule_user_id', Integer(), primary_key=True)
-    repo_review_rule_id = Column("repo_review_rule_id",
-        Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
-    user_id = Column("user_id", Integer(), ForeignKey('users.user_id'),
-        nullable=False)
+    repo_review_rule_user_id = Column('repo_review_rule_user_id', Integer(), primary_key=True)
+    repo_review_rule_id = Column("repo_review_rule_id", Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
+    user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False)
+    mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
     user = relationship('User')
+
+    def rule_data(self):
+        return {
+            'mandatory': self.mandatory
+        }
 
 
 class RepoReviewRuleUserGroup(Base, BaseModel):
@@ -3864,13 +3873,16 @@ class RepoReviewRuleUserGroup(Base, BaseModel):
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
-    repo_review_rule_users_group_id = Column(
-        'repo_review_rule_users_group_id', Integer(), primary_key=True)
-    repo_review_rule_id = Column("repo_review_rule_id",
-        Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
-    users_group_id = Column("users_group_id", Integer(),
-        ForeignKey('users_groups.users_group_id'), nullable=False)
+    repo_review_rule_users_group_id = Column('repo_review_rule_users_group_id', Integer(), primary_key=True)
+    repo_review_rule_id = Column("repo_review_rule_id", Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
+    users_group_id = Column("users_group_id", Integer(),ForeignKey('users_groups.users_group_id'), nullable=False)
+    mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
     users_group = relationship('UserGroup')
+
+    def rule_data(self):
+        return {
+            'mandatory': self.mandatory
+        }
 
 
 class RepoReviewRule(Base, BaseModel):
@@ -3886,13 +3898,13 @@ class RepoReviewRule(Base, BaseModel):
         "repo_id", Integer(), ForeignKey('repositories.repo_id'))
     repo = relationship('Repository', backref='review_rules')
 
-    _branch_pattern = Column("branch_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'),
-        default=u'*') # glob
-    _file_pattern = Column("file_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'),
-        default=u'*') # glob
+    _branch_pattern = Column("branch_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
+    _file_pattern = Column("file_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
 
-    use_authors_for_review = Column("use_authors_for_review", Boolean(),
-        nullable=False, default=False)
+    use_authors_for_review = Column("use_authors_for_review", Boolean(), nullable=False, default=False)
+    forbid_author_to_review = Column("forbid_author_to_review", Boolean(), nullable=False, default=False)
+    forbid_adding_reviewers = Column("forbid_adding_reviewers", Boolean(), nullable=False, default=False)
+
     rule_users = relationship('RepoReviewRuleUser')
     rule_user_groups = relationship('RepoReviewRuleUserGroup')
 
@@ -3948,16 +3960,26 @@ class RepoReviewRule(Base, BaseModel):
     def review_users(self):
         """ Returns the users which this rule applies to """
 
-        users = set()
-        users |= set([
-            rule_user.user for rule_user in self.rule_users
-            if rule_user.user.active])
-        users |= set(
-            member.user
-            for rule_user_group in self.rule_user_groups
-            for member in rule_user_group.users_group.members
-            if member.user.active
-        )
+        users = collections.OrderedDict()
+
+        for rule_user in self.rule_users:
+            if rule_user.user.active:
+                if rule_user.user not in users:
+                    users[rule_user.user.username] = {
+                        'user': rule_user.user,
+                        'source': 'user',
+                        'data': rule_user.rule_data()
+                    }
+
+        for rule_user_group in self.rule_user_groups:
+            for member in rule_user_group.users_group.members:
+                if member.user.active:
+                    users[member.user.username] = {
+                        'user': member.user,
+                        'source': 'user_group',
+                        'data': rule_user_group.rule_data()
+                    }
+
         return users
 
     def __repr__(self):
