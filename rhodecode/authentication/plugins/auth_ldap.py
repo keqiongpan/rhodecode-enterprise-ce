@@ -71,15 +71,17 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
     host = colander.SchemaNode(
         colander.String(),
         default='',
-        description=_('Host of the LDAP Server \n'
-                      '(e.g., 192.168.2.154, or ldap-server.domain.com'),
+        description=_('Host[s] of the LDAP Server \n'
+                      '(e.g., 192.168.2.154, or ldap-server.domain.com.\n '
+                      'Multiple servers can be specified using commas'),
         preparer=strip_whitespace,
         title=_('LDAP Host'),
         widget='string')
     port = colander.SchemaNode(
         colander.Int(),
         default=389,
-        description=_('Custom port that the LDAP server is listening on. Default: 389'),
+        description=_('Custom port that the LDAP server is listening on. '
+                      'Default value is: 389'),
         preparer=strip_whitespace,
         title=_('Port'),
         validator=colander.Range(min=0, max=65536),
