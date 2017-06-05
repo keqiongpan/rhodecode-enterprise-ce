@@ -12,7 +12,7 @@ A new user `${user.username}` has registered on ${h.format_date(date)}
 - Username: ${user.username}
 - Full Name: ${user.firstname} ${user.lastname}
 - Email: ${user.email}
-- Profile link: ${h.route_path('user_profile', username=user.username, qualified=True)}
+- Profile link: ${h.route_url('user_profile', username=user.username)}
 
 ${self.plaintext_footer()}
 </%def>
