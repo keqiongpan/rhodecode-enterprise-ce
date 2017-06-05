@@ -257,6 +257,11 @@ class RepoRoutePredicate(object):
     phash = text
 
     def __call__(self, info, request):
+
+        if hasattr(request, 'vcs_call'):
+            # skip vcs calls
+            return
+
         repo_name = info['match']['repo_name']
         repo_model = repo.RepoModel()
         by_name_match = repo_model.get_by_repo_name(repo_name, cache=True)
@@ -284,6 +289,9 @@ class RepoTypeRoutePredicate(object):
     phash = text
 
     def __call__(self, info, request):
+        if hasattr(request, 'vcs_call'):
+            # skip vcs calls
+            return
 
         rhodecode_db_repo = request.db_repo
 
@@ -316,6 +324,10 @@ class RepoGroupRoutePredicate(object):
     phash = text
 
     def __call__(self, info, request):
+        if hasattr(request, 'vcs_call'):
+            # skip vcs calls
+            return
+
         repo_group_name = info['match']['repo_group_name']
         repo_group_model = repo_group.RepoGroupModel()
         by_name_match = repo_group_model.get_by_group_name(
