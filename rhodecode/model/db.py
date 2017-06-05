@@ -3968,15 +3968,21 @@ class RepoReviewRule(Base, BaseModel):
                     users[rule_user.user.username] = {
                         'user': rule_user.user,
                         'source': 'user',
+                        'source_data': {},
                         'data': rule_user.rule_data()
                     }
 
         for rule_user_group in self.rule_user_groups:
+            source_data = {
+                'name': rule_user_group.users_group.users_group_name,
+                'members': len(rule_user_group.users_group.members)
+            }
             for member in rule_user_group.users_group.members:
                 if member.user.active:
                     users[member.user.username] = {
                         'user': member.user,
                         'source': 'user_group',
+                        'source_data': source_data,
                         'data': rule_user_group.rule_data()
                     }
 
