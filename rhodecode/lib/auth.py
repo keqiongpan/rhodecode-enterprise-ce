@@ -1185,10 +1185,20 @@ class LoginRequired(object):
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
 
+    def _get_request(self):
+        from pyramid.threadlocal import get_current_request
+        pyramid_request = get_current_request()
+        if not pyramid_request:
+            # return global request of pylons in case pyramid isn't available
+            return request
+        return pyramid_request
+
     def __wrapper(self, func, *fargs, **fkwargs):
         from rhodecode.lib import helpers as h
         cls = fargs[0]
         user = cls._rhodecode_user
+        request = self._get_request()
+
         loc = "%s:%s" % (cls.__class__.__name__, func.__name__)
         log.debug('Starting login restriction checks for user: %s' % (user,))
         # check if our IP is allowed
@@ -1262,7 +1272,8 @@ class LoginRequired(object):
 class NotAnonymous(object):
     """
     Must be logged in to execute this function else
-    redirect to login page"""
+    redirect to login page
+    """
 
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
@@ -1288,6 +1299,8 @@ class NotAnonymous(object):
 
 
 class XHRRequired(object):
+    # TODO(marcink): remove this in favor of the predicates in pyramid routes
+
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
 
@@ -1303,9 +1316,9 @@ class XHRRequired(object):
 class HasAcceptedRepoType(object):
     """
     Check if requested repo is within given repo type aliases
-
-    TODO: anderson: not sure where to put this decorator
     """
+
+    # TODO(marcink): remove this in favor of the predicates in pyramid routes
 
     def __init__(self, *repo_type_list):
         self.repo_type_list = set(repo_type_list)
@@ -1595,6 +1608,7 @@ class PermsFunction(object):
         if not user:
             log.debug('Using user attribute from global request')
             # TODO: remove this someday,put as user as attribute here
+            request = self._get_request()
             user = request.user
 
         # init auth user if not already given
