@@ -121,7 +121,7 @@ def add_pylons_context(event):
     # Setup the pylons context object ('c')
     context = ContextObj()
     context.rhodecode_user = auth_user
-    attach_context_attributes(context, request)
+    attach_context_attributes(context, request, request.user.user_id)
     pylons.tmpl_context._push_object(context)
 
 

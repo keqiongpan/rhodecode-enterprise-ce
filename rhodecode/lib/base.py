@@ -265,7 +265,7 @@ class BasicAuth(AuthBasicAuthenticator):
     __call__ = authenticate
 
 
-def attach_context_attributes(context, request):
+def attach_context_attributes(context, request, user_id):
     """
     Attach variables into template context called `c`, please note that
     request could be pylons or pyramid request in here.
@@ -387,9 +387,7 @@ def attach_context_attributes(context, request):
     context.csrf_token = auth.get_csrf_token()
     context.backends = rhodecode.BACKENDS.keys()
     context.backends.sort()
-    context.unread_notifications = NotificationModel().get_unread_cnt_for_user(
-        context.rhodecode_user.user_id)
-
+    context.unread_notifications = NotificationModel().get_unread_cnt_for_user(user_id)
     context.pyramid_request = pyramid.threadlocal.get_current_request()
 
 
@@ -440,7 +438,7 @@ class BaseController(WSGIController):
         """
         # on each call propagate settings calls into global settings.
         set_rhodecode_config(config)
-        attach_context_attributes(c, request)
+        attach_context_attributes(c, request, c.rhodecode_user.user_id)
 
         # TODO: Remove this when fixed in attach_context_attributes()
         c.repo_name = get_repo_slug(request)  # can be empty
