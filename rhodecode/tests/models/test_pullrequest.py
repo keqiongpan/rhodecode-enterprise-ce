@@ -41,7 +41,8 @@ pytestmark = [
 ]
 
 
-class TestPullRequestModel:
+@pytest.mark.usefixtures('config_stub')
+class TestPullRequestModel(object):
 
     @pytest.fixture
     def pull_request(self, request, backend, pr_util):
@@ -372,6 +373,7 @@ class TestPullRequestModel:
         assert type(title) == unicode
 
 
+@pytest.mark.usefixtures('config_stub')
 class TestIntegrationMerge(object):
     @pytest.mark.parametrize('extra_config', (
         {'vcs.hooks.protocol': 'http', 'vcs.hooks.direct_calls': False},
@@ -433,7 +435,7 @@ class TestIntegrationMerge(object):
     (True, 0, 1),
 ])
 def test_outdated_comments(
-        pr_util, use_outdated, inlines_count, outdated_count):
+        pr_util, use_outdated, inlines_count, outdated_count, config_stub):
     pull_request = pr_util.create_pull_request()
     pr_util.create_inline_comment(file_path='not_in_updated_diff')
 
@@ -465,6 +467,7 @@ def merge_extras(user_regular):
     return extras
 
 
+@pytest.mark.usefixtures('config_stub')
 class TestUpdateCommentHandling(object):
 
     @pytest.fixture(autouse=True, scope='class')
@@ -572,6 +575,7 @@ class TestUpdateCommentHandling(object):
             assert_inline_comments(pull_request, visible=0, outdated=1)
 
 
+@pytest.mark.usefixtures('config_stub')
 class TestUpdateChangedFiles(object):
 
     def test_no_changes_on_unchanged_diff(self, pr_util):
@@ -681,7 +685,7 @@ class TestUpdateChangedFiles(object):
             removed=['file_a', 'file_b', 'file_c'])
 
 
-def test_update_writes_snapshot_into_pull_request_version(pr_util):
+def test_update_writes_snapshot_into_pull_request_version(pr_util, config_stub):
     model = PullRequestModel()
     pull_request = pr_util.create_pull_request()
     pr_util.update_source_repository()
@@ -692,7 +696,7 @@ def test_update_writes_snapshot_into_pull_request_version(pr_util):
     assert len(model.get_versions(pull_request)) == 1
 
 
-def test_update_skips_new_version_if_unchanged(pr_util):
+def test_update_skips_new_version_if_unchanged(pr_util, config_stub):
     pull_request = pr_util.create_pull_request()
     model = PullRequestModel()
     model.update_commits(pull_request)
@@ -701,7 +705,7 @@ def test_update_skips_new_version_if_unchanged(pr_util):
     assert len(model.get_versions(pull_request)) == 0
 
 
-def test_update_assigns_comments_to_the_new_version(pr_util):
+def test_update_assigns_comments_to_the_new_version(pr_util, config_stub):
     model = PullRequestModel()
     pull_request = pr_util.create_pull_request()
     comment = pr_util.create_comment()
@@ -713,7 +717,7 @@ def test_update_assigns_comments_to_the_new_version(pr_util):
     assert comment.pull_request_version == model.get_versions(pull_request)[0]
 
 
-def test_update_adds_a_comment_to_the_pull_request_about_the_change(pr_util):
+def test_update_adds_a_comment_to_the_pull_request_about_the_change(pr_util, config_stub):
     model = PullRequestModel()
     pull_request = pr_util.create_pull_request()
     pr_util.update_source_repository()
@@ -745,7 +749,7 @@ def test_update_adds_a_comment_to_the_pull_request_about_the_change(pr_util):
     assert update_comment.text == expected_message
 
 
-def test_create_version_from_snapshot_updates_attributes(pr_util):
+def test_create_version_from_snapshot_updates_attributes(pr_util, config_stub):
     pull_request = pr_util.create_pull_request()
 
     # Avoiding default values
@@ -784,7 +788,7 @@ def test_create_version_from_snapshot_updates_attributes(pr_util):
     assert version.pull_request == pull_request
 
 
-def test_link_comments_to_version_only_updates_unlinked_comments(pr_util):
+def test_link_comments_to_version_only_updates_unlinked_comments(pr_util, config_stub):
     version1 = pr_util.create_version_of_pull_request()
     comment_linked = pr_util.create_comment(linked_to=version1)
     comment_unlinked = pr_util.create_comment()

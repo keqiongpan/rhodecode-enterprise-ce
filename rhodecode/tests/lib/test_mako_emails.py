@@ -7,13 +7,13 @@ from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.notification import EmailNotificationModel
 
 
-def test_get_template_obj(pylonsapp):
+def test_get_template_obj(app):
     template = EmailNotificationModel().get_renderer(
         EmailNotificationModel.TYPE_TEST)
     assert isinstance(template, PartialRenderer)
 
 
-def test_render_email(pylonsapp):
+def test_render_email(app, http_host_only_stub):
     kwargs = {}
     subject, headers, body, body_plaintext = EmailNotificationModel().render_email(
         EmailNotificationModel.TYPE_TEST, **kwargs)
@@ -28,12 +28,13 @@ def test_render_email(pylonsapp):
     assert body_plaintext == 'Email Plaintext Body'
 
     # body
-    assert 'This is a notification ' \
-           'from RhodeCode. http://test.example.com:80/' in body
+    notification_footer = 'This is a notification from RhodeCode. http://%s/' \
+                          % http_host_only_stub
+    assert notification_footer in body
     assert 'Email Body' in body
 
 
-def test_render_pr_email(pylonsapp, user_admin):
+def test_render_pr_email(app, user_admin):
 
     ref = collections.namedtuple('Ref',
         'name, type')(
@@ -77,7 +78,7 @@ def test_render_pr_email(pylonsapp, user_admin):
     EmailNotificationModel.TYPE_COMMIT_COMMENT,
     EmailNotificationModel.TYPE_PULL_REQUEST_COMMENT
 ])
-def test_render_comment_subject_no_newlines(pylonsapp, mention, email_type):
+def test_render_comment_subject_no_newlines(app, mention, email_type):
     ref = collections.namedtuple('Ref',
         'name, type')(
         'fxies123', 'book'

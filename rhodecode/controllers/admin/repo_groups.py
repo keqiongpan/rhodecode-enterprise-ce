@@ -193,10 +193,10 @@ class RepoGroupsController(BaseController):
             _new_group_name = form_result['group_name_full']
             repo_group_url = h.link_to(
                 _new_group_name,
-                h.url('repo_group_home', group_name=_new_group_name))
+                h.route_path('repo_group_home', repo_group_name=_new_group_name))
             h.flash(h.literal(_('Created repository group %s')
                     % repo_group_url), category='success')
-            # TODO: in futureaction_logger(, '', '', '', self.sa)
+            # TODO: in future action_logger(, '', '', '', self.sa)
         except formencode.Invalid as errors:
             return htmlfill.render(
                 render('admin/repo_groups/repo_group_add.mako'),
@@ -234,7 +234,6 @@ class RepoGroupsController(BaseController):
         #    <input type="hidden" name="_method" value="PUT" />
         # Or using helpers:
         #    h.form(url('repos_group', group_name=GROUP_NAME), method='put')
-        # url('repo_group_home', group_name=GROUP_NAME)
 
         c.repo_group = RepoGroupModel()._get_repo_group(group_name)
         can_create_in_root = self._can_create_repo_group()
@@ -284,7 +283,6 @@ class RepoGroupsController(BaseController):
         #    <input type="hidden" name="_method" value="DELETE" />
         # Or using helpers:
         #    h.form(url('repos_group', group_name=GROUP_NAME), method='delete')
-        # url('repo_group_home', group_name=GROUP_NAME)
 
         gr = c.repo_group = RepoGroupModel()._get_repo_group(group_name)
         repos = gr.repositories.all()

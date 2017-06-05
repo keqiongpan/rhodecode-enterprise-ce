@@ -114,7 +114,7 @@ class TestMercurialRemoteRepoInvalidation(object):
         return shadow_repo, source_ref, target_ref
 
     @pytest.mark.backends('hg')
-    def test_commit_does_not_exist_error_happens(self, pr_util, pylonsapp):
+    def test_commit_does_not_exist_error_happens(self, pr_util, app):
         """
         This test is somewhat special. It does not really test the system
         instead it is more or less a precondition for the
@@ -152,8 +152,7 @@ class TestMercurialRemoteRepoInvalidation(object):
             shadow_repo.get_commit(source_ref.commit_id)
 
     @pytest.mark.backends('hg')
-    def test_commit_does_not_exist_error_does_not_happen(
-            self, pr_util, pylonsapp):
+    def test_commit_does_not_exist_error_does_not_happen(self, pr_util, app):
         """
         This test simulates a pull request merge in which the pull operations
         are handled by a different VCSServer process than all other operations.

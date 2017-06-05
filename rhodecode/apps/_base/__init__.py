@@ -29,6 +29,7 @@ from rhodecode.lib.utils2 import StrictAttributeDict, safe_int, datetime_to_time
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.lib.ext_json import json
 from rhodecode.model import repo
+from rhodecode.model import repo_group
 from rhodecode.model.db import User
 from rhodecode.model.scm import ScmModel
 
@@ -37,6 +38,12 @@ log = logging.getLogger(__name__)
 
 ADMIN_PREFIX = '/_admin'
 STATIC_FILE_PREFIX = '/_static'
+
+
+def add_route_with_slash(config,name, pattern, **kw):
+    config.add_route(name, pattern, **kw)
+    if not pattern.endswith('/'):
+        config.add_route(name + '_slash', pattern + '/', **kw)
 
 
 def get_format_ref_id(repo):
@@ -253,8 +260,7 @@ class RepoRoutePredicate(object):
         repo_name = info['match']['repo_name']
         repo_model = repo.RepoModel()
         by_name_match = repo_model.get_by_repo_name(repo_name, cache=True)
-        # if we match quickly from database, short circuit the operation,
-        # and validate repo based on the type.
+
         if by_name_match:
             # register this as request object we can re-use later
             request.db_repo = by_name_match
@@ -300,9 +306,33 @@ class RepoTypeRoutePredicate(object):
             return False
 
 
+class RepoGroupRoutePredicate(object):
+    def __init__(self, val, config):
+        self.val = val
+
+    def text(self):
+        return 'repo_group_route = %s' % self.val
+
+    phash = text
+
+    def __call__(self, info, request):
+        repo_group_name = info['match']['repo_group_name']
+        repo_group_model = repo_group.RepoGroupModel()
+        by_name_match = repo_group_model.get_by_group_name(
+            repo_group_name, cache=True)
+
+        if by_name_match:
+            # register this as request object we can re-use later
+            request.db_repo_group = by_name_match
+            return True
+
+        return False
+
 
 def includeme(config):
     config.add_route_predicate(
         'repo_route', RepoRoutePredicate)
     config.add_route_predicate(
         'repo_accepted_types', RepoTypeRoutePredicate)
+    config.add_route_predicate(
+        'repo_group_route', RepoGroupRoutePredicate)

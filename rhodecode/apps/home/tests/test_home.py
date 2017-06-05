@@ -28,18 +28,25 @@ from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.settings import SettingsModel
-from rhodecode.tests import TestController, url
+from rhodecode.tests import TestController
 from rhodecode.tests.fixture import Fixture
 
 
 fixture = Fixture()
 
 
+def route_path(name, **kwargs):
+    return {
+        'home': '/',
+        'repo_group_home': '/{repo_group_name}'
+    }[name].format(**kwargs)
+
+
 class TestHomeController(TestController):
 
     def test_index(self):
         self.log_user()
-        response = self.app.get(url(controller='home', action='index'))
+        response = self.app.get(route_path('home'))
         # if global permission is set
         response.mustcontain('Add Repository')
 
@@ -49,7 +56,7 @@ class TestHomeController(TestController):
 
     def test_index_contains_statics_with_ver(self):
         self.log_user()
-        response = self.app.get(url(controller='home', action='index'))
+        response = self.app.get(route_path('home'))
 
         rhodecode_version_hash = c.rhodecode_version_hash
         response.mustcontain('style.css?ver={0}'.format(rhodecode_version_hash))
@@ -57,7 +64,7 @@ class TestHomeController(TestController):
 
     def test_index_contains_backend_specific_details(self, backend):
         self.log_user()
-        response = self.app.get(url(controller='home', action='index'))
+        response = self.app.get(route_path('home'))
         tip = backend.repo.get_commit().raw_id
 
         # html in javascript variable:
@@ -69,17 +76,16 @@ class TestHomeController(TestController):
 
     def test_index_with_anonymous_access_disabled(self):
         with fixture.anon_access(False):
-            response = self.app.get(url(controller='home', action='index'),
-                                    status=302)
+            response = self.app.get(route_path('home'), status=302)
             assert 'login' in response.location
 
     def test_index_page_on_groups(self, autologin_user, repo_group):
-        response = self.app.get(url('repo_group_home', group_name='gr1'))
+        response = self.app.get(route_path('repo_group_home', repo_group_name='gr1'))
         response.mustcontain("gr1/repo_in_group")
 
     def test_index_page_on_group_with_trailing_slash(
             self, autologin_user, repo_group):
-        response = self.app.get(url('repo_group_home', group_name='gr1') + '/')
+        response = self.app.get(route_path('repo_group_home', repo_group_name='gr1') + '/')
         response.mustcontain("gr1/repo_in_group")
 
     @pytest.fixture(scope='class')
@@ -93,15 +99,17 @@ class TestHomeController(TestController):
             RepoGroupModel().delete(repo_group='gr1', force_delete=True)
             Session().commit()
 
-    def test_index_with_name_with_tags(self, autologin_user):
-        user = User.get_by_username('test_admin')
+    def test_index_with_name_with_tags(self, user_util, autologin_user):
+        user = user_util.create_user()
+        username = user.username
         user.name = '<img src="/image1" onload="alert(\'Hello, World!\');">'
         user.lastname = (
             '<img src="/image2" onload="alert(\'Hello, World!\');">')
         Session().add(user)
         Session().commit()
+        user_util.create_repo(owner=username)
 
-        response = self.app.get(url(controller='home', action='index'))
+        response = self.app.get(route_path('home'))
         response.mustcontain(
             '&lt;img src=&#34;/image1&#34; onload=&#34;'
             'alert(&#39;Hello, World!&#39;);&#34;&gt;')
@@ -122,7 +130,7 @@ class TestHomeController(TestController):
         Session().commit()
         SettingsModel().invalidate_settings_cache()
 
-        response = self.app.get(url(controller='home', action='index'))
+        response = self.app.get(route_path('home'))
         if state is True:
             response.mustcontain(version_string)
         if state is False:

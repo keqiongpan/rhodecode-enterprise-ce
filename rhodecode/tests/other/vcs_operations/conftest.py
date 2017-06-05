@@ -41,8 +41,7 @@ from rhodecode.model.settings import SettingsModel
 from rhodecode.tests import (
     GIT_REPO, HG_REPO, TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS,)
 from rhodecode.tests.fixture import Fixture
-from rhodecode.tests.utils import (
-    set_anonymous_access, is_url_reachable, wait_for_url)
+from rhodecode.tests.utils import is_url_reachable, wait_for_url
 
 RC_LOG = os.path.join(tempfile.gettempdir(), 'rc.log')
 REPO_GROUP = 'a_repo_group'
@@ -186,11 +185,6 @@ def rc_web_server(
         server_out.close()
 
     return RcWebServer(rc_web_server_config)
-
-
-@pytest.fixture(scope='class', autouse=True)
-def disable_anonymous_user_access(pylonsapp):
-    set_anonymous_access(False)
 
 
 @pytest.fixture

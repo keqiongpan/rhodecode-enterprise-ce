@@ -7,7 +7,7 @@
       <div id="header-inner" class="wrapper">
           <div id="logo">
               <div class="logo-wrapper">
-                  <a href="${h.url('home')}"><img src="${h.asset('images/rhodecode-logo-white-216x60.png')}" alt="RhodeCode"/></a>
+                  <a href="${h.route_path('home')}"><img src="${h.asset('images/rhodecode-logo-white-216x60.png')}" alt="RhodeCode"/></a>
               </div>
               %if c.rhodecode_name:
                <div class="branding">- ${h.branding(c.rhodecode_name)}</div>
@@ -343,7 +343,7 @@
             <ol class="links">
               <li>${h.link_to(_(u'My account'),h.route_path('my_account_profile'))}</li>
               % if c.rhodecode_user.personal_repo_group:
-                <li>${h.link_to(_(u'My personal group'), h.url('repo_group_home', group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
+                <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
               % endif
               <li class="logout">
               ${h.secure_form(h.route_path('logout'))}

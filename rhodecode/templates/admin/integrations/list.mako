@@ -164,7 +164,7 @@
               ${_('repo')}:${integration.repo.repo_name}
             </a>
             %elif integration.repo_group:
-            <a href="${h.url('repo_group_home', group_name=integration.repo_group.group_name)}">
+            <a href="${h.route_path('repo_group_home', repo_group_name=integration.repo_group.group_name)}">
               ${_('repogroup')}:${integration.repo_group.group_name}
               %if integration.child_repos_only:
               ${_('child repos only')}

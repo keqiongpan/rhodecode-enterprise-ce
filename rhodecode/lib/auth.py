@@ -1377,7 +1377,7 @@ class PermsDecorator(object):
             if anonymous:
                 came_from = self._get_came_from()
                 h.flash(_('You need to be signed in to view this page'),
-                               category='warning')
+                        category='warning')
                 raise HTTPFound(
                     h.route_path('login', _query={'came_from': came_from}))
 
@@ -1429,10 +1429,16 @@ class HasRepoPermissionAllDecorator(PermsDecorator):
     def check_permissions(self, user):
         perms = user.permissions
         repo_name = self._get_repo_name()
+
         try:
             user_perms = set([perms['repositories'][repo_name]])
         except KeyError:
+            log.debug('cannot locate repo with name: `%s` in permissions defs',
+                      repo_name)
             return False
+
+        log.debug('checking `%s` permissions for repo `%s`',
+                  user_perms, repo_name)
         if self.required_perms.issubset(user_perms):
             return True
         return False
@@ -1450,11 +1456,16 @@ class HasRepoPermissionAnyDecorator(PermsDecorator):
     def check_permissions(self, user):
         perms = user.permissions
         repo_name = self._get_repo_name()
+
         try:
             user_perms = set([perms['repositories'][repo_name]])
         except KeyError:
+            log.debug('cannot locate repo with name: `%s` in permissions defs',
+                      repo_name)
             return False
 
+        log.debug('checking `%s` permissions for repo `%s`',
+                  user_perms, repo_name)
         if self.required_perms.intersection(user_perms):
             return True
         return False
@@ -1476,8 +1487,12 @@ class HasRepoGroupPermissionAllDecorator(PermsDecorator):
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
+            log.debug('cannot locate repo group with name: `%s` in permissions defs',
+                      group_name)
             return False
 
+        log.debug('checking `%s` permissions for repo group `%s`',
+                  user_perms, group_name)
         if self.required_perms.issubset(user_perms):
             return True
         return False
@@ -1496,11 +1511,16 @@ class HasRepoGroupPermissionAnyDecorator(PermsDecorator):
     def check_permissions(self, user):
         perms = user.permissions
         group_name = self._get_repo_group_name()
+
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
+            log.debug('cannot locate repo group with name: `%s` in permissions defs',
+                      group_name)
             return False
 
+        log.debug('checking `%s` permissions for repo group `%s`',
+                  user_perms, group_name)
         if self.required_perms.intersection(user_perms):
             return True
         return False

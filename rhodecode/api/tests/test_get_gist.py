@@ -28,7 +28,7 @@ from rhodecode.api.tests.utils import (
 
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestApiGetGist(object):
-    def test_api_get_gist(self, gist_util):
+    def test_api_get_gist(self, gist_util, http_host_stub):
         gist = gist_util.create_gist()
         gist_id = gist.gist_access_id
         gist_created_on = gist.created_on
@@ -45,14 +45,14 @@ class TestApiGetGist(object):
             'expires': -1.0,
             'gist_id': int(gist_id),
             'type': 'public',
-            'url': 'http://test.example.com:80/_admin/gists/%s' % (gist_id,),
+            'url': 'http://%s/_admin/gists/%s' % (http_host_stub, gist_id,),
             'acl_level': Gist.ACL_LEVEL_PUBLIC,
             'content': None,
         }
 
         assert_ok(id_, expected, given=response.body)
 
-    def test_api_get_gist_with_content(self, gist_util):
+    def test_api_get_gist_with_content(self, gist_util, http_host_stub):
         mapping = {
             u'filename1.txt': {'content': u'hello world'},
             u'filename1ą.txt': {'content': u'hello worldę'}
@@ -73,7 +73,7 @@ class TestApiGetGist(object):
             'expires': -1.0,
             'gist_id': int(gist_id),
             'type': 'public',
-            'url': 'http://test.example.com:80/_admin/gists/%s' % (gist_id,),
+            'url': 'http://%s/_admin/gists/%s' % (http_host_stub, gist_id,),
             'acl_level': Gist.ACL_LEVEL_PUBLIC,
             'content': {
                 u'filename1.txt': u'hello world',

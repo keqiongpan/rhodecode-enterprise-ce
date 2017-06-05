@@ -23,6 +23,10 @@ def includeme(config):
 
     # Summary
     config.add_route(
+        name='repo_summary',
+        pattern='/{repo_name:.*?[^/]}', repo_route=True)
+
+    config.add_route(
         name='repo_summary_explicit',
         pattern='/{repo_name:.*?[^/]}/summary', repo_route=True)
 

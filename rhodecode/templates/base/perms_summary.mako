@@ -126,7 +126,7 @@
                         %if section == 'repositories':
                             <a href="${h.url('summary_home',repo_name=k)}">${k}</a>
                         %elif section == 'repositories_groups':
-                            <a href="${h.url('repo_group_home',group_name=k)}">${k}</a>
+                            <a href="${h.route_path('repo_group_home', repo_group_name=k)}">${k}</a>
                         %elif section == 'user_groups':
                             ##<a href="${h.url('edit_users_group',user_group_id=k)}">${k}</a>
                             ${k}

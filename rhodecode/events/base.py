@@ -82,7 +82,7 @@ class RhodecodeEvent(object):
         if self.request:
             from rhodecode.lib import helpers as h
             try:
-                return h.url('home', qualified=True)
+                return h.route_url('home')
             except Exception:
                 log.exception('Failed to fetch URL for server')
                 return default

@@ -555,7 +555,7 @@ class BaseRepoController(BaseController):
                     "The repository at %(repo_name)s cannot be located.") %
                     {'repo_name': c.repo_name},
                     category='error', ignore_duplicate=True)
-                redirect(url('home'))
+                redirect(h.route_path('home'))
 
             # update last change according to VCS data
             if not missing_requirements:

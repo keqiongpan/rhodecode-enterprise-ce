@@ -185,7 +185,7 @@ class ReposController(BaseRepoController):
         except Exception as e:
             msg = self._log_creation_exception(e, form_result.get('repo_name'))
             h.flash(msg, category='error')
-            return redirect(url('home'))
+            return redirect(h.route_path('home'))
 
         return redirect(h.url('repo_creating_home',
                               repo_name=form_result['repo_name_full'],
@@ -265,7 +265,7 @@ class ReposController(BaseRepoController):
                 if task.failed():
                     msg = self._log_creation_exception(task.result, c.repo)
                     h.flash(msg, category='error')
-                    return redirect(url('home'), code=501)
+                    return redirect(h.route_path('home'), code=501)
 
         repo = Repository.get_by_repo_name(repo_name)
         if repo and repo.repo_state == Repository.STATE_CREATED:

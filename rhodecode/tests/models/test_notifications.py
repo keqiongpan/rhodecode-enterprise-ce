@@ -30,7 +30,7 @@ from rhodecode.model.user import UserModel
 fixture = Fixture()
 
 
-class TestNotifications:
+class TestNotifications(object):
     destroy_users = set()
 
     @classmethod
@@ -38,7 +38,7 @@ class TestNotifications:
         fixture.destroy_users(cls.destroy_users)
 
     @pytest.fixture(autouse=True)
-    def create_users(self, request, pylonsapp):
+    def create_users(self, request, app):
         Session.remove()
         self.u1 = UserModel().create_or_update(
             username=u'u1', password=u'qweqwe',
@@ -62,7 +62,7 @@ class TestNotifications:
         self.destroy_users.add('u3')
 
     @pytest.fixture(autouse=True)
-    def _clean_notifications(self, request, pylonsapp):
+    def _clean_notifications(self, request, app):
         for n in Notification.query().all():
             Session().delete(n)
 

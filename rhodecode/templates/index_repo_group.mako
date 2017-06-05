@@ -10,9 +10,9 @@
 
 <%def name="breadcrumbs()">
     <span class="groups_breadcrumbs">
-    ${h.link_to(_(u'Home'),h.url('/'))}
+    ${h.link_to(_(u'Home'), h.route_path('home'))}
     %if c.repo_group.parent_group:
-        &raquo; ${h.link_to(c.repo_group.parent_group.name,h.url('repo_group_home',group_name=c.repo_group.parent_group.group_name))}
+        &raquo; ${h.link_to(c.repo_group.parent_group.name, h.route_path('repo_group_home', repo_group_name=c.repo_group.parent_group.group_name))}
     %endif
     &raquo; ${c.repo_group.name}
     </span>

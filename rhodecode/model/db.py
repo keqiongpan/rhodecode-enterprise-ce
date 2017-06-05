@@ -44,8 +44,8 @@ from sqlalchemy.sql.expression import true
 from beaker.cache import cache_region
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
-from pylons import url
 from pylons.i18n.translation import lazy_ugettext as _
+from pyramid.threadlocal import get_current_request
 
 from rhodecode.lib.vcs import get_vcs_instance
 from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
@@ -1774,7 +1774,7 @@ class Repository(Base, BaseModel):
             'repo_name': repo.repo_name,
             'repo_type': repo.repo_type,
             'clone_uri': repo.clone_uri or '',
-            'url': url('summary_home', repo_name=self.repo_name, qualified=True),
+            'url': repo.home_url(),
             'private': repo.private,
             'created_on': repo.created_on,
             'description': repo.description,
@@ -1908,7 +1908,6 @@ class Repository(Base, BaseModel):
         return clone_uri
 
     def clone_url(self, **override):
-        qualified_home_url = url('home', qualified=True)
 
         uri_tmpl = None
         if 'with_id' in override:
@@ -1930,10 +1929,15 @@ class Repository(Base, BaseModel):
                 # ie, not having tmpl_context set up
                 pass
 
-        return get_clone_url(uri_tmpl=uri_tmpl,
-                             qualifed_home_url=qualified_home_url,
+        request = get_current_request()
+        return get_clone_url(request=request,
+                             uri_tmpl=uri_tmpl,
                              repo_name=self.repo_name,
                              repo_id=self.repo_id, **override)
+
+    def home_url(self):
+        request = get_current_request()
+        return request.route_url('repo_summary', repo_name=self.repo_name)
 
     def set_state(self, state):
         self.repo_state = state
@@ -3299,6 +3303,7 @@ class _PullRequestBase(BaseModel):
             return None
 
     def get_api_data(self):
+        from pylons import url
         from rhodecode.model.pull_request import PullRequestModel
         pull_request = self
         merge_status = PullRequestModel().merge_status(pull_request)
@@ -3690,6 +3695,8 @@ class Gist(Base, BaseModel):
 
     def gist_url(self):
         import rhodecode
+        from pylons import url
+
         alias_url = rhodecode.CONFIG.get('gist_alias_url')
         if alias_url:
             return alias_url.replace('{gistid}', self.gist_access_id)

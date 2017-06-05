@@ -28,7 +28,6 @@ from rhodecode.model.meta import Session
 from rhodecode.tests import (
     TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS,
     TestController, assert_session_flash, url)
-from rhodecode.tests.utils import AssertResponse
 
 
 class GistUtility(object):
@@ -273,7 +272,7 @@ class TestGistsController(TestController):
 
         response.mustcontain('added file: gist-show-me<')
 
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_equals_to(
             'div.rc-user span.user',
             '<a href="/_profiles/test_admin">test_admin</a></span>')
@@ -296,7 +295,7 @@ class TestGistsController(TestController):
         response = self.app.get(url('gist', gist_id=gist.gist_access_id))
         response.mustcontain('added file: gist-show-me-only-when-im-logged-in')
 
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_equals_to(
             'div.rc-user span.user',
             '<a href="/_profiles/test_admin">test_admin</a></span>')

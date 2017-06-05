@@ -572,7 +572,8 @@ def credentials_filter(uri):
     return ''.join(uri)
 
 
-def get_clone_url(uri_tmpl, qualifed_home_url, repo_name, repo_id, **override):
+def get_clone_url(request, uri_tmpl, repo_name, repo_id, **override):
+    qualifed_home_url = request.route_url('home')
     parsed_url = urlobject.URLObject(qualifed_home_url)
     decoded_path = safe_unicode(urllib.unquote(parsed_url.path.rstrip('/')))
     args = {

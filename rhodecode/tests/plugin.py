@@ -62,7 +62,7 @@ from rhodecode.tests import (
     login_user_session, get_new_dir, utils, TESTS_TMP_PATH,
     TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR2_LOGIN,
     TEST_USER_REGULAR_PASS)
-from rhodecode.tests.utils import CustomTestApp
+from rhodecode.tests.utils import CustomTestApp, set_anonymous_access, add_test_routes
 from rhodecode.tests.fixture import Fixture
 
 
@@ -191,7 +191,15 @@ def http_host_stub():
     """
     Value of HTTP_HOST in the test run.
     """
-    return 'test.example.com:80'
+    return 'example.com:80'
+
+
+@pytest.fixture
+def http_host_only_stub():
+    """
+    Value of HTTP_HOST in the test run.
+    """
+    return http_host_stub().split(':')[0]
 
 
 @pytest.fixture
@@ -204,7 +212,7 @@ def http_environ(http_host_stub):
     to override this for a specific test case.
     """
     return {
-        'SERVER_NAME': http_host_stub.split(':')[0],
+        'SERVER_NAME': http_host_only_stub(),
         'SERVER_PORT': http_host_stub.split(':')[1],
         'HTTP_HOST': http_host_stub,
         'HTTP_USER_AGENT': 'rc-test-agent',
@@ -213,7 +221,7 @@ def http_environ(http_host_stub):
 
 
 @pytest.fixture(scope='function')
-def app(request, pylonsapp, http_environ):
+def app(request, config_stub, pylonsapp, http_environ):
     app = CustomTestApp(
         pylonsapp,
         extra_environ=http_environ)
@@ -1680,6 +1688,7 @@ def config_stub(request, request_stub):
     Set up pyramid.testing and return the Configurator.
     """
     config = pyramid.testing.setUp(request=request_stub)
+    add_test_routes(config)
 
     @request.addfinalizer
     def cleanup():
@@ -1700,7 +1709,7 @@ def StubIntegrationType():
 
         def __init__(self, settings):
             super(_StubIntegrationType, self).__init__(settings)
-            self.sent_events = [] # for testing
+            self.sent_events = []  # for testing
 
         def send_event(self, event):
             self.sent_events.append(event)
@@ -1811,3 +1820,12 @@ def local_dt_to_utc():
         return dt.replace(tzinfo=dateutil.tz.tzlocal()).astimezone(
             dateutil.tz.tzutc()).replace(tzinfo=None)
     return _factory
+
+
+@pytest.fixture
+def disable_anonymous_user(request, pylonsapp):
+    set_anonymous_access(False)
+
+    @request.addfinalizer
+    def cleanup():
+        set_anonymous_access(True)

@@ -25,12 +25,15 @@ from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
-from rhodecode.lib.auth import LoginRequired, NotAnonymous
+from rhodecode.lib.auth import LoginRequired, NotAnonymous, \
+    HasRepoGroupPermissionAnyDecorator
 from rhodecode.lib.index import searcher_from_config
 from rhodecode.lib.utils2 import safe_unicode, str2bool
+from rhodecode.lib.ext_json import json
 from rhodecode.model.db import func, Repository, RepoGroup
 from rhodecode.model.repo import RepoModel
-from rhodecode.model.scm import ScmModel
+from rhodecode.model.repo_group import RepoGroupModel
+from rhodecode.model.scm import ScmModel, RepoGroupList, RepoList
 from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
 
@@ -143,7 +146,7 @@ class HomeView(BaseAppView):
                 'text': obj.group_name,
                 'type': 'group',
                 'obj': {},
-                'url': h.url('repo_group_home', group_name=obj.group_name)
+                'url': h.route_path('repo_group_home', repo_group_name=obj.group_name)
             }
             for obj in repo_groups_iter]
 
@@ -246,3 +249,56 @@ class HomeView(BaseAppView):
             'results': res
         }
         return data
+
+    def _get_groups_and_repos(self, repo_group_id=None):
+        # repo groups groups
+        repo_group_list = RepoGroup.get_all_repo_groups(group_id=repo_group_id)
+        _perms = ['group.read', 'group.write', 'group.admin']
+        repo_group_list_acl = RepoGroupList(repo_group_list, perm_set=_perms)
+        repo_group_data = RepoGroupModel().get_repo_groups_as_dict(
+            repo_group_list=repo_group_list_acl, admin=False)
+
+        # repositories
+        repo_list = Repository.get_all_repos(group_id=repo_group_id)
+        _perms = ['repository.read', 'repository.write', 'repository.admin']
+        repo_list_acl = RepoList(repo_list, perm_set=_perms)
+        repo_data = RepoModel().get_repos_as_dict(
+            repo_list=repo_list_acl, admin=False)
+
+        return repo_data, repo_group_data
+
+    @LoginRequired()
+    @view_config(
+        route_name='home', request_method='GET',
+        renderer='rhodecode:templates/index.mako')
+    def main_page(self):
+        c = self.load_default_context()
+        c.repo_group = None
+
+        repo_data, repo_group_data = self._get_groups_and_repos()
+        # json used to render the grids
+        c.repos_data = json.dumps(repo_data)
+        c.repo_groups_data = json.dumps(repo_group_data)
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasRepoGroupPermissionAnyDecorator(
+        'group.read', 'group.write', 'group.admin')
+    @view_config(
+        route_name='repo_group_home', request_method='GET',
+        renderer='rhodecode:templates/index_repo_group.mako')
+    @view_config(
+        route_name='repo_group_home_slash', request_method='GET',
+        renderer='rhodecode:templates/index_repo_group.mako')
+    def repo_group_main_page(self):
+        c = self.load_default_context()
+        c.repo_group = self.request.db_repo_group
+        repo_data, repo_group_data = self._get_groups_and_repos(
+            c.repo_group.group_id)
+
+        # json used to render the grids
+        c.repos_data = json.dumps(repo_data)
+        c.repo_groups_data = json.dumps(repo_group_data)
+
+        return self._get_template_context(c)

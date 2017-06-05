@@ -99,6 +99,7 @@ function registerRCRoutes() {
     pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('repo_list_data', '/_repos', []);
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
+    pyroutes.register('repo_summary', '/%(repo_name)s', ['repo_name']);
     pyroutes.register('repo_summary_explicit', '/%(repo_name)s/summary', ['repo_name']);
     pyroutes.register('tags_home', '/%(repo_name)s/tags', ['repo_name']);
     pyroutes.register('branches_home', '/%(repo_name)s/branches', ['repo_name']);
@@ -121,6 +122,8 @@ function registerRCRoutes() {
     pyroutes.register('strip', '/%(repo_name)s/settings/strip', ['repo_name']);
     pyroutes.register('strip_check', '/%(repo_name)s/settings/strip_check', ['repo_name']);
     pyroutes.register('strip_execute', '/%(repo_name)s/settings/strip_execute', ['repo_name']);
+    pyroutes.register('repo_group_home', '/%(repo_group_name)s', ['repo_group_name']);
+    pyroutes.register('repo_group_home_slash', '/%(repo_group_name)s/', ['repo_group_name']);
     pyroutes.register('search', '/_admin/search', []);
     pyroutes.register('search_repo', '/%(repo_name)s/search', ['repo_name']);
     pyroutes.register('user_profile', '/_profiles/%(username)s', ['username']);

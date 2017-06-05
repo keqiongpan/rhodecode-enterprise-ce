@@ -17,3 +17,17 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
+from rhodecode.apps._base import add_route_with_slash
+
+
+def includeme(config):
+
+    # Summary
+    add_route_with_slash(
+        config,
+        name='repo_group_home',
+        pattern='/{repo_group_name:.*?[^/]}', repo_group_route=True)
+
+    # Scan module for configuration decorators.
+    config.scan()
+

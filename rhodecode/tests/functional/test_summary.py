@@ -41,7 +41,7 @@ fixture = Fixture()
 
 
 class TestSummaryController(TestController):
-    def test_index(self, backend):
+    def test_index(self, backend, http_host_only_stub):
         self.log_user()
         repo_id = backend.repo.repo_id
         repo_name = backend.repo_name
@@ -61,12 +61,12 @@ class TestSummaryController(TestController):
         # clone url...
         response.mustcontain(
             'id="clone_url" readonly="readonly"'
-            ' value="http://test_admin@test.example.com:80/%s"' % (repo_name, ))
+            ' value="http://test_admin@%s/%s"' % (http_host_only_stub, repo_name, ))
         response.mustcontain(
             'id="clone_url_id" readonly="readonly"'
-            ' value="http://test_admin@test.example.com:80/_%s"' % (repo_id, ))
+            ' value="http://test_admin@%s/_%s"' % (http_host_only_stub, repo_id, ))
 
-    def test_index_svn_without_proxy(self, backend_svn):
+    def test_index_svn_without_proxy(self, backend_svn, http_host_only_stub):
         self.log_user()
         repo_id = backend_svn.repo.repo_id
         repo_name = backend_svn.repo_name
@@ -74,12 +74,13 @@ class TestSummaryController(TestController):
         # clone url...
         response.mustcontain(
             'id="clone_url" disabled'
-            ' value="http://test_admin@test.example.com:80/%s"' % (repo_name, ))
+            ' value="http://test_admin@%s/%s"' % (http_host_only_stub, repo_name, ))
         response.mustcontain(
             'id="clone_url_id" disabled'
-            ' value="http://test_admin@test.example.com:80/_%s"' % (repo_id, ))
+            ' value="http://test_admin@%s/_%s"' % (http_host_only_stub, repo_id, ))
 
-    def test_index_with_trailing_slash(self, autologin_user, backend):
+    def test_index_with_trailing_slash(self, autologin_user, backend,
+                                       http_host_only_stub):
         repo_id = backend.repo.repo_id
         repo_name = backend.repo_name
         with mock.patch('rhodecode.lib.helpers.is_svn_without_proxy',
@@ -91,10 +92,10 @@ class TestSummaryController(TestController):
         # clone url...
         response.mustcontain(
             'id="clone_url" readonly="readonly"'
-            ' value="http://test_admin@test.example.com:80/%s"' % (repo_name, ))
+            ' value="http://test_admin@%s/%s"' % (http_host_only_stub, repo_name, ))
         response.mustcontain(
             'id="clone_url_id" readonly="readonly"'
-            ' value="http://test_admin@test.example.com:80/_%s"' % (repo_id, ))
+            ' value="http://test_admin@%s/_%s"' % (http_host_only_stub, repo_id, ))
 
     def test_index_by_id(self, backend):
         self.log_user()

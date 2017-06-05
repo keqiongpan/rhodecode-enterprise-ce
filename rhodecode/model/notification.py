@@ -334,9 +334,9 @@ class EmailNotificationModel(BaseModel):
         """
 
         kwargs['rhodecode_instance_name'] = self.rhodecode_instance_name
-
+        instance_url = h.route_url('home')
         _kwargs = {
-            'instance_url': h.url('home', qualified=True),
+            'instance_url': instance_url,
             'whitespace_filter': self.whitespace_filter
         }
         _kwargs.update(kwargs)

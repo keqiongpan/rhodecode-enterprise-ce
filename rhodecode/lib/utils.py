@@ -96,10 +96,11 @@ def repo_name_slug(value):
 # PERM DECORATOR HELPERS FOR EXTRACTING NAMES FOR PERM CHECKS
 #==============================================================================
 def get_repo_slug(request):
-    if isinstance(request, Request) and getattr(request, 'matchdict', None):
+    if isinstance(request, Request) and getattr(request, 'db_repo', None):
         # pyramid
-        _repo = request.matchdict.get('repo_name')
+        _repo = request.db_repo.repo_name
     else:
+        # TODO(marcink): remove after pylons migration...
         _repo = request.environ['pylons.routes_dict'].get('repo_name')
 
     if _repo:
@@ -110,7 +111,7 @@ def get_repo_slug(request):
 def get_repo_group_slug(request):
     if isinstance(request, Request) and getattr(request, 'matchdict', None):
         # pyramid
-        _group = request.matchdict.get('group_name')
+        _group = request.matchdict.get('repo_group_name')
     else:
         _group = request.environ['pylons.routes_dict'].get('group_name')
 

@@ -25,7 +25,6 @@ import formencode
 import logging
 import urlparse
 
-from pylons import url
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 from recaptcha.client.captcha import submit
@@ -91,20 +90,21 @@ def get_came_from(request):
     came_from = safe_str(request.GET.get('came_from', ''))
     parsed = urlparse.urlparse(came_from)
     allowed_schemes = ['http', 'https']
+    default_came_from = h.route_path('home')
     if parsed.scheme and parsed.scheme not in allowed_schemes:
         log.error('Suspicious URL scheme detected %s for url %s' %
                   (parsed.scheme, parsed))
-        came_from = url('home')
+        came_from = default_came_from
     elif parsed.netloc and request.host != parsed.netloc:
         log.error('Suspicious NETLOC detected %s for url %s server url '
                   'is: %s' % (parsed.netloc, parsed, request.host))
-        came_from = url('home')
+        came_from = default_came_from
     elif any(bad_str in parsed.path for bad_str in ('\r', '\n')):
         log.error('Header injection detected `%s` for url %s server url ' %
                   (parsed.path, parsed))
-        came_from = url('home')
+        came_from = default_came_from
 
-    return came_from or url('home')
+    return came_from or default_came_from
 
 
 class LoginView(BaseAppView):
@@ -215,7 +215,7 @@ class LoginView(BaseAppView):
             action='user.logout', action_data=action_data,
             user=auth_user, commit=True)
         self.session.delete()
-        return HTTPFound(url('home'))
+        return HTTPFound(h.route_path('home'))
 
     @HasPermissionAnyDecorator(
         'hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')

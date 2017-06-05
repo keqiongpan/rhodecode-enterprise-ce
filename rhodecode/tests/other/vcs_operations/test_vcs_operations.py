@@ -48,7 +48,7 @@ from rhodecode.tests.other.vcs_operations import (
     HG_REPO_WITH_GROUP, GIT_REPO_WITH_GROUP)
 
 
-@pytest.mark.usefixtures("disable_locking")
+@pytest.mark.usefixtures("disable_locking", "disable_anonymous_user")
 class TestVCSOperations(object):
 
     def test_clone_hg_repo_by_admin(self, rc_web_server, tmpdir):

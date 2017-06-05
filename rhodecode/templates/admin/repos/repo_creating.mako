@@ -61,7 +61,7 @@
             }
         }
         else {
-            window.location = "${h.url('home')}";
+            window.location = "${h.route_path('home')}";
         }
     }
   });

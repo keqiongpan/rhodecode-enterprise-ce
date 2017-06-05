@@ -43,8 +43,8 @@ def rc_web_server_config(testini_factory):
     return testini_factory(CUSTOM_PARAMS)
 
 
-@pytest.mark.usefixtures("disable_locking")
-class TestVCSOperationsOnCustomIniConfig:
+@pytest.mark.usefixtures("disable_locking", "disable_anonymous_user")
+class TestVCSOperationsOnCustomIniConfig(object):
 
     def test_clone_wrong_credentials_hg_ret_code(self, rc_web_server, tmpdir):
         clone_url = rc_web_server.repo_clone_url(HG_REPO, passwd='bad!')

@@ -31,6 +31,12 @@ from rhodecode.tests.utils import AssertResponse
 fixture = Fixture()
 
 
+def route_path(name, **kwargs):
+    return {
+        'home': '/',
+    }[name].format(**kwargs)
+
+
 class TestMyAccountController(TestController):
     test_user_1 = 'testme'
     test_user_1_password = '0jd83nHNS/d23n'
@@ -41,7 +47,7 @@ class TestMyAccountController(TestController):
         fixture.destroy_users(cls.destroy_users)
 
     def test_logout_form_contains_csrf(self, autologin_user, csrf_token):
-        response = self.app.get(url('home'))
+        response = self.app.get(route_path('home'))
         assert_response = AssertResponse(response)
         element = assert_response.get_element('.logout #csrf_token')
         assert element.value == csrf_token

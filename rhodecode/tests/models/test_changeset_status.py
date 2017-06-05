@@ -30,7 +30,7 @@ pytestmark = [
 ]
 
 
-def test_new_pull_request_is_under_review(pr_util):
+def test_new_pull_request_is_under_review(pr_util, config_stub):
     pull_request = pr_util.create_pull_request()
 
     # Expect that review status "Under Review"
@@ -44,7 +44,7 @@ def test_new_pull_request_is_under_review(pr_util):
     db.ChangesetStatus.STATUS_UNDER_REVIEW,
 ])
 def test_pull_request_under_review_if_one_reviewer_voted(
-        pr_util, voted_status):
+        pr_util, voted_status, config_stub):
     pull_request = pr_util.create_pull_request()
     pr_util.create_status_votes(
         voted_status, pull_request.reviewers[0])
@@ -59,7 +59,7 @@ def test_pull_request_under_review_if_one_reviewer_voted(
     db.ChangesetStatus.STATUS_REJECTED,
     db.ChangesetStatus.STATUS_UNDER_REVIEW,
 ])
-def test_pull_request_has_voted_status_if_all_voted(pr_util, voted_status):
+def test_pull_request_has_voted_status_if_all_voted(pr_util, voted_status, config_stub):
     pull_request = pr_util.create_pull_request()
     pr_util.create_status_votes(
         voted_status, *pull_request.reviewers)
@@ -74,7 +74,8 @@ def test_pull_request_has_voted_status_if_all_voted(pr_util, voted_status):
     db.ChangesetStatus.STATUS_REJECTED,
     db.ChangesetStatus.STATUS_UNDER_REVIEW,
 ])
-def test_pull_request_stays_if_update_without_change(pr_util, voted_status):
+def test_pull_request_stays_if_update_without_change(
+        pr_util, voted_status, config_stub):
     pull_request = pr_util.create_pull_request()
     pr_util.create_status_votes(
         voted_status, *pull_request.reviewers)
@@ -92,7 +93,7 @@ def test_pull_request_stays_if_update_without_change(pr_util, voted_status):
     db.ChangesetStatus.STATUS_REJECTED,
     db.ChangesetStatus.STATUS_UNDER_REVIEW,
 ])
-def test_pull_request_under_review_if_update(pr_util, voted_status):
+def test_pull_request_under_review_if_update(pr_util, voted_status, config_stub):
     pull_request = pr_util.create_pull_request()
     pr_util.create_status_votes(
         voted_status, *pull_request.reviewers)
@@ -106,7 +107,7 @@ def test_pull_request_under_review_if_update(pr_util, voted_status):
     assert pull_request.calculated_review_status() == expected_review_status
 
 
-def test_commit_under_review_if_part_of_new_pull_request(pr_util):
+def test_commit_under_review_if_part_of_new_pull_request(pr_util, config_stub):
     pull_request = pr_util.create_pull_request()
     for commit_id in pull_request.revisions:
         status = ChangesetStatusModel().get_status(
@@ -120,7 +121,7 @@ def test_commit_under_review_if_part_of_new_pull_request(pr_util):
     db.ChangesetStatus.STATUS_UNDER_REVIEW,
 ])
 def test_commit_has_voted_status_after_vote_on_pull_request(
-        pr_util, voted_status):
+        pr_util, voted_status, config_stub):
     pull_request = pr_util.create_pull_request()
     pr_util.create_status_votes(
         voted_status, pull_request.reviewers[0])
@@ -130,7 +131,7 @@ def test_commit_has_voted_status_after_vote_on_pull_request(
         assert status == voted_status
 
 
-def test_commit_under_review_if_added_to_pull_request(pr_util):
+def test_commit_under_review_if_added_to_pull_request(pr_util, config_stub):
     pull_request = pr_util.create_pull_request()
     pr_util.create_status_votes(
         db.ChangesetStatus.STATUS_APPROVED, pull_request.reviewers[0])
@@ -147,7 +148,7 @@ def test_commit_under_review_if_added_to_pull_request(pr_util):
     db.ChangesetStatus.STATUS_UNDER_REVIEW,
 ])
 def test_commit_keeps_status_if_removed_from_pull_request(
-        pr_util, voted_status):
+        pr_util, voted_status, config_stub):
     pull_request = pr_util.create_pull_request()
     pr_util.add_one_commit()
     pr_util.create_status_votes(voted_status, pull_request.reviewers[0])
@@ -165,7 +166,7 @@ def test_commit_keeps_status_if_removed_from_pull_request(
     db.ChangesetStatus.STATUS_UNDER_REVIEW,
 ])
 def test_commit_keeps_status_if_unchanged_after_update_of_pull_request(
-        pr_util, voted_status):
+        pr_util, voted_status, config_stub):
     pull_request = pr_util.create_pull_request()
     commit_id = pull_request.revisions[-1]
     pr_util.create_status_votes(voted_status, pull_request.reviewers[0])

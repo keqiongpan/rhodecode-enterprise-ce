@@ -42,7 +42,7 @@ from rhodecode.events import (
     PullRequestMergeEvent,
     PullRequestCloseEvent,
 ])
-def test_pullrequest_events_serialized(pr_util, EventClass):
+def test_pullrequest_events_serialized(EventClass, pr_util, config_stub):
     pr = pr_util.create_pull_request()
     event = EventClass(pr)
     data = event.as_dict()
@@ -51,15 +51,17 @@ def test_pullrequest_events_serialized(pr_util, EventClass):
     assert data['pullrequest']['pull_request_id'] == pr.pull_request_id
     assert data['pullrequest']['url']
 
+
 @pytest.mark.backends("git", "hg")
-def test_create_pull_request_events(pr_util):
+def test_create_pull_request_events(pr_util, config_stub):
     with EventCatcher() as event_catcher:
         pr_util.create_pull_request()
 
     assert PullRequestCreateEvent in event_catcher.events_types
 
+
 @pytest.mark.backends("git", "hg")
-def test_pullrequest_comment_events_serialized(pr_util):
+def test_pullrequest_comment_events_serialized(pr_util, config_stub):
     pr = pr_util.create_pull_request()
     comment = CommentsModel().get_comments(
         pr.target_repo.repo_id, pull_request=pr)[0]
@@ -73,7 +75,7 @@ def test_pullrequest_comment_events_serialized(pr_util):
 
 
 @pytest.mark.backends("git", "hg")
-def test_close_pull_request_events(pr_util, user_admin):
+def test_close_pull_request_events(pr_util, user_admin, config_stub):
     pr = pr_util.create_pull_request()
 
     with EventCatcher() as event_catcher:
@@ -83,7 +85,7 @@ def test_close_pull_request_events(pr_util, user_admin):
 
 
 @pytest.mark.backends("git", "hg")
-def test_close_pull_request_with_comment_events(pr_util, user_admin):
+def test_close_pull_request_with_comment_events(pr_util, user_admin, config_stub):
     pr = pr_util.create_pull_request()
 
     with EventCatcher() as event_catcher:

@@ -1534,7 +1534,7 @@ def breadcrumb_repo_link(repo):
     """
 
     path = [
-        link_to(group.name, url('repo_group_home', group_name=group.group_name))
+        link_to(group.name, route_path('repo_group_home', repo_group_name=group.group_name))
         for group in repo.groups_with_parents
     ] + [
         link_to(repo.just_name, url('summary_home', repo_name=repo.repo_name))
@@ -1960,24 +1960,24 @@ def get_last_path_part(file_node):
     return u'../' + path
 
 
-def route_url(*args, **kwds):
+def route_url(*args, **kwargs):
     """
     Wrapper around pyramids `route_url` (fully qualified url) function. 
     It is used to generate URLs from within pylons views or templates. 
     This will be removed when pyramid migration if finished.
     """
     req = get_current_request()
-    return req.route_url(*args, **kwds)
+    return req.route_url(*args, **kwargs)
 
 
-def route_path(*args, **kwds):
+def route_path(*args, **kwargs):
     """
     Wrapper around pyramids `route_path` function. It is used to generate
     URLs from within pylons views or templates. This will be removed when
     pyramid migration if finished.
     """
     req = get_current_request()
-    return req.route_path(*args, **kwds)
+    return req.route_path(*args, **kwargs)
 
 
 def route_path_or_none(*args, **kwargs):

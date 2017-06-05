@@ -75,7 +75,6 @@ def test_vcs_repo_events_serialize(repo_stub, scm_extras, EventClass):
     assert data['repo']['url']
 
 
-
 @pytest.mark.parametrize('EventClass', [RepoPushEvent])
 def test_vcs_repo_push_event_serialize(repo_stub, scm_extras, EventClass):
     event = EventClass(repo_name=repo_stub.repo_name,

@@ -27,6 +27,7 @@ from pylons.util import ContextObj
 from rhodecode.lib import helpers
 from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.settings import IssueTrackerSettingsModel
+from rhodecode.tests import no_newline_id_generator
 
 
 @pytest.mark.parametrize('url, expected_url', [
@@ -204,7 +205,7 @@ def test_get_visual_attr(pylonsapp):
     ('just a string\n', False, 'just a string'),
     ('just a string\n next line', False, 'just a string...'),
     ('just a string\n next line', True, 'just a string\n...'),
-])
+], ids=no_newline_id_generator)
 def test_chop_at(test_text, inclusive, expected_text):
     assert helpers.chop_at_smart(
         test_text, '\n', inclusive, '...') == expected_text

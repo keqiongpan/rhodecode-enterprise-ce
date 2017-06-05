@@ -28,7 +28,6 @@ from rhodecode.tests import (
     assert_session_flash, url, HG_REPO, TEST_USER_ADMIN_LOGIN,
     no_newline_id_generator)
 from rhodecode.tests.fixture import Fixture
-from rhodecode.tests.utils import AssertResponse, get_session_from_response
 from rhodecode.lib.auth import check_password
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model import validators
@@ -72,7 +71,7 @@ class TestLoginController(object):
                                  {'username': 'test_admin',
                                   'password': 'test12'})
         assert response.status == '302 Found'
-        session = get_session_from_response(response)
+        session = response.get_session_from_response()
         username = session['rhodecode_user'].get('username')
         assert username == 'test_admin'
         response = response.follow()
@@ -84,7 +83,7 @@ class TestLoginController(object):
                                   'password': 'test12'})
 
         assert response.status == '302 Found'
-        session = get_session_from_response(response)
+        session = response.get_session_from_response()
         username = session['rhodecode_user'].get('username')
         assert username == 'test_regular'
         response = response.follow()
@@ -184,7 +183,7 @@ class TestLoginController(object):
                                   'password': 'test123'})
 
         assert response.status == '302 Found'
-        session = get_session_from_response(response)
+        session = response.get_session_from_response()
         username = session['rhodecode_user'].get('username')
         assert username == temp_user
         response = response.follow()
@@ -213,7 +212,7 @@ class TestLoginController(object):
             }
         )
 
-        assertr = AssertResponse(response)
+        assertr = response.assert_response()
         msg = validators.ValidUsername()._messages['username_exists']
         msg = msg % {'username': uname}
         assertr.element_contains('#username+.error-message', msg)
@@ -231,7 +230,7 @@ class TestLoginController(object):
             }
         )
 
-        assertr = AssertResponse(response)
+        assertr = response.assert_response()
         msg = validators.UniqSystemEmail()()._messages['email_taken']
         assertr.element_contains('#email+.error-message', msg)
 
@@ -247,7 +246,7 @@ class TestLoginController(object):
                 'lastname': 'test'
             }
         )
-        assertr = AssertResponse(response)
+        assertr = response.assert_response()
         msg = validators.UniqSystemEmail()()._messages['email_taken']
         assertr.element_contains('#email+.error-message', msg)
 
@@ -301,7 +300,7 @@ class TestLoginController(object):
             }
         )
 
-        assertr = AssertResponse(response)
+        assertr = response.assert_response()
         msg = validators.ValidUsername()._messages['username_exists']
         msg = msg % {'username': usr}
         assertr.element_contains('#username+.error-message', msg)

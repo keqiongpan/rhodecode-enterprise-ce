@@ -139,7 +139,7 @@ class ForksController(BaseRepoController):
         c.repo_info = Repository.get_by_repo_name(repo_name)
         if not c.repo_info:
             h.not_mapped_error(repo_name)
-            return redirect(url('home'))
+            return redirect(h.route_path('home'))
 
         defaults = self.__load_data(repo_name)
 

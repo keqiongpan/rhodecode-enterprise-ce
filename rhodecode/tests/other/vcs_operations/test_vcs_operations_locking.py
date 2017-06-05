@@ -50,8 +50,8 @@ def rc_web_server_config(testini_factory):
     return testini_factory(CUSTOM_PARAMS)
 
 
-@pytest.mark.usefixtures("disable_locking")
-class TestVCSOperationsOnCustomIniConfig:
+@pytest.mark.usefixtures("disable_locking", "disable_anonymous_user")
+class TestVCSOperationsOnCustomIniConfig(object):
 
     def test_clone_and_create_lock_hg(self, rc_web_server, tmpdir):
         # enable locking

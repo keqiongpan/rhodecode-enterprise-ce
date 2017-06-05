@@ -48,7 +48,6 @@ from rhodecode.model.db import User
 from rhodecode.lib import auth
 from rhodecode.lib.helpers import flash, link_to
 from rhodecode.lib.utils2 import safe_unicode, safe_str
-from rhodecode.tests.utils import get_session_from_response
 
 
 log = logging.getLogger(__name__)
@@ -178,7 +177,7 @@ def login_user_session(
     response = response.follow()
     assert response.status == '200 OK'
 
-    session = get_session_from_response(response)
+    session = response.get_session_from_response()
     assert 'rhodecode_user' in session
     rc_user = session['rhodecode_user']
     assert rc_user.get('username') == username

@@ -30,6 +30,12 @@ from rhodecode.tests.fixture import Fixture
 fixture = Fixture()
 
 
+def route_path(name, **kwargs):
+    return {
+        'home': '/',
+    }[name].format(**kwargs)
+
+
 class TestAdminUsersGroupsController(TestController):
 
     def test_regular_user_cannot_see_admin_interfaces(self, user_util):
@@ -37,7 +43,7 @@ class TestAdminUsersGroupsController(TestController):
         self.log_user(user.username, 'qweqwe')
 
         # check if in home view, such user doesn't see the "admin" menus
-        response = self.app.get(url('home'))
+        response = self.app.get(route_path('home'))
 
         assert_response = response.assert_response()
 
@@ -69,7 +75,7 @@ class TestAdminUsersGroupsController(TestController):
 
         self.log_user(username, 'qweqwe')
         # check if in home view, such user doesn't see the "admin" menus
-        response = self.app.get(url('home'))
+        response = self.app.get(route_path('home'))
 
         assert_response = response.assert_response()
 
@@ -109,7 +115,7 @@ class TestAdminUsersGroupsController(TestController):
 
         self.log_user(username, 'qweqwe')
         # check if in home view, such user doesn't see the "admin" menus
-        response = self.app.get(url('home'))
+        response = self.app.get(route_path('home'))
 
         assert_response = response.assert_response()
 

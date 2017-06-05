@@ -184,9 +184,6 @@ def make_map(config):
     # CUSTOM ROUTES HERE
     #==========================================================================
 
-    # MAIN PAGE
-    rmap.connect('home', '/', controller='home', action='index')
-
     # ping and pylons error test
     rmap.connect('ping', '%s/ping' % (ADMIN_PREFIX,), controller='home', action='ping')
     rmap.connect('error_test', '%s/error_test' % (ADMIN_PREFIX,), controller='home', action='error_test')
@@ -1001,13 +998,6 @@ def make_map(config):
                  controller='forks', action='forks',
                  conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
-
-    # must be here for proper group/repo catching pattern
-    _connect_with_slash(
-        rmap, 'repo_group_home', '/{group_name}',
-        controller='home', action='index_repo_group',
-        conditions={'function': check_group},
-        requirements=URL_NAME_REQUIREMENTS)
 
     # catch all, at the end
     _connect_with_slash(

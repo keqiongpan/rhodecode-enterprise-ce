@@ -332,8 +332,18 @@ def test_initials_gravatar_mapping_algo():
 ])
 def test_clone_url_generator(tmpl, repo_name, overrides, prefix, expected):
     from rhodecode.lib.utils2 import get_clone_url
-    clone_url = get_clone_url(uri_tmpl=tmpl, qualifed_home_url='http://vps1:8000'+prefix,
-                              repo_name=repo_name, repo_id=23, **overrides)
+
+    class RequestStub(object):
+        def request_url(self, name):
+            return 'http://vps1:8000' + prefix
+
+        def route_url(self, name):
+            return self.request_url(name)
+
+    clone_url = get_clone_url(
+        request=RequestStub(),
+        uri_tmpl=tmpl,
+        repo_name=repo_name, repo_id=23, **overrides)
     assert clone_url == expected
 
 

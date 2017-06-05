@@ -84,7 +84,7 @@ c.template_context['default_user'] = {
             // register templateContext to pass template variables to JS
             var templateContext = ${h.json.dumps(c.template_context)|n};
 
-            var APPLICATION_URL = "${h.url('home').rstrip('/')}";
+            var APPLICATION_URL = "${h.route_path('home').rstrip('/')}";
             var ASSET_URL = "${h.asset('')}";
             var DEFAULT_RENDERER = "${h.get_visual_attr(c, 'default_renderer')}";
             var CSRF_TOKEN = "${getattr(c, 'csrf_token', '')}";

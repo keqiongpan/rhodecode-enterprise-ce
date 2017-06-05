@@ -59,7 +59,7 @@
         ${h.secure_form(h.url('create_personal_repo_group', user_id=c.user.user_id), method='post')}
 
         %if c.personal_repo_group:
-            <div class="panel-body-title-text">${_('Users personal repository group')} : ${h.link_to(c.personal_repo_group.group_name, url('repo_group_home', group_name=c.personal_repo_group.group_name))}</div>
+            <div class="panel-body-title-text">${_('Users personal repository group')} : ${h.link_to(c.personal_repo_group.group_name, h.route_path('repo_group_home', repo_group_name=c.personal_repo_group.group_name))}</div>
         %else:
             <div class="panel-body-title-text">
                 ${_('This user currently does not have a personal repository group')}

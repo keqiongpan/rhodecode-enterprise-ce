@@ -146,7 +146,7 @@
   <div class="menu_items_container hidden">
     <ul class="menu_items">
       <li>
-         <a href="${h.url('repo_group_home',group_name=repo_group_name)}">
+         <a href="${h.route_path('repo_group_home', repo_group_name=repo_group_name)}">
          <span class="icon">
              <i class="icon-file-text"></i>
          </span>
@@ -160,7 +160,7 @@
 
 <%def name="repo_group_name(repo_group_name, children_groups=None)">
   <div>
-    <a href="${h.url('repo_group_home',group_name=repo_group_name)}">
+    <a href="${h.route_path('repo_group_home', repo_group_name=repo_group_name)}">
     <i class="icon-folder-close" title="${_('Repository group')}"></i>
       %if children_groups:
           ${h.literal(' &raquo; '.join(children_groups))}
