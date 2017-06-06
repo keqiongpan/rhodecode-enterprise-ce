@@ -243,7 +243,9 @@
           </li>
         %endif
         <li class="${is_active('options')}">
-          <a class="menulink" href="#" class="dropdown"><div class="menulabel">${_('Options')} <div class="show_more"></div></div></a>
+          <a class="menulink dropdown">
+              <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
+          </a>
           <ul class="submenu">
              %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
                    <li><a href="${h.route_path('edit_repo',repo_name=c.repo_name)}">${_('Settings')}</a></li>
