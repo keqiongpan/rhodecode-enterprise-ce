@@ -20,17 +20,16 @@
 
 
 import pytest
-from pylons import tmpl_context as c
 
 import rhodecode
-from rhodecode.model.db import Repository, User
+from rhodecode.model.db import Repository
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.settings import SettingsModel
 from rhodecode.tests import TestController
 from rhodecode.tests.fixture import Fixture
-
+from rhodecode.lib import helpers as h
 
 fixture = Fixture()
 
@@ -55,6 +54,8 @@ class TestHomeController(TestController):
             response.mustcontain('"name_raw": "%s"' % repo.repo_name)
 
     def test_index_contains_statics_with_ver(self):
+        from pylons import tmpl_context as c
+
         self.log_user()
         response = self.app.get(route_path('home'))
 
@@ -103,19 +104,15 @@ class TestHomeController(TestController):
         user = user_util.create_user()
         username = user.username
         user.name = '<img src="/image1" onload="alert(\'Hello, World!\');">'
-        user.lastname = (
-            '<img src="/image2" onload="alert(\'Hello, World!\');">')
+        user.lastname = '#"><img src=x onerror=prompt(document.cookie);>'
+
         Session().add(user)
         Session().commit()
         user_util.create_repo(owner=username)
 
         response = self.app.get(route_path('home'))
-        response.mustcontain(
-            '&lt;img src=&#34;/image1&#34; onload=&#34;'
-            'alert(&#39;Hello, World!&#39;);&#34;&gt;')
-        response.mustcontain(
-            '&lt;img src=&#34;/image2&#34; onload=&#34;'
-            'alert(&#39;Hello, World!&#39;);&#34;&gt;')
+        response.mustcontain(h.html_escape(h.escape(user.name)))
+        response.mustcontain(h.html_escape(h.escape(user.lastname)))
 
     @pytest.mark.parametrize("name, state", [
         ('Disabled', False),
