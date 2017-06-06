@@ -30,21 +30,21 @@ from pylons.i18n.translation import _
 
 import ipaddress
 from sqlalchemy.exc import DatabaseError
-from sqlalchemy.sql.expression import true, false
 
 from rhodecode import events
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.utils2 import (
     safe_unicode, get_current_rhodecode_user, action_logger_generic,
     AttributeDict, str2bool)
-from rhodecode.lib.caching_query import FromCache
-from rhodecode.model import BaseModel
-from rhodecode.model.auth_token import AuthTokenModel
-from rhodecode.model.db import (_hash_key,
-    or_, joinedload, User, UserToPerm, UserEmailMap, UserIpMap, UserLog)
 from rhodecode.lib.exceptions import (
     DefaultUserException, UserOwnsReposException, UserOwnsRepoGroupsException,
     UserOwnsUserGroupsException, NotAllowedToCreateUserError)
+from rhodecode.lib.caching_query import FromCache
+from rhodecode.model import BaseModel
+from rhodecode.model.auth_token import AuthTokenModel
+from rhodecode.model.db import (
+    _hash_key, true, false, or_, joinedload, User, UserToPerm,
+    UserEmailMap, UserIpMap, UserLog)
 from rhodecode.model.meta import Session
 from rhodecode.model.repo_group import RepoGroupModel
 
@@ -70,12 +70,12 @@ class UserModel(BaseModel):
 
         return {
             'id': user.user_id,
-            'first_name': user.name,
-            'last_name': user.lastname,
+            'first_name': h.escape(user.name),
+            'last_name': h.escape(user.lastname),
             'username': user.username,
             'email': user.email,
             'icon_link': h.gravatar_url(user.email, 30),
-            'value_display': h.person(user),
+            'value_display': h.escape(h.person(user)),
             'value': user.username,
             'value_type': 'user',
             'active': user.active,

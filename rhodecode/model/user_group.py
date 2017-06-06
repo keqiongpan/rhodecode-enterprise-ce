@@ -28,16 +28,17 @@ import logging
 import traceback
 
 from rhodecode.lib.utils2 import safe_str, safe_unicode
+from rhodecode.lib.exceptions import (
+    UserGroupAssignedException, RepoGroupAssignmentError)
+from rhodecode.lib.utils2 import (
+    get_current_rhodecode_user, action_logger_generic)
 from rhodecode.model import BaseModel
 from rhodecode.model.scm import UserGroupList
 from rhodecode.model.db import (
     true, func, User, UserGroupMember, UserGroup,
     UserGroupRepoToPerm, Permission, UserGroupToPerm, UserUserGroupToPerm,
     UserGroupUserGroupToPerm, UserGroupRepoGroupToPerm)
-from rhodecode.lib.exceptions import (
-    UserGroupAssignedException, RepoGroupAssignmentError)
-from rhodecode.lib.utils2 import (
-    get_current_rhodecode_user, action_logger_generic)
+
 
 log = logging.getLogger(__name__)
 
