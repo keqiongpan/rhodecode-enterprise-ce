@@ -894,7 +894,8 @@ def author_string(email):
         user = User.get_by_email(email, case_insensitive=True, cache=True)
         if user:
             if user.firstname or user.lastname:
-                return '%s %s &lt;%s&gt;' % (user.firstname, user.lastname, email)
+                return '%s %s &lt;%s&gt;' % (
+                    escape(user.firstname), escape(user.lastname), email)
             else:
                 return email
         else:
