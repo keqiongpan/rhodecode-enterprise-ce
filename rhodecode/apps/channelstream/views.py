@@ -30,8 +30,6 @@ Channel Stream controller for rhodecode
 import logging
 import uuid
 
-from pylons import tmpl_context as c
-from pyramid.settings import asbool
 from pyramid.view import view_config
 from webob.exc import HTTPBadRequest, HTTPForbidden, HTTPBadGateway
 
@@ -46,7 +44,6 @@ from rhodecode.lib.channelstream import (
     update_history_from_logs,
     STATE_PUBLIC_KEYS)
 from rhodecode.lib.auth import NotAnonymous
-from rhodecode.lib.utils2 import str2bool
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +79,7 @@ class ChannelstreamView(object):
             log.error('Incorrect permissions for requested channels')
             raise HTTPForbidden()
 
-        user = c.rhodecode_user
+        user = self._rhodecode_user
         if user.user_id:
             user_data = get_user_data(user.user_id)
         else:
@@ -95,7 +92,7 @@ class ChannelstreamView(object):
                 'display_name': None,
                 'display_link': None,
             }
-        user_data['permissions'] = c.rhodecode_user.permissions
+        user_data['permissions'] = self._rhodecode_user.permissions
         payload = {
             'username': user.username,
             'user_state': user_data,

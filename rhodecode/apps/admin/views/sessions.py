@@ -20,7 +20,6 @@
 
 import logging
 
-from pylons import tmpl_context as c
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 
@@ -37,6 +36,11 @@ log = logging.getLogger(__name__)
 
 
 class AdminSessionSettingsView(BaseAppView):
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+
+        self._register_global_c(c)
+        return c
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
@@ -44,6 +48,8 @@ class AdminSessionSettingsView(BaseAppView):
         route_name='admin_settings_sessions', request_method='GET',
         renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_sessions(self):
+        c = self.load_default_context()
+
         c.active = 'sessions'
         c.navlist = navigation_list(self.request)
 
@@ -59,7 +65,7 @@ class AdminSessionSettingsView(BaseAppView):
         c.session_expired_count = c.session_model.get_expired_count(
             older_than_seconds)
 
-        return {}
+        return self._get_template_context(c)
 
     @LoginRequired()
     @CSRFRequired()

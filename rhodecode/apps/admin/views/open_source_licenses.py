@@ -21,7 +21,7 @@
 import collections
 import logging
 
-from pylons import tmpl_context as c
+
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
@@ -34,15 +34,21 @@ log = logging.getLogger(__name__)
 
 class OpenSourceLicensesAdminSettingsView(BaseAppView):
 
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+        self._register_global_c(c)
+        return c
+
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
         route_name='admin_settings_open_source', request_method='GET',
         renderer='rhodecode:templates/admin/settings/settings.mako')
     def open_source_licenses(self):
+        c = self.load_default_context()
         c.active = 'open_source'
         c.navlist = navigation_list(self.request)
         c.opensource_licenses = collections.OrderedDict(
             sorted(read_opensource_licenses().items(), key=lambda t: t[0]))
 
-        return {}
+        return self._get_template_context(c)
