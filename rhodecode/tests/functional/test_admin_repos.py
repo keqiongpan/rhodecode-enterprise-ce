@@ -24,10 +24,10 @@ import mock
 import pytest
 
 from rhodecode.lib import auth
-from rhodecode.lib.utils2 import safe_str, str2bool, safe_unicode
-from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
-from rhodecode.model.db import Repository, RepoGroup, UserRepoToPerm, User,\
-    Permission
+from rhodecode.lib.utils2 import safe_str, str2bool
+from rhodecode.lib import helpers as h
+from rhodecode.model.db import (
+    Repository, RepoGroup, UserRepoToPerm, User, Permission)
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
@@ -475,7 +475,7 @@ class TestAdminRepos(object):
         assert new_repo.description == description
 
         # test if the repository is visible in the list ?
-        response = self.app.get(url('summary_home', repo_name=repo_name))
+        response = self.app.get(h.route_path('repo_summary', repo_name=repo_name))
         response.mustcontain(repo_name)
         response.mustcontain(backend.alias)
 

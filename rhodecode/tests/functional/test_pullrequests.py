@@ -24,13 +24,13 @@ from webob.exc import HTTPNotFound
 
 import rhodecode
 from rhodecode.lib.vcs.nodes import FileNode
+from rhodecode.lib import helpers as h
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.db import (
     PullRequest, ChangesetStatus, UserLog, Notification)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
-from rhodecode.model.repo import RepoModel
 from rhodecode.tests import (
     assert_session_flash, url, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN)
 from rhodecode.tests.utils import AssertResponse
@@ -38,7 +38,7 @@ from rhodecode.tests.utils import AssertResponse
 
 @pytest.mark.usefixtures('app', 'autologin_user')
 @pytest.mark.backends("git", "hg")
-class TestPullrequestsController:
+class TestPullrequestsController(object):
 
     def test_index(self, backend):
         self.app.get(url(
@@ -47,7 +47,7 @@ class TestPullrequestsController:
 
     def test_option_menu_create_pull_request_exists(self, backend):
         repo_name = backend.repo_name
-        response = self.app.get(url('summary_home', repo_name=repo_name))
+        response = self.app.get(h.route_path('repo_summary', repo_name=repo_name))
 
         create_pr_link = '<a href="%s">Create Pull Request</a>' % url(
             'pullrequest', repo_name=repo_name)
@@ -1074,10 +1074,10 @@ def test_redirects_to_repo_summary_for_svn_repositories(backend_svn, app, action
 
     # Not allowed, redirect to the summary
     redirected = response.follow()
-    summary_url = url('summary_home', repo_name=backend_svn.repo_name)
+    summary_url = h.route_path('repo_summary', repo_name=backend_svn.repo_name)
 
     # URL adds leading slash and path doesn't have it
-    assert redirected.req.path == summary_url
+    assert redirected.request.path == summary_url
 
 
 def test_delete_comment_returns_404_if_comment_does_not_exist(pylonsapp):

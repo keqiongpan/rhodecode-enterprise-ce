@@ -1342,7 +1342,7 @@ class HasAcceptedRepoType(object):
                 _('Action not supported for %s.' % rhodecode_repo.alias)),
                 category='warning')
             return redirect(
-                url('summary_home', repo_name=cls.rhodecode_db_repo.repo_name))
+                h.route_path('repo_summary', repo_name=cls.rhodecode_db_repo.repo_name))
 
 
 class PermsDecorator(object):

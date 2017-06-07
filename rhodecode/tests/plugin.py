@@ -1683,6 +1683,15 @@ def request_stub():
 
 
 @pytest.fixture
+def context_stub():
+    """
+    Stub context object.
+    """
+    context = pyramid.testing.DummyResource()
+    return context
+
+
+@pytest.fixture
 def config_stub(request, request_stub):
     """
     Set up pyramid.testing and return the Configurator.

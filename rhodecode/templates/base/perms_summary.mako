@@ -124,7 +124,7 @@
                 <tr class="perm_row ${'%s_%s' % (section, section_perm.split('.')[-1])}">
                     <td class="td-componentname">
                         %if section == 'repositories':
-                            <a href="${h.url('summary_home',repo_name=k)}">${k}</a>
+                            <a href="${h.route_path('repo_summary',repo_name=k)}">${k}</a>
                         %elif section == 'repositories_groups':
                             <a href="${h.route_path('repo_group_home', repo_group_name=k)}">${k}</a>
                         %elif section == 'user_groups':

@@ -36,7 +36,7 @@
      %endif
     <div class="table">
         <div id="shortlog_data">
-            <%include file='../changelog/changelog_summary_data.mako'/>
+            <%include file='summary_commits.mako'/>
         </div>
     </div>
 </div>
@@ -110,8 +110,7 @@ $(document).ready(function(){
 
         var callback = function (data) {
             % if c.show_stats:
-                showRepoStats(
-                    'lang_stats', data);
+                showRepoStats('lang_stats', data);
             % endif
         };
 

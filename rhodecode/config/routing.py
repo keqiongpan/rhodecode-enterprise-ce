@@ -117,8 +117,9 @@ class JSRoutesMapper(Mapper):
 
 def make_map(config):
     """Create, configure and return the routes Mapper"""
-    rmap = JSRoutesMapper(directory=config['pylons.paths']['controllers'],
-                  always_scan=config['debug'])
+    rmap = JSRoutesMapper(
+        directory=config['pylons.paths']['controllers'],
+        always_scan=config['debug'])
     rmap.minimization = False
     rmap.explicit = False
 
@@ -609,18 +610,6 @@ def make_map(config):
                  controller='admin/repos', action='repo_check',
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('repo_stats', '/{repo_name}/repo_stats/{commit_id}',
-                 controller='summary', action='repo_stats',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-
-    rmap.connect('repo_refs_data', '/{repo_name}/refs-data',
-                 controller='summary', action='repo_refs_data',
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-    rmap.connect('repo_refs_changelog_data', '/{repo_name}/refs-data-changelog',
-                 controller='summary', action='repo_refs_changelog_data',
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-
     rmap.connect('changeset_home', '/{repo_name}/changeset/{revision}',
                  controller='changeset', revision='tip',
                  conditions={'function': check_repo},
@@ -834,17 +823,8 @@ def make_map(config):
                  conditions={'function': check_repo, 'method': ['DELETE']},
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
-    rmap.connect('summary_home_explicit', '/{repo_name}/summary',
-                 controller='summary', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     rmap.connect('changelog_home', '/{repo_name}/changelog', jsroute=True,
                  controller='changelog', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('changelog_summary_home', '/{repo_name}/changelog_summary',
-                 controller='changelog', action='changelog_summary',
-                 conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
     rmap.connect('changelog_file_home',
@@ -999,19 +979,4 @@ def make_map(config):
                  conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
-    # catch all, at the end
-    _connect_with_slash(
-        rmap, 'summary_home', '/{repo_name}', jsroute=True,
-        controller='summary', action='index',
-        conditions={'function': check_repo},
-        requirements=URL_NAME_REQUIREMENTS)
-
     return rmap
-
-
-def _connect_with_slash(mapper, name, path, *args, **kwargs):
-    """
-    Connect a route with an optional trailing slash in `path`.
-    """
-    mapper.connect(name + '_slash', path + '/', *args, **kwargs)
-    mapper.connect(name, path, *args, **kwargs)

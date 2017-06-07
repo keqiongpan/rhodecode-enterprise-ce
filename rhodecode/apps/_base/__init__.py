@@ -105,9 +105,14 @@ class BaseAppView(object):
                 raise HTTPFound(
                     self.request.route_path('my_account_password'))
 
-    def _get_local_tmpl_context(self):
+    def _get_local_tmpl_context(self, include_app_defaults=False):
         c = TemplateArgs()
         c.auth_user = self.request.user
+        if include_app_defaults:
+            # NOTE(marcink): after full pyramid migration include_app_defaults
+            # should be turned on by default
+            from rhodecode.lib.base import attach_context_attributes
+            attach_context_attributes(c, self.request, self.request.user.user_id)
         return c
 
     def _register_global_c(self, tmpl_args):
@@ -154,8 +159,10 @@ class RepoAppView(BaseAppView):
             'Requirements are missing for repository %s: %s',
             self.db_repo_name, error.message)
 
-    def _get_local_tmpl_context(self):
-        c = super(RepoAppView, self)._get_local_tmpl_context()
+    def _get_local_tmpl_context(self, include_app_defaults=False):
+        c = super(RepoAppView, self)._get_local_tmpl_context(
+            include_app_defaults=include_app_defaults)
+
         # register common vars for this type of view
         c.rhodecode_db_repo = self.db_repo
         c.repo_name = self.db_repo_name
@@ -309,7 +316,7 @@ class RepoTypeRoutePredicate(object):
             #     _('Action not supported for %s.' % rhodecode_repo.alias)),
             #     category='warning')
             # return redirect(
-            #     url('summary_home', repo_name=cls.rhodecode_db_repo.repo_name))
+            #     route_path('repo_summary', repo_name=cls.rhodecode_db_repo.repo_name))
 
             return False
 

@@ -85,7 +85,7 @@ class PullrequestsController(BaseRepoController):
         except EmptyRepositoryError:
             h.flash(h.literal(_('There are no commits yet')),
                     category='warning')
-            redirect(url('summary_home', repo_name=source_repo.repo_name))
+            redirect(h.route_path('repo_summary', repo_name=source_repo.repo_name))
 
         commit_id = request.GET.get('commit')
         branch_ref = request.GET.get('branch')

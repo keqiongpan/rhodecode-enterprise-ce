@@ -49,7 +49,7 @@ ${h.code_highlight(
             %elif h.get_repo_type_by_name(entry.get('repository')) == 'svn':
                 <i class="icon-svn"></i>
             %endif
-            ${h.link_to(entry['repository'], h.url('summary_home',repo_name=entry['repository']))}
+            ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}
           </h2>
           <div class="stats">
             ${h.link_to(h.literal(entry['f_path']), h.url('files_home',repo_name=entry['repository'],revision=entry.get('commit_id', 'tip'),f_path=entry['f_path']))}

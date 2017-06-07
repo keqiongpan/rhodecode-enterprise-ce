@@ -1765,6 +1765,7 @@ class Repository(Base, BaseModel):
         # TODO: mikhail: Here there is an anti-pattern, we probably need to
         # move this methods on models level.
         from rhodecode.model.settings import SettingsModel
+        from rhodecode.model.repo import RepoModel
 
         repo = self
         _user_id, _time, _reason = self.locked
@@ -1774,7 +1775,7 @@ class Repository(Base, BaseModel):
             'repo_name': repo.repo_name,
             'repo_type': repo.repo_type,
             'clone_uri': repo.clone_uri or '',
-            'url': repo.home_url(),
+            'url': RepoModel().get_url(self),
             'private': repo.private,
             'created_on': repo.created_on,
             'description': repo.description,
@@ -1934,10 +1935,6 @@ class Repository(Base, BaseModel):
                              uri_tmpl=uri_tmpl,
                              repo_name=self.repo_name,
                              repo_id=self.repo_id, **override)
-
-    def home_url(self):
-        request = get_current_request()
-        return request.route_url('repo_summary', repo_name=self.repo_name)
 
     def set_state(self, state):
         self.repo_state = state

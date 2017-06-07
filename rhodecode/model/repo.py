@@ -30,6 +30,7 @@ import time
 import traceback
 from datetime import datetime, timedelta
 
+from pyramid.threadlocal import get_current_request
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode import events
@@ -154,9 +155,10 @@ class RepoModel(BaseModel):
             repos = Repository.query().filter(Repository.group == root).all()
         return repos
 
-    def get_url(self, repo):
-        return h.url('summary_home', repo_name=safe_str(repo.repo_name),
-            qualified=True)
+    def get_url(self, repo, request=None):
+        if not request:
+            request = get_current_request()
+        return request.route_url('repo_summary', repo_name=safe_str(repo.repo_name))
 
     @classmethod
     def update_repoinfo(cls, repositories=None):

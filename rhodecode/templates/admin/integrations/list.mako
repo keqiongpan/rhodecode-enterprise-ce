@@ -160,7 +160,7 @@
           </td>
           <td class="td-scope">
             %if integration.repo:
-            <a href="${h.url('summary_home', repo_name=integration.repo.repo_name)}">
+            <a href="${h.route_path('repo_summary', repo_name=integration.repo.repo_name)}">
               ${_('repo')}:${integration.repo.repo_name}
             </a>
             %elif integration.repo_group:

@@ -27,7 +27,7 @@
       ${h.secure_form(h.route_path('edit_repo_advanced_fork', repo_name=c.repo_info.repo_name), method='POST')}
 
         % if c.repo_info.fork:
-            <div class="panel-body-title-text">${h.literal(_('This repository is a fork of %(repo_link)s') % {'repo_link': h.link_to_if(c.has_origin_repo_read_perm,c.repo_info.fork.repo_name, h.url('summary_home', repo_name=c.repo_info.fork.repo_name))})}
+            <div class="panel-body-title-text">${h.literal(_('This repository is a fork of %(repo_link)s') % {'repo_link': h.link_to_if(c.has_origin_repo_read_perm,c.repo_info.fork.repo_name, h.route_path('repo_summary', repo_name=c.repo_info.fork.repo_name))})}
             | <button class="btn btn-link btn-danger" type="submit">Remove fork reference</button></div>
         % endif
 

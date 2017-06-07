@@ -580,7 +580,7 @@ class BaseRepoController(BaseController):
             'Requirements are missing for repository %s: %s',
             c.repo_name, error.message)
 
-        summary_url = url('summary_home', repo_name=c.repo_name)
+        summary_url = h.route_path('repo_summary', repo_name=c.repo_name)
         statistics_url = url('edit_repo_statistics', repo_name=c.repo_name)
         settings_update_url = url('repo', repo_name=c.repo_name)
         path = request.path

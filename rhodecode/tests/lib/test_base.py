@@ -20,10 +20,10 @@
 
 import pytest
 from mock import Mock, patch
-from pylons import url
 
 from rhodecode.lib import base
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
+from rhodecode.lib import helpers as h
 from rhodecode.model import db
 
 
@@ -165,7 +165,7 @@ class TestBaseRepoControllerHandleMissingRequirements(object):
             context_mock.repo_name = repo_name
             controller._handle_missing_requirements(error)
 
-        expected_url = url('summary_home', repo_name=repo_name)
+        expected_url = h.route_path('repo_summary', repo_name=repo_name)
         if should_redirect:
             redirect_mock.assert_called_once_with(expected_url)
         else:

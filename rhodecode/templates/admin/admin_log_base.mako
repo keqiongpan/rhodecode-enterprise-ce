@@ -45,7 +45,7 @@
         </td>
         <td class="td-componentname">
             %if l.repository is not None:
-              ${h.link_to(l.repository.repo_name,h.url('summary_home',repo_name=l.repository.repo_name))}
+              ${h.link_to(l.repository.repo_name, h.route_path('repo_summary',repo_name=l.repository.repo_name))}
             %else:
               ${l.repository_name}
             %endif

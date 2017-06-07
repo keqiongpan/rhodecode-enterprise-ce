@@ -81,7 +81,7 @@
                       %endif
                     </span>
                     <span class="clone-url">
-                        <a href="${h.url('summary_home', repo_name=c.pull_request.source_repo.repo_name)}">${c.pull_request.source_repo.clone_url()}</a>
+                        <a href="${h.route_path('repo_summary', repo_name=c.pull_request.source_repo.repo_name)}">${c.pull_request.source_repo.clone_url()}</a>
                     </span>
                     <br/>
                     % if c.ancestor_commit:
@@ -113,7 +113,7 @@
                       %endif
                     </span>
                     <span class="clone-url">
-                        <a href="${h.url('summary_home', repo_name=c.pull_request.target_repo.repo_name)}">${c.pull_request.target_repo.clone_url()}</a>
+                        <a href="${h.route_path('repo_summary', repo_name=c.pull_request.target_repo.repo_name)}">${c.pull_request.target_repo.clone_url()}</a>
                     </span>
                 </div>
             </div>

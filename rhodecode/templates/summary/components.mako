@@ -1,28 +1,28 @@
 <%def name="refs_counters(branches, closed_branches, tags, bookmarks)">
     <span class="branchtag tag">
     <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
-      <i class="icon-branch"></i>${ungettext(
+      <i class="icon-branch"></i>${_ungettext(
       '%(num)s Branch','%(num)s Branches', len(branches)) % {'num': len(branches)}}</a>
     </span>
 
     %if closed_branches:
     <span class="branchtag tag">
     <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
-      <i class="icon-branch"></i>${ungettext(
+      <i class="icon-branch"></i>${_ungettext(
       '%(num)s Closed Branch', '%(num)s Closed Branches', len(closed_branches)) % {'num': len(closed_branches)}}</a>
     </span>
     %endif
 
     <span class="tagtag tag">
     <a href="${h.route_path('tags_home',repo_name=c.repo_name)}" class="childs">
-        <i class="icon-tag"></i>${ungettext(
+        <i class="icon-tag"></i>${_ungettext(
         '%(num)s Tag', '%(num)s Tags', len(tags)) % {'num': len(tags)}}</a>
     </span>
 
     %if bookmarks:
     <span class="booktag tag">
     <a href="${h.route_path('bookmarks_home',repo_name=c.repo_name)}" class="childs">
-        <i class="icon-bookmark"></i>${ungettext(
+        <i class="icon-bookmark"></i>${_ungettext(
         '%(num)s Bookmark', '%(num)s Bookmarks', len(bookmarks)) % {'num': len(bookmarks)}}</a>
     </span>
     %endif
@@ -92,15 +92,15 @@
 
                   ## commits
                   % if commit_rev == -1:
-                      ${ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}},
+                      ${_ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}},
                   % else:
                       <a href="${h.url('changelog_home', repo_name=c.repo_name)}">
-                        ${ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>,
+                        ${_ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>,
                   % endif
 
                   ## forks
                   <a title="${_('Number of Repository Forks')}" href="${h.url('repo_forks_home', repo_name=c.repo_name)}">
-                     ${c.repository_forks} ${ungettext('Fork', 'Forks', c.repository_forks)}</a>,
+                     ${c.repository_forks} ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>,
 
                   ## repo size
                   % if commit_rev == -1:

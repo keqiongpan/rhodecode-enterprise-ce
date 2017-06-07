@@ -101,7 +101,7 @@ class FilesController(BaseRepoController):
                 add_new = ""
             h.flash(h.literal(
                 _('There are no files yet. %s') % add_new), category='warning')
-            redirect(h.url('summary_home', repo_name=repo_name))
+            redirect(h.route_path('repo_summary', repo_name=repo_name))
         except (CommitDoesNotExistError, LookupError):
             msg = _('No such commit exists for this repository')
             h.flash(msg, category='error')
@@ -669,14 +669,14 @@ class FilesController(BaseRepoController):
 
         # If there's no commit, redirect to repo summary
         if type(c.commit) is EmptyCommit:
-            redirect_url = "summary_home"
+            redirect_url = h.route_path('repo_summary', repo_name=c.repo_name)
         else:
-            redirect_url = "changeset_home"
+            redirect_url = url("changeset_home", repo_name=c.repo_name,
+                               revision='tip')
 
         if not filename:
             h.flash(_('No filename'), category='warning')
-            return redirect(url(redirect_url, repo_name=c.repo_name,
-                                revision='tip'))
+            return redirect(redirect_url)
 
         # extract the location from filename,
         # allows using foo/bar.txt syntax to create subdirectories

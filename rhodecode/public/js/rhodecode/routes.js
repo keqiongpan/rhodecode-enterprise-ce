@@ -18,9 +18,6 @@ function registerRCRoutes() {
     pyroutes.register('gists', '/_admin/gists', []);
     pyroutes.register('new_gist', '/_admin/gists/new', []);
     pyroutes.register('toggle_following', '/_admin/toggle_following', []);
-    pyroutes.register('repo_stats', '/%(repo_name)s/repo_stats/%(commit_id)s', ['repo_name', 'commit_id']);
-    pyroutes.register('repo_refs_data', '/%(repo_name)s/refs-data', ['repo_name']);
-    pyroutes.register('repo_refs_changelog_data', '/%(repo_name)s/refs-data-changelog', ['repo_name']);
     pyroutes.register('changeset_home', '/%(repo_name)s/changeset/%(revision)s', ['repo_name', 'revision']);
     pyroutes.register('changeset_comment', '/%(repo_name)s/changeset/%(revision)s/comment', ['repo_name', 'revision']);
     pyroutes.register('changeset_comment_preview', '/%(repo_name)s/changeset/comment/preview', ['repo_name']);
@@ -46,8 +43,6 @@ function registerRCRoutes() {
     pyroutes.register('files_archive_home', '/%(repo_name)s/archive/%(fname)s', ['repo_name', 'fname']);
     pyroutes.register('files_nodelist_home', '/%(repo_name)s/nodelist/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
     pyroutes.register('files_nodetree_full', '/%(repo_name)s/nodetree_full/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
-    pyroutes.register('summary_home_slash', '/%(repo_name)s/', ['repo_name']);
-    pyroutes.register('summary_home', '/%(repo_name)s', ['repo_name']);
     pyroutes.register('favicon', '/favicon.ico', []);
     pyroutes.register('robots', '/robots.txt', []);
     pyroutes.register('auth_home', '/_admin/auth*traverse', []);
@@ -99,8 +94,11 @@ function registerRCRoutes() {
     pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('repo_list_data', '/_repos', []);
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
-    pyroutes.register('repo_summary', '/%(repo_name)s', ['repo_name']);
     pyroutes.register('repo_summary_explicit', '/%(repo_name)s/summary', ['repo_name']);
+    pyroutes.register('repo_summary_commits', '/%(repo_name)s/summary-commits', ['repo_name']);
+    pyroutes.register('repo_refs_data', '/%(repo_name)s/refs-data', ['repo_name']);
+    pyroutes.register('repo_refs_changelog_data', '/%(repo_name)s/refs-data-changelog', ['repo_name']);
+    pyroutes.register('repo_stats', '/%(repo_name)s/repo_stats/%(commit_id)s', ['repo_name', 'commit_id']);
     pyroutes.register('tags_home', '/%(repo_name)s/tags', ['repo_name']);
     pyroutes.register('branches_home', '/%(repo_name)s/branches', ['repo_name']);
     pyroutes.register('bookmarks_home', '/%(repo_name)s/bookmarks', ['repo_name']);
@@ -122,6 +120,8 @@ function registerRCRoutes() {
     pyroutes.register('strip', '/%(repo_name)s/settings/strip', ['repo_name']);
     pyroutes.register('strip_check', '/%(repo_name)s/settings/strip_check', ['repo_name']);
     pyroutes.register('strip_execute', '/%(repo_name)s/settings/strip_execute', ['repo_name']);
+    pyroutes.register('repo_summary', '/%(repo_name)s', ['repo_name']);
+    pyroutes.register('repo_summary_slash', '/%(repo_name)s/', ['repo_name']);
     pyroutes.register('repo_group_home', '/%(repo_group_name)s', ['repo_group_name']);
     pyroutes.register('repo_group_home_slash', '/%(repo_group_name)s/', ['repo_group_name']);
     pyroutes.register('search', '/_admin/search', []);

@@ -186,7 +186,7 @@
     %if repo_instance.fork:
     <p>
         <i class="icon-code-fork"></i> ${_('Fork of')}
-        <a href="${h.url('summary_home',repo_name=repo_instance.fork.repo_name)}">${repo_instance.fork.repo_name}</a>
+        <a href="${h.route_path('repo_summary',repo_name=repo_instance.fork.repo_name)}">${repo_instance.fork.repo_name}</a>
     </p>
     %endif
 
@@ -225,7 +225,7 @@
   <div id="context-bar">
     <div class="wrapper">
       <ul id="context-pages" class="horizontal-list navigation">
-        <li class="${is_active('summary')}"><a class="menulink" href="${h.url('summary_home', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
+        <li class="${is_active('summary')}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
         <li class="${is_active('changelog')}"><a class="menulink" href="${h.url('changelog_home', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
         <li class="${is_active('files')}"><a class="menulink" href="${h.url('files_home', repo_name=c.repo_name, revision=c.rhodecode_db_repo.landing_rev[1])}"><div class="menulabel">${_('Files')}</div></a></li>
         <li class="${is_active('compare')}">

@@ -29,6 +29,7 @@ from rhodecode.tests import (
     no_newline_id_generator)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.lib.auth import check_password
+from rhodecode.lib import helpers as h
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model import validators
 from rhodecode.model.db import User, Notification, UserApiKeys
@@ -105,8 +106,9 @@ class TestLoginController(object):
         with fixture.anon_access(False):
             kwargs = {'branch': 'stable'}
             response = self.app.get(
-                url('summary_home', repo_name=HG_REPO, **kwargs))
+                h.route_path('repo_summary', repo_name=HG_REPO, _query=kwargs))
             assert response.status == '302 Found'
+
             response_query = urlparse.parse_qsl(response.location)
             assert 'branch=stable' in response_query[0][1]
 

@@ -1538,7 +1538,7 @@ def breadcrumb_repo_link(repo):
         link_to(group.name, route_path('repo_group_home', repo_group_name=group.group_name))
         for group in repo.groups_with_parents
     ] + [
-        link_to(repo.just_name, url('summary_home', repo_name=repo.repo_name))
+        link_to(repo.just_name, route_path('repo_summary', repo_name=repo.repo_name))
     ]
 
     return literal(' &raquo; '.join(path))

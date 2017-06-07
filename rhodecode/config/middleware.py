@@ -39,11 +39,15 @@ from routes.middleware import RoutesMiddleware
 import routes.util
 
 import rhodecode
+
 from rhodecode.model import meta
 from rhodecode.config import patches
 from rhodecode.config.routing import STATIC_FILE_PREFIX
 from rhodecode.config.environment import (
     load_environment, load_pyramid_environment)
+
+from rhodecode.lib.vcs import VCSCommunicationError
+from rhodecode.lib.exceptions import VCSServerUnavailable
 from rhodecode.lib.middleware import csrf
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
 from rhodecode.lib.middleware.error_handling import (
@@ -51,7 +55,7 @@ from rhodecode.lib.middleware.error_handling import (
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
-from rhodecode.lib.utils2 import aslist as rhodecode_aslist
+from rhodecode.lib.utils2 import aslist as rhodecode_aslist, AttributeDict
 from rhodecode.subscribers import (
     scan_repositories_if_enabled, write_js_routes_if_enabled,
     write_metadata_if_needed)
@@ -221,7 +225,6 @@ def add_pylons_compat_data(registry, global_config, settings):
 
 def error_handler(exception, request):
     import rhodecode
-    from rhodecode.lib.utils2 import AttributeDict
     from rhodecode.lib import helpers
 
     rhodecode_title = rhodecode.CONFIG.get('rhodecode_title') or 'RhodeCode'
@@ -230,6 +233,8 @@ def error_handler(exception, request):
     # prefer original exception for the response since it may have headers set
     if isinstance(exception, HTTPException):
         base_response = exception
+    elif isinstance(exception, VCSCommunicationError):
+        base_response = VCSServerUnavailable()
 
     def is_http_error(response):
         # error which should have traceback
@@ -257,6 +262,7 @@ def error_handler(exception, request):
     if hasattr(base_response, 'causes'):
         c.causes = base_response.causes
     c.messages = helpers.flash.pop_messages()
+
     response = render_to_response(
         '/errors/error_document.mako', {'c': c, 'h': helpers}, request=request,
         response=base_response)
@@ -403,7 +409,6 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
             # if not, then something, somewhere is leaving a connection open
             pool = meta.Base.metadata.bind.engine.pool
             log.debug('sa pool status: %s', pool.status())
-
 
     return pyramid_app_with_cleanup
 

@@ -796,11 +796,12 @@ class TestChangingFiles:
 
         # Not allowed, redirect to the summary
         redirected = response.follow()
-        summary_url = url('summary_home', repo_name=repo.repo_name)
+        summary_url = h.route_path('repo_summary', repo_name=repo.repo_name)
 
         # As there are no commits, displays the summary page with the error of
         # creating a file with no filename
-        assert redirected.req.path == summary_url
+
+        assert redirected.request.path == summary_url
 
     @pytest.mark.parametrize("location, filename", [
         ('/abs', 'foo'),

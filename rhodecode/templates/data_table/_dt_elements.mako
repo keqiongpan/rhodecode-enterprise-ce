@@ -9,7 +9,7 @@
   <div class="menu_items_container hidden">
     <ul class="menu_items">
       <li>
-         <a title="${_('Summary')}" href="${h.url('summary_home',repo_name=repo_name)}">
+         <a title="${_('Summary')}" href="${h.route_path('repo_summary',repo_name=repo_name)}">
          <span>${_('Summary')}</span>
          </a>
       </li>
@@ -42,7 +42,7 @@
     %>
   <div class="${'repo_state_pending' if rstate == 'repo_state_pending' else ''} truncate">
     ##NAME
-    <a href="${h.route_path('edit_repo',repo_name=name) if admin else h.url('summary_home',repo_name=name)}">
+    <a href="${h.route_path('edit_repo',repo_name=name) if admin else h.route_path('repo_summary',repo_name=name)}">
 
     ##TYPE OF REPO
     %if h.is_hg(rtype):
@@ -64,7 +64,7 @@
     ${get_name(name)}
     </a>
     %if fork_of:
-      <a href="${h.url('summary_home',repo_name=fork_of.repo_name)}"><i class="icon-code-fork"></i></a>
+      <a href="${h.route_path('repo_summary',repo_name=fork_of.repo_name)}"><i class="icon-code-fork"></i></a>
     %endif
     %if rstate == 'repo_state_pending':
       <i class="icon-cogs" title="${_('Repository creating in progress...')}"></i>
@@ -282,7 +282,7 @@
 
 <%def name="pullrequest_target_repo(repo_name)">
     <div class="truncate">
-      ${h.link_to(repo_name,h.url('summary_home',repo_name=repo_name))}
+      ${h.link_to(repo_name,h.route_path('repo_summary',repo_name=repo_name))}
     </div>
 </%def>
 <%def name="pullrequest_status(status)">

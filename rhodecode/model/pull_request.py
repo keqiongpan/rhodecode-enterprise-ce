@@ -999,15 +999,11 @@ class PullRequestModel(BaseModel):
             qualified=True,)
 
         # set some variables for email notification
-        pr_target_repo_url = h.url(
-            'summary_home',
-            repo_name=pr_target_repo.repo_name,
-            qualified=True)
+        pr_target_repo_url = h.route_url(
+            'repo_summary', repo_name=pr_target_repo.repo_name)
 
-        pr_source_repo_url = h.url(
-            'summary_home',
-            repo_name=pr_source_repo.repo_name,
-            qualified=True)
+        pr_source_repo_url = h.route_url(
+            'repo_summary', repo_name=pr_source_repo.repo_name)
 
         # pull request specifics
         pull_request_commits = [

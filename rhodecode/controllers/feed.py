@@ -113,7 +113,7 @@ class FeedController(BaseRepoController):
         def _generate_feed(cache_key):
             feed = Atom1Feed(
                 title=self.title % repo_name,
-                link=url('summary_home', repo_name=repo_name, qualified=True),
+                link=h.route_url('repo_summary', repo_name=repo_name),
                 description=self.description % repo_name,
                 language=self.language,
                 ttl=self.ttl
@@ -150,8 +150,7 @@ class FeedController(BaseRepoController):
         def _generate_feed(cache_key):
             feed = Rss201rev2Feed(
                 title=self.title % repo_name,
-                link=url('summary_home', repo_name=repo_name,
-                         qualified=True),
+                link=h.route_url('repo_summary', repo_name=repo_name),
                 description=self.description % repo_name,
                 language=self.language,
                 ttl=self.ttl

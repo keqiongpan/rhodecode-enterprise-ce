@@ -17,18 +17,33 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
+from rhodecode.apps._base import add_route_with_slash
 
 
 def includeme(config):
 
     # Summary
-    config.add_route(
-        name='repo_summary',
-        pattern='/{repo_name:.*?[^/]}', repo_route=True)
-
+    # NOTE(marcink): one additional route is defined in very bottom, catch
+    # all pattern
     config.add_route(
         name='repo_summary_explicit',
         pattern='/{repo_name:.*?[^/]}/summary', repo_route=True)
+    config.add_route(
+        name='repo_summary_commits',
+        pattern='/{repo_name:.*?[^/]}/summary-commits', repo_route=True)
+
+    # refs data
+    config.add_route(
+        name='repo_refs_data',
+        pattern='/{repo_name:.*?[^/]}/refs-data', repo_route=True)
+
+    config.add_route(
+        name='repo_refs_changelog_data',
+        pattern='/{repo_name:.*?[^/]}/refs-data-changelog', repo_route=True)
+
+    config.add_route(
+        name='repo_stats',
+        pattern='/{repo_name:.*?[^/]}/repo_stats/{commit_id}', repo_route=True)
 
     # Tags
     config.add_route(
@@ -40,7 +55,6 @@ def includeme(config):
         name='branches_home',
         pattern='/{repo_name:.*?[^/]}/branches', repo_route=True)
 
-    # Bookmarks
     config.add_route(
         name='bookmarks_home',
         pattern='/{repo_name:.*?[^/]}/bookmarks', repo_route=True)
@@ -125,9 +139,10 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/settings/strip_execute', repo_route=True)
 
     # NOTE(marcink): needs to be at the end for catch-all
-    # config.add_route(
-    #     name='repo_summary',
-    #     pattern='/{repo_name:.*?[^/]}', repo_route=True)
+    add_route_with_slash(
+        config,
+        name='repo_summary',
+        pattern='/{repo_name:.*?[^/]}', repo_route=True)
 
     # Scan module for configuration decorators.
     config.scan()

@@ -16,7 +16,7 @@
                     %elif h.get_repo_type_by_name(entry.get('repository')) == 'svn':
                         <i class="icon-svn"></i>
                     %endif
-                    ${h.link_to(entry['repository'], h.url('summary_home',repo_name=entry['repository']))}
+                    ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}
                 </td>
                 <td class="td-componentname">
                     ${h.link_to(h.literal(entry['f_path']),

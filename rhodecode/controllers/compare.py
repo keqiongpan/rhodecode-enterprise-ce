@@ -63,14 +63,14 @@ class CompareController(BaseRepoController):
                 return repo.scm_instance().EMPTY_COMMIT
             h.flash(h.literal(_('There are no commits yet')),
                     category='warning')
-            redirect(url('summary_home', repo_name=repo.repo_name))
+            redirect(h.route_path('repo_summary', repo_name=repo.repo_name))
 
         except RepositoryError as e:
             msg = safe_str(e)
             log.exception(msg)
             h.flash(msg, category='warning')
             if not partial:
-                redirect(h.url('summary_home', repo_name=repo.repo_name))
+                redirect(h.route_path('repo_summary', repo_name=repo.repo_name))
             raise HTTPBadRequest()
 
     @LoginRequired()

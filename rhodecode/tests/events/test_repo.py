@@ -56,7 +56,7 @@ def scm_extras(user_regular, repo_stub):
     RepoPreCreateEvent, RepoCreateEvent,
     RepoPreDeleteEvent, RepoDeleteEvent,
 ])
-def test_repo_events_serialized(repo_stub, EventClass):
+def test_repo_events_serialized(config_stub, repo_stub, EventClass):
     event = EventClass(repo_stub)
     data = event.as_dict()
     assert data['name'] == EventClass.name
@@ -67,7 +67,7 @@ def test_repo_events_serialized(repo_stub, EventClass):
 @pytest.mark.parametrize('EventClass', [
     RepoPrePullEvent, RepoPullEvent, RepoPrePushEvent
 ])
-def test_vcs_repo_events_serialize(repo_stub, scm_extras, EventClass):
+def test_vcs_repo_events_serialize(config_stub, repo_stub, scm_extras, EventClass):
     event = EventClass(repo_name=repo_stub.repo_name, extras=scm_extras)
     data = event.as_dict()
     assert data['name'] == EventClass.name
@@ -76,7 +76,7 @@ def test_vcs_repo_events_serialize(repo_stub, scm_extras, EventClass):
 
 
 @pytest.mark.parametrize('EventClass', [RepoPushEvent])
-def test_vcs_repo_push_event_serialize(repo_stub, scm_extras, EventClass):
+def test_vcs_repo_push_event_serialize(config_stub, repo_stub, scm_extras, EventClass):
     event = EventClass(repo_name=repo_stub.repo_name,
                        pushed_commit_ids=scm_extras['commit_ids'],
                        extras=scm_extras)

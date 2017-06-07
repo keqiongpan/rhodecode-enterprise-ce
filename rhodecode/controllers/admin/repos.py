@@ -274,9 +274,9 @@ class ReposController(BaseRepoController):
                 h.flash(_('Created repository %s from %s')
                         % (repo.repo_name, clone_uri), category='success')
             else:
-                repo_url = h.link_to(repo.repo_name,
-                                     h.url('summary_home',
-                                           repo_name=repo.repo_name))
+                repo_url = h.link_to(
+                    repo.repo_name,
+                    h.route_path('repo_summary',repo_name=repo.repo_name))
                 fork = repo.fork
                 if fork:
                     fork_name = fork.repo_name
@@ -366,7 +366,7 @@ class ReposController(BaseRepoController):
             log.exception("Exception during unlocking")
             h.flash(_('An error occurred during unlocking'),
                     category='error')
-        return redirect(url('summary_home', repo_name=repo_name))
+        return redirect(h.route_path('repo_summary', repo_name=repo_name))
 
     @HasRepoPermissionAllDecorator('repository.admin')
     @auth.CSRFRequired()

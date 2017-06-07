@@ -123,7 +123,7 @@ class HomeView(BaseAppView):
                 'text': obj['name'],
                 'type': 'repo',
                 'obj': obj['dbrepo'],
-                'url': h.url('summary_home', repo_name=obj['name'])
+                'url': h.route_path('repo_summary', repo_name=obj['name'])
             }
             for obj in repo_iter]
 

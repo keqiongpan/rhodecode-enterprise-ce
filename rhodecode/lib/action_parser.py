@@ -161,8 +161,9 @@ class ActionParser(object):
         return action_map
 
     def get_fork_name(self):
+        from rhodecode.lib import helpers as h
         repo_name = self.action_params
-        _url = url('summary_home', repo_name=repo_name)
+        _url = h.route_path('repo_summary', repo_name=repo_name)
         return _('fork name %s') % link_to(self.action_params, _url)
 
     def get_user_name(self):

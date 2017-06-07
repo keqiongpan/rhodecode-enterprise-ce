@@ -123,6 +123,7 @@ def set_anonymous_access(enabled):
     user.active = enabled
     Session().add(user)
     Session().commit()
+    time.sleep(1.5)  # must sleep for cache (1s to expire)
     log.info('anonymous access is now: %s', enabled)
     assert enabled == User.get_default_user().active, (
         'Cannot set anonymous access')
