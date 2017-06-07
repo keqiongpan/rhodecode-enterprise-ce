@@ -20,15 +20,22 @@
 <div class="box">
     <div class="title">
         ${self.repo_page_title(c.rhodecode_db_repo)}
-        ${self.breadcrumbs()}
     </div>
 
     ${h.secure_form(url('pullrequest', repo_name=c.repo_name), method='post', id='pull_request_form')}
+
+        ${self.breadcrumbs()}
+
         <div class="box pr-summary">
 
             <div class="summary-details block-left">
 
-                <div class="form">
+
+                <div class="pr-details-title">
+                    ${_('Pull request summary')}
+                </div>
+
+                <div class="form" style="padding-top: 10px">
                     <!-- fields -->
 
                     <div class="fields" >
@@ -102,7 +109,21 @@
                 </div>
             </div>
             <div>
-                ## REIEW RULES
+                ## AUTHOR
+                <div class="reviewers-title block-right">
+                  <div class="pr-details-title">
+                      ${_('Author of this pull request')}
+                  </div>
+                </div>
+                <div class="block-right pr-details-content reviewers">
+                    <ul class="group_members">
+                      <li>
+                        ${self.gravatar_with_user(c.rhodecode_user.email, 16)}
+                      </li>
+                    </ul>
+                </div>
+
+                ## REVIEW RULES
                 <div id="review_rules" style="display: none" class="reviewers-title block-right">
                     <div class="pr-details-title">
                         ${_('Reviewer rules')}

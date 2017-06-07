@@ -306,7 +306,7 @@
         ## AUTHOR
         <div class="reviewers-title block-right">
           <div class="pr-details-title">
-              ${_('Author')}
+              ${_('Author of this pull request')}
           </div>
         </div>
         <div class="block-right pr-details-content reviewers">
