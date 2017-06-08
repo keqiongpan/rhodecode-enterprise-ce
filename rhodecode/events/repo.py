@@ -35,9 +35,9 @@ def _commits_as_dict(commit_ids, repos):
     :param repos: list of repos to check
     """
     from rhodecode.lib.utils2 import extract_mentioned_users
-    from rhodecode.lib import helpers as h
     from rhodecode.lib.helpers import (
         urlify_commit_message, process_patterns, chop_at_smart)
+    from rhodecode.model.repo import RepoModel
 
     if not repos:
         raise Exception('no repo defined')
@@ -54,7 +54,7 @@ def _commits_as_dict(commit_ids, repos):
     reviewers = []
     for repo in repos:
         if not needed_commits:
-            return commits # return early if we have the commits we need
+            return commits  # return early if we have the commits we need
 
         vcs_repo = repo.scm_instance(cache=False)
         try:
@@ -63,16 +63,15 @@ def _commits_as_dict(commit_ids, repos):
                 try:
                     cs = vcs_repo.get_changeset(commit_id)
                 except CommitDoesNotExistError:
-                    continue # maybe its in next repo
+                    continue  # maybe its in next repo
 
                 cs_data = cs.__json__()
                 cs_data['mentions'] = extract_mentioned_users(cs_data['message'])
                 cs_data['reviewers'] = reviewers
-                cs_data['url'] = h.url('changeset_home',
-                    repo_name=repo.repo_name,
-                    revision=cs_data['raw_id'],
-                    qualified=True
-                )
+                cs_data['url'] = RepoModel().get_commit_url(
+                    repo, cs_data['raw_id'])
+                cs_data['permalink_url'] = RepoModel().get_commit_url(
+                    repo, cs_data['raw_id'], permalink=True)
                 urlified_message, issues_data = process_patterns(
                     cs_data['message'], repo.repo_name)
                 cs_data['issues'] = issues_data
@@ -130,6 +129,7 @@ class RepoEvent(RhodecodeEvent):
                 'repo_name': self.repo.repo_name,
                 'repo_type': self.repo.repo_type,
                 'url': RepoModel().get_url(self.repo),
+                'permalink_url': RepoModel().get_url(self.repo, permalink=True),
                 'extra_fields': extra_fields
             }
         })
@@ -242,7 +242,10 @@ class RepoPushEvent(RepoVCSEvent):
 
     def as_dict(self):
         data = super(RepoPushEvent, self).as_dict()
-        branch_url = repo_url = data['repo']['url']
+
+        def branch_url(branch_name):
+            return '{}/changelog?branch={}'.format(
+                data['repo']['url'], branch_name)
 
         commits = _commits_as_dict(
             commit_ids=self.pushed_commit_ids, repos=[self.repo])
@@ -258,8 +261,7 @@ class RepoPushEvent(RepoVCSEvent):
         branches = [
             {
                 'name': branch,
-                'url': '{}/changelog?branch={}'.format(
-                    data['repo']['url'], branch)
+                'url': branch_url(branch)
             }
             for branch in branches
         ]

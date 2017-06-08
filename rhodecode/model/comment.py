@@ -29,14 +29,14 @@ import collections
 from datetime import datetime
 
 from pylons.i18n.translation import _
-from pyramid.threadlocal import get_current_registry
+from pyramid.threadlocal import get_current_registry, get_current_request
 from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.functions import coalesce
 
 from rhodecode.lib import helpers as h, diffs
 from rhodecode.lib.channelstream import channelstream_request
 from rhodecode.lib.utils import action_logger
-from rhodecode.lib.utils2 import extract_mentioned_users
+from rhodecode.lib.utils2 import extract_mentioned_users, safe_str
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     ChangesetComment, User, Notification, PullRequest, AttributeDict)
@@ -409,22 +409,40 @@ class CommentsModel(BaseModel):
         q = q.order_by(ChangesetComment.created_on)
         return q.all()
 
-    def get_url(self, comment):
+    def get_url(self, comment, request=None, permalink=False):
+        if not request:
+            request = get_current_request()
+
         comment = self.__get_commit_comment(comment)
         if comment.pull_request:
-            return h.url(
-                'pullrequest_show',
-                repo_name=comment.pull_request.target_repo.repo_name,
-                pull_request_id=comment.pull_request.pull_request_id,
-                anchor='comment-%s' % comment.comment_id,
-                qualified=True,)
+            pull_request = comment.pull_request
+            if permalink:
+                return request.route_url(
+                    'pull_requests_global',
+                    pull_request_id=pull_request.pull_request_id,
+                    _anchor='comment-%s' % comment.comment_id)
+            else:
+                return request.route_url(
+                    'pullrequest_show',
+                    repo_name=safe_str(pull_request.target_repo.repo_name),
+                    pull_request_id=pull_request.pull_request_id,
+                    _anchor='comment-%s' % comment.comment_id)
+
         else:
-            return h.url(
-                'changeset_home',
-                repo_name=comment.repo.repo_name,
-                revision=comment.revision,
-                anchor='comment-%s' % comment.comment_id,
-                qualified=True,)
+            repo = comment.repo
+            commit_id = comment.revision
+
+            if permalink:
+                return request.route_url(
+                    'repo_commit', repo_name=safe_str(repo.repo_id),
+                    commit_id=commit_id,
+                    _anchor='comment-%s' % comment.comment_id)
+
+            else:
+                return request.route_url(
+                    'repo_commit', repo_name=safe_str(repo.repo_name),
+                    commit_id=commit_id,
+                    _anchor='comment-%s' % comment.comment_id)
 
     def get_comments(self, repo_id, revision=None, pull_request=None):
         """

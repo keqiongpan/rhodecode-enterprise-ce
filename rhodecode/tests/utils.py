@@ -412,4 +412,12 @@ def add_test_routes(config):
     """
     config.add_route(name='home', pattern='/')
     config.add_route(name='repo_summary', pattern='/{repo_name}')
+    config.add_route(name='repo_summary_explicit', pattern='/{repo_name}/summary')
     config.add_route(name='repo_group_home', pattern='/{repo_group_name}')
+
+    config.add_route(name='pullrequest_show',
+                     pattern='/{repo_name}/pull-request/{pull_request_id}')
+    config.add_route(name='pull_requests_global',
+                     pattern='/pull-request/{pull_request_id}')
+    config.add_route(name='repo_commit',
+                     pattern='/{repo_name}/changeset/{commit_id}')

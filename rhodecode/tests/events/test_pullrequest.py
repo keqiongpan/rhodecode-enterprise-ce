@@ -50,6 +50,7 @@ def test_pullrequest_events_serialized(EventClass, pr_util, config_stub):
     assert data['repo']['repo_name'] == pr.target_repo.repo_name
     assert data['pullrequest']['pull_request_id'] == pr.pull_request_id
     assert data['pullrequest']['url']
+    assert data['pullrequest']['permalink_url']
 
 
 @pytest.mark.backends("git", "hg")
@@ -71,6 +72,7 @@ def test_pullrequest_comment_events_serialized(pr_util, config_stub):
     assert data['repo']['repo_name'] == pr.target_repo.repo_name
     assert data['pullrequest']['pull_request_id'] == pr.pull_request_id
     assert data['pullrequest']['url']
+    assert data['pullrequest']['permalink_url']
     assert data['comment']['text'] == comment.text
 
 

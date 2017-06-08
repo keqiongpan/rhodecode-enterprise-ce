@@ -155,10 +155,30 @@ class RepoModel(BaseModel):
             repos = Repository.query().filter(Repository.group == root).all()
         return repos
 
-    def get_url(self, repo, request=None):
+    def get_url(self, repo, request=None, permalink=False):
         if not request:
             request = get_current_request()
-        return request.route_url('repo_summary', repo_name=safe_str(repo.repo_name))
+
+        if permalink:
+            return request.route_url(
+                'repo_summary', repo_name=safe_str(repo.repo_id))
+        else:
+            return request.route_url(
+                'repo_summary', repo_name=safe_str(repo.repo_name))
+
+    def get_commit_url(self, repo, commit_id, request=None, permalink=False):
+        if not request:
+            request = get_current_request()
+
+        if permalink:
+            return request.route_url(
+                'repo_commit', repo_name=safe_str(repo.repo_id),
+                commit_id=commit_id)
+
+        else:
+            return request.route_url(
+                'repo_commit', repo_name=safe_str(repo.repo_name),
+                commit_id=commit_id)
 
     @classmethod
     def update_repoinfo(cls, repositories=None):

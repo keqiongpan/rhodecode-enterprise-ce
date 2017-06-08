@@ -32,6 +32,11 @@ def includeme(config):
         name='repo_summary_commits',
         pattern='/{repo_name:.*?[^/]}/summary-commits', repo_route=True)
 
+    # repo commits
+    config.add_route(
+        name='repo_commit',
+        pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}', repo_route=True)
+
     # refs data
     config.add_route(
         name='repo_refs_data',

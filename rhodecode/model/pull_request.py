@@ -31,6 +31,7 @@ import urllib
 
 from pylons.i18n.translation import _
 from pylons.i18n.translation import lazy_ugettext
+from pyramid.threadlocal import get_current_request
 from sqlalchemy import or_
 
 from rhodecode.lib import helpers as h, hooks_utils, diffs
@@ -961,11 +962,19 @@ class PullRequestModel(BaseModel):
         self.notify_reviewers(pull_request, ids_to_add)
         return ids_to_add, ids_to_remove
 
-    def get_url(self, pull_request):
-        return h.url('pullrequest_show',
-                     repo_name=safe_str(pull_request.target_repo.repo_name),
-                     pull_request_id=pull_request.pull_request_id,
-                     qualified=True)
+    def get_url(self, pull_request, request=None, permalink=False):
+        if not request:
+            request = get_current_request()
+
+        if permalink:
+            return request.route_url(
+                'pull_requests_global',
+                pull_request_id=pull_request.pull_request_id,)
+        else:
+            return request.route_url(
+                'pullrequest_show',
+                repo_name=safe_str(pull_request.target_repo.repo_name),
+                pull_request_id=pull_request.pull_request_id,)
 
     def get_shadow_clone_url(self, pull_request):
         """

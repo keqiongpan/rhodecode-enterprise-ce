@@ -964,11 +964,9 @@ class TestPullrequestsController(object):
         assert target.text.strip() == 'tag: target'
         assert target.getchildren() == []
 
-
-
     @pytest.mark.parametrize('mergeable', [True, False])
     def test_shadow_repository_link(
-            self, mergeable, pr_util, http_host_stub):
+            self, mergeable, pr_util, http_host_only_stub):
         """
         Check that the pull request summary page displays a link to the shadow
         repository if the pull request is mergeable. If it is not mergeable
@@ -979,7 +977,7 @@ class TestPullrequestsController(object):
         target_repo = pull_request.target_repo.scm_instance()
         pr_id = pull_request.pull_request_id
         shadow_url = '{host}/{repo}/pull-request/{pr_id}/repository'.format(
-            host=http_host_stub, repo=target_repo.name, pr_id=pr_id)
+            host=http_host_only_stub, repo=target_repo.name, pr_id=pr_id)
 
         response = self.app.get(url(
             controller='pullrequests', action='show',
