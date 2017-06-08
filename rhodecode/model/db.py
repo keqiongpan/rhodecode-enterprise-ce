@@ -3907,6 +3907,7 @@ class RepoReviewRule(Base, BaseModel):
 
     use_authors_for_review = Column("use_authors_for_review", Boolean(), nullable=False, default=False)
     forbid_author_to_review = Column("forbid_author_to_review", Boolean(), nullable=False, default=False)
+    forbid_commit_author_to_review = Column("forbid_commit_author_to_review", Boolean(), nullable=False, default=False)
     forbid_adding_reviewers = Column("forbid_adding_reviewers", Boolean(), nullable=False, default=False)
 
     rule_users = relationship('RepoReviewRuleUser')

@@ -175,6 +175,21 @@ ReviewersController = function () {
                     _gettext('Author is not allowed to be a reviewer.'))
             )
         }
+        if (data.rules.forbid_commit_author_to_review) {
+
+            if (data.rules_data.forbidden_users) {
+                $.each(data.rules_data.forbidden_users, function(index, member_data) {
+                    self.forbidReviewUsers.push(member_data)
+                });
+
+            }
+
+            self.$rulesList.append(
+                self.addRule(
+                    _gettext('Commit Authors are not allowed to be a reviewer.'))
+            )
+        }
+
         return self.forbidReviewUsers
     };
 

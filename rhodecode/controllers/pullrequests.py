@@ -261,8 +261,8 @@ class PullrequestsController(BaseRepoController):
 
         # recalculate reviewers logic, to make sure we can validate this
         reviewer_rules = get_default_reviewers_data(
-            c.rhodecode_user, source_db_repo, source_commit, target_db_repo,
-            target_commit)
+            c.rhodecode_user.get_instance(), source_db_repo,
+            source_commit, target_db_repo, target_commit)
 
         reviewers = validate_default_reviewers(
             _form['review_members'], reviewer_rules)
@@ -634,13 +634,18 @@ class PullrequestsController(BaseRepoController):
 
         c.forbid_adding_reviewers = False
         c.forbid_author_to_review = False
+        c.forbid_commit_author_to_review = False
 
         if pull_request_latest.reviewer_data and \
                         'rules' in pull_request_latest.reviewer_data:
             rules = pull_request_latest.reviewer_data['rules'] or {}
             try:
-                c.forbid_adding_reviewers = rules.get('forbid_adding_reviewers')
-                c.forbid_author_to_review = rules.get('forbid_author_to_review')
+                c.forbid_adding_reviewers = rules.get(
+                    'forbid_adding_reviewers')
+                c.forbid_author_to_review = rules.get(
+                    'forbid_author_to_review')
+                c.forbid_commit_author_to_review = rules.get(
+                    'forbid_commit_author_to_review')
             except Exception:
                 pass
 
