@@ -35,8 +35,8 @@ from functools import wraps
 
 import ipaddress
 from pyramid.httpexceptions import HTTPForbidden, HTTPFound
-from pylons import url, request
-from pylons.controllers.util import abort, redirect
+from pylons import request
+from pylons.controllers.util import abort
 from pylons.i18n.translation import _
 from sqlalchemy.orm.exc import ObjectDeletedError
 from sqlalchemy.orm import joinedload
@@ -1265,7 +1265,7 @@ class LoginRequired(object):
             # we preserve the get PARAM
             came_from = request.path_qs
             log.debug('redirecting to login page with %s' % (came_from,))
-            return redirect(
+            raise HTTPFound(
                 h.route_path('login', _query={'came_from': came_from}))
 
 
@@ -1292,7 +1292,7 @@ class NotAnonymous(object):
             h.flash(_('You need to be a registered user to '
                       'perform this action'),
                     category='warning')
-            return redirect(
+            raise HTTPFound(
                 h.route_path('login', _query={'came_from': came_from}))
         else:
             return func(*fargs, **fkwargs)
@@ -1341,8 +1341,9 @@ class HasAcceptedRepoType(object):
             h.flash(h.literal(
                 _('Action not supported for %s.' % rhodecode_repo.alias)),
                 category='warning')
-            return redirect(
-                h.route_path('repo_summary', repo_name=cls.rhodecode_db_repo.repo_name))
+            raise HTTPFound(
+                h.route_path('repo_summary',
+                             repo_name=cls.rhodecode_db_repo.repo_name))
 
 
 class PermsDecorator(object):
