@@ -22,7 +22,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.utils2 import safe_int
 
 
-def reviewer_as_json(user, reasons, mandatory):
+def reviewer_as_json(user, reasons=None, mandatory=False):
     """
     Returns json struct of a reviewer for frontend
 
@@ -33,7 +33,7 @@ def reviewer_as_json(user, reasons, mandatory):
 
     return {
         'user_id': user.user_id,
-        'reasons': reasons,
+        'reasons': reasons or [],
         'mandatory': mandatory,
         'username': user.username,
         'firstname': user.firstname,

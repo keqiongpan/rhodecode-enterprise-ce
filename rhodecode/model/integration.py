@@ -96,6 +96,9 @@ class IntegrationModel(BaseModel):
         """ Send an event to an integration """
         handler = self.get_integration_handler(integration)
         if handler:
+            log.debug(
+                'events: sending event %s on integration %s using handler %s',
+                event, integration, handler)
             handler.send_event(event)
 
     def get_integrations(self, scope, IntegrationType=None):

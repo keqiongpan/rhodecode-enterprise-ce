@@ -33,12 +33,12 @@ log = logging.getLogger(__name__)
 
 class RhodecodeEvent(object):
     """
-    Base event class for all Rhodecode events
+    Base event class for all RhodeCode events
     """
     name = "RhodeCodeEvent"
 
-    def __init__(self):
-        self.request = get_current_request()
+    def __init__(self, request=None):
+        self.request = request or get_current_request()
         self.utc_timestamp = datetime.utcnow()
 
     @property
@@ -80,9 +80,8 @@ class RhodecodeEvent(object):
     def server_url(self):
         default = '<no server_url available>'
         if self.request:
-            from rhodecode.lib import helpers as h
             try:
-                return h.route_url('home')
+                return self.request.route_url('home')
             except Exception:
                 log.exception('Failed to fetch URL for server')
                 return default

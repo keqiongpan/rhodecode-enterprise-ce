@@ -27,10 +27,11 @@ from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 log = logging.getLogger(__name__)
 
 
-def _commits_as_dict(commit_ids, repos):
+def _commits_as_dict(event, commit_ids, repos):
     """
     Helper function to serialize commit_ids
 
+    :param event: class calling this method
     :param commit_ids: commits to get
     :param repos: list of repos to check
     """
@@ -69,9 +70,9 @@ def _commits_as_dict(commit_ids, repos):
                 cs_data['mentions'] = extract_mentioned_users(cs_data['message'])
                 cs_data['reviewers'] = reviewers
                 cs_data['url'] = RepoModel().get_commit_url(
-                    repo, cs_data['raw_id'])
+                    repo, cs_data['raw_id'], request=event.request)
                 cs_data['permalink_url'] = RepoModel().get_commit_url(
-                    repo, cs_data['raw_id'], permalink=True)
+                    repo, cs_data['raw_id'], request=event.request, permalink=True)
                 urlified_message, issues_data = process_patterns(
                     cs_data['message'], repo.repo_name)
                 cs_data['issues'] = issues_data
@@ -128,8 +129,10 @@ class RepoEvent(RhodecodeEvent):
                 'repo_id': self.repo.repo_id,
                 'repo_name': self.repo.repo_name,
                 'repo_type': self.repo.repo_type,
-                'url': RepoModel().get_url(self.repo),
-                'permalink_url': RepoModel().get_url(self.repo, permalink=True),
+                'url': RepoModel().get_url(
+                    self.repo, request=self.request),
+                'permalink_url': RepoModel().get_url(
+                    self.repo, request=self.request, permalink=True),
                 'extra_fields': extra_fields
             }
         })
@@ -248,7 +251,7 @@ class RepoPushEvent(RepoVCSEvent):
                 data['repo']['url'], branch_name)
 
         commits = _commits_as_dict(
-            commit_ids=self.pushed_commit_ids, repos=[self.repo])
+            self, commit_ids=self.pushed_commit_ids, repos=[self.repo])
 
         last_branch = None
         for commit in reversed(commits):

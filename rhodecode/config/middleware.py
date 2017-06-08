@@ -318,6 +318,12 @@ def includeme(config):
     config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
     config.add_subscriber(write_js_routes_if_enabled, ApplicationCreated)
 
+    # events
+    # TODO(marcink): this should be done when pyramid migration is finished
+    # config.add_subscriber(
+    #     'rhodecode.integrations.integrations_event_handler',
+    #     'rhodecode.events.RhodecodeEvent')
+
     # Set the authorization policy.
     authz_policy = ACLAuthorizationPolicy()
     config.set_authorization_policy(authz_policy)

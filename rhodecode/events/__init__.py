@@ -18,6 +18,8 @@
 
 import logging
 from pyramid.threadlocal import get_current_registry
+from rhodecode.events.base import RhodecodeEvent
+
 
 log = logging.getLogger(__name__)
 
@@ -32,19 +34,20 @@ def trigger(event, registry=None):
     # passing the registry as an argument to get rid of it.
     registry = registry or get_current_registry()
     registry.notify(event)
-    log.debug('event %s triggered', event)
+    log.debug('event %s triggered using registry %s', event, registry)
 
     # Until we can work around the problem that VCS operations do not have a
     # pyramid context to work with, we send the events to integrations directly
 
     # Later it will be possible to use regular pyramid subscribers ie:
-    #   config.add_subscriber(integrations_event_handler, RhodecodeEvent)
+    # config.add_subscriber(
+    #     'rhodecode.integrations.integrations_event_handler',
+    #     'rhodecode.events.RhodecodeEvent')
+    # trigger(event, request.registry)
+
     from rhodecode.integrations import integrations_event_handler
     if isinstance(event, RhodecodeEvent):
         integrations_event_handler(event)
-
-
-from rhodecode.events.base import RhodecodeEvent
 
 from rhodecode.events.user import (  # noqa
     UserPreCreate,

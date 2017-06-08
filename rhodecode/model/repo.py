@@ -159,6 +159,9 @@ class RepoModel(BaseModel):
         if not request:
             request = get_current_request()
 
+        if not request:
+            return
+
         if permalink:
             return request.route_url(
                 'repo_summary', repo_name=safe_str(repo.repo_id))
@@ -169,6 +172,9 @@ class RepoModel(BaseModel):
     def get_commit_url(self, repo, commit_id, request=None, permalink=False):
         if not request:
             request = get_current_request()
+
+        if not request:
+            return
 
         if permalink:
             return request.route_url(

@@ -41,6 +41,7 @@ class PullRequestEvent(RepoEvent):
         data = super(PullRequestEvent, self).as_dict()
 
         commits = _commits_as_dict(
+            self,
             commit_ids=self.pullrequest.revisions,
             repos=[self.pullrequest.source_repo]
         )
