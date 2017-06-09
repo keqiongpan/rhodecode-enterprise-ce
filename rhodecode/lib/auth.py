@@ -35,9 +35,9 @@ from functools import wraps
 
 import ipaddress
 from pyramid.httpexceptions import HTTPForbidden, HTTPFound
-from pylons import request
-from pylons.controllers.util import abort
 from pylons.i18n.translation import _
+# NOTE(marcink): this has to be removed only after pyramid migration,
+# replace with _ = request.translate
 from sqlalchemy.orm.exc import ObjectDeletedError
 from sqlalchemy.orm import joinedload
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -302,7 +302,8 @@ def _cached_perms_data(user_id, scope, user_is_admin,
         explicit, algo)
     return permissions.calculate()
 
-class PermOrigin:
+
+class PermOrigin(object):
     ADMIN = 'superadmin'
 
     REPO_USER = 'user:%s'
@@ -340,7 +341,6 @@ class PermOriginDict(dict):
     >>> perms.perm_origin_stack
     {'resource': [('read', 'default'), ('write', 'admin')]}
     """
-
 
     def __init__(self, *args, **kw):
         dict.__init__(self, *args, **kw)
@@ -1114,6 +1114,17 @@ def get_csrf_token(session=None, force_new=False, save_if_missing=True):
     return session.get(csrf_token_key)
 
 
+def get_request(perm_class):
+    from pyramid.threadlocal import get_current_request
+    pyramid_request = get_current_request()
+    if not pyramid_request:
+        # return global request of pylons in case pyramid isn't available
+        # NOTE(marcink): this should be removed after migration to pyramid
+        from pylons import request
+        return request
+    return pyramid_request
+
+
 # CHECK DECORATORS
 class CSRFRequired(object):
     """
@@ -1144,7 +1155,12 @@ class CSRFRequired(object):
         supplied_token = self._get_csrf(_request)
         return supplied_token and supplied_token == cur_token
 
+    def _get_request(self):
+        return get_request(self)
+
     def __wrapper(self, func, *fargs, **fkwargs):
+        request = self._get_request()
+
         if request.method in self.except_methods:
             return func(*fargs, **fkwargs)
 
@@ -1157,8 +1173,8 @@ class CSRFRequired(object):
             reason = 'token-missing'
             supplied_token = self._get_csrf(request)
             if supplied_token and cur_token != supplied_token:
-                reason = 'token-mismatch [%s:%s]' % (cur_token or ''[:6],
-                                                     supplied_token or ''[:6])
+                reason = 'token-mismatch [%s:%s]' % (
+                    cur_token or ''[:6], supplied_token or ''[:6])
 
             csrf_message = \
                 ("Cross-site request forgery detected, request denied. See "
@@ -1186,12 +1202,7 @@ class LoginRequired(object):
         return get_cython_compat_decorator(self.__wrapper, func)
 
     def _get_request(self):
-        from pyramid.threadlocal import get_current_request
-        pyramid_request = get_current_request()
-        if not pyramid_request:
-            # return global request of pylons in case pyramid isn't available
-            return request
-        return pyramid_request
+        return get_request(self)
 
     def __wrapper(self, func, *fargs, **fkwargs):
         from rhodecode.lib import helpers as h
@@ -1278,10 +1289,14 @@ class NotAnonymous(object):
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
 
+    def _get_request(self):
+        return get_request(self)
+
     def __wrapper(self, func, *fargs, **fkwargs):
         import rhodecode.lib.helpers as h
         cls = fargs[0]
         self.user = cls._rhodecode_user
+        request = self._get_request()
 
         log.debug('Checking if user is not anonymous @%s' % cls)
 
@@ -1304,9 +1319,16 @@ class XHRRequired(object):
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
 
+    def _get_request(self):
+        return get_request(self)
+
     def __wrapper(self, func, *fargs, **fkwargs):
+        from pylons.controllers.util import abort
+        request = self._get_request()
+
         log.debug('Checking if request is XMLHttpRequest (XHR)')
         xhr_message = 'This is not a valid XMLHttpRequest (XHR) request'
+
         if not request.is_xhr:
             abort(400, detail=xhr_message)
 
@@ -1359,12 +1381,7 @@ class PermsDecorator(object):
         return get_cython_compat_decorator(self.__wrapper, func)
 
     def _get_request(self):
-        from pyramid.threadlocal import get_current_request
-        pyramid_request = get_current_request()
-        if not pyramid_request:
-            # return global request of pylons in case pyramid isn't available
-            return request
-        return pyramid_request
+        return get_request(self)
 
     def _get_came_from(self):
         _request = self._get_request()
@@ -1638,12 +1655,7 @@ class PermsFunction(object):
             return False
 
     def _get_request(self):
-        from pyramid.threadlocal import get_current_request
-        pyramid_request = get_current_request()
-        if not pyramid_request:
-            # return global request of pylons incase pyramid one isn't available
-            return request
-        return pyramid_request
+        return get_request(self)
 
     def _get_check_scope(self, cls_name):
         return {
@@ -1708,7 +1720,8 @@ class HasRepoPermissionAny(PermsFunction):
 
     def _get_repo_name(self):
         if not self.repo_name:
-            self.repo_name = get_repo_slug(request)
+            _request = self._get_request()
+            self.repo_name = get_repo_slug(_request)
         return self.repo_name
 
     def check_permissions(self, user):
