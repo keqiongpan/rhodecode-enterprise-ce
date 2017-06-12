@@ -21,6 +21,7 @@
 
 import logging
 
+from rhodecode import events
 from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCValidationError
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
@@ -35,8 +36,8 @@ from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 from rhodecode.model.settings import SettingsModel
 from rhodecode.model.validation_schema import Invalid
-from rhodecode.model.validation_schema.schemas.reviewer_schema import \
-    ReviewerListSchema
+from rhodecode.model.validation_schema.schemas.reviewer_schema import(
+    ReviewerListSchema)
 
 log = logging.getLogger(__name__)
 
@@ -227,8 +228,9 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
 
 
 @jsonrpc_method()
-def merge_pull_request(request, apiuser, repoid, pullrequestid,
-                       userid=Optional(OAttr('apiuser'))):
+def merge_pull_request(
+        request, apiuser, repoid, pullrequestid,
+        userid=Optional(OAttr('apiuser'))):
     """
     Merge the pull request specified by `pullrequestid` into its target
     repository.
@@ -305,63 +307,6 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
     merge_response['merge_commit_id'] = merge_response['merge_ref'].commit_id
 
     return merge_response
-
-
-@jsonrpc_method()
-def close_pull_request(request, apiuser, repoid, pullrequestid,
-                       userid=Optional(OAttr('apiuser'))):
-    """
-    Close the pull request specified by `pullrequestid`.
-
-    :param apiuser: This is filled automatically from the |authtoken|.
-    :type apiuser: AuthUser
-    :param repoid: Repository name or repository ID to which the pull
-        request belongs.
-    :type repoid: str or int
-    :param pullrequestid: ID of the pull request to be closed.
-    :type pullrequestid: int
-    :param userid: Close the pull request as this user.
-    :type userid: Optional(str or int)
-
-    Example output:
-
-    .. code-block:: bash
-
-        "id": <id_given_in_input>,
-        "result": {
-            "pull_request_id":  "<int>",
-            "closed":           "<bool>"
-        },
-        "error": null
-
-    """
-    repo = get_repo_or_error(repoid)
-    if not isinstance(userid, Optional):
-        if (has_superadmin_permission(apiuser) or
-                HasRepoPermissionAnyApi('repository.admin')(
-                    user=apiuser, repo_name=repo.repo_name)):
-            apiuser = get_user_or_error(userid)
-        else:
-            raise JSONRPCError('userid is not the same as your user')
-
-    pull_request = get_pull_request_or_error(pullrequestid)
-    if not PullRequestModel().check_user_update(
-            pull_request, apiuser, api=True):
-        raise JSONRPCError(
-            'pull request `%s` close failed, no permission to close.' % (
-                pullrequestid,))
-    if pull_request.is_closed():
-        raise JSONRPCError(
-            'pull request `%s` is already closed' % (pullrequestid,))
-
-    PullRequestModel().close_pull_request(
-        pull_request.pull_request_id, apiuser)
-    Session().commit()
-    data = {
-        'pull_request_id': pull_request.pull_request_id,
-        'closed': True,
-    }
-    return data
 
 
 @jsonrpc_method()
@@ -610,7 +555,7 @@ def create_pull_request(
 def update_pull_request(
         request, apiuser, repoid, pullrequestid, title=Optional(''),
         description=Optional(''), reviewers=Optional(None),
-        update_commits=Optional(None), close_pull_request=Optional(None)):
+        update_commits=Optional(None)):
     """
     Updates a pull request.
 
@@ -632,8 +577,6 @@ def update_pull_request(
 
     :param update_commits: Trigger update of commits for this pull request
     :type: update_commits: Optional(bool)
-    :param close_pull_request: Close this pull request with rejected state
-    :type: close_pull_request: Optional(bool)
 
     Example output:
 
@@ -674,7 +617,6 @@ def update_pull_request(
         raise JSONRPCError(
             'pull request `%s` update failed, pull request is closed' % (
                 pullrequestid,))
-
 
     reviewer_objects = Optional.extract(reviewers) or []
     if reviewer_objects:
@@ -718,11 +660,6 @@ def update_pull_request(
             [get_user_or_error(n).username for n in removed_reviewers])
         Session().commit()
 
-    if str2bool(Optional.extract(close_pull_request)):
-        PullRequestModel().close_pull_request_with_comment(
-            pull_request, apiuser, repo)
-        Session().commit()
-
     data = {
         'msg': 'Updated pull request `{}`'.format(
             pull_request.pull_request_id),
@@ -731,4 +668,81 @@ def update_pull_request(
         'updated_reviewers': reviewers_changes
     }
 
+    return data
+
+
+@jsonrpc_method()
+def close_pull_request(
+        request, apiuser, repoid, pullrequestid,
+        userid=Optional(OAttr('apiuser')), message=Optional('')):
+    """
+    Close the pull request specified by `pullrequestid`.
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: Repository name or repository ID to which the pull
+        request belongs.
+    :type repoid: str or int
+    :param pullrequestid: ID of the pull request to be closed.
+    :type pullrequestid: int
+    :param userid: Close the pull request as this user.
+    :type userid: Optional(str or int)
+    :param message: Optional message to close the Pull Request with. If not
+        specified it will be generated automatically.
+    :type message: Optional(str)
+
+    Example output:
+
+    .. code-block:: bash
+
+        "id": <id_given_in_input>,
+        "result": {
+            "pull_request_id":  "<int>",
+            "close_status":     "<str:status_lbl>,
+            "closed":           "<bool>"
+        },
+        "error": null
+
+    """
+    _ = request.translate
+
+    repo = get_repo_or_error(repoid)
+    if not isinstance(userid, Optional):
+        if (has_superadmin_permission(apiuser) or
+                HasRepoPermissionAnyApi('repository.admin')(
+                    user=apiuser, repo_name=repo.repo_name)):
+            apiuser = get_user_or_error(userid)
+        else:
+            raise JSONRPCError('userid is not the same as your user')
+
+    pull_request = get_pull_request_or_error(pullrequestid)
+
+    if pull_request.is_closed():
+        raise JSONRPCError(
+            'pull request `%s` is already closed' % (pullrequestid,))
+
+    # only owner or admin or person with write permissions
+    allowed_to_close = PullRequestModel().check_user_update(
+            pull_request, apiuser, api=True)
+
+    if not allowed_to_close:
+        raise JSONRPCError(
+            'pull request `%s` close failed, no permission to close.' % (
+                pullrequestid,))
+
+    # message we're using to close the PR, else it's automatically generated
+    message = Optional.extract(message)
+
+    # finally close the PR, with proper message comment
+    comment, status = PullRequestModel().close_pull_request_with_comment(
+        pull_request, apiuser, repo, message=message)
+    status_lbl = ChangesetStatus.get_status_lbl(status)
+
+    Session().commit()
+
+    data = {
+        'pull_request_id': pull_request.pull_request_id,
+        'close_status': status_lbl,
+        'closed': True,
+    }
     return data

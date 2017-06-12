@@ -3107,6 +3107,10 @@ class ChangesetComment(Base, BaseModel):
     def is_todo(self):
         return self.comment_type == self.COMMENT_TYPE_TODO
 
+    @property
+    def is_inline(self):
+        return self.line_no and self.f_path
+
     def get_index_version(self, versions):
         return self.get_index_from_version(
             self.pull_request_version_id, versions)

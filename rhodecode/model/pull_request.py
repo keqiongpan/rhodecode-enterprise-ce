@@ -34,6 +34,7 @@ from pylons.i18n.translation import lazy_ugettext
 from pyramid.threadlocal import get_current_request
 from sqlalchemy import or_
 
+from rhodecode import events
 from rhodecode.lib import helpers as h, hooks_utils, diffs
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
@@ -1064,41 +1065,60 @@ class PullRequestModel(BaseModel):
             pull_request, pull_request.author, 'close')
         self._log_action('user_closed_pull_request', user, pull_request)
 
-    def close_pull_request_with_comment(self, pull_request, user, repo,
-                                        message=None):
-        status = ChangesetStatus.STATUS_REJECTED
+    def close_pull_request_with_comment(
+            self, pull_request, user, repo, message=None):
 
-        if not message:
-            message = (
-                _('Status change %(transition_icon)s %(status)s') % {
-                    'transition_icon': '>',
-                    'status': ChangesetStatus.get_status_lbl(status)})
+        pull_request_review_status = pull_request.calculated_review_status()
 
-        internal_message = _('Closing with') + ' ' + message
+        if pull_request_review_status == ChangesetStatus.STATUS_APPROVED:
+            # approved only if we have voting consent
+            status = ChangesetStatus.STATUS_APPROVED
+        else:
+            status = ChangesetStatus.STATUS_REJECTED
+        status_lbl = ChangesetStatus.get_status_lbl(status)
 
-        comm = CommentsModel().create(
-            text=internal_message,
+        default_message = (
+            _('Closing with status change {transition_icon} {status}.')
+        ).format(transition_icon='>', status=status_lbl)
+        text = message or default_message
+
+        # create a comment, and link it to new status
+        comment = CommentsModel().create(
+            text=text,
             repo=repo.repo_id,
             user=user.user_id,
             pull_request=pull_request.pull_request_id,
-            f_path=None,
-            line_no=None,
-            status_change=ChangesetStatus.get_status_lbl(status),
+            status_change=status_lbl,
             status_change_type=status,
             closing_pr=True
         )
 
+        # calculate old status before we change it
+        old_calculated_status = pull_request.calculated_review_status()
         ChangesetStatusModel().set_status(
             repo.repo_id,
             status,
             user.user_id,
-            comm,
+            comment=comment,
             pull_request=pull_request.pull_request_id
         )
-        Session().flush()
 
+        Session().flush()
+        events.trigger(events.PullRequestCommentEvent(pull_request, comment))
+        # we now calculate the status of pull request again, and based on that
+        # calculation trigger status change. This might happen in cases
+        # that non-reviewer admin closes a pr, which means his vote doesn't
+        # change the status, while if he's a reviewer this might change it.
+        calculated_status = pull_request.calculated_review_status()
+        if old_calculated_status != calculated_status:
+            self._trigger_pull_request_hook(
+                pull_request, user, 'review_status_change')
+
+        # finally close the PR
         PullRequestModel().close_pull_request(
             pull_request.pull_request_id, user)
+
+        return comment, status
 
     def merge_status(self, pull_request):
         if not self._is_merge_enabled(pull_request):

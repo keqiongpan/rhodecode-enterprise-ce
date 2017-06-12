@@ -96,6 +96,7 @@ function registerRCRoutes() {
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
     pyroutes.register('repo_summary_explicit', '/%(repo_name)s/summary', ['repo_name']);
     pyroutes.register('repo_summary_commits', '/%(repo_name)s/summary-commits', ['repo_name']);
+    pyroutes.register('repo_commit', '/%(repo_name)s/changeset/%(commit_id)s', ['repo_name', 'commit_id']);
     pyroutes.register('repo_refs_data', '/%(repo_name)s/refs-data', ['repo_name']);
     pyroutes.register('repo_refs_changelog_data', '/%(repo_name)s/refs-data-changelog', ['repo_name']);
     pyroutes.register('repo_stats', '/%(repo_name)s/repo_stats/%(commit_id)s', ['repo_name', 'commit_id']);

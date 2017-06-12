@@ -306,8 +306,6 @@ class PullrequestsController(BaseRepoController):
                     pull_request.reviewer_data)
             elif str2bool(request.POST.get('update_commits', 'false')):
                 self._update_commits(pull_request)
-            elif str2bool(request.POST.get('close_pull_request', 'false')):
-                self._reject_close(pull_request)
             elif str2bool(request.POST.get('edit_pull_request', 'false')):
                 self._edit_pull_request(pull_request)
             else:
@@ -460,14 +458,6 @@ class PullrequestsController(BaseRepoController):
 
         PullRequestModel().update_reviewers(pull_request_id, reviewers)
         h.flash(_('Pull request reviewers updated.'), category='success')
-        Session().commit()
-
-    def _reject_close(self, pull_request):
-        if pull_request.is_closed():
-            raise HTTPForbidden()
-
-        PullRequestModel().close_pull_request_with_comment(
-            pull_request, c.rhodecode_user, c.rhodecode_db_repo)
         Session().commit()
 
     @LoginRequired()
@@ -888,6 +878,7 @@ class PullrequestsController(BaseRepoController):
         pull_request_id = safe_int(pull_request_id)
         pull_request = PullRequest.get_or_404(pull_request_id)
         if pull_request.is_closed():
+            log.debug('comment: forbidden because pull request is closed')
             raise HTTPForbidden()
 
         status = request.POST.get('changeset_status', None)
@@ -896,83 +887,78 @@ class PullrequestsController(BaseRepoController):
         resolves_comment_id = request.POST.get('resolves_comment_id', None)
         close_pull_request = request.POST.get('close_pull_request')
 
-        close_pr = False
-        # only owner or admin or person with write permissions
-        allowed_to_close = PullRequestModel().check_user_update(
-            pull_request, c.rhodecode_user)
+        # the logic here should work like following, if we submit close
+        # pr comment, use `close_pull_request_with_comment` function
+        # else handle regular comment logic
+        user = c.rhodecode_user
+        repo = c.rhodecode_db_repo
 
-        if close_pull_request and allowed_to_close:
-            close_pr = True
-            pull_request_review_status = pull_request.calculated_review_status()
-            if pull_request_review_status == ChangesetStatus.STATUS_APPROVED:
-                # approved only if we have voting consent
-                status = ChangesetStatus.STATUS_APPROVED
-            else:
-                status = ChangesetStatus.STATUS_REJECTED
-
-        allowed_to_change_status = PullRequestModel().check_user_change_status(
-            pull_request, c.rhodecode_user)
-
-        if status and allowed_to_change_status:
-            message = (_('Status change %(transition_icon)s %(status)s')
-                       % {'transition_icon': '>',
-                          'status': ChangesetStatus.get_status_lbl(status)})
-            if close_pr:
-                message = _('Closing with') + ' ' + message
-            text = text or message
-        comm = CommentsModel().create(
-            text=text,
-            repo=c.rhodecode_db_repo.repo_id,
-            user=c.rhodecode_user.user_id,
-            pull_request=pull_request_id,
-            f_path=request.POST.get('f_path'),
-            line_no=request.POST.get('line'),
-            status_change=(ChangesetStatus.get_status_lbl(status)
-                           if status and allowed_to_change_status else None),
-            status_change_type=(status
-                                if status and allowed_to_change_status else None),
-            closing_pr=close_pr,
-            comment_type=comment_type,
-            resolves_comment_id=resolves_comment_id
-        )
-
-        if allowed_to_change_status:
-            old_calculated_status = pull_request.calculated_review_status()
-            # get status if set !
-            if status:
-                ChangesetStatusModel().set_status(
-                    c.rhodecode_db_repo.repo_id,
-                    status,
-                    c.rhodecode_user.user_id,
-                    comm,
-                    pull_request=pull_request_id
-                )
-
+        if close_pull_request:
+            # only owner or admin or person with write permissions
+            allowed_to_close = PullRequestModel().check_user_update(
+                pull_request, c.rhodecode_user)
+            if not allowed_to_close:
+                log.debug('comment: forbidden because not allowed to close '
+                          'pull request %s', pull_request_id)
+                raise HTTPForbidden()
+            comment, status = PullRequestModel().close_pull_request_with_comment(
+                pull_request, user, repo, message=text)
             Session().flush()
-            events.trigger(events.PullRequestCommentEvent(pull_request, comm))
-            # we now calculate the status of pull request, and based on that
-            # calculation we set the commits status
-            calculated_status = pull_request.calculated_review_status()
-            if old_calculated_status != calculated_status:
-                PullRequestModel()._trigger_pull_request_hook(
-                    pull_request, c.rhodecode_user, 'review_status_change')
+            events.trigger(
+                events.PullRequestCommentEvent(pull_request, comment))
 
-            calculated_status_lbl = ChangesetStatus.get_status_lbl(
-                calculated_status)
+        else:
+            # regular comment case, could be inline, or one with status.
+            # for that one we check also permissions
 
-            if close_pr:
-                status_completed = (
-                    calculated_status in [ChangesetStatus.STATUS_APPROVED,
-                                          ChangesetStatus.STATUS_REJECTED])
-                if close_pull_request or status_completed:
-                    PullRequestModel().close_pull_request(
-                        pull_request_id, c.rhodecode_user)
-                else:
-                    h.flash(_('Closing pull request on other statuses than '
-                              'rejected or approved is forbidden. '
-                              'Calculated status from all reviewers '
-                              'is currently: %s') % calculated_status_lbl,
-                            category='warning')
+            allowed_to_change_status = PullRequestModel().check_user_change_status(
+                pull_request, c.rhodecode_user)
+
+            if status and allowed_to_change_status:
+                message = (_('Status change %(transition_icon)s %(status)s')
+                           % {'transition_icon': '>',
+                              'status': ChangesetStatus.get_status_lbl(status)})
+                text = text or message
+
+            comment = CommentsModel().create(
+                text=text,
+                repo=c.rhodecode_db_repo.repo_id,
+                user=c.rhodecode_user.user_id,
+                pull_request=pull_request_id,
+                f_path=request.POST.get('f_path'),
+                line_no=request.POST.get('line'),
+                status_change=(ChangesetStatus.get_status_lbl(status)
+                               if status and allowed_to_change_status else None),
+                status_change_type=(status
+                                    if status and allowed_to_change_status else None),
+                comment_type=comment_type,
+                resolves_comment_id=resolves_comment_id
+            )
+
+            if allowed_to_change_status:
+                # calculate old status before we change it
+                old_calculated_status = pull_request.calculated_review_status()
+
+                # get status if set !
+                if status:
+                    ChangesetStatusModel().set_status(
+                        c.rhodecode_db_repo.repo_id,
+                        status,
+                        c.rhodecode_user.user_id,
+                        comment,
+                        pull_request=pull_request_id
+                    )
+
+                Session().flush()
+                events.trigger(
+                    events.PullRequestCommentEvent(pull_request, comment))
+
+                # we now calculate the status of pull request, and based on that
+                # calculation we set the commits status
+                calculated_status = pull_request.calculated_review_status()
+                if old_calculated_status != calculated_status:
+                    PullRequestModel()._trigger_pull_request_hook(
+                        pull_request, c.rhodecode_user, 'review_status_change')
 
         Session().commit()
 
@@ -983,12 +969,11 @@ class PullrequestsController(BaseRepoController):
         data = {
             'target_id': h.safeid(h.safe_unicode(request.POST.get('f_path'))),
         }
-        if comm:
-            c.co = comm
-            c.inline_comment = True if comm.line_no else False
-            data.update(comm.get_dict())
-            data.update({'rendered_text':
-                             render('changeset/changeset_comment_block.mako')})
+        if comment:
+            c.co = comment
+            rendered_comment = render('changeset/changeset_comment_block.mako')
+            data.update(comment.get_dict())
+            data.update({'rendered_text': rendered_comment})
 
         return data
 

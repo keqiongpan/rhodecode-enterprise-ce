@@ -825,11 +825,6 @@
             // fixing issue with caches on firefox
             $('#update_commits').removeAttr("disabled");
 
-            $('#close_pull_request').on('click', function(e){
-                closePullRequest(
-                    "${c.repo_name}", "${c.pull_request.pull_request_id}");
-            });
-
             $('.show-inline-comments').on('click', function(e){
                 var boxid = $(this).attr('data-comment-id');
                 var button = $(this);

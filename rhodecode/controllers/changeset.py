@@ -368,7 +368,6 @@ class ChangesetController(BaseRepoController):
                 comment_type=comment_type,
                 resolves_comment_id=resolves_comment_id
             )
-            c.inline_comment = True if comment.line_no else False
 
             # get status if set !
             if status:

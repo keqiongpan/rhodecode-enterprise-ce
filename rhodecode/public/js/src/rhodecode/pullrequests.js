@@ -368,16 +368,6 @@ var _updatePullRequest = function(repo_name, pull_request_id, postData) {
 };
 
 /**
- * PULL REQUEST reject & close
- */
-var closePullRequest = function(repo_name, pull_request_id) {
-    var postData = {
-        '_method': 'put',
-        'close_pull_request': true};
-    _updatePullRequest(repo_name, pull_request_id, postData);
-};
-
-/**
  * PULL REQUEST update commits
  */
 var updateCommits = function(repo_name, pull_request_id) {

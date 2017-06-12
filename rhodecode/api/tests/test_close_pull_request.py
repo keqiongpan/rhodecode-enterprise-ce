@@ -43,6 +43,7 @@ class TestClosePullRequest(object):
         response = api_call(self.app, params)
         expected = {
             'pull_request_id': pull_request_id,
+            'close_status': 'Rejected',
             'closed': True,
         }
         assert_ok(id_, expected, response.body)

@@ -237,7 +237,9 @@ class TestPullrequestsController(object):
         assertr.element_contains(
             'span[data-role="merge-message"]', str(expected_msg))
 
-    def test_comment_and_close_pull_request(self, pr_util, csrf_token):
+    def test_comment_and_close_pull_request_custom_message_approved(
+            self, pr_util, csrf_token, xhr_header):
+
         pull_request = pr_util.create_pull_request(approved=True)
         pull_request_id = pull_request.pull_request_id
         author = pull_request.user_id
@@ -249,11 +251,10 @@ class TestPullrequestsController(object):
                 repo_name=pull_request.target_repo.scm_instance().name,
                 pull_request_id=str(pull_request_id)),
             params={
-                'changeset_status': ChangesetStatus.STATUS_APPROVED,
                 'close_pull_request': '1',
                 'text': 'Closing a PR',
                 'csrf_token': csrf_token},
-            status=302)
+            extra_environ=xhr_header,)
 
         action = 'user_closed_pull_request:%d' % pull_request_id
         journal = UserLog.query()\
@@ -270,45 +271,26 @@ class TestPullrequestsController(object):
         status = ChangesetStatusModel().get_status(
             pull_request.source_repo, pull_request=pull_request)
         assert status == ChangesetStatus.STATUS_APPROVED
+        assert pull_request.comments[-1].text == 'Closing a PR'
 
-    def test_reject_and_close_pull_request(self, pr_util, csrf_token):
-        pull_request = pr_util.create_pull_request()
-        pull_request_id = pull_request.pull_request_id
-        response = self.app.post(
-            url(controller='pullrequests',
-                action='update',
-                repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=str(pull_request.pull_request_id)),
-            params={'close_pull_request': 'true', '_method': 'put',
-                    'csrf_token': csrf_token})
-
-        pull_request = PullRequest.get(pull_request_id)
-
-        assert response.json is True
-        assert pull_request.is_closed()
-
-        # check only the latest status, not the review status
-        status = ChangesetStatusModel().get_status(
-            pull_request.source_repo, pull_request=pull_request)
-        assert status == ChangesetStatus.STATUS_REJECTED
-
-    def test_comment_force_close_pull_request(self, pr_util, csrf_token):
+    def test_comment_force_close_pull_request_rejected(
+            self, pr_util, csrf_token, xhr_header):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
         PullRequestModel().update_reviewers(
             pull_request_id, [(1, ['reason'], False), (2, ['reason2'], False)])
         author = pull_request.user_id
         repo = pull_request.target_repo.repo_id
+
         self.app.post(
             url(controller='pullrequests',
                 action='comment',
                 repo_name=pull_request.target_repo.scm_instance().name,
                 pull_request_id=str(pull_request_id)),
             params={
-                'changeset_status': 'rejected',
                 'close_pull_request': '1',
                 'csrf_token': csrf_token},
-            status=302)
+            extra_environ=xhr_header)
 
         pull_request = PullRequest.get(pull_request_id)
 
@@ -318,6 +300,31 @@ class TestPullrequestsController(object):
             UserLog.repository_id == repo,
             UserLog.action == action).all()
         assert len(journal) == 1
+
+        # check only the latest status, not the review status
+        status = ChangesetStatusModel().get_status(
+            pull_request.source_repo, pull_request=pull_request)
+        assert status == ChangesetStatus.STATUS_REJECTED
+
+    def test_comment_and_close_pull_request(
+            self, pr_util, csrf_token, xhr_header):
+        pull_request = pr_util.create_pull_request()
+        pull_request_id = pull_request.pull_request_id
+
+        response = self.app.post(
+            url(controller='pullrequests',
+                action='comment',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=str(pull_request.pull_request_id)),
+            params={
+                'close_pull_request': 'true',
+                'csrf_token': csrf_token},
+            extra_environ=xhr_header)
+
+        assert response.json
+
+        pull_request = PullRequest.get(pull_request_id)
+        assert pull_request.is_closed()
 
         # check only the latest status, not the review status
         status = ChangesetStatusModel().get_status(
