@@ -442,8 +442,12 @@ class PullRequestModel(BaseModel):
         # members / reviewers
         for reviewer_object in reviewers:
             user_id, reasons, mandatory = reviewer_object
-
             user = self._get_user(user_id)
+
+            # skip duplicates
+            if user.user_id in reviewer_ids:
+                continue
+
             reviewer_ids.add(user.user_id)
 
             reviewer = PullRequestReviewers()
