@@ -87,7 +87,7 @@ class RepoSettingsPermissionsView(RepoAppView):
             'updated': changes['updated'],
             'deleted': changes['deleted'],
         }
-        audit_logger.store(
+        audit_logger.store_web(
             'repo.edit.permissions', action_data=action_data,
             user=self._rhodecode_user, repo=self.db_repo)
 

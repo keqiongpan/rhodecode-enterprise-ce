@@ -149,7 +149,7 @@ def store(action, user, action_data=None, user_data=None, ip_addr=None,
         audit_logger.store(
             action='repo.edit', user=self._rhodecode_user)
         audit_logger.store(
-            action='repo.delete', action_data={'repo_data': repo_data},
+            action='repo.delete', action_data={'data': repo_data},
             user=audit_logger.UserWrap(username='itried-login', ip_addr='8.8.8.8'))
 
         # repo action

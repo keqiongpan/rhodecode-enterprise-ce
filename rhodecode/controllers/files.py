@@ -814,7 +814,7 @@ class FilesController(BaseRepoController):
                 archive = cached_archive_path
 
         # store download action
-        audit_logger.store(
+        audit_logger.store_web(
             action='repo.archive.download',
             action_data={'user_agent': request.user_agent,
                          'archive_name': archive_name,

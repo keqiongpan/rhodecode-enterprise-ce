@@ -99,11 +99,10 @@ class RepoSettingsView(RepoAppView):
 
             repo = audit_logger.RepoWrap(repo_id=None,
                                          repo_name=self.db_repo.repo_name)
-            audit_logger.store(
+            audit_logger.store_web(
                 action='repo.delete',
-                action_data={'repo_data': repo_data,
-                             'source': audit_logger.SOURCE_WEB},
-                user=self._rhodecode_user, repo=repo, commit=False)
+                action_data={'data': repo_data},
+                user=self._rhodecode_user, repo=repo)
 
             ScmModel().mark_for_invalidation(self.db_repo_name, delete=True)
             h.flash(

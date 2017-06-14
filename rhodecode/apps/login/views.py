@@ -172,7 +172,7 @@ class LoginView(BaseAppView):
                 username=self.request.params.get('username'),
                 ip_addr=self.request.remote_addr)
             action_data = {'user_agent': self.request.user_agent}
-            audit_logger.store(
+            audit_logger.store_web(
                 action='user.login.success', action_data=action_data,
                 user=audit_user, commit=True)
 
@@ -191,7 +191,7 @@ class LoginView(BaseAppView):
                 username=self.request.params.get('username'),
                 ip_addr=self.request.remote_addr)
             action_data = {'user_agent': self.request.user_agent}
-            audit_logger.store(
+            audit_logger.store_web(
                 action='user.login.failure', action_data=action_data,
                 user=audit_user, commit=True)
             return render_ctx
@@ -211,7 +211,7 @@ class LoginView(BaseAppView):
         log.info('Deleting session for user: `%s`', auth_user)
 
         action_data = {'user_agent': self.request.user_agent}
-        audit_logger.store(
+        audit_logger.store_web(
             action='user.logout', action_data=action_data,
             user=auth_user, commit=True)
         self.session.delete()
@@ -364,9 +364,10 @@ class LoginView(BaseAppView):
 
                 action_data = {'email': user_email,
                                'user_agent': self.request.user_agent}
-                audit_logger.store(action='user.password.reset_request',
-                                   action_data=action_data,
-                                   user=self._rhodecode_user, commit=True)
+                audit_logger.store_web(
+                    action='user.password.reset_request',
+                    action_data=action_data,
+                    user=self._rhodecode_user, commit=True)
                 return HTTPFound(self.request.route_path('reset_password'))
 
             except formencode.Invalid as errors:

@@ -101,7 +101,7 @@ class StripView(RepoAppView):
                     commit['rev'], c.repo_info.repo_name, user))
                 data[commit['rev']] = True
 
-                audit_logger.store(
+                audit_logger.store_web(
                     action='repo.commit.strip',
                     action_data={'commit_id': commit['rev']},
                     repo=self.db_repo,

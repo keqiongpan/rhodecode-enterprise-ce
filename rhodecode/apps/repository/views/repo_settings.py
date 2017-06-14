@@ -162,7 +162,7 @@ class RepoSettingsView(RepoAppView):
             RepoModel().update(self.db_repo, **validated_updates)
             ScmModel().mark_for_invalidation(new_repo_name)
 
-            audit_logger.store(
+            audit_logger.store_web(
                 'repo.edit', action_data={'old_data': old_values},
                 user=self._rhodecode_user, repo=self.db_repo)
 

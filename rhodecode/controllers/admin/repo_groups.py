@@ -189,9 +189,9 @@ class RepoGroupsController(BaseController):
             repo_group_data = repo_group.get_api_data()
             _new_group_name = form_result['group_name_full']
 
-            audit_logger.store(
+            audit_logger.store_web(
                 action='repo_group.create',
-                action_data={'repo_group_data': repo_group_data},
+                action_data={'data': repo_group_data},
                 user=c.rhodecode_user, commit=True)
 
             repo_group_url = h.link_to(
@@ -251,7 +251,7 @@ class RepoGroupsController(BaseController):
             gr_name = form_result['group_name']
             new_gr = RepoGroupModel().update(group_name, form_result)
 
-            audit_logger.store(
+            audit_logger.store_web(
                 'repo_group.edit', action_data={'old_data': old_values},
                 user=c.rhodecode_user)
 
@@ -303,10 +303,9 @@ class RepoGroupsController(BaseController):
             old_values = gr.get_api_data()
             RepoGroupModel().delete(group_name)
 
-            audit_logger.store(
+            audit_logger.store_web(
                 'repo_group.delete',
-                action_data={'old_data': old_values,
-                             'source': audit_logger.SOURCE_WEB},
+                action_data={'old_data': old_values},
                 user=c.rhodecode_user)
 
             Session().commit()
@@ -395,9 +394,8 @@ class RepoGroupsController(BaseController):
             'added': changes['added'],
             'updated': changes['updated'],
             'deleted': changes['deleted'],
-            'source': audit_logger.SOURCE_WEB
         }
-        audit_logger.store(
+        audit_logger.store_web(
             'repo_group.edit.permissions', action_data=action_data,
             user=c.rhodecode_user)
 

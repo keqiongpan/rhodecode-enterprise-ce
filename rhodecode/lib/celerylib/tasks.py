@@ -179,7 +179,7 @@ def create_repo(form_data, cur_user):
         repo_id = repo.repo_id
         repo_data = repo.get_api_data()
 
-        audit_logger.store(
+        audit_logger.store_web(
             action='repo.create',
             action_data={'data': repo_data},
             user=cur_user,
@@ -274,7 +274,7 @@ def create_repo_fork(form_data, cur_user):
 
         repo_id = repo.repo_id
         repo_data = repo.get_api_data()
-        audit_logger.store(
+        audit_logger.store_web(
             action='repo.fork',
             action_data={'data': repo_data},
             user=cur_user,
