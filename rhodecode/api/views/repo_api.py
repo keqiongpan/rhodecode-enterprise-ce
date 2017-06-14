@@ -1181,7 +1181,8 @@ def delete_repo(request, apiuser, repoid, forks=Optional('')):
 
         audit_logger.store(
             action='repo.delete',
-            action_data={'repo_data': repo_data, 'source': 'api_call'},
+            action_data={'repo_data': repo_data,
+                         'source': audit_logger.SOURCE_API},
             user=apiuser, repo=repo, commit=False)
 
         ScmModel().mark_for_invalidation(repo_name, delete=True)

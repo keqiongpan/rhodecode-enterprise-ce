@@ -44,6 +44,9 @@ ACTIONS = {
     'repo.archive.download': {},
 }
 
+SOURCE_WEB = 'source_web'
+SOURCE_API = 'source_api'
+
 
 class UserWrap(object):
     """
@@ -114,7 +117,8 @@ def store(
         # repo action, when we know and have the repository object already
         audit_logger.store(
             action='repo.delete',
-            user=audit_logger.UserWrap(username='itried-login', ip_addr='8.8.8.8'),
+            action_data={'source': audit_logger.SOURCE_WEB, },
+            user=self._rhodecode_user,
             repo=repo_object)
 
         # without an user ?

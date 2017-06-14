@@ -101,7 +101,8 @@ class RepoSettingsView(RepoAppView):
                                          repo_name=self.db_repo.repo_name)
             audit_logger.store(
                 action='repo.delete',
-                action_data={'repo_data': repo_data, 'source': 'web_action'},
+                action_data={'repo_data': repo_data,
+                             'source': audit_logger.SOURCE_WEB},
                 user=self._rhodecode_user, repo=repo, commit=False)
 
             ScmModel().mark_for_invalidation(self.db_repo_name, delete=True)
