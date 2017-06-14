@@ -116,7 +116,8 @@ class TestApiUpdateRepo(object):
         master_repo = backend.create_repo()
         repo = backend.create_repo()
         updates = {
-            'fork_of': master_repo.repo_name
+            'fork_of': master_repo.repo_name,
+            'fork_of_id': master_repo.repo_id
         }
         expected_api_data = repo.get_api_data(include_secrets=True)
         expected_api_data.update(updates)
@@ -131,6 +132,7 @@ class TestApiUpdateRepo(object):
         assert_ok(id_, expected, given=response.body)
         result = response.json['result']['repository']
         assert result['fork_of'] == master_repo.repo_name
+        assert result['fork_of_id'] == master_repo.repo_id
 
     def test_api_update_repo_fork_of_not_found(self, backend):
         master_repo_name = 'fake-parent-repo'

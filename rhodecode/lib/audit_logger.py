@@ -50,6 +50,7 @@ ACTIONS = {
     'user.edit.password_reset.disabled': {},
 
     'repo.create': {'data': {}},
+    'repo.fork': {'data': {}},
     'repo.edit': {'old_data': {}},
     'repo.edit.permissions': {},
     'repo.delete': {'old_data': {}},

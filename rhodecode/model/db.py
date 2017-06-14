@@ -1782,6 +1782,7 @@ class Repository(Base, BaseModel):
             'landing_rev': repo.landing_rev,
             'owner': repo.user.username,
             'fork_of': repo.fork.repo_name if repo.fork else None,
+            'fork_of_id': repo.fork.repo_id if repo.fork else None,
             'enable_statistics': repo.enable_statistics,
             'enable_locking': repo.enable_locking,
             'enable_downloads': repo.enable_downloads,
