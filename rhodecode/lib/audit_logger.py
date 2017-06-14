@@ -49,6 +49,13 @@ ACTIONS = {
     'user.edit.password_reset.enabled': {},
     'user.edit.password_reset.disabled': {},
 
+    'user_group.create': {'data': {}},
+    'user_group.delete': {'old_data': {}},
+    'user_group.edit': {'old_data': {}},
+    'user_group.edit.permissions': {},
+    'user_group.edit.member.add': {},
+    'user_group.edit.member.delete': {},
+
     'repo.create': {'data': {}},
     'repo.fork': {'data': {}},
     'repo.edit': {'old_data': {}},
