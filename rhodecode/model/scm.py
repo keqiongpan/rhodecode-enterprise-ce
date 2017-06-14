@@ -47,7 +47,7 @@ from rhodecode.lib.auth import (
 from rhodecode.lib.exceptions import NonRelativePathError, IMCCommitError
 from rhodecode.lib import hooks_utils, caches
 from rhodecode.lib.utils import (
-    get_filesystem_repos, action_logger, make_db_config)
+    get_filesystem_repos, make_db_config)
 from rhodecode.lib.utils2 import (safe_str, safe_unicode)
 from rhodecode.lib.system_info import get_system_info
 from rhodecode.model import BaseModel
@@ -289,9 +289,6 @@ class ScmModel(BaseModel):
         if f is not None:
             try:
                 self.sa.delete(f)
-                action_logger(UserTemp(user_id),
-                              'stopped_following_repo',
-                              RepoTemp(follow_repo_id))
                 return
             except Exception:
                 log.error(traceback.format_exc())
@@ -302,10 +299,6 @@ class ScmModel(BaseModel):
             f.user_id = user_id
             f.follows_repo_id = follow_repo_id
             self.sa.add(f)
-
-            action_logger(UserTemp(user_id),
-                          'started_following_repo',
-                          RepoTemp(follow_repo_id))
         except Exception:
             log.error(traceback.format_exc())
             raise
