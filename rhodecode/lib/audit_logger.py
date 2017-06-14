@@ -29,15 +29,13 @@ log = logging.getLogger(__name__)
 
 # action as key, and expected action_data as value
 ACTIONS = {
-    'user.login.success': {},
-    'user.login.failure': {},
-    'user.logout': {},
+    'user.login.success': {'user_agent': ''},
+    'user.login.failure': {'user_agent': ''},
+    'user.logout': {'user_agent': ''},
     'user.password.reset_request': {},
-    'user.push': {},
-    'user.pull': {},
+    'user.push': {'user_agent': '', 'commit_ids': []},
+    'user.pull': {'user_agent': ''},
 
-    'repo.create': {},
-    'repo.edit': {},
     'user.create': {'data': {}},
     'user.delete': {'old_data': {}},
     'user.edit': {'old_data': {}},
@@ -51,15 +49,17 @@ ACTIONS = {
     'user.edit.password_reset.enabled': {},
     'user.edit.password_reset.disabled': {},
 
+    'repo.create': {'data': {}},
+    'repo.edit': {'old_data': {}},
     'repo.edit.permissions': {},
-    'repo.delete': {},
+    'repo.delete': {'old_data': {}},
     'repo.commit.strip': {},
     'repo.archive.download': {},
 
-    'repo_group.create': {},
-    'repo_group.edit': {},
+    'repo_group.create': {'data': {}},
+    'repo_group.edit': {'old_data': {}},
     'repo_group.edit.permissions': {},
-    'repo_group.delete': {},
+    'repo_group.delete': {'old_data': {}},
 }
 
 SOURCE_WEB = 'source_web'
@@ -175,8 +175,9 @@ def store(action, user, action_data=None, user_data=None, ip_addr=None,
     from rhodecode.lib.utils2 import safe_unicode
     from rhodecode.lib.auth import AuthUser
 
-    if action not in ACTIONS:
-        raise ValueError('Action `{}` not in valid actions'.format(action))
+    action_spec = ACTIONS.get(action, None)
+    if action_spec is None:
+        raise ValueError('Action `{}` is not supported'.format(action))
 
     if not sa_session:
         sa_session = meta.Session()
