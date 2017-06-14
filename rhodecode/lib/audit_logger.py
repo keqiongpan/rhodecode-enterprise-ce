@@ -99,11 +99,30 @@ def _store_log(action_name, action_data, user_id, username, user_data,
     return user_log
 
 
+def store_web(*args, **kwargs):
+    if 'action_data' not in kwargs:
+        kwargs['action_data'] = {}
+    kwargs['action_data'].update({
+        'source': SOURCE_WEB
+    })
+    return store(*args, **kwargs)
+
+
+def store_api(*args, **kwargs):
+    if 'action_data' not in kwargs:
+        kwargs['action_data'] = {}
+    kwargs['action_data'].update({
+        'source': SOURCE_API
+    })
+    return store(*args, **kwargs)
+
+
 def store(
         action, user, action_data=None, user_data=None, ip_addr=None,
         repo=None, sa_session=None, commit=False):
     """
-    Audit logger for various actions made by users, typically this results in a call such::
+    Audit logger for various actions made by users, typically this
+    results in a call such::
 
         from rhodecode.lib import audit_logger
 
@@ -123,6 +142,13 @@ def store(
         audit_logger.store(
             action='repo.delete',
             action_data={'source': audit_logger.SOURCE_WEB, },
+            user=self._rhodecode_user,
+            repo=repo_object)
+
+        # alternative wrapper to the above
+        audit_logger.store_web(
+            action='repo.delete',
+            action_data={},
             user=self._rhodecode_user,
             repo=repo_object)
 
