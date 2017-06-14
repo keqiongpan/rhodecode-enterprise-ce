@@ -41,15 +41,11 @@ from rhodecode.lib.auth import (
     HasRepoGroupPermissionAny, HasRepoPermissionAnyDecorator)
 from rhodecode.lib.base import BaseRepoController, render
 from rhodecode.lib.ext_json import json
-from rhodecode.lib.exceptions import AttachedForksError
-from rhodecode.lib.utils import action_logger, repo_name_slug, jsonify
+from rhodecode.lib.utils import repo_name_slug, jsonify
 from rhodecode.lib.utils2 import safe_int, str2bool
-from rhodecode.lib.vcs import RepositoryError
-from rhodecode.model.db import (
-    User, Repository, UserFollowing, RepoGroup, RepositoryField)
+from rhodecode.model.db import (Repository, RepoGroup, RepositoryField)
 from rhodecode.model.forms import (
-    RepoForm, RepoFieldForm, RepoPermsForm, RepoVcsSettingsForm,
-    IssueTrackerPatternsForm)
+    RepoForm, RepoFieldForm, RepoVcsSettingsForm, IssueTrackerPatternsForm)
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel, RepoGroupList, RepoList

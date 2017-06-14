@@ -39,12 +39,12 @@ from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, HasPermissionAll,
     HasRepoGroupPermissionAll, HasRepoGroupPermissionAnyDecorator)
 from rhodecode.lib.base import BaseController, render
+from rhodecode.lib.utils2 import safe_int
 from rhodecode.model.db import RepoGroup, User
 from rhodecode.model.scm import RepoGroupList
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.forms import RepoGroupForm, RepoGroupPermsForm
 from rhodecode.model.meta import Session
-from rhodecode.lib.utils2 import safe_int
 
 
 log = logging.getLogger(__name__)

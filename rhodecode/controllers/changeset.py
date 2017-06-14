@@ -39,7 +39,7 @@ from rhodecode.lib.base import BaseRepoController, render
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 import rhodecode.lib.helpers as h
-from rhodecode.lib.utils import action_logger, jsonify
+from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_unicode
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
@@ -48,7 +48,6 @@ from rhodecode.model.db import ChangesetComment, ChangesetStatus
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.meta import Session
-from rhodecode.model.repo import RepoModel
 
 
 log = logging.getLogger(__name__)

@@ -35,6 +35,7 @@ from sqlalchemy.orm import joinedload
 
 from rhodecode.lib import auth
 from rhodecode.lib import helpers as h
+from rhodecode.lib.ext_json import json
 from rhodecode.lib.exceptions import UserGroupAssignedException,\
     RepoGroupAssignmentError
 from rhodecode.lib.utils import jsonify, action_logger
@@ -52,8 +53,7 @@ from rhodecode.model.forms import (
     UserGroupForm, UserGroupPermsForm, UserIndividualPermissionsForm,
     UserPermissionsForm)
 from rhodecode.model.meta import Session
-from rhodecode.lib.utils import action_logger
-from rhodecode.lib.ext_json import json
+
 
 log = logging.getLogger(__name__)
 
