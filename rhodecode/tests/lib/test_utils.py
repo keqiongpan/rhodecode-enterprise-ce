@@ -221,11 +221,6 @@ def platform_encodes_filenames():
     return path_with_latin1 != read_path
 
 
-def test_action_logger_action_size(pylonsapp, test_repo):
-    action = 'x' * 1200001
-    utils.action_logger(TEST_USER_ADMIN_LOGIN, action, test_repo, commit=True)
-
-
 @pytest.fixture
 def repo_groups(request):
     session = meta.Session()
