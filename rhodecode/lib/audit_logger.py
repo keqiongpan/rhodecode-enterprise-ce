@@ -42,6 +42,11 @@ ACTIONS = {
     'repo.delete': {},
     'repo.commit.strip': {},
     'repo.archive.download': {},
+
+    'repo_group.create': {},
+    'repo_group.edit': {},
+    'repo_group.edit.permissions': {},
+    'repo_group.delete': {},
 }
 
 SOURCE_WEB = 'source_web'
