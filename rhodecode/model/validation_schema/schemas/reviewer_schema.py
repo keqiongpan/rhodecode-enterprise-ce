@@ -24,7 +24,7 @@ from rhodecode.model.validation_schema import validators, preparers, types
 
 class ReviewerSchema(colander.MappingSchema):
     username = colander.SchemaNode(types.StrOrIntType())
-    reasons = colander.SchemaNode(colander.List(), missing=[])
+    reasons = colander.SchemaNode(colander.List(), missing=['no reason specified'])
     mandatory = colander.SchemaNode(colander.Boolean(), missing=False)
 
 

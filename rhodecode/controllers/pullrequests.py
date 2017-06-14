@@ -264,8 +264,8 @@ class PullrequestsController(BaseRepoController):
             c.rhodecode_user.get_instance(), source_db_repo,
             source_commit, target_db_repo, target_commit)
 
-        reviewers = validate_default_reviewers(
-            _form['review_members'], reviewer_rules)
+        given_reviewers = _form['review_members']
+        reviewers = validate_default_reviewers(given_reviewers, reviewer_rules)
 
         try:
             pull_request = PullRequestModel().create(
@@ -452,7 +452,7 @@ class PullrequestsController(BaseRepoController):
         try:
             reviewers = validate_default_reviewers(review_members, reviewer_rules)
         except ValueError as e:
-            log.error('Reviewers Validation:{}'.format(e))
+            log.error('Reviewers Validation: {}'.format(e))
             h.flash(e, category='error')
             return
 

@@ -1248,12 +1248,19 @@ def initials_gravatar(email_address, first_name, last_name, size=30):
     return klass.generate_svg(svg_type=svg_type)
 
 
-def gravatar_url(email_address, size=30):
-    # doh, we need to re-import those to mock it later
-    from pylons import tmpl_context as c
+def gravatar_url(email_address, size=30, request=None):
+    request = get_current_request()
+    if request and hasattr(request, 'call_context'):
+        _use_gravatar = request.call_context.visual.use_gravatar
+        _gravatar_url = request.call_context.visual.gravatar_url
+    else:
+        # doh, we need to re-import those to mock it later
+        from pylons import tmpl_context as c
 
-    _use_gravatar = c.visual.use_gravatar
-    _gravatar_url = c.visual.gravatar_url or User.DEFAULT_GRAVATAR_URL
+        _use_gravatar = c.visual.use_gravatar
+        _gravatar_url = c.visual.gravatar_url
+
+    _gravatar_url = _gravatar_url or User.DEFAULT_GRAVATAR_URL
 
     email_address = email_address or User.DEFAULT_USER_EMAIL
     if isinstance(email_address, unicode):

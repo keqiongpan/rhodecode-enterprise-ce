@@ -482,24 +482,26 @@ def create_pull_request(
     :param description: Set the pull request description.
     :type description: Optional(str)
     :param reviewers: Set the new pull request reviewers list.
+        Reviewer defined by review rules will be added automatically to the
+        defined list.
     :type reviewers: Optional(list)
         Accepts username strings or objects of the format:
 
-            {'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}
+            [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
     """
 
-    source = get_repo_or_error(source_repo)
-    target = get_repo_or_error(target_repo)
+    source_db_repo =  get_repo_or_error(source_repo)
+    target_db_repo = get_repo_or_error(target_repo)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
-        validate_repo_permissions(apiuser, source_repo, source, _perms)
+        validate_repo_permissions(apiuser, source_repo, source_db_repo, _perms)
 
-    full_source_ref = resolve_ref_or_error(source_ref, source)
-    full_target_ref = resolve_ref_or_error(target_ref, target)
-    source_commit = get_commit_or_error(full_source_ref, source)
-    target_commit = get_commit_or_error(full_target_ref, target)
-    source_scm = source.scm_instance()
-    target_scm = target.scm_instance()
+    full_source_ref = resolve_ref_or_error(source_ref, source_db_repo)
+    full_target_ref = resolve_ref_or_error(target_ref, target_db_repo)
+    source_commit = get_commit_or_error(full_source_ref, source_db_repo)
+    target_commit = get_commit_or_error(full_target_ref, target_db_repo)
+    source_scm = source_db_repo.scm_instance()
+    target_scm = target_db_repo.scm_instance()
 
     commit_ranges = target_scm.compare(
         target_commit.raw_id, source_commit.raw_id, source_scm,
@@ -515,6 +517,7 @@ def create_pull_request(
         raise JSONRPCError('no common ancestor found')
 
     reviewer_objects = Optional.extract(reviewers) or []
+
     if reviewer_objects:
         schema = ReviewerListSchema()
         try:
@@ -522,12 +525,28 @@ def create_pull_request(
         except Invalid as err:
             raise JSONRPCValidationError(colander_exc=err)
 
-    reviewers = []
-    for reviewer_object in reviewer_objects:
-        user = get_user_or_error(reviewer_object['username'])
-        reasons = reviewer_object['reasons']
-        mandatory = reviewer_object['mandatory']
-        reviewers.append((user.user_id, reasons, mandatory))
+        # validate users
+        for reviewer_object in reviewer_objects:
+            user = get_user_or_error(reviewer_object['username'])
+            reviewer_object['user_id'] = user.user_id
+
+    get_default_reviewers_data, get_validated_reviewers = \
+        PullRequestModel().get_reviewer_functions()
+
+    reviewer_rules = get_default_reviewers_data(
+        apiuser.get_instance(), source_db_repo,
+        source_commit, target_db_repo, target_commit)
+
+    # specified rules are later re-validated, thus we can assume users will
+    # eventually provide those that meet the reviewer criteria.
+    if not reviewer_objects:
+        reviewer_objects = reviewer_rules['reviewers']
+
+    try:
+        reviewers = get_validated_reviewers(
+            reviewer_objects, reviewer_rules)
+    except ValueError as e:
+        raise JSONRPCError('Reviewers Validation: {}'.format(e))
 
     pull_request_model = PullRequestModel()
     pull_request = pull_request_model.create(
@@ -573,7 +592,7 @@ def update_pull_request(
     :type reviewers: Optional(list)
         Accepts username strings or objects of the format:
 
-            {'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}
+            [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
 
     :param update_commits: Trigger update of commits for this pull request
     :type: update_commits: Optional(bool)
@@ -619,6 +638,7 @@ def update_pull_request(
                 pullrequestid,))
 
     reviewer_objects = Optional.extract(reviewers) or []
+
     if reviewer_objects:
         schema = ReviewerListSchema()
         try:
@@ -626,12 +646,23 @@ def update_pull_request(
         except Invalid as err:
             raise JSONRPCValidationError(colander_exc=err)
 
-    reviewers = []
-    for reviewer_object in reviewer_objects:
-        user = get_user_or_error(reviewer_object['username'])
-        reasons = reviewer_object['reasons']
-        mandatory = reviewer_object['mandatory']
-        reviewers.append((user.user_id, reasons, mandatory))
+        # validate users
+        for reviewer_object in reviewer_objects:
+            user = get_user_or_error(reviewer_object['username'])
+            reviewer_object['user_id'] = user.user_id
+
+        get_default_reviewers_data, get_validated_reviewers = \
+            PullRequestModel().get_reviewer_functions()
+
+        # re-use stored rules
+        reviewer_rules = pull_request.reviewer_data
+        try:
+            reviewers = get_validated_reviewers(
+                reviewer_objects, reviewer_rules)
+        except ValueError as e:
+            raise JSONRPCError('Reviewers Validation: {}'.format(e))
+    else:
+        reviewers = []
 
     title = Optional.extract(title)
     description = Optional.extract(description)

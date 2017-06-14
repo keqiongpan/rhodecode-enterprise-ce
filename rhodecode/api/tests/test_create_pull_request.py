@@ -77,7 +77,7 @@ class TestCreatePullRequestApi(object):
         assert pull_request.source_repo.repo_name == data['source_repo']
         assert pull_request.target_repo.repo_name == data['target_repo']
         assert pull_request.revisions == [self.commit_ids['change']]
-        assert pull_request.reviewers == []
+        assert len(pull_request.reviewers) == 1
 
     @pytest.mark.backends("git", "hg")
     def test_create_with_empty_description(self, backend):
