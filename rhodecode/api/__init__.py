@@ -35,8 +35,9 @@ from pyramid.httpexceptions import HTTPNotFound
 
 from rhodecode.api.exc import (
     JSONRPCBaseError, JSONRPCError, JSONRPCForbidden, JSONRPCValidationError)
+from rhodecode.apps._base import TemplateArgs
 from rhodecode.lib.auth import AuthUser
-from rhodecode.lib.base import get_ip_addr
+from rhodecode.lib.base import get_ip_addr, attach_context_attributes
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.lib.plugins.utils import get_plugin_settings
@@ -278,6 +279,11 @@ def request_view(request):
         'request': request,
         'apiuser': auth_u
     })
+
+    # register some common functions for usage
+    attach_context_attributes(TemplateArgs(), request, request.rpc_user.user_id,
+                              attach_to_request=True)
+
     try:
         ret_value = func(**call_params)
         return jsonrpc_response(request, ret_value)
