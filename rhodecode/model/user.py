@@ -767,7 +767,7 @@ class UserModel(BaseModel):
         """
         user = self._get_user(user)
         obj = UserEmailMap.query().get(email_id)
-        if obj:
+        if obj and obj.user_id == user.user_id:
             self.sa.delete(obj)
 
     def parse_ip_range(self, ip_range):
@@ -824,7 +824,7 @@ class UserModel(BaseModel):
         """
         user = self._get_user(user)
         obj = UserIpMap.query().get(ip_id)
-        if obj:
+        if obj and obj.user_id == user.user_id:
             self.sa.delete(obj)
 
     def get_accounts_in_creation_order(self, current_user=None):

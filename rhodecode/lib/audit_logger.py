@@ -27,7 +27,7 @@ from rhodecode.model.db import User, UserLog, Repository
 
 log = logging.getLogger(__name__)
 
-
+# action as key, and expected action_data as value
 ACTIONS = {
     'user.login.success': {},
     'user.login.failure': {},
@@ -38,6 +38,19 @@ ACTIONS = {
 
     'repo.create': {},
     'repo.edit': {},
+    'user.create': {'data': {}},
+    'user.delete': {'old_data': {}},
+    'user.edit': {'old_data': {}},
+    'user.edit.permissions': {},
+    'user.edit.ip.add': {},
+    'user.edit.ip.delete': {},
+    'user.edit.token.add': {},
+    'user.edit.token.delete': {},
+    'user.edit.email.add': {},
+    'user.edit.email.delete': {},
+    'user.edit.password_reset.enabled': {},
+    'user.edit.password_reset.disabled': {},
+
     'repo.edit.permissions': {},
     'repo.delete': {},
     'repo.commit.strip': {},
@@ -117,9 +130,8 @@ def store_api(*args, **kwargs):
     return store(*args, **kwargs)
 
 
-def store(
-        action, user, action_data=None, user_data=None, ip_addr=None,
-        repo=None, sa_session=None, commit=False):
+def store(action, user, action_data=None, user_data=None, ip_addr=None,
+          repo=None, sa_session=None, commit=False):
     """
     Audit logger for various actions made by users, typically this
     results in a call such::
