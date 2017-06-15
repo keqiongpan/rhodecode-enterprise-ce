@@ -5,7 +5,10 @@ Use the following example to configure Nginx as a your web server.
 
 
 .. code-block:: nginx
+    ## rate limiter for certain pages to prevent brute force attacks
+    limit_req_zone  $binary_remote_addr  zone=dl_limit:10m   rate=1r/s;
 
+    ## custom log format
     log_format log_custom '$remote_addr - $remote_user [$time_local] '
                           '"$request" $status $body_bytes_sent '
                           '"$http_referer" "$http_user_agent" '
@@ -107,6 +110,12 @@ Use the following example to configure Nginx as a your web server.
             proxy_http_version           1.1;
             proxy_set_header Upgrade     $http_upgrade;
             proxy_set_header Connection  "upgrade";
+        }
+
+        location /_admin/login {
+            ## rate limit this endpoint
+            limit_req  zone=dl_limit  burst=10  nodelay;
+            try_files $uri @rhode;
         }
 
         location / {
