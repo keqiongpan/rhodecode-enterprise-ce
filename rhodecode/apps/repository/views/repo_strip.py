@@ -23,6 +23,7 @@ from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import audit_logger
+from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator,
     NotAnonymous)
 from rhodecode.lib.ext_json import json
@@ -64,10 +65,11 @@ class StripView(RepoAppView):
         for i in range(1, 11):
             chset = 'changeset_id-%d' % (i,)
             check = rp.get(chset)
+
             if check:
                 data[i] = self.db_repo.get_changeset(rp[chset])
                 if isinstance(data[i], EmptyCommit):
-                    data[i] = {'rev': None, 'commit': rp[chset]}
+                    data[i] = {'rev': None, 'commit': h.escape(rp[chset])}
                 else:
                     data[i] = {'rev': data[i].raw_id, 'branch': data[i].branch,
                                'author': data[i].author,
