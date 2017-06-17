@@ -95,13 +95,13 @@ class TestMergePullRequest(object):
 
         assert_ok(id_, expected, response.body)
 
-        action = 'user_merged_pull_request:%d' % (pull_request_id, )
         journal = UserLog.query()\
             .filter(UserLog.user_id == author)\
-            .filter(UserLog.repository_id == repo)\
-            .filter(UserLog.action == action)\
+            .filter(UserLog.repository_id == repo) \
+            .order_by('user_log_id') \
             .all()
-        assert len(journal) == 1
+        assert journal[-2].action == 'repo.pull_request.merge'
+        assert journal[-1].action == 'repo.pull_request.close'
 
         id_, params = build_data(
             self.apikey, 'merge_pull_request',

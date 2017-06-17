@@ -28,7 +28,7 @@ from rhodecode.model.db import User, UserLog, Repository
 log = logging.getLogger(__name__)
 
 # action as key, and expected action_data as value
-ACTIONS = {
+ACTIONS_V1 = {
     'user.login.success': {'user_agent': ''},
     'user.login.failure': {'user_agent': ''},
     'user.logout': {'user_agent': ''},
@@ -64,11 +64,28 @@ ACTIONS = {
     'repo.commit.strip': {},
     'repo.archive.download': {},
 
+    'repo.pull_request.create': '',
+    'repo.pull_request.edit': '',
+    'repo.pull_request.delete': '',
+    'repo.pull_request.close': '',
+    'repo.pull_request.merge': '',
+    'repo.pull_request.vote': '',
+    'repo.pull_request.comment.create': '',
+    'repo.pull_request.comment.delete': '',
+
+    'repo.pull_request.reviewer.add': '',
+    'repo.pull_request.reviewer.delete': '',
+
+    'repo.commit.comment.create': '',
+    'repo.commit.comment.delete': '',
+    'repo.commit.vote': '',
+
     'repo_group.create': {'data': {}},
     'repo_group.edit': {'old_data': {}},
     'repo_group.edit.permissions': {},
     'repo_group.delete': {'old_data': {}},
 }
+ACTIONS = ACTIONS_V1
 
 SOURCE_WEB = 'source_web'
 SOURCE_API = 'source_api'

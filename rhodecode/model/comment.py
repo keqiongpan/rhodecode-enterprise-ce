@@ -34,8 +34,8 @@ from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.functions import coalesce
 
 from rhodecode.lib import helpers as h, diffs
+from rhodecode.lib import audit_logger
 from rhodecode.lib.channelstream import channelstream_request
-from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import extract_mentioned_users, safe_str
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
@@ -162,6 +162,13 @@ class CommentsModel(BaseModel):
         todos = todos.all()
 
         return todos
+
+    def _log_audit_action(self, action, action_data, user, comment):
+        audit_logger.store(
+            action=action,
+            action_data=action_data,
+            user=user,
+            repo=comment.repo)
 
     def create(self, text, repo, user, commit_id=None, pull_request=None,
                f_path=None, line_no=None, status_change=None,
@@ -337,13 +344,15 @@ class CommentsModel(BaseModel):
                 email_kwargs=kwargs,
             )
 
-        action = (
-            'user_commented_pull_request:{}'.format(
-                comment.pull_request.pull_request_id)
-            if comment.pull_request
-            else 'user_commented_revision:{}'.format(comment.revision)
-        )
-        action_logger(user, action, comment.repo)
+        Session().flush()
+        if comment.pull_request:
+            action = 'repo.pull_request.comment.create'
+        else:
+            action = 'repo.commit.comment.create'
+
+        comment_data = comment.get_api_data()
+        self._log_audit_action(
+            action, {'data': comment_data}, user, comment)
 
         registry = get_current_registry()
         rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
@@ -385,14 +394,21 @@ class CommentsModel(BaseModel):
 
         return comment
 
-    def delete(self, comment):
+    def delete(self, comment, user):
         """
         Deletes given comment
-
-        :param comment_id:
         """
         comment = self.__get_commit_comment(comment)
+        old_data = comment.get_api_data()
         Session().delete(comment)
+
+        if comment.pull_request:
+            action = 'repo.pull_request.comment.delete'
+        else:
+            action = 'repo.commit.comment.delete'
+
+        self._log_audit_action(
+            action, {'old_data': old_data}, user, comment)
 
         return comment
 

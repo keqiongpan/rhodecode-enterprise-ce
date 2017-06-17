@@ -3122,6 +3122,25 @@ class ChangesetComment(Base, BaseModel):
         else:
             return '<DB:Comment at %#x>' % id(self)
 
+    def get_api_data(self):
+        comment = self
+        data = {
+            'comment_id': comment.comment_id,
+            'comment_type': comment.comment_type,
+            'comment_text': comment.text,
+            'comment_status': comment.status_change,
+            'comment_f_path': comment.f_path,
+            'comment_lineno': comment.line_no,
+            'comment_author': comment.author,
+            'comment_created_on': comment.created_on
+        }
+        return data
+
+    def __json__(self):
+        data = dict()
+        data.update(self.get_api_data())
+        return data
+
 
 class ChangesetStatus(Base, BaseModel):
     __tablename__ = 'changeset_statuses'
@@ -3172,6 +3191,19 @@ class ChangesetStatus(Base, BaseModel):
     @property
     def status_lbl(self):
         return ChangesetStatus.get_status_lbl(self.status)
+
+    def get_api_data(self):
+        status = self
+        data = {
+            'status_id': status.changeset_status_id,
+            'status': status.status,
+        }
+        return data
+
+    def __json__(self):
+        data = dict()
+        data.update(self.get_api_data())
+        return data
 
 
 class _PullRequestBase(BaseModel):
@@ -3304,15 +3336,19 @@ class _PullRequestBase(BaseModel):
         else:
             return None
 
-    def get_api_data(self):
-        from pylons import url
+    def get_api_data(self, with_merge_state=True):
         from rhodecode.model.pull_request import PullRequestModel
-        pull_request = self
-        merge_status = PullRequestModel().merge_status(pull_request)
 
-        pull_request_url = url(
-            'pullrequest_show', repo_name=self.target_repo.repo_name,
-            pull_request_id=self.pull_request_id, qualified=True)
+        pull_request = self
+        if with_merge_state:
+            merge_status = PullRequestModel().merge_status(pull_request)
+            merge_state = {
+                'status': merge_status[0],
+                'message': safe_unicode(merge_status[1]),
+            }
+        else:
+            merge_state = {'status': 'not_available',
+                           'message': 'not_available'}
 
         merge_data = {
             'clone_url': PullRequestModel().get_shadow_clone_url(pull_request),
@@ -3323,7 +3359,7 @@ class _PullRequestBase(BaseModel):
 
         data = {
             'pull_request_id': pull_request.pull_request_id,
-            'url': pull_request_url,
+            'url': PullRequestModel().get_url(pull_request),
             'title': pull_request.title,
             'description': pull_request.description,
             'status': pull_request.status,
@@ -3331,10 +3367,7 @@ class _PullRequestBase(BaseModel):
             'updated_on': pull_request.updated_on,
             'commit_ids': pull_request.revisions,
             'review_status': pull_request.calculated_review_status(),
-            'mergeable': {
-                'status': merge_status[0],
-                'message': unicode(merge_status[1]),
-            },
+            'mergeable': merge_state,
             'source': {
                 'clone_url': pull_request.source_repo.clone_url(),
                 'repository': pull_request.source_repo.repo_name,
@@ -3389,7 +3422,8 @@ class PullRequest(Base, _PullRequestBase):
 
     reviewers = relationship('PullRequestReviewers',
                              cascade="all, delete, delete-orphan")
-    statuses = relationship('ChangesetStatus')
+    statuses = relationship('ChangesetStatus',
+                            cascade="all, delete, delete-orphan")
     comments = relationship('ChangesetComment',
                             cascade="all, delete, delete-orphan")
     versions = relationship('PullRequestVersion',

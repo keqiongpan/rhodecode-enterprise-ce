@@ -892,7 +892,7 @@ class RepoServer(object):
 
 
 @pytest.fixture
-def pr_util(backend, request):
+def pr_util(backend, request, config_stub):
     """
     Utility for tests of models and for functional tests around pull requests.
 
@@ -1085,7 +1085,7 @@ class PRTestUtility(object):
         # request will already be deleted.
         pull_request = PullRequest().get(self.pull_request_id)
         if pull_request:
-            PullRequestModel().delete(pull_request)
+            PullRequestModel().delete(pull_request, pull_request.author)
             Session().commit()
 
         if self.notification_patcher:
@@ -1644,14 +1644,6 @@ class SettingsUtility(object):
 def no_notifications(request):
     notification_patcher = mock.patch(
         'rhodecode.model.notification.NotificationModel.create')
-    notification_patcher.start()
-    request.addfinalizer(notification_patcher.stop)
-
-
-@pytest.fixture
-def silence_action_logger(request):
-    notification_patcher = mock.patch(
-        'rhodecode.lib.utils.action_logger')
     notification_patcher.start()
     request.addfinalizer(notification_patcher.stop)
 

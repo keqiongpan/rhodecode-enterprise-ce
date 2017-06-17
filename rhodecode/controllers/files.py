@@ -38,7 +38,7 @@ from rhodecode.lib import diffs, helpers as h, caches
 from rhodecode.lib import audit_logger
 from rhodecode.lib.codeblocks import (
     filenode_as_lines_tokens, filenode_as_annotated_lines_tokens)
-from rhodecode.lib.utils import jsonify, action_logger
+from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import (
     convert_line_endings, detect_mode, safe_str, str2bool)
 from rhodecode.lib.auth import (

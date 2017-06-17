@@ -27,7 +27,7 @@ from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib import helpers as h
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.db import (
-    PullRequest, ChangesetStatus, UserLog, Notification)
+    PullRequest, ChangesetStatus, UserLog, Notification, ChangesetComment)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
@@ -256,29 +256,32 @@ class TestPullrequestsController(object):
                 'csrf_token': csrf_token},
             extra_environ=xhr_header,)
 
-        action = 'user_closed_pull_request:%d' % pull_request_id
         journal = UserLog.query()\
             .filter(UserLog.user_id == author)\
-            .filter(UserLog.repository_id == repo)\
-            .filter(UserLog.action == action)\
+            .filter(UserLog.repository_id == repo) \
+            .order_by('user_log_id') \
             .all()
-        assert len(journal) == 1
+        assert journal[-1].action == 'repo.pull_request.close'
 
         pull_request = PullRequest.get(pull_request_id)
         assert pull_request.is_closed()
 
-        # check only the latest status, not the review status
         status = ChangesetStatusModel().get_status(
             pull_request.source_repo, pull_request=pull_request)
         assert status == ChangesetStatus.STATUS_APPROVED
-        assert pull_request.comments[-1].text == 'Closing a PR'
+        comments = ChangesetComment().query() \
+            .filter(ChangesetComment.pull_request == pull_request) \
+            .order_by(ChangesetComment.comment_id.asc())\
+            .all()
+        assert comments[-1].text == 'Closing a PR'
 
     def test_comment_force_close_pull_request_rejected(
             self, pr_util, csrf_token, xhr_header):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
         PullRequestModel().update_reviewers(
-            pull_request_id, [(1, ['reason'], False), (2, ['reason2'], False)])
+            pull_request_id, [(1, ['reason'], False), (2, ['reason2'], False)],
+            pull_request.author)
         author = pull_request.user_id
         repo = pull_request.target_repo.repo_id
 
@@ -294,12 +297,11 @@ class TestPullrequestsController(object):
 
         pull_request = PullRequest.get(pull_request_id)
 
-        action = 'user_closed_pull_request:%d' % pull_request_id
-        journal = UserLog.query().filter(
-            UserLog.user_id == author,
-            UserLog.repository_id == repo,
-            UserLog.action == action).all()
-        assert len(journal) == 1
+        journal = UserLog.query()\
+            .filter(UserLog.user_id == author, UserLog.repository_id == repo) \
+            .order_by('user_log_id') \
+            .all()
+        assert journal[-1].action == 'repo.pull_request.close'
 
         # check only the latest status, not the review status
         status = ChangesetStatusModel().get_status(
@@ -449,7 +451,8 @@ class TestPullrequestsController(object):
 
         # Change reviewers and check that a notification was made
         PullRequestModel().update_reviewers(
-            pull_request.pull_request_id, [(1, [], False)])
+            pull_request.pull_request_id, [(1, [], False)],
+            pull_request.author)
         assert len(notifications.all()) == 2
 
     def test_create_pull_request_stores_ancestor_commit_id(self, backend,
@@ -541,25 +544,20 @@ class TestPullrequestsController(object):
             pull_request, ChangesetStatus.STATUS_APPROVED)
 
         # Check the relevant log entries were added
-        user_logs = UserLog.query() \
-            .filter(UserLog.version == UserLog.VERSION_1) \
-            .order_by('-user_log_id').limit(3)
+        user_logs = UserLog.query().order_by('-user_log_id').limit(3)
         actions = [log.action for log in user_logs]
         pr_commit_ids = PullRequestModel()._get_commit_ids(pull_request)
         expected_actions = [
-            u'user_closed_pull_request:%d' % pull_request_id,
-            u'user_merged_pull_request:%d' % pull_request_id,
-            # The action below reflect that the post push actions were executed
-            u'user_commented_pull_request:%d' % pull_request_id,
+             u'repo.pull_request.close',
+             u'repo.pull_request.merge',
+             u'repo.pull_request.comment.create'
         ]
         assert actions == expected_actions
 
-        user_logs = UserLog.query() \
-            .filter(UserLog.version == UserLog.VERSION_2) \
-            .order_by('-user_log_id').limit(1)
-        actions = [log.action for log in user_logs]
-        assert actions == ['user.push']
-        assert user_logs[0].action_data['commit_ids'] == pr_commit_ids
+        user_logs = UserLog.query().order_by('-user_log_id').limit(4)
+        actions = [log for log in user_logs]
+        assert actions[-1].action == 'user.push'
+        assert actions[-1].action_data['commit_ids'] == pr_commit_ids
 
         # Check post_push rcextension was really executed
         push_calls = rhodecode.EXTENSIONS.calls['post_push']

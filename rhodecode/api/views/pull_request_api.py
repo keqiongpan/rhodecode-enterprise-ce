@@ -669,7 +669,7 @@ def update_pull_request(
     if title or description:
         PullRequestModel().edit(
             pull_request, title or pull_request.title,
-            description or pull_request.description)
+            description or pull_request.description, apiuser)
         Session().commit()
 
     commit_changes = {"added": [], "common": [], "removed": []}
@@ -683,7 +683,7 @@ def update_pull_request(
     reviewers_changes = {"added": [], "removed": []}
     if reviewers:
         added_reviewers, removed_reviewers = \
-            PullRequestModel().update_reviewers(pull_request, reviewers)
+            PullRequestModel().update_reviewers(pull_request, reviewers, apiuser)
 
         reviewers_changes['added'] = sorted(
             [get_user_or_error(n).username for n in added_reviewers])

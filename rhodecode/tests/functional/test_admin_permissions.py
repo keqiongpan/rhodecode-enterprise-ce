@@ -199,6 +199,9 @@ class TestAdminPermissionsController(TestController):
             url('edit_user_ips', user_id=default_user_id),
             params={'_method': 'delete', 'del_ip_id': del_ip_id,
                     'csrf_token': self.csrf_token})
+
+        assert_session_flash(response, 'Removed ip address from user whitelist')
+
         clear_all_caches()
         response = self.app.get(url('admin_permissions_ips'))
         response.mustcontain('All IP addresses are allowed')

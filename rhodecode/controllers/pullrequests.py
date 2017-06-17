@@ -317,7 +317,7 @@ class PullrequestsController(BaseRepoController):
         try:
             PullRequestModel().edit(
                 pull_request, request.POST.get('title'),
-                request.POST.get('description'))
+                request.POST.get('description'), c.rhodecode_user)
         except ValueError:
             msg = _(u'Cannot update closed pull requests.')
             h.flash(msg, category='error')
@@ -456,7 +456,8 @@ class PullrequestsController(BaseRepoController):
             h.flash(e, category='error')
             return
 
-        PullRequestModel().update_reviewers(pull_request_id, reviewers)
+        PullRequestModel().update_reviewers(
+            pull_request_id, reviewers, c.rhodecode_user)
         h.flash(_('Pull request reviewers updated.'), category='success')
         Session().commit()
 
@@ -476,7 +477,7 @@ class PullrequestsController(BaseRepoController):
 
         # only owner can delete it !
         if allowed_to_delete:
-            PullRequestModel().delete(pull_request)
+            PullRequestModel().delete(pull_request, c.rhodecode_user)
             Session().commit()
             h.flash(_('Successfully deleted pull request'),
                     category='success')
@@ -997,7 +998,7 @@ class PullrequestsController(BaseRepoController):
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(c.repo_name)
         if h.HasPermissionAny('hg.admin')() or is_repo_admin or is_owner:
             old_calculated_status = co.pull_request.calculated_review_status()
-            CommentsModel().delete(comment=co)
+            CommentsModel().delete(comment=co, user=c.rhodecode_user)
             Session().commit()
             calculated_status = co.pull_request.calculated_review_status()
             if old_calculated_status != calculated_status:

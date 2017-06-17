@@ -33,7 +33,7 @@ class TestUpdatePullRequest(object):
 
     @pytest.mark.backends("git", "hg")
     def test_api_update_pull_request_title_or_description(
-            self, pr_util, silence_action_logger, no_notifications):
+            self, pr_util, no_notifications):
         pull_request = pr_util.create_pull_request()
 
         id_, params = build_data(
@@ -61,7 +61,7 @@ class TestUpdatePullRequest(object):
 
     @pytest.mark.backends("git", "hg")
     def test_api_try_update_closed_pull_request(
-            self, pr_util, silence_action_logger, no_notifications):
+            self, pr_util, no_notifications):
         pull_request = pr_util.create_pull_request()
         PullRequestModel().close_pull_request(
             pull_request, TEST_USER_ADMIN_LOGIN)
@@ -78,8 +78,7 @@ class TestUpdatePullRequest(object):
         assert_error(id_, expected, response.body)
 
     @pytest.mark.backends("git", "hg")
-    def test_api_update_update_commits(
-            self, pr_util, silence_action_logger, no_notifications):
+    def test_api_update_update_commits(self, pr_util, no_notifications):
         commits = [
             {'message': 'a'},
             {'message': 'b', 'added': [FileNode('file_b', 'test_content\n')]},
@@ -119,7 +118,7 @@ class TestUpdatePullRequest(object):
 
     @pytest.mark.backends("git", "hg")
     def test_api_update_change_reviewers(
-            self, user_util, pr_util, silence_action_logger, no_notifications):
+            self, user_util, pr_util, no_notifications):
         a = user_util.create_user()
         b = user_util.create_user()
         c = user_util.create_user()

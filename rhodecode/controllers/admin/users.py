@@ -628,8 +628,8 @@ class UsersController(BaseController):
 
         ip_id = request.POST.get('del_ip_id')
         user_model = UserModel()
-        ip = UserIpMap.query().get(ip_id).ip_addr
         user_data = c.user.get_api_data()
+        ip = UserIpMap.query().get(ip_id).ip_addr
         user_model.delete_extra_ip(user_id, ip_id)
         audit_logger.store_web(
             'user.edit.ip.delete',

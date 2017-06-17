@@ -440,7 +440,7 @@ class ChangesetController(BaseRepoController):
         owner = (comment.author.user_id == c.rhodecode_user.user_id)
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(c.repo_name)
         if h.HasPermissionAny('hg.admin')() or is_repo_admin or owner:
-            CommentsModel().delete(comment=comment)
+            CommentsModel().delete(comment=comment, user=c.rhodecode_user)
             Session().commit()
             return True
         else:

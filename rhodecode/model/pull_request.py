@@ -36,11 +36,11 @@ from sqlalchemy import or_
 
 from rhodecode import events
 from rhodecode.lib import helpers as h, hooks_utils, diffs
+from rhodecode.lib import audit_logger
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.markup_renderer import (
     DEFAULT_COMMENTS_RENDERER, RstTemplateRenderer)
-from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import safe_unicode, safe_str, md5_safe
 from rhodecode.lib.vcs.backends.base import (
     Reference, MergeResponse, MergeFailureReason, UpdateFailureReason)
@@ -470,6 +470,11 @@ class PullRequestModel(BaseModel):
         self._trigger_pull_request_hook(
             pull_request, created_by_user, 'create')
 
+        creation_data = pull_request.get_api_data(with_merge_state=False)
+        self._log_audit_action(
+            'repo.pull_request.create', {'data': creation_data},
+            created_by_user, pull_request)
+
         return pull_request
 
     def _trigger_pull_request_hook(self, pull_request, user, action):
@@ -520,7 +525,12 @@ class PullRequestModel(BaseModel):
             log.debug(
                 "Merge was successful, updating the pull request comments.")
             self._comment_and_close_pr(pull_request, user, merge_state)
-            self._log_action('user_merged_pull_request', user, pull_request)
+
+            self._log_audit_action(
+                'repo.pull_request.merge',
+                {'merge_state': merge_state.__dict__},
+                user, pull_request)
+
         else:
             log.warn("Merge failed, not updating the pull request.")
         return merge_state
@@ -899,8 +909,9 @@ class PullRequestModel(BaseModel):
         renderer = RstTemplateRenderer()
         return renderer.render('pull_request_update.mako', **params)
 
-    def edit(self, pull_request, title, description):
+    def edit(self, pull_request, title, description, user):
         pull_request = self.__get_pull_request(pull_request)
+        old_data = pull_request.get_api_data(with_merge_state=False)
         if pull_request.is_closed():
             raise ValueError('This pull request is closed')
         if title:
@@ -908,8 +919,11 @@ class PullRequestModel(BaseModel):
         pull_request.description = description
         pull_request.updated_on = datetime.datetime.now()
         Session().add(pull_request)
+        self._log_audit_action(
+            'repo.pull_request.edit', {'old_data': old_data},
+            user, pull_request)
 
-    def update_reviewers(self, pull_request, reviewer_data):
+    def update_reviewers(self, pull_request, reviewer_data, user):
         """
         Update the reviewers in the pull request
 
@@ -946,8 +960,11 @@ class PullRequestModel(BaseModel):
             reviewer.pull_request = pull_request
             reviewer.reasons = reviewers[uid]['reasons']
             # NOTE(marcink): mandatory shouldn't be changed now
-            #reviewer.mandatory = reviewers[uid]['reasons']
+            # reviewer.mandatory = reviewers[uid]['reasons']
             Session().add(reviewer)
+            self._log_audit_action(
+                'repo.pull_request.reviewer.add', {'data': reviewer.get_dict()},
+                user, pull_request)
 
         for uid in ids_to_remove:
             changed = True
@@ -958,7 +975,11 @@ class PullRequestModel(BaseModel):
             # use .all() in case we accidentally added the same person twice
             # this CAN happen due to the lack of DB checks
             for obj in reviewers:
+                old_data = obj.get_dict()
                 Session().delete(obj)
+                self._log_audit_action(
+                    'repo.pull_request.reviewer.delete',
+                    {'old_data': old_data}, user, pull_request)
 
         if changed:
             pull_request.updated_on = datetime.datetime.now()
@@ -1054,9 +1075,13 @@ class PullRequestModel(BaseModel):
             email_kwargs=kwargs,
         )
 
-    def delete(self, pull_request):
+    def delete(self, pull_request, user):
         pull_request = self.__get_pull_request(pull_request)
+        old_data = pull_request.get_api_data(with_merge_state=False)
         self._cleanup_merge_workspace(pull_request)
+        self._log_audit_action(
+            'repo.pull_request.delete', {'old_data': old_data},
+            user, pull_request)
         Session().delete(pull_request)
 
     def close_pull_request(self, pull_request, user):
@@ -1067,7 +1092,8 @@ class PullRequestModel(BaseModel):
         Session().add(pull_request)
         self._trigger_pull_request_hook(
             pull_request, pull_request.author, 'close')
-        self._log_action('user_closed_pull_request', user, pull_request)
+        self._log_audit_action(
+            'repo.pull_request.close', {}, user, pull_request)
 
     def close_pull_request_with_comment(
             self, pull_request, user, repo, message=None):
@@ -1402,12 +1428,12 @@ class PullRequestModel(BaseModel):
         settings = settings_model.get_general_settings()
         return settings.get('rhodecode_hg_use_rebase_for_merging', False)
 
-    def _log_action(self, action, user, pull_request):
-        action_logger(
-            user,
-            '{action}:{pr_id}'.format(
-                action=action, pr_id=pull_request.pull_request_id),
-            pull_request.target_repo)
+    def _log_audit_action(self, action, action_data, user, pull_request):
+        audit_logger.store(
+            action=action,
+            action_data=action_data,
+            user=user,
+            repo=pull_request.target_repo)
 
     def get_reviewer_functions(self):
         """

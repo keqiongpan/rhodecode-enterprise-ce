@@ -33,7 +33,7 @@ pytestmark = pytest.mark.backends("git", "hg")
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestGetPullRequest(object):
 
-    def test_api_get_pull_request(self, pr_util, http_host_stub, http_host_only_stub):
+    def test_api_get_pull_request(self, pr_util, http_host_only_stub):
         from rhodecode.model.pull_request import PullRequestModel
         pull_request = pr_util.create_pull_request(mergeable=True)
         id_, params = build_data(
@@ -52,7 +52,7 @@ class TestGetPullRequest(object):
                 pull_request_id=pull_request.pull_request_id, qualified=True))
 
         pr_url = safe_unicode(
-            url_obj.with_netloc(http_host_stub))
+            url_obj.with_netloc(http_host_only_stub))
         source_url = safe_unicode(
             pull_request.source_repo.clone_url().with_netloc(http_host_only_stub))
         target_url = safe_unicode(

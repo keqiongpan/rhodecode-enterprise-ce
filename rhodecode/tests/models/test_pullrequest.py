@@ -50,7 +50,9 @@ class TestPullRequestModel(object):
         A pull request combined with multiples patches.
         """
         BackendClass = get_backend(backend.alias)
-        self.merge_patcher = mock.patch.object(BackendClass, 'merge')
+        self.merge_patcher = mock.patch.object(
+            BackendClass, 'merge', return_value=MergeResponse(
+            False, False, None, MergeFailureReason.UNKNOWN))
         self.workspace_remove_patcher = mock.patch.object(
             BackendClass, 'cleanup_merge_workspace')
 
@@ -117,7 +119,8 @@ class TestPullRequestModel(object):
 
     def test_get_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [(pull_request.author, ['author'], False)])
+            pull_request, [(pull_request.author, ['author'], False)],
+            pull_request.author)
         prs = PullRequestModel().get_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
         assert isinstance(prs, list)
@@ -125,13 +128,14 @@ class TestPullRequestModel(object):
 
     def test_count_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [(pull_request.author, ['author'], False)])
+            pull_request, [(pull_request.author, ['author'], False)],
+            pull_request.author)
         pr_count = PullRequestModel().count_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
         assert pr_count == 1
 
     def test_delete_calls_cleanup_merge(self, pull_request):
-        PullRequestModel().delete(pull_request)
+        PullRequestModel().delete(pull_request, pull_request.author)
 
         self.workspace_remove_mock.assert_called_once_with(
             self.workspace_id)
