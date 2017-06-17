@@ -124,9 +124,8 @@ class FilesController(BaseRepoController):
             if file_node.is_dir():
                 raise RepositoryError('The given path is a directory')
         except CommitDoesNotExistError:
-            msg = _('No such commit exists for this repository')
-            log.exception(msg)
-            h.flash(msg, category='error')
+            log.exception('No such commit exists for this repository')
+            h.flash(_('No such commit exists for this repository'), category='error')
             raise HTTPNotFound()
         except RepositoryError as e:
             h.flash(safe_str(e), category='error')
@@ -450,7 +449,7 @@ class FilesController(BaseRepoController):
         c.file = self.__get_filenode_or_redirect(repo_name, c.commit, f_path)
 
         c.default_message = _(
-            'Deleted file %s via RhodeCode Enterprise') % (f_path)
+            'Deleted file {} via RhodeCode Enterprise').format(f_path)
         c.f_path = f_path
         node_path = f_path
         author = c.rhodecode_user.full_contact
@@ -469,8 +468,9 @@ class FilesController(BaseRepoController):
                 author=author,
             )
 
-            h.flash(_('Successfully deleted file %s') % f_path,
-                    category='success')
+            h.flash(
+                _('Successfully deleted file `{}`').format(
+                    h.escape(f_path)), category='success')
         except Exception:
             msg = _('Error occurred during commit')
             log.exception(msg)
@@ -503,7 +503,7 @@ class FilesController(BaseRepoController):
         c.file = self.__get_filenode_or_redirect(repo_name, c.commit, f_path)
 
         c.default_message = _(
-            'Deleted file %s via RhodeCode Enterprise') % (f_path)
+            'Deleted file {} via RhodeCode Enterprise').format(f_path)
         c.f_path = f_path
 
         return render('files/files_delete.mako')
@@ -537,7 +537,7 @@ class FilesController(BaseRepoController):
             return redirect(url('files_home', repo_name=c.repo_name,
                             revision=c.commit.raw_id, f_path=f_path))
         c.default_message = _(
-            'Edited file %s via RhodeCode Enterprise') % (f_path)
+            'Edited file {} via RhodeCode Enterprise').format(f_path)
         c.f_path = f_path
         old_content = c.file.content
         sl = old_content.splitlines(1)
@@ -575,12 +575,12 @@ class FilesController(BaseRepoController):
                 parent_commit=c.commit,
             )
 
-            h.flash(_('Successfully committed to %s') % f_path,
-                    category='success')
+            h.flash(
+                _('Successfully committed changes to file `{}`').format(
+                    h.escape(f_path)), category='success')
         except Exception:
-            msg = _('Error occurred during commit')
-            log.exception(msg)
-            h.flash(msg, category='error')
+            log.exception('Error occurred during commit')
+            h.flash(_('Error occurred during commit'), category='error')
         return redirect(url('changeset_home',
                             repo_name=c.repo_name, revision='tip'))
 
@@ -612,7 +612,7 @@ class FilesController(BaseRepoController):
             return redirect(url('files_home', repo_name=c.repo_name,
                             revision=c.commit.raw_id, f_path=f_path))
         c.default_message = _(
-            'Edited file %s via RhodeCode Enterprise') % (f_path)
+            'Edited file {} via RhodeCode Enterprise').format(f_path)
         c.f_path = f_path
 
         return render('files/files_edit.mako')
@@ -704,8 +704,9 @@ class FilesController(BaseRepoController):
                 author=author,
             )
 
-            h.flash(_('Successfully committed to %s') % node_path,
-                    category='success')
+            h.flash(
+                _('Successfully committed new file `{}`').format(
+                    h.escape(node_path)), category='success')
         except NonRelativePathError as e:
             h.flash(_(
                 'The location specified must be a relative path and must not '
@@ -713,11 +714,10 @@ class FilesController(BaseRepoController):
             return redirect(url('changeset_home', repo_name=c.repo_name,
                                 revision='tip'))
         except (NodeError, NodeAlreadyExistsError) as e:
-            h.flash(_(e), category='error')
+            h.flash(_(h.escape(e)), category='error')
         except Exception:
-            msg = _('Error occurred during commit')
-            log.exception(msg)
-            h.flash(msg, category='error')
+            log.exception('Error occurred during commit')
+            h.flash(_('Error occurred during commit'), category='error')
         return redirect(url('changeset_home',
                             repo_name=c.repo_name, revision='tip'))
 
@@ -801,7 +801,7 @@ class FilesController(BaseRepoController):
         if not use_cached_archive:
             # generate new archive
             fd, archive = tempfile.mkstemp()
-            log.debug('Creating new temp archive in %s' % (archive,))
+            log.debug('Creating new temp archive in %s', archive)
             try:
                 commit.archive_repo(archive, kind=fileformat, subrepos=subrepos)
             except ImproperArchiveTypeError:
@@ -809,7 +809,7 @@ class FilesController(BaseRepoController):
             if archive_cache_enabled:
                 # if we generated the archive and we have cache enabled
                 # let's use this for future
-                log.debug('Storing new archive in %s' % (cached_archive_path,))
+                log.debug('Storing new archive in %s', cached_archive_path)
                 shutil.move(archive, cached_archive_path)
                 archive = cached_archive_path
 

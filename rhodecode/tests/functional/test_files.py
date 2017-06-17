@@ -758,9 +758,8 @@ class TestChangingFiles:
                 'csrf_token': csrf_token,
             },
             status=302)
-        assert_session_flash(
-            response, 'Successfully committed to %s'
-            % os.path.join(filename))
+        assert_session_flash(response,
+            'Successfully committed new file `{}`'.format(os.path.join(filename)))
 
     def test_add_file_into_repo_missing_filename(self, backend, csrf_token):
         response = self.app.post(
@@ -848,9 +847,9 @@ class TestChangingFiles:
                 'csrf_token': csrf_token,
             },
             status=302)
-        assert_session_flash(
-            response, 'Successfully committed to %s'
-            % os.path.join(location, filename))
+        assert_session_flash(response,
+            'Successfully committed new file `{}`'.format(
+                os.path.join(location, filename)))
 
     def test_edit_file_view(self, backend):
         response = self.app.get(
@@ -894,7 +893,7 @@ class TestChangingFiles:
             },
             status=302)
         assert_session_flash(
-            response, 'Successfully committed to vcs/nodes.py')
+            response, 'Successfully committed changes to file `vcs/nodes.py`')
         tip = repo.get_commit(commit_idx=-1)
         assert tip.message == 'I committed'
 
@@ -921,7 +920,7 @@ class TestChangingFiles:
             },
             status=302)
         assert_session_flash(
-            response, 'Successfully committed to vcs/nodes.py')
+            response, 'Successfully committed changes to file `vcs/nodes.py`')
         tip = repo.get_commit(commit_idx=-1)
         assert tip.message == 'Edited file vcs/nodes.py via RhodeCode Enterprise'
 
@@ -961,7 +960,7 @@ class TestChangingFiles:
             },
             status=302)
         assert_session_flash(
-            response, 'Successfully deleted file vcs/nodes.py')
+            response, 'Successfully deleted file `vcs/nodes.py`')
 
 
 def assert_files_in_response(response, files, params):
