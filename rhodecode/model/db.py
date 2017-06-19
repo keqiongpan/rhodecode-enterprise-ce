@@ -574,12 +574,16 @@ class User(Base, BaseModel):
     @hybrid_property
     def first_name(self):
         from rhodecode.lib import helpers as h
-        return h.escape(self.name)
+        if self.name:
+            return h.escape(self.name)
+        return self.name
 
     @hybrid_property
     def last_name(self):
         from rhodecode.lib import helpers as h
-        return h.escape(self.lastname)
+        if self.lastname:
+            return h.escape(self.lastname)
+        return self.lastname
 
     @hybrid_property
     def api_key(self):
@@ -700,7 +704,7 @@ class User(Base, BaseModel):
 
     @property
     def username_and_name(self):
-        return '%s (%s %s)' % (self.username, self.firstname, self.lastname)
+        return '%s (%s %s)' % (self.username, self.first_name, self.last_name)
 
     @property
     def username_or_name_or_email(self):
@@ -709,20 +713,20 @@ class User(Base, BaseModel):
 
     @property
     def full_name(self):
-        return '%s %s' % (self.firstname, self.lastname)
+        return '%s %s' % (self.first_name, self.last_name)
 
     @property
     def full_name_or_username(self):
-        return ('%s %s' % (self.firstname, self.lastname)
-                if (self.firstname and self.lastname) else self.username)
+        return ('%s %s' % (self.first_name, self.last_name)
+                if (self.first_name and self.last_name) else self.username)
 
     @property
     def full_contact(self):
-        return '%s %s <%s>' % (self.firstname, self.lastname, self.email)
+        return '%s %s <%s>' % (self.first_name, self.last_name, self.email)
 
     @property
     def short_contact(self):
-        return '%s %s' % (self.firstname, self.lastname)
+        return '%s %s' % (self.first_name, self.last_name)
 
     @property
     def is_admin(self):

@@ -807,6 +807,8 @@ class AuthUser(object):
         self.ip_addr = ip_addr
         self.name = ''
         self.lastname = ''
+        self.first_name = ''
+        self.last_name = ''
         self.email = ''
         self.is_authenticated = False
         self.admin = False

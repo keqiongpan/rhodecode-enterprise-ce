@@ -127,8 +127,8 @@ class AdminUsersView(BaseAppView, DataGridAppView):
             users_data.append({
                 "username": h.gravatar_with_user(user.username),
                 "email": user.email,
-                "first_name": h.escape(user.name),
-                "last_name": h.escape(user.lastname),
+                "first_name": user.first_name,
+                "last_name": user.last_name,
                 "last_login": h.format_date(user.last_login),
                 "last_activity": h.format_date(user.last_activity),
                 "active": h.bool2icon(user.active),

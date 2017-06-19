@@ -70,8 +70,8 @@ class UserModel(BaseModel):
 
         return {
             'id': user.user_id,
-            'first_name': h.escape(user.name),
-            'last_name': h.escape(user.lastname),
+            'first_name': user.first_name,
+            'last_name': user.last_name,
             'username': user.username,
             'email': user.email,
             'icon_link': h.gravatar_url(user.email, 30),
@@ -679,6 +679,11 @@ class UserModel(BaseModel):
             # TODO: johbo: Think about this and find a clean solution
             user_data = dbuser.get_dict()
             user_data.update(dbuser.get_api_data(include_secrets=True))
+            user_data.update({
+                # set explicit the safe escaped values
+                'first_name': dbuser.first_name,
+                'last_name': dbuser.last_name,
+            })
 
             for k, v in user_data.iteritems():
                 # properties of auth user we dont update

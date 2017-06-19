@@ -227,8 +227,8 @@ ReviewersController = function () {
                 for (var i = 0; i < data.reviewers.length; i++) {
                   var reviewer = data.reviewers[i];
                   self.addReviewMember(
-                      reviewer.user_id, reviewer.firstname,
-                      reviewer.lastname, reviewer.username,
+                      reviewer.user_id, reviewer.first_name,
+                      reviewer.last_name, reviewer.username,
                       reviewer.gravatar_link, reviewer.reasons,
                       reviewer.mandatory);
                 }

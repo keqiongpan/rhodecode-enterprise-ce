@@ -336,9 +336,7 @@ class TestGistsController(TestController):
 
     def test_user_first_name_is_escaped(self, user_util, create_gist):
         xss_atack_string = '"><script>alert(\'First Name\')</script>'
-        xss_escaped_string = (
-            '&#34;&gt;&lt;script&gt;alert(&#39;First Name&#39;)&lt;/script'
-            '&gt;')
+        xss_escaped_string = h.html_escape(h.escape(xss_atack_string))
         password = 'test'
         user = user_util.create_user(
             firstname=xss_atack_string, password=password)
@@ -348,8 +346,7 @@ class TestGistsController(TestController):
 
     def test_user_last_name_is_escaped(self, user_util, create_gist):
         xss_atack_string = '"><script>alert(\'Last Name\')</script>'
-        xss_escaped_string = (
-            '&#34;&gt;&lt;script&gt;alert(&#39;Last Name&#39;)&lt;/script&gt;')
+        xss_escaped_string = h.html_escape(h.escape(xss_atack_string))
         password = 'test'
         user = user_util.create_user(
             lastname=xss_atack_string, password=password)

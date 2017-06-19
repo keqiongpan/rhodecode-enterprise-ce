@@ -893,9 +893,9 @@ def author_string(email):
     if email:
         user = User.get_by_email(email, case_insensitive=True, cache=True)
         if user:
-            if user.firstname or user.lastname:
+            if user.first_name or user.last_name:
                 return '%s %s &lt;%s&gt;' % (
-                    escape(user.firstname), escape(user.lastname), email)
+                    user.first_name, user.last_name, email)
             else:
                 return email
         else:
@@ -1144,14 +1144,14 @@ class InitialsGravatar(object):
         # first push the email initials
         prefix, server = email_address.split('@', 1)
 
-        # check if prefix is maybe a 'firstname.lastname' syntax
+        # check if prefix is maybe a 'first_name.last_name' syntax
         _dot_split = prefix.rsplit('.', 1)
         if len(_dot_split) == 2:
             initials = [_dot_split[0][0], _dot_split[1][0]]
         else:
             initials = [prefix[0], server[0]]
 
-        # then try to replace either firtname or lastname
+        # then try to replace either first_name or last_name
         fn_letter = (first_name or " ")[0].strip()
         ln_letter = (last_name.split(' ', 1)[-1] or " ")[0].strip()
 

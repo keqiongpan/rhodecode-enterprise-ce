@@ -77,8 +77,8 @@ def get_user_data(user_id):
     return {
         'id': user.user_id,
         'username': user.username,
-        'first_name': user.name,
-        'last_name': user.lastname,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
         'icon_link': h.gravatar_url(user.email, 60),
         'display_name': h.person(user, 'username_or_name_or_email'),
         'display_link': h.link_to_user(user),

@@ -21,8 +21,6 @@
 """
 pull requests controller for rhodecode for initializing pull requests
 """
-import types
-
 import peppercorn
 import formencode
 import logging
@@ -33,6 +31,7 @@ from pylons import request, tmpl_context as c, url
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 from pyramid.threadlocal import get_current_registry
+from pyramid.httpexceptions import HTTPFound
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 

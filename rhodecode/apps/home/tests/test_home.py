@@ -111,8 +111,8 @@ class TestHomeController(TestController):
         user_util.create_repo(owner=username)
 
         response = self.app.get(route_path('home'))
-        response.mustcontain(h.html_escape(h.escape(user.name)))
-        response.mustcontain(h.html_escape(h.escape(user.lastname)))
+        response.mustcontain(h.html_escape(user.first_name))
+        response.mustcontain(h.html_escape(user.last_name))
 
     @pytest.mark.parametrize("name, state", [
         ('Disabled', False),

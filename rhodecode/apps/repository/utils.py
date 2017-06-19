@@ -36,8 +36,8 @@ def reviewer_as_json(user, reasons=None, mandatory=False):
         'reasons': reasons or [],
         'mandatory': mandatory,
         'username': user.username,
-        'firstname': user.firstname,
-        'lastname': user.lastname,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
         'gravatar_link': h.gravatar_url(user.email, 14),
     }
 
