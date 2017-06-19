@@ -48,10 +48,6 @@ log = logging.getLogger(__name__)
 
 class NotificationsController(BaseController):
     """REST Controller styled on the Atom Publishing Protocol"""
-    # To properly map this controller, ensure your config/routing.py
-    # file has a resource setup:
-    #     map.resource('notification', 'notifications', controller='_admin/notifications',
-    #         path_prefix='/_admin', name_prefix='_admin_')
 
     @LoginRequired()
     @NotAnonymous()
@@ -62,8 +58,8 @@ class NotificationsController(BaseController):
         """GET /_admin/notifications: All items in the collection"""
         # url('notifications')
         c.user = c.rhodecode_user
-        notif = NotificationModel().get_for_user(c.rhodecode_user.user_id,
-                                            filter_=request.GET.getall('type'))
+        notif = NotificationModel().get_for_user(
+            c.rhodecode_user.user_id, filter_=request.GET.getall('type'))
 
         p = safe_int(request.GET.get('page', 1), 1)
         notifications_url = webhelpers.paginate.PageURL(
@@ -85,7 +81,6 @@ class NotificationsController(BaseController):
             return render('admin/notifications/notifications_data.mako')
 
         return render('admin/notifications/notifications.mako')
-
 
     @auth.CSRFRequired()
     def mark_all_read(self):
@@ -115,15 +110,8 @@ class NotificationsController(BaseController):
 
     @auth.CSRFRequired()
     def update(self, notification_id):
-        """PUT /_admin/notifications/id: Update an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        #    <input type="hidden" name="_method" value="PUT" />
-        # Or using helpers:
-        #    h.form(url('notification', notification_id=ID),
-        #           method='put')
-        # url('notification', notification_id=ID)
+        no = Notification.get_or_404(notification_id)
         try:
-            no = Notification.get(notification_id)
             if self._has_permissions(no):
                 # deletes only notification2user
                 NotificationModel().mark_read(c.rhodecode_user.user_id, no)
@@ -136,15 +124,8 @@ class NotificationsController(BaseController):
 
     @auth.CSRFRequired()
     def delete(self, notification_id):
-        """DELETE /_admin/notifications/id: Delete an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        #    <input type="hidden" name="_method" value="DELETE" />
-        # Or using helpers:
-        #    h.form(url('notification', notification_id=ID),
-        #           method='delete')
-        # url('notification', notification_id=ID)
+        no = Notification.get_or_404(notification_id)
         try:
-            no = Notification.get(notification_id)
             if self._has_permissions(no):
                 # deletes only notification2user
                 NotificationModel().delete(c.rhodecode_user.user_id, no)
@@ -156,10 +137,8 @@ class NotificationsController(BaseController):
         raise HTTPBadRequest()
 
     def show(self, notification_id):
-        """GET /_admin/notifications/id: Show a specific item"""
-        # url('notification', notification_id=ID)
         c.user = c.rhodecode_user
-        no = Notification.get(notification_id)
+        no = Notification.get_or_404(notification_id)
 
         if no and self._has_permissions(no):
             unotification = NotificationModel()\
