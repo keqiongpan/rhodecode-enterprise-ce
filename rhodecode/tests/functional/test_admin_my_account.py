@@ -57,26 +57,6 @@ class TestMyAccountController(TestController):
 
         response.mustcontain('value="test_admin')
 
-    def test_my_account_my_repos(self):
-        self.log_user()
-        response = self.app.get(url('my_account_repos'))
-        repos = Repository.query().filter(
-            Repository.user == User.get_by_username(
-                TEST_USER_ADMIN_LOGIN)).all()
-        for repo in repos:
-            response.mustcontain('"name_raw": "%s"' % repo.repo_name)
-
-    def test_my_account_my_watched(self):
-        self.log_user()
-        response = self.app.get(url('my_account_watched'))
-
-        repos = UserFollowing.query().filter(
-            UserFollowing.user == User.get_by_username(
-                TEST_USER_ADMIN_LOGIN)).all()
-        for repo in repos:
-            response.mustcontain(
-                '"name_raw": "%s"' % repo.follows_repository.repo_name)
-
     @pytest.mark.backends("git", "hg")
     def test_my_account_my_pullrequests(self, pr_util):
         self.log_user()
@@ -88,8 +68,6 @@ class TestMyAccountController(TestController):
         response = self.app.get(url('my_account_pullrequests'))
         response.mustcontain('"name_raw": %s' % pr.pull_request_id)
         response.mustcontain('TestMyAccountPR')
-
-
 
     @pytest.mark.parametrize(
         "name, attrs", [

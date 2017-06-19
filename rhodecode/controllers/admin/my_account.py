@@ -29,26 +29,22 @@ import formencode
 from formencode import htmlfill
 from pyramid.httpexceptions import HTTPFound
 
-from pylons import request, tmpl_context as c, url
+from pylons import request, tmpl_context as c
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
-from sqlalchemy.orm import joinedload
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib import auth
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, AuthUser)
 from rhodecode.lib.base import BaseController, render
-from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.lib.ext_json import json
 
 from rhodecode.model.db import (
     Repository, PullRequest, UserEmailMap, User, UserFollowing)
 from rhodecode.model.forms import UserForm
-from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
-from rhodecode.model.repo import RepoModel
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.comment import CommentsModel
@@ -77,26 +73,6 @@ class MyAccountController(BaseController):
 
         c.auth_user = AuthUser(
             user_id=c.rhodecode_user.user_id, ip_addr=self.ip_addr)
-
-    def _load_my_repos_data(self, watched=False):
-        if watched:
-            admin = False
-            follows_repos = Session().query(UserFollowing)\
-                .filter(UserFollowing.user_id == c.rhodecode_user.user_id)\
-                .options(joinedload(UserFollowing.follows_repository))\
-                .all()
-            repo_list = [x.follows_repository for x in follows_repos]
-        else:
-            admin = True
-            repo_list = Repository.get_all_repos(
-                user_id=c.rhodecode_user.user_id)
-            repo_list = RepoList(repo_list, perm_set=[
-                'repository.read', 'repository.write', 'repository.admin'])
-
-        repos_data = RepoModel().get_repos_as_dict(
-            repo_list=repo_list, admin=admin)
-        # json used to render the grid
-        return json.dumps(repos_data)
 
     @auth.CSRFRequired()
     def my_account_update(self):
@@ -176,29 +152,6 @@ class MyAccountController(BaseController):
             encoding="UTF-8",
             force_defaults=False
         )
-
-    def my_account_repos(self):
-        c.active = 'repos'
-        self.__load_data()
-
-        # json used to render the grid
-        c.data = self._load_my_repos_data()
-        return render('admin/my_account/my_account.mako')
-
-    def my_account_watched(self):
-        c.active = 'watched'
-        self.__load_data()
-
-        # json used to render the grid
-        c.data = self._load_my_repos_data(watched=True)
-        return render('admin/my_account/my_account.mako')
-
-    def my_account_perms(self):
-        c.active = 'perms'
-        self.__load_data()
-        c.perm_user = c.auth_user
-
-        return render('admin/my_account/my_account.mako')
 
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
@@ -280,15 +233,4 @@ class MyAccountController(BaseController):
         else:
             return json.dumps(data)
 
-    def my_notifications(self):
-        c.active = 'notifications'
-        return render('admin/my_account/my_account.mako')
 
-    @auth.CSRFRequired()
-    @jsonify
-    def my_notifications_toggle_visibility(self):
-        user = c.rhodecode_user.get_instance()
-        new_status = not user.user_data.get('notification_status', True)
-        user.update_userdata(notification_status=new_status)
-        Session().commit()
-        return user.user_data['notification_status']

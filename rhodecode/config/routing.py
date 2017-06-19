@@ -485,25 +485,8 @@ def make_map(config):
         m.connect('my_account_password', '/my_account/password',
                   action='my_account_password', conditions={'method': ['GET']})
 
-        m.connect('my_account_repos', '/my_account/repos',
-                  action='my_account_repos', conditions={'method': ['GET']})
-
-        m.connect('my_account_watched', '/my_account/watched',
-                  action='my_account_watched', conditions={'method': ['GET']})
-
         m.connect('my_account_pullrequests', '/my_account/pull_requests',
                   action='my_account_pullrequests', conditions={'method': ['GET']})
-
-        m.connect('my_account_perms', '/my_account/perms',
-                  action='my_account_perms', conditions={'method': ['GET']})
-
-        m.connect('my_account_notifications', '/my_account/notifications',
-                  action='my_notifications',
-                  conditions={'method': ['GET']})
-        m.connect('my_account_notifications_toggle_visibility',
-                  '/my_account/toggle_visibility',
-                  action='my_notifications_toggle_visibility',
-                  conditions={'method': ['POST']})
 
     # NOTIFICATION REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,

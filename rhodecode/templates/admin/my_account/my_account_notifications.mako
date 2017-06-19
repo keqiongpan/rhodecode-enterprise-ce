@@ -1,7 +1,7 @@
 <template is="dom-bind" id="notificationsPage">
 <iron-ajax id="toggleNotifications"
            method="post"
-           url="${url('my_account_notifications_toggle_visibility')}"
+           url="${h.route_path('my_account_notifications_toggle_visibility')}"
            content-type="application/json"
            loading="{{changeNotificationsLoading}}"
            on-response="handleNotifications"

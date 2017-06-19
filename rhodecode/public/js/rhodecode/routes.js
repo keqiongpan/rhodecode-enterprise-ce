@@ -134,6 +134,14 @@ function registerRCRoutes() {
     pyroutes.register('my_account_auth_tokens', '/_admin/my_account/auth_tokens', []);
     pyroutes.register('my_account_auth_tokens_add', '/_admin/my_account/auth_tokens/new', []);
     pyroutes.register('my_account_auth_tokens_delete', '/_admin/my_account/auth_tokens/delete', []);
+    pyroutes.register('my_account_emails', '/_admin/my_account/emails', []);
+    pyroutes.register('my_account_emails_add', '/_admin/my_account/emails/new', []);
+    pyroutes.register('my_account_emails_delete', '/_admin/my_account/emails/delete', []);
+    pyroutes.register('my_account_repos', '/_admin/my_account/repos', []);
+    pyroutes.register('my_account_watched', '/_admin/my_account/watched', []);
+    pyroutes.register('my_account_perms', '/_admin/my_account/perms', []);
+    pyroutes.register('my_account_notifications', '/_admin/my_account/notifications', []);
+    pyroutes.register('my_account_notifications_toggle_visibility', '/_admin/my_account/toggle_visibility', []);
     pyroutes.register('my_account_notifications_test_channelstream', '/_admin/my_account/test_channelstream', []);
     pyroutes.register('apiv2', '/_admin/api', []);
 }
