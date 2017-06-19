@@ -23,7 +23,7 @@
     %if c.statuses.get(commit.raw_id):
       <div class="changeset-status-ico">
         %if c.statuses.get(commit.raw_id)[2]:
-          <a class="tooltip" title="${_('Commit status: %s\nClick to open associated pull request #%s') % (h.commit_status_lbl(c.statuses.get(commit.raw_id)[0]), c.statuses.get(commit.raw_id)[2])}" href="${h.url('pullrequest_show',repo_name=c.statuses.get(commit.raw_id)[3],pull_request_id=c.statuses.get(commit.raw_id)[2])}">
+          <a class="tooltip" title="${_('Commit status: %s\nClick to open associated pull request #%s') % (h.commit_status_lbl(c.statuses.get(commit.raw_id)[0]), c.statuses.get(commit.raw_id)[2])}" href="${h.route_path('pullrequest_show',repo_name=c.statuses.get(commit.raw_id)[3],pull_request_id=c.statuses.get(commit.raw_id)[2])}">
             <div class="${'flag_status %s' % c.statuses.get(commit.raw_id)[0]}"></div>
           </a>
         %else:

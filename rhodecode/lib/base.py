@@ -330,6 +330,11 @@ def attach_context_attributes(context, request, user_id, attach_to_request=False
 
     context.rhodecode_instanceid = config.get('instance_id')
 
+    context.visual.cut_off_limit_diff = safe_int(
+        config.get('cut_off_limit_diff'))
+    context.visual.cut_off_limit_file = safe_int(
+        config.get('cut_off_limit_file'))
+
     # AppEnlight
     context.appenlight_enabled = str2bool(config.get('appenlight', 'false'))
     context.appenlight_api_public_key = config.get(

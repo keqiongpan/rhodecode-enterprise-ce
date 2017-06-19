@@ -175,6 +175,7 @@ class ActionParser(object):
         return group_name
 
     def get_pull_request(self):
+        from rhodecode.lib import helpers as h
         pull_request_id = self.action_params
         if self.is_deleted():
             repo_name = self.user_log.repository_name
@@ -182,8 +183,8 @@ class ActionParser(object):
             repo_name = self.user_log.repository.repo_name
         return link_to(
             _('Pull request #%s') % pull_request_id,
-            url('pullrequest_show', repo_name=repo_name,
-                pull_request_id=pull_request_id))
+            h.route_path('pullrequest_show', repo_name=repo_name,
+                         pull_request_id=pull_request_id))
 
     def get_archive_name(self):
         archive_name = self.action_params

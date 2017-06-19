@@ -997,8 +997,7 @@ class PullRequestModel(BaseModel):
                 'pull_requests_global',
                 pull_request_id=pull_request.pull_request_id,)
         else:
-            return request.route_url(
-                'pullrequest_show',
+            return request.route_url('pullrequest_show',
                 repo_name=safe_str(pull_request.target_repo.repo_name),
                 pull_request_id=pull_request.pull_request_id,)
 
@@ -1027,11 +1026,9 @@ class PullRequestModel(BaseModel):
         pr_source_repo = pull_request_obj.source_repo
         pr_target_repo = pull_request_obj.target_repo
 
-        pr_url = h.url(
-            'pullrequest_show',
+        pr_url = h.route_url('pullrequest_show',
             repo_name=pr_target_repo.repo_name,
-            pull_request_id=pull_request_obj.pull_request_id,
-            qualified=True,)
+            pull_request_id=pull_request_obj.pull_request_id,)
 
         # set some variables for email notification
         pr_target_repo_url = h.route_url(

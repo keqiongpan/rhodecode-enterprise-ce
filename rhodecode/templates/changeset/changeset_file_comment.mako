@@ -61,7 +61,7 @@
           % else:
               <div class="status-change">
                   % if comment.pull_request:
-                      <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
+                      <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
                           % if comment.status_change:
                               ${_('pull request #%s') % comment.pull_request.pull_request_id}:
                           % else:
@@ -122,7 +122,7 @@
                         </a>
                       % else:
                         <div title="${_('Comment from pull request version {0}').format(pr_index_ver)}">
-                            <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}">
+                            <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}">
                             <code class="pr-version-num">
                                 ${'v{}'.format(pr_index_ver)}
                             </code>

@@ -299,7 +299,7 @@
 </%def>
 
 <%def name="pullrequest_name(pull_request_id, target_repo_name, short=False)">
-    <a href="${h.url('pullrequest_show',repo_name=target_repo_name,pull_request_id=pull_request_id)}">
+    <a href="${h.route_path('pullrequest_show',repo_name=target_repo_name,pull_request_id=pull_request_id)}">
       % if short:
         #${pull_request_id}
       % else:

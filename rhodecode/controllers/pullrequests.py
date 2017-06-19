@@ -282,8 +282,9 @@ class PullrequestsController(BaseRepoController):
             h.flash(msg, category='error')
             return redirect(url('pullrequest_home', repo_name=repo_name))
 
-        return redirect(url('pullrequest_show', repo_name=target_repo,
-                            pull_request_id=pull_request.pull_request_id))
+        raise HTTPFound(
+            h.route_path('pullrequest_show', repo_name=target_repo,
+                         pull_request_id=pull_request.pull_request_id))
 
     @LoginRequired()
     @NotAnonymous()
@@ -420,10 +421,10 @@ class PullrequestsController(BaseRepoController):
                 scm=pull_request.target_repo.repo_type)
             self._merge_pull_request(pull_request, user, extras)
 
-        return redirect(url(
-            'pullrequest_show',
-            repo_name=pull_request.target_repo.repo_name,
-            pull_request_id=pull_request.pull_request_id))
+        raise HTTPFound(
+            h.route_path('pullrequest_show',
+                         repo_name=pull_request.target_repo.repo_name,
+                         pull_request_id=pull_request.pull_request_id))
 
     def _merge_pull_request(self, pull_request, user, extras):
         merge_resp = PullRequestModel().merge(
@@ -964,8 +965,10 @@ class PullrequestsController(BaseRepoController):
         Session().commit()
 
         if not request.is_xhr:
-            return redirect(h.url('pullrequest_show', repo_name=repo_name,
-                                  pull_request_id=pull_request_id))
+            raise HTTPFound(
+                h.route_path('pullrequest_show',
+                             repo_name=repo_name,
+                             pull_request_id=pull_request_id))
 
         data = {
             'target_id': h.safeid(h.safe_unicode(request.POST.get('f_path'))),
