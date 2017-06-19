@@ -34,7 +34,7 @@ import traceback
 from functools import wraps
 
 import ipaddress
-from pyramid.httpexceptions import HTTPForbidden, HTTPFound
+from pyramid.httpexceptions import HTTPForbidden, HTTPFound, HTTPNotFound
 from pylons.i18n.translation import _
 # NOTE(marcink): this has to be removed only after pyramid migration,
 # replace with _ = request.translate
@@ -1415,8 +1415,8 @@ class PermsDecorator(object):
                     h.route_path('login', _query={'came_from': came_from}))
 
             else:
-                # redirect with forbidden ret code
-                raise HTTPForbidden()
+                # redirect with 404 to prevent resource discovery
+                raise HTTPNotFound()
 
     def check_permissions(self, user):
         """Dummy function for overriding"""

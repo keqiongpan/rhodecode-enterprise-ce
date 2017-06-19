@@ -75,7 +75,7 @@ class _BaseTest(TestController):
         repo_name = self.REPO
         self.app.post(
             url(controller='forks', action='fork_create', repo_name=repo_name),
-            {'csrf_token': self.csrf_token}, status=403)
+            {'csrf_token': self.csrf_token}, status=404)
 
     def test_index_with_fork(self):
         self.log_user()

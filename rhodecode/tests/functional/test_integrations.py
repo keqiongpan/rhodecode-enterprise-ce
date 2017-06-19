@@ -214,7 +214,7 @@ def _post_integration_test_helper(app, url, csrf_token, repo, repo_group,
     checks if the redirect url is correct.
     """
 
-    app.post(url, params={}, status=403) # missing csrf check
+    app.post(url, params={}, status=403)  # missing csrf check
     response = app.post(url, params={'csrf_token': csrf_token})
     assert response.status_code == 200
     assert 'Errors exist' in response.body

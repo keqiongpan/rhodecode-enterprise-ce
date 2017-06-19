@@ -462,7 +462,7 @@ class TestOpenSourceLicenses(object):
             '.panel-heading', 'Licenses of Third Party Packages')
 
     def test_forbidden_when_normal_user(self, autologin_regular_user):
-        self.app.get(self._get_url(), status=403)
+        self.app.get(self._get_url(), status=404)
 
 
 @pytest.mark.usefixtures('app')
@@ -475,7 +475,7 @@ class TestUserSessions(object):
         }[name]
 
     def test_forbidden_when_normal_user(self, autologin_regular_user):
-        self.app.get(self._get_url(), status=403)
+        self.app.get(self._get_url(), status=404)
 
     def test_show_sessions_page(self, autologin_user):
         response = self.app.get(self._get_url(), status=200)
@@ -502,7 +502,7 @@ class TestAdminSystemInfo(object):
         }[name]
 
     def test_forbidden_when_normal_user(self, autologin_regular_user):
-        self.app.get(self._get_url(), status=403)
+        self.app.get(self._get_url(), status=404)
 
     def test_system_info_page(self, autologin_user):
         response = self.app.get(self._get_url())
