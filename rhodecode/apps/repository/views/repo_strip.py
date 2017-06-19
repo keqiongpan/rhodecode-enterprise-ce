@@ -25,7 +25,7 @@ from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import audit_logger
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator,
-    NotAnonymous)
+                                NotAnonymous, CSRFRequired)
 from rhodecode.lib.ext_json import json
 
 log = logging.getLogger(__name__)
@@ -55,6 +55,7 @@ class StripView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
+    @CSRFRequired()
     @view_config(
         route_name='strip_check', request_method='POST',
         renderer='json', xhr=True)
@@ -80,6 +81,7 @@ class StripView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
+    @CSRFRequired()
     @view_config(
         route_name='strip_execute', request_method='POST',
         renderer='json', xhr=True)

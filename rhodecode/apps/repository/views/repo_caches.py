@@ -24,7 +24,8 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
-from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
+from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator, \
+    CSRFRequired
 from rhodecode.lib import helpers as h
 from rhodecode.model.meta import Session
 from rhodecode.model.scm import ScmModel
@@ -55,6 +56,7 @@ class RepoCachesView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
+    @CSRFRequired()
     @view_config(
         route_name='edit_repo_caches', request_method='POST')
     def repo_caches_purge(self):

@@ -68,8 +68,8 @@ class AdminSessionSettingsView(BaseAppView):
         return self._get_template_context(c)
 
     @LoginRequired()
-    @CSRFRequired()
     @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
     @view_config(
         route_name='admin_settings_sessions_cleanup', request_method='POST')
     def settings_sessions_cleanup(self):

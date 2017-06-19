@@ -251,6 +251,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
     @view_config(
         route_name='edit_user_groups_management_updates', request_method='POST')
     def groups_management_updates(self):

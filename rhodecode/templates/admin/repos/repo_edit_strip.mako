@@ -104,7 +104,9 @@ delOld = function(number){
 
 };
 
-var result_data;
+var resultData = {
+    'csrf_token': CSRF_TOKEN
+};
 
 checkCommits = function() {
     var postData = $('form').serialize();
@@ -116,14 +118,16 @@ checkCommits = function() {
     btn.addClass('disabled');
 
     var success = function (data) {
-        result_data = {};
+        resultData = {
+            'csrf_token': CSRF_TOKEN
+        };
         var i = 0;
         var result = '<ol>';
         $.each(data, function(index, value){
             i= index;
             var box = $('#box-'+index);
             if (value.rev){
-                result_data[index] = JSON.stringify(value);
+                resultData[index] = JSON.stringify(value);
 
                 var verifiedHtml = (
                         '<li style="line-height:1.2em">' +
@@ -185,7 +189,7 @@ strip = function() {
         $('#results').html(result);
 
     };
-    ajaxPOST(url, result_data, success, null);
+    ajaxPOST(url, resultData, success, null);
     var btn = $('#strip_action');
     btn.remove();
 

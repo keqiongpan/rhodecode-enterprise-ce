@@ -73,6 +73,7 @@ class RepoSettingsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
+    @CSRFRequired()
     @view_config(
         route_name='edit_repo_advanced_delete', request_method='POST',
         renderer='rhodecode:templates/admin/repos/repo_edit.mako')
