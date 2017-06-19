@@ -572,6 +572,16 @@ class User(Base, BaseModel):
         self._email = val.lower() if val else None
 
     @hybrid_property
+    def first_name(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.name)
+
+    @hybrid_property
+    def last_name(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.lastname)
+
+    @hybrid_property
     def api_key(self):
         """
         Fetch if exist an auth-token with role ALL connected to this user
