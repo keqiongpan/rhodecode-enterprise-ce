@@ -40,7 +40,7 @@ from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 import rhodecode.lib.helpers as h
 from rhodecode.lib.utils import jsonify
-from rhodecode.lib.utils2 import safe_unicode
+from rhodecode.lib.utils2 import safe_unicode, safe_int
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
     RepositoryError, CommitDoesNotExistError, NodeDoesNotExistError)
@@ -431,15 +431,19 @@ class ChangesetController(BaseRepoController):
     @auth.CSRFRequired()
     @jsonify
     def delete_comment(self, repo_name, comment_id):
-        comment = ChangesetComment.get(comment_id)
+        comment = ChangesetComment.get_or_404(safe_int(comment_id))
         if not comment:
             log.debug('Comment with id:%s not found, skipping', comment_id)
             # comment already deleted in another call probably
             return True
 
-        owner = (comment.author.user_id == c.rhodecode_user.user_id)
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(c.repo_name)
-        if h.HasPermissionAny('hg.admin')() or is_repo_admin or owner:
+        super_admin = h.HasPermissionAny('hg.admin')()
+        comment_owner = (comment.author.user_id == c.rhodecode_user.user_id)
+        is_repo_comment = comment.repo.repo_name == c.repo_name
+        comment_repo_admin = is_repo_admin and is_repo_comment
+
+        if super_admin or comment_owner or comment_repo_admin:
             CommentsModel().delete(comment=comment, user=c.rhodecode_user)
             Session().commit()
             return True

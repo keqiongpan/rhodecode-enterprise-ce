@@ -1060,6 +1060,17 @@ class TestPullrequestsControllerDelete(object):
         response.mustcontain('id="delete_pullrequest"')
         response.mustcontain(no=['Confirm to delete this pull request'])
 
+    def test_delete_comment_returns_404_if_comment_does_not_exist(
+            self, autologin_user, pr_util, user_admin):
+
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+
+        self.app.get(url(
+            controller='pullrequests', action='delete_comment',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            comment_id=1024404), status=404)
+
 
 def assert_pull_request_status(pull_request, expected_status):
     status = ChangesetStatusModel().calculated_review_status(
@@ -1081,13 +1092,3 @@ def test_redirects_to_repo_summary_for_svn_repositories(backend_svn, app, action
 
     # URL adds leading slash and path doesn't have it
     assert redirected.request.path == summary_url
-
-
-def test_delete_comment_returns_404_if_comment_does_not_exist(pylonsapp):
-    # TODO: johbo: Global import not possible because models.forms blows up
-    from rhodecode.controllers.pullrequests import PullrequestsController
-    controller = PullrequestsController()
-    patcher = mock.patch(
-        'rhodecode.model.db.BaseModel.get', return_value=None)
-    with pytest.raises(HTTPNotFound), patcher:
-        controller._delete_comment(1)

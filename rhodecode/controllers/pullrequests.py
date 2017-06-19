@@ -987,25 +987,30 @@ class PullrequestsController(BaseRepoController):
     @auth.CSRFRequired()
     @jsonify
     def delete_comment(self, repo_name, comment_id):
-        return self._delete_comment(comment_id)
+        comment = ChangesetComment.get_or_404(safe_int(comment_id))
+        if not comment:
+            log.debug('Comment with id:%s not found, skipping', comment_id)
+            # comment already deleted in another call probably
+            return True
 
-    def _delete_comment(self, comment_id):
-        comment_id = safe_int(comment_id)
-        co = ChangesetComment.get_or_404(comment_id)
-        if co.pull_request.is_closed():
+        if comment.pull_request.is_closed():
             # don't allow deleting comments on closed pull request
             raise HTTPForbidden()
 
-        is_owner = co.author.user_id == c.rhodecode_user.user_id
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(c.repo_name)
-        if h.HasPermissionAny('hg.admin')() or is_repo_admin or is_owner:
-            old_calculated_status = co.pull_request.calculated_review_status()
-            CommentsModel().delete(comment=co, user=c.rhodecode_user)
+        super_admin = h.HasPermissionAny('hg.admin')()
+        comment_owner = comment.author.user_id == c.rhodecode_user.user_id
+        is_repo_comment = comment.repo.repo_name == c.repo_name
+        comment_repo_admin = is_repo_admin and is_repo_comment
+
+        if super_admin or comment_owner or comment_repo_admin:
+            old_calculated_status = comment.pull_request.calculated_review_status()
+            CommentsModel().delete(comment=comment, user=c.rhodecode_user)
             Session().commit()
-            calculated_status = co.pull_request.calculated_review_status()
+            calculated_status = comment.pull_request.calculated_review_status()
             if old_calculated_status != calculated_status:
                 PullRequestModel()._trigger_pull_request_hook(
-                    co.pull_request, c.rhodecode_user, 'review_status_change')
+                    comment.pull_request, c.rhodecode_user, 'review_status_change')
             return True
         else:
             raise HTTPForbidden()
