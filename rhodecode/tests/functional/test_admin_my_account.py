@@ -23,8 +23,7 @@ import pytest
 from rhodecode.lib import helpers as h
 from rhodecode.model.db import User, UserFollowing, Repository
 from rhodecode.tests import (
-    TestController, url, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_EMAIL,
-    assert_session_flash)
+    TestController, url, TEST_USER_ADMIN_LOGIN, assert_session_flash)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import AssertResponse
 
@@ -90,56 +89,7 @@ class TestMyAccountController(TestController):
         response.mustcontain('"name_raw": %s' % pr.pull_request_id)
         response.mustcontain('TestMyAccountPR')
 
-    def test_my_account_my_emails(self):
-        self.log_user()
-        response = self.app.get(url('my_account_emails'))
-        response.mustcontain('No additional emails specified')
 
-    def test_my_account_my_emails_add_existing_email(self):
-        self.log_user()
-        response = self.app.get(url('my_account_emails'))
-        response.mustcontain('No additional emails specified')
-        response = self.app.post(url('my_account_emails'),
-                                 {'new_email': TEST_USER_REGULAR_EMAIL,
-                                  'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'This e-mail address is already taken')
-
-    def test_my_account_my_emails_add_mising_email_in_form(self):
-        self.log_user()
-        response = self.app.get(url('my_account_emails'))
-        response.mustcontain('No additional emails specified')
-        response = self.app.post(url('my_account_emails'),
-                                 {'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Please enter an email address')
-
-    def test_my_account_my_emails_add_remove(self):
-        self.log_user()
-        response = self.app.get(url('my_account_emails'))
-        response.mustcontain('No additional emails specified')
-
-        response = self.app.post(url('my_account_emails'),
-                                 {'new_email': 'foo@barz.com',
-                                  'csrf_token': self.csrf_token})
-
-        response = self.app.get(url('my_account_emails'))
-
-        from rhodecode.model.db import UserEmailMap
-        email_id = UserEmailMap.query().filter(
-            UserEmailMap.user == User.get_by_username(
-                TEST_USER_ADMIN_LOGIN)).filter(
-                    UserEmailMap.email == 'foo@barz.com').one().email_id
-
-        response.mustcontain('foo@barz.com')
-        response.mustcontain('<input id="del_email_id" name="del_email_id" '
-                             'type="hidden" value="%s" />' % email_id)
-
-        response = self.app.post(
-            url('my_account_emails'), {
-                'del_email_id': email_id, '_method': 'delete',
-                'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Removed email address from user account')
-        response = self.app.get(url('my_account_emails'))
-        response.mustcontain('No additional emails specified')
 
     @pytest.mark.parametrize(
         "name, attrs", [

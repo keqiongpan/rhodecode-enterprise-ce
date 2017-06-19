@@ -21,6 +21,7 @@
 import logging
 import datetime
 
+import formencode
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
@@ -32,6 +33,7 @@ from rhodecode.lib.channelstream import channelstream_request, \
     ChannelstreamException
 from rhodecode.lib.utils2 import safe_int, md5
 from rhodecode.model.auth_token import AuthTokenModel
+from rhodecode.model.db import UserEmailMap
 from rhodecode.model.meta import Session
 from rhodecode.model.user import UserModel
 from rhodecode.model.validation_schema.schemas import user_schema
@@ -161,7 +163,7 @@ class MyAccountView(BaseAppView):
     @NotAnonymous()
     @CSRFRequired()
     @view_config(
-        route_name='my_account_auth_tokens_add', request_method='POST')
+        route_name='my_account_auth_tokens_add', request_method='POST',)
     def my_account_auth_tokens_add(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -195,6 +197,65 @@ class MyAccountView(BaseAppView):
             h.flash(_("Auth token successfully deleted"), category='success')
 
         return HTTPFound(h.route_path('my_account_auth_tokens'))
+
+    @LoginRequired()
+    @NotAnonymous()
+    @view_config(
+        route_name='my_account_emails', request_method='GET',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_emails(self):
+        _ = self.request.translate
+
+        c = self.load_default_context()
+        c.active = 'emails'
+
+        c.user_email_map = UserEmailMap.query()\
+            .filter(UserEmailMap.user == c.user).all()
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    @view_config(
+        route_name='my_account_emails_add', request_method='POST')
+    def my_account_emails_add(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        email = self.request.POST.get('new_email')
+
+        try:
+            UserModel().add_extra_email(c.user.user_id, email)
+            Session().commit()
+            h.flash(_("Added new email address `%s` for user account") % email,
+                    category='success')
+        except formencode.Invalid as error:
+            msg = error.error_dict['email']
+            h.flash(msg, category='error')
+        except Exception:
+            log.exception("Exception in my_account_emails")
+            h.flash(_('An error occurred during email saving'),
+                    category='error')
+        return HTTPFound(h.route_path('my_account_emails'))
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    @view_config(
+        route_name='my_account_emails_delete', request_method='POST')
+    def my_account_emails_delete(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        del_email_id = self.request.POST.get('del_email_id')
+        if del_email_id:
+
+            UserModel().delete_extra_email(
+                c.user.user_id, del_email_id)
+            Session().commit()
+            h.flash(_("Email successfully deleted"),
+                    category='success')
+        return HTTPFound(h.route_path('my_account_emails'))
 
     @LoginRequired()
     @NotAnonymous()

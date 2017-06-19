@@ -200,42 +200,6 @@ class MyAccountController(BaseController):
 
         return render('admin/my_account/my_account.mako')
 
-    def my_account_emails(self):
-        c.active = 'emails'
-        self.__load_data()
-
-        c.user_email_map = UserEmailMap.query()\
-            .filter(UserEmailMap.user == c.user).all()
-        return render('admin/my_account/my_account.mako')
-
-    @auth.CSRFRequired()
-    def my_account_emails_add(self):
-        email = request.POST.get('new_email')
-
-        try:
-            UserModel().add_extra_email(c.rhodecode_user.user_id, email)
-            Session().commit()
-            h.flash(_("Added new email address `%s` for user account") % email,
-                    category='success')
-        except formencode.Invalid as error:
-            msg = error.error_dict['email']
-            h.flash(msg, category='error')
-        except Exception:
-            log.exception("Exception in my_account_emails")
-            h.flash(_('An error occurred during email saving'),
-                    category='error')
-        return redirect(url('my_account_emails'))
-
-    @auth.CSRFRequired()
-    def my_account_emails_delete(self):
-        email_id = request.POST.get('del_email_id')
-        user_model = UserModel()
-        user_model.delete_extra_email(c.rhodecode_user.user_id, email_id)
-        Session().commit()
-        h.flash(_("Removed email address from user account"),
-                category='success')
-        return redirect(url('my_account_emails'))
-
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
         order_dir = request.GET.get('order[0][dir]', 'desc')

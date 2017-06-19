@@ -497,13 +497,6 @@ def make_map(config):
         m.connect('my_account_perms', '/my_account/perms',
                   action='my_account_perms', conditions={'method': ['GET']})
 
-        m.connect('my_account_emails', '/my_account/emails',
-                  action='my_account_emails', conditions={'method': ['GET']})
-        m.connect('my_account_emails', '/my_account/emails',
-                  action='my_account_emails_add', conditions={'method': ['POST']})
-        m.connect('my_account_emails', '/my_account/emails',
-                  action='my_account_emails_delete', conditions={'method': ['DELETE']})
-
         m.connect('my_account_notifications', '/my_account/notifications',
                   action='my_notifications',
                   conditions={'method': ['GET']})

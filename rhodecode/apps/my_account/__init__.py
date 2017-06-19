@@ -46,6 +46,16 @@ def includeme(config):
         name='my_account_auth_tokens_delete',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens/delete')
 
+    config.add_route(
+        name='my_account_emails',
+        pattern=ADMIN_PREFIX + '/my_account/emails')
+    config.add_route(
+        name='my_account_emails_add',
+        pattern=ADMIN_PREFIX + '/my_account/emails/new')
+    config.add_route(
+        name='my_account_emails_delete',
+        pattern=ADMIN_PREFIX + '/my_account/emails/delete')
+
     # channelstream test
     config.add_route(
         name='my_account_notifications_test_channelstream',
