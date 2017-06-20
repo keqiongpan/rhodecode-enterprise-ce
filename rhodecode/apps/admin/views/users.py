@@ -208,7 +208,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         token_data = token.get_api_data()
 
         self.maybe_attach_token_scope(token)
-        audit_logger.store(
+        audit_logger.store_web(
             action='user.edit.token.add',
             action_data={'data': {'token': token_data, 'user': user_data}},
             user=self._rhodecode_user, )
@@ -238,7 +238,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
             token_data = token.get_api_data()
 
             AuthTokenModel().delete(del_auth_token, c.user.user_id)
-            audit_logger.store(
+            audit_logger.store_web(
                 action='user.edit.token.delete',
                 action_data={'data': {'token': token_data, 'user': user_data}},
                 user=self._rhodecode_user,)
@@ -246,11 +246,6 @@ class AdminUsersView(BaseAppView, DataGridAppView):
             h.flash(_("Auth token successfully deleted"), category='success')
 
         return HTTPFound(h.route_path('edit_user_auth_tokens', user_id=user_id))
-
-
-
-
-
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')

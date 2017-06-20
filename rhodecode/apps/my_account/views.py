@@ -182,9 +182,9 @@ class MyAccountView(BaseAppView):
         token_data = token.get_api_data()
 
         self.maybe_attach_token_scope(token)
-        audit_logger.store(
+        audit_logger.store_web(
             action='user.edit.token.add',
-            action_data={'data': {'token': token_data}},
+            action_data={'data': {'token': token_data, 'user': 'self'}},
             user=self._rhodecode_user, )
         Session().commit()
 
@@ -207,9 +207,9 @@ class MyAccountView(BaseAppView):
             token_data = token.get_api_data()
 
             AuthTokenModel().delete(del_auth_token, c.user.user_id)
-            audit_logger.store(
+            audit_logger.store_web(
                 action='user.edit.token.delete',
-                action_data={'data': {'token': token_data}},
+                action_data={'data': {'token': token_data, 'user': 'self'}},
                 user=self._rhodecode_user,)
             Session().commit()
             h.flash(_("Auth token successfully deleted"), category='success')
@@ -244,9 +244,9 @@ class MyAccountView(BaseAppView):
 
         try:
             UserModel().add_extra_email(c.user.user_id, email)
-            audit_logger.store(
+            audit_logger.store_web(
                 action='user.edit.email.add',
-                action_data={'data': {'email': email}},
+                action_data={'data': {'email': email, 'user': 'self'}},
                 user=self._rhodecode_user,)
 
             Session().commit()
@@ -274,9 +274,9 @@ class MyAccountView(BaseAppView):
         if del_email_id:
             email = UserEmailMap.get_or_404(del_email_id, pyramid_exc=True).email
             UserModel().delete_extra_email(c.user.user_id, del_email_id)
-            audit_logger.store(
+            audit_logger.store_web(
                 action='user.edit.email.delete',
-                action_data={'data': {'email': email}},
+                action_data={'data': {'email': email, 'user': 'self'}},
                 user=self._rhodecode_user,)
             Session().commit()
             h.flash(_("Email successfully deleted"),
