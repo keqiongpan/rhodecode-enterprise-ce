@@ -1837,6 +1837,7 @@ def journal_filter_help():
         'Example filter terms:\n' +
         '     repository:vcs\n' +
         '     username:marcin\n' +
+        '     username:(NOT marcin)\n' +
         '     action:*push*\n' +
         '     ip:127.0.0.1\n' +
         '     date:20120101\n' +
