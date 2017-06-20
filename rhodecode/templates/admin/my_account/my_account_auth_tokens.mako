@@ -43,9 +43,9 @@
                 </td>
                 <td class="td-action">
                     ${h.secure_form(h.route_path('my_account_auth_tokens_delete'), method='post')}
-                        ${h.hidden('del_auth_token',auth_token.api_key)}
+                        ${h.hidden('del_auth_token', auth_token.user_api_key_id)}
                         <button class="btn btn-link btn-danger" type="submit"
-                                onclick="return confirm('${_('Confirm to remove this auth token: %s') % auth_token.api_key}');">
+                                onclick="return confirm('${_('Confirm to remove this auth token: %s') % auth_token.token_obfuscated}');">
                             ${_('Delete')}
                         </button>
                     ${h.end_form()}

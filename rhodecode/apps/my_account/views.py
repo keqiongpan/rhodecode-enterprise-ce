@@ -28,6 +28,7 @@ from pyramid.view import view_config
 from rhodecode.apps._base import BaseAppView
 from rhodecode import forms
 from rhodecode.lib import helpers as h
+from rhodecode.lib import audit_logger
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
 from rhodecode.lib.channelstream import channelstream_request, \
@@ -35,7 +36,7 @@ from rhodecode.lib.channelstream import channelstream_request, \
 from rhodecode.lib.utils2 import safe_int, md5
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import (
-    Repository, PullRequest, UserEmailMap, User, UserFollowing, joinedload)
+    Repository, UserEmailMap, UserApiKeys, UserFollowing, joinedload)
 from rhodecode.model.meta import Session
 from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
@@ -178,7 +179,13 @@ class MyAccountView(BaseAppView):
 
         token = AuthTokenModel().create(
             c.user.user_id, description, lifetime, role)
+        token_data = token.get_api_data()
+
         self.maybe_attach_token_scope(token)
+        audit_logger.store(
+            action='user.edit.token.add',
+            action_data={'data': {'token': token_data}},
+            user=self._rhodecode_user, )
         Session().commit()
 
         h.flash(_("Auth token successfully created"), category='success')
@@ -196,7 +203,14 @@ class MyAccountView(BaseAppView):
         del_auth_token = self.request.POST.get('del_auth_token')
 
         if del_auth_token:
+            token = UserApiKeys.get_or_404(del_auth_token, pyramid_exc=True)
+            token_data = token.get_api_data()
+
             AuthTokenModel().delete(del_auth_token, c.user.user_id)
+            audit_logger.store(
+                action='user.edit.token.delete',
+                action_data={'data': {'token': token_data}},
+                user=self._rhodecode_user,)
             Session().commit()
             h.flash(_("Auth token successfully deleted"), category='success')
 
@@ -230,6 +244,11 @@ class MyAccountView(BaseAppView):
 
         try:
             UserModel().add_extra_email(c.user.user_id, email)
+            audit_logger.store(
+                action='user.edit.email.add',
+                action_data={'data': {'email': email}},
+                user=self._rhodecode_user,)
+
             Session().commit()
             h.flash(_("Added new email address `%s` for user account") % email,
                     category='success')
@@ -253,9 +272,12 @@ class MyAccountView(BaseAppView):
 
         del_email_id = self.request.POST.get('del_email_id')
         if del_email_id:
-
-            UserModel().delete_extra_email(
-                c.user.user_id, del_email_id)
+            email = UserEmailMap.get_or_404(del_email_id, pyramid_exc=True).email
+            UserModel().delete_extra_email(c.user.user_id, del_email_id)
+            audit_logger.store(
+                action='user.edit.email.delete',
+                action_data={'data': {'email': email}},
+                user=self._rhodecode_user,)
             Session().commit()
             h.flash(_("Email successfully deleted"),
                     category='success')

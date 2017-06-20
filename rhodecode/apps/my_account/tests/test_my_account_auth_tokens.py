@@ -103,7 +103,7 @@ class TestMyAccountAuthTokens(TestController):
 
         response = self.app.post(
             route_path('my_account_auth_tokens_delete'),
-            {'del_auth_token': keys[0].api_key, 'csrf_token': self.csrf_token})
+            {'del_auth_token': keys[0].user_api_key_id, 'csrf_token': self.csrf_token})
         assert_session_flash(response, 'Auth token successfully deleted')
 
         user = User.get(user_id)

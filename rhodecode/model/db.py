@@ -1018,6 +1018,14 @@ class UserApiKeys(Base, BaseModel):
         }
         return data
 
+    def get_api_data(self, include_secrets=False):
+        data = self.__json__()
+        if include_secrets:
+            return data
+        else:
+            data['auth_token'] = self.token_obfuscated
+            return data
+
     @property
     def expired(self):
         if self.expires == -1:
@@ -1048,6 +1056,11 @@ class UserApiKeys(Base, BaseModel):
     @property
     def scope_humanized(self):
         return self._get_scope()
+
+    @property
+    def token_obfuscated(self):
+        if self.api_key:
+            return self.api_key[:4] + "****"
 
 
 class UserEmailMap(Base, BaseModel):
