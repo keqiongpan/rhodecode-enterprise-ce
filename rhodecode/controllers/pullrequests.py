@@ -1013,4 +1013,6 @@ class PullrequestsController(BaseRepoController):
                     comment.pull_request, c.rhodecode_user, 'review_status_change')
             return True
         else:
-            raise HTTPForbidden()
+            log.warning('No permissions for user %s to delete comment_id: %s',
+                        c.rhodecode_user, comment_id)
+            raise HTTPNotFound()

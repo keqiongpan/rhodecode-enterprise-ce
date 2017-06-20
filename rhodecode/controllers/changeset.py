@@ -448,7 +448,9 @@ class ChangesetController(BaseRepoController):
             Session().commit()
             return True
         else:
-            raise HTTPForbidden()
+            log.warning('No permissions for user %s to delete comment_id: %s',
+                        c.rhodecode_user, comment_id)
+            raise HTTPNotFound()
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
