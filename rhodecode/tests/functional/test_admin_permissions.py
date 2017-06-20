@@ -25,6 +25,24 @@ from rhodecode.tests import (
     TestController, url, clear_all_caches, assert_session_flash)
 
 
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
+
+    base_url = {
+        'edit_user_ips':
+            ADMIN_PREFIX + '/users/{user_id}/edit/ips',
+        'edit_user_ips_add':
+            ADMIN_PREFIX + '/users/{user_id}/edit/ips/new',
+        'edit_user_ips_delete':
+            ADMIN_PREFIX + '/users/{user_id}/edit/ips/delete',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
+
 class TestAdminPermissionsController(TestController):
 
     @pytest.fixture(scope='class', autouse=True)
@@ -181,10 +199,9 @@ class TestAdminPermissionsController(TestController):
 
         # ADD
         default_user_id = User.get_default_user().user_id
-        response = self.app.post(
-            url('edit_user_ips', user_id=default_user_id),
-            params={'new_ip': '127.0.0.0/24', '_method': 'put',
-                    'csrf_token': self.csrf_token})
+        self.app.post(
+            route_path('edit_user_ips_add', user_id=default_user_id),
+            params={'new_ip': '127.0.0.0/24', 'csrf_token': self.csrf_token})
 
         response = self.app.get(url('admin_permissions_ips'))
         response.mustcontain('127.0.0.0/24')
@@ -196,9 +213,8 @@ class TestAdminPermissionsController(TestController):
                                              default_user_id).first().ip_id
 
         response = self.app.post(
-            url('edit_user_ips', user_id=default_user_id),
-            params={'_method': 'delete', 'del_ip_id': del_ip_id,
-                    'csrf_token': self.csrf_token})
+            route_path('edit_user_ips_delete', user_id=default_user_id),
+            params={'del_ip_id': del_ip_id, 'csrf_token': self.csrf_token})
 
         assert_session_flash(response, 'Removed ip address from user whitelist')
 

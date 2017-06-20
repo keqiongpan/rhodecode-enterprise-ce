@@ -20,7 +20,7 @@
               <td class="td-iprange"><div class="ip">${h.ip_range(ip.ip_addr)}</div></td>
               <td class="td-description"><div class="ip">${ip.description}</div></td>
               <td class="td-action">
-                ${h.secure_form(url('edit_user_ips', user_id=c.user.user_id),method='delete')}
+                ${h.secure_form(h.route_path('edit_user_ips_delete', user_id=c.user.user_id), method='POST')}
                     ${h.hidden('del_ip_id',ip.ip_id)}
                     ${h.hidden('default_user', 'True')}
                     ${h.submit('remove_',_('Delete'),id="remove_ip_%s" % ip.ip_id,
@@ -40,7 +40,7 @@
       </table>
     </div>
 
-    ${h.secure_form(url('edit_user_ips', user_id=c.user.user_id),method='put')}
+    ${h.secure_form(h.route_path('edit_user_ips_add', user_id=c.user.user_id), method='POST')}
       <div class="form">
         <!-- fields -->
         <div class="fields">

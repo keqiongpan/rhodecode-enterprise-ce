@@ -287,19 +287,6 @@ def make_map(config):
         m.connect('edit_user_perms_summary', '/users/{user_id}/edit/permissions_summary',
                   action='edit_perms_summary', conditions={'method': ['GET']})
 
-        m.connect('edit_user_emails', '/users/{user_id}/edit/emails',
-                  action='edit_emails', conditions={'method': ['GET']})
-        m.connect('edit_user_emails', '/users/{user_id}/edit/emails',
-                  action='add_email', conditions={'method': ['PUT']})
-        m.connect('edit_user_emails', '/users/{user_id}/edit/emails',
-                  action='delete_email', conditions={'method': ['DELETE']})
-
-        m.connect('edit_user_ips', '/users/{user_id}/edit/ips',
-                  action='edit_ips', conditions={'method': ['GET']})
-        m.connect('edit_user_ips', '/users/{user_id}/edit/ips',
-                  action='add_ip', conditions={'method': ['PUT']})
-        m.connect('edit_user_ips', '/users/{user_id}/edit/ips',
-                  action='delete_ip', conditions={'method': ['DELETE']})
 
     # ADMIN USER GROUPS REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,

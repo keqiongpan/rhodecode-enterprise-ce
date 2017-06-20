@@ -64,6 +64,11 @@ def admin_routes(config):
         name='admin_settings_sessions_cleanup',
         pattern='/settings/sessions/cleanup')
 
+    # global permissions
+    config.add_route(
+        name='admin_permissions_ips',
+        pattern='/permissions/ips')
+
     # users admin
     config.add_route(
         name='users',
@@ -83,6 +88,28 @@ def admin_routes(config):
     config.add_route(
         name='edit_user_auth_tokens_delete',
         pattern='/users/{user_id:\d+}/edit/auth_tokens/delete')
+
+    # user emails
+    config.add_route(
+        name='edit_user_emails',
+        pattern='/users/{user_id:\d+}/edit/emails')
+    config.add_route(
+        name='edit_user_emails_add',
+        pattern='/users/{user_id:\d+}/edit/emails/new')
+    config.add_route(
+        name='edit_user_emails_delete',
+        pattern='/users/{user_id:\d+}/edit/emails/delete')
+
+    # user IPs
+    config.add_route(
+        name='edit_user_ips',
+        pattern='/users/{user_id:\d+}/edit/ips')
+    config.add_route(
+        name='edit_user_ips_add',
+        pattern='/users/{user_id:\d+}/edit/ips/new')
+    config.add_route(
+        name='edit_user_ips_delete',
+        pattern='/users/{user_id:\d+}/edit/ips/delete')
 
     # user groups management
     config.add_route(

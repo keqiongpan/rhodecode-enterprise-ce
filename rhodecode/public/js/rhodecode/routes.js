@@ -73,11 +73,18 @@ function registerRCRoutes() {
     pyroutes.register('admin_settings_system_update', '_admin/settings/system/updates', []);
     pyroutes.register('admin_settings_sessions', '_admin/settings/sessions', []);
     pyroutes.register('admin_settings_sessions_cleanup', '_admin/settings/sessions/cleanup', []);
+    pyroutes.register('admin_permissions_ips', '_admin/permissions/ips', []);
     pyroutes.register('users', '_admin/users', []);
     pyroutes.register('users_data', '_admin/users_data', []);
     pyroutes.register('edit_user_auth_tokens', '_admin/users/%(user_id)s/edit/auth_tokens', ['user_id']);
     pyroutes.register('edit_user_auth_tokens_add', '_admin/users/%(user_id)s/edit/auth_tokens/new', ['user_id']);
     pyroutes.register('edit_user_auth_tokens_delete', '_admin/users/%(user_id)s/edit/auth_tokens/delete', ['user_id']);
+    pyroutes.register('edit_user_emails', '_admin/users/%(user_id)s/edit/emails', ['user_id']);
+    pyroutes.register('edit_user_emails_add', '_admin/users/%(user_id)s/edit/emails/new', ['user_id']);
+    pyroutes.register('edit_user_emails_delete', '_admin/users/%(user_id)s/edit/emails/delete', ['user_id']);
+    pyroutes.register('edit_user_ips', '_admin/users/%(user_id)s/edit/ips', ['user_id']);
+    pyroutes.register('edit_user_ips_add', '_admin/users/%(user_id)s/edit/ips/new', ['user_id']);
+    pyroutes.register('edit_user_ips_delete', '_admin/users/%(user_id)s/edit/ips/delete', ['user_id']);
     pyroutes.register('edit_user_groups_management', '_admin/users/%(user_id)s/edit/groups_management', ['user_id']);
     pyroutes.register('edit_user_groups_management_updates', '_admin/users/%(user_id)s/edit/edit_user_groups_management/updates', ['user_id']);
     pyroutes.register('edit_user_audit_logs', '_admin/users/%(user_id)s/edit/audit', ['user_id']);
