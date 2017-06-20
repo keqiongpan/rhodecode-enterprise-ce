@@ -496,7 +496,7 @@ class ScmModel(BaseModel):
 
                     if not flat:
                         _data = {
-                            "name": f.unicode_path,
+                            "name": h.escape(f.unicode_path),
                             "type": "file",
                             }
                         if extended_info:
@@ -522,7 +522,7 @@ class ScmModel(BaseModel):
                     _data = d.unicode_path
                     if not flat:
                         _data = {
-                            "name": d.unicode_path,
+                            "name": h.escape(d.unicode_path),
                             "type": "dir",
                             }
                     if extended_info:
