@@ -253,8 +253,7 @@ class MyAccountView(BaseAppView):
             h.flash(_("Added new email address `%s` for user account") % email,
                     category='success')
         except formencode.Invalid as error:
-            msg = error.error_dict['email']
-            h.flash(msg, category='error')
+            h.flash(h.escape(error.error_dict['email']), category='error')
         except Exception:
             log.exception("Exception in my_account_emails")
             h.flash(_('An error occurred during email saving'),
