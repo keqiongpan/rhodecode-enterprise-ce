@@ -20,7 +20,8 @@
 
 import logging
 
-from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCForbidden
+from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCForbidden, \
+    JSONRPCValidationError
 from rhodecode.api.utils import (
     Optional, OAttr, store_update, has_superadmin_permission, get_origin,
     get_user_or_error, get_user_group_or_error, get_perm_or_error)
@@ -30,6 +31,8 @@ from rhodecode.lib.exceptions import UserGroupAssignedException
 from rhodecode.model.db import Session
 from rhodecode.model.scm import UserGroupList
 from rhodecode.model.user_group import UserGroupModel
+from rhodecode.model import validation_schema
+from rhodecode.model.validation_schema.schemas import user_group_schema
 
 log = logging.getLogger(__name__)
 
@@ -211,16 +214,32 @@ def create_user_group(
     if UserGroupModel().get_by_name(group_name):
         raise JSONRPCError("user group `%s` already exist" % (group_name,))
 
-    try:
-        if isinstance(owner, Optional):
-            owner = apiuser.user_id
+    if isinstance(owner, Optional):
+        owner = apiuser.user_id
 
-        owner = get_user_or_error(owner)
-        active = Optional.extract(active)
-        description = Optional.extract(description)
+    owner = get_user_or_error(owner)
+    active = Optional.extract(active)
+    description = Optional.extract(description)
+
+    schema = user_group_schema.UserGroupSchema().bind(
+        # user caller
+        user=apiuser)
+    try:
+        schema_data = schema.deserialize(dict(
+            user_group_name=group_name,
+            user_group_description=description,
+            user_group_owner=owner.username,
+            user_group_active=active,
+            ))
+    except validation_schema.Invalid as err:
+        raise JSONRPCValidationError(colander_exc=err)
+
+    try:
         user_group = UserGroupModel().create(
-            name=group_name, description=description, owner=owner,
-            active=active)
+            name=schema_data['user_group_name'],
+            description=schema_data['user_group_description'],
+            owner=owner,
+            active=schema_data['user_group_active'])
         Session().flush()
         creation_data = user_group.get_api_data()
         audit_logger.store_api(
