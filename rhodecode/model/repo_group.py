@@ -711,7 +711,7 @@ class RepoGroupModel(BaseModel):
                 "menu": quick_menu(group.group_name),
                 "name": repo_group_lnk(group.group_name),
                 "name_raw": group.group_name,
-                "desc": desc(group.group_description, group.personal),
+                "desc": desc(group.description_safe, group.personal),
                 "top_level_repos": 0,
                 "owner": user_profile(group.user.username)
             }

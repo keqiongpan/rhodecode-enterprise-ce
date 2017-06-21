@@ -1026,6 +1026,11 @@ class UserApiKeys(Base, BaseModel):
             data['auth_token'] = self.token_obfuscated
             return data
 
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.description)
+
     @property
     def expired(self):
         if self.expires == -1:
@@ -1110,6 +1115,11 @@ class UserIpMap(Base, BaseModel):
     active = Column("active", Boolean(), nullable=True, unique=None, default=True)
     description = Column("description", String(10000), nullable=True, unique=None, default=None)
     user = relationship('User', lazy='joined')
+
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.description)
 
     @classmethod
     def _get_ip_range(cls, ip_addr):
@@ -1197,6 +1207,11 @@ class UserGroup(Base, BaseModel):
     user_group_user_group_to_perm = relationship('UserGroupUserGroupToPerm ', primaryjoin="UserGroupUserGroupToPerm.target_user_group_id==UserGroup.users_group_id", cascade='all')
 
     user = relationship('User')
+
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.description)
 
     @hybrid_property
     def group_data(self):
@@ -1494,6 +1509,11 @@ class Repository(Base, BaseModel):
     def __unicode__(self):
         return u"<%s('%s:%s')>" % (self.__class__.__name__, self.repo_id,
                                    safe_unicode(self.repo_name))
+
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.description)
 
     @hybrid_property
     def landing_rev(self):
@@ -1805,7 +1825,7 @@ class Repository(Base, BaseModel):
             'url': RepoModel().get_url(self),
             'private': repo.private,
             'created_on': repo.created_on,
-            'description': repo.description,
+            'description': repo.description_safe,
             'landing_rev': repo.landing_rev,
             'owner': repo.user.username,
             'fork_of': repo.fork.repo_name if repo.fork else None,
@@ -2204,8 +2224,13 @@ class RepoGroup(Base, BaseModel):
         self.parent_group = parent_group
 
     def __unicode__(self):
-        return u"<%s('id:%s:%s')>" % (self.__class__.__name__, self.group_id,
-                                      self.group_name)
+        return u"<%s('id:%s:%s')>" % (
+            self.__class__.__name__, self.group_id, self.group_name)
+
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.group_description)
 
     @classmethod
     def _generate_choice(cls, repo_group):
@@ -2436,7 +2461,7 @@ class RepoGroup(Base, BaseModel):
         data = {
             'group_id': group.group_id,
             'group_name': group.group_name,
-            'group_description': group.group_description,
+            'group_description': group.description_safe,
             'parent_group': group.parent_group.group_name if group.parent_group else None,
             'repositories': [x.repo_name for x in group.repositories],
             'owner': group.user.username,
@@ -3303,6 +3328,11 @@ class _PullRequestBase(BaseModel):
         return json.dumps(self.reviewer_data)
 
     @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.description)
+
+    @hybrid_property
     def revisions(self):
         return self._revisions.split(':') if self._revisions else []
 
@@ -3738,6 +3768,11 @@ class Gist(Base, BaseModel):
 
     def __repr__(self):
         return '<Gist:[%s]%s>' % (self.gist_type, self.gist_access_id)
+
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.gist_description)
 
     @classmethod
     def get_or_404(cls, id_, pyramid_exc=False):

@@ -1295,7 +1295,7 @@ class PullRequestModel(BaseModel):
                 'lastname': repo.user.last_name,
                 'gravatar_link': h.gravatar_url(repo.user.email, 14),
             },
-            'description': h.chop_at_smart(repo.description, '\n'),
+            'description': h.chop_at_smart(repo.description_safe, '\n'),
             'refs': {
                 'all_refs': all_refs,
                 'selected_ref': selected_ref,

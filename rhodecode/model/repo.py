@@ -257,7 +257,7 @@ class RepoModel(BaseModel):
                 "last_changeset": last_rev(repo.repo_name, cs_cache),
                 "last_changeset_raw": cs_cache.get('revision'),
 
-                "desc": desc(repo.description),
+                "desc": desc(repo.description_safe),
                 "owner": user_profile(repo.user.username),
 
                 "state": state(repo.repo_state),
