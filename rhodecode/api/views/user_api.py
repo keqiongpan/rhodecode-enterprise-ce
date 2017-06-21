@@ -20,7 +20,8 @@
 
 import logging
 
-from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCForbidden
+from rhodecode.api import (
+    jsonrpc_method, JSONRPCError, JSONRPCForbidden, JSONRPCValidationError)
 from rhodecode.api.utils import (
     Optional, OAttr, has_superadmin_permission, get_user_or_error, store_update)
 from rhodecode.lib import audit_logger
@@ -29,6 +30,8 @@ from rhodecode.lib.exceptions import DefaultUserException
 from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.model.db import Session, User, Repository
 from rhodecode.model.user import UserModel
+from rhodecode.model import validation_schema
+from rhodecode.model.validation_schema.schemas import user_schema
 
 log = logging.getLogger(__name__)
 
@@ -238,17 +241,45 @@ def create_user(request, apiuser, username, email, password=Optional(''),
     if isinstance(create_repo_group, basestring):
         create_repo_group = str2bool(create_repo_group)
 
+    username = Optional.extract(username)
+    password = Optional.extract(password)
+    email = Optional.extract(email)
+    first_name = Optional.extract(firstname)
+    last_name = Optional.extract(lastname)
+    active = Optional.extract(active)
+    admin = Optional.extract(admin)
+    extern_type = Optional.extract(extern_type)
+    extern_name = Optional.extract(extern_name)
+
+    schema = user_schema.UserSchema().bind(
+        # user caller
+        user=apiuser)
+    try:
+        schema_data = schema.deserialize(dict(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            active=active,
+            admin=admin,
+            extern_type=extern_type,
+            extern_name=extern_name,
+            ))
+    except validation_schema.Invalid as err:
+        raise JSONRPCValidationError(colander_exc=err)
+
     try:
         user = UserModel().create_or_update(
-            username=Optional.extract(username),
-            password=Optional.extract(password),
-            email=Optional.extract(email),
-            firstname=Optional.extract(firstname),
-            lastname=Optional.extract(lastname),
-            active=Optional.extract(active),
-            admin=Optional.extract(admin),
-            extern_type=Optional.extract(extern_type),
-            extern_name=Optional.extract(extern_name),
+            username=schema_data['username'],
+            password=schema_data['password'],
+            email=schema_data['email'],
+            firstname=schema_data['first_name'],
+            lastname=schema_data['last_name'],
+            active=schema_data['active'],
+            admin=schema_data['admin'],
+            extern_type=schema_data['extern_type'],
+            extern_name=schema_data['extern_name'],
             force_password_change=Optional.extract(force_password_change),
             create_repo_group=create_repo_group
         )

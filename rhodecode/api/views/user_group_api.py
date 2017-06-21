@@ -20,8 +20,8 @@
 
 import logging
 
-from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCForbidden, \
-    JSONRPCValidationError
+from rhodecode.api import (
+    jsonrpc_method, JSONRPCError, JSONRPCForbidden, JSONRPCValidationError)
 from rhodecode.api.utils import (
     Optional, OAttr, store_update, has_superadmin_permission, get_origin,
     get_user_or_error, get_user_group_or_error, get_perm_or_error)
