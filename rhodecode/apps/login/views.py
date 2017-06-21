@@ -173,7 +173,7 @@ class LoginView(BaseAppView):
                 ip_addr=self.request.remote_addr)
             action_data = {'user_agent': self.request.user_agent}
             audit_logger.store_web(
-                action='user.login.success', action_data=action_data,
+                'user.login.success', action_data=action_data,
                 user=audit_user, commit=True)
 
             raise HTTPFound(c.came_from, headers=headers)
@@ -192,7 +192,7 @@ class LoginView(BaseAppView):
                 ip_addr=self.request.remote_addr)
             action_data = {'user_agent': self.request.user_agent}
             audit_logger.store_web(
-                action='user.login.failure', action_data=action_data,
+                'user.login.failure', action_data=action_data,
                 user=audit_user, commit=True)
             return render_ctx
 
@@ -212,7 +212,7 @@ class LoginView(BaseAppView):
 
         action_data = {'user_agent': self.request.user_agent}
         audit_logger.store_web(
-            action='user.logout', action_data=action_data,
+            'user.logout', action_data=action_data,
             user=auth_user, commit=True)
         self.session.delete()
         return HTTPFound(h.route_path('home'))
@@ -365,8 +365,7 @@ class LoginView(BaseAppView):
                 action_data = {'email': user_email,
                                'user_agent': self.request.user_agent}
                 audit_logger.store_web(
-                    action='user.password.reset_request',
-                    action_data=action_data,
+                    'user.password.reset_request', action_data=action_data,
                     user=self._rhodecode_user, commit=True)
                 return HTTPFound(self.request.route_path('reset_password'))
 

@@ -53,8 +53,8 @@ ACTIONS_V1 = {
     'user_group.delete': {'old_data': {}},
     'user_group.edit': {'old_data': {}},
     'user_group.edit.permissions': {},
-    'user_group.edit.member.add': {},
-    'user_group.edit.member.delete': {},
+    'user_group.edit.member.add': {'user': {}},
+    'user_group.edit.member.delete': {'user': {}},
 
     'repo.create': {'data': {}},
     'repo.fork': {'data': {}},
@@ -76,8 +76,8 @@ ACTIONS_V1 = {
     'repo.pull_request.reviewer.add': '',
     'repo.pull_request.reviewer.delete': '',
 
-    'repo.commit.comment.create': '',
-    'repo.commit.comment.delete': '',
+    'repo.commit.comment.create': {'data': {}},
+    'repo.commit.comment.delete': {'data': {}},
     'repo.commit.vote': '',
 
     'repo_group.create': {'data': {}},
@@ -164,34 +164,32 @@ def store(action, user, action_data=None, user_data=None, ip_addr=None,
         from rhodecode.lib import audit_logger
 
         audit_logger.store(
-            action='repo.edit', user=self._rhodecode_user)
+            'repo.edit', user=self._rhodecode_user)
         audit_logger.store(
-            action='repo.delete', action_data={'data': repo_data},
+            'repo.delete', action_data={'data': repo_data},
             user=audit_logger.UserWrap(username='itried-login', ip_addr='8.8.8.8'))
 
         # repo action
         audit_logger.store(
-            action='repo.delete',
+            'repo.delete',
             user=audit_logger.UserWrap(username='itried-login', ip_addr='8.8.8.8'),
             repo=audit_logger.RepoWrap(repo_name='some-repo'))
 
         # repo action, when we know and have the repository object already
         audit_logger.store(
-            action='repo.delete',
-            action_data={'source': audit_logger.SOURCE_WEB, },
+            'repo.delete', action_data={'source': audit_logger.SOURCE_WEB, },
             user=self._rhodecode_user,
             repo=repo_object)
 
         # alternative wrapper to the above
         audit_logger.store_web(
-            action='repo.delete',
-            action_data={},
+            'repo.delete', action_data={},
             user=self._rhodecode_user,
             repo=repo_object)
 
         # without an user ?
         audit_logger.store(
-            action='user.login.failure',
+            'user.login.failure',
             user=audit_logger.UserWrap(
                     username=self.request.params.get('username'),
                     ip_addr=self.request.remote_addr))

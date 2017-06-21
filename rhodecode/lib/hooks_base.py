@@ -158,7 +158,7 @@ def post_pull(extras):
         ip_addr=extras.ip)
     repo = audit_logger.RepoWrap(repo_name=extras.repository)
     audit_logger.store(
-        action='user.pull', action_data={
+        'user.pull', action_data={
             'user_agent': extras.user_agent},
         user=audit_user, repo=repo, commit=True)
 
@@ -199,7 +199,7 @@ def post_push(extras):
         username=extras.username, ip_addr=extras.ip)
     repo = audit_logger.RepoWrap(repo_name=extras.repository)
     audit_logger.store(
-        action='user.push', action_data={
+        'user.push', action_data={
             'user_agent': extras.user_agent,
             'commit_ids': commit_ids[:10000]},
         user=audit_user, repo=repo, commit=True)

@@ -175,7 +175,7 @@ class UserGroupModel(BaseModel):
                 user_id for user_id in current_members_ids
                 if user_id not in user_id_list]
 
-        return (added_members, deleted_members)
+        return added_members, deleted_members
 
     def _set_users_as_members(self, user_group, user_ids):
         user_group.members = []
@@ -191,6 +191,7 @@ class UserGroupModel(BaseModel):
         self._set_users_as_members(user_group, user_ids)
         self._log_user_changes('added to', user_group, added)
         self._log_user_changes('removed from', user_group, removed)
+        return added, removed
 
     def _clean_members_data(self, members_data):
         if not members_data:
@@ -225,12 +226,16 @@ class UserGroupModel(BaseModel):
 
             user_group.user = owner
 
+        added_user_ids = []
+        removed_user_ids = []
         if 'users_group_members' in form_data:
             members_id_list = self._clean_members_data(
                 form_data['users_group_members'])
-            self._update_members_from_user_ids(user_group, members_id_list)
+            added_user_ids, removed_user_ids = \
+                self._update_members_from_user_ids(user_group, members_id_list)
 
         self.sa.add(user_group)
+        return user_group, added_user_ids, removed_user_ids
 
     def delete(self, user_group, force=False):
         """

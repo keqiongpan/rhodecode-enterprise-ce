@@ -185,14 +185,16 @@ class RepoGroupsController(BaseController):
                 owner=owner.user_id,
                 copy_permissions=form_result['group_copy_permissions']
             )
-            Session().commit()
-            repo_group_data = repo_group.get_api_data()
-            _new_group_name = form_result['group_name_full']
+            Session().flush()
 
+            repo_group_data = repo_group.get_api_data()
             audit_logger.store_web(
-                action='repo_group.create',
-                action_data={'data': repo_group_data},
-                user=c.rhodecode_user, commit=True)
+                'repo_group.create', action_data={'data': repo_group_data},
+                user=c.rhodecode_user)
+
+            Session().commit()
+
+            _new_group_name = form_result['group_name_full']
 
             repo_group_url = h.link_to(
                 _new_group_name,
@@ -304,8 +306,7 @@ class RepoGroupsController(BaseController):
             RepoGroupModel().delete(group_name)
 
             audit_logger.store_web(
-                'repo_group.delete',
-                action_data={'old_data': old_values},
+                'repo_group.delete', action_data={'old_data': old_values},
                 user=c.rhodecode_user)
 
             Session().commit()

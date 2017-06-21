@@ -27,6 +27,7 @@ from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_user_or_error,
     get_repo_group_or_error, get_perm_or_error, get_user_group_or_error,
     get_origin, validate_repo_group_permissions, validate_set_owner_permissions)
+from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     HasRepoGroupPermissionAnyApi, HasUserGroupPermissionAnyApi)
 from rhodecode.model.db import Session
@@ -222,6 +223,13 @@ def create_repo_group(
             group_name=validated_group_name,
             group_description=schema_data['repo_group_name'],
             copy_permissions=schema_data['repo_group_copy_permissions'])
+        Session().flush()
+
+        repo_group_data = repo_group.get_api_data()
+        audit_logger.store_api(
+            'repo_group.create', action_data={'data': repo_group_data},
+            user=apiuser)
+
         Session().commit()
         return {
             'msg': 'Created new repo group `%s`' % validated_group_name,
@@ -310,8 +318,13 @@ def update_repo_group(
         enable_locking=schema_data['repo_group_enable_locking'],
     )
 
+    old_data = repo_group.get_api_data()
     try:
         RepoGroupModel().update(repo_group, validated_updates)
+        audit_logger.store_api(
+            'repo_group.edit', action_data={'old_data': old_data},
+            user=apiuser)
+
         Session().commit()
         return {
             'msg': 'updated repository group ID:%s %s' % (
@@ -365,8 +378,12 @@ def delete_repo_group(request, apiuser, repogroupid):
         validate_repo_group_permissions(
             apiuser, repogroupid, repo_group, ('group.admin',))
 
+    old_data = repo_group.get_api_data()
     try:
         RepoGroupModel().delete(repo_group)
+        audit_logger.store_api(
+            'repo_group.delete', action_data={'old_data': old_data},
+            user=apiuser)
         Session().commit()
         return {
             'msg': 'deleted repo group ID:%s %s' %

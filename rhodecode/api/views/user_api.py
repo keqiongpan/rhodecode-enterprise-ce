@@ -23,6 +23,7 @@ import logging
 from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCForbidden
 from rhodecode.api.utils import (
     Optional, OAttr, has_superadmin_permission, get_user_or_error, store_update)
+from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import AuthUser, PasswordGenerator
 from rhodecode.lib.exceptions import DefaultUserException
 from rhodecode.lib.utils2 import safe_int, str2bool
@@ -251,6 +252,12 @@ def create_user(request, apiuser, username, email, password=Optional(''),
             force_password_change=Optional.extract(force_password_change),
             create_repo_group=create_repo_group
         )
+        Session().flush()
+        creation_data = user.get_api_data()
+        audit_logger.store_api(
+            'user.create', action_data={'data': creation_data},
+            user=apiuser)
+
         Session().commit()
         return {
             'msg': 'created new user `%s`' % username,
@@ -326,7 +333,7 @@ def update_user(request, apiuser, userid, username=Optional(None),
         raise JSONRPCForbidden()
 
     user = get_user_or_error(userid)
-
+    old_data = user.get_api_data()
     # only non optional arguments will be stored in updates
     updates = {}
 
@@ -343,6 +350,9 @@ def update_user(request, apiuser, userid, username=Optional(None),
         store_update(updates, extern_type, 'extern_type')
 
         user = UserModel().update_user(user, **updates)
+        audit_logger.store_api(
+            'user.edit', action_data={'old_data': old_data},
+            user=apiuser)
         Session().commit()
         return {
             'msg': 'updated user ID:%s %s' % (user.user_id, user.username),
@@ -405,9 +415,13 @@ def delete_user(request, apiuser, userid):
         raise JSONRPCForbidden()
 
     user = get_user_or_error(userid)
-
+    old_data = user.get_api_data()
     try:
         UserModel().delete(userid)
+        audit_logger.store_api(
+            'user.delete', action_data={'old_data': old_data},
+            user=apiuser)
+
         Session().commit()
         return {
             'msg': 'deleted user ID:%s %s' % (user.user_id, user.username),

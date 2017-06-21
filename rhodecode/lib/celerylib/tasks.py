@@ -179,9 +179,8 @@ def create_repo(form_data, cur_user):
         repo_id = repo.repo_id
         repo_data = repo.get_api_data()
 
-        audit_logger.store_web(
-            action='repo.create',
-            action_data={'data': repo_data},
+        audit_logger.store(
+            'repo.create', action_data={'data': repo_data},
             user=cur_user,
             repo=audit_logger.RepoWrap(repo_name=repo_name, repo_id=repo_id))
 
@@ -274,9 +273,8 @@ def create_repo_fork(form_data, cur_user):
 
         repo_id = repo.repo_id
         repo_data = repo.get_api_data()
-        audit_logger.store_web(
-            action='repo.fork',
-            action_data={'data': repo_data},
+        audit_logger.store(
+            'repo.fork', action_data={'data': repo_data},
             user=cur_user,
             repo=audit_logger.RepoWrap(repo_name=repo_name, repo_id=repo_id))
 

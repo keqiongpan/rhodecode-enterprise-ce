@@ -106,10 +106,8 @@ class StripView(RepoAppView):
                 data[commit['rev']] = True
 
                 audit_logger.store_web(
-                    action='repo.commit.strip',
-                    action_data={'commit_id': commit['rev']},
-                    repo=self.db_repo,
-                    user=self._rhodecode_user, commit=True)
+                    'repo.commit.strip', action_data={'commit_id': commit['rev']},
+                    repo=self.db_repo, user=self._rhodecode_user, commit=True)
 
             except Exception as e:
                 data[commit['rev']] = False

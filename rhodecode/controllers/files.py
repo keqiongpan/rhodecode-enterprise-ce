@@ -815,11 +815,11 @@ class FilesController(BaseRepoController):
 
         # store download action
         audit_logger.store_web(
-            action='repo.archive.download',
-            action_data={'user_agent': request.user_agent,
-                         'archive_name': archive_name,
-                         'archive_spec': fname,
-                         'archive_cached': use_cached_archive},
+            'repo.archive.download', action_data={
+                'user_agent': request.user_agent,
+                'archive_name': archive_name,
+                'archive_spec': fname,
+                'archive_cached': use_cached_archive},
             user=c.rhodecode_user,
             repo=dbrepo,
             commit=True

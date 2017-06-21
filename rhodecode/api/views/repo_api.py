@@ -917,12 +917,13 @@ def update_repo(
 
     ref_choices, _labels = ScmModel().get_repo_landing_revs(repo=repo)
 
+    old_values = repo.get_api_data()
     schema = repo_schema.RepoSchema().bind(
         repo_type_options=rhodecode.BACKENDS.keys(),
         repo_ref_options=ref_choices,
         # user caller
         user=apiuser,
-        old_values=repo.get_api_data())
+        old_values=old_values)
     try:
         schema_data = schema.deserialize(dict(
             # we save old value, users cannot change type
@@ -967,6 +968,9 @@ def update_repo(
 
     try:
         RepoModel().update(repo, **validated_updates)
+        audit_logger.store_api(
+            'repo.edit', action_data={'old_data': old_values},
+            user=apiuser, repo=repo)
         Session().commit()
         return {
             'msg': 'updated repo ID:%s %s' % (repo.repo_id, repo.repo_name),
@@ -1173,15 +1177,14 @@ def delete_repo(request, apiuser, repoid, forks=Optional('')):
                 'Cannot delete `%s` it still contains attached forks' %
                 (repo.repo_name,)
             )
-        repo_data = repo.get_api_data()
+        old_data = repo.get_api_data()
         RepoModel().delete(repo, forks=forks)
 
         repo = audit_logger.RepoWrap(repo_id=None,
                                      repo_name=repo.repo_name)
 
         audit_logger.store_api(
-            action='repo.delete',
-            action_data={'data': repo_data},
+            'repo.delete', action_data={'old_data': old_data},
             user=apiuser, repo=repo)
 
         ScmModel().mark_for_invalidation(repo_name, delete=True)
@@ -1472,7 +1475,7 @@ def comment_commit(
         rc_config = SettingsModel().get_all_settings()
         renderer = rc_config.get('rhodecode_markup_renderer', 'rst')
         status_change_label = ChangesetStatus.get_status_lbl(status)
-        comm = CommentsModel().create(
+        comment = CommentsModel().create(
             message, repo, user, commit_id=commit_id,
             status_change=status_change_label,
             status_change_type=status,
@@ -1484,7 +1487,7 @@ def comment_commit(
             # also do a status change
             try:
                 ChangesetStatusModel().set_status(
-                    repo, status, user, comm, revision=commit_id,
+                    repo, status, user, comment, revision=commit_id,
                     dont_allow_on_closed_pull_request=True
                 )
             except StatusChangeOnClosedPullRequestError:
@@ -1498,7 +1501,7 @@ def comment_commit(
         return {
             'msg': (
                 'Commented on commit `%s` for repository `%s`' % (
-                    comm.revision, repo.repo_name)),
+                    comment.revision, repo.repo_name)),
             'status_change': status,
             'success': True,
         }
@@ -1879,6 +1882,11 @@ def strip(request, apiuser, repoid, revision, branch):
 
     try:
         ScmModel().strip(repo, revision, branch)
+        audit_logger.store_api(
+            'repo.commit.strip', action_data={'commit_id': revision},
+            repo=repo,
+            user=apiuser, commit=True)
+
         return {
             'msg': 'Stripped commit %s from repo `%s`' % (
                 revision, repo.repo_name),

@@ -209,8 +209,8 @@ class AdminUsersView(BaseAppView, DataGridAppView):
 
         self.maybe_attach_token_scope(token)
         audit_logger.store_web(
-            action='user.edit.token.add',
-            action_data={'data': {'token': token_data, 'user': user_data}},
+            'user.edit.token.add', action_data={
+                'data': {'token': token_data, 'user': user_data}},
             user=self._rhodecode_user, )
         Session().commit()
 
@@ -239,8 +239,8 @@ class AdminUsersView(BaseAppView, DataGridAppView):
 
             AuthTokenModel().delete(del_auth_token, c.user.user_id)
             audit_logger.store_web(
-                action='user.edit.token.delete',
-                action_data={'data': {'token': token_data, 'user': user_data}},
+                'user.edit.token.delete', action_data={
+                    'data': {'token': token_data, 'user': user_data}},
                 user=self._rhodecode_user,)
             Session().commit()
             h.flash(_("Auth token successfully deleted"), category='success')
@@ -284,8 +284,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         try:
             UserModel().add_extra_email(c.user.user_id, email)
             audit_logger.store_web(
-                'user.edit.email.add',
-                action_data={'email': email, 'user': user_data},
+                'user.edit.email.add', action_data={'email': email, 'user': user_data},
                 user=self._rhodecode_user)
             Session().commit()
             h.flash(_("Added new email address `%s` for user account") % email,
@@ -318,8 +317,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         user_data = c.user.get_api_data()
         user_model.delete_extra_email(c.user.user_id, email_id)
         audit_logger.store_web(
-            'user.edit.email.delete',
-            action_data={'email': email, 'user': user_data},
+            'user.edit.email.delete', action_data={'email': email, 'user': user_data},
             user=self._rhodecode_user)
         Session().commit()
         h.flash(_("Removed email address from user account"),
@@ -379,8 +377,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
             try:
                 user_model.add_extra_ip(c.user.user_id, ip, desc)
                 audit_logger.store_web(
-                    'user.edit.ip.add',
-                    action_data={'ip': ip, 'user': user_data},
+                    'user.edit.ip.add', action_data={'ip': ip, 'user': user_data},
                     user=self._rhodecode_user)
                 Session().commit()
                 added.append(ip)
@@ -420,8 +417,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         ip = UserIpMap.query().get(ip_id).ip_addr
         user_model.delete_extra_ip(c.user.user_id, ip_id)
         audit_logger.store_web(
-            'user.edit.ip.delete',
-            action_data={'ip': ip, 'user': user_data},
+            'user.edit.ip.delete', action_data={'ip': ip, 'user': user_data},
             user=self._rhodecode_user)
         Session().commit()
         h.flash(_("Removed ip address from user whitelist"), category='success')

@@ -205,12 +205,15 @@ class UserGroupsController(BaseController):
             pstruct = peppercorn.parse(request.POST.items())
             form_result['users_group_members'] = pstruct['user_group_members']
 
-            UserGroupModel().update(c.user_group, form_result)
+            user_group, added_members, removed_members = \
+                UserGroupModel().update(c.user_group, form_result)
             updated_user_group = form_result['users_group_name']
 
             audit_logger.store_web(
                 'user_group.edit', action_data={'old_data': old_values},
                 user=c.rhodecode_user)
+
+            # TODO(marcink): use added/removed to set user_group.edit.member.add
 
             h.flash(_('Updated user group %s') % updated_user_group,
                     category='success')

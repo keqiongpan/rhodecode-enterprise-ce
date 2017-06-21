@@ -95,14 +95,13 @@ class RepoSettingsView(RepoAppView):
                     handle_forks = 'delete'
                     h.flash(_('Deleted %s forks') % _forks, category='success')
 
-            repo_data = self.db_repo.get_api_data()
+            old_data = self.db_repo.get_api_data()
             RepoModel().delete(self.db_repo, forks=handle_forks)
 
             repo = audit_logger.RepoWrap(repo_id=None,
                                          repo_name=self.db_repo.repo_name)
             audit_logger.store_web(
-                action='repo.delete',
-                action_data={'data': repo_data},
+                'repo.delete', action_data={'old_data': old_data},
                 user=self._rhodecode_user, repo=repo)
 
             ScmModel().mark_for_invalidation(self.db_repo_name, delete=True)
