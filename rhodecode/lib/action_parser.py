@@ -42,8 +42,13 @@ def action_parser(user_log, feed=False, parse_cs=False):
     :param feed: use output for feeds (no html and fancy icons)
     :param parse_cs: parse Changesets into VCS instances
     """
-    ap = ActionParser(user_log, feed=False, parse_commits=False)
-    return ap.callbacks()
+    if user_log.version == 'v2':
+        ap = AuditLogParser(user_log)
+        return ap.callbacks()
+    else:
+        # old style
+        ap = ActionParser(user_log, feed=False, parse_commits=False)
+        return ap.callbacks()
 
 
 class ActionParser(object):
@@ -302,6 +307,34 @@ class ActionParser(object):
 
     def is_deleted(self):
         return self.user_log.repository is None
+
+
+class AuditLogParser(object):
+    def __init__(self, audit_log_entry):
+        self.audit_log_entry = audit_log_entry
+
+    def get_icon(self, action):
+        return 'icon-rhodecode'
+
+    def callbacks(self):
+        action_str = self.audit_log_entry.action
+
+        def callback():
+            # returned callbacks we need to call to get
+            action = action_str \
+                .replace('[', '<span class="journal_highlight">')\
+                .replace(']', '</span>')
+            return literal(action)
+
+        def icon():
+            tmpl = """<i class="%s" alt="%s"></i>"""
+            ico = self.get_icon(action_str)
+            return literal(tmpl % (ico, action_str))
+
+        action_params_func = _no_params_func
+
+        return [
+            callback, action_params_func, icon]
 
 
 def _no_params_func():
