@@ -20,7 +20,7 @@ and commit files and |repos| while managing their security permissions.
 * Migration from existing databases.
 * |RCM| SDK.
 * Built-in analytics
-* Built in integrations including: Slack, Jenkins, Webhooks, Jira, Redmine, Hipchat
+* Built in integrations including: Slack, Webhooks (used for Jenkins/TeamCity and other CIs), Jira, Redmine, Hipchat
 * Pluggable authentication system.
 * Support for AD, |LDAP|, Crowd, CAS, PAM.
 * Support for external authentication via Oauth Google, Github, Bitbucket, Twitter.
