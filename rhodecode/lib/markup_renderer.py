@@ -34,6 +34,8 @@ from mako.template import Template as MakoTemplate
 
 from docutils.core import publish_parts
 from docutils.parsers.rst import directives
+from docutils import writers
+from docutils.writers import html4css1
 import markdown
 
 from rhodecode.lib.markdown_ext import GithubFlavoredMarkdownExtension
@@ -44,6 +46,31 @@ log = logging.getLogger(__name__)
 
 # default renderer used to generate automated comments
 DEFAULT_COMMENTS_RENDERER = 'rst'
+
+
+class CustomHTMLTranslator(writers.html4css1.HTMLTranslator):
+    """
+    Custom HTML Translator used for sandboxing potential
+    JS injections in ref links
+    """
+
+    def visit_reference(self, node):
+        if 'refuri' in node.attributes:
+            refuri = node['refuri']
+            if ':' in refuri:
+                prefix, link = refuri.lstrip().split(':', 1)
+                if prefix == 'javascript':
+                    # we don't allow javascript type of refs...
+                    node['refuri'] = 'javascript:alert("SandBoxedJavascript")'
+
+        # old style class requires this...
+        return html4css1.HTMLTranslator.visit_reference(self, node)
+
+
+class RhodeCodeWriter(writers.html4css1.Writer):
+    def __init__(self):
+        writers.Writer.__init__(self)
+        self.translator_class = CustomHTMLTranslator
 
 
 def relative_links(html_source, server_path):
@@ -341,7 +368,7 @@ class MarkupRenderer(object):
                 directives.register_directive(k, v)
 
             parts = publish_parts(source=source,
-                                  writer_name="html4css1",
+                                  writer=RhodeCodeWriter(),
                                   settings_overrides=docutils_settings)
 
             return parts['html_title'] + parts["fragment"]
