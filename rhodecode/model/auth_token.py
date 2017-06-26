@@ -71,11 +71,13 @@ class AuthTokenModel(BaseModel):
             user = self._get_user(user)
             auth_token = auth_token.filter(UserApiKeys.user_id == user.user_id)
             auth_token = auth_token.scalar()
-        try:
-            Session().delete(auth_token)
-        except Exception:
-            log.error(traceback.format_exc())
-            raise
+
+        if auth_token:
+            try:
+                Session().delete(auth_token)
+            except Exception:
+                log.error(traceback.format_exc())
+                raise
 
     def get_auth_tokens(self, user, show_expired=True):
         user = self._get_user(user)
