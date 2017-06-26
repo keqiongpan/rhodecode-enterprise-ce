@@ -107,7 +107,7 @@ class FilesController(BaseRepoController):
             h.flash(msg, category='error')
             raise HTTPNotFound()
         except RepositoryError as e:
-            h.flash(safe_str(e), category='error')
+            h.flash(safe_str(h.escape(e)), category='error')
             raise HTTPNotFound()
 
     def __get_filenode_or_redirect(self, repo_name, commit, path):
@@ -128,7 +128,7 @@ class FilesController(BaseRepoController):
             h.flash(_('No such commit exists for this repository'), category='error')
             raise HTTPNotFound()
         except RepositoryError as e:
-            h.flash(safe_str(e), category='error')
+            h.flash(safe_str(h.escape(e)), category='error')
             raise HTTPNotFound()
 
         return file_node
@@ -256,7 +256,7 @@ class FilesController(BaseRepoController):
                     repo_name, c.commit.raw_id, f_path)
 
         except RepositoryError as e:
-            h.flash(safe_str(e), category='error')
+            h.flash(safe_str(h.escape(e)), category='error')
             raise HTTPNotFound()
 
         if request.environ.get('HTTP_X_PJAX'):
@@ -472,9 +472,8 @@ class FilesController(BaseRepoController):
                 _('Successfully deleted file `{}`').format(
                     h.escape(f_path)), category='success')
         except Exception:
-            msg = _('Error occurred during commit')
-            log.exception(msg)
-            h.flash(msg, category='error')
+            log.exception('Error during commit operation')
+            h.flash(_('Error occurred during commit'), category='error')
         return redirect(url('changeset_home',
                             repo_name=c.repo_name, revision='tip'))
 

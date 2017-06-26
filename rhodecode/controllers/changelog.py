@@ -67,13 +67,11 @@ class ChangelogController(BaseRepoController):
         except EmptyRepositoryError:
             if not redirect_after:
                 return None
-            h.flash(h.literal(_('There are no commits yet')),
-                    category='warning')
+            h.flash(_('There are no commits yet'), category='warning')
             redirect(url('changelog_home', repo_name=repo.repo_name))
         except RepositoryError as e:
-            msg = safe_str(e)
-            log.exception(msg)
-            h.flash(msg, category='warning')
+            log.exception(safe_str(e))
+            h.flash(safe_str(h.escape(e)), category='warning')
             if not partial:
                 redirect(h.url('changelog_home', repo_name=repo.repo_name))
             raise HTTPBadRequest()
@@ -113,7 +111,7 @@ class ChangelogController(BaseRepoController):
 
     def _check_if_valid_branch(self, branch_name, repo_name, f_path):
         if branch_name not in c.rhodecode_repo.branches_all:
-            h.flash('Branch {} is not found.'.format(branch_name),
+            h.flash('Branch {} is not found.'.format(h.escape(branch_name)),
                     category='warning')
             redirect(url('changelog_file_home', repo_name=repo_name,
                          revision=branch_name, f_path=f_path or ''))
@@ -189,12 +187,11 @@ class ChangelogController(BaseRepoController):
                 collection, p, chunk_size, c.branch_name, dynamic=f_path)
 
         except EmptyRepositoryError as e:
-            h.flash(safe_str(e), category='warning')
+            h.flash(safe_str(h.escape(e)), category='warning')
             return redirect(h.route_path('repo_summary', repo_name=repo_name))
         except (RepositoryError, CommitDoesNotExistError, Exception) as e:
-            msg = safe_str(e)
-            log.exception(msg)
-            h.flash(msg, category='error')
+            log.exception(safe_str(e))
+            h.flash(safe_str(h.escape(e)), category='error')
             return redirect(url('changelog_home', repo_name=repo_name))
 
         if (request.environ.get('HTTP_X_PARTIAL_XHR')

@@ -484,7 +484,7 @@ class TestRawFileHandling(object):
 
         msg = (
             "There is no file nor directory at the given path: "
-            "&#39;%s&#39; at commit %s" % (f_path, commit.short_id))
+            "`%s` at commit %s" % (f_path, commit.short_id))
         response.mustcontain(msg)
 
     def test_raw_ok(self, backend):
@@ -517,7 +517,7 @@ class TestRawFileHandling(object):
                                     f_path=f_path), status=404)
         msg = (
             "There is no file nor directory at the given path: "
-            "&#39;%s&#39; at commit %s" % (f_path, commit.short_id))
+            "`%s` at commit %s" % (f_path, commit.short_id))
         response.mustcontain(msg)
 
     def test_raw_svg_should_not_be_rendered(self, backend):

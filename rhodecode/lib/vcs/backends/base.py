@@ -1066,7 +1066,7 @@ class BaseCommit(object):
     def no_node_at_path(self, path):
         return NodeDoesNotExistError(
             u"There is no file nor directory at the given path: "
-            u"'%s' at commit %s" % (safe_unicode(path), self.short_id))
+            u"`%s` at commit %s" % (safe_unicode(path), self.short_id))
 
     def _fix_path(self, path):
         """
