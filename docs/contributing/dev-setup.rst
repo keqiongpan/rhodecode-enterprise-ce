@@ -66,7 +66,7 @@ RhodeCode VCSServer repositories into the same directory.
 RhodeCode currently is using Mercurial Version Control System, please make sure
 you have it installed before continuing.
 
-To obtain the required sources, use the following commands:
+To obtain the required sources, use the following commands::
 
     mkdir rhodecode-develop && cd rhodecode-develop
     hg clone https://code.rhodecode.com/rhodecode-enterprise-ce
@@ -80,9 +80,9 @@ To obtain the required sources, use the following commands:
 Install some required libraries
 -------------------------------
 
-There are some required drivers that we need to install to test RhodeCode
-under different types of databases. For example in Ubuntu we need to install
-the following.
+There are some required drivers and dev libraries that we need to install to
+test RhodeCode under different types of databases. For example in Ubuntu we
+need to install the following.
 
 required libraries::
 
