@@ -83,12 +83,12 @@ def relative_links(html_source, server_path):
         return html_source
 
     for el in doc.cssselect('img, video'):
-        src = el.attrib['src']
+        src = el.attrib.get('src')
         if src:
             el.attrib['src'] = relative_path(src, server_path)
 
     for el in doc.cssselect('a:not(.gfm)'):
-        src = el.attrib['href']
+        src = el.attrib.get('href')
         if src:
             el.attrib['href'] = relative_path(src, server_path)
 
