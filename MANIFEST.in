@@ -33,6 +33,7 @@ include rhodecode/public/502.html
 # images, css
 include rhodecode/public/css/*.css
 include rhodecode/public/images/*.*
+include rhodecode/public/images/ee_features/*.*
 
 # sound files
 include rhodecode/public/sounds/*.mp3
