@@ -527,6 +527,7 @@ get_repo_settings
            "id": 237,
            "result": {
                "extensions_largefiles": true,
+               "extensions_evolve": true,
                "hooks_changegroup_push_logger": true,
                "hooks_changegroup_repo_size": false,
                "hooks_outgoing_pull_logger": true,
@@ -759,6 +760,49 @@ lock
      result : null
      error :  {
        'Error occurred locking repository `<reponame>`'
+     }
+
+
+maintenance 
+-----------
+
+.. py:function:: maintenance(apiuser, repoid)
+
+   Triggers a maintenance on the given repository.
+
+   This command can only be run using an |authtoken| with admin
+   rights to the specified repository. For more information,
+   see :ref:`config-token-ref`.
+
+   This command takes the following options:
+
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+   :param repoid: The repository name or repository ID.
+   :type repoid: str or int
+
+   Example output:
+
+   .. code-block:: bash
+
+     id : <id_given_in_input>
+     result : {
+       "msg": "executed maintenance command",
+       "executed_actions": [
+          <action_message>, <action_message2>...
+       ],
+       "repository": "<repository name>"
+     }
+     error :  null
+
+   Example error output:
+
+   .. code-block:: bash
+
+     id : <id_given_in_input>
+     result : null
+     error :  {
+       "Unable to execute maintenance on `<reponame>`"
      }
 
 

@@ -6,7 +6,7 @@ pull_request methods
 close_pull_request 
 ------------------
 
-.. py:function:: close_pull_request(apiuser, repoid, pullrequestid, userid=<Optional:<OptionalAttr:apiuser>>)
+.. py:function:: close_pull_request(apiuser, repoid, pullrequestid, userid=<Optional:<OptionalAttr:apiuser>>, message=<Optional:''>)
 
    Close the pull request specified by `pullrequestid`.
 
@@ -19,6 +19,9 @@ close_pull_request
    :type pullrequestid: int
    :param userid: Close the pull request as this user.
    :type userid: Optional(str or int)
+   :param message: Optional message to close the Pull Request with. If not
+       specified it will be generated automatically.
+   :type message: Optional(str)
 
    Example output:
 
@@ -27,6 +30,7 @@ close_pull_request
        "id": <id_given_in_input>,
        "result": {
            "pull_request_id":  "<int>",
+           "close_status":     "<str:status_lbl>,
            "closed":           "<bool>"
        },
        "error": null
@@ -105,10 +109,12 @@ create_pull_request
    :param description: Set the pull request description.
    :type description: Optional(str)
    :param reviewers: Set the new pull request reviewers list.
+       Reviewer defined by review rules will be added automatically to the
+       defined list.
    :type reviewers: Optional(list)
        Accepts username strings or objects of the format:
 
-           {'username': 'nick', 'reasons': ['original author']}
+           [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
 
 
 get_pull_request 
@@ -320,7 +326,7 @@ merge_pull_request
 update_pull_request 
 -------------------
 
-.. py:function:: update_pull_request(apiuser, repoid, pullrequestid, title=<Optional:''>, description=<Optional:''>, reviewers=<Optional:None>, update_commits=<Optional:None>, close_pull_request=<Optional:None>)
+.. py:function:: update_pull_request(apiuser, repoid, pullrequestid, title=<Optional:''>, description=<Optional:''>, reviewers=<Optional:None>, update_commits=<Optional:None>)
 
    Updates a pull request.
 
@@ -336,10 +342,12 @@ update_pull_request
    :type description: Optional(str)
    :param reviewers: Update pull request reviewers list with new value.
    :type reviewers: Optional(list)
+       Accepts username strings or objects of the format:
+
+           [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
+
    :param update_commits: Trigger update of commits for this pull request
    :type: update_commits: Optional(bool)
-   :param close_pull_request: Close this pull request with rejected state
-   :type: close_pull_request: Optional(bool)
 
    Example output:
 
