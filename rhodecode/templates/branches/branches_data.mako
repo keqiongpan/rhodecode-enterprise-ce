@@ -9,7 +9,7 @@
 </%def>
 
 <%def name="name(name, files_url)">
-     <span class="tag branchtag" title="${_('Branch %s') % (name,)}">
+     <span class="tag branchtag" title="${h.tooltip(_('Branch %s') % (name,))}">
      <a href="${files_url}"><i class="icon-code-fork"></i>${name}
         %if name in c.closed_branches:
             [closed]
@@ -23,11 +23,11 @@
 </%def>
 
 <%def name="author(author)">
-    <span class="tooltip" title="${author}">${h.link_to_user(author)}</span>
+    <span class="tooltip" title="${h.tooltip(author)}">${h.link_to_user(author)}</span>
 </%def>
 
 <%def name="commit(message, commit_id, commit_idx)">
     <div>
-        <pre><a title="${message}" href="${h.url('files_home',repo_name=c.repo_name,revision=commit_id)}">r${commit_idx}:${h.short_id(commit_id)}</a></pre>
+        <pre><a title="${h.tooltip(message)}" href="${h.url('files_home',repo_name=c.repo_name,revision=commit_id)}">r${commit_idx}:${h.short_id(commit_id)}</a></pre>
     </div>
 </%def>

@@ -114,7 +114,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     <div class="diffset-heading ${diffset.limited_diff and 'diffset-heading-warning' or ''}">
         %if commit:
             <div class="pull-right">
-                <a class="btn tooltip" title="${_('Browse Files at revision {}').format(commit.raw_id)}" href="${h.url('files_home',repo_name=diffset.repo_name, revision=commit.raw_id, f_path='')}">
+                <a class="btn tooltip" title="${h.tooltip(_('Browse Files at revision {}').format(commit.raw_id))}" href="${h.url('files_home',repo_name=diffset.repo_name, revision=commit.raw_id, f_path='')}">
                     ${_('Browse Files')}
                 </a>
             </div>
@@ -640,13 +640,13 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 
                 <a
                   class="btn ${c.diffmode == 'sideside' and 'btn-primary'} tooltip"
-                  title="${_('View side by side')}"
+                  title="${h.tooltip(_('View side by side'))}"
                   href="${h.url_replace(diffmode='sideside')}">
                     <span>${_('Side by Side')}</span>
                 </a>
                 <a
                   class="btn ${c.diffmode == 'unified' and 'btn-primary'} tooltip"
-                  title="${_('View unified')}" href="${h.url_replace(diffmode='unified')}">
+                  title="${h.tooltip(_('View unified'))}" href="${h.url_replace(diffmode='unified')}">
                     <span>${_('Unified')}</span>
                 </a>
             </div>

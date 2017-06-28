@@ -5,6 +5,7 @@
     from rhodecode.lib.codeblocks import render_tokenstream
     # avoid module lookup for performance
     html_escape = h.html_escape
+    tooltip = h.tooltip
     %>
     <tr class="cb-line cb-line-fresh ${'cb-annotate' if show_annotation else ''}"
     %if annotation:
@@ -15,13 +16,13 @@
     % if annotation:
         % if show_annotation:
             <td class="cb-annotate-info tooltip"
-                title="Author: ${annotation.author | entity}<br>Date: ${annotation.date}<br>Message: ${annotation.message | entity}"
+                title="Author: ${tooltip(annotation.author) | entity}<br>Date: ${annotation.date}<br>Message: ${annotation.message | entity}"
             >
               ${h.gravatar_with_user(annotation.author, 16) | n}
               <div class="cb-annotate-message truncate-wrap">${h.chop_at_smart(annotation.message, '\n', suffix_if_chopped='...')}</div>
             </td>
             <td class="cb-annotate-message-spacer">
-                <a class="tooltip" href="#show-previous-annotation" onclick="return annotationController.previousAnnotation('${annotation.raw_id}', '${c.f_path}')" title="${_('view annotation from before this change')}">
+                <a class="tooltip" href="#show-previous-annotation" onclick="return annotationController.previousAnnotation('${annotation.raw_id}', '${c.f_path}')" title="${tooltip(_('view annotation from before this change'))}">
                     <i class="icon-left"></i>
                 </a>
             </td>

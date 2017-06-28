@@ -100,7 +100,7 @@
 
         ## branch
         %if commit.branch:
-          <span class="tag branchtag" title="${_('Branch %s') % commit.branch}">
+          <span class="tag branchtag" title="${h.tooltip(_('Branch %s') % commit.branch)}">
              <a href="${h.url('changelog_home',repo_name=c.repo_name,branch=commit.branch)}"><i class="icon-code-fork"></i>${h.shorter(commit.branch)}</a>
           </span>
         %endif
@@ -108,7 +108,7 @@
         ## bookmarks
         %if h.is_hg(c.rhodecode_repo):
             %for book in commit.bookmarks:
-                <span class="tag booktag" title="${_('Bookmark %s') % book}">
+                <span class="tag booktag" title="${h.tooltip(_('Bookmark %s') % book)}">
                   <a href="${h.url('files_home',repo_name=c.repo_name,revision=commit.raw_id)}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
                 </span>
             %endfor
@@ -116,7 +116,7 @@
 
         ## tags
         %for tag in commit.tags:
-          <span class="tag tagtag"  title="${_('Tag %s') % tag}">
+          <span class="tag tagtag"  title="${h.tooltip(_('Tag %s') % tag)}">
             <a href="${h.url('files_home',repo_name=c.repo_name,revision=commit.raw_id)}"><i class="icon-tag"></i>${h.shorter(tag)}</a>
           </span>
         %endfor

@@ -92,22 +92,22 @@
 
 <%def name="rss(name)">
   %if c.rhodecode_user.username != h.DEFAULT_USER:
-    <a title="${_('Subscribe to %s rss feed')% name}" href="${h.url('rss_feed_home',repo_name=name,auth_token=c.rhodecode_user.feed_token)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s rss feed')% name)}" href="${h.url('rss_feed_home',repo_name=name,auth_token=c.rhodecode_user.feed_token)}"><i class="icon-rss-sign"></i></a>
   %else:
-    <a title="${_('Subscribe to %s rss feed')% name}" href="${h.url('rss_feed_home',repo_name=name)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s rss feed')% name)}" href="${h.url('rss_feed_home',repo_name=name)}"><i class="icon-rss-sign"></i></a>
   %endif
 </%def>
 
 <%def name="atom(name)">
   %if c.rhodecode_user.username != h.DEFAULT_USER:
-    <a title="${_('Subscribe to %s atom feed')% name}" href="${h.url('atom_feed_home',repo_name=name,auth_token=c.rhodecode_user.feed_token)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s atom feed')% name)}" href="${h.url('atom_feed_home',repo_name=name,auth_token=c.rhodecode_user.feed_token)}"><i class="icon-rss-sign"></i></a>
   %else:
-    <a title="${_('Subscribe to %s atom feed')% name}" href="${h.url('atom_feed_home',repo_name=name)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s atom feed')% name)}" href="${h.url('atom_feed_home',repo_name=name)}"><i class="icon-rss-sign"></i></a>
   %endif
 </%def>
 
 <%def name="user_gravatar(email, size=16)">
-  <div class="rc-user tooltip" title="${h.author_string(email)}">
+  <div class="rc-user tooltip" title="${h.tooltip(h.author_string(email))}">
     ${base.gravatar(email, 16)}
   </div>
 </%def>
@@ -134,7 +134,7 @@
     %elif repo_state == 'repo_state_created':
         <div class="tag tag1">${_('Created')}</div>
     %else:
-        <div class="tag alert2" title="${repo_state}">invalid</div>
+        <div class="tag alert2" title="${h.tooltip(repo_state)}">invalid</div>
     %endif
   </div>
 </%def>

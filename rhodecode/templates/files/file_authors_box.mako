@@ -15,7 +15,7 @@
 <ul class="sidebar-right-content">
     % for email, user in sorted(c.authors, key=lambda e: c.file_last_commit.author_email!=e[0]):
     <li class="file_author">
-        <div class="rc-user tooltip" title="${h.author_string(email)}">
+        <div class="rc-user tooltip" title="${h.tooltip(h.author_string(email))}">
           ${base.gravatar(email, 16)}
           <span class="user">${h.link_to_user(user)}</span>
         </div>

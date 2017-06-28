@@ -39,7 +39,7 @@
                     <tr>
                         <td colspan="4">
                             <span class="private_repo_msg">
-                            <strong title="${_user.permission}">${_('private repository')}</strong>
+                            <strong title="${h.tooltip(_user.permission)}">${_('private repository')}</strong>
                             </span>
                         </td>
                         <td class="private_repo_msg">

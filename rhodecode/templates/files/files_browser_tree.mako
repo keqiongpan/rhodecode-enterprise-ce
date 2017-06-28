@@ -58,14 +58,14 @@
               </td>
               <td class="td-hash" data-attr-name="commit_id">
                   % if c.full_load:
-                  <div class="tooltip" title="${node.last_commit.message}">
+                  <div class="tooltip" title="${h.tooltip(node.last_commit.message)}">
                       <pre data-commit-id="${node.last_commit.raw_id}">r${node.last_commit.revision}:${node.last_commit.short_id}</pre>
                   </div>
                   % endif
               </td>
               <td class="td-user" data-attr-name="author">
                   % if c.full_load:
-                  <span data-author="${node.last_commit.author}" title="${node.last_commit.author}">${h.gravatar_with_user(node.last_commit.author)|n}</span>
+                  <span data-author="${node.last_commit.author}" title="${h.tooltip(node.last_commit.author)}">${h.gravatar_with_user(node.last_commit.author)|n}</span>
                   % endif
               </td>
             %else:

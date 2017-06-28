@@ -369,7 +369,7 @@
                             <i class="icon-remove-sign"></i>
                         </div>
                         <div class="reviewer_member_mandatory">
-                            <i class="icon-lock" title="Mandatory reviewer"></i>
+                            <i class="icon-lock" title="${h.tooltip(_('Mandatory reviewer'))}"></i>
                         </div>
                   % else:
                     %if c.allowed_to_update:
@@ -500,7 +500,7 @@
                                 <tr id="row-${commit.raw_id}" commit_id="${commit.raw_id}" class="compare_select">
                                 <td>
                                     <div class="commit-change-indicator color-${c_type}-border">
-                                      <div class="commit-change-content color-${c_type} tooltip" title="${cc_title}">
+                                      <div class="commit-change-content color-${c_type} tooltip" title="${h.tooltip(cc_title)}">
                                         ${c_type.upper()}
                                       </div>
                                     </div>

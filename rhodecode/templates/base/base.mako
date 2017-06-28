@@ -90,7 +90,7 @@
     <dl class="dl-horizontal">
     %for dt, dd, title, show_items in elements:
       <dt>${dt}:</dt>
-      <dd title="${title}">
+      <dd title="${h.tooltip(title)}">
       %if callable(dd):
           ## allow lazy evaluation of elements
           ${dd()}
@@ -134,7 +134,7 @@
 
 <%def name="gravatar_with_user(contact, size=16, show_disabled=False)">
   <% email = h.email_or_none(contact) %>
-  <div class="rc-user tooltip" title="${h.author_string(email)}">
+  <div class="rc-user tooltip" title="${h.tooltip(h.author_string(email))}">
     ${self.gravatar(email, size)}
     <span class="${'user user-disabled' if show_disabled else 'user'}"> ${h.link_to_user(contact)}</span>
   </div>
@@ -234,7 +234,7 @@
         ## TODO: anderson: ideally it would have a function on the scm_instance "enable_pullrequest() and enable_fork()"
         %if c.rhodecode_db_repo.repo_type in ['git','hg']:
           <li class="${is_active('showpullrequest')}">
-            <a class="menulink" href="${h.route_path('pullrequest_show_all', repo_name=c.repo_name)}" title="${_('Show Pull Requests for %s') % c.repo_name}">
+            <a class="menulink" href="${h.route_path('pullrequest_show_all', repo_name=c.repo_name)}" title="${h.tooltip(_('Show Pull Requests for %s') % c.repo_name)}">
               %if c.repository_pull_requests:
                 <span class="pr_notifications">${c.repository_pull_requests}</span>
               %endif
