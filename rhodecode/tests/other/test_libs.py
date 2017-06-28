@@ -27,6 +27,8 @@ import datetime
 import string
 import mock
 import pytest
+
+from rhodecode.tests import no_newline_id_generator
 from rhodecode.tests.utils import run_test_concurrently
 from rhodecode.lib.helpers import InitialsGravatar
 
@@ -113,7 +115,7 @@ def test_str2bool(str_bool, expected):
 (pref+"user.dot  hej ! not-needed maril@domain.org", []),
 (pref+"\n@marcin", ['marcin']),
 ]
-for pref in ['', '\n', 'hi !', '\t', '\n\n']]))
+for pref in ['', '\n', 'hi !', '\t', '\n\n']]), ids=no_newline_id_generator)
 def test_mention_extractor(text, expected):
     from rhodecode.lib.utils2 import extract_mentioned_users
     got = extract_mentioned_users(text)
@@ -330,8 +332,18 @@ def test_initials_gravatar_mapping_algo():
 ])
 def test_clone_url_generator(tmpl, repo_name, overrides, prefix, expected):
     from rhodecode.lib.utils2 import get_clone_url
-    clone_url = get_clone_url(uri_tmpl=tmpl, qualifed_home_url='http://vps1:8000'+prefix,
-                              repo_name=repo_name, repo_id=23, **overrides)
+
+    class RequestStub(object):
+        def request_url(self, name):
+            return 'http://vps1:8000' + prefix
+
+        def route_url(self, name):
+            return self.request_url(name)
+
+    clone_url = get_clone_url(
+        request=RequestStub(),
+        uri_tmpl=tmpl,
+        repo_name=repo_name, repo_id=23, **overrides)
     assert clone_url == expected
 
 
@@ -378,7 +390,7 @@ def _quick_url(text, tmpl="""<a class="revision-link" href="%s">%s</a>""", url_=
    some text url[123123123123]
    sometimes !
    """)
-])
+], ids=no_newline_id_generator)
 def test_urlify_commits(sample, expected):
     def fake_url(self, *args, **kwargs):
         return '/some-url'
@@ -410,7 +422,7 @@ def test_urlify_commits(sample, expected):
      url[https://foo.bar.com]
      some text lalala""",
      "https://foo.bar.com")
-])
+], ids=no_newline_id_generator)
 def test_urlify_test(sample, expected, url_):
     from rhodecode.lib.helpers import urlify_text
     expected = _quick_url(expected, tmpl="""<a href="%s">%s</a>""", url_=url_)

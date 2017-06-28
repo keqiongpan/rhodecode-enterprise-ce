@@ -7,7 +7,7 @@ The VCS Server handles |RCM| backend functionality. You need to configure
 a VCS Server to run with a |RCM| instance. If you do not, you will be missing
 the connection between |RCM| and its |repos|. This will cause error messages
 on the web interface. You can run your setup in the following configurations,
-currently the best performance is one VCS Server per |RCM| instance:
+currently the best performance is one of following:
 
 * One VCS Server per |RCM| instance.
 * One VCS Server handling multiple instances.
@@ -59,7 +59,8 @@ instance in the
     \vcs.backends <available-vcs-systems>
         Set a comma-separated list of the |repo| options available from the
         web interface. The default is ``hg, git, svn``,
-        which is all |repo| types available.
+        which is all |repo| types available. The order of backends is also the
+        order backend will try to detect requests type.
 
     \vcs.connection_timeout <seconds>
         Set the length of time in seconds that the VCS Server waits for
@@ -159,9 +160,10 @@ for full details see the :ref:`RhodeCode Control CLI <control:rcc-cli>`.
 
     - NAME: vcsserver-1
     - STATUS: RUNNING
-    - TYPE: VCSServer
-    - VERSION: 1.0.0
-    - URL: http://127.0.0.1:10001
+      logs:/home/ubuntu/.rccontrol/vcsserver-1/vcsserver.log
+    - VERSION: 4.7.2 VCSServer
+    - URL: http://127.0.0.1:10008
+    - CONFIG: /home/ubuntu/.rccontrol/vcsserver-1/vcsserver.ini
 
     $ rccontrol restart vcsserver-1
     Instance "vcsserver-1" successfully stopped.
@@ -181,7 +183,9 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
 .. rst-class:: dl-horizontal
 
     \host <ip-address>
-        Set the host on which the VCS Server will run.
+        Set the host on which the VCS Server will run. VCSServer is not
+        protected by any authentication, so we *highly* recommend running it
+        under localhost ip that is `127.0.0.1`
 
     \port <int>
         Set the port number on which the VCS Server will be available.
@@ -189,13 +193,22 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
     \locale <locale_utf>
         Set the locale the VCS Server expects.
 
-    \threadpool_size <int>
-        Set the size of the threadpool used to communicate
-        with the WSGI workers. This should be at least 6 times the number of
-        WSGI worker processes.
+    \workers <int>
+        Set the number of process workers.Recommended
+        value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers
 
-    \timeout <seconds>
-        Set the timeout for RPC communication in seconds.
+    \max_requests <int>
+        The maximum number of requests a worker will process before restarting.
+        Any value greater than zero will limit the number of requests a work
+        will process before automatically restarting. This is a simple method
+        to help limit the damage of memory leaks.
+
+    \max_requests_jitter <int>
+        The maximum jitter to add to the max_requests setting.
+        The jitter causes the restart per worker to be randomized by
+        randint(0, max_requests_jitter). This is intended to stagger worker
+        restarts to avoid all workers restarting at the same time.
+
 
 .. note::
 
@@ -204,27 +217,54 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
 .. code-block:: ini
 
     ################################################################################
-    # RhodeCode VCSServer - configuration                                          #
+    # RhodeCode VCSServer with HTTP Backend - configuration                        #
     #                                                                              #
     ################################################################################
 
-    [DEFAULT]
+
+    [server:main]
+    ## COMMON ##
     host = 127.0.0.1
-    port = 9900
+    port = 10002
+
+    ##########################
+    ## GUNICORN WSGI SERVER ##
+    ##########################
+    ## run with gunicorn --log-config vcsserver.ini --paste vcsserver.ini
+    use = egg:gunicorn#main
+    ## Sets the number of process workers. Recommended
+    ## value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers
+    workers = 3
+    ## process name
+    proc_name = rhodecode_vcsserver
+    ## type of worker class, one of sync, gevent
+    ## recommended for bigger setup is using of of other than sync one
+    worker_class = sync
+    ## The maximum number of simultaneous clients. Valid only for Gevent
+    #worker_connections = 10
+    ## max number of requests that worker will handle before being gracefully
+    ## restarted, could prevent memory leaks
+    max_requests = 1000
+    max_requests_jitter = 30
+    ## amount of time a worker can spend with handling a request before it
+    ## gets killed and restarted. Set to 6hrs
+    timeout = 21600
+
+    [app:main]
+    use = egg:rhodecode-vcsserver
+
+    pyramid.default_locale_name = en
+    pyramid.includes =
+
+    ## default locale used by VCS systems
     locale = en_US.UTF-8
-    # number of worker threads, this should be set based on a formula threadpool=N*6
-    # where N is number of RhodeCode Enterprise workers, eg. running 2 instances
-    # 8 gunicorn workers each would be 2 * 8 * 6 = 96, threadpool_size = 96
-    threadpool_size = 16
-    timeout = 0
 
     # cache regions, please don't change
     beaker.cache.regions = repo_object
     beaker.cache.repo_object.type = memorylru
-    beaker.cache.repo_object.max_items = 1000
-
+    beaker.cache.repo_object.max_items = 100
     # cache auto-expires after N seconds
-    beaker.cache.repo_object.expire = 10
+    beaker.cache.repo_object.expire = 300
     beaker.cache.repo_object.enabled = true
 
 
@@ -267,20 +307,6 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
     [handler_console]
     class = StreamHandler
     args = (sys.stderr,)
-    level = DEBUG
-    formatter = generic
-
-    [handler_file]
-    class = FileHandler
-    args = ('vcsserver.log', 'a',)
-    level = DEBUG
-    formatter = generic
-
-    [handler_file_rotating]
-    class = logging.handlers.TimedRotatingFileHandler
-    # 'D', 5 - rotate every 5days
-    # you can set 'h', 'midnight'
-    args = ('vcsserver.log', 'D', 5, 10,)
     level = DEBUG
     formatter = generic
 

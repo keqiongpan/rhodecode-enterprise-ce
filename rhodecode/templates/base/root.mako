@@ -12,10 +12,15 @@ if getattr(c, 'rhodecode_user', None) and c.rhodecode_user.user_id:
     c.template_context['rhodecode_user']['username'] = c.rhodecode_user.username
     c.template_context['rhodecode_user']['email'] = c.rhodecode_user.email
     c.template_context['rhodecode_user']['notification_status'] = c.rhodecode_user.get_instance().user_data.get('notification_status', True)
-    c.template_context['rhodecode_user']['first_name'] = c.rhodecode_user.name
-    c.template_context['rhodecode_user']['last_name'] = c.rhodecode_user.lastname
+    c.template_context['rhodecode_user']['first_name'] = c.rhodecode_user.first_name
+    c.template_context['rhodecode_user']['last_name'] = c.rhodecode_user.last_name
 
 c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default_renderer')
+c.template_context['default_user'] = {
+    'username': h.DEFAULT_USER,
+    'user_id': 1
+}
+
 %>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
@@ -79,7 +84,7 @@ c.template_context['visual']['default_renderer'] = h.get_visual_attr(c, 'default
             // register templateContext to pass template variables to JS
             var templateContext = ${h.json.dumps(c.template_context)|n};
 
-            var APPLICATION_URL = "${h.url('home').rstrip('/')}";
+            var APPLICATION_URL = "${h.route_path('home').rstrip('/')}";
             var ASSET_URL = "${h.asset('')}";
             var DEFAULT_RENDERER = "${h.get_visual_attr(c, 'default_renderer')}";
             var CSRF_TOKEN = "${getattr(c, 'csrf_token', '')}";

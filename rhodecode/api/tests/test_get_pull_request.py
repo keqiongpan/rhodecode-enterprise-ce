@@ -19,13 +19,13 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-import mock
 import pytest
 import urlobject
 from pylons import url
 
 from rhodecode.api.tests.utils import (
     build_data, api_call, assert_error, assert_ok)
+from rhodecode.lib.utils2 import safe_unicode
 
 pytestmark = pytest.mark.backends("git", "hg")
 
@@ -33,7 +33,7 @@ pytestmark = pytest.mark.backends("git", "hg")
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestGetPullRequest(object):
 
-    def test_api_get_pull_request(self, pr_util):
+    def test_api_get_pull_request(self, pr_util, http_host_only_stub):
         from rhodecode.model.pull_request import PullRequestModel
         pull_request = pr_util.create_pull_request(mergeable=True)
         id_, params = build_data(
@@ -50,16 +50,16 @@ class TestGetPullRequest(object):
                 'pullrequest_show',
                 repo_name=pull_request.target_repo.repo_name,
                 pull_request_id=pull_request.pull_request_id, qualified=True))
-        pr_url = unicode(
-            url_obj.with_netloc('test.example.com:80'))
-        source_url = unicode(
-            pull_request.source_repo.clone_url()
-                .with_netloc('test.example.com:80'))
-        target_url = unicode(
-            pull_request.target_repo.clone_url()
-                .with_netloc('test.example.com:80'))
-        shadow_url = unicode(
+
+        pr_url = safe_unicode(
+            url_obj.with_netloc(http_host_only_stub))
+        source_url = safe_unicode(
+            pull_request.source_repo.clone_url().with_netloc(http_host_only_stub))
+        target_url = safe_unicode(
+            pull_request.target_repo.clone_url().with_netloc(http_host_only_stub))
+        shadow_url = safe_unicode(
             PullRequestModel().get_shadow_clone_url(pull_request))
+
         expected = {
             'pull_request_id': pull_request.pull_request_id,
             'url': pr_url,
@@ -109,7 +109,8 @@ class TestGetPullRequest(object):
                     'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, reasons, st in pull_request.reviewers_statuses()
+                for reviewer, reasons, mandatory, st in
+                pull_request.reviewers_statuses()
             ]
         }
         assert_ok(id_, expected, response.body)

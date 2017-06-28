@@ -24,11 +24,10 @@
         <script type="text/javascript" src="${h.asset('js/scripts.js', ver=c.rhodecode_version_hash)}"></script>
     </head>
     <body>
-        <% messages = h.flash.pop_messages() %>
 
         <div class="wrapper error_page">
             <div class="sidebar">
-                <a href="${h.url('home')}"><img class="error-page-logo" src="${h.asset('images/RhodeCode_Logo_Black.png')}" alt="RhodeCode"/></a>
+                <a href="${h.route_path('home')}"><img class="error-page-logo" src="${h.asset('images/RhodeCode_Logo_Black.png')}" alt="RhodeCode"/></a>
             </div>
             <div class="main-content">
                 <h1>
@@ -37,8 +36,8 @@
                     </span><br/>
                     ${c.error_message} | <span class="error_message">${c.error_explanation}</span>
                 </h1>
-                % if messages:
-                    % for message in messages:
+                % if c.messages:
+                    % for message in c.messages:
                         <div class="alert alert-${message.category}">${message}</div>
                     % endfor
                 % endif    
@@ -62,12 +61,12 @@
                 <div class="inner-column">
                     <h4>Support</h4>
                     <p>For support, go to <a href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support')}</a>.
-                       It may be useful to include your log file; see the log file locations <a href="${h.url('enterprise_log_file_locations')}">here</a>.
+                       It may be useful to include your log file; see the log file locations <a href="${h.route_url('enterprise_log_file_locations')}">here</a>.
                     </p>
                 </div>
                 <div class="inner-column">
                     <h4>Documentation</h4>
-                    <p>For more information, see <a href="${h.url('enterprise_docs')}">docs.rhodecode.com</a>.</p>
+                    <p>For more information, see <a href="${h.route_url('enterprise_docs')}">docs.rhodecode.com</a>.</p>
                 </div>
             </div>
         </div>

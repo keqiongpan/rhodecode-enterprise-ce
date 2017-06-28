@@ -41,15 +41,11 @@ from rhodecode.lib.auth import (
     HasRepoGroupPermissionAny, HasRepoPermissionAnyDecorator)
 from rhodecode.lib.base import BaseRepoController, render
 from rhodecode.lib.ext_json import json
-from rhodecode.lib.exceptions import AttachedForksError
-from rhodecode.lib.utils import action_logger, repo_name_slug, jsonify
+from rhodecode.lib.utils import repo_name_slug, jsonify
 from rhodecode.lib.utils2 import safe_int, str2bool
-from rhodecode.lib.vcs import RepositoryError
-from rhodecode.model.db import (
-    User, Repository, UserFollowing, RepoGroup, RepositoryField)
+from rhodecode.model.db import (Repository, RepoGroup, RepositoryField)
 from rhodecode.model.forms import (
-    RepoForm, RepoFieldForm, RepoPermsForm, RepoVcsSettingsForm,
-    IssueTrackerPatternsForm)
+    RepoForm, RepoFieldForm, RepoVcsSettingsForm, IssueTrackerPatternsForm)
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel, RepoGroupList, RepoList
@@ -185,7 +181,7 @@ class ReposController(BaseRepoController):
         except Exception as e:
             msg = self._log_creation_exception(e, form_result.get('repo_name'))
             h.flash(msg, category='error')
-            return redirect(url('home'))
+            return redirect(h.route_path('home'))
 
         return redirect(h.url('repo_creating_home',
                               repo_name=form_result['repo_name_full'],
@@ -265,7 +261,7 @@ class ReposController(BaseRepoController):
                 if task.failed():
                     msg = self._log_creation_exception(task.result, c.repo)
                     h.flash(msg, category='error')
-                    return redirect(url('home'), code=501)
+                    return redirect(h.route_path('home'), code=501)
 
         repo = Repository.get_by_repo_name(repo_name)
         if repo and repo.repo_state == Repository.STATE_CREATED:
@@ -274,9 +270,9 @@ class ReposController(BaseRepoController):
                 h.flash(_('Created repository %s from %s')
                         % (repo.repo_name, clone_uri), category='success')
             else:
-                repo_url = h.link_to(repo.repo_name,
-                                     h.url('summary_home',
-                                           repo_name=repo.repo_name))
+                repo_url = h.link_to(
+                    repo.repo_name,
+                    h.route_path('repo_summary',repo_name=repo.repo_name))
                 fork = repo.fork
                 if fork:
                     fork_name = fork.repo_name
@@ -288,165 +284,14 @@ class ReposController(BaseRepoController):
             return {'result': True}
         return {'result': False}
 
-    @HasRepoPermissionAllDecorator('repository.admin')
-    @auth.CSRFRequired()
-    def update(self, repo_name):
-        """
-        PUT /repos/repo_name: Update an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        #    <input type="hidden" name="_method" value="PUT" />
-        # Or using helpers:
-        #    h.form(url('repo', repo_name=ID),
-        #           method='put')
-        # url('repo', repo_name=ID)
-
-        self.__load_data(repo_name)
-        c.active = 'settings'
-        c.repo_fields = RepositoryField.query()\
-            .filter(RepositoryField.repository == c.repo_info).all()
-
-        repo_model = RepoModel()
-        changed_name = repo_name
-
-        c.personal_repo_group = c.rhodecode_user.personal_repo_group
-        # override the choices with extracted revisions !
-        repo = Repository.get_by_repo_name(repo_name)
-        old_data = {
-            'repo_name': repo_name,
-            'repo_group': repo.group.get_dict() if repo.group else {},
-            'repo_type': repo.repo_type,
-        }
-        _form = RepoForm(
-            edit=True, old_data=old_data, repo_groups=c.repo_groups_choices,
-            landing_revs=c.landing_revs_choices, allow_disabled=True)()
-
-        try:
-            form_result = _form.to_python(dict(request.POST))
-            repo = repo_model.update(repo_name, **form_result)
-            ScmModel().mark_for_invalidation(repo_name)
-            h.flash(_('Repository %s updated successfully') % repo_name,
-                    category='success')
-            changed_name = repo.repo_name
-            action_logger(c.rhodecode_user, 'admin_updated_repo',
-                              changed_name, self.ip_addr, self.sa)
-            Session().commit()
-        except formencode.Invalid as errors:
-            defaults = self.__load_data(repo_name)
-            defaults.update(errors.value)
-            return htmlfill.render(
-                render('admin/repos/repo_edit.mako'),
-                defaults=defaults,
-                errors=errors.error_dict or {},
-                prefix_error=False,
-                encoding="UTF-8",
-                force_defaults=False)
-
-        except Exception:
-            log.exception("Exception during update of repository")
-            h.flash(_('Error occurred during update of repository %s') \
-                    % repo_name, category='error')
-        return redirect(url('edit_repo', repo_name=changed_name))
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    @auth.CSRFRequired()
-    def delete(self, repo_name):
-        """
-        DELETE /repos/repo_name: Delete an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        #    <input type="hidden" name="_method" value="DELETE" />
-        # Or using helpers:
-        #    h.form(url('repo', repo_name=ID),
-        #           method='delete')
-        # url('repo', repo_name=ID)
-
-        repo_model = RepoModel()
-        repo = repo_model.get_by_repo_name(repo_name)
-        if not repo:
-            h.not_mapped_error(repo_name)
-            return redirect(url('repos'))
-        try:
-            _forks = repo.forks.count()
-            handle_forks = None
-            if _forks and request.POST.get('forks'):
-                do = request.POST['forks']
-                if do == 'detach_forks':
-                    handle_forks = 'detach'
-                    h.flash(_('Detached %s forks') % _forks, category='success')
-                elif do == 'delete_forks':
-                    handle_forks = 'delete'
-                    h.flash(_('Deleted %s forks') % _forks, category='success')
-            repo_model.delete(repo, forks=handle_forks)
-            action_logger(c.rhodecode_user, 'admin_deleted_repo',
-                  repo_name, self.ip_addr, self.sa)
-            ScmModel().mark_for_invalidation(repo_name)
-            h.flash(_('Deleted repository %s') % repo_name, category='success')
-            Session().commit()
-        except AttachedForksError:
-            h.flash(_('Cannot delete %s it still contains attached forks')
-                        % repo_name, category='warning')
-
-        except Exception:
-            log.exception("Exception during deletion of repository")
-            h.flash(_('An error occurred during deletion of %s') % repo_name,
-                    category='error')
-
-        return redirect(url('repos'))
-
     @HasPermissionAllDecorator('hg.admin')
     def show(self, repo_name, format='html'):
         """GET /repos/repo_name: Show a specific item"""
         # url('repo', repo_name=ID)
 
     @HasRepoPermissionAllDecorator('repository.admin')
-    def edit(self, repo_name):
-        """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
-        defaults = self.__load_data(repo_name)
-        if 'clone_uri' in defaults:
-            del defaults['clone_uri']
-
-        c.repo_fields = RepositoryField.query()\
-            .filter(RepositoryField.repository == c.repo_info).all()
-        c.personal_repo_group = c.rhodecode_user.personal_repo_group
-        c.active = 'settings'
-        return htmlfill.render(
-            render('admin/repos/repo_edit.mako'),
-            defaults=defaults,
-            encoding="UTF-8",
-            force_defaults=False)
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    def edit_permissions(self, repo_name):
-        """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
-        c.repo_info = self._load_repo(repo_name)
-        c.active = 'permissions'
-        defaults = RepoModel()._get_defaults(repo_name)
-
-        return htmlfill.render(
-            render('admin/repos/repo_edit.mako'),
-            defaults=defaults,
-            encoding="UTF-8",
-            force_defaults=False)
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    @auth.CSRFRequired()
-    def edit_permissions_update(self, repo_name):
-        form = RepoPermsForm()().to_python(request.POST)
-        RepoModel().update_permissions(repo_name,
-            form['perm_additions'], form['perm_updates'], form['perm_deletions'])
-
-        #TODO: implement this
-        #action_logger(c.rhodecode_user, 'admin_changed_repo_permissions',
-        #              repo_name, self.ip_addr, self.sa)
-        Session().commit()
-        h.flash(_('Repository permissions updated'), category='success')
-        return redirect(url('edit_repo_perms', repo_name=repo_name))
-
-    @HasRepoPermissionAllDecorator('repository.admin')
     def edit_fields(self, repo_name):
         """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
         c.repo_info = self._load_repo(repo_name)
         c.repo_fields = RepositoryField.query()\
             .filter(RepositoryField.repository == c.repo_info).all()
@@ -490,106 +335,6 @@ class ReposController(BaseRepoController):
             h.flash(msg, category='error')
         return redirect(url('edit_repo_fields', repo_name=repo_name))
 
-    @HasRepoPermissionAllDecorator('repository.admin')
-    def edit_advanced(self, repo_name):
-        """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
-        c.repo_info = self._load_repo(repo_name)
-        c.default_user_id = User.get_default_user().user_id
-        c.in_public_journal = UserFollowing.query()\
-            .filter(UserFollowing.user_id == c.default_user_id)\
-            .filter(UserFollowing.follows_repository == c.repo_info).scalar()
-
-        c.active = 'advanced'
-        c.has_origin_repo_read_perm = False
-        if c.repo_info.fork:
-            c.has_origin_repo_read_perm = h.HasRepoPermissionAny(
-                'repository.write', 'repository.read', 'repository.admin')(
-                c.repo_info.fork.repo_name, 'repo set as fork page')
-
-        if request.POST:
-            return redirect(url('repo_edit_advanced'))
-        return render('admin/repos/repo_edit.mako')
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    @auth.CSRFRequired()
-    def edit_advanced_journal(self, repo_name):
-        """
-        Set's this repository to be visible in public journal,
-        in other words assing default user to follow this repo
-
-        :param repo_name:
-        """
-
-        try:
-            repo_id = Repository.get_by_repo_name(repo_name).repo_id
-            user_id = User.get_default_user().user_id
-            self.scm_model.toggle_following_repo(repo_id, user_id)
-            h.flash(_('Updated repository visibility in public journal'),
-                    category='success')
-            Session().commit()
-        except Exception:
-            h.flash(_('An error occurred during setting this'
-                      ' repository in public journal'),
-                    category='error')
-
-        return redirect(url('edit_repo_advanced', repo_name=repo_name))
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    @auth.CSRFRequired()
-    def edit_advanced_fork(self, repo_name):
-        """
-        Mark given repository as a fork of another
-
-        :param repo_name:
-        """
-
-        new_fork_id = request.POST.get('id_fork_of')
-        try:
-
-            if new_fork_id and not new_fork_id.isdigit():
-                log.error('Given fork id %s is not an INT', new_fork_id)
-
-            fork_id = safe_int(new_fork_id)
-            repo = ScmModel().mark_as_fork(repo_name, fork_id,
-                                           c.rhodecode_user.username)
-            fork = repo.fork.repo_name if repo.fork else _('Nothing')
-            Session().commit()
-            h.flash(_('Marked repo %s as fork of %s') % (repo_name, fork),
-                    category='success')
-        except RepositoryError as e:
-            log.exception("Repository Error occurred")
-            h.flash(str(e), category='error')
-        except Exception as e:
-            log.exception("Exception while editing fork")
-            h.flash(_('An error occurred during this operation'),
-                    category='error')
-
-        return redirect(url('edit_repo_advanced', repo_name=repo_name))
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    @auth.CSRFRequired()
-    def edit_advanced_locking(self, repo_name):
-        """
-        Unlock repository when it is locked !
-
-        :param repo_name:
-        """
-        try:
-            repo = Repository.get_by_repo_name(repo_name)
-            if request.POST.get('set_lock'):
-                Repository.lock(repo, c.rhodecode_user.user_id,
-                                lock_reason=Repository.LOCK_WEB)
-                h.flash(_('Locked repository'), category='success')
-            elif request.POST.get('set_unlock'):
-                Repository.unlock(repo)
-                h.flash(_('Unlocked repository'), category='success')
-        except Exception as e:
-            log.exception("Exception during unlocking")
-            h.flash(_('An error occurred during unlocking'),
-                    category='error')
-        return redirect(url('edit_repo_advanced', repo_name=repo_name))
-
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
     @auth.CSRFRequired()
     def toggle_locking(self, repo_name):
@@ -617,32 +362,7 @@ class ReposController(BaseRepoController):
             log.exception("Exception during unlocking")
             h.flash(_('An error occurred during unlocking'),
                     category='error')
-        return redirect(url('summary_home', repo_name=repo_name))
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    @auth.CSRFRequired()
-    def edit_caches(self, repo_name):
-        """PUT /{repo_name}/settings/caches: invalidate the repo caches."""
-        try:
-            ScmModel().mark_for_invalidation(repo_name, delete=True)
-            Session().commit()
-            h.flash(_('Cache invalidation successful'),
-                    category='success')
-        except Exception:
-            log.exception("Exception during cache invalidation")
-            h.flash(_('An error occurred during cache invalidation'),
-                    category='error')
-
-        return redirect(url('edit_repo_caches', repo_name=c.repo_name))
-
-    @HasRepoPermissionAllDecorator('repository.admin')
-    def edit_caches_form(self, repo_name):
-        """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
-        c.repo_info = self._load_repo(repo_name)
-        c.active = 'caches'
-
-        return render('admin/repos/repo_edit.mako')
+        return redirect(h.route_path('repo_summary', repo_name=repo_name))
 
     @HasRepoPermissionAllDecorator('repository.admin')
     @auth.CSRFRequired()
@@ -660,7 +380,6 @@ class ReposController(BaseRepoController):
     @HasRepoPermissionAllDecorator('repository.admin')
     def edit_remote_form(self, repo_name):
         """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
         c.repo_info = self._load_repo(repo_name)
         c.active = 'remote'
 
@@ -682,7 +401,6 @@ class ReposController(BaseRepoController):
     @HasRepoPermissionAllDecorator('repository.admin')
     def edit_statistics_form(self, repo_name):
         """GET /repo_name/settings: Form to edit an existing item"""
-        # url('edit_repo', repo_name=ID)
         c.repo_info = self._load_repo(repo_name)
         repo = c.repo_info.scm_instance()
 

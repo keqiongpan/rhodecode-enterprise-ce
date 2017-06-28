@@ -41,12 +41,45 @@ def includeme(config):
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens')
     config.add_route(
         name='my_account_auth_tokens_add',
-        pattern=ADMIN_PREFIX + '/my_account/auth_tokens/new',
-        )
+        pattern=ADMIN_PREFIX + '/my_account/auth_tokens/new')
     config.add_route(
         name='my_account_auth_tokens_delete',
-        pattern=ADMIN_PREFIX + '/my_account/auth_tokens/delete',
-        )
+        pattern=ADMIN_PREFIX + '/my_account/auth_tokens/delete')
+
+    config.add_route(
+        name='my_account_emails',
+        pattern=ADMIN_PREFIX + '/my_account/emails')
+    config.add_route(
+        name='my_account_emails_add',
+        pattern=ADMIN_PREFIX + '/my_account/emails/new')
+    config.add_route(
+        name='my_account_emails_delete',
+        pattern=ADMIN_PREFIX + '/my_account/emails/delete')
+
+    config.add_route(
+        name='my_account_repos',
+        pattern=ADMIN_PREFIX + '/my_account/repos')
+
+    config.add_route(
+        name='my_account_watched',
+        pattern=ADMIN_PREFIX + '/my_account/watched')
+
+    config.add_route(
+        name='my_account_perms',
+        pattern=ADMIN_PREFIX + '/my_account/perms')
+
+    config.add_route(
+        name='my_account_notifications',
+        pattern=ADMIN_PREFIX + '/my_account/notifications')
+
+    config.add_route(
+        name='my_account_notifications_toggle_visibility',
+        pattern=ADMIN_PREFIX + '/my_account/toggle_visibility')
+
+    # channelstream test
+    config.add_route(
+        name='my_account_notifications_test_channelstream',
+        pattern=ADMIN_PREFIX + '/my_account/test_channelstream')
 
     # Scan module for configuration decorators.
     config.scan()

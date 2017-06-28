@@ -28,7 +28,6 @@ from rhodecode.model.meta import Session
 from rhodecode.tests import (
     TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS,
     TestController, assert_session_flash, url)
-from rhodecode.tests.utils import AssertResponse
 
 
 class GistUtility(object):
@@ -273,7 +272,7 @@ class TestGistsController(TestController):
 
         response.mustcontain('added file: gist-show-me<')
 
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_equals_to(
             'div.rc-user span.user',
             '<a href="/_profiles/test_admin">test_admin</a></span>')
@@ -296,7 +295,7 @@ class TestGistsController(TestController):
         response = self.app.get(url('gist', gist_id=gist.gist_access_id))
         response.mustcontain('added file: gist-show-me-only-when-im-logged-in')
 
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_equals_to(
             'div.rc-user span.user',
             '<a href="/_profiles/test_admin">test_admin</a></span>')
@@ -337,9 +336,7 @@ class TestGistsController(TestController):
 
     def test_user_first_name_is_escaped(self, user_util, create_gist):
         xss_atack_string = '"><script>alert(\'First Name\')</script>'
-        xss_escaped_string = (
-            '&#34;&gt;&lt;script&gt;alert(&#39;First Name&#39;)&lt;/script'
-            '&gt;')
+        xss_escaped_string = h.html_escape(h.escape(xss_atack_string))
         password = 'test'
         user = user_util.create_user(
             firstname=xss_atack_string, password=password)
@@ -349,8 +346,7 @@ class TestGistsController(TestController):
 
     def test_user_last_name_is_escaped(self, user_util, create_gist):
         xss_atack_string = '"><script>alert(\'Last Name\')</script>'
-        xss_escaped_string = (
-            '&#34;&gt;&lt;script&gt;alert(&#39;Last Name&#39;)&lt;/script&gt;')
+        xss_escaped_string = h.html_escape(h.escape(xss_atack_string))
         password = 'test'
         user = user_util.create_user(
             lastname=xss_atack_string, password=password)

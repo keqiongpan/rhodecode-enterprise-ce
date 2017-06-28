@@ -36,6 +36,8 @@ import urlparse
 import time
 import string
 import hashlib
+from collections import OrderedDict
+
 import pygments
 import itertools
 import fnmatch
@@ -891,8 +893,9 @@ def author_string(email):
     if email:
         user = User.get_by_email(email, case_insensitive=True, cache=True)
         if user:
-            if user.firstname or user.lastname:
-                return '%s %s &lt;%s&gt;' % (user.firstname, user.lastname, email)
+            if user.first_name or user.last_name:
+                return '%s %s &lt;%s&gt;' % (
+                    user.first_name, user.last_name, email)
             else:
                 return email
         else:
@@ -1141,14 +1144,14 @@ class InitialsGravatar(object):
         # first push the email initials
         prefix, server = email_address.split('@', 1)
 
-        # check if prefix is maybe a 'firstname.lastname' syntax
+        # check if prefix is maybe a 'first_name.last_name' syntax
         _dot_split = prefix.rsplit('.', 1)
         if len(_dot_split) == 2:
             initials = [_dot_split[0][0], _dot_split[1][0]]
         else:
             initials = [prefix[0], server[0]]
 
-        # then try to replace either firtname or lastname
+        # then try to replace either first_name or last_name
         fn_letter = (first_name or " ")[0].strip()
         ln_letter = (last_name.split(' ', 1)[-1] or " ")[0].strip()
 
@@ -1245,12 +1248,19 @@ def initials_gravatar(email_address, first_name, last_name, size=30):
     return klass.generate_svg(svg_type=svg_type)
 
 
-def gravatar_url(email_address, size=30):
-    # doh, we need to re-import those to mock it later
-    from pylons import tmpl_context as c
+def gravatar_url(email_address, size=30, request=None):
+    request = get_current_request()
+    if request and hasattr(request, 'call_context'):
+        _use_gravatar = request.call_context.visual.use_gravatar
+        _gravatar_url = request.call_context.visual.gravatar_url
+    else:
+        # doh, we need to re-import those to mock it later
+        from pylons import tmpl_context as c
 
-    _use_gravatar = c.visual.use_gravatar
-    _gravatar_url = c.visual.gravatar_url or User.DEFAULT_GRAVATAR_URL
+        _use_gravatar = c.visual.use_gravatar
+        _gravatar_url = c.visual.gravatar_url
+
+    _gravatar_url = _gravatar_url or User.DEFAULT_GRAVATAR_URL
 
     email_address = email_address or User.DEFAULT_USER_EMAIL
     if isinstance(email_address, unicode):
@@ -1532,10 +1542,10 @@ def breadcrumb_repo_link(repo):
     """
 
     path = [
-        link_to(group.name, url('repo_group_home', group_name=group.group_name))
+        link_to(group.name, route_path('repo_group_home', repo_group_name=group.group_name))
         for group in repo.groups_with_parents
     ] + [
-        link_to(repo.just_name, url('summary_home', repo_name=repo.repo_name))
+        link_to(repo.just_name, route_path('repo_summary', repo_name=repo.repo_name))
     ]
 
     return literal(' &raquo; '.join(path))
@@ -1602,16 +1612,24 @@ def urlify_commits(text_, repository):
 
 
 def _process_url_func(match_obj, repo_name, uid, entry,
-                      return_raw_data=False):
+                      return_raw_data=False, link_format='html'):
     pref = ''
     if match_obj.group().startswith(' '):
         pref = ' '
 
     issue_id = ''.join(match_obj.groups())
-    tmpl = (
-        '%(pref)s<a class="%(cls)s" href="%(url)s">'
-        '%(issue-prefix)s%(id-repr)s'
-        '</a>')
+
+    if link_format == 'html':
+        tmpl = (
+            '%(pref)s<a class="%(cls)s" href="%(url)s">'
+            '%(issue-prefix)s%(id-repr)s'
+            '</a>')
+    elif link_format == 'rst':
+        tmpl = '`%(issue-prefix)s%(id-repr)s <%(url)s>`_'
+    elif link_format == 'markdown':
+        tmpl = '[%(issue-prefix)s%(id-repr)s](%(url)s)'
+    else:
+        raise ValueError('Bad link_format:{}'.format(link_format))
 
     (repo_name_cleaned,
      parent_group_name) = RepoGroupModel().\
@@ -1644,7 +1662,12 @@ def _process_url_func(match_obj, repo_name, uid, entry,
     return tmpl % data
 
 
-def process_patterns(text_string, repo_name, config=None):
+def process_patterns(text_string, repo_name, link_format='html'):
+    allowed_formats = ['html', 'rst', 'markdown']
+    if link_format not in allowed_formats:
+        raise ValueError('Link format can be only one of:{} got {}'.format(
+                         allowed_formats, link_format))
+
     repo = None
     if repo_name:
         # Retrieving repo_name to avoid invalid repo_name to explode on
@@ -1656,6 +1679,7 @@ def process_patterns(text_string, repo_name, config=None):
 
     issues_data = []
     newtext = text_string
+
     for uid, entry in active_entries.items():
         log.debug('found issue tracker entry with uid %s' % (uid,))
 
@@ -1682,7 +1706,8 @@ def process_patterns(text_string, repo_name, config=None):
             issues_data.append(data_func(match_obj))
 
         url_func = partial(
-            _process_url_func, repo_name=repo_name, entry=entry, uid=uid)
+            _process_url_func, repo_name=repo_name, entry=entry, uid=uid,
+            link_format=link_format)
 
         newtext = pattern.sub(url_func, newtext)
         log.debug('processed prefix:uid `%s`' % (uid,))
@@ -1750,7 +1775,8 @@ def renderer_from_filename(filename, exclude=None):
     return None
 
 
-def render(source, renderer='rst', mentions=False, relative_url=None):
+def render(source, renderer='rst', mentions=False, relative_url=None,
+           repo_name=None):
 
     def maybe_convert_relative_links(html_source):
         if relative_url:
@@ -1758,11 +1784,21 @@ def render(source, renderer='rst', mentions=False, relative_url=None):
         return html_source
 
     if renderer == 'rst':
+        if repo_name:
+            # process patterns on comments if we pass in repo name
+            source, issues = process_patterns(
+                source, repo_name, link_format='rst')
+
         return literal(
             '<div class="rst-block">%s</div>' %
             maybe_convert_relative_links(
                 MarkupRenderer.rst(source, mentions=mentions)))
     elif renderer == 'markdown':
+        if repo_name:
+            # process patterns on comments if we pass in repo name
+            source, issues = process_patterns(
+                source, repo_name, link_format='markdown')
+
         return literal(
             '<div class="markdown-block">%s</div>' %
             maybe_convert_relative_links(
@@ -1801,6 +1837,7 @@ def journal_filter_help():
         'Example filter terms:\n' +
         '     repository:vcs\n' +
         '     username:marcin\n' +
+        '     username:(NOT marcin)\n' +
         '     action:*push*\n' +
         '     ip:127.0.0.1\n' +
         '     date:20120101\n' +
@@ -1814,6 +1851,24 @@ def journal_filter_help():
         '     "repository:vcs OR repository:test"\n' +
         '     "username:test AND repository:test*"\n'
     )
+
+
+def search_filter_help(searcher):
+
+    terms = ''
+    return _(
+        'Example filter terms for `{searcher}` search:\n' +
+        '{terms}\n' +
+        'Generate wildcards using \'*\' character:\n' +
+        '     "repo_name:vcs*" - search everything starting with \'vcs\'\n' +
+        '     "repo_name:*vcs*" - search for repository containing \'vcs\'\n' +
+        '\n' +
+        'Optional AND / OR operators in queries\n' +
+        '     "repo_name:vcs OR repo_name:test"\n' +
+        '     "owner:test AND repo_name:test*"\n' +
+        'More: {search_doc}'
+    ).format(searcher=searcher.name,
+             terms=terms, search_doc=searcher.query_lang_doc)
 
 
 def not_mapped_error(repo_name):
@@ -1914,24 +1969,24 @@ def get_last_path_part(file_node):
     return u'../' + path
 
 
-def route_url(*args, **kwds):
+def route_url(*args, **kwargs):
     """
-    Wrapper around pyramids `route_url` function. It is used to generate
-    URLs from within pylons views or templates. This will be removed when
-    pyramid migration if finished.
+    Wrapper around pyramids `route_url` (fully qualified url) function. 
+    It is used to generate URLs from within pylons views or templates. 
+    This will be removed when pyramid migration if finished.
     """
     req = get_current_request()
-    return req.route_url(*args, **kwds)
+    return req.route_url(*args, **kwargs)
 
 
-def route_path(*args, **kwds):
+def route_path(*args, **kwargs):
     """
     Wrapper around pyramids `route_path` function. It is used to generate
     URLs from within pylons views or templates. This will be removed when
     pyramid migration if finished.
     """
     req = get_current_request()
-    return req.route_path(*args, **kwds)
+    return req.route_path(*args, **kwargs)
 
 
 def route_path_or_none(*args, **kwargs):
@@ -1959,3 +2014,23 @@ def resource_path(*args, **kwds):
     """
     req = get_current_request()
     return req.resource_path(*args, **kwds)
+
+
+def api_call_example(method, args):
+    """
+    Generates an API call example via CURL
+    """
+    args_json = json.dumps(OrderedDict([
+        ('id', 1),
+        ('auth_token', 'SECRET'),
+        ('method', method),
+        ('args', args)
+    ]))
+    return literal(
+        "curl {api_url} -X POST -H 'content-type:text/plain' --data-binary '{data}'"
+        "<br/><br/>SECRET can be found in <a href=\"{token_url}\">auth-tokens</a> page, "
+        "and needs to be of `api calls` role."
+        .format(
+            api_url=route_url('apiv2'),
+            token_url=route_url('my_account_auth_tokens'),
+            data=args_json))

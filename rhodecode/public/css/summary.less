@@ -57,9 +57,13 @@
           white-space: pre-wrap;
         }
 
-        #clone_url,
+        #clone_url {
+            width: ~"calc(100% - 96px)";
+            padding:  @padding/4;
+        }
+
         #clone_url_id {
-            min-width: 29em;
+            width: ~"calc(100% - 118px)";
             padding:  @padding/4;
         }
 
@@ -211,6 +215,7 @@
     float: left;
     display: block;
     position: relative;
+    width: 100%;
 
     // adds some space to make copy and paste easier
     .left-label,

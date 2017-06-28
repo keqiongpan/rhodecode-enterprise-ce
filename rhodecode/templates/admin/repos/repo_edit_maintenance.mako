@@ -4,18 +4,26 @@
     </div>
     <div class="panel-body">
 
+        % if c.executable_tasks:
+        <h4>${_('Perform maintenance tasks for this repo')}</h4>
+
+        <span>${_('Following tasks will be performed')}:</span>
+        <ol>
+        % for task in c.executable_tasks:
+            <li>${task}</li>
+        % endfor
+        </ol>
         <p>
-            % if c.executable_tasks:
-            ${_('Perform maintenance tasks for this repo, following tasks will be performed')}:
-            <ol>
-            % for task in c.executable_tasks:
-                <li>${task}</li>
-            % endfor
-            </ol>
-            % else:
-                ${_('No maintenance tasks for this repo available')}
-            % endif
+            ${_('Maintenance can be automated by such api call. Can be called periodically in crontab etc.')}
+            <br/>
+            <code>
+                ${h.api_call_example(method='maintenance', args={"repoid": c.repo_info.repo_name})}
+            </code>
         </p>
+
+        % else:
+            <h4>${_('No maintenance tasks for this repo available')}</h4>
+        % endif
 
         <div id="results" style="display:none; padding: 10px 0px;"></div>
 

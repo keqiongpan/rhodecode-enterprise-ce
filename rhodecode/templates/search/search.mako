@@ -45,7 +45,7 @@
         <div class="title">
             ${self.repo_page_title(c.rhodecode_db_repo)}
         </div>
-        ${h.form(h.url('search_repo_home',repo_name=c.repo_name),method='get')}
+        ${h.form(h.route_path('search_repo',repo_name=c.repo_name),method='get')}
     %else:
         <!-- box / title -->
         <div class="title">
@@ -53,7 +53,7 @@
             <ul class="links">&nbsp;</ul>
         </div>
         <!-- end box / title -->
-        ${h.form(h.url('search'),method='get')}
+        ${h.form(h.route_path('search'), method='get')}
     %endif
     <div class="form search-form">
         <div class="fields">
@@ -63,6 +63,7 @@
             ${h.select('type',c.search_type,[('content',_('File contents')), ('commit',_('Commit messages')), ('path',_('File names')),],id='id_search_type')}
             <input type="submit" value="${_('Search')}" class="btn"/>
             <br/>
+
             <div class="search-feedback-items">
             % for error in c.errors:
               <span class="error-message">
@@ -71,10 +72,16 @@
                   % endfor
               </span>
             % endfor
+            <div class="field">
+                <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Example Queries')}</p>
+                <pre id="search-help" style="display: none">${h.tooltip(h.search_filter_help(c.searcher))}</pre>
+            </div>
+
             <div class="field">${c.runtime}</div>
             </div>
         </div>
     </div>
+
     ${h.end_form()}
     <div class="search">
     % if c.search_type == 'content':

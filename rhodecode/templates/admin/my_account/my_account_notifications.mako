@@ -1,7 +1,7 @@
 <template is="dom-bind" id="notificationsPage">
 <iron-ajax id="toggleNotifications"
            method="post"
-           url="${url('my_account_notifications_toggle_visibility')}"
+           url="${h.route_path('my_account_notifications_toggle_visibility')}"
            content-type="application/json"
            loading="{{changeNotificationsLoading}}"
            on-response="handleNotifications"
@@ -10,7 +10,7 @@
 
 <iron-ajax id="sendTestNotification"
            method="post"
-           url="${url('my_account_notifications_test_channelstream')}"
+           url="${h.route_path('my_account_notifications_test_channelstream')}"
            content-type="application/json"
            on-response="handleTestNotification"
            handle-as="json">

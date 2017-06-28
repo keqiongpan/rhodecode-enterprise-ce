@@ -20,7 +20,7 @@
                         <span class="journal_repo_name">
                         %if entry.repository is not None:
                           ${h.link_to(entry.repository.repo_name,
-                                      h.url('summary_home',repo_name=entry.repository.repo_name))}
+                                      h.route_path('repo_summary',repo_name=entry.repository.repo_name))}
                         %else:
                           ${entry.repository_name}
                         %endif

@@ -25,6 +25,7 @@ from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 from rhodecode.model.pull_request import PullRequestModel
 
 
+@pytest.mark.usefixtures('config_stub')
 @pytest.mark.backends('git')
 class TestGetDiffForPrOrVersion(object):
 

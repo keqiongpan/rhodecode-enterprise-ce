@@ -32,7 +32,12 @@ def base_data():
             'repo_name': 'foo',
             'repo_type': 'hg',
             'repo_id': '12',
-            'url': 'http://repo.url/foo'
+            'url': 'http://repo.url/foo',
+            'extra_fields': {},
+        },
+        'actor': {
+            'username': 'actor_name',
+            'user_id': 1
         }
     }
 

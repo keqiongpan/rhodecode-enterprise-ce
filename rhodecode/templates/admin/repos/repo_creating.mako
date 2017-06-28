@@ -48,12 +48,12 @@
             if (jsonResponse === undefined) {
                 setTimeout(function () {
                     // we might have a backend problem, try dashboard again
-                    window.location = "${h.url('summary_home', repo_name = c.repo)}";
+                    window.location = "${h.route_path('repo_summary', repo_name = c.repo)}";
                 }, 3000);
             } else {
                 if (skipCheck || jsonResponse.result === true) {
                     // success, means go to dashboard
-                    window.location = "${h.url('summary_home', repo_name = c.repo)}";
+                    window.location = "${h.route_path('repo_summary', repo_name = c.repo)}";
                 } else {
                     // Schedule the next request when the current one's complete
                     setTimeout(worker, 1000);
@@ -61,7 +61,7 @@
             }
         }
         else {
-            window.location = "${h.url('home')}";
+            window.location = "${h.route_path('home')}";
         }
     }
   });

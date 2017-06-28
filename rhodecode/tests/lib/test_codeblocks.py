@@ -19,11 +19,12 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import pytest
+from pygments.lexers import get_lexer_by_name
 
+from rhodecode.tests import no_newline_id_generator
 from rhodecode.lib.codeblocks import (
     tokenize_string, split_token_stream, rollup_tokenstream,
     render_tokenstream)
-from pygments.lexers import get_lexer_by_name
 
 
 class TestTokenizeString(object):
@@ -298,7 +299,7 @@ class TestRenderTokenStream(object):
             [('A', '', u'hel'), ('B', 'ins', u'lo')],
             '<span class="A">hel</span><span class="B"><ins>lo</ins></span>',
         ),
-    ])
+    ], ids=no_newline_id_generator)
     def test_render_tokenstream_with_ops(self, tokenstream, output):
         html = render_tokenstream(tokenstream)
         assert html == output

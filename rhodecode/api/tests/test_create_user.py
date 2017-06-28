@@ -59,6 +59,21 @@ class TestCreateUser(object):
         expected = "email `%s` already exist" % (TEST_USER_REGULAR_EMAIL,)
         assert_error(id_, expected, given=response.body)
 
+    def test_api_create_user_with_wrong_username(self):
+        bad_username = '<> HELLO WORLD <>'
+        id_, params = build_data(
+            self.apikey, 'create_user',
+            username=bad_username,
+            email='new@email.com',
+            password='trololo')
+        response = api_call(self.app, params)
+
+        expected = {'username':
+                        "Username may only contain alphanumeric characters "
+                        "underscores, periods or dashes and must begin with "
+                        "alphanumeric character or underscore"}
+        assert_error(id_, expected, given=response.body)
+
     def test_api_create_user(self):
         username = 'test_new_api_user'
         email = username + "@foo.com"
@@ -174,7 +189,6 @@ class TestCreateUser(object):
         finally:
             fixture.destroy_repo_group(username)
             fixture.destroy_user(usr.user_id)
-
 
     @mock.patch.object(UserModel, 'create_or_update', crash)
     def test_api_create_user_when_exception_happened(self):

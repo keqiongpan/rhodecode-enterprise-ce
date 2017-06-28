@@ -3,8 +3,12 @@
 Repository Extra Fields
 =======================
 
-Extra fields attached to a |repo| allow you to configure additional actions for
-|RCX|. To install and read more about |RCX|, see the :ref:`install-rcx` section.
+Extra fields attached to a |repo| allow you to configure additional fields for
+each repository. This allows storing custom data per-repository.
+
+It can be used in :ref:`integrations-webhook` or in |RCX|.
+To install and read more about |RCX|, see the :ref:`install-rcx` section.
+
 
 Enabling Extra Fields
 ---------------------
@@ -27,9 +31,14 @@ To configure extra fields per repository, use the following steps:
 
 .. image:: ../images/extra-repo-fields.png
 
+The most important is the `New field key` variable which under the value will
+be stored. It needs to be unique for each repository. The label and description
+will be generated in repository settings where users can actually save some
+values inside generated extra fields.
 
-Example Usage
--------------
+
+Example Usage in extensions
+---------------------------
 
 To use the extra fields in an extension, see the example below. For more
 information and examples, see the :ref:`extensions-hooks-ref` section.

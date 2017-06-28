@@ -25,10 +25,10 @@
                         <span class="user email">${em.email}</span>
                     </td>
                     <td class="td-action">
-                        ${h.secure_form(url('my_account_emails'),method='delete')}
+                        ${h.secure_form(h.route_path('my_account_emails_delete'), method='POST')}
                             ${h.hidden('del_email_id',em.email_id)}
-                            <button class="btn btn-link btn-danger" type="submit" id="remove_email_%s" % em.email_id
-                                    onclick="return confirm('${_('Confirm to delete this email: %s') % em.email}');">
+                            <button class="btn btn-link btn-danger" type="submit" id="${'remove_email_%s'.format(em.email_id)}"
+                                    onclick="return confirm('${_('Confirm to delete this email: {}').format(em.email)}');">
                                 ${_('Delete')}
                             </button>
                         ${h.end_form()}
@@ -48,7 +48,7 @@
         </div>
 
         <div>
-            ${h.secure_form(url('my_account_emails'), method='post')}
+            ${h.secure_form(h.route_path('my_account_emails_add'), method='POST')}
             <div class="form">
                 <!-- fields -->
                 <div class="fields">

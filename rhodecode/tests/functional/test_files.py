@@ -484,7 +484,7 @@ class TestRawFileHandling(object):
 
         msg = (
             "There is no file nor directory at the given path: "
-            "&#39;%s&#39; at commit %s" % (f_path, commit.short_id))
+            "`%s` at commit %s" % (f_path, commit.short_id))
         response.mustcontain(msg)
 
     def test_raw_ok(self, backend):
@@ -517,7 +517,7 @@ class TestRawFileHandling(object):
                                     f_path=f_path), status=404)
         msg = (
             "There is no file nor directory at the given path: "
-            "&#39;%s&#39; at commit %s" % (f_path, commit.short_id))
+            "`%s` at commit %s" % (f_path, commit.short_id))
         response.mustcontain(msg)
 
     def test_raw_svg_should_not_be_rendered(self, backend):
@@ -758,9 +758,8 @@ class TestChangingFiles:
                 'csrf_token': csrf_token,
             },
             status=302)
-        assert_session_flash(
-            response, 'Successfully committed to %s'
-            % os.path.join(filename))
+        assert_session_flash(response,
+            'Successfully committed new file `{}`'.format(os.path.join(filename)))
 
     def test_add_file_into_repo_missing_filename(self, backend, csrf_token):
         response = self.app.post(
@@ -796,11 +795,12 @@ class TestChangingFiles:
 
         # Not allowed, redirect to the summary
         redirected = response.follow()
-        summary_url = url('summary_home', repo_name=repo.repo_name)
+        summary_url = h.route_path('repo_summary', repo_name=repo.repo_name)
 
         # As there are no commits, displays the summary page with the error of
         # creating a file with no filename
-        assert redirected.req.path == summary_url
+
+        assert redirected.request.path == summary_url
 
     @pytest.mark.parametrize("location, filename", [
         ('/abs', 'foo'),
@@ -847,9 +847,9 @@ class TestChangingFiles:
                 'csrf_token': csrf_token,
             },
             status=302)
-        assert_session_flash(
-            response, 'Successfully committed to %s'
-            % os.path.join(location, filename))
+        assert_session_flash(response,
+            'Successfully committed new file `{}`'.format(
+                os.path.join(location, filename)))
 
     def test_edit_file_view(self, backend):
         response = self.app.get(
@@ -893,7 +893,7 @@ class TestChangingFiles:
             },
             status=302)
         assert_session_flash(
-            response, 'Successfully committed to vcs/nodes.py')
+            response, 'Successfully committed changes to file `vcs/nodes.py`')
         tip = repo.get_commit(commit_idx=-1)
         assert tip.message == 'I committed'
 
@@ -920,7 +920,7 @@ class TestChangingFiles:
             },
             status=302)
         assert_session_flash(
-            response, 'Successfully committed to vcs/nodes.py')
+            response, 'Successfully committed changes to file `vcs/nodes.py`')
         tip = repo.get_commit(commit_idx=-1)
         assert tip.message == 'Edited file vcs/nodes.py via RhodeCode Enterprise'
 
@@ -960,7 +960,7 @@ class TestChangingFiles:
             },
             status=302)
         assert_session_flash(
-            response, 'Successfully deleted file vcs/nodes.py')
+            response, 'Successfully deleted file `vcs/nodes.py`')
 
 
 def assert_files_in_response(response, files, params):

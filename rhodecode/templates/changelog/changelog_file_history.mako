@@ -14,7 +14,7 @@
             </td>
             <td class="td-message">
                 <div class="log-container">
-                    <div class="message_history" title="${cs.message}">
+                    <div class="message_history" title="${h.tooltip(cs.message)}">
                         <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=cs.raw_id)}">
                             ${h.shorter(cs.message, 75)}
                         </a>

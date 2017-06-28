@@ -35,7 +35,6 @@ from rhodecode.model.meta import Session
 from rhodecode.tests import (
     HG_REPO, TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
 from rhodecode.tests.lib.middleware import mock_scm_app
-from rhodecode.tests.utils import set_anonymous_access
 
 
 class StubVCSController(simplevcs.SimpleVCS):
@@ -70,7 +69,7 @@ def vcscontroller(pylonsapp, config_stub):
     config_stub.testing_securitypolicy()
     config_stub.include('rhodecode.authentication')
 
-    set_anonymous_access(True)
+    #set_anonymous_access(True)
     controller = StubVCSController(pylonsapp, pylonsapp.config, None)
     app = HttpsFixup(controller, pylonsapp.config)
     app = CustomTestApp(app)
@@ -87,19 +86,12 @@ def vcscontroller(pylonsapp, config_stub):
 def _remove_default_user_from_query_cache():
     user = User.get_default_user(cache=True)
     query = Session().query(User).filter(User.username == user.username)
-    query = query.options(FromCache(
-        "sql_cache_short", "get_user_%s" % _hash_key(user.username)))
+    query = query.options(
+        FromCache("sql_cache_short", "get_user_%s" % _hash_key(user.username)))
     query.invalidate()
     Session().expire(user)
 
 
-@pytest.fixture
-def disable_anonymous_user(request, pylonsapp):
-    set_anonymous_access(False)
-
-    @request.addfinalizer
-    def cleanup():
-        set_anonymous_access(True)
 
 
 def test_handles_exceptions_during_permissions_checks(
@@ -275,7 +267,7 @@ class TestShadowRepoExposure(object):
                 controller.vcs_repo_name ==
                 controller._get_repository_name(environ_stub))
 
-    def test_set_repo_names_with_shadow(self, pylonsapp, pr_util):
+    def test_set_repo_names_with_shadow(self, pylonsapp, pr_util, config_stub):
         """
         Check that the set_repo_names method sets correct names on a request
         to a shadow repo.
@@ -304,7 +296,7 @@ class TestShadowRepoExposure(object):
         assert controller.is_shadow_repo
 
     def test_set_repo_names_with_shadow_but_missing_pr(
-            self, pylonsapp, pr_util):
+            self, pylonsapp, pr_util, config_stub):
         """
         Checks that the set_repo_names method enforces matching target repos
         and pull request IDs.
@@ -326,7 +318,7 @@ class TestShadowRepoExposure(object):
 
 
 @pytest.mark.usefixtures('db')
-class TestGenerateVcsResponse:
+class TestGenerateVcsResponse(object):
 
     def test_ensures_that_start_response_is_called_early_enough(self):
         self.call_controller_with_response_body(iter(['a', 'b']))
@@ -418,7 +410,7 @@ class TestGenerateVcsResponse:
         return self.controller._invalidate_cache.called
 
 
-class TestInitializeGenerator:
+class TestInitializeGenerator(object):
 
     def test_drains_first_element(self):
         gen = self.factory(['__init__', 1, 2])

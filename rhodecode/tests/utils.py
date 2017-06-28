@@ -94,6 +94,14 @@ class CustomTestResponse(TestResponse):
     def assert_response(self):
         return AssertResponse(self)
 
+    def get_session_from_response(self):
+        """
+        This returns the session from a response object. Pylons has some magic
+        to make the session available as `response.session`. But pyramid
+        doesn't expose it.
+        """
+        return self.request.environ['beaker.session']
+
 
 class TestRequest(Request):
 
@@ -109,15 +117,13 @@ class CustomTestApp(TestApp):
     RequestClass = TestRequest
 
 
-
-
-
 def set_anonymous_access(enabled):
     """(Dis)allows anonymous access depending on parameter `enabled`"""
     user = User.get_default_user()
     user.active = enabled
     Session().add(user)
     Session().commit()
+    time.sleep(1.5)  # must sleep for cache (1s to expire)
     log.info('anonymous access is now: %s', enabled)
     assert enabled == User.get_default_user().active, (
         'Cannot set anonymous access')
@@ -357,16 +363,6 @@ def is_url_reachable(url):
     return True
 
 
-def get_session_from_response(response):
-    """
-    This returns the session from a response object. Pylons has some magic
-    to make the session available as `response.session`. But pyramid
-    doesn't expose it.
-    """
-    # TODO: Try to look up the session key also.
-    return response.request.environ['beaker.session']
-
-
 def repo_on_filesystem(repo_name):
     from rhodecode.lib import vcs
     from rhodecode.tests import TESTS_TMP_PATH
@@ -407,3 +403,21 @@ def commit_change(
             f_path=filename
         )
     return commit
+
+
+def add_test_routes(config):
+    """
+    Adds test routing that can be used in different functional tests
+
+    """
+    config.add_route(name='home', pattern='/')
+    config.add_route(name='repo_summary', pattern='/{repo_name}')
+    config.add_route(name='repo_summary_explicit', pattern='/{repo_name}/summary')
+    config.add_route(name='repo_group_home', pattern='/{repo_group_name}')
+
+    config.add_route(name='pullrequest_show',
+                     pattern='/{repo_name}/pull-request/{pull_request_id}')
+    config.add_route(name='pull_requests_global',
+                     pattern='/pull-request/{pull_request_id}')
+    config.add_route(name='repo_commit',
+                     pattern='/{repo_name}/changeset/{commit_id}')

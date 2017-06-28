@@ -112,3 +112,16 @@ class TestCreateUserGroup(object):
 
         expected = 'failed to create group `%s`' % (group_name,)
         assert_error(id_, expected, given=response.body)
+
+    def test_api_create_user_group_with_wrong_name(self, user_util):
+
+        group_name = 'wrong NAME <>'
+        id_, params = build_data(
+            self.apikey, 'create_user_group', group_name=group_name)
+        response = api_call(self.app, params)
+
+        expected = {"user_group_name":
+                        "Allowed in name are letters, numbers, and `-`, `_`, "
+                        "`.` Name must start with a letter or number. "
+                        "Got `{}`".format(group_name)}
+        assert_error(id_, expected, given=response.body)

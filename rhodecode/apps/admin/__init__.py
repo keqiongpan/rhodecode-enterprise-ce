@@ -30,6 +30,20 @@ def admin_routes(config):
     """
 
     config.add_route(
+        name='admin_audit_logs',
+        pattern='/audit_logs')
+
+    config.add_route(
+        name='pull_requests_global_0',  # backward compat
+        pattern='/pull_requests/{pull_request_id:[0-9]+}')
+    config.add_route(
+        name='pull_requests_global_1',  # backward compat
+        pattern='/pull-requests/{pull_request_id:[0-9]+}')
+    config.add_route(
+        name='pull_requests_global',
+        pattern='/pull-request/{pull_request_id:[0-9]+}')
+
+    config.add_route(
         name='admin_settings_open_source',
         pattern='/settings/open_source')
     config.add_route(
@@ -50,6 +64,11 @@ def admin_routes(config):
         name='admin_settings_sessions_cleanup',
         pattern='/settings/sessions/cleanup')
 
+    # global permissions
+    config.add_route(
+        name='admin_permissions_ips',
+        pattern='/permissions/ips')
+
     # users admin
     config.add_route(
         name='users',
@@ -69,6 +88,28 @@ def admin_routes(config):
     config.add_route(
         name='edit_user_auth_tokens_delete',
         pattern='/users/{user_id:\d+}/edit/auth_tokens/delete')
+
+    # user emails
+    config.add_route(
+        name='edit_user_emails',
+        pattern='/users/{user_id:\d+}/edit/emails')
+    config.add_route(
+        name='edit_user_emails_add',
+        pattern='/users/{user_id:\d+}/edit/emails/new')
+    config.add_route(
+        name='edit_user_emails_delete',
+        pattern='/users/{user_id:\d+}/edit/emails/delete')
+
+    # user IPs
+    config.add_route(
+        name='edit_user_ips',
+        pattern='/users/{user_id:\d+}/edit/ips')
+    config.add_route(
+        name='edit_user_ips_add',
+        pattern='/users/{user_id:\d+}/edit/ips/new')
+    config.add_route(
+        name='edit_user_ips_delete',
+        pattern='/users/{user_id:\d+}/edit/ips/delete')
 
     # user groups management
     config.add_route(
@@ -93,6 +134,8 @@ def includeme(config):
     navigation_registry = NavigationRegistry(labs_active=labs_active)
     config.registry.registerUtility(navigation_registry)
 
+    # main admin routes
+    config.add_route(name='admin_home', pattern=ADMIN_PREFIX)
     config.include(admin_routes, route_prefix=ADMIN_PREFIX)
 
     # Scan module for configuration decorators.

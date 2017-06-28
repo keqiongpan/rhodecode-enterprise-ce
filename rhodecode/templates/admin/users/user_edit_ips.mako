@@ -4,11 +4,12 @@
     </div>
     <div class="panel-body">
         <div class="ips_wrap">
+        <h5>${_('Current IP address')}: <code>${c.rhodecode_user.ip_addr}</code></h5>
   <table class="rctable ip-whitelist">
     <tr>
-      <th>IP Address</th>
-      <th>IP Range</th>
-      <th>Description</th>
+      <th>${_('IP Address')}</th>
+      <th>${_('IP Range')}</th>
+      <th>${_('Description')}</th>
       <th></th>
     </tr>
     %if c.default_user_ip_map and c.inherit_default_ips:
@@ -29,9 +30,9 @@
             <td class="td-iprange"><div class="ip">${h.ip_range(ip.ip_addr)}</div></td>
             <td class="td-description"><div class="ip">${ip.description}</div></td>
             <td class="td-action">
-                ${h.secure_form(url('edit_user_ips', user_id=c.user.user_id),method='delete')}
-                    ${h.hidden('del_ip_id',ip.ip_id)}
-                    ${h.submit('remove_',_('Delete'),id="remove_ip_%s" % ip.ip_id,
+                ${h.secure_form(h.route_path('edit_user_ips_delete', user_id=c.user.user_id), method='POST')}
+                    ${h.hidden('del_ip_id', ip.ip_id)}
+                    ${h.submit('remove_', _('Delete'),id="remove_ip_%s" % ip.ip_id,
                     class_="btn btn-link btn-danger", onclick="return confirm('"+_('Confirm to delete this ip: %s') % ip.ip_addr+"');")}
                 ${h.end_form()}
             </td>
@@ -50,7 +51,7 @@
 </div>
 
         <div>
-    ${h.secure_form(url('edit_user_ips', user_id=c.user.user_id),method='put')}
+    ${h.secure_form(h.route_path('edit_user_ips_add', user_id=c.user.user_id), method='POST')}
     <div class="form">
         <!-- fields -->
         <div class="fields">

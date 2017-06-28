@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import os
 import hashlib
 import logging
 from collections import namedtuple
@@ -51,7 +52,8 @@ class SettingsModel(BaseModel):
     BUILTIN_HOOKS = (
         RhodeCodeUi.HOOK_REPO_SIZE, RhodeCodeUi.HOOK_PUSH,
         RhodeCodeUi.HOOK_PRE_PUSH, RhodeCodeUi.HOOK_PRETX_PUSH,
-        RhodeCodeUi.HOOK_PULL, RhodeCodeUi.HOOK_PRE_PULL)
+        RhodeCodeUi.HOOK_PULL, RhodeCodeUi.HOOK_PRE_PULL,
+        RhodeCodeUi.HOOK_PUSH_KEY,)
     HOOKS_SECTION = 'hooks'
 
     def __init__(self, sa=None, repo=None):
@@ -207,6 +209,7 @@ class SettingsModel(BaseModel):
         caches.clear_cache_manager(cache_manager)
 
     def get_all_settings(self, cache=False):
+
         def _compute():
             q = self._get_settings_query()
             if not q:
@@ -413,15 +416,16 @@ class VcsSettingsModel(object):
         ('hooks', 'outgoing.pull_logger'),)
     HG_SETTINGS = (
         ('extensions', 'largefiles'),
-        ('phases', 'publish'),)
+        ('phases', 'publish'),
+        ('extensions', 'evolve'),)
     GIT_SETTINGS = (
         ('vcs_git_lfs', 'enabled'),)
-
     GLOBAL_HG_SETTINGS = (
         ('extensions', 'largefiles'),
         ('largefiles', 'usercache'),
         ('phases', 'publish'),
-        ('extensions', 'hgsubversion'))
+        ('extensions', 'hgsubversion'),
+        ('extensions', 'evolve'),)
     GLOBAL_GIT_SETTINGS = (
         ('vcs_git_lfs', 'enabled'),
         ('vcs_git_lfs', 'store_location'))
@@ -544,22 +548,26 @@ class VcsSettingsModel(object):
 
     @assert_repo_settings
     def create_or_update_repo_hg_settings(self, data):
-        largefiles, phases = \
+        largefiles, phases, evolve = \
             self.HG_SETTINGS
-        largefiles_key, phases_key = \
+        largefiles_key, phases_key, evolve_key = \
             self._get_settings_keys(self.HG_SETTINGS, data)
 
         self._create_or_update_ui(
             self.repo_settings, *largefiles, value='',
             active=data[largefiles_key])
         self._create_or_update_ui(
+            self.repo_settings, *evolve, value='',
+            active=data[evolve_key])
+        self._create_or_update_ui(
             self.repo_settings, *phases, value=safe_str(data[phases_key]))
 
     def create_or_update_global_hg_settings(self, data):
-        largefiles, largefiles_store, phases, hgsubversion \
+        largefiles, largefiles_store, phases, hgsubversion, evolve \
             = self.GLOBAL_HG_SETTINGS
-        largefiles_key, largefiles_store_key, phases_key, subversion_key \
+        largefiles_key, largefiles_store_key, phases_key, subversion_key, evolve_key \
             = self._get_settings_keys(self.GLOBAL_HG_SETTINGS, data)
+
         self._create_or_update_ui(
             self.global_settings, *largefiles, value='',
             active=data[largefiles_key])
@@ -570,6 +578,9 @@ class VcsSettingsModel(object):
             self.global_settings, *phases, value=safe_str(data[phases_key]))
         self._create_or_update_ui(
             self.global_settings, *hgsubversion, active=data[subversion_key])
+        self._create_or_update_ui(
+            self.global_settings, *evolve, value='',
+            active=data[evolve_key])
 
     def create_or_update_repo_git_settings(self, data):
         # NOTE(marcink): # comma make unpack work properly
@@ -774,3 +785,27 @@ class VcsSettingsModel(object):
                 raise ValueError(
                     'The given data does not contain {} key'.format(data_key))
         return data_keys
+
+    def create_largeobjects_dirs_if_needed(self, repo_store_path):
+        """
+        This is subscribed to the `pyramid.events.ApplicationCreated` event. It
+        does a repository scan if enabled in the settings.
+        """
+
+        from rhodecode.lib.vcs.backends.hg import largefiles_store
+        from rhodecode.lib.vcs.backends.git import lfs_store
+
+        paths = [
+            largefiles_store(repo_store_path),
+            lfs_store(repo_store_path)]
+
+        for path in paths:
+            if os.path.isdir(path):
+                continue
+            if os.path.isfile(path):
+                continue
+            # not a file nor dir, we try to create it
+            try:
+                os.makedirs(path)
+            except Exception:
+                log.warning('Failed to create largefiles dir:%s', path)

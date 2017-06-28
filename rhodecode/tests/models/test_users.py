@@ -19,10 +19,11 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import pytest
-from sqlalchemy.sql.expression import true
+import mock
 
-from rhodecode.model.db import User, UserGroup, UserGroupMember, UserEmailMap,\
-    Permission, UserIpMap
+from rhodecode.lib.utils2 import safe_unicode
+from rhodecode.model.db import (
+    true, User, UserGroup, UserGroupMember, UserEmailMap, Permission, UserIpMap)
 from rhodecode.model.meta import Session
 from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
@@ -31,6 +32,86 @@ from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.tests.fixture import Fixture
 
 fixture = Fixture()
+
+
+class TestGetUsers(object):
+    def test_returns_active_users(self, backend, user_util):
+        for i in range(4):
+            is_active = i % 2 == 0
+            user_util.create_user(active=is_active, lastname='Fake user')
+
+        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
+            users = UserModel().get_users()
+        fake_users = [u for u in users if u['last_name'] == 'Fake user']
+        assert len(fake_users) == 2
+
+        expected_keys = (
+            'id', 'first_name', 'last_name', 'username', 'icon_link',
+            'value_display', 'value', 'value_type')
+        for user in users:
+            assert user['value_type'] is 'user'
+            for key in expected_keys:
+                assert key in user
+
+    def test_returns_user_filtered_by_last_name(self, backend, user_util):
+        keywords = ('aBc', u'ünicode')
+        for keyword in keywords:
+            for i in range(2):
+                user_util.create_user(
+                    active=True, lastname=u'Fake {} user'.format(keyword))
+
+        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
+            keyword = keywords[1].lower()
+            users = UserModel().get_users(name_contains=keyword)
+
+        fake_users = [u for u in users if u['last_name'].startswith('Fake')]
+        assert len(fake_users) == 2
+        for user in fake_users:
+            assert user['last_name'] == safe_unicode('Fake ünicode user')
+
+    def test_returns_user_filtered_by_first_name(self, backend, user_util):
+        created_users = []
+        keywords = ('aBc', u'ünicode')
+        for keyword in keywords:
+            for i in range(2):
+                created_users.append(user_util.create_user(
+                    active=True, lastname='Fake user',
+                    firstname=u'Fake {} user'.format(keyword)))
+
+        keyword = keywords[1].lower()
+        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
+            users = UserModel().get_users(name_contains=keyword)
+
+        fake_users = [u for u in users if u['last_name'].startswith('Fake')]
+        assert len(fake_users) == 2
+        for user in fake_users:
+            assert user['first_name'] == safe_unicode('Fake ünicode user')
+
+    def test_returns_user_filtered_by_username(self, backend, user_util):
+        created_users = []
+        for i in range(5):
+            created_users.append(user_util.create_user(
+                active=True, lastname='Fake user'))
+
+        user_filter = created_users[-1].username[-2:]
+        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
+            users = UserModel().get_users(name_contains=user_filter)
+
+        fake_users = [u for u in users if u['last_name'].startswith('Fake')]
+        assert len(fake_users) == 1
+        assert fake_users[0]['username'] == created_users[-1].username
+
+    def test_returns_limited_user_list(self, backend, user_util):
+        created_users = []
+        for i in range(5):
+            created_users.append(user_util.create_user(
+                active=True, lastname='Fake user'))
+
+        with mock.patch('rhodecode.lib.helpers.gravatar_url'):
+            users = UserModel().get_users(name_contains='Fake', limit=3)
+
+        fake_users = [u for u in users if u['last_name'].startswith('Fake')]
+        assert len(fake_users) == 3
 
 
 @pytest.fixture

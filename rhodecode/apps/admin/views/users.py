@@ -20,15 +20,16 @@
 
 import logging
 import datetime
+import formencode
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 from sqlalchemy.sql.functions import coalesce
 
-from rhodecode.lib.helpers import Page
-from rhodecode_tools.lib.ext_json import json
+from rhodecode.apps._base import BaseAppView, DataGridAppView
 
-from rhodecode.apps._base import BaseAppView
+from rhodecode.lib import audit_logger
+from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h
@@ -37,13 +38,13 @@ from rhodecode.lib.utils2 import safe_int, safe_unicode
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
-from rhodecode.model.db import User, or_
+from rhodecode.model.db import User, or_, UserIpMap, UserEmailMap, UserApiKeys
 from rhodecode.model.meta import Session
 
 log = logging.getLogger(__name__)
 
 
-class AdminUsersView(BaseAppView):
+class AdminUsersView(BaseAppView, DataGridAppView):
     ALLOW_SCOPED_TOKENS = False
     """
     This view has alternative version inside EE, if modified please take a look
@@ -64,28 +65,6 @@ class AdminUsersView(BaseAppView):
             # is a pyramid view
             raise HTTPFound('/')
 
-    def _extract_ordering(self, request):
-        column_index = safe_int(request.GET.get('order[0][column]'))
-        order_dir = request.GET.get(
-            'order[0][dir]', 'desc')
-        order_by = request.GET.get(
-            'columns[%s][data][sort]' % column_index, 'name_raw')
-
-        # translate datatable to DB columns
-        order_by = {
-            'first_name': 'name',
-            'last_name': 'lastname',
-        }.get(order_by) or order_by
-
-        search_q = request.GET.get('search[value]')
-        return search_q, order_by, order_dir
-
-    def _extract_chunk(self, request):
-        start = safe_int(request.GET.get('start'), 0)
-        length = safe_int(request.GET.get('length'), 25)
-        draw = safe_int(request.GET.get('draw'))
-        return draw, start, length
-
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
         route_name='users', request_method='GET',
@@ -97,8 +76,8 @@ class AdminUsersView(BaseAppView):
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
         # renderer defined below
-        route_name='users_data', request_method='GET', renderer='json',
-        xhr=True)
+        route_name='users_data', request_method='GET',
+        renderer='json_ext', xhr=True)
     def users_list_data(self):
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(self.request)
@@ -149,8 +128,8 @@ class AdminUsersView(BaseAppView):
             users_data.append({
                 "username": h.gravatar_with_user(user.username),
                 "email": user.email,
-                "first_name": h.escape(user.name),
-                "last_name": h.escape(user.lastname),
+                "first_name": user.first_name,
+                "last_name": user.last_name,
                 "last_login": h.format_date(user.last_login),
                 "last_activity": h.format_date(user.last_activity),
                 "active": h.bool2icon(user.active),
@@ -216,15 +195,23 @@ class AdminUsersView(BaseAppView):
 
         user_id = self.request.matchdict.get('user_id')
         c.user = User.get_or_404(user_id, pyramid_exc=True)
+
         self._redirect_for_default_user(c.user.username)
 
+        user_data = c.user.get_api_data()
         lifetime = safe_int(self.request.POST.get('lifetime'), -1)
         description = self.request.POST.get('description')
         role = self.request.POST.get('role')
 
         token = AuthTokenModel().create(
             c.user.user_id, description, lifetime, role)
+        token_data = token.get_api_data()
+
         self.maybe_attach_token_scope(token)
+        audit_logger.store_web(
+            'user.edit.token.add', action_data={
+                'data': {'token': token_data, 'user': user_data}},
+            user=self._rhodecode_user, )
         Session().commit()
 
         h.flash(_("Auth token successfully created"), category='success')
@@ -242,15 +229,203 @@ class AdminUsersView(BaseAppView):
         user_id = self.request.matchdict.get('user_id')
         c.user = User.get_or_404(user_id, pyramid_exc=True)
         self._redirect_for_default_user(c.user.username)
+        user_data = c.user.get_api_data()
 
         del_auth_token = self.request.POST.get('del_auth_token')
 
         if del_auth_token:
+            token = UserApiKeys.get_or_404(del_auth_token, pyramid_exc=True)
+            token_data = token.get_api_data()
+
             AuthTokenModel().delete(del_auth_token, c.user.user_id)
+            audit_logger.store_web(
+                'user.edit.token.delete', action_data={
+                    'data': {'token': token_data, 'user': user_data}},
+                user=self._rhodecode_user,)
             Session().commit()
             h.flash(_("Auth token successfully deleted"), category='success')
 
         return HTTPFound(h.route_path('edit_user_auth_tokens', user_id=user_id))
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_emails', request_method='GET',
+        renderer='rhodecode:templates/admin/users/user_edit.mako')
+    def emails(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        self._redirect_for_default_user(c.user.username)
+
+        c.active = 'emails'
+        c.user_email_map = UserEmailMap.query() \
+            .filter(UserEmailMap.user == c.user).all()
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='edit_user_emails_add', request_method='POST')
+    def emails_add(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        self._redirect_for_default_user(c.user.username)
+
+        email = self.request.POST.get('new_email')
+        user_data = c.user.get_api_data()
+        try:
+            UserModel().add_extra_email(c.user.user_id, email)
+            audit_logger.store_web(
+                'user.edit.email.add', action_data={'email': email, 'user': user_data},
+                user=self._rhodecode_user)
+            Session().commit()
+            h.flash(_("Added new email address `%s` for user account") % email,
+                    category='success')
+        except formencode.Invalid as error:
+            h.flash(h.escape(error.error_dict['email']), category='error')
+        except Exception:
+            log.exception("Exception during email saving")
+            h.flash(_('An error occurred during email saving'),
+                    category='error')
+        raise HTTPFound(h.route_path('edit_user_emails', user_id=user_id))
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='edit_user_emails_delete', request_method='POST')
+    def emails_delete(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        self._redirect_for_default_user(c.user.username)
+
+        email_id = self.request.POST.get('del_email_id')
+        user_model = UserModel()
+
+        email = UserEmailMap.query().get(email_id).email
+        user_data = c.user.get_api_data()
+        user_model.delete_extra_email(c.user.user_id, email_id)
+        audit_logger.store_web(
+            'user.edit.email.delete', action_data={'email': email, 'user': user_data},
+            user=self._rhodecode_user)
+        Session().commit()
+        h.flash(_("Removed email address from user account"),
+                category='success')
+        raise HTTPFound(h.route_path('edit_user_emails', user_id=user_id))
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_ips', request_method='GET',
+        renderer='rhodecode:templates/admin/users/user_edit.mako')
+    def ips(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        self._redirect_for_default_user(c.user.username)
+
+        c.active = 'ips'
+        c.user_ip_map = UserIpMap.query() \
+            .filter(UserIpMap.user == c.user).all()
+
+        c.inherit_default_ips = c.user.inherit_default_permissions
+        c.default_user_ip_map = UserIpMap.query() \
+            .filter(UserIpMap.user == User.get_default_user()).all()
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='edit_user_ips_add', request_method='POST')
+    def ips_add(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        # NOTE(marcink): this view is allowed for default users, as we can
+        # edit their IP white list
+
+        user_model = UserModel()
+        desc = self.request.POST.get('description')
+        try:
+            ip_list = user_model.parse_ip_range(
+                self.request.POST.get('new_ip'))
+        except Exception as e:
+            ip_list = []
+            log.exception("Exception during ip saving")
+            h.flash(_('An error occurred during ip saving:%s' % (e,)),
+                    category='error')
+        added = []
+        user_data = c.user.get_api_data()
+        for ip in ip_list:
+            try:
+                user_model.add_extra_ip(c.user.user_id, ip, desc)
+                audit_logger.store_web(
+                    'user.edit.ip.add', action_data={'ip': ip, 'user': user_data},
+                    user=self._rhodecode_user)
+                Session().commit()
+                added.append(ip)
+            except formencode.Invalid as error:
+                msg = error.error_dict['ip']
+                h.flash(msg, category='error')
+            except Exception:
+                log.exception("Exception during ip saving")
+                h.flash(_('An error occurred during ip saving'),
+                        category='error')
+        if added:
+            h.flash(
+                _("Added ips %s to user whitelist") % (', '.join(ip_list), ),
+                category='success')
+        if 'default_user' in self.request.POST:
+            # case for editing global IP list we do it for 'DEFAULT' user
+            raise HTTPFound(h.route_path('admin_permissions_ips'))
+        raise HTTPFound(h.route_path('edit_user_ips', user_id=user_id))
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='edit_user_ips_delete', request_method='POST')
+    def ips_delete(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        # NOTE(marcink): this view is allowed for default users, as we can
+        # edit their IP white list
+
+        ip_id = self.request.POST.get('del_ip_id')
+        user_model = UserModel()
+        user_data = c.user.get_api_data()
+        ip = UserIpMap.query().get(ip_id).ip_addr
+        user_model.delete_extra_ip(c.user.user_id, ip_id)
+        audit_logger.store_web(
+            'user.edit.ip.delete', action_data={'ip': ip, 'user': user_data},
+            user=self._rhodecode_user)
+        Session().commit()
+        h.flash(_("Removed ip address from user whitelist"), category='success')
+
+        if 'default_user' in self.request.POST:
+            # case for editing global IP list we do it for 'DEFAULT' user
+            raise HTTPFound(h.route_path('admin_permissions_ips'))
+        raise HTTPFound(h.route_path('edit_user_ips', user_id=user_id))
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
@@ -264,7 +439,8 @@ class AdminUsersView(BaseAppView):
         c.user = User.get_or_404(user_id, pyramid_exc=True)
         c.data = c.user.group_member
         self._redirect_for_default_user(c.user.username)
-        groups = [UserGroupModel.get_user_groups_as_dict(group.users_group) for group in c.user.group_member]
+        groups = [UserGroupModel.get_user_groups_as_dict(group.users_group)
+                  for group in c.user.group_member]
         c.groups = json.dumps(groups)
         c.active = 'groups'
 
@@ -272,6 +448,7 @@ class AdminUsersView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
     @view_config(
         route_name='edit_user_groups_management_updates', request_method='POST')
     def groups_management_updates(self):
@@ -314,15 +491,15 @@ class AdminUsersView(BaseAppView):
         p = safe_int(self.request.GET.get('page', 1), 1)
 
         filter_term = self.request.GET.get('filter')
-        c.user_log = UserModel().get_user_log(c.user, filter_term)
+        user_log = UserModel().get_user_log(c.user, filter_term)
 
         def url_generator(**kw):
             if filter_term:
                 kw['filter'] = filter_term
             return self.request.current_route_path(_query=kw)
 
-        c.user_log = Page(c.user_log, page=p, items_per_page=10,
-                          url=url_generator)
+        c.audit_logs = h.Page(
+            user_log, page=p, items_per_page=10, url=url_generator)
         c.filter_term = filter_term
         return self._get_template_context(c)
 

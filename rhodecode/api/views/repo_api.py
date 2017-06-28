@@ -29,6 +29,8 @@ from rhodecode.api.utils import (
     get_user_group_or_error, get_user_or_error, validate_repo_permissions,
     get_perm_or_error, parse_args, get_origin, build_commit_data,
     validate_set_owner_permissions)
+from rhodecode.lib import audit_logger
+from rhodecode.lib import repo_maintenance
 from rhodecode.lib.auth import HasPermissionAnyApi, HasUserGroupPermissionAnyApi
 from rhodecode.lib.utils2 import str2bool, time_to_datetime
 from rhodecode.lib.ext_json import json
@@ -915,12 +917,13 @@ def update_repo(
 
     ref_choices, _labels = ScmModel().get_repo_landing_revs(repo=repo)
 
+    old_values = repo.get_api_data()
     schema = repo_schema.RepoSchema().bind(
         repo_type_options=rhodecode.BACKENDS.keys(),
         repo_ref_options=ref_choices,
         # user caller
         user=apiuser,
-        old_values=repo.get_api_data())
+        old_values=old_values)
     try:
         schema_data = schema.deserialize(dict(
             # we save old value, users cannot change type
@@ -965,6 +968,9 @@ def update_repo(
 
     try:
         RepoModel().update(repo, **validated_updates)
+        audit_logger.store_api(
+            'repo.edit', action_data={'old_data': old_values},
+            user=apiuser, repo=repo)
         Session().commit()
         return {
             'msg': 'updated repo ID:%s %s' % (repo.repo_id, repo.repo_name),
@@ -1153,6 +1159,7 @@ def delete_repo(request, apiuser, repoid, forks=Optional('')):
     """
 
     repo = get_repo_or_error(repoid)
+    repo_name = repo.repo_name
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
@@ -1170,18 +1177,26 @@ def delete_repo(request, apiuser, repoid, forks=Optional('')):
                 'Cannot delete `%s` it still contains attached forks' %
                 (repo.repo_name,)
             )
-
+        old_data = repo.get_api_data()
         RepoModel().delete(repo, forks=forks)
+
+        repo = audit_logger.RepoWrap(repo_id=None,
+                                     repo_name=repo.repo_name)
+
+        audit_logger.store_api(
+            'repo.delete', action_data={'old_data': old_data},
+            user=apiuser, repo=repo)
+
+        ScmModel().mark_for_invalidation(repo_name, delete=True)
         Session().commit()
         return {
-            'msg': 'Deleted repository `%s`%s' % (
-                repo.repo_name, _forks_msg),
+            'msg': 'Deleted repository `%s`%s' % (repo_name, _forks_msg),
             'success': True
         }
     except Exception:
         log.exception("Exception occurred while trying to delete repo")
         raise JSONRPCError(
-            'failed to delete repository `%s`' % (repo.repo_name,)
+            'failed to delete repository `%s`' % (repo_name,)
         )
 
 
@@ -1460,7 +1475,7 @@ def comment_commit(
         rc_config = SettingsModel().get_all_settings()
         renderer = rc_config.get('rhodecode_markup_renderer', 'rst')
         status_change_label = ChangesetStatus.get_status_lbl(status)
-        comm = CommentsModel().create(
+        comment = CommentsModel().create(
             message, repo, user, commit_id=commit_id,
             status_change=status_change_label,
             status_change_type=status,
@@ -1472,7 +1487,7 @@ def comment_commit(
             # also do a status change
             try:
                 ChangesetStatusModel().set_status(
-                    repo, status, user, comm, revision=commit_id,
+                    repo, status, user, comment, revision=commit_id,
                     dont_allow_on_closed_pull_request=True
                 )
             except StatusChangeOnClosedPullRequestError:
@@ -1486,7 +1501,7 @@ def comment_commit(
         return {
             'msg': (
                 'Commented on commit `%s` for repository `%s`' % (
-                    comm.revision, repo.repo_name)),
+                    comment.revision, repo.repo_name)),
             'status_change': status,
             'success': True,
         }
@@ -1867,6 +1882,11 @@ def strip(request, apiuser, repoid, revision, branch):
 
     try:
         ScmModel().strip(repo, revision, branch)
+        audit_logger.store_api(
+            'repo.commit.strip', action_data={'commit_id': revision},
+            repo=repo,
+            user=apiuser, commit=True)
+
         return {
             'msg': 'Stripped commit %s from repo `%s`' % (
                 revision, repo.repo_name),
@@ -1902,6 +1922,7 @@ def get_repo_settings(request, apiuser, repoid, key=Optional(None)):
             "id": 237,
             "result": {
                 "extensions_largefiles": true,
+                "extensions_evolve": true,
                 "hooks_changegroup_push_logger": true,
                 "hooks_changegroup_repo_size": false,
                 "hooks_outgoing_pull_logger": true,
@@ -1985,3 +2006,65 @@ def set_repo_settings(request, apiuser, repoid, settings):
 
     # Indicate success.
     return True
+
+
+@jsonrpc_method()
+def maintenance(request, apiuser, repoid):
+    """
+    Triggers a maintenance on the given repository.
+
+    This command can only be run using an |authtoken| with admin
+    rights to the specified repository. For more information,
+    see :ref:`config-token-ref`.
+
+    This command takes the following options:
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: The repository name or repository ID.
+    :type repoid: str or int
+
+    Example output:
+
+    .. code-block:: bash
+
+      id : <id_given_in_input>
+      result : {
+        "msg": "executed maintenance command",
+        "executed_actions": [
+           <action_message>, <action_message2>...
+        ],
+        "repository": "<repository name>"
+      }
+      error :  null
+
+    Example error output:
+
+    .. code-block:: bash
+
+      id : <id_given_in_input>
+      result : null
+      error :  {
+        "Unable to execute maintenance on `<reponame>`"
+      }
+
+    """
+
+    repo = get_repo_or_error(repoid)
+    if not has_superadmin_permission(apiuser):
+        _perms = ('repository.admin',)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
+
+    try:
+        maintenance = repo_maintenance.RepoMaintenance()
+        executed_actions = maintenance.execute(repo)
+
+        return {
+            'msg': 'executed maintenance command',
+            'executed_actions': executed_actions,
+            'repository': repo.repo_name
+        }
+    except Exception:
+        log.exception("Exception occurred while trying to run maintenance")
+        raise JSONRPCError(
+            'Unable to execute maintenance on `%s`' % repo.repo_name)

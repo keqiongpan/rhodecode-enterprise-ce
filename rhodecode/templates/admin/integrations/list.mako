@@ -3,15 +3,15 @@
 
 <%def name="breadcrumbs_links()">
   %if c.repo:
-    ${h.link_to('Settings',h.url('edit_repo', repo_name=c.repo.repo_name))}
+    ${h.link_to('Settings',h.route_path('edit_repo', repo_name=c.repo.repo_name))}
   %elif c.repo_group:
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('Repository Groups'),h.url('repo_groups'))}
     &raquo;
     ${h.link_to(c.repo_group.group_name,h.url('edit_repo_group', group_name=c.repo_group.group_name))}
   %else:
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('Settings'),h.url('admin_settings'))}
   %endif
@@ -160,11 +160,11 @@
           </td>
           <td class="td-scope">
             %if integration.repo:
-            <a href="${h.url('summary_home', repo_name=integration.repo.repo_name)}">
+            <a href="${h.route_path('repo_summary', repo_name=integration.repo.repo_name)}">
               ${_('repo')}:${integration.repo.repo_name}
             </a>
             %elif integration.repo_group:
-            <a href="${h.url('repo_group_home', group_name=integration.repo_group.group_name)}">
+            <a href="${h.route_path('repo_group_home', repo_group_name=integration.repo_group.group_name)}">
               ${_('repogroup')}:${integration.repo_group.group_name}
               %if integration.child_repos_only:
               ${_('child repos only')}

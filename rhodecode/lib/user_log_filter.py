@@ -23,10 +23,10 @@ import logging
 from whoosh.qparser.default import QueryParser, query
 from whoosh.qparser.dateparse import DateParserPlugin
 from whoosh.fields import (TEXT, Schema, DATETIME)
-from sqlalchemy.sql.expression import or_, and_, func
+from sqlalchemy.sql.expression import or_, and_, not_, func
 
 from rhodecode.model.db import UserLog
-from rhodecode.lib.utils2 import remove_prefix, remove_suffix
+from rhodecode.lib.utils2 import remove_prefix, remove_suffix, safe_unicode
 
 # JOURNAL SCHEMA used only to generate queries in journal. We use whoosh
 # querylang to build sql queries and filter journals
@@ -54,7 +54,7 @@ def user_log_filter(user_log, search_term):
     if search_term:
         qp = QueryParser('repository', schema=JOURNAL_SCHEMA)
         qp.add_plugin(DateParserPlugin())
-        qry = qp.parse(unicode(search_term))
+        qry = qp.parse(safe_unicode(search_term))
         log.debug('Filtering using parsed query %r' % qry)
 
     def wildcard_handler(col, wc_term):
@@ -89,16 +89,27 @@ def user_log_filter(user_log, search_term):
             return func.lower(field).startswith(func.lower(val))
         elif isinstance(term, query.DateRange):
             return and_(field >= val[0], field <= val[1])
+        elif isinstance(term, query.Not):
+            return not_(field == val)
         return func.lower(field) == func.lower(val)
 
-    if isinstance(qry, (query.And, query.Term, query.Prefix, query.Wildcard,
-                        query.DateRange)):
+    if isinstance(qry, (query.And, query.Not, query.Term, query.Prefix,
+                        query.Wildcard, query.DateRange)):
         if not isinstance(qry, query.And):
             qry = [qry]
+
         for term in qry:
-            field = term.fieldname
-            val = (term.text if not isinstance(term, query.DateRange)
-                   else [term.startdate, term.enddate])
+            if isinstance(term, query.Not):
+                not_term = [z for z in term.leaves()][0]
+                field = not_term.fieldname
+                val = not_term.text
+            elif isinstance(term, query.DateRange):
+                field = term.fieldname
+                val = [term.startdate, term.enddate]
+            else:
+                field = term.fieldname
+                val = term.text
+
             user_log = user_log.filter(get_filterion(field, val, term))
     elif isinstance(qry, query.Or):
         filters = []

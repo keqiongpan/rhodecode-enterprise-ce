@@ -16,6 +16,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import collections
 import logging
 
 from rhodecode.translation import lazy_ugettext
@@ -26,17 +27,18 @@ from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 log = logging.getLogger(__name__)
 
 
-def _commits_as_dict(commit_ids, repos):
+def _commits_as_dict(event, commit_ids, repos):
     """
     Helper function to serialize commit_ids
 
+    :param event: class calling this method
     :param commit_ids: commits to get
     :param repos: list of repos to check
     """
     from rhodecode.lib.utils2 import extract_mentioned_users
-    from rhodecode.lib import helpers as h
     from rhodecode.lib.helpers import (
         urlify_commit_message, process_patterns, chop_at_smart)
+    from rhodecode.model.repo import RepoModel
 
     if not repos:
         raise Exception('no repo defined')
@@ -53,7 +55,7 @@ def _commits_as_dict(commit_ids, repos):
     reviewers = []
     for repo in repos:
         if not needed_commits:
-            return commits # return early if we have the commits we need
+            return commits  # return early if we have the commits we need
 
         vcs_repo = repo.scm_instance(cache=False)
         try:
@@ -62,22 +64,22 @@ def _commits_as_dict(commit_ids, repos):
                 try:
                     cs = vcs_repo.get_changeset(commit_id)
                 except CommitDoesNotExistError:
-                    continue # maybe its in next repo
+                    continue  # maybe its in next repo
 
                 cs_data = cs.__json__()
                 cs_data['mentions'] = extract_mentioned_users(cs_data['message'])
                 cs_data['reviewers'] = reviewers
-                cs_data['url'] = h.url('changeset_home',
-                    repo_name=repo.repo_name,
-                    revision=cs_data['raw_id'],
-                    qualified=True
-                )
+                cs_data['url'] = RepoModel().get_commit_url(
+                    repo, cs_data['raw_id'], request=event.request)
+                cs_data['permalink_url'] = RepoModel().get_commit_url(
+                    repo, cs_data['raw_id'], request=event.request, permalink=True)
                 urlified_message, issues_data = process_patterns(
                     cs_data['message'], repo.repo_name)
                 cs_data['issues'] = issues_data
-                cs_data['message_html'] = urlify_commit_message(cs_data['message'],
-                    repo.repo_name)
-                cs_data['message_html_title'] = chop_at_smart(cs_data['message'], '\n', suffix_if_chopped='...')
+                cs_data['message_html'] = urlify_commit_message(
+                    cs_data['message'], repo.repo_name)
+                cs_data['message_html_title'] = chop_at_smart(
+                    cs_data['message'], '\n', suffix_if_chopped='...')
                 commits.append(cs_data)
 
                 needed_commits.remove(commit_id)
@@ -118,12 +120,20 @@ class RepoEvent(RhodecodeEvent):
     def as_dict(self):
         from rhodecode.model.repo import RepoModel
         data = super(RepoEvent, self).as_dict()
+        extra_fields = collections.OrderedDict()
+        for field in self.repo.extra_fields:
+            extra_fields[field.field_key] = field.field_value
+
         data.update({
             'repo': {
                 'repo_id': self.repo.repo_id,
                 'repo_name': self.repo.repo_name,
                 'repo_type': self.repo.repo_type,
-                'url': RepoModel().get_url(self.repo)
+                'url': RepoModel().get_url(
+                    self.repo, request=self.request),
+                'permalink_url': RepoModel().get_url(
+                    self.repo, request=self.request, permalink=True),
+                'extra_fields': extra_fields
             }
         })
         return data
@@ -235,10 +245,13 @@ class RepoPushEvent(RepoVCSEvent):
 
     def as_dict(self):
         data = super(RepoPushEvent, self).as_dict()
-        branch_url = repo_url = data['repo']['url']
+
+        def branch_url(branch_name):
+            return '{}/changelog?branch={}'.format(
+                data['repo']['url'], branch_name)
 
         commits = _commits_as_dict(
-            commit_ids=self.pushed_commit_ids, repos=[self.repo])
+            self, commit_ids=self.pushed_commit_ids, repos=[self.repo])
 
         last_branch = None
         for commit in reversed(commits):
@@ -251,8 +264,7 @@ class RepoPushEvent(RepoVCSEvent):
         branches = [
             {
                 'name': branch,
-                'url': '{}/changelog?branch={}'.format(
-                    data['repo']['url'], branch)
+                'url': branch_url(branch)
             }
             for branch in branches
         ]

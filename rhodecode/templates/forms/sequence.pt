@@ -32,21 +32,21 @@
          tal:attributes="prototype prototype"/>
 
   <div class="panel panel-default">
-    <div class="panel-heading">${title}</div>
     <div class="panel-body">
 
       <div class="deform-seq-container"
            id="${oid}-orderable">
         <div tal:define="subfields [ x[1] for x in subfields ]"
              tal:repeat="subfield subfields"
-             tal:replace="structure subfield.render_template(item_tmpl,
-                                                          parent=field)" />
+             tal:replace="structure subfield.render_template(item_tmpl,parent=field)" />
         <span class="deform-insert-before"
               tal:attributes="
                  min_len min_len;
                  max_len max_len;
                  now_len now_len;
-                 orderable orderable;"></span>
+                 orderable orderable;">
+
+        </span>
       </div>
 
       <div style="clear: both"></div>
@@ -78,12 +78,12 @@
                placeholder: '<span class="glyphicon glyphicon-arrow-right placeholder"></span>',
                onDragStart: function ($item, container, _super) {
                  var offset = $item.offset(),
-                 pointer = container.rootGroup.pointer
+                 pointer = container.rootGroup.pointer;
 
                  adjustment = {
                    left: pointer.left - offset.left,
                    top: pointer.top - offset.top
-                 }
+                 };
 
                  _super($item, container)
                },

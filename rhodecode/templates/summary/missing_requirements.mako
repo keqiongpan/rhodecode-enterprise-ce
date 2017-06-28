@@ -14,8 +14,14 @@
 
   <div class="alert alert-dismissable alert-warning">
     <strong>Missing requirements</strong>
-    These commits cannot be displayed, because this repository uses the Mercurial largefiles extension, which was not enabled.
-    Please <a href="${h.url('repo_vcs_settings', repo_name=c.repo_name)}">enable this extension in settings</a>, or contact the repository owner for help.
+    Commits cannot be displayed, because this repository uses one or more extensions, which was not enabled. <br/>
+    Please <a href="${h.url('repo_vcs_settings', repo_name=c.repo_name)}">enable extension in settings</a>, or contact the repository owner for help.
+    Missing extensions could be:
+<pre>
+
+- Mercurial largefiles
+- Git LFS
+</pre>
   </div>
 
 </%def>

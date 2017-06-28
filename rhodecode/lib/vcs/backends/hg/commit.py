@@ -160,6 +160,27 @@ class MercurialCommit(base.BaseCommit):
         return self._make_commits(parents)
 
     @LazyProperty
+    def phase(self):
+        phase_id = self._remote.ctx_phase(self.idx)
+        phase_text = {
+            0: 'public',
+            1: 'draft',
+            2: 'secret',
+        }.get(phase_id) or ''
+
+        return safe_unicode(phase_text)
+
+    @LazyProperty
+    def obsolete(self):
+        obsolete = self._remote.ctx_obsolete(self.idx)
+        return obsolete
+
+    @LazyProperty
+    def hidden(self):
+        hidden = self._remote.ctx_hidden(self.idx)
+        return hidden
+
+    @LazyProperty
     def children(self):
         """
         Returns list of child commits.

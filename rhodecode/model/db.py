@@ -44,8 +44,8 @@ from sqlalchemy.sql.expression import true
 from beaker.cache import cache_region
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
-from pylons import url
 from pylons.i18n.translation import lazy_ugettext as _
+from pyramid.threadlocal import get_current_request
 
 from rhodecode.lib.vcs import get_vcs_instance
 from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
@@ -358,6 +358,7 @@ class RhodeCodeUi(Base, BaseModel):
     HOOK_PRE_PUSH = 'prechangegroup.pre_push'
     HOOK_PRETX_PUSH = 'pretxnchangegroup.pre_push'
     HOOK_PUSH = 'changegroup.push_logger'
+    HOOK_PUSH_KEY = 'pushkey.key_push'
 
     # TODO: johbo: Unify way how hooks are configured for git and hg,
     # git part is currently hardcoded.
@@ -571,6 +572,20 @@ class User(Base, BaseModel):
         self._email = val.lower() if val else None
 
     @hybrid_property
+    def first_name(self):
+        from rhodecode.lib import helpers as h
+        if self.name:
+            return h.escape(self.name)
+        return self.name
+
+    @hybrid_property
+    def last_name(self):
+        from rhodecode.lib import helpers as h
+        if self.lastname:
+            return h.escape(self.lastname)
+        return self.lastname
+
+    @hybrid_property
     def api_key(self):
         """
         Fetch if exist an auth-token with role ALL connected to this user
@@ -689,7 +704,7 @@ class User(Base, BaseModel):
 
     @property
     def username_and_name(self):
-        return '%s (%s %s)' % (self.username, self.firstname, self.lastname)
+        return '%s (%s %s)' % (self.username, self.first_name, self.last_name)
 
     @property
     def username_or_name_or_email(self):
@@ -698,20 +713,20 @@ class User(Base, BaseModel):
 
     @property
     def full_name(self):
-        return '%s %s' % (self.firstname, self.lastname)
+        return '%s %s' % (self.first_name, self.last_name)
 
     @property
     def full_name_or_username(self):
-        return ('%s %s' % (self.firstname, self.lastname)
-                if (self.firstname and self.lastname) else self.username)
+        return ('%s %s' % (self.first_name, self.last_name)
+                if (self.first_name and self.last_name) else self.username)
 
     @property
     def full_contact(self):
-        return '%s %s <%s>' % (self.firstname, self.lastname, self.email)
+        return '%s %s <%s>' % (self.first_name, self.last_name, self.email)
 
     @property
     def short_contact(self):
-        return '%s %s' % (self.firstname, self.lastname)
+        return '%s %s' % (self.first_name, self.last_name)
 
     @property
     def is_admin(self):
@@ -761,9 +776,9 @@ class User(Base, BaseModel):
                 if val:
                     return val
             else:
+                cache_key = "get_user_by_name_%s" % _hash_key(username)
                 q = q.options(
-                    FromCache("sql_cache_short",
-                              "get_user_by_name_%s" % _hash_key(username)))
+                    FromCache("sql_cache_short", cache_key))
 
         return q.scalar()
 
@@ -774,8 +789,8 @@ class User(Base, BaseModel):
             .filter(or_(UserApiKeys.expires == -1,
                         UserApiKeys.expires >= time.time()))
         if cache:
-            q = q.options(FromCache("sql_cache_short",
-                                    "get_auth_token_%s" % auth_token))
+            q = q.options(
+                FromCache("sql_cache_short", "get_auth_token_%s" % auth_token))
 
         match = q.first()
         if match:
@@ -790,9 +805,10 @@ class User(Base, BaseModel):
         else:
             q = cls.query().filter(cls.email == email)
 
+        email_key = _hash_key(email)
         if cache:
-            q = q.options(FromCache("sql_cache_short",
-                                    "get_email_key_%s" % _hash_key(email)))
+            q = q.options(
+                FromCache("sql_cache_short", "get_email_key_%s" % email_key))
 
         ret = q.scalar()
         if ret is None:
@@ -804,8 +820,8 @@ class User(Base, BaseModel):
                 q = q.filter(UserEmailMap.email == email)
             q = q.options(joinedload(UserEmailMap.user))
             if cache:
-                q = q.options(FromCache("sql_cache_short",
-                                        "get_email_map_key_%s" % email))
+                q = q.options(
+                    FromCache("sql_cache_short", "get_email_map_key_%s" % email_key))
             ret = getattr(q.scalar(), 'user', None)
 
         return ret
@@ -872,10 +888,16 @@ class User(Base, BaseModel):
             .order_by(User.username.asc()).all()
 
     @classmethod
-    def get_default_user(cls, cache=False):
+    def get_default_user(cls, cache=False, refresh=False):
         user = User.get_by_username(User.DEFAULT_USER, cache=cache)
         if user is None:
             raise Exception('FATAL: Missing default account!')
+        if refresh:
+            # The default user might be based on outdated state which
+            # has been loaded from the cache.
+            # A call to refresh() ensures that the
+            # latest state from the database is used.
+            Session().refresh(user)
         return user
 
     def _get_default_perms(self, user, suffix=''):
@@ -996,6 +1018,19 @@ class UserApiKeys(Base, BaseModel):
         }
         return data
 
+    def get_api_data(self, include_secrets=False):
+        data = self.__json__()
+        if include_secrets:
+            return data
+        else:
+            data['auth_token'] = self.token_obfuscated
+            return data
+
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.description)
+
     @property
     def expired(self):
         if self.expires == -1:
@@ -1026,6 +1061,11 @@ class UserApiKeys(Base, BaseModel):
     @property
     def scope_humanized(self):
         return self._get_scope()
+
+    @property
+    def token_obfuscated(self):
+        if self.api_key:
+            return self.api_key[:4] + "****"
 
 
 class UserEmailMap(Base, BaseModel):
@@ -1076,6 +1116,11 @@ class UserIpMap(Base, BaseModel):
     description = Column("description", String(10000), nullable=True, unique=None, default=None)
     user = relationship('User', lazy='joined')
 
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.description)
+
     @classmethod
     def _get_ip_range(cls, ip_addr):
         net = ipaddress.ip_network(ip_addr, strict=False)
@@ -1098,6 +1143,10 @@ class UserLog(Base, BaseModel):
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
+    VERSION_1 = 'v1'
+    VERSION_2 = 'v2'
+    VERSIONS = [VERSION_1, VERSION_2]
+
     user_log_id = Column("user_log_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=True, unique=None, default=None)
     username = Column("username", String(255), nullable=True, unique=None, default=None)
@@ -1106,6 +1155,10 @@ class UserLog(Base, BaseModel):
     user_ip = Column("user_ip", String(255), nullable=True, unique=None, default=None)
     action = Column("action", Text().with_variant(Text(1200000), 'mysql'), nullable=True, unique=None, default=None)
     action_date = Column("action_date", DateTime(timezone=False), nullable=True, unique=None, default=None)
+
+    version = Column("version", String(255), nullable=True, default=VERSION_1)
+    user_data = Column('user_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
+    action_data = Column('action_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
 
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (
@@ -1156,6 +1209,11 @@ class UserGroup(Base, BaseModel):
     user = relationship('User')
 
     @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.description)
+
+    @hybrid_property
     def group_data(self):
         if not self._group_data:
             return {}
@@ -1187,17 +1245,16 @@ class UserGroup(Base, BaseModel):
         else:
             q = cls.query().filter(cls.users_group_name == group_name)
         if cache:
-            q = q.options(FromCache(
-                            "sql_cache_short",
-                            "get_group_%s" % _hash_key(group_name)))
+            q = q.options(
+                FromCache("sql_cache_short", "get_group_%s" % _hash_key(group_name)))
         return q.scalar()
 
     @classmethod
     def get(cls, user_group_id, cache=False):
         user_group = cls.query()
         if cache:
-            user_group = user_group.options(FromCache("sql_cache_short",
-                                    "get_users_group_%s" % user_group_id))
+            user_group = user_group.options(
+                FromCache("sql_cache_short", "get_users_group_%s" % user_group_id))
         return user_group.get(user_group_id)
 
     def permissions(self, with_admins=True, with_owner=True):
@@ -1454,6 +1511,11 @@ class Repository(Base, BaseModel):
                                    safe_unicode(self.repo_name))
 
     @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.description)
+
+    @hybrid_property
     def landing_rev(self):
         # always should return [rev_type, rev]
         if self._landing_revision:
@@ -1538,9 +1600,9 @@ class Repository(Base, BaseModel):
                 if val:
                     return val
             else:
+                cache_key = "get_repo_by_name_%s" % _hash_key(repo_name)
                 q = q.options(
-                    FromCache("sql_cache_short",
-                              "get_repo_by_name_%s" % _hash_key(repo_name)))
+                    FromCache("sql_cache_short", cache_key))
 
         return q.scalar()
 
@@ -1750,6 +1812,7 @@ class Repository(Base, BaseModel):
         # TODO: mikhail: Here there is an anti-pattern, we probably need to
         # move this methods on models level.
         from rhodecode.model.settings import SettingsModel
+        from rhodecode.model.repo import RepoModel
 
         repo = self
         _user_id, _time, _reason = self.locked
@@ -1759,13 +1822,14 @@ class Repository(Base, BaseModel):
             'repo_name': repo.repo_name,
             'repo_type': repo.repo_type,
             'clone_uri': repo.clone_uri or '',
-            'url': url('summary_home', repo_name=self.repo_name, qualified=True),
+            'url': RepoModel().get_url(self),
             'private': repo.private,
             'created_on': repo.created_on,
-            'description': repo.description,
+            'description': repo.description_safe,
             'landing_rev': repo.landing_rev,
             'owner': repo.user.username,
             'fork_of': repo.fork.repo_name if repo.fork else None,
+            'fork_of_id': repo.fork.repo_id if repo.fork else None,
             'enable_statistics': repo.enable_statistics,
             'enable_locking': repo.enable_locking,
             'enable_downloads': repo.enable_downloads,
@@ -1893,7 +1957,6 @@ class Repository(Base, BaseModel):
         return clone_uri
 
     def clone_url(self, **override):
-        qualified_home_url = url('home', qualified=True)
 
         uri_tmpl = None
         if 'with_id' in override:
@@ -1915,8 +1978,9 @@ class Repository(Base, BaseModel):
                 # ie, not having tmpl_context set up
                 pass
 
-        return get_clone_url(uri_tmpl=uri_tmpl,
-                             qualifed_home_url=qualified_home_url,
+        request = get_current_request()
+        return get_clone_url(request=request,
+                             uri_tmpl=uri_tmpl,
                              repo_name=self.repo_name,
                              repo_id=self.repo_id, **override)
 
@@ -2160,8 +2224,13 @@ class RepoGroup(Base, BaseModel):
         self.parent_group = parent_group
 
     def __unicode__(self):
-        return u"<%s('id:%s:%s')>" % (self.__class__.__name__, self.group_id,
-                                      self.group_name)
+        return u"<%s('id:%s:%s')>" % (
+            self.__class__.__name__, self.group_id, self.group_name)
+
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.group_description)
 
     @classmethod
     def _generate_choice(cls, repo_group):
@@ -2176,7 +2245,7 @@ class RepoGroup(Base, BaseModel):
 
         repo_groups = []
         if show_empty_group:
-            repo_groups = [('-1', u'-- %s --' % _('No parent'))]
+            repo_groups = [(-1, u'-- %s --' % _('No parent'))]
 
         repo_groups.extend([cls._generate_choice(x) for x in groups])
 
@@ -2196,16 +2265,19 @@ class RepoGroup(Base, BaseModel):
         else:
             gr = cls.query().filter(cls.group_name == group_name)
         if cache:
-            gr = gr.options(FromCache(
-                            "sql_cache_short",
-                            "get_group_%s" % _hash_key(group_name)))
+            name_key = _hash_key(group_name)
+            gr = gr.options(
+                FromCache("sql_cache_short", "get_group_%s" % name_key))
         return gr.scalar()
 
     @classmethod
     def get_user_personal_repo_group(cls, user_id):
         user = User.get(user_id)
+        if user.username == User.DEFAULT_USER:
+            return None
+
         return cls.query()\
-            .filter(cls.personal == true())\
+            .filter(cls.personal == true()) \
             .filter(cls.user == user).scalar()
 
     @classmethod
@@ -2389,7 +2461,7 @@ class RepoGroup(Base, BaseModel):
         data = {
             'group_id': group.group_id,
             'group_name': group.group_name,
-            'group_description': group.group_description,
+            'group_description': group.description_safe,
             'parent_group': group.parent_group.group_name if group.parent_group else None,
             'repositories': [x.repo_name for x in group.repositories],
             'owner': group.user.username,
@@ -3088,19 +3160,38 @@ class ChangesetComment(Base, BaseModel):
     def is_todo(self):
         return self.comment_type == self.COMMENT_TYPE_TODO
 
+    @property
+    def is_inline(self):
+        return self.line_no and self.f_path
+
     def get_index_version(self, versions):
         return self.get_index_from_version(
             self.pull_request_version_id, versions)
-
-    def render(self, mentions=False):
-        from rhodecode.lib import helpers as h
-        return h.render(self.text, renderer=self.renderer, mentions=mentions)
 
     def __repr__(self):
         if self.comment_id:
             return '<DB:Comment #%s>' % self.comment_id
         else:
             return '<DB:Comment at %#x>' % id(self)
+
+    def get_api_data(self):
+        comment = self
+        data = {
+            'comment_id': comment.comment_id,
+            'comment_type': comment.comment_type,
+            'comment_text': comment.text,
+            'comment_status': comment.status_change,
+            'comment_f_path': comment.f_path,
+            'comment_lineno': comment.line_no,
+            'comment_author': comment.author,
+            'comment_created_on': comment.created_on
+        }
+        return data
+
+    def __json__(self):
+        data = dict()
+        data.update(self.get_api_data())
+        return data
 
 
 class ChangesetStatus(Base, BaseModel):
@@ -3152,6 +3243,19 @@ class ChangesetStatus(Base, BaseModel):
     @property
     def status_lbl(self):
         return ChangesetStatus.get_status_lbl(self.status)
+
+    def get_api_data(self):
+        status = self
+        data = {
+            'status_id': status.changeset_status_id,
+            'status': status.status,
+        }
+        return data
+
+    def __json__(self):
+        data = dict()
+        data.update(self.get_api_data())
+        return data
 
 
 class _PullRequestBase(BaseModel):
@@ -3215,6 +3319,19 @@ class _PullRequestBase(BaseModel):
     _last_merge_status = Column('merge_status', Integer(), nullable=True)
     merge_rev = Column('merge_rev', String(40), nullable=True)
 
+    reviewer_data = Column(
+        'reviewer_data_json', MutationObj.as_mutable(
+            JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
+
+    @property
+    def reviewer_data_json(self):
+        return json.dumps(self.reviewer_data)
+
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.description)
+
     @hybrid_property
     def revisions(self):
         return self._revisions.split(':') if self._revisions else []
@@ -3276,14 +3393,19 @@ class _PullRequestBase(BaseModel):
         else:
             return None
 
-    def get_api_data(self):
+    def get_api_data(self, with_merge_state=True):
         from rhodecode.model.pull_request import PullRequestModel
-        pull_request = self
-        merge_status = PullRequestModel().merge_status(pull_request)
 
-        pull_request_url = url(
-            'pullrequest_show', repo_name=self.target_repo.repo_name,
-            pull_request_id=self.pull_request_id, qualified=True)
+        pull_request = self
+        if with_merge_state:
+            merge_status = PullRequestModel().merge_status(pull_request)
+            merge_state = {
+                'status': merge_status[0],
+                'message': safe_unicode(merge_status[1]),
+            }
+        else:
+            merge_state = {'status': 'not_available',
+                           'message': 'not_available'}
 
         merge_data = {
             'clone_url': PullRequestModel().get_shadow_clone_url(pull_request),
@@ -3294,7 +3416,7 @@ class _PullRequestBase(BaseModel):
 
         data = {
             'pull_request_id': pull_request.pull_request_id,
-            'url': pull_request_url,
+            'url': PullRequestModel().get_url(pull_request),
             'title': pull_request.title,
             'description': pull_request.description,
             'status': pull_request.status,
@@ -3302,10 +3424,7 @@ class _PullRequestBase(BaseModel):
             'updated_on': pull_request.updated_on,
             'commit_ids': pull_request.revisions,
             'review_status': pull_request.calculated_review_status(),
-            'mergeable': {
-                'status': merge_status[0],
-                'message': unicode(merge_status[1]),
-            },
+            'mergeable': merge_state,
             'source': {
                 'clone_url': pull_request.source_repo.clone_url(),
                 'repository': pull_request.source_repo.repo_name,
@@ -3334,7 +3453,8 @@ class _PullRequestBase(BaseModel):
                     'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, reasons, st in pull_request.reviewers_statuses()
+                for reviewer, reasons, mandatory, st in
+                pull_request.reviewers_statuses()
             ]
         }
 
@@ -3359,7 +3479,8 @@ class PullRequest(Base, _PullRequestBase):
 
     reviewers = relationship('PullRequestReviewers',
                              cascade="all, delete, delete-orphan")
-    statuses = relationship('ChangesetStatus')
+    statuses = relationship('ChangesetStatus',
+                            cascade="all, delete, delete-orphan")
     comments = relationship('ChangesetComment',
                             cascade="all, delete, delete-orphan")
     versions = relationship('PullRequestVersion',
@@ -3424,6 +3545,8 @@ class PullRequest(Base, _PullRequestBase):
         attrs.revisions = pull_request_obj.revisions
 
         attrs.shadow_merge_ref = org_pull_request_obj.shadow_merge_ref
+        attrs.reviewer_data = org_pull_request_obj.reviewer_data
+        attrs.reviewer_data_json = org_pull_request_obj.reviewer_data_json
 
         return PullRequestDisplay(attrs, internal=internal_methods)
 
@@ -3502,11 +3625,6 @@ class PullRequestReviewers(Base, BaseModel):
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
-    def __init__(self, user=None, pull_request=None, reasons=None):
-        self.user = user
-        self.pull_request = pull_request
-        self.reasons = reasons or []
-
     @hybrid_property
     def reasons(self):
         if not self._reasons:
@@ -3531,7 +3649,7 @@ class PullRequestReviewers(Base, BaseModel):
     _reasons = Column(
         'reason', MutationList.as_mutable(
             JsonType('list', dialect_map=dict(mysql=UnicodeText(16384)))))
-
+    mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
     user = relationship('User')
     pull_request = relationship('PullRequest')
 
@@ -3651,6 +3769,11 @@ class Gist(Base, BaseModel):
     def __repr__(self):
         return '<Gist:[%s]%s>' % (self.gist_type, self.gist_access_id)
 
+    @hybrid_property
+    def description_safe(self):
+        from rhodecode.lib import helpers as h
+        return h.escape(self.gist_description)
+
     @classmethod
     def get_or_404(cls, id_, pyramid_exc=False):
 
@@ -3670,6 +3793,8 @@ class Gist(Base, BaseModel):
 
     def gist_url(self):
         import rhodecode
+        from pylons import url
+
         alias_url = rhodecode.CONFIG.get('gist_alias_url')
         if alias_url:
             return alias_url.replace('{gistid}', self.gist_access_id)
@@ -3835,13 +3960,16 @@ class RepoReviewRuleUser(Base, BaseModel):
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
-    repo_review_rule_user_id = Column(
-        'repo_review_rule_user_id', Integer(), primary_key=True)
-    repo_review_rule_id = Column("repo_review_rule_id",
-        Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
-    user_id = Column("user_id", Integer(), ForeignKey('users.user_id'),
-        nullable=False)
+    repo_review_rule_user_id = Column('repo_review_rule_user_id', Integer(), primary_key=True)
+    repo_review_rule_id = Column("repo_review_rule_id", Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
+    user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False)
+    mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
     user = relationship('User')
+
+    def rule_data(self):
+        return {
+            'mandatory': self.mandatory
+        }
 
 
 class RepoReviewRuleUserGroup(Base, BaseModel):
@@ -3850,13 +3978,16 @@ class RepoReviewRuleUserGroup(Base, BaseModel):
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
-    repo_review_rule_users_group_id = Column(
-        'repo_review_rule_users_group_id', Integer(), primary_key=True)
-    repo_review_rule_id = Column("repo_review_rule_id",
-        Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
-    users_group_id = Column("users_group_id", Integer(),
-        ForeignKey('users_groups.users_group_id'), nullable=False)
+    repo_review_rule_users_group_id = Column('repo_review_rule_users_group_id', Integer(), primary_key=True)
+    repo_review_rule_id = Column("repo_review_rule_id", Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
+    users_group_id = Column("users_group_id", Integer(),ForeignKey('users_groups.users_group_id'), nullable=False)
+    mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
     users_group = relationship('UserGroup')
+
+    def rule_data(self):
+        return {
+            'mandatory': self.mandatory
+        }
 
 
 class RepoReviewRule(Base, BaseModel):
@@ -3872,13 +4003,14 @@ class RepoReviewRule(Base, BaseModel):
         "repo_id", Integer(), ForeignKey('repositories.repo_id'))
     repo = relationship('Repository', backref='review_rules')
 
-    _branch_pattern = Column("branch_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'),
-        default=u'*') # glob
-    _file_pattern = Column("file_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'),
-        default=u'*') # glob
+    _branch_pattern = Column("branch_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
+    _file_pattern = Column("file_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
 
-    use_authors_for_review = Column("use_authors_for_review", Boolean(),
-        nullable=False, default=False)
+    use_authors_for_review = Column("use_authors_for_review", Boolean(), nullable=False, default=False)
+    forbid_author_to_review = Column("forbid_author_to_review", Boolean(), nullable=False, default=False)
+    forbid_commit_author_to_review = Column("forbid_commit_author_to_review", Boolean(), nullable=False, default=False)
+    forbid_adding_reviewers = Column("forbid_adding_reviewers", Boolean(), nullable=False, default=False)
+
     rule_users = relationship('RepoReviewRuleUser')
     rule_user_groups = relationship('RepoReviewRuleUserGroup')
 
@@ -3934,16 +4066,32 @@ class RepoReviewRule(Base, BaseModel):
     def review_users(self):
         """ Returns the users which this rule applies to """
 
-        users = set()
-        users |= set([
-            rule_user.user for rule_user in self.rule_users
-            if rule_user.user.active])
-        users |= set(
-            member.user
-            for rule_user_group in self.rule_user_groups
-            for member in rule_user_group.users_group.members
-            if member.user.active
-        )
+        users = collections.OrderedDict()
+
+        for rule_user in self.rule_users:
+            if rule_user.user.active:
+                if rule_user.user not in users:
+                    users[rule_user.user.username] = {
+                        'user': rule_user.user,
+                        'source': 'user',
+                        'source_data': {},
+                        'data': rule_user.rule_data()
+                    }
+
+        for rule_user_group in self.rule_user_groups:
+            source_data = {
+                'name': rule_user_group.users_group.users_group_name,
+                'members': len(rule_user_group.users_group.members)
+            }
+            for member in rule_user_group.users_group.members:
+                if member.user.active:
+                    users[member.user.username] = {
+                        'user': member.user,
+                        'source': 'user_group',
+                        'source_data': source_data,
+                        'data': rule_user_group.rule_data()
+                    }
+
         return users
 
     def __repr__(self):

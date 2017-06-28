@@ -242,7 +242,7 @@ def RepoForm(edit=False, old_data=None, repo_groups=None, landing_revs=None,
         allow_extra_fields = True
         filter_extra_fields = False
         repo_name = All(v.UnicodeString(strip=True, min=1, not_empty=True),
-                        v.SlugifyName())
+                        v.SlugifyName(), v.CannotHaveGitSuffix())
         repo_group = All(v.CanWriteGroup(old_data),
                          v.OneOf(repo_groups, hideList=True))
         repo_type = v.OneOf(supported_backends, required=False,
@@ -384,6 +384,7 @@ class _BaseVcsSettingsForm(formencode.Schema):
 
     # hg
     extensions_largefiles = v.StringBoolean(if_missing=False)
+    extensions_evolve = v.StringBoolean(if_missing=False)
     phases_publish = v.StringBoolean(if_missing=False)
     rhodecode_hg_use_rebase_for_merging = v.StringBoolean(if_missing=False)
 
@@ -534,12 +535,13 @@ def PullRequestForm(repo_id):
     class ReviewerForm(formencode.Schema):
         user_id = v.Int(not_empty=True)
         reasons = All()
+        mandatory = v.StringBoolean()
 
     class _PullRequestForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
 
-        user = v.UnicodeString(strip=True, required=True)
+        common_ancestor = v.UnicodeString(strip=True, required=True)
         source_repo = v.UnicodeString(strip=True, required=True)
         source_ref = v.UnicodeString(strip=True, required=True)
         target_repo = v.UnicodeString(strip=True, required=True)

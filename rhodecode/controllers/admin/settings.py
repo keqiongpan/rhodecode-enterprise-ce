@@ -195,9 +195,12 @@ class SettingsController(BaseController):
         pyramid_settings = get_current_registry().settings
         c.svn_proxy_generate_config = pyramid_settings[generate_config]
 
+        defaults = self._form_defaults()
+
+        model.create_largeobjects_dirs_if_needed(defaults['paths_root_path'])
         return htmlfill.render(
             render('admin/settings/settings.mako'),
-            defaults=self._form_defaults(),
+            defaults=defaults,
             encoding="UTF-8",
             force_defaults=False)
 

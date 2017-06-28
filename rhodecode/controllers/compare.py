@@ -24,7 +24,7 @@ Compare controller for showing differences between two commits/refs/tags etc.
 
 import logging
 
-from webob.exc import HTTPBadRequest
+from webob.exc import HTTPBadRequest, HTTPNotFound
 from pylons import request, tmpl_context as c, url
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
@@ -63,14 +63,13 @@ class CompareController(BaseRepoController):
                 return repo.scm_instance().EMPTY_COMMIT
             h.flash(h.literal(_('There are no commits yet')),
                     category='warning')
-            redirect(url('summary_home', repo_name=repo.repo_name))
+            redirect(h.route_path('repo_summary', repo_name=repo.repo_name))
 
         except RepositoryError as e:
-            msg = safe_str(e)
-            log.exception(msg)
-            h.flash(msg, category='warning')
+            log.exception(safe_str(e))
+            h.flash(safe_str(h.escape(e)), category='warning')
             if not partial:
-                redirect(h.url('summary_home', repo_name=repo.repo_name))
+                redirect(h.route_path('repo_summary', repo_name=repo.repo_name))
             raise HTTPBadRequest()
 
     @LoginRequired()
@@ -86,6 +85,10 @@ class CompareController(BaseRepoController):
         target_repo = request.GET.get('target_repo', source_repo)
         c.source_repo = Repository.get_by_repo_name(source_repo)
         c.target_repo = Repository.get_by_repo_name(target_repo)
+
+        if c.source_repo is None or c.target_repo is None:
+            raise HTTPNotFound()
+
         c.source_ref = c.target_ref = _('Select commit')
         c.source_ref_type = ""
         c.target_ref_type = ""
@@ -141,18 +144,17 @@ class CompareController(BaseRepoController):
         target_repo = Repository.get_by_repo_name(target_repo_name)
 
         if source_repo is None:
-            msg = _('Could not find the original repo: %(repo)s') % {
-                'repo': source_repo}
-
-            log.error(msg)
-            h.flash(msg, category='error')
+            log.error('Could not find the source repo: {}'
+                      .format(source_repo_name))
+            h.flash(_('Could not find the source repo: `{}`')
+                    .format(h.escape(source_repo_name)), category='error')
             return redirect(url('compare_home', repo_name=c.repo_name))
 
         if target_repo is None:
-            msg = _('Could not find the other repo: %(repo)s') % {
-                'repo': target_repo_name}
-            log.error(msg)
-            h.flash(msg, category='error')
+            log.error('Could not find the target repo: {}'
+                      .format(source_repo_name))
+            h.flash(_('Could not find the target repo: `{}`')
+                    .format(h.escape(target_repo_name)), category='error')
             return redirect(url('compare_home', repo_name=c.repo_name))
 
         source_scm = source_repo.scm_instance()
@@ -269,11 +271,13 @@ class CompareController(BaseRepoController):
                     return None
             return get_node
 
-        c.diffset = codeblocks.DiffSet(
+        diffset = codeblocks.DiffSet(
             repo_name=source_repo.repo_name,
             source_node_getter=_node_getter(source_commit),
             target_node_getter=_node_getter(target_commit),
-        ).render_patchset(_parsed, source_ref, target_ref)
+        )
+        c.diffset = diffset.render_patchset(
+            _parsed, source_ref, target_ref)
 
         c.preview_mode = merge
         c.source_commit = source_commit

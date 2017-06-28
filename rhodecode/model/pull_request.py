@@ -31,14 +31,16 @@ import urllib
 
 from pylons.i18n.translation import _
 from pylons.i18n.translation import lazy_ugettext
+from pyramid.threadlocal import get_current_request
 from sqlalchemy import or_
 
+from rhodecode import events
 from rhodecode.lib import helpers as h, hooks_utils, diffs
+from rhodecode.lib import audit_logger
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.markup_renderer import (
     DEFAULT_COMMENTS_RENDERER, RstTemplateRenderer)
-from rhodecode.lib.utils import action_logger
 from rhodecode.lib.utils2 import safe_unicode, safe_str, md5_safe
 from rhodecode.lib.vcs.backends.base import (
     Reference, MergeResponse, MergeFailureReason, UpdateFailureReason)
@@ -118,9 +120,9 @@ class PullRequestModel(BaseModel):
             'Pull request update failed because of an unknown error.'),
         UpdateFailureReason.NO_CHANGE: lazy_ugettext(
             'No update needed because the source and target have not changed.'),
-        UpdateFailureReason.WRONG_REF_TPYE: lazy_ugettext(
+        UpdateFailureReason.WRONG_REF_TYPE: lazy_ugettext(
             'Pull request cannot be updated because the reference type is '
-            'not supported for an update.'),
+            'not supported for an update. Only Branch, Tag or Bookmark is allowed.'),
         UpdateFailureReason.MISSING_TARGET_REF: lazy_ugettext(
             'This pull request cannot be updated because the target '
             'reference is missing.'),
@@ -415,7 +417,9 @@ class PullRequestModel(BaseModel):
             .all()
 
     def create(self, created_by, source_repo, source_ref, target_repo,
-        target_ref, revisions, reviewers, title, description=None):
+               target_ref, revisions, reviewers, title, description=None,
+               reviewer_data=None):
+
         created_by_user = self._get_user(created_by)
         source_repo = self._get_repo(source_repo)
         target_repo = self._get_repo(target_repo)
@@ -429,6 +433,7 @@ class PullRequestModel(BaseModel):
         pull_request.title = title
         pull_request.description = description
         pull_request.author = created_by_user
+        pull_request.reviewer_data = reviewer_data
 
         Session().add(pull_request)
         Session().flush()
@@ -436,15 +441,20 @@ class PullRequestModel(BaseModel):
         reviewer_ids = set()
         # members / reviewers
         for reviewer_object in reviewers:
-            if isinstance(reviewer_object, tuple):
-                user_id, reasons = reviewer_object
-            else:
-                user_id, reasons = reviewer_object, []
-
+            user_id, reasons, mandatory = reviewer_object
             user = self._get_user(user_id)
+
+            # skip duplicates
+            if user.user_id in reviewer_ids:
+                continue
+
             reviewer_ids.add(user.user_id)
 
-            reviewer = PullRequestReviewers(user, pull_request, reasons)
+            reviewer = PullRequestReviewers()
+            reviewer.user = user
+            reviewer.pull_request = pull_request
+            reviewer.reasons = reasons
+            reviewer.mandatory = mandatory
             Session().add(reviewer)
 
         # Set approval status to "Under Review" for all commits which are
@@ -459,6 +469,11 @@ class PullRequestModel(BaseModel):
         self.notify_reviewers(pull_request, reviewer_ids)
         self._trigger_pull_request_hook(
             pull_request, created_by_user, 'create')
+
+        creation_data = pull_request.get_api_data(with_merge_state=False)
+        self._log_audit_action(
+            'repo.pull_request.create', {'data': creation_data},
+            created_by_user, pull_request)
 
         return pull_request
 
@@ -510,7 +525,12 @@ class PullRequestModel(BaseModel):
             log.debug(
                 "Merge was successful, updating the pull request comments.")
             self._comment_and_close_pr(pull_request, user, merge_state)
-            self._log_action('user_merged_pull_request', user, pull_request)
+
+            self._log_audit_action(
+                'repo.pull_request.merge',
+                {'merge_state': merge_state.__dict__},
+                user, pull_request)
+
         else:
             log.warn("Merge failed, not updating the pull request.")
         return merge_state
@@ -594,7 +614,7 @@ class PullRequestModel(BaseModel):
                 pull_request, source_ref_type)
             return UpdateResponse(
                 executed=False,
-                reason=UpdateFailureReason.WRONG_REF_TPYE,
+                reason=UpdateFailureReason.WRONG_REF_TYPE,
                 old=pull_request, new=None, changes=None,
                 source_changed=False, target_changed=False)
 
@@ -763,6 +783,7 @@ class PullRequestModel(BaseModel):
         version._last_merge_status = pull_request._last_merge_status
         version.shadow_merge_ref = pull_request.shadow_merge_ref
         version.merge_rev = pull_request.merge_rev
+        version.reviewer_data = pull_request.reviewer_data
 
         version.revisions = pull_request.revisions
         version.pull_request = pull_request
@@ -806,13 +827,15 @@ class PullRequestModel(BaseModel):
 
         """
         pull_request = pull_request_version.pull_request
-        comments = ChangesetComment.query().filter(
-            # TODO: johbo: Should we query for the repo at all here?
-            # Pending decision on how comments of PRs are to be related
-            # to either the source repo, the target repo or no repo at all.
-            ChangesetComment.repo_id == pull_request.target_repo.repo_id,
-            ChangesetComment.pull_request == pull_request,
-            ChangesetComment.pull_request_version == None)
+        comments = ChangesetComment.query()\
+            .filter(
+                # TODO: johbo: Should we query for the repo at all here?
+                # Pending decision on how comments of PRs are to be related
+                # to either the source repo, the target repo or no repo at all.
+                ChangesetComment.repo_id == pull_request.target_repo.repo_id,
+                ChangesetComment.pull_request == pull_request,
+                ChangesetComment.pull_request_version == None)\
+            .order_by(ChangesetComment.comment_id.asc())
 
         # TODO: johbo: Find out why this breaks if it is done in a bulk
         # operation.
@@ -886,8 +909,9 @@ class PullRequestModel(BaseModel):
         renderer = RstTemplateRenderer()
         return renderer.render('pull_request_update.mako', **params)
 
-    def edit(self, pull_request, title, description):
+    def edit(self, pull_request, title, description, user):
         pull_request = self.__get_pull_request(pull_request)
+        old_data = pull_request.get_api_data(with_merge_state=False)
         if pull_request.is_closed():
             raise ValueError('This pull request is closed')
         if title:
@@ -895,22 +919,27 @@ class PullRequestModel(BaseModel):
         pull_request.description = description
         pull_request.updated_on = datetime.datetime.now()
         Session().add(pull_request)
+        self._log_audit_action(
+            'repo.pull_request.edit', {'old_data': old_data},
+            user, pull_request)
 
-    def update_reviewers(self, pull_request, reviewer_data):
+    def update_reviewers(self, pull_request, reviewer_data, user):
         """
         Update the reviewers in the pull request
 
         :param pull_request: the pr to update
-        :param reviewer_data: list of tuples [(user, ['reason1', 'reason2'])]
+        :param reviewer_data: list of tuples
+            [(user, ['reason1', 'reason2'], mandatory_flag)]
         """
 
-        reviewers_reasons = {}
-        for user_id, reasons in reviewer_data:
+        reviewers = {}
+        for user_id, reasons, mandatory in reviewer_data:
             if isinstance(user_id, (int, basestring)):
                 user_id = self._get_user(user_id).user_id
-            reviewers_reasons[user_id] = reasons
+            reviewers[user_id] = {
+                'reasons': reasons, 'mandatory': mandatory}
 
-        reviewers_ids = set(reviewers_reasons.keys())
+        reviewers_ids = set(reviewers.keys())
         pull_request = self.__get_pull_request(pull_request)
         current_reviewers = PullRequestReviewers.query()\
             .filter(PullRequestReviewers.pull_request ==
@@ -926,9 +955,16 @@ class PullRequestModel(BaseModel):
         for uid in ids_to_add:
             changed = True
             _usr = self._get_user(uid)
-            reasons = reviewers_reasons[uid]
-            reviewer = PullRequestReviewers(_usr, pull_request, reasons)
+            reviewer = PullRequestReviewers()
+            reviewer.user = _usr
+            reviewer.pull_request = pull_request
+            reviewer.reasons = reviewers[uid]['reasons']
+            # NOTE(marcink): mandatory shouldn't be changed now
+            # reviewer.mandatory = reviewers[uid]['reasons']
             Session().add(reviewer)
+            self._log_audit_action(
+                'repo.pull_request.reviewer.add', {'data': reviewer.get_dict()},
+                user, pull_request)
 
         for uid in ids_to_remove:
             changed = True
@@ -939,7 +975,11 @@ class PullRequestModel(BaseModel):
             # use .all() in case we accidentally added the same person twice
             # this CAN happen due to the lack of DB checks
             for obj in reviewers:
+                old_data = obj.get_dict()
                 Session().delete(obj)
+                self._log_audit_action(
+                    'repo.pull_request.reviewer.delete',
+                    {'old_data': old_data}, user, pull_request)
 
         if changed:
             pull_request.updated_on = datetime.datetime.now()
@@ -948,11 +988,18 @@ class PullRequestModel(BaseModel):
         self.notify_reviewers(pull_request, ids_to_add)
         return ids_to_add, ids_to_remove
 
-    def get_url(self, pull_request):
-        return h.url('pullrequest_show',
-                     repo_name=safe_str(pull_request.target_repo.repo_name),
-                     pull_request_id=pull_request.pull_request_id,
-                     qualified=True)
+    def get_url(self, pull_request, request=None, permalink=False):
+        if not request:
+            request = get_current_request()
+
+        if permalink:
+            return request.route_url(
+                'pull_requests_global',
+                pull_request_id=pull_request.pull_request_id,)
+        else:
+            return request.route_url('pullrequest_show',
+                repo_name=safe_str(pull_request.target_repo.repo_name),
+                pull_request_id=pull_request.pull_request_id,)
 
     def get_shadow_clone_url(self, pull_request):
         """
@@ -979,22 +1026,16 @@ class PullRequestModel(BaseModel):
         pr_source_repo = pull_request_obj.source_repo
         pr_target_repo = pull_request_obj.target_repo
 
-        pr_url = h.url(
-            'pullrequest_show',
+        pr_url = h.route_url('pullrequest_show',
             repo_name=pr_target_repo.repo_name,
-            pull_request_id=pull_request_obj.pull_request_id,
-            qualified=True,)
+            pull_request_id=pull_request_obj.pull_request_id,)
 
         # set some variables for email notification
-        pr_target_repo_url = h.url(
-            'summary_home',
-            repo_name=pr_target_repo.repo_name,
-            qualified=True)
+        pr_target_repo_url = h.route_url(
+            'repo_summary', repo_name=pr_target_repo.repo_name)
 
-        pr_source_repo_url = h.url(
-            'summary_home',
-            repo_name=pr_source_repo.repo_name,
-            qualified=True)
+        pr_source_repo_url = h.route_url(
+            'repo_summary', repo_name=pr_source_repo.repo_name)
 
         # pull request specifics
         pull_request_commits = [
@@ -1031,9 +1072,13 @@ class PullRequestModel(BaseModel):
             email_kwargs=kwargs,
         )
 
-    def delete(self, pull_request):
+    def delete(self, pull_request, user):
         pull_request = self.__get_pull_request(pull_request)
+        old_data = pull_request.get_api_data(with_merge_state=False)
         self._cleanup_merge_workspace(pull_request)
+        self._log_audit_action(
+            'repo.pull_request.delete', {'old_data': old_data},
+            user, pull_request)
         Session().delete(pull_request)
 
     def close_pull_request(self, pull_request, user):
@@ -1044,43 +1089,63 @@ class PullRequestModel(BaseModel):
         Session().add(pull_request)
         self._trigger_pull_request_hook(
             pull_request, pull_request.author, 'close')
-        self._log_action('user_closed_pull_request', user, pull_request)
+        self._log_audit_action(
+            'repo.pull_request.close', {}, user, pull_request)
 
-    def close_pull_request_with_comment(self, pull_request, user, repo,
-                                        message=None):
-        status = ChangesetStatus.STATUS_REJECTED
+    def close_pull_request_with_comment(
+            self, pull_request, user, repo, message=None):
 
-        if not message:
-            message = (
-                _('Status change %(transition_icon)s %(status)s') % {
-                    'transition_icon': '>',
-                    'status': ChangesetStatus.get_status_lbl(status)})
+        pull_request_review_status = pull_request.calculated_review_status()
 
-        internal_message = _('Closing with') + ' ' + message
+        if pull_request_review_status == ChangesetStatus.STATUS_APPROVED:
+            # approved only if we have voting consent
+            status = ChangesetStatus.STATUS_APPROVED
+        else:
+            status = ChangesetStatus.STATUS_REJECTED
+        status_lbl = ChangesetStatus.get_status_lbl(status)
 
-        comm = CommentsModel().create(
-            text=internal_message,
+        default_message = (
+            _('Closing with status change {transition_icon} {status}.')
+        ).format(transition_icon='>', status=status_lbl)
+        text = message or default_message
+
+        # create a comment, and link it to new status
+        comment = CommentsModel().create(
+            text=text,
             repo=repo.repo_id,
             user=user.user_id,
             pull_request=pull_request.pull_request_id,
-            f_path=None,
-            line_no=None,
-            status_change=ChangesetStatus.get_status_lbl(status),
+            status_change=status_lbl,
             status_change_type=status,
             closing_pr=True
         )
 
+        # calculate old status before we change it
+        old_calculated_status = pull_request.calculated_review_status()
         ChangesetStatusModel().set_status(
             repo.repo_id,
             status,
             user.user_id,
-            comm,
+            comment=comment,
             pull_request=pull_request.pull_request_id
         )
-        Session().flush()
 
+        Session().flush()
+        events.trigger(events.PullRequestCommentEvent(pull_request, comment))
+        # we now calculate the status of pull request again, and based on that
+        # calculation trigger status change. This might happen in cases
+        # that non-reviewer admin closes a pr, which means his vote doesn't
+        # change the status, while if he's a reviewer this might change it.
+        calculated_status = pull_request.calculated_review_status()
+        if old_calculated_status != calculated_status:
+            self._trigger_pull_request_hook(
+                pull_request, user, 'review_status_change')
+
+        # finally close the PR
         PullRequestModel().close_pull_request(
             pull_request.pull_request_id, user)
+
+        return comment, status
 
     def merge_status(self, pull_request):
         if not self._is_merge_enabled(pull_request):
@@ -1226,11 +1291,11 @@ class PullRequestModel(BaseModel):
             'user': {
                 'user_id': repo.user.user_id,
                 'username': repo.user.username,
-                'firstname': repo.user.firstname,
-                'lastname': repo.user.lastname,
+                'firstname': repo.user.first_name,
+                'lastname': repo.user.last_name,
                 'gravatar_link': h.gravatar_url(repo.user.email, 14),
             },
-            'description': h.chop_at_smart(repo.description, '\n'),
+            'description': h.chop_at_smart(repo.description_safe, '\n'),
             'refs': {
                 'all_refs': all_refs,
                 'selected_ref': selected_ref,
@@ -1360,12 +1425,29 @@ class PullRequestModel(BaseModel):
         settings = settings_model.get_general_settings()
         return settings.get('rhodecode_hg_use_rebase_for_merging', False)
 
-    def _log_action(self, action, user, pull_request):
-        action_logger(
-            user,
-            '{action}:{pr_id}'.format(
-                action=action, pr_id=pull_request.pull_request_id),
-            pull_request.target_repo)
+    def _log_audit_action(self, action, action_data, user, pull_request):
+        audit_logger.store(
+            action=action,
+            action_data=action_data,
+            user=user,
+            repo=pull_request.target_repo)
+
+    def get_reviewer_functions(self):
+        """
+        Fetches functions for validation and fetching default reviewers.
+        If available we use the EE package, else we fallback to CE
+        package functions
+        """
+        try:
+            from rc_reviewers.utils import get_default_reviewers_data
+            from rc_reviewers.utils import validate_default_reviewers
+        except ImportError:
+            from rhodecode.apps.repository.utils import \
+                get_default_reviewers_data
+            from rhodecode.apps.repository.utils import \
+                validate_default_reviewers
+
+        return get_default_reviewers_data, validate_default_reviewers
 
 
 class MergeCheck(object):

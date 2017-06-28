@@ -30,8 +30,7 @@ import time
 import traceback
 from datetime import datetime, timedelta
 
-from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import true, or_
+from pyramid.threadlocal import get_current_request
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode import events
@@ -40,19 +39,17 @@ from rhodecode.lib.auth import HasUserGroupPermissionAny
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.exceptions import AttachedForksError
 from rhodecode.lib.hooks_base import log_delete_repository
-from rhodecode.lib.markup_renderer import MarkupRenderer
 from rhodecode.lib.utils import make_db_config
 from rhodecode.lib.utils2 import (
     safe_str, safe_unicode, remove_prefix, obfuscate_url_pw,
     get_current_rhodecode_user, safe_int, datetime_to_time, action_logger_generic)
 from rhodecode.lib.vcs.backends import get_backend
-from rhodecode.lib.vcs.exceptions import NodeDoesNotExistError
 from rhodecode.model import BaseModel
-from rhodecode.model.db import (
+from rhodecode.model.db import (_hash_key,
     Repository, UserRepoToPerm, UserGroupRepoToPerm, UserRepoGroupToPerm,
     UserGroupRepoGroupToPerm, User, Permission, Statistics, UserGroup,
     RepoGroup, RepositoryField)
-from rhodecode.model.scm import UserGroupList
+
 from rhodecode.model.settings import VcsSettingsModel
 
 
@@ -103,8 +100,8 @@ class RepoModel(BaseModel):
             .filter(Repository.repo_id == repo_id)
 
         if cache:
-            repo = repo.options(FromCache("sql_cache_short",
-                                          "get_repo_%s" % repo_id))
+            repo = repo.options(
+                FromCache("sql_cache_short", "get_repo_%s" % repo_id))
         return repo.scalar()
 
     def get_repo(self, repository):
@@ -115,8 +112,9 @@ class RepoModel(BaseModel):
             .filter(Repository.repo_name == repo_name)
 
         if cache:
-            repo = repo.options(FromCache("sql_cache_short",
-                                          "get_repo_%s" % repo_name))
+            name_key = _hash_key(repo_name)
+            repo = repo.options(
+                FromCache("sql_cache_short", "get_repo_%s" % name_key))
         return repo.scalar()
 
     def _extract_id_from_repo_name(self, repo_name):
@@ -134,6 +132,7 @@ class RepoModel(BaseModel):
         :param repo_name:
         :return: repo object if matched else None
         """
+
         try:
             _repo_id = self._extract_id_from_repo_name(repo_name)
             if _repo_id:
@@ -156,86 +155,36 @@ class RepoModel(BaseModel):
             repos = Repository.query().filter(Repository.group == root).all()
         return repos
 
-    def get_url(self, repo):
-        return h.url('summary_home', repo_name=safe_str(repo.repo_name),
-            qualified=True)
+    def get_url(self, repo, request=None, permalink=False):
+        if not request:
+            request = get_current_request()
 
-    def get_users(self, name_contains=None, limit=20, only_active=True):
+        if not request:
+            return
 
-        # TODO: mikhail: move this method to the UserModel.
-        query = self.sa.query(User)
-        if only_active:
-            query = query.filter(User.active == true())
+        if permalink:
+            return request.route_url(
+                'repo_summary', repo_name=safe_str(repo.repo_id))
+        else:
+            return request.route_url(
+                'repo_summary', repo_name=safe_str(repo.repo_name))
 
-        if name_contains:
-            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
-            query = query.filter(
-                or_(
-                    User.name.ilike(ilike_expression),
-                    User.lastname.ilike(ilike_expression),
-                    User.username.ilike(ilike_expression)
-                )
-            )
-            query = query.limit(limit)
-        users = query.all()
+    def get_commit_url(self, repo, commit_id, request=None, permalink=False):
+        if not request:
+            request = get_current_request()
 
-        _users = [
-            {
-                'id': user.user_id,
-                'first_name': user.name,
-                'last_name': user.lastname,
-                'username': user.username,
-                'email': user.email,
-                'icon_link': h.gravatar_url(user.email, 30),
-                'value_display': h.person(user),
-                'value': user.username,
-                'value_type': 'user',
-                'active': user.active,
-            }
-            for user in users
-        ]
-        return _users
+        if not request:
+            return
 
-    def get_user_groups(self, name_contains=None, limit=20, only_active=True):
+        if permalink:
+            return request.route_url(
+                'repo_commit', repo_name=safe_str(repo.repo_id),
+                commit_id=commit_id)
 
-        # TODO: mikhail: move this method to the UserGroupModel.
-        query = self.sa.query(UserGroup)
-        if only_active:
-            query = query.filter(UserGroup.users_group_active == true())
-
-        if name_contains:
-            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
-            query = query.filter(
-                UserGroup.users_group_name.ilike(ilike_expression))\
-                .order_by(func.length(UserGroup.users_group_name))\
-                .order_by(UserGroup.users_group_name)
-
-            query = query.limit(limit)
-        user_groups = query.all()
-        perm_set = ['usergroup.read', 'usergroup.write', 'usergroup.admin']
-        user_groups = UserGroupList(user_groups, perm_set=perm_set)
-
-        _groups = [
-            {
-                'id': group.users_group_id,
-                # TODO: marcink figure out a way to generate the url for the
-                # icon
-                'icon_link': '',
-                'value_display': 'Group: %s (%d members)' % (
-                    group.users_group_name, len(group.members),),
-                'value': group.users_group_name,
-                'description': group.user_group_description,
-                'owner': group.user.username,
-
-                'owner_icon': h.gravatar_url(group.user.email, 30),
-                'value_display_owner': h.person(group.user.email),
-
-                'value_type': 'user_group',
-                'active': group.users_group_active,
-            }
-            for group in user_groups
-        ]
-        return _groups
+        else:
+            return request.route_url(
+                'repo_commit', repo_name=safe_str(repo.repo_name),
+                commit_id=commit_id)
 
     @classmethod
     def update_repoinfo(cls, repositories=None):
@@ -308,7 +257,7 @@ class RepoModel(BaseModel):
                 "last_changeset": last_rev(repo.repo_name, cs_cache),
                 "last_changeset_raw": cs_cache.get('revision'),
 
-                "desc": desc(repo.description),
+                "desc": desc(repo.description_safe),
                 "owner": user_profile(repo.user.username),
 
                 "state": state(repo.repo_state),
@@ -340,7 +289,7 @@ class RepoModel(BaseModel):
         defaults = repo_info.get_dict()
         defaults['repo_name'] = repo_info.just_name
 
-        groups  = repo_info.groups_with_parents
+        groups = repo_info.groups_with_parents
         parent_group = groups[-1] if groups else None
 
         # we use -1 as this is how in HTML, we mark an empty group
@@ -376,16 +325,6 @@ class RepoModel(BaseModel):
             replacement_user = User.get_first_super_admin().username
             defaults.update({'user': replacement_user})
 
-        # fill repository users
-        for p in repo_info.repo_to_perm:
-            defaults.update({'u_perm_%s' % p.user.user_id:
-                            p.permission.permission_name})
-
-        # fill repository groups
-        for p in repo_info.users_group_to_perm:
-            defaults.update({'g_perm_%s' % p.users_group.users_group_id:
-                            p.permission.permission_name})
-
         return defaults
 
     def update(self, repo, **kwargs):
@@ -414,12 +353,6 @@ class RepoModel(BaseModel):
                     val = kwargs[k]
                     if strip:
                         k = remove_prefix(k, 'repo_')
-                    if k == 'clone_uri':
-                        from rhodecode.model.validators import Missing
-                        _change = kwargs.get('clone_uri_change')
-                        if _change in [Missing, 'OLD']:
-                            # we don't change the value, so use original one
-                            val = cur_repo.clone_uri
 
                     setattr(cur_repo, k, val)
 
@@ -594,10 +527,16 @@ class RepoModel(BaseModel):
 
         req_perms = ('usergroup.read', 'usergroup.write', 'usergroup.admin')
 
+        changes = {
+            'added': [],
+            'updated': [],
+            'deleted': []
+        }
         # update permissions
         for member_id, perm, member_type in perm_updates:
             member_id = int(member_id)
             if member_type == 'user':
+                member_name = User.get(member_id).username
                 # this updates also current one if found
                 self.grant_user_permission(
                     repo=repo, user=member_id, perm=perm)
@@ -609,10 +548,14 @@ class RepoModel(BaseModel):
                     self.grant_user_group_permission(
                         repo=repo, group_name=member_id, perm=perm)
 
+            changes['updated'].append({'type': member_type, 'id': member_id,
+                                       'name': member_name, 'new_perm': perm})
+
         # set new permissions
         for member_id, perm, member_type in perm_additions:
             member_id = int(member_id)
             if member_type == 'user':
+                member_name = User.get(member_id).username
                 self.grant_user_permission(
                     repo=repo, user=member_id, perm=perm)
             else:  # set for user group
@@ -622,11 +565,13 @@ class RepoModel(BaseModel):
                         *req_perms)(member_name, user=cur_user):
                     self.grant_user_group_permission(
                         repo=repo, group_name=member_id, perm=perm)
-
+            changes['added'].append({'type': member_type, 'id': member_id,
+                                     'name': member_name, 'new_perm': perm})
         # delete permissions
         for member_id, perm, member_type in perm_deletions:
             member_id = int(member_id)
             if member_type == 'user':
+                member_name = User.get(member_id).username
                 self.revoke_user_permission(repo=repo, user=member_id)
             else:  # set for user group
                 # check if we have permissions to alter this usergroup
@@ -635,6 +580,10 @@ class RepoModel(BaseModel):
                         *req_perms)(member_name, user=cur_user):
                     self.revoke_user_group_permission(
                         repo=repo, group_name=member_id)
+
+            changes['deleted'].append({'type': member_type, 'id': member_id,
+                                       'name': member_name, 'new_perm': perm})
+        return changes
 
     def create_fork(self, form_data, cur_user):
         """

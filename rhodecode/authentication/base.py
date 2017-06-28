@@ -564,8 +564,6 @@ def authenticate(username, password, environ=None, auth_type=None,
     for plugin in authn_registry.get_plugins_for_authentication():
         plugin.set_auth_type(auth_type)
         plugin.set_calling_scope_repo(acl_repo_name)
-        user = plugin.get_user(username)
-        display_user = user.username if user else username
 
         if headers_only and not plugin.is_headers_auth:
             log.debug('Auth type is for headers only and plugin `%s` is not '

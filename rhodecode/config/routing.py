@@ -32,8 +32,6 @@ import os
 import re
 from routes import Mapper
 
-from rhodecode.config import routing_links
-
 # prefix for non repository related links needs to be prefixed with `/`
 ADMIN_PREFIX = '/_admin'
 STATIC_FILE_PREFIX = '/_static'
@@ -119,8 +117,9 @@ class JSRoutesMapper(Mapper):
 
 def make_map(config):
     """Create, configure and return the routes Mapper"""
-    rmap = JSRoutesMapper(directory=config['pylons.paths']['controllers'],
-                  always_scan=config['debug'])
+    rmap = JSRoutesMapper(
+        directory=config['pylons.paths']['controllers'],
+        always_scan=config['debug'])
     rmap.minimization = False
     rmap.explicit = False
 
@@ -186,36 +185,7 @@ def make_map(config):
     # CUSTOM ROUTES HERE
     #==========================================================================
 
-    # MAIN PAGE
-    rmap.connect('home', '/', controller='home', action='index', jsroute=True)
-    rmap.connect('goto_switcher_data', '/_goto_data', controller='home',
-                 action='goto_switcher_data')
-    rmap.connect('repo_list_data', '/_repos', controller='home',
-                 action='repo_list_data')
-
-    rmap.connect('user_autocomplete_data', '/_users', controller='home',
-                 action='user_autocomplete_data', jsroute=True)
-    rmap.connect('user_group_autocomplete_data', '/_user_groups', controller='home',
-                 action='user_group_autocomplete_data', jsroute=True)
-
-    # TODO: johbo: Static links, to be replaced by our redirection mechanism
-    rmap.connect('rst_help',
-                 'http://docutils.sourceforge.net/docs/user/rst/quickref.html',
-                 _static=True)
-    rmap.connect('markdown_help',
-                 'http://daringfireball.net/projects/markdown/syntax',
-                 _static=True)
-    rmap.connect('rhodecode_official', 'https://rhodecode.com', _static=True)
-    rmap.connect('rhodecode_support', 'https://rhodecode.com/help/', _static=True)
-    rmap.connect('rhodecode_translations', 'https://rhodecode.com/translate/enterprise', _static=True)
-    # TODO: anderson - making this a static link since redirect won't play
-    # nice with POST requests
-    rmap.connect('enterprise_license_convert_from_old',
-                 'https://rhodecode.com/u/license-upgrade',
-                 _static=True)
-
-    routing_links.connect_redirection_links(rmap)
-
+    # ping and pylons error test
     rmap.connect('ping', '%s/ping' % (ADMIN_PREFIX,), controller='home', action='ping')
     rmap.connect('error_test', '%s/error_test' % (ADMIN_PREFIX,), controller='home', action='error_test')
 
@@ -228,10 +198,6 @@ def make_map(config):
                   action='index', conditions={'method': ['GET']})
         m.connect('new_repo', '/create_repository', jsroute=True,
                   action='create_repository', conditions={'method': ['GET']})
-        m.connect('/repos/{repo_name}',
-                  action='update', conditions={'method': ['PUT'],
-                                               'function': check_repo},
-                  requirements=URL_NAME_REQUIREMENTS)
         m.connect('delete_repo', '/repos/{repo_name}',
                   action='delete', conditions={'method': ['DELETE']},
                   requirements=URL_NAME_REQUIREMENTS)
@@ -321,19 +287,6 @@ def make_map(config):
         m.connect('edit_user_perms_summary', '/users/{user_id}/edit/permissions_summary',
                   action='edit_perms_summary', conditions={'method': ['GET']})
 
-        m.connect('edit_user_emails', '/users/{user_id}/edit/emails',
-                  action='edit_emails', conditions={'method': ['GET']})
-        m.connect('edit_user_emails', '/users/{user_id}/edit/emails',
-                  action='add_email', conditions={'method': ['PUT']})
-        m.connect('edit_user_emails', '/users/{user_id}/edit/emails',
-                  action='delete_email', conditions={'method': ['DELETE']})
-
-        m.connect('edit_user_ips', '/users/{user_id}/edit/ips',
-                  action='edit_ips', conditions={'method': ['GET']})
-        m.connect('edit_user_ips', '/users/{user_id}/edit/ips',
-                  action='add_ip', conditions={'method': ['PUT']})
-        m.connect('edit_user_ips', '/users/{user_id}/edit/ips',
-                  action='delete_ip', conditions={'method': ['DELETE']})
 
     # ADMIN USER GROUPS REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
@@ -519,36 +472,8 @@ def make_map(config):
         m.connect('my_account_password', '/my_account/password',
                   action='my_account_password', conditions={'method': ['GET']})
 
-        m.connect('my_account_repos', '/my_account/repos',
-                  action='my_account_repos', conditions={'method': ['GET']})
-
-        m.connect('my_account_watched', '/my_account/watched',
-                  action='my_account_watched', conditions={'method': ['GET']})
-
         m.connect('my_account_pullrequests', '/my_account/pull_requests',
                   action='my_account_pullrequests', conditions={'method': ['GET']})
-
-        m.connect('my_account_perms', '/my_account/perms',
-                  action='my_account_perms', conditions={'method': ['GET']})
-
-        m.connect('my_account_emails', '/my_account/emails',
-                  action='my_account_emails', conditions={'method': ['GET']})
-        m.connect('my_account_emails', '/my_account/emails',
-                  action='my_account_emails_add', conditions={'method': ['POST']})
-        m.connect('my_account_emails', '/my_account/emails',
-                  action='my_account_emails_delete', conditions={'method': ['DELETE']})
-
-        m.connect('my_account_notifications', '/my_account/notifications',
-                  action='my_notifications',
-                  conditions={'method': ['GET']})
-        m.connect('my_account_notifications_toggle_visibility',
-                  '/my_account/toggle_visibility',
-                  action='my_notifications_toggle_visibility',
-                  conditions={'method': ['POST']})
-    m.connect('my_account_notifications_test_channelstream',
-              '/my_account/test_channelstream',
-              action='my_account_notifications_test_channelstream',
-              conditions={'method': ['POST']})
 
     # NOTIFICATION REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
@@ -597,22 +522,6 @@ def make_map(config):
                   action='show', conditions={'method': ['GET']},
                   requirements=URL_NAME_REQUIREMENTS)
 
-    # ADMIN MAIN PAGES
-    with rmap.submapper(path_prefix=ADMIN_PREFIX,
-                        controller='admin/admin') as m:
-        m.connect('admin_home', '', action='index')
-        m.connect('admin_add_repo', '/add_repo/{new_repo:[a-z0-9\. _-]*}',
-                  action='add_repo')
-        m.connect(
-            'pull_requests_global_0', '/pull_requests/{pull_request_id:[0-9]+}',
-            action='pull_requests')
-        m.connect(
-            'pull_requests_global_1', '/pull-requests/{pull_request_id:[0-9]+}',
-            action='pull_requests')
-        m.connect(
-            'pull_requests_global', '/pull-request/{pull_request_id:[0-9]+}',
-            action='pull_requests')
-
     # USER JOURNAL
     rmap.connect('journal', '%s/journal' % (ADMIN_PREFIX,),
                  controller='journal', action='index')
@@ -642,15 +551,6 @@ def make_map(config):
                  controller='journal', action='toggle_following', jsroute=True,
                  conditions={'method': ['POST']})
 
-    # FULL TEXT SEARCH
-    rmap.connect('search', '%s/search' % (ADMIN_PREFIX,),
-                 controller='search')
-    rmap.connect('search_repo_home', '/{repo_name}/search',
-                 controller='search',
-                 action='index',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     # FEEDS
     rmap.connect('rss_feed_home', '/{repo_name}/feed/rss',
                  controller='feed', action='rss',
@@ -673,21 +573,6 @@ def make_map(config):
                  controller='admin/repos', action='repo_check',
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('repo_stats', '/{repo_name}/repo_stats/{commit_id}',
-                 controller='summary', action='repo_stats',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-
-    rmap.connect('repo_refs_data', '/{repo_name}/refs-data',
-                 controller='summary', action='repo_refs_data',
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-    rmap.connect('repo_refs_changelog_data', '/{repo_name}/refs-data-changelog',
-                 controller='summary', action='repo_refs_changelog_data',
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-    rmap.connect('repo_default_reviewers_data', '/{repo_name}/default-reviewers',
-                 controller='summary', action='repo_default_reviewers_data',
-                 jsroute=True, requirements=URL_NAME_REQUIREMENTS)
-
     rmap.connect('changeset_home', '/{repo_name}/changeset/{revision}',
                  controller='changeset', revision='tip',
                  conditions={'function': check_repo},
@@ -702,21 +587,6 @@ def make_map(config):
                  requirements=URL_NAME_REQUIREMENTS)
 
     # repo edit options
-    rmap.connect('edit_repo', '/{repo_name}/settings', jsroute=True,
-                 controller='admin/repos', action='edit',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('edit_repo_perms', '/{repo_name}/settings/permissions',
-                 jsroute=True,
-                 controller='admin/repos', action='edit_permissions',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('edit_repo_perms_update', '/{repo_name}/settings/permissions',
-                 controller='admin/repos', action='edit_permissions_update',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     rmap.connect('edit_repo_fields', '/{repo_name}/settings/fields',
                  controller='admin/repos', action='edit_fields',
                  conditions={'method': ['GET'], 'function': check_repo},
@@ -730,37 +600,9 @@ def make_map(config):
                  conditions={'method': ['DELETE'], 'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('edit_repo_advanced', '/{repo_name}/settings/advanced',
-                 controller='admin/repos', action='edit_advanced',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('edit_repo_advanced_locking', '/{repo_name}/settings/advanced/locking',
-                 controller='admin/repos', action='edit_advanced_locking',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
     rmap.connect('toggle_locking', '/{repo_name}/settings/advanced/locking_toggle',
                  controller='admin/repos', action='toggle_locking',
                  conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('edit_repo_advanced_journal', '/{repo_name}/settings/advanced/journal',
-                 controller='admin/repos', action='edit_advanced_journal',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('edit_repo_advanced_fork', '/{repo_name}/settings/advanced/fork',
-                 controller='admin/repos', action='edit_advanced_fork',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('edit_repo_caches', '/{repo_name}/settings/caches',
-                 controller='admin/repos', action='edit_caches_form',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('edit_repo_caches', '/{repo_name}/settings/caches',
-                 controller='admin/repos', action='edit_caches',
-                 conditions={'method': ['PUT'], 'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
     rmap.connect('edit_repo_remote', '/{repo_name}/settings/remote',
@@ -931,13 +773,6 @@ def make_map(config):
                                               'method': ['DELETE']},
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('pullrequest_show_all',
-                 '/{repo_name}/pull-request',
-                 controller='pullrequests',
-                 action='show_all', conditions={'function': check_repo,
-                                                'method': ['GET']},
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-
     rmap.connect('pullrequest_comment',
                  '/{repo_name}/pull-request-comment/{pull_request_id}',
                  controller='pullrequests',
@@ -951,29 +786,8 @@ def make_map(config):
                  conditions={'function': check_repo, 'method': ['DELETE']},
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
-    rmap.connect('summary_home_explicit', '/{repo_name}/summary',
-                 controller='summary', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('branches_home', '/{repo_name}/branches',
-                 controller='branches', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('tags_home', '/{repo_name}/tags',
-                 controller='tags', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('bookmarks_home', '/{repo_name}/bookmarks',
-                 controller='bookmarks', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     rmap.connect('changelog_home', '/{repo_name}/changelog', jsroute=True,
                  controller='changelog', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('changelog_summary_home', '/{repo_name}/changelog_summary',
-                 controller='changelog', action='changelog_summary',
-                 conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
     rmap.connect('changelog_file_home',
@@ -1128,26 +942,4 @@ def make_map(config):
                  conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
-    # must be here for proper group/repo catching pattern
-    _connect_with_slash(
-        rmap, 'repo_group_home', '/{group_name}',
-        controller='home', action='index_repo_group',
-        conditions={'function': check_group},
-        requirements=URL_NAME_REQUIREMENTS)
-
-    # catch all, at the end
-    _connect_with_slash(
-        rmap, 'summary_home', '/{repo_name}', jsroute=True,
-        controller='summary', action='index',
-        conditions={'function': check_repo},
-        requirements=URL_NAME_REQUIREMENTS)
-
     return rmap
-
-
-def _connect_with_slash(mapper, name, path, *args, **kwargs):
-    """
-    Connect a route with an optional trailing slash in `path`.
-    """
-    mapper.connect(name + '_slash', path + '/', *args, **kwargs)
-    mapper.connect(name, path, *args, **kwargs)

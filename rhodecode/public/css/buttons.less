@@ -62,6 +62,10 @@ input[type="button"] {
         text-shadow: none;
     }
 
+    &.no-margin {
+        margin: 0 0 0 0;
+    }
+
 }
 
 
@@ -270,11 +274,17 @@ input[type="button"] {
     font-size: inherit;
     color: @rcblue;
     border: none;
-    .border-radius (0);
+    border-radius: 0;
     background-color: transparent;
+
+    &.last-item {
+        border: none;
+        padding: 0 0 0 0;
+    }
 
     &:last-child {
         border: none;
+        padding: 0 0 0 0;
     }
 
     &:hover {

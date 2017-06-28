@@ -25,7 +25,6 @@ import formencode
 import logging
 import urlparse
 
-from pylons import url
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 from recaptcha.client.captcha import submit
@@ -34,6 +33,7 @@ from rhodecode.apps._base import BaseAppView
 from rhodecode.authentication.base import authenticate, HTTP_TYPE
 from rhodecode.events import UserRegistered
 from rhodecode.lib import helpers as h
+from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     AuthUser, HasPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib.base import get_ip_addr
@@ -90,20 +90,21 @@ def get_came_from(request):
     came_from = safe_str(request.GET.get('came_from', ''))
     parsed = urlparse.urlparse(came_from)
     allowed_schemes = ['http', 'https']
+    default_came_from = h.route_path('home')
     if parsed.scheme and parsed.scheme not in allowed_schemes:
         log.error('Suspicious URL scheme detected %s for url %s' %
                   (parsed.scheme, parsed))
-        came_from = url('home')
+        came_from = default_came_from
     elif parsed.netloc and request.host != parsed.netloc:
         log.error('Suspicious NETLOC detected %s for url %s server url '
                   'is: %s' % (parsed.netloc, parsed, request.host))
-        came_from = url('home')
+        came_from = default_came_from
     elif any(bad_str in parsed.path for bad_str in ('\r', '\n')):
         log.error('Header injection detected `%s` for url %s server url ' %
                   (parsed.path, parsed))
-        came_from = url('home')
+        came_from = default_came_from
 
-    return came_from or url('home')
+    return came_from or default_came_from
 
 
 class LoginView(BaseAppView):
@@ -166,6 +167,15 @@ class LoginView(BaseAppView):
                 username=form_result['username'],
                 remember=form_result['remember'])
             log.debug('Redirecting to "%s" after login.', c.came_from)
+
+            audit_user = audit_logger.UserWrap(
+                username=self.request.params.get('username'),
+                ip_addr=self.request.remote_addr)
+            action_data = {'user_agent': self.request.user_agent}
+            audit_logger.store_web(
+                'user.login.success', action_data=action_data,
+                user=audit_user, commit=True)
+
             raise HTTPFound(c.came_from, headers=headers)
         except formencode.Invalid as errors:
             defaults = errors.value
@@ -176,6 +186,14 @@ class LoginView(BaseAppView):
                 'errors': errors.error_dict,
                 'defaults': defaults,
             })
+
+            audit_user = audit_logger.UserWrap(
+                username=self.request.params.get('username'),
+                ip_addr=self.request.remote_addr)
+            action_data = {'user_agent': self.request.user_agent}
+            audit_logger.store_web(
+                'user.login.failure', action_data=action_data,
+                user=audit_user, commit=True)
             return render_ctx
 
         except UserCreationError as e:
@@ -191,8 +209,13 @@ class LoginView(BaseAppView):
     def logout(self):
         auth_user = self._rhodecode_user
         log.info('Deleting session for user: `%s`', auth_user)
+
+        action_data = {'user_agent': self.request.user_agent}
+        audit_logger.store_web(
+            'user.logout', action_data=action_data,
+            user=auth_user, commit=True)
         self.session.delete()
-        return HTTPFound(url('home'))
+        return HTTPFound(h.route_path('home'))
 
     @HasPermissionAnyDecorator(
         'hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')
@@ -338,6 +361,12 @@ class LoginView(BaseAppView):
                     form_result, password_reset_url)
                 # Display success message and redirect.
                 self.session.flash(msg, queue='success')
+
+                action_data = {'email': user_email,
+                               'user_agent': self.request.user_agent}
+                audit_logger.store_web(
+                    'user.password.reset_request', action_data=action_data,
+                    user=self._rhodecode_user, commit=True)
                 return HTTPFound(self.request.route_path('reset_password'))
 
             except formencode.Invalid as errors:

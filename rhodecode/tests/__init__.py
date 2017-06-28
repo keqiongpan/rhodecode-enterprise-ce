@@ -48,7 +48,6 @@ from rhodecode.model.db import User
 from rhodecode.lib import auth
 from rhodecode.lib.helpers import flash, link_to
 from rhodecode.lib.utils2 import safe_unicode, safe_str
-from rhodecode.tests.utils import get_session_from_response
 
 
 log = logging.getLogger(__name__)
@@ -56,7 +55,7 @@ log = logging.getLogger(__name__)
 __all__ = [
     'get_new_dir', 'TestController', 'SkipTest',
     'url', 'link_to', 'ldap_lib_installed', 'clear_all_caches',
-    'assert_session_flash', 'login_user',
+    'assert_session_flash', 'login_user', 'no_newline_id_generator',
     'TESTS_TMP_PATH', 'HG_REPO', 'GIT_REPO', 'SVN_REPO',
     'NEW_HG_REPO', 'NEW_GIT_REPO',
     'HG_FORK', 'GIT_FORK', 'TEST_USER_ADMIN_LOGIN', 'TEST_USER_ADMIN_PASS',
@@ -178,7 +177,7 @@ def login_user_session(
     response = response.follow()
     assert response.status == '200 OK'
 
-    session = get_session_from_response(response)
+    session = response.get_session_from_response()
     assert 'rhodecode_user' in session
     rc_user = session['rhodecode_user']
     assert rc_user.get('username') == username
@@ -249,3 +248,17 @@ def assert_session_flash_is_empty(response):
         msg = 'flash messages are present in session:%s' % \
               response.session['flash'][0]
         pytest.fail(safe_str(msg))
+
+
+def no_newline_id_generator(test_name):
+    """
+    Generates a test name without spaces or newlines characters. Used for
+    nicer output of progress of test
+    """
+    org_name = test_name
+    test_name = test_name\
+        .replace('\n', '_N') \
+        .replace('\t', '_T') \
+        .replace(' ', '_S')
+
+    return test_name or 'test-with-empty-name'

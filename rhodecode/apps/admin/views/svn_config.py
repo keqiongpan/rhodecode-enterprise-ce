@@ -33,8 +33,8 @@ log = logging.getLogger(__name__)
 class SvnConfigAdminSettingsView(BaseAppView):
 
     @LoginRequired()
-    @CSRFRequired()
     @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
     @view_config(
         route_name='admin_settings_vcs_svn_generate_cfg',
         request_method='POST', renderer='json')

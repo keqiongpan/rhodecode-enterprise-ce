@@ -62,13 +62,12 @@ class TestCommentPullRequest(object):
         }
         assert_ok(id_, expected, response.body)
 
-        action = 'user_commented_pull_request:%d' % pull_request_id
         journal = UserLog.query()\
             .filter(UserLog.user_id == author)\
-            .filter(UserLog.repository_id == repo)\
-            .filter(UserLog.action == action)\
+            .filter(UserLog.repository_id == repo) \
+            .order_by('user_log_id') \
             .all()
-        assert len(journal) == 2
+        assert journal[-1].action == 'repo.pull_request.comment.create'
 
     @pytest.mark.backends("git", "hg")
     def test_api_comment_pull_request_change_status(

@@ -96,6 +96,9 @@ class IntegrationModel(BaseModel):
         """ Send an event to an integration """
         handler = self.get_integration_handler(integration)
         if handler:
+            log.debug(
+                'events: sending event %s on integration %s using handler %s',
+                event, integration, handler)
             handler.send_event(event)
 
     def get_integrations(self, scope, IntegrationType=None):
@@ -200,14 +203,14 @@ class IntegrationModel(BaseModel):
             query = query.filter(or_(*clauses))
 
             if cache:
-                query = query.options(FromCache(
-                    "sql_cache_short",
-                    "get_enabled_repo_integrations_%i" % event.repo.repo_id))
+                cache_key = "get_enabled_repo_integrations_%i" % event.repo.repo_id
+                query = query.options(
+                    FromCache("sql_cache_short", cache_key))
         else: # only global integrations
             query = query.filter(global_integrations_filter)
             if cache:
-                query = query.options(FromCache(
-                    "sql_cache_short", "get_enabled_global_integrations"))
+                query = query.options(
+                    FromCache("sql_cache_short", "get_enabled_global_integrations"))
 
         result = query.all()
         return result

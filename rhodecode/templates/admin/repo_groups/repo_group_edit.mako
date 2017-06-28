@@ -9,11 +9,11 @@
 </%def>
 
 <%def name="breadcrumbs_links()">
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('Repository Groups'),h.url('repo_groups'))}
     %if c.repo_group.parent_group:
-        &raquo; ${h.link_to(c.repo_group.parent_group.name,h.url('repo_group_home',group_name=c.repo_group.parent_group.group_name))}
+        &raquo; ${h.link_to(c.repo_group.parent_group.name, h.route_path('repo_group_home', repo_group_name=c.repo_group.parent_group.group_name))}
     %endif
     &raquo; ${c.repo_group.name}
 </%def>

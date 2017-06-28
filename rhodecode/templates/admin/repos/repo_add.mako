@@ -10,7 +10,7 @@
 
 <%def name="breadcrumbs_links()">
     %if c.rhodecode_user.is_admin:
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('Repositories'),h.url('repos'))}
     %else:

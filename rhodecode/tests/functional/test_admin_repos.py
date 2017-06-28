@@ -25,9 +25,9 @@ import pytest
 
 from rhodecode.lib import auth
 from rhodecode.lib.utils2 import safe_str, str2bool
-from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
-from rhodecode.model.db import Repository, RepoGroup, UserRepoToPerm, User,\
-    Permission
+from rhodecode.lib import helpers as h
+from rhodecode.model.db import (
+    Repository, RepoGroup, UserRepoToPerm, User, Permission)
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
@@ -44,7 +44,7 @@ fixture = Fixture()
 
 
 @pytest.mark.usefixtures("app")
-class TestAdminRepos:
+class TestAdminRepos(object):
 
     def test_index(self):
         self.app.get(url('repos'))
@@ -63,13 +63,14 @@ class TestAdminRepos:
         assert_response.element_contains('#repo_type', 'svn')
         assert_response.element_contains('#repo_type', 'hg')
 
-    @pytest.mark.parametrize("suffix", [u'', u''], ids=['', 'non-ascii'])
+    @pytest.mark.parametrize("suffix",
+                             [u'', u'xxa'], ids=['', 'non-ascii'])
     def test_create(self, autologin_user, backend, suffix, csrf_token):
         repo_name_unicode = backend.new_repo_name(suffix=suffix)
         repo_name = repo_name_unicode.encode('utf8')
         description_unicode = u'description for newly created repo' + suffix
         description = description_unicode.encode('utf8')
-        self.app.post(
+        response = self.app.post(
             url('repos'),
             fixture._get_repo_create_params(
                 repo_private=False,
@@ -77,8 +78,7 @@ class TestAdminRepos:
                 repo_type=backend.alias,
                 repo_description=description,
                 csrf_token=csrf_token),
-            status=302
-            )
+            status=302)
 
         self.assert_repository_is_created_correctly(
             repo_name, description, backend)
@@ -368,84 +368,22 @@ class TestAdminRepos:
                 csrf_token=csrf_token))
         response.mustcontain('invalid clone url')
 
-    @pytest.mark.parametrize("suffix", [u'', u'ąęł'], ids=['', 'non-ascii'])
-    def test_delete(self, autologin_user, backend, suffix, csrf_token):
-        repo = backend.create_repo(name_suffix=suffix)
-        repo_name = repo.repo_name
-
-        response = self.app.post(url('repo', repo_name=repo_name),
-                                 params={'_method': 'delete',
-                                         'csrf_token': csrf_token})
-        assert_session_flash(response, 'Deleted repository %s' % (repo_name))
-        response.follow()
-
-        # check if repo was deleted from db
-        assert RepoModel().get_by_repo_name(repo_name) is None
-        assert not repo_on_filesystem(repo_name)
+    def test_create_with_git_suffix(
+            self, autologin_user, backend, csrf_token):
+        repo_name = backend.new_repo_name() + ".git"
+        description = 'description for newly created repo'
+        response = self.app.post(
+            url('repos'),
+            fixture._get_repo_create_params(
+                repo_private=False,
+                repo_name=repo_name,
+                repo_type=backend.alias,
+                repo_description=description,
+                csrf_token=csrf_token))
+        response.mustcontain('Repository name cannot end with .git')
 
     def test_show(self, autologin_user, backend):
         self.app.get(url('repo', repo_name=backend.repo_name))
-
-    def test_edit(self, backend, autologin_user):
-        self.app.get(url('edit_repo', repo_name=backend.repo_name))
-
-    def test_edit_accessible_when_missing_requirements(
-            self, backend_hg, autologin_user):
-        scm_patcher = mock.patch.object(
-            Repository, 'scm_instance', side_effect=RepositoryRequirementError)
-        with scm_patcher:
-            self.app.get(url('edit_repo', repo_name=backend_hg.repo_name))
-
-    def test_set_private_flag_sets_default_to_none(
-            self, autologin_user, backend, csrf_token):
-        # initially repository perm should be read
-        perm = _get_permission_for_user(user='default', repo=backend.repo_name)
-        assert len(perm) == 1
-        assert perm[0].permission.permission_name == 'repository.read'
-        assert not backend.repo.private
-
-        response = self.app.post(
-            url('repo', repo_name=backend.repo_name),
-            fixture._get_repo_create_params(
-                repo_private=1,
-                repo_name=backend.repo_name,
-                repo_type=backend.alias,
-                user=TEST_USER_ADMIN_LOGIN,
-                _method='put',
-                csrf_token=csrf_token))
-        assert_session_flash(
-            response,
-            msg='Repository %s updated successfully' % (backend.repo_name))
-        assert backend.repo.private
-
-        # now the repo default permission should be None
-        perm = _get_permission_for_user(user='default', repo=backend.repo_name)
-        assert len(perm) == 1
-        assert perm[0].permission.permission_name == 'repository.none'
-
-        response = self.app.post(
-            url('repo', repo_name=backend.repo_name),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=backend.repo_name,
-                repo_type=backend.alias,
-                user=TEST_USER_ADMIN_LOGIN,
-                _method='put',
-                csrf_token=csrf_token))
-        assert_session_flash(
-            response,
-            msg='Repository %s updated successfully' % (backend.repo_name))
-        assert not backend.repo.private
-
-        # we turn off private now the repo default permission should stay None
-        perm = _get_permission_for_user(user='default', repo=backend.repo_name)
-        assert len(perm) == 1
-        assert perm[0].permission.permission_name == 'repository.none'
-
-        # update this permission back
-        perm[0].permission = Permission.get_by_key('repository.read')
-        Session().add(perm[0])
-        Session().commit()
 
     def test_default_user_cannot_access_private_repo_in_a_group(
             self, autologin_user, user_util, backend, csrf_token):
@@ -460,82 +398,6 @@ class TestAdminRepos:
         assert len(permissions) == 1
         assert permissions[0].permission.permission_name == 'repository.none'
         assert permissions[0].repository.private is True
-
-    def test_set_repo_fork_has_no_self_id(self, autologin_user, backend):
-        repo = backend.repo
-        response = self.app.get(
-            url('edit_repo_advanced', repo_name=backend.repo_name))
-        opt = """<option value="%s">vcs_test_git</option>""" % repo.repo_id
-        response.mustcontain(no=[opt])
-
-    def test_set_fork_of_target_repo(
-            self, autologin_user, backend, csrf_token):
-        target_repo = 'target_%s' % backend.alias
-        fixture.create_repo(target_repo, repo_type=backend.alias)
-        repo2 = Repository.get_by_repo_name(target_repo)
-        response = self.app.post(
-            url('edit_repo_advanced_fork', repo_name=backend.repo_name),
-            params={'id_fork_of': repo2.repo_id, '_method': 'put',
-                    'csrf_token': csrf_token})
-        repo = Repository.get_by_repo_name(backend.repo_name)
-        repo2 = Repository.get_by_repo_name(target_repo)
-        assert_session_flash(
-            response,
-            'Marked repo %s as fork of %s' % (repo.repo_name, repo2.repo_name))
-
-        assert repo.fork == repo2
-        response = response.follow()
-        # check if given repo is selected
-
-        opt = 'This repository is a fork of <a href="%s">%s</a>' % (
-            url('summary_home', repo_name=repo2.repo_name), repo2.repo_name)
-
-        response.mustcontain(opt)
-
-        fixture.destroy_repo(target_repo, forks='detach')
-
-    @pytest.mark.backends("hg", "git")
-    def test_set_fork_of_other_type_repo(self, autologin_user, backend,
-                                         csrf_token):
-        TARGET_REPO_MAP = {
-            'git': {
-                'type': 'hg',
-                'repo_name': HG_REPO},
-            'hg': {
-                'type': 'git',
-                'repo_name': GIT_REPO},
-        }
-        target_repo = TARGET_REPO_MAP[backend.alias]
-
-        repo2 = Repository.get_by_repo_name(target_repo['repo_name'])
-        response = self.app.post(
-            url('edit_repo_advanced_fork', repo_name=backend.repo_name),
-            params={'id_fork_of': repo2.repo_id, '_method': 'put',
-                    'csrf_token': csrf_token})
-        assert_session_flash(
-            response,
-            'Cannot set repository as fork of repository with other type')
-
-    def test_set_fork_of_none(self, autologin_user, backend, csrf_token):
-        # mark it as None
-        response = self.app.post(
-            url('edit_repo_advanced_fork', repo_name=backend.repo_name),
-            params={'id_fork_of': None, '_method': 'put',
-                    'csrf_token': csrf_token})
-        assert_session_flash(
-            response,
-            'Marked repo %s as fork of %s'
-            % (backend.repo_name, "Nothing"))
-        assert backend.repo.fork is None
-
-    def test_set_fork_of_same_repo(self, autologin_user, backend, csrf_token):
-        repo = Repository.get_by_repo_name(backend.repo_name)
-        response = self.app.post(
-            url('edit_repo_advanced_fork', repo_name=backend.repo_name),
-            params={'id_fork_of': repo.repo_id, '_method': 'put',
-                    'csrf_token': csrf_token})
-        assert_session_flash(
-            response, 'An error occurred during this operation')
 
     def test_create_on_top_level_without_permissions(self, backend):
         session = login_user_session(
@@ -596,15 +458,15 @@ class TestAdminRepos:
 
     def assert_repository_is_created_correctly(
             self, repo_name, description, backend):
-        repo_name_utf8 = repo_name.encode('utf-8')
+        repo_name_utf8 = safe_str(repo_name)
 
         # run the check page that triggers the flash message
         response = self.app.get(url('repo_check_home', repo_name=repo_name))
         assert response.json == {u'result': True}
-        assert_session_flash(
-            response,
-            u'Created repository <a href="/%s">%s</a>'
-            % (urllib.quote(repo_name_utf8), repo_name))
+
+        flash_msg = u'Created repository <a href="/{}">{}</a>'.format(
+            urllib.quote(repo_name_utf8), repo_name)
+        assert_session_flash(response, flash_msg)
 
         # test if the repo was created in the database
         new_repo = RepoModel().get_by_repo_name(repo_name)
@@ -613,7 +475,7 @@ class TestAdminRepos:
         assert new_repo.description == description
 
         # test if the repository is visible in the list ?
-        response = self.app.get(url('summary_home', repo_name=repo_name))
+        response = self.app.get(h.route_path('repo_summary', repo_name=repo_name))
         response.mustcontain(repo_name)
         response.mustcontain(backend.alias)
 
@@ -628,6 +490,7 @@ class TestVcsSettings(object):
         'hooks_changegroup_push_logger': False,
         'hooks_outgoing_pull_logger': False,
         'extensions_largefiles': False,
+        'extensions_evolve': False,
         'phases_publish': 'False',
         'rhodecode_pr_merge_enabled': False,
         'rhodecode_use_outdated_comments': False,
@@ -783,13 +646,14 @@ class TestVcsSettings(object):
             self, backend, user_util, settings_util, csrf_token):
         repo = backend.create_repo()
         repo_name = repo.repo_name
-        user = UserModel().get_by_username(TEST_USER_REGULAR_LOGIN)
 
         logout_user_session(self.app, csrf_token)
         session = login_user_session(
             self.app, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
         new_csrf_token = auth.get_csrf_token(session)
 
+        user = UserModel().get_by_username(TEST_USER_REGULAR_LOGIN)
+        repo = Repository.get_by_repo_name(repo_name)
         user_util.grant_user_permission_to_repo(repo, user, 'repository.admin')
         data = self.FORM_DATA.copy()
         data['csrf_token'] = new_csrf_token
@@ -1165,11 +1029,14 @@ class TestVcsSettings(object):
             self, backend_svn, user_util, settings_util, csrf_token):
         repo = backend_svn.create_repo()
         repo_name = repo.repo_name
-        user = UserModel().get_by_username(TEST_USER_REGULAR_LOGIN)
+
         logout_user_session(self.app, csrf_token)
         session = login_user_session(
             self.app, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
         csrf_token = auth.get_csrf_token(session)
+
+        repo = Repository.get_by_repo_name(repo_name)
+        user = UserModel().get_by_username(TEST_USER_REGULAR_LOGIN)
         user_util.grant_user_permission_to_repo(repo, user, 'repository.admin')
         branch = settings_util.create_repo_rhodecode_ui(
             repo, VcsSettingsModel.SVN_BRANCH_SECTION, 'test_branch',

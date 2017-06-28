@@ -30,21 +30,21 @@ from pylons.i18n.translation import _
 
 import ipaddress
 from sqlalchemy.exc import DatabaseError
-from sqlalchemy.sql.expression import true, false
 
 from rhodecode import events
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.utils2 import (
     safe_unicode, get_current_rhodecode_user, action_logger_generic,
     AttributeDict, str2bool)
+from rhodecode.lib.exceptions import (
+    DefaultUserException, UserOwnsReposException, UserOwnsRepoGroupsException,
+    UserOwnsUserGroupsException, NotAllowedToCreateUserError)
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import (
-    or_, joinedload, User, UserToPerm, UserEmailMap, UserIpMap, UserLog)
-from rhodecode.lib.exceptions import (
-    DefaultUserException, UserOwnsReposException, UserOwnsRepoGroupsException,
-    UserOwnsUserGroupsException, NotAllowedToCreateUserError)
+    _hash_key, true, false, or_, joinedload, User, UserToPerm,
+    UserEmailMap, UserIpMap, UserLog)
 from rhodecode.model.meta import Session
 from rhodecode.model.repo_group import RepoGroupModel
 
@@ -58,12 +58,51 @@ class UserModel(BaseModel):
     def get(self, user_id, cache=False):
         user = self.sa.query(User)
         if cache:
-            user = user.options(FromCache("sql_cache_short",
-                                          "get_user_%s" % user_id))
+            user = user.options(
+                FromCache("sql_cache_short", "get_user_%s" % user_id))
         return user.get(user_id)
 
     def get_user(self, user):
         return self._get_user(user)
+
+    def _serialize_user(self, user):
+        import rhodecode.lib.helpers as h
+
+        return {
+            'id': user.user_id,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'username': user.username,
+            'email': user.email,
+            'icon_link': h.gravatar_url(user.email, 30),
+            'value_display': h.escape(h.person(user)),
+            'value': user.username,
+            'value_type': 'user',
+            'active': user.active,
+        }
+
+    def get_users(self, name_contains=None, limit=20, only_active=True):
+
+        query = self.sa.query(User)
+        if only_active:
+            query = query.filter(User.active == true())
+
+        if name_contains:
+            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
+            query = query.filter(
+                or_(
+                    User.name.ilike(ilike_expression),
+                    User.lastname.ilike(ilike_expression),
+                    User.username.ilike(ilike_expression)
+                )
+            )
+            query = query.limit(limit)
+        users = query.all()
+
+        _users = [
+            self._serialize_user(user) for user in users
+        ]
+        return _users
 
     def get_by_username(self, username, cache=False, case_insensitive=False):
 
@@ -73,8 +112,9 @@ class UserModel(BaseModel):
             user = self.sa.query(User)\
                 .filter(User.username == username)
         if cache:
-            user = user.options(FromCache("sql_cache_short",
-                                          "get_user_%s" % username))
+            name_key = _hash_key(username)
+            user = user.options(
+                FromCache("sql_cache_short", "get_user_%s" % name_key))
         return user.scalar()
 
     def get_by_email(self, email, cache=False, case_insensitive=False):
@@ -630,7 +670,8 @@ class UserModel(BaseModel):
                     user_id, api_key, username)
                 return False
             if not dbuser.active:
-                log.debug('User `%s` is inactive, skipping fill data', username)
+                log.debug('User `%s:%s` is inactive, skipping fill data',
+                          username, user_id)
                 return False
 
             log.debug('filling user:%s data', dbuser)
@@ -638,6 +679,11 @@ class UserModel(BaseModel):
             # TODO: johbo: Think about this and find a clean solution
             user_data = dbuser.get_dict()
             user_data.update(dbuser.get_api_data(include_secrets=True))
+            user_data.update({
+                # set explicit the safe escaped values
+                'first_name': dbuser.first_name,
+                'last_name': dbuser.last_name,
+            })
 
             for k, v in user_data.iteritems():
                 # properties of auth user we dont update
@@ -726,7 +772,7 @@ class UserModel(BaseModel):
         """
         user = self._get_user(user)
         obj = UserEmailMap.query().get(email_id)
-        if obj:
+        if obj and obj.user_id == user.user_id:
             self.sa.delete(obj)
 
     def parse_ip_range(self, ip_range):
@@ -783,7 +829,7 @@ class UserModel(BaseModel):
         """
         user = self._get_user(user)
         obj = UserIpMap.query().get(ip_id)
-        if obj:
+        if obj and obj.user_id == user.user_id:
             self.sa.delete(obj)
 
     def get_accounts_in_creation_order(self, current_user=None):

@@ -35,10 +35,10 @@ from webob.exc import HTTPNotFound, HTTPBadRequest
 
 from rhodecode.controllers.utils import parse_path_ref
 from rhodecode.lib import diffs, helpers as h, caches
-from rhodecode.lib.compat import OrderedDict
+from rhodecode.lib import audit_logger
 from rhodecode.lib.codeblocks import (
     filenode_as_lines_tokens, filenode_as_annotated_lines_tokens)
-from rhodecode.lib.utils import jsonify, action_logger
+from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import (
     convert_line_endings, detect_mode, safe_str, str2bool)
 from rhodecode.lib.auth import (
@@ -101,13 +101,13 @@ class FilesController(BaseRepoController):
                 add_new = ""
             h.flash(h.literal(
                 _('There are no files yet. %s') % add_new), category='warning')
-            redirect(h.url('summary_home', repo_name=repo_name))
+            redirect(h.route_path('repo_summary', repo_name=repo_name))
         except (CommitDoesNotExistError, LookupError):
             msg = _('No such commit exists for this repository')
             h.flash(msg, category='error')
             raise HTTPNotFound()
         except RepositoryError as e:
-            h.flash(safe_str(e), category='error')
+            h.flash(safe_str(h.escape(e)), category='error')
             raise HTTPNotFound()
 
     def __get_filenode_or_redirect(self, repo_name, commit, path):
@@ -124,12 +124,11 @@ class FilesController(BaseRepoController):
             if file_node.is_dir():
                 raise RepositoryError('The given path is a directory')
         except CommitDoesNotExistError:
-            msg = _('No such commit exists for this repository')
-            log.exception(msg)
-            h.flash(msg, category='error')
+            log.exception('No such commit exists for this repository')
+            h.flash(_('No such commit exists for this repository'), category='error')
             raise HTTPNotFound()
         except RepositoryError as e:
-            h.flash(safe_str(e), category='error')
+            h.flash(safe_str(h.escape(e)), category='error')
             raise HTTPNotFound()
 
         return file_node
@@ -257,7 +256,7 @@ class FilesController(BaseRepoController):
                     repo_name, c.commit.raw_id, f_path)
 
         except RepositoryError as e:
-            h.flash(safe_str(e), category='error')
+            h.flash(safe_str(h.escape(e)), category='error')
             raise HTTPNotFound()
 
         if request.environ.get('HTTP_X_PJAX'):
@@ -450,7 +449,7 @@ class FilesController(BaseRepoController):
         c.file = self.__get_filenode_or_redirect(repo_name, c.commit, f_path)
 
         c.default_message = _(
-            'Deleted file %s via RhodeCode Enterprise') % (f_path)
+            'Deleted file {} via RhodeCode Enterprise').format(f_path)
         c.f_path = f_path
         node_path = f_path
         author = c.rhodecode_user.full_contact
@@ -469,12 +468,12 @@ class FilesController(BaseRepoController):
                 author=author,
             )
 
-            h.flash(_('Successfully deleted file %s') % f_path,
-                    category='success')
+            h.flash(
+                _('Successfully deleted file `{}`').format(
+                    h.escape(f_path)), category='success')
         except Exception:
-            msg = _('Error occurred during commit')
-            log.exception(msg)
-            h.flash(msg, category='error')
+            log.exception('Error during commit operation')
+            h.flash(_('Error occurred during commit'), category='error')
         return redirect(url('changeset_home',
                             repo_name=c.repo_name, revision='tip'))
 
@@ -503,7 +502,7 @@ class FilesController(BaseRepoController):
         c.file = self.__get_filenode_or_redirect(repo_name, c.commit, f_path)
 
         c.default_message = _(
-            'Deleted file %s via RhodeCode Enterprise') % (f_path)
+            'Deleted file {} via RhodeCode Enterprise').format(f_path)
         c.f_path = f_path
 
         return render('files/files_delete.mako')
@@ -537,7 +536,7 @@ class FilesController(BaseRepoController):
             return redirect(url('files_home', repo_name=c.repo_name,
                             revision=c.commit.raw_id, f_path=f_path))
         c.default_message = _(
-            'Edited file %s via RhodeCode Enterprise') % (f_path)
+            'Edited file {} via RhodeCode Enterprise').format(f_path)
         c.f_path = f_path
         old_content = c.file.content
         sl = old_content.splitlines(1)
@@ -575,12 +574,12 @@ class FilesController(BaseRepoController):
                 parent_commit=c.commit,
             )
 
-            h.flash(_('Successfully committed to %s') % f_path,
-                    category='success')
+            h.flash(
+                _('Successfully committed changes to file `{}`').format(
+                    h.escape(f_path)), category='success')
         except Exception:
-            msg = _('Error occurred during commit')
-            log.exception(msg)
-            h.flash(msg, category='error')
+            log.exception('Error occurred during commit')
+            h.flash(_('Error occurred during commit'), category='error')
         return redirect(url('changeset_home',
                             repo_name=c.repo_name, revision='tip'))
 
@@ -612,7 +611,7 @@ class FilesController(BaseRepoController):
             return redirect(url('files_home', repo_name=c.repo_name,
                             revision=c.commit.raw_id, f_path=f_path))
         c.default_message = _(
-            'Edited file %s via RhodeCode Enterprise') % (f_path)
+            'Edited file {} via RhodeCode Enterprise').format(f_path)
         c.f_path = f_path
 
         return render('files/files_edit.mako')
@@ -660,7 +659,7 @@ class FilesController(BaseRepoController):
         file_obj = r_post.get('upload_file', None)
 
         if file_obj is not None and hasattr(file_obj, 'filename'):
-            filename = file_obj.filename
+            filename = r_post.get('filename_upload')
             content = file_obj.file
 
             if hasattr(content, 'file'):
@@ -669,14 +668,14 @@ class FilesController(BaseRepoController):
 
         # If there's no commit, redirect to repo summary
         if type(c.commit) is EmptyCommit:
-            redirect_url = "summary_home"
+            redirect_url = h.route_path('repo_summary', repo_name=c.repo_name)
         else:
-            redirect_url = "changeset_home"
+            redirect_url = url("changeset_home", repo_name=c.repo_name,
+                               revision='tip')
 
         if not filename:
             h.flash(_('No filename'), category='warning')
-            return redirect(url(redirect_url, repo_name=c.repo_name,
-                                revision='tip'))
+            return redirect(redirect_url)
 
         # extract the location from filename,
         # allows using foo/bar.txt syntax to create subdirectories
@@ -704,8 +703,9 @@ class FilesController(BaseRepoController):
                 author=author,
             )
 
-            h.flash(_('Successfully committed to %s') % node_path,
-                    category='success')
+            h.flash(
+                _('Successfully committed new file `{}`').format(
+                    h.escape(node_path)), category='success')
         except NonRelativePathError as e:
             h.flash(_(
                 'The location specified must be a relative path and must not '
@@ -713,11 +713,10 @@ class FilesController(BaseRepoController):
             return redirect(url('changeset_home', repo_name=c.repo_name,
                                 revision='tip'))
         except (NodeError, NodeAlreadyExistsError) as e:
-            h.flash(_(e), category='error')
+            h.flash(_(h.escape(e)), category='error')
         except Exception:
-            msg = _('Error occurred during commit')
-            log.exception(msg)
-            h.flash(msg, category='error')
+            log.exception('Error occurred during commit')
+            h.flash(_('Error occurred during commit'), category='error')
         return redirect(url('changeset_home',
                             repo_name=c.repo_name, revision='tip'))
 
@@ -801,7 +800,7 @@ class FilesController(BaseRepoController):
         if not use_cached_archive:
             # generate new archive
             fd, archive = tempfile.mkstemp()
-            log.debug('Creating new temp archive in %s' % (archive,))
+            log.debug('Creating new temp archive in %s', archive)
             try:
                 commit.archive_repo(archive, kind=fileformat, subrepos=subrepos)
             except ImproperArchiveTypeError:
@@ -809,9 +808,25 @@ class FilesController(BaseRepoController):
             if archive_cache_enabled:
                 # if we generated the archive and we have cache enabled
                 # let's use this for future
-                log.debug('Storing new archive in %s' % (cached_archive_path,))
+                log.debug('Storing new archive in %s', cached_archive_path)
                 shutil.move(archive, cached_archive_path)
                 archive = cached_archive_path
+
+        # store download action
+        audit_logger.store_web(
+            'repo.archive.download', action_data={
+                'user_agent': request.user_agent,
+                'archive_name': archive_name,
+                'archive_spec': fname,
+                'archive_cached': use_cached_archive},
+            user=c.rhodecode_user,
+            repo=dbrepo,
+            commit=True
+        )
+
+        response.content_disposition = str(
+            'attachment; filename=%s' % archive_name)
+        response.content_type = str(content_type)
 
         def get_chunked_archive(archive):
             with open(archive, 'rb') as stream:
@@ -825,14 +840,6 @@ class FilesController(BaseRepoController):
                             os.remove(archive)
                         break
                     yield data
-
-        # store download action
-        action_logger(user=c.rhodecode_user,
-                      action='user_downloaded_archive:%s' % archive_name,
-                      repo=repo_name, ipaddr=self.ip_addr, commit=True)
-        response.content_disposition = str(
-            'attachment; filename=%s' % archive_name)
-        response.content_type = str(content_type)
 
         return get_chunked_archive(archive)
 

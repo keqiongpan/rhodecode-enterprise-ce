@@ -35,7 +35,7 @@
                 ${_('First name')}:
             </div>
             <div class="right-content">
-                ${c.user.firstname}
+                ${c.user.first_name}
             </div>
         </div>
         <div class="fieldset">
@@ -43,7 +43,7 @@
                 ${_('Last name')}:
             </div>
             <div class="right-content">
-                ${c.user.lastname}
+                ${c.user.last_name}
             </div>
         </div>
         <div class="fieldset">

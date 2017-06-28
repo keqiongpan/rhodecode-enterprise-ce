@@ -489,7 +489,22 @@ class TestCompareController(object):
         compare_page = ComparePage(response)
         compare_page.contains_commits(commits=[commit1], ancestors=[commit0])
 
-    def test_errors_when_comparing_unknown_repo(self, backend):
+    def test_errors_when_comparing_unknown_source_repo(self, backend):
+        repo = backend.repo
+        badrepo = 'badrepo'
+
+        response = self.app.get(
+            url('compare_url',
+                repo_name=badrepo,
+                source_ref_type="rev",
+                source_ref='tip',
+                target_ref_type="rev",
+                target_ref='tip',
+                target_repo=repo.repo_name,
+                merge='1',),
+            status=404)
+
+    def test_errors_when_comparing_unknown_target_repo(self, backend):
         repo = backend.repo
         badrepo = 'badrepo'
 
@@ -504,7 +519,8 @@ class TestCompareController(object):
                 merge='1',),
             status=302)
         redirected = response.follow()
-        redirected.mustcontain('Could not find the other repo: %s' % badrepo)
+        redirected.mustcontain(
+            'Could not find the target repo: `{}`'.format(badrepo))
 
     def test_compare_not_in_preview_mode(self, backend_stub):
         commit0 = backend_stub.repo.get_commit(commit_idx=0)

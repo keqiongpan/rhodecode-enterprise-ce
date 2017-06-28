@@ -41,7 +41,6 @@ class RepoMaintenanceView(RepoAppView):
         return c
 
     @LoginRequired()
-    @NotAnonymous()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
         route_name='repo_maintenance', request_method='GET',
@@ -54,7 +53,6 @@ class RepoMaintenanceView(RepoAppView):
         return self._get_template_context(c)
 
     @LoginRequired()
-    @NotAnonymous()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
         route_name='repo_maintenance_execute', request_method='GET',

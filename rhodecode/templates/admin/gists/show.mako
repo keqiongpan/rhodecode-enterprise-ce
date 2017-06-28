@@ -73,7 +73,7 @@
                     </div>
 
                     <div class="author">
-                        <div title="${c.file_last_commit.author}">
+                        <div title="${h.tooltip(c.file_last_commit.author)}">
                           ${self.gravatar_with_user(c.file_last_commit.author, 16)} - ${_('created')} ${h.age_component(c.file_last_commit.date)}
                         </div>
 

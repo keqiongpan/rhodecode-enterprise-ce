@@ -3,7 +3,7 @@
 
 <%def name="breadcrumbs_links()">
   %if c.repo:
-    ${h.link_to('Settings',h.url('edit_repo', repo_name=c.repo.repo_name))}
+    ${h.link_to('Settings',h.route_path('edit_repo', repo_name=c.repo.repo_name))}
     &raquo;
     ${h.link_to(_('Integrations'),request.route_url(route_name='repo_integrations_home', repo_name=c.repo.repo_name))}
     &raquo;
@@ -12,7 +12,7 @@
                         repo_name=c.repo.repo_name,
                         integration=current_IntegrationType.key))}
   %elif c.repo_group:
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('Repository Groups'),h.url('repo_groups'))}
     &raquo;
@@ -25,7 +25,7 @@
                         repo_group_name=c.repo_group.group_name,
                         integration=current_IntegrationType.key))}
   %else:
-    ${h.link_to(_('Admin'),h.url('admin_home'))}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
     ${h.link_to(_('Settings'),h.url('admin_settings'))}
     &raquo;

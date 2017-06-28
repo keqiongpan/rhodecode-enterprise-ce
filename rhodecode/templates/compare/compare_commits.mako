@@ -6,6 +6,7 @@
     <a href="${h.url('changeset_home', repo_name=c.repo_name, revision=c.ancestor)}">
         ${h.short_id(c.ancestor)}
     </a>. ${_('Compare was calculated based on this shared commit.')}
+    <input id="common_ancestor" type="hidden" name="common_ancestor" value="${c.ancestor}">
 </div>
 %endif
 

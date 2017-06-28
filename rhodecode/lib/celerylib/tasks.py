@@ -31,12 +31,13 @@ from celery.task import task
 from pylons import config
 
 import rhodecode
+from rhodecode.lib import audit_logger
 from rhodecode.lib.celerylib import (
     run_task, dbsession, __get_lockkey, LockHeld, DaemonLock,
     get_session, vcsconnection, RhodecodeCeleryTask)
 from rhodecode.lib.hooks_base import log_create_repository
 from rhodecode.lib.rcmail.smtp_mailer import SmtpMailer
-from rhodecode.lib.utils import add_cache, action_logger
+from rhodecode.lib.utils import add_cache
 from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.model.db import Repository, User
 
@@ -141,7 +142,7 @@ def create_repo(form_data, cur_user):
         'enable_downloads', defs.get('repo_enable_downloads'))
 
     try:
-        RepoModel(DBS)._create_repo(
+        repo = RepoModel(DBS)._create_repo(
             repo_name=repo_name_full,
             repo_type=repo_type,
             description=description,
@@ -158,8 +159,6 @@ def create_repo(form_data, cur_user):
             enable_downloads=enable_downloads,
             state=state
         )
-
-        action_logger(cur_user, 'user_created_repo', repo_name_full, '', DBS)
         DBS.commit()
 
         # now create this repo on Filesystem
@@ -177,6 +176,14 @@ def create_repo(form_data, cur_user):
 
         # set new created state
         repo.set_state(Repository.STATE_CREATED)
+        repo_id = repo.repo_id
+        repo_data = repo.get_api_data()
+
+        audit_logger.store(
+            'repo.create', action_data={'data': repo_data},
+            user=cur_user,
+            repo=audit_logger.RepoWrap(repo_name=repo_name, repo_id=repo_id))
+
         DBS.commit()
     except Exception:
         log.warning('Exception occurred when creating repository, '
@@ -240,8 +247,7 @@ def create_repo_fork(form_data, cur_user):
             fork_of=fork_of,
             copy_fork_permissions=copy_fork_permissions
         )
-        action_logger(cur_user, 'user_forked_repo:%s' % repo_name_full,
-                      fork_of.repo_name, '', DBS)
+
         DBS.commit()
 
         base_path = Repository.base_path()
@@ -264,6 +270,14 @@ def create_repo_fork(form_data, cur_user):
 
         # set new created state
         repo.set_state(Repository.STATE_CREATED)
+
+        repo_id = repo.repo_id
+        repo_data = repo.get_api_data()
+        audit_logger.store(
+            'repo.fork', action_data={'data': repo_data},
+            user=cur_user,
+            repo=audit_logger.RepoWrap(repo_name=repo_name, repo_id=repo_id))
+
         DBS.commit()
     except Exception as e:
         log.warning('Exception %s occurred when forking repository, '

@@ -10,8 +10,8 @@
 
 
 <%def name="head_extra()">
-    <link href="${h.url('atom_feed_home',repo_name=c.rhodecode_db_repo.repo_name,auth_token=c.rhodecode_user.feed_token)}" rel="alternate" title="${_('%s ATOM feed') % c.repo_name}" type="application/atom+xml" />
-    <link href="${h.url('rss_feed_home',repo_name=c.rhodecode_db_repo.repo_name,auth_token=c.rhodecode_user.feed_token)}" rel="alternate" title="${_('%s RSS feed') % c.repo_name}" type="application/rss+xml" />
+    <link href="${h.url('atom_feed_home',repo_name=c.rhodecode_db_repo.repo_name,auth_token=c.rhodecode_user.feed_token)}" rel="alternate" title="${h.tooltip(_('%s ATOM feed') % c.repo_name)}" type="application/atom+xml" />
+    <link href="${h.url('rss_feed_home',repo_name=c.rhodecode_db_repo.repo_name,auth_token=c.rhodecode_user.feed_token)}" rel="alternate" title="${h.tooltip(_('%s RSS feed') % c.repo_name)}" type="application/rss+xml" />
 </%def>
 
 

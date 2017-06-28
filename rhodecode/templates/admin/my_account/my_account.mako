@@ -34,12 +34,12 @@
           % if my_account_oauth_url:
           <li class="${'active' if c.active=='oauth' else ''}"><a href="${my_account_oauth_url}">${_('OAuth Identities')}</a></li>
           % endif
-          <li class="${'active' if c.active=='emails' else ''}"><a href="${h.url('my_account_emails')}">${_('Emails')}</a></li>
-          <li class="${'active' if c.active=='repos' else ''}"><a href="${h.url('my_account_repos')}">${_('Repositories')}</a></li>
-          <li class="${'active' if c.active=='watched' else ''}"><a href="${h.url('my_account_watched')}">${_('Watched')}</a></li>
+          <li class="${'active' if c.active=='emails' else ''}"><a href="${h.route_path('my_account_emails')}">${_('Emails')}</a></li>
+          <li class="${'active' if c.active=='repos' else ''}"><a href="${h.route_path('my_account_repos')}">${_('Repositories')}</a></li>
+          <li class="${'active' if c.active=='watched' else ''}"><a href="${h.route_path('my_account_watched')}">${_('Watched')}</a></li>
           <li class="${'active' if c.active=='pullrequests' else ''}"><a href="${h.url('my_account_pullrequests')}">${_('Pull Requests')}</a></li>
-          <li class="${'active' if c.active=='perms' else ''}"><a href="${h.url('my_account_perms')}">${_('Permissions')}</a></li>
-          <li class="${'active' if c.active=='my_notifications' else ''}"><a href="${h.url('my_account_notifications')}">${_('Live Notifications')}</a></li>
+          <li class="${'active' if c.active=='perms' else ''}"><a href="${h.route_path('my_account_perms')}">${_('Permissions')}</a></li>
+          <li class="${'active' if c.active=='my_notifications' else ''}"><a href="${h.route_path('my_account_notifications')}">${_('Live Notifications')}</a></li>
         </ul>
     </div>
 

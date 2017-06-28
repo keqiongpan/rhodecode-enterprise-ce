@@ -130,7 +130,7 @@ class UpdateFailureReason(object):
     NO_CHANGE = 2
 
     # The pull request has a reference type that is not supported for update.
-    WRONG_REF_TPYE = 3
+    WRONG_REF_TYPE = 3
 
     # Update failed because the target reference is missing.
     MISSING_TARGET_REF = 4
@@ -1065,8 +1065,8 @@ class BaseCommit(object):
 
     def no_node_at_path(self, path):
         return NodeDoesNotExistError(
-            "There is no file nor directory at the given path: "
-            "'%s' at commit %s" % (path, self.short_id))
+            u"There is no file nor directory at the given path: "
+            u"`%s` at commit %s" % (safe_unicode(path), self.short_id))
 
     def _fix_path(self, path):
         """

@@ -36,7 +36,7 @@
      %endif
     <div class="table">
         <div id="shortlog_data">
-            <%include file='../changelog/changelog_summary_data.mako'/>
+            <%include file='summary_commits.mako'/>
         </div>
     </div>
 </div>
@@ -44,13 +44,13 @@
 %if c.readme_data:
 <div id="readme" class="anchor">
 <div class="box" >
-    <div class="title" title="${_('Readme file from commit %s:%s') % (c.rhodecode_db_repo.landing_rev[0], c.rhodecode_db_repo.landing_rev[1])}">
+    <div class="title" title="${h.tooltip(_('Readme file from commit %s:%s') % (c.rhodecode_db_repo.landing_rev[0], c.rhodecode_db_repo.landing_rev[1]))}">
         <h3 class="breadcrumbs">
             <a href="${h.url('files_home',repo_name=c.repo_name,revision='tip',f_path=c.readme_file)}">${c.readme_file}</a>
         </h3>
     </div>
     <div class="readme codeblock">
-      <div class="readme_box markdown-block">
+      <div class="readme_box">
         ${c.readme_data|n}
       </div>
     </div>
@@ -110,8 +110,7 @@ $(document).ready(function(){
 
         var callback = function (data) {
             % if c.show_stats:
-                showRepoStats(
-                    'lang_stats', data);
+                showRepoStats('lang_stats', data);
             % endif
         };
 

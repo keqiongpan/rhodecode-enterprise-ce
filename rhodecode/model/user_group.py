@@ -27,14 +27,18 @@ user group model for RhodeCode
 import logging
 import traceback
 
-from rhodecode.lib.utils2 import safe_str
+from rhodecode.lib.utils2 import safe_str, safe_unicode
+from rhodecode.lib.exceptions import (
+    UserGroupAssignedException, RepoGroupAssignmentError)
+from rhodecode.lib.utils2 import (
+    get_current_rhodecode_user, action_logger_generic)
 from rhodecode.model import BaseModel
-from rhodecode.model.db import UserGroupMember, UserGroup,\
-    UserGroupRepoToPerm, Permission, UserGroupToPerm, User, UserUserGroupToPerm,\
-    UserGroupUserGroupToPerm, UserGroupRepoGroupToPerm
-from rhodecode.lib.exceptions import UserGroupAssignedException,\
-    RepoGroupAssignmentError
-from rhodecode.lib.utils2 import get_current_rhodecode_user, action_logger_generic
+from rhodecode.model.scm import UserGroupList
+from rhodecode.model.db import (
+    true, func, User, UserGroupMember, UserGroup,
+    UserGroupRepoToPerm, Permission, UserGroupToPerm, UserUserGroupToPerm,
+    UserGroupUserGroupToPerm, UserGroupRepoGroupToPerm)
+
 
 log = logging.getLogger(__name__)
 
@@ -112,7 +116,7 @@ class UserGroupModel(BaseModel):
             if member_type == 'user':
                 self.revoke_user_permission(user_group=user_group, user=member_id)
             else:
-                #check if we have permissions to alter this usergroup
+                # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
                 if not check_perms or HasUserGroupPermissionAny(*req_perms)(member_name, user=cur_user):
                     self.revoke_user_group_permission(
@@ -171,7 +175,7 @@ class UserGroupModel(BaseModel):
                 user_id for user_id in current_members_ids
                 if user_id not in user_id_list]
 
-        return (added_members, deleted_members)
+        return added_members, deleted_members
 
     def _set_users_as_members(self, user_group, user_ids):
         user_group.members = []
@@ -187,6 +191,7 @@ class UserGroupModel(BaseModel):
         self._set_users_as_members(user_group, user_ids)
         self._log_user_changes('added to', user_group, added)
         self._log_user_changes('removed from', user_group, removed)
+        return added, removed
 
     def _clean_members_data(self, members_data):
         if not members_data:
@@ -221,12 +226,16 @@ class UserGroupModel(BaseModel):
 
             user_group.user = owner
 
+        added_user_ids = []
+        removed_user_ids = []
         if 'users_group_members' in form_data:
             members_id_list = self._clean_members_data(
                 form_data['users_group_members'])
-            self._update_members_from_user_ids(user_group, members_id_list)
+            added_user_ids, removed_user_ids = \
+                self._update_members_from_user_ids(user_group, members_id_list)
 
         self.sa.add(user_group)
+        return user_group, added_user_ids, removed_user_ids
 
     def delete(self, user_group, force=False):
         """
@@ -539,6 +548,59 @@ class UserGroupModel(BaseModel):
             log.debug('Adding user %s to user group %s', user.username, gr.users_group_name)
             UserGroupModel().add_user_to_group(gr.users_group_name, user.username)
 
+    def _serialize_user_group(self, user_group):
+        import rhodecode.lib.helpers as h
+        return {
+                'id': user_group.users_group_id,
+                # TODO: marcink figure out a way to generate the url for the
+                # icon
+                'icon_link': '',
+                'value_display': 'Group: %s (%d members)' % (
+                    user_group.users_group_name, len(user_group.members),),
+                'value': user_group.users_group_name,
+                'description': user_group.user_group_description,
+                'owner': user_group.user.username,
+
+                'owner_icon': h.gravatar_url(user_group.user.email, 30),
+                'value_display_owner': h.person(user_group.user.email),
+
+                'value_type': 'user_group',
+                'active': user_group.users_group_active,
+            }
+
+    def get_user_groups(self, name_contains=None, limit=20, only_active=True,
+                        expand_groups=False):
+        query = self.sa.query(UserGroup)
+        if only_active:
+            query = query.filter(UserGroup.users_group_active == true())
+
+        if name_contains:
+            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
+            query = query.filter(
+                UserGroup.users_group_name.ilike(ilike_expression))\
+                .order_by(func.length(UserGroup.users_group_name))\
+                .order_by(UserGroup.users_group_name)
+
+            query = query.limit(limit)
+        user_groups = query.all()
+        perm_set = ['usergroup.read', 'usergroup.write', 'usergroup.admin']
+        user_groups = UserGroupList(user_groups, perm_set=perm_set)
+
+        # store same serialize method to extract data from User
+        from rhodecode.model.user import UserModel
+        serialize_user = UserModel()._serialize_user
+
+        _groups = []
+        for group in user_groups:
+            entry = self._serialize_user_group(group)
+            if expand_groups:
+                expanded_members = []
+                for member in group.members:
+                    expanded_members.append(serialize_user(member.user))
+                entry['members'] = expanded_members
+            _groups.append(entry)
+        return _groups
+
     @staticmethod
     def get_user_groups_as_dict(user_group):
         import rhodecode.lib.helpers as h
@@ -550,7 +612,9 @@ class UserGroupModel(BaseModel):
             'active': user_group.users_group_active,
             "owner": user_group.user.username,
             'owner_icon': h.gravatar_url(user_group.user.email, 30),
-            "owner_data": {'owner': user_group.user.username, 'owner_icon': h.gravatar_url(user_group.user.email, 30)}
+            "owner_data": {
+                'owner': user_group.user.username,
+                'owner_icon': h.gravatar_url(user_group.user.email, 30)}
             }
         return data
 

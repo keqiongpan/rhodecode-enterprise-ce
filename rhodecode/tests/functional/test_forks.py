@@ -22,6 +22,7 @@ import pytest
 
 from rhodecode.tests import *
 from rhodecode.tests.fixture import Fixture
+from rhodecode.lib import helpers as h
 
 from rhodecode.model.db import Repository
 from rhodecode.model.repo import RepoModel
@@ -74,7 +75,7 @@ class _BaseTest(TestController):
         repo_name = self.REPO
         self.app.post(
             url(controller='forks', action='fork_create', repo_name=repo_name),
-            {'csrf_token': self.csrf_token}, status=403)
+            {'csrf_token': self.csrf_token}, status=404)
 
     def test_index_with_fork(self):
         self.log_user()
@@ -106,9 +107,7 @@ class _BaseTest(TestController):
         )
 
         # remove this fork
-        response = self.app.post(
-            url('repo', repo_name=fork_name),
-            params={'_method': 'delete', 'csrf_token': self.csrf_token})
+        fixture.destroy_repo(fork_name)
 
     def test_fork_create_into_group(self):
         self.log_user()
@@ -149,7 +148,7 @@ class _BaseTest(TestController):
         assert fork_repo.fork.repo_name == repo_name
 
         # test if the repository is visible in the list ?
-        response = self.app.get(url('summary_home', repo_name=fork_name_full))
+        response = self.app.get(h.route_path('repo_summary', repo_name=fork_name_full))
         response.mustcontain(fork_name_full)
         response.mustcontain(self.REPO_TYPE)
 
@@ -195,7 +194,7 @@ class _BaseTest(TestController):
         assert fork_repo.fork.repo_name == repo_name
 
         # test if the repository is visible in the list ?
-        response = self.app.get(url('summary_home', repo_name=fork_name))
+        response = self.app.get(h.route_path('repo_summary', repo_name=fork_name))
         response.mustcontain(fork_name)
         response.mustcontain(self.REPO_TYPE)
         response.mustcontain('Fork of')
@@ -256,7 +255,7 @@ class TestHG(_BaseTest):
 
 @pytest.mark.usefixtures('app', 'autologin_user')
 @pytest.mark.skip_backends('git','hg')
-class TestSVNFork:
+class TestSVNFork(object):
 
     def test_fork_redirects(self, backend):
         denied_actions = ['fork','fork_create']
@@ -268,7 +267,7 @@ class TestSVNFork:
 
             # Not allowed, redirect to the summary
             redirected = response.follow()
-            summary_url = url('summary_home', repo_name=backend.repo_name)
+            summary_url = h.route_path('repo_summary', repo_name=backend.repo_name)
 
             # URL adds leading slash and path doesn't have it
-            assert redirected.req.path == summary_url
+            assert redirected.request.path == summary_url

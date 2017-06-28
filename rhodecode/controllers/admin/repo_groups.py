@@ -34,17 +34,18 @@ from pylons.i18n.translation import _, ungettext
 
 from rhodecode.lib import auth
 from rhodecode.lib import helpers as h
+from rhodecode.lib import audit_logger
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, HasPermissionAll,
     HasRepoGroupPermissionAll, HasRepoGroupPermissionAnyDecorator)
 from rhodecode.lib.base import BaseController, render
+from rhodecode.lib.utils2 import safe_int
 from rhodecode.model.db import RepoGroup, User
 from rhodecode.model.scm import RepoGroupList
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.forms import RepoGroupForm, RepoGroupPermsForm
 from rhodecode.model.meta import Session
-from rhodecode.lib.utils2 import safe_int
 
 
 log = logging.getLogger(__name__)
@@ -153,9 +154,6 @@ class RepoGroupsController(BaseController):
 
     @NotAnonymous()
     def index(self):
-        """GET /repo_groups: All items in the collection"""
-        # url('repo_groups')
-
         repo_group_list = RepoGroup.get_all_repo_groups()
         _perms = ['group.admin']
         repo_group_list_acl = RepoGroupList(repo_group_list, perm_set=_perms)
@@ -168,8 +166,6 @@ class RepoGroupsController(BaseController):
     @NotAnonymous()
     @auth.CSRFRequired()
     def create(self):
-        """POST /repo_groups: Create a new item"""
-        # url('repo_groups')
 
         parent_group_id = safe_int(request.POST.get('group_parent_id'))
         can_create = self._can_create_repo_group(parent_group_id)
@@ -183,20 +179,29 @@ class RepoGroupsController(BaseController):
         try:
             owner = c.rhodecode_user
             form_result = repo_group_form.to_python(dict(request.POST))
-            RepoGroupModel().create(
+            repo_group = RepoGroupModel().create(
                 group_name=form_result['group_name_full'],
                 group_description=form_result['group_description'],
                 owner=owner.user_id,
                 copy_permissions=form_result['group_copy_permissions']
             )
+            Session().flush()
+
+            repo_group_data = repo_group.get_api_data()
+            audit_logger.store_web(
+                'repo_group.create', action_data={'data': repo_group_data},
+                user=c.rhodecode_user)
+
             Session().commit()
+
             _new_group_name = form_result['group_name_full']
+
             repo_group_url = h.link_to(
                 _new_group_name,
-                h.url('repo_group_home', group_name=_new_group_name))
+                h.route_path('repo_group_home', repo_group_name=_new_group_name))
             h.flash(h.literal(_('Created repository group %s')
                     % repo_group_url), category='success')
-            # TODO: in futureaction_logger(, '', '', '', self.sa)
+
         except formencode.Invalid as errors:
             return htmlfill.render(
                 render('admin/repo_groups/repo_group_add.mako'),
@@ -216,8 +221,6 @@ class RepoGroupsController(BaseController):
     # perm checks inside
     @NotAnonymous()
     def new(self):
-        """GET /repo_groups/new: Form to create a new item"""
-        # url('new_repo_group')
         # perm check for admin, create_group perm or admin of parent_group
         parent_group_id = safe_int(request.GET.get('parent_group'))
         if not self._can_create_repo_group(parent_group_id):
@@ -229,12 +232,6 @@ class RepoGroupsController(BaseController):
     @HasRepoGroupPermissionAnyDecorator('group.admin')
     @auth.CSRFRequired()
     def update(self, group_name):
-        """PUT /repo_groups/group_name: Update an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        #    <input type="hidden" name="_method" value="PUT" />
-        # Or using helpers:
-        #    h.form(url('repos_group', group_name=GROUP_NAME), method='put')
-        # url('repo_group_home', group_name=GROUP_NAME)
 
         c.repo_group = RepoGroupModel()._get_repo_group(group_name)
         can_create_in_root = self._can_create_repo_group()
@@ -250,16 +247,21 @@ class RepoGroupsController(BaseController):
             available_groups=c.repo_groups_choices,
             can_create_in_root=can_create_in_root, allow_disabled=True)()
 
+        old_values = c.repo_group.get_api_data()
         try:
             form_result = repo_group_form.to_python(dict(request.POST))
             gr_name = form_result['group_name']
             new_gr = RepoGroupModel().update(group_name, form_result)
+
+            audit_logger.store_web(
+                'repo_group.edit', action_data={'old_data': old_values},
+                user=c.rhodecode_user)
+
             Session().commit()
             h.flash(_('Updated repository group %s') % (gr_name,),
                     category='success')
             # we now have new name !
             group_name = new_gr.group_name
-            # TODO: in future action_logger(, '', '', '', self.sa)
         except formencode.Invalid as errors:
             c.active = 'settings'
             return htmlfill.render(
@@ -279,13 +281,6 @@ class RepoGroupsController(BaseController):
     @HasRepoGroupPermissionAnyDecorator('group.admin')
     @auth.CSRFRequired()
     def delete(self, group_name):
-        """DELETE /repo_groups/group_name: Delete an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        #    <input type="hidden" name="_method" value="DELETE" />
-        # Or using helpers:
-        #    h.form(url('repos_group', group_name=GROUP_NAME), method='delete')
-        # url('repo_group_home', group_name=GROUP_NAME)
-
         gr = c.repo_group = RepoGroupModel()._get_repo_group(group_name)
         repos = gr.repositories.all()
         if repos:
@@ -307,11 +302,16 @@ class RepoGroupsController(BaseController):
             return redirect(url('repo_groups'))
 
         try:
+            old_values = gr.get_api_data()
             RepoGroupModel().delete(group_name)
+
+            audit_logger.store_web(
+                'repo_group.delete', action_data={'old_data': old_values},
+                user=c.rhodecode_user)
+
             Session().commit()
             h.flash(_('Removed repository group %s') % group_name,
                     category='success')
-            # TODO: in future action_logger(, '', '', '', self.sa)
         except Exception:
             log.exception("Exception during deletion of repository group")
             h.flash(_('Error occurred during deletion of repository group %s')
@@ -321,8 +321,7 @@ class RepoGroupsController(BaseController):
 
     @HasRepoGroupPermissionAnyDecorator('group.admin')
     def edit(self, group_name):
-        """GET /repo_groups/group_name/edit: Form to edit an existing item"""
-        # url('edit_repo_group', group_name=GROUP_NAME)
+
         c.active = 'settings'
 
         c.repo_group = RepoGroupModel()._get_repo_group(group_name)
@@ -346,8 +345,6 @@ class RepoGroupsController(BaseController):
 
     @HasRepoGroupPermissionAnyDecorator('group.admin')
     def edit_repo_group_advanced(self, group_name):
-        """GET /repo_groups/group_name/edit: Form to edit an existing item"""
-        # url('edit_repo_group', group_name=GROUP_NAME)
         c.active = 'advanced'
         c.repo_group = RepoGroupModel()._get_repo_group(group_name)
 
@@ -355,8 +352,6 @@ class RepoGroupsController(BaseController):
 
     @HasRepoGroupPermissionAnyDecorator('group.admin')
     def edit_repo_group_perms(self, group_name):
-        """GET /repo_groups/group_name/edit: Form to edit an existing item"""
-        # url('edit_repo_group', group_name=GROUP_NAME)
         c.active = 'perms'
         c.repo_group = RepoGroupModel()._get_repo_group(group_name)
         self.__load_defaults()
@@ -374,8 +369,6 @@ class RepoGroupsController(BaseController):
     def update_perms(self, group_name):
         """
         Update permissions for given repository group
-
-        :param group_name:
         """
 
         c.repo_group = RepoGroupModel()._get_repo_group(group_name)
@@ -393,14 +386,20 @@ class RepoGroupsController(BaseController):
         # iterate over all members(if in recursive mode) of this groups and
         # set the permissions !
         # this can be potentially heavy operation
-        RepoGroupModel().update_permissions(
+        changes = RepoGroupModel().update_permissions(
             c.repo_group,
-            form['perm_additions'], form['perm_updates'],
-            form['perm_deletions'], form['recursive'])
+            form['perm_additions'], form['perm_updates'], form['perm_deletions'],
+            form['recursive'])
 
-        # TODO: implement this
-        # action_logger(c.rhodecode_user, 'admin_changed_repo_permissions',
-        #               repo_name, self.ip_addr, self.sa)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_web(
+            'repo_group.edit.permissions', action_data=action_data,
+            user=c.rhodecode_user)
+
         Session().commit()
         h.flash(_('Repository Group permissions updated'), category='success')
         return redirect(url('edit_repo_group_perms', group_name=group_name))

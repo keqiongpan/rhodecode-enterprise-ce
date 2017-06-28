@@ -132,6 +132,7 @@ class TestMyAccountPassword(TestController):
         self.app.post(route_path('my_account_password'), form_data)
 
         response = self.app.get(route_path('home'))
-        new_password_hash = response.session['rhodecode_user']['password']
+        session = response.get_session_from_response()
+        new_password_hash = session['rhodecode_user']['password']
 
         assert old_password_hash != new_password_hash

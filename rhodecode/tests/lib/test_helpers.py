@@ -27,6 +27,7 @@ from pylons.util import ContextObj
 from rhodecode.lib import helpers
 from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.settings import IssueTrackerSettingsModel
+from rhodecode.tests import no_newline_id_generator
 
 
 @pytest.mark.parametrize('url, expected_url', [
@@ -103,55 +104,62 @@ def test_extract_issues(backend, text_string, pattern, expected):
     assert issues == expected
 
 
-@pytest.mark.parametrize('text_string, pattern, expected_text', [
-    ('Fix #42', '(?:#)(?P<issue_id>\d+)',
-     'Fix <a class="issue-tracker-link" href="http://r.io/{repo}/i/42">#42</a>'
-     ),
-    ('Fix #42', '(?:#)?<issue_id>\d+)', 'Fix #42'),  # Broken regex
+@pytest.mark.parametrize('text_string, pattern, link_format, expected_text', [
+    ('Fix #42', '(?:#)(?P<issue_id>\d+)', 'html',
+     'Fix <a class="issue-tracker-link" href="http://r.io/{repo}/i/42">#42</a>'),
+
+    ('Fix #42', '(?:#)(?P<issue_id>\d+)', 'markdown',
+     'Fix [#42](http://r.io/{repo}/i/42)'),
+
+    ('Fix #42', '(?:#)(?P<issue_id>\d+)', 'rst',
+     'Fix `#42 <http://r.io/{repo}/i/42>`_'),
+
+    ('Fix #42', '(?:#)?<issue_id>\d+)', 'html',
+     'Fix #42'),  # Broken regex
 ])
-def test_process_patterns_repo(backend, text_string, pattern, expected_text):
+def test_process_patterns_repo(backend, text_string, pattern, expected_text, link_format):
     repo = backend.create_repo()
-    config = {'123': {
-        'uid': '123',
-        'pat': pattern,
-        'url': 'http://r.io/${repo}/i/${issue_id}',
-        'pref': '#',
-        }
-    }
 
     def get_settings_mock(self, cache=True):
-        return config
+        return {
+            '123': {
+                'uid': '123',
+                'pat': pattern,
+                'url': 'http://r.io/${repo}/i/${issue_id}',
+                'pref': '#',
+            }
+        }
 
     with mock.patch.object(IssueTrackerSettingsModel,
                            'get_settings', get_settings_mock):
         processed_text, issues = helpers.process_patterns(
-            text_string, repo.repo_name, config)
+            text_string, repo.repo_name, link_format)
 
     assert processed_text == expected_text.format(repo=repo.repo_name)
 
 
 @pytest.mark.parametrize('text_string, pattern, expected_text', [
     ('Fix #42', '(?:#)(?P<issue_id>\d+)',
-     'Fix <a class="issue-tracker-link" href="http://r.io/i/42">#42</a>'
-     ),
-    ('Fix #42', '(?:#)?<issue_id>\d+)', 'Fix #42'),  # Broken regex
+     'Fix <a class="issue-tracker-link" href="http://r.io/i/42">#42</a>'),
+    ('Fix #42', '(?:#)?<issue_id>\d+)',
+     'Fix #42'),  # Broken regex
 ])
 def test_process_patterns_no_repo(text_string, pattern, expected_text):
-    config = {'123': {
-        'uid': '123',
-        'pat': pattern,
-        'url': 'http://r.io/i/${issue_id}',
-        'pref': '#',
-        }
-    }
 
     def get_settings_mock(self, cache=True):
-        return config
+        return {
+            '123': {
+                'uid': '123',
+                'pat': pattern,
+                'url': 'http://r.io/i/${issue_id}',
+                'pref': '#',
+            }
+        }
 
     with mock.patch.object(IssueTrackerSettingsModel,
                            'get_global_settings', get_settings_mock):
         processed_text, issues = helpers.process_patterns(
-            text_string, '', config)
+            text_string, '')
 
     assert processed_text == expected_text
 
@@ -161,21 +169,21 @@ def test_process_patterns_non_existent_repo_name(backend):
     pattern = '(?:#)(?P<issue_id>\d+)'
     expected_text = ('Fix <a class="issue-tracker-link" '
                      'href="http://r.io/do-not-exist/i/42">#42</a>')
-    config = {'123': {
-        'uid': '123',
-        'pat': pattern,
-        'url': 'http://r.io/${repo}/i/${issue_id}',
-        'pref': '#',
-        }
-    }
 
     def get_settings_mock(self, cache=True):
-        return config
+        return {
+            '123': {
+                'uid': '123',
+                'pat': pattern,
+                'url': 'http://r.io/${repo}/i/${issue_id}',
+                'pref': '#',
+            }
+        }
 
     with mock.patch.object(IssueTrackerSettingsModel,
                            'get_global_settings', get_settings_mock):
         processed_text, issues = helpers.process_patterns(
-            text_string, 'do-not-exist', config)
+            text_string, 'do-not-exist')
 
     assert processed_text == expected_text
 
@@ -197,7 +205,7 @@ def test_get_visual_attr(pylonsapp):
     ('just a string\n', False, 'just a string'),
     ('just a string\n next line', False, 'just a string...'),
     ('just a string\n next line', True, 'just a string\n...'),
-])
+], ids=no_newline_id_generator)
 def test_chop_at(test_text, inclusive, expected_text):
     assert helpers.chop_at_smart(
         test_text, '\n', inclusive, '...') == expected_text

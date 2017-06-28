@@ -35,9 +35,11 @@ from sqlalchemy.orm import joinedload
 
 from rhodecode.lib import auth
 from rhodecode.lib import helpers as h
+from rhodecode.lib import audit_logger
+from rhodecode.lib.ext_json import json
 from rhodecode.lib.exceptions import UserGroupAssignedException,\
     RepoGroupAssignmentError
-from rhodecode.lib.utils import jsonify, action_logger
+from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, HasUserGroupPermissionAnyDecorator,
@@ -52,8 +54,7 @@ from rhodecode.model.forms import (
     UserGroupForm, UserGroupPermsForm, UserIndividualPermissionsForm,
     UserPermissionsForm)
 from rhodecode.model.meta import Session
-from rhodecode.lib.utils import action_logger
-from rhodecode.lib.ext_json import json
+
 
 log = logging.getLogger(__name__)
 
@@ -105,8 +106,6 @@ class UserGroupsController(BaseController):
     # permission check inside
     @NotAnonymous()
     def index(self):
-        """GET /users_groups: All items in the collection"""
-        # url('users_groups')
 
         from rhodecode.lib.utils import PartialRenderer
         _render = PartialRenderer('data_table/_dt_elements.mako')
@@ -142,8 +141,6 @@ class UserGroupsController(BaseController):
     @HasPermissionAnyDecorator('hg.admin', 'hg.usergroup.create.true')
     @auth.CSRFRequired()
     def create(self):
-        """POST /users_groups: Create a new item"""
-        # url('users_groups')
 
         users_group_form = UserGroupForm()()
         try:
@@ -154,14 +151,16 @@ class UserGroupsController(BaseController):
                 owner=c.rhodecode_user.user_id,
                 active=form_result['users_group_active'])
             Session().flush()
-
+            creation_data = user_group.get_api_data()
             user_group_name = form_result['users_group_name']
-            action_logger(c.rhodecode_user,
-                          'admin_created_users_group:%s' % user_group_name,
-                          None, self.ip_addr, self.sa)
-            user_group_link = h.link_to(h.escape(user_group_name),
-                                        url('edit_users_group',
-                                            user_group_id=user_group.users_group_id))
+
+            audit_logger.store_web(
+                'user_group.create', action_data={'data': creation_data},
+                user=c.rhodecode_user)
+
+            user_group_link = h.link_to(
+                h.escape(user_group_name),
+                url('edit_users_group', user_group_id=user_group.users_group_id))
             h.flash(h.literal(_('Created user group %(user_group_link)s')
                               % {'user_group_link': user_group_link}),
                     category='success')
@@ -191,13 +190,6 @@ class UserGroupsController(BaseController):
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     @auth.CSRFRequired()
     def update(self, user_group_id):
-        """PUT /user_groups/user_group_id: Update an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        #    <input type="hidden" name="_method" value="PUT" />
-        # Or using helpers:
-        #    h.form(url('users_group', user_group_id=ID),
-        #           method='put')
-        # url('users_group', user_group_id=ID)
 
         user_group_id = safe_int(user_group_id)
         c.user_group = UserGroup.get_or_404(user_group_id)
@@ -207,16 +199,22 @@ class UserGroupsController(BaseController):
         users_group_form = UserGroupForm(
             edit=True, old_data=c.user_group.get_dict(), allow_disabled=True)()
 
+        old_values = c.user_group.get_api_data()
         try:
             form_result = users_group_form.to_python(request.POST)
             pstruct = peppercorn.parse(request.POST.items())
             form_result['users_group_members'] = pstruct['user_group_members']
 
-            UserGroupModel().update(c.user_group, form_result)
+            user_group, added_members, removed_members = \
+                UserGroupModel().update(c.user_group, form_result)
             updated_user_group = form_result['users_group_name']
-            action_logger(c.rhodecode_user,
-                          'admin_updated_users_group:%s' % updated_user_group,
-                          None, self.ip_addr, self.sa)
+
+            audit_logger.store_web(
+                'user_group.edit', action_data={'old_data': old_values},
+                user=c.rhodecode_user)
+
+            # TODO(marcink): use added/removed to set user_group.edit.member.add
+
             h.flash(_('Updated user group %s') % updated_user_group,
                     category='success')
             Session().commit()
@@ -241,19 +239,16 @@ class UserGroupsController(BaseController):
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     @auth.CSRFRequired()
     def delete(self, user_group_id):
-        """DELETE /user_groups/user_group_id: Delete an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        #    <input type="hidden" name="_method" value="DELETE" />
-        # Or using helpers:
-        #    h.form(url('users_group', user_group_id=ID),
-        #           method='delete')
-        # url('users_group', user_group_id=ID)
         user_group_id = safe_int(user_group_id)
         c.user_group = UserGroup.get_or_404(user_group_id)
         force = str2bool(request.POST.get('force'))
 
+        old_values = c.user_group.get_api_data()
         try:
             UserGroupModel().delete(c.user_group, force=force)
+            audit_logger.store_web(
+                'user.delete', action_data={'old_data': old_values},
+                user=c.rhodecode_user)
             Session().commit()
             h.flash(_('Successfully deleted user group'), category='success')
         except UserGroupAssignedException as e:
@@ -330,9 +325,9 @@ class UserGroupsController(BaseController):
         except RepoGroupAssignmentError:
             h.flash(_('Target group cannot be the same'), category='error')
             return redirect(url('edit_user_group_perms', user_group_id=user_group_id))
-        #TODO: implement this
-        #action_logger(c.rhodecode_user, 'admin_changed_repo_permissions',
-        #              repo_name, self.ip_addr, self.sa)
+
+        # TODO(marcink): implement global permissions
+        # audit_log.store_web('user_group.edit.permissions')
         Session().commit()
         h.flash(_('User Group permissions updated'), category='success')
         return redirect(url('edit_user_group_perms', user_group_id=user_group_id))
@@ -389,8 +384,6 @@ class UserGroupsController(BaseController):
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     @auth.CSRFRequired()
     def update_global_perms(self, user_group_id):
-        """PUT /users_perm/user_group_id: Update an existing item"""
-        # url('users_group_perm', user_group_id=ID, method='put')
         user_group_id = safe_int(user_group_id)
         user_group = UserGroup.get_or_404(user_group_id)
         c.active = 'global_perms'
@@ -492,6 +485,9 @@ class UserGroupsController(BaseController):
     @XHRRequired()
     @jsonify
     def user_group_members(self, user_group_id):
+        """
+        Return members of given user group
+        """
         user_group_id = safe_int(user_group_id)
         user_group = UserGroup.get_or_404(user_group_id)
         group_members_obj = sorted((x.user for x in user_group.members),
@@ -500,8 +496,8 @@ class UserGroupsController(BaseController):
         group_members = [
             {
                 'id': user.user_id,
-                'first_name': user.name,
-                'last_name': user.lastname,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
                 'username': user.username,
                 'icon_link': h.gravatar_url(user.email, 30),
                 'value_display': h.person(user.email),

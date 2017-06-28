@@ -34,11 +34,11 @@ from webob.exc import HTTPBadRequest
 from pylons import request, tmpl_context as c, response, url
 from pylons.i18n.translation import _
 
-from rhodecode.controllers.admin.admin import user_log_filter
 from rhodecode.model.db import UserLog, UserFollowing, User, UserApiKeys
 from rhodecode.model.meta import Session
 import rhodecode.lib.helpers as h
 from rhodecode.lib.helpers import Page
+from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
 from rhodecode.lib.base import BaseController, render
 from rhodecode.lib.utils2 import safe_int, AttributeDict

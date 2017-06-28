@@ -162,6 +162,10 @@ def get_access_path(environ):
     return path
 
 
+def get_user_agent(environ):
+    return environ.get('HTTP_USER_AGENT')
+
+
 def vcs_operation_context(
         environ, repo_name, username, action, scm, check_locking=True,
         is_shadow_repo=False):
@@ -200,6 +204,7 @@ def vcs_operation_context(
         'make_lock': make_lock,
         'locked_by': locked_by,
         'server_url': utils2.get_server_url(environ),
+        'user_agent': get_user_agent(environ),
         'hooks': get_enabled_hook_classes(ui_settings),
         'is_shadow_repo': is_shadow_repo,
     }
@@ -260,7 +265,7 @@ class BasicAuth(AuthBasicAuthenticator):
     __call__ = authenticate
 
 
-def attach_context_attributes(context, request):
+def attach_context_attributes(context, request, user_id, attach_to_request=False):
     """
     Attach variables into template context called `c`, please note that
     request could be pylons or pyramid request in here.
@@ -302,7 +307,7 @@ def attach_context_attributes(context, request):
         'rhodecode_markup_renderer', 'rst')
     context.visual.comment_types = ChangesetComment.COMMENT_TYPES
     context.visual.rhodecode_support_url = \
-        rc_config.get('rhodecode_support_url') or url('rhodecode_support')
+        rc_config.get('rhodecode_support_url') or h.route_url('rhodecode_support')
 
     context.pre_code = rc_config.get('rhodecode_pre_code')
     context.post_code = rc_config.get('rhodecode_post_code')
@@ -324,6 +329,11 @@ def attach_context_attributes(context, request):
     context.debug_style = str2bool(config.get('debug_style', False))
 
     context.rhodecode_instanceid = config.get('instance_id')
+
+    context.visual.cut_off_limit_diff = safe_int(
+        config.get('cut_off_limit_diff'))
+    context.visual.cut_off_limit_file = safe_int(
+        config.get('cut_off_limit_file'))
 
     # AppEnlight
     context.appenlight_enabled = str2bool(config.get('appenlight', 'false'))
@@ -382,10 +392,12 @@ def attach_context_attributes(context, request):
     context.csrf_token = auth.get_csrf_token()
     context.backends = rhodecode.BACKENDS.keys()
     context.backends.sort()
-    context.unread_notifications = NotificationModel().get_unread_cnt_for_user(
-        context.rhodecode_user.user_id)
+    context.unread_notifications = NotificationModel().get_unread_cnt_for_user(user_id)
+    if attach_to_request:
+        request.call_context = context
+    else:
+        context.pyramid_request = pyramid.threadlocal.get_current_request()
 
-    context.pyramid_request = pyramid.threadlocal.get_current_request()
 
 
 def get_auth_user(environ):
@@ -435,7 +447,7 @@ class BaseController(WSGIController):
         """
         # on each call propagate settings calls into global settings.
         set_rhodecode_config(config)
-        attach_context_attributes(c, request)
+        attach_context_attributes(c, request, c.rhodecode_user.user_id)
 
         # TODO: Remove this when fixed in attach_context_attributes()
         c.repo_name = get_repo_slug(request)  # can be empty
@@ -550,7 +562,7 @@ class BaseRepoController(BaseController):
                     "The repository at %(repo_name)s cannot be located.") %
                     {'repo_name': c.repo_name},
                     category='error', ignore_duplicate=True)
-                redirect(url('home'))
+                redirect(h.route_path('home'))
 
             # update last change according to VCS data
             if not missing_requirements:
@@ -577,7 +589,7 @@ class BaseRepoController(BaseController):
             'Requirements are missing for repository %s: %s',
             c.repo_name, error.message)
 
-        summary_url = url('summary_home', repo_name=c.repo_name)
+        summary_url = h.route_path('repo_summary', repo_name=c.repo_name)
         statistics_url = url('edit_repo_statistics', repo_name=c.repo_name)
         settings_update_url = url('repo', repo_name=c.repo_name)
         path = request.path

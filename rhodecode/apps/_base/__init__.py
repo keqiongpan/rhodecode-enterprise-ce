@@ -24,8 +24,12 @@ from pylons import tmpl_context as c
 from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.lib import helpers as h
-from rhodecode.lib.utils2 import StrictAttributeDict, safe_int
+from rhodecode.lib.utils import PartialRenderer
+from rhodecode.lib.utils2 import StrictAttributeDict, safe_int, datetime_to_time
+from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
+from rhodecode.lib.ext_json import json
 from rhodecode.model import repo
+from rhodecode.model import repo_group
 from rhodecode.model.db import User
 from rhodecode.model.scm import ScmModel
 
@@ -34,6 +38,30 @@ log = logging.getLogger(__name__)
 
 ADMIN_PREFIX = '/_admin'
 STATIC_FILE_PREFIX = '/_static'
+
+
+def add_route_with_slash(config,name, pattern, **kw):
+    config.add_route(name, pattern, **kw)
+    if not pattern.endswith('/'):
+        config.add_route(name + '_slash', pattern + '/', **kw)
+
+
+def get_format_ref_id(repo):
+    """Returns a `repo` specific reference formatter function"""
+    if h.is_svn(repo):
+        return _format_ref_id_svn
+    else:
+        return _format_ref_id
+
+
+def _format_ref_id(name, raw_id):
+    """Default formatting of a given reference `name`"""
+    return name
+
+
+def _format_ref_id_svn(name, raw_id):
+    """Special way of formatting a reference for Subversion including path"""
+    return '%s@%s' % (name, raw_id)
 
 
 class TemplateArgs(StrictAttributeDict):
@@ -77,9 +105,14 @@ class BaseAppView(object):
                 raise HTTPFound(
                     self.request.route_path('my_account_password'))
 
-    def _get_local_tmpl_context(self):
+    def _get_local_tmpl_context(self, include_app_defaults=False):
         c = TemplateArgs()
         c.auth_user = self.request.user
+        if include_app_defaults:
+            # NOTE(marcink): after full pyramid migration include_app_defaults
+            # should be turned on by default
+            from rhodecode.lib.base import attach_context_attributes
+            attach_context_attributes(c, self.request, self.request.user.user_id)
         return c
 
     def _register_global_c(self, tmpl_args):
@@ -121,13 +154,104 @@ class RepoAppView(BaseAppView):
         self.db_repo_name = self.db_repo.repo_name
         self.db_repo_pull_requests = ScmModel().get_pull_requests(self.db_repo)
 
-    def _get_local_tmpl_context(self):
-        c = super(RepoAppView, self)._get_local_tmpl_context()
+    def _handle_missing_requirements(self, error):
+        log.error(
+            'Requirements are missing for repository %s: %s',
+            self.db_repo_name, error.message)
+
+    def _get_local_tmpl_context(self, include_app_defaults=False):
+        c = super(RepoAppView, self)._get_local_tmpl_context(
+            include_app_defaults=include_app_defaults)
+
         # register common vars for this type of view
         c.rhodecode_db_repo = self.db_repo
         c.repo_name = self.db_repo_name
         c.repository_pull_requests = self.db_repo_pull_requests
+
+        c.repository_requirements_missing = False
+        try:
+            self.rhodecode_vcs_repo = self.db_repo.scm_instance()
+        except RepositoryRequirementError as e:
+            c.repository_requirements_missing = True
+            self._handle_missing_requirements(e)
+
         return c
+
+
+class DataGridAppView(object):
+    """
+    Common class to have re-usable grid rendering components
+    """
+
+    def _extract_ordering(self, request, column_map=None):
+        column_map = column_map or {}
+        column_index = safe_int(request.GET.get('order[0][column]'))
+        order_dir = request.GET.get(
+            'order[0][dir]', 'desc')
+        order_by = request.GET.get(
+            'columns[%s][data][sort]' % column_index, 'name_raw')
+
+        # translate datatable to DB columns
+        order_by = column_map.get(order_by) or order_by
+
+        search_q = request.GET.get('search[value]')
+        return search_q, order_by, order_dir
+
+    def _extract_chunk(self, request):
+        start = safe_int(request.GET.get('start'), 0)
+        length = safe_int(request.GET.get('length'), 25)
+        draw = safe_int(request.GET.get('draw'))
+        return draw, start, length
+
+
+class BaseReferencesView(RepoAppView):
+    """
+    Base for reference view for branches, tags and bookmarks.
+    """
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+
+        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
+        c.repo_info = self.db_repo
+
+        self._register_global_c(c)
+        return c
+
+    def load_refs_context(self, ref_items, partials_template):
+        _render = PartialRenderer(partials_template)
+        _data = []
+        pre_load = ["author", "date", "message"]
+
+        is_svn = h.is_svn(self.rhodecode_vcs_repo)
+        format_ref_id = get_format_ref_id(self.rhodecode_vcs_repo)
+
+        for ref_name, commit_id in ref_items:
+            commit = self.rhodecode_vcs_repo.get_commit(
+                commit_id=commit_id, pre_load=pre_load)
+
+            # TODO: johbo: Unify generation of reference links
+            use_commit_id = '/' in ref_name or is_svn
+            files_url = h.url(
+                'files_home',
+                repo_name=c.repo_name,
+                f_path=ref_name if is_svn else '',
+                revision=commit_id if use_commit_id else ref_name,
+                at=ref_name)
+
+            _data.append({
+                "name": _render('name', ref_name, files_url),
+                "name_raw": ref_name,
+                "date": _render('date', commit.date),
+                "date_raw": datetime_to_time(commit.date),
+                "author": _render('author', commit.author),
+                "commit": _render(
+                    'commit', commit.message, commit.raw_id, commit.idx),
+                "commit_raw": commit.idx,
+                "compare": _render(
+                    'compare', format_ref_id(ref_name, commit.raw_id)),
+            })
+        c.has_references = bool(_data)
+        c.data = json.dumps(_data)
 
 
 class RepoRoutePredicate(object):
@@ -140,11 +264,15 @@ class RepoRoutePredicate(object):
     phash = text
 
     def __call__(self, info, request):
+
+        if hasattr(request, 'vcs_call'):
+            # skip vcs calls
+            return
+
         repo_name = info['match']['repo_name']
         repo_model = repo.RepoModel()
         by_name_match = repo_model.get_by_repo_name(repo_name, cache=True)
-        # if we match quickly from database, short circuit the operation,
-        # and validate repo based on the type.
+
         if by_name_match:
             # register this as request object we can re-use later
             request.db_repo = by_name_match
@@ -158,6 +286,72 @@ class RepoRoutePredicate(object):
         return False
 
 
+class RepoTypeRoutePredicate(object):
+    def __init__(self, val, config):
+        self.val = val or ['hg', 'git', 'svn']
+
+    def text(self):
+        return 'repo_accepted_type = %s' % self.val
+
+    phash = text
+
+    def __call__(self, info, request):
+        if hasattr(request, 'vcs_call'):
+            # skip vcs calls
+            return
+
+        rhodecode_db_repo = request.db_repo
+
+        log.debug(
+            '%s checking repo type for %s in %s',
+            self.__class__.__name__, rhodecode_db_repo.repo_type, self.val)
+
+        if rhodecode_db_repo.repo_type in self.val:
+            return True
+        else:
+            log.warning('Current view is not supported for repo type:%s',
+                        rhodecode_db_repo.repo_type)
+            #
+            # h.flash(h.literal(
+            #     _('Action not supported for %s.' % rhodecode_repo.alias)),
+            #     category='warning')
+            # return redirect(
+            #     route_path('repo_summary', repo_name=cls.rhodecode_db_repo.repo_name))
+
+            return False
+
+
+class RepoGroupRoutePredicate(object):
+    def __init__(self, val, config):
+        self.val = val
+
+    def text(self):
+        return 'repo_group_route = %s' % self.val
+
+    phash = text
+
+    def __call__(self, info, request):
+        if hasattr(request, 'vcs_call'):
+            # skip vcs calls
+            return
+
+        repo_group_name = info['match']['repo_group_name']
+        repo_group_model = repo_group.RepoGroupModel()
+        by_name_match = repo_group_model.get_by_group_name(
+            repo_group_name, cache=True)
+
+        if by_name_match:
+            # register this as request object we can re-use later
+            request.db_repo_group = by_name_match
+            return True
+
+        return False
+
+
 def includeme(config):
     config.add_route_predicate(
         'repo_route', RepoRoutePredicate)
+    config.add_route_predicate(
+        'repo_accepted_types', RepoTypeRoutePredicate)
+    config.add_route_predicate(
+        'repo_group_route', RepoGroupRoutePredicate)

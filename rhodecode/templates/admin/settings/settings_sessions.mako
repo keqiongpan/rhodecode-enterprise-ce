@@ -16,7 +16,7 @@
         <dl class="dl-horizontal settings">
         %for dt, dd, tt in elems:
           <dt>${dt}:</dt>
-          <dd title="${tt}">${dd}</dd>
+          <dd title="${h.tooltip(tt)}">${dd}</dd>
         %endfor
         </dl>
     </div>

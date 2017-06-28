@@ -61,7 +61,8 @@ log = logging.getLogger(__name__)
 
 
 class Search(BaseSearch):
-
+    # this also shows in UI
+    query_lang_doc = 'http://whoosh.readthedocs.io/en/latest/querylang.html'
     name = 'whoosh'
 
     def __init__(self, config):

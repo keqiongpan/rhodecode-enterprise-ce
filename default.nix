@@ -174,32 +174,33 @@ let
       '';
 
       postInstall = ''
+        echo "Writing meta information for rccontrol to nix-support/rccontrol"
+        mkdir -p $out/nix-support/rccontrol
+        cp -v rhodecode/VERSION $out/nix-support/rccontrol/version
+        echo "DONE: Meta information for rccontrol written"
+
         # python based programs need to be wrapped
-        ln -s ${self.supervisor}/bin/supervisor* $out/bin/
+        ln -s ${self.pyramid}/bin/* $out/bin/
         ln -s ${self.gunicorn}/bin/gunicorn $out/bin/
+        ln -s ${self.supervisor}/bin/supervisor* $out/bin/
         ln -s ${self.PasteScript}/bin/paster $out/bin/
         ln -s ${self.channelstream}/bin/channelstream $out/bin/
-        ln -s ${self.pyramid}/bin/* $out/bin/  #*/
 
         # rhodecode-tools
-        # TODO: johbo: re-think this. Do the tools import anything from enterprise?
         ln -s ${self.rhodecode-tools}/bin/rhodecode-* $out/bin/
 
         # note that condition should be restricted when adding further tools
-        for file in $out/bin/*; do  #*/
+        for file in $out/bin/*;
+        do
           wrapProgram $file \
-              --prefix PYTHONPATH : $PYTHONPATH \
               --prefix PATH : $PATH \
+              --prefix PYTHONPATH : $PYTHONPATH \
               --set PYTHONHASHSEED random
         done
 
         mkdir $out/etc
         cp configs/production.ini $out/etc
 
-        echo "Writing meta information for rccontrol to nix-support/rccontrol"
-        mkdir -p $out/nix-support/rccontrol
-        cp -v rhodecode/VERSION $out/nix-support/rccontrol/version
-        echo "DONE: Meta information for rccontrol written"
 
         # TODO: johbo: Make part of ac-tests
         if [ ! -f rhodecode/public/js/scripts.js ]; then

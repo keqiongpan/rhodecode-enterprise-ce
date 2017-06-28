@@ -19,8 +19,10 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import colander
+import deform.widget
 
 from rhodecode.translation import _
+from rhodecode.model.validation_schema.utils import convert_to_optgroup
 from rhodecode.model.validation_schema import validators, preparers, types
 
 DEFAULT_LANDING_REF = 'rev:tip'
@@ -30,6 +32,11 @@ def get_group_and_repo(repo_name):
     from rhodecode.model.repo_group import RepoGroupModel
     return RepoGroupModel()._get_group_name_and_parent(
         repo_name, get_object=True)
+
+
+def get_repo_group(repo_group_id):
+    from rhodecode.model.repo_group import RepoGroup
+    return RepoGroup.get(repo_group_id), RepoGroup.CHOICES_SEPARATOR
 
 
 @colander.deferred
@@ -53,8 +60,24 @@ def deferred_repo_owner_validator(node, kw):
 
 @colander.deferred
 def deferred_landing_ref_validator(node, kw):
-    options = kw.get('repo_ref_options', [DEFAULT_LANDING_REF])
+    options = kw.get(
+        'repo_ref_options', [DEFAULT_LANDING_REF])
     return colander.OneOf([x for x in options])
+
+
+@colander.deferred
+def deferred_clone_uri_validator(node, kw):
+    repo_type = kw.get('repo_type')
+    validator = validators.CloneUriValidator(repo_type)
+    return validator
+
+
+@colander.deferred
+def deferred_landing_ref_widget(node, kw):
+    items = kw.get(
+        'repo_ref_items', [(DEFAULT_LANDING_REF, DEFAULT_LANDING_REF)])
+    items = convert_to_optgroup(items)
+    return deform.widget.Select2Widget(values=items)
 
 
 @colander.deferred
@@ -191,7 +214,25 @@ def deferred_unique_name_validator(node, kw):
 
 @colander.deferred
 def deferred_repo_name_validator(node, kw):
-    return validators.valid_name_validator
+    def no_git_suffix_validator(node, value):
+        if value.endswith('.git'):
+            msg = _('Repository name cannot end with .git')
+            raise colander.Invalid(node, msg)
+    return colander.All(
+        no_git_suffix_validator, validators.valid_name_validator)
+
+
+@colander.deferred
+def deferred_repo_group_validator(node, kw):
+    options = kw.get(
+        'repo_repo_group_options')
+    return colander.OneOf([x for x in options])
+
+
+@colander.deferred
+def deferred_repo_group_widget(node, kw):
+    items = kw.get('repo_repo_group_items')
+    return deform.widget.Select2Widget(values=items)
 
 
 class GroupType(colander.Mapping):
@@ -215,8 +256,10 @@ class GroupType(colander.Mapping):
          parent_group_name,
          parent_group) = get_group_and_repo(validated_name)
 
+        appstruct['repo_name_with_group'] = validated_name
         appstruct['repo_name_without_group'] = repo_name_without_group
         appstruct['repo_group_name'] = parent_group_name or types.RootLocation
+
         if parent_group:
             appstruct['repo_group_id'] = parent_group.group_id
 
@@ -260,16 +303,19 @@ class RepoSchema(colander.MappingSchema):
 
     repo_owner = colander.SchemaNode(
         colander.String(),
-        validator=deferred_repo_owner_validator)
+        validator=deferred_repo_owner_validator,
+        widget=deform.widget.TextInputWidget())
 
     repo_description = colander.SchemaNode(
-        colander.String(), missing='')
+        colander.String(), missing='',
+        widget=deform.widget.TextAreaWidget())
 
     repo_landing_commit_ref = colander.SchemaNode(
         colander.String(),
         validator=deferred_landing_ref_validator,
         preparers=[preparers.strip_preparer],
-        missing=DEFAULT_LANDING_REF)
+        missing=DEFAULT_LANDING_REF,
+        widget=deferred_landing_ref_widget)
 
     repo_clone_uri = colander.SchemaNode(
         colander.String(),
@@ -284,19 +330,19 @@ class RepoSchema(colander.MappingSchema):
 
     repo_private = colander.SchemaNode(
         types.StringBooleanType(),
-        missing=False)
+        missing=False, widget=deform.widget.CheckboxWidget())
     repo_copy_permissions = colander.SchemaNode(
         types.StringBooleanType(),
-        missing=False)
+        missing=False, widget=deform.widget.CheckboxWidget())
     repo_enable_statistics = colander.SchemaNode(
         types.StringBooleanType(),
-        missing=False)
+        missing=False, widget=deform.widget.CheckboxWidget())
     repo_enable_downloads = colander.SchemaNode(
         types.StringBooleanType(),
-        missing=False)
+        missing=False, widget=deform.widget.CheckboxWidget())
     repo_enable_locking = colander.SchemaNode(
         types.StringBooleanType(),
-        missing=False)
+        missing=False, widget=deform.widget.CheckboxWidget())
 
     def deserialize(self, cstruct):
         """
@@ -307,6 +353,53 @@ class RepoSchema(colander.MappingSchema):
         # first pass, to validate given data
         appstruct = super(RepoSchema, self).deserialize(cstruct)
         validated_name = appstruct['repo_name']
+
+        # second pass to validate permissions to repo_group
+        second = RepoGroupAccessSchema().bind(**self.bindings)
+        appstruct_second = second.deserialize({'repo_group': validated_name})
+        # save result
+        appstruct['repo_group'] = appstruct_second['repo_group']
+
+        # thirds to validate uniqueness
+        third = RepoNameUniqueSchema().bind(**self.bindings)
+        third.deserialize({'unique_repo_name': validated_name})
+
+        return appstruct
+
+
+class RepoSettingsSchema(RepoSchema):
+    repo_group = colander.SchemaNode(
+        colander.Integer(),
+        validator=deferred_repo_group_validator,
+        widget=deferred_repo_group_widget,
+        missing='')
+
+    repo_clone_uri_change = colander.SchemaNode(
+        colander.String(),
+        missing='NEW')
+
+    repo_clone_uri = colander.SchemaNode(
+        colander.String(),
+        preparers=[preparers.strip_preparer],
+        validator=deferred_clone_uri_validator,
+        missing='')
+
+    def deserialize(self, cstruct):
+        """
+        Custom deserialize that allows to chain validation, and verify
+        permissions, and as last step uniqueness
+        """
+
+        # first pass, to validate given data
+        appstruct = super(RepoSchema, self).deserialize(cstruct)
+        validated_name = appstruct['repo_name']
+        # because of repoSchema adds repo-group as an ID, we inject it as
+        # full name here because validators require it, it's unwrapped later
+        # so it's safe to use and final name is going to be without group anyway
+
+        group, separator = get_repo_group(appstruct['repo_group'])
+        if group:
+            validated_name = separator.join([group.group_name, validated_name])
 
         # second pass to validate permissions to repo_group
         second = RepoGroupAccessSchema().bind(**self.bindings)

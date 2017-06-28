@@ -36,16 +36,36 @@
             <h4>${_('Commit')}
               <code>
                 ${h.show_id(c.commit)}
+                % if hasattr(c.commit, 'phase'):
+                      <span class="tag phase-${c.commit.phase} tooltip" title="${_('Commit phase')}">${c.commit.phase}</span>
+                % endif
+
+                ## obsolete commits
+                % if hasattr(c.commit, 'obsolete'):
+                  % if c.commit.obsolete:
+                      <span class="tag obsolete-${c.commit.obsolete} tooltip" title="${_('Evolve State')}">${_('obsolete')}</span>
+                  % endif
+                % endif
+
+                ## hidden commits
+                % if hasattr(c.commit, 'hidden'):
+                  % if c.commit.hidden:
+                      <span class="tag hidden-${c.commit.hidden} tooltip" title="${_('Evolve State')}">${_('hidden')}</span>
+                  % endif
+                % endif
+
               </code>
             </h4>
           </span>
-          <span id="parent_link">
-            <a href="#" title="${_('Parent Commit')}">${_('Parent')}</a>
-          </span>
-           |
-          <span id="child_link">
-            <a href="#" title="${_('Child Commit')}">${_('Child')}</a>
-          </span>
+          <div class="pull-right">
+              <span id="parent_link">
+                <a href="#" title="${_('Parent Commit')}">${_('Parent')}</a>
+              </span>
+               |
+              <span id="child_link">
+                <a href="#" title="${_('Child Commit')}">${_('Child')}</a>
+              </span>
+          </div>
       </div>
 
       <div class="fieldset">
@@ -89,20 +109,20 @@
 
             %if h.is_hg(c.rhodecode_repo):
               %for book in c.commit.bookmarks:
-              <span class="booktag tag" title="${_('Bookmark %s') % book}">
+              <span class="booktag tag" title="${h.tooltip(_('Bookmark %s') % book)}">
                 <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
               </span>
               %endfor
             %endif
 
             %for tag in c.commit.tags:
-             <span class="tagtag tag"  title="${_('Tag %s') % tag}">
+             <span class="tagtag tag"  title="${h.tooltip(_('Tag %s') % tag)}">
               <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"><i class="icon-tag"></i>${tag}</a>
              </span>
             %endfor
 
             %if c.commit.branch:
-              <span class="branchtag tag" title="${_('Branch %s') % c.commit.branch}">
+              <span class="branchtag tag" title="${h.tooltip(_('Branch %s') % c.commit.branch)}">
                 <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"><i class="icon-code-fork"></i>${h.shorter(c.commit.branch)}</a>
               </span>
             %endif

@@ -124,9 +124,9 @@
                 <tr class="perm_row ${'%s_%s' % (section, section_perm.split('.')[-1])}">
                     <td class="td-componentname">
                         %if section == 'repositories':
-                            <a href="${h.url('summary_home',repo_name=k)}">${k}</a>
+                            <a href="${h.route_path('repo_summary',repo_name=k)}">${k}</a>
                         %elif section == 'repositories_groups':
-                            <a href="${h.url('repo_group_home',group_name=k)}">${k}</a>
+                            <a href="${h.route_path('repo_group_home', repo_group_name=k)}">${k}</a>
                         %elif section == 'user_groups':
                             ##<a href="${h.url('edit_users_group',user_group_id=k)}">${k}</a>
                             ${k}
@@ -146,7 +146,7 @@
                     %if actions:
                     <td class="td-action">
                         %if section == 'repositories':
-                            <a href="${h.url('edit_repo_perms',repo_name=k,anchor='permissions_manage')}">${_('edit')}</a>
+                            <a href="${h.route_path('edit_repo_perms',repo_name=k,anchor='permissions_manage')}">${_('edit')}</a>
                         %elif section == 'repositories_groups':
                             <a href="${h.url('edit_repo_group_perms',group_name=k,anchor='permissions_manage')}">${_('edit')}</a>
                         %elif section == 'user_groups':

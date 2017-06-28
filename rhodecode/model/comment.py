@@ -29,14 +29,14 @@ import collections
 from datetime import datetime
 
 from pylons.i18n.translation import _
-from pyramid.threadlocal import get_current_registry
+from pyramid.threadlocal import get_current_registry, get_current_request
 from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.functions import coalesce
 
 from rhodecode.lib import helpers as h, diffs
+from rhodecode.lib import audit_logger
 from rhodecode.lib.channelstream import channelstream_request
-from rhodecode.lib.utils import action_logger
-from rhodecode.lib.utils2 import extract_mentioned_users
+from rhodecode.lib.utils2 import extract_mentioned_users, safe_str
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     ChangesetComment, User, Notification, PullRequest, AttributeDict)
@@ -163,6 +163,13 @@ class CommentsModel(BaseModel):
 
         return todos
 
+    def _log_audit_action(self, action, action_data, user, comment):
+        audit_logger.store(
+            action=action,
+            action_data=action_data,
+            user=user,
+            repo=comment.repo)
+
     def create(self, text, repo, user, commit_id=None, pull_request=None,
                f_path=None, line_no=None, status_change=None,
                status_change_type=None, comment_type=None,
@@ -268,8 +275,7 @@ class CommentsModel(BaseModel):
 
             target_repo_url = h.link_to(
                 repo.repo_name,
-                h.url('summary_home',
-                      repo_name=repo.repo_name, qualified=True))
+                h.route_url('repo_summary', repo_name=repo.repo_name))
 
             # commit specifics
             kwargs.update({
@@ -300,13 +306,11 @@ class CommentsModel(BaseModel):
                 qualified=True,)
 
             # set some variables for email notification
-            pr_target_repo_url = h.url(
-                'summary_home', repo_name=pr_target_repo.repo_name,
-                qualified=True)
+            pr_target_repo_url = h.route_url(
+                'repo_summary', repo_name=pr_target_repo.repo_name)
 
-            pr_source_repo_url = h.url(
-                'summary_home', repo_name=pr_source_repo.repo_name,
-                qualified=True)
+            pr_source_repo_url = h.route_url(
+                'repo_summary', repo_name=pr_source_repo.repo_name)
 
             # pull request specifics
             kwargs.update({
@@ -340,13 +344,15 @@ class CommentsModel(BaseModel):
                 email_kwargs=kwargs,
             )
 
-        action = (
-            'user_commented_pull_request:{}'.format(
-                comment.pull_request.pull_request_id)
-            if comment.pull_request
-            else 'user_commented_revision:{}'.format(comment.revision)
-        )
-        action_logger(user, action, comment.repo)
+        Session().flush()
+        if comment.pull_request:
+            action = 'repo.pull_request.comment.create'
+        else:
+            action = 'repo.commit.comment.create'
+
+        comment_data = comment.get_api_data()
+        self._log_audit_action(
+            action, {'data': comment_data}, user, comment)
 
         registry = get_current_registry()
         rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
@@ -388,14 +394,21 @@ class CommentsModel(BaseModel):
 
         return comment
 
-    def delete(self, comment):
+    def delete(self, comment, user):
         """
         Deletes given comment
-
-        :param comment_id:
         """
         comment = self.__get_commit_comment(comment)
+        old_data = comment.get_api_data()
         Session().delete(comment)
+
+        if comment.pull_request:
+            action = 'repo.pull_request.comment.delete'
+        else:
+            action = 'repo.commit.comment.delete'
+
+        self._log_audit_action(
+            action, {'old_data': old_data}, user, comment)
 
         return comment
 
@@ -412,22 +425,39 @@ class CommentsModel(BaseModel):
         q = q.order_by(ChangesetComment.created_on)
         return q.all()
 
-    def get_url(self, comment):
+    def get_url(self, comment, request=None, permalink=False):
+        if not request:
+            request = get_current_request()
+
         comment = self.__get_commit_comment(comment)
         if comment.pull_request:
-            return h.url(
-                'pullrequest_show',
-                repo_name=comment.pull_request.target_repo.repo_name,
-                pull_request_id=comment.pull_request.pull_request_id,
-                anchor='comment-%s' % comment.comment_id,
-                qualified=True,)
+            pull_request = comment.pull_request
+            if permalink:
+                return request.route_url(
+                    'pull_requests_global',
+                    pull_request_id=pull_request.pull_request_id,
+                    _anchor='comment-%s' % comment.comment_id)
+            else:
+                return request.route_url('pullrequest_show',
+                    repo_name=safe_str(pull_request.target_repo.repo_name),
+                    pull_request_id=pull_request.pull_request_id,
+                    _anchor='comment-%s' % comment.comment_id)
+
         else:
-            return h.url(
-                'changeset_home',
-                repo_name=comment.repo.repo_name,
-                revision=comment.revision,
-                anchor='comment-%s' % comment.comment_id,
-                qualified=True,)
+            repo = comment.repo
+            commit_id = comment.revision
+
+            if permalink:
+                return request.route_url(
+                    'repo_commit', repo_name=safe_str(repo.repo_id),
+                    commit_id=commit_id,
+                    _anchor='comment-%s' % comment.comment_id)
+
+            else:
+                return request.route_url(
+                    'repo_commit', repo_name=safe_str(repo.repo_name),
+                    commit_id=commit_id,
+                    _anchor='comment-%s' % comment.comment_id)
 
     def get_comments(self, repo_id, revision=None, pull_request=None):
         """

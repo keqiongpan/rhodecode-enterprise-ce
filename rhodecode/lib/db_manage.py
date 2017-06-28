@@ -319,6 +319,7 @@ class DbManage(object):
             (RhodeCodeUi.HOOK_PRE_PUSH, 'python:vcsserver.hooks.pre_push'),
             (RhodeCodeUi.HOOK_PRETX_PUSH, 'python:vcsserver.hooks.pre_push'),
             (RhodeCodeUi.HOOK_PUSH, 'python:vcsserver.hooks.log_push_action'),
+            (RhodeCodeUi.HOOK_PUSH_KEY, 'python:vcsserver.hooks.key_push'),
 
         ]
 
@@ -362,6 +363,14 @@ class DbManage(object):
         hgsubversion.ui_value = ''
         hgsubversion.ui_active = False
         self.sa.add(hgsubversion)
+
+        # enable hgevolve disabled by default
+        hgevolve = RhodeCodeUi()
+        hgevolve.ui_section = 'extensions'
+        hgevolve.ui_key = 'evolve'
+        hgevolve.ui_value = ''
+        hgevolve.ui_active = False
+        self.sa.add(hgevolve)
 
         # enable hggit disabled by default
         hggit = RhodeCodeUi()

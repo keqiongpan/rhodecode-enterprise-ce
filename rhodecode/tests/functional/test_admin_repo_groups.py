@@ -31,6 +31,7 @@ from rhodecode.tests.fixture import Fixture
 fixture = Fixture()
 
 
+
 def test_update(app, csrf_token, autologin_user, user_util):
     repo_group = user_util.create_repo_group()
     description = 'description for newly created repo group'
@@ -123,11 +124,13 @@ class _BaseTest(TestController):
         # run the check page that triggers the flash message
         # response = self.app.get(url('repo_check_home', repo_name=repo_name))
         # assert response.json == {u'result': True}
+        repo_gr_url = h.route_path(
+            'repo_group_home', repo_group_name=repo_group_name)
+
         assert_session_flash(
             response,
-            u'Created repository group <a href="%s">%s</a>' % (
-                h.url('repo_group_home', group_name=repo_group_name),
-                repo_group_name_unicode))
+            'Created repository group <a href="%s">%s</a>' % (
+                repo_gr_url, repo_group_name_unicode))
 
         # # test if the repo group was created in the database
         new_repo_group = RepoGroupModel()._get_repo_group(
@@ -138,8 +141,7 @@ class _BaseTest(TestController):
         assert new_repo_group.group_description == description
 
         # test if the repository is visible in the list ?
-        response = self.app.get(
-            url('repo_group_home', group_name=repo_group_name))
+        response = self.app.get(repo_gr_url)
         response.mustcontain(repo_group_name)
 
         # test if the repository group was created on filesystem
@@ -173,7 +175,7 @@ class _BaseTest(TestController):
             assert_session_flash(
                 response,
                 u'Created repository group <a href="%s">%s</a>' % (
-                    h.url('repo_group_home', group_name=expected_group_name),
+                    h.route_path('repo_group_home', repo_group_name=expected_group_name),
                     expected_group_name_unicode))
         finally:
             RepoGroupModel().delete(expected_group_name_unicode)
@@ -195,6 +197,13 @@ class _BaseTest(TestController):
 class TestRepoGroupsControllerGIT(_BaseTest):
     REPO_GROUP = None
     NEW_REPO_GROUP = 'git_repo'
+    REPO = GIT_REPO
+    REPO_TYPE = 'git'
+
+
+class TestRepoGroupsControllerNonAsciiGit(_BaseTest):
+    REPO_GROUP = None
+    NEW_REPO_GROUP = 'git_repo_ąć'
     REPO = GIT_REPO
     REPO_TYPE = 'git'
 

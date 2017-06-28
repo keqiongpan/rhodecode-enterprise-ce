@@ -37,7 +37,7 @@
                 %if c.rhodecode_db_repo.fork:
                     <span>
                         <a  id="compare_fork_button"
-                            title="${_('Compare fork with %s' % c.rhodecode_db_repo.fork.repo_name)}"
+                            title="${h.tooltip(_('Compare fork with %s' % c.rhodecode_db_repo.fork.repo_name))}"
                             class="btn btn-small"
                             href="${h.url('compare_url',
                                 repo_name=c.rhodecode_db_repo.fork.repo_name,

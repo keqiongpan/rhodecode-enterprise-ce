@@ -62,6 +62,9 @@ Below config if for an Apache Reverse Proxy configuration.
         ProxyPass / http://127.0.0.1:10002/ timeout=7200 Keepalive=On
         ProxyPassReverse / http://127.0.0.1:10002/
 
+        # Increase headers for large Mercurial headers
+        LimitRequestLine 16380
+
         # strict http prevents from https -> http downgrade
         Header always set Strict-Transport-Security "max-age=63072000; includeSubdomains; preload"
 

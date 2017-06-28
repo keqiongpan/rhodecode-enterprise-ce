@@ -16,7 +16,7 @@
               ${base.gravatar_with_user(f.user.email, 16)}
             </td>
             <td class="td-componentname">
-              ${h.link_to(f.repo_name,h.url('summary_home',repo_name=f.repo_name))}
+              ${h.link_to(f.repo_name,h.route_path('repo_summary',repo_name=f.repo_name))}
             </td>
             <td class="td-description">
                 <div class="truncate">${f.description}</div>
@@ -25,7 +25,7 @@
                 ${h.age_component(f.created_on, time_is_local=True)}
             </td>
             <td class="td-compare">
-                <a title="${_('Compare fork with %s' % c.repo_name)}"
+                <a title="${h.tooltip(_('Compare fork with %s' % c.repo_name))}"
                    href="${h.url('compare_url',repo_name=c.repo_name, source_ref_type=c.rhodecode_db_repo.landing_rev[0],source_ref=c.rhodecode_db_repo.landing_rev[1],target_repo=f.repo_name,target_ref_type=c.rhodecode_db_repo.landing_rev[0],target_ref=c.rhodecode_db_repo.landing_rev[1], merge=1)}"
                    class="btn-link"><i class="icon-loop"></i> ${_('Compare fork')}</a>
             </td>

@@ -24,7 +24,8 @@ from rhodecode.lib.utils2 import AttributeDict
 
 # this is a user object to be used for events caused by the system (eg. shell)
 SYSTEM_USER = AttributeDict(dict(
-    username='__SYSTEM__'
+    username='__SYSTEM__',
+    user_id='__SYSTEM_ID__'
 ))
 
 log = logging.getLogger(__name__)
@@ -32,12 +33,12 @@ log = logging.getLogger(__name__)
 
 class RhodecodeEvent(object):
     """
-    Base event class for all Rhodecode events
+    Base event class for all RhodeCode events
     """
     name = "RhodeCodeEvent"
 
-    def __init__(self):
-        self.request = get_current_request()
+    def __init__(self, request=None):
+        self.request = request or get_current_request()
         self.utc_timestamp = datetime.utcnow()
 
     @property
@@ -61,7 +62,8 @@ class RhodecodeEvent(object):
             instance = auth_user.get_instance()
             if not instance:
                 return AttributeDict(dict(
-                    username=auth_user.username
+                    username=auth_user.username,
+                    user_id=auth_user.user_id,
                 ))
             return instance
 
@@ -78,9 +80,8 @@ class RhodecodeEvent(object):
     def server_url(self):
         default = '<no server_url available>'
         if self.request:
-            from rhodecode.lib import helpers as h
             try:
-                return h.url('home', qualified=True)
+                return self.request.route_url('home')
             except Exception:
                 log.exception('Failed to fetch URL for server')
                 return default
@@ -93,7 +94,8 @@ class RhodecodeEvent(object):
             'utc_timestamp': self.utc_timestamp,
             'actor_ip': self.actor_ip,
             'actor': {
-                'username': self.actor.username
+                'username': self.actor.username,
+                'user_id': self.actor.user_id
             },
             'server_url': self.server_url
         }

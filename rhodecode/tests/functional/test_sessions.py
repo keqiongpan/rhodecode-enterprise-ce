@@ -21,8 +21,13 @@
 import mock
 import pytest
 
-from rhodecode.tests import TEST_USER_ADMIN_LOGIN, url
-from rhodecode.tests.utils import AssertResponse
+from rhodecode.tests import TEST_USER_ADMIN_LOGIN
+
+
+def route_path(name, **kwargs):
+    return {
+        'home': '/',
+    }[name].format(**kwargs)
 
 
 class TestSessionBehaviorOnPasswordChange(object):
@@ -39,18 +44,23 @@ class TestSessionBehaviorOnPasswordChange(object):
 
     def test_sessions_are_ok_when_password_is_not_changed(
             self, app, autologin_user):
-        response = app.get(url('home'))
-        assert_response = AssertResponse(response)
+        response = app.get(route_path('home'))
+        assert_response = response.assert_response()
         assert_response.element_contains(
             '#quick_login_link .menu_link_user', TEST_USER_ADMIN_LOGIN)
-        assert 'rhodecode_user' in response.session
-        assert response.session.was_invalidated is False
+
+        session = response.get_session_from_response()
+
+        assert 'rhodecode_user' in session
+        assert session.was_invalidated is False
 
     def test_sessions_invalidated_when_password_is_changed(
             self, app, autologin_user):
         self.password_changed_mock.return_value = True
-        response = app.get(url('home'))
-        assert_response = AssertResponse(response)
+        response = app.get(route_path('home'))
+        assert_response = response.assert_response()
         assert_response.element_contains('#quick_login_link .user', 'Sign in')
-        assert 'rhodecode_user' not in response.session
-        assert response.session.was_invalidated is True
+
+        session = response.get_session_from_response()
+        assert 'rhodecode_user' not in session
+        assert session.was_invalidated is True

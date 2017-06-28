@@ -22,7 +22,6 @@ import logging
 import urllib2
 import packaging.version
 
-from pylons import tmpl_context as c
 from pyramid.view import view_config
 
 import rhodecode
@@ -39,6 +38,10 @@ log = logging.getLogger(__name__)
 
 
 class AdminSystemInfoSettingsView(BaseAppView):
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+        self._register_global_c(c)
+        return c
 
     @staticmethod
     def get_update_data(update_url):
@@ -64,6 +67,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
         renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_system_info(self):
         _ = self.request.translate
+        c = self.load_default_context()
 
         c.active = 'system'
         c.navlist = navigation_list(self.request)
@@ -106,6 +110,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
             (_('RhodeCode Server IP'), val('server')['server_ip'], state('server')),
             (_('RhodeCode Server ID'), val('server')['server_id'], state('server')),
             (_('RhodeCode Configuration'), val('rhodecode_config')['path'], state('rhodecode_config')),
+            (_('RhodeCode Certificate'), val('rhodecode_config')['cert_path'], state('rhodecode_config')),
             (_('Workers'), val('rhodecode_config')['config']['server:main'].get('workers', '?'), state('rhodecode_config')),
             (_('Worker Type'), val('rhodecode_config')['config']['server:main'].get('worker_class', 'sync'), state('rhodecode_config')),
             ('', '', ''),  # spacer
@@ -163,7 +168,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
             else:
                 self.request.session.flash(
                     'You are not allowed to do this', queue='warning')
-        return {}
+        return self._get_template_context(c)
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
@@ -172,6 +177,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
         renderer='rhodecode:templates/admin/settings/settings_system_update.mako')
     def settings_system_info_check_update(self):
         _ = self.request.translate
+        c = self.load_default_context()
 
         update_url = self.get_update_url()
 
@@ -200,4 +206,4 @@ class AdminSystemInfoSettingsView(BaseAppView):
             c.should_upgrade = True
         c.important_notices = latest['general']
 
-        return {}
+        return self._get_template_context(c)

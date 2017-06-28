@@ -24,7 +24,11 @@
 </%def>
 
 <%def name="main_content()">
-  <%include file="/admin/repos/repo_edit_${c.active}.mako"/>
+  % if hasattr(c, 'repo_edit_template'):
+    <%include file="${c.repo_edit_template}"/>
+  % else:
+    <%include file="/admin/repos/repo_edit_${c.active}.mako"/>
+  % endif
 </%def>
 
 
@@ -36,17 +40,16 @@
   </div>
 
   <div class="sidebar-col-wrapper scw-small">
-    ##main
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
           <li class="${'active' if c.active=='settings' else ''}">
-              <a href="${h.url('edit_repo', repo_name=c.repo_name)}">${_('Settings')}</a>
+              <a href="${h.route_path('edit_repo', repo_name=c.repo_name)}">${_('Settings')}</a>
           </li>
           <li class="${'active' if c.active=='permissions' else ''}">
-              <a href="${h.url('edit_repo_perms', repo_name=c.repo_name)}">${_('Permissions')}</a>
+              <a href="${h.route_path('edit_repo_perms', repo_name=c.repo_name)}">${_('Permissions')}</a>
           </li>
           <li class="${'active' if c.active=='advanced' else ''}">
-              <a href="${h.url('edit_repo_advanced', repo_name=c.repo_name)}">${_('Advanced')}</a>
+              <a href="${h.route_path('edit_repo_advanced', repo_name=c.repo_name)}">${_('Advanced')}</a>
           </li>
           <li class="${'active' if c.active=='vcs' else ''}">
               <a href="${h.url('repo_vcs_settings', repo_name=c.repo_name)}">${_('VCS')}</a>
@@ -58,7 +61,7 @@
               <a href="${h.url('repo_settings_issuetracker', repo_name=c.repo_name)}">${_('Issue Tracker')}</a>
           </li>
           <li class="${'active' if c.active=='caches' else ''}">
-              <a href="${h.url('edit_repo_caches', repo_name=c.repo_name)}">${_('Caches')}</a>
+              <a href="${h.route_path('edit_repo_caches', repo_name=c.repo_name)}">${_('Caches')}</a>
           </li>
           %if c.repo_info.repo_type != 'svn':
           <li class="${'active' if c.active=='remote' else ''}">
@@ -71,28 +74,18 @@
           <li class="${'active' if c.active=='integrations' else ''}">
               <a href="${h.route_path('repo_integrations_home', repo_name=c.repo_name)}">${_('Integrations')}</a>
           </li>
+          %if c.repo_info.repo_type != 'svn':
+          <li class="${'active' if c.active=='reviewers' else ''}">
+              <a href="${h.route_path('repo_reviewers', repo_name=c.repo_name)}">${_('Reviewer Rules')}</a>
+          </li>
+          %endif
           <li class="${'active' if c.active=='maintenance' else ''}">
               <a href="${h.route_path('repo_maintenance', repo_name=c.repo_name)}">${_('Maintenance')}</a>
           </li>
           <li class="${'active' if c.active=='strip' else ''}">
               <a href="${h.route_path('strip', repo_name=c.repo_name)}">${_('Strip')}</a>
           </li>
-          ## TODO: dan: replace repo navigation with navlist registry like with
-          ## admin menu. First must find way to allow runtime configuration
-          ## it to account for the c.repo_info.repo_type != 'svn' call above
-          <%
-          reviewer_settings = False
-          try:
-            import rc_reviewers
-            reviewer_settings = True
-          except ImportError:
-            pass
-          %>
-          %if reviewer_settings:
-          <li class="${'active' if c.active=='reviewers' else ''}">
-              <a href="${h.route_path('repo_reviewers_home', repo_name=c.repo_name)}">${_('Reviewers')}</a>
-          </li>
-          %endif
+
         </ul>
     </div>
 

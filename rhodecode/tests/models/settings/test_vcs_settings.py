@@ -500,7 +500,8 @@ class TestCreateOrUpdateUi(object):
     def test_update(self, repo_stub, settings_util):
         model = VcsSettingsModel(repo=repo_stub.repo_name)
 
-        largefiles, phases = model.HG_SETTINGS
+        largefiles, phases, evolve = model.HG_SETTINGS
+
         section = 'test-section'
         key = 'test-key'
         settings_util.create_repo_rhodecode_ui(
@@ -519,6 +520,7 @@ class TestCreateOrUpdateUi(object):
 class TestCreateOrUpdateRepoHgSettings(object):
     FORM_DATA = {
         'extensions_largefiles': False,
+        'extensions_evolve': False,
         'phases_publish': False
     }
 
@@ -528,6 +530,8 @@ class TestCreateOrUpdateRepoHgSettings(object):
             model.create_or_update_repo_hg_settings(self.FORM_DATA)
         expected_calls = [
             mock.call(model.repo_settings, 'extensions', 'largefiles',
+                      active=False, value=''),
+            mock.call(model.repo_settings, 'extensions', 'evolve',
                       active=False, value=''),
             mock.call(model.repo_settings, 'phases', 'publish', value='False'),
         ]
@@ -574,7 +578,8 @@ class TestCreateOrUpdateGlobalHgSettings(object):
         'extensions_largefiles': False,
         'largefiles_usercache': '/example/largefiles-store',
         'phases_publish': False,
-        'extensions_hgsubversion': False
+        'extensions_hgsubversion': False,
+        'extensions_evolve': False
     }
 
     def test_creates_repo_hg_settings_when_data_is_correct(self):
@@ -589,7 +594,9 @@ class TestCreateOrUpdateGlobalHgSettings(object):
             mock.call(model.global_settings, 'phases', 'publish',
                       value='False'),
             mock.call(model.global_settings, 'extensions', 'hgsubversion',
-                      active=False)
+                      active=False),
+            mock.call(model.global_settings, 'extensions', 'evolve',
+                      active=False, value='')
         ]
         assert expected_calls == create_mock.call_args_list
 
@@ -957,6 +964,7 @@ class TestCreateOrUpdateRepoSettings(object):
         'hooks_changegroup_push_logger': False,
         'hooks_outgoing_pull_logger': False,
         'extensions_largefiles': False,
+        'extensions_evolve': False,
         'largefiles_usercache': '/example/largefiles-store',
         'vcs_git_lfs_enabled': False,
         'vcs_git_lfs_store_location': '/',

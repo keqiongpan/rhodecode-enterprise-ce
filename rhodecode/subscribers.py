@@ -121,7 +121,7 @@ def add_pylons_context(event):
     # Setup the pylons context object ('c')
     context = ContextObj()
     context.rhodecode_user = auth_user
-    attach_context_attributes(context, request)
+    attach_context_attributes(context, request, request.user.user_id)
     pylons.tmpl_context._push_object(context)
 
 
@@ -130,12 +130,12 @@ def scan_repositories_if_enabled(event):
     This is subscribed to the `pyramid.events.ApplicationCreated` event. It
     does a repository scan if enabled in the settings.
     """
-    from rhodecode.model.scm import ScmModel
-    from rhodecode.lib.utils import repo2db_mapper, get_rhodecode_base_path
     settings = event.app.registry.settings
     vcs_server_enabled = settings['vcs.server.enable']
     import_on_startup = settings['startup.import_repos']
     if vcs_server_enabled and import_on_startup:
+        from rhodecode.model.scm import ScmModel
+        from rhodecode.lib.utils import repo2db_mapper, get_rhodecode_base_path
         repositories = ScmModel().repo_scan(get_rhodecode_base_path())
         repo2db_mapper(repositories, remove_obsolete=False)
 
@@ -171,6 +171,10 @@ def write_metadata_if_needed(event):
 
         with open(metadata_destination, 'wb') as f:
             f.write(ext_json.json.dumps(metadata))
+
+    settings = event.app.registry.settings
+    if settings.get('metadata.skip'):
+        return
 
     try:
         write()

@@ -35,7 +35,7 @@ from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode import events
 from rhodecode.model import BaseModel
-from rhodecode.model.db import (
+from rhodecode.model.db import (_hash_key,
     RepoGroup, UserRepoGroupToPerm, User, Permission, UserGroupRepoGroupToPerm,
     UserGroup, Repository)
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
@@ -73,8 +73,9 @@ class RepoGroupModel(BaseModel):
             .filter(RepoGroup.group_name == repo_group_name)
 
         if cache:
-            repo = repo.options(FromCache(
-                "sql_cache_short", "get_repo_group_%s" % repo_group_name))
+            name_key = _hash_key(repo_group_name)
+            repo = repo.options(
+                FromCache("sql_cache_short", "get_repo_group_%s" % name_key))
         return repo.scalar()
 
     def get_default_create_personal_repo_group(self):
@@ -339,6 +340,12 @@ class RepoGroupModel(BaseModel):
 
         req_perms = ('usergroup.read', 'usergroup.write', 'usergroup.admin')
 
+        changes = {
+            'added': [],
+            'updated': [],
+            'deleted': []
+        }
+
         def _set_perm_user(obj, user, perm):
             if isinstance(obj, RepoGroup):
                 self.grant_user_permission(
@@ -381,7 +388,6 @@ class RepoGroupModel(BaseModel):
                     repo=obj, group_name=user_group)
 
         # start updates
-        updates = []
         log.debug('Now updating permissions for %s in recursive mode:%s',
                   repo_group, recursive)
 
@@ -407,10 +413,13 @@ class RepoGroupModel(BaseModel):
                 # in recursive mode
                 obj = repo_group
 
+            change_obj = obj.get_api_data()
+
             # update permissions
             for member_id, perm, member_type in perm_updates:
                 member_id = int(member_id)
                 if member_type == 'user':
+                    member_name = User.get(member_id).username
                     # this updates also current one if found
                     _set_perm_user(obj, user=member_id, perm=perm)
                 else:  # set for user group
@@ -419,10 +428,15 @@ class RepoGroupModel(BaseModel):
                                                          user=cur_user):
                         _set_perm_group(obj, users_group=member_id, perm=perm)
 
+                changes['updated'].append(
+                    {'change_obj': change_obj, 'type': member_type,
+                     'id': member_id, 'name': member_name, 'new_perm': perm})
+
             # set new permissions
             for member_id, perm, member_type in perm_additions:
                 member_id = int(member_id)
                 if member_type == 'user':
+                    member_name = User.get(member_id).username
                     _set_perm_user(obj, user=member_id, perm=perm)
                 else:  # set for user group
                     # check if we have permissions to alter this usergroup
@@ -431,10 +445,15 @@ class RepoGroupModel(BaseModel):
                                                          user=cur_user):
                         _set_perm_group(obj, users_group=member_id, perm=perm)
 
+                changes['added'].append(
+                    {'change_obj': change_obj, 'type': member_type,
+                     'id': member_id, 'name': member_name, 'new_perm': perm})
+
             # delete permissions
             for member_id, perm, member_type in perm_deletions:
                 member_id = int(member_id)
                 if member_type == 'user':
+                    member_name = User.get(member_id).username
                     _revoke_perm_user(obj, user=member_id)
                 else:  # set for user group
                     # check if we have permissions to alter this usergroup
@@ -443,13 +462,16 @@ class RepoGroupModel(BaseModel):
                                                          user=cur_user):
                         _revoke_perm_group(obj, user_group=member_id)
 
-            updates.append(obj)
+                changes['deleted'].append(
+                    {'change_obj': change_obj, 'type': member_type,
+                     'id': member_id, 'name': member_name, 'new_perm': perm})
+
             # if it's not recursive call for all,repos,groups
             # break the loop and don't proceed with other changes
             if recursive not in ['all', 'repos', 'groups']:
                 break
 
-        return updates
+        return changes
 
     def update(self, repo_group, form_data):
         try:
@@ -689,7 +711,7 @@ class RepoGroupModel(BaseModel):
                 "menu": quick_menu(group.group_name),
                 "name": repo_group_lnk(group.group_name),
                 "name_raw": group.group_name,
-                "desc": desc(group.group_description, group.personal),
+                "desc": desc(group.description_safe, group.personal),
                 "top_level_repos": 0,
                 "owner": user_profile(group.user.username)
             }

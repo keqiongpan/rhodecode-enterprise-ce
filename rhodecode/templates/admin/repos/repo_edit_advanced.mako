@@ -10,8 +10,8 @@
 %>
 
 <div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">${_('Repository: %s') % c.repo_info.repo_name}</h3>
+    <div class="panel-heading" id="advanced-info" >
+        <h3 class="panel-title">${_('Repository: %s') % c.repo_info.repo_name} <a class="permalink" href="#advanced-info"> ¶</a></h3>
     </div>
     <div class="panel-body">
         ${base.dt_info_panel(elems)}
@@ -20,14 +20,14 @@
 
 
 <div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">${_('Fork Reference')}</h3>
+    <div class="panel-heading" id="advanced-fork">
+        <h3 class="panel-title">${_('Fork Reference')} <a class="permalink" href="#advanced-fork"> ¶</a></h3>
     </div>
     <div class="panel-body">
-      ${h.secure_form(url('edit_repo_advanced_fork', repo_name=c.repo_info.repo_name), method='put')}
+      ${h.secure_form(h.route_path('edit_repo_advanced_fork', repo_name=c.repo_info.repo_name), method='POST')}
 
         % if c.repo_info.fork:
-            <div class="panel-body-title-text">${h.literal(_('This repository is a fork of %(repo_link)s') % {'repo_link': h.link_to_if(c.has_origin_repo_read_perm,c.repo_info.fork.repo_name, h.url('summary_home', repo_name=c.repo_info.fork.repo_name))})}
+            <div class="panel-body-title-text">${h.literal(_('This repository is a fork of %(repo_link)s') % {'repo_link': h.link_to_if(c.has_origin_repo_read_perm,c.repo_info.fork.repo_name, h.route_path('repo_summary', repo_name=c.repo_info.fork.repo_name))})}
             | <button class="btn btn-link btn-danger" type="submit">Remove fork reference</button></div>
         % endif
 
@@ -44,15 +44,14 @@
 
 
 <div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">${_('Public Journal Visibility')}</h3>
+    <div class="panel-heading" id="advanced-journal">
+        <h3 class="panel-title">${_('Public Journal Visibility')} <a class="permalink" href="#advanced-journal"> ¶</a></h3>
     </div>
     <div class="panel-body">
-      ${h.secure_form(url('edit_repo_advanced_journal', repo_name=c.repo_info.repo_name), method='put')}
+      ${h.secure_form(h.route_path('edit_repo_advanced_journal', repo_name=c.repo_info.repo_name), method='POST')}
         <div class="field">
         %if c.in_public_journal:
           <button class="btn btn-small" type="submit">
-              <i class="icon-minus"></i>
               ${_('Remove from Public Journal')}
           </button>
         %else:
@@ -70,11 +69,11 @@
 
 
 <div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">${_('Locking state')}</h3>
+    <div class="panel-heading" id="advanced-locking">
+        <h3 class="panel-title">${_('Locking state')} <a class="permalink" href="#advanced-locking"> ¶</a></h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(url('edit_repo_advanced_locking', repo_name=c.repo_info.repo_name), method='put')}
+        ${h.secure_form(h.route_path('edit_repo_advanced_locking', repo_name=c.repo_info.repo_name), method='POST')}
 
         %if c.repo_info.locked[0]:
              <div class="panel-body-title-text">${'Locked by %s on %s. Lock reason: %s' % (h.person_by_id(c.repo_info.locked[0]),
@@ -110,15 +109,15 @@
 </div>
 
 <div class="panel panel-danger">
-    <div class="panel-heading">
-        <h3 class="panel-title">${_('Delete repository')}</h3>
+    <div class="panel-heading" id="advanced-delete">
+        <h3 class="panel-title">${_('Delete repository')} <a class="permalink" href="#advanced-delete"> ¶</a></h3>
     </div>
     <div class="panel-body">
-      ${h.secure_form(url('repo', repo_name=c.repo_name),method='delete')}
+      ${h.secure_form(h.route_path('edit_repo_advanced_delete', repo_name=c.repo_name), method='POST')}
         <table class="display">
             <tr>
                 <td>
-                    ${ungettext('This repository has %s fork.', 'This repository has %s forks.', c.repo_info.  forks.count()) % c.repo_info.forks.count()}
+                    ${_ungettext('This repository has %s fork.', 'This repository has %s forks.', c.repo_info.forks.count()) % c.repo_info.forks.count()}
                 </td>
                 <td>
                     %if c.repo_info.forks.count():
@@ -143,7 +142,7 @@
         </div>
         <div class="field">
             <span class="help-block">
-                ${_('This repository will be renamed in a special way in order to make it inaccessible to RhodeCode Enterprise and its VCS systems. If you need to fully delete it from the file system, please do it manually, or with rhodecode-cleanup-repos command.')}
+                ${_('This repository will be renamed in a special way in order to make it inaccessible to RhodeCode Enterprise and its VCS systems. If you need to fully delete it from the file system, please do it manually, or with rhodecode-cleanup-repos command available in rhodecode-tools.')}
             </span>
         </div>
 
@@ -191,7 +190,7 @@ $("#id_fork_of").select2({
             query.callback({results: cachedData.results});
         } else {
             $.ajax({
-                url: "${h.url('repo_list_data')}",
+                url: pyroutes.url('repo_list_data'),
                 data: {'query': query.term, repo_type: '${c.repo_info.repo_type}'},
                 dataType: 'json',
                 type: 'GET',

@@ -1,28 +1,28 @@
 <%def name="refs_counters(branches, closed_branches, tags, bookmarks)">
     <span class="branchtag tag">
-    <a href="${h.url('branches_home',repo_name=c.repo_name)}" class="childs">
-      <i class="icon-branch"></i>${ungettext(
+    <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
+      <i class="icon-branch"></i>${_ungettext(
       '%(num)s Branch','%(num)s Branches', len(branches)) % {'num': len(branches)}}</a>
     </span>
 
     %if closed_branches:
     <span class="branchtag tag">
-    <a href="${h.url('branches_home',repo_name=c.repo_name)}" class="childs">
-      <i class="icon-branch"></i>${ungettext(
+    <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
+      <i class="icon-branch"></i>${_ungettext(
       '%(num)s Closed Branch', '%(num)s Closed Branches', len(closed_branches)) % {'num': len(closed_branches)}}</a>
     </span>
     %endif
 
     <span class="tagtag tag">
-    <a href="${h.url('tags_home',repo_name=c.repo_name)}" class="childs">
-        <i class="icon-tag"></i>${ungettext(
+    <a href="${h.route_path('tags_home',repo_name=c.repo_name)}" class="childs">
+        <i class="icon-tag"></i>${_ungettext(
         '%(num)s Tag', '%(num)s Tags', len(tags)) % {'num': len(tags)}}</a>
     </span>
 
     %if bookmarks:
     <span class="booktag tag">
-    <a href="${h.url('bookmarks_home',repo_name=c.repo_name)}" class="childs">
-        <i class="icon-bookmark"></i>${ungettext(
+    <a href="${h.route_path('bookmarks_home',repo_name=c.repo_name)}" class="childs">
+        <i class="icon-bookmark"></i>${_ungettext(
         '%(num)s Bookmark', '%(num)s Bookmarks', len(bookmarks)) % {'num': len(bookmarks)}}</a>
     </span>
     %endif
@@ -53,7 +53,7 @@
                 <input type="text" class="input-monospace" id="clone_url_id" disabled value="${c.clone_repo_url_id}" style="display: none;"/>
                 <a id="clone_by_name" class="clone" style="display: none;">${_('Show by Name')}</a>
                 <a id="clone_by_id" class="clone">${_('Show by ID')}</a>
-                <p class="help-block">${_('SVN Protocol is disabled. To enable it, see the')} <a href="${h.url('enterprise_svn_setup')}" target="_blank">${_('documentation here')}</a>.</p>
+                <p class="help-block">${_('SVN Protocol is disabled. To enable it, see the')} <a href="${h.route_url('enterprise_svn_setup')}" target="_blank">${_('documentation here')}</a>.</p>
             </div>
           %else:
             <div class="left-label">
@@ -92,15 +92,15 @@
 
                   ## commits
                   % if commit_rev == -1:
-                      ${ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}},
+                      ${_ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}},
                   % else:
                       <a href="${h.url('changelog_home', repo_name=c.repo_name)}">
-                        ${ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>,
+                        ${_ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>,
                   % endif
 
                   ## forks
                   <a title="${_('Number of Repository Forks')}" href="${h.url('repo_forks_home', repo_name=c.repo_name)}">
-                     ${c.repository_forks} ${ungettext('Fork', 'Forks', c.repository_forks)}</a>,
+                     ${c.repository_forks} ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>,
 
                   ## repo size
                   % if commit_rev == -1:
@@ -145,7 +145,7 @@
                       ${_('Statistics are disabled for this repository')}
                   </span>
                   % if h.HasPermissionAll('hg.admin')('enable stats on from summary'):
-                     , ${h.link_to(_('enable statistics'),h.url('edit_repo',repo_name=c.repo_name, anchor='repo_enable_statistics'))}
+                     , ${h.link_to(_('enable statistics'),h.route_path('edit_repo',repo_name=c.repo_name, anchor='repo_enable_statistics'))}
                   % endif
               % endif
             </div>
@@ -169,7 +169,7 @@
                         ${_('Downloads are disabled for this repository')}
                     </span>
                     % if h.HasPermissionAll('hg.admin')('enable downloads on from summary'):
-                       , ${h.link_to(_('enable downloads'),h.url('edit_repo',repo_name=c.repo_name, anchor='repo_enable_downloads'))}
+                       , ${h.link_to(_('enable downloads'),h.route_path('edit_repo',repo_name=c.repo_name, anchor='repo_enable_downloads'))}
                     % endif
                 % else:
                     <span class="enabled">

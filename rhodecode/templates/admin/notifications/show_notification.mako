@@ -9,7 +9,7 @@
 </%def>
 
 <%def name="breadcrumbs_links()">
-    ${h.link_to(_('Notifications'),h.url('notifications'))}
+    ${h.link_to(_('Notifications'), h.url('notifications'))}
     &raquo;
     ${_('Show notification')}
 </%def>
@@ -23,11 +23,6 @@
     <!-- box / title -->
     <div class="title">
         ${self.breadcrumbs()}
-        ##<ul class="links">
-        ##    <li>
-        ##      <span ><a href="#">${_('Compose message')}</a></span>
-        ##    </li>
-        ##</ul>
     </div>
     <div class="table">
       <div id="notification_${c.notification.notification_id}" class="main-content-full">
@@ -41,7 +36,9 @@
           </div>
         </div>
         <div class="notification-body">
-        <div class="notification-subject">${h.literal(c.notification.subject)}</div>
+        <div class="notification-subject">
+            <h3>${_('Subject')}: ${c.notification.subject}</h3>
+        </div>
         %if c.notification.body:
             ${h.render(c.notification.body, renderer=c.visual.default_renderer, mentions=True)}
         %endif

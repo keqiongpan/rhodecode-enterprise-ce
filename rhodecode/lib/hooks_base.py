@@ -30,7 +30,7 @@ import logging
 import rhodecode
 from rhodecode import events
 from rhodecode.lib import helpers as h
-from rhodecode.lib.utils import action_logger
+from rhodecode.lib import audit_logger
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.lib.exceptions import HTTPLockedRC, UserCreationError
 from rhodecode.model.db import Repository, User
@@ -152,9 +152,15 @@ def pre_pull(extras):
 
 def post_pull(extras):
     """Hook executed after client pulls the code."""
-    user = User.get_by_username(extras.username)
-    action = 'pull'
-    action_logger(user, action, extras.repository, extras.ip, commit=True)
+
+    audit_user = audit_logger.UserWrap(
+        username=extras.username,
+        ip_addr=extras.ip)
+    repo = audit_logger.RepoWrap(repo_name=extras.repository)
+    audit_logger.store(
+        'user.pull', action_data={
+            'user_agent': extras.user_agent},
+        user=audit_user, repo=repo, commit=True)
 
     # Propagate to external components.
     if not is_shadow_repo(extras):
@@ -165,6 +171,7 @@ def post_pull(extras):
     output = ''
     # make lock is a tri state False, True, None. We only make lock on True
     if extras.make_lock is True and not is_shadow_repo(extras):
+        user = User.get_by_username(extras.username)
         Repository.lock(Repository.get_by_repo_name(extras.repository),
                         user.user_id,
                         lock_reason=Repository.LOCK_PULL)
@@ -185,12 +192,17 @@ def post_pull(extras):
 
 def post_push(extras):
     """Hook executed after user pushes to the repository."""
-    action_tmpl = extras.action + ':%s'
-    commit_ids = extras.commit_ids[:29000]
+    commit_ids = extras.commit_ids
 
-    action = action_tmpl % ','.join(commit_ids)
-    action_logger(
-        extras.username, action, extras.repository, extras.ip, commit=True)
+    # log the push call
+    audit_user = audit_logger.UserWrap(
+        username=extras.username, ip_addr=extras.ip)
+    repo = audit_logger.RepoWrap(repo_name=extras.repository)
+    audit_logger.store(
+        'user.push', action_data={
+            'user_agent': extras.user_agent,
+            'commit_ids': commit_ids[:10000]},
+        user=audit_user, repo=repo, commit=True)
 
     # Propagate to external components.
     if not is_shadow_repo(extras):
@@ -220,8 +232,20 @@ def post_push(extras):
             # 2xx Codes don't raise exceptions
             output += _http_ret.title
 
-    output += 'RhodeCode: push completed\n'
+    if extras.new_refs:
+        tmpl = \
+            extras.server_url + '/' + \
+            extras.repository + \
+            "/pull-request/new?{ref_type}={ref_name}"
+        for branch_name in extras.new_refs['branches']:
+            output += 'RhodeCode: open pull request link: {}\n'.format(
+                tmpl.format(ref_type='branch', ref_name=branch_name))
 
+        for book_name in extras.new_refs['bookmarks']:
+            output += 'RhodeCode: open pull request link: {}\n'.format(
+                tmpl.format(ref_type='bookmark', ref_name=book_name))
+
+    output += 'RhodeCode: push completed\n'
     return HookResponse(0, output)
 
 

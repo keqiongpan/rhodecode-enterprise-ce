@@ -61,7 +61,7 @@
           % else:
               <div class="status-change">
                   % if comment.pull_request:
-                      <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
+                      <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
                           % if comment.status_change:
                               ${_('pull request #%s') % comment.pull_request.pull_request_id}:
                           % else:
@@ -92,7 +92,12 @@
           <a class="permalink" href="#comment-${comment.comment_id}"> &para;</a>
 
           <div class="comment-links-block">
-
+              % if comment.pull_request and comment.pull_request.author.user_id == comment.author.user_id:
+                <span class="tag authortag tooltip" title="${_('Pull request author')}">
+                ${_('author')}
+                </span>
+                |
+              % endif
             % if inline:
                   <div class="pr-version-inline">
                     <a href="${h.url.current(version=comment.pull_request_version_id, anchor='comment-{}'.format(comment.comment_id))}">
@@ -117,7 +122,7 @@
                         </a>
                       % else:
                         <div title="${_('Comment from pull request version {0}').format(pr_index_ver)}">
-                            <a href="${h.url('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}">
+                            <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}">
                             <code class="pr-version-num">
                                 ${'v{}'.format(pr_index_ver)}
                             </code>
@@ -153,7 +158,7 @@
           </div>
       </div>
       <div class="text">
-          ${comment.render(mentions=True)|n}
+          ${h.render(comment.text, renderer=comment.renderer, mentions=True)}
       </div>
 
   </div>
@@ -341,7 +346,7 @@
             <div class="toolbar">
                 <div class="toolbar-text">
                   ${(_('Comments parsed using %s syntax with %s, and %s actions support.') % (
-                           ('<a href="%s">%s</a>' % (h.url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
+                           ('<a href="%s">%s</a>' % (h.route_url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
                            ('<span class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user')),
                            ('<span class="tooltip" title="%s">`/`</span>' % _('Start typing with / for certain actions to be triggered via text box.'))
                        )

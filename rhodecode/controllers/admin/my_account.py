@@ -24,35 +24,27 @@ my account controller for RhodeCode admin
 """
 
 import logging
-import datetime
 
 import formencode
 from formencode import htmlfill
-from pyramid.threadlocal import get_current_registry
 from pyramid.httpexceptions import HTTPFound
 
-from pylons import request, tmpl_context as c, url
+from pylons import request, tmpl_context as c
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
-from sqlalchemy.orm import joinedload
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib import auth
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, AuthUser)
 from rhodecode.lib.base import BaseController, render
-from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.lib.ext_json import json
-from rhodecode.lib.channelstream import channelstream_request, \
-    ChannelstreamException
 
 from rhodecode.model.db import (
     Repository, PullRequest, UserEmailMap, User, UserFollowing)
 from rhodecode.model.forms import UserForm
-from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
-from rhodecode.model.repo import RepoModel
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.comment import CommentsModel
@@ -81,26 +73,6 @@ class MyAccountController(BaseController):
 
         c.auth_user = AuthUser(
             user_id=c.rhodecode_user.user_id, ip_addr=self.ip_addr)
-
-    def _load_my_repos_data(self, watched=False):
-        if watched:
-            admin = False
-            follows_repos = Session().query(UserFollowing)\
-                .filter(UserFollowing.user_id == c.rhodecode_user.user_id)\
-                .options(joinedload(UserFollowing.follows_repository))\
-                .all()
-            repo_list = [x.follows_repository for x in follows_repos]
-        else:
-            admin = True
-            repo_list = Repository.get_all_repos(
-                user_id=c.rhodecode_user.user_id)
-            repo_list = RepoList(repo_list, perm_set=[
-                'repository.read', 'repository.write', 'repository.admin'])
-
-        repos_data = RepoModel().get_repos_as_dict(
-            repo_list=repo_list, admin=admin)
-        # json used to render the grid
-        return json.dumps(repos_data)
 
     @auth.CSRFRequired()
     def my_account_update(self):
@@ -180,65 +152,6 @@ class MyAccountController(BaseController):
             encoding="UTF-8",
             force_defaults=False
         )
-
-    def my_account_repos(self):
-        c.active = 'repos'
-        self.__load_data()
-
-        # json used to render the grid
-        c.data = self._load_my_repos_data()
-        return render('admin/my_account/my_account.mako')
-
-    def my_account_watched(self):
-        c.active = 'watched'
-        self.__load_data()
-
-        # json used to render the grid
-        c.data = self._load_my_repos_data(watched=True)
-        return render('admin/my_account/my_account.mako')
-
-    def my_account_perms(self):
-        c.active = 'perms'
-        self.__load_data()
-        c.perm_user = c.auth_user
-
-        return render('admin/my_account/my_account.mako')
-
-    def my_account_emails(self):
-        c.active = 'emails'
-        self.__load_data()
-
-        c.user_email_map = UserEmailMap.query()\
-            .filter(UserEmailMap.user == c.user).all()
-        return render('admin/my_account/my_account.mako')
-
-    @auth.CSRFRequired()
-    def my_account_emails_add(self):
-        email = request.POST.get('new_email')
-
-        try:
-            UserModel().add_extra_email(c.rhodecode_user.user_id, email)
-            Session().commit()
-            h.flash(_("Added new email address `%s` for user account") % email,
-                    category='success')
-        except formencode.Invalid as error:
-            msg = error.error_dict['email']
-            h.flash(msg, category='error')
-        except Exception:
-            log.exception("Exception in my_account_emails")
-            h.flash(_('An error occurred during email saving'),
-                    category='error')
-        return redirect(url('my_account_emails'))
-
-    @auth.CSRFRequired()
-    def my_account_emails_delete(self):
-        email_id = request.POST.get('del_email_id')
-        user_model = UserModel()
-        user_model.delete_extra_email(c.rhodecode_user.user_id, email_id)
-        Session().commit()
-        h.flash(_("Removed email address from user account"),
-                category='success')
-        return redirect(url('my_account_emails'))
 
     def _extract_ordering(self, request):
         column_index = safe_int(request.GET.get('order[0][column]'))
@@ -320,45 +233,4 @@ class MyAccountController(BaseController):
         else:
             return json.dumps(data)
 
-    def my_notifications(self):
-        c.active = 'notifications'
-        return render('admin/my_account/my_account.mako')
 
-    @auth.CSRFRequired()
-    @jsonify
-    def my_notifications_toggle_visibility(self):
-        user = c.rhodecode_user.get_instance()
-        new_status = not user.user_data.get('notification_status', True)
-        user.update_userdata(notification_status=new_status)
-        Session().commit()
-        return user.user_data['notification_status']
-
-    @auth.CSRFRequired()
-    @jsonify
-    def my_account_notifications_test_channelstream(self):
-        message = 'Test message sent via Channelstream by user: {}, on {}'.format(
-            c.rhodecode_user.username, datetime.datetime.now())
-        payload = {
-            'type': 'message',
-            'timestamp': datetime.datetime.utcnow(),
-            'user': 'system',
-            #'channel': 'broadcast',
-            'pm_users': [c.rhodecode_user.username],
-            'message': {
-                'message': message,
-                'level': 'info',
-                'topic': '/notifications'
-            }
-        }
-
-        registry = get_current_registry()
-        rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
-        channelstream_config = rhodecode_plugins.get('channelstream', {})
-
-        try:
-            channelstream_request(channelstream_config, [payload], '/message')
-        except ChannelstreamException as e:
-            log.exception('Failed to send channelstream data')
-            return {"response": 'ERROR: {}'.format(e.__class__.__name__)}
-        return {"response": 'Channelstream data sent. '
-                            'You should see a new live message now.'}

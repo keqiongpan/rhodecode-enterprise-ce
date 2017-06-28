@@ -41,6 +41,7 @@ class PullRequestEvent(RepoEvent):
         data = super(PullRequestEvent, self).as_dict()
 
         commits = _commits_as_dict(
+            self,
             commit_ids=self.pullrequest.revisions,
             repos=[self.pullrequest.source_repo]
         )
@@ -52,6 +53,8 @@ class PullRequestEvent(RepoEvent):
                 'issues': issues,
                 'pull_request_id': self.pullrequest.pull_request_id,
                 'url': PullRequestModel().get_url(self.pullrequest),
+                'permalink_url': PullRequestModel().get_url(
+                    self.pullrequest, permalink=True),
                 'status': self.pullrequest.calculated_review_status(),
                 'commits': commits,
             }
@@ -131,7 +134,9 @@ class PullRequestCommentEvent(PullRequestEvent):
                 'type': self.comment.comment_type,
                 'file': self.comment.f_path,
                 'line': self.comment.line_no,
-                'url': CommentsModel().get_url(self.comment)
+                'url': CommentsModel().get_url(self.comment),
+                'permalink_url': CommentsModel().get_url(
+                    self.comment, permalink=True),
             }
         })
         return data

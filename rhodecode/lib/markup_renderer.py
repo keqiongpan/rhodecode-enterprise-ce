@@ -34,6 +34,8 @@ from mako.template import Template as MakoTemplate
 
 from docutils.core import publish_parts
 from docutils.parsers.rst import directives
+from docutils import writers
+from docutils.writers import html4css1
 import markdown
 
 from rhodecode.lib.markdown_ext import GithubFlavoredMarkdownExtension
@@ -46,6 +48,31 @@ log = logging.getLogger(__name__)
 DEFAULT_COMMENTS_RENDERER = 'rst'
 
 
+class CustomHTMLTranslator(writers.html4css1.HTMLTranslator):
+    """
+    Custom HTML Translator used for sandboxing potential
+    JS injections in ref links
+    """
+
+    def visit_reference(self, node):
+        if 'refuri' in node.attributes:
+            refuri = node['refuri']
+            if ':' in refuri:
+                prefix, link = refuri.lstrip().split(':', 1)
+                if prefix == 'javascript':
+                    # we don't allow javascript type of refs...
+                    node['refuri'] = 'javascript:alert("SandBoxedJavascript")'
+
+        # old style class requires this...
+        return html4css1.HTMLTranslator.visit_reference(self, node)
+
+
+class RhodeCodeWriter(writers.html4css1.Writer):
+    def __init__(self):
+        writers.Writer.__init__(self)
+        self.translator_class = CustomHTMLTranslator
+
+
 def relative_links(html_source, server_path):
     if not html_source:
         return html_source
@@ -56,12 +83,12 @@ def relative_links(html_source, server_path):
         return html_source
 
     for el in doc.cssselect('img, video'):
-        src = el.attrib['src']
+        src = el.attrib.get('src')
         if src:
             el.attrib['src'] = relative_path(src, server_path)
 
     for el in doc.cssselect('a:not(.gfm)'):
-        src = el.attrib['href']
+        src = el.attrib.get('href')
         if src:
             el.attrib['href'] = relative_path(src, server_path)
 
@@ -341,7 +368,7 @@ class MarkupRenderer(object):
                 directives.register_directive(k, v)
 
             parts = publish_parts(source=source,
-                                  writer_name="html4css1",
+                                  writer=RhodeCodeWriter(),
                                   settings_overrides=docutils_settings)
 
             return parts['html_title'] + parts["fragment"]

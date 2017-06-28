@@ -31,15 +31,17 @@ from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 
 from rhodecode.authentication.plugins import auth_rhodecode
+
+from rhodecode.lib import helpers as h
+from rhodecode.lib import auth
+from rhodecode.lib import audit_logger
+from rhodecode.lib.auth import (
+    LoginRequired, HasPermissionAllDecorator, AuthUser)
+from rhodecode.lib.base import BaseController, render
 from rhodecode.lib.exceptions import (
     DefaultUserException, UserOwnsReposException, UserOwnsRepoGroupsException,
     UserOwnsUserGroupsException, UserCreationError)
-from rhodecode.lib import helpers as h
-from rhodecode.lib import auth
-from rhodecode.lib.auth import (
-    LoginRequired, HasPermissionAllDecorator, AuthUser, generate_auth_token)
-from rhodecode.lib.base import BaseController, render
-from rhodecode.model.auth_token import AuthTokenModel
+from rhodecode.lib.utils2 import safe_int, AttributeDict
 
 from rhodecode.model.db import (
     PullRequestReviewers, User, UserEmailMap, UserIpMap, RepoGroup)
@@ -49,8 +51,6 @@ from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.user import UserModel
 from rhodecode.model.meta import Session
 from rhodecode.model.permission import PermissionModel
-from rhodecode.lib.utils import action_logger
-from rhodecode.lib.utils2 import datetime_to_time, safe_int, AttributeDict
 
 log = logging.getLogger(__name__)
 
@@ -88,7 +88,6 @@ class UsersController(BaseController):
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
     def create(self):
-        """POST /users: Create a new item"""
         c.default_extern_type = auth_rhodecode.RhodeCodeAuthPlugin.name
         user_model = UserModel()
         user_form = UserForm()()
@@ -96,9 +95,12 @@ class UsersController(BaseController):
             form_result = user_form.to_python(dict(request.POST))
             user = user_model.create(form_result)
             Session().flush()
+            creation_data = user.get_api_data()
             username = form_result['username']
-            action_logger(c.rhodecode_user, 'admin_created_user:%s' % username,
-                          None, self.ip_addr, self.sa)
+
+            audit_logger.store_web(
+                'user.create', action_data={'data': creation_data},
+                user=c.rhodecode_user)
 
             user_link = h.link_to(h.escape(username),
                                   url('edit_user',
@@ -125,8 +127,6 @@ class UsersController(BaseController):
 
     @HasPermissionAllDecorator('hg.admin')
     def new(self):
-        """GET /users/new: Form to create a new item"""
-        # url('new_user')
         c.default_extern_type = auth_rhodecode.RhodeCodeAuthPlugin.name
         self._get_personal_repo_group_template_vars()
         return render('admin/users/user_add.mako')
@@ -134,13 +134,7 @@ class UsersController(BaseController):
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
     def update(self, user_id):
-        """PUT /users/user_id: Update an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        # <input type="hidden" name="_method" value="PUT" />
-        # Or using helpers:
-        #    h.form(url('update_user', user_id=ID),
-        #           method='put')
-        # url('user', user_id=ID)
+
         user_id = safe_int(user_id)
         c.user = User.get_or_404(user_id)
         c.active = 'profile'
@@ -152,6 +146,7 @@ class UsersController(BaseController):
                          old_data={'user_id': user_id,
                                    'email': c.user.email})()
         form_result = {}
+        old_values = c.user.get_api_data()
         try:
             form_result = _form.to_python(dict(request.POST))
             skip_attrs = ['extern_type', 'extern_name']
@@ -160,12 +155,15 @@ class UsersController(BaseController):
                 # forbid updating username for external accounts
                 skip_attrs.append('username')
 
-            UserModel().update_user(user_id, skip_attrs=skip_attrs, **form_result)
-            usr = form_result['username']
-            action_logger(c.rhodecode_user, 'admin_updated_user:%s' % usr,
-                          None, self.ip_addr, self.sa)
-            h.flash(_('User updated successfully'), category='success')
+            UserModel().update_user(
+                user_id, skip_attrs=skip_attrs, **form_result)
+
+            audit_logger.store_web(
+                'user.edit', action_data={'old_data': old_values},
+                user=c.rhodecode_user)
+
             Session().commit()
+            h.flash(_('User updated successfully'), category='success')
         except formencode.Invalid as errors:
             defaults = errors.value
             e = errors.error_dict or {}
@@ -188,13 +186,6 @@ class UsersController(BaseController):
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
     def delete(self, user_id):
-        """DELETE /users/user_id: Delete an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        # <input type="hidden" name="_method" value="DELETE" />
-        # Or using helpers:
-        #    h.form(url('delete_user', user_id=ID),
-        #           method='delete')
-        # url('user', user_id=ID)
         user_id = safe_int(user_id)
         c.user = User.get_or_404(user_id)
 
@@ -249,10 +240,16 @@ class UsersController(BaseController):
                     _('Deleted %s user groups') % len(_user_groups),
                     category='success')
 
+        old_values = c.user.get_api_data()
         try:
             UserModel().delete(c.user, handle_repos=handle_repos,
                                handle_repo_groups=handle_repo_groups,
                                handle_user_groups=handle_user_groups)
+
+            audit_logger.store_web(
+                'user.delete', action_data={'old_data': old_values},
+                user=c.rhodecode_user)
+
             Session().commit()
             set_handle_flash_repos()
             set_handle_flash_repo_groups()
@@ -272,19 +269,25 @@ class UsersController(BaseController):
     def reset_password(self, user_id):
         """
         toggle reset password flag for this user
-
-        :param user_id:
         """
         user_id = safe_int(user_id)
         c.user = User.get_or_404(user_id)
         try:
             old_value = c.user.user_data.get('force_password_change')
             c.user.update_userdata(force_password_change=not old_value)
-            Session().commit()
+
             if old_value:
                 msg = _('Force password change disabled for user')
+                audit_logger.store_web(
+                    'user.edit.password_reset.disabled',
+                    user=c.rhodecode_user)
             else:
                 msg = _('Force password change enabled for user')
+                audit_logger.store_web(
+                    'user.edit.password_reset.enabled',
+                    user=c.rhodecode_user)
+
+            Session().commit()
             h.flash(msg, category='success')
         except Exception:
             log.exception("Exception during password reset for user")
@@ -298,8 +301,6 @@ class UsersController(BaseController):
     def create_personal_repo_group(self, user_id):
         """
         Create personal repository group for this user
-
-        :param user_id:
         """
         from rhodecode.model.repo_group import RepoGroupModel
 
@@ -381,8 +382,7 @@ class UsersController(BaseController):
             return redirect(h.route_path('users'))
 
         c.active = 'advanced'
-        c.perm_user = AuthUser(user_id=user_id, ip_addr=self.ip_addr)
-        c.personal_repo_group = c.perm_user.personal_repo_group
+        c.personal_repo_group = RepoGroup.get_user_personal_repo_group(user_id)
         c.personal_repo_group_name = RepoGroupModel()\
             .get_personal_group_name(user)
         c.first_admin = User.get_first_super_admin()
@@ -429,8 +429,6 @@ class UsersController(BaseController):
     @HasPermissionAllDecorator('hg.admin')
     @auth.CSRFRequired()
     def update_global_perms(self, user_id):
-        """PUT /users_perm/user_id: Update an existing item"""
-        # url('user_perm', user_id=ID, method='put')
         user_id = safe_int(user_id)
         user = User.get_or_404(user_id)
         c.active = 'global_perms'
@@ -457,11 +455,13 @@ class UsersController(BaseController):
 
                 PermissionModel().update_user_permissions(form_result)
 
+            # TODO(marcink): implement global permissions
+            # audit_log.store_web('user.edit.permissions')
+
             Session().commit()
             h.flash(_('User global permissions updated successfully'),
                     category='success')
 
-            Session().commit()
         except formencode.Invalid as errors:
             defaults = errors.value
             c.user = user
@@ -491,140 +491,3 @@ class UsersController(BaseController):
 
         return render('admin/users/user_edit.mako')
 
-    @HasPermissionAllDecorator('hg.admin')
-    def edit_emails(self, user_id):
-        user_id = safe_int(user_id)
-        c.user = User.get_or_404(user_id)
-        if c.user.username == User.DEFAULT_USER:
-            h.flash(_("You can't edit this user"), category='warning')
-            return redirect(h.route_path('users'))
-
-        c.active = 'emails'
-        c.user_email_map = UserEmailMap.query() \
-            .filter(UserEmailMap.user == c.user).all()
-
-        defaults = c.user.get_dict()
-        return htmlfill.render(
-            render('admin/users/user_edit.mako'),
-            defaults=defaults,
-            encoding="UTF-8",
-            force_defaults=False)
-
-    @HasPermissionAllDecorator('hg.admin')
-    @auth.CSRFRequired()
-    def add_email(self, user_id):
-        """POST /user_emails:Add an existing item"""
-        # url('user_emails', user_id=ID, method='put')
-        user_id = safe_int(user_id)
-        c.user = User.get_or_404(user_id)
-
-        email = request.POST.get('new_email')
-        user_model = UserModel()
-
-        try:
-            user_model.add_extra_email(user_id, email)
-            Session().commit()
-            h.flash(_("Added new email address `%s` for user account") % email,
-                    category='success')
-        except formencode.Invalid as error:
-            msg = error.error_dict['email']
-            h.flash(msg, category='error')
-        except Exception:
-            log.exception("Exception during email saving")
-            h.flash(_('An error occurred during email saving'),
-                    category='error')
-        return redirect(url('edit_user_emails', user_id=user_id))
-
-    @HasPermissionAllDecorator('hg.admin')
-    @auth.CSRFRequired()
-    def delete_email(self, user_id):
-        """DELETE /user_emails_delete/user_id: Delete an existing item"""
-        # url('user_emails_delete', user_id=ID, method='delete')
-        user_id = safe_int(user_id)
-        c.user = User.get_or_404(user_id)
-        email_id = request.POST.get('del_email_id')
-        user_model = UserModel()
-        user_model.delete_extra_email(user_id, email_id)
-        Session().commit()
-        h.flash(_("Removed email address from user account"), category='success')
-        return redirect(url('edit_user_emails', user_id=user_id))
-
-    @HasPermissionAllDecorator('hg.admin')
-    def edit_ips(self, user_id):
-        user_id = safe_int(user_id)
-        c.user = User.get_or_404(user_id)
-        if c.user.username == User.DEFAULT_USER:
-            h.flash(_("You can't edit this user"), category='warning')
-            return redirect(h.route_path('users'))
-
-        c.active = 'ips'
-        c.user_ip_map = UserIpMap.query() \
-            .filter(UserIpMap.user == c.user).all()
-
-        c.inherit_default_ips = c.user.inherit_default_permissions
-        c.default_user_ip_map = UserIpMap.query() \
-            .filter(UserIpMap.user == User.get_default_user()).all()
-
-        defaults = c.user.get_dict()
-        return htmlfill.render(
-            render('admin/users/user_edit.mako'),
-            defaults=defaults,
-            encoding="UTF-8",
-            force_defaults=False)
-
-    @HasPermissionAllDecorator('hg.admin')
-    @auth.CSRFRequired()
-    def add_ip(self, user_id):
-        """POST /user_ips:Add an existing item"""
-        # url('user_ips', user_id=ID, method='put')
-
-        user_id = safe_int(user_id)
-        c.user = User.get_or_404(user_id)
-        user_model = UserModel()
-        try:
-            ip_list = user_model.parse_ip_range(request.POST.get('new_ip'))
-        except Exception as e:
-            ip_list = []
-            log.exception("Exception during ip saving")
-            h.flash(_('An error occurred during ip saving:%s' % (e,)),
-                    category='error')
-
-        desc = request.POST.get('description')
-        added = []
-        for ip in ip_list:
-            try:
-                user_model.add_extra_ip(user_id, ip, desc)
-                Session().commit()
-                added.append(ip)
-            except formencode.Invalid as error:
-                msg = error.error_dict['ip']
-                h.flash(msg, category='error')
-            except Exception:
-                log.exception("Exception during ip saving")
-                h.flash(_('An error occurred during ip saving'),
-                        category='error')
-        if added:
-            h.flash(
-                _("Added ips %s to user whitelist") % (', '.join(ip_list), ),
-                category='success')
-        if 'default_user' in request.POST:
-            return redirect(url('admin_permissions_ips'))
-        return redirect(url('edit_user_ips', user_id=user_id))
-
-    @HasPermissionAllDecorator('hg.admin')
-    @auth.CSRFRequired()
-    def delete_ip(self, user_id):
-        """DELETE /user_ips_delete/user_id: Delete an existing item"""
-        # url('user_ips_delete', user_id=ID, method='delete')
-        user_id = safe_int(user_id)
-        c.user = User.get_or_404(user_id)
-
-        ip_id = request.POST.get('del_ip_id')
-        user_model = UserModel()
-        user_model.delete_extra_ip(user_id, ip_id)
-        Session().commit()
-        h.flash(_("Removed ip address from user whitelist"), category='success')
-
-        if 'default_user' in request.POST:
-            return redirect(url('admin_permissions_ips'))
-        return redirect(url('edit_user_ips', user_id=user_id))

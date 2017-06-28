@@ -275,6 +275,23 @@ class TestAdminSettingsVcs(object):
             'value="True" checked="checked" />')
         response.mustcontain(extensions_input)
 
+    def test_extensions_hgevolve(self, app, form_defaults, csrf_token):
+        form_defaults.update({
+            'csrf_token': csrf_token,
+            'extensions_evolve': 'True',
+        })
+        response = app.post(
+            url('admin_settings_vcs'),
+            params=form_defaults,
+            status=302)
+
+        response = response.follow()
+        extensions_input = (
+            '<input id="extensions_evolve" '
+            'name="extensions_evolve" type="checkbox" '
+            'value="True" checked="checked" />')
+        response.mustcontain(extensions_input)
+
     def test_has_a_section_for_pull_request_settings(self, app):
         response = app.get(url('admin_settings_vcs'))
         response.mustcontain('Pull Request Settings')
@@ -445,7 +462,7 @@ class TestOpenSourceLicenses(object):
             '.panel-heading', 'Licenses of Third Party Packages')
 
     def test_forbidden_when_normal_user(self, autologin_regular_user):
-        self.app.get(self._get_url(), status=403)
+        self.app.get(self._get_url(), status=404)
 
 
 @pytest.mark.usefixtures('app')
@@ -458,7 +475,7 @@ class TestUserSessions(object):
         }[name]
 
     def test_forbidden_when_normal_user(self, autologin_regular_user):
-        self.app.get(self._get_url(), status=403)
+        self.app.get(self._get_url(), status=404)
 
     def test_show_sessions_page(self, autologin_user):
         response = self.app.get(self._get_url(), status=200)
@@ -485,7 +502,7 @@ class TestAdminSystemInfo(object):
         }[name]
 
     def test_forbidden_when_normal_user(self, autologin_regular_user):
-        self.app.get(self._get_url(), status=403)
+        self.app.get(self._get_url(), status=404)
 
     def test_system_info_page(self, autologin_user):
         response = self.app.get(self._get_url())

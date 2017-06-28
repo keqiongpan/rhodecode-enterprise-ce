@@ -59,23 +59,25 @@ class AuthTokenModel(BaseModel):
 
         return new_auth_token
 
-    def delete(self, api_key, user=None):
+    def delete(self, auth_token_id, user=None):
         """
         Deletes given api_key, if user is set it also filters the object for
         deletion by given user.
         """
-        api_key = UserApiKeys.query().filter(UserApiKeys.api_key == api_key)
+        auth_token = UserApiKeys.query().filter(
+            UserApiKeys.user_api_key_id == auth_token_id)
 
         if user:
             user = self._get_user(user)
-            api_key = api_key.filter(UserApiKeys.user_id == user.user_id)
+            auth_token = auth_token.filter(UserApiKeys.user_id == user.user_id)
+            auth_token = auth_token.scalar()
 
-        api_key = api_key.scalar()
-        try:
-            Session().delete(api_key)
-        except Exception:
-            log.error(traceback.format_exc())
-            raise
+        if auth_token:
+            try:
+                Session().delete(auth_token)
+            except Exception:
+                log.error(traceback.format_exc())
+                raise
 
     def get_auth_tokens(self, user, show_expired=True):
         user = self._get_user(user)

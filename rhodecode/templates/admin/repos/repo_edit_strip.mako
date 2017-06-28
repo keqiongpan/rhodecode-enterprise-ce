@@ -23,7 +23,7 @@
                 <div id="results" style="display:none; padding: 10px 0px;"></div>
 
                 <div class="buttons">
-                   <button class="btn btn-small btn-primary" onclick="checkCommits();return false">
+                   <button id="strip_action" class="btn btn-small btn-primary" onclick="checkCommits();return false">
                    ${_('Check commits')}
                    </button>
                 </div>
@@ -104,34 +104,60 @@ delOld = function(number){
 
 };
 
-var result_data;
+var resultData = {
+    'csrf_token': CSRF_TOKEN
+};
 
 checkCommits = function() {
     var postData = $('form').serialize();
     $('#results').show();
     $('#results').html('<h4>${_('Checking commits')}...</h4>');
     var url = "${h.route_path('strip_check', repo_name=c.repo_info.repo_name)}";
-    var btn = $('button');
+    var btn = $('#strip_action');
     btn.attr('disabled', 'disabled');
     btn.addClass('disabled');
 
     var success = function (data) {
-        result_data = {};
+        resultData = {
+            'csrf_token': CSRF_TOKEN
+        };
         var i = 0;
-        result ='';
+        var result = '<ol>';
         $.each(data, function(index, value){
             i= index;
             var box = $('#box-'+index);
             if (value.rev){
-                result_data[index] = JSON.stringify(value);
-                msg = '${_("author")}: ' + value.author + ' ${_("comment")}: ' + value.comment;
-                result += '<h4><code>' +value.rev+ '</code>${_(' commit verified positive')}</br> '+ msg + '</h4>';
+                resultData[index] = JSON.stringify(value);
+
+                var verifiedHtml = (
+                        '<li style="line-height:1.2em">' +
+                            '<code>{0}</code>' +
+                            '{1}' +
+                            '<div style="white-space:pre">' +
+                            'author: {2}\n' +
+                            'description: {3}' +
+                            '</div>' +
+                        '</li>').format(
+                            value.rev,
+                            "${_(' commit verified positive')}",
+                            value.author, value.comment
+                            );
+                result += verifiedHtml;
             }
-            else{
-                result += '<h4><code>' +value.commit+ '</code>${_(' commit verified negative')}' + '</h4>';
+            else {
+                var verifiedHtml = (
+                        '<li style="line-height:1.2em">' +
+                            '<code><strike>{0}</strike></code>' +
+                            '{1}' +
+                        '</li>').format(
+                            value.commit,
+                            "${_(' commit verified negative')}"
+                            );
+                result += verifiedHtml;
             }
             box.remove();
         });
+        result += '</ol>';
         var box = $('#box-'+(parseInt(i)+1));
         box.remove();
         $('#results').html(result);
@@ -144,25 +170,28 @@ checkCommits = function() {
     ajaxPOST(url, postData, success, null);
 };
 
-strip = function(){
+strip = function() {
     var url = "${h.route_path('strip_execute', repo_name=c.repo_info.repo_name)}";
-    var success = function(data){
-        result = '';
+    var success = function(data) {
+        var result = '<h4>Strip executed</h4><ol>';
         $.each(data, function(index, value){
-             if(data[index]){
-                 result += '<h4>' +index+ '${_(' commit striped successful')}' + '</h4>';
+             if(data[index]) {
+                 result += '<li><code>' +index+ '</code> ${_(' commit striped successfully')}' + '</li>';
              }
-             else{
-                 result += '<h4>' +index+ '${_(' commit striped failed')}' + '</h4>';
+             else {
+                 result += '<li><code>' +index+ '</code> ${_(' commit strip failed')}' + '</li>';
              }
         });
+        if ($.isEmptyObject(data)) {
+            result += '<li>Nothing done...</li>'
+        }
+        result += '</ol>';
         $('#results').html(result);
 
     };
-    ajaxPOST(url, result_data, success, null);
-    var btn = $('button');
-    btn.attr('disabled', 'disabled');
-    btn.addClass('disabled');
+    ajaxPOST(url, resultData, success, null);
+    var btn = $('#strip_action');
+    btn.remove();
 
 };
 </script>

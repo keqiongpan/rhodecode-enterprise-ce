@@ -24,20 +24,21 @@ from webob.exc import HTTPNotFound
 
 import rhodecode
 from rhodecode.lib.vcs.nodes import FileNode
+from rhodecode.lib import helpers as h
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.db import (
-    PullRequest, ChangesetStatus, UserLog, Notification)
+    PullRequest, ChangesetStatus, UserLog, Notification, ChangesetComment)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
-from rhodecode.model.repo import RepoModel
-from rhodecode.tests import assert_session_flash, url, TEST_USER_ADMIN_LOGIN
+from rhodecode.tests import (
+    assert_session_flash, url, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN)
 from rhodecode.tests.utils import AssertResponse
 
 
 @pytest.mark.usefixtures('app', 'autologin_user')
 @pytest.mark.backends("git", "hg")
-class TestPullrequestsController:
+class TestPullrequestsController(object):
 
     def test_index(self, backend):
         self.app.get(url(
@@ -46,24 +47,11 @@ class TestPullrequestsController:
 
     def test_option_menu_create_pull_request_exists(self, backend):
         repo_name = backend.repo_name
-        response = self.app.get(url('summary_home', repo_name=repo_name))
+        response = self.app.get(h.route_path('repo_summary', repo_name=repo_name))
 
         create_pr_link = '<a href="%s">Create Pull Request</a>' % url(
             'pullrequest', repo_name=repo_name)
         response.mustcontain(create_pr_link)
-
-    def test_global_redirect_of_pr(self, backend, pr_util):
-        pull_request = pr_util.create_pull_request()
-
-        response = self.app.get(
-            url('pull_requests_global',
-                pull_request_id=pull_request.pull_request_id))
-
-        repo_name = pull_request.target_repo.repo_name
-        redirect_url = url('pullrequest_show', repo_name=repo_name,
-                           pull_request_id=pull_request.pull_request_id)
-        assert response.status == '302 Found'
-        assert redirect_url in response.location
 
     def test_create_pr_form_with_raw_commit_id(self, backend):
         repo = backend.repo
@@ -97,7 +85,7 @@ class TestPullrequestsController:
             'Server-side pull request merging is disabled.'
             in response) != pr_merge_enabled
 
-    def test_close_status_visibility(self, pr_util, csrf_token):
+    def test_close_status_visibility(self, pr_util, user_util, csrf_token):
         from rhodecode.tests.functional.test_login import login_url, logut_url
         # Logout
         response = self.app.post(
@@ -105,10 +93,11 @@ class TestPullrequestsController:
             params={'csrf_token': csrf_token})
         # Login as regular user
         response = self.app.post(login_url,
-                                 {'username': 'test_regular',
+                                 {'username': TEST_USER_REGULAR_LOGIN,
                                   'password': 'test12'})
 
-        pull_request = pr_util.create_pull_request(author='test_regular')
+        pull_request = pr_util.create_pull_request(
+            author=TEST_USER_REGULAR_LOGIN)
 
         response = self.app.get(url(
             controller='pullrequests', action='show',
@@ -118,6 +107,22 @@ class TestPullrequestsController:
         response.mustcontain('Server-side pull request merging is disabled.')
 
         assert_response = response.assert_response()
+        # for regular user without a merge permissions, we don't see it
+        assert_response.no_element_exists('#close-pull-request-action')
+
+        user_util.grant_user_permission_to_repo(
+            pull_request.target_repo,
+            UserModel().get_by_username(TEST_USER_REGULAR_LOGIN),
+            'repository.write')
+        response = self.app.get(url(
+            controller='pullrequests', action='show',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=str(pull_request.pull_request_id)))
+
+        response.mustcontain('Server-side pull request merging is disabled.')
+
+        assert_response = response.assert_response()
+        # now regular user has a merge permissions, we have CLOSE button
         assert_response.one_element_exists('#close-pull-request-action')
 
     def test_show_invalid_commit_id(self, pr_util):
@@ -232,7 +237,9 @@ class TestPullrequestsController:
         assertr.element_contains(
             'span[data-role="merge-message"]', str(expected_msg))
 
-    def test_comment_and_close_pull_request(self, pr_util, csrf_token):
+    def test_comment_and_close_pull_request_custom_message_approved(
+            self, pr_util, csrf_token, xhr_header):
+
         pull_request = pr_util.create_pull_request(approved=True)
         pull_request_id = pull_request.pull_request_id
         author = pull_request.user_id
@@ -244,75 +251,82 @@ class TestPullrequestsController:
                 repo_name=pull_request.target_repo.scm_instance().name,
                 pull_request_id=str(pull_request_id)),
             params={
-                'changeset_status': ChangesetStatus.STATUS_APPROVED,
                 'close_pull_request': '1',
                 'text': 'Closing a PR',
                 'csrf_token': csrf_token},
-            status=302)
+            extra_environ=xhr_header,)
 
-        action = 'user_closed_pull_request:%d' % pull_request_id
         journal = UserLog.query()\
             .filter(UserLog.user_id == author)\
-            .filter(UserLog.repository_id == repo)\
-            .filter(UserLog.action == action)\
+            .filter(UserLog.repository_id == repo) \
+            .order_by('user_log_id') \
             .all()
-        assert len(journal) == 1
+        assert journal[-1].action == 'repo.pull_request.close'
 
         pull_request = PullRequest.get(pull_request_id)
         assert pull_request.is_closed()
 
-        # check only the latest status, not the review status
         status = ChangesetStatusModel().get_status(
             pull_request.source_repo, pull_request=pull_request)
         assert status == ChangesetStatus.STATUS_APPROVED
+        comments = ChangesetComment().query() \
+            .filter(ChangesetComment.pull_request == pull_request) \
+            .order_by(ChangesetComment.comment_id.asc())\
+            .all()
+        assert comments[-1].text == 'Closing a PR'
 
-    def test_reject_and_close_pull_request(self, pr_util, csrf_token):
+    def test_comment_force_close_pull_request_rejected(
+            self, pr_util, csrf_token, xhr_header):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
-        response = self.app.post(
-            url(controller='pullrequests',
-                action='update',
-                repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=str(pull_request.pull_request_id)),
-            params={'close_pull_request': 'true', '_method': 'put',
-                    'csrf_token': csrf_token})
-
-        pull_request = PullRequest.get(pull_request_id)
-
-        assert response.json is True
-        assert pull_request.is_closed()
-
-        # check only the latest status, not the review status
-        status = ChangesetStatusModel().get_status(
-            pull_request.source_repo, pull_request=pull_request)
-        assert status == ChangesetStatus.STATUS_REJECTED
-
-    def test_comment_force_close_pull_request(self, pr_util, csrf_token):
-        pull_request = pr_util.create_pull_request()
-        pull_request_id = pull_request.pull_request_id
-        reviewers_data = [(1, ['reason']), (2, ['reason2'])]
-        PullRequestModel().update_reviewers(pull_request_id, reviewers_data)
+        PullRequestModel().update_reviewers(
+            pull_request_id, [(1, ['reason'], False), (2, ['reason2'], False)],
+            pull_request.author)
         author = pull_request.user_id
         repo = pull_request.target_repo.repo_id
+
         self.app.post(
             url(controller='pullrequests',
                 action='comment',
                 repo_name=pull_request.target_repo.scm_instance().name,
                 pull_request_id=str(pull_request_id)),
             params={
-                'changeset_status': 'rejected',
                 'close_pull_request': '1',
                 'csrf_token': csrf_token},
-            status=302)
+            extra_environ=xhr_header)
 
         pull_request = PullRequest.get(pull_request_id)
 
-        action = 'user_closed_pull_request:%d' % pull_request_id
-        journal = UserLog.query().filter(
-            UserLog.user_id == author,
-            UserLog.repository_id == repo,
-            UserLog.action == action).all()
-        assert len(journal) == 1
+        journal = UserLog.query()\
+            .filter(UserLog.user_id == author, UserLog.repository_id == repo) \
+            .order_by('user_log_id') \
+            .all()
+        assert journal[-1].action == 'repo.pull_request.close'
+
+        # check only the latest status, not the review status
+        status = ChangesetStatusModel().get_status(
+            pull_request.source_repo, pull_request=pull_request)
+        assert status == ChangesetStatus.STATUS_REJECTED
+
+    def test_comment_and_close_pull_request(
+            self, pr_util, csrf_token, xhr_header):
+        pull_request = pr_util.create_pull_request()
+        pull_request_id = pull_request.pull_request_id
+
+        response = self.app.post(
+            url(controller='pullrequests',
+                action='comment',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=str(pull_request.pull_request_id)),
+            params={
+                'close_pull_request': 'true',
+                'csrf_token': csrf_token},
+            extra_environ=xhr_header)
+
+        assert response.json
+
+        pull_request = PullRequest.get(pull_request_id)
+        assert pull_request.is_closed()
 
         # check only the latest status, not the review status
         status = ChangesetStatusModel().get_status(
@@ -340,6 +354,7 @@ class TestPullrequestsController:
                 ('source_ref', 'branch:default:' + commit_ids['change2']),
                 ('target_repo', target.repo_name),
                 ('target_ref',  'branch:default:' + commit_ids['ancestor']),
+                ('common_ancestor', commit_ids['ancestor']),
                 ('pullrequest_desc', 'Description'),
                 ('pullrequest_title', 'Title'),
                 ('__start__', 'review_members:sequence'),
@@ -348,6 +363,7 @@ class TestPullrequestsController:
                         ('__start__', 'reasons:sequence'),
                             ('reason', 'Some reason'),
                         ('__end__', 'reasons:sequence'),
+                        ('mandatory', 'False'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
                 ('__start__', 'revisions:sequence'),
@@ -360,8 +376,9 @@ class TestPullrequestsController:
             status=302)
 
         location = response.headers['Location']
-        pull_request_id = int(location.rsplit('/', 1)[1])
-        pull_request = PullRequest.get(pull_request_id)
+        pull_request_id = location.rsplit('/', 1)[1]
+        assert pull_request_id != 'new'
+        pull_request = PullRequest.get(int(pull_request_id))
 
         # check that we have now both revisions
         assert pull_request.revisions == [commit_ids['change2'], commit_ids['change']]
@@ -398,6 +415,7 @@ class TestPullrequestsController:
                 ('source_ref', 'branch:default:' + commit_ids['change']),
                 ('target_repo', target.repo_name),
                 ('target_ref',  'branch:default:' + commit_ids['ancestor-child']),
+                ('common_ancestor', commit_ids['ancestor']),
                 ('pullrequest_desc', 'Description'),
                 ('pullrequest_title', 'Title'),
                 ('__start__', 'review_members:sequence'),
@@ -406,6 +424,7 @@ class TestPullrequestsController:
                         ('__start__', 'reasons:sequence'),
                             ('reason', 'Some reason'),
                         ('__end__', 'reasons:sequence'),
+                        ('mandatory', 'False'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
                 ('__start__', 'revisions:sequence'),
@@ -417,21 +436,23 @@ class TestPullrequestsController:
             status=302)
 
         location = response.headers['Location']
-        pull_request_id = int(location.rsplit('/', 1)[1])
-        pull_request = PullRequest.get(pull_request_id)
+
+        pull_request_id = location.rsplit('/', 1)[1]
+        assert pull_request_id != 'new'
+        pull_request = PullRequest.get(int(pull_request_id))
 
         # Check that a notification was made
         notifications = Notification.query()\
             .filter(Notification.created_by == pull_request.author.user_id,
                     Notification.type_ == Notification.TYPE_PULL_REQUEST,
-                    Notification.subject.contains("wants you to review "
-                                                  "pull request #%d"
-                                                  % pull_request_id))
+                    Notification.subject.contains(
+                        "wants you to review pull request #%s" % pull_request_id))
         assert len(notifications.all()) == 1
 
         # Change reviewers and check that a notification was made
         PullRequestModel().update_reviewers(
-            pull_request.pull_request_id, [(1, [])])
+            pull_request.pull_request_id, [(1, [], False)],
+            pull_request.author)
         assert len(notifications.all()) == 2
 
     def test_create_pull_request_stores_ancestor_commit_id(self, backend,
@@ -462,6 +483,7 @@ class TestPullrequestsController:
                 ('source_ref', 'branch:default:' + commit_ids['change']),
                 ('target_repo', target.repo_name),
                 ('target_ref',  'branch:default:' + commit_ids['ancestor-child']),
+                ('common_ancestor', commit_ids['ancestor']),
                 ('pullrequest_desc', 'Description'),
                 ('pullrequest_title', 'Title'),
                 ('__start__', 'review_members:sequence'),
@@ -470,6 +492,7 @@ class TestPullrequestsController:
                         ('__start__', 'reasons:sequence'),
                             ('reason', 'Some reason'),
                         ('__end__', 'reasons:sequence'),
+                        ('mandatory', 'False'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
                 ('__start__', 'revisions:sequence'),
@@ -481,8 +504,10 @@ class TestPullrequestsController:
             status=302)
 
         location = response.headers['Location']
-        pull_request_id = int(location.rsplit('/', 1)[1])
-        pull_request = PullRequest.get(pull_request_id)
+
+        pull_request_id = location.rsplit('/', 1)[1]
+        assert pull_request_id != 'new'
+        pull_request = PullRequest.get(int(pull_request_id))
 
         # target_ref has to point to the ancestor's commit_id in order to
         # show the correct diff
@@ -519,17 +544,20 @@ class TestPullrequestsController:
             pull_request, ChangesetStatus.STATUS_APPROVED)
 
         # Check the relevant log entries were added
-        user_logs = UserLog.query().order_by('-user_log_id').limit(4)
+        user_logs = UserLog.query().order_by('-user_log_id').limit(3)
         actions = [log.action for log in user_logs]
         pr_commit_ids = PullRequestModel()._get_commit_ids(pull_request)
         expected_actions = [
-            u'user_closed_pull_request:%d' % pull_request_id,
-            u'user_merged_pull_request:%d' % pull_request_id,
-            # The action below reflect that the post push actions were executed
-            u'user_commented_pull_request:%d' % pull_request_id,
-            u'push:%s' % ','.join(pr_commit_ids),
+             u'repo.pull_request.close',
+             u'repo.pull_request.merge',
+             u'repo.pull_request.comment.create'
         ]
         assert actions == expected_actions
+
+        user_logs = UserLog.query().order_by('-user_log_id').limit(4)
+        actions = [log for log in user_logs]
+        assert actions[-1].action == 'user.push'
+        assert actions[-1].action_data['commit_ids'] == pr_commit_ids
 
         # Check post_push rcextension was really executed
         push_calls = rhodecode.EXTENSIONS.calls['post_push']
@@ -941,18 +969,9 @@ class TestPullrequestsController:
         assert target.text.strip() == 'tag: target'
         assert target.getchildren() == []
 
-    def test_description_is_escaped_on_index_page(self, backend, pr_util):
-        xss_description = "<script>alert('Hi!')</script>"
-        pull_request = pr_util.create_pull_request(description=xss_description)
-        response = self.app.get(url(
-            controller='pullrequests', action='show_all',
-            repo_name=pull_request.target_repo.repo_name))
-        response.mustcontain(
-            "&lt;script&gt;alert(&#39;Hi!&#39;)&lt;/script&gt;")
-
     @pytest.mark.parametrize('mergeable', [True, False])
     def test_shadow_repository_link(
-            self, mergeable, pr_util, http_host_stub):
+            self, mergeable, pr_util, http_host_only_stub):
         """
         Check that the pull request summary page displays a link to the shadow
         repository if the pull request is mergeable. If it is not mergeable
@@ -963,7 +982,7 @@ class TestPullrequestsController:
         target_repo = pull_request.target_repo.scm_instance()
         pr_id = pull_request.pull_request_id
         shadow_url = '{host}/{repo}/pull-request/{pr_id}/repository'.format(
-            host=http_host_stub, repo=target_repo.name, pr_id=pr_id)
+            host=http_host_only_stub, repo=target_repo.name, pr_id=pr_id)
 
         response = self.app.get(url(
             controller='pullrequests', action='show',
@@ -1041,6 +1060,17 @@ class TestPullrequestsControllerDelete(object):
         response.mustcontain('id="delete_pullrequest"')
         response.mustcontain(no=['Confirm to delete this pull request'])
 
+    def test_delete_comment_returns_404_if_comment_does_not_exist(
+            self, autologin_user, pr_util, user_admin):
+
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+
+        self.app.get(url(
+            controller='pullrequests', action='delete_comment',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            comment_id=1024404), status=404)
+
 
 def assert_pull_request_status(pull_request, expected_status):
     status = ChangesetStatusModel().calculated_review_status(
@@ -1048,30 +1078,17 @@ def assert_pull_request_status(pull_request, expected_status):
     assert status == expected_status
 
 
-@pytest.mark.parametrize('action', ['show_all', 'index', 'create'])
+@pytest.mark.parametrize('action', ['index', 'create'])
 @pytest.mark.usefixtures("autologin_user")
-def test_redirects_to_repo_summary_for_svn_repositories(
-        backend_svn, app, action):
-    denied_actions = ['show_all', 'index', 'create']
-    for action in denied_actions:
-        response = app.get(url(
-            controller='pullrequests', action=action,
-            repo_name=backend_svn.repo_name))
-        assert response.status_int == 302
+def test_redirects_to_repo_summary_for_svn_repositories(backend_svn, app, action):
+    response = app.get(url(
+        controller='pullrequests', action=action,
+        repo_name=backend_svn.repo_name))
+    assert response.status_int == 302
 
-        # Not allowed, redirect to the summary
-        redirected = response.follow()
-        summary_url = url('summary_home', repo_name=backend_svn.repo_name)
+    # Not allowed, redirect to the summary
+    redirected = response.follow()
+    summary_url = h.route_path('repo_summary', repo_name=backend_svn.repo_name)
 
-        # URL adds leading slash and path doesn't have it
-        assert redirected.req.path == summary_url
-
-
-def test_delete_comment_returns_404_if_comment_does_not_exist(pylonsapp):
-    # TODO: johbo: Global import not possible because models.forms blows up
-    from rhodecode.controllers.pullrequests import PullrequestsController
-    controller = PullrequestsController()
-    patcher = mock.patch(
-        'rhodecode.model.db.BaseModel.get', return_value=None)
-    with pytest.raises(HTTPNotFound), patcher:
-        controller._delete_comment(1)
+    # URL adds leading slash and path doesn't have it
+    assert redirected.request.path == summary_url

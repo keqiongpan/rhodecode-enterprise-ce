@@ -20,15 +20,19 @@
 
 import logging
 
-from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCForbidden
+from rhodecode.api import (
+    jsonrpc_method, JSONRPCError, JSONRPCForbidden, JSONRPCValidationError)
 from rhodecode.api.utils import (
     Optional, OAttr, store_update, has_superadmin_permission, get_origin,
     get_user_or_error, get_user_group_or_error, get_perm_or_error)
+from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import HasUserGroupPermissionAnyApi, HasPermissionAnyApi
 from rhodecode.lib.exceptions import UserGroupAssignedException
 from rhodecode.model.db import Session
 from rhodecode.model.scm import UserGroupList
 from rhodecode.model.user_group import UserGroupModel
+from rhodecode.model import validation_schema
+from rhodecode.model.validation_schema.schemas import user_group_schema
 
 log = logging.getLogger(__name__)
 
@@ -210,20 +214,41 @@ def create_user_group(
     if UserGroupModel().get_by_name(group_name):
         raise JSONRPCError("user group `%s` already exist" % (group_name,))
 
-    try:
-        if isinstance(owner, Optional):
-            owner = apiuser.user_id
+    if isinstance(owner, Optional):
+        owner = apiuser.user_id
 
-        owner = get_user_or_error(owner)
-        active = Optional.extract(active)
-        description = Optional.extract(description)
-        ug = UserGroupModel().create(
-            name=group_name, description=description, owner=owner,
-            active=active)
+    owner = get_user_or_error(owner)
+    active = Optional.extract(active)
+    description = Optional.extract(description)
+
+    schema = user_group_schema.UserGroupSchema().bind(
+        # user caller
+        user=apiuser)
+    try:
+        schema_data = schema.deserialize(dict(
+            user_group_name=group_name,
+            user_group_description=description,
+            user_group_owner=owner.username,
+            user_group_active=active,
+            ))
+    except validation_schema.Invalid as err:
+        raise JSONRPCValidationError(colander_exc=err)
+
+    try:
+        user_group = UserGroupModel().create(
+            name=schema_data['user_group_name'],
+            description=schema_data['user_group_description'],
+            owner=owner,
+            active=schema_data['user_group_active'])
+        Session().flush()
+        creation_data = user_group.get_api_data()
+        audit_logger.store_api(
+            'user_group.create', action_data={'data': creation_data},
+            user=apiuser)
         Session().commit()
         return {
             'msg': 'created new user group `%s`' % group_name,
-            'user_group': ug.get_api_data()
+            'user_group': creation_data
         }
     except Exception:
         log.exception("Error occurred during creation of user group")
@@ -291,6 +316,7 @@ def update_user_group(request, apiuser, usergroupid, group_name=Optional(''),
     if not isinstance(owner, Optional):
         owner = get_user_or_error(owner)
 
+    old_data = user_group.get_api_data()
     updates = {}
     store_update(updates, group_name, 'users_group_name')
     store_update(updates, description, 'user_group_description')
@@ -298,6 +324,9 @@ def update_user_group(request, apiuser, usergroupid, group_name=Optional(''),
     store_update(updates, active, 'users_group_active')
     try:
         UserGroupModel().update(user_group, updates)
+        audit_logger.store_api(
+            'user_group.edit', action_data={'old_data': old_data},
+            user=apiuser)
         Session().commit()
         return {
             'msg': 'updated user group ID:%s %s' % (
@@ -359,8 +388,12 @@ def delete_user_group(request, apiuser, usergroupid):
             raise JSONRPCError(
                 'user group `%s` does not exist' % (usergroupid,))
 
+    old_data = user_group.get_api_data()
     try:
         UserGroupModel().delete(user_group)
+        audit_logger.store_api(
+            'user_group.delete', action_data={'old_data': old_data},
+            user=apiuser)
         Session().commit()
         return {
             'msg': 'deleted user group ID:%s %s' % (
@@ -438,6 +471,12 @@ def add_user_to_user_group(request, apiuser, usergroupid, userid):
             user.username, user_group.users_group_name
         )
         msg = msg if success else 'User is already in that group'
+        if success:
+            user_data = user.get_api_data()
+            audit_logger.store_api(
+                'user_group.edit.member.add', action_data={'user': user_data},
+                user=apiuser)
+
         Session().commit()
 
         return {
@@ -501,6 +540,12 @@ def remove_user_from_user_group(request, apiuser, usergroupid, userid):
             user.username, user_group.users_group_name
         )
         msg = msg if success else "User wasn't in group"
+        if success:
+            user_data = user.get_api_data()
+            audit_logger.store_api(
+                'user_group.edit.member.delete', action_data={'user': user_data},
+                user=apiuser)
+
         Session().commit()
         return {'success': success, 'msg': msg}
     except Exception:

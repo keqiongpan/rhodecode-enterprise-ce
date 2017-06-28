@@ -138,14 +138,6 @@ def create_test_repo(force=True):
     print 'done'
 
 
-def set_anonymous_access(enable=True):
-    sa = get_session()
-    user = sa.query(User).filter(User.username == 'default').one()
-    user.active = enable
-    sa.add(user)
-    sa.commit()
-
-
 def get_anonymous_access():
     sa = get_session()
     return sa.query(User).filter(User.username == 'default').one().active

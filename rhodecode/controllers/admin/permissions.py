@@ -64,12 +64,7 @@ class PermissionsController(BaseController):
         c.active = 'application'
         self.__load_data()
 
-        c.user = User.get_default_user()
-
-        # TODO: johbo: The default user might be based on outdated state which
-        # has been loaded from the cache. A call to refresh() ensures that the
-        # latest state from the database is used.
-        Session().refresh(c.user)
+        c.user = User.get_default_user(refresh=True)
 
         app_settings = SettingsModel().get_all_settings()
         defaults = {

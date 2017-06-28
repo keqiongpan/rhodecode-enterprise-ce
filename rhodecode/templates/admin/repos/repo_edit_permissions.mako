@@ -5,8 +5,7 @@
         <h3 class="panel-title">${_('Repository Permissions')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(url('edit_repo_perms_update', repo_name=c.repo_name), method='put')}
-        ${h.hidden('repo_private')}
+        ${h.secure_form(h.route_path('edit_repo_perms', repo_name=c.repo_name), method='POST')}
         <table id="permissions_manage" class="rctable permissions">
             <tr>
                 <th class="td-radio">${_('None')}</th>
@@ -40,7 +39,7 @@
                     <tr>
                         <td colspan="4">
                             <span class="private_repo_msg">
-                            <strong>${_('private repository')}</strong>
+                            <strong title="${h.tooltip(_user.permission)}">${_('private repository')}</strong>
                             </span>
                         </td>
                         <td class="private_repo_msg">
@@ -50,10 +49,10 @@
                     </tr>
                 %else:
                     <tr>
-                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.none')}</td>
-                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.read')}</td>
-                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.write')}</td>
-                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.admin')}</td>
+                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.none', checked=_user.permission=='repository.none')}</td>
+                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.read', checked=_user.permission=='repository.read')}</td>
+                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.write', checked=_user.permission=='repository.write')}</td>
+                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.admin', checked=_user.permission=='repository.admin')}</td>
                         <td class="td-user">
                             ${base.gravatar(_user.email, 16)}
                             <span class="user">
@@ -79,10 +78,10 @@
             ## USER GROUPS
             %for _user_group in c.repo_info.permission_user_groups():
                 <tr>
-                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.none')}</td>
-                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.read')}</td>
-                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.write')}</td>
-                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.admin')}</td>
+                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.none', checked=_user_group.permission=='repository.none')}</td>
+                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.read', checked=_user_group.permission=='repository.read')}</td>
+                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.write', checked=_user_group.permission=='repository.write')}</td>
+                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.admin', checked=_user_group.permission=='repository.admin')}</td>
                     <td class="td-componentname">
                         <i class="icon-group" ></i>
                         %if h.HasPermissionAny('hg.admin')():

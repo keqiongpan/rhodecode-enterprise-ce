@@ -21,7 +21,8 @@
 
 import logging
 
-from rhodecode.api import jsonrpc_method, JSONRPCError
+from rhodecode import events
+from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCValidationError
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
     get_pull_request_or_error, get_commit_or_error, get_user_or_error,
@@ -34,6 +35,9 @@ from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 from rhodecode.model.settings import SettingsModel
+from rhodecode.model.validation_schema import Invalid
+from rhodecode.model.validation_schema.schemas.reviewer_schema import(
+    ReviewerListSchema)
 
 log = logging.getLogger(__name__)
 
@@ -224,8 +228,9 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
 
 
 @jsonrpc_method()
-def merge_pull_request(request, apiuser, repoid, pullrequestid,
-                       userid=Optional(OAttr('apiuser'))):
+def merge_pull_request(
+        request, apiuser, repoid, pullrequestid,
+        userid=Optional(OAttr('apiuser'))):
     """
     Merge the pull request specified by `pullrequestid` into its target
     repository.
@@ -273,7 +278,12 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
     merge_possible = not check.failed
 
     if not merge_possible:
-        reasons = ','.join([msg for _e, msg in check.errors])
+        error_messages = []
+        for err_type, error_msg in check.errors:
+            error_msg = request.translate(error_msg)
+            error_messages.append(error_msg)
+
+        reasons = ','.join(error_messages)
         raise JSONRPCError(
             'merge not possible for following reasons: {}'.format(reasons))
 
@@ -297,63 +307,6 @@ def merge_pull_request(request, apiuser, repoid, pullrequestid,
     merge_response['merge_commit_id'] = merge_response['merge_ref'].commit_id
 
     return merge_response
-
-
-@jsonrpc_method()
-def close_pull_request(request, apiuser, repoid, pullrequestid,
-                       userid=Optional(OAttr('apiuser'))):
-    """
-    Close the pull request specified by `pullrequestid`.
-
-    :param apiuser: This is filled automatically from the |authtoken|.
-    :type apiuser: AuthUser
-    :param repoid: Repository name or repository ID to which the pull
-        request belongs.
-    :type repoid: str or int
-    :param pullrequestid: ID of the pull request to be closed.
-    :type pullrequestid: int
-    :param userid: Close the pull request as this user.
-    :type userid: Optional(str or int)
-
-    Example output:
-
-    .. code-block:: bash
-
-        "id": <id_given_in_input>,
-        "result": {
-            "pull_request_id":  "<int>",
-            "closed":           "<bool>"
-        },
-        "error": null
-
-    """
-    repo = get_repo_or_error(repoid)
-    if not isinstance(userid, Optional):
-        if (has_superadmin_permission(apiuser) or
-                HasRepoPermissionAnyApi('repository.admin')(
-                    user=apiuser, repo_name=repo.repo_name)):
-            apiuser = get_user_or_error(userid)
-        else:
-            raise JSONRPCError('userid is not the same as your user')
-
-    pull_request = get_pull_request_or_error(pullrequestid)
-    if not PullRequestModel().check_user_update(
-            pull_request, apiuser, api=True):
-        raise JSONRPCError(
-            'pull request `%s` close failed, no permission to close.' % (
-                pullrequestid,))
-    if pull_request.is_closed():
-        raise JSONRPCError(
-            'pull request `%s` is already closed' % (pullrequestid,))
-
-    PullRequestModel().close_pull_request(
-        pull_request.pull_request_id, apiuser)
-    Session().commit()
-    data = {
-        'pull_request_id': pull_request.pull_request_id,
-        'closed': True,
-    }
-    return data
 
 
 @jsonrpc_method()
@@ -529,24 +482,26 @@ def create_pull_request(
     :param description: Set the pull request description.
     :type description: Optional(str)
     :param reviewers: Set the new pull request reviewers list.
+        Reviewer defined by review rules will be added automatically to the
+        defined list.
     :type reviewers: Optional(list)
         Accepts username strings or objects of the format:
 
-            {'username': 'nick', 'reasons': ['original author']}
+            [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
     """
 
-    source = get_repo_or_error(source_repo)
-    target = get_repo_or_error(target_repo)
+    source_db_repo =  get_repo_or_error(source_repo)
+    target_db_repo = get_repo_or_error(target_repo)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
-        validate_repo_permissions(apiuser, source_repo, source, _perms)
+        validate_repo_permissions(apiuser, source_repo, source_db_repo, _perms)
 
-    full_source_ref = resolve_ref_or_error(source_ref, source)
-    full_target_ref = resolve_ref_or_error(target_ref, target)
-    source_commit = get_commit_or_error(full_source_ref, source)
-    target_commit = get_commit_or_error(full_target_ref, target)
-    source_scm = source.scm_instance()
-    target_scm = target.scm_instance()
+    full_source_ref = resolve_ref_or_error(source_ref, source_db_repo)
+    full_target_ref = resolve_ref_or_error(target_ref, target_db_repo)
+    source_commit = get_commit_or_error(full_source_ref, source_db_repo)
+    target_commit = get_commit_or_error(full_target_ref, target_db_repo)
+    source_scm = source_db_repo.scm_instance()
+    target_scm = target_db_repo.scm_instance()
 
     commit_ranges = target_scm.compare(
         target_commit.raw_id, source_commit.raw_id, source_scm,
@@ -562,20 +517,36 @@ def create_pull_request(
         raise JSONRPCError('no common ancestor found')
 
     reviewer_objects = Optional.extract(reviewers) or []
-    if not isinstance(reviewer_objects, list):
-        raise JSONRPCError('reviewers should be specified as a list')
 
-    reviewers_reasons = []
-    for reviewer_object in reviewer_objects:
-        reviewer_reasons = []
-        if isinstance(reviewer_object, (basestring, int)):
-            reviewer_username = reviewer_object
-        else:
-            reviewer_username = reviewer_object['username']
-            reviewer_reasons = reviewer_object.get('reasons', [])
+    if reviewer_objects:
+        schema = ReviewerListSchema()
+        try:
+            reviewer_objects = schema.deserialize(reviewer_objects)
+        except Invalid as err:
+            raise JSONRPCValidationError(colander_exc=err)
 
-        user = get_user_or_error(reviewer_username)
-        reviewers_reasons.append((user.user_id, reviewer_reasons))
+        # validate users
+        for reviewer_object in reviewer_objects:
+            user = get_user_or_error(reviewer_object['username'])
+            reviewer_object['user_id'] = user.user_id
+
+    get_default_reviewers_data, get_validated_reviewers = \
+        PullRequestModel().get_reviewer_functions()
+
+    reviewer_rules = get_default_reviewers_data(
+        apiuser.get_instance(), source_db_repo,
+        source_commit, target_db_repo, target_commit)
+
+    # specified rules are later re-validated, thus we can assume users will
+    # eventually provide those that meet the reviewer criteria.
+    if not reviewer_objects:
+        reviewer_objects = reviewer_rules['reviewers']
+
+    try:
+        reviewers = get_validated_reviewers(
+            reviewer_objects, reviewer_rules)
+    except ValueError as e:
+        raise JSONRPCError('Reviewers Validation: {}'.format(e))
 
     pull_request_model = PullRequestModel()
     pull_request = pull_request_model.create(
@@ -586,7 +557,7 @@ def create_pull_request(
         target_ref=full_target_ref,
         revisions=reversed(
             [commit.raw_id for commit in reversed(commit_ranges)]),
-        reviewers=reviewers_reasons,
+        reviewers=reviewers,
         title=title,
         description=Optional.extract(description)
     )
@@ -603,7 +574,7 @@ def create_pull_request(
 def update_pull_request(
         request, apiuser, repoid, pullrequestid, title=Optional(''),
         description=Optional(''), reviewers=Optional(None),
-        update_commits=Optional(None), close_pull_request=Optional(None)):
+        update_commits=Optional(None)):
     """
     Updates a pull request.
 
@@ -619,10 +590,12 @@ def update_pull_request(
     :type description: Optional(str)
     :param reviewers: Update pull request reviewers list with new value.
     :type reviewers: Optional(list)
+        Accepts username strings or objects of the format:
+
+            [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
+
     :param update_commits: Trigger update of commits for this pull request
     :type: update_commits: Optional(bool)
-    :param close_pull_request: Close this pull request with rejected state
-    :type: close_pull_request: Optional(bool)
 
     Example output:
 
@@ -665,29 +638,38 @@ def update_pull_request(
                 pullrequestid,))
 
     reviewer_objects = Optional.extract(reviewers) or []
-    if not isinstance(reviewer_objects, list):
-        raise JSONRPCError('reviewers should be specified as a list')
 
-    reviewers_reasons = []
-    reviewer_ids = set()
-    for reviewer_object in reviewer_objects:
-        reviewer_reasons = []
-        if isinstance(reviewer_object, (int, basestring)):
-            reviewer_username = reviewer_object
-        else:
-            reviewer_username = reviewer_object['username']
-            reviewer_reasons = reviewer_object.get('reasons', [])
+    if reviewer_objects:
+        schema = ReviewerListSchema()
+        try:
+            reviewer_objects = schema.deserialize(reviewer_objects)
+        except Invalid as err:
+            raise JSONRPCValidationError(colander_exc=err)
 
-        user = get_user_or_error(reviewer_username)
-        reviewer_ids.add(user.user_id)
-        reviewers_reasons.append((user.user_id, reviewer_reasons))
+        # validate users
+        for reviewer_object in reviewer_objects:
+            user = get_user_or_error(reviewer_object['username'])
+            reviewer_object['user_id'] = user.user_id
+
+        get_default_reviewers_data, get_validated_reviewers = \
+            PullRequestModel().get_reviewer_functions()
+
+        # re-use stored rules
+        reviewer_rules = pull_request.reviewer_data
+        try:
+            reviewers = get_validated_reviewers(
+                reviewer_objects, reviewer_rules)
+        except ValueError as e:
+            raise JSONRPCError('Reviewers Validation: {}'.format(e))
+    else:
+        reviewers = []
 
     title = Optional.extract(title)
     description = Optional.extract(description)
     if title or description:
         PullRequestModel().edit(
             pull_request, title or pull_request.title,
-            description or pull_request.description)
+            description or pull_request.description, apiuser)
         Session().commit()
 
     commit_changes = {"added": [], "common": [], "removed": []}
@@ -699,19 +681,14 @@ def update_pull_request(
         Session().commit()
 
     reviewers_changes = {"added": [], "removed": []}
-    if reviewer_ids:
+    if reviewers:
         added_reviewers, removed_reviewers = \
-            PullRequestModel().update_reviewers(pull_request, reviewers_reasons)
+            PullRequestModel().update_reviewers(pull_request, reviewers, apiuser)
 
         reviewers_changes['added'] = sorted(
             [get_user_or_error(n).username for n in added_reviewers])
         reviewers_changes['removed'] = sorted(
             [get_user_or_error(n).username for n in removed_reviewers])
-        Session().commit()
-
-    if str2bool(Optional.extract(close_pull_request)):
-        PullRequestModel().close_pull_request_with_comment(
-            pull_request, apiuser, repo)
         Session().commit()
 
     data = {
@@ -722,4 +699,81 @@ def update_pull_request(
         'updated_reviewers': reviewers_changes
     }
 
+    return data
+
+
+@jsonrpc_method()
+def close_pull_request(
+        request, apiuser, repoid, pullrequestid,
+        userid=Optional(OAttr('apiuser')), message=Optional('')):
+    """
+    Close the pull request specified by `pullrequestid`.
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: Repository name or repository ID to which the pull
+        request belongs.
+    :type repoid: str or int
+    :param pullrequestid: ID of the pull request to be closed.
+    :type pullrequestid: int
+    :param userid: Close the pull request as this user.
+    :type userid: Optional(str or int)
+    :param message: Optional message to close the Pull Request with. If not
+        specified it will be generated automatically.
+    :type message: Optional(str)
+
+    Example output:
+
+    .. code-block:: bash
+
+        "id": <id_given_in_input>,
+        "result": {
+            "pull_request_id":  "<int>",
+            "close_status":     "<str:status_lbl>,
+            "closed":           "<bool>"
+        },
+        "error": null
+
+    """
+    _ = request.translate
+
+    repo = get_repo_or_error(repoid)
+    if not isinstance(userid, Optional):
+        if (has_superadmin_permission(apiuser) or
+                HasRepoPermissionAnyApi('repository.admin')(
+                    user=apiuser, repo_name=repo.repo_name)):
+            apiuser = get_user_or_error(userid)
+        else:
+            raise JSONRPCError('userid is not the same as your user')
+
+    pull_request = get_pull_request_or_error(pullrequestid)
+
+    if pull_request.is_closed():
+        raise JSONRPCError(
+            'pull request `%s` is already closed' % (pullrequestid,))
+
+    # only owner or admin or person with write permissions
+    allowed_to_close = PullRequestModel().check_user_update(
+            pull_request, apiuser, api=True)
+
+    if not allowed_to_close:
+        raise JSONRPCError(
+            'pull request `%s` close failed, no permission to close.' % (
+                pullrequestid,))
+
+    # message we're using to close the PR, else it's automatically generated
+    message = Optional.extract(message)
+
+    # finally close the PR, with proper message comment
+    comment, status = PullRequestModel().close_pull_request_with_comment(
+        pull_request, apiuser, repo, message=message)
+    status_lbl = ChangesetStatus.get_status_lbl(status)
+
+    Session().commit()
+
+    data = {
+        'pull_request_id': pull_request.pull_request_id,
+        'close_status': status_lbl,
+        'closed': True,
+    }
     return data

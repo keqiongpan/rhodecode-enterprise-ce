@@ -52,6 +52,6 @@
 <script>
     $('#check_for_update').click(function(e){
         $('#update_notice').show();
-        $('#update_notice').load("${h.route_path('admin_settings_system_update',version=c.rhodecode_version, platform=c.platform)}");
+        $('#update_notice').load("${h.route_path('admin_settings_system_update')}");
     })
 </script>

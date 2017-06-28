@@ -26,7 +26,7 @@ from rhodecode.tests import TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN
 from rhodecode.api.tests.utils import (
     build_data, api_call, assert_error, assert_ok, crash, jsonify)
 from rhodecode.tests.fixture import Fixture
-
+from rhodecode.tests.plugin import http_host_stub, http_host_only_stub
 
 fixture = Fixture()
 
@@ -71,14 +71,15 @@ class TestApiUpdateRepo(object):
         ({'repo_name': 'new_repo_name'},
          {
             'repo_name': 'new_repo_name',
-            'url': 'http://test.example.com:80/new_repo_name'
+            'url': 'http://{}/new_repo_name'.format(http_host_only_stub())
          }),
 
         ({'repo_name': 'test_group_for_update/{}'.format(UPDATE_REPO_NAME),
           '_group': 'test_group_for_update'},
          {
             'repo_name': 'test_group_for_update/{}'.format(UPDATE_REPO_NAME),
-            'url': 'http://test.example.com:80/test_group_for_update/{}'.format(UPDATE_REPO_NAME)
+            'url': 'http://{}/test_group_for_update/{}'.format(
+                http_host_only_stub(), UPDATE_REPO_NAME)
          }),
     ])
     def test_api_update_repo(self, updates, expected, backend):
@@ -115,7 +116,8 @@ class TestApiUpdateRepo(object):
         master_repo = backend.create_repo()
         repo = backend.create_repo()
         updates = {
-            'fork_of': master_repo.repo_name
+            'fork_of': master_repo.repo_name,
+            'fork_of_id': master_repo.repo_id
         }
         expected_api_data = repo.get_api_data(include_secrets=True)
         expected_api_data.update(updates)
@@ -130,6 +132,7 @@ class TestApiUpdateRepo(object):
         assert_ok(id_, expected, given=response.body)
         result = response.json['result']['repository']
         assert result['fork_of'] == master_repo.repo_name
+        assert result['fork_of_id'] == master_repo.repo_id
 
     def test_api_update_repo_fork_of_not_found(self, backend):
         master_repo_name = 'fake-parent-repo'

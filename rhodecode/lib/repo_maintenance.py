@@ -83,6 +83,15 @@ class HGVerify(MaintenanceTask):
         return res
 
 
+class SVNVerify(MaintenanceTask):
+    human_name = 'SVN Verify repo'
+
+    def run(self):
+        instance = self.db_repo.scm_instance()
+        res = instance.verify()
+        return res
+
+
 class RepoMaintenance(object):
     """
     Performs maintenance of repository based on it's type
@@ -90,7 +99,7 @@ class RepoMaintenance(object):
     tasks = {
         'hg': [HGVerify],
         'git': [GitGC],
-        'svn': [],
+        'svn': [SVNVerify],
     }
 
     def get_tasks_for_repo(self, db_repo):

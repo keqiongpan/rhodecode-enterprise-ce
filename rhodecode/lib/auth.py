@@ -34,10 +34,10 @@ import traceback
 from functools import wraps
 
 import ipaddress
-from pyramid.httpexceptions import HTTPForbidden, HTTPFound
-from pylons import url, request
-from pylons.controllers.util import abort, redirect
+from pyramid.httpexceptions import HTTPForbidden, HTTPFound, HTTPNotFound
 from pylons.i18n.translation import _
+# NOTE(marcink): this has to be removed only after pyramid migration,
+# replace with _ = request.translate
 from sqlalchemy.orm.exc import ObjectDeletedError
 from sqlalchemy.orm import joinedload
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -138,7 +138,7 @@ class _RhodeCodeCryptoBase(object):
 
 
 class _RhodeCodeCryptoBCrypt(_RhodeCodeCryptoBase):
-    ENC_PREF = '$2a$10'
+    ENC_PREF = ('$2a$10', '$2b$10')
 
     def hash_create(self, str_):
         self._assert_bytes(str_)
@@ -302,7 +302,8 @@ def _cached_perms_data(user_id, scope, user_is_admin,
         explicit, algo)
     return permissions.calculate()
 
-class PermOrigin:
+
+class PermOrigin(object):
     ADMIN = 'superadmin'
 
     REPO_USER = 'user:%s'
@@ -340,7 +341,6 @@ class PermOriginDict(dict):
     >>> perms.perm_origin_stack
     {'resource': [('read', 'default'), ('write', 'admin')]}
     """
-
 
     def __init__(self, *args, **kw):
         dict.__init__(self, *args, **kw)
@@ -807,6 +807,8 @@ class AuthUser(object):
         self.ip_addr = ip_addr
         self.name = ''
         self.lastname = ''
+        self.first_name = ''
+        self.last_name = ''
         self.email = ''
         self.is_authenticated = False
         self.admin = False
@@ -1045,8 +1047,8 @@ class AuthUser(object):
             default_ips = UserIpMap.query().filter(
                 UserIpMap.user == User.get_default_user(cache=True))
             if cache:
-                default_ips = default_ips.options(FromCache("sql_cache_short",
-                                                  "get_user_ips_default"))
+                default_ips = default_ips.options(
+                    FromCache("sql_cache_short", "get_user_ips_default"))
 
             # populate from default user
             for ip in default_ips:
@@ -1059,8 +1061,8 @@ class AuthUser(object):
 
         user_ips = UserIpMap.query().filter(UserIpMap.user_id == user_id)
         if cache:
-            user_ips = user_ips.options(FromCache("sql_cache_short",
-                                                  "get_user_ips_%s" % user_id))
+            user_ips = user_ips.options(
+                FromCache("sql_cache_short", "get_user_ips_%s" % user_id))
 
         for ip in user_ips:
             try:
@@ -1114,6 +1116,17 @@ def get_csrf_token(session=None, force_new=False, save_if_missing=True):
     return session.get(csrf_token_key)
 
 
+def get_request(perm_class):
+    from pyramid.threadlocal import get_current_request
+    pyramid_request = get_current_request()
+    if not pyramid_request:
+        # return global request of pylons in case pyramid isn't available
+        # NOTE(marcink): this should be removed after migration to pyramid
+        from pylons import request
+        return request
+    return pyramid_request
+
+
 # CHECK DECORATORS
 class CSRFRequired(object):
     """
@@ -1144,7 +1157,12 @@ class CSRFRequired(object):
         supplied_token = self._get_csrf(_request)
         return supplied_token and supplied_token == cur_token
 
+    def _get_request(self):
+        return get_request(self)
+
     def __wrapper(self, func, *fargs, **fkwargs):
+        request = self._get_request()
+
         if request.method in self.except_methods:
             return func(*fargs, **fkwargs)
 
@@ -1157,8 +1175,8 @@ class CSRFRequired(object):
             reason = 'token-missing'
             supplied_token = self._get_csrf(request)
             if supplied_token and cur_token != supplied_token:
-                reason = 'token-mismatch [%s:%s]' % (cur_token or ''[:6],
-                                                     supplied_token or ''[:6])
+                reason = 'token-mismatch [%s:%s]' % (
+                    cur_token or ''[:6], supplied_token or ''[:6])
 
             csrf_message = \
                 ("Cross-site request forgery detected, request denied. See "
@@ -1185,10 +1203,15 @@ class LoginRequired(object):
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
 
+    def _get_request(self):
+        return get_request(self)
+
     def __wrapper(self, func, *fargs, **fkwargs):
         from rhodecode.lib import helpers as h
         cls = fargs[0]
         user = cls._rhodecode_user
+        request = self._get_request()
+
         loc = "%s:%s" % (cls.__class__.__name__, func.__name__)
         log.debug('Starting login restriction checks for user: %s' % (user,))
         # check if our IP is allowed
@@ -1255,22 +1278,27 @@ class LoginRequired(object):
             # we preserve the get PARAM
             came_from = request.path_qs
             log.debug('redirecting to login page with %s' % (came_from,))
-            return redirect(
+            raise HTTPFound(
                 h.route_path('login', _query={'came_from': came_from}))
 
 
 class NotAnonymous(object):
     """
     Must be logged in to execute this function else
-    redirect to login page"""
+    redirect to login page
+    """
 
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
+
+    def _get_request(self):
+        return get_request(self)
 
     def __wrapper(self, func, *fargs, **fkwargs):
         import rhodecode.lib.helpers as h
         cls = fargs[0]
         self.user = cls._rhodecode_user
+        request = self._get_request()
 
         log.debug('Checking if user is not anonymous @%s' % cls)
 
@@ -1281,19 +1309,28 @@ class NotAnonymous(object):
             h.flash(_('You need to be a registered user to '
                       'perform this action'),
                     category='warning')
-            return redirect(
+            raise HTTPFound(
                 h.route_path('login', _query={'came_from': came_from}))
         else:
             return func(*fargs, **fkwargs)
 
 
 class XHRRequired(object):
+    # TODO(marcink): remove this in favor of the predicates in pyramid routes
+
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
 
+    def _get_request(self):
+        return get_request(self)
+
     def __wrapper(self, func, *fargs, **fkwargs):
+        from pylons.controllers.util import abort
+        request = self._get_request()
+
         log.debug('Checking if request is XMLHttpRequest (XHR)')
         xhr_message = 'This is not a valid XMLHttpRequest (XHR) request'
+
         if not request.is_xhr:
             abort(400, detail=xhr_message)
 
@@ -1303,9 +1340,9 @@ class XHRRequired(object):
 class HasAcceptedRepoType(object):
     """
     Check if requested repo is within given repo type aliases
-
-    TODO: anderson: not sure where to put this decorator
     """
+
+    # TODO(marcink): remove this in favor of the predicates in pyramid routes
 
     def __init__(self, *repo_type_list):
         self.repo_type_list = set(repo_type_list)
@@ -1328,8 +1365,9 @@ class HasAcceptedRepoType(object):
             h.flash(h.literal(
                 _('Action not supported for %s.' % rhodecode_repo.alias)),
                 category='warning')
-            return redirect(
-                url('summary_home', repo_name=cls.rhodecode_db_repo.repo_name))
+            raise HTTPFound(
+                h.route_path('repo_summary',
+                             repo_name=cls.rhodecode_db_repo.repo_name))
 
 
 class PermsDecorator(object):
@@ -1345,12 +1383,7 @@ class PermsDecorator(object):
         return get_cython_compat_decorator(self.__wrapper, func)
 
     def _get_request(self):
-        from pyramid.threadlocal import get_current_request
-        pyramid_request = get_current_request()
-        if not pyramid_request:
-            # return global request of pylons in case pyramid isn't available
-            return request
-        return pyramid_request
+        return get_request(self)
 
     def _get_came_from(self):
         _request = self._get_request()
@@ -1377,13 +1410,13 @@ class PermsDecorator(object):
             if anonymous:
                 came_from = self._get_came_from()
                 h.flash(_('You need to be signed in to view this page'),
-                               category='warning')
+                        category='warning')
                 raise HTTPFound(
                     h.route_path('login', _query={'came_from': came_from}))
 
             else:
-                # redirect with forbidden ret code
-                raise HTTPForbidden()
+                # redirect with 404 to prevent resource discovery
+                raise HTTPNotFound()
 
     def check_permissions(self, user):
         """Dummy function for overriding"""
@@ -1429,10 +1462,16 @@ class HasRepoPermissionAllDecorator(PermsDecorator):
     def check_permissions(self, user):
         perms = user.permissions
         repo_name = self._get_repo_name()
+
         try:
             user_perms = set([perms['repositories'][repo_name]])
         except KeyError:
+            log.debug('cannot locate repo with name: `%s` in permissions defs',
+                      repo_name)
             return False
+
+        log.debug('checking `%s` permissions for repo `%s`',
+                  user_perms, repo_name)
         if self.required_perms.issubset(user_perms):
             return True
         return False
@@ -1450,11 +1489,16 @@ class HasRepoPermissionAnyDecorator(PermsDecorator):
     def check_permissions(self, user):
         perms = user.permissions
         repo_name = self._get_repo_name()
+
         try:
             user_perms = set([perms['repositories'][repo_name]])
         except KeyError:
+            log.debug('cannot locate repo with name: `%s` in permissions defs',
+                      repo_name)
             return False
 
+        log.debug('checking `%s` permissions for repo `%s`',
+                  user_perms, repo_name)
         if self.required_perms.intersection(user_perms):
             return True
         return False
@@ -1476,8 +1520,12 @@ class HasRepoGroupPermissionAllDecorator(PermsDecorator):
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
+            log.debug('cannot locate repo group with name: `%s` in permissions defs',
+                      group_name)
             return False
 
+        log.debug('checking `%s` permissions for repo group `%s`',
+                  user_perms, group_name)
         if self.required_perms.issubset(user_perms):
             return True
         return False
@@ -1496,11 +1544,16 @@ class HasRepoGroupPermissionAnyDecorator(PermsDecorator):
     def check_permissions(self, user):
         perms = user.permissions
         group_name = self._get_repo_group_name()
+
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
+            log.debug('cannot locate repo group with name: `%s` in permissions defs',
+                      group_name)
             return False
 
+        log.debug('checking `%s` permissions for repo group `%s`',
+                  user_perms, group_name)
         if self.required_perms.intersection(user_perms):
             return True
         return False
@@ -1575,6 +1628,7 @@ class PermsFunction(object):
         if not user:
             log.debug('Using user attribute from global request')
             # TODO: remove this someday,put as user as attribute here
+            request = self._get_request()
             user = request.user
 
         # init auth user if not already given
@@ -1603,12 +1657,7 @@ class PermsFunction(object):
             return False
 
     def _get_request(self):
-        from pyramid.threadlocal import get_current_request
-        pyramid_request = get_current_request()
-        if not pyramid_request:
-            # return global request of pylons incase pyramid one isn't available
-            return request
-        return pyramid_request
+        return get_request(self)
 
     def _get_check_scope(self, cls_name):
         return {
@@ -1673,7 +1722,8 @@ class HasRepoPermissionAny(PermsFunction):
 
     def _get_repo_name(self):
         if not self.repo_name:
-            self.repo_name = get_repo_slug(request)
+            _request = self._get_request()
+            self.repo_name = get_repo_slug(_request)
         return self.repo_name
 
     def check_permissions(self, user):

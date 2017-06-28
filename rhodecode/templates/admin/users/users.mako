@@ -10,7 +10,7 @@
 
 <%def name="breadcrumbs_links()">
     <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-    ${h.link_to(_('Admin'),h.url('admin_home'))} &raquo; <span id="user_count">0</span>
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))} &raquo; <span id="user_count">0</span>
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -38,9 +38,10 @@
 <script type="text/javascript">
 
 $(document).ready(function() {
+    var $userListTable = $('#user_list_table');
 
     var getDatatableCount = function(){
-      var table = $('#user_list_table').dataTable();
+      var table = $userListTable.dataTable();
       var page = table.api().page.info();
       var  active = page.recordsDisplay;
       var  total = page.recordsTotal;
@@ -50,7 +51,7 @@ $(document).ready(function() {
     };
 
     // user list
-    $('#user_list_table').DataTable({
+    $userListTable.DataTable({
       processing: true,
       serverSide: true,
       ajax: "${h.route_path('users_data')}",
@@ -76,7 +77,7 @@ $(document).ready(function() {
          { data: {"_": "extern_type",
                   "sort": "extern_type"}, title: "${_('Auth type')}", className: "td-type"  },
          { data: {"_": "action",
-                  "sort": "action"}, title: "${_('Action')}", className: "td-action" }
+                  "sort": "action"}, title: "${_('Action')}", className: "td-action", orderable: false }
       ],
       language: {
           paginate: DEFAULT_GRID_PAGINATION,
@@ -91,23 +92,23 @@ $(document).ready(function() {
       }
     });
 
-    $('#user_list_table').on('xhr.dt', function(e, settings, json, xhr){
-        $('#user_list_table').css('opacity', 1);
+    $userListTable.on('xhr.dt', function(e, settings, json, xhr){
+        $userListTable.css('opacity', 1);
     });
 
-    $('#user_list_table').on('preXhr.dt', function(e, settings, data){
-        $('#user_list_table').css('opacity', 0.3);
+    $userListTable.on('preXhr.dt', function(e, settings, data){
+        $userListTable.css('opacity', 0.3);
     });
 
     // refresh counters on draw
-    $('#user_list_table').on('draw.dt', function(){
+    $userListTable.on('draw.dt', function(){
         getDatatableCount();
     });
 
     // filter
     $('#q_filter').on('keyup',
         $.debounce(250, function() {
-            $('#user_list_table').DataTable().search(
+            $userListTable.DataTable().search(
                 $('#q_filter').val()
             ).draw();
         })

@@ -24,6 +24,9 @@ deform - later can be replaced with something custom.
 """
 
 from rhodecode.translation import _
+from rhodecode.translation import TranslationString
+
+from mako.template import Template
 from deform import Button, Form, widget, ValidationFailure
 
 
@@ -31,3 +34,16 @@ class buttons:
     save = Button(name='Save', type='submit')
     reset = Button(name=_('Reset'), type='reset')
     delete = Button(name=_('Delete'), type='submit')
+
+
+class RcForm(Form):
+    def render_error(self, request, field):
+        html = ''
+        if field.error:
+            for err in field.error.messages():
+                if isinstance(err, TranslationString):
+                    err = request.translate(err)
+                html = Template(
+                    '<span class="error-message">${err}</span>').render(err=err)
+
+        return html

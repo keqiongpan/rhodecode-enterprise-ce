@@ -34,7 +34,6 @@
         % if sync_type:
             <p>
                 ${_('This group is set to be automatically synchronised.')}<br/>
-                ${_('Each member will be added or removed from this groups once they interact with RhodeCode system.')}<br/>
                 ${_('This group synchronization was set by')}: <strong>${sync_type}</strong>
             </p>
         % else:
@@ -56,11 +55,8 @@
             </div>
             <div class="field">
                 <span class="help-block">
-                    %if sync_type:
-                        ${_('User group will no longer synchronize membership')}
-                    %else:
-                        ${_('User group will start to synchronize membership')}
-                    %endif
+                    ${_('Users will be added or removed from this group when they authenticate with RhodeCode system, based on LDAP group membership. '
+                        'This requires `LDAP+User group` authentication plugin to be configured and enabled. (EE only feature)')}
                 </span>
             </div>
         ${h.end_form()}

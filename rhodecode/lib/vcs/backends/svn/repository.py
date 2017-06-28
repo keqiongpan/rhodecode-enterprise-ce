@@ -158,6 +158,12 @@ class SubversionRepository(base.BaseRepository):
             return commit_id1
         return commit_id2
 
+    def verify(self):
+        verify = self._remote.verify()
+
+        self._remote.invalidate_vcs_cache()
+        return verify
+
     def compare(self, commit_id1, commit_id2, repo2, merge, pre_load=None):
         # TODO: johbo: Implement better comparison, this is a very naive
         # version which does not allow to compare branches, tags or folders

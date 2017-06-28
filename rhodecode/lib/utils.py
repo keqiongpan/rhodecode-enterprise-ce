@@ -96,10 +96,11 @@ def repo_name_slug(value):
 # PERM DECORATOR HELPERS FOR EXTRACTING NAMES FOR PERM CHECKS
 #==============================================================================
 def get_repo_slug(request):
-    if isinstance(request, Request) and getattr(request, 'matchdict', None):
+    if isinstance(request, Request) and getattr(request, 'db_repo', None):
         # pyramid
-        _repo = request.matchdict.get('repo_name')
+        _repo = request.db_repo.repo_name
     else:
+        # TODO(marcink): remove after pylons migration...
         _repo = request.environ['pylons.routes_dict'].get('repo_name')
 
     if _repo:
@@ -110,7 +111,7 @@ def get_repo_slug(request):
 def get_repo_group_slug(request):
     if isinstance(request, Request) and getattr(request, 'matchdict', None):
         # pyramid
-        _group = request.matchdict.get('group_name')
+        _group = request.matchdict.get('repo_group_name')
     else:
         _group = request.environ['pylons.routes_dict'].get('group_name')
 
@@ -136,68 +137,6 @@ def get_user_group_slug(request):
         pass
 
     return _group
-
-
-def action_logger(user, action, repo, ipaddr='', sa=None, commit=False):
-    """
-    Action logger for various actions made by users
-
-    :param user: user that made this action, can be a unique username string or
-        object containing user_id attribute
-    :param action: action to log, should be on of predefined unique actions for
-        easy translations
-    :param repo: string name of repository or object containing repo_id,
-        that action was made on
-    :param ipaddr: optional ip address from what the action was made
-    :param sa: optional sqlalchemy session
-
-    """
-
-    if not sa:
-        sa = meta.Session()
-    # if we don't get explicit IP address try to get one from registered user
-    # in tmpl context var
-    if not ipaddr:
-        ipaddr = getattr(get_current_rhodecode_user(), 'ip_addr', '')
-
-    try:
-        if getattr(user, 'user_id', None):
-            user_obj = User.get(user.user_id)
-        elif isinstance(user, basestring):
-            user_obj = User.get_by_username(user)
-        else:
-            raise Exception('You have to provide a user object or a username')
-
-        if getattr(repo, 'repo_id', None):
-            repo_obj = Repository.get(repo.repo_id)
-            repo_name = repo_obj.repo_name
-        elif isinstance(repo, basestring):
-            repo_name = repo.lstrip('/')
-            repo_obj = Repository.get_by_repo_name(repo_name)
-        else:
-            repo_obj = None
-            repo_name = ''
-
-        user_log = UserLog()
-        user_log.user_id = user_obj.user_id
-        user_log.username = user_obj.username
-        action = safe_unicode(action)
-        user_log.action = action[:1200000]
-
-        user_log.repository = repo_obj
-        user_log.repository_name = repo_name
-
-        user_log.action_date = datetime.datetime.now()
-        user_log.user_ip = ipaddr
-        sa.add(user_log)
-
-        log.info('Logging action:`%s` on repo:`%s` by user:%s ip:%s',
-                 action, safe_unicode(repo), user_obj, ipaddr)
-        if commit:
-            sa.commit()
-    except Exception:
-        log.error(traceback.format_exc())
-        raise
 
 
 def get_filesystem_repos(path, recursive=False, skip_removed_repos=True):
@@ -428,6 +367,7 @@ def config_data_from_db(clear_session=True, repo=None):
     if 'push' not in enabled_hook_classes:
         skip_entries.append(('hooks', RhodeCodeUi.HOOK_PRE_PUSH))
         skip_entries.append(('hooks', RhodeCodeUi.HOOK_PRETX_PUSH))
+        skip_entries.append(('hooks', RhodeCodeUi.HOOK_PUSH_KEY))
 
     config = [entry for entry in config if entry[:2] not in skip_entries]
 

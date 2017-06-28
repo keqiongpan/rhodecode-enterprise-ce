@@ -131,6 +131,13 @@ def _check_proper_git_push(
         assert "Setting default branch" not in stderr
 
 
+def _check_proper_hg_push(stdout, stderr, branch='default'):
+    assert 'pushing to' in stdout
+    assert 'searching for changes' in stdout
+
+    assert 'abort:' not in stderr
+
+
 def _check_proper_clone(stdout, stderr, vcs):
     if vcs == 'hg':
         assert 'requesting all changes' in stdout

@@ -48,13 +48,13 @@
       <div class="summary-details block-left">
         <% summary = lambda n:{False:'summary-short'}.get(n) %>
         <div class="pr-details-title">
-            <a href="${h.url('pull_requests_global', pull_request_id=c.pull_request.pull_request_id)}">${_('Pull request #%s') % c.pull_request.pull_request_id}</a> ${_('From')} ${h.format_date(c.pull_request.created_on)}
+            <a href="${h.route_path('pull_requests_global', pull_request_id=c.pull_request.pull_request_id)}">${_('Pull request #%s') % c.pull_request.pull_request_id}</a> ${_('From')} ${h.format_date(c.pull_request.created_on)}
             %if c.allowed_to_update:
               <div id="delete_pullrequest" class="pull-right action_button ${'' if c.allowed_to_delete else 'disabled' }" style="clear:inherit;padding: 0">
                   % if c.allowed_to_delete:
                       ${h.secure_form(url('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id),method='delete')}
                           ${h.submit('remove_%s' % c.pull_request.pull_request_id, _('Delete'),
-                        class_="btn btn-link btn-danger",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
+                        class_="btn btn-link btn-danger no-margin",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
                       ${h.end_form()}
                   % else:
                     ${_('Delete')}
@@ -68,7 +68,7 @@
         <div id="summary" class="fields pr-details-content">
            <div class="field">
             <div class="label-summary">
-                <label>${_('Origin')}:</label>
+                <label>${_('Source')}:</label>
             </div>
             <div class="input">
                 <div class="pr-origininfo">
@@ -81,7 +81,7 @@
                       %endif
                     </span>
                     <span class="clone-url">
-                        <a href="${h.url('summary_home', repo_name=c.pull_request.source_repo.repo_name)}">${c.pull_request.source_repo.clone_url()}</a>
+                        <a href="${h.route_path('repo_summary', repo_name=c.pull_request.source_repo.repo_name)}">${c.pull_request.source_repo.clone_url()}</a>
                     </span>
                     <br/>
                     % if c.ancestor_commit:
@@ -113,7 +113,7 @@
                       %endif
                     </span>
                     <span class="clone-url">
-                        <a href="${h.url('summary_home', repo_name=c.pull_request.target_repo.repo_name)}">${c.pull_request.target_repo.clone_url()}</a>
+                        <a href="${h.route_path('repo_summary', repo_name=c.pull_request.target_repo.repo_name)}">${c.pull_request.target_repo.clone_url()}</a>
                     </span>
                 </div>
             </div>
@@ -297,7 +297,7 @@
            <div id="pr-save" class="field" style="display: none;">
             <div class="label-summary"></div>
             <div class="input">
-              <span id="edit_pull_request" class="btn btn-small">${_('Save Changes')}</span>
+              <span id="edit_pull_request" class="btn btn-small no-margin">${_('Save Changes')}</span>
             </div>
            </div>
         </div>
@@ -306,7 +306,7 @@
         ## AUTHOR
         <div class="reviewers-title block-right">
           <div class="pr-details-title">
-              ${_('Author')}
+              ${_('Author of this pull request')}
           </div>
         </div>
         <div class="block-right pr-details-content reviewers">
@@ -316,13 +316,27 @@
               </li>
             </ul>
         </div>
+
+        ## REVIEW RULES
+        <div id="review_rules" style="display: none" class="reviewers-title block-right">
+            <div class="pr-details-title">
+                ${_('Reviewer rules')}
+              %if c.allowed_to_update:
+                <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
+              %endif
+            </div>
+            <div class="pr-reviewer-rules">
+                ## review rules will be appended here, by default reviewers logic
+            </div>
+            <input id="review_data" type="hidden" name="review_data" value="">
+        </div>
+
         ## REVIEWERS
         <div class="reviewers-title block-right">
           <div class="pr-details-title">
               ${_('Pull request reviewers')}
               %if c.allowed_to_update:
-                <span id="open_edit_reviewers" class="block-right action_button">${_('Edit')}</span>
-                <span id="close_edit_reviewers" class="block-right action_button" style="display: none;">${_('Close')}</span>
+                <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Edit')}</span>
               %endif
           </div>
         </div>
@@ -330,8 +344,8 @@
           ## members goes here !
             <input type="hidden" name="__start__" value="review_members:sequence">
             <ul id="review_members" class="group_members">
-            %for member,reasons,status in c.pull_request_reviewers:
-              <li id="reviewer_${member.user_id}">
+            %for member,reasons,mandatory,status in c.pull_request_reviewers:
+              <li id="reviewer_${member.user_id}" class="reviewer_entry">
                 <div class="reviewers_member">
                     <div class="reviewer_status tooltip" title="${h.tooltip(h.commit_status_lbl(status[0][1].status if status else 'not_reviewed'))}">
                       <div class="${'flag_status %s' % (status[0][1].status if status else 'not_reviewed')} pull-left reviewer_member_status"></div>
@@ -348,30 +362,43 @@
                   %endfor
                   <input type="hidden" name="__end__" value="reasons:sequence">
                   <input id="reviewer_${member.user_id}_input" type="hidden" value="${member.user_id}" name="user_id" />
+                  <input type="hidden" name="mandatory" value="${mandatory}"/>
                   <input type="hidden" name="__end__" value="reviewer:mapping">
-                  %if c.allowed_to_update:
-                  <div class="reviewer_member_remove action_button" onclick="removeReviewMember(${member.user_id}, true)" style="visibility: hidden;">
-                      <i class="icon-remove-sign" ></i>
-                  </div>
-                  %endif
+                  % if mandatory:
+                        <div class="reviewer_member_mandatory_remove">
+                            <i class="icon-remove-sign"></i>
+                        </div>
+                        <div class="reviewer_member_mandatory">
+                            <i class="icon-lock" title="${h.tooltip(_('Mandatory reviewer'))}"></i>
+                        </div>
+                  % else:
+                    %if c.allowed_to_update:
+                      <div class="reviewer_member_remove action_button" onclick="reviewersController.removeReviewMember(${member.user_id}, true)" style="visibility: hidden;">
+                          <i class="icon-remove-sign" ></i>
+                      </div>
+                    %endif
+                  % endif
                 </div>
               </li>
             %endfor
             </ul>
             <input type="hidden" name="__end__" value="review_members:sequence">
-          %if not c.pull_request.is_closed():
-          <div id="add_reviewer_input" class='ac' style="display: none;">
-            %if c.allowed_to_update:
-            <div class="reviewer_ac">
-               ${h.text('user', class_='ac-input', placeholder=_('Add reviewer'))}
-               <div id="reviewers_container"></div>
-            </div>
-            <div>
-             <button id="update_pull_request" class="btn btn-small">${_('Save Changes')}</button>
-            </div>
+
+            %if not c.pull_request.is_closed():
+                <div id="add_reviewer" class="ac" style="display: none;">
+                %if c.allowed_to_update:
+                    % if not c.forbid_adding_reviewers:
+                        <div id="add_reviewer_input" class="reviewer_ac">
+                           ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
+                           <div id="reviewers_container"></div>
+                        </div>
+                    % endif
+                    <div class="pull-right">
+                        <button id="update_pull_request" class="btn btn-small no-margin">${_('Save Changes')}</button>
+                    </div>
+                %endif
+                </div>
             %endif
-          </div>
-          %endif
         </div>
       </div>
   </div>
@@ -429,7 +456,7 @@
 
                     <div class="pull-right">
                         % if c.allowed_to_update and not c.pull_request.is_closed():
-                          <a id="update_commits" class="btn btn-primary pull-right">${_('Update commits')}</a>
+                          <a id="update_commits" class="btn btn-primary no-margin pull-right">${_('Update commits')}</a>
                         % else:
                           <a class="tooltip btn disabled pull-right" disabled="disabled" title="${_('Update is disabled for current view')}">${_('Update commits')}</a>
                         % endif
@@ -473,7 +500,7 @@
                                 <tr id="row-${commit.raw_id}" commit_id="${commit.raw_id}" class="compare_select">
                                 <td>
                                     <div class="commit-change-indicator color-${c_type}-border">
-                                      <div class="commit-change-content color-${c_type} tooltip" title="${cc_title}">
+                                      <div class="commit-change-content color-${c_type} tooltip" title="${h.tooltip(cc_title)}">
                                         ${c_type.upper()}
                                       </div>
                                     </div>
@@ -615,9 +642,10 @@
         versionController = new VersionController();
         versionController.init();
 
+        reviewersController = new ReviewersController();
 
         $(function(){
-            ReviewerAutoComplete('user');
+
             // custom code mirror
             var codeMirrorInstance = initPullRequestsCodeMirror('#pr-description-input');
 
@@ -655,13 +683,13 @@
             var ReviewersPanel = {
               editButton: $('#open_edit_reviewers'),
               closeButton: $('#close_edit_reviewers'),
-              addButton: $('#add_reviewer_input'),
-              removeButtons: $('.reviewer_member_remove'),
+              addButton: $('#add_reviewer'),
+              removeButtons: $('.reviewer_member_remove,.reviewer_member_mandatory_remove,.reviewer_member_mandatory'),
 
               init: function() {
-                var that = this;
-                this.editButton.on('click', function(e) { that.edit(); });
-                this.closeButton.on('click', function(e) { that.close(); });
+                var self = this;
+                this.editButton.on('click', function(e) { self.edit(); });
+                this.closeButton.on('click', function(e) { self.close(); });
               },
 
               edit: function(event) {
@@ -669,6 +697,9 @@
                 this.closeButton.show();
                 this.addButton.show();
                 this.removeButtons.css('visibility', 'visible');
+                // review rules
+                reviewersController.loadReviewRules(
+                    ${c.pull_request.reviewer_data_json | n});
               },
 
               close: function(event) {
@@ -676,6 +707,8 @@
                 this.closeButton.hide();
                 this.addButton.hide();
                 this.removeButtons.css('visibility', 'hidden');
+                // hide review rules
+                reviewersController.hideReviewRules()
               }
             };
 
@@ -774,7 +807,8 @@
                 $(this).attr('disabled', 'disabled');
                 $(this).addClass('disabled');
                 $(this).html(_gettext('Saving...'));
-                updateReviewers(undefined, "${c.repo_name}", "${c.pull_request.pull_request_id}");
+                reviewersController.updateReviewers(
+                    "${c.repo_name}", "${c.pull_request.pull_request_id}");
             });
 
             $('#update_commits').on('click', function(e){
@@ -784,15 +818,12 @@
                 $(e.currentTarget).removeClass('btn-primary');
                 $(e.currentTarget).text(_gettext('Updating...'));
                 if(isDisabled){
-                    updateCommits("${c.repo_name}", "${c.pull_request.pull_request_id}");
+                    updateCommits(
+                        "${c.repo_name}", "${c.pull_request.pull_request_id}");
                 }
             });
             // fixing issue with caches on firefox
             $('#update_commits').removeAttr("disabled");
-
-            $('#close_pull_request').on('click', function(e){
-                closePullRequest("${c.repo_name}", "${c.pull_request.pull_request_id}");
-            });
 
             $('.show-inline-comments').on('click', function(e){
                 var boxid = $(this).attr('data-comment-id');
@@ -817,6 +848,8 @@
             };
             // initial injection
             injectCloseAction();
+
+            ReviewerAutoComplete('#user');
 
         })
       </script>

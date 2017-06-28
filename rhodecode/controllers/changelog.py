@@ -46,27 +46,6 @@ log = logging.getLogger(__name__)
 DEFAULT_CHANGELOG_SIZE = 20
 
 
-def _load_changelog_summary():
-    p = safe_int(request.GET.get('page'), 1)
-    size = safe_int(request.GET.get('size'), 10)
-
-    def url_generator(**kw):
-        return url('summary_home',
-                   repo_name=c.rhodecode_db_repo.repo_name, size=size, **kw)
-
-    pre_load = ['author', 'branch', 'date', 'message']
-    try:
-        collection = c.rhodecode_repo.get_commits(pre_load=pre_load)
-    except EmptyRepositoryError:
-        collection = c.rhodecode_repo
-
-    c.repo_commits = RepoPage(
-        collection, page=p, items_per_page=size, url=url_generator)
-    page_ids = [x.raw_id for x in c.repo_commits]
-    c.comments = c.rhodecode_db_repo.get_comments(page_ids)
-    c.statuses = c.rhodecode_db_repo.statuses(page_ids)
-
-
 class ChangelogController(BaseRepoController):
 
     def __before__(self):
@@ -88,13 +67,11 @@ class ChangelogController(BaseRepoController):
         except EmptyRepositoryError:
             if not redirect_after:
                 return None
-            h.flash(h.literal(_('There are no commits yet')),
-                    category='warning')
+            h.flash(_('There are no commits yet'), category='warning')
             redirect(url('changelog_home', repo_name=repo.repo_name))
         except RepositoryError as e:
-            msg = safe_str(e)
-            log.exception(msg)
-            h.flash(msg, category='warning')
+            log.exception(safe_str(e))
+            h.flash(safe_str(h.escape(e)), category='warning')
             if not partial:
                 redirect(h.url('changelog_home', repo_name=repo.repo_name))
             raise HTTPBadRequest()
@@ -134,7 +111,7 @@ class ChangelogController(BaseRepoController):
 
     def _check_if_valid_branch(self, branch_name, repo_name, f_path):
         if branch_name not in c.rhodecode_repo.branches_all:
-            h.flash('Branch {} is not found.'.format(branch_name),
+            h.flash('Branch {} is not found.'.format(h.escape(branch_name)),
                     category='warning')
             redirect(url('changelog_file_home', repo_name=repo_name,
                          revision=branch_name, f_path=f_path or ''))
@@ -210,12 +187,11 @@ class ChangelogController(BaseRepoController):
                 collection, p, chunk_size, c.branch_name, dynamic=f_path)
 
         except EmptyRepositoryError as e:
-            h.flash(safe_str(e), category='warning')
-            return redirect(url('summary_home', repo_name=repo_name))
+            h.flash(safe_str(h.escape(e)), category='warning')
+            return redirect(h.route_path('repo_summary', repo_name=repo_name))
         except (RepositoryError, CommitDoesNotExistError, Exception) as e:
-            msg = safe_str(e)
-            log.exception(msg)
-            h.flash(msg, category='error')
+            log.exception(safe_str(e))
+            h.flash(safe_str(h.escape(e)), category='error')
             return redirect(url('changelog_home', repo_name=repo_name))
 
         if (request.environ.get('HTTP_X_PARTIAL_XHR')
@@ -279,12 +255,3 @@ class ChangelogController(BaseRepoController):
             c.rhodecode_repo, c.pagination,
             prev_data=prev_data, next_data=next_data)
         return render('changelog/changelog_elements.mako')
-
-    @LoginRequired()
-    @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
-                                   'repository.admin')
-    def changelog_summary(self, repo_name):
-        if request.environ.get('HTTP_X_PJAX'):
-            _load_changelog_summary()
-            return render('changelog/changelog_summary_data.mako')
-        raise HTTPNotFound()

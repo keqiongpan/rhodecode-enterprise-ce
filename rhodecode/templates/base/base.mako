@@ -7,7 +7,7 @@
       <div id="header-inner" class="wrapper">
           <div id="logo">
               <div class="logo-wrapper">
-                  <a href="${h.url('home')}"><img src="${h.asset('images/rhodecode-logo-white-216x60.png')}" alt="RhodeCode"/></a>
+                  <a href="${h.route_path('home')}"><img src="${h.asset('images/rhodecode-logo-white-216x60.png')}" alt="RhodeCode"/></a>
               </div>
               %if c.rhodecode_name:
                <div class="branding">- ${h.branding(c.rhodecode_name)}</div>
@@ -41,7 +41,7 @@
                % if c.visual.show_version:
                    RhodeCode Enterprise ${c.rhodecode_version} ${c.rhodecode_edition}
                % endif
-               &copy; 2010-${h.datetime.today().year}, <a href="${h.url('rhodecode_official')}" target="_blank">RhodeCode GmbH</a>. All rights reserved.
+               &copy; 2010-${h.datetime.today().year}, <a href="${h.route_url('rhodecode_official')}" target="_blank">RhodeCode GmbH</a>. All rights reserved.
                % if c.visual.rhodecode_support_url:
                   <a href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support')}</a>
                % endif
@@ -72,7 +72,7 @@
 
 <%def name="admin_menu()">
   <ul class="admin_menu submenu">
-      <li><a href="${h.url('admin_home')}">${_('Admin journal')}</a></li>
+      <li><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
       <li><a href="${h.url('repos')}">${_('Repositories')}</a></li>
       <li><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
       <li><a href="${h.route_path('users')}">${_('Users')}</a></li>
@@ -90,7 +90,7 @@
     <dl class="dl-horizontal">
     %for dt, dd, title, show_items in elements:
       <dt>${dt}:</dt>
-      <dd title="${title}">
+      <dd title="${h.tooltip(title)}">
       %if callable(dd):
           ## allow lazy evaluation of elements
           ${dd()}
@@ -134,7 +134,7 @@
 
 <%def name="gravatar_with_user(contact, size=16, show_disabled=False)">
   <% email = h.email_or_none(contact) %>
-  <div class="rc-user tooltip" title="${h.author_string(email)}">
+  <div class="rc-user tooltip" title="${h.tooltip(h.author_string(email))}">
     ${self.gravatar(email, size)}
     <span class="${'user user-disabled' if show_disabled else 'user'}"> ${h.link_to_user(contact)}</span>
   </div>
@@ -186,7 +186,7 @@
     %if repo_instance.fork:
     <p>
         <i class="icon-code-fork"></i> ${_('Fork of')}
-        <a href="${h.url('summary_home',repo_name=repo_instance.fork.repo_name)}">${repo_instance.fork.repo_name}</a>
+        <a href="${h.route_path('repo_summary',repo_name=repo_instance.fork.repo_name)}">${repo_instance.fork.repo_name}</a>
     </p>
     %endif
 
@@ -225,7 +225,7 @@
   <div id="context-bar">
     <div class="wrapper">
       <ul id="context-pages" class="horizontal-list navigation">
-        <li class="${is_active('summary')}"><a class="menulink" href="${h.url('summary_home', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
+        <li class="${is_active('summary')}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
         <li class="${is_active('changelog')}"><a class="menulink" href="${h.url('changelog_home', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
         <li class="${is_active('files')}"><a class="menulink" href="${h.url('files_home', repo_name=c.repo_name, revision=c.rhodecode_db_repo.landing_rev[1])}"><div class="menulabel">${_('Files')}</div></a></li>
         <li class="${is_active('compare')}">
@@ -234,7 +234,7 @@
         ## TODO: anderson: ideally it would have a function on the scm_instance "enable_pullrequest() and enable_fork()"
         %if c.rhodecode_db_repo.repo_type in ['git','hg']:
           <li class="${is_active('showpullrequest')}">
-            <a class="menulink" href="${h.url('pullrequest_show_all',repo_name=c.repo_name)}" title="${_('Show Pull Requests for %s') % c.repo_name}">
+            <a class="menulink" href="${h.route_path('pullrequest_show_all', repo_name=c.repo_name)}" title="${h.tooltip(_('Show Pull Requests for %s') % c.repo_name)}">
               %if c.repository_pull_requests:
                 <span class="pr_notifications">${c.repository_pull_requests}</span>
               %endif
@@ -243,17 +243,19 @@
           </li>
         %endif
         <li class="${is_active('options')}">
-          <a class="menulink" href="#" class="dropdown"><div class="menulabel">${_('Options')} <div class="show_more"></div></div></a>
+          <a class="menulink dropdown">
+              <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
+          </a>
           <ul class="submenu">
              %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
-                   <li><a href="${h.url('edit_repo',repo_name=c.repo_name)}">${_('Settings')}</a></li>
+                   <li><a href="${h.route_path('edit_repo',repo_name=c.repo_name)}">${_('Settings')}</a></li>
              %endif
               %if c.rhodecode_db_repo.fork:
                <li><a href="${h.url('compare_url',repo_name=c.rhodecode_db_repo.fork.repo_name,source_ref_type=c.rhodecode_db_repo.landing_rev[0],source_ref=c.rhodecode_db_repo.landing_rev[1], target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1], merge=1)}">
                    ${_('Compare fork')}</a></li>
               %endif
 
-              <li><a href="${h.url('search_repo_home',repo_name=c.repo_name)}">${_('Search')}</a></li>
+              <li><a href="${h.route_path('search_repo',repo_name=c.repo_name)}">${_('Search')}</a></li>
 
               %if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking:
                 %if c.rhodecode_db_repo.locked[0]:
@@ -322,8 +324,9 @@
                     <div class="buttons">
                         <div class="register">
                         %if h.HasPermissionAny('hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')():
-                         ${h.link_to(_("Don't have an account ?"),h.route_path('register'))}
+                         ${h.link_to(_("Don't have an account?"),h.route_path('register'))} <br/>
                         %endif
+                        ${h.link_to(_("Using external auth? Sign In here."),h.route_path('login'))}
                         </div>
                         <div class="submit">
                             ${h.submit('sign_in',_('Sign In'),class_="btn btn-small",tabindex=3)}
@@ -342,7 +345,7 @@
             <ol class="links">
               <li>${h.link_to(_(u'My account'),h.route_path('my_account_profile'))}</li>
               % if c.rhodecode_user.personal_repo_group:
-                <li>${h.link_to(_(u'My personal group'), h.url('repo_group_home', group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
+                <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
               % endif
               <li class="logout">
               ${h.secure_form(h.route_path('logout'))}
@@ -399,7 +402,7 @@
           </a>
         </li>
       <li class="${is_active('search')}">
-          <a class="menulink" title="${_('Search in repositories you have access to')}" href="${h.url('search')}">
+          <a class="menulink" title="${_('Search in repositories you have access to')}" href="${h.route_path('search')}">
             <div class="menulabel">${_('Search')}</div>
           </a>
       </li>
@@ -503,7 +506,7 @@
                     query.callback({results: cachedData.results});
                 } else {
                     $.ajax({
-                        url: "${h.url('goto_switcher_data')}",
+                        url: pyroutes.url('goto_switcher_data'),
                         data: {'query': query.term},
                         dataType: 'json',
                         type: 'GET',

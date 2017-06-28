@@ -42,8 +42,13 @@ def action_parser(user_log, feed=False, parse_cs=False):
     :param feed: use output for feeds (no html and fancy icons)
     :param parse_cs: parse Changesets into VCS instances
     """
-    ap = ActionParser(user_log, feed=False, parse_commits=False)
-    return ap.callbacks()
+    if user_log.version == 'v2':
+        ap = AuditLogParser(user_log)
+        return ap.callbacks()
+    else:
+        # old style
+        ap = ActionParser(user_log, feed=False, parse_commits=False)
+        return ap.callbacks()
 
 
 class ActionParser(object):
@@ -161,8 +166,9 @@ class ActionParser(object):
         return action_map
 
     def get_fork_name(self):
+        from rhodecode.lib import helpers as h
         repo_name = self.action_params
-        _url = url('summary_home', repo_name=repo_name)
+        _url = h.route_path('repo_summary', repo_name=repo_name)
         return _('fork name %s') % link_to(self.action_params, _url)
 
     def get_user_name(self):
@@ -174,6 +180,7 @@ class ActionParser(object):
         return group_name
 
     def get_pull_request(self):
+        from rhodecode.lib import helpers as h
         pull_request_id = self.action_params
         if self.is_deleted():
             repo_name = self.user_log.repository_name
@@ -181,8 +188,8 @@ class ActionParser(object):
             repo_name = self.user_log.repository.repo_name
         return link_to(
             _('Pull request #%s') % pull_request_id,
-            url('pullrequest_show', repo_name=repo_name,
-                pull_request_id=pull_request_id))
+            h.route_path('pullrequest_show', repo_name=repo_name,
+                         pull_request_id=pull_request_id))
 
     def get_archive_name(self):
         archive_name = self.action_params
@@ -300,6 +307,34 @@ class ActionParser(object):
 
     def is_deleted(self):
         return self.user_log.repository is None
+
+
+class AuditLogParser(object):
+    def __init__(self, audit_log_entry):
+        self.audit_log_entry = audit_log_entry
+
+    def get_icon(self, action):
+        return 'icon-rhodecode'
+
+    def callbacks(self):
+        action_str = self.audit_log_entry.action
+
+        def callback():
+            # returned callbacks we need to call to get
+            action = action_str \
+                .replace('[', '<span class="journal_highlight">')\
+                .replace(']', '</span>')
+            return literal(action)
+
+        def icon():
+            tmpl = """<i class="%s" alt="%s"></i>"""
+            ico = self.get_icon(action_str)
+            return literal(tmpl % (ico, action_str))
+
+        action_params_func = _no_params_func
+
+        return [
+            callback, action_params_func, icon]
 
 
 def _no_params_func():

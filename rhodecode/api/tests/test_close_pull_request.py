@@ -43,16 +43,16 @@ class TestClosePullRequest(object):
         response = api_call(self.app, params)
         expected = {
             'pull_request_id': pull_request_id,
+            'close_status': 'Rejected',
             'closed': True,
         }
         assert_ok(id_, expected, response.body)
-        action = 'user_closed_pull_request:%d' % pull_request_id
         journal = UserLog.query()\
-            .filter(UserLog.user_id == author)\
+            .filter(UserLog.user_id == author) \
+            .order_by('user_log_id') \
             .filter(UserLog.repository_id == repo)\
-            .filter(UserLog.action == action)\
             .all()
-        assert len(journal) == 1
+        assert journal[-1].action == 'repo.pull_request.close'
 
     @pytest.mark.backends("git", "hg")
     def test_api_close_pull_request_already_closed_error(self, pr_util):

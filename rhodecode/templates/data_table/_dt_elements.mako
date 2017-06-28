@@ -9,7 +9,7 @@
   <div class="menu_items_container hidden">
     <ul class="menu_items">
       <li>
-         <a title="${_('Summary')}" href="${h.url('summary_home',repo_name=repo_name)}">
+         <a title="${_('Summary')}" href="${h.route_path('repo_summary',repo_name=repo_name)}">
          <span>${_('Summary')}</span>
          </a>
       </li>
@@ -42,7 +42,7 @@
     %>
   <div class="${'repo_state_pending' if rstate == 'repo_state_pending' else ''} truncate">
     ##NAME
-    <a href="${h.url('edit_repo' if admin else 'summary_home',repo_name=name)}">
+    <a href="${h.route_path('edit_repo',repo_name=name) if admin else h.route_path('repo_summary',repo_name=name)}">
 
     ##TYPE OF REPO
     %if h.is_hg(rtype):
@@ -64,7 +64,7 @@
     ${get_name(name)}
     </a>
     %if fork_of:
-      <a href="${h.url('summary_home',repo_name=fork_of.repo_name)}"><i class="icon-code-fork"></i></a>
+      <a href="${h.route_path('repo_summary',repo_name=fork_of.repo_name)}"><i class="icon-code-fork"></i></a>
     %endif
     %if rstate == 'repo_state_pending':
       <i class="icon-cogs" title="${_('Repository creating in progress...')}"></i>
@@ -92,22 +92,22 @@
 
 <%def name="rss(name)">
   %if c.rhodecode_user.username != h.DEFAULT_USER:
-    <a title="${_('Subscribe to %s rss feed')% name}" href="${h.url('rss_feed_home',repo_name=name,auth_token=c.rhodecode_user.feed_token)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s rss feed')% name)}" href="${h.url('rss_feed_home',repo_name=name,auth_token=c.rhodecode_user.feed_token)}"><i class="icon-rss-sign"></i></a>
   %else:
-    <a title="${_('Subscribe to %s rss feed')% name}" href="${h.url('rss_feed_home',repo_name=name)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s rss feed')% name)}" href="${h.url('rss_feed_home',repo_name=name)}"><i class="icon-rss-sign"></i></a>
   %endif
 </%def>
 
 <%def name="atom(name)">
   %if c.rhodecode_user.username != h.DEFAULT_USER:
-    <a title="${_('Subscribe to %s atom feed')% name}" href="${h.url('atom_feed_home',repo_name=name,auth_token=c.rhodecode_user.feed_token)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s atom feed')% name)}" href="${h.url('atom_feed_home',repo_name=name,auth_token=c.rhodecode_user.feed_token)}"><i class="icon-rss-sign"></i></a>
   %else:
-    <a title="${_('Subscribe to %s atom feed')% name}" href="${h.url('atom_feed_home',repo_name=name)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s atom feed')% name)}" href="${h.url('atom_feed_home',repo_name=name)}"><i class="icon-rss-sign"></i></a>
   %endif
 </%def>
 
 <%def name="user_gravatar(email, size=16)">
-  <div class="rc-user tooltip" title="${h.author_string(email)}">
+  <div class="rc-user tooltip" title="${h.tooltip(h.author_string(email))}">
     ${base.gravatar(email, 16)}
   </div>
 </%def>
@@ -115,11 +115,11 @@
 <%def name="repo_actions(repo_name, super_user=True)">
   <div>
     <div class="grid_edit">
-      <a href="${h.url('edit_repo',repo_name=repo_name)}" title="${_('Edit')}">
+      <a href="${h.route_path('edit_repo',repo_name=repo_name)}" title="${_('Edit')}">
         <i class="icon-pencil"></i>Edit</a>
     </div>
     <div class="grid_delete">
-      ${h.secure_form(h.url('repo', repo_name=repo_name),method='delete')}
+      ${h.secure_form(h.route_path('edit_repo_advanced_delete', repo_name=repo_name), method='POST')}
         ${h.submit('remove_%s' % repo_name,_('Delete'),class_="btn btn-link btn-danger",
         onclick="return confirm('"+_('Confirm to delete this repository: %s') % repo_name+"');")}
       ${h.end_form()}
@@ -134,7 +134,7 @@
     %elif repo_state == 'repo_state_created':
         <div class="tag tag1">${_('Created')}</div>
     %else:
-        <div class="tag alert2" title="${repo_state}">invalid</div>
+        <div class="tag alert2" title="${h.tooltip(repo_state)}">invalid</div>
     %endif
   </div>
 </%def>
@@ -146,7 +146,7 @@
   <div class="menu_items_container hidden">
     <ul class="menu_items">
       <li>
-         <a href="${h.url('repo_group_home',group_name=repo_group_name)}">
+         <a href="${h.route_path('repo_group_home', repo_group_name=repo_group_name)}">
          <span class="icon">
              <i class="icon-file-text"></i>
          </span>
@@ -160,7 +160,7 @@
 
 <%def name="repo_group_name(repo_group_name, children_groups=None)">
   <div>
-    <a href="${h.url('repo_group_home',group_name=repo_group_name)}">
+    <a href="${h.route_path('repo_group_home', repo_group_name=repo_group_name)}">
     <i class="icon-folder-close" title="${_('Repository group')}"></i>
       %if children_groups:
           ${h.literal(' &raquo; '.join(children_groups))}
@@ -282,7 +282,7 @@
 
 <%def name="pullrequest_target_repo(repo_name)">
     <div class="truncate">
-      ${h.link_to(repo_name,h.url('summary_home',repo_name=repo_name))}
+      ${h.link_to(repo_name,h.route_path('repo_summary',repo_name=repo_name))}
     </div>
 </%def>
 <%def name="pullrequest_status(status)">
@@ -299,7 +299,7 @@
 </%def>
 
 <%def name="pullrequest_name(pull_request_id, target_repo_name, short=False)">
-    <a href="${h.url('pullrequest_show',repo_name=target_repo_name,pull_request_id=pull_request_id)}">
+    <a href="${h.route_path('pullrequest_show',repo_name=target_repo_name,pull_request_id=pull_request_id)}">
       % if short:
         #${pull_request_id}
       % else:

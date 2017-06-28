@@ -18,10 +18,12 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import re
 import colander
 
 from rhodecode import forms
 from rhodecode.model.db import User
+from rhodecode.model.validation_schema import types, validators
 from rhodecode.translation import _
 from rhodecode.lib.auth import check_password
 
@@ -52,10 +54,72 @@ class ChangePasswordSchema(colander.Schema):
         widget=forms.widget.CheckedPasswordWidget(redisplay=True),
         validator=colander.Length(min=6))
 
-
     def validator(self, form, values):
         if values['current_password'] == values['new_password']:
             exc = colander.Invalid(form)
             exc['new_password'] = _('New password must be different '
                                     'to old password')
             raise exc
+
+
+@colander.deferred
+def deferred_username_validator(node, kw):
+
+    def name_validator(node, value):
+        msg = _(
+            u'Username may only contain alphanumeric characters '
+            u'underscores, periods or dashes and must begin with '
+            u'alphanumeric character or underscore')
+
+        if not re.match(r'^[\w]{1}[\w\-\.]{0,254}$', value):
+            raise colander.Invalid(node, msg)
+
+    return name_validator
+
+
+@colander.deferred
+def deferred_email_validator(node, kw):
+    # NOTE(marcink): we might provide uniqueness validation later here...
+    return colander.Email()
+
+
+class UserSchema(colander.Schema):
+    username = colander.SchemaNode(
+        colander.String(),
+        validator=deferred_username_validator)
+
+    email = colander.SchemaNode(
+        colander.String(),
+        validator=deferred_email_validator)
+
+    password = colander.SchemaNode(
+        colander.String(), missing='')
+
+    first_name = colander.SchemaNode(
+        colander.String(), missing='')
+
+    last_name = colander.SchemaNode(
+        colander.String(), missing='')
+
+    active = colander.SchemaNode(
+        types.StringBooleanType(),
+        missing=False)
+
+    admin = colander.SchemaNode(
+        types.StringBooleanType(),
+        missing=False)
+
+    extern_name = colander.SchemaNode(
+        colander.String(), missing='')
+
+    extern_type = colander.SchemaNode(
+        colander.String(), missing='')
+
+    def deserialize(self, cstruct):
+        """
+        Custom deserialize that allows to chain validation, and verify
+        permissions, and as last step uniqueness
+        """
+
+        appstruct = super(UserSchema, self).deserialize(cstruct)
+        return appstruct
