@@ -1082,13 +1082,13 @@
     };
   };
   objgraph = super.buildPythonPackage {
-    name = "objgraph-2.0.0";
+    name = "objgraph-3.1.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/d7/33/ace750b59247496ed769b170586c5def7202683f3d98e737b75b767ff29e/objgraph-2.0.0.tar.gz";
-      md5 = "25b0d5e5adc74aa63ead15699614159c";
+      url = "https://pypi.python.org/packages/f4/b3/082e54e62094cb2ec84f8d5a49e0142cef99016491cecba83309cff920ae/objgraph-3.1.0.tar.gz";
+      md5 = "eddbd96039796bfbd13eee403701e64a";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
