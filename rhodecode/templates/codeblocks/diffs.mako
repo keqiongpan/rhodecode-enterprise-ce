@@ -147,14 +147,14 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     %for i, filediff in enumerate(diffset.files):
 
         <%
-        lines_changed = filediff['patch']['stats']['added'] + filediff['patch']['stats']['deleted']
+        lines_changed = filediff.patch['stats']['added'] + filediff.patch['stats']['deleted']
         over_lines_changed_limit = lines_changed > lines_changed_limit
         %>
         <input ${collapse_all and 'checked' or ''} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox">
         <div
             class="filediff"
-            data-f-path="${filediff['patch']['filename']}"
-            id="a_${h.FID('', filediff['patch']['filename'])}">
+            data-f-path="${filediff.patch['filename']}"
+            id="a_${h.FID('', filediff.patch['filename'])}">
             <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
                 <div class="filediff-collapse-indicator"></div>
                 ${diff_ops(filediff)}
@@ -162,7 +162,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             ${diff_menu(filediff, use_comments=use_comments)}
             <table class="cb cb-diff-${c.diffmode} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
         %if not filediff.hunks:
-            %for op_id, op_text in filediff['patch']['stats']['ops'].items():
+            %for op_id, op_text in filediff.patch['stats']['ops'].items():
                 <tr>
                     <td class="cb-text cb-${op_class(op_id)}" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
                         %if op_id == DEL_FILENODE:
@@ -176,7 +176,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 </tr>
             %endfor
         %endif
-        %if filediff.patch['is_limited_diff']:
+        %if filediff.limited_diff:
                 <tr class="cb-warning cb-collapser">
                     <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
                         ${_('The requested commit is too big and content was truncated.')} <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
@@ -322,7 +322,6 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 
 <%def name="diff_ops(filediff)">
 <%
-stats = filediff['patch']['stats']
 from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     MOD_FILENODE, RENAMED_FILENODE, CHMOD_FILENODE, BIN_FILENODE, COPIED_FILENODE
 %>
@@ -330,9 +329,9 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         %if filediff.source_file_path and filediff.target_file_path:
             %if filediff.source_file_path != filediff.target_file_path:
                  ## file was renamed, or copied
-                %if RENAMED_FILENODE in stats['ops']:
+                %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
                     <strong>${filediff.target_file_path}</strong> ⬅ <del>${filediff.source_file_path}</del>
-                %elif COPIED_FILENODE in stats['ops']:
+                %elif COPIED_FILENODE in filediff.patch['stats']['ops']:
                     <strong>${filediff.target_file_path}</strong> ⬅ ${filediff.source_file_path}
                 %endif
             %else:
@@ -350,19 +349,19 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         %endif
     </span>
     <span class="pill-group" style="float: left">
-        %if filediff.patch['is_limited_diff']:
+        %if filediff.limited_diff:
         <span class="pill tooltip" op="limited" title="The stats for this diff are not complete">limited diff</span>
         %endif
 
-        %if RENAMED_FILENODE in stats['ops']:
+        %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
         <span class="pill" op="renamed">renamed</span>
         %endif
 
-        %if COPIED_FILENODE in stats['ops']:
+        %if COPIED_FILENODE in filediff.patch['stats']['ops']:
         <span class="pill" op="copied">copied</span>
         %endif
 
-        %if NEW_FILENODE in stats['ops']:
+        %if NEW_FILENODE in filediff.patch['stats']['ops']:
         <span class="pill" op="created">created</span>
             %if filediff['target_mode'].startswith('120'):
         <span class="pill" op="symlink">symlink</span>
@@ -371,11 +370,11 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         %endif
 
-        %if DEL_FILENODE in stats['ops']:
+        %if DEL_FILENODE in filediff.patch['stats']['ops']:
         <span class="pill" op="removed">removed</span>
         %endif
 
-        %if CHMOD_FILENODE in stats['ops']:
+        %if CHMOD_FILENODE in filediff.patch['stats']['ops']:
         <span class="pill" op="mode">
             ${nice_mode(filediff['source_mode'])} ➡ ${nice_mode(filediff['target_mode'])}
         </span>
@@ -385,17 +384,17 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     <a class="pill filediff-anchor" href="#a_${h.FID('', filediff.patch['filename'])}">¶</a>
 
     <span class="pill-group" style="float: right">
-        %if BIN_FILENODE in stats['ops']:
+        %if BIN_FILENODE in filediff.patch['stats']['ops']:
         <span class="pill" op="binary">binary</span>
-            %if MOD_FILENODE in stats['ops']:
+            %if MOD_FILENODE in filediff.patch['stats']['ops']:
             <span class="pill" op="modified">modified</span>
             %endif
         %endif
-        %if stats['added']:
-        <span class="pill" op="added">+${stats['added']}</span>
+        %if filediff.patch['stats']['added']:
+        <span class="pill" op="added">+${filediff.patch['stats']['added']}</span>
         %endif
-        %if stats['deleted']:
-        <span class="pill" op="deleted">-${stats['deleted']}</span>
+        %if filediff.patch['stats']['deleted']:
+        <span class="pill" op="deleted">-${filediff.patch['stats']['deleted']}</span>
         %endif
     </span>
 
@@ -408,7 +407,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 <%def name="diff_menu(filediff, use_comments=False)">
     <div class="filediff-menu">
 %if filediff.diffset.source_ref:
-    %if filediff.patch['operation'] in ['D', 'M']:
+    %if filediff.operation in ['D', 'M']:
         <a
             class="tooltip"
             href="${h.url('files_home',repo_name=filediff.diffset.repo_name,f_path=filediff.source_file_path,revision=filediff.diffset.source_ref)}"
@@ -424,7 +423,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             ${_('Show file before')}
         </span> |
     %endif
-    %if filediff.patch['operation'] in ['A', 'M']:
+    %if filediff.operation in ['A', 'M']:
         <a
             class="tooltip"
             href="${h.url('files_home',repo_name=filediff.diffset.source_repo_name,f_path=filediff.target_file_path,revision=filediff.diffset.target_ref)}"
@@ -460,10 +459,10 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 
         ## TODO: dan: refactor ignorews_url and context_url into the diff renderer same as diffmode=unified/sideside. Also use ajax to load more context (by clicking hunks)
         %if hasattr(c, 'ignorews_url'):
-        ${c.ignorews_url(request.GET, h.FID('', filediff['patch']['filename']))}
+        ${c.ignorews_url(request.GET, h.FID('', filediff.patch['filename']))}
         %endif
         %if hasattr(c, 'context_url'):
-        ${c.context_url(request.GET, h.FID('', filediff['patch']['filename']))}
+        ${c.context_url(request.GET, h.FID('', filediff.patch['filename']))}
         %endif
 
         %if use_comments:
@@ -503,9 +502,9 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     <%
     old_line_anchor, new_line_anchor = None, None
     if line.original.lineno:
-        old_line_anchor = diff_line_anchor(hunk.filediff.source_file_path, line.original.lineno, 'o')
+        old_line_anchor = diff_line_anchor(hunk.source_file_path, line.original.lineno, 'o')
     if line.modified.lineno:
-        new_line_anchor = diff_line_anchor(hunk.filediff.target_file_path, line.modified.lineno, 'n')
+        new_line_anchor = diff_line_anchor(hunk.target_file_path, line.modified.lineno, 'n')
     %>
 
     <tr class="cb-line">
@@ -579,9 +578,9 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     <%
     old_line_anchor, new_line_anchor = None, None
     if old_line_no:
-        old_line_anchor = diff_line_anchor(hunk.filediff.source_file_path, old_line_no, 'o')
+        old_line_anchor = diff_line_anchor(hunk.source_file_path, old_line_no, 'o')
     if new_line_no:
-        new_line_anchor = diff_line_anchor(hunk.filediff.target_file_path, new_line_no, 'n')
+        new_line_anchor = diff_line_anchor(hunk.target_file_path, new_line_no, 'n')
     %>
     <tr class="cb-line">
         <td class="cb-data ${action_class(action)}">

@@ -471,31 +471,29 @@ class DiffSet(object):
         source_file_type = source_lexer.name
         target_file_type = target_lexer.name
 
-        op_hunks = patch['chunks'][0]
-        hunks = patch['chunks'][1:]
-
         filediff = AttributeDict({
             'source_file_path': source_file_path,
             'target_file_path': target_file_path,
             'source_filenode': source_filenode,
             'target_filenode': target_filenode,
-            'hunks': [],
             'source_file_type': target_file_type,
             'target_file_type': source_file_type,
-            'patch': patch,
+            'patch': {'filename': patch['filename'], 'stats': patch['stats']},
+            'operation': patch['operation'],
             'source_mode': patch['stats']['old_mode'],
             'target_mode': patch['stats']['new_mode'],
             'limited_diff': isinstance(patch, LimitedDiffContainer),
+            'hunks': [],
             'diffset': self,
         })
 
-        for hunk in hunks:
+        for hunk in patch['chunks'][1:]:
             hunkbit = self.parse_hunk(hunk, source_file, target_file)
-            hunkbit.filediff = filediff
+            hunkbit.source_file_path = source_file_path
+            hunkbit.target_file_path = target_file_path
             filediff.hunks.append(hunkbit)
 
         left_comments = {}
-
         if source_file_path in self.comments_store:
             for lineno, comments in self.comments_store[source_file_path].items():
                 left_comments[lineno] = comments
@@ -503,8 +501,8 @@ class DiffSet(object):
         if target_file_path in self.comments_store:
             for lineno, comments in self.comments_store[target_file_path].items():
                 left_comments[lineno] = comments
-
         filediff.left_comments = left_comments
+
         return filediff
 
     def parse_hunk(self, hunk, source_file, target_file):
@@ -519,6 +517,7 @@ class DiffSet(object):
         before, after = [], []
 
         for line in hunk['lines']:
+
             if line['action'] == 'unmod':
                 result.lines.extend(
                     self.parse_lines(before, after, source_file, target_file))
@@ -567,7 +566,8 @@ class DiffSet(object):
                     before_tokens = [('nonl', before['line'])]
                 else:
                     before_tokens = self.get_line_tokens(
-                        line_text=before['line'], line_number=before['old_lineno'],
+                        line_text=before['line'],
+                        line_number=before['old_lineno'],
                         file=source_file)
                 original.lineno = before['old_lineno']
                 original.content = before['line']

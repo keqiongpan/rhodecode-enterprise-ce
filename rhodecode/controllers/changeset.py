@@ -267,8 +267,10 @@ class ChangesetController(BaseRepoController):
                     repo_name=c.repo_name,
                     source_node_getter=_node_getter(commit1),
                     target_node_getter=_node_getter(commit2),
-                    comments=inline_comments
-                ).render_patchset(_parsed, commit1.raw_id, commit2.raw_id)
+                    comments=inline_comments)
+                diffset = diffset.render_patchset(
+                    _parsed, commit1.raw_id, commit2.raw_id)
+
                 c.changes[commit.raw_id] = diffset
             else:
                 # downloads/raw we only need RAW diff nothing else
