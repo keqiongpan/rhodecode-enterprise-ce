@@ -822,13 +822,13 @@
     };
   };
   gunicorn = super.buildPythonPackage {
-    name = "gunicorn-19.6.0";
+    name = "gunicorn-19.7.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/84/ce/7ea5396efad1cef682bbc4068e72a0276341d9d9d0f501da609fab9fcb80/gunicorn-19.6.0.tar.gz";
-      md5 = "338e5e8a83ea0f0625f768dba4597530";
+      url = "https://pypi.python.org/packages/30/3a/10bb213cede0cc4d13ac2263316c872a64bf4c819000c8ccd801f1d5f822/gunicorn-19.7.1.tar.gz";
+      md5 = "174d3c3cd670a5be0404d84c484e590c";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1859,13 +1859,13 @@
     };
   };
   uWSGI = super.buildPythonPackage {
-    name = "uWSGI-2.0.11.2";
+    name = "uWSGI-2.0.15";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/9b/78/918db0cfab0546afa580c1e565209c49aaf1476bbfe491314eadbe47c556/uwsgi-2.0.11.2.tar.gz";
-      md5 = "1f02dcbee7f6f61de4b1fd68350cf16f";
+      url = "https://pypi.python.org/packages/bb/0a/45e5aa80dc135889594bb371c082d20fb7ee7303b174874c996888cc8511/uwsgi-2.0.15.tar.gz";
+      md5 = "fc50bd9e83b7602fa474b032167010a7";
     };
     meta = {
       license = [ pkgs.lib.licenses.gpl2 ];
@@ -1898,13 +1898,13 @@
     };
   };
   waitress = super.buildPythonPackage {
-    name = "waitress-1.0.1";
+    name = "waitress-1.0.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/78/7d/84d11b96c3f60164dec3bef4a859a03aeae0231aa93f57fbe0d05fa4ff36/waitress-1.0.1.tar.gz";
-      md5 = "dda92358a7569669086155923a46e57c";
+      url = "https://pypi.python.org/packages/cd/f4/400d00863afa1e03618e31fd7e2092479a71b8c9718b00eb1eeb603746c6/waitress-1.0.2.tar.gz";
+      md5 = "b968f39e95d609f6194c6e50425d4bb7";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpt21 ];
