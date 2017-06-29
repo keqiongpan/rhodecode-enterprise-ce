@@ -1794,13 +1794,13 @@
     };
   };
   testpath = super.buildPythonPackage {
-    name = "testpath-0.1";
+    name = "testpath-0.3.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f9/c4/c0b22f35138bc26a6058c39cb61db1e8977e5e9550b12cd2cb02ef56fc51/testpath-0.1.tar.gz";
-      md5 = "401918bcd0b0e5b71a9b909835117bc6";
+      url = "https://pypi.python.org/packages/f4/8b/b71e9ee10e5f751e9d959bc750ab122ba04187f5aa52aabdc4e63b0e31a7/testpath-0.3.1.tar.gz";
+      md5 = "2cd5ed5522fda781bb497c9d80ae2fc9";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
