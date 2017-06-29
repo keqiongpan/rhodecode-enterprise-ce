@@ -16,13 +16,13 @@
     };
   };
   Beaker = super.buildPythonPackage {
-    name = "Beaker-1.7.0";
+    name = "Beaker-1.9.0";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [];
+    propagatedBuildInputs = with self; [funcsigs];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/97/8e/409d2e7c009b8aa803dc9e6f239f1db7c3cdf578249087a404e7c27a505d/Beaker-1.7.0.tar.gz";
-      md5 = "386be3f7fe427358881eee4622b428b3";
+      url = "https://pypi.python.org/packages/93/b2/12de6937b06e9615dbb3cb3a1c9af17f133f435bdef59f4ad42032b6eb49/Beaker-1.9.0.tar.gz";
+      md5 = "38b3fcdfa24faf97c6cf66991eb54e9c";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -715,6 +715,19 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
+  funcsigs = super.buildPythonPackage {
+    name = "funcsigs-1.0.2";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/94/4a/db842e7a0545de1cdb0439bb80e6e42dfe82aaeaadd4072f2263a4fbed23/funcsigs-1.0.2.tar.gz";
+      md5 = "7e583285b1fb8a76305d6d68f4ccc14e";
+    };
+    meta = {
+      license = [ { fullName = "ASL"; } pkgs.lib.licenses.asl20 ];
     };
   };
   functools32 = super.buildPythonPackage {
