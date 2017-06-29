@@ -1251,13 +1251,13 @@
     };
   };
   py = super.buildPythonPackage {
-    name = "py-1.4.31";
+    name = "py-1.4.34";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f4/9a/8dfda23f36600dd701c6722316ba8a3ab4b990261f83e7d3ffc6dfedf7ef/py-1.4.31.tar.gz";
-      md5 = "5d2c63c56dc3f2115ec35c066ecd582b";
+      url = "https://pypi.python.org/packages/68/35/58572278f1c097b403879c1e9369069633d1cbad5239b9057944bb764782/py-1.4.34.tar.gz";
+      md5 = "d9c3d8f734b0819ff48e355d77bf1730";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1433,13 +1433,13 @@
     };
   };
   pytest = super.buildPythonPackage {
-    name = "pytest-3.0.5";
+    name = "pytest-3.1.2";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [py];
+    propagatedBuildInputs = with self; [py setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/a8/87/b7ca49efe52d2b4169f2bfc49aa5e384173c4619ea8e635f123a0dac5b75/pytest-3.0.5.tar.gz";
-      md5 = "cefd527b59332688bf5db4a10aa8a7cb";
+      url = "https://pypi.python.org/packages/72/2b/2d3155e01f45a5a04427857352ee88220ee39550b2bc078f9db3190aea46/pytest-3.1.2.tar.gz";
+      md5 = "c4d179f89043cc925e1c169d03128e02";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1459,52 +1459,52 @@
     };
   };
   pytest-cov = super.buildPythonPackage {
-    name = "pytest-cov-2.4.0";
+    name = "pytest-cov-2.5.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pytest coverage];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/00/c0/2bfd1fcdb9d407b8ac8185b1cb5ff458105c6b207a9a7f0e13032de9828f/pytest-cov-2.4.0.tar.gz";
-      md5 = "2fda09677d232acc99ec1b3c5831e33f";
+      url = "https://pypi.python.org/packages/24/b4/7290d65b2f3633db51393bdf8ae66309b37620bc3ec116c5e357e3e37238/pytest-cov-2.5.1.tar.gz";
+      md5 = "5acf38d4909e19819eb5c1754fbfc0ac";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.mit ];
     };
   };
   pytest-profiling = super.buildPythonPackage {
-    name = "pytest-profiling-1.2.2";
+    name = "pytest-profiling-1.2.6";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six pytest gprof2dot];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/73/e8/804681323bac0bc45c520ec34185ba8469008942266d0074699b204835c1/pytest-profiling-1.2.2.tar.gz";
-      md5 = "0a16d7dda2d23b91e9730fa4558cf728";
+      url = "https://pypi.python.org/packages/f9/0d/df67fb9ce16c2cef201693da956321b1bccfbf9a4ead39748b9f9d1d74cb/pytest-profiling-1.2.6.tar.gz";
+      md5 = "50eb4c66c3762a2f1a49669bedc0b894";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   pytest-runner = super.buildPythonPackage {
-    name = "pytest-runner-2.9";
+    name = "pytest-runner-2.11.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/11/d4/c335ddf94463e451109e3494e909765c3e5205787b772e3b25ee8601b86a/pytest-runner-2.9.tar.gz";
-      md5 = "2212a2e34404b0960b2fdc2c469247b2";
+      url = "https://pypi.python.org/packages/9e/4d/08889e5e27a9f5d6096b9ad257f4dea1faabb03c5ded8f665ead448f5d8a/pytest-runner-2.11.1.tar.gz";
+      md5 = "bdb73eb18eca2727944a2dcf963c5a81";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   pytest-sugar = super.buildPythonPackage {
-    name = "pytest-sugar-0.7.1";
+    name = "pytest-sugar-0.8.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pytest termcolor];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/03/97/05d988b4fa870e7373e8ee4582408543b9ca2bd35c3c67b569369c6f9c49/pytest-sugar-0.7.1.tar.gz";
-      md5 = "7400f7c11f3d572b2c2a3b60352d35fe";
+      url = "https://pypi.python.org/packages/a5/b0/b2773dee078f17773a5bf2dfad49b0be57b6354bbd84bbefe4313e509d87/pytest-sugar-0.8.0.tar.gz";
+      md5 = "8cafbdad648068e0e44b8fc5f9faae42";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];

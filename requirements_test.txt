@@ -1,11 +1,11 @@
 # test related requirements
-pytest==3.0.5
-py==1.4.31
-pytest-cov==2.4.0
-pytest-sugar==0.7.1
-pytest-runner==2.9.0
+pytest==3.1.2
+py==1.4.34
+pytest-cov==2.5.1
+pytest-sugar==0.8.0
+pytest-runner==2.11.1
 pytest-catchlog==1.2.2
-pytest-profiling==1.2.2
+pytest-profiling==1.2.6
 gprof2dot==2016.10.13
 pytest-timeout==1.2.0
 
