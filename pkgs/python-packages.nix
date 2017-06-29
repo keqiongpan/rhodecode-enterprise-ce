@@ -1238,13 +1238,13 @@
     };
   };
   ptyprocess = super.buildPythonPackage {
-    name = "ptyprocess-0.5.1";
+    name = "ptyprocess-0.5.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/db/d7/b465161910f3d1cef593c5e002bff67e0384898f597f1a7fdc8db4c02bf6/ptyprocess-0.5.1.tar.gz";
-      md5 = "94e537122914cc9ec9c1eadcd36e73a1";
+      url = "https://pypi.python.org/packages/51/83/5d07dc35534640b06f9d9f1a1d2bc2513fb9cc7595a1b0e28ae5477056ce/ptyprocess-0.5.2.tar.gz";
+      md5 = "d3b8febae1b8c53b054bd818d0bb8665";
     };
     meta = {
       license = [  ];
