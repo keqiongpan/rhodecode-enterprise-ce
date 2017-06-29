@@ -1885,13 +1885,13 @@
     };
   };
   venusian = super.buildPythonPackage {
-    name = "venusian-1.0";
+    name = "venusian-1.1.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/86/20/1948e0dfc4930ddde3da8c33612f6a5717c0b4bc28f591a5c5cf014dd390/venusian-1.0.tar.gz";
-      md5 = "dccf2eafb7113759d60c86faf5538756";
+      url = "https://pypi.python.org/packages/38/24/b4b470ab9e0a2e2e9b9030c7735828c8934b4c6b45befd1bb713ec2aeb2d/venusian-1.1.0.tar.gz";
+      md5 = "56bc5e6756e4bda37bcdb94f74a72b8f";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
