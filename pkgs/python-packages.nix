@@ -510,13 +510,13 @@
     };
   };
   colander = super.buildPythonPackage {
-    name = "colander-1.2";
+    name = "colander-1.3.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [translationstring iso8601];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/14/23/c9ceba07a6a1dc0eefbb215fc0dc64aabc2b22ee756bc0f0c13278fa0887/colander-1.2.tar.gz";
-      md5 = "83db21b07936a0726e588dae1914b9ed";
+      url = "https://pypi.python.org/packages/54/a9/9862a561e015b2c7b56404c0b13828a8bdc51e05ab3703bd792cec064487/colander-1.3.3.tar.gz";
+      md5 = "f5d783768c51d73695f49bbe95778ab4";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
