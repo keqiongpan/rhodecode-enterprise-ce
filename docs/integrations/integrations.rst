@@ -52,3 +52,4 @@ See pages specific to each type of integration for more instructions:
    jira
    webhook
    email
+   ci

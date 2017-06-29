@@ -48,14 +48,13 @@ the following steps:
 
     # Check the JSON-RPC verification
 
-.. code-block:: jsonld
+.. code-block:: javascript
 
     {
       "error": null,
       "id": 5960,
       "result": {
-        "msg": "Stripped commit ad1e0523a4ab from
-            repo `repo-group/repo-name`",
+        "msg": "Stripped commit ad1e0523a4ab from repo `repo-group/repo-name`",
         "repository": "repo-group/repo-name"
       }
     }

@@ -35,7 +35,7 @@ call for unspecified builds.
     A quick note on security. It's recommended to allow IP restrictions
     to only allow RhodeCode server to trigger builds. If you need to
     specify username and password this could be done by embedding it into a
-    trigger URL, e.g. `http://user:password@server.com/job/${project_id}
+    trigger URL, e.g. `http://user:password@server.com/job/${project_id}`
 
 
 If users require to provide any custom parameters, they can be stored for each
