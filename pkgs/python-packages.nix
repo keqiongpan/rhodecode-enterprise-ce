@@ -341,13 +341,13 @@
     };
   };
   alembic = super.buildPythonPackage {
-    name = "alembic-0.8.4";
+    name = "alembic-0.9.2";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [SQLAlchemy Mako python-editor];
+    propagatedBuildInputs = with self; [SQLAlchemy Mako python-editor python-dateutil];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/ca/7e/299b4499b5c75e5a38c5845145ad24755bebfb8eec07a2e1c366b7181eeb/alembic-0.8.4.tar.gz";
-      md5 = "5f95d8ee62b443f9b37eb5bee76c582d";
+      url = "https://pypi.python.org/packages/78/48/b5b26e7218b415f40b60b92c53853d242e5456c0f19f6c66101d98ff5f2a/alembic-0.9.2.tar.gz";
+      md5 = "40daf8bae50969beea40efaaf0839ff4";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
