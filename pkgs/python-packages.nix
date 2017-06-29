@@ -29,13 +29,13 @@
     };
   };
   CProfileV = super.buildPythonPackage {
-    name = "CProfileV-1.0.6";
+    name = "CProfileV-1.0.7";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [bottle];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/eb/df/983a0b6cfd3ac94abf023f5011cb04f33613ace196e33f53c86cf91850d5/CProfileV-1.0.6.tar.gz";
-      md5 = "08c7c242b6e64237bc53c5d13537e03d";
+      url = "https://pypi.python.org/packages/df/50/d8c1ada7d537c64b0f76453fa31dedb6af6e27b82fcf0331e5f71a4cf98b/CProfileV-1.0.7.tar.gz";
+      md5 = "db4c7640438aa3d8887e194c81c7a019";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
