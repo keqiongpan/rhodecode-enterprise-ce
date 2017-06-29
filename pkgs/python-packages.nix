@@ -627,13 +627,13 @@
     };
   };
   dogpile.cache = super.buildPythonPackage {
-    name = "dogpile.cache-0.6.1";
+    name = "dogpile.cache-0.6.4";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f6/a0/6f2142c58c6588d17c734265b103ae1cd0741e1681dd9483a63f22033375/dogpile.cache-0.6.1.tar.gz";
-      md5 = "35d7fb30f22bbd0685763d894dd079a9";
+      url = "https://pypi.python.org/packages/b6/3d/35c05ca01c070bb70d9d422f2c4858ecb021b05b21af438fec5ccd7b945c/dogpile.cache-0.6.4.tar.gz";
+      md5 = "66e0a6cae6c08cb1ea25f89d0eadfeb0";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
