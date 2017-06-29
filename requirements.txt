@@ -44,7 +44,7 @@ paramiko==1.15.1
 Paste==2.0.3
 PasteDeploy==1.5.2
 PasteScript==1.7.5
-pathlib2==2.1.0
+pathlib2==2.3.0
 psutil==4.3.1
 psycopg2==2.6.1
 py-bcrypt==0.4

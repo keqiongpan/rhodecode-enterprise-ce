@@ -1147,13 +1147,13 @@
     };
   };
   pathlib2 = super.buildPythonPackage {
-    name = "pathlib2-2.1.0";
+    name = "pathlib2-2.3.0";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [six];
+    propagatedBuildInputs = with self; [six scandir];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/c9/27/8448b10d8440c08efeff0794adf7d0ed27adb98372c70c7b38f3947d4749/pathlib2-2.1.0.tar.gz";
-      md5 = "38e4f58b4d69dfcb9edb49a54a8b28d2";
+      url = "https://pypi.python.org/packages/a1/14/df0deb867c2733f7d857523c10942b3d6612a1b222502fdffa9439943dfb/pathlib2-2.3.0.tar.gz";
+      md5 = "89c90409d11fd5947966b6a30a47d18c";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1674,6 +1674,19 @@
     };
     meta = {
       license = [ { fullName = "AGPLv3 and Proprietary"; } ];
+    };
+  };
+  scandir = super.buildPythonPackage {
+    name = "scandir-1.5";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/bd/f4/3143e0289faf0883228017dbc6387a66d0b468df646645e29e1eb89ea10e/scandir-1.5.tar.gz";
+      md5 = "a2713043de681bba6b084be42e7a8a44";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal { fullName = "New BSD License"; } ];
     };
   };
   setproctitle = super.buildPythonPackage {
