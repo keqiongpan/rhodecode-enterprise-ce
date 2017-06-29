@@ -32,7 +32,7 @@ Jinja2==2.7.3
 kombu==1.5.1
 lxml==3.7.3
 Mako==1.0.6
-Markdown==2.6.7
+Markdown==2.6.8
 MarkupSafe==0.23
 meld3==1.0.2
 msgpack-python==0.4.8
