@@ -1433,13 +1433,13 @@
     };
   };
   pysqlite = super.buildPythonPackage {
-    name = "pysqlite-2.6.3";
+    name = "pysqlite-2.8.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/5c/a6/1c429cd4c8069cf4bfbd0eb4d592b3f4042155a8202df83d7e9b93aa3dc2/pysqlite-2.6.3.tar.gz";
-      md5 = "7ff1cedee74646b50117acff87aa1cfa";
+      url = "https://pypi.python.org/packages/42/02/981b6703e3c83c5b25a829c6e77aad059f9481b0bbacb47e6e8ca12bd731/pysqlite-2.8.3.tar.gz";
+      md5 = "033f17b8644577715aee55e8832ac9fc";
     };
     meta = {
       license = [ { fullName = "zlib/libpng License"; } { fullName = "zlib/libpng license"; } ];
