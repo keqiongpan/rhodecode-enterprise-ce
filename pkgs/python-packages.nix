@@ -1768,13 +1768,13 @@
     };
   };
   subprocess32 = super.buildPythonPackage {
-    name = "subprocess32-3.2.6";
+    name = "subprocess32-3.2.7";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/28/8d/33ccbff51053f59ae6c357310cac0e79246bbed1d345ecc6188b176d72c3/subprocess32-3.2.6.tar.gz";
-      md5 = "754c5ab9f533e764f931136974b618f1";
+      url = "https://pypi.python.org/packages/b8/2f/49e53b0d0e94611a2dc624a1ad24d41b6d94d0f1b0a078443407ea2214c2/subprocess32-3.2.7.tar.gz";
+      md5 = "824c801e479d3e916879aae3e9c15e16";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
