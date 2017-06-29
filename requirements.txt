@@ -62,7 +62,7 @@ pyramid==1.7.4
 pysqlite==2.8.3
 python-dateutil==2.1
 python-ldap==2.4.19
-python-memcached==1.57
+python-memcached==1.58
 python-pam==1.8.2
 pytz==2015.4
 pyzmq==14.6.0
