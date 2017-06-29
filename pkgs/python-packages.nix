@@ -380,13 +380,13 @@
     };
   };
   appenlight-client = super.buildPythonPackage {
-    name = "appenlight-client-0.6.14";
+    name = "appenlight-client-0.6.21";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [WebOb requests];
+    propagatedBuildInputs = with self; [WebOb requests six];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/4d/e0/23fee3ebada8143f707e65c06bcb82992040ee64ea8355e044ed55ebf0c1/appenlight_client-0.6.14.tar.gz";
-      md5 = "578c69b09f4356d898fff1199b98a95c";
+      url = "https://pypi.python.org/packages/c9/23/91b66cfa0b963662c10b2a06ccaadf3f3a4848a7a2aa16255cb43d5160ec/appenlight_client-0.6.21.tar.gz";
+      md5 = "273999ac854fdaefa8d0fb61965a4ed9";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "DFSG approved"; } ];
