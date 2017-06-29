@@ -614,13 +614,13 @@
     };
   };
   docutils = super.buildPythonPackage {
-    name = "docutils-0.12";
+    name = "docutils-0.13.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/37/38/ceda70135b9144d84884ae2fc5886c6baac4edea39550f28bcd144c1234d/docutils-0.12.tar.gz";
-      md5 = "4622263b62c5c771c03502afa3157768";
+      url = "https://pypi.python.org/packages/05/25/7b5484aca5d46915493f1fd4ecb63c38c333bd32aa9ad6e19da8d08895ae/docutils-0.13.1.tar.gz";
+      md5 = "ea4a893c633c788be9b8078b6b305d53";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.publicDomain pkgs.lib.licenses.gpl1 { fullName = "public domain, Python, 2-Clause BSD, GPL 3 (see COPYING.txt)"; } pkgs.lib.licenses.psfl ];
