@@ -757,13 +757,13 @@
     };
   };
   gevent = super.buildPythonPackage {
-    name = "gevent-1.1.2";
+    name = "gevent-1.2.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [greenlet];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/43/8f/cb3224a0e6ab663547f45c10d0651cfd52633fde4283bf68d627084df8cc/gevent-1.1.2.tar.gz";
-      md5 = "bb32a2f852a4997138014d5007215c6e";
+      url = "https://pypi.python.org/packages/1b/92/b111f76e54d2be11375b47b213b56687214f258fd9dae703546d30b837be/gevent-1.2.2.tar.gz";
+      md5 = "7f0baf355384fe5ff2ecf66853422554";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -809,13 +809,13 @@
     };
   };
   greenlet = super.buildPythonPackage {
-    name = "greenlet-0.4.10";
+    name = "greenlet-0.4.12";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/67/62/ca2a95648666eaa2ffeb6a9b3964f21d419ae27f82f2e66b53da5b943fc4/greenlet-0.4.10.zip";
-      md5 = "bed0c4b3b896702131f4d5c72f87c41d";
+      url = "https://pypi.python.org/packages/be/76/82af375d98724054b7e273b5d9369346937324f9bcc20980b45b068ef0b0/greenlet-0.4.12.tar.gz";
+      md5 = "e8637647d58a26c4a1f51ca393e53c00";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
