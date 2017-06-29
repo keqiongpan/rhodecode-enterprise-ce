@@ -19,3 +19,8 @@ Welcome to the contribution guides and development docs of RhodeCode.
    dev-settings
    api
    dependencies
+   checklist-tickets
+   checklist-pull-request
+   frontend
+   standards
+

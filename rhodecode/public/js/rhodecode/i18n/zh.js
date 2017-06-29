@@ -77,7 +77,7 @@ var _TM = {
     'in {0}': 'in {0}',
     'in {0} and {1}': 'in {0} and {1}',
     'in {0}, {1}': 'in {0}, {1}',
-    'just now': '刚才',
+    'just now': '刚刚',
     'loading...': 'loading...',
     'member of "{0}"': 'member of "{0}"',
     'resolve comment': 'resolve comment',

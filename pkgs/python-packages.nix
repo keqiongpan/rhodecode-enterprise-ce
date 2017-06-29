@@ -185,7 +185,7 @@
     };
   };
   Pylons = super.buildPythonPackage {
-    name = "Pylons-1.0.2.dev20170407";
+    name = "Pylons-1.0.2.dev20170630";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [Routes WebHelpers Beaker Paste PasteDeploy PasteScript FormEncode simplejson decorator nose Mako WebError WebTest Tempita MarkupSafe WebOb];
@@ -795,6 +795,19 @@
       license = [ { fullName = "LGPL"; } ];
     };
   };
+  graphviz = super.buildPythonPackage {
+    name = "graphviz-0.7.1";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/7d/2d/f5cfa56467ca5a65eb44e1103d89d2f65dbc4f04cf7a1f3d38e973c3d1a8/graphviz-0.7.1.zip";
+      md5 = "d5926e89975121d56dec777a79bfc9d1";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   greenlet = super.buildPythonPackage {
     name = "greenlet-0.4.10";
     buildInputs = with self; [];
@@ -1085,7 +1098,7 @@
     name = "objgraph-3.1.0";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [];
+    propagatedBuildInputs = with self; [graphviz];
     src = fetchurl {
       url = "https://pypi.python.org/packages/f4/b3/082e54e62094cb2ec84f8d5a49e0142cef99016491cecba83309cff920ae/objgraph-3.1.0.tar.gz";
       md5 = "eddbd96039796bfbd13eee403701e64a";

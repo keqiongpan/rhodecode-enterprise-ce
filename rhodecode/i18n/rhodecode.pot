@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rhodecode-enterprise-ce 4.8.0\n"
 "Report-Msgid-Bugs-To: marcin@rhodecode.com\n"
-"POT-Creation-Date: 2017-06-27 17:25+0200\n"
+"POT-Creation-Date: 2017-06-28 21:55+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -835,13 +835,13 @@ msgstr ""
 msgid "No such commit exists for this repository"
 msgstr ""
 
-#: rhodecode/controllers/changeset.py:343
+#: rhodecode/controllers/changeset.py:345
 #: rhodecode/controllers/pullrequests.py:919
 #, python-format
 msgid "Status change %(transition_icon)s %(status)s"
 msgstr ""
 
-#: rhodecode/controllers/changeset.py:387
+#: rhodecode/controllers/changeset.py:389
 msgid "Changing the status of a commit associated with a closed pull request is not allowed"
 msgstr ""
 
@@ -4342,8 +4342,8 @@ msgid "(from usergroup {0})"
 msgstr ""
 
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:3
-#: rhodecode/templates/codeblocks/diffs.mako:488
-#: rhodecode/templates/codeblocks/diffs.mako:493
+#: rhodecode/templates/codeblocks/diffs.mako:487
+#: rhodecode/templates/codeblocks/diffs.mako:492
 msgid "Add another comment"
 msgstr ""
 
@@ -8146,8 +8146,8 @@ msgid "Diff options"
 msgstr ""
 
 #: rhodecode/templates/changeset/changeset.mako:139
-#: rhodecode/templates/codeblocks/diffs.mako:445
-#: rhodecode/templates/codeblocks/diffs.mako:448
+#: rhodecode/templates/codeblocks/diffs.mako:444
+#: rhodecode/templates/codeblocks/diffs.mako:447
 msgid "Raw diff"
 msgstr ""
 
@@ -8164,8 +8164,8 @@ msgid "Patch Diff"
 msgstr ""
 
 #: rhodecode/templates/changeset/changeset.mako:147
-#: rhodecode/templates/codeblocks/diffs.mako:452
-#: rhodecode/templates/codeblocks/diffs.mako:455
+#: rhodecode/templates/codeblocks/diffs.mako:451
+#: rhodecode/templates/codeblocks/diffs.mako:454
 msgid "Download diff"
 msgstr ""
 
@@ -8449,65 +8449,65 @@ msgstr ""
 msgid "File was deleted in this version, and outdated comments were made on it"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:415
-#: rhodecode/templates/codeblocks/diffs.mako:431
+#: rhodecode/templates/codeblocks/diffs.mako:414
+#: rhodecode/templates/codeblocks/diffs.mako:430
 #, python-format
 msgid "Show file at commit: %(commit_id)s"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:417
-#: rhodecode/templates/codeblocks/diffs.mako:424
+#: rhodecode/templates/codeblocks/diffs.mako:416
+#: rhodecode/templates/codeblocks/diffs.mako:423
 msgid "Show file before"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:422
-#: rhodecode/templates/codeblocks/diffs.mako:438
+#: rhodecode/templates/codeblocks/diffs.mako:421
+#: rhodecode/templates/codeblocks/diffs.mako:437
 #, python-format
 msgid "File no longer present at commit: %(commit_id)s"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:433
-#: rhodecode/templates/codeblocks/diffs.mako:440
+#: rhodecode/templates/codeblocks/diffs.mako:432
+#: rhodecode/templates/codeblocks/diffs.mako:439
 msgid "Show file after"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:471
+#: rhodecode/templates/codeblocks/diffs.mako:470
 msgid "Show comments"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:471
+#: rhodecode/templates/codeblocks/diffs.mako:470
 msgid "Hide comments"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:643
+#: rhodecode/templates/codeblocks/diffs.mako:642
 msgid "View side by side"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:645
+#: rhodecode/templates/codeblocks/diffs.mako:644
 msgid "Side by Side"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:649
+#: rhodecode/templates/codeblocks/diffs.mako:648
 msgid "View unified"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:650
+#: rhodecode/templates/codeblocks/diffs.mako:649
 msgid "Unified"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:660
+#: rhodecode/templates/codeblocks/diffs.mako:659
 msgid "Expand All Files"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:664
+#: rhodecode/templates/codeblocks/diffs.mako:663
 msgid "Collapse All Files"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/diffs.mako:668
+#: rhodecode/templates/codeblocks/diffs.mako:667
 msgid "Wide Mode Diff"
 msgstr ""
 
-#: rhodecode/templates/codeblocks/source.mako:24
+#: rhodecode/templates/codeblocks/source.mako:25
 msgid "view annotation from before this change"
 msgstr ""
 
@@ -9600,6 +9600,10 @@ msgstr ""
 #: rhodecode/templates/pullrequests/pullrequest_show.mako:300
 #: rhodecode/templates/pullrequests/pullrequest_show.mako:397
 msgid "Save Changes"
+msgstr ""
+
+#: rhodecode/templates/pullrequests/pullrequest_show.mako:372
+msgid "Mandatory reviewer"
 msgstr ""
 
 #: rhodecode/templates/pullrequests/pullrequest_show.mako:414

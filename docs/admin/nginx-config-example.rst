@@ -5,6 +5,7 @@ Use the following example to configure Nginx as a your web server.
 
 
 .. code-block:: nginx
+
     ## rate limiter for certain pages to prevent brute force attacks
     limit_req_zone  $binary_remote_addr  zone=dl_limit:10m   rate=1r/s;
 
