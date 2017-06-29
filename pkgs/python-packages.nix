@@ -1755,13 +1755,13 @@
     };
   };
   simplejson = super.buildPythonPackage {
-    name = "simplejson-3.7.2";
+    name = "simplejson-3.11.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/6d/89/7f13f099344eea9d6722779a1f165087cb559598107844b1ac5dbd831fb1/simplejson-3.7.2.tar.gz";
-      md5 = "a5fc7d05d4cb38492285553def5d4b46";
+      url = "https://pypi.python.org/packages/08/48/c97b668d6da7d7bebe7ea1817a6f76394b0ec959cb04214ca833c34359df/simplejson-3.11.1.tar.gz";
+      md5 = "6e2f1bd5fb0a926facf5d89d217a7183";
     };
     meta = {
       license = [ { fullName = "Academic Free License (AFL)"; } pkgs.lib.licenses.mit ];
