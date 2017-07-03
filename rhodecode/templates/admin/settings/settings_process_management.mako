@@ -14,6 +14,8 @@
         <table>
         % for proc in c.gunicorn_processes:
             <% mem = proc.memory_info()%>
+            <% children = proc.children(recursive=True) %>
+            % if children:
 
             <tr>
                 <td>
@@ -34,16 +36,38 @@
                     VMS:${h.format_byte_size_binary(mem.vms)}
                 </td>
                 <td>
-                    <% is_master = proc.children(recursive=True) %>
-                    % if is_master:
-                        MASTER
-                    % else:
-                        <a href="#restartProcess" onclick="restart(this, ${proc.pid});return false">
-                            restart
-                        </a>
-                    % endif
+                    MASTER [children: ${len(children)}]
                 </td>
             </tr>
+            % for proc_child in children:
+                <% mem = proc_child.memory_info()%>
+                <tr>
+                    <td>
+                        <code>
+                          | ${proc_child.pid} - ${proc_child.name()}
+                        </code>
+                    </td>
+                    <td>
+                        <a href="#showCommand" onclick="$('#pid'+${proc_child.pid}).toggle();return false"> command </a>
+                        <code id="pid${proc_child.pid}" style="display: none">
+                        ${''.join(proc_child.cmdline())}
+                        </code>
+                    </td>
+                    <td>
+                        RSS:${h.format_byte_size_binary(mem.rss)}
+                    </td>
+                    <td>
+                        VMS:${h.format_byte_size_binary(mem.vms)}
+                    </td>
+                    <td>
+                        <a href="#restartProcess" onclick="restart(this, ${proc_child.pid});return false">
+                            restart
+                        </a>
+                    </td>
+                </tr>
+            % endfor
+
+            % endif
         % endfor
         </table>
     </div>
