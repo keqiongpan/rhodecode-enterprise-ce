@@ -94,6 +94,8 @@ class NavigationRegistry(object):
                  'global_integrations_home', pyramid=True),
         NavEntry('system', _('System Info'),
                  'admin_settings_system', pyramid=True),
+        NavEntry('process_management', _('Processes'),
+                 'admin_settings_process_management', pyramid=True),
         NavEntry('sessions', _('User Sessions'),
                  'admin_settings_sessions', pyramid=True),
         NavEntry('open_source', _('Open Source Licenses'),

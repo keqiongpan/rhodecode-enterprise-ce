@@ -64,6 +64,13 @@ def admin_routes(config):
         name='admin_settings_sessions_cleanup',
         pattern='/settings/sessions/cleanup')
 
+    config.add_route(
+        name='admin_settings_process_management',
+        pattern='/settings/process_management')
+    config.add_route(
+        name='admin_settings_process_management_signal',
+        pattern='/settings/process_management/signal')
+
     # global permissions
     config.add_route(
         name='admin_permissions_ips',
