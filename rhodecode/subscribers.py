@@ -205,6 +205,9 @@ def write_js_routes_if_enabled(event):
 
         routepath = _argument_prog.sub(replace, routepath)
 
+        if not routepath.startswith('/'):
+            routepath = '/'+routepath
+
         return (
             route.name,
             routepath,
