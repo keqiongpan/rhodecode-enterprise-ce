@@ -26,9 +26,10 @@
                 <td>
                     <a href="#showCommand" onclick="$('#pid'+${proc.pid}).toggle();return false"> command </a>
                     <code id="pid${proc.pid}" style="display: none">
-                    ${''.join(proc.cmdline())}
+                    ${' '.join(proc.cmdline())}
                     </code>
                 </td>
+                <td></td>
                 <td>
                     RSS:${h.format_byte_size_binary(mem.rss)}
                 </td>
@@ -50,8 +51,11 @@
                     <td>
                         <a href="#showCommand" onclick="$('#pid'+${proc_child.pid}).toggle();return false"> command </a>
                         <code id="pid${proc_child.pid}" style="display: none">
-                        ${''.join(proc_child.cmdline())}
+                        ${' '.join(proc_child.cmdline())}
                         </code>
+                    </td>
+                    <td>
+                        CPU: ${proc_child.cpu_percent()} %
                     </td>
                     <td>
                         RSS:${h.format_byte_size_binary(mem.rss)}
