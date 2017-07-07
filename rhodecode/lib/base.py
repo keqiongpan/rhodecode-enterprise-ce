@@ -266,6 +266,12 @@ class BasicAuth(AuthBasicAuthenticator):
 
 
 def attach_context_attributes(context, request, user_id, attach_to_request=False):
+def calculate_version_hash():
+    return md5(
+        config.get('beaker.session.secret', '') +
+        rhodecode.__version__)[:8]
+
+
     """
     Attach variables into template context called `c`, please note that
     request could be pylons or pyramid request in here.
@@ -275,9 +281,7 @@ def attach_context_attributes(context, request, user_id, attach_to_request=False
     context.rhodecode_version = rhodecode.__version__
     context.rhodecode_edition = config.get('rhodecode.edition')
     # unique secret + version does not leak the version but keep consistency
-    context.rhodecode_version_hash = md5(
-        config.get('beaker.session.secret', '') +
-        rhodecode.__version__)[:8]
+    context.rhodecode_version_hash = calculate_version_hash()
 
     # Default language set for the incoming request
     context.language = translation.get_lang()[0]
