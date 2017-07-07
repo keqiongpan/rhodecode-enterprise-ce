@@ -136,6 +136,8 @@ function registerRCRoutes() {
     pyroutes.register('search_repo', '/%(repo_name)s/search', ['repo_name']);
     pyroutes.register('user_profile', '/_profiles/%(username)s', ['username']);
     pyroutes.register('my_account_profile', '/_admin/my_account/profile', []);
+    pyroutes.register('my_account_edit', '/_admin/my_account/edit', []);
+    pyroutes.register('my_account_update', '/_admin/my_account/update', []);
     pyroutes.register('my_account_password', '/_admin/my_account/password', []);
     pyroutes.register('my_account_password_update', '/_admin/my_account/password', []);
     pyroutes.register('my_account_auth_tokens', '/_admin/my_account/auth_tokens', []);
@@ -149,6 +151,8 @@ function registerRCRoutes() {
     pyroutes.register('my_account_perms', '/_admin/my_account/perms', []);
     pyroutes.register('my_account_notifications', '/_admin/my_account/notifications', []);
     pyroutes.register('my_account_notifications_toggle_visibility', '/_admin/my_account/toggle_visibility', []);
+    pyroutes.register('my_account_pullrequests', '/_admin/my_account/pull_requests', []);
+    pyroutes.register('my_account_pullrequests_data', '/_admin/my_account/pull_requests/data', []);
     pyroutes.register('my_account_notifications_test_channelstream', '/_admin/my_account/test_channelstream', []);
     pyroutes.register('gists_show', '/_admin/gists', []);
     pyroutes.register('gists_new', '/_admin/gists/new', []);

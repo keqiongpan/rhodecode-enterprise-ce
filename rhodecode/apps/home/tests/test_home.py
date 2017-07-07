@@ -132,3 +132,9 @@ class TestHomeController(TestController):
             response.mustcontain(version_string)
         if state is False:
             response.mustcontain(no=[version_string])
+
+    def test_logout_form_contains_csrf(self, autologin_user, csrf_token):
+        response = self.app.get(route_path('home'))
+        assert_response = response.assert_response()
+        element = assert_response.get_element('.logout #csrf_token')
+        assert element.value == csrf_token

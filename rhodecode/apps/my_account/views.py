@@ -24,8 +24,10 @@ import datetime
 import formencode
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
+from pyramid.renderers import render
+from pyramid.response import Response
 
-from rhodecode.apps._base import BaseAppView
+from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode import forms
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
@@ -33,11 +35,16 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
 from rhodecode.lib.channelstream import channelstream_request, \
     ChannelstreamException
-from rhodecode.lib.utils2 import safe_int, md5
+from rhodecode.lib.utils import PartialRenderer
+from rhodecode.lib.utils2 import safe_int, md5, str2bool
 from rhodecode.model.auth_token import AuthTokenModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    Repository, UserEmailMap, UserApiKeys, UserFollowing, joinedload)
+    Repository, UserEmailMap, UserApiKeys, UserFollowing, joinedload,
+    PullRequest)
+from rhodecode.model.forms import UserForm
 from rhodecode.model.meta import Session
+from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
 from rhodecode.model.repo import RepoModel
@@ -46,7 +53,7 @@ from rhodecode.model.validation_schema.schemas import user_schema
 log = logging.getLogger(__name__)
 
 
-class MyAccountView(BaseAppView):
+class MyAccountView(BaseAppView, DataGridAppView):
     ALLOW_SCOPED_TOKENS = False
     """
     This view has alternative version inside EE, if modified please take a look
@@ -397,3 +404,181 @@ class MyAccountView(BaseAppView):
         user.update_userdata(notification_status=new_status)
         Session().commit()
         return user.user_data['notification_status']
+
+    @LoginRequired()
+    @NotAnonymous()
+    @view_config(
+        route_name='my_account_edit',
+        request_method='GET',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_edit(self):
+        c = self.load_default_context()
+        c.active = 'profile_edit'
+
+        c.perm_user = c.auth_user
+        c.extern_type = c.user.extern_type
+        c.extern_name = c.user.extern_name
+
+        defaults = c.user.get_dict()
+
+        data = render('rhodecode:templates/admin/my_account/my_account.mako',
+                      self._get_template_context(c), self.request)
+        html = formencode.htmlfill.render(
+            data,
+            defaults=defaults,
+            encoding="UTF-8",
+            force_defaults=False
+        )
+        return Response(html)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    @view_config(
+        route_name='my_account_update',
+        request_method='POST',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_update(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.active = 'profile_edit'
+
+        c.perm_user = c.auth_user
+        c.extern_type = c.user.extern_type
+        c.extern_name = c.user.extern_name
+
+        _form = UserForm(edit=True,
+                         old_data={'user_id': self._rhodecode_user.user_id,
+                                   'email': self._rhodecode_user.email})()
+        form_result = {}
+        try:
+            post_data = dict(self.request.POST)
+            post_data['new_password'] = ''
+            post_data['password_confirmation'] = ''
+            form_result = _form.to_python(post_data)
+            # skip updating those attrs for my account
+            skip_attrs = ['admin', 'active', 'extern_type', 'extern_name',
+                          'new_password', 'password_confirmation']
+            # TODO: plugin should define if username can be updated
+            if c.extern_type != "rhodecode":
+                # forbid updating username for external accounts
+                skip_attrs.append('username')
+
+            UserModel().update_user(
+                self._rhodecode_user.user_id, skip_attrs=skip_attrs,
+                **form_result)
+            h.flash(_('Your account was updated successfully'),
+                    category='success')
+            Session().commit()
+
+        except formencode.Invalid as errors:
+            data = render(
+                'rhodecode:templates/admin/my_account/my_account.mako',
+                self._get_template_context(c), self.request)
+
+            html = formencode.htmlfill.render(
+                data,
+                defaults=errors.value,
+                errors=errors.error_dict or {},
+                prefix_error=False,
+                encoding="UTF-8",
+                force_defaults=False)
+            return Response(html)
+
+        except Exception:
+            log.exception("Exception updating user")
+            h.flash(_('Error occurred during update of user %s')
+                    % form_result.get('username'), category='error')
+            raise HTTPFound(h.route_path('my_account_profile'))
+
+        raise HTTPFound(h.route_path('my_account_profile'))
+
+    def _get_pull_requests_list(self, statuses):
+        draw, start, limit = self._extract_chunk(self.request)
+        search_q, order_by, order_dir = self._extract_ordering(self.request)
+        _render = PartialRenderer('data_table/_dt_elements.mako')
+
+        pull_requests = PullRequestModel().get_im_participating_in(
+            user_id=self._rhodecode_user.user_id,
+            statuses=statuses,
+            offset=start, length=limit, order_by=order_by,
+            order_dir=order_dir)
+
+        pull_requests_total_count = PullRequestModel().count_im_participating_in(
+            user_id=self._rhodecode_user.user_id, statuses=statuses)
+
+        data = []
+        comments_model = CommentsModel()
+        for pr in pull_requests:
+            repo_id = pr.target_repo_id
+            comments = comments_model.get_all_comments(
+                repo_id, pull_request=pr)
+            owned = pr.user_id == self._rhodecode_user.user_id
+
+            data.append({
+                'target_repo': _render('pullrequest_target_repo',
+                                       pr.target_repo.repo_name),
+                'name': _render('pullrequest_name',
+                                pr.pull_request_id, pr.target_repo.repo_name,
+                                short=True),
+                'name_raw': pr.pull_request_id,
+                'status': _render('pullrequest_status',
+                                  pr.calculated_review_status()),
+                'title': _render(
+                    'pullrequest_title', pr.title, pr.description),
+                'description': h.escape(pr.description),
+                'updated_on': _render('pullrequest_updated_on',
+                                      h.datetime_to_time(pr.updated_on)),
+                'updated_on_raw': h.datetime_to_time(pr.updated_on),
+                'created_on': _render('pullrequest_updated_on',
+                                      h.datetime_to_time(pr.created_on)),
+                'created_on_raw': h.datetime_to_time(pr.created_on),
+                'author': _render('pullrequest_author',
+                                  pr.author.full_contact, ),
+                'author_raw': pr.author.full_name,
+                'comments': _render('pullrequest_comments', len(comments)),
+                'comments_raw': len(comments),
+                'closed': pr.is_closed(),
+                'owned': owned
+            })
+
+        # json used to render the grid
+        data = ({
+            'draw': draw,
+            'data': data,
+            'recordsTotal': pull_requests_total_count,
+            'recordsFiltered': pull_requests_total_count,
+        })
+        return data
+
+    @LoginRequired()
+    @NotAnonymous()
+    @view_config(
+        route_name='my_account_pullrequests',
+        request_method='GET',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_pullrequests(self):
+        c = self.load_default_context()
+        c.active = 'pullrequests'
+        req_get = self.request.GET
+
+        c.closed = str2bool(req_get.get('pr_show_closed'))
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @view_config(
+        route_name='my_account_pullrequests_data',
+        request_method='GET', renderer='json_ext')
+    def my_account_pullrequests_data(self):
+        req_get = self.request.GET
+        closed = str2bool(req_get.get('closed'))
+
+        statuses = [PullRequest.STATUS_NEW, PullRequest.STATUS_OPEN]
+        if closed:
+            statuses += [PullRequest.STATUS_CLOSED]
+
+        data = self._get_pull_requests_list(statuses=statuses)
+        return data
+

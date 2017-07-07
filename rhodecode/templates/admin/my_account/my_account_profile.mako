@@ -2,7 +2,7 @@
 <div class="panel panel-default user-profile">
     <div class="panel-heading">
         <h3 class="panel-title">${_('My Profile')}</h3>
-        <a href="${url('my_account_edit')}" class="panel-edit">${_('Edit')}</a>
+        <a href="${h.route_path('my_account_edit')}" class="panel-edit">${_('Edit')}</a>
     </div>
 
     <div class="panel-body">

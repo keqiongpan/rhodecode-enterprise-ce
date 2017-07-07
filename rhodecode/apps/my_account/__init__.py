@@ -28,6 +28,15 @@ def includeme(config):
         name='my_account_profile',
         pattern=ADMIN_PREFIX + '/my_account/profile')
 
+    # my account edit details
+    config.add_route(
+        name='my_account_edit',
+        pattern=ADMIN_PREFIX + '/my_account/edit')
+    config.add_route(
+        name='my_account_update',
+        pattern=ADMIN_PREFIX + '/my_account/update')
+
+    # my account password
     config.add_route(
         name='my_account_password',
         pattern=ADMIN_PREFIX + '/my_account/password')
@@ -36,6 +45,7 @@ def includeme(config):
         name='my_account_password_update',
         pattern=ADMIN_PREFIX + '/my_account/password')
 
+    # my account tokens
     config.add_route(
         name='my_account_auth_tokens',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens')
@@ -46,6 +56,7 @@ def includeme(config):
         name='my_account_auth_tokens_delete',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens/delete')
 
+    # my account emails
     config.add_route(
         name='my_account_emails',
         pattern=ADMIN_PREFIX + '/my_account/emails')
@@ -75,6 +86,14 @@ def includeme(config):
     config.add_route(
         name='my_account_notifications_toggle_visibility',
         pattern=ADMIN_PREFIX + '/my_account/toggle_visibility')
+
+    # my account pull requests
+    config.add_route(
+        name='my_account_pullrequests',
+        pattern=ADMIN_PREFIX + '/my_account/pull_requests')
+    config.add_route(
+        name='my_account_pullrequests_data',
+        pattern=ADMIN_PREFIX + '/my_account/pull_requests/data')
 
     # channelstream test
     config.add_route(

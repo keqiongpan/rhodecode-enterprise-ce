@@ -462,18 +462,10 @@ def make_map(config):
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/my_account') as m:
 
-        m.connect('my_account_edit', '/my_account/edit',
-                  action='my_account_edit', conditions={'method': ['GET']})
-        m.connect('my_account', '/my_account/update',
-                  action='my_account_update', conditions={'method': ['POST']})
-
         # NOTE(marcink): this needs to be kept for password force flag to be
-        # handler, remove after migration to pyramid
+        # handled in pylons controllers, remove after full migration to pyramid
         m.connect('my_account_password', '/my_account/password',
                   action='my_account_password', conditions={'method': ['GET']})
-
-        m.connect('my_account_pullrequests', '/my_account/pull_requests',
-                  action='my_account_pullrequests', conditions={'method': ['GET']})
 
     # NOTIFICATION REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
