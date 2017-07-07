@@ -18,35 +18,26 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
-"""
-gist controller for RhodeCode
-"""
-
 import time
 import logging
 
 import formencode
 import peppercorn
 
-from pylons import request, response, tmpl_context as c, url
-from pylons.controllers.util import redirect
-from pylons.i18n.translation import _
-from webob.exc import HTTPNotFound, HTTPForbidden
-from sqlalchemy.sql.expression import or_
+from pyramid.httpexceptions import HTTPNotFound, HTTPForbidden, HTTPFound
+from pyramid.view import view_config
+from pyramid.renderers import render
+from pyramid.response import Response
 
-
-from rhodecode.model.gist import GistModel
-from rhodecode.model.meta import Session
-from rhodecode.model.db import Gist, User
-from rhodecode.lib import auth
+from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
-from rhodecode.lib.base import BaseController, render
-from rhodecode.lib.auth import LoginRequired, NotAnonymous
-from rhodecode.lib.utils import jsonify
+from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
 from rhodecode.lib.utils2 import time_to_datetime
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs.exceptions import VCSError, NodeNotChangedError
+from rhodecode.model.gist import GistModel
+from rhodecode.model.meta import Session
+from rhodecode.model.db import Gist, User, or_
 from rhodecode.model import validation_schema
 from rhodecode.model.validation_schema.schemas import gist_schema
 
@@ -54,10 +45,13 @@ from rhodecode.model.validation_schema.schemas import gist_schema
 log = logging.getLogger(__name__)
 
 
-class GistsController(BaseController):
-    """REST Controller styled on the Atom Publishing Protocol"""
+class GistView(BaseAppView):
 
-    def __load_defaults(self, extra_values=None):
+    def load_default_context(self):
+        _ = self.request.translate
+        c = self._get_local_tmpl_context()
+        c.user = c.auth_user.get_instance()
+
         c.lifetime_values = [
             (-1, _('forever')),
             (5, _('5 minutes')),
@@ -65,22 +59,27 @@ class GistsController(BaseController):
             (60 * 24, _('1 day')),
             (60 * 24 * 30, _('1 month')),
         ]
-        if extra_values:
-            c.lifetime_values.append(extra_values)
+
         c.lifetime_options = [(c.lifetime_values, _("Lifetime"))]
         c.acl_options = [
             (Gist.ACL_LEVEL_PRIVATE, _("Requires registered account")),
             (Gist.ACL_LEVEL_PUBLIC, _("Can be accessed by anonymous users"))
         ]
 
+        self._register_global_c(c)
+        return c
+
     @LoginRequired()
-    def index(self):
-        """GET /admin/gists: All items in the collection"""
-        # url('gists')
-        not_default_user = c.rhodecode_user.username != User.DEFAULT_USER
-        c.show_private = request.GET.get('private') and not_default_user
-        c.show_public = request.GET.get('public') and not_default_user
-        c.show_all = request.GET.get('all') and c.rhodecode_user.admin
+    @view_config(
+        route_name='gists_show', request_method='GET',
+        renderer='rhodecode:templates/admin/gists/index.mako')
+    def gist_show_all(self):
+        c = self.load_default_context()
+
+        not_default_user = self._rhodecode_user.username != User.DEFAULT_USER
+        c.show_private = self.request.GET.get('private') and not_default_user
+        c.show_public = self.request.GET.get('public') and not_default_user
+        c.show_all = self.request.GET.get('all') and self._rhodecode_user.admin
 
         gists = _gists = Gist().query()\
             .filter(or_(Gist.gist_expires == -1, Gist.gist_expires >= time.time()))\
@@ -90,18 +89,18 @@ class GistsController(BaseController):
         # MY private
         if c.show_private and not c.show_public:
             gists = _gists.filter(Gist.gist_type == Gist.GIST_PRIVATE)\
-                        .filter(Gist.gist_owner == c.rhodecode_user.user_id)
+                        .filter(Gist.gist_owner == self._rhodecode_user.user_id)
             c.active = 'my_private'
         # MY public
         elif c.show_public and not c.show_private:
             gists = _gists.filter(Gist.gist_type == Gist.GIST_PUBLIC)\
-                        .filter(Gist.gist_owner == c.rhodecode_user.user_id)
+                        .filter(Gist.gist_owner == self._rhodecode_user.user_id)
             c.active = 'my_public'
         # MY public+private
         elif c.show_private and c.show_public:
             gists = _gists.filter(or_(Gist.gist_type == Gist.GIST_PUBLIC,
                                       Gist.gist_type == Gist.GIST_PRIVATE))\
-                        .filter(Gist.gist_owner == c.rhodecode_user.user_id)
+                        .filter(Gist.gist_owner == self._rhodecode_user.user_id)
             c.active = 'my_all'
         # Show all by super-admin
         elif c.show_all:
@@ -130,17 +129,29 @@ class GistsController(BaseController):
                 'description': _render('gist_description', gist.gist_description)
             })
         c.data = json.dumps(data)
-        return render('admin/gists/index.mako')
+
+        return self._get_template_context(c)
 
     @LoginRequired()
     @NotAnonymous()
-    @auth.CSRFRequired()
-    def create(self):
-        """POST /admin/gists: Create a new item"""
-        # url('gists')
-        self.__load_defaults()
+    @view_config(
+        route_name='gists_new', request_method='GET',
+        renderer='rhodecode:templates/admin/gists/new.mako')
+    def gist_new(self):
+        c = self.load_default_context()
+        return self._get_template_context(c)
 
-        data = dict(request.POST)
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    @view_config(
+        route_name='gists_create', request_method='POST',
+        renderer='rhodecode:templates/admin/gists/new.mako')
+    def gist_create(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        data = dict(self.request.POST)
         data['filename'] = data.get('filename') or Gist.DEFAULT_FILENAME
         data['nodes'] = [{
             'filename': data['filename'],
@@ -166,7 +177,7 @@ class GistsController(BaseController):
             gist = GistModel().create(
                 gist_id=schema_data['gistid'],  # custom access id not real ID
                 description=schema_data['description'],
-                owner=c.rhodecode_user.user_id,
+                owner=self._rhodecode_user.user_id,
                 gist_mapping=schema_data['nodes'],
                 gist_type=schema_data['gist_type'],
                 lifetime=schema_data['lifetime'],
@@ -185,75 +196,91 @@ class GistsController(BaseController):
                 errors['filename'] = errors['nodes.0.filename']
                 del errors['nodes.0.filename']
 
-            return formencode.htmlfill.render(
-                render('admin/gists/new.mako'),
+            data = render('rhodecode:templates/admin/gists/new.mako',
+                          self._get_template_context(c), self.request)
+            html = formencode.htmlfill.render(
+                data,
                 defaults=defaults,
                 errors=errors,
                 prefix_error=False,
                 encoding="UTF-8",
                 force_defaults=False
             )
+            return Response(html)
 
         except Exception:
             log.exception("Exception while trying to create a gist")
             h.flash(_('Error occurred during gist creation'), category='error')
-            return redirect(url('new_gist'))
-        return redirect(url('gist', gist_id=new_gist_id))
+            raise HTTPFound(h.route_url('gists_new'))
+        raise HTTPFound(h.route_url('gist_show', gist_id=new_gist_id))
 
     @LoginRequired()
     @NotAnonymous()
-    def new(self):
-        """GET /admin/gists/new: Form to create a new item"""
-        # url('new_gist')
-        self.__load_defaults()
-        return render('admin/gists/new.mako')
+    @CSRFRequired()
+    @view_config(
+        route_name='gist_delete', request_method='POST')
+    def gist_delete(self):
+        _ = self.request.translate
+        gist_id = self.request.matchdict['gist_id']
 
-    @LoginRequired()
-    @NotAnonymous()
-    @auth.CSRFRequired()
-    def delete(self, gist_id):
-        """DELETE /admin/gists/gist_id: Delete an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        #    <input type="hidden" name="_method" value="DELETE" />
-        # Or using helpers:
-        #    h.form(url('gist', gist_id=ID),
-        #           method='delete')
-        # url('gist', gist_id=ID)
+        c = self.load_default_context()
         c.gist = Gist.get_or_404(gist_id)
 
-        owner = c.gist.gist_owner == c.rhodecode_user.user_id
+        owner = c.gist.gist_owner == self._rhodecode_user.user_id
         if not (h.HasPermissionAny('hg.admin')() or owner):
-            raise HTTPForbidden()
+            log.warning('Deletion of Gist was forbidden '
+                        'by unauthorized user: `%s`', self._rhodecode_user)
+            raise HTTPNotFound()
 
         GistModel().delete(c.gist)
         Session().commit()
         h.flash(_('Deleted gist %s') % c.gist.gist_access_id, category='success')
 
-        return redirect(url('gists'))
+        raise HTTPFound(h.route_url('gists_show'))
 
-    def _add_gist_to_context(self, gist_id):
-        c.gist = Gist.get_or_404(gist_id)
+    def _get_gist(self, gist_id):
+
+        gist = Gist.get_or_404(gist_id)
 
         # Check if this gist is expired
-        if c.gist.gist_expires != -1:
-            if time.time() > c.gist.gist_expires:
+        if gist.gist_expires != -1:
+            if time.time() > gist.gist_expires:
                 log.error(
-                    'Gist expired at %s', time_to_datetime(c.gist.gist_expires))
+                    'Gist expired at %s', time_to_datetime(gist.gist_expires))
                 raise HTTPNotFound()
 
         # check if this gist requires a login
-        is_default_user = c.rhodecode_user.username == User.DEFAULT_USER
-        if c.gist.acl_level == Gist.ACL_LEVEL_PRIVATE and is_default_user:
+        is_default_user = self._rhodecode_user.username == User.DEFAULT_USER
+        if gist.acl_level == Gist.ACL_LEVEL_PRIVATE and is_default_user:
             log.error("Anonymous user %s tried to access protected gist `%s`",
-                      c.rhodecode_user, gist_id)
+                      self._rhodecode_user, gist_id)
             raise HTTPNotFound()
+        return gist
 
     @LoginRequired()
-    def show(self, gist_id, revision='tip', format='html', f_path=None):
-        """GET /admin/gists/gist_id: Show a specific item"""
-        # url('gist', gist_id=ID)
-        self._add_gist_to_context(gist_id)
-        c.render = not request.GET.get('no-render', False)
+    @view_config(
+        route_name='gist_show', request_method='GET',
+        renderer='rhodecode:templates/admin/gists/show.mako')
+    @view_config(
+        route_name='gist_show_rev', request_method='GET',
+        renderer='rhodecode:templates/admin/gists/show.mako')
+    @view_config(
+        route_name='gist_show_formatted', request_method='GET',
+        renderer=None)
+    @view_config(
+        route_name='gist_show_formatted_path', request_method='GET',
+        renderer=None)
+    def show(self):
+        gist_id = self.request.matchdict['gist_id']
+
+        # TODO(marcink): expose those via matching dict
+        revision = self.request.matchdict.get('revision', 'tip')
+        f_path = self.request.matchdict.get('f_path', None)
+        return_format = self.request.matchdict.get('format')
+
+        c = self.load_default_context()
+        c.gist = self._get_gist(gist_id)
+        c.render = not self.request.GET.get('no-render', False)
 
         try:
             c.file_last_commit, c.files = GistModel().get_gist_files(
@@ -261,25 +288,66 @@ class GistsController(BaseController):
         except VCSError:
             log.exception("Exception in gist show")
             raise HTTPNotFound()
-        if format == 'raw':
+
+        if return_format == 'raw':
             content = '\n\n'.join([f.content for f in c.files
                                    if (f_path is None or f.path == f_path)])
+            response = Response(content)
             response.content_type = 'text/plain'
-            return content
-        return render('admin/gists/show.mako')
+            return response
+
+        return self._get_template_context(c)
 
     @LoginRequired()
     @NotAnonymous()
-    @auth.CSRFRequired()
-    def edit(self, gist_id):
-        self.__load_defaults()
-        self._add_gist_to_context(gist_id)
+    @view_config(
+        route_name='gist_edit', request_method='GET',
+        renderer='rhodecode:templates/admin/gists/edit.mako')
+    def gist_edit(self):
+        _ = self.request.translate
+        gist_id = self.request.matchdict['gist_id']
+        c = self.load_default_context()
+        c.gist = self._get_gist(gist_id)
 
-        owner = c.gist.gist_owner == c.rhodecode_user.user_id
+        owner = c.gist.gist_owner == self._rhodecode_user.user_id
         if not (h.HasPermissionAny('hg.admin')() or owner):
-            raise HTTPForbidden()
+            raise HTTPNotFound()
 
-        data = peppercorn.parse(request.POST.items())
+        try:
+            c.file_last_commit, c.files = GistModel().get_gist_files(gist_id)
+        except VCSError:
+            log.exception("Exception in gist edit")
+            raise HTTPNotFound()
+
+        if c.gist.gist_expires == -1:
+            expiry = _('never')
+        else:
+            # this cannot use timeago, since it's used in select2 as a value
+            expiry = h.age(h.time_to_datetime(c.gist.gist_expires))
+
+        c.lifetime_values.append(
+            (0, _('%(expiry)s - current value') % {'expiry': _(expiry)})
+        )
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    @view_config(
+        route_name='gist_update', request_method='POST',
+        renderer='rhodecode:templates/admin/gists/edit.mako')
+    def gist_update(self):
+        _ = self.request.translate
+        gist_id = self.request.matchdict['gist_id']
+        c = self.load_default_context()
+        c.gist = self._get_gist(gist_id)
+
+        owner = c.gist.gist_owner == self._rhodecode_user.user_id
+        if not (h.HasPermissionAny('hg.admin')() or owner):
+            raise HTTPNotFound()
+
+        data = peppercorn.parse(self.request.POST.items())
 
         schema = gist_schema.GistSchema()
         schema = schema.bind(
@@ -318,48 +386,23 @@ class GistsController(BaseController):
             h.flash(_('Error occurred during update of gist %s') % gist_id,
                     category='error')
 
-        return redirect(url('gist', gist_id=gist_id))
+        raise HTTPFound(h.route_url('gist_show', gist_id=gist_id))
 
     @LoginRequired()
     @NotAnonymous()
-    def edit_form(self, gist_id):
-        translate = _ = c.pyramid_request.translate
+    @view_config(
+        route_name='gist_edit_check_revision', request_method='GET',
+        renderer='json_ext')
+    def gist_edit_check_revision(self):
+        _ = self.request.translate
+        gist_id = self.request.matchdict['gist_id']
+        c = self.load_default_context()
+        c.gist = self._get_gist(gist_id)
 
-        """GET /admin/gists/gist_id/edit: Form to edit an existing item"""
-        # url('edit_gist', gist_id=ID)
-        self._add_gist_to_context(gist_id)
-
-        owner = c.gist.gist_owner == c.rhodecode_user.user_id
-        if not (h.HasPermissionAny('hg.admin')() or owner):
-            raise HTTPForbidden()
-
-        try:
-            c.file_last_commit, c.files = GistModel().get_gist_files(gist_id)
-        except VCSError:
-            log.exception("Exception in gist edit")
-            raise HTTPNotFound()
-
-        if c.gist.gist_expires == -1:
-            expiry = _('never')
-        else:
-            # this cannot use timeago, since it's used in select2 as a value
-            expiry = h.age(h.time_to_datetime(c.gist.gist_expires))
-
-        expiry = translate(expiry)
-        self.__load_defaults(
-            extra_values=(0, _('%(expiry)s - current value') % {'expiry': expiry}))
-        return render('admin/gists/edit.mako')
-
-    @LoginRequired()
-    @NotAnonymous()
-    @jsonify
-    def check_revision(self, gist_id):
-        c.gist = Gist.get_or_404(gist_id)
         last_rev = c.gist.scm_instance().get_commit()
         success = True
-        revision = request.GET.get('revision')
+        revision = self.request.GET.get('revision')
 
-        ##TODO: maybe move this to model ?
         if revision != last_rev.raw_id:
             log.error('Last revision %s is different then submitted %s'
                       % (revision, last_rev))

@@ -67,15 +67,25 @@ class CSRFDetector(object):
         '/error/document',
     ))
 
+    _SKIP_PATTERN = frozenset((
+        '/_admin/gists/',
+    ))
+
     def __init__(self, app):
         self._app = app
 
     def __call__(self, environ, start_response):
         if environ['REQUEST_METHOD'].upper() not in ('GET', 'POST'):
             raise Exception(self._PUT_DELETE_MESSAGE)
+        token_expected = environ['PATH_INFO'] not in self._PATHS_WITHOUT_TOKEN
+        allowed = True
+        for pattern in self._SKIP_PATTERN:
+            if environ['PATH_INFO'].startswith(pattern):
+                allowed = False
+                break
 
         if (environ['REQUEST_METHOD'] == 'POST' and
-                environ['PATH_INFO'] not in self._PATHS_WITHOUT_TOKEN and
+                token_expected and allowed and
                 routes.middleware.is_form_post(environ)):
             body = environ['wsgi.input']
             if body.seekable():

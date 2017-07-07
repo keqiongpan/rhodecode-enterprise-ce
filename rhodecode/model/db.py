@@ -3788,14 +3788,8 @@ class Gist(Base, BaseModel):
         return cls.query().filter(cls.gist_access_id == gist_access_id).scalar()
 
     def gist_url(self):
-        import rhodecode
-        from pylons import url
-
-        alias_url = rhodecode.CONFIG.get('gist_alias_url')
-        if alias_url:
-            return alias_url.replace('{gistid}', self.gist_access_id)
-
-        return url('gist', gist_id=self.gist_access_id, qualified=True)
+        from rhodecode.model.gist import GistModel
+        return GistModel().get_url(self)
 
     @classmethod
     def base_path(cls):

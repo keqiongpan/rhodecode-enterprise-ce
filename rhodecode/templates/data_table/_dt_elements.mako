@@ -241,7 +241,7 @@
 <%def name="gist_access_id(gist_access_id, full_contact)">
     <div>
       <b>
-        <a href="${h.url('gist',gist_id=gist_access_id)}">gist: ${gist_access_id}</a>
+        <a href="${h.route_path('gist_show', gist_id=gist_access_id)}">gist: ${gist_access_id}</a>
       </b>
     </div>
 </%def>

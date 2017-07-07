@@ -15,8 +15,6 @@ function registerRCRoutes() {
     pyroutes.register('new_repo', '/_admin/create_repository', []);
     pyroutes.register('edit_user', '/_admin/users/%(user_id)s/edit', ['user_id']);
     pyroutes.register('edit_user_group_members', '/_admin/user_groups/%(user_group_id)s/edit/members', ['user_group_id']);
-    pyroutes.register('gists', '/_admin/gists', []);
-    pyroutes.register('new_gist', '/_admin/gists/new', []);
     pyroutes.register('toggle_following', '/_admin/toggle_following', []);
     pyroutes.register('changeset_home', '/%(repo_name)s/changeset/%(revision)s', ['repo_name', 'revision']);
     pyroutes.register('changeset_comment', '/%(repo_name)s/changeset/%(revision)s/comment', ['repo_name', 'revision']);
@@ -152,5 +150,16 @@ function registerRCRoutes() {
     pyroutes.register('my_account_notifications', '/_admin/my_account/notifications', []);
     pyroutes.register('my_account_notifications_toggle_visibility', '/_admin/my_account/toggle_visibility', []);
     pyroutes.register('my_account_notifications_test_channelstream', '/_admin/my_account/test_channelstream', []);
+    pyroutes.register('gists_show', '/_admin/gists', []);
+    pyroutes.register('gists_new', '/_admin/gists/new', []);
+    pyroutes.register('gists_create', '/_admin/gists/create', []);
+    pyroutes.register('gist_show', '/_admin/gists/%(gist_id)s', ['gist_id']);
+    pyroutes.register('gist_delete', '/_admin/gists/%(gist_id)s/delete', ['gist_id']);
+    pyroutes.register('gist_edit', '/_admin/gists/%(gist_id)s/edit', ['gist_id']);
+    pyroutes.register('gist_edit_check_revision', '/_admin/gists/%(gist_id)s/edit/check_revision', ['gist_id']);
+    pyroutes.register('gist_update', '/_admin/gists/%(gist_id)s/update', ['gist_id']);
+    pyroutes.register('gist_show_rev', '/_admin/gists/%(gist_id)s/%(revision)s', ['gist_id', 'revision']);
+    pyroutes.register('gist_show_formatted', '/_admin/gists/%(gist_id)s/%(revision)s/%(format)s', ['gist_id', 'revision', 'format']);
+    pyroutes.register('gist_show_formatted_path', '/_admin/gists/%(gist_id)s/%(revision)s/%(format)s/%(f_path)s', ['gist_id', 'revision', 'format', 'f_path']);
     pyroutes.register('apiv2', '/_admin/api', []);
 }

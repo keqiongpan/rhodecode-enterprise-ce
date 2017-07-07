@@ -46,13 +46,13 @@ function setRCMouseBindings(repoName, repoLandingRev) {
         window.location = pyroutes.url('home');
     });
     Mousetrap.bind(['g g'], function(e) {
-        window.location = pyroutes.url('gists', {'private': 1});
+        window.location = pyroutes.url('gists_show', {'private': 1});
     });
     Mousetrap.bind(['g G'], function(e) {
-        window.location = pyroutes.url('gists', {'public': 1});
+        window.location = pyroutes.url('gists_show', {'public': 1});
     });
     Mousetrap.bind(['n g'], function(e) {
-        window.location = pyroutes.url('new_gist');
+        window.location = pyroutes.url('gists_new');
     });
     Mousetrap.bind(['n r'], function(e) {
         window.location = pyroutes.url('new_repo');

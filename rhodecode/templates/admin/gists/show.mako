@@ -18,7 +18,6 @@
 
 <%def name="breadcrumbs_links()">
     ${_('Gist')} &middot; ${c.gist.gist_access_id}
-    / ${_('URL')}: ${c.gist.gist_url()}
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -33,11 +32,12 @@
         %if c.rhodecode_user.username != h.DEFAULT_USER:
         <ul class="links">
           <li>
-              <a href="${h.url('new_gist')}" class="btn btn-primary">${_(u'Create New Gist')}</a>
+              <a href="${h.route_path('gists_new')}" class="btn btn-primary">${_(u'Create New Gist')}</a>
           </li>
         </ul>
         %endif
     </div>
+    <code>${c.gist.gist_url()}</code>
     <div class="table">
         <div id="files_data">
             <div id="codeblock" class="codeblock">
@@ -45,7 +45,7 @@
                     <div class="stats">
                        %if h.HasPermissionAny('hg.admin')() or c.gist.gist_owner == c.rhodecode_user.user_id:
                         <div class="remove_gist">
-                            ${h.secure_form(url('gist', gist_id=c.gist.gist_access_id),method='delete')}
+                            ${h.secure_form(h.route_path('gist_delete', gist_id=c.gist.gist_access_id), method='POST')}
                                 ${h.submit('remove_gist', _('Delete'),class_="btn btn-mini btn-danger",onclick="return confirm('"+_('Confirm to delete this Gist')+"');")}
                             ${h.end_form()}
                         </div>
@@ -53,9 +53,9 @@
                         <div class="buttons">
                           ## only owner should see that
                           %if h.HasPermissionAny('hg.admin')() or c.gist.gist_owner == c.rhodecode_user.user_id:
-                            ${h.link_to(_('Edit'),h.url('edit_gist', gist_id=c.gist.gist_access_id),class_="btn btn-mini")}
+                            ${h.link_to(_('Edit'), h.route_path('gist_edit', gist_id=c.gist.gist_access_id), class_="btn btn-mini")}
                           %endif
-                          ${h.link_to(_('Show as Raw'),h.url('formatted_gist', gist_id=c.gist.gist_access_id, format='raw'),class_="btn btn-mini")}
+                          ${h.link_to(_('Show as Raw'), h.route_path('gist_show_formatted', gist_id=c.gist.gist_access_id, revision='tip', format='raw'), class_="btn btn-mini")}
                         </div>
                         <div class="left" >
                           %if c.gist.gist_type != 'public':
@@ -78,19 +78,21 @@
                         </div>
 
                     </div>
-                    <div class="commit">${h.urlify_commit_message(c.file_last_commit.message,c.repo_name)}</div>
+                    <div class="commit">${h.urlify_commit_message(c.file_last_commit.message, None)}</div>
                 </div>
 
                ## iterate over the files
                % for file in c.files:
                 <% renderer = c.render and h.renderer_from_filename(file.path, exclude=['.txt', '.TXT'])%>
-<!--                 <div id="${h.FID('G', file.path)}" class="stats" >
+                <!--
+                <div id="${h.FID('G', file.path)}" class="stats" >
                     <a href="${c.gist.gist_url()}">¶</a>
                     <b >${file.path}</b>
                     <div>
-                       ${h.link_to(_('Show as raw'),h.url('formatted_gist_file', gist_id=c.gist.gist_access_id, format='raw', revision=file.commit.raw_id, f_path=file.path),class_="btn btn-mini")}
+                       ${h.link_to(_('Show as raw'), h.route_path('gist_show_formatted_path', gist_id=c.gist.gist_access_id, revision=file.commit.raw_id, format='raw', f_path=file.path), class_="btn btn-mini")}
                     </div>
-                </div> -->
+                </div>
+                -->
                 <div class="code-body textarea text-area editor">
                     %if renderer:
                         ${h.render(file.content, renderer=renderer)}

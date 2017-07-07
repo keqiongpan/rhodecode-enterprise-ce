@@ -489,39 +489,6 @@ def make_map(config):
         m.connect('notification', '/notifications/{notification_id}',
                   action='show', conditions={'method': ['GET']})
 
-    # ADMIN GIST
-    with rmap.submapper(path_prefix=ADMIN_PREFIX,
-                        controller='admin/gists') as m:
-        m.connect('gists', '/gists',
-                  action='create', conditions={'method': ['POST']})
-        m.connect('gists', '/gists', jsroute=True,
-                  action='index', conditions={'method': ['GET']})
-        m.connect('new_gist', '/gists/new', jsroute=True,
-                  action='new', conditions={'method': ['GET']})
-
-        m.connect('/gists/{gist_id}',
-                  action='delete', conditions={'method': ['DELETE']})
-        m.connect('edit_gist', '/gists/{gist_id}/edit',
-                  action='edit_form', conditions={'method': ['GET']})
-        m.connect('edit_gist', '/gists/{gist_id}/edit',
-                  action='edit', conditions={'method': ['POST']})
-        m.connect(
-            'edit_gist_check_revision', '/gists/{gist_id}/edit/check_revision',
-            action='check_revision', conditions={'method': ['GET']})
-
-        m.connect('gist', '/gists/{gist_id}',
-                  action='show', conditions={'method': ['GET']})
-        m.connect('gist_rev', '/gists/{gist_id}/{revision}',
-                  revision='tip',
-                  action='show', conditions={'method': ['GET']})
-        m.connect('formatted_gist', '/gists/{gist_id}/{revision}/{format}',
-                  revision='tip',
-                  action='show', conditions={'method': ['GET']})
-        m.connect('formatted_gist_file', '/gists/{gist_id}/{revision}/{format}/{f_path}',
-                  revision='tip',
-                  action='show', conditions={'method': ['GET']},
-                  requirements=URL_NAME_REQUIREMENTS)
-
     # USER JOURNAL
     rmap.connect('journal', '%s/journal' % (ADMIN_PREFIX,),
                  controller='journal', action='index')

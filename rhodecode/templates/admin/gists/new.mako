@@ -25,7 +25,7 @@
 
     <div class="table">
         <div id="files_data">
-          ${h.secure_form(h.url('gists'), method='post',id='eform')}
+          ${h.secure_form(h.route_path('gists_create'), id='eform', method='POST')}
             <div>
                 <textarea id="description" name="description" placeholder="${_('Gist description ...')}"></textarea>
 

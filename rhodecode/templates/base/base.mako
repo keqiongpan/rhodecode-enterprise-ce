@@ -397,7 +397,7 @@
         </li>
       %endif
         <li class="${is_active('gists')}">
-          <a class="menulink childs" title="${_('Show Gists')}" href="${h.url('gists')}">
+          <a class="menulink childs" title="${_('Show Gists')}" href="${h.route_path('gists_show')}">
             <div class="menulabel">${_('Gists')}</div>
           </a>
         </li>

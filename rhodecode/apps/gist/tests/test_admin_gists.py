@@ -27,7 +27,31 @@ from rhodecode.model.gist import GistModel
 from rhodecode.model.meta import Session
 from rhodecode.tests import (
     TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS,
-    TestController, assert_session_flash, url)
+    TestController, assert_session_flash)
+
+
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
+
+    base_url = {
+        'gists_show': ADMIN_PREFIX + '/gists',
+        'gists_new': ADMIN_PREFIX + '/gists/new',
+        'gists_create': ADMIN_PREFIX + '/gists/create',
+        'gist_show': ADMIN_PREFIX + '/gists/{gist_id}',
+        'gist_delete': ADMIN_PREFIX + '/gists/{gist_id}/delete',
+        'gist_edit': ADMIN_PREFIX + '/gists/{gist_id}/edit',
+        'gist_edit_check_revision': ADMIN_PREFIX + '/gists/{gist_id}/edit/check_revision',
+        'gist_update': ADMIN_PREFIX + '/gists/{gist_id}/update',
+        'gist_show_rev': ADMIN_PREFIX + '/gists/{gist_id}/{revision}',
+        'gist_show_formatted': ADMIN_PREFIX + '/gists/{gist_id}/{revision}/{format}',
+        'gist_show_formatted_path': ADMIN_PREFIX + '/gists/{gist_id}/{revision}/{format}/{f_path}',
+
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
 
 
 class GistUtility(object):
@@ -70,7 +94,7 @@ class TestGistsController(TestController):
 
     def test_index_empty(self, create_gist):
         self.log_user()
-        response = self.app.get(url('gists'))
+        response = self.app.get(route_path('gists_show'))
         response.mustcontain('data: [],')
 
     def test_index(self, create_gist):
@@ -79,7 +103,7 @@ class TestGistsController(TestController):
         g2 = create_gist('gist2', lifetime=1400)
         g3 = create_gist('gist3', description='gist3-desc')
         g4 = create_gist('gist4', gist_type='private').gist_access_id
-        response = self.app.get(url('gists'))
+        response = self.app.get(route_path('gists_show'))
 
         response.mustcontain('gist: %s' % g1.gist_access_id)
         response.mustcontain('gist: %s' % g2.gist_access_id)
@@ -95,7 +119,7 @@ class TestGistsController(TestController):
     def test_index_private_gists(self, create_gist):
         self.log_user()
         gist = create_gist('gist5', gist_type='private')
-        response = self.app.get(url('gists', private=1))
+        response = self.app.get(route_path('gists_show', params=dict(private=1)))
 
         # and privates
         response.mustcontain('gist: %s' % gist.gist_access_id)
@@ -107,7 +131,7 @@ class TestGistsController(TestController):
         create_gist('gist3', description='gist3-desc')
         create_gist('gist4', gist_type='private')
 
-        response = self.app.get(url('gists', all=1))
+        response = self.app.get(route_path('gists_show', params=dict(all=1)))
 
         assert len(GistModel.get_all()) == 4
         # and privates
@@ -120,7 +144,7 @@ class TestGistsController(TestController):
         create_gist('gist3', gist_type='private')
         create_gist('gist4', gist_type='private')
 
-        response = self.app.get(url('gists', all=1))
+        response = self.app.get(route_path('gists_show', params=dict(all=1)))
 
         assert len(GistModel.get_all()) == 3
         # since we don't have access to private in this view, we
@@ -131,7 +155,7 @@ class TestGistsController(TestController):
     def test_create(self):
         self.log_user()
         response = self.app.post(
-            url('gists'),
+            route_path('gists_create'),
             params={'lifetime': -1,
                     'content': 'gist test',
                     'filename': 'foo',
@@ -146,7 +170,7 @@ class TestGistsController(TestController):
     def test_create_with_path_with_dirs(self):
         self.log_user()
         response = self.app.post(
-            url('gists'),
+            route_path('gists_create'),
             params={'lifetime': -1,
                     'content': 'gist test',
                     'filename': '/home/foo',
@@ -163,12 +187,13 @@ class TestGistsController(TestController):
         Session().add(gist)
         Session().commit()
 
-        self.app.get(url('gist', gist_id=gist.gist_access_id), status=404)
+        self.app.get(route_path('gist_show', gist_id=gist.gist_access_id),
+                     status=404)
 
     def test_create_private(self):
         self.log_user()
         response = self.app.post(
-            url('gists'),
+            route_path('gists_create'),
             params={'lifetime': -1,
                     'content': 'private gist test',
                     'filename': 'private-foo',
@@ -187,7 +212,7 @@ class TestGistsController(TestController):
     def test_create_private_acl_private(self):
         self.log_user()
         response = self.app.post(
-            url('gists'),
+            route_path('gists_create'),
             params={'lifetime': -1,
                     'content': 'private gist test',
                     'filename': 'private-foo',
@@ -206,7 +231,7 @@ class TestGistsController(TestController):
     def test_create_with_description(self):
         self.log_user()
         response = self.app.post(
-            url('gists'),
+            route_path('gists_create'),
             params={'lifetime': -1,
                     'content': 'gist test',
                     'filename': 'foo-desc',
@@ -231,7 +256,8 @@ class TestGistsController(TestController):
             'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
             'csrf_token': self.csrf_token
         }
-        response = self.app.post(url('gists'), params=params, status=302)
+        response = self.app.post(
+            route_path('gists_create'), params=params, status=302)
         self.logout_user()
         response = response.follow()
         response.mustcontain('added file: foo-desc')
@@ -240,35 +266,36 @@ class TestGistsController(TestController):
 
     def test_new(self):
         self.log_user()
-        self.app.get(url('new_gist'))
+        self.app.get(route_path('gists_new'))
 
     def test_delete(self, create_gist):
         self.log_user()
         gist = create_gist('delete-me')
         response = self.app.post(
-            url('gist', gist_id=gist.gist_id),
-            params={'_method': 'delete', 'csrf_token': self.csrf_token})
+            route_path('gist_delete', gist_id=gist.gist_id),
+            params={'csrf_token': self.csrf_token})
         assert_session_flash(response, 'Deleted gist %s' % gist.gist_id)
 
     def test_delete_normal_user_his_gist(self, create_gist):
         self.log_user(TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
         gist = create_gist('delete-me', owner=TEST_USER_REGULAR_LOGIN)
+
         response = self.app.post(
-            url('gist', gist_id=gist.gist_id),
-            params={'_method': 'delete', 'csrf_token': self.csrf_token})
+            route_path('gist_delete', gist_id=gist.gist_id),
+            params={'csrf_token': self.csrf_token})
         assert_session_flash(response, 'Deleted gist %s' % gist.gist_id)
 
     def test_delete_normal_user_not_his_own_gist(self, create_gist):
         self.log_user(TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
-        gist = create_gist('delete-me')
+        gist = create_gist('delete-me-2')
+
         self.app.post(
-            url('gist', gist_id=gist.gist_id),
-            params={'_method': 'delete', 'csrf_token': self.csrf_token},
-            status=403)
+            route_path('gist_delete', gist_id=gist.gist_id),
+            params={'csrf_token': self.csrf_token}, status=404)
 
     def test_show(self, create_gist):
         gist = create_gist('gist-show-me')
-        response = self.app.get(url('gist', gist_id=gist.gist_access_id))
+        response = self.app.get(route_path('gist_show', gist_id=gist.gist_access_id))
 
         response.mustcontain('added file: gist-show-me<')
 
@@ -283,16 +310,19 @@ class TestGistsController(TestController):
         with mock.patch(
                 'rhodecode.lib.vcs.settings.ALIASES', ['git']):
             gist = create_gist('gist-show-me-again')
-            self.app.get(url('gist', gist_id=gist.gist_access_id), status=200)
+            self.app.get(
+                route_path('gist_show', gist_id=gist.gist_access_id), status=200)
 
     def test_show_acl_private(self, create_gist):
         gist = create_gist('gist-show-me-only-when-im-logged-in',
                            acl_level=Gist.ACL_LEVEL_PRIVATE)
-        self.app.get(url('gist', gist_id=gist.gist_access_id), status=404)
+        self.app.get(
+            route_path('gist_show', gist_id=gist.gist_access_id), status=404)
 
         # now we log-in we should see thi gist
         self.log_user()
-        response = self.app.get(url('gist', gist_id=gist.gist_access_id))
+        response = self.app.get(
+            route_path('gist_show', gist_id=gist.gist_access_id))
         response.mustcontain('added file: gist-show-me-only-when-im-logged-in')
 
         assert_response = response.assert_response()
@@ -303,36 +333,42 @@ class TestGistsController(TestController):
 
     def test_show_as_raw(self, create_gist):
         gist = create_gist('gist-show-me', content='GIST CONTENT')
-        response = self.app.get(url('formatted_gist',
-                                    gist_id=gist.gist_access_id, format='raw'))
+        response = self.app.get(
+            route_path('gist_show_formatted',
+                       gist_id=gist.gist_access_id, revision='tip',
+                       format='raw'))
         assert response.body == 'GIST CONTENT'
 
     def test_show_as_raw_individual_file(self, create_gist):
         gist = create_gist('gist-show-me-raw', content='GIST BODY')
-        response = self.app.get(url('formatted_gist_file',
-                                    gist_id=gist.gist_access_id, format='raw',
-                                    revision='tip', f_path='gist-show-me-raw'))
+        response = self.app.get(
+            route_path('gist_show_formatted_path',
+                       gist_id=gist.gist_access_id, format='raw',
+                       revision='tip', f_path='gist-show-me-raw'))
         assert response.body == 'GIST BODY'
 
     def test_edit_page(self, create_gist):
         self.log_user()
         gist = create_gist('gist-for-edit', content='GIST EDIT BODY')
-        response = self.app.get(url('edit_gist', gist_id=gist.gist_access_id))
+        response = self.app.get(route_path('gist_edit', gist_id=gist.gist_access_id))
         response.mustcontain('GIST EDIT BODY')
 
     def test_edit_page_non_logged_user(self, create_gist):
         gist = create_gist('gist-for-edit', content='GIST EDIT BODY')
-        self.app.get(url('edit_gist', gist_id=gist.gist_access_id), status=302)
+        self.app.get(route_path('gist_edit', gist_id=gist.gist_access_id),
+                     status=302)
 
     def test_edit_normal_user_his_gist(self, create_gist):
         self.log_user(TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
         gist = create_gist('gist-for-edit', owner=TEST_USER_REGULAR_LOGIN)
-        self.app.get(url('edit_gist', gist_id=gist.gist_access_id, status=200))
+        self.app.get(route_path('gist_edit', gist_id=gist.gist_access_id,
+                                status=200))
 
     def test_edit_normal_user_not_his_own_gist(self, create_gist):
         self.log_user(TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
         gist = create_gist('delete-me')
-        self.app.get(url('edit_gist', gist_id=gist.gist_access_id), status=403)
+        self.app.get(route_path('gist_edit', gist_id=gist.gist_access_id),
+                     status=404)
 
     def test_user_first_name_is_escaped(self, user_util, create_gist):
         xss_atack_string = '"><script>alert(\'First Name\')</script>'
@@ -341,7 +377,7 @@ class TestGistsController(TestController):
         user = user_util.create_user(
             firstname=xss_atack_string, password=password)
         create_gist('gist', gist_type='public', owner=user.username)
-        response = self.app.get(url('gists'))
+        response = self.app.get(route_path('gists_show'))
         response.mustcontain(xss_escaped_string)
 
     def test_user_last_name_is_escaped(self, user_util, create_gist):
@@ -351,5 +387,5 @@ class TestGistsController(TestController):
         user = user_util.create_user(
             lastname=xss_atack_string, password=password)
         create_gist('gist', gist_type='public', owner=user.username)
-        response = self.app.get(url('gists'))
+        response = self.app.get(route_path('gists_show'))
         response.mustcontain(xss_escaped_string)
