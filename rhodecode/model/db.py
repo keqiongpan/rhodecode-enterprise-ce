@@ -1957,6 +1957,7 @@ class Repository(Base, BaseModel):
         return clone_uri
 
     def clone_url(self, **override):
+        from rhodecode.model.settings import SettingsModel
 
         uri_tmpl = None
         if 'with_id' in override:
@@ -1969,14 +1970,9 @@ class Repository(Base, BaseModel):
 
         # we didn't override our tmpl from **overrides
         if not uri_tmpl:
-            uri_tmpl = self.DEFAULT_CLONE_URI
-            try:
-                from pylons import tmpl_context as c
-                uri_tmpl = c.clone_uri_tmpl
-            except Exception:
-                # in any case if we call this outside of request context,
-                # ie, not having tmpl_context set up
-                pass
+            rc_config = SettingsModel().get_all_settings(cache=True)
+            uri_tmpl = rc_config.get(
+                'rhodecode_clone_uri_tmpl') or self.DEFAULT_CLONE_URI
 
         request = get_current_request()
         return get_clone_url(request=request,
