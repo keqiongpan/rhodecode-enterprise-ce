@@ -24,7 +24,6 @@ import logging
 from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.lib import helpers as h
-from rhodecode.lib.utils import PartialRenderer
 from rhodecode.lib.utils2 import StrictAttributeDict, safe_int, datetime_to_time
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.lib.ext_json import json
@@ -219,8 +218,8 @@ class BaseReferencesView(RepoAppView):
         return c
 
     def load_refs_context(self, ref_items, partials_template):
-        _render = PartialRenderer(partials_template)
         _data = []
+        _render = self.request.get_partial_renderer(partials_template)
         pre_load = ["author", "date", "message"]
 
         is_svn = h.is_svn(self.rhodecode_vcs_repo)

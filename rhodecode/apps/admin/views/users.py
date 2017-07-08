@@ -33,7 +33,6 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h
-from rhodecode.lib.utils import PartialRenderer
 from rhodecode.lib.utils2 import safe_int, safe_unicode
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.user import UserModel
@@ -82,7 +81,8 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(self.request)
 
-        _render = PartialRenderer('data_table/_dt_elements.mako')
+        _render = self.request.get_partial_renderer(
+            'data_table/_dt_elements.mako')
 
         def user_actions(user_id, username):
             return _render("user_actions", user_id, username)

@@ -28,7 +28,6 @@ from rhodecode.apps._base import RepoAppView, DataGridAppView
 from rhodecode.lib import helpers as h, diffs, codeblocks
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator)
-from rhodecode.lib.utils import PartialRenderer
 from rhodecode.lib.utils2 import str2bool, safe_int, safe_str
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError, \
@@ -57,7 +56,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(self.request)
-        _render = PartialRenderer('data_table/_dt_elements.mako')
+        _render = self.request.get_partial_renderer(
+            'data_table/_dt_elements.mako')
 
         # pagination
 

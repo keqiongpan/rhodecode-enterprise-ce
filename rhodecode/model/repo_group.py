@@ -673,10 +673,11 @@ class RepoGroupModel(BaseModel):
     def get_repo_groups_as_dict(self, repo_group_list=None, admin=False,
                                 super_user_actions=False):
 
-        from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.mako')
-        c = _render.c
-        h = _render.h
+        from pyramid.threadlocal import get_current_request
+        _render = get_current_request().get_partial_renderer(
+            'data_table/_dt_elements.mako')
+        c = _render.get_call_context()
+        h = _render.get_helpers()
 
         def quick_menu(repo_group_name):
             return _render('quick_repo_group_menu', repo_group_name)

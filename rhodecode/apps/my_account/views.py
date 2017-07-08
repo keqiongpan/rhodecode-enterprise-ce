@@ -35,7 +35,6 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
 from rhodecode.lib.channelstream import channelstream_request, \
     ChannelstreamException
-from rhodecode.lib.utils import PartialRenderer
 from rhodecode.lib.utils2 import safe_int, md5, str2bool
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.comment import CommentsModel
@@ -496,7 +495,8 @@ class MyAccountView(BaseAppView, DataGridAppView):
     def _get_pull_requests_list(self, statuses):
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(self.request)
-        _render = PartialRenderer('data_table/_dt_elements.mako')
+        _render = self.request.get_partial_renderer(
+            'data_table/_dt_elements.mako')
 
         pull_requests = PullRequestModel().get_im_participating_in(
             user_id=self._rhodecode_user.user_id,

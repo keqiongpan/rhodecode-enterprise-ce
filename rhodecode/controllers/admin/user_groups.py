@@ -106,9 +106,10 @@ class UserGroupsController(BaseController):
     # permission check inside
     @NotAnonymous()
     def index(self):
-
-        from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.mako')
+        # TODO(marcink): remove bind to self.request after pyramid migration
+        self.request = c.pyramid_request
+        _render = self.request.get_partial_renderer(
+            'data_table/_dt_elements.mako')
 
         def user_group_name(user_group_id, user_group_name):
             return _render("user_group_name", user_group_id, user_group_name)

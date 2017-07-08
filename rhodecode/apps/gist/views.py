@@ -112,8 +112,8 @@ class GistView(BaseAppView):
             gists = _gists.filter(Gist.gist_type == Gist.GIST_PUBLIC)
             c.active = 'public'
 
-        from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.mako')
+        _render = self.request.get_partial_renderer(
+            'data_table/_dt_elements.mako')
 
         data = []
 
