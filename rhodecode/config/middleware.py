@@ -319,6 +319,10 @@ def includeme(config):
     config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
     config.add_subscriber(write_js_routes_if_enabled, ApplicationCreated)
 
+    config.add_request_method(
+        'rhodecode.lib.partial_renderer.get_partial_renderer',
+        'get_partial_renderer')
+
     # events
     # TODO(marcink): this should be done when pyramid migration is finished
     # config.add_subscriber(
