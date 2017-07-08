@@ -22,7 +22,6 @@
 import logging
 import collections
 
-from pylons import url
 from zope.interface import implementer
 
 from rhodecode.apps.admin.interfaces import IAdminNavigationRegistry
@@ -64,6 +63,7 @@ class NavEntry(object):
                 pyramid_request = get_current_request()
                 return pyramid_request.route_path(self.view_name)
         else:
+            from pylons import url
             return url(self.view_name)
 
     def get_localized_name(self, request):

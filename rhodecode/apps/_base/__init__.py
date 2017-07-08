@@ -20,7 +20,7 @@
 
 import time
 import logging
-from pylons import tmpl_context as c
+
 from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.lib import helpers as h
@@ -120,6 +120,7 @@ class BaseAppView(object):
         Registers attributes to pylons global `c`
         """
         # TODO(marcink): remove once pyramid migration is finished
+        from pylons import tmpl_context as c
         for k, v in tmpl_args.items():
             setattr(c, k, v)
 
