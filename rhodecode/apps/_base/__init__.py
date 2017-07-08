@@ -26,7 +26,6 @@ from pyramid.httpexceptions import HTTPFound
 from rhodecode.lib import helpers as h
 from rhodecode.lib.utils2 import StrictAttributeDict, safe_int, datetime_to_time
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
-from rhodecode.lib.ext_json import json
 from rhodecode.model import repo
 from rhodecode.model import repo_group
 from rhodecode.model.db import User
@@ -218,28 +217,35 @@ class BaseReferencesView(RepoAppView):
         return c
 
     def load_refs_context(self, ref_items, partials_template):
-        _data = []
         _render = self.request.get_partial_renderer(partials_template)
         pre_load = ["author", "date", "message"]
 
         is_svn = h.is_svn(self.rhodecode_vcs_repo)
+        is_hg = h.is_hg(self.rhodecode_vcs_repo)
+
         format_ref_id = get_format_ref_id(self.rhodecode_vcs_repo)
 
+        closed_refs = {}
+        if is_hg:
+            closed_refs = self.rhodecode_vcs_repo.branches_closed
+
+        data = []
         for ref_name, commit_id in ref_items:
             commit = self.rhodecode_vcs_repo.get_commit(
                 commit_id=commit_id, pre_load=pre_load)
+            closed = ref_name in closed_refs
 
             # TODO: johbo: Unify generation of reference links
             use_commit_id = '/' in ref_name or is_svn
             files_url = h.url(
                 'files_home',
-                repo_name=c.repo_name,
+                repo_name=self.db_repo_name,
                 f_path=ref_name if is_svn else '',
                 revision=commit_id if use_commit_id else ref_name,
                 at=ref_name)
 
-            _data.append({
-                "name": _render('name', ref_name, files_url),
+            data.append({
+                "name": _render('name', ref_name, files_url, closed),
                 "name_raw": ref_name,
                 "date": _render('date', commit.date),
                 "date_raw": datetime_to_time(commit.date),
@@ -250,8 +256,8 @@ class BaseReferencesView(RepoAppView):
                 "compare": _render(
                     'compare', format_ref_id(ref_name, commit.raw_id)),
             })
-        c.has_references = bool(_data)
-        c.data = json.dumps(_data)
+
+        return data
 
 
 class RepoRoutePredicate(object):

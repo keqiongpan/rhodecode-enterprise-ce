@@ -8,7 +8,7 @@
     <input class="compare-radio-button" type="radio" name="compare_target" value="${commit_id}"/>
 </%def>
 
-<%def name="name(name, files_url)">
+<%def name="name(name, files_url, closed)">
      <span class="tagtag tag" title="${h.tooltip(_('Tag %s') % (name,))}">
      <a href="${files_url}"><i class="icon-tag"></i>${name}</a>
      </span>

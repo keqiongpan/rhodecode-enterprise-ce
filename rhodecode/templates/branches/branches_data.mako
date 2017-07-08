@@ -8,10 +8,10 @@
     <input class="compare-radio-button" type="radio" name="compare_target" value="${commit_id}"/>
 </%def>
 
-<%def name="name(name, files_url)">
+<%def name="name(name, files_url, closed)">
      <span class="tag branchtag" title="${h.tooltip(_('Branch %s') % (name,))}">
      <a href="${files_url}"><i class="icon-code-fork"></i>${name}
-        %if name in c.closed_branches:
+        %if closed:
             [closed]
         %endif
     </a>

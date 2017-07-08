@@ -9,7 +9,7 @@
 </%def>
 
 
-<%def name="name(name, files_url)">
+<%def name="name(name, files_url, closed)">
      <span class="tag booktag" title="${h.tooltip(_('Bookmark %s') % (name,))}">
      <a href="${files_url}">
          <i class="icon-bookmark"></i>
