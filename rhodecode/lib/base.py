@@ -265,13 +265,13 @@ class BasicAuth(AuthBasicAuthenticator):
     __call__ = authenticate
 
 
-def attach_context_attributes(context, request, user_id, attach_to_request=False):
 def calculate_version_hash():
     return md5(
         config.get('beaker.session.secret', '') +
         rhodecode.__version__)[:8]
 
 
+def attach_context_attributes(context, request, user_id):
     """
     Attach variables into template context called `c`, please note that
     request could be pylons or pyramid request in here.
@@ -397,11 +397,10 @@ def calculate_version_hash():
     context.backends = rhodecode.BACKENDS.keys()
     context.backends.sort()
     context.unread_notifications = NotificationModel().get_unread_cnt_for_user(user_id)
-    if attach_to_request:
-        request.call_context = context
-    else:
-        context.pyramid_request = pyramid.threadlocal.get_current_request()
+    context.pyramid_request = pyramid.threadlocal.get_current_request()
 
+    # attach the whole call context to the request
+    request.call_context = context
 
 
 def get_auth_user(environ):

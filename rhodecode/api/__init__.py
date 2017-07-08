@@ -281,8 +281,8 @@ def request_view(request):
     })
 
     # register some common functions for usage
-    attach_context_attributes(TemplateArgs(), request, request.rpc_user.user_id,
-                              attach_to_request=True)
+    attach_context_attributes(
+        TemplateArgs(), request, request.rpc_user.user_id)
 
     try:
         ret_value = func(**call_params)
