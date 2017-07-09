@@ -92,17 +92,17 @@
 
 <%def name="rss(name)">
   %if c.rhodecode_user.username != h.DEFAULT_USER:
-    <a title="${h.tooltip(_('Subscribe to %s rss feed')% name)}" href="${h.url('rss_feed_home',repo_name=name,auth_token=c.rhodecode_user.feed_token)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s rss feed')% name)}" href="${h.route_path('rss_feed_home', repo_name=name, _query=dict(auth_token=c.rhodecode_user.feed_token))}"><i class="icon-rss-sign"></i></a>
   %else:
-    <a title="${h.tooltip(_('Subscribe to %s rss feed')% name)}" href="${h.url('rss_feed_home',repo_name=name)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s rss feed')% name)}" href="${h.route_path('rss_feed_home', repo_name=name)}"><i class="icon-rss-sign"></i></a>
   %endif
 </%def>
 
 <%def name="atom(name)">
   %if c.rhodecode_user.username != h.DEFAULT_USER:
-    <a title="${h.tooltip(_('Subscribe to %s atom feed')% name)}" href="${h.url('atom_feed_home',repo_name=name,auth_token=c.rhodecode_user.feed_token)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s atom feed')% name)}" href="${h.route_path('atom_feed_home', repo_name=name, _query=dict(auth_token=c.rhodecode_user.feed_token))}"><i class="icon-rss-sign"></i></a>
   %else:
-    <a title="${h.tooltip(_('Subscribe to %s atom feed')% name)}" href="${h.url('atom_feed_home',repo_name=name)}"><i class="icon-rss-sign"></i></a>
+    <a title="${h.tooltip(_('Subscribe to %s atom feed')% name)}" href="${h.route_path('atom_feed_home', repo_name=name)}"><i class="icon-rss-sign"></i></a>
   %endif
 </%def>
 

@@ -14,9 +14,9 @@
     <ul class="links icon-only-links block-right">
       <li>
      %if c.rhodecode_user.username != h.DEFAULT_USER:
-       <a href="${h.url('atom_feed_home',repo_name=c.rhodecode_db_repo.repo_name,auth_token=c.rhodecode_user.feed_token)}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
+       <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
      %else:
-       <a href="${h.url('atom_feed_home',repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
+       <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
      %endif
       </li>
     </ul>

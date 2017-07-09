@@ -113,6 +113,9 @@ function registerRCRoutes() {
     pyroutes.register('pullrequest_show', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_show_all', '/%(repo_name)s/pull-request', ['repo_name']);
     pyroutes.register('pullrequest_show_all_data', '/%(repo_name)s/pull-request-data', ['repo_name']);
+    pyroutes.register('changeset_home', '/%(repo_name)s/changeset/%(revision)s', ['repo_name', 'revision']);
+    pyroutes.register('changeset_children', '/%(repo_name)s/changeset_children/%(revision)s', ['repo_name', 'revision']);
+    pyroutes.register('changeset_parents', '/%(repo_name)s/changeset_parents/%(revision)s', ['repo_name', 'revision']);
     pyroutes.register('edit_repo', '/%(repo_name)s/settings', ['repo_name']);
     pyroutes.register('edit_repo_advanced', '/%(repo_name)s/settings/advanced', ['repo_name']);
     pyroutes.register('edit_repo_advanced_delete', '/%(repo_name)s/settings/advanced/delete', ['repo_name']);
@@ -128,6 +131,8 @@ function registerRCRoutes() {
     pyroutes.register('strip', '/%(repo_name)s/settings/strip', ['repo_name']);
     pyroutes.register('strip_check', '/%(repo_name)s/settings/strip_check', ['repo_name']);
     pyroutes.register('strip_execute', '/%(repo_name)s/settings/strip_execute', ['repo_name']);
+    pyroutes.register('rss_feed_home', '/%(repo_name)s/feed/rss', ['repo_name']);
+    pyroutes.register('atom_feed_home', '/%(repo_name)s/feed/atom', ['repo_name']);
     pyroutes.register('repo_summary', '/%(repo_name)s', ['repo_name']);
     pyroutes.register('repo_summary_slash', '/%(repo_name)s/', ['repo_name']);
     pyroutes.register('repo_group_home', '/%(repo_group_name)s', ['repo_group_name']);

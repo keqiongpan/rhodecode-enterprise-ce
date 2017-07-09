@@ -80,6 +80,21 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/pull-request-data',
         repo_route=True, repo_accepted_types=['hg', 'git'])
 
+    # commits aka changesets
+    # TODO(dan): handle default landing revision ?
+    config.add_route(
+        name='changeset_home',
+        pattern='/{repo_name:.*?[^/]}/changeset/{revision}',
+        repo_route=True)
+    config.add_route(
+        name='changeset_children',
+        pattern='/{repo_name:.*?[^/]}/changeset_children/{revision}',
+        repo_route=True)
+    config.add_route(
+        name='changeset_parents',
+        pattern='/{repo_name:.*?[^/]}/changeset_parents/{revision}',
+        repo_route=True)
+
     # Settings
     config.add_route(
         name='edit_repo',
@@ -142,6 +157,15 @@ def includeme(config):
     config.add_route(
         name='strip_execute',
         pattern='/{repo_name:.*?[^/]}/settings/strip_execute', repo_route=True)
+
+    # ATOM/RSS Feed
+    config.add_route(
+        name='rss_feed_home',
+        pattern='/{repo_name:.*?[^/]}/feed/rss', repo_route=True)
+
+    config.add_route(
+        name='atom_feed_home',
+        pattern='/{repo_name:.*?[^/]}/feed/atom', repo_route=True)
 
     # NOTE(marcink): needs to be at the end for catch-all
     add_route_with_slash(
