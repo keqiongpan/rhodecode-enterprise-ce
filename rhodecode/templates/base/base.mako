@@ -425,7 +425,7 @@
       % endif
       % if c.debug_style:
       <li class="${is_active('debug_style')}">
-          <a class="menulink" title="${_('Style')}" href="${h.url('debug_style_home')}">
+          <a class="menulink" title="${_('Style')}" href="${h.route_path('debug_style_home')}">
             <div class="menulabel">${_('Style')}</div>
           </a>
       </li>

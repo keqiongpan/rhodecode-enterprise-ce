@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2017 RhodeCode GmbH
+# Copyright (C) 2016-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -17,23 +17,26 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
-"""
-Provides a few url endpoints that help understanding the styling concept.
-"""
-import os
-
-from pylons import tmpl_context as c
-
-from rhodecode.lib.base import BaseController, render
+from rhodecode.apps._base import ADMIN_PREFIX
+from rhodecode.lib.utils2 import str2bool
 
 
-class DebugStyleController(BaseController):
+def debug_style_enabled(info, request):
+    return str2bool(request.registry.settings.get('debug_style'))
 
-    def index(self):
-        c.active = 'index'
-        return render('debug_style/index.html')
 
-    def template(self, t_path):
-        c.active = os.path.splitext(t_path)[0]
-        return render('debug_style/' + t_path)
+def includeme(config):
+    config.add_route(
+        name='debug_style_home',
+        pattern=ADMIN_PREFIX + '/debug_style',
+        custom_predicates=(debug_style_enabled,))
+    config.add_route(
+        name='debug_style_template',
+        pattern=ADMIN_PREFIX + '/debug_style/t/{t_path}',
+        custom_predicates=(debug_style_enabled,))
+
+    # Scan module for configuration decorators.
+    config.scan()
+
+
+

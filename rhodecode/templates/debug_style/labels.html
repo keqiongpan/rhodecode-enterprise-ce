@@ -2,7 +2,7 @@
 <%inherit file="/debug_style/index.html"/>
 
 <%def name="breadcrumbs_links()">
-    ${h.link_to(_('Style'), h.url('debug_style_home'))}
+    ${h.link_to(_('Style'), h.route_path('debug_style_home'))}
     &raquo;
     ${c.active}
 </%def>

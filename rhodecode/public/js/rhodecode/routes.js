@@ -170,5 +170,7 @@ function registerRCRoutes() {
     pyroutes.register('gist_show_rev', '/_admin/gists/%(gist_id)s/%(revision)s', ['gist_id', 'revision']);
     pyroutes.register('gist_show_formatted', '/_admin/gists/%(gist_id)s/%(revision)s/%(format)s', ['gist_id', 'revision', 'format']);
     pyroutes.register('gist_show_formatted_path', '/_admin/gists/%(gist_id)s/%(revision)s/%(format)s/%(f_path)s', ['gist_id', 'revision', 'format', 'f_path']);
+    pyroutes.register('debug_style_home', '/_admin/debug_style', []);
+    pyroutes.register('debug_style_template', '/_admin/debug_style/t/%(t_path)s', ['t_path']);
     pyroutes.register('apiv2', '/_admin/api', []);
 }

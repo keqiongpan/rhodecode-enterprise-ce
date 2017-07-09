@@ -305,6 +305,7 @@ def includeme(config):
     config.include('rhodecode.apps.svn_support')
     config.include('rhodecode.apps.gist')
 
+    config.include('rhodecode.apps.debug_style')
     config.include('rhodecode.tweens')
     config.include('rhodecode.api')
 

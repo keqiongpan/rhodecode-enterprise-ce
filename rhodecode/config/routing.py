@@ -369,15 +369,6 @@ def make_map(config):
         m.connect('admin_defaults_repositories', '/defaults/repositories',
                   action='index', conditions={'method': ['GET']})
 
-    # ADMIN DEBUG STYLE ROUTES
-    if str2bool(config.get('debug_style')):
-        with rmap.submapper(path_prefix=ADMIN_PREFIX + '/debug_style',
-                            controller='debug_style') as m:
-            m.connect('debug_style_home', '',
-                      action='index', conditions={'method': ['GET']})
-            m.connect('debug_style_template', '/t/{t_path}',
-                      action='template', conditions={'method': ['GET']})
-
     # ADMIN SETTINGS ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/settings') as m:
