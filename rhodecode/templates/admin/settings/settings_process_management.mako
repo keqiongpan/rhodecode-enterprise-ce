@@ -37,9 +37,10 @@
                     VMS:${h.format_byte_size_binary(mem.vms)}
                 </td>
                 <td>
-                    MASTER [children: ${len(children)}]
+                    MASTER
                 </td>
             </tr>
+            <% mem_sum = 0 %>
             % for proc_child in children:
                 <% mem = proc_child.memory_info()%>
                 <tr>
@@ -59,6 +60,7 @@
                     </td>
                     <td>
                         RSS:${h.format_byte_size_binary(mem.rss)}
+                        <% mem_sum += mem.rss %>
                     </td>
                     <td>
                         VMS:${h.format_byte_size_binary(mem.vms)}
@@ -70,6 +72,13 @@
                     </td>
                 </tr>
             % endfor
+            <tr>
+                <td colspan="2"><code>| total processes: ${len(children)}</code></td>
+                <td></td>
+                <td><strong>RSS:${h.format_byte_size_binary(mem_sum)}</strong></td>
+                <td></td>
+            </tr>
+            <tr><td> <code> - </code> </td></tr>
 
             % endif
         % endfor
