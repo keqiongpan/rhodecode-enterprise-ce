@@ -660,14 +660,17 @@ class _Message(object):
 
 class Flash(_Flash):
 
-    def pop_messages(self):
+    def pop_messages(self, request=None):
         """Return all accumulated messages and delete them from the session.
 
         The return value is a list of ``Message`` objects.
         """
-        from pylons import session
-
         messages = []
+
+        if request:
+            session = request.session
+        else:
+            from pylons import session
 
         # Pop the 'old' pylons flash messages. They are tuples of the form
         # (category, message)
