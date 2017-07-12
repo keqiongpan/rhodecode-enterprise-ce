@@ -271,6 +271,16 @@ def calculate_version_hash():
         rhodecode.__version__)[:8]
 
 
+def get_current_lang(request):
+    # NOTE(marcink): remove after pyramid move
+    try:
+        return translation.get_lang()[0]
+    except:
+        pass
+
+    return getattr(request, '_LOCALE_', None)
+
+
 def attach_context_attributes(context, request, user_id):
     """
     Attach variables into template context called `c`, please note that
@@ -284,7 +294,7 @@ def attach_context_attributes(context, request, user_id):
     context.rhodecode_version_hash = calculate_version_hash()
 
     # Default language set for the incoming request
-    context.language = translation.get_lang()[0]
+    context.language = get_current_lang(request)
 
     # Visual options
     context.visual = AttributeDict({})
