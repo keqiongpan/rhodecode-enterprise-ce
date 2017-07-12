@@ -414,15 +414,15 @@ class TestRepositoryArchival(object):
                                         fname=fname))
 
             assert response.status == '200 OK'
-            headers = {
-                'Pragma': 'no-cache',
-                'Cache-Control': 'no-cache',
-                'Content-Disposition': 'attachment; filename=%s' % filename,
-                'Content-Type': '%s; charset=utf-8' % mime_type,
-            }
+            headers = [
+                ('Pragma', 'no-cache'),
+                ('Cache-Control', 'no-cache'),
+                ('Content-Disposition', 'attachment; filename=%s' % filename),
+                ('Content-Type', '%s' % mime_type),
+            ]
             if 'Set-Cookie' in response.response.headers:
                 del response.response.headers['Set-Cookie']
-            assert response.response.headers == headers
+            assert response.response.headers.items() == headers
 
     def test_archival_wrong_ext(self, backend):
         backend.enable_downloads()

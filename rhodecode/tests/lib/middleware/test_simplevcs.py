@@ -56,7 +56,10 @@ class StubVCSController(simplevcs.SimpleVCS):
 
     def _create_wsgi_app(self, repo_path, repo_name, config):
         def fake_app(environ, start_response):
-            start_response('200 OK', [])
+            headers = [
+                ('Http-Accept', 'application/mercurial')
+            ]
+            start_response('200 OK', headers)
             return self.stub_response_body
         return fake_app
 
@@ -90,8 +93,6 @@ def _remove_default_user_from_query_cache():
         FromCache("sql_cache_short", "get_user_%s" % _hash_key(user.username)))
     query.invalidate()
     Session().expire(user)
-
-
 
 
 def test_handles_exceptions_during_permissions_checks(
@@ -220,6 +221,7 @@ class TestShadowRepoExposure(object):
         controller.stub_response_body = 'dummy body value'
         environ_stub = {
             'HTTP_HOST': 'test.example.com',
+            'HTTP_ACCEPT': 'application/mercurial',
             'REQUEST_METHOD': 'GET',
             'wsgi.url_scheme': 'http',
         }
@@ -241,6 +243,7 @@ class TestShadowRepoExposure(object):
         controller.stub_response_body = 'dummy body value'
         environ_stub = {
             'HTTP_HOST': 'test.example.com',
+            'HTTP_ACCEPT': 'application/mercurial',
             'REQUEST_METHOD': 'GET',
             'wsgi.url_scheme': 'http',
         }

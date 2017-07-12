@@ -1105,6 +1105,9 @@ def get_csrf_token(session=None, force_new=False, save_if_missing=True):
     :param save_if_missing: save the newly generated token if it's missing in
         session
     """
+    # NOTE(marcink): probably should be replaced with below one from pyramid 1.9
+    # from pyramid.csrf import get_csrf_token
+
     if not session:
         from pylons import session
 

@@ -48,10 +48,11 @@ log = logging.getLogger(__name__)
 
 
 def add_renderer_globals(event):
+    from rhodecode.lib import helpers
+
+    # NOTE(marcink):
     # Put pylons stuff into the context. This will be removed as soon as
     # migration to pyramid is finished.
-    conf = pylons.config._current_obj()
-    event['h'] = conf.get('pylons.h')
     event['c'] = pylons.tmpl_context
     event['url'] = pylons.url
 
@@ -62,6 +63,7 @@ def add_renderer_globals(event):
     # Add Pyramid translation as '_' to context
     event['_'] = request.translate
     event['_ungettext'] = request.plularize
+    event['h'] = helpers
 
 
 def add_localizer(event):

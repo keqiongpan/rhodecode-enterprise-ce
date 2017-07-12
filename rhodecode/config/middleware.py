@@ -111,14 +111,6 @@ def make_app(global_conf, static_files=True, **app_conf):
 
     # The Pylons WSGI app
     app = PylonsApp(config=config)
-    if rhodecode.is_test:
-        app = csrf.CSRFDetector(app)
-
-    expected_origin = config.get('expected_origin')
-    if expected_origin:
-        # The API can be accessed from other Origins.
-        app = csrf.OriginChecker(app, expected_origin,
-                                 skip_urls=[routes.util.url_for('api')])
 
     # Establish the Registry for this application
     app = RegistryManager(app)

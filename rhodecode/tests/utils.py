@@ -29,9 +29,10 @@ from lxml.html import fromstring, tostring
 from lxml.cssselect import CSSSelector
 from urlparse import urlparse, parse_qsl
 from urllib import unquote_plus
+import webob
 
-from webtest.app import (
-    Request, TestResponse, TestApp, print_stderr, string_types)
+from webtest.app import TestResponse, TestApp, string_types
+from webtest.compat import print_stderr
 
 import pytest
 import rc_testdata
@@ -103,7 +104,7 @@ class CustomTestResponse(TestResponse):
         return self.request.environ['beaker.session']
 
 
-class TestRequest(Request):
+class TestRequest(webob.BaseRequest):
 
     # for py.test
     disabled = True

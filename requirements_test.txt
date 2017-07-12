@@ -10,6 +10,6 @@ gprof2dot==2016.10.13
 pytest-timeout==1.2.0
 
 mock==1.0.1
-WebTest==1.4.3
+WebTest==2.0.27
 cov-core==1.15.0
 coverage==3.7.1

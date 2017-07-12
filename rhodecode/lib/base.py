@@ -33,7 +33,7 @@ import pyramid.threadlocal
 from paste.auth.basic import AuthBasicAuthenticator
 from paste.httpexceptions import HTTPUnauthorized, HTTPForbidden, get_exception
 from paste.httpheaders import WWW_AUTHENTICATE, AUTHORIZATION
-from pylons import config, tmpl_context as c, request, session, url
+from pylons import config, tmpl_context as c, request, url
 from pylons.controllers import WSGIController
 from pylons.controllers.util import redirect
 from pylons.i18n import translation
@@ -403,11 +403,25 @@ def attach_context_attributes(context, request, user_id):
     if request.session.get('diffmode') != diffmode:
         request.session['diffmode'] = diffmode
 
-    context.csrf_token = auth.get_csrf_token()
+    context.csrf_token = auth.get_csrf_token(session=request.session)
     context.backends = rhodecode.BACKENDS.keys()
     context.backends.sort()
     context.unread_notifications = NotificationModel().get_unread_cnt_for_user(user_id)
-    context.pyramid_request = pyramid.threadlocal.get_current_request()
+
+    # NOTE(marcink): when migrated to pyramid we don't need to set this anymore,
+    # given request will ALWAYS be pyramid one
+    pyramid_request = pyramid.threadlocal.get_current_request()
+    context.pyramid_request = pyramid_request
+
+    # web case
+    if hasattr(pyramid_request, 'user'):
+        context.auth_user = pyramid_request.user
+        context.rhodecode_user = pyramid_request.user
+
+    # api case
+    if hasattr(pyramid_request, 'rpc_user'):
+        context.auth_user = pyramid_request.rpc_user
+        context.rhodecode_user = pyramid_request.rpc_user
 
     # attach the whole call context to the request
     request.call_context = context
@@ -463,7 +477,7 @@ class BaseController(WSGIController):
         """
         # on each call propagate settings calls into global settings.
         set_rhodecode_config(config)
-        attach_context_attributes(c, request, c.rhodecode_user.user_id)
+        attach_context_attributes(c, request, self._rhodecode_user.user_id)
 
         # TODO: Remove this when fixed in attach_context_attributes()
         c.repo_name = get_repo_slug(request)  # can be empty
@@ -510,7 +524,7 @@ class BaseController(WSGIController):
 
         # set globals for auth user
         request.user = auth_user
-        c.rhodecode_user = self._rhodecode_user = auth_user
+        self._rhodecode_user = auth_user
 
         log.info('IP: %s User: %s accessed %s [%s]' % (
             self.ip_addr, auth_user, safe_unicode(get_access_path(environ)),

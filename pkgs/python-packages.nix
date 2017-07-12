@@ -302,26 +302,26 @@
     };
   };
   WebOb = super.buildPythonPackage {
-    name = "WebOb-1.3.1";
+    name = "WebOb-1.7.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/16/78/adfc0380b8a0d75b2d543fa7085ba98a573b1ae486d9def88d172b81b9fa/WebOb-1.3.1.tar.gz";
-      md5 = "20918251c5726956ba8fef22d1556177";
+      url = "https://pypi.python.org/packages/46/87/2f96d8d43b2078fae6e1d33fa86b95c228cebed060f4e3c7576cc44ea83b/WebOb-1.7.3.tar.gz";
+      md5 = "350028baffc508e3d23c078118e35316";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   WebTest = super.buildPythonPackage {
-    name = "WebTest-1.4.3";
+    name = "WebTest-2.0.27";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [WebOb];
+    propagatedBuildInputs = with self; [six WebOb waitress beautifulsoup4];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/51/3d/84fd0f628df10b30c7db87895f56d0158e5411206b721ca903cb51bfd948/WebTest-1.4.3.zip";
-      md5 = "631ce728bed92c681a4020a36adbc353";
+      url = "https://pypi.python.org/packages/80/fa/ca3a759985c72e3a124cbca3e1f8a2e931a07ffd31fd45d8f7bf21cb95cf/WebTest-2.0.27.tar.gz";
+      md5 = "54e6515ac71c51b6fc90179483c749ad";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -426,6 +426,19 @@
     src = fetchurl {
       url = "https://pypi.python.org/packages/ec/9c/368086faa9c016efce5da3e0e13ba392c9db79e3ab740b763fe28620b18b/backports.shutil_get_terminal_size-1.0.0.tar.gz";
       md5 = "03267762480bd86b50580dc19dff3c66";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  beautifulsoup4 = super.buildPythonPackage {
+    name = "beautifulsoup4-4.6.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/fa/8d/1d14391fdaed5abada4e0f63543fef49b8331a34ca60c88bd521bcf7f782/beautifulsoup4-4.6.0.tar.gz";
+      md5 = "c17714d0f91a23b708a592cb3c697728";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -990,6 +1003,19 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  hupper = super.buildPythonPackage {
+    name = "hupper-1.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/2e/07/df892c564dc09bb3cf6f6deb976c26adf9117db75ba218cb4353dbc9d826/hupper-1.0.tar.gz";
+      md5 = "26e77da7d5ac5858f59af050d1a6eb5a";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   kombu = super.buildPythonPackage {
     name = "kombu-1.5.1";
     buildInputs = with self; [];
@@ -1211,6 +1237,32 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  plaster = super.buildPythonPackage {
+    name = "plaster-0.5";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [setuptools];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/99/b3/d7ca1fe31d2b56dba68a238721fda6820770f9c2a3de17a582d4b5b2edcc/plaster-0.5.tar.gz";
+      md5 = "c59345a67a860cfcaa1bd6a81451399d";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  plaster-pastedeploy = super.buildPythonPackage {
+    name = "plaster-pastedeploy-0.4.1";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [PasteDeploy plaster];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/9d/6e/f8be01ed41c94e6c54ac97cf2eb142a702aae0c8cce31c846f785e525b40/plaster_pastedeploy-0.4.1.tar.gz";
+      md5 = "f48d5344b922e56c4978eebf1cd2e0d3";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   prompt-toolkit = super.buildPythonPackage {
     name = "prompt-toolkit-1.0.14";
     buildInputs = with self; [];
@@ -1368,13 +1420,13 @@
     };
   };
   pyramid = super.buildPythonPackage {
-    name = "pyramid-1.7.4";
+    name = "pyramid-1.9";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [setuptools WebOb repoze.lru zope.interface zope.deprecation venusian translationstring PasteDeploy];
+    propagatedBuildInputs = with self; [setuptools WebOb repoze.lru zope.interface zope.deprecation venusian translationstring PasteDeploy plaster plaster-pastedeploy hupper];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/33/91/55f5c661f8923902cd1f68d75f2b937c45e7682857356cf18f0be5493899/pyramid-1.7.4.tar.gz";
-      md5 = "6ef1dfdcff9136d04490410757c4c446";
+      url = "https://pypi.python.org/packages/b0/73/715321e129334f3e41430bede877620175a63ed075fd5d1fd2c25b7cb121/pyramid-1.9.tar.gz";
+      md5 = "aa6c7c568f83151af51eb053ac633bc4";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
