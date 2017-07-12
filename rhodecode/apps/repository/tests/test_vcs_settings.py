@@ -22,6 +22,7 @@ import mock
 import pytest
 
 import rhodecode
+from rhodecode.model.db import Repository
 from rhodecode.model.settings import SettingsModel
 from rhodecode.tests import url
 from rhodecode.tests.utils import AssertResponse
@@ -87,10 +88,11 @@ class TestAdminRepoVcsSettings(object):
             pytest.skip('Setting not available for backend {}'.format(backend))
 
         repo = backend.create_repo()
+        repo_name = repo.repo_name
 
         settings_model = SettingsModel(repo=repo)
         vcs_settings_url = url(
-            'repo_vcs_settings', repo_name=repo.repo_name)
+            'repo_vcs_settings', repo_name=repo_name)
 
         self.app.post(
             vcs_settings_url,
@@ -101,6 +103,7 @@ class TestAdminRepoVcsSettings(object):
                 'rhodecode_{}'.format(setting_name): 'true',
                 'csrf_token': csrf_token,
             })
+        settings_model = SettingsModel(repo=Repository.get_by_repo_name(repo_name))
         setting = settings_model.get_setting_by_name(setting_name)
         assert setting.app_settings_value
 
@@ -113,5 +116,6 @@ class TestAdminRepoVcsSettings(object):
                 'rhodecode_{}'.format(setting_name): 'false',
                 'csrf_token': csrf_token,
             })
+        settings_model = SettingsModel(repo=Repository.get_by_repo_name(repo_name))
         setting = settings_model.get_setting_by_name(setting_name)
         assert not setting.app_settings_value

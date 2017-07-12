@@ -21,6 +21,7 @@
 import pytest
 
 from rhodecode.lib.utils2 import md5
+from rhodecode.model.db import Repository
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel, IssueTrackerSettingsModel
 from rhodecode.tests import url
@@ -100,6 +101,7 @@ class TestAdminRepos:
     def test_delete_issuetracker_pattern(
             self, autologin_user, backend, csrf_token, settings_util):
         repo = backend.create_repo()
+        repo_name = repo.repo_name
         entry_key = 'issuetracker_pat_'
         pattern = 'issuetracker_pat3'
         uid = md5(pattern)
@@ -115,5 +117,6 @@ class TestAdminRepos:
                 'uid': uid,
                 'csrf_token': csrf_token
             }, status=302)
-        settings = IssueTrackerSettingsModel(repo=repo).get_repo_settings()
+        settings = IssueTrackerSettingsModel(
+            repo=Repository.get_by_repo_name(repo_name)).get_repo_settings()
         assert 'rhodecode_%s%s' % (entry_key, uid) not in settings
