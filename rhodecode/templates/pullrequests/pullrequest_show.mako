@@ -32,7 +32,7 @@
 
 <script type="text/javascript">
     // TODO: marcink switch this to pyroutes
-    AJAX_COMMENT_DELETE_URL = "${url('pullrequest_comment_delete',repo_name=c.repo_name,comment_id='__COMMENT_ID__')}";
+    AJAX_COMMENT_DELETE_URL = "${h.url('pullrequest_comment_delete',repo_name=c.repo_name,comment_id='__COMMENT_ID__')}";
     templateContext.pull_request_data.pull_request_id = ${c.pull_request.pull_request_id};
 </script>
 <div class="box">
@@ -52,7 +52,7 @@
             %if c.allowed_to_update:
               <div id="delete_pullrequest" class="pull-right action_button ${'' if c.allowed_to_delete else 'disabled' }" style="clear:inherit;padding: 0">
                   % if c.allowed_to_delete:
-                      ${h.secure_form(url('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id),method='delete')}
+                      ${h.secure_form(h.url('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id),method='delete')}
                           ${h.submit('remove_%s' % c.pull_request.pull_request_id, _('Delete'),
                         class_="btn btn-link btn-danger no-margin",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
                       ${h.end_form()}

@@ -1,5 +1,5 @@
 
-${h.secure_form(url('admin_permissions_global'), method='post')}
+${h.secure_form(h.url('admin_permissions_global'), method='post')}
     <div class="form permissions-global">
         <!-- fields -->
         <div class="fields">

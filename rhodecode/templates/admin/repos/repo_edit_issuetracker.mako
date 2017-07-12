@@ -1,7 +1,7 @@
 <%namespace name="its" file="/base/issue_tracker_settings.mako"/>
 
 <div id="repo_issue_tracker" class="${'inherited' if c.settings_model.inherit_global_settings else ''}">
-  ${h.secure_form(url('repo_issuetracker_save', repo_name=c.repo_name), method='post', id="inherit-form")}
+  ${h.secure_form(h.url('repo_issuetracker_save', repo_name=c.repo_name), method='post', id="inherit-form")}
       <div class="panel panel-default panel-body">
           <div class="fields">
               <div class="field">
@@ -72,8 +72,8 @@
             <div class="panel-body">
                     ${its.issue_tracker_settings_table(
                         patterns=c.repo_patterns.items(),
-                        form_url=url('repo_settings_issuetracker', repo_name=c.repo_info.repo_name),
-                        delete_url=url('repo_issuetracker_delete', repo_name=c.repo_info.repo_name)
+                        form_url=h.url('repo_settings_issuetracker', repo_name=c.repo_info.repo_name),
+                        delete_url=h.url('repo_issuetracker_delete', repo_name=c.repo_info.repo_name)
                     )}
                   <div class="buttons">
                       <button type="submit" class="btn btn-primary save-inheritance" id="save">${_('Save')}</button>
@@ -92,7 +92,7 @@
     </div>
     <div class="panel-body">
         ${its.issue_tracker_new_row()}
-        ${its.issue_tracker_settings_test(test_url=url('repo_issuetracker_test', repo_name=c.repo_info.repo_name))}
+        ${its.issue_tracker_settings_test(test_url=h.url('repo_issuetracker_test', repo_name=c.repo_info.repo_name))}
     </div>
 </div>
 

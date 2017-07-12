@@ -1,7 +1,7 @@
 <%namespace name="vcss" file="/base/vcs_settings.mako"/>
 
 <div id="repo_vcs_settings" class="${'inherited' if c.inherit_global_settings else ''}">
-    ${h.secure_form(url('repo_vcs_settings', repo_name=c.repo_info.repo_name), method='post')}
+    ${h.secure_form(h.url('repo_vcs_settings', repo_name=c.repo_info.repo_name), method='post')}
         <div class="form panel panel-default">
             <div class="fields panel-body">
                 <div class="field">

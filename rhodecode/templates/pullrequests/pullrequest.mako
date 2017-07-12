@@ -22,7 +22,7 @@
         ${self.repo_page_title(c.rhodecode_db_repo)}
     </div>
 
-    ${h.secure_form(url('pullrequest', repo_name=c.repo_name), method='post', id='pull_request_form')}
+    ${h.secure_form(h.url('pullrequest', repo_name=c.repo_name), method='post', id='pull_request_form')}
 
         ${self.breadcrumbs()}
 

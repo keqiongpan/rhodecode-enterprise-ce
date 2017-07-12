@@ -6,7 +6,7 @@
     </div>
     <div class="panel-body">
         <div class="user-profile-content">
-        ${h.secure_form(url('update_user', user_id=c.user.user_id),method='put', class_='form')}
+        ${h.secure_form(h.url('update_user', user_id=c.user.user_id),method='put', class_='form')}
         <% readonly = None %>
         <% disabled = "" %>
         %if c.extern_type != 'rhodecode':

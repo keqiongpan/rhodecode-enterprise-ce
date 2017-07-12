@@ -44,7 +44,7 @@
   </div>
 </div>
 <script type="text/javascript">
-var url_action = "${url('notification', notification_id='__NOTIFICATION_ID__')}";
+var url_action = "${h.url('notification', notification_id='__NOTIFICATION_ID__')}";
 var run = function(){
   $('#notification_data').on('click','.delete-notification',function(e){
     var notification_id = e.currentTarget.id;

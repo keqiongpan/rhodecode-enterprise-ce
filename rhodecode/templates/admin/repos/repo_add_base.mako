@@ -1,6 +1,6 @@
 ## -*- coding: utf-8 -*-
 
-${h.secure_form(url('repos'))}
+${h.secure_form(h.url('repos'))}
 <div class="form">
     <!-- fields -->
     <div class="fields">

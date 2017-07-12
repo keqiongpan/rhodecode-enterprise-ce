@@ -27,7 +27,7 @@
         ${self.breadcrumbs()}
     </div>
     <!-- end box / title -->
-    ${h.secure_form(url('repo_groups'), method='post')}
+    ${h.secure_form(h.url('repo_groups'), method='post')}
     <div class="form">
         <!-- fields -->
         <div class="fields">

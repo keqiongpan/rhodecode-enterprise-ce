@@ -1,4 +1,4 @@
-${h.secure_form(url('admin_settings_mapping'), method='post')}
+${h.secure_form(h.url('admin_settings_mapping'), method='post')}
 
 <div class="panel panel-default">
     <div class="panel-heading">

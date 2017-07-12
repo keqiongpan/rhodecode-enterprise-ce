@@ -21,7 +21,7 @@
 <%def name="main()">
 <script>
     // TODO: marcink switch this to pyroutes
-    AJAX_COMMENT_DELETE_URL = "${url('changeset_comment_delete',repo_name=c.repo_name,comment_id='__COMMENT_ID__')}";
+    AJAX_COMMENT_DELETE_URL = "${h.url('changeset_comment_delete',repo_name=c.repo_name,comment_id='__COMMENT_ID__')}";
     templateContext.commit_data.commit_id = "${c.commit.raw_id}";
 </script>
 <div class="box">

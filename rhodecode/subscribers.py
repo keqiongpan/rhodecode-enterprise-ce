@@ -54,7 +54,6 @@ def add_renderer_globals(event):
     # Put pylons stuff into the context. This will be removed as soon as
     # migration to pyramid is finished.
     event['c'] = pylons.tmpl_context
-    event['url'] = pylons.url
 
     # TODO: When executed in pyramid view context the request is not available
     # in the event. Find a better solution to get the request.
