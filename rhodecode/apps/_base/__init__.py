@@ -106,17 +106,22 @@ class BaseAppView(object):
     def _get_local_tmpl_context(self, include_app_defaults=False):
         c = TemplateArgs()
         c.auth_user = self.request.user
+        # TODO(marcink): migrate the usage of c.rhodecode_user to c.auth_user
+        c.rhodecode_user = self.request.user
+
         if include_app_defaults:
             # NOTE(marcink): after full pyramid migration include_app_defaults
             # should be turned on by default
             from rhodecode.lib.base import attach_context_attributes
             attach_context_attributes(c, self.request, self.request.user.user_id)
+
         return c
 
     def _register_global_c(self, tmpl_args):
         """
         Registers attributes to pylons global `c`
         """
+
         # TODO(marcink): remove once pyramid migration is finished
         from pylons import tmpl_context as c
         for k, v in tmpl_args.items():

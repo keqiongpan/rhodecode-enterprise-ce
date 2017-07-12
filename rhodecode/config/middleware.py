@@ -253,7 +253,7 @@ def error_handler(exception, request):
     c.causes = []
     if hasattr(base_response, 'causes'):
         c.causes = base_response.causes
-    c.messages = helpers.flash.pop_messages()
+    c.messages = helpers.flash.pop_messages(request=request)
 
     response = render_to_response(
         '/errors/error_document.mako', {'c': c, 'h': helpers}, request=request,
