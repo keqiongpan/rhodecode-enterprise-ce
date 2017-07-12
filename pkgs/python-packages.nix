@@ -389,7 +389,7 @@
       md5 = "273999ac854fdaefa8d0fb61965a4ed9";
     };
     meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal { fullName = "DFSG approved"; } ];
+      license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   authomatic = super.buildPythonPackage {
@@ -860,6 +860,19 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  hupper = super.buildPythonPackage {
+    name = "hupper-1.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/2e/07/df892c564dc09bb3cf6f6deb976c26adf9117db75ba218cb4353dbc9d826/hupper-1.0.tar.gz";
+      md5 = "26e77da7d5ac5858f59af050d1a6eb5a";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   infrae.cache = super.buildPythonPackage {
     name = "infrae.cache-1.0.1";
     buildInputs = with self; [];
@@ -1001,19 +1014,6 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
-    };
-  };
-  hupper = super.buildPythonPackage {
-    name = "hupper-1.0";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/2e/07/df892c564dc09bb3cf6f6deb976c26adf9117db75ba218cb4353dbc9d826/hupper-1.0.tar.gz";
-      md5 = "26e77da7d5ac5858f59af050d1a6eb5a";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
     };
   };
   kombu = super.buildPythonPackage {
