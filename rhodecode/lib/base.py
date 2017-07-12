@@ -403,7 +403,10 @@ def attach_context_attributes(context, request, user_id):
     request.call_context = context
 
 
-def get_auth_user(environ):
+def get_auth_user(request):
+    environ = request.environ
+    session = request.session
+
     ip_addr = get_ip_addr(environ)
     # make sure that we update permissions each time we call controller
     _auth_token = (request.GET.get('auth_token', '') or

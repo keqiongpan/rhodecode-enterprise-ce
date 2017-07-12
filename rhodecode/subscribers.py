@@ -87,6 +87,25 @@ def set_user_lang(event):
             event.request._LOCALE_ = user_lang
 
 
+def add_request_user_context(event):
+    """
+    Adds auth user into request context
+    """
+    request = event.request
+
+    if hasattr(request, 'vcs_call'):
+        # skip vcs calls
+        return
+
+    if hasattr(request, 'rpc_method'):
+        # skip api calls
+        return
+
+    auth_user = get_auth_user(request)
+    request.user = auth_user
+    request.environ['rc_auth_user'] = auth_user
+
+
 def add_pylons_context(event):
     request = event.request
 
@@ -113,14 +132,9 @@ def add_pylons_context(event):
         # skip api calls
         return
 
-    # Get the rhodecode auth user object and make it available.
-    auth_user = get_auth_user(environ)
-    request.user = auth_user
-    environ['rc_auth_user'] = auth_user
-
     # Setup the pylons context object ('c')
     context = ContextObj()
-    context.rhodecode_user = auth_user
+    context.rhodecode_user = request.user
     attach_context_attributes(context, request, request.user.user_id)
     pylons.tmpl_context._push_object(context)
 
