@@ -89,10 +89,7 @@
   }, 
   "python2.7-authomatic-0.1.0.post1": {
     "MIT License": "http://spdx.org/licenses/MIT"
-  }, 
-  "python2.7-backport-ipaddress-0.1": {
-    "Python Software Foundation License version 2": "http://spdx.org/licenses/Python-2.0"
-  }, 
+  },
   "python2.7-backports.shutil-get-terminal-size-1.0.0": {
     "MIT License": "http://spdx.org/licenses/MIT"
   }, 

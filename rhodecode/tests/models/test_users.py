@@ -261,7 +261,7 @@ def test_revoke_perm(test_user):
 def test_ip_range_generator(ip_range, expected, expect_errors):
     func = UserModel().parse_ip_range
     if expect_errors:
-        pytest.raises(Exception, func, ip_range)
+        pytest.raises(ValueError, func, ip_range)
     else:
         parsed_list = func(ip_range)
         assert parsed_list == expected

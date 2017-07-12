@@ -1991,9 +1991,10 @@ def check_ip_access(source_ip, allowed_ips=None):
     :param allowed_ips: list of allowed ips together with mask
     """
     log.debug('checking if ip:%s is subnet of %s' % (source_ip, allowed_ips))
-    source_ip_address = ipaddress.ip_address(source_ip)
+    source_ip_address = ipaddress.ip_address(safe_unicode(source_ip))
     if isinstance(allowed_ips, (tuple, list, set)):
         for ip in allowed_ips:
+            ip = safe_unicode(ip)
             try:
                 network_address = ipaddress.ip_network(ip, strict=False)
                 if source_ip_address in network_address:

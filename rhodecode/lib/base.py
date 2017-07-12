@@ -101,7 +101,7 @@ def _filter_port(ip):
         else:
             # fallback to ipaddress
             try:
-                ipaddress.IPv6Address(ip_addr)
+                ipaddress.IPv6Address(safe_unicode(ip_addr))
             except Exception:
                 return False
         return True
@@ -286,6 +286,7 @@ def attach_context_attributes(context, request, user_id):
     Attach variables into template context called `c`, please note that
     request could be pylons or pyramid request in here.
     """
+
     rc_config = SettingsModel().get_all_settings(cache=True)
 
     context.rhodecode_version = rhodecode.__version__

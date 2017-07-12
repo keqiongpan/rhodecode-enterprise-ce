@@ -99,7 +99,6 @@ install_requirements = [
     'anyjson',
     'appenlight-client',
     'authomatic',
-    'backport_ipaddress',
     'cssselect',
     'celery',
     'channelstream',

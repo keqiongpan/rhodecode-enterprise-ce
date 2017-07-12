@@ -777,6 +777,7 @@ class UserModel(BaseModel):
 
     def parse_ip_range(self, ip_range):
         ip_list = []
+
         def make_unique(value):
             seen = []
             return [c for c in value if not (c in seen or seen.append(c))]
@@ -788,8 +789,8 @@ class UserModel(BaseModel):
             ip_range = ip_range.strip()
             if '-' in ip_range:
                 start_ip, end_ip = ip_range.split('-', 1)
-                start_ip = ipaddress.ip_address(start_ip.strip())
-                end_ip = ipaddress.ip_address(end_ip.strip())
+                start_ip = ipaddress.ip_address(safe_unicode(start_ip.strip()))
+                end_ip = ipaddress.ip_address(safe_unicode(end_ip.strip()))
                 parsed_ip_range = []
 
                 for index in xrange(int(start_ip), int(end_ip) + 1):

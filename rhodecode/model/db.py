@@ -1123,7 +1123,7 @@ class UserIpMap(Base, BaseModel):
 
     @classmethod
     def _get_ip_range(cls, ip_addr):
-        net = ipaddress.ip_network(ip_addr, strict=False)
+        net = ipaddress.ip_network(safe_unicode(ip_addr), strict=False)
         return [str(net.network_address), str(net.broadcast_address)]
 
     def __json__(self):

@@ -405,19 +405,6 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
-  backport-ipaddress = super.buildPythonPackage {
-    name = "backport-ipaddress-0.1";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/d3/30/54c6dab05a4dec44db25ff309f1fbb6b7a8bde3f2bade38bb9da67bbab8f/backport_ipaddress-0.1.tar.gz";
-      md5 = "9c1f45f4361f71b124d7293a60006c05";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.psfl ];
-    };
-  };
   backports.shutil-get-terminal-size = super.buildPythonPackage {
     name = "backports.shutil-get-terminal-size-1.0.0";
     buildInputs = with self; [];
@@ -822,13 +809,13 @@
     };
   };
   graphviz = super.buildPythonPackage {
-    name = "graphviz-0.7.1";
+    name = "graphviz-0.8";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/7d/2d/f5cfa56467ca5a65eb44e1103d89d2f65dbc4f04cf7a1f3d38e973c3d1a8/graphviz-0.7.1.zip";
-      md5 = "d5926e89975121d56dec777a79bfc9d1";
+      url = "https://pypi.python.org/packages/da/84/0e997520323d6b01124eb01c68d5c101814d0aab53083cd62bd75a90f70b/graphviz-0.8.zip";
+      md5 = "9486a885360a5ee54a81eb2950470c71";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -897,6 +884,19 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
+  ipaddress = super.buildPythonPackage {
+    name = "ipaddress-1.0.18";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/4e/13/774faf38b445d0b3a844b65747175b2e0500164b7c28d78e34987a5bfe06/ipaddress-1.0.18.tar.gz";
+      md5 = "310c2dfd64eb6f0df44aa8c59f2334a7";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.psfl ];
     };
   };
   ipdb = super.buildPythonPackage {
@@ -1446,13 +1446,13 @@
     };
   };
   pyramid-debugtoolbar = super.buildPythonPackage {
-    name = "pyramid-debugtoolbar-3.0.5";
+    name = "pyramid-debugtoolbar-4.2.1";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [pyramid pyramid-mako repoze.lru Pygments];
+    propagatedBuildInputs = with self; [pyramid pyramid-mako repoze.lru Pygments ipaddress];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/64/0e/df00bfb55605900e7a2f7e4a18dd83575a6651688e297d5a0aa4c208fd7d/pyramid_debugtoolbar-3.0.5.tar.gz";
-      md5 = "aebab8c3bfdc6f89e4d3adc1d126538e";
+      url = "https://pypi.python.org/packages/db/26/94620b7752936e2cd74838263ff366db9b454f7394bfb62d1eb2f84b29c1/pyramid_debugtoolbar-4.2.1.tar.gz";
+      md5 = "3dfaced2fab1644ff5284017be9d92b9";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } pkgs.lib.licenses.bsdOriginal ];
@@ -1722,7 +1722,7 @@
     name = "rhodecode-enterprise-ce-4.9.0";
     buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage configobj];
     doCheck = true;
-    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress cssselect celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu lxml msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
+    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic cssselect celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu lxml msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
     src = ./.;
     meta = {
       license = [ { fullName = "Affero GNU General Public License v3 or later (AGPLv3+)"; } { fullName = "AGPLv3, and Commercial License"; } ];
