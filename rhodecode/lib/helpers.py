@@ -2029,3 +2029,12 @@ def api_call_example(method, args):
             api_url=route_url('apiv2'),
             token_url=route_url('my_account_auth_tokens'),
             data=args_json))
+
+
+def notification_description(notification, request):
+    """
+    Generate notification human readable description based on notification type
+    """
+    from rhodecode.model.notification import NotificationModel
+    return NotificationModel().make_description(
+        notification, translate=request.translate)

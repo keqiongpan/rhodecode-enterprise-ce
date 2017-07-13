@@ -29,7 +29,7 @@
         <div class="notification-header">
           ${self.gravatar(c.notification.created_by_user.email, 30)}
           <div class="desc">
-              ${c.notification.description}
+              ${h.notification_description(c.notification, request)}
           </div>
           <div class="delete-notifications">
             <span class="delete-notification tooltip" title="${_('Delete')}" onclick="deleteNotification(${c.notification.notification_id}, [function(){window.location=pyroutes.url('notifications_show_all')}])" class="delete-notification action"><i class="icon-delete" ></i></span>

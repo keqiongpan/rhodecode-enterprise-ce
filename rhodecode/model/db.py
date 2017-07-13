@@ -3708,11 +3708,6 @@ class Notification(Base, BaseModel):
 
         return notification
 
-    @property
-    def description(self):
-        from rhodecode.model.notification import NotificationModel
-        return NotificationModel().make_description(self)
-
 
 class UserNotification(Base, BaseModel):
     __tablename__ = 'user_to_notification'

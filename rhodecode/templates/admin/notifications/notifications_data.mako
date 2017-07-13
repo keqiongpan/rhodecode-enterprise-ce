@@ -15,7 +15,7 @@
               <div class="desc ${'unread' if not notification.read else '' }">
                 <a href="${h.route_path('notifications_show', notification_id=notification.notification.notification_id)}">
                   ${base.gravatar(notification.notification.created_by_user.email, 16)}
-                  ${notification.notification.description}
+                  ${h.notification_description(notification.notification, request)}
                 </a>
               </div>
               <div class="delete-notifications">
