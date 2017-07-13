@@ -44,9 +44,9 @@ from sqlalchemy.sql.expression import true
 from beaker.cache import cache_region
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
-from pylons.i18n.translation import lazy_ugettext as _
 from pyramid.threadlocal import get_current_request
 
+from rhodecode.translation import _
 from rhodecode.lib.vcs import get_vcs_instance
 from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
