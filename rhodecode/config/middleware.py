@@ -22,6 +22,7 @@
 Pylons middleware initialization
 """
 import logging
+import traceback
 from collections import OrderedDict
 
 from paste.registry import RegistryManager
@@ -36,8 +37,6 @@ from pyramid.httpexceptions import (
 from pyramid.events import ApplicationCreated
 from pyramid.renderers import render_to_response
 from routes.middleware import RoutesMiddleware
-import routes.util
-
 import rhodecode
 
 from rhodecode.model import meta
@@ -48,7 +47,6 @@ from rhodecode.config.environment import (
 
 from rhodecode.lib.vcs import VCSCommunicationError
 from rhodecode.lib.exceptions import VCSServerUnavailable
-from rhodecode.lib.middleware import csrf
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
 from rhodecode.lib.middleware.error_handling import (
     PylonsErrorHandlingMiddleware)
@@ -254,7 +252,7 @@ def error_handler(exception, request):
     if hasattr(base_response, 'causes'):
         c.causes = base_response.causes
     c.messages = helpers.flash.pop_messages(request=request)
-
+    c.traceback = traceback.format_exc()
     response = render_to_response(
         '/errors/error_document.mako', {'c': c, 'h': helpers}, request=request,
         response=base_response)
