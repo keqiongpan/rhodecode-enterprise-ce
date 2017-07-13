@@ -278,7 +278,7 @@ def get_current_lang(request):
     except:
         pass
 
-    return getattr(request, '_LOCALE_', None)
+    return getattr(request, '_LOCALE_', request.locale_name)
 
 
 def attach_context_attributes(context, request, user_id):
