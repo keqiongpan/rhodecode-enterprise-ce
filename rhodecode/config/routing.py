@@ -458,20 +458,6 @@ def make_map(config):
         m.connect('my_account_password', '/my_account/password',
                   action='my_account_password', conditions={'method': ['GET']})
 
-    # NOTIFICATION REST ROUTES
-    with rmap.submapper(path_prefix=ADMIN_PREFIX,
-                        controller='admin/notifications') as m:
-        m.connect('notifications', '/notifications',
-                  action='index', conditions={'method': ['GET']})
-        m.connect('notifications_mark_all_read', '/notifications/mark_all_read',
-                  action='mark_all_read', conditions={'method': ['POST']})
-        m.connect('/notifications/{notification_id}',
-                  action='update', conditions={'method': ['PUT']})
-        m.connect('/notifications/{notification_id}',
-                  action='delete', conditions={'method': ['DELETE']})
-        m.connect('notification', '/notifications/{notification_id}',
-                  action='show', conditions={'method': ['GET']})
-
     # USER JOURNAL
     rmap.connect('journal', '%s/journal' % (ADMIN_PREFIX,),
                  controller='journal', action='index')

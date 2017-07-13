@@ -20,7 +20,10 @@
 
 import pytest
 
-from rhodecode.tests import *
+from rhodecode.apps._base import ADMIN_PREFIX
+from rhodecode.tests import (
+    TestController, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS,
+    TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
 from rhodecode.tests.fixture import Fixture
 
 from rhodecode.model.db import Notification, User
@@ -31,12 +34,25 @@ from rhodecode.model.meta import Session
 fixture = Fixture()
 
 
-class TestNotificationsController(TestController):
-    destroy_users = set()
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
 
-    @classmethod
-    def teardown_class(cls):
-        fixture.destroy_users(cls.destroy_users)
+    base_url = {
+        'notifications_show_all': ADMIN_PREFIX + '/notifications',
+        'notifications_mark_all_read': ADMIN_PREFIX + '/notifications/mark_all_read',
+        'notifications_show': ADMIN_PREFIX + '/notifications/{notification_id}',
+        'notifications_update': ADMIN_PREFIX + '/notifications/{notification_id}/update',
+        'notifications_delete': ADMIN_PREFIX + '/notifications/{notification_id}/delete',
+
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
+
+class TestNotificationsController(TestController):
 
     def teardown_method(self, method):
         for n in Notification.query().all():
@@ -44,43 +60,61 @@ class TestNotificationsController(TestController):
             Session().delete(inst)
         Session().commit()
 
-    def test_index(self):
-        u1 = UserModel().create_or_update(
-            username='u1', password='qweqwe', email='u1@rhodecode.org',
-            firstname='u1', lastname='u1')
-        u1 = u1.user_id
-        self.destroy_users.add('u1')
+    def test_show_all(self, user_util):
+        user = user_util.create_user(password='qweqwe')
+        user_id = user.user_id
+        self.log_user(user.username, 'qweqwe')
 
-        self.log_user('u1', 'qweqwe')
-
-        response = self.app.get(url('notifications'))
+        response = self.app.get(
+            route_path('notifications_show_all', params={'type': 'all'}))
         response.mustcontain(
             '<div class="table">No notifications here yet</div>')
 
-        cur_user = self._get_logged_user()
-        notif = NotificationModel().create(
-            created_by=u1, notification_subject=u'test_notification_1',
-            notification_body=u'notification_1', recipients=[cur_user])
+        notification = NotificationModel().create(
+            created_by=user_id, notification_subject=u'test_notification_1',
+            notification_body=u'notification_1', recipients=[user_id])
         Session().commit()
-        response = self.app.get(url('notifications'))
-        response.mustcontain('id="notification_%s"' % notif.notification_id)
+        notification_id = notification.notification_id
+
+        response = self.app.get(route_path('notifications_show_all',
+                                           params={'type': 'all'}))
+        response.mustcontain('id="notification_%s"' % notification_id)
+
+    def test_show_unread(self, user_util):
+        user = user_util.create_user(password='qweqwe')
+        user_id = user.user_id
+        self.log_user(user.username, 'qweqwe')
+
+        response = self.app.get(route_path('notifications_show_all'))
+        response.mustcontain(
+            '<div class="table">No notifications here yet</div>')
+
+        notification = NotificationModel().create(
+            created_by=user_id, notification_subject=u'test_notification_1',
+            notification_body=u'notification_1', recipients=[user_id])
+
+        # mark the USER notification as unread
+        user_notification = NotificationModel().get_user_notification(
+            user_id, notification)
+        user_notification.read = False
+
+        Session().commit()
+        notification_id = notification.notification_id
+
+        response = self.app.get(route_path('notifications_show_all'))
+        response.mustcontain('id="notification_%s"' % notification_id)
+        response.mustcontain('<div class="desc unread')
 
     @pytest.mark.parametrize('user,password', [
         (TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS),
         (TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS),
     ])
-    def test_delete(self, user, password):
+    def test_delete(self, user, password, user_util):
         self.log_user(user, password)
         cur_user = self._get_logged_user()
 
-        u1 = UserModel().create_or_update(
-            username='u1', password='qweqwe',
-            email='u1@rhodecode.org', firstname='u1', lastname='u1')
-        u2 = UserModel().create_or_update(
-            username='u2', password='qweqwe', email='u2@rhodecode.org',
-            firstname='u2', lastname='u2')
-        self.destroy_users.add('u1')
-        self.destroy_users.add('u2')
+        u1 = user_util.create_user()
+        u2 = user_util.create_user()
 
         # make notifications
         notification = NotificationModel().create(
@@ -98,9 +132,10 @@ class TestNotificationsController(TestController):
         cur_usr_id = cur_user.user_id
 
         response = self.app.post(
-            url('notification', notification_id=notification.notification_id),
-            params={'_method': 'delete', 'csrf_token': self.csrf_token})
-        assert response.body == 'ok'
+            route_path('notifications_delete',
+                       notification_id=notification.notification_id),
+            params={'csrf_token': self.csrf_token})
+        assert response.json == 'ok'
 
         cur_user = User.get(cur_usr_id)
         assert cur_user.notifications == []
@@ -109,17 +144,11 @@ class TestNotificationsController(TestController):
         (TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS),
         (TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS),
     ])
-    def test_show(self, user, password):
+    def test_show(self, user, password, user_util):
         self.log_user(user, password)
         cur_user = self._get_logged_user()
-        u1 = UserModel().create_or_update(username='u1', password='qweqwe',
-                                          email='u1@rhodecode.org',
-                                          firstname='u1', lastname='u1')
-        u2 = UserModel().create_or_update(username='u2', password='qweqwe',
-                                          email='u2@rhodecode.org',
-                                          firstname='u2', lastname='u2')
-        self.destroy_users.add('u1')
-        self.destroy_users.add('u2')
+        u1 = user_util.create_user()
+        u2 = user_util.create_user()
 
         subject = u'test'
         notif_body = u'hi there'
@@ -127,8 +156,9 @@ class TestNotificationsController(TestController):
             created_by=cur_user, notification_subject=subject,
             notification_body=notif_body, recipients=[cur_user, u1, u2])
 
-        response = self.app.get(url(
-            'notification', notification_id=notification.notification_id))
+        response = self.app.get(
+            route_path('notifications_show',
+                       notification_id=notification.notification_id))
 
         response.mustcontain(subject)
         response.mustcontain(notif_body)
@@ -137,18 +167,11 @@ class TestNotificationsController(TestController):
         (TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS),
         (TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS),
     ])
-    def test_update(self, user, password):
+    def test_update(self, user, password, user_util):
         self.log_user(user, password)
         cur_user = self._get_logged_user()
-
-        u1 = UserModel().create_or_update(username='u1', password='qweqwe',
-                                          email='u1@rhodecode.org',
-                                          firstname='u1', lastname='u1')
-        u2 = UserModel().create_or_update(username='u2', password='qweqwe',
-                                          email='u2@rhodecode.org',
-                                          firstname='u2', lastname='u2')
-        self.destroy_users.add('u1')
-        self.destroy_users.add('u2')
+        u1 = user_util.create_user()
+        u2 = user_util.create_user()
 
         # make notifications
         recipients = [cur_user, u1, u2]
@@ -164,9 +187,10 @@ class TestNotificationsController(TestController):
             assert u_obj.notifications[0].read == read
 
         response = self.app.post(
-            url('notification', notification_id=notification.notification_id),
-            params={'_method': 'put', 'csrf_token': self.csrf_token})
-        assert response.body == 'ok'
+            route_path('notifications_update',
+                       notification_id=notification.notification_id),
+            params={'csrf_token': self.csrf_token})
+        assert response.json == 'ok'
 
         cur_user = self._get_logged_user()
-        assert True == cur_user.notifications[0].read
+        assert True is cur_user.notifications[0].read

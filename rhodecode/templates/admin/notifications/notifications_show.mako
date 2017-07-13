@@ -9,7 +9,7 @@
 </%def>
 
 <%def name="breadcrumbs_links()">
-    ${h.link_to(_('Notifications'), h.url('notifications'))}
+    ${h.link_to(_('My Notifications'), h.route_path('notifications_show_all'))}
     &raquo;
     ${_('Show notification')}
 </%def>
@@ -32,7 +32,7 @@
               ${c.notification.description}
           </div>
           <div class="delete-notifications">
-            <span id="${c.notification.notification_id}" class="delete-notification action"><i class="icon-delete" ></i></span>
+            <span class="delete-notification tooltip" title="${_('Delete')}" onclick="deleteNotification(${c.notification.notification_id}, [function(){window.location=pyroutes.url('notifications_show_all')}])" class="delete-notification action"><i class="icon-delete" ></i></span>
           </div>
         </div>
         <div class="notification-body">
@@ -46,12 +46,5 @@
       </div>
     </div>
 </div>
-<script type="text/javascript">
-var url = "${h.url('notification', notification_id='__NOTIFICATION_ID__')}";
-var main = "${h.url('notifications')}";
-   $('.delete-notification').on('click',function(e){
-       var notification_id = e.currentTarget.id;
-       deleteNotification(url,notification_id,[function(){window.location=main}])
-   })
-</script>
+
 </%def>

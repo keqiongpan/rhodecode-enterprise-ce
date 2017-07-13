@@ -30,35 +30,37 @@ var _run_callbacks = function(callbacks){
     }
 };
 
-var deleteNotification = function(url, notification_id,callbacks){
+var deleteNotification = function(notification_id, callbacks){
     var callback = function(o){
             var obj = $("#notification_"+notification_id);
             obj.remove();
             _run_callbacks(callbacks);
     };
-    var postData = {'_method': 'delete', 'csrf_token': CSRF_TOKEN};
-    var sUrl = url.replace('__NOTIFICATION_ID__',notification_id);
-    var request = $.post(sUrl, postData)
-                        .done(callback)
-                        .fail(function(data, textStatus, errorThrown){
-                            alert("Error while deleting notification.\nError code {0} ({1}). URL: {2}".format(data.status,data.statusText,$(this)[0].url));
-                        });
+    var postData = {'csrf_token': CSRF_TOKEN};
+    var sUrl = pyroutes.url('notifications_delete', {'notification_id': notification_id});
+    var request =
+        $.post(sUrl, postData)
+            .done(callback)
+            .fail(function(data, textStatus, errorThrown){
+                alert("Error while deleting notification.\nError code {0} ({1}). URL: {2}".format(data.status,data.statusText,$(this)[0].url));
+            });
 };
 
-var readNotification = function(url, notification_id,callbacks){
+var readNotification = function(notification_id, callbacks){
     var callback = function(o){
             var obj = $("#notification_"+notification_id);
             obj.removeClass('unread');
-            var r_button = $('.read-notification',obj)[0];
+            var r_button = $('.read-notification', obj)[0];
             r_button.remove();
 
             _run_callbacks(callbacks);
     };
-    var postData = {'_method': 'put', 'csrf_token': CSRF_TOKEN};
-    var sUrl = url.replace('__NOTIFICATION_ID__',notification_id);
-    var request = $.post(sUrl, postData)
-                        .done(callback)
-                        .fail(function(data, textStatus, errorThrown){
-                            alert("Error while saving notification.\nError code {0} ({1}). URL: {2}".format(data.status,data.statusText,$(this)[0].url));
-                        });
+    var postData = {'csrf_token': CSRF_TOKEN};
+    var sUrl = pyroutes.url('notifications_update', {'notification_id': notification_id});
+    var request =
+        $.post(sUrl, postData)
+            .done(callback)
+            .fail(function(data, textStatus, errorThrown){
+                alert("Error while saving notification.\nError code {0} ({1}). URL: {2}".format(data.status,data.statusText,$(this)[0].url));
+            });
 };

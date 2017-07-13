@@ -160,6 +160,11 @@ function registerRCRoutes() {
     pyroutes.register('my_account_notifications_toggle_visibility', '/_admin/my_account/toggle_visibility', []);
     pyroutes.register('my_account_pullrequests', '/_admin/my_account/pull_requests', []);
     pyroutes.register('my_account_pullrequests_data', '/_admin/my_account/pull_requests/data', []);
+    pyroutes.register('notifications_show_all', '/_admin/notifications', []);
+    pyroutes.register('notifications_mark_all_read', '/_admin/notifications/mark_all_read', []);
+    pyroutes.register('notifications_show', '/_admin/notifications/%(notification_id)s', ['notification_id']);
+    pyroutes.register('notifications_update', '/_admin/notifications/%(notification_id)s/update', ['notification_id']);
+    pyroutes.register('notifications_delete', '/_admin/notifications/%(notification_id)s/delete', ['notification_id']);
     pyroutes.register('my_account_notifications_test_channelstream', '/_admin/my_account/test_channelstream', []);
     pyroutes.register('gists_show', '/_admin/gists', []);
     pyroutes.register('gists_new', '/_admin/gists/new', []);

@@ -359,11 +359,7 @@
   </div>
       %if c.rhodecode_user.username != h.DEFAULT_USER:
         <div class="pill_container">
-        % if c.unread_notifications == 0:
-          <a class="menu_link_notifications empty" href="${h.url('notifications')}">${c.unread_notifications}</a>
-        % else:
-          <a class="menu_link_notifications" href="${h.url('notifications')}">${c.unread_notifications}</a>
-        % endif
+          <a class="menu_link_notifications ${'empty' if c.unread_notifications == 0 else ''}" href="${h.route_path('notifications_show_all')}">${c.unread_notifications}</a>
         </div>
       % endif
     </li>

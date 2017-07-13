@@ -166,9 +166,6 @@ class NotificationModel(BaseModel):
     def get_for_user(self, user, filter_=None):
         """
         Get mentions for given user, filter them if filter dict is given
-
-        :param user:
-        :param filter:
         """
         user = self._get_user(user)
 
@@ -177,11 +174,14 @@ class NotificationModel(BaseModel):
             .join((
                 Notification, UserNotification.notification_id ==
                 Notification.notification_id))
-
-        if filter_:
+        if filter_ == ['all']:
+            q = q  # no filter
+        elif filter_ == ['unread']:
+            q = q.filter(UserNotification.read == false())
+        elif filter_:
             q = q.filter(Notification.type_.in_(filter_))
 
-        return q.all()
+        return q
 
     def mark_read(self, user, notification):
         try:
@@ -207,7 +207,9 @@ class NotificationModel(BaseModel):
             .join((
                 Notification, UserNotification.notification_id ==
                 Notification.notification_id))
-        if filter_:
+        if filter_ == ['unread']:
+            q = q.filter(UserNotification.read == false())
+        elif filter_:
             q = q.filter(Notification.type_.in_(filter_))
 
         # this is a little inefficient but sqlalchemy doesn't support

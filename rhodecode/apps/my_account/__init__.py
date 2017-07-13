@@ -95,6 +95,28 @@ def includeme(config):
         name='my_account_pullrequests_data',
         pattern=ADMIN_PREFIX + '/my_account/pull_requests/data')
 
+    # notifications
+    config.add_route(
+        name='notifications_show_all',
+        pattern=ADMIN_PREFIX + '/notifications')
+
+    # notifications
+    config.add_route(
+        name='notifications_mark_all_read',
+        pattern=ADMIN_PREFIX + '/notifications/mark_all_read')
+
+    config.add_route(
+        name='notifications_show',
+        pattern=ADMIN_PREFIX + '/notifications/{notification_id}')
+
+    config.add_route(
+        name='notifications_update',
+        pattern=ADMIN_PREFIX + '/notifications/{notification_id}/update')
+
+    config.add_route(
+        name='notifications_delete',
+        pattern=ADMIN_PREFIX + '/notifications/{notification_id}/delete')
+
     # channelstream test
     config.add_route(
         name='my_account_notifications_test_channelstream',
