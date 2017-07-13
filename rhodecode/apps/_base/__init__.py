@@ -124,8 +124,12 @@ class BaseAppView(object):
 
         # TODO(marcink): remove once pyramid migration is finished
         from pylons import tmpl_context as c
-        for k, v in tmpl_args.items():
-            setattr(c, k, v)
+        try:
+            for k, v in tmpl_args.items():
+                setattr(c, k, v)
+        except TypeError:
+            log.exception('Failed to register pylons C')
+            pass
 
     def _get_template_context(self, tmpl_args):
         self._register_global_c(tmpl_args)

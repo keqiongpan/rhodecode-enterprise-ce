@@ -48,7 +48,6 @@ from pygments.formatters.html import HtmlFormatter
 from pygments import highlight as code_highlight
 from pygments.lexers import (
     get_lexer_by_name, get_lexer_for_filename, get_lexer_for_mimetype)
-from pylons import url as pylons_url
 from pylons.i18n.translation import _, ungettext
 from pyramid.threadlocal import get_current_request
 
@@ -94,6 +93,7 @@ DEFAULT_USER_EMAIL = User.DEFAULT_USER_EMAIL
 
 
 def url(*args, **kw):
+    from pylons import url as pylons_url
     return pylons_url(*args, **kw)
 
 
@@ -103,6 +103,7 @@ def pylons_url_current(*args, **kw):
     path so that it will also work from a pyramid only context. This
     should be removed once port to pyramid is complete.
     """
+    from pylons import url as pylons_url
     if not args and not kw:
         request = get_current_request()
         return request.path

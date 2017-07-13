@@ -345,7 +345,7 @@ def includeme(config):
     config.add_notfound_view(make_not_found_view(config))
 
     if not settings.get('debugtoolbar.enabled', False):
-        # if no toolbar, then any exception gets caught and rendered
+        # disabled debugtoolbar handle all exceptions via the error_handlers
         config.add_view(error_handler, context=Exception)
 
     config.add_view(error_handler, context=HTTPError)
@@ -388,9 +388,13 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
 
     # Add RoutesMiddleware to support the pylons compatibility tween during
     # migration to pyramid.
-    pyramid_app = SkippableRoutesMiddleware(
-        pyramid_app, config.registry._pylons_compat_config['routes.map'],
-        skip_prefixes=(STATIC_FILE_PREFIX, '/_debug_toolbar'))
+
+    # TODO(marcink): remove after migration to pyramid
+    if hasattr(config.registry, '_pylons_compat_config'):
+        routes_map = config.registry._pylons_compat_config['routes.map']
+        pyramid_app = SkippableRoutesMiddleware(
+            pyramid_app, routes_map,
+            skip_prefixes=(STATIC_FILE_PREFIX, '/_debug_toolbar'))
 
     pyramid_app, _ = wrap_in_appenlight_if_enabled(pyramid_app, settings)
 
