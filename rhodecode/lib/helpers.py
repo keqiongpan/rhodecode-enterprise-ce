@@ -48,7 +48,7 @@ from pygments.formatters.html import HtmlFormatter
 from pygments import highlight as code_highlight
 from pygments.lexers import (
     get_lexer_by_name, get_lexer_for_filename, get_lexer_for_mimetype)
-from pylons.i18n.translation import _, ungettext
+
 from pyramid.threadlocal import get_current_request
 
 from webhelpers.html import literal, HTML, escape
@@ -1517,24 +1517,6 @@ class RepoPage(Page):
         list.__init__(self, reversed(self.items))
 
 
-def changed_tooltip(nodes):
-    """
-    Generates a html string for changed nodes in commit page.
-    It limits the output to 30 entries
-
-    :param nodes: LazyNodesGenerator
-    """
-    if nodes:
-        pref = ': <br/> '
-        suf = ''
-        if len(nodes) > 30:
-            suf = '<br/>' + _(' and %s more') % (len(nodes) - 30)
-        return literal(pref + '<br/> '.join([safe_unicode(x.path)
-                                             for x in nodes[:30]]) + suf)
-    else:
-        return ': ' + _('No Files')
-
-
 def breadcrumb_repo_link(repo):
     """
     Makes a breadcrumbs path link to repo
@@ -1836,7 +1818,9 @@ def get_permission_name(key):
     return dict(Permission.PERMS).get(key)
 
 
-def journal_filter_help():
+def journal_filter_help(request):
+    _ = request.translate
+
     return _(
         'Example filter terms:\n' +
         '     repository:vcs\n' +
@@ -1857,7 +1841,8 @@ def journal_filter_help():
     )
 
 
-def search_filter_help(searcher):
+def search_filter_help(searcher, request):
+    _ = request.translate
 
     terms = ''
     return _(
@@ -1876,6 +1861,7 @@ def search_filter_help(searcher):
 
 
 def not_mapped_error(repo_name):
+    from rhodecode.translation import _
     flash(_('%s repository is not mapped to db perhaps'
             ' it was created or renamed from the filesystem'
             ' please run the application again'
