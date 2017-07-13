@@ -5,7 +5,7 @@
         <h3 class="panel-title">${_('Repository Permissions')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.route_path('edit_repo_perms', repo_name=c.repo_name), method='POST')}
+        ${h.secure_form(h.route_path('edit_repo_perms', repo_name=c.repo_name), method='POST', request=request)}
         <table id="permissions_manage" class="rctable permissions">
             <tr>
                 <th class="td-radio">${_('None')}</th>

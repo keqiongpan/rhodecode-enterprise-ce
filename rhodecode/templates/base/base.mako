@@ -348,7 +348,7 @@
                 <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
               % endif
               <li class="logout">
-              ${h.secure_form(h.route_path('logout'))}
+              ${h.secure_form(h.route_path('logout'), request=request)}
                   ${h.submit('log_out', _(u'Sign Out'),class_="btn btn-primary")}
               ${h.end_form()}
               </li>

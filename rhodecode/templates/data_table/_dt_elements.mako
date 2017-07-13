@@ -119,7 +119,7 @@
         <i class="icon-pencil"></i>Edit</a>
     </div>
     <div class="grid_delete">
-      ${h.secure_form(h.route_path('edit_repo_advanced_delete', repo_name=repo_name), method='POST')}
+      ${h.secure_form(h.route_path('edit_repo_advanced_delete', repo_name=repo_name), method='POST', request=request)}
         ${h.submit('remove_%s' % repo_name,_('Delete'),class_="btn btn-link btn-danger",
         onclick="return confirm('"+_('Confirm to delete this repository: %s') % repo_name+"');")}
       ${h.end_form()}

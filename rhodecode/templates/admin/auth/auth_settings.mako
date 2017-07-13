@@ -38,7 +38,7 @@
     </div>
 
     <div class="main-content-full-width">
-      ${h.secure_form(request.resource_path(resource, route_name='auth_home'))}
+      ${h.secure_form(request.resource_path(resource, route_name='auth_home'), request=request)}
       <div class="form">
 
         <div class="panel panel-default">

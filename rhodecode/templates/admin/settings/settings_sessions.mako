@@ -28,7 +28,7 @@
         <h3 class="panel-title">${_('Cleanup Old Sessions')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.route_path('admin_settings_sessions_cleanup'), method='post')}
+        ${h.secure_form(h.route_path('admin_settings_sessions_cleanup'), method='POST', request=request)}
 
             <p>
             ${_('Cleanup user sessions that were not active during chosen time frame.')} <br/>

@@ -49,6 +49,7 @@ from pkg_resources import resource_filename
 from formencode import All, Pipe
 
 from pylons.i18n.translation import _
+from pyramid.threadlocal import get_current_request
 
 from rhodecode import BACKENDS
 from rhodecode.lib import helpers
@@ -66,6 +67,7 @@ class RhodecodeFormZPTRendererFactory(deform.ZPTRendererFactory):
     """ Subclass of ZPTRendererFactory to add rhodecode context variables """
     def __call__(self, template_name, **kw):
         kw['h'] = helpers
+        kw['request'] = get_current_request()
         return self.load(template_name)(**kw)
 
 

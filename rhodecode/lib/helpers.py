@@ -1906,13 +1906,18 @@ def secure_form(url, method="POST", multipart=False, **attrs):
     """
     from webhelpers.pylonslib.secure_form import insecure_form
     form = insecure_form(url, method, multipart, **attrs)
-    token = csrf_input()
+
+    session = None
+    # TODO(marcink): after pyramid migration require request variable ALWAYS
+    if 'request' in attrs:
+        session = attrs['request'].session
+
+    token = literal(
+        '<input type="hidden" id="{}" name="{}" value="{}">'.format(
+        csrf_token_key, csrf_token_key, get_csrf_token(session)))
+
     return literal("%s\n%s" % (form, token))
 
-def csrf_input():
-    return literal(
-        '<input type="hidden" id="{}" name="{}" value="{}">'.format(
-        csrf_token_key, csrf_token_key, get_csrf_token()))
 
 def dropdownmenu(name, selected, options, enable_filter=False, **attrs):
     select_html = select(name, selected, options, **attrs)

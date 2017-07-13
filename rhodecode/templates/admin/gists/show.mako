@@ -45,7 +45,7 @@
                     <div class="stats">
                        %if h.HasPermissionAny('hg.admin')() or c.gist.gist_owner == c.rhodecode_user.user_id:
                         <div class="remove_gist">
-                            ${h.secure_form(h.route_path('gist_delete', gist_id=c.gist.gist_access_id), method='POST')}
+                            ${h.secure_form(h.route_path('gist_delete', gist_id=c.gist.gist_access_id), method='POST', request=request)}
                                 ${h.submit('remove_gist', _('Delete'),class_="btn btn-mini btn-danger",onclick="return confirm('"+_('Confirm to delete this Gist')+"');")}
                             ${h.end_form()}
                         </div>

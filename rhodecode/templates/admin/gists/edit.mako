@@ -26,7 +26,7 @@
     <div class="table">
 
         <div id="files_data">
-          ${h.secure_form(h.route_path('gist_update', gist_id=c.gist.gist_access_id), id='eform', method='POST')}
+          ${h.secure_form(h.route_path('gist_update', gist_id=c.gist.gist_access_id), id='eform', method='POST', request=request)}
             <div>
                 <input type="hidden" value="${c.file_last_commit.raw_id}" name="parent_hash">
                 <textarea id="description" name="description"
