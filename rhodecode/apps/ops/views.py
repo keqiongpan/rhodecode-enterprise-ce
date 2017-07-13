@@ -18,12 +18,14 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import time
 import logging
 
 from pyramid.view import view_config
+from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.apps._base import BaseAppView
-
+from rhodecode.lib import helpers as h
 
 log = logging.getLogger(__name__)
 
@@ -50,5 +52,26 @@ class OpsView(BaseAppView):
             })
         return {'ok': data}
 
+    @view_config(
+        route_name='ops_error_test', request_method='GET',
+        renderer='json_ext')
+    def ops_error_test(self):
+        """
+        Test exception handling and emails on errors
+        """
+        class TestException(Exception):
+            pass
 
+        msg = ('RhodeCode Enterprise test exception. '
+               'Generation time: {}'.format(time.time()))
+        raise TestException(msg)
 
+    @view_config(
+        route_name='ops_redirect_test', request_method='GET',
+        renderer='json_ext')
+    def ops_redirect_test(self):
+        """
+        Test redirect handling
+        """
+        redirect_to = self.request.GET.get('to') or h.route_path('home')
+        raise HTTPFound(redirect_to)

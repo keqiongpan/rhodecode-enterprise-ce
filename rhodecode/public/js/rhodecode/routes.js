@@ -60,6 +60,8 @@ function registerRCRoutes() {
     pyroutes.register('repo_integrations_create', '/%(repo_name)s/settings/integrations/%(integration)s/new', ['repo_name', 'integration']);
     pyroutes.register('repo_integrations_edit', '/%(repo_name)s/settings/integrations/%(integration)s/%(integration_id)s', ['repo_name', 'integration', 'integration_id']);
     pyroutes.register('ops_ping', '/_admin/ops/ping', []);
+    pyroutes.register('ops_error_test', '/_admin/ops/error', []);
+    pyroutes.register('ops_redirect_test', '/_admin/ops/redirect', []);
     pyroutes.register('admin_home', '/_admin', []);
     pyroutes.register('admin_audit_logs', '/_admin/audit_logs', []);
     pyroutes.register('pull_requests_global_0', '/_admin/pull_requests/%(pull_request_id)s', ['pull_request_id']);

@@ -25,6 +25,12 @@ def admin_routes(config):
     config.add_route(
         name='ops_ping',
         pattern='/ping')
+    config.add_route(
+        name='ops_error_test',
+        pattern='/error')
+    config.add_route(
+        name='ops_redirect_test',
+        pattern='/redirect')
 
 
 def includeme(config):
