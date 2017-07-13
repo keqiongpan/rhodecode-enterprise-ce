@@ -690,9 +690,9 @@ class Flash(_Flash):
         session.save()
         return messages
 
-    def json_alerts(self):
+    def json_alerts(self, request=None):
         payloads = []
-        messages = flash.pop_messages()
+        messages = flash.pop_messages(request=request)
         if messages:
             for message in messages:
                 subdata = {}

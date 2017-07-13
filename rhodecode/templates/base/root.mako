@@ -113,7 +113,7 @@ c.template_context['default_user'] = {
             <script language="javascript" type="text/javascript" src="${h.asset('js/excanvas.min.js')}"></script>
             <![endif]-->
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode/routes.js', ver=c.rhodecode_version_hash)}"></script>
-            <script> var alertMessagePayloads = ${h.flash.json_alerts()|n}; </script>
+            <script> var alertMessagePayloads = ${h.flash.json_alerts(request)|n}; </script>
             ## avoide escaping the %N
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode-components.js', ver=c.rhodecode_version_hash)}"></script>
             <script>CodeMirror.modeURL = "${h.asset('') + 'js/mode/%N/%N.js?ver='+c.rhodecode_version_hash}";</script>
