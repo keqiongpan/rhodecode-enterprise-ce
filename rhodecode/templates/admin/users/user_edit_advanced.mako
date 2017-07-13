@@ -12,6 +12,7 @@
     (_('Repository groups'), len(c.user.repository_groups), '', [x.group_name for x in c.user.repository_groups]),
     (_('User groups'), len(c.user.user_groups), '', [x.users_group_name for x in c.user.user_groups]),
 
+    (_('Reviewer of pull requests'), len(c.user.reviewer_pull_requests), '', ['Pull Request #{}'.format(x.pull_request.pull_request_id) for x in c.user.reviewer_pull_requests]),
     (_('Member of User groups'), len(c.user.group_member), '', [x.users_group.users_group_name for x in c.user.group_member]),
     (_('Force password change'), c.user.user_data.get('force_password_change', 'False'), '', ''),
  ]
@@ -142,7 +143,7 @@
                 </button>
             </div>
             % if c.can_delete_user_message:
-            <p class="help-block">${c.can_delete_user_message}</p>
+            <p class="help-block pre-formatting">${c.can_delete_user_message}</p>
             % endif
 
             <div class="field">

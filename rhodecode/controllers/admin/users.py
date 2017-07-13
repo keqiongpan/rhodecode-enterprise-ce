@@ -390,13 +390,23 @@ class UsersController(BaseController):
 
         # Interim workaround if the user participated on any pull requests as a
         # reviewer.
-        has_review = bool(PullRequestReviewers.query().filter(
-            PullRequestReviewers.user_id == user_id).first())
+        has_review = len(user.reviewer_pull_requests)
         c.can_delete_user = not has_review
-        c.can_delete_user_message = _(
-            'The user participates as reviewer in pull requests and '
-            'cannot be deleted. You can set the user to '
-            '"inactive" instead of deleting it.') if has_review else ''
+        c.can_delete_user_message = ''
+        inactive_link = h.link_to(
+            'inactive', h.url('edit_user', user_id=user_id, anchor='active'))
+        if has_review == 1:
+            c.can_delete_user_message = h.literal(_(
+                'The user participates as reviewer in {} pull request and '
+                'cannot be deleted. \nYou can set the user to '
+                '"{}" instead of deleting it.').format(
+                has_review, inactive_link))
+        elif has_review:
+            c.can_delete_user_message = h.literal(_(
+                'The user participates as reviewer in {} pull requests and '
+                'cannot be deleted. \nYou can set the user to '
+                '"{}" instead of deleting it.').format(
+                has_review, inactive_link))
 
         return htmlfill.render(
             render('admin/users/user_edit.mako'),

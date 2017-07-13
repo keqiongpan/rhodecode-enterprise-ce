@@ -606,6 +606,13 @@ class User(Base, BaseModel):
         self._api_key = None
 
     @property
+    def reviewer_pull_requests(self):
+        return PullRequestReviewers.query() \
+            .options(joinedload(PullRequestReviewers.pull_request)) \
+            .filter(PullRequestReviewers.user_id == self.user_id) \
+            .all()
+
+    @property
     def firstname(self):
         # alias for future
         return self.name
