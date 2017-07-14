@@ -137,6 +137,10 @@ class BaseAppView(object):
         local_tmpl_args = {
             'defaults': {},
             'errors': {},
+            # register a fake 'c' to be used in templates instead of global
+            # pylons c, after migration to pyramid we should rename it to 'c'
+            # make sure we replace usage of _c in templates too
+            '_c': tmpl_args
         }
         local_tmpl_args.update(tmpl_args)
         return local_tmpl_args
