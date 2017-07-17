@@ -213,6 +213,13 @@ class RepoAppView(BaseAppView):
 
         return c
 
+    def _get_f_path(self, matchdict, default=None):
+        f_path = matchdict.get('f_path')
+        if f_path:
+            # fix for multiple initial slashes that causes errors for GIT
+            return f_path.lstrip('/')
+
+        return default
 
 class DataGridAppView(object):
     """

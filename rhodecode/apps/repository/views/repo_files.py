@@ -108,7 +108,7 @@ class RepoFilesView(RepoAppView):
 
         commit_id = self.request.matchdict.get(
             'commit_id', default_commit_id)
-        f_path = self.request.matchdict.get('f_path', default_f_path)
+        f_path = self._get_f_path(self.request.matchdict, default_f_path)
         return commit_id, f_path
 
     def _get_default_encoding(self, c):
@@ -375,9 +375,9 @@ class RepoFilesView(RepoAppView):
         renderer=None)
     def repo_files_diff(self):
         c = self.load_default_context()
+        f_path = self._get_f_path(self.request.matchdict)
         diff1 = self.request.GET.get('diff1', '')
         diff2 = self.request.GET.get('diff2', '')
-        f_path = self.request.matchdict['f_path']
 
         path1, diff1 = parse_path_ref(diff1, default_path=f_path)
 
@@ -461,9 +461,9 @@ class RepoFilesView(RepoAppView):
         """
         Kept only to make OLD links work
         """
+        f_path = self._get_f_path(self.request.matchdict)
         diff1 = self.request.GET.get('diff1', '')
         diff2 = self.request.GET.get('diff2', '')
-        f_path = self.request.matchdict['f_path']
 
         if not any((diff1, diff2)):
             h.flash(
