@@ -258,6 +258,7 @@ def no_newline_id_generator(test_name):
     org_name = test_name
     test_name = test_name\
         .replace('\n', '_N') \
+        .replace('\r', '_N') \
         .replace('\t', '_T') \
         .replace(' ', '_S')
 
