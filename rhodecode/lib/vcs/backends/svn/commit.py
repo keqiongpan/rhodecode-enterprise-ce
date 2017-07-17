@@ -154,7 +154,7 @@ class SubversionCommit(base.BaseCommit):
                 elif node_type == 'file':
                     node = nodes.FileNode(path, commit=self, pre_load=pre_load)
                 else:
-                    raise NodeDoesNotExistError(self.no_node_at_path(path))
+                    raise self.no_node_at_path(path)
 
             self.nodes[path] = node
         return self.nodes[path]
