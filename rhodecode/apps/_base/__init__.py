@@ -37,11 +37,35 @@ log = logging.getLogger(__name__)
 ADMIN_PREFIX = '/_admin'
 STATIC_FILE_PREFIX = '/_static'
 
+URL_NAME_REQUIREMENTS = {
+    # group name can have a slash in them, but they must not end with a slash
+    'group_name': r'.*?[^/]',
+    'repo_group_name': r'.*?[^/]',
+    # repo names can have a slash in them, but they must not end with a slash
+    'repo_name': r'.*?[^/]',
+    # file path eats up everything at the end
+    'f_path': r'.*',
+    # reference types
+    'source_ref_type': '(branch|book|tag|rev|\%\(source_ref_type\)s)',
+    'target_ref_type': '(branch|book|tag|rev|\%\(target_ref_type\)s)',
+}
+
 
 def add_route_with_slash(config,name, pattern, **kw):
     config.add_route(name, pattern, **kw)
     if not pattern.endswith('/'):
         config.add_route(name + '_slash', pattern + '/', **kw)
+
+
+def add_route_requirements(route_path, requirements=URL_NAME_REQUIREMENTS):
+    """
+    Adds regex requirements to pyramid routes using a mapping dict
+    e.g::
+        add_route_requirements('{repo_name}/settings')
+    """
+    for key, regex in requirements.items():
+        route_path = route_path.replace('{%s}' % key, '{%s:%s}' % (key, regex))
+    return route_path
 
 
 def get_format_ref_id(repo):

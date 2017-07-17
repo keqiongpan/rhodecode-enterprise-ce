@@ -20,9 +20,8 @@
 
 import logging
 
+from rhodecode.apps._base import ADMIN_PREFIX, add_route_requirements
 from rhodecode.model.db import Repository, Integration, RepoGroup
-from rhodecode.config.routing import (
-    ADMIN_PREFIX, add_route_requirements, URL_NAME_REQUIREMENTS)
 from rhodecode.integrations import integration_type_registry
 
 log = logging.getLogger(__name__)
@@ -76,14 +75,12 @@ def includeme(config):
     config.add_route('repo_group_integrations_home',
                      add_route_requirements(
                         '{repo_group_name}/settings/integrations',
-                        URL_NAME_REQUIREMENTS
                      ),
                      custom_predicates=(valid_repo_group,)
                      )
     config.add_route('repo_group_integrations_list',
                      add_route_requirements(
                         '{repo_group_name}/settings/integrations/{integration}',
-                        URL_NAME_REQUIREMENTS
                      ),
                      custom_predicates=(valid_repo_group, valid_integration))
     for route_name in ['repo_group_integrations_home', 'repo_group_integrations_list']:
@@ -96,7 +93,6 @@ def includeme(config):
     config.add_route('repo_group_integrations_new',
                      add_route_requirements(
                         '{repo_group_name}/settings/integrations/new',
-                        URL_NAME_REQUIREMENTS
                      ),
                      custom_predicates=(valid_repo_group,))
     config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
@@ -108,13 +104,11 @@ def includeme(config):
     config.add_route('repo_group_integrations_create',
                      add_route_requirements(
                         '{repo_group_name}/settings/integrations/{integration}/new',
-                        URL_NAME_REQUIREMENTS
                      ),
                      custom_predicates=(valid_repo_group, valid_integration))
     config.add_route('repo_group_integrations_edit',
                      add_route_requirements(
                         '{repo_group_name}/settings/integrations/{integration}/{integration_id}',
-                        URL_NAME_REQUIREMENTS
                      ),
                      custom_predicates=(valid_repo_group, valid_integration))
     for route_name in ['repo_group_integrations_edit', 'repo_group_integrations_create']:
@@ -134,13 +128,11 @@ def includeme(config):
     config.add_route('repo_integrations_home',
                      add_route_requirements(
                         '{repo_name}/settings/integrations',
-                        URL_NAME_REQUIREMENTS
                      ),
                      custom_predicates=(valid_repo,))
     config.add_route('repo_integrations_list',
                      add_route_requirements(
                         '{repo_name}/settings/integrations/{integration}',
-                        URL_NAME_REQUIREMENTS
                      ),
                      custom_predicates=(valid_repo, valid_integration))
     for route_name in ['repo_integrations_home', 'repo_integrations_list']:
@@ -153,7 +145,6 @@ def includeme(config):
     config.add_route('repo_integrations_new',
                      add_route_requirements(
                         '{repo_name}/settings/integrations/new',
-                        URL_NAME_REQUIREMENTS
                      ),
                      custom_predicates=(valid_repo,))
     config.add_view('rhodecode.integrations.views.RepoIntegrationsView',
@@ -165,13 +156,11 @@ def includeme(config):
     config.add_route('repo_integrations_create',
                      add_route_requirements(
                         '{repo_name}/settings/integrations/{integration}/new',
-                        URL_NAME_REQUIREMENTS
                      ),
                      custom_predicates=(valid_repo, valid_integration))
     config.add_route('repo_integrations_edit',
                      add_route_requirements(
                         '{repo_name}/settings/integrations/{integration}/{integration_id}',
-                        URL_NAME_REQUIREMENTS
                      ),
                      custom_predicates=(valid_repo, valid_integration))
     for route_name in ['repo_integrations_edit', 'repo_integrations_create']:
@@ -222,7 +211,6 @@ def valid_integration(info, request):
 
     if repo_name and repo_group:
         raise Exception('Either repo or repo_group can be set, not both')
-
 
     if integration_id:
         integration = Integration.get(integration_id)
