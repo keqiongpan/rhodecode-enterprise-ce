@@ -29,7 +29,7 @@
                 </code>
             </td>
             <td class="td-actions">
-                <a href="${h.url('files_home',repo_name=c.repo_name,f_path=c.changelog_for_path,revision=cs.raw_id)}">
+                <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=cs.raw_id,f_path=c.changelog_for_path)}">
                     ${_('Show File')}
                 </a>
             </td>

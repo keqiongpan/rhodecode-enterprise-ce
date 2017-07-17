@@ -22,7 +22,7 @@
               <div class="cb-annotate-message truncate-wrap">${h.chop_at_smart(annotation.message, '\n', suffix_if_chopped='...')}</div>
             </td>
             <td class="cb-annotate-message-spacer">
-                <a class="tooltip" href="#show-previous-annotation" onclick="return annotationController.previousAnnotation('${annotation.raw_id}', '${c.f_path}')" title="${tooltip(_('view annotation from before this change'))}">
+                <a class="tooltip" href="#show-previous-annotation" onclick="return annotationController.previousAnnotation('${annotation.raw_id}', '${c.f_path}', ${line_num})" title="${tooltip(_('view annotation from before this change'))}">
                     <i class="icon-left"></i>
                 </a>
             </td>
@@ -76,13 +76,14 @@
 var AnnotationController = function() {
   var self = this;
 
-  this.previousAnnotation = function(commitId, fPath) {
+  this.previousAnnotation = function(commitId, fPath, lineNo) {
       var params = {
           'repo_name': templateContext.repo_name,
-          'revision': commitId,
-          'f_path': fPath
+          'commit_id': commitId,
+          'f_path': fPath,
+          'line_anchor': lineNo
       };
-      window.location = pyroutes.url('files_annotate_previous', params);
+      window.location = pyroutes.url('repo_files:annotated_previous', params);
       return false;
   };
 };

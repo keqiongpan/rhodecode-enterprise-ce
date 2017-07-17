@@ -409,7 +409,6 @@ def commit_change(
 def add_test_routes(config):
     """
     Adds test routing that can be used in different functional tests
-
     """
     config.add_route(name='home', pattern='/')
     config.add_route(name='repo_summary', pattern='/{repo_name}')
@@ -422,3 +421,6 @@ def add_test_routes(config):
                      pattern='/pull-request/{pull_request_id}')
     config.add_route(name='repo_commit',
                      pattern='/{repo_name}/changeset/{commit_id}')
+
+    config.add_route(name='repo_files',
+                     pattern='/{repo_name}/files/{commit_id}/{f_path}')

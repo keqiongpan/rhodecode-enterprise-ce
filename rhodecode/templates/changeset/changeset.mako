@@ -110,20 +110,20 @@
             %if h.is_hg(c.rhodecode_repo):
               %for book in c.commit.bookmarks:
               <span class="booktag tag" title="${h.tooltip(_('Bookmark %s') % book)}">
-                <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
+                <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=c.commit.raw_id,_query=dict(at=book))}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
               </span>
               %endfor
             %endif
 
             %for tag in c.commit.tags:
              <span class="tagtag tag"  title="${h.tooltip(_('Tag %s') % tag)}">
-              <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"><i class="icon-tag"></i>${tag}</a>
+              <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=c.commit.raw_id,_query=dict(at=tag))}"><i class="icon-tag"></i>${tag}</a>
              </span>
             %endfor
 
             %if c.commit.branch:
               <span class="branchtag tag" title="${h.tooltip(_('Branch %s') % c.commit.branch)}">
-                <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"><i class="icon-code-fork"></i>${h.shorter(c.commit.branch)}</a>
+                <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=c.commit.raw_id,_query=dict(at=c.commit.branch))}"><i class="icon-code-fork"></i>${h.shorter(c.commit.branch)}</a>
               </span>
             %endif
             </div>
@@ -339,7 +339,7 @@
 
           // browse tree @ revision
           $('#files_link').on('click', function(e){
-              window.location = '${h.url('files_home',repo_name=c.repo_name, revision=c.commit.raw_id, f_path='')}';
+              window.location = '${h.route_path('repo_files:default_path',repo_name=c.repo_name, commit_id=c.commit.raw_id)}';
               e.preventDefault();
           });
 

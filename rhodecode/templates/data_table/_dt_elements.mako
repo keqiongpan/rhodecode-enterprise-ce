@@ -19,7 +19,7 @@
          </a>
       </li>
       <li>
-         <a title="${_('Files')}" href="${h.url('files_home',repo_name=repo_name)}">
+         <a title="${_('Files')}" href="${h.route_path('repo_files:default_commit',repo_name=repo_name)}">
          <span>${_('Files')}</span>
          </a>
       </li>

@@ -109,7 +109,7 @@
         %if h.is_hg(c.rhodecode_repo):
             %for book in commit.bookmarks:
                 <span class="tag booktag" title="${h.tooltip(_('Bookmark %s') % book)}">
-                  <a href="${h.url('files_home',repo_name=c.repo_name,revision=commit.raw_id)}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
+                  <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=commit.raw_id, _query=dict(at=book))}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
                 </span>
             %endfor
         %endif
@@ -117,7 +117,7 @@
         ## tags
         %for tag in commit.tags:
           <span class="tag tagtag"  title="${h.tooltip(_('Tag %s') % tag)}">
-            <a href="${h.url('files_home',repo_name=c.repo_name,revision=commit.raw_id)}"><i class="icon-tag"></i>${h.shorter(tag)}</a>
+            <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=commit.raw_id, _query=dict(at=tag))}"><i class="icon-tag"></i>${h.shorter(tag)}</a>
           </span>
         %endfor
 

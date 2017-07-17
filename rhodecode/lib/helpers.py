@@ -258,9 +258,10 @@ def files_breadcrumbs(repo_name, commit_id, file_path):
         url_segments = [
             link_to(
                 repo_name_html,
-                url('files_home',
+                route_path(
+                    'repo_files',
                     repo_name=repo_name,
-                    revision=commit_id,
+                    commit_id=commit_id,
                     f_path=''),
                 class_='pjax-link')]
 
@@ -274,9 +275,10 @@ def files_breadcrumbs(repo_name, commit_id, file_path):
             url_segments.append(
                 link_to(
                     segment_html,
-                    url('files_home',
+                    route_path(
+                        'repo_files',
                         repo_name=repo_name,
-                        revision=commit_id,
+                        commit_id=commit_id,
                         f_path='/'.join(path_segments[:cnt + 1])),
                     class_='pjax-link'))
         else:
@@ -1541,6 +1543,9 @@ def format_byte_size_binary(file_size):
     """
     Formats file/folder sizes to standard.
     """
+    if file_size is None:
+        file_size = 0
+
     formatted_size = format_byte_size(file_size, binary=True)
     return formatted_size
 
@@ -1740,8 +1745,9 @@ def render_binary(repo_name, file_obj):
     for ext in ['*.png', '*.jpg', '*.ico', '*.gif']:
         if fnmatch.fnmatch(filename, pat=ext):
             alt = filename
-            src = url('files_raw_home', repo_name=repo_name,
-                      revision=file_obj.commit.raw_id, f_path=file_obj.path)
+            src = route_path(
+                'repo_file_raw', repo_name=repo_name,
+                commit_id=file_obj.commit.raw_id, f_path=file_obj.path)
             return literal('<img class="rendered-binary" alt="{}" src="{}">'.format(alt, src))
 
 

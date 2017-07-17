@@ -46,7 +46,7 @@
 <div class="box" >
     <div class="title" title="${h.tooltip(_('Readme file from commit %s:%s') % (c.rhodecode_db_repo.landing_rev[0], c.rhodecode_db_repo.landing_rev[1]))}">
         <h3 class="breadcrumbs">
-            <a href="${h.url('files_home',repo_name=c.repo_name,revision='tip',f_path=c.readme_file)}">${c.readme_file}</a>
+            <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.landing_rev[1],f_path=c.readme_file)}">${c.readme_file}</a>
         </h3>
     </div>
     <div class="readme codeblock">
@@ -96,7 +96,7 @@ $(document).ready(function(){
         // format of Object {text: "v0.0.3", type: "tag", id: "rev"}
         var selected_cs = e.added;
         var fname= e.added.raw_id + ".zip";
-        var href = pyroutes.url('files_archive_home', {'repo_name': templateContext.repo_name, 'fname':fname});
+        var href = pyroutes.url('repo_archivefile', {'repo_name': templateContext.repo_name, 'fname':fname});
         // set new label
         $('#archive_link').html('<i class="icon-archive"></i> '+ e.added.text+".zip");
 

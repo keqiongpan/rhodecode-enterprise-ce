@@ -60,14 +60,14 @@
             %if h.is_hg(c.rhodecode_repo):
                 %for book in cs.bookmarks:
                      <span class="booktag tag" title="${h.tooltip(_('Bookmark %s') % book)}">
-                     <a href="${h.url('files_home',repo_name=c.repo_name,revision=cs.raw_id)}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
+                     <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=cs.raw_id, _query=dict(at=book))}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
                      </span>
                 %endfor
             %endif
             ## tags
             %for tag in cs.tags:
              <span class="tagtag tag" title="${h.tooltip(_('Tag %s') % tag)}">
-             <a href="${h.url('files_home',repo_name=c.repo_name,revision=cs.raw_id)}"><i class="icon-tag"></i>${h.shorter(tag)}</a>
+             <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=cs.raw_id, _query=dict(at=tag))}"><i class="icon-tag"></i>${h.shorter(tag)}</a>
              </span>
             %endfor
 
@@ -100,7 +100,7 @@ ${c.repo_commits.pager('$link_previous ~2~ $link_next')}
     <div class="left-label">${_('Add or upload files directly via RhodeCode:')}</div>
     <div class="right-content">
       <div id="add_node_id" class="add_node">
-          <a href="${h.url('files_add_home',repo_name=c.repo_name,revision=0,f_path='', anchor='edit')}" class="btn btn-default">${_('Add New File')}</a>
+          <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=0, f_path='', _anchor='edit')}" class="btn btn-default">${_('Add New File')}</a>
       </div>
     </div>
     %endif

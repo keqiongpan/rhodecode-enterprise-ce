@@ -42,7 +42,7 @@
     </div>
 
     <div class="table">
-        ${h.secure_form(h.url.current(),method='post',id='eform')}
+        ${h.secure_form(h.route_path('repo_files_update_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path), id='eform', method='POST')}
         <div id="codeblock" class="codeblock" >
         <div class="code-header">
             <div class="stats">
@@ -58,12 +58,15 @@
                   % if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name):
                    % if not c.file.is_binary:
                       %if True:
-                        ${h.link_to(_('source'),    h.url('files_home',         repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path),class_="btn btn-mini")}
+                        ${h.link_to(_('source'),    h.route_path('repo_files',          repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path),class_="btn btn-mini")}
                       %else:
-                        ${h.link_to(_('annotation'),h.url('files_annotate_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path),class_="btn btn-mini")}
+                        ${h.link_to(_('annotation'),h.route_path('repo_files:annotated',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path),class_="btn btn-mini")}
                       %endif
-                      ${h.link_to(_('raw'),h.url('files_raw_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path),class_="btn btn-mini")}
-                      <a class="btn btn-mini" href="${h.url('files_rawfile_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path)}">
+
+                      <a class="btn btn-mini" href="${h.route_path('repo_file_raw',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}">
+                          ${_('raw')}
+                      </a>
+                      <a class="btn btn-mini" href="${h.route_path('repo_file_download',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}">
                           <i class="icon-archive"></i> ${_('download')}
                       </a>
                    % endif
@@ -112,7 +115,7 @@
 <script type="text/javascript">
 $(document).ready(function(){
     var renderer = "${renderer}";
-    var reset_url = "${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.file.path)}";
+    var reset_url = "${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.file.path)}";
     var myCodeMirror = initCodeMirror('editor', reset_url);
 
     var modes_select = $('#set_mode');

@@ -14,7 +14,7 @@
           %if c.file.parent:
           <tr class="parity0">
             <td class="td-componentname">
-              <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.file.parent.path)}" class="pjax-link">
+              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.file.parent.path)}" class="pjax-link">
                 <i class="icon-folder"></i>..
               </a>
             </td>
@@ -38,7 +38,7 @@
                 % endif
               </span>
             % else:
-              <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=h.safe_unicode(node.path))}" class="pjax-link">
+              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=h.safe_unicode(node.path))}" class="pjax-link">
                 <i class="${'icon-file browser-file' if node.is_file() else 'icon-folder browser-dir'}"></i>${node.name}
               </a>
             % endif

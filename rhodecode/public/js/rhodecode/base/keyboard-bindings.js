@@ -70,20 +70,20 @@ function setRCMouseBindings(repoName, repoLandingRev) {
         });
         Mousetrap.bind(['g F'], function(e) {
             window.location = pyroutes.url(
-                'files_home',
+                'repo_files',
                 {
                     'repo_name': repoName,
-                    'revision': repoLandingRev,
+                    'commit_id': repoLandingRev,
                     'f_path': '',
                     'search': '1'
                 });
         });
         Mousetrap.bind(['g f'], function(e) {
             window.location = pyroutes.url(
-                'files_home',
+                'repo_files',
                 {
                     'repo_name': repoName,
-                    'revision': repoLandingRev,
+                    'commit_id': repoLandingRev,
                     'f_path': ''
                 });
         });

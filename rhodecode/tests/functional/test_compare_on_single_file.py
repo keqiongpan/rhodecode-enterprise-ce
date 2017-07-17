@@ -18,23 +18,10 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import os
-
-import mock
 import pytest
 
-from rhodecode.controllers.files import FilesController
-from rhodecode.lib import helpers as h
-from rhodecode.lib.compat import OrderedDict
-from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs import nodes
-from rhodecode.lib.vcs.backends.base import EmptyCommit
-from rhodecode.lib.vcs.conf import settings
-from rhodecode.lib.vcs.nodes import FileNode
-from rhodecode.model.db import Repository
-from rhodecode.model.scm import ScmModel
-from rhodecode.tests import (
-    url, TEST_USER_ADMIN_LOGIN, assert_session_flash, assert_not_in_session_flash)
+from rhodecode.tests import url
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import commit_change
 

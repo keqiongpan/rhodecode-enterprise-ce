@@ -114,7 +114,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     <div class="diffset-heading ${diffset.limited_diff and 'diffset-heading-warning' or ''}">
         %if commit:
             <div class="pull-right">
-                <a class="btn tooltip" title="${h.tooltip(_('Browse Files at revision {}').format(commit.raw_id))}" href="${h.url('files_home',repo_name=diffset.repo_name, revision=commit.raw_id, f_path='')}">
+                <a class="btn tooltip" title="${h.tooltip(_('Browse Files at revision {}').format(commit.raw_id))}" href="${h.route_path('repo_files',repo_name=diffset.repo_name, commit_id=commit.raw_id, f_path='')}">
                     ${_('Browse Files')}
                 </a>
             </div>
@@ -410,7 +410,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     %if filediff.operation in ['D', 'M']:
         <a
             class="tooltip"
-            href="${h.url('files_home',repo_name=filediff.diffset.repo_name,f_path=filediff.source_file_path,revision=filediff.diffset.source_ref)}"
+            href="${h.route_path('repo_files',repo_name=filediff.diffset.repo_name,commit_id=filediff.diffset.source_ref,f_path=filediff.source_file_path)}"
             title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
         >
             ${_('Show file before')}
@@ -426,7 +426,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     %if filediff.operation in ['A', 'M']:
         <a
             class="tooltip"
-            href="${h.url('files_home',repo_name=filediff.diffset.source_repo_name,f_path=filediff.target_file_path,revision=filediff.diffset.target_ref)}"
+            href="${h.route_path('repo_files',repo_name=filediff.diffset.source_repo_name,commit_id=filediff.diffset.target_ref,f_path=filediff.target_file_path)}"
             title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
         >
             ${_('Show file after')}
@@ -442,14 +442,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         <a
             class="tooltip"
             title="${h.tooltip(_('Raw diff'))}"
-            href="${h.url('files_diff_home',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path,diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='raw')}"
+            href="${h.route_path('repo_files_diff',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path, _query=dict(diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='raw'))}"
         >
             ${_('Raw diff')}
         </a> |
         <a
             class="tooltip"
             title="${h.tooltip(_('Download diff'))}"
-            href="${h.url('files_diff_home',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path,diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='download')}"
+            href="${h.route_path('repo_files_diff',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path, _query=dict(diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='download'))}"
         >
             ${_('Download diff')}
         </a>

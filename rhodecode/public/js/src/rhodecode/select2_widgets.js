@@ -77,8 +77,8 @@ var select2RefSwitcher = function(targetElement, initialData) {
 };
 
 var select2FileHistorySwitcher = function(targetElement, initialData, state) {
-  var loadUrl = pyroutes.url('files_history_home',
-    {'repo_name': templateContext.repo_name, 'revision': state.rev,
+  var loadUrl = pyroutes.url('repo_file_history',
+    {'repo_name': templateContext.repo_name, 'commit_id': state.rev,
      'f_path': state.f_path});
   select2RefBaseSwitcher(targetElement, loadUrl, initialData);
 };

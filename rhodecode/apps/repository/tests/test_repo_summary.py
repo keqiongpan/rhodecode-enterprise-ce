@@ -384,7 +384,7 @@ class TestCreateReferenceData(object):
 
 class TestCreateFilesUrl(object):
 
-    def test_creates_non_svn_url(self, summary_view):
+    def test_creates_non_svn_url(self, app, summary_view):
         repo = mock.Mock()
         repo.name = 'abcde'
         full_repo_name = 'test-repo-group/' + repo.name
@@ -392,15 +392,15 @@ class TestCreateFilesUrl(object):
         raw_id = 'deadbeef0123456789'
         is_svn = False
 
-        with mock.patch('rhodecode.lib.helpers.url') as url_mock:
+        with mock.patch('rhodecode.lib.helpers.route_path') as url_mock:
             result = summary_view._create_files_url(
                 repo, full_repo_name, ref_name, raw_id, is_svn)
         url_mock.assert_called_once_with(
-            'files_home', repo_name=full_repo_name, f_path='',
-            revision=ref_name, at=ref_name)
+            'repo_files', repo_name=full_repo_name, commit_id=ref_name,
+            f_path='', _query=dict(at=ref_name))
         assert result == url_mock.return_value
 
-    def test_creates_svn_url(self, summary_view):
+    def test_creates_svn_url(self, app, summary_view):
         repo = mock.Mock()
         repo.name = 'abcde'
         full_repo_name = 'test-repo-group/' + repo.name
@@ -408,15 +408,15 @@ class TestCreateFilesUrl(object):
         raw_id = 'deadbeef0123456789'
         is_svn = True
 
-        with mock.patch('rhodecode.lib.helpers.url') as url_mock:
+        with mock.patch('rhodecode.lib.helpers.route_path') as url_mock:
             result = summary_view._create_files_url(
                 repo, full_repo_name, ref_name, raw_id, is_svn)
         url_mock.assert_called_once_with(
-            'files_home', repo_name=full_repo_name, f_path=ref_name,
-            revision=raw_id, at=ref_name)
+            'repo_files', repo_name=full_repo_name, f_path=ref_name,
+            commit_id=raw_id, _query=dict(at=ref_name))
         assert result == url_mock.return_value
 
-    def test_name_has_slashes(self, summary_view):
+    def test_name_has_slashes(self, app, summary_view):
         repo = mock.Mock()
         repo.name = 'abcde'
         full_repo_name = 'test-repo-group/' + repo.name
@@ -424,12 +424,12 @@ class TestCreateFilesUrl(object):
         raw_id = 'deadbeef0123456789'
         is_svn = False
 
-        with mock.patch('rhodecode.lib.helpers.url') as url_mock:
+        with mock.patch('rhodecode.lib.helpers.route_path') as url_mock:
             result = summary_view._create_files_url(
                 repo, full_repo_name, ref_name, raw_id, is_svn)
         url_mock.assert_called_once_with(
-            'files_home', repo_name=full_repo_name, f_path='', revision=raw_id,
-            at=ref_name)
+            'repo_files', repo_name=full_repo_name, commit_id=raw_id,
+            f_path='', _query=dict(at=ref_name))
         assert result == url_mock.return_value
 
 

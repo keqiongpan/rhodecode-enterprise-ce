@@ -173,7 +173,7 @@
                     % endif
                 % else:
                     <span class="enabled">
-                        <a id="archive_link" class="btn btn-small" href="${h.url('files_archive_home',repo_name=c.rhodecode_db_repo.repo_name,fname='tip.zip')}">
+                        <a id="archive_link" class="btn btn-small" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name,fname='tip.zip')}">
                             <i class="icon-archive"></i> tip.zip
                             ## replaced by some JS on select
                         </a>

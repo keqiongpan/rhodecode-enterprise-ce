@@ -37,6 +37,95 @@ def includeme(config):
         name='repo_commit',
         pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}', repo_route=True)
 
+    # repo files
+    config.add_route(
+        name='repo_archivefile',
+        pattern='/{repo_name:.*?[^/]}/archive/{fname}', repo_route=True)
+
+    config.add_route(
+        name='repo_files_diff',
+        pattern='/{repo_name:.*?[^/]}/diff/{f_path:.*}', repo_route=True)
+    config.add_route(  # legacy route to make old links work
+        name='repo_files_diff_2way_redirect',
+        pattern='/{repo_name:.*?[^/]}/diff-2way/{f_path:.*}', repo_route=True)
+
+    config.add_route(
+        name='repo_files',
+        pattern='/{repo_name:.*?[^/]}/files/{commit_id}/{f_path:.*}', repo_route=True)
+    config.add_route(
+        name='repo_files:default_path',
+        pattern='/{repo_name:.*?[^/]}/files/{commit_id}/', repo_route=True)
+    config.add_route(
+        name='repo_files:default_commit',
+        pattern='/{repo_name:.*?[^/]}/files', repo_route=True)
+
+    config.add_route(
+        name='repo_files:rendered',
+        pattern='/{repo_name:.*?[^/]}/render/{commit_id}/{f_path:.*}', repo_route=True)
+
+    config.add_route(
+        name='repo_files:annotated',
+        pattern='/{repo_name:.*?[^/]}/annotate/{commit_id}/{f_path:.*}', repo_route=True)
+    config.add_route(
+        name='repo_files:annotated_previous',
+        pattern='/{repo_name:.*?[^/]}/annotate-previous/{commit_id}/{f_path:.*}', repo_route=True)
+
+    config.add_route(
+        name='repo_nodetree_full',
+        pattern='/{repo_name:.*?[^/]}/nodetree_full/{commit_id}/{f_path:.*}', repo_route=True)
+    config.add_route(
+        name='repo_nodetree_full:default_path',
+        pattern='/{repo_name:.*?[^/]}/nodetree_full/{commit_id}/', repo_route=True)
+
+    config.add_route(
+        name='repo_files_nodelist',
+        pattern='/{repo_name:.*?[^/]}/nodelist/{commit_id}/{f_path:.*}', repo_route=True)
+
+    config.add_route(
+        name='repo_file_raw',
+        pattern='/{repo_name:.*?[^/]}/raw/{commit_id}/{f_path:.*}', repo_route=True)
+
+    config.add_route(
+        name='repo_file_download',
+        pattern='/{repo_name:.*?[^/]}/download/{commit_id}/{f_path:.*}', repo_route=True)
+    config.add_route(  # backward compat to keep old links working
+        name='repo_file_download:legacy',
+        pattern='/{repo_name:.*?[^/]}/rawfile/{commit_id}/{f_path:.*}',
+        repo_route=True)
+
+    config.add_route(
+        name='repo_file_history',
+        pattern='/{repo_name:.*?[^/]}/history/{commit_id}/{f_path:.*}', repo_route=True)
+
+    config.add_route(
+        name='repo_file_authors',
+        pattern='/{repo_name:.*?[^/]}/authors/{commit_id}/{f_path:.*}', repo_route=True)
+
+    config.add_route(
+        name='repo_files_remove_file',
+        pattern='/{repo_name:.*?[^/]}/remove_file/{commit_id}/{f_path:.*}',
+        repo_route=True)
+    config.add_route(
+        name='repo_files_delete_file',
+        pattern='/{repo_name:.*?[^/]}/delete_file/{commit_id}/{f_path:.*}',
+        repo_route=True)
+    config.add_route(
+        name='repo_files_edit_file',
+        pattern='/{repo_name:.*?[^/]}/edit_file/{commit_id}/{f_path:.*}',
+        repo_route=True)
+    config.add_route(
+        name='repo_files_update_file',
+        pattern='/{repo_name:.*?[^/]}/update_file/{commit_id}/{f_path:.*}',
+        repo_route=True)
+    config.add_route(
+        name='repo_files_add_file',
+        pattern='/{repo_name:.*?[^/]}/add_file/{commit_id}/{f_path:.*}',
+        repo_route=True)
+    config.add_route(
+        name='repo_files_create_file',
+        pattern='/{repo_name:.*?[^/]}/create_file/{commit_id}/{f_path:.*}',
+        repo_route=True)
+
     # refs data
     config.add_route(
         name='repo_refs_data',

@@ -59,7 +59,7 @@ def test_urlify_text(url, expected_url):
      '</a>/bX&#34;X'),
 ], ids=['simple', 'one_segment', 'empty_path', 'simple_quote'])
 def test_files_breadcrumbs_xss(
-        repo_name, commit_id, path, pylonsapp, expected_result):
+        repo_name, commit_id, path, app, expected_result):
     result = helpers.files_breadcrumbs(repo_name, commit_id, path)
     # Expect it to encode all path fragments properly. This is important
     # because it returns an instance of `literal`.

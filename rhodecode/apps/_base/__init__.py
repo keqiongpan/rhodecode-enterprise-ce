@@ -250,12 +250,21 @@ class BaseReferencesView(RepoAppView):
 
             # TODO: johbo: Unify generation of reference links
             use_commit_id = '/' in ref_name or is_svn
-            files_url = h.url(
-                'files_home',
-                repo_name=self.db_repo_name,
-                f_path=ref_name if is_svn else '',
-                revision=commit_id if use_commit_id else ref_name,
-                at=ref_name)
+
+            if use_commit_id:
+                files_url = h.route_path(
+                    'repo_files',
+                    repo_name=self.db_repo_name,
+                    f_path=ref_name if is_svn else '',
+                    commit_id=commit_id)
+
+            else:
+                files_url = h.route_path(
+                    'repo_files',
+                    repo_name=self.db_repo_name,
+                    f_path=ref_name if is_svn else '',
+                    commit_id=ref_name,
+                    _query=dict(at=ref_name))
 
             data.append({
                 "name": _render('name', ref_name, files_url, closed),

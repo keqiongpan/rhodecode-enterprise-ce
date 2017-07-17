@@ -28,6 +28,7 @@ ${h.code_highlight(
         query_terms=terms,
         only_line_numbers=lines_of_interest
 ))|n}
+
 %if len(matching_lines) > shown_matching_lines:
 <a href="${url}">
   ${len(matching_lines) - shown_matching_lines} ${_('more matches in this file')}
@@ -52,7 +53,7 @@ ${h.code_highlight(
             ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}
           </h2>
           <div class="stats">
-            ${h.link_to(h.literal(entry['f_path']), h.url('files_home',repo_name=entry['repository'],revision=entry.get('commit_id', 'tip'),f_path=entry['f_path']))}
+            ${h.link_to(h.literal(entry['f_path']), h.route_path('repo_files',repo_name=entry['repository'],commit_id=entry.get('commit_id', 'tip'),f_path=entry['f_path']))}
             %if entry.get('lines'):
               | ${entry.get('lines', 0.)} ${_ungettext('line', 'lines', entry.get('lines', 0.))}
             %endif
@@ -66,17 +67,15 @@ ${h.code_highlight(
           <div class="buttons">
             <a id="file_history_overview_full" href="${h.url('changelog_file_home',repo_name=entry.get('repository',''),revision=entry.get('commit_id', 'tip'),f_path=entry.get('f_path',''))}">
                ${_('Show Full History')}
-            </a> |
-              ${h.link_to(_('Annotation'), h.url('files_annotate_home', repo_name=entry.get('repository',''),revision=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
-             | ${h.link_to(_('Raw'), h.url('files_raw_home', repo_name=entry.get('repository',''),revision=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
-             | <a href="${h.url('files_rawfile_home',repo_name=entry.get('repository',''),revision=entry.get('commit_id', 'tip'),f_path=entry.get('f_path',''))}">
-                ${_('Download')}
-               </a>
+            </a>
+             | ${h.link_to(_('Annotation'), h.route_path('repo_files:annotated', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
+             | ${h.link_to(_('Raw'), h.route_path('repo_file_raw', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
+             | ${h.link_to(_('Download'), h.route_path('repo_file_download',repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
           </div>
         </div>
         <div class="code-body search-code-body">
             ${highlight_text_file(c.cur_query, entry['content'],
-            url=h.url('files_home',repo_name=entry['repository'],revision=entry.get('commit_id', 'tip'),f_path=entry['f_path']),
+            url=h.route_path('repo_files',repo_name=entry['repository'],commit_id=entry.get('commit_id', 'tip'),f_path=entry['f_path']),
             mimetype=entry.get('mimetype'), filepath=entry.get('path'))}
         </div>
       </div>

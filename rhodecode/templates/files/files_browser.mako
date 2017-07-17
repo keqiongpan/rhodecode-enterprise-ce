@@ -23,7 +23,7 @@
             </div>
             % if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name):
               <div title="${_('Add New File')}" class="btn btn-primary new-file">
-                <a href="${h.url('files_add_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path, anchor='edit')}">
+                <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path, _anchor='edit')}">
                     ${_('Add File')}</a>
               </div>
             % endif
@@ -43,7 +43,7 @@
     </div>
     ## file tree is computed from caches, and filled in
     <div id="file-tree">
-    ${c.file_tree}
+    ${c.file_tree |n}
     </div>
 
 </div>

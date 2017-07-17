@@ -74,10 +74,9 @@ class RepoSummaryView(RepoAppView):
                 log.debug("Searching for a README file.")
                 readme_node = ReadmeFinder(default_renderer).search(commit)
             if readme_node:
-                relative_url = h.url('files_raw_home',
-                                     repo_name=repo_name,
-                                     revision=commit.raw_id,
-                                     f_path=readme_node.path)
+                relative_url = h.route_path(
+                    'repo_file_raw', repo_name=repo_name,
+                    commit_id=commit.raw_id, f_path=readme_node.path)
                 readme_data = self._render_readme_or_none(
                     commit, readme_node, relative_url)
                 readme_filename = readme_node.path
@@ -360,9 +359,9 @@ class RepoSummaryView(RepoAppView):
 
     def _create_files_url(self, repo, full_repo_name, ref_name, raw_id, is_svn):
         use_commit_id = '/' in ref_name or is_svn
-        return h.url(
-            'files_home',
+        return h.route_path(
+            'repo_files',
             repo_name=full_repo_name,
             f_path=ref_name if is_svn else '',
-            revision=raw_id if use_commit_id else ref_name,
-            at=ref_name)
+            commit_id=raw_id if use_commit_id else ref_name,
+            _query=dict(at=ref_name))
