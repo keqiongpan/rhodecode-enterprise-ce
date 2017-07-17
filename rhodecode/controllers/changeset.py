@@ -149,7 +149,6 @@ class ChangesetController(BaseRepoController):
 
     def __before__(self):
         super(ChangesetController, self).__before__()
-        c.affected_files_cut_off = 60
 
     def _index(self, commit_id_range, method):
         c.ignorews_url = _ignorews_url

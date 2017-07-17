@@ -16,7 +16,7 @@
         <a id="file_history_overview" href="#">
             ${_('History')}
         </a>
-        <a id="file_history_overview_full" style="display: none" href="${h.url('changelog_file_home',repo_name=c.repo_name, revision=c.commit.raw_id, f_path=c.f_path)}">
+        <a id="file_history_overview_full" style="display: none" href="${h.route_path('repo_changelog_file',repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path)}">
            ${_('Show Full History')}
         </a> |
         %if c.annotate:

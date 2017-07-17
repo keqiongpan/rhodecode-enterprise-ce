@@ -74,7 +74,7 @@
             ## branch
             %if cs.branch:
              <span class="branchtag tag" title="${h.tooltip(_('Branch %s') % cs.branch)}">
-              <a href="${h.url('changelog_home',repo_name=c.repo_name,branch=cs.branch)}"><i class="icon-code-fork"></i>${h.shorter(cs.branch)}</a>
+              <a href="${h.route_path('repo_changelog',repo_name=c.repo_name,_query=dict(branch=cs.branch))}"><i class="icon-code-fork"></i>${h.shorter(cs.branch)}</a>
              </span>
             %endif
           </div>

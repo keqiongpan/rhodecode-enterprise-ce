@@ -14,7 +14,7 @@
          </a>
       </li>
       <li>
-         <a title="${_('Changelog')}" href="${h.url('changelog_home',repo_name=repo_name)}">
+         <a title="${_('Changelog')}" href="${h.route_path('repo_changelog',repo_name=repo_name)}">
          <span>${_('Changelog')}</span>
          </a>
       </li>

@@ -139,6 +139,17 @@ def includeme(config):
         name='repo_stats',
         pattern='/{repo_name:.*?[^/]}/repo_stats/{commit_id}', repo_route=True)
 
+    # Changelog
+    config.add_route(
+        name='repo_changelog',
+        pattern='/{repo_name:.*?[^/]}/changelog', repo_route=True)
+    config.add_route(
+        name='repo_changelog_file',
+        pattern='/{repo_name:.*?[^/]}/changelog/{commit_id}/{f_path:.*}', repo_route=True)
+    config.add_route(
+        name='repo_changelog_elements',
+        pattern='/{repo_name:.*?[^/]}/changelog_elements', repo_route=True)
+
     # Tags
     config.add_route(
         name='tags_home',

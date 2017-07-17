@@ -94,7 +94,7 @@
                   % if commit_rev == -1:
                       ${_ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}},
                   % else:
-                      <a href="${h.url('changelog_home', repo_name=c.repo_name)}">
+                      <a href="${h.route_path('repo_changelog', repo_name=c.repo_name)}">
                         ${_ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>,
                   % endif
 

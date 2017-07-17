@@ -226,7 +226,7 @@
     <div class="wrapper">
       <ul id="context-pages" class="horizontal-list navigation">
         <li class="${is_active('summary')}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
-        <li class="${is_active('changelog')}"><a class="menulink" href="${h.url('changelog_home', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
+        <li class="${is_active('changelog')}"><a class="menulink" href="${h.route_path('repo_changelog', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
         <li class="${is_active('files')}"><a class="menulink" href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.rhodecode_db_repo.landing_rev[1], f_path='')}"><div class="menulabel">${_('Files')}</div></a></li>
         <li class="${is_active('compare')}">
             <a class="menulink" href="${h.url('compare_home',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a>

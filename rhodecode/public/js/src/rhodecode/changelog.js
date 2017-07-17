@@ -105,7 +105,7 @@ var CommitsController = function () {
             urlData['branch'] = branch;
         }
 
-        return pyroutes.url('changelog_elements', urlData);
+        return pyroutes.url('repo_changelog_elements', urlData);
     };
 
     this.loadNext = function (node, page, branch) {

@@ -274,7 +274,6 @@ def make_map(config):
         m.connect('edit_user_perms_summary', '/users/{user_id}/edit/permissions_summary',
                   action='edit_perms_summary', conditions={'method': ['GET']})
 
-
     # ADMIN USER GROUPS REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/user_groups') as m:
@@ -696,21 +695,6 @@ def make_map(config):
                  '/{repo_name}/pull-request-comment/{comment_id}/delete',
                  controller='pullrequests', action='delete_comment',
                  conditions={'function': check_repo, 'method': ['DELETE']},
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-
-    rmap.connect('changelog_home', '/{repo_name}/changelog', jsroute=True,
-                 controller='changelog', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('changelog_file_home',
-                 '/{repo_name}/changelog/{revision}/{f_path}',
-                 controller='changelog', f_path=None,
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-
-    rmap.connect('changelog_elements', '/{repo_name}/changelog_details',
-                 controller='changelog', action='changelog_elements',
-                 conditions={'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('repo_fork_create_home', '/{repo_name}/fork',

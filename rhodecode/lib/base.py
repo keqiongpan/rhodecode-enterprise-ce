@@ -324,6 +324,8 @@ def attach_context_attributes(context, request, user_id):
     context.visual.rhodecode_support_url = \
         rc_config.get('rhodecode_support_url') or h.route_url('rhodecode_support')
 
+    context.visual.affected_files_cut_off = 60
+
     context.pre_code = rc_config.get('rhodecode_pre_code')
     context.post_code = rc_config.get('rhodecode_post_code')
     context.rhodecode_name = rc_config.get('rhodecode_title')

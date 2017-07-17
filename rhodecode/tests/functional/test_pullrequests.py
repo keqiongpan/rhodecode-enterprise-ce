@@ -36,6 +36,19 @@ from rhodecode.tests import (
 from rhodecode.tests.utils import AssertResponse
 
 
+def route_path(name, params=None, **kwargs):
+    import urllib
+
+    base_url = {
+        'repo_changelog':'/{repo_name}/changelog',
+        'repo_changelog_file':'/{repo_name}/changelog/{commit_id}/{f_path}',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
+
 @pytest.mark.usefixtures('app', 'autologin_user')
 @pytest.mark.backends("git", "hg")
 class TestPullrequestsController(object):
@@ -912,14 +925,14 @@ class TestPullrequestsController(object):
         target_children = target.getchildren()
         assert len(target_children) == 1
 
-        expected_origin_link = url(
-            'changelog_home',
+        expected_origin_link = route_path(
+            'repo_changelog',
             repo_name=pull_request.source_repo.scm_instance().name,
-            branch='origin')
-        expected_target_link = url(
-            'changelog_home',
+            params=dict(branch='origin'))
+        expected_target_link = route_path(
+            'repo_changelog',
             repo_name=pull_request.target_repo.scm_instance().name,
-            branch='target')
+            params=dict(branch='target'))
         assert origin_children[0].attrib['href'] == expected_origin_link
         assert origin_children[0].text == 'branch: origin'
         assert target_children[0].attrib['href'] == expected_target_link

@@ -129,9 +129,8 @@ class JournalController(BaseController):
             desc = action_extra()
             _url = None
             if entry.repository is not None:
-                _url = url('changelog_home',
-                           repo_name=entry.repository.repo_name,
-                           qualified=True)
+                _url = h.route_url('repo_changelog',
+                                   repo_name=entry.repository.repo_name)
 
             feed.add_item(title=title,
                           pubdate=entry.action_date,
@@ -172,9 +171,8 @@ class JournalController(BaseController):
             desc = action_extra()
             _url = None
             if entry.repository is not None:
-                _url = url('changelog_home',
-                           repo_name=entry.repository.repo_name,
-                           qualified=True)
+                _url = h.route_url('repo_changelog',
+                                   repo_name=entry.repository.repo_name)
 
             feed.add_item(title=title,
                           pubdate=entry.action_date,

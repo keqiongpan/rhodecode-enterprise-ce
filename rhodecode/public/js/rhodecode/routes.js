@@ -30,9 +30,6 @@ function registerRCRoutes() {
     pyroutes.register('pullrequest_update', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_comment', '/%(repo_name)s/pull-request-comment/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_comment_delete', '/%(repo_name)s/pull-request-comment/%(comment_id)s/delete', ['repo_name', 'comment_id']);
-    pyroutes.register('changelog_home', '/%(repo_name)s/changelog', ['repo_name']);
-    pyroutes.register('changelog_file_home', '/%(repo_name)s/changelog/%(revision)s/%(f_path)s', ['repo_name', 'revision', 'f_path']);
-    pyroutes.register('changelog_elements', '/%(repo_name)s/changelog_details', ['repo_name']);
     pyroutes.register('favicon', '/favicon.ico', []);
     pyroutes.register('robots', '/robots.txt', []);
     pyroutes.register('auth_home', '/_admin/auth*traverse', []);
@@ -124,6 +121,9 @@ function registerRCRoutes() {
     pyroutes.register('repo_refs_data', '/%(repo_name)s/refs-data', ['repo_name']);
     pyroutes.register('repo_refs_changelog_data', '/%(repo_name)s/refs-data-changelog', ['repo_name']);
     pyroutes.register('repo_stats', '/%(repo_name)s/repo_stats/%(commit_id)s', ['repo_name', 'commit_id']);
+    pyroutes.register('repo_changelog', '/%(repo_name)s/changelog', ['repo_name']);
+    pyroutes.register('repo_changelog_file', '/%(repo_name)s/changelog/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
+    pyroutes.register('repo_changelog_elements', '/%(repo_name)s/changelog_elements', ['repo_name']);
     pyroutes.register('tags_home', '/%(repo_name)s/tags', ['repo_name']);
     pyroutes.register('branches_home', '/%(repo_name)s/branches', ['repo_name']);
     pyroutes.register('bookmarks_home', '/%(repo_name)s/bookmarks', ['repo_name']);

@@ -65,7 +65,7 @@ ${h.code_highlight(
             %endif
           </div>
           <div class="buttons">
-            <a id="file_history_overview_full" href="${h.url('changelog_file_home',repo_name=entry.get('repository',''),revision=entry.get('commit_id', 'tip'),f_path=entry.get('f_path',''))}">
+            <a id="file_history_overview_full" href="${h.route_path('repo_changelog_file',repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path',''))}">
                ${_('Show Full History')}
             </a>
              | ${h.link_to(_('Annotation'), h.route_path('repo_files:annotated', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}

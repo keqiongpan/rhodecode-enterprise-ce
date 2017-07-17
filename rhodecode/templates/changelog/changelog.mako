@@ -86,7 +86,7 @@
             </div>
             ${self.breadcrumbs('breadcrumbs_light')}
             <div id="commit-counter" data-total=${c.total_cs} class="pull-right">
-                ${ungettext('showing %d out of %d commit', 'showing %d out of %d commits', c.showing_commits) % (c.showing_commits, c.total_cs)}
+                ${_ungettext('showing %d out of %d commit', 'showing %d out of %d commits', c.showing_commits) % (c.showing_commits, c.total_cs)}
             </div>
         </div>
 
@@ -230,7 +230,7 @@
 
             $("#clear_filter").on("click", function() {
                 var filter = {'repo_name': '${c.repo_name}'};
-                window.location = pyroutes.url('changelog_home', filter);
+                window.location = pyroutes.url('repo_changelog', filter);
             });
 
             $("#branch_filter").select2({
@@ -280,7 +280,7 @@
                 else if (data.type == 'book'){
                     filter["bookmark"] = selected;
                 }
-                window.location = pyroutes.url('changelog_home', filter);
+                window.location = pyroutes.url('repo_changelog', filter);
             });
 
             commitsController = new CommitsController();
