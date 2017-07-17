@@ -35,11 +35,13 @@ from rhodecode.tests.fixture import Fixture
 
 fixture = Fixture()
 
-NODE_HISTORY = {
-    'hg': json.loads(fixture.load_resource('hg_node_history_response.json')),
-    'git': json.loads(fixture.load_resource('git_node_history_response.json')),
-    'svn': json.loads(fixture.load_resource('svn_node_history_response.json')),
-}
+
+def get_node_history(backend_type):
+    return {
+        'hg': json.loads(fixture.load_resource('hg_node_history_response.json')),
+        'git': json.loads(fixture.load_resource('git_node_history_response.json')),
+        'svn': json.loads(fixture.load_resource('svn_node_history_response.json')),
+    }[backend_type]
 
 
 def route_path(name, params=None, **kwargs):
@@ -297,7 +299,7 @@ class TestFilesViews(object):
                        repo_name=backend.repo_name,
                        commit_id='tip', f_path='vcs/nodes.py'),
             extra_environ=xhr_header)
-        assert NODE_HISTORY[backend.alias] == json.loads(response.body)
+        assert get_node_history(backend.alias) == json.loads(response.body)
 
     def test_file_source_history_svn(self, backend_svn, xhr_header):
         simple_repo = backend_svn['svn-simple-layout']
@@ -319,7 +321,7 @@ class TestFilesViews(object):
                        params=dict(annotate=1)),
 
             extra_environ=xhr_header)
-        assert NODE_HISTORY[backend.alias] == json.loads(response.body)
+        assert get_node_history(backend.alias) == json.loads(response.body)
 
     def test_tree_search_top_level(self, backend, xhr_header):
         commit = backend.repo.get_commit(commit_idx=173)
