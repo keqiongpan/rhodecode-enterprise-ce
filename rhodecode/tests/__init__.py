@@ -196,7 +196,7 @@ def login_user(app, username=TEST_USER_ADMIN_LOGIN,
     return login_user_session(app, username, password)['rhodecode_user']
 
 
-def assert_session_flash(response=None, msg=None, category=None):
+def assert_session_flash(response=None, msg=None, category=None, no_=None):
     """
     Assert on a flash message in the current session.
 
@@ -206,9 +206,14 @@ def assert_session_flash(response=None, msg=None, category=None):
         object. Otherwise don't pass in any value.
     :param category: Optional. If passed, the message category will be
         checked as well.
+    :param no_: Optional. If passed, the message will be checked to NOT be in the
+        flash session
     """
-    if msg is None:
-        raise ValueError("Parameter msg is required.")
+    if msg is None and no_ is None:
+        raise ValueError("Parameter msg or no_ is required.")
+
+    if msg and no_:
+        raise ValueError("Please specify either msg or no_, but not both")
 
     messages = flash.pop_messages()
     msg = _eval_if_lazy(msg)
@@ -216,38 +221,33 @@ def assert_session_flash(response=None, msg=None, category=None):
     assert messages, 'unable to find message `%s` in empty flash list' % msg
     message = messages[0]
 
-    message_text = _eval_if_lazy(message.message)
+    message_text = _eval_if_lazy(message.message) or ''
 
-    if msg not in message_text:
-        fail_msg = u'msg `%s` not found in session ' \
-                   u'flash: got `%s` (type:%s) instead' % (
-            msg, message_text, type(message_text))
+    if no_:
+        if no_ in message_text:
+            msg = u'msg `%s` found in session flash.' % (no_,)
+            pytest.fail(safe_str(msg))
+    else:
+        if msg not in message_text:
+            fail_msg = u'msg `%s` not found in session ' \
+                       u'flash: got `%s` (type:%s) instead' % (
+                msg, message_text, type(message_text))
 
-        pytest.fail(safe_str(fail_msg))
-    if category:
-        assert category == message.category
+            pytest.fail(safe_str(fail_msg))
+        if category:
+            assert category == message.category
 
 
 def _eval_if_lazy(value):
     return value.eval() if hasattr(value, 'eval') else value
 
 
-def assert_not_in_session_flash(response, msg, category=None):
-    assert 'flash' in response.session, 'Response session has no flash key'
-    message_category, message_text = response.session['flash'][0]
-    if msg in message_text:
-        msg = u'msg `%s` found in session flash: got `%s` instead' % (
-            msg, message_text)
-        pytest.fail(safe_str(msg))
-    if category:
-        assert category == message_category
-
-
 def assert_session_flash_is_empty(response):
-    if 'flash' in response.session:
-        msg = 'flash messages are present in session:%s' % \
-              response.session['flash'][0]
-        pytest.fail(safe_str(msg))
+    assert 'flash' in response.session, 'Response session has no flash key'
+
+    msg = 'flash messages are present in session:%s' % \
+          response.session['flash'][0]
+    pytest.fail(safe_str(msg))
 
 
 def no_newline_id_generator(test_name):
