@@ -15,7 +15,6 @@ function registerRCRoutes() {
     pyroutes.register('new_repo', '/_admin/create_repository', []);
     pyroutes.register('edit_user', '/_admin/users/%(user_id)s/edit', ['user_id']);
     pyroutes.register('edit_user_group_members', '/_admin/user_groups/%(user_group_id)s/edit/members', ['user_group_id']);
-    pyroutes.register('toggle_following', '/_admin/toggle_following', []);
     pyroutes.register('changeset_home', '/%(repo_name)s/changeset/%(revision)s', ['repo_name', 'revision']);
     pyroutes.register('changeset_comment', '/%(repo_name)s/changeset/%(revision)s/comment', ['repo_name', 'revision']);
     pyroutes.register('changeset_comment_preview', '/%(repo_name)s/changeset/comment/preview', ['repo_name']);
@@ -92,6 +91,15 @@ function registerRCRoutes() {
     pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('repo_list_data', '/_repos', []);
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
+    pyroutes.register('journal', '/_admin/journal', []);
+    pyroutes.register('journal_rss', '/_admin/journal/rss', []);
+    pyroutes.register('journal_atom', '/_admin/journal/atom', []);
+    pyroutes.register('journal_public', '/_admin/public_journal', []);
+    pyroutes.register('journal_public_atom', '/_admin/public_journal/atom', []);
+    pyroutes.register('journal_public_atom_old', '/_admin/public_journal_atom', []);
+    pyroutes.register('journal_public_rss', '/_admin/public_journal/rss', []);
+    pyroutes.register('journal_public_rss_old', '/_admin/public_journal_rss', []);
+    pyroutes.register('toggle_following', '/_admin/toggle_following', []);
     pyroutes.register('repo_summary_explicit', '/%(repo_name)s/summary', ['repo_name']);
     pyroutes.register('repo_summary_commits', '/%(repo_name)s/summary-commits', ['repo_name']);
     pyroutes.register('repo_commit', '/%(repo_name)s/changeset/%(commit_id)s', ['repo_name', 'commit_id']);

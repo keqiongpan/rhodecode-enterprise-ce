@@ -444,35 +444,6 @@ def make_map(config):
         m.connect('my_account_password', '/my_account/password',
                   action='my_account_password', conditions={'method': ['GET']})
 
-    # USER JOURNAL
-    rmap.connect('journal', '%s/journal' % (ADMIN_PREFIX,),
-                 controller='journal', action='index')
-    rmap.connect('journal_rss', '%s/journal/rss' % (ADMIN_PREFIX,),
-                 controller='journal', action='journal_rss')
-    rmap.connect('journal_atom', '%s/journal/atom' % (ADMIN_PREFIX,),
-                 controller='journal', action='journal_atom')
-
-    rmap.connect('public_journal', '%s/public_journal' % (ADMIN_PREFIX,),
-                 controller='journal', action='public_journal')
-
-    rmap.connect('public_journal_rss', '%s/public_journal/rss' % (ADMIN_PREFIX,),
-                 controller='journal', action='public_journal_rss')
-
-    rmap.connect('public_journal_rss_old', '%s/public_journal_rss' % (ADMIN_PREFIX,),
-                 controller='journal', action='public_journal_rss')
-
-    rmap.connect('public_journal_atom',
-                 '%s/public_journal/atom' % (ADMIN_PREFIX,), controller='journal',
-                 action='public_journal_atom')
-
-    rmap.connect('public_journal_atom_old',
-                 '%s/public_journal_atom' % (ADMIN_PREFIX,), controller='journal',
-                 action='public_journal_atom')
-
-    rmap.connect('toggle_following', '%s/toggle_following' % (ADMIN_PREFIX,),
-                 controller='journal', action='toggle_following', jsroute=True,
-                 conditions={'method': ['POST']})
-
     #==========================================================================
     # REPOSITORY ROUTES
     #==========================================================================

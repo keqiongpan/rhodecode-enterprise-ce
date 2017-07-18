@@ -381,13 +381,13 @@
       ## ROOT MENU
       %if c.rhodecode_user.username != h.DEFAULT_USER:
         <li class="${is_active('journal')}">
-          <a class="menulink" title="${_('Show activity journal')}" href="${h.url('journal')}">
+          <a class="menulink" title="${_('Show activity journal')}" href="${h.route_path('journal')}">
             <div class="menulabel">${_('Journal')}</div>
           </a>
         </li>
       %else:
         <li class="${is_active('journal')}">
-          <a class="menulink" title="${_('Show Public activity journal')}" href="${h.url('public_journal')}">
+          <a class="menulink" title="${_('Show Public activity journal')}" href="${h.route_path('journal_public')}">
             <div class="menulabel">${_('Public journal')}</div>
           </a>
         </li>
