@@ -35,8 +35,8 @@
           <span class="breadcrumbs files_location">
             <h4>${_('Commit')}
               <code>
-                <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.commit.raw_id}" title="${_('Copy the full commit id')}"></i>
                 ${h.show_id(c.commit)}
+                <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.commit.raw_id}" title="${_('Copy the full commit id')}"></i>
                 % if hasattr(c.commit, 'phase'):
                       <span class="tag phase-${c.commit.phase} tooltip" title="${_('Commit phase')}">${c.commit.phase}</span>
                 % endif

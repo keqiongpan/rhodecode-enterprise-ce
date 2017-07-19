@@ -3,7 +3,7 @@
 
     % if c.pr_merge_possible:
         <h2 class="merge-status">
-            <span class="merge-icon success"><i class="icon-true"></i></span>
+            <span class="merge-icon success"><i class="icon-ok"></i></span>
             ${_('This pull request can be merged automatically.')}
         </h2>
     % else:

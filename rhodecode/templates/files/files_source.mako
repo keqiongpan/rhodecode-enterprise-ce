@@ -3,7 +3,12 @@
 <div id="codeblock" class="codeblock">
     <div class="codeblock-header">
       <div class="stats">
-            <span> <strong>${c.file}</strong></span>
+            <span>
+                <strong>
+                    <i class="icon-file-text"></i>
+                    ${c.file}
+                </strong>
+            </span>
             % if c.lf_node:
             <span title="${_('This file is a pointer to large binary file')}"> | ${_('LargeFile')} ${h.format_byte_size_binary(c.lf_node.size)} </span>
             % endif

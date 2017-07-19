@@ -6,11 +6,11 @@
             <div class="info_box">
               ${h.hidden('refs_filter')}
               <div class="info_box_elem previous">
-                    <a id="prev_commit_link" data-commit-id="${c.prev_commit.raw_id}" class="pjax-link ${'disabled' if c.url_prev == '#' else ''}" href="${c.url_prev}" title="${_('Previous commit')}"><i class="icon-chevron-left"></i></a>
+                    <a id="prev_commit_link" data-commit-id="${c.prev_commit.raw_id}" class="pjax-link ${'disabled' if c.url_prev == '#' else ''}" href="${c.url_prev}" title="${_('Previous commit')}"><i class="icon-left"></i></a>
               </div>
               <div class="info_box_elem">${h.text('at_rev',value=c.commit.revision)}</div>
               <div class="info_box_elem next">
-                    <a id="next_commit_link" data-commit-id="${c.next_commit.raw_id}" class="pjax-link ${'disabled' if c.url_next == '#' else ''}" href="${c.url_next}" title="${_('Next commit')}"><i class="icon-chevron-right"></i></a>
+                    <a id="next_commit_link" data-commit-id="${c.next_commit.raw_id}" class="pjax-link ${'disabled' if c.url_next == '#' else ''}" href="${c.url_next}" title="${_('Next commit')}"><i class="icon-right"></i></a>
               </div>
             </div>
             ${h.end_form()}

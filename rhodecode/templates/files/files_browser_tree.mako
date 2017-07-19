@@ -15,7 +15,7 @@
           <tr class="parity0">
             <td class="td-componentname">
               <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.file.parent.path)}" class="pjax-link">
-                <i class="icon-folder"></i>..
+                <i class="icon-directory"></i>..
               </a>
             </td>
             <td></td>
@@ -31,15 +31,15 @@
               <span class="submodule-dir">
                 % if node.url.startswith('http://') or node.url.startswith('https://'):
                   <a href="${node.url}">
-                      <i class="icon-folder browser-dir"></i>${node.name}
+                      <i class="icon-directory browser-dir"></i>${node.name}
                   </a>
                 % else:
-                  <i class="icon-folder browser-dir"></i>${node.name}
+                  <i class="icon-directory browser-dir"></i>${node.name}
                 % endif
               </span>
             % else:
               <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=h.safe_unicode(node.path))}" class="pjax-link">
-                <i class="${'icon-file browser-file' if node.is_file() else 'icon-folder browser-dir'}"></i>${node.name}
+                <i class="${'icon-file-text browser-file' if node.is_file() else 'icon-directory browser-dir'}"></i>${node.name}
               </a>
             % endif
             </td>

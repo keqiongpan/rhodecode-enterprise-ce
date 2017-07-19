@@ -45,11 +45,11 @@
     </td>
     <td class="td-hash">
     <code>
-      <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${commit.raw_id}" title="${_('Copy the full commit id')}"></i>
 
       <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id)}">
         <span class="${'commit_hash obsolete' if getattr(commit, 'obsolete', None) else 'commit_hash'}">${h.show_id(commit)}</span>
       </a>
+      <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${commit.raw_id}" title="${_('Copy the full commit id')}"></i>
       % if hasattr(commit, 'phase'):
           % if commit.phase != 'public':
               <span class="tag phase-${commit.phase} tooltip" title="${_('Commit phase')}">${commit.phase}</span>
