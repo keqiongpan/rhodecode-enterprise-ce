@@ -36,6 +36,7 @@
         "<%= dirs.js.src %>/bootstrap.js",
         "<%= dirs.js.src %>/mousetrap.js",
         "<%= dirs.js.src %>/moment.js",
+        "<%= dirs.js.src %>/clipboard.min.js",
         "<%= dirs.js.node_modules %>/appenlight-client/appenlight-client.min.js",
         "<%= dirs.js.node_modules %>/favico.js/favico-0.3.10.min.js",
         "<%= dirs.js.src %>/i18n_utils.js",
