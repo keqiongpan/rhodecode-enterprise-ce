@@ -133,6 +133,7 @@ c.template_context['default_user'] = {
             $(document).ready(function(){
               show_more_event();
               timeagoActivate();
+              clipboardActivate();
             })
             </script>
 

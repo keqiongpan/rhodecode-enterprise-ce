@@ -210,6 +210,20 @@ var timeagoActivate = function() {
     $("time.timeago").timeago();
 };
 
+
+var clipboardActivate = function() {
+    /*
+    *
+    * <i class="tooltip icon-plus clipboard-action" data-clipboard-text="${commit.raw_id}" title="${_('Copy the full commit id')}"></i>
+    * */
+    var clipboard = new Clipboard('.clipboard-action');
+
+    clipboard.on('success', function(e) {
+        e.clearSelection();
+    });
+};
+
+
 // Formatting values in a Select2 dropdown of commit references
 var formatSelect2SelectionRefs = function(commit_ref){
   var tmpl = '';
