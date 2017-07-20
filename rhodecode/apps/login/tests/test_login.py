@@ -23,9 +23,8 @@ import urlparse
 import mock
 import pytest
 
-from rhodecode.config.routing import ADMIN_PREFIX
 from rhodecode.tests import (
-    assert_session_flash, url, HG_REPO, TEST_USER_ADMIN_LOGIN,
+    assert_session_flash, HG_REPO, TEST_USER_ADMIN_LOGIN,
     no_newline_id_generator)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.lib.auth import check_password
@@ -37,14 +36,32 @@ from rhodecode.model.meta import Session
 
 fixture = Fixture()
 
-# Hardcode URLs because we don't have a request object to use
-# pyramids URL generation methods.
-index_url = '/'
-login_url = ADMIN_PREFIX + '/login'
-logut_url = ADMIN_PREFIX + '/logout'
-register_url = ADMIN_PREFIX + '/register'
-pwd_reset_url = ADMIN_PREFIX + '/password_reset'
-pwd_reset_confirm_url = ADMIN_PREFIX + '/password_reset_confirmation'
+
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
+
+    base_url = {
+        'login': ADMIN_PREFIX + '/login',
+        'logout': ADMIN_PREFIX + '/logout',
+        'register': ADMIN_PREFIX + '/register',
+        'reset_password':
+            ADMIN_PREFIX + '/password_reset',
+        'reset_password_confirmation':
+            ADMIN_PREFIX + '/password_reset_confirmation',
+
+        'admin_permissions_application':
+            ADMIN_PREFIX + '/permissions/application',
+        'admin_permissions_application_update':
+            ADMIN_PREFIX + '/permissions/application/update',
+
+        'repo_commit_raw': '/{repo_name}/raw-changeset/{commit_id}'
+
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
 
 
 @pytest.mark.usefixtures('app')
@@ -63,12 +80,12 @@ class TestLoginController(object):
         assert Notification.query().all() == []
 
     def test_index(self):
-        response = self.app.get(login_url)
+        response = self.app.get(route_path('login'))
         assert response.status == '200 OK'
         # Test response...
 
     def test_login_admin_ok(self):
-        response = self.app.post(login_url,
+        response = self.app.post(route_path('login'),
                                  {'username': 'test_admin',
                                   'password': 'test12'})
         assert response.status == '302 Found'
@@ -79,7 +96,7 @@ class TestLoginController(object):
         response.mustcontain('/%s' % HG_REPO)
 
     def test_login_regular_ok(self):
-        response = self.app.post(login_url,
+        response = self.app.post(route_path('login'),
                                  {'username': 'test_regular',
                                   'password': 'test12'})
 
@@ -92,7 +109,7 @@ class TestLoginController(object):
 
     def test_login_ok_came_from(self):
         test_came_from = '/_admin/users?branch=stable'
-        _url = '{}?came_from={}'.format(login_url, test_came_from)
+        _url = '{}?came_from={}'.format(route_path('login'), test_came_from)
         response = self.app.post(
             _url, {'username': 'test_admin', 'password': 'test12'})
         assert response.status == '302 Found'
@@ -113,7 +130,7 @@ class TestLoginController(object):
             assert 'branch=stable' in response_query[0][1]
 
     def test_login_form_with_get_args(self):
-        _url = '{}?came_from=/_admin/users,branch=stable'.format(login_url)
+        _url = '{}?came_from=/_admin/users,branch=stable'.format(route_path('login'))
         response = self.app.get(_url)
         assert 'branch%3Dstable' in response.form.action
 
@@ -126,7 +143,7 @@ class TestLoginController(object):
         '/\r\nX-Forwarded-Host: http://example.org',
     ], ids=no_newline_id_generator)
     def test_login_bad_came_froms(self, url_came_from):
-        _url = '{}?came_from={}'.format(login_url, url_came_from)
+        _url = '{}?came_from={}'.format(route_path('login'), url_came_from)
         response = self.app.post(
             _url,
             {'username': 'test_admin', 'password': 'test12'})
@@ -136,7 +153,7 @@ class TestLoginController(object):
         assert response.request.path == '/'
 
     def test_login_short_password(self):
-        response = self.app.post(login_url,
+        response = self.app.post(route_path('login'),
                                  {'username': 'test_admin',
                                   'password': 'as'})
         assert response.status == '200 OK'
@@ -145,7 +162,7 @@ class TestLoginController(object):
 
     def test_login_wrong_non_ascii_password(self, user_regular):
         response = self.app.post(
-            login_url,
+            route_path('login'),
             {'username': user_regular.username,
              'password': u'invalid-non-asci\xe4'.encode('utf8')})
 
@@ -156,13 +173,13 @@ class TestLoginController(object):
         password = u'valid-non-ascii\xe4'
         user = user_util.create_user(password=password)
         response = self.app.post(
-            login_url,
+            route_path('login'),
             {'username': user.username,
              'password': password.encode('utf-8')})
         assert response.status_code == 302
 
     def test_login_wrong_username_password(self):
-        response = self.app.post(login_url,
+        response = self.app.post(route_path('login'),
                                  {'username': 'error',
                                   'password': 'test12'})
 
@@ -180,7 +197,7 @@ class TestLoginController(object):
         Session().add(user)
         Session().commit()
         self.destroy_users.add(temp_user)
-        response = self.app.post(login_url,
+        response = self.app.post(route_path('login'),
                                  {'username': temp_user,
                                   'password': 'test123'})
 
@@ -197,13 +214,13 @@ class TestLoginController(object):
 
     # REGISTRATIONS
     def test_register(self):
-        response = self.app.get(register_url)
+        response = self.app.get(route_path('register'))
         response.mustcontain('Create an Account')
 
     def test_register_err_same_username(self):
         uname = 'test_admin'
         response = self.app.post(
-            register_url,
+            route_path('register'),
             {
                 'username': uname,
                 'password': 'test12',
@@ -221,7 +238,7 @@ class TestLoginController(object):
 
     def test_register_err_same_email(self):
         response = self.app.post(
-            register_url,
+            route_path('register'),
             {
                 'username': 'test_admin_0',
                 'password': 'test12',
@@ -238,7 +255,7 @@ class TestLoginController(object):
 
     def test_register_err_same_email_case_sensitive(self):
         response = self.app.post(
-            register_url,
+            route_path('register'),
             {
                 'username': 'test_admin_1',
                 'password': 'test12',
@@ -254,7 +271,7 @@ class TestLoginController(object):
 
     def test_register_err_wrong_data(self):
         response = self.app.post(
-            register_url,
+            route_path('register'),
             {
                 'username': 'xs',
                 'password': 'test',
@@ -270,7 +287,7 @@ class TestLoginController(object):
 
     def test_register_err_username(self):
         response = self.app.post(
-            register_url,
+            route_path('register'),
             {
                 'username': 'error user',
                 'password': 'test12',
@@ -291,7 +308,7 @@ class TestLoginController(object):
     def test_register_err_case_sensitive(self):
         usr = 'Test_Admin'
         response = self.app.post(
-            register_url,
+            route_path('register'),
             {
                 'username': usr,
                 'password': 'test12',
@@ -309,7 +326,7 @@ class TestLoginController(object):
 
     def test_register_special_chars(self):
         response = self.app.post(
-            register_url,
+            route_path('register'),
             {
                 'username': 'xxxaxn',
                 'password': 'ąćźżąśśśś',
@@ -325,7 +342,7 @@ class TestLoginController(object):
 
     def test_register_password_mismatch(self):
         response = self.app.post(
-            register_url,
+            route_path('register'),
             {
                 'username': 'xs',
                 'password': '123qwe',
@@ -346,7 +363,7 @@ class TestLoginController(object):
         lastname = 'testlastname'
 
         response = self.app.post(
-            register_url,
+            route_path('register'),
             {
                 'username': username,
                 'password': password,
@@ -374,29 +391,29 @@ class TestLoginController(object):
     def test_forgot_password_wrong_mail(self):
         bad_email = 'marcin@wrongmail.org'
         response = self.app.post(
-            pwd_reset_url, {'email': bad_email, }
+            route_path('reset_password'), {'email': bad_email, }
         )
         assert_session_flash(response,
             'If such email exists, a password reset link was sent to it.')
 
     def test_forgot_password(self, user_util):
-        response = self.app.get(pwd_reset_url)
+        response = self.app.get(route_path('reset_password'))
         assert response.status == '200 OK'
 
         user = user_util.create_user()
         user_id = user.user_id
         email = user.email
 
-        response = self.app.post(pwd_reset_url, {'email': email, })
+        response = self.app.post(route_path('reset_password'), {'email': email, })
 
         assert_session_flash(response,
             'If such email exists, a password reset link was sent to it.')
 
         # BAD KEY
-        confirm_url = '{}?key={}'.format(pwd_reset_confirm_url, 'badkey')
+        confirm_url = '{}?key={}'.format(route_path('reset_password_confirmation'), 'badkey')
         response = self.app.get(confirm_url)
         assert response.status == '302 Found'
-        assert response.location.endswith(pwd_reset_url)
+        assert response.location.endswith(route_path('reset_password'))
         assert_session_flash(response, 'Given reset token is invalid')
 
         response.follow()  # cleanup flash
@@ -409,10 +426,10 @@ class TestLoginController(object):
 
         assert key
 
-        confirm_url = '{}?key={}'.format(pwd_reset_confirm_url, key.api_key)
+        confirm_url = '{}?key={}'.format(route_path('reset_password_confirmation'), key.api_key)
         response = self.app.get(confirm_url)
         assert response.status == '302 Found'
-        assert response.location.endswith(login_url)
+        assert response.location.endswith(route_path('login'))
 
         assert_session_flash(
             response,
@@ -442,11 +459,11 @@ class TestLoginController(object):
                 auth_token = user_admin.api_key
 
             with fixture.anon_access(False):
-                self.app.get(url(controller='changeset',
-                                 action='changeset_raw',
-                                 repo_name=HG_REPO, revision='tip',
-                                 api_key=auth_token),
-                             status=302)
+                self.app.get(
+                    route_path('repo_commit_raw',
+                               repo_name=HG_REPO, commit_id='tip',
+                               params=dict(api_key=auth_token)),
+                    status=302)
 
     @pytest.mark.parametrize("test_name, auth_token, code", [
         ('none', None, 302),
@@ -468,11 +485,11 @@ class TestLoginController(object):
                 assert auth_token
 
             with fixture.anon_access(False):
-                self.app.get(url(controller='changeset',
-                                 action='changeset_raw',
-                                 repo_name=HG_REPO, revision='tip',
-                                 api_key=auth_token),
-                             status=code)
+                self.app.get(
+                    route_path('repo_commit_raw',
+                               repo_name=HG_REPO, commit_id='tip',
+                               params=dict(api_key=auth_token)),
+                    status=code)
 
     def test_access_page_via_extra_auth_token(self):
         whitelist = self._get_api_whitelist(
@@ -485,11 +502,11 @@ class TestLoginController(object):
                 TEST_USER_ADMIN_LOGIN, 'test')
             Session().commit()
             with fixture.anon_access(False):
-                self.app.get(url(controller='changeset',
-                                 action='changeset_raw',
-                                 repo_name=HG_REPO, revision='tip',
-                                 api_key=new_auth_token.api_key),
-                             status=200)
+                self.app.get(
+                    route_path('repo_commit_raw',
+                               repo_name=HG_REPO, commit_id='tip',
+                               params=dict(api_key=new_auth_token.api_key)),
+                    status=200)
 
     def test_access_page_via_expired_auth_token(self):
         whitelist = self._get_api_whitelist(
@@ -506,8 +523,8 @@ class TestLoginController(object):
             Session().add(new_auth_token)
             Session().commit()
             with fixture.anon_access(False):
-                self.app.get(url(controller='changeset',
-                                 action='changeset_raw',
-                                 repo_name=HG_REPO, revision='tip',
-                                 api_key=new_auth_token.api_key),
-                             status=302)
+                self.app.get(
+                    route_path('repo_commit_raw',
+                               repo_name=HG_REPO, commit_id='tip',
+                               params=dict(api_key=new_auth_token.api_key)),
+                    status=302)

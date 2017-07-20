@@ -6,6 +6,9 @@
   </div>
   <div class="panel-body">
     <div class="ips_wrap">
+    <h5>${_('Current IP address')}: <code>${c.rhodecode_user.ip_addr}</code></h5>
+
+
       <table class="rctable ip-whitelist">
         <tr>
           <th>IP Address</th>

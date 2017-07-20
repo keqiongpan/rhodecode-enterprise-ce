@@ -20,23 +20,38 @@
 
 import pytest
 
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.lib import helpers as h
 from rhodecode.tests import (
-    TestController, clear_all_caches, url,
+    TestController, clear_all_caches,
     TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import AssertResponse
 
 fixture = Fixture()
 
-# Hardcode URLs because we don't have a request object to use
-# pyramids URL generation methods.
-index_url = '/'
-login_url = ADMIN_PREFIX + '/login'
-logut_url = ADMIN_PREFIX + '/logout'
-register_url = ADMIN_PREFIX + '/register'
-pwd_reset_url = ADMIN_PREFIX + '/password_reset'
-pwd_reset_confirm_url = ADMIN_PREFIX + '/password_reset_confirmation'
+
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
+
+    base_url = {
+        'login': ADMIN_PREFIX + '/login',
+        'logout': ADMIN_PREFIX + '/logout',
+        'register': ADMIN_PREFIX + '/register',
+        'reset_password':
+            ADMIN_PREFIX + '/password_reset',
+        'reset_password_confirmation':
+            ADMIN_PREFIX + '/password_reset_confirmation',
+
+        'admin_permissions_application':
+            ADMIN_PREFIX + '/permissions/application',
+        'admin_permissions_application_update':
+            ADMIN_PREFIX + '/permissions/application/update',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
 
 
 class TestPasswordReset(TestController):
@@ -59,12 +74,12 @@ class TestPasswordReset(TestController):
             'default_password_reset': pwd_reset_setting,
             'default_extern_activate': 'hg.extern_activate.auto',
         }
-        resp = self.app.post(url('admin_permissions_application'), params=params)
+        resp = self.app.post(route_path('admin_permissions_application_update'), params=params)
         self.logout_user()
 
-        login_page = self.app.get(login_url)
+        login_page = self.app.get(route_path('login'))
         asr_login = AssertResponse(login_page)
-        index_page = self.app.get(index_url)
+        index_page = self.app.get(h.route_path('home'))
         asr_index = AssertResponse(index_page)
 
         if show_link:
@@ -74,7 +89,7 @@ class TestPasswordReset(TestController):
             asr_login.no_element_exists('a.pwd_reset')
             asr_index.no_element_exists('a.pwd_reset')
 
-        response = self.app.get(pwd_reset_url)
+        response = self.app.get(route_path('reset_password'))
         
         assert_response = AssertResponse(response)
         if show_reset:
@@ -96,11 +111,11 @@ class TestPasswordReset(TestController):
             'default_password_reset': 'hg.password_reset.disabled',
             'default_extern_activate': 'hg.extern_activate.auto',
         }
-        self.app.post(url('admin_permissions_application'), params=params)
+        self.app.post(route_path('admin_permissions_application_update'), params=params)
         self.logout_user()
 
         response = self.app.post(
-            pwd_reset_url, {'email': 'lisa@rhodecode.com',}
+            route_path('reset_password'), {'email': 'lisa@rhodecode.com',}
         )
         response = response.follow()
         response.mustcontain('Password reset is disabled.')

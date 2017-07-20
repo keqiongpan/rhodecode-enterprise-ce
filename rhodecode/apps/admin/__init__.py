@@ -72,9 +72,35 @@ def admin_routes(config):
         pattern='/settings/process_management/signal')
 
     # global permissions
+
+    config.add_route(
+        name='admin_permissions_application',
+        pattern='/permissions/application')
+    config.add_route(
+        name='admin_permissions_application_update',
+        pattern='/permissions/application/update')
+
+    config.add_route(
+        name='admin_permissions_global',
+        pattern='/permissions/global')
+    config.add_route(
+        name='admin_permissions_global_update',
+        pattern='/permissions/global/update')
+
+    config.add_route(
+        name='admin_permissions_object',
+        pattern='/permissions/object')
+    config.add_route(
+        name='admin_permissions_object_update',
+        pattern='/permissions/object/update')
+
     config.add_route(
         name='admin_permissions_ips',
         pattern='/permissions/ips')
+
+    config.add_route(
+        name='admin_permissions_overview',
+        pattern='/permissions/overview')
 
     # users admin
     config.add_route(

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2016-2017  RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,24 +18,19 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
-"""
-permissions controller for RhodeCode Enterprise
-"""
-
-
 import logging
-
 import formencode
-from formencode import htmlfill
-from pylons import request, tmpl_context as c, url
-from pylons.controllers.util import redirect
-from pylons.i18n.translation import _
+
+from pyramid.view import view_config
+from pyramid.httpexceptions import HTTPFound
+from pyramid.renderers import render
+from pyramid.response import Response
+
+from rhodecode.apps._base import BaseAppView
 
 from rhodecode.lib import helpers as h
-from rhodecode.lib import auth
-from rhodecode.lib.auth import (LoginRequired, HasPermissionAllDecorator)
-from rhodecode.lib.base import BaseController, render
+from rhodecode.lib.auth import (
+    LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.model.db import User, UserIpMap
 from rhodecode.model.forms import (
     ApplicationPermissionsForm, ObjectPermissionsForm, UserPermissionsForm)
@@ -43,26 +38,27 @@ from rhodecode.model.meta import Session
 from rhodecode.model.permission import PermissionModel
 from rhodecode.model.settings import SettingsModel
 
+
 log = logging.getLogger(__name__)
 
 
-class PermissionsController(BaseController):
-    """REST Controller styled on the Atom Publishing Protocol"""
-    # To properly map this controller, ensure your config/routing.py
-    # file has a resource setup:
-    #     map.resource('permission', 'permissions')
+class AdminPermissionsView(BaseAppView):
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+
+        self._register_global_c(c)
+        PermissionModel().set_global_permission_choices(
+            c, gettext_translator=self.request.translate)
+        return c
 
     @LoginRequired()
-    def __before__(self):
-        super(PermissionsController, self).__before__()
-
-    def __load_data(self):
-        PermissionModel().set_global_permission_choices(c, gettext_translator=_)
-
     @HasPermissionAllDecorator('hg.admin')
-    def permission_application(self):
+    @view_config(
+        route_name='admin_permissions_application', request_method='GET',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def permissions_application(self):
+        c = self.load_default_context()
         c.active = 'application'
-        self.__load_data()
 
         c.user = User.get_default_user(refresh=True)
 
@@ -74,24 +70,34 @@ class PermissionsController(BaseController):
         }
         defaults.update(c.user.get_default_perms())
 
-        return htmlfill.render(
-            render('admin/permissions/permissions.mako'),
+        data = render('rhodecode:templates/admin/permissions/permissions.mako',
+                      self._get_template_context(c), self.request)
+        html = formencode.htmlfill.render(
+            data,
             defaults=defaults,
             encoding="UTF-8",
-            force_defaults=False)
+            force_defaults=False
+        )
+        return Response(html)
 
+    @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @auth.CSRFRequired()
-    def permission_application_update(self):
+    @CSRFRequired()
+    @view_config(
+        route_name='admin_permissions_application_update', request_method='POST',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def permissions_application_update(self):
+        _ = self.request.translate
+        c = self.load_default_context()
         c.active = 'application'
-        self.__load_data()
+
         _form = ApplicationPermissionsForm(
             [x[0] for x in c.register_choices],
             [x[0] for x in c.password_reset_choices],
             [x[0] for x in c.extern_activate_choices])()
 
         try:
-            form_result = _form.to_python(dict(request.POST))
+            form_result = _form.to_python(dict(self.request.POST))
             form_result.update({'perm_user_name': User.DEFAULT_USER})
             PermissionModel().update_application_permissions(form_result)
 
@@ -110,45 +116,68 @@ class PermissionsController(BaseController):
         except formencode.Invalid as errors:
             defaults = errors.value
 
-            return htmlfill.render(
-                render('admin/permissions/permissions.mako'),
+            data = render(
+                'rhodecode:templates/admin/permissions/permissions.mako',
+                self._get_template_context(c), self.request)
+            html = formencode.htmlfill.render(
+                data,
                 defaults=defaults,
                 errors=errors.error_dict or {},
                 prefix_error=False,
                 encoding="UTF-8",
-                force_defaults=False)
+                force_defaults=False
+            )
+            return Response(html)
+
         except Exception:
             log.exception("Exception during update of permissions")
             h.flash(_('Error occurred during update of permissions'),
                     category='error')
 
-        return redirect(url('admin_permissions_application'))
+        raise HTTPFound(h.route_path('admin_permissions_application'))
 
+    @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    def permission_objects(self):
+    @view_config(
+        route_name='admin_permissions_object', request_method='GET',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def permissions_objects(self):
+        c = self.load_default_context()
         c.active = 'objects'
-        self.__load_data()
-        c.user = User.get_default_user()
+
+        c.user = User.get_default_user(refresh=True)
         defaults = {}
         defaults.update(c.user.get_default_perms())
-        return htmlfill.render(
-            render('admin/permissions/permissions.mako'),
+
+        data = render(
+            'rhodecode:templates/admin/permissions/permissions.mako',
+            self._get_template_context(c), self.request)
+        html = formencode.htmlfill.render(
+            data,
             defaults=defaults,
             encoding="UTF-8",
-            force_defaults=False)
+            force_defaults=False
+        )
+        return Response(html)
 
+    @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @auth.CSRFRequired()
-    def permission_objects_update(self):
+    @CSRFRequired()
+    @view_config(
+        route_name='admin_permissions_object_update', request_method='POST',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def permissions_objects_update(self):
+        _ = self.request.translate
+        c = self.load_default_context()
         c.active = 'objects'
-        self.__load_data()
+
         _form = ObjectPermissionsForm(
             [x[0] for x in c.repo_perms_choices],
             [x[0] for x in c.group_perms_choices],
             [x[0] for x in c.user_group_perms_choices])()
 
         try:
-            form_result = _form.to_python(dict(request.POST))
+            form_result = _form.to_python(dict(self.request.POST))
             form_result.update({'perm_user_name': User.DEFAULT_USER})
             PermissionModel().update_object_permissions(form_result)
 
@@ -159,40 +188,60 @@ class PermissionsController(BaseController):
         except formencode.Invalid as errors:
             defaults = errors.value
 
-            return htmlfill.render(
-                render('admin/permissions/permissions.mako'),
+            data = render(
+                'rhodecode:templates/admin/permissions/permissions.mako',
+                self._get_template_context(c), self.request)
+            html = formencode.htmlfill.render(
+                data,
                 defaults=defaults,
                 errors=errors.error_dict or {},
                 prefix_error=False,
                 encoding="UTF-8",
-                force_defaults=False)
+                force_defaults=False
+            )
+            return Response(html)
         except Exception:
             log.exception("Exception during update of permissions")
             h.flash(_('Error occurred during update of permissions'),
                     category='error')
 
-        return redirect(url('admin_permissions_object'))
+        raise HTTPFound(h.route_path('admin_permissions_object'))
 
+    @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    def permission_global(self):
+    @view_config(
+        route_name='admin_permissions_global', request_method='GET',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def permissions_global(self):
+        c = self.load_default_context()
         c.active = 'global'
-        self.__load_data()
 
-        c.user = User.get_default_user()
+        c.user = User.get_default_user(refresh=True)
         defaults = {}
         defaults.update(c.user.get_default_perms())
 
-        return htmlfill.render(
-            render('admin/permissions/permissions.mako'),
+        data = render(
+            'rhodecode:templates/admin/permissions/permissions.mako',
+            self._get_template_context(c), self.request)
+        html = formencode.htmlfill.render(
+            data,
             defaults=defaults,
             encoding="UTF-8",
-            force_defaults=False)
+            force_defaults=False
+        )
+        return Response(html)
 
+    @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @auth.CSRFRequired()
-    def permission_global_update(self):
+    @CSRFRequired()
+    @view_config(
+        route_name='admin_permissions_global_update', request_method='POST',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def permissions_global_update(self):
+        _ = self.request.translate
+        c = self.load_default_context()
         c.active = 'global'
-        self.__load_data()
+
         _form = UserPermissionsForm(
             [x[0] for x in c.repo_create_choices],
             [x[0] for x in c.repo_create_on_write_choices],
@@ -202,7 +251,7 @@ class PermissionsController(BaseController):
             [x[0] for x in c.inherit_default_permission_choices])()
 
         try:
-            form_result = _form.to_python(dict(request.POST))
+            form_result = _form.to_python(dict(self.request.POST))
             form_result.update({'perm_user_name': User.DEFAULT_USER})
             PermissionModel().update_user_permissions(form_result)
 
@@ -213,32 +262,49 @@ class PermissionsController(BaseController):
         except formencode.Invalid as errors:
             defaults = errors.value
 
-            return htmlfill.render(
-                render('admin/permissions/permissions.mako'),
+            data = render(
+                'rhodecode:templates/admin/permissions/permissions.mako',
+                self._get_template_context(c), self.request)
+            html = formencode.htmlfill.render(
+                data,
                 defaults=defaults,
                 errors=errors.error_dict or {},
                 prefix_error=False,
                 encoding="UTF-8",
-                force_defaults=False)
+                force_defaults=False
+            )
+            return Response(html)
         except Exception:
             log.exception("Exception during update of permissions")
             h.flash(_('Error occurred during update of permissions'),
                     category='error')
 
-        return redirect(url('admin_permissions_global'))
+        raise HTTPFound(h.route_path('admin_permissions_global'))
 
+    @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    def permission_ips(self):
+    @view_config(
+        route_name='admin_permissions_ips', request_method='GET',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def permissions_ips(self):
+        c = self.load_default_context()
         c.active = 'ips'
-        c.user = User.get_default_user()
+
+        c.user = User.get_default_user(refresh=True)
         c.user_ip_map = (
             UserIpMap.query().filter(UserIpMap.user == c.user).all())
 
-        return render('admin/permissions/permissions.mako')
+        return self._get_template_context(c)
 
+    @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    def permission_perms(self):
+    @view_config(
+        route_name='admin_permissions_overview', request_method='GET',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def permissions_overview(self):
+        c = self.load_default_context()
         c.active = 'perms'
-        c.user = User.get_default_user()
+
+        c.user = User.get_default_user(refresh=True)
         c.perm_user = c.user.AuthUser
-        return render('admin/permissions/permissions.mako')
+        return self._get_template_context(c)

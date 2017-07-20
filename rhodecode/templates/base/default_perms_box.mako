@@ -106,7 +106,7 @@
               <span class="help-block">
               ${h.literal(_('Select to inherit permissions from %s permissions settings, '
                             'including default IP address whitelist and inheritance of \npermission by members of user groups.')
-                          % h.link_to('default user', h.url('admin_permissions_global')))}
+                          % h.link_to('default user', h.route_path('admin_permissions_global')))}
               </span>
           </div>
         </div>

@@ -5,7 +5,7 @@
     <div class="panel-body">
         <p>${_('Default system permissions. Each permissions management entity will be created with the following default settings. Check the overwrite checkbox to force any permission changes on already existing settings.')}
         </p>
-        ${h.secure_form(h.url('admin_permissions_object'), method='post')}
+        ${h.secure_form(h.route_path('admin_permissions_object_update'), method='POST', request=request)}
             <div class="form">
                 <div class="fields">
                     <div class="field">

@@ -63,7 +63,14 @@ function registerRCRoutes() {
     pyroutes.register('admin_settings_sessions_cleanup', '/_admin/settings/sessions/cleanup', []);
     pyroutes.register('admin_settings_process_management', '/_admin/settings/process_management', []);
     pyroutes.register('admin_settings_process_management_signal', '/_admin/settings/process_management/signal', []);
+    pyroutes.register('admin_permissions_application', '/_admin/permissions/application', []);
+    pyroutes.register('admin_permissions_application_update', '/_admin/permissions/application/update', []);
+    pyroutes.register('admin_permissions_global', '/_admin/permissions/global', []);
+    pyroutes.register('admin_permissions_global_update', '/_admin/permissions/global/update', []);
+    pyroutes.register('admin_permissions_object', '/_admin/permissions/object', []);
+    pyroutes.register('admin_permissions_object_update', '/_admin/permissions/object/update', []);
     pyroutes.register('admin_permissions_ips', '/_admin/permissions/ips', []);
+    pyroutes.register('admin_permissions_overview', '/_admin/permissions/overview', []);
     pyroutes.register('users', '/_admin/users', []);
     pyroutes.register('users_data', '/_admin/users_data', []);
     pyroutes.register('edit_user_auth_tokens', '/_admin/users/%(user_id)s/edit/auth_tokens', ['user_id']);

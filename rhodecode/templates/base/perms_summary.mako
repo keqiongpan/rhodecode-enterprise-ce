@@ -76,7 +76,7 @@
                 </td>
                 %if actions:
                 <td class="td-action">
-                     <a href="${custom_url or h.url('admin_permissions_global')}">${_('edit')}</a>
+                     <a href="${custom_url or h.route_path('admin_permissions_global')}">${_('edit')}</a>
                 </td>
                 %endif
               </tr>
@@ -84,14 +84,14 @@
 
            ${glob(_('Super admin'), get_section_perms('hg.admin', permissions[section]))}
 
-           ${glob(_('Repository default permission'), get_section_perms('repository.', permissions[section]), 'repository', h.url('admin_permissions_object'))}
-           ${glob(_('Repository group default permission'), get_section_perms('group.', permissions[section]), 'group', h.url('admin_permissions_object'))}
-           ${glob(_('User group default permission'), get_section_perms('usergroup.', permissions[section]), 'usergroup', h.url('admin_permissions_object'))}
+           ${glob(_('Repository default permission'), get_section_perms('repository.', permissions[section]), 'repository', h.route_path('admin_permissions_object'))}
+           ${glob(_('Repository group default permission'), get_section_perms('group.', permissions[section]), 'group', h.route_path('admin_permissions_object'))}
+           ${glob(_('User group default permission'), get_section_perms('usergroup.', permissions[section]), 'usergroup', h.route_path('admin_permissions_object'))}
 
-           ${glob(_('Create repositories'), get_section_perms('hg.create.', permissions[section]), custom_url=h.url('admin_permissions_global'))}
-           ${glob(_('Fork repositories'), get_section_perms('hg.fork.', permissions[section]), custom_url=h.url('admin_permissions_global'))}
-           ${glob(_('Create repository groups'), get_section_perms('hg.repogroup.create.', permissions[section]), custom_url=h.url('admin_permissions_global'))}
-           ${glob(_('Create user groups'), get_section_perms('hg.usergroup.create.', permissions[section]), custom_url=h.url('admin_permissions_global'))}
+           ${glob(_('Create repositories'), get_section_perms('hg.create.', permissions[section]), custom_url=h.route_path('admin_permissions_global'))}
+           ${glob(_('Fork repositories'), get_section_perms('hg.fork.', permissions[section]), custom_url=h.route_path('admin_permissions_global'))}
+           ${glob(_('Create repository groups'), get_section_perms('hg.repogroup.create.', permissions[section]), custom_url=h.route_path('admin_permissions_global'))}
+           ${glob(_('Create user groups'), get_section_perms('hg.usergroup.create.', permissions[section]), custom_url=h.route_path('admin_permissions_global'))}
 
 
            </tbody>

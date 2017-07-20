@@ -17,7 +17,7 @@
           <tr>
             <td class="td-ip"><div class="ip">${ip.ip_addr}</div></td>
             <td class="td-iprange"><div class="ip">${h.ip_range(ip.ip_addr)}</div></td>
-            <td class="td-description">${h.literal(_('Inherited from %s') % h.link_to('*default*',h.url('admin_permissions_ips')))}</td>
+            <td class="td-description">${h.literal(_('Inherited from %s') % h.link_to('*default*',h.route_path('admin_permissions_ips')))}</td>
             <td></td>
           </tr>
         %endfor

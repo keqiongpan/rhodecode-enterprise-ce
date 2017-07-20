@@ -22,7 +22,7 @@ import pytest
 from rhodecode.model.db import User, UserIpMap
 from rhodecode.model.permission import PermissionModel
 from rhodecode.tests import (
-    TestController, url, clear_all_caches, assert_session_flash)
+    TestController, clear_all_caches, assert_session_flash)
 
 
 def route_path(name, params=None, **kwargs):
@@ -36,6 +36,27 @@ def route_path(name, params=None, **kwargs):
             ADMIN_PREFIX + '/users/{user_id}/edit/ips/new',
         'edit_user_ips_delete':
             ADMIN_PREFIX + '/users/{user_id}/edit/ips/delete',
+
+        'admin_permissions_application':
+            ADMIN_PREFIX + '/permissions/application',
+        'admin_permissions_application_update':
+            ADMIN_PREFIX + '/permissions/application/update',
+
+        'admin_permissions_global':
+            ADMIN_PREFIX + '/permissions/global',
+        'admin_permissions_global_update':
+            ADMIN_PREFIX + '/permissions/global/update',
+
+        'admin_permissions_object':
+            ADMIN_PREFIX + '/permissions/object',
+        'admin_permissions_object_update':
+            ADMIN_PREFIX + '/permissions/object/update',
+
+        'admin_permissions_ips':
+            ADMIN_PREFIX + '/permissions/ips',
+        'admin_permissions_overview':
+            ADMIN_PREFIX + '/permissions/overview'
+
     }[name].format(**kwargs)
 
     if params:
@@ -55,7 +76,7 @@ class TestAdminPermissionsController(TestController):
 
     def test_index_application(self):
         self.log_user()
-        self.app.get(url('admin_permissions_application'))
+        self.app.get(route_path('admin_permissions_application'))
 
     @pytest.mark.parametrize(
         'anonymous, default_register, default_register_message, default_password_reset,' 
@@ -87,7 +108,7 @@ class TestAdminPermissionsController(TestController):
             'default_password_reset': default_password_reset,
             'default_extern_activate': default_extern_activate,
         }
-        response = self.app.post(url('admin_permissions_application'),
+        response = self.app.post(route_path('admin_permissions_application_update'),
                                  params=params)
         if expect_form_error:
             assert response.status_int == 200
@@ -101,7 +122,7 @@ class TestAdminPermissionsController(TestController):
 
     def test_index_object(self):
         self.log_user()
-        self.app.get(url('admin_permissions_object'))
+        self.app.get(route_path('admin_permissions_object'))
 
     @pytest.mark.parametrize(
         'repo, repo_group, user_group, expect_error, expect_form_error', [
@@ -127,7 +148,7 @@ class TestAdminPermissionsController(TestController):
             'default_user_group_perm': user_group,
             'overwrite_default_user_group': False,
         }
-        response = self.app.post(url('admin_permissions_object'),
+        response = self.app.post(route_path('admin_permissions_object_update'),
                                  params=params)
         if expect_form_error:
             assert response.status_int == 200
@@ -141,7 +162,7 @@ class TestAdminPermissionsController(TestController):
 
     def test_index_global(self):
         self.log_user()
-        self.app.get(url('admin_permissions_global'))
+        self.app.get(route_path('admin_permissions_global'))
 
     @pytest.mark.parametrize(
         'repo_create, repo_create_write, user_group_create, repo_group_create,'
@@ -175,7 +196,7 @@ class TestAdminPermissionsController(TestController):
             'default_fork_create': fork_create,
             'default_inherit_default_permissions': inherit_default_permissions
         }
-        response = self.app.post(url('admin_permissions_global'),
+        response = self.app.post(route_path('admin_permissions_global_update'),
                                  params=params)
         if expect_form_error:
             assert response.status_int == 200
@@ -189,7 +210,7 @@ class TestAdminPermissionsController(TestController):
 
     def test_index_ips(self):
         self.log_user()
-        response = self.app.get(url('admin_permissions_ips'))
+        response = self.app.get(route_path('admin_permissions_ips'))
         # TODO: Test response...
         response.mustcontain('All IP addresses are allowed')
 
@@ -203,7 +224,7 @@ class TestAdminPermissionsController(TestController):
             route_path('edit_user_ips_add', user_id=default_user_id),
             params={'new_ip': '127.0.0.0/24', 'csrf_token': self.csrf_token})
 
-        response = self.app.get(url('admin_permissions_ips'))
+        response = self.app.get(route_path('admin_permissions_ips'))
         response.mustcontain('127.0.0.0/24')
         response.mustcontain('127.0.0.0 - 127.0.0.255')
 
@@ -219,11 +240,11 @@ class TestAdminPermissionsController(TestController):
         assert_session_flash(response, 'Removed ip address from user whitelist')
 
         clear_all_caches()
-        response = self.app.get(url('admin_permissions_ips'))
+        response = self.app.get(route_path('admin_permissions_ips'))
         response.mustcontain('All IP addresses are allowed')
         response.mustcontain(no=['127.0.0.0/24'])
         response.mustcontain(no=['127.0.0.0 - 127.0.0.255'])
 
     def test_index_overview(self):
         self.log_user()
-        self.app.get(url('admin_permissions_overview'))
+        self.app.get(route_path('admin_permissions_overview'))

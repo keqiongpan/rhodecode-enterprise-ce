@@ -46,6 +46,7 @@ from rhodecode.config.routing import ADMIN_PREFIX
 from rhodecode.model.meta import Session
 from rhodecode.model.db import User
 from rhodecode.lib import auth
+from rhodecode.lib import helpers as h
 from rhodecode.lib.helpers import flash, link_to
 from rhodecode.lib.utils2 import safe_unicode, safe_str
 
@@ -166,9 +167,9 @@ class TestController(object):
 
 def login_user_session(
         app, username=TEST_USER_ADMIN_LOGIN, password=TEST_USER_ADMIN_PASS):
-    from rhodecode.tests.functional.test_login import login_url
+
     response = app.post(
-        login_url,
+        h.route_path('login'),
         {'username': username, 'password': password})
     if 'invalid user name' in response.body:
         pytest.fail('could not login using %s %s' % (username, password))
@@ -187,8 +188,7 @@ def login_user_session(
 
 
 def logout_user_session(app, csrf_token):
-    from rhodecode.tests.functional.test_login import logut_url
-    app.post(logut_url, {'csrf_token': csrf_token}, status=302)
+    app.post(h.route_path('logout'), {'csrf_token': csrf_token}, status=302)
 
 
 def login_user(app, username=TEST_USER_ADMIN_LOGIN,

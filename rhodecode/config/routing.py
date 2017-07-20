@@ -321,32 +321,6 @@ def make_map(config):
                   '/user_groups/{user_group_id}/edit/members', jsroute=True,
                   action='user_group_members', conditions={'method': ['GET']})
 
-    # ADMIN PERMISSIONS ROUTES
-    with rmap.submapper(path_prefix=ADMIN_PREFIX,
-                        controller='admin/permissions') as m:
-        m.connect('admin_permissions_application', '/permissions/application',
-                  action='permission_application_update', conditions={'method': ['POST']})
-        m.connect('admin_permissions_application', '/permissions/application',
-                  action='permission_application', conditions={'method': ['GET']})
-
-        m.connect('admin_permissions_global', '/permissions/global',
-                  action='permission_global_update', conditions={'method': ['POST']})
-        m.connect('admin_permissions_global', '/permissions/global',
-                  action='permission_global', conditions={'method': ['GET']})
-
-        m.connect('admin_permissions_object', '/permissions/object',
-                  action='permission_objects_update', conditions={'method': ['POST']})
-        m.connect('admin_permissions_object', '/permissions/object',
-                  action='permission_objects', conditions={'method': ['GET']})
-
-        m.connect('admin_permissions_ips', '/permissions/ips',
-                  action='permission_ips', conditions={'method': ['POST']})
-        m.connect('admin_permissions_ips', '/permissions/ips',
-                  action='permission_ips', conditions={'method': ['GET']})
-
-        m.connect('admin_permissions_overview', '/permissions/overview',
-                  action='permission_perms', conditions={'method': ['GET']})
-
     # ADMIN DEFAULTS REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/defaults') as m:
