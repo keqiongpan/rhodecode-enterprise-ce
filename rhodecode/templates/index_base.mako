@@ -98,6 +98,9 @@
              { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
              { data: {"_": "desc",
                       "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
+             { data: {"_": "last_change",
+                      "sort": "last_change_raw",
+                      "type": Number}, title: "${_('Last Change')}", className: "td-time" },
              { data: {"_": "owner",
                       "sort": "owner"}, title: "${_('Owner')}", className: "td-user" }
           ],

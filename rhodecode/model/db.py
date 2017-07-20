@@ -2213,6 +2213,7 @@ class RepoGroup(Base, BaseModel):
     enable_locking = Column("enable_locking", Boolean(), nullable=False, unique=None, default=False)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False, unique=False, default=None)
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
+    updated_on = Column('updated_on', DateTime(timezone=False), nullable=True, unique=None, default=datetime.datetime.now)
     personal = Column('personal', Boolean(), nullable=True, unique=None, default=None)
 
     repo_group_to_perm = relationship('UserRepoGroupToPerm', cascade='all', order_by='UserRepoGroupToPerm.group_to_perm_id')
@@ -2323,6 +2324,10 @@ class RepoGroup(Base, BaseModel):
 
             groups.insert(0, gr)
         return groups
+
+    @property
+    def last_db_change(self):
+        return self.updated_on
 
     @property
     def children(self):

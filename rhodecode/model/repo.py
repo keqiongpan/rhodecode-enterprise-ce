@@ -28,7 +28,7 @@ import re
 import shutil
 import time
 import traceback
-from datetime import datetime, timedelta
+import datetime
 
 from pyramid.threadlocal import get_current_request
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -207,9 +207,9 @@ class RepoModel(BaseModel):
                            short_name=not admin, admin=False)
 
         def last_change(last_change):
-            if admin and isinstance(last_change, datetime) and not last_change.tzinfo:
-                last_change = last_change + timedelta(seconds=
-                    (datetime.now() - datetime.utcnow()).seconds)
+            if admin and isinstance(last_change, datetime.datetime) and not last_change.tzinfo:
+                last_change = last_change + datetime.timedelta(seconds=
+                    (datetime.datetime.now() - datetime.datetime.utcnow()).seconds)
             return _render("last_change", last_change)
 
         def rss_lnk(repo_name):
@@ -374,6 +374,7 @@ class RepoModel(BaseModel):
                 if ex_field:
                     ex_field.field_value = kwargs[field]
                     self.sa.add(ex_field)
+            cur_repo.updated_on = datetime.datetime.now()
             self.sa.add(cur_repo)
 
             if source_repo_name != new_name:
@@ -899,7 +900,7 @@ class RepoModel(BaseModel):
             if os.path.exists(vcs_path):
                 shutil.move(vcs_path, os.path.join(rm_path, 'rm__.%s' % alias))
 
-        _now = datetime.now()
+        _now = datetime.datetime.now()
         _ms = str(_now.microsecond).rjust(6, '0')
         _d = 'rm__%s__%s' % (_now.strftime('%Y%m%d_%H%M%S_' + _ms),
                              repo.just_name)

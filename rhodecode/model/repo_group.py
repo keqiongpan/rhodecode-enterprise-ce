@@ -40,7 +40,7 @@ from rhodecode.model.db import (_hash_key,
     UserGroup, Repository)
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 from rhodecode.lib.caching_query import FromCache
-from rhodecode.lib.utils2 import action_logger_generic
+from rhodecode.lib.utils2 import action_logger_generic, datetime_to_time
 
 log = logging.getLogger(__name__)
 
@@ -501,7 +501,7 @@ class RepoGroupModel(BaseModel):
 
             if 'user' in form_data:
                 repo_group.user = User.get_by_username(form_data['user'])
-
+            repo_group.updated_on = datetime.datetime.now()
             self.sa.add(repo_group)
 
             # iterate over all members of this groups and do fixes
@@ -518,6 +518,7 @@ class RepoGroupModel(BaseModel):
                     log.debug('Fixing group %s to new name %s',
                               obj.group_name, new_name)
                     obj.group_name = new_name
+                    obj.updated_on = datetime.datetime.now()
                 elif isinstance(obj, Repository):
                     # we need to get all repositories from this new group and
                     # rename them accordingly to new group path
@@ -525,6 +526,7 @@ class RepoGroupModel(BaseModel):
                     log.debug('Fixing repo %s to new name %s',
                               obj.repo_name, new_name)
                     obj.repo_name = new_name
+                    obj.updated_on = datetime.datetime.now()
                 self.sa.add(obj)
 
             self._rename_group(old_path, new_path)
@@ -685,6 +687,12 @@ class RepoGroupModel(BaseModel):
         def repo_group_lnk(repo_group_name):
             return _render('repo_group_name', repo_group_name)
 
+        def last_change(last_change):
+            if admin and isinstance(last_change, datetime.datetime) and not last_change.tzinfo:
+                last_change = last_change + datetime.timedelta(seconds=
+                    (datetime.datetime.now() - datetime.datetime.utcnow()).seconds)
+            return _render("last_change", last_change)
+
         def desc(desc, personal):
             prefix = h.escaped_stylize(u'[personal] ') if personal else ''
 
@@ -712,6 +720,8 @@ class RepoGroupModel(BaseModel):
                 "menu": quick_menu(group.group_name),
                 "name": repo_group_lnk(group.group_name),
                 "name_raw": group.group_name,
+                "last_change": last_change(group.last_db_change),
+                "last_change_raw": datetime_to_time(group.last_db_change),
                 "desc": desc(group.description_safe, group.personal),
                 "top_level_repos": 0,
                 "owner": user_profile(group.user.username)
