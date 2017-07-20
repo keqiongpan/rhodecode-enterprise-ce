@@ -69,6 +69,10 @@ $(document).ready(function(){
         $('#clone_by_id').show();
         $('#clone_url_id').hide();
 
+        // hide copy by id
+        $('#clone_by_name_copy').show();
+        $('#clone_by_id_copy').hide();
+
     });
     $('#clone_by_id').on('click',function(e){
 
@@ -79,6 +83,10 @@ $(document).ready(function(){
         // hide url by name and show id button
         $('#clone_by_name').show();
         $('#clone_url').hide();
+
+        // hide copy by id
+        $('#clone_by_id_copy').show();
+        $('#clone_by_name_copy').hide();
     });
 
     var initialCommitData = {

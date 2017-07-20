@@ -50,9 +50,14 @@
             </div>
             <div class="right-content disabled">
                 <input type="text" class="input-monospace" id="clone_url" disabled value="${c.clone_repo_url}"/>
+                <i id="clone_by_name_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url}" title="${_('Copy the clone url')}"></i>
+
                 <input type="text" class="input-monospace" id="clone_url_id" disabled value="${c.clone_repo_url_id}" style="display: none;"/>
+                <i id="clone_by_id_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url_id}" title="${_('Copy the clone by id url')}" style="display: none"></i>
+
                 <a id="clone_by_name" class="clone" style="display: none;">${_('Show by Name')}</a>
                 <a id="clone_by_id" class="clone">${_('Show by ID')}</a>
+
                 <p class="help-block">${_('SVN Protocol is disabled. To enable it, see the')} <a href="${h.route_url('enterprise_svn_setup')}" target="_blank">${_('documentation here')}</a>.</p>
             </div>
           %else:
@@ -61,7 +66,11 @@
             </div>
             <div class="right-content">
                 <input type="text" class="input-monospace" id="clone_url" readonly="readonly" value="${c.clone_repo_url}"/>
+                <i id="clone_by_name_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url}" title="${_('Copy the clone url')}"></i>
+
                 <input type="text" class="input-monospace" id="clone_url_id" readonly="readonly" value="${c.clone_repo_url_id}" style="display: none;"/>
+                <i id="clone_by_id_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url_id}" title="${_('Copy the clone by id url')}" style="display: none"></i>
+
                 <a id="clone_by_name" class="clone" style="display: none;">${_('Show by Name')}</a>
                 <a id="clone_by_id" class="clone">${_('Show by ID')}</a>
             </div>
