@@ -41,6 +41,9 @@
           <li class="${'active' if c.active=='ips' else ''}">
             <a href="${h.route_path('admin_permissions_ips')}">${_('IP Whitelist')}</a>
           </li>
+          <li class="${'active' if c.active=='auth_token_access' else ''}">
+            <a href="${h.route_path('admin_permissions_auth_token_access')}">${_('AuthToken Access')}</a>
+          </li>
           <li class="${'active' if c.active=='perms' else ''}">
             <a href="${h.route_path('admin_permissions_overview')}">${_('Overview')}</a>
           </li>

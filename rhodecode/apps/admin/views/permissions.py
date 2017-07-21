@@ -18,8 +18,10 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import re
 import logging
 import formencode
+from pyramid.interfaces import IRoutesMapper
 
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
@@ -31,6 +33,7 @@ from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
+from rhodecode.lib.utils2 import aslist
 from rhodecode.model.db import User, UserIpMap
 from rhodecode.model.forms import (
     ApplicationPermissionsForm, ObjectPermissionsForm, UserPermissionsForm)
@@ -307,4 +310,60 @@ class AdminPermissionsView(BaseAppView):
 
         c.user = User.get_default_user(refresh=True)
         c.perm_user = c.user.AuthUser
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='admin_permissions_auth_token_access', request_method='GET',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def auth_token_access(self):
+        from rhodecode import CONFIG
+
+        c = self.load_default_context()
+        c.active = 'auth_token_access'
+
+        c.user = User.get_default_user(refresh=True)
+        c.perm_user = c.user.AuthUser
+
+        mapper = self.request.registry.queryUtility(IRoutesMapper)
+        c.view_data = []
+
+        _argument_prog = re.compile('\{(.*?)\}|:\((.*)\)')
+        introspector = self.request.registry.introspector
+
+        view_intr = {}
+        for view_data in introspector.get_category('views'):
+            intr = view_data['introspectable']
+
+            if 'route_name' in intr and intr['attr']:
+                view_intr[intr['route_name']] = '{}.{}'.format(
+                    str(intr['derived_callable'].func_name), intr['attr']
+                )
+
+        c.whitelist_key = 'api_access_controllers_whitelist'
+        c.whitelist_file = CONFIG.get('__file__')
+        whitelist_views = aslist(
+            CONFIG.get(c.whitelist_key), sep=',')
+
+        for route_info in mapper.get_routes():
+            if not route_info.name.startswith('__'):
+                routepath = route_info.pattern
+
+                def replace(matchobj):
+                    if matchobj.group(1):
+                        return "{%s}" % matchobj.group(1).split(':')[0]
+                    else:
+                        return "{%s}" % matchobj.group(2)
+
+                routepath = _argument_prog.sub(replace, routepath)
+
+                if not routepath.startswith('/'):
+                    routepath = '/' + routepath
+
+                view_fqn = view_intr.get(route_info.name, 'NOT AVAILABLE')
+                active = view_fqn in whitelist_views
+                c.view_data.append((route_info.name, view_fqn, routepath, active))
+
+        c.whitelist_views = whitelist_views
         return self._get_template_context(c)

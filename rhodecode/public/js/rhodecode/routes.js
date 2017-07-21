@@ -71,6 +71,7 @@ function registerRCRoutes() {
     pyroutes.register('admin_permissions_object_update', '/_admin/permissions/object/update', []);
     pyroutes.register('admin_permissions_ips', '/_admin/permissions/ips', []);
     pyroutes.register('admin_permissions_overview', '/_admin/permissions/overview', []);
+    pyroutes.register('admin_permissions_auth_token_access', '/_admin/permissions/auth_token_access', []);
     pyroutes.register('users', '/_admin/users', []);
     pyroutes.register('users_data', '/_admin/users_data', []);
     pyroutes.register('edit_user_auth_tokens', '/_admin/users/%(user_id)s/edit/auth_tokens', ['user_id']);
@@ -176,7 +177,7 @@ function registerRCRoutes() {
     pyroutes.register('my_account_edit', '/_admin/my_account/edit', []);
     pyroutes.register('my_account_update', '/_admin/my_account/update', []);
     pyroutes.register('my_account_password', '/_admin/my_account/password', []);
-    pyroutes.register('my_account_password_update', '/_admin/my_account/password', []);
+    pyroutes.register('my_account_password_update', '/_admin/my_account/password/update', []);
     pyroutes.register('my_account_auth_tokens', '/_admin/my_account/auth_tokens', []);
     pyroutes.register('my_account_auth_tokens_add', '/_admin/my_account/auth_tokens/new', []);
     pyroutes.register('my_account_auth_tokens_delete', '/_admin/my_account/auth_tokens/delete', []);

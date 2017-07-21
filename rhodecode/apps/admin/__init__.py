@@ -102,6 +102,10 @@ def admin_routes(config):
         name='admin_permissions_overview',
         pattern='/permissions/overview')
 
+    config.add_route(
+        name='admin_permissions_auth_token_access',
+        pattern='/permissions/auth_token_access')
+
     # users admin
     config.add_route(
         name='users',
