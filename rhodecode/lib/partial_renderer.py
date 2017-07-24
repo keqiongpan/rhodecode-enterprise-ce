@@ -64,7 +64,7 @@ class PyramidPartialRenderer(object):
 
         _kwargs = {
             '_': self.request.translate,
-            'ungettext': self.request.plularize,
+            '_ungettext': self.request.plularize,
             'h': self.get_helpers(),
             'c': self.get_call_context(),
 

@@ -55,9 +55,9 @@
 
 <%def name="diff_summary_text(changed_files, lines_added, lines_deleted, limited_diff=False)">
     % if limited_diff:
-        ${ungettext('%(num)s file changed', '%(num)s files changed', changed_files) % {'num': changed_files}}
+        ${_ungettext('%(num)s file changed', '%(num)s files changed', changed_files) % {'num': changed_files}}
     % else:
-        ${ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
+        ${_ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
                     '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', changed_files) % {'num': changed_files, 'linesadd': lines_added, 'linesdel': lines_deleted}}
     %endif
 </%def>

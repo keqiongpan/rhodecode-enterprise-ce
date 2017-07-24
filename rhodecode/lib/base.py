@@ -38,7 +38,7 @@ from pylons.controllers import WSGIController
 from pylons.controllers.util import redirect
 from pylons.i18n import translation
 # marcink: don't remove this import
-from pylons.templating import render_mako as render  # noqa
+from pylons.templating import render_mako, pylons_globals, literal, cached_template
 from pylons.i18n.translation import _
 from webob.exc import HTTPFound
 
@@ -64,6 +64,32 @@ from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 
 log = logging.getLogger(__name__)
 
+
+# hack to make the migration to pyramid easier
+def render(template_name, extra_vars=None, cache_key=None,
+           cache_type=None, cache_expire=None):
+    """Render a template with Mako
+
+    Accepts the cache options ``cache_key``, ``cache_type``, and
+    ``cache_expire``.
+
+    """
+    # Create a render callable for the cache function
+    def render_template():
+        # Pull in extra vars if needed
+        globs = extra_vars or {}
+
+        # Second, get the globals
+        globs.update(pylons_globals())
+
+        globs['_ungettext'] = globs['ungettext']
+        # Grab a template reference
+        template = globs['app_globals'].mako_lookup.get_template(template_name)
+
+        return literal(template.render_unicode(**globs))
+
+    return cached_template(template_name, render_template, cache_key=cache_key,
+                           cache_type=cache_type, cache_expire=cache_expire)
 
 def _filter_proxy(ip):
     """

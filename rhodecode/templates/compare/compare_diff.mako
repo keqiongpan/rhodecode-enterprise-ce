@@ -14,7 +14,7 @@
 </%def>
 
 <%def name="breadcrumbs_links()">
-  ${ungettext('%s commit','%s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+  ${_ungettext('%s commit','%s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -309,13 +309,13 @@
                               class="btn"
                               href="#"
                               onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">
-                              ${ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                              ${_ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
                           </a>
                           <a
                               class="btn"
                               href="#"
                               onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
-                              ${ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                              ${_ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
                           </a>
                       </div>
                     </div>

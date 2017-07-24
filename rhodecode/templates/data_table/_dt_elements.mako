@@ -182,7 +182,7 @@
  <div class="grid_delete">
     ${h.secure_form(h.url('delete_repo_group', group_name=repo_group_name),method='delete')}
         ${h.submit('remove_%s' % repo_group_name,_('Delete'),class_="btn btn-link btn-danger",
-        onclick="return confirm('"+ungettext('Confirm to delete this group: %s with %s repository','Confirm to delete this group: %s with %s repositories',gr_count) % (repo_group_name, gr_count)+"');")}
+        onclick="return confirm('"+_ungettext('Confirm to delete this group: %s with %s repository','Confirm to delete this group: %s with %s repositories',gr_count) % (repo_group_name, gr_count)+"');")}
     ${h.end_form()}
  </div>
 </%def>

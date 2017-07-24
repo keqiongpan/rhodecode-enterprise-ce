@@ -154,7 +154,7 @@
                   %endif
                   ${h.commit_status_lbl(c.pull_request_review_status)}
                 </span>
-                - ${ungettext('calculated based on %s reviewer vote', 'calculated based on %s reviewers votes', len(c.pull_request_reviewers)) % len(c.pull_request_reviewers)}
+                - ${_ungettext('calculated based on %s reviewer vote', 'calculated based on %s reviewers votes', len(c.pull_request_reviewers)) % len(c.pull_request_reviewers)}
               %endif
             </div>
            </div>
@@ -183,9 +183,9 @@
                    <% outdated_comm_count_ver = len(c.inline_versions[c.at_version_num]['outdated']) %>
                    <% general_outdated_comm_count_ver = len(c.comment_versions[c.at_version_num]['outdated']) %>
                    <a id="show-pr-versions" class="input" onclick="return versionController.toggleVersionView(this)" href="#show-pr-versions"
-                        data-toggle-on="${ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}"
+                        data-toggle-on="${_ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}"
                         data-toggle-off="${_('Hide all versions of this pull request')}">
-                       ${ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}
+                       ${_ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}
                    </a>
                    <table>
                        ## SHOW ALL VERSIONS OF PR
@@ -443,13 +443,13 @@
                               class="btn"
                               href="#"
                               onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">
-                              ${ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                              ${_ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
                           </a>
                           <a
                               class="btn"
                               href="#"
                               onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
-                              ${ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                              ${_ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
                           </a>
                       </div>
                     </div>

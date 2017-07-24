@@ -87,7 +87,7 @@
             <table class="display">
                 <tr>
                     <td>
-                        ${ungettext('This user owns %s repository.', 'This user owns %s repositories.', len(c.user.repositories)) % len(c.user.repositories)}
+                        ${_ungettext('This user owns %s repository.', 'This user owns %s repositories.', len(c.user.repositories)) % len(c.user.repositories)}
                     </td>
                     <td>
                         %if len(c.user.repositories) > 0:
@@ -103,7 +103,7 @@
 
                 <tr>
                     <td>
-                        ${ungettext('This user owns %s repository group.', 'This user owns %s repository groups.', len(c.user.repository_groups)) % len(c.user.repository_groups)}
+                        ${_ungettext('This user owns %s repository group.', 'This user owns %s repository groups.', len(c.user.repository_groups)) % len(c.user.repository_groups)}
                     </td>
                     <td>
                         %if len(c.user.repository_groups) > 0:
@@ -119,7 +119,7 @@
 
                 <tr>
                     <td>
-                        ${ungettext('This user owns %s user group.', 'This user owns %s user groups.', len(c.user.user_groups)) % len(c.user.user_groups)}
+                        ${_ungettext('This user owns %s user group.', 'This user owns %s user groups.', len(c.user.user_groups)) % len(c.user.user_groups)}
                     </td>
                     <td>
                         %if len(c.user.user_groups) > 0:

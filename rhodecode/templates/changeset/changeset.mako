@@ -163,14 +163,14 @@
         <div class="right-content">
             <div class="comments-number">
                 %if c.comments:
-                    <a href="#comments">${ungettext("%d Commit comment", "%d Commit comments", len(c.comments)) % len(c.comments)}</a>,
+                    <a href="#comments">${_ungettext("%d Commit comment", "%d Commit comments", len(c.comments)) % len(c.comments)}</a>,
                 %else:
-                    ${ungettext("%d Commit comment", "%d Commit comments", len(c.comments)) % len(c.comments)}
+                    ${_ungettext("%d Commit comment", "%d Commit comments", len(c.comments)) % len(c.comments)}
                 %endif
                 %if c.inline_cnt:
-                    <a href="#" onclick="return Rhodecode.comments.nextComment();" id="inline-comments-counter">${ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}</a>
+                    <a href="#" onclick="return Rhodecode.comments.nextComment();" id="inline-comments-counter">${_ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}</a>
                 %else:
-                    ${ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}
+                    ${_ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}
                 %endif
             </div>
         </div>

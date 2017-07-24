@@ -43,7 +43,7 @@ ${h.literal(_('Pull request from %(source_ref_type)s:%(source_ref_name)s of %(re
 ${pull_request.description}
 
 
-* ${ungettext('Commit (%(num)s)', 'Commits (%(num)s)', len(pull_request_commits) ) % {'num': len(pull_request_commits)}}:
+* ${_ungettext('Commit (%(num)s)', 'Commits (%(num)s)', len(pull_request_commits) ) % {'num': len(pull_request_commits)}}:
 
 % for commit_id, message in pull_request_commits:
         - ${h.short_id(commit_id)}
@@ -73,7 +73,7 @@ data = {
     <tr><td style="padding-right:20px;">${_('Source')}</td><td>${base.tag_button(pull_request.source_ref_parts.name)} ${h.literal(_('%(source_ref_type)s of %(source_repo_url)s') % data)}</td></tr>
     <tr><td style="padding-right:20px;">${_('Target')}</td><td>${base.tag_button(pull_request.target_ref_parts.name)} ${h.literal(_('%(target_ref_type)s of %(target_repo_url)s') % data)}</td></tr>
     <tr><td style="padding-right:20px;">${_('Description')}</td><td style="white-space:pre-wrap">${pull_request.description}</td></tr>
-    <tr><td style="padding-right:20px;">${ungettext('%(num)s Commit', '%(num)s Commits', len(pull_request_commits)) % {'num': len(pull_request_commits)}}</td>
+    <tr><td style="padding-right:20px;">${_ungettext('%(num)s Commit', '%(num)s Commits', len(pull_request_commits)) % {'num': len(pull_request_commits)}}</td>
         <td><ol style="margin:0 0 0 1em;padding:0;text-align:left;">
             % for commit_id, message in pull_request_commits:
             <li style="margin:0 0 1em;"><pre style="margin:0 0 .5em">${h.short_id(commit_id)}</pre>

@@ -353,9 +353,9 @@ $(function(){
 
               var msg = '';
               if (commitElements.length === 1) {
-                  msg = "${ungettext('This pull request will consist of __COMMITS__ commit.', 'This pull request will consist of __COMMITS__ commits.', 1)}";
+                  msg = "${_ungettext('This pull request will consist of __COMMITS__ commit.', 'This pull request will consist of __COMMITS__ commits.', 1)}";
               } else {
-                  msg = "${ungettext('This pull request will consist of __COMMITS__ commit.', 'This pull request will consist of __COMMITS__ commits.', 2)}";
+                  msg = "${_ungettext('This pull request will consist of __COMMITS__ commit.', 'This pull request will consist of __COMMITS__ commits.', 2)}";
               }
 
               msg += ' <a id="pull_request_overview_url" href="{0}" target="_blank">${_('Show detailed compare.')}</a>'.format(url);

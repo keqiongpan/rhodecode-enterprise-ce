@@ -127,10 +127,10 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     %if diffset.limited_diff:
         ${_('The requested commit is too big and content was truncated.')}
 
-        ${ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
+        ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
         <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
     %else:
-        ${ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
+        ${_ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
                     '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
     %endif
 

@@ -904,7 +904,7 @@ class PartialRenderer(object):
             'h': self.h,
             'c': self.c,
             'request': self.request,
-            'ungettext': self.ungettext,
+            '_ungettext': self.ungettext,
         }
         _kwargs.update(kwargs)
         return _kwargs
