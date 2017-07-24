@@ -65,7 +65,7 @@
               </td>
               <td class="td-user" data-attr-name="author">
                   % if c.full_load:
-                  <span data-author="${node.last_commit.author}" title="${h.tooltip(node.last_commit.author)}">${h.gravatar_with_user(node.last_commit.author)|n}</span>
+                  <span data-author="${node.last_commit.author}" title="${h.tooltip(node.last_commit.author)}">${h.gravatar_with_user(request, node.last_commit.author)|n}</span>
                   % endif
               </td>
             %else:

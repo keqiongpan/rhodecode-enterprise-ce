@@ -18,7 +18,7 @@
             <td class="cb-annotate-info tooltip"
                 title="Author: ${tooltip(annotation.author) | entity}<br>Date: ${annotation.date}<br>Message: ${annotation.message | entity}"
             >
-              ${h.gravatar_with_user(annotation.author, 16) | n}
+              ${h.gravatar_with_user(request, annotation.author, 16) | n}
               <div class="cb-annotate-message truncate-wrap">${h.chop_at_smart(annotation.message, '\n', suffix_if_chopped='...')}</div>
             </td>
             <td class="cb-annotate-message-spacer">

@@ -126,7 +126,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         users_data = []
         for user in users_list:
             users_data.append({
-                "username": h.gravatar_with_user(user.username),
+                "username": h.gravatar_with_user(self.request, user.username),
                 "email": user.email,
                 "first_name": user.first_name,
                 "last_name": user.last_name,

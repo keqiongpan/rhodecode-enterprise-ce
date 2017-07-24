@@ -923,9 +923,8 @@ def person_by_id(id_, show_attr="username_and_name"):
     return id_
 
 
-def gravatar_with_user(author, show_disabled=False):
-    from rhodecode.lib.utils import PartialRenderer
-    _render = PartialRenderer('base/base.mako')
+def gravatar_with_user(request, author, show_disabled=False):
+    _render = request.get_partial_renderer('base/base.mako')
     return _render('gravatar_with_user', author, show_disabled=show_disabled)
 
 
