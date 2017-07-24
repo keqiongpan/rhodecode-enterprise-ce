@@ -337,7 +337,7 @@ class AdminPermissionsView(BaseAppView):
             intr = view_data['introspectable']
 
             if 'route_name' in intr and intr['attr']:
-                view_intr[intr['route_name']] = '{}.{}'.format(
+                view_intr[intr['route_name']] = '{}:{}'.format(
                     str(intr['derived_callable'].func_name), intr['attr']
                 )
 
