@@ -27,6 +27,7 @@ controllers
 import logging
 import socket
 
+import markupsafe
 import ipaddress
 import pyramid.threadlocal
 
@@ -568,6 +569,17 @@ class BaseController(WSGIController):
                 url('my_account_password'), environ, start_response)
 
         return WSGIController.__call__(self, environ, start_response)
+
+
+def h_filter(s):
+    """
+    Custom filter for Mako templates. Mako by standard uses `markupsafe.escape`
+    we wrap this with additional functionality that converts None to empty
+    strings
+    """
+    if s is None:
+        return markupsafe.Markup()
+    return markupsafe.escape(s)
 
 
 class BaseRepoController(BaseController):
