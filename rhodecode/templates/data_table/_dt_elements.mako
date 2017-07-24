@@ -5,7 +5,7 @@
 
 ## REPOSITORY RENDERERS
 <%def name="quick_menu(repo_name)">
-  <i class="pointer icon-more"></i>
+  <i class="icon-more"></i>
   <div class="menu_items_container hidden">
     <ul class="menu_items">
       <li>
@@ -142,7 +142,7 @@
 
 ## REPO GROUP RENDERERS
 <%def name="quick_repo_group_menu(repo_group_name)">
-  <i class="pointer icon-more"></i>
+  <i class="icon-more"></i>
   <div class="menu_items_container hidden">
     <ul class="menu_items">
       <li>
