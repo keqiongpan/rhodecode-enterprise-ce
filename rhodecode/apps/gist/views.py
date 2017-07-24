@@ -270,7 +270,7 @@ class GistView(BaseAppView):
     @view_config(
         route_name='gist_show_formatted_path', request_method='GET',
         renderer=None)
-    def show(self):
+    def gist_show(self):
         gist_id = self.request.matchdict['gist_id']
 
         # TODO(marcink): expose those via matching dict

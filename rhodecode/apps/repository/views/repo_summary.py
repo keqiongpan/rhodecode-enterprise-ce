@@ -162,6 +162,9 @@ class RepoSummaryView(RepoAppView):
     @view_config(
         route_name='repo_summary_slash', request_method='GET',
         renderer='rhodecode:templates/summary/summary.mako')
+    @view_config(
+        route_name='repo_summary_explicit', request_method='GET',
+        renderer='rhodecode:templates/summary/summary.mako')
     def summary(self):
         c = self.load_default_context()
 

@@ -37,6 +37,8 @@ def route_path(name, **kwargs):
         'home': '/',
         'my_account_password':
             ADMIN_PREFIX + '/my_account/password',
+        'my_account_password_update':
+            ADMIN_PREFIX + '/my_account/password/update',
     }[name].format(**kwargs)
 
 
@@ -58,7 +60,8 @@ class TestMyAccountPassword(TestController):
             ('__end__', 'new_password:mapping'),
             ('csrf_token', self.csrf_token),
         ]
-        response = self.app.post(route_path('my_account_password'), form_data).follow()
+        response = self.app.post(
+            route_path('my_account_password_update'), form_data).follow()
         assert 'Successfully updated password' in response
 
         # check_password depends on user being in session
@@ -91,7 +94,8 @@ class TestMyAccountPassword(TestController):
             ('__end__', 'new_password:mapping'),
             ('csrf_token', self.csrf_token),
         ]
-        response = self.app.post(route_path('my_account_password'), form_data)
+        response = self.app.post(
+            route_path('my_account_password_update'), form_data)
 
         assert_response = response.assert_response()
         assert assert_response.get_elements('.error-block')
@@ -109,7 +113,8 @@ class TestMyAccountPassword(TestController):
             ('__end__', 'new_password:mapping'),
             ('csrf_token', self.csrf_token),
         ]
-        response = self.app.post(route_path('my_account_password'), form_data)
+        response = self.app.post(
+            route_path('my_account_password_update'), form_data)
         assert_session_flash(
             response, 'Error occurred during update of user password')
 
@@ -129,7 +134,8 @@ class TestMyAccountPassword(TestController):
             ('__end__', 'new_password:mapping'),
             ('csrf_token', self.csrf_token),
         ]
-        self.app.post(route_path('my_account_password'), form_data)
+        self.app.post(
+            route_path('my_account_password_update'), form_data)
 
         response = self.app.get(route_path('home'))
         session = response.get_session_from_response()

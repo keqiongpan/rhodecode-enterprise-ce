@@ -90,7 +90,9 @@ class MyAccountView(BaseAppView, DataGridAppView):
             username=c.user.username)
 
         form = forms.Form(
-            schema, buttons=(forms.buttons.save, forms.buttons.reset))
+            schema,
+            action=h.route_path('my_account_password_update'),
+            buttons=(forms.buttons.save, forms.buttons.reset))
 
         c.form = form
         return self._get_template_context(c)
@@ -99,7 +101,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
     @NotAnonymous()
     @CSRFRequired()
     @view_config(
-        route_name='my_account_password', request_method='POST',
+        route_name='my_account_password_update', request_method='POST',
         renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_password_update(self):
         _ = self.request.translate

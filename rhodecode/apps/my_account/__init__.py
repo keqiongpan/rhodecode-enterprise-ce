@@ -43,7 +43,7 @@ def includeme(config):
 
     config.add_route(
         name='my_account_password_update',
-        pattern=ADMIN_PREFIX + '/my_account/password')
+        pattern=ADMIN_PREFIX + '/my_account/password/update')
 
     # my account tokens
     config.add_route(
