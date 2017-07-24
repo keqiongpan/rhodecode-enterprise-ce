@@ -870,7 +870,7 @@ class UserModel(BaseModel):
 
         return list_of_accounts
 
-    def deactivate_last_users(self, expected_users):
+    def deactivate_last_users(self, expected_users, current_user=None):
         """
         Deactivate accounts that are over the license limits.
         Algorithm of which accounts to disabled is based on the formula:
@@ -885,7 +885,8 @@ class UserModel(BaseModel):
             the end N ammoun of users from that list
         """
 
-        list_of_accounts = self.get_accounts_in_creation_order()
+        list_of_accounts = self.get_accounts_in_creation_order(
+            current_user=current_user)
 
         for acc_id in list_of_accounts[expected_users + 1:]:
             user = User.get(acc_id)
