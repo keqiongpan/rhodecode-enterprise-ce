@@ -378,7 +378,7 @@ class GistView(BaseAppView):
             Session().commit()
             h.flash(_('Successfully updated gist data'), category='success')
         except validation_schema.Invalid as errors:
-            errors = errors.asdict()
+            errors = h.escape(errors.asdict())
             h.flash(_('Error occurred during update of gist {}: {}').format(
                 gist_id, errors), category='error')
         except Exception:
