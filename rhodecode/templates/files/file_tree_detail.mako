@@ -23,7 +23,7 @@
   <div class="right-content">
     <div class="tags">
       <code>
-          <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=c.commit.raw_id)}">${h.show_id(c.commit)}</a>
+          <a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.commit.raw_id)}">${h.show_id(c.commit)}</a>
       </code>
 
       ${file_base.refs(c.commit)}

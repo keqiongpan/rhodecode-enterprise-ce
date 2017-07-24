@@ -103,8 +103,9 @@ var bindToggleButtons = function() {
         this.submitButton = $(this.submitForm).find('input[type="submit"]');
         this.submitButtonText = this.submitButton.val();
 
-        this.previewUrl = pyroutes.url('changeset_comment_preview',
-            {'repo_name': templateContext.repo_name});
+        this.previewUrl = pyroutes.url('repo_commit_comment_preview',
+            {'repo_name': templateContext.repo_name,
+             'commit_id': templateContext.commit_data.commit_id});
 
         if (resolvesCommentId){
             this.resolvesId = '#resolve_comment_{0}'.format(resolvesCommentId);
@@ -129,12 +130,12 @@ var bindToggleButtons = function() {
         // based on commitId, or pullRequestId decide where do we submit
         // out data
         if (this.commitId){
-            this.submitUrl = pyroutes.url('changeset_comment',
+            this.submitUrl = pyroutes.url('repo_commit_comment_create',
                 {'repo_name': templateContext.repo_name,
-                 'revision': this.commitId});
-            this.selfUrl = pyroutes.url('changeset_home',
+                 'commit_id': this.commitId});
+            this.selfUrl = pyroutes.url('repo_commit',
                 {'repo_name': templateContext.repo_name,
-                 'revision': this.commitId});
+                 'commit_id': this.commitId});
 
         } else if (this.pullRequestId) {
             this.submitUrl = pyroutes.url('pullrequest_comment',

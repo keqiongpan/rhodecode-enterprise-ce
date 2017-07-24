@@ -33,9 +33,51 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/summary-commits', repo_route=True)
 
     # repo commits
+
     config.add_route(
         name='repo_commit',
         pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}', repo_route=True)
+
+    config.add_route(
+        name='repo_commit_children',
+        pattern='/{repo_name:.*?[^/]}/changeset_children/{commit_id}', repo_route=True)
+
+    config.add_route(
+        name='repo_commit_parents',
+        pattern='/{repo_name:.*?[^/]}/changeset_parents/{commit_id}', repo_route=True)
+
+    # still working url for backward compat.
+    config.add_route(
+        name='repo_commit_raw_deprecated',
+        pattern='/{repo_name:.*?[^/]}/raw-changeset/{commit_id}', repo_route=True)
+
+    config.add_route(
+        name='repo_commit_raw',
+        pattern='/{repo_name:.*?[^/]}/changeset-diff/{commit_id}', repo_route=True)
+
+    config.add_route(
+        name='repo_commit_patch',
+        pattern='/{repo_name:.*?[^/]}/changeset-patch/{commit_id}', repo_route=True)
+
+    config.add_route(
+        name='repo_commit_download',
+        pattern='/{repo_name:.*?[^/]}/changeset-download/{commit_id}', repo_route=True)
+
+    config.add_route(
+        name='repo_commit_data',
+        pattern='/{repo_name:.*?[^/]}/changeset-data/{commit_id}', repo_route=True)
+
+    config.add_route(
+        name='repo_commit_comment_create',
+        pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/create', repo_route=True)
+
+    config.add_route(
+        name='repo_commit_comment_preview',
+        pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/preview', repo_route=True)
+
+    config.add_route(
+        name='repo_commit_comment_delete',
+        pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/{comment_id}/delete', repo_route=True)
 
     # repo files
     config.add_route(
@@ -179,21 +221,6 @@ def includeme(config):
         name='pullrequest_show_all_data',
         pattern='/{repo_name:.*?[^/]}/pull-request-data',
         repo_route=True, repo_accepted_types=['hg', 'git'])
-
-    # commits aka changesets
-    # TODO(dan): handle default landing revision ?
-    config.add_route(
-        name='changeset_home',
-        pattern='/{repo_name:.*?[^/]}/changeset/{revision}',
-        repo_route=True)
-    config.add_route(
-        name='changeset_children',
-        pattern='/{repo_name:.*?[^/]}/changeset_children/{revision}',
-        repo_route=True)
-    config.add_route(
-        name='changeset_parents',
-        pattern='/{repo_name:.*?[^/]}/changeset_parents/{revision}',
-        repo_route=True)
 
     # Settings
     config.add_route(

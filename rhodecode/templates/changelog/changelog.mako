@@ -161,9 +161,9 @@
                 if (selectedCheckboxes.length>0){
                     var revEnd = selectedCheckboxes[0].name;
                     var revStart = selectedCheckboxes[selectedCheckboxes.length-1].name;
-                    var url = pyroutes.url('changeset_home',
+                    var url = pyroutes.url('repo_commit',
                             {'repo_name': '${c.repo_name}',
-                             'revision': revStart+'...'+revEnd});
+                             'commit_id': revStart+'...'+revEnd});
 
                     var link = (revStart == revEnd)
                         ? _gettext('Show selected commit __S')

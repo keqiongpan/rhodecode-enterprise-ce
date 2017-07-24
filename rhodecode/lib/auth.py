@@ -754,7 +754,7 @@ class PermissionCalculator(object):
         }
 
 
-def allowed_auth_token_access(controller_name, whitelist=None, auth_token=None):
+def allowed_auth_token_access(view_name, whitelist=None, auth_token=None):
     """
     Check if given controller_name is in whitelist of auth token access
     """
@@ -767,16 +767,16 @@ def allowed_auth_token_access(controller_name, whitelist=None, auth_token=None):
 
     auth_token_access_valid = False
     for entry in whitelist:
-        if fnmatch.fnmatch(controller_name, entry):
+        if fnmatch.fnmatch(view_name, entry):
             auth_token_access_valid = True
             break
 
     if auth_token_access_valid:
-        log.debug('controller:%s matches entry in whitelist'
-                  % (controller_name,))
+        log.debug('view: `%s` matches entry in whitelist: %s'
+                  % (view_name, whitelist))
     else:
-        msg = ('controller: %s does *NOT* match any entry in whitelist'
-               % (controller_name,))
+        msg = ('view: `%s` does *NOT* match any entry in whitelist: %s'
+               % (view_name, whitelist))
         if auth_token:
             # if we use auth token key and don't have access it's a warning
             log.warning(msg)

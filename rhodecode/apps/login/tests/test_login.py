@@ -36,6 +36,8 @@ from rhodecode.model.meta import Session
 
 fixture = Fixture()
 
+whitelist_view = ['RepoCommitsView:repo_commit_raw']
+
 
 def route_path(name, params=None, **kwargs):
     import urllib
@@ -474,11 +476,10 @@ class TestLoginController(object):
     def test_access_whitelisted_page_via_auth_token(
             self, test_name, auth_token, code, user_admin):
 
-        whitelist_entry = ['ChangesetController:changeset_raw']
-        whitelist = self._get_api_whitelist(whitelist_entry)
+        whitelist = self._get_api_whitelist(whitelist_view)
 
         with mock.patch.dict('rhodecode.CONFIG', whitelist):
-            assert whitelist_entry == whitelist['api_access_controllers_whitelist']
+            assert whitelist_view == whitelist['api_access_controllers_whitelist']
 
             if test_name == 'proper_auth_token':
                 auth_token = user_admin.api_key
@@ -492,10 +493,9 @@ class TestLoginController(object):
                     status=code)
 
     def test_access_page_via_extra_auth_token(self):
-        whitelist = self._get_api_whitelist(
-            ['ChangesetController:changeset_raw'])
+        whitelist = self._get_api_whitelist(whitelist_view)
         with mock.patch.dict('rhodecode.CONFIG', whitelist):
-            assert ['ChangesetController:changeset_raw'] == \
+            assert whitelist_view == \
                 whitelist['api_access_controllers_whitelist']
 
             new_auth_token = AuthTokenModel().create(
@@ -509,10 +509,9 @@ class TestLoginController(object):
                     status=200)
 
     def test_access_page_via_expired_auth_token(self):
-        whitelist = self._get_api_whitelist(
-            ['ChangesetController:changeset_raw'])
+        whitelist = self._get_api_whitelist(whitelist_view)
         with mock.patch.dict('rhodecode.CONFIG', whitelist):
-            assert ['ChangesetController:changeset_raw'] == \
+            assert whitelist_view == \
                 whitelist['api_access_controllers_whitelist']
 
             new_auth_token = AuthTokenModel().create(

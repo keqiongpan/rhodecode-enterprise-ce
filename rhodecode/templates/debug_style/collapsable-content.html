@@ -840,7 +840,8 @@ $(document).ready(function() {
         $('#edit-container').hide();
         $('#preview-container').show();
 
-        var url = pyroutes.url('changeset_comment_preview', {'repo_name': 'rhodecode-momentum'});
+        var url = pyroutes.url('repo_commit_comment_preview',
+            {'repo_name': 'rhodecode-momentum', 'commit_id': '000000'});
 
         ajaxPOST(url, post_data, function(o) {
             previewbox.html(o);

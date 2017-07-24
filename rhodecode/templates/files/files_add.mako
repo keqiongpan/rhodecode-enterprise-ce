@@ -217,7 +217,9 @@
             var _renderer = possible_renderer || DEFAULT_RENDERER;
             var post_data = {'text': _text, 'renderer': _renderer, 'csrf_token': CSRF_TOKEN};
             $('#editor_preview').html(_gettext('Loading ...'));
-            var url = pyroutes.url('changeset_comment_preview', {'repo_name': '${c.repo_name}'});
+            var url = pyroutes.url('repo_commit_comment_preview',
+                    {'repo_name': '${c.repo_name}',
+                     'commit_id': '${c.commit.raw_id}'});
 
             ajaxPOST(url, post_data, function(o){
                 $('#editor_preview').html(o);

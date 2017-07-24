@@ -139,8 +139,8 @@ class RepoFeedView(RepoAppView):
                     author_name=commit.author,
                     description=self._get_description(commit),
                     link=h.route_url(
-                        'changeset_home', repo_name=self.db_repo_name,
-                        revision=commit.raw_id),
+                        'repo_commit', repo_name=self.db_repo_name,
+                        commit_id=commit.raw_id),
                     pubdate=date,)
 
             return feed.mime_type, feed.writeString('utf-8')
@@ -185,8 +185,8 @@ class RepoFeedView(RepoAppView):
                     author_name=commit.author,
                     description=self._get_description(commit),
                     link=h.route_url(
-                        'changeset_home', repo_name=self.db_repo_name,
-                        revision=commit.raw_id),
+                        'repo_commit', repo_name=self.db_repo_name,
+                        commit_id=commit.raw_id),
                     pubdate=date,)
 
             return feed.mime_type, feed.writeString('utf-8')

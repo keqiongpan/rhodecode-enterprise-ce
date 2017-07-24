@@ -19,11 +19,11 @@
                 <div class="changeset-status-ico shortlog">
                     %if c.statuses.get(cs.raw_id)[2]:
                     <a class="tooltip" title="${_('Commit status: %s\nClick to open associated pull request #%s') % (c.statuses.get(cs.raw_id)[0], c.statuses.get(cs.raw_id)[2])}" href="${h.route_path('pullrequest_show',repo_name=c.statuses.get(cs.raw_id)[3],pull_request_id=c.statuses.get(cs.raw_id)[2])}">
-                        <div class="${'flag_status %s' % c.statuses.get(cs.raw_id)[0]}"></div>
+                        <div class="${'flag_status {}'.format(c.statuses.get(cs.raw_id)[0])}"></div>
                     </a>
                     %else:
-                    <a class="tooltip" title="${_('Commit status: %s') % h.commit_status_lbl(c.statuses.get(cs.raw_id)[0])}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=cs.raw_id,anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
-                        <div class="${'flag_status %s' % c.statuses.get(cs.raw_id)[0]}"></div>
+                    <a class="tooltip" title="${_('Commit status: {}').format(h.commit_status_lbl(c.statuses.get(cs.raw_id)[0]))}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
+                        <div class="${'flag_status {}'.format(c.statuses.get(cs.raw_id)[0])}"></div>
                     </a>
                     %endif
                 </div>
@@ -33,13 +33,13 @@
         </td>
         <td class="td-comments">
             %if c.comments.get(cs.raw_id,[]):
-            <a title="${_('Commit has comments')}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=cs.raw_id,anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
+            <a title="${_('Commit has comments')}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
                 <i class="icon-comment"></i> ${len(c.comments[cs.raw_id])}
             </a>
             %endif
         </td>
         <td class="td-commit">
-            <pre><a href="${h.url('changeset_home', repo_name=c.repo_name, revision=cs.raw_id)}">${h.show_id(cs)}</a></pre>
+            <pre><a href="${h.route_path('repo_commit', repo_name=c.repo_name, commit_id=cs.raw_id)}">${h.show_id(cs)}</a></pre>
         </td>
 
         <td class="td-description mid">

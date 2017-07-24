@@ -121,7 +121,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         %endif
         <h2 class="clearinner">
         %if commit:
-            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id)}">${'r%s:%s' % (commit.revision,h.short_id(commit.raw_id))}</a> -
+            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">${'r%s:%s' % (commit.revision,h.short_id(commit.raw_id))}</a> -
             ${h.age_component(commit.date)} -
         %endif
     %if diffset.limited_diff:
@@ -459,10 +459,10 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 
         ## TODO: dan: refactor ignorews_url and context_url into the diff renderer same as diffmode=unified/sideside. Also use ajax to load more context (by clicking hunks)
         %if hasattr(c, 'ignorews_url'):
-        ${c.ignorews_url(request.GET, h.FID('', filediff.patch['filename']))}
+        ${c.ignorews_url(request, h.FID('', filediff.patch['filename']))}
         %endif
         %if hasattr(c, 'context_url'):
-        ${c.context_url(request.GET, h.FID('', filediff.patch['filename']))}
+        ${c.context_url(request, h.FID('', filediff.patch['filename']))}
         %endif
 
         %if use_comments:

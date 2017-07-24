@@ -5,7 +5,7 @@
     (_('Owner'), lambda:base.gravatar_with_user(c.repo_info.user.email), '', ''),
     (_('Created on'), h.format_date(c.repo_info.created_on), '', ''),
     (_('Updated on'), h.format_date(c.repo_info.updated_on), '', ''),
-    (_('Cached Commit id'), lambda: h.link_to(c.repo_info.changeset_cache.get('short_id'), h.url('changeset_home',repo_name=c.repo_name,revision=c.repo_info.changeset_cache.get('raw_id'))), '', ''),
+    (_('Cached Commit id'), lambda: h.link_to(c.repo_info.changeset_cache.get('short_id'), h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.repo_info.changeset_cache.get('raw_id'))), '', ''),
  ]
 %>
 

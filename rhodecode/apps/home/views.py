@@ -172,9 +172,9 @@ class HomeView(BaseAppView):
                 'text': entry['commit_id'],
                 'type': 'commit',
                 'obj': {'repo': entry['repository']},
-                'url': h.url('changeset_home',
+                'url': h.route_path('repo_commit',
                              repo_name=entry['repository'],
-                             revision=entry['commit_id'])
+                             commit_id=entry['commit_id'])
             }
             for entry in result['results']]
 

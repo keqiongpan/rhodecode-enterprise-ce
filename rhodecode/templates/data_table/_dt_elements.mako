@@ -83,7 +83,7 @@
 <%def name="revision(name,rev,tip,author,last_msg)">
   <div>
   %if rev >= 0:
-      <code><a title="${h.tooltip('%s:\n\n%s' % (author,last_msg))}" class="tooltip" href="${h.url('changeset_home',repo_name=name,revision=tip)}">${'r%s:%s' % (rev,h.short_id(tip))}</a></code>
+      <code><a title="${h.tooltip('%s:\n\n%s' % (author,last_msg))}" class="tooltip" href="${h.route_path('repo_commit',repo_name=name,commit_id=tip)}">${'r%s:%s' % (rev,h.short_id(tip))}</a></code>
   %else:
       ${_('No commits yet')}
   %endif

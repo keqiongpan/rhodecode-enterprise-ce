@@ -471,7 +471,7 @@ class TestCompareController(object):
         compare_page.contains_change_summary(1, 1, 0)
 
     @pytest.mark.xfail_backends("svn")
-    def test_compare_commits(self, backend):
+    def test_compare_commits(self, backend, xhr_header):
         commit0 = backend.repo.get_commit(commit_idx=0)
         commit1 = backend.repo.get_commit(commit_idx=1)
 
@@ -483,7 +483,7 @@ class TestCompareController(object):
                 target_ref_type="rev",
                 target_ref=commit1.raw_id,
                 merge='1',),
-            extra_environ={'HTTP_X_PARTIAL_XHR': '1'},)
+            extra_environ=xhr_header,)
 
         # outgoing commits between those commits
         compare_page = ComparePage(response)

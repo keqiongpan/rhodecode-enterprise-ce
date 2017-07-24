@@ -47,7 +47,7 @@
         <div class="code-header">
             <div class="stats">
                 <i class="icon-file"></i>
-                <span class="item">${h.link_to("r%s:%s" % (c.file.commit.idx,h.short_id(c.file.commit.raw_id)),h.url('changeset_home',repo_name=c.repo_name,revision=c.file.commit.raw_id))}</span>
+                <span class="item">${h.link_to("r%s:%s" % (c.file.commit.idx,h.short_id(c.file.commit.raw_id)),h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.file.commit.raw_id))}</span>
                 <span class="item">${h.format_byte_size_binary(c.file.size)}</span>
                 <span class="item last">${c.file.mimetype}</span>
                 <div class="buttons">
@@ -177,8 +177,9 @@ $(document).ready(function(){
             var _renderer = possible_renderer || DEFAULT_RENDERER;
             var post_data = {'text': _text, 'renderer': _renderer, 'csrf_token': CSRF_TOKEN};
             $('#editor_preview').html(_gettext('Loading ...'));
-            var url = pyroutes.url('changeset_comment_preview', {'repo_name': '${c.repo_name}'});
-
+            var url = pyroutes.url('repo_commit_comment_preview',
+                    {'repo_name': '${c.repo_name}',
+                     'commit_id': '${c.commit.raw_id}'});
             ajaxPOST(url, post_data, function(o){
                 $('#editor_preview').html(o);
             })

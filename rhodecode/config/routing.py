@@ -429,19 +429,6 @@ def make_map(config):
                  controller='admin/repos', action='repo_check',
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('changeset_home', '/{repo_name}/changeset/{revision}',
-                 controller='changeset', revision='tip',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-    rmap.connect('changeset_children', '/{repo_name}/changeset_children/{revision}',
-                 controller='changeset', revision='tip', action='changeset_children',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('changeset_parents', '/{repo_name}/changeset_parents/{revision}',
-                 controller='changeset', revision='tip', action='changeset_parents',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     # repo edit options
     rmap.connect('edit_repo_fields', '/{repo_name}/settings/fields',
                  controller='admin/repos', action='edit_fields',
@@ -514,54 +501,6 @@ def make_map(config):
                  controller='admin/repos', action='repo_settings_pullrequest',
                  conditions={'method': ['GET', 'POST'], 'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
-
-    # still working url for backward compat.
-    rmap.connect('raw_changeset_home_depraced',
-                 '/{repo_name}/raw-changeset/{revision}',
-                 controller='changeset', action='changeset_raw',
-                 revision='tip', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    # new URLs
-    rmap.connect('changeset_raw_home',
-                 '/{repo_name}/changeset-diff/{revision}',
-                 controller='changeset', action='changeset_raw',
-                 revision='tip', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('changeset_patch_home',
-                 '/{repo_name}/changeset-patch/{revision}',
-                 controller='changeset', action='changeset_patch',
-                 revision='tip', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('changeset_download_home',
-                 '/{repo_name}/changeset-download/{revision}',
-                 controller='changeset', action='changeset_download',
-                 revision='tip', conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('changeset_comment',
-                 '/{repo_name}/changeset/{revision}/comment', jsroute=True,
-                 controller='changeset', revision='tip', action='comment',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('changeset_comment_preview',
-                 '/{repo_name}/changeset/comment/preview', jsroute=True,
-                 controller='changeset', action='preview_comment',
-                 conditions={'function': check_repo, 'method': ['POST']},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('changeset_comment_delete',
-                 '/{repo_name}/changeset/comment/{comment_id}/delete',
-                 controller='changeset', action='delete_comment',
-                 conditions={'function': check_repo, 'method': ['DELETE']},
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
-
-    rmap.connect('changeset_info', '/{repo_name}/changeset_info/{revision}',
-                 controller='changeset', action='changeset_info',
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('compare_home',
                  '/{repo_name}/compare',

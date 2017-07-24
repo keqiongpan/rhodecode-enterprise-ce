@@ -70,15 +70,15 @@
             </div>
             <div class="right-content">
                 <div class="diff-actions">
-                  <a href="${h.url('changeset_raw_home',repo_name=c.repo_name,revision='?')}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
+                  <a href="${h.route_path('repo_commit_raw',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
                     ${_('Raw Diff')}
                   </a>
                    |
-                  <a href="${h.url('changeset_patch_home',repo_name=c.repo_name,revision='?')}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
+                  <a href="${h.route_path('repo_commit_patch',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
                     ${_('Patch Diff')}
                   </a>
                    |
-                  <a href="${h.url('changeset_download_home',repo_name=c.repo_name,revision='?',diff='download')}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
+                  <a href="${h.route_path('repo_commit_download',repo_name=c.repo_name,commit_id='?',_query=dict(diff='download'))}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
                     ${_('Download Diff')}
                   </a>
                 </div>

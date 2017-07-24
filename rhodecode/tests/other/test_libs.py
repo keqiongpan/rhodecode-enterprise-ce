@@ -397,7 +397,7 @@ def test_urlify_commits(sample, expected):
 
     expected = _quick_url(expected)
 
-    with mock.patch('pylons.url', fake_url):
+    with mock.patch('rhodecode.lib.helpers.route_url', fake_url):
         from rhodecode.lib.helpers import urlify_commits
         assert urlify_commits(sample, 'repo_name') == expected
 

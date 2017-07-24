@@ -24,11 +24,11 @@
       <div class="changeset-status-ico">
         %if c.statuses.get(commit.raw_id)[2]:
           <a class="tooltip" title="${_('Commit status: %s\nClick to open associated pull request #%s') % (h.commit_status_lbl(c.statuses.get(commit.raw_id)[0]), c.statuses.get(commit.raw_id)[2])}" href="${h.route_path('pullrequest_show',repo_name=c.statuses.get(commit.raw_id)[3],pull_request_id=c.statuses.get(commit.raw_id)[2])}">
-            <div class="${'flag_status %s' % c.statuses.get(commit.raw_id)[0]}"></div>
+            <div class="${'flag_status {}'.format(c.statuses.get(commit.raw_id)[0])}"></div>
           </a>
         %else:
-          <a class="tooltip" title="${_('Commit status: %s') % h.commit_status_lbl(c.statuses.get(commit.raw_id)[0])}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id,anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
-            <div class="${'flag_status %s' % c.statuses.get(commit.raw_id)[0]}"></div>
+          <a class="tooltip" title="${_('Commit status: {}').format(h.commit_status_lbl(c.statuses.get(commit.raw_id)[0]))}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id,_anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
+            <div class="${'flag_status {}'.format(c.statuses.get(commit.raw_id)[0])}"></div>
           </a>
         %endif
       </div>
@@ -38,7 +38,7 @@
     </td>
     <td class="td-comments comments-col">
     %if c.comments.get(commit.raw_id):
-      <a title="${_('Commit has comments')}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id,anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
+      <a title="${_('Commit has comments')}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id,_anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
           <i class="icon-comment"></i> ${len(c.comments[commit.raw_id])}
       </a>
     %endif
@@ -46,7 +46,7 @@
     <td class="td-hash">
     <code>
 
-      <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id)}">
+      <a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">
         <span class="${'commit_hash obsolete' if getattr(commit, 'obsolete', None) else 'commit_hash'}">${h.show_id(commit)}</span>
       </a>
       <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${commit.raw_id}" title="${_('Copy the full commit id')}"></i>

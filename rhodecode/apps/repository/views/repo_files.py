@@ -1043,8 +1043,8 @@ class RepoFilesView(RepoAppView):
             log.exception('Error during commit operation')
             h.flash(_('Error occurred during commit'), category='error')
         raise HTTPFound(
-            h.route_path('changeset_home', repo_name=self.db_repo_name,
-                         revision='tip'))
+            h.route_path('repo_commit', repo_name=self.db_repo_name,
+                         commit_id='tip'))
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
@@ -1133,8 +1133,8 @@ class RepoFilesView(RepoAppView):
         if content == old_content and filename == org_filename:
             h.flash(_('No changes'), category='warning')
             raise HTTPFound(
-                h.route_path('changeset_home', repo_name=self.db_repo_name,
-                             revision='tip'))
+                h.route_path('repo_commit', repo_name=self.db_repo_name,
+                             commit_id='tip'))
         try:
             mapping = {
                 org_f_path: {
@@ -1161,8 +1161,8 @@ class RepoFilesView(RepoAppView):
             log.exception('Error occurred during commit')
             h.flash(_('Error occurred during commit'), category='error')
         raise HTTPFound(
-            h.route_path('changeset_home', repo_name=self.db_repo_name,
-                         revision='tip'))
+            h.route_path('repo_commit', repo_name=self.db_repo_name,
+                         commit_id='tip'))
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
@@ -1222,7 +1222,7 @@ class RepoFilesView(RepoAppView):
                 content = content.file
 
         default_redirect_url = h.route_path(
-            'changeset_home', repo_name=self.db_repo_name, revision='tip')
+            'repo_commit', repo_name=self.db_repo_name, commit_id='tip')
 
         # If there's no commit, redirect to repo summary
         if type(c.commit) is EmptyCommit:

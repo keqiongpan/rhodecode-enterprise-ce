@@ -1575,7 +1575,7 @@ def urlify_commits(text_, repository):
     :param text_:
     :param repository: repo name to build the URL with
     """
-    from pylons import url  # doh, we need to re-import url to mock it later
+
     URL_PAT = re.compile(r'(^|\s)([0-9a-fA-F]{12,40})($|\s)')
 
     def url_func(match_obj):
@@ -1590,8 +1590,8 @@ def urlify_commits(text_, repository):
         return tmpl % {
             'pref': pref,
             'cls': 'revision-link',
-            'url': url('changeset_home', repo_name=repository,
-                       revision=commit_id, qualified=True),
+            'url': route_url('repo_commit', repo_name=repository,
+                             commit_id=commit_id),
             'commit_id': commit_id,
             'suf': suf
         }

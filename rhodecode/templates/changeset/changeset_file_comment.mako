@@ -100,7 +100,7 @@
               % endif
             % if inline:
                   <div class="pr-version-inline">
-                    <a href="${h.url.current(version=comment.pull_request_version_id, anchor='comment-{}'.format(comment.comment_id))}">
+                    <a href="${request.current_route_path(_query=dict(version=comment.pull_request_version_id), _anchor='comment-{}'.format(comment.comment_id))}">
                     % if outdated_at_ver:
                         <code class="pr-version-num" title="${_('Outdated comment from pull request version {0}').format(pr_index_ver)}">
                             outdated ${'v{}'.format(pr_index_ver)} |

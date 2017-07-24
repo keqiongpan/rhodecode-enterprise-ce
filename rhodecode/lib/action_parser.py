@@ -20,7 +20,6 @@
 
 import logging
 
-from pylons import url
 from pylons.i18n.translation import _
 from webhelpers.html.builder import literal
 from webhelpers.html.tags import link_to
@@ -201,6 +200,7 @@ class ActionParser(object):
         return literal(tmpl % (ico, self.action))
 
     def get_cs_links(self):
+        from rhodecode.lib import helpers as h
         if self.is_deleted():
             return self.action_params
 
@@ -223,8 +223,9 @@ class ActionParser(object):
                 _('Show all combined commits %s->%s') % (
                     commit_ids[0][:12], commit_ids[-1][:12]
                 ),
-                url('changeset_home', repo_name=repo_name,
-                    revision=commit_id_range), _('compare view')
+                h.route_path(
+                    'repo_commit', repo_name=repo_name,
+                    commit_id=commit_id_range), _('compare view')
             )
         )
 
@@ -275,6 +276,7 @@ class ActionParser(object):
 
     def lnk(self, commit_or_id, repo_name):
         from rhodecode.lib.helpers import tooltip
+        from rhodecode.lib import helpers as h
 
         if isinstance(commit_or_id, (BaseCommit, AttributeDict)):
             lazy_cs = True
@@ -292,8 +294,8 @@ class ActionParser(object):
 
             else:
                 lbl = '%s' % (commit_or_id.short_id[:8])
-                _url = url('changeset_home', repo_name=repo_name,
-                           revision=commit_or_id.raw_id)
+                _url = h.route_path('repo_commit', repo_name=repo_name,
+                                    commit_id=commit_or_id.raw_id)
                 title = tooltip(commit_or_id.message)
         else:
             # commit cannot be found/striped/removed etc.

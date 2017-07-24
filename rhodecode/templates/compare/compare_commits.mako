@@ -3,7 +3,7 @@
 
 %if c.ancestor:
 <div class="ancestor">${_('Common Ancestor Commit')}:
-    <a href="${h.url('changeset_home', repo_name=c.repo_name, revision=c.ancestor)}">
+    <a href="${h.route_path('repo_commit', repo_name=c.repo_name, commit_id=c.ancestor)}">
         ${h.short_id(c.ancestor)}
     </a>. ${_('Compare was calculated based on this shared commit.')}
     <input id="common_ancestor" type="hidden" name="common_ancestor" value="${c.ancestor}">
@@ -34,9 +34,7 @@
             </td>
             <td class="td-hash">
                 <code>
-                    <a href="${h.url('changeset_home',
-                                     repo_name=c.target_repo.repo_name,
-                                     revision=commit.raw_id)}">
+                    <a href="${h.route_path('repo_commit', repo_name=c.target_repo.repo_name, commit_id=commit.raw_id)}">
                         r${commit.revision}:${h.short_id(commit.raw_id)}
                     </a>
                     ${h.hidden('revisions',commit.raw_id)}

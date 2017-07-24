@@ -86,7 +86,7 @@
                     <br/>
                     % if c.ancestor_commit:
                         ${_('Common ancestor')}:
-                        <code><a href="${h.url('changeset_home', repo_name=c.target_repo.repo_name, revision=c.ancestor_commit.raw_id)}">${h.show_id(c.ancestor_commit)}</a></code>
+                        <code><a href="${h.route_path('repo_commit', repo_name=c.target_repo.repo_name, commit_id=c.ancestor_commit.raw_id)}">${h.show_id(c.ancestor_commit)}</a></code>
                     % endif
                 </div>
                 <div class="pr-pullinfo">
@@ -513,7 +513,7 @@
                                 </td>
                                 <td class="td-hash">
                                     <code>
-                                        <a href="${h.url('changeset_home', repo_name=c.target_repo.repo_name, revision=commit.raw_id)}">
+                                        <a href="${h.route_path('repo_commit', repo_name=c.target_repo.repo_name, commit_id=commit.raw_id)}">
                                             r${commit.revision}:${h.short_id(commit.raw_id)}
                                         </a>
                                         ${h.hidden('revisions', commit.raw_id)}

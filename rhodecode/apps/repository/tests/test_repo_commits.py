@@ -21,40 +21,56 @@
 import pytest
 
 from rhodecode.lib.helpers import _shorten_commit_id
-from rhodecode.tests import url
+
+
+def route_path(name, params=None, **kwargs):
+    import urllib
+
+    base_url = {
+        'repo_commit': '/{repo_name}/changeset/{commit_id}',
+        'repo_commit_children': '/{repo_name}/changeset_children/{commit_id}',
+        'repo_commit_parents': '/{repo_name}/changeset_parents/{commit_id}',
+        'repo_commit_raw': '/{repo_name}/changeset-diff/{commit_id}',
+        'repo_commit_patch': '/{repo_name}/changeset-patch/{commit_id}',
+        'repo_commit_download': '/{repo_name}/changeset-download/{commit_id}',
+        'repo_commit_data': '/{repo_name}/changeset-data/{commit_id}',
+        'repo_compare': '/{repo_name}/compare/{source_ref_type}@{source_ref}...{target_ref_type}@{target_ref}',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
 
 
 @pytest.mark.usefixtures("app")
-class TestChangesetController(object):
+class TestRepoCommitView(object):
 
-    def test_index(self, backend):
+    def test_show_commit(self, backend):
         commit_id = self.commit_id[backend.alias]
-        response = self.app.get(url(
-            controller='changeset', action='index',
-            repo_name=backend.repo_name, revision=commit_id))
+        response = self.app.get(route_path(
+            'repo_commit', repo_name=backend.repo_name, commit_id=commit_id))
         response.mustcontain('Added a symlink')
         response.mustcontain(commit_id)
         response.mustcontain('No newline at end of file')
 
-    def test_index_raw(self, backend):
+    def test_show_raw(self, backend):
         commit_id = self.commit_id[backend.alias]
-        response = self.app.get(url(
-            controller='changeset', action='changeset_raw',
-            repo_name=backend.repo_name, revision=commit_id))
+        response = self.app.get(route_path(
+            'repo_commit_raw',
+            repo_name=backend.repo_name, commit_id=commit_id))
         assert response.body == self.diffs[backend.alias]
 
-    def test_index_raw_patch(self, backend):
-        response = self.app.get(url(
-            controller='changeset', action='changeset_patch',
-            repo_name=backend.repo_name,
-            revision=self.commit_id[backend.alias]))
+    def test_show_raw_patch(self, backend):
+        response = self.app.get(route_path(
+            'repo_commit_patch', repo_name=backend.repo_name,
+            commit_id=self.commit_id[backend.alias]))
         assert response.body == self.patches[backend.alias]
 
-    def test_index_changeset_download(self, backend):
-        response = self.app.get(url(
-            controller='changeset', action='changeset_download',
+    def test_commit_download(self, backend):
+        response = self.app.get(route_path(
+            'repo_commit_download',
             repo_name=backend.repo_name,
-            revision=self.commit_id[backend.alias]))
+            commit_id=self.commit_id[backend.alias]))
         assert response.body == self.diffs[backend.alias]
 
     def test_single_commit_page_different_ops(self, backend):
@@ -64,9 +80,9 @@ class TestChangesetController(object):
             'svn': '337',
         }
         commit_id = commit_id[backend.alias]
-        response = self.app.get(url(
-            controller='changeset', action='index',
-            repo_name=backend.repo_name, revision=commit_id))
+        response = self.app.get(route_path(
+            'repo_commit',
+            repo_name=backend.repo_name, commit_id=commit_id))
 
         response.mustcontain(_shorten_commit_id(commit_id))
         response.mustcontain('21 files changed: 943 inserted, 288 deleted')
@@ -98,9 +114,9 @@ class TestChangesetController(object):
         }
         commit_ids = commit_id_range[backend.alias]
         commit_id = '%s...%s' % (commit_ids[0], commit_ids[1])
-        response = self.app.get(url(
-            controller='changeset', action='index',
-            repo_name=backend.repo_name, revision=commit_id))
+        response = self.app.get(route_path(
+            'repo_commit',
+            repo_name=backend.repo_name, commit_id=commit_id))
 
         response.mustcontain(_shorten_commit_id(commit_ids[0]))
         response.mustcontain(_shorten_commit_id(commit_ids[1]))
@@ -137,8 +153,8 @@ class TestChangesetController(object):
                 '337'),
         }
         commit_ids = commit_id_range[backend.alias]
-        response = self.app.get(url(
-            controller='compare', action='compare',
+        response = self.app.get(route_path(
+            'repo_compare',
             repo_name=backend.repo_name,
             source_ref_type='rev', source_ref=commit_ids[0],
             target_ref_type='rev', target_ref=commit_ids[1], ))
@@ -188,9 +204,10 @@ class TestChangesetController(object):
     def _check_changeset_range(
             self, backend, commit_id_ranges, commit_id_range_result):
         response = self.app.get(
-            url(controller='changeset', action='index',
-                repo_name=backend.repo_name,
-                revision=commit_id_ranges[backend.alias]))
+            route_path('repo_commit',
+                       repo_name=backend.repo_name,
+                       commit_id=commit_id_ranges[backend.alias]))
+
         expected_result = commit_id_range_result[backend.alias]
         response.mustcontain('{} commits'.format(len(expected_result)))
         for commit_id in expected_result:

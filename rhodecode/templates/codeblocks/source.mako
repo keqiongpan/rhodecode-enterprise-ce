@@ -31,7 +31,7 @@
               data-revision="${annotation.revision}"
               onclick="$('[data-revision=${annotation.revision}]').toggleClass('cb-line-fresh')"
               style="background: ${bgcolor}">
-            <a class="cb-annotate" href="${h.url('changeset_home',repo_name=c.repo_name,revision=annotation.raw_id)}">
+            <a class="cb-annotate" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=annotation.raw_id)}">
               r${annotation.revision}
             </a>
             </td>

@@ -21,7 +21,7 @@
 <%def name="main()">
 <script>
     // TODO: marcink switch this to pyroutes
-    AJAX_COMMENT_DELETE_URL = "${h.url('changeset_comment_delete',repo_name=c.repo_name,comment_id='__COMMENT_ID__')}";
+    AJAX_COMMENT_DELETE_URL = "${h.route_path('repo_commit_comment_delete',repo_name=c.repo_name,commit_id=c.commit.raw_id,comment_id='__COMMENT_ID__')}";
     templateContext.commit_data.commit_id = "${c.commit.raw_id}";
 </script>
 <div class="box">
@@ -137,21 +137,21 @@
         </div>
         <div class="right-content">
             <div class="diff-actions">
-              <a href="${h.url('changeset_raw_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
+              <a href="${h.route_path('repo_commit_raw',repo_name=c.repo_name,commit_id=c.commit.raw_id)}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
                 ${_('Raw Diff')}
               </a>
                |
-              <a href="${h.url('changeset_patch_home',repo_name=c.repo_name,revision=c.commit.raw_id)}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
+              <a href="${h.route_path('repo_commit_patch',repo_name=c.repo_name,commit_id=c.commit.raw_id)}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
                 ${_('Patch Diff')}
               </a>
                |
-              <a href="${h.url('changeset_download_home',repo_name=c.repo_name,revision=c.commit.raw_id,diff='download')}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
+              <a href="${h.route_path('repo_commit_download',repo_name=c.repo_name,commit_id=c.commit.raw_id,_query=dict(diff='download'))}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
                 ${_('Download Diff')}
               </a>
                |
-              ${c.ignorews_url(request.GET)}
+              ${c.ignorews_url(request)}
                |
-              ${c.context_url(request.GET)}
+              ${c.context_url(request)}
             </div>
         </div>
       </div>
@@ -221,7 +221,7 @@
     ${comment.generate_comments(c.comments)}
 
     ## main comment form and it status
-    ${comment.comments(h.url('changeset_comment', repo_name=c.repo_name, revision=c.commit.raw_id),
+    ${comment.comments(h.route_path('repo_commit_comment_create', repo_name=c.repo_name, commit_id=c.commit.raw_id),
                        h.commit_status(c.rhodecode_db_repo, c.commit.raw_id))}
 </div>
 
@@ -264,14 +264,14 @@
               // >1 links show them to user to choose
               if(!$('#child_link').hasClass('disabled')){
                   $.ajax({
-                    url: '${h.url('changeset_children',repo_name=c.repo_name, revision=c.commit.raw_id)}',
+                    url: '${h.route_path('repo_commit_children',repo_name=c.repo_name, commit_id=c.commit.raw_id)}',
                     success: function(data) {
                       if(data.results.length === 0){
                           $('#child_link').html("${_('No Child Commits')}").addClass('disabled');
                       }
                       if(data.results.length === 1){
                           var commit = data.results[0];
-                          window.location = pyroutes.url('changeset_home', {'repo_name': '${c.repo_name}','revision': commit.raw_id});
+                          window.location = pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}','commit_id': commit.raw_id});
                       }
                       else if(data.results.length === 2){
                           $('#child_link').addClass('disabled');
@@ -280,12 +280,12 @@
                           _html +='<a title="__title__" href="__url__">__rev__</a> '
                                   .replace('__rev__','r{0}:{1}'.format(data.results[0].revision, data.results[0].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[0].message)
-                                  .replace('__url__', pyroutes.url('changeset_home', {'repo_name': '${c.repo_name}','revision': data.results[0].raw_id}));
+                                  .replace('__url__', pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}','commit_id': data.results[0].raw_id}));
                           _html +=' | ';
                           _html +='<a title="__title__" href="__url__">__rev__</a> '
                                   .replace('__rev__','r{0}:{1}'.format(data.results[1].revision, data.results[1].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[1].message)
-                                  .replace('__url__', pyroutes.url('changeset_home', {'repo_name': '${c.repo_name}','revision': data.results[1].raw_id}));
+                                  .replace('__url__', pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}','commit_id': data.results[1].raw_id}));
                           $('#child_link').html(_html);
                       }
                     }
@@ -300,14 +300,14 @@
               // >1 links show them to user to choose
               if(!$('#parent_link').hasClass('disabled')){
                   $.ajax({
-                    url: '${h.url("changeset_parents",repo_name=c.repo_name, revision=c.commit.raw_id)}',
+                    url: '${h.route_path("repo_commit_parents",repo_name=c.repo_name, commit_id=c.commit.raw_id)}',
                     success: function(data) {
                       if(data.results.length === 0){
                           $('#parent_link').html('${_('No Parent Commits')}').addClass('disabled');
                       }
                       if(data.results.length === 1){
                           var commit = data.results[0];
-                          window.location = pyroutes.url('changeset_home', {'repo_name': '${c.repo_name}','revision': commit.raw_id});
+                          window.location = pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}','commit_id': commit.raw_id});
                       }
                       else if(data.results.length === 2){
                           $('#parent_link').addClass('disabled');
@@ -316,12 +316,12 @@
                           _html +='<a title="__title__" href="__url__">Parent __rev__</a>'
                                   .replace('__rev__','r{0}:{1}'.format(data.results[0].revision, data.results[0].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[0].message)
-                                  .replace('__url__', pyroutes.url('changeset_home', {'repo_name': '${c.repo_name}','revision': data.results[0].raw_id}));
+                                  .replace('__url__', pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}','commit_id': data.results[0].raw_id}));
                           _html +=' | ';
                           _html +='<a title="__title__" href="__url__">Parent __rev__</a>'
                                   .replace('__rev__','r{0}:{1}'.format(data.results[1].revision, data.results[1].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[1].message)
-                                  .replace('__url__', pyroutes.url('changeset_home', {'repo_name': '${c.repo_name}','revision': data.results[1].raw_id}));
+                                  .replace('__url__', pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}','commit_id': data.results[1].raw_id}));
                           $('#parent_link').html(_html);
                       }
                     }
