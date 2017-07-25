@@ -372,7 +372,10 @@ class UserModel(BaseModel):
                 AuthTokenModel().create(username,
                                         description='Generated feed token',
                                         role=AuthTokenModel.cls.ROLE_FEED)
-                log_create_user(created_by=cur_user, **new_user.get_dict())
+                kwargs = new_user.get_dict()
+                # backward compat, require api_keys present
+                kwargs['api_keys'] = kwargs['auth_tokens']
+                log_create_user(created_by=cur_user, **kwargs)
                 events.trigger(events.UserPostCreate(user_data))
             return new_user
         except (DatabaseError,):
@@ -675,17 +678,15 @@ class UserModel(BaseModel):
                 return False
 
             log.debug('filling user:%s data', dbuser)
-
-            # TODO: johbo: Think about this and find a clean solution
             user_data = dbuser.get_dict()
-            user_data.update(dbuser.get_api_data(include_secrets=True))
+
             user_data.update({
                 # set explicit the safe escaped values
                 'first_name': dbuser.first_name,
                 'last_name': dbuser.last_name,
             })
 
-            for k, v in user_data.iteritems():
+            for k, v in user_data.items():
                 # properties of auth user we dont update
                 if k not in ['auth_tokens', 'permissions']:
                     setattr(auth_user, k, v)

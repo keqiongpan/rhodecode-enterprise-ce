@@ -135,7 +135,7 @@ class TestAdminUsersView(TestController):
         self.log_user()
         user = user_util.create_user()
         user_id = user.user_id
-        keys = user.extra_auth_tokens
+        keys = user.auth_tokens
         assert 2 == len(keys)
 
         response = self.app.post(

@@ -190,13 +190,13 @@ def test_get_api_data_replaces_secret_data_by_default(test_user):
     api_key_length = 40
     expected_replacement = '*' * api_key_length
 
-    for key in api_data['api_keys']:
+    for key in api_data['auth_tokens']:
         assert key == expected_replacement
 
 
 def test_get_api_data_includes_secret_data_if_activated(test_user):
     api_data = test_user.get_api_data(include_secrets=True)
-    assert api_data['api_keys'] == test_user.auth_tokens
+    assert api_data['auth_tokens'] == test_user.auth_tokens
 
 
 def test_add_perm(test_user):

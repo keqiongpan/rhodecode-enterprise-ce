@@ -619,15 +619,15 @@ class User(Base, BaseModel):
 
     @property
     def emails(self):
-        other = UserEmailMap.query().filter(UserEmailMap.user==self).all()
+        other = UserEmailMap.query().filter(UserEmailMap.user == self).all()
         return [self.email] + [x.email for x in other]
 
     @property
     def auth_tokens(self):
-        return [x.api_key for x in self.extra_auth_tokens]
+        auth_tokens = self.get_auth_tokens()
+        return [x.api_key for x in auth_tokens]
 
-    @property
-    def extra_auth_tokens(self):
+    def get_auth_tokens(self):
         return UserApiKeys.query().filter(UserApiKeys.user == self).all()
 
     @property
@@ -938,12 +938,11 @@ class User(Base, BaseModel):
         if details == 'basic':
             return data
 
-        api_key_length = 40
-        api_key_replacement = '*' * api_key_length
+        auth_token_length = 40
+        auth_token_replacement = '*' * auth_token_length
 
         extras = {
-            'api_keys': [api_key_replacement],
-            'auth_tokens': [api_key_replacement],
+            'auth_tokens': [auth_token_replacement],
             'active': user.active,
             'admin': user.admin,
             'extern_type': user.extern_type,
@@ -956,8 +955,7 @@ class User(Base, BaseModel):
         data.update(extras)
 
         if include_secrets:
-            data['api_keys'] = user.auth_tokens
-            data['auth_tokens'] = user.extra_auth_tokens
+            data['auth_tokens'] = user.auth_tokens
         return data
 
     def __json__(self):

@@ -865,7 +865,7 @@ class AuthUser(object):
         Fills in user data and propagates values to this instance. Maps fetched
         user attributes to this class instance attributes
         """
-        log.debug('starting data propagation for new potential AuthUser')
+        log.debug('AuthUser: starting data propagation for new potential user')
         user_model = UserModel()
         anon_user = self.anonymous_user = User.get_default_user(cache=True)
         is_user_loaded = False
@@ -904,7 +904,7 @@ class AuthUser(object):
         if not self.username:
             self.username = 'None'
 
-        log.debug('Auth User is now %s' % self)
+        log.debug('AuthUser: propagated user is now %s' % self)
 
     def get_perms(self, user, scope=None, explicit=True, algo='higherwin',
                   cache=False):

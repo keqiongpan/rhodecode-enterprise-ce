@@ -87,7 +87,7 @@ class TestMyAccountAuthTokens(TestController):
         self.log_user(user.username, 'qweqwe')
 
         user = User.get(user_id)
-        keys = user.extra_auth_tokens
+        keys = user.get_auth_tokens()
         assert 2 == len(keys)
 
         response = self.app.post(
@@ -98,7 +98,7 @@ class TestMyAccountAuthTokens(TestController):
         response.follow()
 
         user = User.get(user_id)
-        keys = user.extra_auth_tokens
+        keys = user.get_auth_tokens()
         assert 3 == len(keys)
 
         response = self.app.post(
@@ -107,5 +107,5 @@ class TestMyAccountAuthTokens(TestController):
         assert_session_flash(response, 'Auth token successfully deleted')
 
         user = User.get(user_id)
-        keys = user.extra_auth_tokens
+        keys = user.auth_tokens
         assert 2 == len(keys)
