@@ -40,6 +40,8 @@ import uuid
 import pygments.lexers
 import sqlalchemy
 import sqlalchemy.engine.url
+import sqlalchemy.exc
+import sqlalchemy.sql
 import webob
 import routes.util
 
@@ -314,6 +316,41 @@ def find_calling_context(ignore_modules=None):
     return None
 
 
+def ping_connection(connection, branch):
+    if branch:
+        # "branch" refers to a sub-connection of a connection,
+        # we don't want to bother pinging on these.
+        return
+
+    # turn off "close with result".  This flag is only used with
+    # "connectionless" execution, otherwise will be False in any case
+    save_should_close_with_result = connection.should_close_with_result
+    connection.should_close_with_result = False
+
+    try:
+        # run a SELECT 1.   use a core select() so that
+        # the SELECT of a scalar value without a table is
+        # appropriately formatted for the backend
+        connection.scalar(sqlalchemy.sql.select([1]))
+    except sqlalchemy.exc.DBAPIError as err:
+        # catch SQLAlchemy's DBAPIError, which is a wrapper
+        # for the DBAPI's exception.  It includes a .connection_invalidated
+        # attribute which specifies if this connection is a "disconnect"
+        # condition, which is based on inspection of the original exception
+        # by the dialect in use.
+        if err.connection_invalidated:
+            # run the same SELECT again - the connection will re-validate
+            # itself and establish a new connection.  The disconnect detection
+            # here also causes the whole connection pool to be invalidated
+            # so that all stale connections are discarded.
+            connection.scalar(sqlalchemy.sql.select([1]))
+        else:
+            raise
+    finally:
+        # restore "close with result"
+        connection.should_close_with_result = save_should_close_with_result
+
+
 def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
     """Custom engine_from_config functions."""
     log = logging.getLogger('sqlalchemy.engine')
@@ -345,6 +382,8 @@ def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
                                  parameters, context, executemany):
             delattr(conn, 'query_start_time')
 
+        sqlalchemy.event.listen(engine, "engine_connect",
+                                ping_connection)
         sqlalchemy.event.listen(engine, "before_cursor_execute",
                                 before_cursor_execute)
         sqlalchemy.event.listen(engine, "after_cursor_execute",
