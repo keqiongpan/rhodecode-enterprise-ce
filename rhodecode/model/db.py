@@ -206,22 +206,17 @@ class BaseModel(object):
             return cls.query().get(id_)
 
     @classmethod
-    def get_or_404(cls, id_, pyramid_exc=False):
-        if pyramid_exc:
-            # NOTE(marcink): backward compat, once migration to pyramid
-            # this should only use pyramid exceptions
-            from pyramid.httpexceptions import HTTPNotFound
-        else:
-            from webob.exc import HTTPNotFound
+    def get_or_404(cls, id_):
+        from pyramid.httpexceptions import HTTPNotFound
 
         try:
             id_ = int(id_)
         except (TypeError, ValueError):
-            raise HTTPNotFound
+            raise HTTPNotFound()
 
         res = cls.query().get(id_)
         if not res:
-            raise HTTPNotFound
+            raise HTTPNotFound()
         return res
 
     @classmethod
@@ -3776,16 +3771,12 @@ class Gist(Base, BaseModel):
         return h.escape(self.gist_description)
 
     @classmethod
-    def get_or_404(cls, id_, pyramid_exc=False):
-
-        if pyramid_exc:
-            from pyramid.httpexceptions import HTTPNotFound
-        else:
-            from webob.exc import HTTPNotFound
+    def get_or_404(cls, id_):
+        from pyramid.httpexceptions import HTTPNotFound
 
         res = cls.query().filter(cls.gist_access_id == id_).scalar()
         if not res:
-            raise HTTPNotFound
+            raise HTTPNotFound()
         return res
 
     @classmethod

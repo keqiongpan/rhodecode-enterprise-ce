@@ -987,7 +987,7 @@ class PullrequestsController(BaseRepoController):
     @auth.CSRFRequired()
     @jsonify
     def delete_comment(self, repo_name, comment_id):
-        comment = ChangesetComment.get_or_404(safe_int(comment_id))
+        comment = ChangesetComment.get_or_404(comment_id)
         if not comment:
             log.debug('Comment with id:%s not found, skipping', comment_id)
             # comment already deleted in another call probably

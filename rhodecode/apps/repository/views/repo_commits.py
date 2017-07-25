@@ -492,7 +492,7 @@ class RepoCommitsView(RepoAppView):
         commit_id = self.request.matchdict['commit_id']
         comment_id = self.request.matchdict['comment_id']
 
-        comment = ChangesetComment.get_or_404(safe_int(comment_id))
+        comment = ChangesetComment.get_or_404(comment_id)
         if not comment:
             log.debug('Comment with id:%s not found, skipping', comment_id)
             # comment already deleted in another call probably

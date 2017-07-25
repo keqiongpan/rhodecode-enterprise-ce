@@ -221,6 +221,7 @@ class RepoAppView(BaseAppView):
 
         return default
 
+
 class DataGridAppView(object):
     """
     Common class to have re-usable grid rendering components

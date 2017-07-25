@@ -159,7 +159,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         self._redirect_for_default_user(c.user.username)
 
         c.active = 'auth_tokens'
@@ -194,7 +194,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
 
         self._redirect_for_default_user(c.user.username)
 
@@ -227,14 +227,14 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         self._redirect_for_default_user(c.user.username)
         user_data = c.user.get_api_data()
 
         del_auth_token = self.request.POST.get('del_auth_token')
 
         if del_auth_token:
-            token = UserApiKeys.get_or_404(del_auth_token, pyramid_exc=True)
+            token = UserApiKeys.get_or_404(del_auth_token)
             token_data = token.get_api_data()
 
             AuthTokenModel().delete(del_auth_token, c.user.user_id)
@@ -257,7 +257,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         self._redirect_for_default_user(c.user.username)
 
         c.active = 'emails'
@@ -276,7 +276,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         self._redirect_for_default_user(c.user.username)
 
         email = self.request.POST.get('new_email')
@@ -307,7 +307,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         self._redirect_for_default_user(c.user.username)
 
         email_id = self.request.POST.get('del_email_id')
@@ -334,7 +334,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         self._redirect_for_default_user(c.user.username)
 
         c.active = 'ips'
@@ -357,7 +357,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         # NOTE(marcink): this view is allowed for default users, as we can
         # edit their IP white list
 
@@ -407,7 +407,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         # NOTE(marcink): this view is allowed for default users, as we can
         # edit their IP white list
 
@@ -436,7 +436,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         c.data = c.user.group_member
         self._redirect_for_default_user(c.user.username)
         groups = [UserGroupModel.get_user_groups_as_dict(group.users_group)
@@ -456,7 +456,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         self._redirect_for_default_user(c.user.username)
 
         users_groups = set(self.request.POST.getall('users_group_id'))
@@ -484,7 +484,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         user_id = self.request.matchdict.get('user_id')
-        c.user = User.get_or_404(user_id, pyramid_exc=True)
+        c.user = User.get_or_404(user_id)
         self._redirect_for_default_user(c.user.username)
         c.active = 'audit'
 

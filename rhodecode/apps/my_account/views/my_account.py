@@ -211,7 +211,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         del_auth_token = self.request.POST.get('del_auth_token')
 
         if del_auth_token:
-            token = UserApiKeys.get_or_404(del_auth_token, pyramid_exc=True)
+            token = UserApiKeys.get_or_404(del_auth_token)
             token_data = token.get_api_data()
 
             AuthTokenModel().delete(del_auth_token, c.user.user_id)
@@ -279,7 +279,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
         del_email_id = self.request.POST.get('del_email_id')
         if del_email_id:
-            email = UserEmailMap.get_or_404(del_email_id, pyramid_exc=True).email
+            email = UserEmailMap.get_or_404(del_email_id).email
             UserModel().delete_extra_email(c.user.user_id, del_email_id)
             audit_logger.store_web(
                 'user.edit.email.delete', action_data={

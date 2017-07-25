@@ -55,7 +55,7 @@ class AdminMainView(BaseAppView):
         """
 
         pull_request_id = self.request.matchdict.get('pull_request_id')
-        pull_request = PullRequest.get_or_404(pull_request_id, pyramid_exc=True)
+        pull_request = PullRequest.get_or_404(pull_request_id)
         repo_name = pull_request.target_repo.repo_name
 
         raise HTTPFound(
