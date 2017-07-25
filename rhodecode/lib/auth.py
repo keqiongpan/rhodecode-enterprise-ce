@@ -872,20 +872,20 @@ class AuthUser(object):
 
         # lookup by userid
         if self.user_id is not None and self.user_id != anon_user.user_id:
-            log.debug('Trying Auth User lookup by USER ID: `%s`' % self.user_id)
+            log.debug('Trying Auth User lookup by USER ID: `%s`', self.user_id)
             is_user_loaded = user_model.fill_data(self, user_id=self.user_id)
 
         # try go get user by api key
         elif self._api_key and self._api_key != anon_user.api_key:
-            log.debug('Trying Auth User lookup by API KEY: `%s`' % self._api_key)
+            log.debug('Trying Auth User lookup by API KEY: `%s`', self._api_key)
             is_user_loaded = user_model.fill_data(self, api_key=self._api_key)
 
         # lookup by username
         elif self.username:
-            log.debug('Trying Auth User lookup by USER NAME: `%s`' % self.username)
+            log.debug('Trying Auth User lookup by USER NAME: `%s`', self.username)
             is_user_loaded = user_model.fill_data(self, username=self.username)
         else:
-            log.debug('No data in %s that could been used to log in' % self)
+            log.debug('No data in %s that could been used to log in', self)
 
         if not is_user_loaded:
             log.debug('Failed to load user. Fallback to default user')
@@ -904,7 +904,7 @@ class AuthUser(object):
         if not self.username:
             self.username = 'None'
 
-        log.debug('AuthUser: propagated user is now %s' % self)
+        log.debug('AuthUser: propagated user is now %s', self)
 
     def get_perms(self, user, scope=None, explicit=True, algo='higherwin',
                   cache=False):

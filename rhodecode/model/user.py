@@ -656,8 +656,8 @@ class UserModel(BaseModel):
             raise Exception('You need to pass user_id, api_key or username')
 
         log.debug(
-            'doing fill data based on: user_id:%s api_key:%s username:%s',
-            user_id, api_key, username)
+            'AuthUser: fill data execution based on: '
+            'user_id:%s api_key:%s username:%s', user_id, api_key, username)
         try:
             dbuser = None
             if user_id:
@@ -677,7 +677,7 @@ class UserModel(BaseModel):
                           username, user_id)
                 return False
 
-            log.debug('filling user:%s data', dbuser)
+            log.debug('AuthUser: filling found user:%s data', dbuser)
             user_data = dbuser.get_dict()
 
             user_data.update({
