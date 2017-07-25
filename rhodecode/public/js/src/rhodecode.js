@@ -219,6 +219,10 @@ var clipboardActivate = function() {
     var clipboard = new Clipboard('.clipboard-action');
 
     clipboard.on('success', function(e) {
+        var callback = function () {
+            $(e.trigger).animate({'opacity': 1.00}, 200)
+        };
+        $(e.trigger).animate({'opacity': 0.15}, 200, callback);
         e.clearSelection();
     });
 };
