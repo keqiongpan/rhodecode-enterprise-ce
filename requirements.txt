@@ -73,7 +73,7 @@ setproctitle==1.1.8
 simplejson==3.11.1
 six==1.9.0
 Sphinx==1.2.2
-SQLAlchemy==0.9.9
+SQLAlchemy==1.1.11
 subprocess32==3.2.7
 supervisor==3.3.2
 Tempita==0.5.2
