@@ -207,7 +207,9 @@ class Hooks(object):
 
     def _call_hook(self, hook, extras):
         extras = AttributeDict(extras)
-        extras.request = bootstrap_request()
+
+        extras.request = bootstrap_request(
+            application_url=extras['server_url'])
 
         try:
             result = hook(extras)
