@@ -370,7 +370,7 @@ class UserModel(BaseModel):
             if not edit:
                 # add the RSS token
                 AuthTokenModel().create(username,
-                                        description='Generated feed token',
+                                        description=u'Generated feed token',
                                         role=AuthTokenModel.cls.ROLE_FEED)
                 kwargs = new_user.get_dict()
                 # backward compat, require api_keys present
