@@ -228,6 +228,7 @@ def post_message(channel, message, username, registry=None):
     if not registry:
         registry = get_current_registry()
 
+    log.debug('Channelstream: sending notification to channel %s', channel)
     rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
     channelstream_config = rhodecode_plugins.get('channelstream', {})
     if channelstream_config.get('enabled'):

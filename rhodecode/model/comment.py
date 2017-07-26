@@ -33,7 +33,7 @@ from pyramid.threadlocal import get_current_registry, get_current_request
 from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.functions import coalesce
 
-from rhodecode.lib import helpers as h, diffs
+from rhodecode.lib import helpers as h, diffs, channelstream
 from rhodecode.lib import audit_logger
 from rhodecode.lib.channelstream import channelstream_request
 from rhodecode.lib.utils2 import extract_mentioned_users, safe_str
@@ -354,43 +354,34 @@ class CommentsModel(BaseModel):
         self._log_audit_action(
             action, {'data': comment_data}, user, comment)
 
-        registry = get_current_registry()
-        rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
-        channelstream_config = rhodecode_plugins.get('channelstream', {})
         msg_url = ''
+        channel = None
         if commit_obj:
             msg_url = commit_comment_url
             repo_name = repo.repo_name
+            channel = u'/repo${}$/commit/{}'.format(
+                repo_name,
+                commit_obj.raw_id
+            )
         elif pull_request_obj:
             msg_url = pr_comment_url
             repo_name = pr_target_repo.repo_name
-
-        if channelstream_config.get('enabled'):
-            message = '<strong>{}</strong> {} - ' \
-                      '<a onclick="window.location=\'{}\';' \
-                      'window.location.reload()">' \
-                      '<strong>{}</strong></a>'
-            message = message.format(
-                user.username, _('made a comment'), msg_url,
-                _('Show it now'))
-            channel = '/repo${}$/pr/{}'.format(
+            channel = u'/repo${}$/pr/{}'.format(
                 repo_name,
                 pull_request_id
             )
-            payload = {
-                'type': 'message',
-                'timestamp': datetime.utcnow(),
-                'user': 'system',
-                'exclude_users': [user.username],
-                'channel': channel,
-                'message': {
-                    'message': message,
-                    'level': 'info',
-                    'topic': '/notifications'
-                }
-            }
-            channelstream_request(channelstream_config, [payload],
-                                  '/message', raise_exc=False)
+
+        message = '<strong>{}</strong> {} - ' \
+                  '<a onclick="window.location=\'{}\';' \
+                  'window.location.reload()">' \
+                  '<strong>{}</strong></a>'
+        message = message.format(
+            user.username, _('made a comment'), msg_url,
+            _('Show it now'))
+
+        channelstream.post_message(
+            channel, message, user.username,
+            registry=get_current_registry())
 
         return comment
 
