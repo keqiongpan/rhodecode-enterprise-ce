@@ -28,9 +28,9 @@ import logging
 import time
 import traceback
 import warnings
+import functools
 
 from pyramid.threadlocal import get_current_registry
-from sqlalchemy.ext.hybrid import hybrid_property
 
 from rhodecode.authentication.interface import IAuthnPluginRegistry
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
@@ -50,6 +50,31 @@ log = logging.getLogger(__name__)
 # auth types that authenticate() function can receive
 VCS_TYPE = 'vcs'
 HTTP_TYPE = 'http'
+
+
+class hybrid_property(object):
+    """
+    a property decorator that works both for instance and class
+    """
+    def __init__(self, fget, fset=None, fdel=None, expr=None):
+        self.fget = fget
+        self.fset = fset
+        self.fdel = fdel
+        self.expr = expr or fget
+        functools.update_wrapper(self, fget)
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self.expr(owner)
+        else:
+            return self.fget(instance)
+
+    def __set__(self, instance, value):
+        self.fset(instance, value)
+
+    def __delete__(self, instance):
+        self.fdel(instance)
+
 
 
 class LazyFormencode(object):
