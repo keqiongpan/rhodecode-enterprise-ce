@@ -46,7 +46,8 @@ def upgrade(migrate_engine):
         if repo_name_idx in repo_name_indexes:
             batch_op.drop_index(repo_name_idx)
         for name in repo_name_constraints:
-            batch_op.drop_constraint(name, type_='unique')
+            if name:  # sqlite can have this empty, then it raises an error
+                batch_op.drop_constraint(name, type_='unique')
 
         batch_op.alter_column(repo_name_column.name, type_=Text)
         batch_op.alter_column(clone_uri_column.name, type_=Text)
