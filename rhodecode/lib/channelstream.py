@@ -18,12 +18,15 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import os
 import hashlib
 import itsdangerous
 import logging
-import os
 import requests
+import datetime
+
 from dogpile.core import ReadWriteMutex
+from pyramid.threadlocal import get_current_registry
 
 import rhodecode.lib.helpers as h
 from rhodecode.lib.auth import HasRepoPermissionAny
@@ -218,3 +221,33 @@ def get_connection_validators(registry):
         if validator:
             validators.append(validator)
     return validators
+
+
+def post_message(channel, message, username, registry=None):
+
+    if not registry:
+        registry = get_current_registry()
+
+    rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
+    channelstream_config = rhodecode_plugins.get('channelstream', {})
+    if channelstream_config.get('enabled'):
+        payload = {
+            'type': 'message',
+            'timestamp': datetime.datetime.utcnow(),
+            'user': 'system',
+            'exclude_users': [username],
+            'channel': channel,
+            'message': {
+                'message': message,
+                'level': 'success',
+                'topic': '/notifications'
+            }
+        }
+
+        try:
+            return channelstream_request(
+                channelstream_config, [payload], '/message',
+                raise_exc=False)
+        except ChannelstreamException:
+            log.exception('Failed to send channelstream data')
+            raise
