@@ -201,7 +201,7 @@ def post_push(extras):
     audit_logger.store(
         'user.push', action_data={
             'user_agent': extras.user_agent,
-            'commit_ids': commit_ids[:10000]},
+            'commit_ids': commit_ids[:400]},
         user=audit_user, repo=repo, commit=True)
 
     # Propagate to external components.
