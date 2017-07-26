@@ -3339,6 +3339,14 @@ class _PullRequestBase(BaseModel):
     def revisions(self, val):
         self._revisions = ':'.join(val)
 
+    @hybrid_property
+    def last_merge_status(self):
+        return safe_int(self._last_merge_status)
+
+    @last_merge_status.setter
+    def last_merge_status(self, val):
+        self._last_merge_status = val
+
     @declared_attr
     def author(cls):
         return relationship('User', lazy='joined')

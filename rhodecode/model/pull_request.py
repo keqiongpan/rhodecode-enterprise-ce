@@ -780,7 +780,7 @@ class PullRequestModel(BaseModel):
 
         version._last_merge_source_rev = pull_request._last_merge_source_rev
         version._last_merge_target_rev = pull_request._last_merge_target_rev
-        version._last_merge_status = pull_request._last_merge_status
+        version.last_merge_status = pull_request.last_merge_status
         version.shadow_merge_ref = pull_request.shadow_merge_ref
         version.merge_rev = pull_request.merge_rev
         version.reviewer_data = pull_request.reviewer_data
@@ -1223,9 +1223,9 @@ class PullRequestModel(BaseModel):
                 pull_request, target_vcs, target_ref)
         else:
             possible = pull_request.\
-                _last_merge_status == MergeFailureReason.NONE
+                last_merge_status == MergeFailureReason.NONE
             merge_state = MergeResponse(
-                possible, False, None, pull_request._last_merge_status)
+                possible, False, None, pull_request.last_merge_status)
 
         return merge_state
 
@@ -1258,7 +1258,7 @@ class PullRequestModel(BaseModel):
             pull_request._last_merge_source_rev = \
                 pull_request.source_ref_parts.commit_id
             pull_request._last_merge_target_rev = target_reference.commit_id
-            pull_request._last_merge_status = merge_state.failure_reason
+            pull_request.last_merge_status = merge_state.failure_reason
             pull_request.shadow_merge_ref = merge_state.merge_ref
             Session().add(pull_request)
             Session().commit()

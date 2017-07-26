@@ -155,7 +155,7 @@ class TestPullRequestModel(object):
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
-        assert pull_request._last_merge_status is None
+        assert pull_request.last_merge_status is None
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is True
@@ -168,7 +168,7 @@ class TestPullRequestModel(object):
 
         assert pull_request._last_merge_source_rev == self.source_commit
         assert pull_request._last_merge_target_rev == self.target_commit
-        assert pull_request._last_merge_status is MergeFailureReason.NONE
+        assert pull_request.last_merge_status is MergeFailureReason.NONE
 
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
@@ -182,7 +182,7 @@ class TestPullRequestModel(object):
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
-        assert pull_request._last_merge_status is None
+        assert pull_request.last_merge_status is None
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
@@ -198,7 +198,7 @@ class TestPullRequestModel(object):
         assert pull_request._last_merge_source_rev == self.source_commit
         assert pull_request._last_merge_target_rev == self.target_commit
         assert (
-            pull_request._last_merge_status is MergeFailureReason.MERGE_FAILED)
+            pull_request.last_merge_status is MergeFailureReason.MERGE_FAILED)
 
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
@@ -214,7 +214,7 @@ class TestPullRequestModel(object):
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
-        assert pull_request._last_merge_status is None
+        assert pull_request.last_merge_status is None
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
@@ -229,7 +229,7 @@ class TestPullRequestModel(object):
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
-        assert pull_request._last_merge_status is None
+        assert pull_request.last_merge_status is None
 
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
@@ -760,7 +760,7 @@ def test_create_version_from_snapshot_updates_attributes(pr_util, config_stub):
     pull_request.status = PullRequest.STATUS_CLOSED
     pull_request._last_merge_source_rev = "0" * 40
     pull_request._last_merge_target_rev = "1" * 40
-    pull_request._last_merge_status = 1
+    pull_request.last_merge_status = 1
     pull_request.merge_rev = "2" * 40
 
     # Remember automatic values
@@ -787,7 +787,7 @@ def test_create_version_from_snapshot_updates_attributes(pr_util, config_stub):
     assert version.target_ref == pr_util.create_parameters['target_ref']
     assert version._last_merge_source_rev == pull_request._last_merge_source_rev
     assert version._last_merge_target_rev == pull_request._last_merge_target_rev
-    assert version._last_merge_status == pull_request._last_merge_status
+    assert version.last_merge_status == pull_request.last_merge_status
     assert version.merge_rev == pull_request.merge_rev
     assert version.pull_request == pull_request
 
