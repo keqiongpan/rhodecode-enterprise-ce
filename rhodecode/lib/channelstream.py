@@ -105,8 +105,9 @@ def repo_validator(channel_name):
             'repository.read',
             'repository.write',
             'repository.admin')(repo_name)
-        log.debug('permission check for {} channel '
-                  'resulted in {}'.format(repo_name, can_access))
+        log.debug(
+            'permission check for %s channel resulted in %s',
+            repo_name, can_access)
         if can_access:
             return True
     return False
