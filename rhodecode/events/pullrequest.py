@@ -52,9 +52,10 @@ class PullRequestEvent(RepoEvent):
                 'title': self.pullrequest.title,
                 'issues': issues,
                 'pull_request_id': self.pullrequest.pull_request_id,
-                'url': PullRequestModel().get_url(self.pullrequest),
+                'url': PullRequestModel().get_url(
+                    self.pullrequest, request=self.request),
                 'permalink_url': PullRequestModel().get_url(
-                    self.pullrequest, permalink=True),
+                    self.pullrequest, request=self.request, permalink=True),
                 'status': self.pullrequest.calculated_review_status(),
                 'commits': commits,
             }
@@ -134,9 +135,10 @@ class PullRequestCommentEvent(PullRequestEvent):
                 'type': self.comment.comment_type,
                 'file': self.comment.f_path,
                 'line': self.comment.line_no,
-                'url': CommentsModel().get_url(self.comment),
+                'url': CommentsModel().get_url(
+                    self.comment, request=self.request),
                 'permalink_url': CommentsModel().get_url(
-                    self.comment, permalink=True),
+                    self.comment, request=self.request, permalink=True),
             }
         })
         return data

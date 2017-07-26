@@ -120,6 +120,7 @@ class RepoEvent(RhodecodeEvent):
     def as_dict(self):
         from rhodecode.model.repo import RepoModel
         data = super(RepoEvent, self).as_dict()
+
         extra_fields = collections.OrderedDict()
         for field in self.repo.extra_fields:
             extra_fields[field.field_key] = field.field_value
@@ -200,6 +201,10 @@ class RepoVCSEvent(RepoEvent):
     def server_url(self):
         if self.extras.get('server_url'):
             return self.extras['server_url']
+
+    @property
+    def request(self):
+        return self.extras.get('request') or self.get_request()
 
 
 class RepoPrePullEvent(RepoVCSEvent):

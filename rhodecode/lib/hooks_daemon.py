@@ -25,13 +25,11 @@ import threading
 from BaseHTTPServer import BaseHTTPRequestHandler
 from SocketServer import TCPServer
 
-import pylons
 import rhodecode
-
 from rhodecode.model import meta
+from rhodecode.lib.base import bootstrap_request
 from rhodecode.lib import hooks_base
-from rhodecode.lib.utils2 import (
-    AttributeDict, safe_str, get_routes_generator_for_server_url)
+from rhodecode.lib.utils2 import AttributeDict
 
 
 log = logging.getLogger(__name__)
@@ -188,29 +186,28 @@ class Hooks(object):
     """
 
     def repo_size(self, extras):
-        log.debug("Called repo_size of Hooks object")
+        log.debug("Called repo_size of %s object", self)
         return self._call_hook(hooks_base.repo_size, extras)
 
     def pre_pull(self, extras):
-        log.debug("Called pre_pull of Hooks object")
+        log.debug("Called pre_pull of %s object", self)
         return self._call_hook(hooks_base.pre_pull, extras)
 
     def post_pull(self, extras):
-        log.debug("Called post_pull of Hooks object")
+        log.debug("Called post_pull of %s object", self)
         return self._call_hook(hooks_base.post_pull, extras)
 
     def pre_push(self, extras):
-        log.debug("Called pre_push of Hooks object")
+        log.debug("Called pre_push of %s object", self)
         return self._call_hook(hooks_base.pre_push, extras)
 
     def post_push(self, extras):
-        log.debug("Called post_push of Hooks object")
+        log.debug("Called post_push of %s object", self)
         return self._call_hook(hooks_base.post_push, extras)
 
     def _call_hook(self, hook, extras):
         extras = AttributeDict(extras)
-        pylons_router = get_routes_generator_for_server_url(extras.server_url)
-        pylons.url._push_object(pylons_router)
+        extras.request = bootstrap_request()
 
         try:
             result = hook(extras)
@@ -226,7 +223,6 @@ class Hooks(object):
                 'exception_args': error_args,
             }
         finally:
-            pylons.url._pop_object()
             meta.Session.remove()
 
         return {

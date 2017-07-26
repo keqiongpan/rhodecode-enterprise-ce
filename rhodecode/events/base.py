@@ -16,9 +16,11 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import logging
+import datetime
 
-from datetime import datetime
+from zope.cachedescriptors.property import Lazy as LazyProperty
 from pyramid.threadlocal import get_current_request
+
 from rhodecode.lib.utils2 import AttributeDict
 
 
@@ -36,10 +38,20 @@ class RhodecodeEvent(object):
     Base event class for all RhodeCode events
     """
     name = "RhodeCodeEvent"
+    no_url_set = '<no server_url available>'
 
     def __init__(self, request=None):
-        self.request = request or get_current_request()
-        self.utc_timestamp = datetime.utcnow()
+        self._request = request
+        self.utc_timestamp = datetime.datetime.utcnow()
+
+    def get_request(self):
+        if self._request:
+            return self._request
+        return get_current_request()
+
+    @LazyProperty
+    def request(self):
+        return self.get_request()
 
     @property
     def auth_user(self):
@@ -57,7 +69,6 @@ class RhodecodeEvent(object):
     @property
     def actor(self):
         auth_user = self.auth_user
-
         if auth_user:
             instance = auth_user.get_instance()
             if not instance:
@@ -78,15 +89,14 @@ class RhodecodeEvent(object):
 
     @property
     def server_url(self):
-        default = '<no server_url available>'
         if self.request:
             try:
                 return self.request.route_url('home')
             except Exception:
                 log.exception('Failed to fetch URL for server')
-                return default
+                return self.no_url_set
 
-        return default
+        return self.no_url_set
 
     def as_dict(self):
         data = {
