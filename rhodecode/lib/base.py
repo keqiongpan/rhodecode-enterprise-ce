@@ -534,9 +534,13 @@ def add_events_routes(config):
                      pattern='/{repo_name}/files/{commit_id}/{f_path}')
 
 
-def bootstrap_request():
+def bootstrap_request(**kwargs):
     import pyramid.testing
-    request = pyramid.testing.DummyRequest()
+    request = pyramid.testing.DummyRequest(**kwargs)
+    request.application_url = kwargs.pop('application_url', 'http://example.com')
+    request.host = kwargs.pop('host', 'example.com:80')
+    request.domain = kwargs.pop('domain', 'example.com')
+
     config = pyramid.testing.setUp(request=request)
     add_events_routes(config)
 

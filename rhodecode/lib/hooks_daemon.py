@@ -213,7 +213,8 @@ class Hooks(object):
         extras = AttributeDict(extras)
         pylons_router = get_routes_generator_for_server_url(extras.server_url)
         pylons.url._push_object(pylons_router)
-        extras.request = bootstrap_request()
+        extras.request = bootstrap_request(
+            application_url=extras['server_url'])
 
         try:
             result = hook(extras)
