@@ -967,9 +967,8 @@ class User(Base, BaseModel):
 class UserApiKeys(Base, BaseModel):
     __tablename__ = 'user_api_keys'
     __table_args__ = (
-        Index('uak_api_key_idx', 'api_key'),
+        Index('uak_api_key_idx', 'api_key', unique=True),
         Index('uak_api_key_expires_idx', 'api_key', 'expires'),
-        UniqueConstraint('api_key'),
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
@@ -2905,7 +2904,6 @@ class UserGroupRepoGroupToPerm(Base, BaseModel):
 class Statistics(Base, BaseModel):
     __tablename__ = 'statistics'
     __table_args__ = (
-         UniqueConstraint('repository_id'),
          {'extend_existing': True, 'mysql_engine': 'InnoDB',
           'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
