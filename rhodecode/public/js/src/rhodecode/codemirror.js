@@ -81,7 +81,8 @@ var CodeMirrorLoadUserHints = function(query, triggerHints) {
     triggerHints(userHintsCache[query]);
   })
   .fail(function(data, textStatus, xhr) {
-    alert("error processing request: " + textStatus);
+      alert("error processing request. \n" +
+            "Error code {0} ({1}).".format(data.status, data.statusText));
   });
 };
 

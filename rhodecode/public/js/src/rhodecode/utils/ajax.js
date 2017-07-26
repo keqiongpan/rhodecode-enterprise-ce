@@ -46,7 +46,8 @@ var ajaxGET = function(url, success, failure) {
     if (failure) {
       failure(data, textStatus, xhr);
     } else {
-      alert("error processing request: " + textStatus);
+      alert("Error processing request. \n" +
+            "Error code {0} ({1}).".format(data.status, data.statusText));
     }
   });
   return request;
@@ -63,7 +64,8 @@ var ajaxPOST = function(url, postData, success, failure) {
     if (failure) {
       failure(data, textStatus, xhr);
     } else {
-      alert("error processing request: " + textStatus);
+      alert("Error processing request. \n" +
+            "Error code {0} ({1}).".format(data.status, data.statusText));
     }
   });
   return request;
