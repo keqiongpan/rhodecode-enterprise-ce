@@ -255,14 +255,13 @@ class WebhookIntegrationType(IntegrationTypeBase):
 @task(ignore_result=True)
 def post_to_webhook(url_calls, settings):
     max_retries = 3
+    retries = Retry(
+        total=max_retries,
+        backoff_factor=0.15,
+        status_forcelist=[500, 502, 503, 504])
     for url, token, data in url_calls:
-        # retry max N times
-        retries = Retry(
-            total=max_retries,
-            backoff_factor=0.15,
-            status_forcelist=[500, 502, 503, 504])
         req_session = requests.Session()
-        req_session.mount(
+        req_session.mount(  # retry max N times
             'http://', requests.adapters.HTTPAdapter(max_retries=retries))
 
         method = settings.get('method_type') or 'post'

@@ -32,6 +32,7 @@ import uuid
 import pycurl
 import msgpack
 import requests
+from requests.packages.urllib3.util.retry import Retry
 
 from . import exceptions, CurlSession
 
@@ -232,7 +233,11 @@ class VcsHttpProxy(object):
     CHUNK_SIZE = 16384
 
     def __init__(self, server_and_port, backend_endpoint):
-        adapter = requests.adapters.HTTPAdapter(max_retries=5)
+
+
+        retries = Retry(total=5, connect=None, read=None, redirect=None)
+
+        adapter = requests.adapters.HTTPAdapter(max_retries=retries)
         self.base_url = urlparse.urljoin(
             'http://%s' % server_and_port, backend_endpoint)
         self.session = requests.Session()
