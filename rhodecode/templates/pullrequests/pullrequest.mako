@@ -302,7 +302,7 @@ $(function(){
           prButtonLock(true, "${_('Please select source and target')}");
           return;
       }
-      var url = pyroutes.url('compare_url', url_data);
+      var url = pyroutes.url('repo_compare', url_data);
 
       // lock PR button, so we cannot send PR before it's calculated
       prButtonLock(true, "${_('Loading compare ...')}", 'compare');

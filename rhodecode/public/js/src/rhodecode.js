@@ -58,7 +58,7 @@ var compare_radio_buttons = function(repo_name, compare_ref_type){
                 target_ref_type: compare_ref_type,
                 merge: 1
             };
-            window.location = pyroutes.url('compare_url', url_data);
+            window.location = pyroutes.url('repo_compare', url_data);
         }
     });
     $('.compare-radio-button').on('click', function(e){

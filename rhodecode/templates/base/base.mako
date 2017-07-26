@@ -228,9 +228,7 @@
         <li class="${is_active('summary')}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
         <li class="${is_active('changelog')}"><a class="menulink" href="${h.route_path('repo_changelog', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
         <li class="${is_active('files')}"><a class="menulink" href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.rhodecode_db_repo.landing_rev[1], f_path='')}"><div class="menulabel">${_('Files')}</div></a></li>
-        <li class="${is_active('compare')}">
-            <a class="menulink" href="${h.url('compare_home',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a>
-        </li>
+        <li class="${is_active('compare')}"><a class="menulink" href="${h.route_path('repo_compare_select',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a></li>
         ## TODO: anderson: ideally it would have a function on the scm_instance "enable_pullrequest() and enable_fork()"
         %if c.rhodecode_db_repo.repo_type in ['git','hg']:
           <li class="${is_active('showpullrequest')}">
@@ -251,8 +249,19 @@
                    <li><a href="${h.route_path('edit_repo',repo_name=c.repo_name)}">${_('Settings')}</a></li>
              %endif
               %if c.rhodecode_db_repo.fork:
-               <li><a href="${h.url('compare_url',repo_name=c.rhodecode_db_repo.fork.repo_name,source_ref_type=c.rhodecode_db_repo.landing_rev[0],source_ref=c.rhodecode_db_repo.landing_rev[1], target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1], merge=1)}">
-                   ${_('Compare fork')}</a></li>
+               <li>
+                   <a title="${h.tooltip(_('Compare fork with %s' % c.rhodecode_db_repo.fork.repo_name))}"
+                      href="${h.route_path('repo_compare',
+                            repo_name=c.rhodecode_db_repo.fork.repo_name,
+                            source_ref_type=c.rhodecode_db_repo.landing_rev[0],
+                            source_ref=c.rhodecode_db_repo.landing_rev[1],
+                            target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],
+                            target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1],
+                            _query=dict(merge=1))}"
+                    >
+                   ${_('Compare fork')}
+                   </a>
+               </li>
               %endif
 
               <li><a href="${h.route_path('search_repo',repo_name=c.repo_name)}">${_('Search')}</a></li>

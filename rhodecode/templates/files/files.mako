@@ -174,7 +174,7 @@
                         merge: 1,
                         f_path: state.f_path
                     };
-                    window.location = pyroutes.url('compare_url', url_data);
+                    window.location = pyroutes.url('repo_compare', url_data);
                 });
 
                 $('#show_at_commit').on('click', function(e) {

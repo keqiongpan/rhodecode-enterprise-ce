@@ -392,14 +392,15 @@ class RepoFilesView(RepoAppView):
 
         c.action = self.request.GET.get('diff')
         if c.action not in ['download', 'raw']:
-            compare_url = h.url(
-                'compare_url', repo_name=self.db_repo_name,
+            compare_url = h.route_path(
+                'repo_compare',
+                repo_name=self.db_repo_name,
                 source_ref_type='rev',
                 source_ref=diff1,
                 target_repo=self.db_repo_name,
                 target_ref_type='rev',
                 target_ref=diff2,
-                f_path=f_path)
+                _query=dict(f_path=f_path))
             # redirect to new view if we render diff
             raise HTTPFound(compare_url)
 
@@ -471,15 +472,15 @@ class RepoFilesView(RepoAppView):
                 category='error')
             raise HTTPBadRequest()
 
-        compare_url = h.url(
-            'compare_url', repo_name=self.db_repo_name,
+        compare_url = h.route_path(
+            'repo_compare',
+            repo_name=self.db_repo_name,
             source_ref_type='rev',
             source_ref=diff1,
-            target_repo=self.db_repo_name,
             target_ref_type='rev',
             target_ref=diff2,
-            f_path=f_path,
-            diffmode='sideside')
+            _query=dict(f_path=f_path, diffmode='sideside',
+                        target_repo=self.db_repo_name,))
         raise HTTPFound(compare_url)
 
     @LoginRequired()

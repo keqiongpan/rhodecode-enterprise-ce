@@ -21,11 +21,23 @@
 import pytest
 
 from rhodecode.lib.vcs import nodes
-from rhodecode.tests import url
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import commit_change
 
 fixture = Fixture()
+
+
+def route_path(name, params=None, **kwargs):
+    import urllib
+
+    base_url = {
+        'repo_compare_select': '/{repo_name}/compare',
+        'repo_compare': '/{repo_name}/compare/{source_ref_type}@{source_ref}...{target_ref_type}@{target_ref}',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
 
 
 @pytest.mark.usefixtures("autologin_user", "app")
@@ -45,18 +57,15 @@ class TestSideBySideDiff(object):
             repo.repo_name, filename=f_path, content=commit2_content,
             message='B, child of A', vcs_type=backend.alias, parent=commit1)
 
-        compare_url = url(
-            'compare_url',
+        response = self.app.get(route_path(
+            'repo_compare',
             repo_name=repo.repo_name,
             source_ref_type='rev',
             source_ref=commit1.raw_id,
-            target_repo=repo.repo_name,
             target_ref_type='rev',
             target_ref=commit2.raw_id,
-            f_path=f_path,
-            diffmode='sidebyside')
-
-        response = self.app.get(compare_url)
+            params=dict(f_path=f_path, target_repo=repo.repo_name, diffmode='sidebyside')
+        ))
 
         response.mustcontain('Expand 1 commit')
         response.mustcontain('1 file changed')
@@ -78,18 +87,15 @@ class TestSideBySideDiff(object):
         commit1 = repo.get_commit(commit_idx=0)
         commit2 = repo.get_commit(commit_idx=1)
 
-        compare_url = url(
-            'compare_url',
+        response = self.app.get(route_path(
+            'repo_compare',
             repo_name=repo.repo_name,
             source_ref_type='rev',
             source_ref=commit1.raw_id,
-            target_repo=repo.repo_name,
             target_ref_type='rev',
             target_ref=commit2.raw_id,
-            f_path=f_path,
-            diffmode='sidebyside')
-
-        response = self.app.get(compare_url)
+            params=dict(f_path=f_path, target_repo=repo.repo_name, diffmode='sidebyside')
+        ))
 
         response.mustcontain('Expand 1 commit')
         response.mustcontain('1 file changed')
@@ -124,16 +130,16 @@ class TestSideBySideDiff(object):
         commit2, commit1 = commit_info['commits']
         file_changes = commit_info['changes']
 
-        compare_url = url(
-            'compare_url',
+        response = self.app.get(route_path(
+            'repo_compare',
             repo_name=backend.repo_name,
             source_ref_type='rev',
             source_ref=commit2,
             target_repo=backend.repo_name,
             target_ref_type='rev',
             target_ref=commit1,
-            diffmode='sidebyside')
-        response = self.app.get(compare_url)
+            params=dict(target_repo=backend.repo_name, diffmode='sidebyside')
+        ))
 
         response.mustcontain('Expand 1 commit')
         response.mustcontain(file_changes)
@@ -163,17 +169,15 @@ class TestSideBySideDiff(object):
         commit2, commit1 = commit_info['commits']
         file_changes = commit_info['changes']
 
-        compare_url = url(
-            'compare_url',
+        response = self.app.get(route_path(
+            'repo_compare',
             repo_name=backend.repo_name,
             source_ref_type='rev',
             source_ref=commit2,
-            target_repo=backend.repo_name,
             target_ref_type='rev',
             target_ref=commit1,
-            f_path=f_path,
-            diffmode='sidebyside')
-        response = self.app.get(compare_url)
+            params=dict(f_path=f_path, target_repo=backend.repo_name, diffmode='sidebyside')
+        ))
 
         response.mustcontain('Expand 1 commit')
         response.mustcontain(file_changes)

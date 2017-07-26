@@ -20,20 +20,32 @@
 
 import pytest
 
-from rhodecode.tests import url
-from rhodecode.tests.functional.test_compare import ComparePage
+from .test_repo_compare import ComparePage
+
+
+def route_path(name, params=None, **kwargs):
+    import urllib
+
+    base_url = {
+        'repo_compare_select': '/{repo_name}/compare',
+        'repo_compare': '/{repo_name}/compare/{source_ref_type}@{source_ref}...{target_ref_type}@{target_ref}',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
 
 
 @pytest.mark.usefixtures("autologin_user", "app")
-class TestCompareController:
+class TestCompareView(object):
 
     @pytest.mark.xfail_backends("svn", msg="Depends on branch and tag support")
     def test_compare_tag(self, backend):
         tag1 = 'v0.1.2'
         tag2 = 'v0.1.3'
         response = self.app.get(
-            url(
-                'compare_url',
+            route_path(
+                'repo_compare',
                 repo_name=backend.repo_name,
                 source_ref_type="tag",
                 source_ref=tag1,
@@ -90,8 +102,9 @@ class TestCompareController:
         # functional tests.
         data = revisions[backend.alias]
 
-        response = self.app.get(url(
-            'compare_url',
+        response = self.app.get(
+            route_path(
+            'repo_compare',
             repo_name=backend.repo_name,
             source_ref_type='branch',
             source_ref=data['branch'],
@@ -106,8 +119,9 @@ class TestCompareController:
 
     def test_index_branch(self, backend):
         head_id = backend.default_head_id
-        response = self.app.get(url(
-            'compare_url',
+        response = self.app.get(
+            route_path(
+            'repo_compare',
             repo_name=backend.repo_name,
             source_ref_type="branch",
             source_ref=head_id,
@@ -126,8 +140,9 @@ class TestCompareController:
         commit1 = repo.get_commit(commit_idx=0)
         commit2 = repo.get_commit(commit_idx=1)
 
-        response = self.app.get(url(
-            'compare_url',
+        response = self.app.get(
+            route_path(
+            'repo_compare',
             repo_name=backend.repo_name,
             source_ref_type="rev",
             source_ref=commit1.raw_id,

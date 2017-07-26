@@ -502,17 +502,6 @@ def make_map(config):
                  conditions={'method': ['GET', 'POST'], 'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
-    rmap.connect('compare_home',
-                 '/{repo_name}/compare',
-                 controller='compare', action='index',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('compare_url',
-                 '/{repo_name}/compare/{source_ref_type}@{source_ref:.*?}...{target_ref_type}@{target_ref:.*?}',
-                 controller='compare', action='compare',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS, jsroute=True)
 
     rmap.connect('pullrequest_home',
                  '/{repo_name}/pull-request/new', controller='pullrequests',

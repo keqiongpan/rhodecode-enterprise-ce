@@ -288,7 +288,7 @@
                             target_ref: target.id,
                             target_ref_type: target.type
                         };
-                        window.location = pyroutes.url('compare_url', url_data);
+                        window.location = pyroutes.url('repo_compare', url_data);
                     }
                 });
                 $('#compare_changeset_status_toggle').on('click', function(e) {

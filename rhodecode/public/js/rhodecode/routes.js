@@ -15,7 +15,6 @@ function registerRCRoutes() {
     pyroutes.register('new_repo', '/_admin/create_repository', []);
     pyroutes.register('edit_user', '/_admin/users/%(user_id)s/edit', ['user_id']);
     pyroutes.register('edit_user_group_members', '/_admin/user_groups/%(user_group_id)s/edit/members', ['user_group_id']);
-    pyroutes.register('compare_url', '/%(repo_name)s/compare/%(source_ref_type)s@%(source_ref)s...%(target_ref_type)s@%(target_ref)s', ['repo_name', 'source_ref_type', 'source_ref', 'target_ref_type', 'target_ref']);
     pyroutes.register('pullrequest_home', '/%(repo_name)s/pull-request/new', ['repo_name']);
     pyroutes.register('pullrequest', '/%(repo_name)s/pull-request/new', ['repo_name']);
     pyroutes.register('pullrequest_repo_refs', '/%(repo_name)s/pull-request/refs/%(target_repo_name)s', ['repo_name', 'target_repo_name']);
@@ -108,7 +107,6 @@ function registerRCRoutes() {
     pyroutes.register('repo_commit', '/%(repo_name)s/changeset/%(commit_id)s', ['repo_name', 'commit_id']);
     pyroutes.register('repo_commit_children', '/%(repo_name)s/changeset_children/%(commit_id)s', ['repo_name', 'commit_id']);
     pyroutes.register('repo_commit_parents', '/%(repo_name)s/changeset_parents/%(commit_id)s', ['repo_name', 'commit_id']);
-    pyroutes.register('repo_commit_raw_deprecated', '/%(repo_name)s/raw-changeset/%(commit_id)s', ['repo_name', 'commit_id']);
     pyroutes.register('repo_commit_raw', '/%(repo_name)s/changeset-diff/%(commit_id)s', ['repo_name', 'commit_id']);
     pyroutes.register('repo_commit_patch', '/%(repo_name)s/changeset-patch/%(commit_id)s', ['repo_name', 'commit_id']);
     pyroutes.register('repo_commit_download', '/%(repo_name)s/changeset-download/%(commit_id)s', ['repo_name', 'commit_id']);
@@ -116,6 +114,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_commit_comment_create', '/%(repo_name)s/changeset/%(commit_id)s/comment/create', ['repo_name', 'commit_id']);
     pyroutes.register('repo_commit_comment_preview', '/%(repo_name)s/changeset/%(commit_id)s/comment/preview', ['repo_name', 'commit_id']);
     pyroutes.register('repo_commit_comment_delete', '/%(repo_name)s/changeset/%(commit_id)s/comment/%(comment_id)s/delete', ['repo_name', 'commit_id', 'comment_id']);
+    pyroutes.register('repo_commit_raw_deprecated', '/%(repo_name)s/raw-changeset/%(commit_id)s', ['repo_name', 'commit_id']);
     pyroutes.register('repo_archivefile', '/%(repo_name)s/archive/%(fname)s', ['repo_name', 'fname']);
     pyroutes.register('repo_files_diff', '/%(repo_name)s/diff/%(f_path)s', ['repo_name', 'f_path']);
     pyroutes.register('repo_files_diff_2way_redirect', '/%(repo_name)s/diff-2way/%(f_path)s', ['repo_name', 'f_path']);
@@ -145,6 +144,8 @@ function registerRCRoutes() {
     pyroutes.register('repo_changelog', '/%(repo_name)s/changelog', ['repo_name']);
     pyroutes.register('repo_changelog_file', '/%(repo_name)s/changelog/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_changelog_elements', '/%(repo_name)s/changelog_elements', ['repo_name']);
+    pyroutes.register('repo_compare_select', '/%(repo_name)s/compare', ['repo_name']);
+    pyroutes.register('repo_compare', '/%(repo_name)s/compare/%(source_ref_type)s@%(source_ref)s...%(target_ref_type)s@%(target_ref)s', ['repo_name', 'source_ref_type', 'source_ref', 'target_ref_type', 'target_ref']);
     pyroutes.register('tags_home', '/%(repo_name)s/tags', ['repo_name']);
     pyroutes.register('branches_home', '/%(repo_name)s/branches', ['repo_name']);
     pyroutes.register('bookmarks_home', '/%(repo_name)s/bookmarks', ['repo_name']);

@@ -32,8 +32,7 @@ def includeme(config):
         name='repo_summary_commits',
         pattern='/{repo_name:.*?[^/]}/summary-commits', repo_route=True)
 
-    # repo commits
-
+    # Commits
     config.add_route(
         name='repo_commit',
         pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}', repo_route=True)
@@ -45,11 +44,6 @@ def includeme(config):
     config.add_route(
         name='repo_commit_parents',
         pattern='/{repo_name:.*?[^/]}/changeset_parents/{commit_id}', repo_route=True)
-
-    # still working url for backward compat.
-    config.add_route(
-        name='repo_commit_raw_deprecated',
-        pattern='/{repo_name:.*?[^/]}/raw-changeset/{commit_id}', repo_route=True)
 
     config.add_route(
         name='repo_commit_raw',
@@ -79,7 +73,12 @@ def includeme(config):
         name='repo_commit_comment_delete',
         pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/{comment_id}/delete', repo_route=True)
 
-    # repo files
+    # still working url for backward compat.
+    config.add_route(
+        name='repo_commit_raw_deprecated',
+        pattern='/{repo_name:.*?[^/]}/raw-changeset/{commit_id}', repo_route=True)
+
+    # Files
     config.add_route(
         name='repo_archivefile',
         pattern='/{repo_name:.*?[^/]}/archive/{fname}', repo_route=True)
@@ -168,7 +167,7 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/create_file/{commit_id}/{f_path:.*}',
         repo_route=True)
 
-    # refs data
+    # Refs data
     config.add_route(
         name='repo_refs_data',
         pattern='/{repo_name:.*?[^/]}/refs-data', repo_route=True)
@@ -191,6 +190,15 @@ def includeme(config):
     config.add_route(
         name='repo_changelog_elements',
         pattern='/{repo_name:.*?[^/]}/changelog_elements', repo_route=True)
+
+    # Compare
+    config.add_route(
+        name='repo_compare_select',
+        pattern='/{repo_name:.*?[^/]}/compare', repo_route=True)
+
+    config.add_route(
+        name='repo_compare',
+        pattern='/{repo_name:.*?[^/]}/compare/{source_ref_type}@{source_ref:.*?}...{target_ref_type}@{target_ref:.*?}', repo_route=True)
 
     # Tags
     config.add_route(

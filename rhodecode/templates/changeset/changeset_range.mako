@@ -55,7 +55,13 @@
             </div>
             <div class="right-content">
               <div class="header-buttons">
-                <a href="${h.url('compare_url', repo_name=c.repo_name, source_ref_type='rev', source_ref=getattr(c.commit_ranges[0].parents[0] if c.commit_ranges[0].parents else h.EmptyCommit(), 'raw_id'), target_ref_type='rev', target_ref=c.commit_ranges[-1].raw_id)}">
+                <a href="${h.route_path('repo_compare',
+                repo_name=c.repo_name,
+                source_ref_type='rev',
+                source_ref=getattr(c.commit_ranges[0].parents[0] if c.commit_ranges[0].parents else h.EmptyCommit(), 'raw_id'),
+                target_ref_type='rev',
+                target_ref=c.commit_ranges[-1].raw_id)}"
+                >
                     ${_('Show combined compare')}
                 </a>
               </div>

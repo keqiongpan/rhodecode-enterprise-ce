@@ -18,22 +18,20 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-Compare controller for showing differences between two commits/refs/tags etc.
-"""
 
 import logging
 
-from webob.exc import HTTPBadRequest, HTTPNotFound
-from pylons import request, tmpl_context as c, url
-from pylons.controllers.util import redirect
-from pylons.i18n.translation import _
+from pyramid.httpexceptions import HTTPBadRequest, HTTPNotFound, HTTPFound
+from pyramid.view import view_config
+from pyramid.renderers import render
+from pyramid.response import Response
 
+
+from rhodecode.apps._base import RepoAppView
 from rhodecode.controllers.utils import parse_path_ref, get_commit_from_ref_name
 from rhodecode.lib import helpers as h
 from rhodecode.lib import diffs, codeblocks
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
-from rhodecode.lib.base import BaseRepoController, render
 from rhodecode.lib.utils import safe_str
 from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.lib.vcs.exceptions import (
@@ -44,10 +42,16 @@ from rhodecode.model.db import Repository, ChangesetStatus
 log = logging.getLogger(__name__)
 
 
-class CompareController(BaseRepoController):
+class RepoCompareView(RepoAppView):
+    def load_default_context(self):
+        c = self._get_local_tmpl_context(include_app_defaults=True)
 
-    def __before__(self):
-        super(CompareController, self).__before__()
+        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
+        c.repo_info = self.db_repo
+        c.rhodecode_repo = self.rhodecode_vcs_repo
+
+        self._register_global_c(c)
+        return c
 
     def _get_commit_or_redirect(
             self, ref, ref_type, repo, redirect_after=True, partial=False):
@@ -56,6 +60,7 @@ class CompareController(BaseRepoController):
         redirects to a commit with a proper message. If partial is set
         then it does not do redirect raise and throws an exception instead.
         """
+        _ = self.request.translate
         try:
             return get_commit_from_ref_name(repo, safe_str(ref), ref_type)
         except EmptyRepositoryError:
@@ -63,82 +68,100 @@ class CompareController(BaseRepoController):
                 return repo.scm_instance().EMPTY_COMMIT
             h.flash(h.literal(_('There are no commits yet')),
                     category='warning')
-            redirect(h.route_path('repo_summary', repo_name=repo.repo_name))
+            raise HTTPFound(
+                h.route_path('repo_summary', repo_name=repo.repo_name))
 
         except RepositoryError as e:
             log.exception(safe_str(e))
             h.flash(safe_str(h.escape(e)), category='warning')
             if not partial:
-                redirect(h.route_path('repo_summary', repo_name=repo.repo_name))
+                raise HTTPFound(
+                    h.route_path('repo_summary', repo_name=repo.repo_name))
             raise HTTPBadRequest()
 
     @LoginRequired()
-    @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
-                                   'repository.admin')
-    def index(self, repo_name):
-        c.compare_home = True
-        c.commit_ranges = []
-        c.collapse_all_commits = False
-        c.diffset = None
-        c.limited_diff = False
-        source_repo = c.rhodecode_db_repo.repo_name
-        target_repo = request.GET.get('target_repo', source_repo)
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @view_config(
+        route_name='repo_compare_select', request_method='GET',
+        renderer='rhodecode:templates/compare/compare_diff.mako')
+    def compare_select(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        source_repo = self.db_repo_name
+        target_repo = self.request.GET.get('target_repo', source_repo)
         c.source_repo = Repository.get_by_repo_name(source_repo)
         c.target_repo = Repository.get_by_repo_name(target_repo)
 
         if c.source_repo is None or c.target_repo is None:
             raise HTTPNotFound()
 
+        c.compare_home = True
+        c.commit_ranges = []
+        c.collapse_all_commits = False
+        c.diffset = None
+        c.limited_diff = False
         c.source_ref = c.target_ref = _('Select commit')
         c.source_ref_type = ""
         c.target_ref_type = ""
         c.commit_statuses = ChangesetStatus.STATUSES
         c.preview_mode = False
         c.file_path = None
-        return render('compare/compare_diff.mako')
+
+        return self._get_template_context(c)
 
     @LoginRequired()
-    @HasRepoPermissionAnyDecorator('repository.read', 'repository.write',
-                                   'repository.admin')
-    def compare(self, repo_name, source_ref_type, source_ref,
-                                 target_ref_type, target_ref):
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @view_config(
+        route_name='repo_compare', request_method='GET',
+        renderer=None)
+    def compare(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        source_ref_type = self.request.matchdict['source_ref_type']
+        source_ref = self.request.matchdict['source_ref']
+        target_ref_type = self.request.matchdict['target_ref_type']
+        target_ref = self.request.matchdict['target_ref']
+
         # source_ref will be evaluated in source_repo
-        source_repo_name = c.rhodecode_db_repo.repo_name
+        source_repo_name = self.db_repo_name
         source_path, source_id = parse_path_ref(source_ref)
 
         # target_ref will be evaluated in target_repo
-        target_repo_name = request.GET.get('target_repo', source_repo_name)
+        target_repo_name = self.request.GET.get('target_repo', source_repo_name)
         target_path, target_id = parse_path_ref(
-            target_ref, default_path=request.GET.get('f_path', ''))
-
-        c.file_path = target_path
-        c.commit_statuses = ChangesetStatus.STATUSES
+            target_ref, default_path=self.request.GET.get('f_path', ''))
 
         # if merge is True
         #   Show what changes since the shared ancestor commit of target/source
         #   the source would get if it was merged with target. Only commits
         #   which are in target but not in source will be shown.
-        merge = str2bool(request.GET.get('merge'))
+        merge = str2bool(self.request.GET.get('merge'))
         # if merge is False
         #   Show a raw diff of source/target refs even if no ancestor exists
 
         # c.fulldiff disables cut_off_limit
-        c.fulldiff = str2bool(request.GET.get('fulldiff'))
+        c.fulldiff = str2bool(self.request.GET.get('fulldiff'))
+
+        c.file_path = target_path
+        c.commit_statuses = ChangesetStatus.STATUSES
 
         # if partial, returns just compare_commits.html (commits log)
-        partial = request.is_xhr
+        partial = self.request.is_xhr
 
         # swap url for compare_diff page
-        c.swap_url = h.url(
-            'compare_url',
+        c.swap_url = h.route_path(
+            'repo_compare',
             repo_name=target_repo_name,
             source_ref_type=target_ref_type,
             source_ref=target_ref,
             target_repo=source_repo_name,
             target_ref_type=source_ref_type,
             target_ref=source_ref,
-            merge=merge and '1' or '',
-            f_path=target_path)
+            _query=dict(merge=merge and '1' or '', f_path=target_path))
 
         source_repo = Repository.get_by_repo_name(source_repo_name)
         target_repo = Repository.get_by_repo_name(target_repo_name)
@@ -148,14 +171,16 @@ class CompareController(BaseRepoController):
                       .format(source_repo_name))
             h.flash(_('Could not find the source repo: `{}`')
                     .format(h.escape(source_repo_name)), category='error')
-            return redirect(url('compare_home', repo_name=c.repo_name))
+            raise HTTPFound(
+                h.route_path('repo_compare_select', repo_name=self.db_repo_name))
 
         if target_repo is None:
             log.error('Could not find the target repo: {}'
                       .format(source_repo_name))
             h.flash(_('Could not find the target repo: `{}`')
                     .format(h.escape(target_repo_name)), category='error')
-            return redirect(url('compare_home', repo_name=c.repo_name))
+            raise HTTPFound(
+                h.route_path('repo_compare_select', repo_name=self.db_repo_name))
 
         source_scm = source_repo.scm_instance()
         target_scm = target_repo.scm_instance()
@@ -167,7 +192,8 @@ class CompareController(BaseRepoController):
                     'is not available')
             log.error(msg)
             h.flash(msg, category='error')
-            return redirect(url('compare_home', repo_name=c.repo_name))
+            raise HTTPFound(
+                h.route_path('repo_compare_select', repo_name=self.db_repo_name))
 
         source_commit = self._get_commit_or_redirect(
             ref=source_id, ref_type=source_ref_type, repo=source_repo,
@@ -205,11 +231,13 @@ class CompareController(BaseRepoController):
                         'large file settings')
                 log.error(msg)
                 if partial:
-                    return msg
+                    return Response(msg)
                 h.flash(msg, category='error')
-                return redirect(url('compare_home', repo_name=c.repo_name))
+                raise HTTPFound(
+                    h.route_path('repo_compare_select',
+                                 repo_name=self.db_repo_name))
 
-        c.statuses = c.rhodecode_db_repo.statuses(
+        c.statuses = self.db_repo.statuses(
             [x.raw_id for x in c.commit_ranges])
 
         # auto collapse if we have more than limit
@@ -218,8 +246,12 @@ class CompareController(BaseRepoController):
 
         if partial:  # for PR ajax commits loader
             if not c.ancestor:
-                return ''  # cannot merge if there is no ancestor
-            return render('compare/compare_commits.mako')
+                return Response('')  # cannot merge if there is no ancestor
+
+            html = render(
+                'rhodecode:templates/compare/compare_commits.mako',
+                self._get_template_context(c), self.request)
+            return Response(html)
 
         if c.ancestor:
             # case we want a simple diff without incoming commits,
@@ -232,8 +264,8 @@ class CompareController(BaseRepoController):
 
         # diff_limit will cut off the whole diff if the limit is applied
         # otherwise it will just hide the big files from the front-end
-        diff_limit = self.cut_off_limit_diff
-        file_limit = self.cut_off_limit_file
+        diff_limit = c.visual.cut_off_limit_diff
+        file_limit = c.visual.cut_off_limit_file
 
         log.debug('calculating diff between '
                   'source_ref:%s and target_ref:%s for repo `%s`',
@@ -251,14 +283,16 @@ class CompareController(BaseRepoController):
                     'repo2': target_repo.repo_name,
                 }
             h.flash(msg, category='error')
-            raise HTTPBadRequest()
+            raise HTTPFound(
+                h.route_path('repo_compare_select',
+                             repo_name=self.db_repo_name))
 
-        txtdiff = source_repo.scm_instance().get_diff(
+        txt_diff = source_repo.scm_instance().get_diff(
             commit1=source_commit, commit2=target_commit,
             path=target_path, path1=source_path)
 
         diff_processor = diffs.DiffProcessor(
-            txtdiff, format='newdiff', diff_limit=diff_limit,
+            txt_diff, format='newdiff', diff_limit=diff_limit,
             file_limit=file_limit, show_full_diff=c.fulldiff)
         _parsed = diff_processor.prepare()
 
@@ -283,4 +317,7 @@ class CompareController(BaseRepoController):
         c.source_commit = source_commit
         c.target_commit = target_commit
 
-        return render('compare/compare_diff.mako')
+        html = render(
+            'rhodecode:templates/compare/compare_diff.mako',
+            self._get_template_context(c), self.request)
+        return Response(html)
