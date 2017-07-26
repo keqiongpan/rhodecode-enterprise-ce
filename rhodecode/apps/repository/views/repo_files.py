@@ -1181,7 +1181,7 @@ class RepoFilesView(RepoAppView):
         if c.commit is None:
             c.commit = EmptyCommit(alias=self.rhodecode_vcs_repo.alias)
         c.default_message = (_('Added file via RhodeCode Enterprise'))
-        c.f_path = f_path
+        c.f_path = f_path.lstrip('/')  # ensure not relative path
 
         return self._get_template_context(c)
 
@@ -1222,8 +1222,12 @@ class RepoFilesView(RepoAppView):
                 # non posix systems store real file under file attr
                 content = content.file
 
-        default_redirect_url = h.route_path(
-            'repo_commit', repo_name=self.db_repo_name, commit_id='tip')
+        if self.rhodecode_vcs_repo.is_empty:
+            default_redirect_url = h.route_path(
+                'repo_summary', repo_name=self.db_repo_name)
+        else:
+            default_redirect_url = h.route_path(
+                'repo_commit', repo_name=self.db_repo_name, commit_id='tip')
 
         # If there's no commit, redirect to repo summary
         if type(c.commit) is EmptyCommit:
@@ -1266,6 +1270,7 @@ class RepoFilesView(RepoAppView):
                 _('Successfully committed new file `{}`').format(
                     h.escape(node_path)), category='success')
         except NonRelativePathError:
+            log.exception('Non Relative path found')
             h.flash(_(
                 'The location specified must be a relative path and must not '
                 'contain .. in the path'), category='warning')
