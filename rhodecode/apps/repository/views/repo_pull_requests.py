@@ -1142,9 +1142,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         route_name='pullrequest_comment_delete', request_method='POST',
         renderer='json_ext')
     def pull_request_comment_delete(self):
-        commit_id = self.request.matchdict['commit_id']
-        comment_id = self.request.matchdict['comment_id']
         pull_request_id = self.request.matchdict['pull_request_id']
+        comment_id = self.request.matchdict['comment_id']
 
         pull_request = PullRequest.get_or_404(pull_request_id)
         if pull_request.is_closed():

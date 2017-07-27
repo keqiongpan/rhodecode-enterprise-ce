@@ -1084,16 +1084,41 @@ class TestPullrequestsControllerDelete(object):
         response.mustcontain(no=['Confirm to delete this pull request'])
 
     def test_delete_comment_returns_404_if_comment_does_not_exist(
-            self, autologin_user, pr_util, user_admin):
+            self, autologin_user, pr_util, user_admin, csrf_token, xhr_header):
 
         pull_request = pr_util.create_pull_request(
             author=user_admin.username, enable_notifications=False)
 
-        self.app.get(route_path(
+        self.app.post(
+            route_path(
             'pullrequest_comment_delete',
             repo_name=pull_request.target_repo.scm_instance().name,
             pull_request_id=pull_request.pull_request_id,
-            comment_id=1024404), status=404)
+            comment_id=1024404),
+            extra_environ=xhr_header,
+            params={'csrf_token': csrf_token},
+            status=404
+        )
+
+    def test_delete_comment(
+            self, autologin_user, pr_util, user_admin, csrf_token, xhr_header):
+
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+        comment = pr_util.create_comment()
+        comment_id = comment.comment_id
+
+        response = self.app.post(
+            route_path(
+            'pullrequest_comment_delete',
+            repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=pull_request.pull_request_id,
+            comment_id=comment_id),
+            extra_environ=xhr_header,
+            params={'csrf_token': csrf_token},
+            status=200
+        )
+        assert response.body == 'true'
 
 
 def assert_pull_request_status(pull_request, expected_status):
