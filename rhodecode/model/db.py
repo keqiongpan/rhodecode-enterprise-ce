@@ -615,7 +615,10 @@ class User(Base, BaseModel):
 
     @property
     def emails(self):
-        other = UserEmailMap.query().filter(UserEmailMap.user == self).all()
+        other = UserEmailMap.query()\
+            .filter(UserEmailMap.user == self) \
+            .order_by(UserEmailMap.email_id.asc()) \
+            .all()
         return [self.email] + [x.email for x in other]
 
     @property
@@ -624,7 +627,10 @@ class User(Base, BaseModel):
         return [x.api_key for x in auth_tokens]
 
     def get_auth_tokens(self):
-        return UserApiKeys.query().filter(UserApiKeys.user == self).all()
+        return UserApiKeys.query()\
+            .filter(UserApiKeys.user == self)\
+            .order_by(UserApiKeys.user_api_key_id.asc())\
+            .all()
 
     @property
     def feed_token(self):
