@@ -14,7 +14,6 @@ function registerRCRoutes() {
     // routes registration
     pyroutes.register('new_repo', '/_admin/create_repository', []);
     pyroutes.register('edit_user', '/_admin/users/%(user_id)s/edit', ['user_id']);
-    pyroutes.register('edit_user_group_members', '/_admin/user_groups/%(user_group_id)s/edit/members', ['user_group_id']);
     pyroutes.register('favicon', '/favicon.ico', []);
     pyroutes.register('robots', '/robots.txt', []);
     pyroutes.register('auth_home', '/_admin/auth*traverse', []);
@@ -72,6 +71,9 @@ function registerRCRoutes() {
     pyroutes.register('edit_user_groups_management', '/_admin/users/%(user_id)s/edit/groups_management', ['user_id']);
     pyroutes.register('edit_user_groups_management_updates', '/_admin/users/%(user_id)s/edit/edit_user_groups_management/updates', ['user_id']);
     pyroutes.register('edit_user_audit_logs', '/_admin/users/%(user_id)s/edit/audit', ['user_id']);
+    pyroutes.register('user_groups', '/_admin/user_groups', []);
+    pyroutes.register('user_groups_data', '/_admin/user_groups_data', []);
+    pyroutes.register('user_group_members_data', '/_admin/user_groups/%(user_group_id)s/members', ['user_group_id']);
     pyroutes.register('channelstream_connect', '/_admin/channelstream/connect', []);
     pyroutes.register('channelstream_subscribe', '/_admin/channelstream/subscribe', []);
     pyroutes.register('channelstream_proxy', '/_channelstream', []);

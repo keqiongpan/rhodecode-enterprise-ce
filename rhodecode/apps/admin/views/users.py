@@ -78,8 +78,13 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         route_name='users_data', request_method='GET',
         renderer='json_ext', xhr=True)
     def users_list_data(self):
+        column_map = {
+            'first_name': 'name',
+            'last_name': 'lastname',
+        }
         draw, start, limit = self._extract_chunk(self.request)
-        search_q, order_by, order_dir = self._extract_ordering(self.request)
+        search_q, order_by, order_dir = self._extract_ordering(
+            self.request, column_map=column_map)
 
         _render = self.request.get_partial_renderer(
             'data_table/_dt_elements.mako')

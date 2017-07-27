@@ -132,9 +132,9 @@ def get_user_group_slug(request):
         if _group:
             _group = _group.users_group_name
     except Exception:
-        log.debug(traceback.format_exc())
+        log.exception('Failed to get user group by id')
         # catch all failures here
-        pass
+        return None
 
     return _group
 

@@ -38,26 +38,31 @@
 </div>
 <script>
 $(document).ready(function() {
+    var getDatatableCount = function(){
+      var table = $('#user_group_list_table').dataTable();
+      var page = table.api().page.info();
+      var  active = page.recordsDisplay;
+      var  total = page.recordsTotal;
 
-    var get_datatable_count = function(){
-      var api = $('#user_group_list_table').dataTable().api();
-      $('#user_group_count').text(api.page.info().recordsDisplay);
+      var _text = _gettext("{0} out of {1} users").format(active, total);
+      $('#user_group_count').text(_text);
     };
 
     // user list
     $('#user_group_list_table').DataTable({
-      data: ${c.data|n},
+      processing: true,
+      serverSide: true,
+      ajax: "${h.route_path('user_groups_data')}",
       dom: 'rtp',
       pageLength: ${c.visual.admin_grid_items},
       order: [[ 0, "asc" ]],
       columns: [
-         { data: {"_": "group_name",
-                  "sort": "group_name_raw"}, title: "${_('Name')}", className: "td-componentname"  },
-         { data: {"_": "desc",
-                  "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
+         { data: {"_": "users_group_name",
+                  "sort": "users_group_name"}, title: "${_('Name')}", className: "td-componentname"  },
+         { data: {"_": "description",
+                  "sort": "description"}, title: "${_('Description')}", className: "td-description" },
          { data: {"_": "members",
-                  "sort": "members",
-                  "type": Number}, title: "${_('Members')}", className: "td-number" },
+                  "sort": "members"}, title: "${_('Members')}", className: "td-number" },
          { data: {"_": "sync",
                   "sort": "sync"}, title: "${_('Sync')}", className: "td-sync" },
          { data: {"_": "active",
@@ -65,33 +70,36 @@ $(document).ready(function() {
          { data: {"_": "owner",
                   "sort": "owner"}, title: "${_('Owner')}", className: "td-user" },
          { data: {"_": "action",
-                  "sort": "action"}, title: "${_('Action')}", className: "td-action" }
+                  "sort": "action"}, title: "${_('Action')}", className: "td-action", orderable: false}
       ],
       language: {
           paginate: DEFAULT_GRID_PAGINATION,
+          sProcessing: _gettext('loading...'),
           emptyTable: _gettext("No user groups available yet.")
-      },
-      "initComplete": function( settings, json ) {
-          get_datatable_count();
       }
     });
 
-    // update the counter when doing search
-    $('#user_group_list_table').on( 'search.dt', function (e,settings) {
-      get_datatable_count();
+    $('#user_group_list_table').on('xhr.dt', function(e, settings, json, xhr){
+        $('#user_group_list_table').css('opacity', 1);
     });
 
-    // filter, filter both grids
-    $('#q_filter').on( 'keyup', function () {
-      var user_api = $('#user_group_list_table').dataTable().api();
-      user_api
-        .columns(0)
-        .search(this.value)
-        .draw();
+    $('#user_group_list_table').on('preXhr.dt', function(e, settings, data){
+        $('#user_group_list_table').css('opacity', 0.3);
     });
 
-    // refilter table if page load via back button
-    $("#q_filter").trigger('keyup');
+    // refresh counters on draw
+    $('#user_group_list_table').on('draw.dt', function(){
+        getDatatableCount();
+    });
+
+    // filter
+    $('#q_filter').on('keyup',
+        $.debounce(250, function() {
+            $('#user_group_list_table').DataTable().search(
+                $('#q_filter').val()
+            ).draw();
+        })
+    );
 
   });
 

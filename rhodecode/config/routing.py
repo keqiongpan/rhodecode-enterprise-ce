@@ -279,8 +279,6 @@ def make_map(config):
                         controller='admin/user_groups') as m:
         m.connect('users_groups', '/user_groups',
                   action='create', conditions={'method': ['POST']})
-        m.connect('users_groups', '/user_groups',
-                  action='index', conditions={'method': ['GET']})
         m.connect('new_users_group', '/user_groups/new',
                   action='new', conditions={'method': ['GET']})
         m.connect('update_users_group', '/user_groups/{user_group_id}',
@@ -316,10 +314,6 @@ def make_map(config):
         m.connect('edit_user_group_advanced_sync',
                   '/user_groups/{user_group_id}/edit/advanced/sync',
                   action='edit_advanced_set_synchronization', conditions={'method': ['POST']})
-
-        m.connect('edit_user_group_members',
-                  '/user_groups/{user_group_id}/edit/members', jsroute=True,
-                  action='user_group_members', conditions={'method': ['GET']})
 
     # ADMIN DEFAULTS REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,

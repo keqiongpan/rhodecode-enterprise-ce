@@ -166,7 +166,7 @@
 
                 if (suggestion.value_type == 'user_group') {
                     $.getJSON(
-                        pyroutes.url('edit_user_group_members',
+                        pyroutes.url('user_group_members_data',
                                     {'user_group_id': suggestion.id}),
                         function(data) {
                             $.each(data.members, function(idx, user) {

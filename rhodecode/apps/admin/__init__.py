@@ -162,6 +162,19 @@ def admin_routes(config):
         name='edit_user_audit_logs',
         pattern='/users/{user_id:\d+}/edit/audit')
 
+    # user groups admin
+    config.add_route(
+        name='user_groups',
+        pattern='/user_groups')
+
+    config.add_route(
+        name='user_groups_data',
+        pattern='/user_groups_data')
+
+    config.add_route(
+        name='user_group_members_data',
+        pattern='/user_groups/{user_group_id:\d+}/members')
+
 
 def includeme(config):
     settings = config.get_settings()

@@ -103,42 +103,6 @@ class UserGroupsController(BaseController):
             return True
         return False
 
-    # permission check inside
-    @NotAnonymous()
-    def index(self):
-        # TODO(marcink): remove bind to self.request after pyramid migration
-        self.request = c.pyramid_request
-        _render = self.request.get_partial_renderer(
-            'data_table/_dt_elements.mako')
-
-        def user_group_name(user_group_id, user_group_name):
-            return _render("user_group_name", user_group_id, user_group_name)
-
-        def user_group_actions(user_group_id, user_group_name):
-            return _render("user_group_actions", user_group_id, user_group_name)
-
-        # json generate
-        group_iter = UserGroupList(UserGroup.query().all(),
-                                   perm_set=['usergroup.admin'])
-
-        user_groups_data = []
-        for user_gr in group_iter:
-            user_groups_data.append({
-                "group_name": user_group_name(
-                    user_gr.users_group_id, h.escape(user_gr.users_group_name)),
-                "group_name_raw": user_gr.users_group_name,
-                "desc": h.escape(user_gr.user_group_description),
-                "members": len(user_gr.members),
-                "sync": user_gr.group_data.get('extern_type'),
-                "active": h.bool2icon(user_gr.users_group_active),
-                "owner": h.escape(h.link_to_user(user_gr.user.username)),
-                "action": user_group_actions(
-                    user_gr.users_group_id, user_gr.users_group_name)
-            })
-
-        c.data = json.dumps(user_groups_data)
-        return render('admin/user_groups/user_groups.mako')
-
     @HasPermissionAnyDecorator('hg.admin', 'hg.usergroup.create.true')
     @auth.CSRFRequired()
     def create(self):
@@ -482,33 +446,3 @@ class UserGroupsController(BaseController):
         return redirect(
             url('edit_user_group_advanced', user_group_id=user_group_id))
 
-    @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    @XHRRequired()
-    @jsonify
-    def user_group_members(self, user_group_id):
-        """
-        Return members of given user group
-        """
-        user_group_id = safe_int(user_group_id)
-        user_group = UserGroup.get_or_404(user_group_id)
-        group_members_obj = sorted((x.user for x in user_group.members),
-                                   key=lambda u: u.username.lower())
-
-        group_members = [
-            {
-                'id': user.user_id,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'username': user.username,
-                'icon_link': h.gravatar_url(user.email, 30),
-                'value_display': h.person(user.email),
-                'value': user.username,
-                'value_type': 'user',
-                'active': user.active,
-            }
-            for user in group_members_obj
-        ]
-
-        return {
-            'members': group_members
-        }

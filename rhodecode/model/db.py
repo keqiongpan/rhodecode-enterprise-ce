@@ -41,6 +41,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
 from sqlalchemy.sql.expression import true
+from sqlalchemy.sql.functions import coalesce, count  # noqa
 from beaker.cache import cache_region
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
@@ -1205,7 +1206,17 @@ class UserGroup(Base, BaseModel):
     user_user_group_to_perm = relationship('UserUserGroupToPerm', cascade='all')
     user_group_user_group_to_perm = relationship('UserGroupUserGroupToPerm ', primaryjoin="UserGroupUserGroupToPerm.target_user_group_id==UserGroup.users_group_id", cascade='all')
 
-    user = relationship('User')
+    user = relationship('User', primaryjoin="User.user_id==UserGroup.user_id")
+
+    @classmethod
+    def _load_group_data(cls, column):
+        if not column:
+            return {}
+
+        try:
+            return json.loads(column) or {}
+        except TypeError:
+            return {}
 
     @hybrid_property
     def description_safe(self):
@@ -1214,13 +1225,11 @@ class UserGroup(Base, BaseModel):
 
     @hybrid_property
     def group_data(self):
-        if not self._group_data:
-            return {}
+        return self._load_group_data(self._group_data)
 
-        try:
-            return json.loads(self._group_data)
-        except TypeError:
-            return {}
+    @group_data.expression
+    def group_data(self, **kwargs):
+        return self._group_data
 
     @group_data.setter
     def group_data(self, val):

@@ -33,11 +33,6 @@ fixture = Fixture()
 
 class TestAdminUsersGroupsController(TestController):
 
-    def test_index(self):
-        self.log_user()
-        response = self.app.get(url('users_groups'))
-        assert response.status_int == 200
-
     def test_create(self):
         self.log_user()
         users_group_name = TEST_USER_GROUP
@@ -189,46 +184,6 @@ class TestAdminUsersGroupsController(TestController):
         response = self.app.get(
             url('edit_users_group', user_group_id=ug.users_group_id))
         fixture.destroy_user_group(TEST_USER_GROUP)
-
-    def test_edit_user_group_autocomplete_members(self, xhr_header):
-        self.log_user()
-        ug = fixture.create_user_group(TEST_USER_GROUP, skip_if_exists=True)
-        response = self.app.get(
-            url('edit_user_group_members', user_group_id=ug.users_group_id),
-            extra_environ=xhr_header)
-
-        assert response.body == '{"members": []}'
-        fixture.destroy_user_group(TEST_USER_GROUP)
-
-    def test_usergroup_escape(self, user_util):
-        user = user_util.create_user(
-            username='escape_user',
-            firstname='<img src="/image2" onload="alert(\'Hello, World!\');">',
-            lastname='<img src="/image2" onload="alert(\'Hello, World!\');">'
-        )
-
-        user_util.create_user_group(owner=user.username)
-
-        self.log_user()
-        users_group_name = 'samplegroup'
-        data = {
-            'users_group_name': users_group_name,
-            'user_group_description': (
-                '<strong onload="alert();">DESC</strong>'),
-            'active': True,
-            'csrf_token': self.csrf_token
-        }
-
-        self.app.post(url('users_groups'), data)
-        response = self.app.get(url('users_groups'))
-
-        response.mustcontain(
-            '&lt;strong onload=&#34;alert();&#34;&gt;'
-            'DESC&lt;/strong&gt;')
-        # TODO(marcink): fix this test after user-group grid rewrite
-        # response.mustcontain(
-        #     '&lt;img src=&#34;/image2&#34; onload=&#34;'
-        #     'alert(&#39;Hello, World!&#39;);&#34;&gt;')
 
     def test_update_members_from_user_ids(self, user_regular):
         uid = user_regular.user_id
