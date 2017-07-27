@@ -1541,6 +1541,7 @@ class MergeCheck(object):
             if fail_early:
                 return merge_check
 
+        log.debug('MergeCheck: is failed: %s', merge_check.failed)
         return merge_check
 
 

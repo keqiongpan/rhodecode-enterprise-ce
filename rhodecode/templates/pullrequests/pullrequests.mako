@@ -30,7 +30,7 @@
         <li>
            %if c.rhodecode_user.username != h.DEFAULT_USER:
             <span>
-                <a id="open_new_pull_request" class="btn btn-small btn-success" href="${h.url('pullrequest_home',repo_name=c.repo_name)}">
+                <a id="open_new_pull_request" class="btn btn-small btn-success" href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">
                     ${_('Open new Pull Request')}
                 </a>
             </span>

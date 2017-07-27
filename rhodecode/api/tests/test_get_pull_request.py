@@ -21,10 +21,10 @@
 
 import pytest
 import urlobject
-from pylons import url
 
 from rhodecode.api.tests.utils import (
     build_data, api_call, assert_error, assert_ok)
+from rhodecode.lib import helpers as h
 from rhodecode.lib.utils2 import safe_unicode
 
 pytestmark = pytest.mark.backends("git", "hg")
@@ -46,10 +46,10 @@ class TestGetPullRequest(object):
         assert response.status == '200 OK'
 
         url_obj = urlobject.URLObject(
-            url(
+            h.route_url(
                 'pullrequest_show',
                 repo_name=pull_request.target_repo.repo_name,
-                pull_request_id=pull_request.pull_request_id, qualified=True))
+                pull_request_id=pull_request.pull_request_id))
 
         pr_url = safe_unicode(
             url_obj.with_netloc(http_host_only_stub))

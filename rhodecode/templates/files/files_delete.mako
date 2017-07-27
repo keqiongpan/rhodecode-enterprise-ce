@@ -27,7 +27,7 @@
     <div class="edit-file-title">
         ${self.breadcrumbs()}
     </div>
-    ${h.secure_form(h.route_path('repo_files_delete_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path), id='eform', method='POST', class_="form-horizontal")}
+    ${h.secure_form(h.route_path('repo_files_delete_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path), id='eform', method='POST', class_="form-horizontal", request=request)}
     <div class="edit-file-fieldset">
         <div class="fieldset">
             <div id="destination-label" class="left-label">

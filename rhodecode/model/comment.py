@@ -298,12 +298,11 @@ class CommentsModel(BaseModel):
             pr_target_repo = pull_request_obj.target_repo
             pr_source_repo = pull_request_obj.source_repo
 
-            pr_comment_url = h.url(
+            pr_comment_url = h.route_url(
                 'pullrequest_show',
                 repo_name=pr_target_repo.repo_name,
                 pull_request_id=pull_request_obj.pull_request_id,
-                anchor='comment-%s' % comment.comment_id,
-                qualified=True,)
+                anchor='comment-%s' % comment.comment_id)
 
             # set some variables for email notification
             pr_target_repo_url = h.route_url(

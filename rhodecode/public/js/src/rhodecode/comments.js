@@ -138,7 +138,7 @@ var bindToggleButtons = function() {
                  'commit_id': this.commitId});
 
         } else if (this.pullRequestId) {
-            this.submitUrl = pyroutes.url('pullrequest_comment',
+            this.submitUrl = pyroutes.url('pullrequest_comment_create',
                 {'repo_name': templateContext.repo_name,
                  'pull_request_id': this.pullRequestId});
             this.selfUrl = pyroutes.url('pullrequest_show',

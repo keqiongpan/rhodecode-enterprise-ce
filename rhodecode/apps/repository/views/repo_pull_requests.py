@@ -19,23 +19,35 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
-
 import collections
-from pyramid.httpexceptions import HTTPFound, HTTPNotFound
-from pyramid.view import view_config
 
+import formencode
+import peppercorn
+from pyramid.httpexceptions import (
+    HTTPFound, HTTPNotFound, HTTPForbidden, HTTPBadRequest)
+from pyramid.view import view_config
+from pyramid.renderers import render
+
+from rhodecode import events
 from rhodecode.apps._base import RepoAppView, DataGridAppView
-from rhodecode.lib import helpers as h, diffs, codeblocks
+
+from rhodecode.lib import helpers as h, diffs, codeblocks, channelstream
+from rhodecode.lib.base import vcs_operation_context
+from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
-    LoginRequired, HasRepoPermissionAnyDecorator)
-from rhodecode.lib.utils2 import str2bool, safe_int, safe_str
-from rhodecode.lib.vcs.backends.base import EmptyCommit
-from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError, \
-    RepositoryRequirementError, NodeDoesNotExistError
+    LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous, CSRFRequired)
+from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode
+from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
+from rhodecode.lib.vcs.exceptions import (CommitDoesNotExistError,
+    RepositoryRequirementError, NodeDoesNotExistError, EmptyRepositoryError)
+from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
-from rhodecode.model.db import PullRequest, PullRequestVersion, \
-    ChangesetComment, ChangesetStatus
+from rhodecode.model.db import (func, or_, PullRequest, PullRequestVersion,
+    ChangesetComment, ChangesetStatus, Repository)
+from rhodecode.model.forms import PullRequestForm
+from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
+from rhodecode.model.scm import ScmModel
 
 log = logging.getLogger(__name__)
 
@@ -189,7 +201,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         return data
 
     def _get_pr_version(self, pull_request_id, version=None):
-        pull_request_id = safe_int(pull_request_id)
         at_version = None
 
         if version and version == 'latest':
@@ -250,12 +261,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    # @view_config(
-    #     route_name='pullrequest_show', request_method='GET',
-    #     renderer='rhodecode:templates/pullrequests/pullrequest_show.mako')
+    @view_config(
+        route_name='pullrequest_show', request_method='GET',
+        renderer='rhodecode:templates/pullrequests/pullrequest_show.mako')
     def pull_request_show(self):
-        pull_request_id = safe_int(
-            self.request.matchdict.get('pull_request_id'))
+        pull_request_id = self.request.matchdict.get('pull_request_id')
+
         c = self.load_default_context()
 
         version = self.request.GET.get('version')
@@ -582,3 +593,590 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                             c.review_versions[_ver_pr] = status[0]
 
         return self._get_template_context(c)
+
+    def assure_not_empty_repo(self):
+        _ = self.request.translate
+
+        try:
+            self.db_repo.scm_instance().get_commit()
+        except EmptyRepositoryError:
+            h.flash(h.literal(_('There are no commits yet')),
+                    category='warning')
+            raise HTTPFound(
+                h.route_path('repo_summary', repo_name=self.db_repo.repo_name))
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @view_config(
+        route_name='pullrequest_new', request_method='GET',
+        renderer='rhodecode:templates/pullrequests/pullrequest.mako')
+    def pull_request_new(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        self.assure_not_empty_repo()
+        source_repo = self.db_repo
+
+        commit_id = self.request.GET.get('commit')
+        branch_ref = self.request.GET.get('branch')
+        bookmark_ref = self.request.GET.get('bookmark')
+
+        try:
+            source_repo_data = PullRequestModel().generate_repo_data(
+                source_repo, commit_id=commit_id,
+                branch=branch_ref, bookmark=bookmark_ref)
+        except CommitDoesNotExistError as e:
+            log.exception(e)
+            h.flash(_('Commit does not exist'), 'error')
+            raise HTTPFound(
+                h.route_path('pullrequest_new', repo_name=source_repo.repo_name))
+
+        default_target_repo = source_repo
+
+        if source_repo.parent:
+            parent_vcs_obj = source_repo.parent.scm_instance()
+            if parent_vcs_obj and not parent_vcs_obj.is_empty():
+                # change default if we have a parent repo
+                default_target_repo = source_repo.parent
+
+        target_repo_data = PullRequestModel().generate_repo_data(
+            default_target_repo)
+
+        selected_source_ref = source_repo_data['refs']['selected_ref']
+
+        title_source_ref = selected_source_ref.split(':', 2)[1]
+        c.default_title = PullRequestModel().generate_pullrequest_title(
+            source=source_repo.repo_name,
+            source_ref=title_source_ref,
+            target=default_target_repo.repo_name
+        )
+
+        c.default_repo_data = {
+            'source_repo_name': source_repo.repo_name,
+            'source_refs_json': json.dumps(source_repo_data),
+            'target_repo_name': default_target_repo.repo_name,
+            'target_refs_json': json.dumps(target_repo_data),
+        }
+        c.default_source_ref = selected_source_ref
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @view_config(
+        route_name='pullrequest_repo_refs', request_method='GET',
+        renderer='json_ext', xhr=True)
+    def pull_request_repo_refs(self):
+        target_repo_name = self.request.matchdict['target_repo_name']
+        repo = Repository.get_by_repo_name(target_repo_name)
+        if not repo:
+            raise HTTPNotFound()
+        return PullRequestModel().generate_repo_data(repo)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @view_config(
+        route_name='pullrequest_repo_destinations', request_method='GET',
+        renderer='json_ext', xhr=True)
+    def pull_request_repo_destinations(self):
+        _ = self.request.translate
+        filter_query = self.request.GET.get('query')
+
+        query = Repository.query() \
+            .order_by(func.length(Repository.repo_name)) \
+            .filter(
+                or_(Repository.repo_name == self.db_repo.repo_name,
+                    Repository.fork_id == self.db_repo.repo_id))
+
+        if filter_query:
+            ilike_expression = u'%{}%'.format(safe_unicode(filter_query))
+            query = query.filter(
+                Repository.repo_name.ilike(ilike_expression))
+
+        add_parent = False
+        if self.db_repo.parent:
+            if filter_query in self.db_repo.parent.repo_name:
+                parent_vcs_obj = self.db_repo.parent.scm_instance()
+                if parent_vcs_obj and not parent_vcs_obj.is_empty():
+                    add_parent = True
+
+        limit = 20 - 1 if add_parent else 20
+        all_repos = query.limit(limit).all()
+        if add_parent:
+            all_repos += [self.db_repo.parent]
+
+        repos = []
+        for obj in ScmModel().get_repos(all_repos):
+            repos.append({
+                'id': obj['name'],
+                'text': obj['name'],
+                'type': 'repo',
+                'obj': obj['dbrepo']
+            })
+
+        data = {
+            'more': False,
+            'results': [{
+                'text': _('Repositories'),
+                'children': repos
+            }] if repos else []
+        }
+        return data
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='pullrequest_create', request_method='POST',
+        renderer=None)
+    def pull_request_create(self):
+        _ = self.request.translate
+        self.assure_not_empty_repo()
+
+        controls = peppercorn.parse(self.request.POST.items())
+
+        try:
+            _form = PullRequestForm(self.db_repo.repo_id)().to_python(controls)
+        except formencode.Invalid as errors:
+            if errors.error_dict.get('revisions'):
+                msg = 'Revisions: %s' % errors.error_dict['revisions']
+            elif errors.error_dict.get('pullrequest_title'):
+                msg = _('Pull request requires a title with min. 3 chars')
+            else:
+                msg = _('Error creating pull request: {}').format(errors)
+            log.exception(msg)
+            h.flash(msg, 'error')
+
+            # would rather just go back to form ...
+            raise HTTPFound(
+                h.route_path('pullrequest_new', repo_name=self.db_repo_name))
+
+        source_repo = _form['source_repo']
+        source_ref = _form['source_ref']
+        target_repo = _form['target_repo']
+        target_ref = _form['target_ref']
+        commit_ids = _form['revisions'][::-1]
+
+        # find the ancestor for this pr
+        source_db_repo = Repository.get_by_repo_name(_form['source_repo'])
+        target_db_repo = Repository.get_by_repo_name(_form['target_repo'])
+
+        source_scm = source_db_repo.scm_instance()
+        target_scm = target_db_repo.scm_instance()
+
+        source_commit = source_scm.get_commit(source_ref.split(':')[-1])
+        target_commit = target_scm.get_commit(target_ref.split(':')[-1])
+
+        ancestor = source_scm.get_common_ancestor(
+            source_commit.raw_id, target_commit.raw_id, target_scm)
+
+        target_ref_type, target_ref_name, __ = _form['target_ref'].split(':')
+        target_ref = ':'.join((target_ref_type, target_ref_name, ancestor))
+
+        pullrequest_title = _form['pullrequest_title']
+        title_source_ref = source_ref.split(':', 2)[1]
+        if not pullrequest_title:
+            pullrequest_title = PullRequestModel().generate_pullrequest_title(
+                source=source_repo,
+                source_ref=title_source_ref,
+                target=target_repo
+            )
+
+        description = _form['pullrequest_desc']
+
+        get_default_reviewers_data, validate_default_reviewers = \
+            PullRequestModel().get_reviewer_functions()
+
+        # recalculate reviewers logic, to make sure we can validate this
+        reviewer_rules = get_default_reviewers_data(
+            self._rhodecode_db_user, source_db_repo,
+            source_commit, target_db_repo, target_commit)
+
+        given_reviewers = _form['review_members']
+        reviewers = validate_default_reviewers(given_reviewers, reviewer_rules)
+
+        try:
+            pull_request = PullRequestModel().create(
+                self._rhodecode_user.user_id, source_repo, source_ref, target_repo,
+                target_ref, commit_ids, reviewers, pullrequest_title,
+                description, reviewer_rules
+            )
+            Session().commit()
+            h.flash(_('Successfully opened new pull request'),
+                    category='success')
+        except Exception as e:
+            msg = _('Error occurred during creation of this pull request.')
+            log.exception(msg)
+            h.flash(msg, category='error')
+            raise HTTPFound(
+                h.route_path('pullrequest_new', repo_name=self.db_repo_name))
+
+        raise HTTPFound(
+            h.route_path('pullrequest_show', repo_name=target_repo,
+                         pull_request_id=pull_request.pull_request_id))
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='pullrequest_update', request_method='POST',
+        renderer='json_ext')
+    def pull_request_update(self):
+        pull_request_id = self.request.matchdict['pull_request_id']
+        pull_request = PullRequest.get_or_404(pull_request_id)
+
+        # only owner or admin can update it
+        allowed_to_update = PullRequestModel().check_user_update(
+            pull_request, self._rhodecode_user)
+        if allowed_to_update:
+            controls = peppercorn.parse(self.request.POST.items())
+
+            if 'review_members' in controls:
+                self._update_reviewers(
+                    pull_request_id, controls['review_members'],
+                    pull_request.reviewer_data)
+            elif str2bool(self.request.POST.get('update_commits', 'false')):
+                self._update_commits(pull_request)
+            elif str2bool(self.request.POST.get('edit_pull_request', 'false')):
+                self._edit_pull_request(pull_request)
+            else:
+                raise HTTPBadRequest()
+            return True
+        raise HTTPForbidden()
+
+    def _edit_pull_request(self, pull_request):
+        _ = self.request.translate
+        try:
+            PullRequestModel().edit(
+                pull_request, self.request.POST.get('title'),
+                self.request.POST.get('description'), self._rhodecode_user)
+        except ValueError:
+            msg = _(u'Cannot update closed pull requests.')
+            h.flash(msg, category='error')
+            return
+        else:
+            Session().commit()
+
+        msg = _(u'Pull request title & description updated.')
+        h.flash(msg, category='success')
+        return
+
+    def _update_commits(self, pull_request):
+        _ = self.request.translate
+        resp = PullRequestModel().update_commits(pull_request)
+
+        if resp.executed:
+
+            if resp.target_changed and resp.source_changed:
+                changed = 'target and source repositories'
+            elif resp.target_changed and not resp.source_changed:
+                changed = 'target repository'
+            elif not resp.target_changed and resp.source_changed:
+                changed = 'source repository'
+            else:
+                changed = 'nothing'
+
+            msg = _(
+                u'Pull request updated to "{source_commit_id}" with '
+                u'{count_added} added, {count_removed} removed commits. '
+                u'Source of changes: {change_source}')
+            msg = msg.format(
+                source_commit_id=pull_request.source_ref_parts.commit_id,
+                count_added=len(resp.changes.added),
+                count_removed=len(resp.changes.removed),
+                change_source=changed)
+            h.flash(msg, category='success')
+
+            channel = '/repo${}$/pr/{}'.format(
+                pull_request.target_repo.repo_name,
+                pull_request.pull_request_id)
+            message = msg + (
+                ' - <a onclick="window.location.reload()">'
+                '<strong>{}</strong></a>'.format(_('Reload page')))
+            channelstream.post_message(
+                channel, message, self._rhodecode_user.username,
+                registry=self.request.registry)
+        else:
+            msg = PullRequestModel.UPDATE_STATUS_MESSAGES[resp.reason]
+            warning_reasons = [
+                UpdateFailureReason.NO_CHANGE,
+                UpdateFailureReason.WRONG_REF_TYPE,
+            ]
+            category = 'warning' if resp.reason in warning_reasons else 'error'
+            h.flash(msg, category=category)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='pullrequest_merge', request_method='POST',
+        renderer='json_ext')
+    def pull_request_merge(self):
+        """
+        Merge will perform a server-side merge of the specified
+        pull request, if the pull request is approved and mergeable.
+        After successful merging, the pull request is automatically
+        closed, with a relevant comment.
+        """
+        pull_request_id = self.request.matchdict['pull_request_id']
+        pull_request = PullRequest.get_or_404(pull_request_id)
+
+        check = MergeCheck.validate(pull_request, self._rhodecode_db_user)
+        merge_possible = not check.failed
+
+        for err_type, error_msg in check.errors:
+            h.flash(error_msg, category=err_type)
+
+        if merge_possible:
+            log.debug("Pre-conditions checked, trying to merge.")
+            extras = vcs_operation_context(
+                self.request.environ, repo_name=pull_request.target_repo.repo_name,
+                username=self._rhodecode_db_user.username, action='push',
+                scm=pull_request.target_repo.repo_type)
+            self._merge_pull_request(
+                pull_request, self._rhodecode_db_user, extras)
+        else:
+            log.debug("Pre-conditions failed, NOT merging.")
+
+        raise HTTPFound(
+            h.route_path('pullrequest_show',
+                         repo_name=pull_request.target_repo.repo_name,
+                         pull_request_id=pull_request.pull_request_id))
+
+    def _merge_pull_request(self, pull_request, user, extras):
+        _ = self.request.translate
+        merge_resp = PullRequestModel().merge(pull_request, user, extras=extras)
+
+        if merge_resp.executed:
+            log.debug("The merge was successful, closing the pull request.")
+            PullRequestModel().close_pull_request(
+                pull_request.pull_request_id, user)
+            Session().commit()
+            msg = _('Pull request was successfully merged and closed.')
+            h.flash(msg, category='success')
+        else:
+            log.debug(
+                "The merge was not successful. Merge response: %s",
+                merge_resp)
+            msg = PullRequestModel().merge_status_message(
+                merge_resp.failure_reason)
+            h.flash(msg, category='error')
+
+    def _update_reviewers(self, pull_request_id, review_members, reviewer_rules):
+        _ = self.request.translate
+        get_default_reviewers_data, validate_default_reviewers = \
+            PullRequestModel().get_reviewer_functions()
+
+        try:
+            reviewers = validate_default_reviewers(review_members, reviewer_rules)
+        except ValueError as e:
+            log.error('Reviewers Validation: {}'.format(e))
+            h.flash(e, category='error')
+            return
+
+        PullRequestModel().update_reviewers(
+            pull_request_id, reviewers, self._rhodecode_user)
+        h.flash(_('Pull request reviewers updated.'), category='success')
+        Session().commit()
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='pullrequest_delete', request_method='POST',
+        renderer='json_ext')
+    def pull_request_delete(self):
+        _ = self.request.translate
+
+        pull_request_id = self.request.matchdict['pull_request_id']
+        pull_request = PullRequest.get_or_404(pull_request_id)
+
+        pr_closed = pull_request.is_closed()
+        allowed_to_delete = PullRequestModel().check_user_delete(
+            pull_request, self._rhodecode_user) and not pr_closed
+
+        # only owner can delete it !
+        if allowed_to_delete:
+            PullRequestModel().delete(pull_request, self._rhodecode_user)
+            Session().commit()
+            h.flash(_('Successfully deleted pull request'),
+                    category='success')
+            raise HTTPFound(h.route_path('my_account_pullrequests'))
+
+        log.warning('user %s tried to delete pull request without access',
+                    self._rhodecode_user)
+        raise HTTPNotFound()
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='pullrequest_comment_create', request_method='POST',
+        renderer='json_ext')
+    def pull_request_comment_create(self):
+        _ = self.request.translate
+        pull_request_id = self.request.matchdict['pull_request_id']
+        pull_request = PullRequest.get_or_404(pull_request_id)
+        if pull_request.is_closed():
+            log.debug('comment: forbidden because pull request is closed')
+            raise HTTPForbidden()
+
+        c = self.load_default_context()
+
+        status = self.request.POST.get('changeset_status', None)
+        text = self.request.POST.get('text')
+        comment_type = self.request.POST.get('comment_type')
+        resolves_comment_id = self.request.POST.get('resolves_comment_id', None)
+        close_pull_request = self.request.POST.get('close_pull_request')
+
+        # the logic here should work like following, if we submit close
+        # pr comment, use `close_pull_request_with_comment` function
+        # else handle regular comment logic
+
+        if close_pull_request:
+            # only owner or admin or person with write permissions
+            allowed_to_close = PullRequestModel().check_user_update(
+                pull_request, self._rhodecode_user)
+            if not allowed_to_close:
+                log.debug('comment: forbidden because not allowed to close '
+                          'pull request %s', pull_request_id)
+                raise HTTPForbidden()
+            comment, status = PullRequestModel().close_pull_request_with_comment(
+                pull_request, self._rhodecode_user, self.db_repo, message=text)
+            Session().flush()
+            events.trigger(
+                events.PullRequestCommentEvent(pull_request, comment))
+
+        else:
+            # regular comment case, could be inline, or one with status.
+            # for that one we check also permissions
+
+            allowed_to_change_status = PullRequestModel().check_user_change_status(
+                pull_request, self._rhodecode_user)
+
+            if status and allowed_to_change_status:
+                message = (_('Status change %(transition_icon)s %(status)s')
+                           % {'transition_icon': '>',
+                              'status': ChangesetStatus.get_status_lbl(status)})
+                text = text or message
+
+            comment = CommentsModel().create(
+                text=text,
+                repo=self.db_repo.repo_id,
+                user=self._rhodecode_user.user_id,
+                pull_request=pull_request_id,
+                f_path=self.request.POST.get('f_path'),
+                line_no=self.request.POST.get('line'),
+                status_change=(ChangesetStatus.get_status_lbl(status)
+                               if status and allowed_to_change_status else None),
+                status_change_type=(status
+                                    if status and allowed_to_change_status else None),
+                comment_type=comment_type,
+                resolves_comment_id=resolves_comment_id
+            )
+
+            if allowed_to_change_status:
+                # calculate old status before we change it
+                old_calculated_status = pull_request.calculated_review_status()
+
+                # get status if set !
+                if status:
+                    ChangesetStatusModel().set_status(
+                        self.db_repo.repo_id,
+                        status,
+                        self._rhodecode_user.user_id,
+                        comment,
+                        pull_request=pull_request_id
+                    )
+
+                Session().flush()
+                events.trigger(
+                    events.PullRequestCommentEvent(pull_request, comment))
+
+                # we now calculate the status of pull request, and based on that
+                # calculation we set the commits status
+                calculated_status = pull_request.calculated_review_status()
+                if old_calculated_status != calculated_status:
+                    PullRequestModel()._trigger_pull_request_hook(
+                        pull_request, self._rhodecode_user, 'review_status_change')
+
+        Session().commit()
+
+        data = {
+            'target_id': h.safeid(h.safe_unicode(
+                self.request.POST.get('f_path'))),
+        }
+        if comment:
+            c.co = comment
+            rendered_comment = render(
+                'rhodecode:templates/changeset/changeset_comment_block.mako',
+                self._get_template_context(c), self.request)
+
+            data.update(comment.get_dict())
+            data.update({'rendered_text': rendered_comment})
+
+        return data
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='pullrequest_comment_delete', request_method='POST',
+        renderer='json_ext')
+    def pull_request_comment_delete(self):
+        commit_id = self.request.matchdict['commit_id']
+        comment_id = self.request.matchdict['comment_id']
+        pull_request_id = self.request.matchdict['pull_request_id']
+
+        pull_request = PullRequest.get_or_404(pull_request_id)
+        if pull_request.is_closed():
+            log.debug('comment: forbidden because pull request is closed')
+            raise HTTPForbidden()
+
+        comment = ChangesetComment.get_or_404(comment_id)
+        if not comment:
+            log.debug('Comment with id:%s not found, skipping', comment_id)
+            # comment already deleted in another call probably
+            return True
+
+        if comment.pull_request.is_closed():
+            # don't allow deleting comments on closed pull request
+            raise HTTPForbidden()
+
+        is_repo_admin = h.HasRepoPermissionAny('repository.admin')(self.db_repo_name)
+        super_admin = h.HasPermissionAny('hg.admin')()
+        comment_owner = comment.author.user_id == self._rhodecode_user.user_id
+        is_repo_comment = comment.repo.repo_name == self.db_repo_name
+        comment_repo_admin = is_repo_admin and is_repo_comment
+
+        if super_admin or comment_owner or comment_repo_admin:
+            old_calculated_status = comment.pull_request.calculated_review_status()
+            CommentsModel().delete(comment=comment, user=self._rhodecode_user)
+            Session().commit()
+            calculated_status = comment.pull_request.calculated_review_status()
+            if old_calculated_status != calculated_status:
+                PullRequestModel()._trigger_pull_request_hook(
+                    comment.pull_request, self._rhodecode_user, 'review_status_change')
+            return True
+        else:
+            log.warning('No permissions for user %s to delete comment_id: %s',
+                        self._rhodecode_db_user, comment_id)
+            raise HTTPNotFound()

@@ -55,7 +55,7 @@
                 ## pr open link
                 %if h.is_hg(c.rhodecode_repo) or h.is_git(c.rhodecode_repo):
                     <span>
-                        <a id="open_new_pull_request" class="btn btn-small btn-success" href="${h.url('pullrequest_home',repo_name=c.repo_name)}">
+                        <a id="open_new_pull_request" class="btn btn-small btn-success" href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">
                             ${_('Open new pull request')}
                         </a>
                     </span>
@@ -176,7 +176,7 @@
                         .show();
 
                     $commitRangeClear.show();
-                    var _url = pyroutes.url('pullrequest_home',
+                    var _url = pyroutes.url('pullrequest_new',
                                     {'repo_name': '${c.repo_name}',
                                      'commit': revEnd});
                     open_new_pull_request.attr('href', _url);
@@ -186,12 +186,12 @@
                     $commitRangeClear.hide();
 
                     %if c.branch_name:
-                        var _url = pyroutes.url('pullrequest_home',
+                        var _url = pyroutes.url('pullrequest_new',
                                         {'repo_name': '${c.repo_name}',
                                          'branch':'${c.branch_name}'});
                         open_new_pull_request.attr('href', _url);
                     %else:
-                        var _url = pyroutes.url('pullrequest_home',
+                        var _url = pyroutes.url('pullrequest_new',
                                         {'repo_name': '${c.repo_name}'});
                         open_new_pull_request.attr('href', _url);
                     %endif

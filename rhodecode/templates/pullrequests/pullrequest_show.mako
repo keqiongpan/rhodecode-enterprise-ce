@@ -32,7 +32,7 @@
 
 <script type="text/javascript">
     // TODO: marcink switch this to pyroutes
-    AJAX_COMMENT_DELETE_URL = "${h.url('pullrequest_comment_delete',repo_name=c.repo_name,comment_id='__COMMENT_ID__')}";
+    AJAX_COMMENT_DELETE_URL = "${h.route_path('pullrequest_comment_delete',repo_name=c.repo_name,pull_request_id=c.pull_request.pull_request_id,comment_id='__COMMENT_ID__')}";
     templateContext.pull_request_data.pull_request_id = ${c.pull_request.pull_request_id};
 </script>
 <div class="box">
@@ -52,7 +52,7 @@
             %if c.allowed_to_update:
               <div id="delete_pullrequest" class="pull-right action_button ${'' if c.allowed_to_delete else 'disabled' }" style="clear:inherit;padding: 0">
                   % if c.allowed_to_delete:
-                      ${h.secure_form(h.url('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id),method='delete')}
+                      ${h.secure_form(h.route_path('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id), method='POST', request=request)}
                           ${h.submit('remove_%s' % c.pull_request.pull_request_id, _('Delete'),
                         class_="btn btn-link btn-danger no-margin",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
                       ${h.end_form()}
@@ -200,7 +200,7 @@
                            <tr class="version-pr" style="display: ${display_row}">
                                <td>
                                     <code>
-                                        <a href="${h.url.current(version=ver_pr or 'latest')}">v${ver_pos}</a>
+                                        <a href="${request.current_route_path(_query=dict(version=ver_pr or 'latest'))}">v${ver_pos}</a>
                                     </code>
                                </td>
                                <td>
@@ -616,8 +616,8 @@
         </div>
 
         ## main comment form and it status
-        ${comment.comments(h.url('pullrequest_comment', repo_name=c.repo_name,
-                                  pull_request_id=c.pull_request.pull_request_id),
+        ${comment.comments(h.route_path('pullrequest_comment_create', repo_name=c.repo_name,
+                                        pull_request_id=c.pull_request.pull_request_id),
                            c.pull_request_review_status,
                            is_pull_request=True, change_status=c.allowed_to_change_status)}
       %endif
@@ -730,7 +730,7 @@
             };
 
             refreshMergeChecks = function(){
-                var loadUrl = "${h.url.current(merge_checks=1)}";
+                var loadUrl = "${request.current_route_path(_query=dict(merge_checks=1))}";
                 $('.pull-request-merge').css('opacity', 0.3);
                 $('.action-buttons-extra').css('opacity', 0.3);
 

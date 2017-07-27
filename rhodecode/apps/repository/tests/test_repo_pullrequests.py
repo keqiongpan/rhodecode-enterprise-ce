@@ -17,12 +17,11 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
 import mock
 import pytest
-from webob.exc import HTTPNotFound
 
 import rhodecode
+from rhodecode.lib.vcs.backends.base import MergeResponse, MergeFailureReason
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib import helpers as h
 from rhodecode.model.changeset_status import ChangesetStatusModel
@@ -32,7 +31,7 @@ from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
 from rhodecode.tests import (
-    assert_session_flash, url, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN)
+    assert_session_flash, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN)
 from rhodecode.tests.utils import AssertResponse
 
 
@@ -40,8 +39,20 @@ def route_path(name, params=None, **kwargs):
     import urllib
 
     base_url = {
-        'repo_changelog':'/{repo_name}/changelog',
-        'repo_changelog_file':'/{repo_name}/changelog/{commit_id}/{f_path}',
+        'repo_changelog': '/{repo_name}/changelog',
+        'repo_changelog_file': '/{repo_name}/changelog/{commit_id}/{f_path}',
+        'pullrequest_show': '/{repo_name}/pull-request/{pull_request_id}',
+        'pullrequest_show_all': '/{repo_name}/pull-request',
+        'pullrequest_show_all_data': '/{repo_name}/pull-request-data',
+        'pullrequest_repo_refs': '/{repo_name}/pull-request/refs/{target_repo_name:.*?[^/]}',
+        'pullrequest_repo_destinations': '/{repo_name}/pull-request/repo-destinations',
+        'pullrequest_new': '/{repo_name}/pull-request/new',
+        'pullrequest_create': '/{repo_name}/pull-request/create',
+        'pullrequest_update': '/{repo_name}/pull-request/{pull_request_id}/update',
+        'pullrequest_merge': '/{repo_name}/pull-request/{pull_request_id}/merge',
+        'pullrequest_delete': '/{repo_name}/pull-request/{pull_request_id}/delete',
+        'pullrequest_comment_create': '/{repo_name}/pull-request/{pull_request_id}/comment',
+        'pullrequest_comment_delete': '/{repo_name}/pull-request/{pull_request_id}/comment/{comment_id}/delete',
     }[name].format(**kwargs)
 
     if params:
@@ -51,26 +62,26 @@ def route_path(name, params=None, **kwargs):
 
 @pytest.mark.usefixtures('app', 'autologin_user')
 @pytest.mark.backends("git", "hg")
-class TestPullrequestsController(object):
+class TestPullrequestsView(object):
 
     def test_index(self, backend):
-        self.app.get(url(
-            controller='pullrequests', action='index',
+        self.app.get(route_path(
+            'pullrequest_new',
             repo_name=backend.repo_name))
 
     def test_option_menu_create_pull_request_exists(self, backend):
         repo_name = backend.repo_name
         response = self.app.get(h.route_path('repo_summary', repo_name=repo_name))
 
-        create_pr_link = '<a href="%s">Create Pull Request</a>' % url(
-            'pullrequest', repo_name=repo_name)
+        create_pr_link = '<a href="%s">Create Pull Request</a>' % route_path(
+            'pullrequest_new', repo_name=repo_name)
         response.mustcontain(create_pr_link)
 
     def test_create_pr_form_with_raw_commit_id(self, backend):
         repo = backend.repo
 
         self.app.get(
-            url(controller='pullrequests', action='index',
+            route_path('pullrequest_new',
                 repo_name=repo.repo_name,
                 commit=repo.get_commit().raw_id),
             status=200)
@@ -80,10 +91,10 @@ class TestPullrequestsController(object):
         pull_request = pr_util.create_pull_request(
             mergeable=pr_merge_enabled, enable_notifications=False)
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
         for commit_id in pull_request.revisions:
             response.mustcontain(commit_id)
@@ -111,10 +122,10 @@ class TestPullrequestsController(object):
         pull_request = pr_util.create_pull_request(
             author=TEST_USER_REGULAR_LOGIN)
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
         response.mustcontain('Server-side pull request merging is disabled.')
 
@@ -126,10 +137,10 @@ class TestPullrequestsController(object):
             pull_request.target_repo,
             UserModel().get_by_username(TEST_USER_REGULAR_LOGIN),
             'repository.write')
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
         response.mustcontain('Server-side pull request merging is disabled.')
 
@@ -144,10 +155,10 @@ class TestPullrequestsController(object):
         Session().add(pull_request)
         Session().commit()
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
         for commit_id in pull_request.revisions:
             response.mustcontain(commit_id)
@@ -158,22 +169,21 @@ class TestPullrequestsController(object):
         Session().add(pull_request)
         Session().commit()
 
-        self.app.get(url(
-            controller='pullrequests', action='show',
+        self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
     def test_edit_title_description(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
 
         response = self.app.post(
-            url(controller='pullrequests', action='update',
+            route_path('pullrequest_update',
                 repo_name=pull_request.target_repo.repo_name,
-                pull_request_id=str(pull_request_id)),
+                pull_request_id=pull_request_id),
             params={
                 'edit_pull_request': 'true',
-                '_method': 'put',
                 'title': 'New title',
                 'description': 'New description',
                 'csrf_token': csrf_token})
@@ -192,12 +202,11 @@ class TestPullrequestsController(object):
         pr_util.close()
 
         response = self.app.post(
-            url(controller='pullrequests', action='update',
+            route_path('pullrequest_update',
                 repo_name=pull_request.target_repo.repo_name,
-                pull_request_id=str(pull_request_id)),
+                pull_request_id=pull_request_id),
             params={
                 'edit_pull_request': 'true',
-                '_method': 'put',
                 'title': 'New title',
                 'description': 'New description',
                 'csrf_token': csrf_token})
@@ -217,10 +226,10 @@ class TestPullrequestsController(object):
         pull_request_id = pull_request.pull_request_id
 
         response = self.app.post(
-            url(controller='pullrequests', action='update',
+            route_path('pullrequest_update',
                 repo_name=pull_request.target_repo.repo_name,
-                pull_request_id=str(pull_request_id)),
-            params={'update_commits': 'true', '_method': 'put',
+                pull_request_id=pull_request_id),
+            params={'update_commits': 'true',
                     'csrf_token': csrf_token})
 
         expected_msg = PullRequestModel.UPDATE_STATUS_MESSAGES[
@@ -236,10 +245,10 @@ class TestPullrequestsController(object):
         Session().commit()
 
         pull_request_id = pull_request.pull_request_id
-        pull_request_url = url(
-            controller='pullrequests', action='show',
+        pull_request_url = route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.repo_name,
-            pull_request_id=str(pull_request_id))
+            pull_request_id=pull_request_id)
 
         response = self.app.get(pull_request_url)
 
@@ -258,10 +267,9 @@ class TestPullrequestsController(object):
         repo = pull_request.target_repo.repo_id
 
         self.app.post(
-            url(controller='pullrequests',
-                action='comment',
+            route_path('pullrequest_comment_create',
                 repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=str(pull_request_id)),
+                pull_request_id=pull_request_id),
             params={
                 'close_pull_request': '1',
                 'text': 'Closing a PR',
@@ -298,10 +306,9 @@ class TestPullrequestsController(object):
         repo = pull_request.target_repo.repo_id
 
         self.app.post(
-            url(controller='pullrequests',
-                action='comment',
+            route_path('pullrequest_comment_create',
                 repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=str(pull_request_id)),
+                pull_request_id=pull_request_id),
             params={
                 'close_pull_request': '1',
                 'csrf_token': csrf_token},
@@ -326,10 +333,9 @@ class TestPullrequestsController(object):
         pull_request_id = pull_request.pull_request_id
 
         response = self.app.post(
-            url(controller='pullrequests',
-                action='comment',
+            route_path('pullrequest_comment_create',
                 repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=str(pull_request.pull_request_id)),
+                pull_request_id=pull_request.pull_request_id),
             params={
                 'close_pull_request': 'true',
                 'csrf_token': csrf_token},
@@ -356,11 +362,7 @@ class TestPullrequestsController(object):
         source = backend.create_repo(heads=['change2'])
 
         response = self.app.post(
-            url(
-                controller='pullrequests',
-                action='create',
-                repo_name=source.repo_name
-            ),
+            route_path('pullrequest_create', repo_name=source.repo_name),
             [
                 ('source_repo', source.repo_name),
                 ('source_ref', 'branch:default:' + commit_ids['change2']),
@@ -417,11 +419,7 @@ class TestPullrequestsController(object):
         source = backend.create_repo(heads=['change'])
 
         response = self.app.post(
-            url(
-                controller='pullrequests',
-                action='create',
-                repo_name=source.repo_name
-            ),
+            route_path('pullrequest_create', repo_name=source.repo_name),
             [
                 ('source_repo', source.repo_name),
                 ('source_ref', 'branch:default:' + commit_ids['change']),
@@ -485,11 +483,7 @@ class TestPullrequestsController(object):
         source = backend.create_repo(heads=['change'])
 
         response = self.app.post(
-            url(
-                controller='pullrequests',
-                action='create',
-                repo_name=source.repo_name
-            ),
+            route_path('pullrequest_create', repo_name=source.repo_name),
             [
                 ('source_repo', source.repo_name),
                 ('source_ref', 'branch:default:' + commit_ids['change']),
@@ -542,10 +536,9 @@ class TestPullrequestsController(object):
         repo_name = pull_request.target_repo.scm_instance().name,
 
         response = self.app.post(
-            url(controller='pullrequests',
-                action='merge',
+            route_path('pullrequest_merge',
                 repo_name=str(repo_name[0]),
-                pull_request_id=str(pull_request_id)),
+                pull_request_id=pull_request_id),
             params={'csrf_token': csrf_token}).follow()
 
         pull_request = PullRequest.get(pull_request_id)
@@ -584,10 +577,9 @@ class TestPullrequestsController(object):
         pull_request = PullRequest.get(pull_request_id)
 
         response = self.app.post(
-            url(controller='pullrequests',
-                action='merge',
+            route_path('pullrequest_merge',
                 repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=str(pull_request.pull_request_id)),
+                pull_request_id=pull_request.pull_request_id),
             params={'csrf_token': csrf_token}).follow()
 
         assert response.status_int == 200
@@ -599,13 +591,12 @@ class TestPullrequestsController(object):
     def test_merge_pull_request_not_approved(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request(mergeable=True)
         pull_request_id = pull_request.pull_request_id
-        repo_name = pull_request.target_repo.scm_instance().name,
+        repo_name = pull_request.target_repo.scm_instance().name
 
         response = self.app.post(
-            url(controller='pullrequests',
-                action='merge',
-                repo_name=str(repo_name[0]),
-                pull_request_id=str(pull_request_id)),
+            route_path('pullrequest_merge',
+                repo_name=repo_name,
+                pull_request_id=pull_request_id),
             params={'csrf_token': csrf_token}).follow()
 
         assert response.status_int == 200
@@ -613,6 +604,28 @@ class TestPullrequestsController(object):
         response.mustcontain(
             'Merge is not currently possible because of below failed checks.')
         response.mustcontain('Pull request reviewer approval is pending.')
+
+    def test_merge_pull_request_renders_failure_reason(
+            self, user_regular, csrf_token, pr_util):
+        pull_request = pr_util.create_pull_request(mergeable=True, approved=True)
+        pull_request_id = pull_request.pull_request_id
+        repo_name = pull_request.target_repo.scm_instance().name
+
+        model_patcher = mock.patch.multiple(
+            PullRequestModel,
+            merge=mock.Mock(return_value=MergeResponse(
+                True, False, 'STUB_COMMIT_ID', MergeFailureReason.PUSH_FAILED)),
+            merge_status=mock.Mock(return_value=(True, 'WRONG_MESSAGE')))
+
+        with model_patcher:
+            response = self.app.post(
+                route_path('pullrequest_merge',
+                           repo_name=repo_name,
+                           pull_request_id=pull_request_id),
+                params={'csrf_token': csrf_token}, status=302)
+
+        assert_session_flash(response, PullRequestModel.MERGE_STATUS_MESSAGES[
+            MergeFailureReason.PUSH_FAILED])
 
     def test_update_source_revision(self, backend, csrf_token):
         commits = [
@@ -649,10 +662,10 @@ class TestPullrequestsController(object):
 
         # update PR
         self.app.post(
-            url(controller='pullrequests', action='update',
+            route_path('pullrequest_update',
                 repo_name=target.repo_name,
-                pull_request_id=str(pull_request_id)),
-            params={'update_commits': 'true', '_method': 'put',
+                pull_request_id=pull_request_id),
+            params={'update_commits': 'true',
                     'csrf_token': csrf_token})
 
         # check that we have now both revisions
@@ -661,8 +674,8 @@ class TestPullrequestsController(object):
             commit_ids['change-2'], commit_ids['change']]
 
         # TODO: johbo: this should be a test on its own
-        response = self.app.get(url(
-            controller='pullrequests', action='index',
+        response = self.app.get(route_path(
+            'pullrequest_new',
             repo_name=target.repo_name))
         assert response.status_int == 200
         assert 'Pull request updated to' in response.body
@@ -707,10 +720,10 @@ class TestPullrequestsController(object):
 
         # update PR
         self.app.post(
-            url(controller='pullrequests', action='update',
+            route_path('pullrequest_update',
                 repo_name=target.repo_name,
-                pull_request_id=str(pull_request_id)),
-            params={'update_commits': 'true', '_method': 'put',
+                pull_request_id=pull_request_id),
+            params={'update_commits': 'true',
                     'csrf_token': csrf_token},
             status=200)
 
@@ -722,8 +735,8 @@ class TestPullrequestsController(object):
             commit_id=commit_ids['ancestor-new'])
 
         # TODO: johbo: This should be a test on its own
-        response = self.app.get(url(
-            controller='pullrequests', action='index',
+        response = self.app.get(route_path(
+            'pullrequest_new',
             repo_name=target.repo_name))
         assert response.status_int == 200
         assert 'Pull request updated to' in response.body
@@ -770,10 +783,10 @@ class TestPullrequestsController(object):
 
         # update PR
         self.app.post(
-            url(controller='pullrequests', action='update',
+            route_path('pullrequest_update',
                 repo_name=target.repo_name,
-                pull_request_id=str(pull_request_id)),
-            params={'update_commits': 'true', '_method': 'put',
+                pull_request_id=pull_request_id),
+            params={'update_commits': 'true',
                     'csrf_token': csrf_token},
             status=200)
 
@@ -814,10 +827,10 @@ class TestPullrequestsController(object):
         vcs = repo.scm_instance()
         vcs.remove_ref('refs/heads/{}'.format(branch_name))
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=repo.repo_name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
         assert response.status_int == 200
         assert_response = AssertResponse(response)
@@ -846,10 +859,10 @@ class TestPullrequestsController(object):
         else:
             vcs.strip(pr_util.commit_ids['new-feature'])
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pr_util.target_repository.repo_name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
         assert response.status_int == 200
         assert_response = AssertResponse(response)
@@ -882,20 +895,20 @@ class TestPullrequestsController(object):
             vcs.strip(pr_util.commit_ids['new-feature'])
 
         response = self.app.post(
-            url(controller='pullrequests', action='update',
+            route_path('pullrequest_update',
                 repo_name=pull_request.target_repo.repo_name,
-                pull_request_id=str(pull_request.pull_request_id)),
-            params={'update_commits': 'true', '_method': 'put',
+                pull_request_id=pull_request.pull_request_id),
+            params={'update_commits': 'true',
                     'csrf_token': csrf_token})
 
         assert response.status_int == 200
         assert response.body == 'true'
 
         # Make sure that after update, it won't raise 500 errors
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pr_util.target_repository.repo_name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
         assert response.status_int == 200
         assert_response = AssertResponse(response)
@@ -910,10 +923,10 @@ class TestPullrequestsController(object):
         Session().add(pull_request)
         Session().commit()
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
         assert_response = AssertResponse(response)
 
@@ -944,10 +957,10 @@ class TestPullrequestsController(object):
         Session().add(pull_request)
         Session().commit()
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
         assert_response = AssertResponse(response)
 
@@ -966,10 +979,10 @@ class TestPullrequestsController(object):
         Session().add(pull_request)
         Session().commit()
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
         assert_response = AssertResponse(response)
 
@@ -996,10 +1009,10 @@ class TestPullrequestsController(object):
         shadow_url = '{host}/{repo}/pull-request/{pr_id}/repository'.format(
             host=http_host_only_stub, repo=target_repo.name, pr_id=pr_id)
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=target_repo.name,
-            pull_request_id=str(pr_id)))
+            pull_request_id=pr_id))
 
         assertr = AssertResponse(response)
         if mergeable:
@@ -1019,10 +1032,10 @@ class TestPullrequestsControllerDelete(object):
         pull_request = pr_util.create_pull_request(
             author=user_admin.username, enable_notifications=False)
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
         response.mustcontain('id="delete_pullrequest"')
         response.mustcontain('Confirm to delete this pull request')
@@ -1032,10 +1045,10 @@ class TestPullrequestsControllerDelete(object):
         pull_request = pr_util.create_pull_request(
             author=user_regular.username, enable_notifications=False)
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
         response.mustcontain('id="delete_pullrequest"')
         response.mustcontain('Confirm to delete this pull request')
@@ -1045,10 +1058,10 @@ class TestPullrequestsControllerDelete(object):
         pull_request = pr_util.create_pull_request(
             author=user_admin.username, enable_notifications=False)
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
         response.mustcontain(no=['id="delete_pullrequest"'])
         response.mustcontain(no=['Confirm to delete this pull request'])
 
@@ -1063,10 +1076,10 @@ class TestPullrequestsControllerDelete(object):
             pull_request.target_repo, user_regular,
             'repository.write')
 
-        response = self.app.get(url(
-            controller='pullrequests', action='show',
+        response = self.app.get(route_path(
+            'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=str(pull_request.pull_request_id)))
+            pull_request_id=pull_request.pull_request_id))
 
         response.mustcontain('id="open_edit_pullrequest"')
         response.mustcontain('id="delete_pullrequest"')
@@ -1078,9 +1091,10 @@ class TestPullrequestsControllerDelete(object):
         pull_request = pr_util.create_pull_request(
             author=user_admin.username, enable_notifications=False)
 
-        self.app.get(url(
-            controller='pullrequests', action='delete_comment',
+        self.app.get(route_path(
+            'pullrequest_comment_delete',
             repo_name=pull_request.target_repo.scm_instance().name,
+            pull_request_id=pull_request.pull_request_id,
             comment_id=1024404), status=404)
 
 
@@ -1090,17 +1104,9 @@ def assert_pull_request_status(pull_request, expected_status):
     assert status == expected_status
 
 
-@pytest.mark.parametrize('action', ['index', 'create'])
+@pytest.mark.parametrize('route', ['pullrequest_new', 'pullrequest_create'])
 @pytest.mark.usefixtures("autologin_user")
-def test_redirects_to_repo_summary_for_svn_repositories(backend_svn, app, action):
-    response = app.get(url(
-        controller='pullrequests', action=action,
-        repo_name=backend_svn.repo_name))
-    assert response.status_int == 302
+def test_forbidde_to_repo_summary_for_svn_repositories(backend_svn, app, route):
+    response = app.get(
+        route_path(route, repo_name=backend_svn.repo_name), status=404)
 
-    # Not allowed, redirect to the summary
-    redirected = response.follow()
-    summary_url = h.route_path('repo_summary', repo_name=backend_svn.repo_name)
-
-    # URL adds leading slash and path doesn't have it
-    assert redirected.request.path == summary_url

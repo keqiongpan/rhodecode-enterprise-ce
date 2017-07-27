@@ -217,7 +217,7 @@ def includeme(config):
     # Pull Requests
     config.add_route(
         name='pullrequest_show',
-        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id}',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}',
         repo_route=True)
 
     config.add_route(
@@ -228,6 +228,51 @@ def includeme(config):
     config.add_route(
         name='pullrequest_show_all_data',
         pattern='/{repo_name:.*?[^/]}/pull-request-data',
+        repo_route=True, repo_accepted_types=['hg', 'git'])
+
+    config.add_route(
+        name='pullrequest_repo_refs',
+        pattern='/{repo_name:.*?[^/]}/pull-request/refs/{target_repo_name:.*?[^/]}',
+        repo_route=True)
+
+    config.add_route(
+        name='pullrequest_repo_destinations',
+        pattern='/{repo_name:.*?[^/]}/pull-request/repo-destinations',
+        repo_route=True)
+
+    config.add_route(
+        name='pullrequest_new',
+        pattern='/{repo_name:.*?[^/]}/pull-request/new',
+        repo_route=True, repo_accepted_types=['hg', 'git'])
+
+    config.add_route(
+        name='pullrequest_create',
+        pattern='/{repo_name:.*?[^/]}/pull-request/create',
+        repo_route=True, repo_accepted_types=['hg', 'git'])
+
+    config.add_route(
+        name='pullrequest_update',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/update',
+        repo_route=True)
+
+    config.add_route(
+        name='pullrequest_merge',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/merge',
+        repo_route=True)
+
+    config.add_route(
+        name='pullrequest_delete',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/delete',
+        repo_route=True)
+
+    config.add_route(
+        name='pullrequest_comment_create',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/comment',
+        repo_route=True)
+
+    config.add_route(
+        name='pullrequest_comment_delete',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/comment/{comment_id}/delete',
         repo_route=True, repo_accepted_types=['hg', 'git'])
 
     # Settings

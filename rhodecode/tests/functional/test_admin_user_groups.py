@@ -200,13 +200,14 @@ class TestAdminUsersGroupsController(TestController):
         assert response.body == '{"members": []}'
         fixture.destroy_user_group(TEST_USER_GROUP)
 
-    def test_usergroup_escape(self):
-        user = User.get_by_username('test_admin')
-        user.name = '<img src="/image1" onload="alert(\'Hello, World!\');">'
-        user.lastname = (
-            '<img src="/image2" onload="alert(\'Hello, World!\');">')
-        Session().add(user)
-        Session().commit()
+    def test_usergroup_escape(self, user_util):
+        user = user_util.create_user(
+            username='escape_user',
+            firstname='<img src="/image2" onload="alert(\'Hello, World!\');">',
+            lastname='<img src="/image2" onload="alert(\'Hello, World!\');">'
+        )
+
+        user_util.create_user_group(owner=user.username)
 
         self.log_user()
         users_group_name = 'samplegroup'

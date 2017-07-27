@@ -387,7 +387,6 @@ var editPullRequest = function(repo_name, pull_request_id, title, description) {
         {"repo_name": repo_name, "pull_request_id": pull_request_id});
 
     var postData = {
-        '_method': 'put',
         'title': title,
         'description': description,
         'edit_pull_request': true,
