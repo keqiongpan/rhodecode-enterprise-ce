@@ -28,7 +28,7 @@ from rhodecode.apps.admin.navigation import navigation_list
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
-from vcsserver.utils import safe_int
+from rhodecode.lib.utils2 import safe_int
 
 log = logging.getLogger(__name__)
 
