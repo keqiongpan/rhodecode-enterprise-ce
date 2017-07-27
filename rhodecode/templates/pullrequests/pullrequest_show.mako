@@ -89,13 +89,17 @@
                         <code><a href="${h.route_path('repo_commit', repo_name=c.target_repo.repo_name, commit_id=c.ancestor_commit.raw_id)}">${h.show_id(c.ancestor_commit)}</a></code>
                     % endif
                 </div>
-                <div class="pr-pullinfo">
-                     %if h.is_hg(c.pull_request.source_repo):
-                        <input type="text" class="input-monospace" value="hg pull -r ${h.short_id(c.source_ref)} ${c.pull_request.source_repo.clone_url()}" readonly="readonly">
-                     %elif h.is_git(c.pull_request.source_repo):
-                        <input type="text" class="input-monospace" value="git pull ${c.pull_request.source_repo.clone_url()} ${c.pull_request.source_ref_parts.name}" readonly="readonly">
-                     %endif
+                %if h.is_hg(c.pull_request.source_repo):
+                    <% clone_url = 'hg pull -r {} {}'.format(h.short_id(c.source_ref), c.pull_request.source_repo.clone_url()) %>
+                %elif h.is_git(c.pull_request.source_repo):
+                    <% clone_url = 'git pull {} {}'.format(c.pull_request.source_repo.clone_url(), c.pull_request.source_ref_parts.name) %>
+                %endif
+
+                <div class="">
+                    <input type="text" class="input-monospace pr-pullinfo" value="${clone_url}" readonly="readonly">
+                    <i class="tooltip icon-clipboard clipboard-action pull-right pr-pullinfo-copy" data-clipboard-text="${clone_url}" title="${_('Copy the pull url')}"></i>
                 </div>
+
             </div>
            </div>
            <div class="field">
@@ -126,17 +130,19 @@
                 </div>
                 <div class="input">
                     % if not c.pull_request.is_closed() and c.pull_request.shadow_merge_ref:
-                    <div class="pr-mergeinfo">
                         %if h.is_hg(c.pull_request.target_repo):
-                            <input type="text" class="input-monospace" value="hg clone -u ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                            <% clone_url = 'hg clone --update {} {} pull-request-{}'.format(c.pull_request.shadow_merge_ref.name, c.shadow_clone_url, c.pull_request.pull_request_id) %>
                         %elif h.is_git(c.pull_request.target_repo):
-                            <input type="text" class="input-monospace" value="git clone --branch ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                            <% clone_url = 'git clone --branch {} {} pull-request-{}'.format(c.pull_request.shadow_merge_ref.name, c.shadow_clone_url, c.pull_request.pull_request_id) %>
                         %endif
-                    </div>
+                        <div class="">
+                            <input type="text" class="input-monospace pr-mergeinfo" value="${clone_url}" readonly="readonly">
+                            <i class="tooltip icon-clipboard clipboard-action pull-right pr-mergeinfo-copy" data-clipboard-text="${clone_url}" title="${_('Copy the clone url')}"></i>
+                        </div>
                     % else:
-                    <div class="">
-                        ${_('Shadow repository data not available')}.
-                    </div>
+                        <div class="">
+                            ${_('Shadow repository data not available')}.
+                        </div>
                     % endif
                 </div>
             </div>
