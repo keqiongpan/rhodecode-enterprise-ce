@@ -35,13 +35,13 @@ def admin_routes(config):
 
     config.add_route(
         name='pull_requests_global_0',  # backward compat
-        pattern='/pull_requests/{pull_request_id:[0-9]+}')
+        pattern='/pull_requests/{pull_request_id:\d+}')
     config.add_route(
         name='pull_requests_global_1',  # backward compat
-        pattern='/pull-requests/{pull_request_id:[0-9]+}')
+        pattern='/pull-requests/{pull_request_id:\d+}')
     config.add_route(
         name='pull_requests_global',
-        pattern='/pull-request/{pull_request_id:[0-9]+}')
+        pattern='/pull-request/{pull_request_id:\d+}')
 
     config.add_route(
         name='admin_settings_open_source',

@@ -265,7 +265,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         route_name='pullrequest_show', request_method='GET',
         renderer='rhodecode:templates/pullrequests/pullrequest_show.mako')
     def pull_request_show(self):
-        pull_request_id = self.request.matchdict.get('pull_request_id')
+        pull_request_id = self.request.matchdict['pull_request_id']
 
         c = self.load_default_context()
 
@@ -832,8 +832,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         route_name='pullrequest_update', request_method='POST',
         renderer='json_ext')
     def pull_request_update(self):
-        pull_request_id = self.request.matchdict['pull_request_id']
-        pull_request = PullRequest.get_or_404(pull_request_id)
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
 
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
@@ -843,7 +843,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             if 'review_members' in controls:
                 self._update_reviewers(
-                    pull_request_id, controls['review_members'],
+                    pull_request, controls['review_members'],
                     pull_request.reviewer_data)
             elif str2bool(self.request.POST.get('update_commits', 'false')):
                 self._update_commits(pull_request)
@@ -930,8 +930,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         After successful merging, the pull request is automatically
         closed, with a relevant comment.
         """
-        pull_request_id = self.request.matchdict['pull_request_id']
-        pull_request = PullRequest.get_or_404(pull_request_id)
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
 
         check = MergeCheck.validate(pull_request, self._rhodecode_db_user)
         merge_possible = not check.failed
@@ -974,7 +974,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 merge_resp.failure_reason)
             h.flash(msg, category='error')
 
-    def _update_reviewers(self, pull_request_id, review_members, reviewer_rules):
+    def _update_reviewers(self, pull_request, review_members, reviewer_rules):
         _ = self.request.translate
         get_default_reviewers_data, validate_default_reviewers = \
             PullRequestModel().get_reviewer_functions()
@@ -987,7 +987,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             return
 
         PullRequestModel().update_reviewers(
-            pull_request_id, reviewers, self._rhodecode_user)
+            pull_request, reviewers, self._rhodecode_user)
         h.flash(_('Pull request reviewers updated.'), category='success')
         Session().commit()
 
@@ -1002,8 +1002,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def pull_request_delete(self):
         _ = self.request.translate
 
-        pull_request_id = self.request.matchdict['pull_request_id']
-        pull_request = PullRequest.get_or_404(pull_request_id)
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
 
         pr_closed = pull_request.is_closed()
         allowed_to_delete = PullRequestModel().check_user_delete(
@@ -1031,8 +1031,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         renderer='json_ext')
     def pull_request_comment_create(self):
         _ = self.request.translate
-        pull_request_id = self.request.matchdict['pull_request_id']
-        pull_request = PullRequest.get_or_404(pull_request_id)
+
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
+        pull_request_id = pull_request.pull_request_id
+
         if pull_request.is_closed():
             log.debug('comment: forbidden because pull request is closed')
             raise HTTPForbidden()
@@ -1080,7 +1083,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 text=text,
                 repo=self.db_repo.repo_id,
                 user=self._rhodecode_user.user_id,
-                pull_request=pull_request_id,
+                pull_request=pull_request,
                 f_path=self.request.POST.get('f_path'),
                 line_no=self.request.POST.get('line'),
                 status_change=(ChangesetStatus.get_status_lbl(status)
@@ -1102,7 +1105,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                         status,
                         self._rhodecode_user.user_id,
                         comment,
-                        pull_request=pull_request_id
+                        pull_request=pull_request
                     )
 
                 Session().flush()
@@ -1142,15 +1145,17 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         route_name='pullrequest_comment_delete', request_method='POST',
         renderer='json_ext')
     def pull_request_comment_delete(self):
-        pull_request_id = self.request.matchdict['pull_request_id']
-        comment_id = self.request.matchdict['comment_id']
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
 
-        pull_request = PullRequest.get_or_404(pull_request_id)
+        comment = ChangesetComment.get_or_404(
+            self.request.matchdict['comment_id'])
+        comment_id = comment.comment_id
+
         if pull_request.is_closed():
             log.debug('comment: forbidden because pull request is closed')
             raise HTTPForbidden()
 
-        comment = ChangesetComment.get_or_404(comment_id)
         if not comment:
             log.debug('Comment with id:%s not found, skipping', comment_id)
             # comment already deleted in another call probably

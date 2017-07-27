@@ -54,8 +54,10 @@ class AdminMainView(BaseAppView):
         :param pull_request_id: id of pull requests in the system
         """
 
-        pull_request_id = self.request.matchdict.get('pull_request_id')
-        pull_request = PullRequest.get_or_404(pull_request_id)
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
+        pull_request_id = pull_request.pull_request_id
+
         repo_name = pull_request.target_repo.repo_name
 
         raise HTTPFound(

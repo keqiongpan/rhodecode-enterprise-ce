@@ -544,7 +544,6 @@ var CommentsController = function() {
       var comment_id = $comment.attr('data-comment-id');
       var url = AJAX_COMMENT_DELETE_URL.replace('__COMMENT_ID__', comment_id);
       var postData = {
-        '_method': 'delete',
         'csrf_token': CSRF_TOKEN
       };
 

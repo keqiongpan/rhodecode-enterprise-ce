@@ -113,7 +113,7 @@ class TestAdminRepoSettingsAdvanced(object):
         # mark it as None
         response = self.app.post(
             route_path('edit_repo_advanced_fork', repo_name=backend.repo_name),
-            params={'id_fork_of': None, '_method': 'put',
+            params={'id_fork_of': None,
                     'csrf_token': csrf_token})
         assert_session_flash(
             response,

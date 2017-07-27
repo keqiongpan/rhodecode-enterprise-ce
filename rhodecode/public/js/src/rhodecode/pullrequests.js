@@ -372,7 +372,6 @@ var _updatePullRequest = function(repo_name, pull_request_id, postData) {
  */
 var updateCommits = function(repo_name, pull_request_id) {
     var postData = {
-        '_method': 'put',
         'update_commits': true};
     _updatePullRequest(repo_name, pull_request_id, postData);
 };
