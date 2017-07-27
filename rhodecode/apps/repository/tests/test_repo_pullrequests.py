@@ -1016,12 +1016,10 @@ class TestPullrequestsView(object):
 
         assertr = AssertResponse(response)
         if mergeable:
-            assertr.element_value_contains(
-                'div.pr-mergeinfo input', shadow_url)
-            assertr.element_value_contains(
-                'div.pr-mergeinfo input', 'pr-merge')
+            assertr.element_value_contains('input.pr-mergeinfo', shadow_url)
+            assertr.element_value_contains('input.pr-mergeinfo ', 'pr-merge')
         else:
-            assertr.no_element_exists('div.pr-mergeinfo')
+            assertr.no_element_exists('.pr-mergeinfo')
 
 
 @pytest.mark.usefixtures('app')
