@@ -105,12 +105,15 @@ class VcsHttpProxy(object):
         if environ.get('QUERY_STRING'):
             url += '?' + environ['QUERY_STRING']
 
+        log.debug('http-app: preparing request to: %s', url)
         response = session.request(
-            method, url,
+            method,
+            url,
             data=_maybe_stream_request(environ),
             headers=request_headers,
             stream=True)
 
+        log.debug('http-app: got vcsserver response: %s', response)
         # Preserve the headers of the response, except hop_by_hop ones
         response_headers = [
             (h, v) for h, v in response.headers.items()
