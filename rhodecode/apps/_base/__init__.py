@@ -127,6 +127,23 @@ class BaseAppView(object):
                 raise HTTPFound(
                     self.request.route_path('my_account_password'))
 
+    def _log_creation_exception(self, e, repo_name):
+        _ = self.request.translate
+        reason = None
+        if len(e.args) == 2:
+            reason = e.args[1]
+
+        if reason == 'INVALID_CERTIFICATE':
+            log.exception(
+                'Exception creating a repository: invalid certificate')
+            msg = (_('Error creating repository %s: invalid certificate')
+                   % repo_name)
+        else:
+            log.exception("Exception creating a repository")
+            msg = (_('Error creating repository %s')
+                   % repo_name)
+        return msg
+
     def _get_local_tmpl_context(self, include_app_defaults=False):
         c = TemplateArgs()
         c.auth_user = self.request.user
@@ -196,6 +213,7 @@ class RepoAppView(BaseAppView):
             self.db_repo_name, error.message)
 
     def _get_local_tmpl_context(self, include_app_defaults=False):
+        _ = self.request.translate
         c = super(RepoAppView, self)._get_local_tmpl_context(
             include_app_defaults=include_app_defaults)
 
@@ -210,6 +228,17 @@ class RepoAppView(BaseAppView):
         except RepositoryRequirementError as e:
             c.repository_requirements_missing = True
             self._handle_missing_requirements(e)
+            self.rhodecode_vcs_repo = None
+
+        if (not c.repository_requirements_missing
+            and self.rhodecode_vcs_repo is None):
+            # unable to fetch this repo as vcs instance, report back to user
+            h.flash(_(
+                "The repository `%(repo_name)s` cannot be loaded in filesystem. "
+                "Please check if it exist, or is not damaged.") %
+                    {'repo_name': c.repo_name},
+                    category='error', ignore_duplicate=True)
+            raise HTTPFound(h.route_path('home'))
 
         return c
 

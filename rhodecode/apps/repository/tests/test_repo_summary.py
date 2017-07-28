@@ -26,7 +26,7 @@ import pytest
 from rhodecode.apps.repository.views.repo_summary import RepoSummaryView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.compat import OrderedDict
-from rhodecode.lib.utils2 import AttributeDict
+from rhodecode.lib.utils2 import AttributeDict, safe_str
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model.db import Repository
 from rhodecode.model.meta import Session
@@ -259,7 +259,8 @@ class TestSummaryView(object):
 class TestRepoLocation(object):
 
     @pytest.mark.parametrize("suffix", [u'', u'ąęł'], ids=['', 'non-ascii'])
-    def test_manual_delete(self, autologin_user, backend, suffix, csrf_token):
+    def test_missing_filesystem_repo(
+            self, autologin_user, backend, suffix, csrf_token):
         repo = backend.create_repo(name_suffix=suffix)
         repo_name = repo.repo_name
 
@@ -272,13 +273,41 @@ class TestRepoLocation(object):
 
         # check if repo is not in the filesystem
         assert not repo_on_filesystem(repo_name)
-        self.assert_repo_not_found_redirect(repo_name)
 
-    def assert_repo_not_found_redirect(self, repo_name):
-        # run the check page that triggers the other flash message
-        response = self.app.get(h.url('repo_check_home', repo_name=repo_name))
-        assert_session_flash(
-            response, 'The repository at %s cannot be located.' % repo_name)
+        response = self.app.get(
+            route_path('repo_summary', repo_name=safe_str(repo_name)), status=302)
+
+        msg = 'The repository `%s` cannot be loaded in filesystem. ' \
+              'Please check if it exist, or is not damaged.' % repo_name
+        assert_session_flash(response, msg)
+
+    @pytest.mark.parametrize("suffix", [u'', u'ąęł'], ids=['', 'non-ascii'])
+    def test_missing_filesystem_repo_on_repo_check(
+            self, autologin_user, backend, suffix, csrf_token):
+        repo = backend.create_repo(name_suffix=suffix)
+        repo_name = repo.repo_name
+
+        # delete from file system
+        RepoModel()._delete_filesystem_repo(repo)
+
+        # test if the repo is still in the database
+        new_repo = RepoModel().get_by_repo_name(repo_name)
+        assert new_repo.repo_name == repo_name
+
+        # check if repo is not in the filesystem
+        assert not repo_on_filesystem(repo_name)
+
+        # flush the session
+        self.app.get(
+            route_path('repo_summary', repo_name=safe_str(repo_name)),
+            status=302)
+
+        response = self.app.get(
+            route_path('repo_creating_check', repo_name=safe_str(repo_name)),
+            status=200)
+        msg = 'The repository `%s` cannot be loaded in filesystem. ' \
+              'Please check if it exist, or is not damaged.' % repo_name
+        assert_session_flash(response, msg )
 
 
 @pytest.fixture()
