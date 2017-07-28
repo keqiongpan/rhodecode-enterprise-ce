@@ -31,8 +31,9 @@ from formencode import htmlfill
 from pylons import request, tmpl_context as c, url
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
-from webob.exc import HTTPForbidden, HTTPNotFound, HTTPBadRequest
+from webob.exc import HTTPForbidden, HTTPBadRequest
 
+from pyramid.httpexceptions import HTTPFound
 import rhodecode
 from rhodecode.lib import auth, helpers as h
 from rhodecode.lib.auth import (
@@ -183,9 +184,10 @@ class ReposController(BaseRepoController):
             h.flash(msg, category='error')
             return redirect(h.route_path('home'))
 
-        return redirect(h.url('repo_creating_home',
-                              repo_name=form_result['repo_name_full'],
-                              task_id=task_id))
+        raise HTTPFound(
+            h.route_path('repo_creating',
+                         repo_name=form_result['repo_name_full'],
+                         _query=dict(task_id=task_id)))
 
     # perms check inside
     @NotAnonymous()
@@ -238,51 +240,6 @@ class ReposController(BaseRepoController):
             encoding="UTF-8",
             force_defaults=False
         )
-
-    @NotAnonymous()
-    def repo_creating(self, repo_name):
-        c.repo = repo_name
-        c.task_id = request.GET.get('task_id')
-        if not c.repo:
-            raise HTTPNotFound()
-        return render('admin/repos/repo_creating.mako')
-
-    @NotAnonymous()
-    @jsonify
-    def repo_check(self, repo_name):
-        c.repo = repo_name
-        task_id = request.GET.get('task_id')
-
-        if task_id and task_id not in ['None']:
-            import rhodecode
-            from celery.result import AsyncResult
-            if rhodecode.CELERY_ENABLED:
-                task = AsyncResult(task_id)
-                if task.failed():
-                    msg = self._log_creation_exception(task.result, c.repo)
-                    h.flash(msg, category='error')
-                    return redirect(h.route_path('home'), code=501)
-
-        repo = Repository.get_by_repo_name(repo_name)
-        if repo and repo.repo_state == Repository.STATE_CREATED:
-            if repo.clone_uri:
-                clone_uri = repo.clone_uri_hidden
-                h.flash(_('Created repository %s from %s')
-                        % (repo.repo_name, clone_uri), category='success')
-            else:
-                repo_url = h.link_to(
-                    repo.repo_name,
-                    h.route_path('repo_summary',repo_name=repo.repo_name))
-                fork = repo.fork
-                if fork:
-                    fork_name = fork.repo_name
-                    h.flash(h.literal(_('Forked repository %s as %s')
-                            % (fork_name, repo_url)), category='success')
-                else:
-                    h.flash(h.literal(_('Created repository %s') % repo_url),
-                            category='success')
-            return {'result': True}
-        return {'result': False}
 
     @HasPermissionAllDecorator('hg.admin')
     def show(self, repo_name, format='html'):

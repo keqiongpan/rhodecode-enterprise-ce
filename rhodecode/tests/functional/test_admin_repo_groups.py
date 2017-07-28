@@ -122,8 +122,6 @@ class _BaseTest(TestController):
                 csrf_token=self.csrf_token))
 
         # run the check page that triggers the flash message
-        # response = self.app.get(url('repo_check_home', repo_name=repo_name))
-        # assert response.json == {u'result': True}
         repo_gr_url = h.route_path(
             'repo_group_home', repo_group_name=repo_group_name)
 

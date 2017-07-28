@@ -35,12 +35,24 @@ from rhodecode.model.settings import SettingsModel, VcsSettingsModel
 from rhodecode.model.user import UserModel
 from rhodecode.tests import (
     login_user_session, url, assert_session_flash, TEST_USER_ADMIN_LOGIN,
-    TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS, HG_REPO, GIT_REPO,
-    logout_user_session)
+    TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS, logout_user_session)
 from rhodecode.tests.fixture import Fixture, error_function
 from rhodecode.tests.utils import AssertResponse, repo_on_filesystem
 
 fixture = Fixture()
+
+
+def route_path(name, params=None, **kwargs):
+    import urllib
+
+    base_url = {
+        'repo_summary': '/{repo_name}',
+        'repo_creating_check': '/{repo_name}/repo_creating_check',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
 
 
 @pytest.mark.usefixtures("app")
@@ -461,7 +473,8 @@ class TestAdminRepos(object):
         repo_name_utf8 = safe_str(repo_name)
 
         # run the check page that triggers the flash message
-        response = self.app.get(url('repo_check_home', repo_name=repo_name))
+        response = self.app.get(
+            route_path('repo_creating_check', repo_name=safe_str(repo_name)))
         assert response.json == {u'result': True}
 
         flash_msg = u'Created repository <a href="/{}">{}</a>'.format(
@@ -475,7 +488,8 @@ class TestAdminRepos(object):
         assert new_repo.description == description
 
         # test if the repository is visible in the list ?
-        response = self.app.get(h.route_path('repo_summary', repo_name=repo_name))
+        response = self.app.get(
+            h.route_path('repo_summary', repo_name=safe_str(repo_name)))
         response.mustcontain(repo_name)
         response.mustcontain(backend.alias)
 

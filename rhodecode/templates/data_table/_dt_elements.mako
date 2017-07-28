@@ -67,7 +67,9 @@
       <a href="${h.route_path('repo_summary',repo_name=fork_of.repo_name)}"><i class="icon-code-fork"></i></a>
     %endif
     %if rstate == 'repo_state_pending':
-      <i class="icon-cogs" title="${_('Repository creating in progress...')}"></i>
+      <span class="creation_in_progress tooltip" title="${_('This repository is being created in a background task')}">
+          (${_('creating...')})
+      </span>
     %endif
   </div>
 </%def>

@@ -96,6 +96,8 @@ function registerRCRoutes() {
     pyroutes.register('journal_public_rss', '/_admin/public_journal/rss', []);
     pyroutes.register('journal_public_rss_old', '/_admin/public_journal_rss', []);
     pyroutes.register('toggle_following', '/_admin/toggle_following', []);
+    pyroutes.register('repo_creating', '/%(repo_name)s/repo_creating', ['repo_name']);
+    pyroutes.register('repo_creating_check', '/%(repo_name)s/repo_creating_check', ['repo_name']);
     pyroutes.register('repo_summary_explicit', '/%(repo_name)s/summary', ['repo_name']);
     pyroutes.register('repo_summary_commits', '/%(repo_name)s/summary-commits', ['repo_name']);
     pyroutes.register('repo_commit', '/%(repo_name)s/changeset/%(commit_id)s', ['repo_name', 'commit_id']);

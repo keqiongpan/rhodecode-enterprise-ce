@@ -362,14 +362,22 @@ class RepoRoutePredicate(object):
         repo_model = repo.RepoModel()
         by_name_match = repo_model.get_by_repo_name(repo_name, cache=True)
 
+        def redirect_if_creating(db_repo):
+            if db_repo.repo_state in [repo.Repository.STATE_PENDING]:
+                raise HTTPFound(
+                    request.route_path('repo_creating',
+                                       repo_name=db_repo.repo_name))
+
         if by_name_match:
             # register this as request object we can re-use later
             request.db_repo = by_name_match
+            redirect_if_creating(by_name_match)
             return True
 
         by_id_match = repo_model.get_repo_by_id(repo_name)
         if by_id_match:
             request.db_repo = by_id_match
+            redirect_if_creating(by_id_match)
             return True
 
         return False

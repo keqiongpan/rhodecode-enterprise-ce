@@ -416,13 +416,6 @@ def make_map(config):
     # REPOSITORY ROUTES
     #==========================================================================
 
-    rmap.connect('repo_creating_home', '/{repo_name}/repo_creating',
-                 controller='admin/repos', action='repo_creating',
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('repo_check_home', '/{repo_name}/crepo_check',
-                 controller='admin/repos', action='repo_check',
-                 requirements=URL_NAME_REQUIREMENTS)
-
     # repo edit options
     rmap.connect('edit_repo_fields', '/{repo_name}/settings/fields',
                  controller='admin/repos', action='edit_fields',

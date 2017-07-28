@@ -32,6 +32,19 @@ from rhodecode.model.meta import Session
 fixture = Fixture()
 
 
+def route_path(name, params=None, **kwargs):
+    import urllib
+
+    base_url = {
+        'repo_summary': '/{repo_name}',
+        'repo_creating_check': '/{repo_name}/repo_creating_check',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
+
 class _BaseTest(TestController):
 
     REPO = None
@@ -134,7 +147,8 @@ class _BaseTest(TestController):
         assert repo.fork.repo_name == self.REPO
 
         # run the check page that triggers the flash message
-        response = self.app.get(url('repo_check_home', repo_name=fork_name_full))
+        response = self.app.get(
+            route_path('repo_creating_check', repo_name=fork_name_full))
         # test if we have a message that fork is ok
         assert_session_flash(response,
                 'Forked repository %s as <a href="/%s">%s</a>'
@@ -180,7 +194,8 @@ class _BaseTest(TestController):
         assert repo.fork.repo_name == self.REPO
 
         # run the check page that triggers the flash message
-        response = self.app.get(url('repo_check_home', repo_name=fork_name))
+        response = self.app.get(
+            route_path('repo_creating_check', repo_name=fork_name))
         # test if we have a message that fork is ok
         assert_session_flash(response,
                 'Forked repository %s as <a href="/%s">%s</a>'

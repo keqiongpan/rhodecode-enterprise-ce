@@ -47,8 +47,8 @@ def route_path(name, params=None, **kwargs):
         'repo_summary': '/{repo_name}',
         'repo_stats': '/{repo_name}/repo_stats/{commit_id}',
         'repo_refs_data': '/{repo_name}/refs-data',
-        'repo_refs_changelog_data': '/{repo_name}/refs-data-changelog'
-
+        'repo_refs_changelog_data': '/{repo_name}/refs-data-changelog',
+        'repo_creating_check': '/{repo_name}/repo_creating_check',
     }[name].format(**kwargs)
 
     if params:

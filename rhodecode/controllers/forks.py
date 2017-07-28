@@ -30,6 +30,7 @@ from pylons import tmpl_context as c, request, url
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 
+from pyramid.httpexceptions import HTTPFound
 import rhodecode.lib.helpers as h
 
 from rhodecode.lib import auth
@@ -191,6 +192,7 @@ class ForksController(BaseRepoController):
                 (repo_name, ))
             h.flash(msg, category='error')
 
-        return redirect(h.url('repo_creating_home',
-                              repo_name=form_result['repo_name_full'],
-                              task_id=task_id))
+        raise HTTPFound(
+            h.route_path('repo_creating',
+                         repo_name=form_result['repo_name_full'],
+                         _query=dict(task_id=task_id)))

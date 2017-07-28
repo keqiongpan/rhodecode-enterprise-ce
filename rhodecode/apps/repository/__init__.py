@@ -22,6 +22,15 @@ from rhodecode.apps._base import add_route_with_slash
 
 def includeme(config):
 
+    # repo creating checks, special cases that aren't repo routes
+    config.add_route(
+        name='repo_creating',
+        pattern='/{repo_name:.*?[^/]}/repo_creating')
+
+    config.add_route(
+        name='repo_creating_check',
+        pattern='/{repo_name:.*?[^/]}/repo_creating_check')
+
     # Summary
     # NOTE(marcink): one additional route is defined in very bottom, catch
     # all pattern
