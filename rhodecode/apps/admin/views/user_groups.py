@@ -89,7 +89,16 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         def user_profile(username):
             return _render('user_profile', username)
 
-        user_groups_data_total_count = UserGroup.query().count()
+        auth_user_group_list = UserGroupList(
+            UserGroup.query().all(), perm_set=['usergroup.admin'])
+
+        allowed_ids = []
+        for user_group in auth_user_group_list:
+                allowed_ids.append(user_group.users_group_id)
+
+        user_groups_data_total_count = UserGroup.query()\
+            .filter(UserGroup.users_group_id.in_(allowed_ids))\
+            .count()
 
         member_count = count(UserGroupMember.user_id)
         base_q = Session.query(
@@ -101,6 +110,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
             User,
             member_count.label('member_count')
         ) \
+        .filter(UserGroup.users_group_id.in_(allowed_ids)) \
         .outerjoin(UserGroupMember) \
         .join(User, User.user_id == UserGroup.user_id) \
         .group_by(UserGroup, User)
@@ -130,9 +140,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         base_q = base_q.offset(start).limit(limit)
 
         # authenticated access to user groups
-        user_group_list = base_q.all()
-        auth_user_group_list = UserGroupList(
-            user_group_list, perm_set=['usergroup.admin'])
+        auth_user_group_list = base_q.all()
 
         user_groups_data = []
         for user_gr in auth_user_group_list:
