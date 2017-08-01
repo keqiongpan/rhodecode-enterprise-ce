@@ -108,7 +108,7 @@
                   % endif
 
                   ## forks
-                  <a title="${_('Number of Repository Forks')}" href="${h.url('repo_forks_home', repo_name=c.repo_name)}">
+                  <a title="${_('Number of Repository Forks')}" href="${h.route_path('repo_forks_show_all', repo_name=c.repo_name)}">
                      ${c.repository_forks} ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>,
 
                   ## repo size

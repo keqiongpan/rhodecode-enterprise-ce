@@ -219,9 +219,30 @@ def includeme(config):
         name='branches_home',
         pattern='/{repo_name:.*?[^/]}/branches', repo_route=True)
 
+    # Bookmarks
     config.add_route(
         name='bookmarks_home',
         pattern='/{repo_name:.*?[^/]}/bookmarks', repo_route=True)
+
+    # Forks
+    config.add_route(
+        name='repo_fork_new',
+        pattern='/{repo_name:.*?[^/]}/fork', repo_route=True,
+        repo_accepted_types=['hg', 'git'])
+
+    config.add_route(
+        name='repo_fork_create',
+        pattern='/{repo_name:.*?[^/]}/fork/create', repo_route=True,
+        repo_accepted_types=['hg', 'git'])
+
+    config.add_route(
+        name='repo_forks_show_all',
+        pattern='/{repo_name:.*?[^/]}/forks', repo_route=True,
+        repo_accepted_types=['hg', 'git'])
+    config.add_route(
+        name='repo_forks_data',
+        pattern='/{repo_name:.*?[^/]}/forks/data', repo_route=True,
+        repo_accepted_types=['hg', 'git'])
 
     # Pull Requests
     config.add_route(

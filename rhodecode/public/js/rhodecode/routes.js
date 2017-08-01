@@ -145,6 +145,10 @@ function registerRCRoutes() {
     pyroutes.register('tags_home', '/%(repo_name)s/tags', ['repo_name']);
     pyroutes.register('branches_home', '/%(repo_name)s/branches', ['repo_name']);
     pyroutes.register('bookmarks_home', '/%(repo_name)s/bookmarks', ['repo_name']);
+    pyroutes.register('repo_fork_new', '/%(repo_name)s/fork', ['repo_name']);
+    pyroutes.register('repo_fork_create', '/%(repo_name)s/fork/create', ['repo_name']);
+    pyroutes.register('repo_forks_show_all', '/%(repo_name)s/forks', ['repo_name']);
+    pyroutes.register('repo_forks_data', '/%(repo_name)s/forks/data', ['repo_name']);
     pyroutes.register('pullrequest_show', '/%(repo_name)s/pull-request/%(pull_request_id)s', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_show_all', '/%(repo_name)s/pull-request', ['repo_name']);
     pyroutes.register('pullrequest_show_all_data', '/%(repo_name)s/pull-request-data', ['repo_name']);

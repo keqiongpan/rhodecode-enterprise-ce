@@ -489,20 +489,4 @@ def make_map(config):
                  conditions={'method': ['GET', 'POST'], 'function': check_repo},
                  requirements=URL_NAME_REQUIREMENTS)
 
-
-    rmap.connect('repo_fork_create_home', '/{repo_name}/fork',
-                 controller='forks', action='fork_create',
-                 conditions={'function': check_repo, 'method': ['POST']},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('repo_fork_home', '/{repo_name}/fork',
-                 controller='forks', action='fork',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('repo_forks_home', '/{repo_name}/forks',
-                 controller='forks', action='forks',
-                 conditions={'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
     return rmap

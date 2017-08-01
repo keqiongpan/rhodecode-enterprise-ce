@@ -1340,39 +1340,6 @@ class XHRRequired(object):
         return func(*fargs, **fkwargs)
 
 
-class HasAcceptedRepoType(object):
-    """
-    Check if requested repo is within given repo type aliases
-    """
-
-    # TODO(marcink): remove this in favor of the predicates in pyramid routes
-
-    def __init__(self, *repo_type_list):
-        self.repo_type_list = set(repo_type_list)
-
-    def __call__(self, func):
-        return get_cython_compat_decorator(self.__wrapper, func)
-
-    def __wrapper(self, func, *fargs, **fkwargs):
-        import rhodecode.lib.helpers as h
-        cls = fargs[0]
-        rhodecode_repo = cls.rhodecode_repo
-
-        log.debug('%s checking repo type for %s in %s',
-                  self.__class__.__name__,
-                  rhodecode_repo.alias, self.repo_type_list)
-
-        if rhodecode_repo.alias in self.repo_type_list:
-            return func(*fargs, **fkwargs)
-        else:
-            h.flash(h.literal(
-                _('Action not supported for %s.' % rhodecode_repo.alias)),
-                category='warning')
-            raise HTTPFound(
-                h.route_path('repo_summary',
-                             repo_name=cls.rhodecode_db_repo.repo_name))
-
-
 class PermsDecorator(object):
     """
     Base class for controller decorators, we extract the current user from

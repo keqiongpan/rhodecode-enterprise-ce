@@ -275,7 +275,7 @@
               %endif
               %if c.rhodecode_user.username != h.DEFAULT_USER:
                 %if c.rhodecode_db_repo.repo_type in ['git','hg']:
-                  <li><a href="${h.url('repo_fork_home',repo_name=c.repo_name)}">${_('Fork')}</a></li>
+                  <li><a href="${h.route_path('repo_fork_new',repo_name=c.repo_name)}">${_('Fork')}</a></li>
                   <li><a href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">${_('Create Pull Request')}</a></li>
                 %endif
               %endif

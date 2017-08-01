@@ -24,7 +24,7 @@
          </a>
       </li>
       <li>
-         <a title="${_('Fork')}" href="${h.url('repo_fork_home',repo_name=repo_name)}">
+         <a title="${_('Fork')}" href="${h.route_path('repo_fork_new',repo_name=repo_name)}">
          <span>${_('Fork')}</span>
          </a>
       </li>

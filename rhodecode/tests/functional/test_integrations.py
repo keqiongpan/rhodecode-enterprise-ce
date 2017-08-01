@@ -18,15 +18,10 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import mock
 import pytest
-from webob.exc import HTTPNotFound
 
-import rhodecode
 from rhodecode.model.db import Integration
 from rhodecode.model.meta import Session
-from rhodecode.tests import assert_session_flash, url, TEST_USER_ADMIN_LOGIN
-from rhodecode.tests.utils import AssertResponse
 from rhodecode.integrations import integration_type_registry
 from rhodecode.config.routing import ADMIN_PREFIX
 

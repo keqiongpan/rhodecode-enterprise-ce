@@ -27,7 +27,7 @@
           ${self.breadcrumbs()}
       </div>
 
-    ${h.secure_form(h.url('repo_fork_create_home',repo_name=c.repo_info.repo_name))}
+    ${h.secure_form(h.route_path('repo_fork_create',repo_name=c.repo_info.repo_name), method='POST', request=request)}
     <div class="form">
         <!-- fields -->
         <div class="fields">
