@@ -273,7 +273,7 @@ def includeme(config):
     if asbool(settings.get('appenlight', 'false')):
         config.include('appenlight_client.ext.pyramid_tween')
 
-    if not 'mako.default_filters' in settings:
+    if 'mako.default_filters' not in settings:
         # set custom default filters if we don't have it defined
         settings['mako.imports'] = 'from rhodecode.lib.base import h_filter'
         settings['mako.default_filters'] = 'h_filter'

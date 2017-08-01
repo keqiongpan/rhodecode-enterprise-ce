@@ -54,7 +54,7 @@ def integrations_event_handler(event):
             integration_model.send_event(integration, event)
         except Exception:
             log.exception(
-                'failure occured when sending event %s to integration %s' % (
+                'failure occurred when sending event %s to integration %s' % (
                     event, integration))
 
 

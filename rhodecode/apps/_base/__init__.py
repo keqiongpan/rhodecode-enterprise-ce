@@ -251,6 +251,13 @@ class RepoAppView(BaseAppView):
         return default
 
 
+class RepoGroupAppView(BaseAppView):
+    def __init__(self, context, request):
+        super(RepoGroupAppView, self).__init__(context, request)
+        self.db_repo_group = request.db_repo_group
+        self.db_repo_group_name = self.db_repo_group.group_name
+
+
 class DataGridAppView(object):
     """
     Common class to have re-usable grid rendering components

@@ -96,11 +96,18 @@ def repo_name_slug(value):
 # PERM DECORATOR HELPERS FOR EXTRACTING NAMES FOR PERM CHECKS
 #==============================================================================
 def get_repo_slug(request):
-    if isinstance(request, Request) and getattr(request, 'db_repo', None):
-        # pyramid
-        _repo = request.db_repo.repo_name
-    else:
-        # TODO(marcink): remove after pylons migration...
+    _repo = ''
+    if isinstance(request, Request):
+        if hasattr(request, 'db_repo'):
+            # if our requests has set db reference use it for name, this
+            # translates the example.com/_<id> into proper repo names
+            _repo = request.db_repo.repo_name
+        elif getattr(request, 'matchdict', None):
+            # pyramid
+            _repo = request.matchdict.get('repo_name')
+
+    # TODO(marcink): remove after pylons migration...
+    if not _repo:
         _repo = request.environ['pylons.routes_dict'].get('repo_name')
 
     if _repo:
@@ -109,10 +116,18 @@ def get_repo_slug(request):
 
 
 def get_repo_group_slug(request):
-    if isinstance(request, Request) and getattr(request, 'matchdict', None):
-        # pyramid
-        _group = request.matchdict.get('repo_group_name')
-    else:
+    _group = ''
+    if isinstance(request, Request):
+        if hasattr(request, 'db_repo_group'):
+            # if our requests has set db reference use it for name, this
+            # translates the example.com/_<id> into proper repo group names
+            _group = request.db_repo_group.group_name
+        elif getattr(request, 'matchdict', None):
+            # pyramid
+            _group = request.matchdict.get('repo_group_name')
+
+    # TODO(marcink): remove after pylons migration...
+    if not _group:
         _group = request.environ['pylons.routes_dict'].get('group_name')
 
     if _group:

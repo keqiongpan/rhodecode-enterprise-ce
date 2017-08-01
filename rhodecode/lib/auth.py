@@ -1463,8 +1463,9 @@ class HasRepoPermissionAnyDecorator(PermsDecorator):
         try:
             user_perms = set([perms['repositories'][repo_name]])
         except KeyError:
-            log.debug('cannot locate repo with name: `%s` in permissions defs',
-                      repo_name)
+            log.debug(
+                'cannot locate repo with name: `%s` in permissions defs',
+                repo_name)
             return False
 
         log.debug('checking `%s` permissions for repo `%s`',
@@ -1490,8 +1491,9 @@ class HasRepoGroupPermissionAllDecorator(PermsDecorator):
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
-            log.debug('cannot locate repo group with name: `%s` in permissions defs',
-                      group_name)
+            log.debug(
+                'cannot locate repo group with name: `%s` in permissions defs',
+                group_name)
             return False
 
         log.debug('checking `%s` permissions for repo group `%s`',
@@ -1518,8 +1520,9 @@ class HasRepoGroupPermissionAnyDecorator(PermsDecorator):
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
-            log.debug('cannot locate repo group with name: `%s` in permissions defs',
-                      group_name)
+            log.debug(
+                'cannot locate repo group with name: `%s` in permissions defs',
+                group_name)
             return False
 
         log.debug('checking `%s` permissions for repo group `%s`',
