@@ -23,13 +23,13 @@ function registerRCRoutes() {
     pyroutes.register('global_integrations_create', '/_admin/integrations/%(integration)s/new', ['integration']);
     pyroutes.register('global_integrations_edit', '/_admin/integrations/%(integration)s/%(integration_id)s', ['integration', 'integration_id']);
     pyroutes.register('repo_group_integrations_home', '/%(repo_group_name)s/settings/integrations', ['repo_group_name']);
-    pyroutes.register('repo_group_integrations_list', '/%(repo_group_name)s/settings/integrations/%(integration)s', ['repo_group_name', 'integration']);
     pyroutes.register('repo_group_integrations_new', '/%(repo_group_name)s/settings/integrations/new', ['repo_group_name']);
+    pyroutes.register('repo_group_integrations_list', '/%(repo_group_name)s/settings/integrations/%(integration)s', ['repo_group_name', 'integration']);
     pyroutes.register('repo_group_integrations_create', '/%(repo_group_name)s/settings/integrations/%(integration)s/new', ['repo_group_name', 'integration']);
     pyroutes.register('repo_group_integrations_edit', '/%(repo_group_name)s/settings/integrations/%(integration)s/%(integration_id)s', ['repo_group_name', 'integration', 'integration_id']);
     pyroutes.register('repo_integrations_home', '/%(repo_name)s/settings/integrations', ['repo_name']);
-    pyroutes.register('repo_integrations_list', '/%(repo_name)s/settings/integrations/%(integration)s', ['repo_name', 'integration']);
     pyroutes.register('repo_integrations_new', '/%(repo_name)s/settings/integrations/new', ['repo_name']);
+    pyroutes.register('repo_integrations_list', '/%(repo_name)s/settings/integrations/%(integration)s', ['repo_name', 'integration']);
     pyroutes.register('repo_integrations_create', '/%(repo_name)s/settings/integrations/%(integration)s/new', ['repo_name', 'integration']);
     pyroutes.register('repo_integrations_edit', '/%(repo_name)s/settings/integrations/%(integration)s/%(integration_id)s', ['repo_name', 'integration', 'integration_id']);
     pyroutes.register('ops_ping', '/_admin/ops/ping', []);

@@ -25,21 +25,21 @@ from rhodecode import events
 from rhodecode.tests.fixture import Fixture
 from rhodecode.model.db import Session, Integration
 from rhodecode.model.integration import IntegrationModel
-from rhodecode.integrations.types.base import IntegrationTypeBase
 
 
 class TestDeleteScopesDeletesIntegrations(object):
-    def test_delete_repo_with_integration_deletes_integration(self,
-        repo_integration_stub):
+    def test_delete_repo_with_integration_deletes_integration(
+            self, repo_integration_stub):
+
         Session().delete(repo_integration_stub.repo)
         Session().commit()
         Session().expire_all()
         integration = Integration.get(repo_integration_stub.integration_id)
         assert integration is None
 
+    def test_delete_repo_group_with_integration_deletes_integration(
+            self, repogroup_integration_stub):
 
-    def test_delete_repo_group_with_integration_deletes_integration(self,
-        repogroup_integration_stub):
         Session().delete(repogroup_integration_stub.repo_group)
         Session().commit()
         Session().expire_all()
@@ -146,7 +146,6 @@ def test_enabled_integration_repo_scopes(integration_repos):
         integrations['root_repo'],
     ]
 
-
     triggered_integrations = IntegrationModel().get_for_event(
         events.RepoEvent(repos['other_repo']))
 
@@ -156,7 +155,6 @@ def test_enabled_integration_repo_scopes(integration_repos):
         integrations['other_group'],
         integrations['other_group_recursive'],
     ]
-
 
     triggered_integrations = IntegrationModel().get_for_event(
         events.RepoEvent(repos['parent_repo']))
@@ -193,24 +191,20 @@ def test_disabled_integration_repo_scopes(integration_repos):
 
     assert triggered_integrations == []
 
-
     triggered_integrations = IntegrationModel().get_for_event(
         events.RepoEvent(repos['parent_repo']))
 
     assert triggered_integrations == []
-
 
     triggered_integrations = IntegrationModel().get_for_event(
         events.RepoEvent(repos['child_repo']))
 
     assert triggered_integrations == []
 
-
     triggered_integrations = IntegrationModel().get_for_event(
         events.RepoEvent(repos['other_repo']))
 
     assert triggered_integrations == []
-
 
 
 def test_enabled_non_repo_integrations(integration_repos):

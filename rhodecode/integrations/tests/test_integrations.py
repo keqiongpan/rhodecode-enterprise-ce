@@ -20,10 +20,16 @@
 
 import pytest
 
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.model.db import Integration
 from rhodecode.model.meta import Session
 from rhodecode.integrations import integration_type_registry
-from rhodecode.config.routing import ADMIN_PREFIX
+
+
+def route_path(name, **kwargs):
+    return {
+        'home': '/',
+    }[name].format(**kwargs)
 
 
 @pytest.mark.usefixtures('app', 'autologin_user')
@@ -32,86 +38,141 @@ class TestIntegrationsView(object):
 
 
 class TestGlobalIntegrationsView(TestIntegrationsView):
-    def test_index_no_integrations(self, app):
+    def test_index_no_integrations(self):
         url = ADMIN_PREFIX + '/integrations'
-        response = app.get(url)
+        response = self.app.get(url)
 
         assert response.status_code == 200
         assert 'exist yet' in response.body
 
-    def test_index_with_integrations(self, app, global_integration_stub):
+    def test_index_with_integrations(self, global_integration_stub):
         url = ADMIN_PREFIX + '/integrations'
-        response = app.get(url)
+        response = self.app.get(url)
 
         assert response.status_code == 200
         assert 'exist yet' not in response.body
         assert global_integration_stub.name in response.body
 
-    def test_new_integration_page(self, app):
+    @pytest.mark.parametrize(
+        'IntegrationType', integration_type_registry.values())
+    def test_new_integration_page(self, IntegrationType):
         url = ADMIN_PREFIX + '/integrations/new'
 
-        response = app.get(url)
+        response = self.app.get(url, status=200)
 
-        assert response.status_code == 200
-
-        for integration_key in integration_type_registry:
-            nurl = (ADMIN_PREFIX + '/integrations/{integration}/new').format(
-                    integration=integration_key)
-            assert nurl in response.body
+        url = (ADMIN_PREFIX + '/integrations/{integration}/new').format(
+                integration=IntegrationType.key)
+        assert url in response.body
 
     @pytest.mark.parametrize(
         'IntegrationType', integration_type_registry.values())
-    def test_get_create_integration_page(self, app, IntegrationType):
+    def test_get_create_integration_page(self, IntegrationType):
         url = ADMIN_PREFIX + '/integrations/{integration_key}/new'.format(
             integration_key=IntegrationType.key)
 
-        response = app.get(url)
+        response = self.app.get(url, status=200)
 
-        assert response.status_code == 200
         assert IntegrationType.display_name in response.body
 
-    def test_post_integration_page(self, app, StubIntegrationType, csrf_token,
+    def test_post_integration_page(self, StubIntegrationType, csrf_token,
                                    test_repo_group, backend_random):
         url = ADMIN_PREFIX + '/integrations/{integration_key}/new'.format(
             integration_key=StubIntegrationType.key)
 
-        _post_integration_test_helper(app, url, csrf_token, admin_view=True,
+        _post_integration_test_helper(self.app, url, csrf_token, admin_view=True,
             repo=backend_random.repo, repo_group=test_repo_group)
 
 
-class TestRepoGroupIntegrationsView(TestIntegrationsView):
-    def test_index_no_integrations(self, app, test_repo_group):
-        url = '/{repo_group_name}/settings/integrations'.format(
-            repo_group_name=test_repo_group.group_name)
-        response = app.get(url)
+class TestRepoIntegrationsView(TestIntegrationsView):
+    def test_index_no_integrations(self, backend_random):
+        url = '/{repo_name}/settings/integrations'.format(
+            repo_name=backend_random.repo.repo_name)
+        response = self.app.get(url)
 
         assert response.status_code == 200
         assert 'exist yet' in response.body
 
-    def test_index_with_integrations(self, app, test_repo_group,
-                                     repogroup_integration_stub):
+    def test_index_with_integrations(self, repo_integration_stub):
+        url = '/{repo_name}/settings/integrations'.format(
+            repo_name=repo_integration_stub.repo.repo_name)
+        stub_name = repo_integration_stub.name
+
+        response = self.app.get(url)
+
+        assert response.status_code == 200
+        assert stub_name in response.body
+        assert 'exist yet' not in response.body
+
+    @pytest.mark.parametrize(
+        'IntegrationType', integration_type_registry.values())
+    def test_new_integration_page(self, backend_random, IntegrationType):
+        repo_name = backend_random.repo.repo_name
+        url = '/{repo_name}/settings/integrations/new'.format(
+            repo_name=repo_name)
+
+        response = self.app.get(url, status=200)
+
+        url = '/{repo_name}/settings/integrations/{integration}/new'.format(
+                repo_name=repo_name,
+                integration=IntegrationType.key)
+
+        assert url in response.body
+
+    @pytest.mark.parametrize(
+        'IntegrationType', integration_type_registry.values())
+    def test_get_create_integration_page(self, backend_random, IntegrationType):
+        repo_name = backend_random.repo.repo_name
+        url = '/{repo_name}/settings/integrations/{integration_key}/new'.format(
+            repo_name=repo_name, integration_key=IntegrationType.key)
+
+        response = self.app.get(url, status=200)
+
+        assert IntegrationType.display_name in response.body
+
+    def test_post_integration_page(self, backend_random, test_repo_group,
+                                   StubIntegrationType, csrf_token):
+        repo_name = backend_random.repo.repo_name
+        url = '/{repo_name}/settings/integrations/{integration_key}/new'.format(
+            repo_name=repo_name, integration_key=StubIntegrationType.key)
+
+        _post_integration_test_helper(
+            self.app, url, csrf_token, admin_view=False,
+            repo=backend_random.repo, repo_group=test_repo_group)
+
+
+class TestRepoGroupIntegrationsView(TestIntegrationsView):
+    def test_index_no_integrations(self, test_repo_group):
+        url = '/{repo_group_name}/settings/integrations'.format(
+            repo_group_name=test_repo_group.group_name)
+        response = self.app.get(url)
+
+        assert response.status_code == 200
+        assert 'exist yet' in response.body
+
+    def test_index_with_integrations(
+            self, test_repo_group, repogroup_integration_stub):
+
         url = '/{repo_group_name}/settings/integrations'.format(
             repo_group_name=test_repo_group.group_name)
 
         stub_name = repogroup_integration_stub.name
-        response = app.get(url)
+        response = self.app.get(url)
 
         assert response.status_code == 200
         assert 'exist yet' not in response.body
         assert stub_name in response.body
 
-    def test_new_integration_page(self, app, test_repo_group):
+    def test_new_integration_page(self, test_repo_group):
         repo_group_name = test_repo_group.group_name
         url = '/{repo_group_name}/settings/integrations/new'.format(
             repo_group_name=test_repo_group.group_name)
 
-        response = app.get(url)
+        response = self.app.get(url)
 
         assert response.status_code == 200
 
         for integration_key in integration_type_registry:
-            nurl = ('/{repo_group_name}/settings/integrations'
-                    '/{integration}/new').format(
+            nurl = ('/{repo_group_name}/settings/integrations/{integration}/new').format(
                     repo_group_name=repo_group_name,
                     integration=integration_key)
 
@@ -119,86 +180,29 @@ class TestRepoGroupIntegrationsView(TestIntegrationsView):
 
     @pytest.mark.parametrize(
         'IntegrationType', integration_type_registry.values())
-    def test_get_create_integration_page(self, app, test_repo_group,
-                                         IntegrationType):
+    def test_get_create_integration_page(
+            self, test_repo_group, IntegrationType):
+
         repo_group_name = test_repo_group.group_name
         url = ('/{repo_group_name}/settings/integrations/{integration_key}/new'
                ).format(repo_group_name=repo_group_name,
                         integration_key=IntegrationType.key)
 
-        response = app.get(url)
+        response = self.app.get(url)
 
         assert response.status_code == 200
         assert IntegrationType.display_name in response.body
 
-    def test_post_integration_page(self, app, test_repo_group, backend_random,
+    def test_post_integration_page(self, test_repo_group, backend_random,
                                    StubIntegrationType, csrf_token):
+
         repo_group_name = test_repo_group.group_name
         url = ('/{repo_group_name}/settings/integrations/{integration_key}/new'
                ).format(repo_group_name=repo_group_name,
                         integration_key=StubIntegrationType.key)
 
-        _post_integration_test_helper(app, url, csrf_token, admin_view=False,
-            repo=backend_random.repo, repo_group=test_repo_group)
-
-
-class TestRepoIntegrationsView(TestIntegrationsView):
-    def test_index_no_integrations(self, app, backend_random):
-        url = '/{repo_name}/settings/integrations'.format(
-            repo_name=backend_random.repo.repo_name)
-        response = app.get(url)
-
-        assert response.status_code == 200
-        assert 'exist yet' in response.body
-
-    def test_index_with_integrations(self, app, repo_integration_stub):
-        url = '/{repo_name}/settings/integrations'.format(
-            repo_name=repo_integration_stub.repo.repo_name)
-        stub_name = repo_integration_stub.name
-
-        response = app.get(url)
-
-        assert response.status_code == 200
-        assert stub_name in response.body
-        assert 'exist yet' not in response.body
-
-    def test_new_integration_page(self, app, backend_random):
-        repo_name = backend_random.repo.repo_name
-        url = '/{repo_name}/settings/integrations/new'.format(
-            repo_name=repo_name)
-
-        response = app.get(url)
-
-        assert response.status_code == 200
-
-        for integration_key in integration_type_registry:
-            nurl = ('/{repo_name}/settings/integrations'
-                    '/{integration}/new').format(
-                    repo_name=repo_name,
-                    integration=integration_key)
-
-            assert nurl in response.body
-
-    @pytest.mark.parametrize(
-        'IntegrationType', integration_type_registry.values())
-    def test_get_create_integration_page(self, app, backend_random,
-                                         IntegrationType):
-        repo_name = backend_random.repo.repo_name
-        url = '/{repo_name}/settings/integrations/{integration_key}/new'.format(
-            repo_name=repo_name, integration_key=IntegrationType.key)
-
-        response = app.get(url)
-
-        assert response.status_code == 200
-        assert IntegrationType.display_name in response.body
-
-    def test_post_integration_page(self, app, backend_random, test_repo_group,
-                                   StubIntegrationType, csrf_token):
-        repo_name = backend_random.repo.repo_name
-        url = '/{repo_name}/settings/integrations/{integration_key}/new'.format(
-            repo_name=repo_name, integration_key=StubIntegrationType.key)
-
-        _post_integration_test_helper(app, url, csrf_token, admin_view=False,
+        _post_integration_test_helper(
+            self.app, url, csrf_token, admin_view=False,
             repo=backend_random.repo, repo_group=test_repo_group)
 
 
@@ -208,7 +212,8 @@ def _post_integration_test_helper(app, url, csrf_token, repo, repo_group,
     Posts form data to create integration at the url given then deletes it and
     checks if the redirect url is correct.
     """
-
+    repo_name = repo.repo_name
+    repo_group_name = repo_group.group_name
     app.post(url, params={}, status=403)  # missing csrf check
     response = app.post(url, params={'csrf_token': csrf_token})
     assert response.status_code == 200
@@ -216,15 +221,15 @@ def _post_integration_test_helper(app, url, csrf_token, repo, repo_group,
 
     scopes_destinations = [
         ('global',
-            ADMIN_PREFIX + '/integrations'),
+                ADMIN_PREFIX + '/integrations'),
         ('root-repos',
                 ADMIN_PREFIX + '/integrations'),
-        ('repo:%s' % repo.repo_name,
-                '/%s/settings/integrations' % repo.repo_name),
-        ('repogroup:%s' % repo_group.group_name,
-                '/%s/settings/integrations' % repo_group.group_name),
-        ('repogroup-recursive:%s' % repo_group.group_name,
-                '/%s/settings/integrations' % repo_group.group_name),
+        ('repo:%s' % repo_name,
+                '/%s/settings/integrations' % repo_name),
+        ('repogroup:%s' % repo_group_name,
+                '/%s/settings/integrations' % repo_group_name),
+        ('repogroup-recursive:%s' % repo_group_name,
+                '/%s/settings/integrations' % repo_group_name),
     ]
 
     for scope, destination in scopes_destinations:

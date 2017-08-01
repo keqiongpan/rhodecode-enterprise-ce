@@ -336,7 +336,7 @@ def test_repo_group(request):
     usage automatically
     """
     fixture = Fixture()
-    repogroupid = 'test_repo_group_%s' % int(time.time())
+    repogroupid = 'test_repo_group_%s' % str(time.time()).replace('.', '')
     repo_group = fixture.create_repo_group(repogroupid)
 
     def _cleanup():
@@ -353,7 +353,7 @@ def test_user_group(request):
     usage automatically
     """
     fixture = Fixture()
-    usergroupid = 'test_user_group_%s' % int(time.time())
+    usergroupid = 'test_user_group_%s' % str(time.time()).replace('.', '')
     user_group = fixture.create_user_group(usergroupid)
 
     def _cleanup():

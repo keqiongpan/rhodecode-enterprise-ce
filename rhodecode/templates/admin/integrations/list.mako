@@ -15,22 +15,22 @@
     &raquo;
     ${h.link_to(_('Settings'),h.url('admin_settings'))}
   %endif
-  %if current_IntegrationType:
+  %if c.current_IntegrationType:
     &raquo;
     %if c.repo:
     ${h.link_to(_('Integrations'),
-      request.route_url(route_name='repo_integrations_home',
-                        repo_name=c.repo.repo_name))}
+      request.route_path(route_name='repo_integrations_home',
+                         repo_name=c.repo.repo_name))}
     %elif c.repo_group:
     ${h.link_to(_('Integrations'),
-      request.route_url(route_name='repo_group_integrations_home',
-                        repo_group_name=c.repo_group.group_name))}
+      request.route_path(route_name='repo_group_integrations_home',
+                         repo_group_name=c.repo_group.group_name))}
     %else:
     ${h.link_to(_('Integrations'),
-      request.route_url(route_name='global_integrations_home'))}
+      request.route_path(route_name='global_integrations_home'))}
     %endif
     &raquo;
-    ${current_IntegrationType.display_name}
+    ${c.current_IntegrationType.display_name}
   %else:
     &raquo;
     ${_('Integrations')}
@@ -61,9 +61,9 @@
       home_url = request.route_path('global_integrations_home')
     %>
 
-    <a href="${home_url}" class="btn ${not current_IntegrationType and 'btn-primary' or ''}">${_('All')}</a>
+    <a href="${home_url}" class="btn ${not c.current_IntegrationType and 'btn-primary' or ''}">${_('All')}</a>
 
-    %for integration_key, IntegrationType in available_integrations.items():
+    %for integration_key, IntegrationType in c.available_integrations.items():
         <%
         if c.repo:
           list_url = request.route_path('repo_integrations_list',
@@ -78,12 +78,14 @@
                                        integration=integration_key)
         %>
       <a href="${list_url}"
-         class="btn ${current_IntegrationType and integration_key == current_IntegrationType.key and 'btn-primary' or ''}">
+         class="btn ${c.current_IntegrationType and integration_key == c.current_IntegrationType.key and 'btn-primary' or ''}">
         ${IntegrationType.display_name}
       </a>
     %endfor
 
     <%
+    integration_type = c.current_IntegrationType and c.current_IntegrationType.display_name or ''
+
     if c.repo:
       create_url = h.route_path('repo_integrations_new', repo_name=c.repo.repo_name)
     elif c.repo_group:
@@ -98,19 +100,19 @@
     <table class="rctable integrations">
       <thead>
         <tr>
-            <th><a href="?sort=enabled:${rev_sort_dir}">${_('Enabled')}</a></th>
-            <th><a href="?sort=name:${rev_sort_dir}">${_('Name')}</a></th>
-            <th colspan="2"><a href="?sort=integration_type:${rev_sort_dir}">${_('Type')}</a></th>
-            <th><a href="?sort=scope:${rev_sort_dir}">${_('Scope')}</a></th>
+            <th><a href="?sort=enabled:${c.rev_sort_dir}">${_('Enabled')}</a></th>
+            <th><a href="?sort=name:${c.rev_sort_dir}">${_('Name')}</a></th>
+            <th colspan="2"><a href="?sort=integration_type:${c.rev_sort_dir}">${_('Type')}</a></th>
+            <th><a href="?sort=scope:${c.rev_sort_dir}">${_('Scope')}</a></th>
             <th>${_('Actions')}</th>
             <th></th>
         </tr>
       </thead>
       <tbody>
-  %if not integrations_list:
+  %if not c.integrations_list:
         <tr>
           <td colspan="7">
-          <% integration_type = current_IntegrationType and current_IntegrationType.display_name or '' %>
+
             %if c.repo:
               ${_('No {type} integrations for repo {repo} exist yet.').format(type=integration_type, repo=c.repo.repo_name)}
             %elif c.repo_group:
@@ -119,14 +121,14 @@
               ${_('No {type} integrations exist yet.').format(type=integration_type)}
             %endif
 
-            %if current_IntegrationType:
+            %if c.current_IntegrationType:
             <%
             if c.repo:
-              create_url = h.route_path('repo_integrations_create', repo_name=c.repo.repo_name, integration=current_IntegrationType.key)
+              create_url = h.route_path('repo_integrations_create', repo_name=c.repo.repo_name, integration=c.current_IntegrationType.key)
             elif c.repo_group:
-              create_url = h.route_path('repo_group_integrations_create', repo_group_name=c.repo_group.group_name, integration=current_IntegrationType.key)
+              create_url = h.route_path('repo_group_integrations_create', repo_group_name=c.repo_group.group_name, integration=c.current_IntegrationType.key)
             else:
-              create_url = h.route_path('global_integrations_create', integration=current_IntegrationType.key)
+              create_url = h.route_path('global_integrations_create', integration=c.current_IntegrationType.key)
             %>
             %endif
 
@@ -134,7 +136,7 @@
           </td>
         </tr>
   %endif
-  %for IntegrationType, integration in integrations_list:
+  %for IntegrationType, integration in c.integrations_list:
         <tr id="integration_${integration.integration_id}">
           <td class="td-enabled">
             %if integration.enabled:
@@ -147,9 +149,9 @@
             ${integration.name}
           </td>
           <td class="td-icon">
-            %if integration.integration_type in available_integrations:
+            %if integration.integration_type in c.available_integrations:
             <div class="integration-icon">
-              ${available_integrations[integration.integration_type].icon|n}
+              ${c.available_integrations[integration.integration_type].icon|n}
             </div>
             %else:
               ?
@@ -220,7 +222,7 @@
     </table>
     <div class="integrations-paginator">
       <div class="pagination-wh pagination-left">
-      ${integrations_list.pager('$link_previous ~2~ $link_next')}
+      ${c.integrations_list.pager('$link_previous ~2~ $link_next')}
       </div>
     </div>
   </div>

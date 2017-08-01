@@ -36,7 +36,7 @@
         %endif
     </%def>
 
-    %for integration, IntegrationType in available_integrations.items():
+    %for integration, IntegrationType in c.available_integrations.items():
       <%
       if c.repo:
         create_url = request.route_path('repo_integrations_create',
