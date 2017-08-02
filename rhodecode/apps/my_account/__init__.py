@@ -123,4 +123,4 @@ def includeme(config):
         pattern=ADMIN_PREFIX + '/my_account/test_channelstream')
 
     # Scan module for configuration decorators.
-    config.scan()
+    config.scan('.views', ignore='.tests')

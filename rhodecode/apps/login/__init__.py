@@ -41,4 +41,4 @@ def includeme(config):
         pattern=ADMIN_PREFIX + '/password_reset_confirmation')
 
     # Scan module for configuration decorators.
-    config.scan()
+    config.scan('.views', ignore='.tests')

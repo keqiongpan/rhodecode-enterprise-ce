@@ -38,4 +38,4 @@ def includeme(config):
     config.include(admin_routes, route_prefix=ADMIN_PREFIX + '/ops')
 
     # Scan module for configuration decorators.
-    config.scan()
+    config.scan('.views', ignore='.tests')

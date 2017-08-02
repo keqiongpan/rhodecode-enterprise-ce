@@ -87,4 +87,4 @@ def includeme(config):
         pattern=settings.get('channelstream.proxy_path') or '/_channelstream')
 
     # Scan module for configuration decorators.
-    config.scan()
+    config.scan('.views', ignore='.tests')

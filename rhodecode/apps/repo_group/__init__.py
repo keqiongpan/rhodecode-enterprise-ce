@@ -29,5 +29,5 @@ def includeme(config):
         pattern='/{repo_group_name:.*?[^/]}', repo_group_route=True)
 
     # Scan module for configuration decorators.
-    config.scan()
+    config.scan('.views', ignore='.tests')
 

@@ -46,4 +46,4 @@ def includeme(config):
     routing_links.connect_redirection_links(config)
 
     # Scan module for configuration decorators.
-    config.scan()
+    config.scan('.views', ignore='.tests')

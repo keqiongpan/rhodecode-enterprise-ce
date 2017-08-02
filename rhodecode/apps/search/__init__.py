@@ -31,14 +31,4 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/search', repo_route=True)
 
     # Scan module for configuration decorators.
-    config.scan()
-
-
-    # # FULL TEXT SEARCH
-    # rmap.connect('search', '%s/search' % (ADMIN_PREFIX,),
-    #              controller='search')
-    # rmap.connect('search_repo_home', '/{repo_name}/search',
-    #              controller='search',
-    #              action='index',
-    #              conditions={'function': check_repo},
-    #              requirements=URL_NAME_REQUIREMENTS)
+    config.scan('.views', ignore='.tests')

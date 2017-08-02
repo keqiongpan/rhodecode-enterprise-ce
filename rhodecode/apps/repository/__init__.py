@@ -384,4 +384,4 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}', repo_route=True)
 
     # Scan module for configuration decorators.
-    config.scan()
+    config.scan('.views', ignore='.tests')
