@@ -69,6 +69,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
             # is a pyramid view
             raise HTTPFound('/')
 
+    @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
         route_name='users', request_method='GET',
@@ -77,6 +78,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
         return self._get_template_context(c)
 
+    @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
         # renderer defined below

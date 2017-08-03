@@ -51,6 +51,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
 
     # permission check in data loading of
     # `user_groups_list_data` via UserGroupList
+    @LoginRequired()
     @NotAnonymous()
     @view_config(
         route_name='user_groups', request_method='GET',
@@ -60,6 +61,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         return self._get_template_context(c)
 
     # permission check inside
+    @LoginRequired()
     @NotAnonymous()
     @view_config(
         route_name='user_groups_data', request_method='GET',
