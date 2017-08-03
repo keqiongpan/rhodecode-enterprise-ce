@@ -78,6 +78,13 @@ def relative_links(html_source, server_path):
         return html_source
 
     try:
+        from lxml.html import fromstring
+        from lxml.html import tostring
+    except ImportError:
+        log.exception('Failed to import lxml')
+        return html_source
+
+    try:
         doc = lxml.html.fromstring(html_source)
     except Exception:
         return html_source
