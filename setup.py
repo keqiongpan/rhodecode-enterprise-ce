@@ -235,8 +235,6 @@ setup(
         'paste.global_paster_command': [
             'make-config=rhodecode.lib.paster_commands.make_config:Command',
             'setup-rhodecode=rhodecode.lib.paster_commands.setup_rhodecode:Command',
-            'update-repoinfo=rhodecode.lib.paster_commands.update_repoinfo:Command',
-            'cache-keys=rhodecode.lib.paster_commands.cache_keys:Command',
             'ishell=rhodecode.lib.paster_commands.ishell:Command',
             'upgrade-db=rhodecode.lib.dbmigrate:UpgradeDb',
             'celeryd=rhodecode.lib.celerypylons.commands:CeleryDaemonCommand',
