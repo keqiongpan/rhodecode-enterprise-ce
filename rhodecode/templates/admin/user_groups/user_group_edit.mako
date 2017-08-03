@@ -34,7 +34,7 @@
           <li class="${'active' if c.active=='perms' else ''}"><a href="${h.url('edit_user_group_perms', user_group_id=c.user_group.users_group_id)}">${_('Permissions')}</a></li>
           <li class="${'active' if c.active=='advanced' else ''}"><a href="${h.url('edit_user_group_advanced', user_group_id=c.user_group.users_group_id)}">${_('Advanced')}</a></li>
           <li class="${'active' if c.active=='global_perms' else ''}"><a href="${h.url('edit_user_group_global_perms', user_group_id=c.user_group.users_group_id)}">${_('Global permissions')}</a></li>
-          <li class="${'active' if c.active=='perms_summary' else ''}"><a href="${h.url('edit_user_group_perms_summary', user_group_id=c.user_group.users_group_id)}">${_('Permissions summary')}</a></li>
+          <li class="${'active' if c.active=='perms_summary' else ''}"><a href="${h.route_path('edit_user_group_perms_summary', user_group_id=c.user_group.users_group_id)}">${_('Permissions summary')}</a></li>
         </ul>
     </div>
 

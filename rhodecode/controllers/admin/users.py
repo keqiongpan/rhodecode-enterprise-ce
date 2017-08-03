@@ -488,16 +488,4 @@ class UsersController(BaseController):
                     category='error')
         return redirect(url('edit_user_global_perms', user_id=user_id))
 
-    @HasPermissionAllDecorator('hg.admin')
-    def edit_perms_summary(self, user_id):
-        user_id = safe_int(user_id)
-        c.user = User.get_or_404(user_id)
-        if c.user.username == User.DEFAULT_USER:
-            h.flash(_("You can't edit this user"), category='warning')
-            return redirect(h.route_path('users'))
-
-        c.active = 'perms_summary'
-        c.perm_user = AuthUser(user_id=user_id, ip_addr=self.ip_addr)
-
-        return render('admin/users/user_edit.mako')
 

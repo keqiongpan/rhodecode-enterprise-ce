@@ -635,3 +635,36 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c.filter_term = filter_term
         return self._get_template_context(c)
 
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_perms_summary', request_method='GET',
+        renderer='rhodecode:templates/admin/users/user_edit.mako')
+    def user_perms_summary(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id)
+        self._redirect_for_default_user(c.user.username)
+
+        c.active = 'perms_summary'
+        c.perm_user = c.user.AuthUser(ip_addr=self.request.remote_addr)
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_perms_summary_json', request_method='GET',
+        renderer='json_ext')
+    def user_perms_summary_json(self):
+        self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        user = User.get_or_404(user_id)
+        self._redirect_for_default_user(user.username)
+
+        perm_user = user.AuthUser(ip_addr=self.request.remote_addr)
+
+        return perm_user.permissions

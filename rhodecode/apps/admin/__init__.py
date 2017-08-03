@@ -162,6 +162,14 @@ def admin_routes(config):
         name='edit_user_ips_delete',
         pattern='/users/{user_id:\d+}/edit/ips/delete')
 
+    # user perms
+    config.add_route(
+        name='edit_user_perms_summary',
+        pattern='/users/{user_id:\d+}/edit/permissions_summary')
+    config.add_route(
+        name='edit_user_perms_summary_json',
+        pattern='/users/{user_id:\d+}/edit/permissions_summary/json')
+
     # user groups management
     config.add_route(
         name='edit_user_groups_management',
@@ -188,6 +196,14 @@ def admin_routes(config):
     config.add_route(
         name='user_group_members_data',
         pattern='/user_groups/{user_group_id:\d+}/members')
+
+    # user groups perms
+    config.add_route(
+        name='edit_user_group_perms_summary',
+        pattern='/user_groups/{user_group_id:\d+}/edit/permissions_summary')
+    config.add_route(
+        name='edit_user_group_perms_summary_json',
+        pattern='/user_groups/{user_group_id:\d+}/edit/permissions_summary/json')
 
 
 def includeme(config):

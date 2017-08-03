@@ -271,9 +271,6 @@ def make_map(config):
         m.connect('edit_user_global_perms', '/users/{user_id}/edit/global_permissions',
                   action='update_global_perms', conditions={'method': ['PUT']})
 
-        m.connect('edit_user_perms_summary', '/users/{user_id}/edit/permissions_summary',
-                  action='edit_perms_summary', conditions={'method': ['GET']})
-
     # ADMIN USER GROUPS REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/user_groups') as m:
@@ -296,9 +293,6 @@ def make_map(config):
         m.connect('edit_user_group_global_perms',
                   '/user_groups/{user_group_id}/edit/global_permissions',
                   action='update_global_perms', conditions={'method': ['PUT']})
-        m.connect('edit_user_group_perms_summary',
-                  '/user_groups/{user_group_id}/edit/permissions_summary',
-                  action='edit_perms_summary', conditions={'method': ['GET']})
 
         m.connect('edit_user_group_perms',
                   '/user_groups/{user_group_id}/edit/permissions',

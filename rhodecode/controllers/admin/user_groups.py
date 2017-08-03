@@ -297,36 +297,7 @@ class UserGroupsController(BaseController):
         h.flash(_('User Group permissions updated'), category='success')
         return redirect(url('edit_user_group_perms', user_group_id=user_group_id))
 
-    @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    def edit_perms_summary(self, user_group_id):
-        user_group_id = safe_int(user_group_id)
-        c.user_group = UserGroup.get_or_404(user_group_id)
-        c.active = 'perms_summary'
-        permissions = {
-            'repositories': {},
-            'repositories_groups': {},
-        }
-        ugroup_repo_perms = UserGroupRepoToPerm.query()\
-            .options(joinedload(UserGroupRepoToPerm.permission))\
-            .options(joinedload(UserGroupRepoToPerm.repository))\
-            .filter(UserGroupRepoToPerm.users_group_id == user_group_id)\
-            .all()
 
-        for gr in ugroup_repo_perms:
-            permissions['repositories'][gr.repository.repo_name]  \
-                = gr.permission.permission_name
-
-        ugroup_group_perms = UserGroupRepoGroupToPerm.query()\
-            .options(joinedload(UserGroupRepoGroupToPerm.permission))\
-            .options(joinedload(UserGroupRepoGroupToPerm.group))\
-            .filter(UserGroupRepoGroupToPerm.users_group_id == user_group_id)\
-            .all()
-
-        for gr in ugroup_group_perms:
-            permissions['repositories_groups'][gr.group.group_name] \
-                = gr.permission.permission_name
-        c.permissions = permissions
-        return render('admin/user_groups/user_group_edit.mako')
 
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     def edit_global_perms(self, user_group_id):

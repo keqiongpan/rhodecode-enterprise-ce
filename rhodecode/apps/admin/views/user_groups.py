@@ -24,9 +24,7 @@ import datetime
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
-from rhodecode.lib.helpers import Page
 from rhodecode.model.scm import UserGroupList
-from rhodecode_tools.lib.ext_json import json
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib.auth import (
@@ -35,10 +33,10 @@ from rhodecode.lib.auth import (
 from rhodecode.lib import helpers as h
 from rhodecode.lib.utils import PartialRenderer
 from rhodecode.lib.utils2 import safe_int, safe_unicode
-from rhodecode.model.auth_token import AuthTokenModel
-from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
-from rhodecode.model.db import User, UserGroup, UserGroupMember, or_, count
+from rhodecode.model.db import (
+    joinedload, or_, count, User, UserGroup, UserGroupMember,
+    UserGroupRepoToPerm, UserGroupRepoGroupToPerm)
 from rhodecode.model.meta import Session
 
 log = logging.getLogger(__name__)
@@ -201,3 +199,58 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         return {
             'members': group_members
         }
+
+    def _get_perms_summary(self, user_group_id):
+        permissions = {
+            'repositories': {},
+            'repositories_groups': {},
+        }
+        ugroup_repo_perms = UserGroupRepoToPerm.query()\
+            .options(joinedload(UserGroupRepoToPerm.permission))\
+            .options(joinedload(UserGroupRepoToPerm.repository))\
+            .filter(UserGroupRepoToPerm.users_group_id == user_group_id)\
+            .all()
+
+        for gr in ugroup_repo_perms:
+            permissions['repositories'][gr.repository.repo_name]  \
+                = gr.permission.permission_name
+
+        ugroup_group_perms = UserGroupRepoGroupToPerm.query()\
+            .options(joinedload(UserGroupRepoGroupToPerm.permission))\
+            .options(joinedload(UserGroupRepoGroupToPerm.group))\
+            .filter(UserGroupRepoGroupToPerm.users_group_id == user_group_id)\
+            .all()
+
+        for gr in ugroup_group_perms:
+            permissions['repositories_groups'][gr.group.group_name] \
+                = gr.permission.permission_name
+        return permissions
+
+    @LoginRequired()
+    @HasUserGroupPermissionAnyDecorator('usergroup.admin')
+    @view_config(
+        route_name='edit_user_group_perms_summary', request_method='GET',
+        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
+    def user_group_perms_summary(self):
+        c = self.load_default_context()
+
+        user_group_id = self.request.matchdict.get('user_group_id')
+        c.user_group = UserGroup.get_or_404(user_group_id)
+
+        c.active = 'perms_summary'
+
+        c.permissions = self._get_perms_summary(c.user_group.users_group_id)
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasUserGroupPermissionAnyDecorator('usergroup.admin')
+    @view_config(
+        route_name='edit_user_group_perms_summary_json', request_method='GET',
+        renderer='json_ext')
+    def user_group_perms_summary(self):
+        self.load_default_context()
+
+        user_group_id = self.request.matchdict.get('user_group_id')
+        user_group = UserGroup.get_or_404(user_group_id)
+
+        return self._get_perms_summary(user_group.users_group_id)

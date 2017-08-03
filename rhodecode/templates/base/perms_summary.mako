@@ -3,12 +3,17 @@
 ##    <%namespace name="p" file="/base/perms_summary.mako"/>
 ##    ${p.perms_summary(c.perm_user.permissions)}
 
-<%def name="perms_summary(permissions, show_all=False, actions=True)">
+<%def name="perms_summary(permissions, show_all=False, actions=True, side_link=None)">
 <div id="perms" class="table fields">
   %for section in sorted(permissions.keys()):
   <div class="panel panel-default">
     <div class="panel-heading">
         <h3 class="panel-title">${section.replace("_"," ").capitalize()}</h3>
+        % if side_link:
+            <div class="pull-right">
+                <a href="${side_link}">${_('in JSON format')}</a>
+            </div>
+        % endif
     </div>
     <div class="panel-body">
       <div class="perms_section_head field">
