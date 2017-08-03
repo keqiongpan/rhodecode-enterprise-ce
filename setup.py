@@ -134,6 +134,7 @@ install_requirements = [
     'repoze.lru',
     'requests',
     'simplejson',
+    'sshpubkeys',
     'subprocess32',
     'waitress',
     'zope.cachedescriptors',

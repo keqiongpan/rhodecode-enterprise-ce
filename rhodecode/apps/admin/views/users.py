@@ -25,6 +25,7 @@ import formencode
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 from sqlalchemy.sql.functions import coalesce
+from sqlalchemy.exc import IntegrityError
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 
@@ -35,9 +36,11 @@ from rhodecode.lib.auth import (
 from rhodecode.lib import helpers as h
 from rhodecode.lib.utils2 import safe_int, safe_unicode
 from rhodecode.model.auth_token import AuthTokenModel
+from rhodecode.model.ssh_key import SshKeyModel
 from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
-from rhodecode.model.db import User, or_, UserIpMap, UserEmailMap, UserApiKeys
+from rhodecode.model.db import (
+    or_, User, UserIpMap, UserEmailMap, UserApiKeys, UserSshKeys)
 from rhodecode.model.meta import Session
 
 log = logging.getLogger(__name__)
@@ -251,6 +254,123 @@ class AdminUsersView(BaseAppView, DataGridAppView):
             h.flash(_("Auth token successfully deleted"), category='success')
 
         return HTTPFound(h.route_path('edit_user_auth_tokens', user_id=user_id))
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_ssh_keys', request_method='GET',
+        renderer='rhodecode:templates/admin/users/user_edit.mako')
+    def ssh_keys(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id)
+        self._redirect_for_default_user(c.user.username)
+
+        c.active = 'ssh_keys'
+        c.default_key = self.request.GET.get('default_key')
+        c.user_ssh_keys = SshKeyModel().get_ssh_keys(c.user.user_id)
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_ssh_keys_generate_keypair', request_method='GET',
+        renderer='rhodecode:templates/admin/users/user_edit.mako')
+    def ssh_keys_generate_keypair(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id)
+        self._redirect_for_default_user(c.user.username)
+
+        c.active = 'ssh_keys_generate'
+        comment = 'RhodeCode-SSH {}'.format(c.user.email or '')
+        c.private, c.public = SshKeyModel().generate_keypair(comment=comment)
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='edit_user_ssh_keys_add', request_method='POST')
+    def ssh_keys_add(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id)
+
+        self._redirect_for_default_user(c.user.username)
+
+        user_data = c.user.get_api_data()
+        key_data = self.request.POST.get('key_data')
+        description = self.request.POST.get('description')
+
+        try:
+            if not key_data:
+                raise ValueError('Please add a valid public key')
+
+            key = SshKeyModel().parse_key(key_data.strip())
+            fingerprint = key.hash_md5()
+
+            ssh_key = SshKeyModel().create(
+                c.user.user_id, fingerprint, key_data, description)
+            ssh_key_data = ssh_key.get_api_data()
+
+            audit_logger.store_web(
+                'user.edit.ssh_key.add', action_data={
+                    'data': {'ssh_key': ssh_key_data, 'user': user_data}},
+                user=self._rhodecode_user, )
+            Session().commit()
+
+            h.flash(_("Ssh Key successfully created"), category='success')
+
+        except IntegrityError:
+            log.exception("Exception during ssh key saving")
+            h.flash(_('An error occurred during ssh key saving: {}').format(
+                'Such key already exists, please use a different one'),
+                    category='error')
+        except Exception as e:
+            log.exception("Exception during ssh key saving")
+            h.flash(_('An error occurred during ssh key saving: {}').format(e),
+                    category='error')
+
+        return HTTPFound(
+            h.route_path('edit_user_ssh_keys', user_id=user_id))
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='edit_user_ssh_keys_delete', request_method='POST')
+    def ssh_keys_delete(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.request.matchdict.get('user_id')
+        c.user = User.get_or_404(user_id)
+        self._redirect_for_default_user(c.user.username)
+        user_data = c.user.get_api_data()
+
+        del_ssh_key = self.request.POST.get('del_ssh_key')
+
+        if del_ssh_key:
+            ssh_key = UserSshKeys.get_or_404(del_ssh_key)
+            ssh_key_data = ssh_key.get_api_data()
+
+            SshKeyModel().delete(del_ssh_key, c.user.user_id)
+            audit_logger.store_web(
+                'user.edit.ssh_key.delete', action_data={
+                    'data': {'ssh_key': ssh_key_data, 'user': user_data}},
+                user=self._rhodecode_user,)
+            Session().commit()
+            h.flash(_("Ssh key successfully deleted"), category='success')
+
+        return HTTPFound(h.route_path('edit_user_ssh_keys', user_id=user_id))
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')

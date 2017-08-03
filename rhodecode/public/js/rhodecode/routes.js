@@ -62,6 +62,10 @@ function registerRCRoutes() {
     pyroutes.register('edit_user_auth_tokens', '/_admin/users/%(user_id)s/edit/auth_tokens', ['user_id']);
     pyroutes.register('edit_user_auth_tokens_add', '/_admin/users/%(user_id)s/edit/auth_tokens/new', ['user_id']);
     pyroutes.register('edit_user_auth_tokens_delete', '/_admin/users/%(user_id)s/edit/auth_tokens/delete', ['user_id']);
+    pyroutes.register('edit_user_ssh_keys', '/_admin/users/%(user_id)s/edit/ssh_keys', ['user_id']);
+    pyroutes.register('edit_user_ssh_keys_generate_keypair', '/_admin/users/%(user_id)s/edit/ssh_keys/generate', ['user_id']);
+    pyroutes.register('edit_user_ssh_keys_add', '/_admin/users/%(user_id)s/edit/ssh_keys/new', ['user_id']);
+    pyroutes.register('edit_user_ssh_keys_delete', '/_admin/users/%(user_id)s/edit/ssh_keys/delete', ['user_id']);
     pyroutes.register('edit_user_emails', '/_admin/users/%(user_id)s/edit/emails', ['user_id']);
     pyroutes.register('edit_user_emails_add', '/_admin/users/%(user_id)s/edit/emails/new', ['user_id']);
     pyroutes.register('edit_user_emails_delete', '/_admin/users/%(user_id)s/edit/emails/delete', ['user_id']);

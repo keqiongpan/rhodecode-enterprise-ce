@@ -653,13 +653,13 @@
     };
   };
   ecdsa = super.buildPythonPackage {
-    name = "ecdsa-0.11";
+    name = "ecdsa-0.13";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/6c/3f/92fe5dcdcaa7bd117be21e5520c9a54375112b66ec000d209e9e9519fad1/ecdsa-0.11.tar.gz";
-      md5 = "8ef586fe4dbb156697d756900cb41d7c";
+      url = "https://pypi.python.org/packages/f9/e5/99ebb176e47f150ac115ffeda5fedb6a3dbb3c00c74a59fd84ddf12f5857/ecdsa-0.13.tar.gz";
+      md5 = "1f60eda9cb5c46722856db41a3ae6670";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1170,19 +1170,6 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
-    };
-  };
-  paramiko = super.buildPythonPackage {
-    name = "paramiko-1.15.1";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [pycrypto ecdsa];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/04/2b/a22d2a560c1951abbbf95a0628e245945565f70dc082d9e784666887222c/paramiko-1.15.1.tar.gz";
-      md5 = "48c274c3f9b1282932567b21f6acf3b5";
-    };
-    meta = {
-      license = [ { fullName = "LGPL"; } { fullName = "GNU Library or Lesser General Public License (LGPL)"; } ];
     };
   };
   pathlib2 = super.buildPythonPackage {
@@ -1722,7 +1709,7 @@
     name = "rhodecode-enterprise-ce-4.9.0";
     buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage configobj];
     doCheck = true;
-    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic cssselect celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu lxml msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
+    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic cssselect celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu lxml msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson sshpubkeys subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
     src = ./.;
     meta = {
       license = [ { fullName = "Affero GNU General Public License v3 or later (AGPLv3+)"; } { fullName = "AGPLv3, and Commercial License"; } ];
@@ -1830,6 +1817,19 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  sshpubkeys = super.buildPythonPackage {
+    name = "sshpubkeys-2.2.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [pycrypto ecdsa];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/27/da/337fabeb3dca6b62039a93ceaa636f25065e0ae92b575b1235342076cf0a/sshpubkeys-2.2.0.tar.gz";
+      md5 = "458e45f6b92b1afa84f0ffe1f1c90935";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   subprocess32 = super.buildPythonPackage {

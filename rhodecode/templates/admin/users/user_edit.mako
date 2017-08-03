@@ -37,6 +37,7 @@
         <ul class="nav nav-pills nav-stacked">
           <li class="${'active' if c.active=='profile' else ''}"><a href="${h.url('edit_user', user_id=c.user.user_id)}">${_('User Profile')}</a></li>
           <li class="${'active' if c.active=='auth_tokens' else ''}"><a href="${h.route_path('edit_user_auth_tokens', user_id=c.user.user_id)}">${_('Auth tokens')}</a></li>
+          <li class="${'active' if c.active in ['ssh_keys','ssh_keys_generate'] else ''}"><a href="${h.route_path('edit_user_ssh_keys', user_id=c.user.user_id)}">${_('SSH Keys')}</a></li>
           <li class="${'active' if c.active=='advanced' else ''}"><a href="${h.url('edit_user_advanced', user_id=c.user.user_id)}">${_('Advanced')}</a></li>
           <li class="${'active' if c.active=='global_perms' else ''}"><a href="${h.url('edit_user_global_perms', user_id=c.user.user_id)}">${_('Global permissions')}</a></li>
           <li class="${'active' if c.active=='perms_summary' else ''}"><a href="${h.url('edit_user_perms_summary', user_id=c.user.user_id)}">${_('Permissions summary')}</a></li>

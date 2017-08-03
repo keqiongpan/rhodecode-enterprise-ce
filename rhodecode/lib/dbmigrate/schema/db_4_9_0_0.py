@@ -1149,7 +1149,6 @@ class UserSshKeys(Base, BaseModel):
     __tablename__ = 'user_ssh_keys'
     __table_args__ = (
         Index('usk_ssh_key_fingerprint_idx', 'ssh_key_fingerprint'),
-
         UniqueConstraint('ssh_key_fingerprint'),
 
         {'extend_existing': True, 'mysql_engine': 'InnoDB',

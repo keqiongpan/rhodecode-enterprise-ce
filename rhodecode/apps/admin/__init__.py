@@ -126,6 +126,20 @@ def admin_routes(config):
         name='edit_user_auth_tokens_delete',
         pattern='/users/{user_id:\d+}/edit/auth_tokens/delete')
 
+    # user ssh keys
+    config.add_route(
+        name='edit_user_ssh_keys',
+        pattern='/users/{user_id:\d+}/edit/ssh_keys')
+    config.add_route(
+        name='edit_user_ssh_keys_generate_keypair',
+        pattern='/users/{user_id:\d+}/edit/ssh_keys/generate')
+    config.add_route(
+        name='edit_user_ssh_keys_add',
+        pattern='/users/{user_id:\d+}/edit/ssh_keys/new')
+    config.add_route(
+        name='edit_user_ssh_keys_delete',
+        pattern='/users/{user_id:\d+}/edit/ssh_keys/delete')
+
     # user emails
     config.add_route(
         name='edit_user_emails',

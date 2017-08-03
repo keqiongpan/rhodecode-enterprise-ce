@@ -46,6 +46,8 @@ ACTIONS_V1 = {
     'user.edit.token.delete': {'token': {}, 'user': {}},
     'user.edit.email.add': {'email': ''},
     'user.edit.email.delete': {'email': ''},
+    'user.edit.ssh_key.add': {'token': {}, 'user': {}},
+    'user.edit.ssh_key.delete': {'token': {}, 'user': {}},
     'user.edit.password_reset.enabled': {},
     'user.edit.password_reset.disabled': {},
 
