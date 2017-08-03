@@ -42,9 +42,6 @@ The application's model objects
 
 import logging
 
-from pylons import config
-from pyramid.threadlocal import get_current_registry
-
 from rhodecode.model import meta, db
 from rhodecode.lib.utils2 import obfuscate_url_pw, get_encryption_key
 
@@ -66,6 +63,7 @@ def init_model(engine, encryption_key=None):
 
 
 def init_model_encryption(migration_models):
+    from pylons import config
     migration_models.ENCRYPTION_KEY = get_encryption_key(config)
     db.ENCRYPTION_KEY = get_encryption_key(config)
 

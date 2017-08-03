@@ -59,7 +59,8 @@ class TestHomeController(TestController):
         self.log_user()
         response = self.app.get(route_path('home'))
 
-        rhodecode_version_hash = calculate_version_hash()
+        rhodecode_version_hash = calculate_version_hash(
+            {'beaker.session.secret':'test-rc-uytcxaz'})
         response.mustcontain('style.css?ver={0}'.format(rhodecode_version_hash))
         response.mustcontain('rhodecode-components.js?ver={0}'.format(
             rhodecode_version_hash))

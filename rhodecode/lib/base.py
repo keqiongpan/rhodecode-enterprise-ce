@@ -34,7 +34,7 @@ import pyramid.threadlocal
 from paste.auth.basic import AuthBasicAuthenticator
 from paste.httpexceptions import HTTPUnauthorized, HTTPForbidden, get_exception
 from paste.httpheaders import WWW_AUTHENTICATE, AUTHORIZATION
-from pylons import config, tmpl_context as c, request, url
+from pylons import tmpl_context as c, request, url
 from pylons.controllers import WSGIController
 from pylons.controllers.util import redirect
 from pylons.i18n import translation
@@ -292,7 +292,7 @@ class BasicAuth(AuthBasicAuthenticator):
     __call__ = authenticate
 
 
-def calculate_version_hash():
+def calculate_version_hash(config):
     return md5(
         config.get('beaker.session.secret', '') +
         rhodecode.__version__)[:8]
@@ -313,13 +313,18 @@ def attach_context_attributes(context, request, user_id):
     Attach variables into template context called `c`, please note that
     request could be pylons or pyramid request in here.
     """
+    # NOTE(marcink): remove check after pyramid migration
+    if hasattr(request, 'registry'):
+        config = request.registry.settings
+    else:
+        from pylons import config
 
     rc_config = SettingsModel().get_all_settings(cache=True)
 
     context.rhodecode_version = rhodecode.__version__
     context.rhodecode_edition = config.get('rhodecode.edition')
     # unique secret + version does not leak the version but keep consistency
-    context.rhodecode_version_hash = calculate_version_hash()
+    context.rhodecode_version_hash = calculate_version_hash(config)
 
     # Default language set for the incoming request
     context.language = get_current_lang(request)
@@ -506,6 +511,7 @@ class BaseController(WSGIController):
         __before__ is called before controller methods and after __call__
         """
         # on each call propagate settings calls into global settings.
+        from pylons import config
         set_rhodecode_config(config)
         attach_context_attributes(c, request, self._rhodecode_user.user_id)
 
