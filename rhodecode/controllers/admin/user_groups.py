@@ -43,7 +43,7 @@ from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, HasUserGroupPermissionAnyDecorator,
-    HasPermissionAnyDecorator, XHRRequired)
+    HasPermissionAnyDecorator)
 from rhodecode.lib.base import BaseController, render
 from rhodecode.model.permission import PermissionModel
 from rhodecode.model.scm import UserGroupList

@@ -1339,28 +1339,6 @@ class NotAnonymous(object):
             return func(*fargs, **fkwargs)
 
 
-class XHRRequired(object):
-    # TODO(marcink): remove this in favor of the predicates in pyramid routes
-
-    def __call__(self, func):
-        return get_cython_compat_decorator(self.__wrapper, func)
-
-    def _get_request(self):
-        return get_request(self)
-
-    def __wrapper(self, func, *fargs, **fkwargs):
-        from pylons.controllers.util import abort
-        request = self._get_request()
-
-        log.debug('Checking if request is XMLHttpRequest (XHR)')
-        xhr_message = 'This is not a valid XMLHttpRequest (XHR) request'
-
-        if not request.is_xhr:
-            abort(400, detail=xhr_message)
-
-        return func(*fargs, **fkwargs)
-
-
 class PermsDecorator(object):
     """
     Base class for controller decorators, we extract the current user from
