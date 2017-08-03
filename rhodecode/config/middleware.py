@@ -300,6 +300,7 @@ def includeme(config):
     config.include('rhodecode.apps.user_profile')
     config.include('rhodecode.apps.my_account')
     config.include('rhodecode.apps.svn_support')
+    config.include('rhodecode.apps.ssh_support')
     config.include('rhodecode.apps.gist')
 
     config.include('rhodecode.apps.debug_style')

@@ -28,6 +28,8 @@ from sqlalchemy.sql.functions import coalesce
 from sqlalchemy.exc import IntegrityError
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
+from rhodecode.apps.ssh_support import SshKeyFileChangeEvent
+from rhodecode.events import trigger
 
 from rhodecode.lib import audit_logger
 from rhodecode.lib.ext_json import json
@@ -327,6 +329,9 @@ class AdminUsersView(BaseAppView, DataGridAppView):
                 user=self._rhodecode_user, )
             Session().commit()
 
+            # Trigger an event on change of keys.
+            trigger(SshKeyFileChangeEvent(), self.request.registry)
+
             h.flash(_("Ssh Key successfully created"), category='success')
 
         except IntegrityError:
@@ -368,6 +373,8 @@ class AdminUsersView(BaseAppView, DataGridAppView):
                     'data': {'ssh_key': ssh_key_data, 'user': user_data}},
                 user=self._rhodecode_user,)
             Session().commit()
+            # Trigger an event on change of keys.
+            trigger(SshKeyFileChangeEvent(), self.request.registry)
             h.flash(_("Ssh key successfully deleted"), category='success')
 
         return HTTPFound(h.route_path('edit_user_ssh_keys', user_id=user_id))
