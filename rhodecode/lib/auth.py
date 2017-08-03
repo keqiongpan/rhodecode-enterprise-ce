@@ -754,7 +754,7 @@ class PermissionCalculator(object):
         }
 
 
-def allowed_auth_token_access(view_name, whitelist=None, auth_token=None):
+def allowed_auth_token_access(view_name, auth_token, whitelist=None):
     """
     Check if given controller_name is in whitelist of auth token access
     """
@@ -762,12 +762,19 @@ def allowed_auth_token_access(view_name, whitelist=None, auth_token=None):
         from rhodecode import CONFIG
         whitelist = aslist(
             CONFIG.get('api_access_controllers_whitelist'), sep=',')
-        log.debug(
-            'Allowed controllers for AUTH TOKEN access: %s' % (whitelist,))
 
+    log.debug(
+        'Allowed views for AUTH TOKEN access: %s' % (whitelist,))
     auth_token_access_valid = False
+
     for entry in whitelist:
-        if fnmatch.fnmatch(view_name, entry):
+        token_match = True
+        if '@' in entry:
+            # specific AuthToken
+            entry, allowed_token = entry.split('@', 1)
+            token_match = auth_token == allowed_token
+
+        if fnmatch.fnmatch(view_name, entry) and token_match:
             auth_token_access_valid = True
             break
 

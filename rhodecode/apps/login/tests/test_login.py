@@ -492,6 +492,31 @@ class TestLoginController(object):
                                params=dict(api_key=auth_token)),
                     status=code)
 
+    @pytest.mark.parametrize("test_name, auth_token, code", [
+        ('proper_auth_token', None, 200),
+        ('wrong_auth_token', '123456', 302),
+    ])
+    def test_access_whitelisted_page_via_auth_token_bound_to_token(
+            self, test_name, auth_token, code, user_admin):
+
+        expected_token = auth_token
+        if test_name == 'proper_auth_token':
+            auth_token = user_admin.api_key
+            expected_token = auth_token
+            assert auth_token
+
+        whitelist = self._get_api_whitelist([
+            'RepoCommitsView:repo_commit_raw@{}'.format(expected_token)])
+
+        with mock.patch.dict('rhodecode.CONFIG', whitelist):
+
+            with fixture.anon_access(False):
+                self.app.get(
+                    route_path('repo_commit_raw',
+                               repo_name=HG_REPO, commit_id='tip',
+                               params=dict(api_key=auth_token)),
+                    status=code)
+
     def test_access_page_via_extra_auth_token(self):
         whitelist = self._get_api_whitelist(whitelist_view)
         with mock.patch.dict('rhodecode.CONFIG', whitelist):
