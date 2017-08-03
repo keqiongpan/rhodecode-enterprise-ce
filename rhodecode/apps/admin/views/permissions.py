@@ -309,7 +309,7 @@ class AdminPermissionsView(BaseAppView):
         c.active = 'perms'
 
         c.user = User.get_default_user(refresh=True)
-        c.perm_user = c.user.AuthUser
+        c.perm_user = c.user.AuthUser()
         return self._get_template_context(c)
 
     @LoginRequired()
@@ -324,7 +324,7 @@ class AdminPermissionsView(BaseAppView):
         c.active = 'auth_token_access'
 
         c.user = User.get_default_user(refresh=True)
-        c.perm_user = c.user.AuthUser
+        c.perm_user = c.user.AuthUser()
 
         mapper = self.request.registry.queryUtility(IRoutesMapper)
         c.view_data = []

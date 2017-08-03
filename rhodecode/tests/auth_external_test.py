@@ -56,7 +56,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         return True
 
     def user_activation_state(self):
-        def_user_perms = User.get_default_user().AuthUser.permissions['global']
+        def_user_perms = User.get_default_user().AuthUser().permissions['global']
         return 'hg.extern_activate.auto' in def_user_perms
 
     def auth(self, userobj, username, password, settings, **kwargs):

@@ -231,7 +231,7 @@ class LoginView(BaseAppView):
         register_message = settings.get('rhodecode_register_message') or ''
         captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
-            .AuthUser.permissions['global']
+            .AuthUser().permissions['global']
 
         render_ctx = self._get_template_context(c)
         render_ctx.update({
@@ -252,7 +252,7 @@ class LoginView(BaseAppView):
     def register_post(self):
         captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
-            .AuthUser.permissions['global']
+            .AuthUser().permissions['global']
 
         register_form = RegisterForm()()
         try:

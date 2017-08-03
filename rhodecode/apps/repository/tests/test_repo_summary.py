@@ -317,7 +317,7 @@ def summary_view(context_stub, request_stub, user_util):
     """
     request_stub.matched_route = AttributeDict(name='test_view')
 
-    request_stub.user = user_util.create_user().AuthUser
+    request_stub.user = user_util.create_user().AuthUser()
     request_stub.db_repo = user_util.create_repo()
 
     view = RepoSummaryView(context=context_stub, request=request_stub)
