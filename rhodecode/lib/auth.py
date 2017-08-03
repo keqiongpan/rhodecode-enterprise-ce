@@ -762,6 +762,16 @@ def allowed_auth_token_access(view_name, auth_token, whitelist=None):
         from rhodecode import CONFIG
         whitelist = aslist(
             CONFIG.get('api_access_controllers_whitelist'), sep=',')
+    # backward compat translation
+    compat = {
+        # old controller, new VIEW
+        'ChangesetController:*': 'RepoCommitsView:*',
+        'ChangesetController:changeset_patch': 'RepoCommitsView:repo_commit_patch',
+        'ChangesetController:changeset_raw': 'RepoCommitsView:repo_commit_raw',
+        'FilesController:raw': 'RepoCommitsView:repo_commit_raw',
+        'FilesController:archivefile': 'RepoFilesView:repo_archivefile',
+        'GistsController:*': 'GistView:*',
+    }
 
     log.debug(
         'Allowed views for AUTH TOKEN access: %s' % (whitelist,))
@@ -769,6 +779,10 @@ def allowed_auth_token_access(view_name, auth_token, whitelist=None):
 
     for entry in whitelist:
         token_match = True
+        if entry in compat:
+            # translate from old Controllers to Pyramid Views
+            entry = compat[entry]
+
         if '@' in entry:
             # specific AuthToken
             entry, allowed_token = entry.split('@', 1)
