@@ -73,7 +73,7 @@ class RhodeCodeWriter(writers.html4css1.Writer):
         self.translator_class = CustomHTMLTranslator
 
 
-def relative_links(html_source, server_path):
+def relative_links(html_source, server_paths):
     if not html_source:
         return html_source
 
@@ -92,12 +92,16 @@ def relative_links(html_source, server_path):
     for el in doc.cssselect('img, video'):
         src = el.attrib.get('src')
         if src:
-            el.attrib['src'] = relative_path(src, server_path)
+            el.attrib['src'] = relative_path(src, server_paths['raw'])
 
     for el in doc.cssselect('a:not(.gfm)'):
         src = el.attrib.get('href')
         if src:
-            el.attrib['href'] = relative_path(src, server_path)
+            raw_mode = el.attrib['href'].endswith('?raw=1')
+            if raw_mode:
+                el.attrib['href'] = relative_path(src, server_paths['raw'])
+            else:
+                el.attrib['href'] = relative_path(src, server_paths['standard'])
 
     return lxml.html.tostring(doc)
 

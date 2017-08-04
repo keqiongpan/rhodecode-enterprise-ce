@@ -1766,12 +1766,12 @@ def renderer_from_filename(filename, exclude=None):
     return None
 
 
-def render(source, renderer='rst', mentions=False, relative_url=None,
+def render(source, renderer='rst', mentions=False, relative_urls=None,
            repo_name=None):
 
     def maybe_convert_relative_links(html_source):
-        if relative_url:
-            return relative_links(html_source, relative_url)
+        if relative_urls:
+            return relative_links(html_source, relative_urls)
         return html_source
 
     if renderer == 'rst':
