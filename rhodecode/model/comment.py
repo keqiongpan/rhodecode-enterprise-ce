@@ -26,8 +26,6 @@ import logging
 import traceback
 import collections
 
-from datetime import datetime
-
 from pylons.i18n.translation import _
 from pyramid.threadlocal import get_current_registry, get_current_request
 from sqlalchemy.sql.expression import null
@@ -35,7 +33,6 @@ from sqlalchemy.sql.functions import coalesce
 
 from rhodecode.lib import helpers as h, diffs, channelstream
 from rhodecode.lib import audit_logger
-from rhodecode.lib.channelstream import channelstream_request
 from rhodecode.lib.utils2 import extract_mentioned_users, safe_str
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
@@ -72,10 +69,10 @@ class CommentsModel(BaseModel):
         return user_objects
 
     def _get_renderer(self, global_renderer='rst'):
+        request = get_current_request()
+
         try:
-            # try reading from visual context
-            from pylons import tmpl_context
-            global_renderer = tmpl_context.visual.default_renderer
+            global_renderer = request.call_context.visual.default_renderer
         except AttributeError:
             log.debug("Renderer not set, falling back "
                       "to default renderer '%s'", global_renderer)
