@@ -240,6 +240,9 @@ setup(
             'upgrade-db=rhodecode.lib.dbmigrate:UpgradeDb',
             'celeryd=rhodecode.lib.celerypylons.commands:CeleryDaemonCommand',
         ],
+        'pyramid.pshell_runner': [
+            'ipython = rhodecode.lib.pyramid_shell:ipython_shell_runner',
+        ],
         'pytest11': [
             'pylons=rhodecode.tests.pylons_plugin',
             'enterprise=rhodecode.tests.plugin',
