@@ -249,6 +249,8 @@ setup(
         ],
         'console_scripts': [
             'rcserver=rhodecode.rcserver:main',
+            'rcsetup-app=rhodecode.lib.rc_commands.setup_rc:main',
+            'rcupgrade-db=rhodecode.lib.rc_commands.upgrade_db:main',
         ],
         'beaker.backends': [
             'memorylru_base=rhodecode.lib.memory_lru_debug:MemoryLRUNamespaceManagerBase',
