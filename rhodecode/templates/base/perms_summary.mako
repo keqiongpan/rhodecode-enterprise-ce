@@ -70,10 +70,12 @@
                       %endif
                     %else:
                       %if not val_lbl:
-                          ${h.bool2icon({'false': False,
-                                         'true': True,
-                                         'none': False,
-                                         'repository': True}.get(val[1][0] if 0 < len(val[1]) else 'false'))}
+                          ${
+                             {'false': False,
+                             'true': True,
+                             'none': False,
+                             'repository': True}.get(val[1][0] if 0 < len(val[1]) else 'false')
+                          }
                       %else:
                           <span class="perm_tag ${val[1][0]}">${val_lbl}.${val[1][0]}</span>
                       %endif
