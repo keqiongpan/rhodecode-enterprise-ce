@@ -161,6 +161,14 @@
                         <span class="help-block">${_('Use rebase instead of creating a merge commit when merging via web interface.')}</span>
                     </div>
 
+                    <div class="checkbox">
+                        ${h.checkbox('rhodecode_hg_close_branch_before_merging' + suffix, 'True', **kwargs)}
+                        <label for="rhodecode_hg_close_branch_before_merging{suffix}">${_('Close branch before merging it')}</label>
+                    </div>
+                    <div class="label">
+                        <span class="help-block">${_('Close branch before merging it into destination branch. No effect when rebase strategy is use.')}</span>
+                    </div>
+
                 </div>
             </div>
         % endif

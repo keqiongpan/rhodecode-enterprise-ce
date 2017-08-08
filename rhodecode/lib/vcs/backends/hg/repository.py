@@ -646,6 +646,28 @@ class MercurialRepository(BaseRepository):
                 self._remote.update(clean=True)
                 raise
 
+    def _local_close(self, target_ref, user_name, user_email,
+                     source_ref, close_message=''):
+        """
+        Close the branch of the given source_revision
+
+        Returns the commit id of the close and a boolean indicating if the
+        commit needs to be pushed.
+        """
+        self._update(target_ref.commit_id)
+        message = close_message or "Closing branch"
+        try:
+            self._remote.commit(
+                message=safe_str(message),
+                username=safe_str('%s <%s>' % (user_name, user_email)),
+                close_branch=True)
+            self._remote.invalidate_vcs_cache()
+            return self._identify(), True
+        except RepositoryError:
+            # Cleanup any commit leftovers
+            self._remote.update(clean=True)
+            raise
+
     def _is_the_same_branch(self, target_ref, source_ref):
         return (
             self._get_branch_name(target_ref) ==
@@ -679,7 +701,7 @@ class MercurialRepository(BaseRepository):
     def _merge_repo(self, shadow_repository_path, target_ref,
                     source_repo, source_ref, merge_message,
                     merger_name, merger_email, dry_run=False,
-                    use_rebase=False):
+                    use_rebase=False, close_branch=False):
         if target_ref.commit_id not in self._heads():
             return MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
@@ -712,26 +734,40 @@ class MercurialRepository(BaseRepository):
         merge_ref = None
         merge_failure_reason = MergeFailureReason.NONE
 
-        try:
-            merge_commit_id, needs_push = shadow_repo._local_merge(
-                target_ref, merge_message, merger_name, merger_email,
-                source_ref, use_rebase=use_rebase)
+        if close_branch and not use_rebase:
+            try:
+                close_commit_id, needs_push = shadow_repo._local_close(
+                    target_ref, merger_name, merger_email, source_ref)
+                target_ref.commit_id = close_commit_id
+                merge_possible = True
+            except RepositoryError:
+                log.exception('Failure when doing close branch on hg shadow repo')
+                merge_possible = False
+                merge_failure_reason = MergeFailureReason.MERGE_FAILED
+        else:
             merge_possible = True
 
-            # Set a bookmark pointing to the merge commit. This bookmark may be
-            # used to easily identify the last successful merge commit in the
-            # shadow repository.
-            shadow_repo.bookmark('pr-merge', revision=merge_commit_id)
-            merge_ref = Reference('book', 'pr-merge', merge_commit_id)
-        except SubrepoMergeError:
-            log.exception(
-                'Subrepo merge error during local merge on hg shadow repo.')
-            merge_possible = False
-            merge_failure_reason = MergeFailureReason.SUBREPO_MERGE_FAILED
-        except RepositoryError:
-            log.exception('Failure when doing local merge on hg shadow repo')
-            merge_possible = False
-            merge_failure_reason = MergeFailureReason.MERGE_FAILED
+        if merge_possible:
+            try:
+                merge_commit_id, needs_push = shadow_repo._local_merge(
+                    target_ref, merge_message, merger_name, merger_email,
+                    source_ref, use_rebase=use_rebase)
+                merge_possible = True
+
+                # Set a bookmark pointing to the merge commit. This bookmark may be
+                # used to easily identify the last successful merge commit in the
+                # shadow repository.
+                shadow_repo.bookmark('pr-merge', revision=merge_commit_id)
+                merge_ref = Reference('book', 'pr-merge', merge_commit_id)
+            except SubrepoMergeError:
+                log.exception(
+                    'Subrepo merge error during local merge on hg shadow repo.')
+                merge_possible = False
+                merge_failure_reason = MergeFailureReason.SUBREPO_MERGE_FAILED
+            except RepositoryError:
+                log.exception('Failure when doing local merge on hg shadow repo')
+                merge_possible = False
+                merge_failure_reason = MergeFailureReason.MERGE_FAILED
 
         if merge_possible and not dry_run:
             if needs_push:

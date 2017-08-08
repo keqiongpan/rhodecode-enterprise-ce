@@ -552,6 +552,7 @@ class PullRequestModel(BaseModel):
 
         workspace_id = self._workspace_id(pull_request)
         use_rebase = self._use_rebase_for_merging(pull_request)
+        close_branch = self._close_branch_before_merging(pull_request)
 
         callback_daemon, extras = prepare_callback_daemon(
             extras, protocol=vcs_settings.HOOKS_PROTOCOL,
@@ -565,7 +566,8 @@ class PullRequestModel(BaseModel):
             merge_state = target_vcs.merge(
                 target_ref, source_vcs, pull_request.source_ref_parts,
                 workspace_id, user_name=user.username,
-                user_email=user.email, message=message, use_rebase=use_rebase)
+                user_email=user.email, message=message, use_rebase=use_rebase,
+                close_branch=close_branch)
         return merge_state
 
     def _comment_and_close_pr(self, pull_request, user, merge_state):
@@ -1249,9 +1251,11 @@ class PullRequestModel(BaseModel):
         workspace_id = self._workspace_id(pull_request)
         source_vcs = pull_request.source_repo.scm_instance()
         use_rebase = self._use_rebase_for_merging(pull_request)
+        close_branch = self._close_branch_before_merging(pull_request)
         merge_state = target_vcs.merge(
             target_reference, source_vcs, pull_request.source_ref_parts,
-            workspace_id, dry_run=True, use_rebase=use_rebase)
+            workspace_id, dry_run=True, use_rebase=use_rebase,
+            close_branch=close_branch)
 
         # Do not store the response if there was an unknown error.
         if merge_state.failure_reason != MergeFailureReason.UNKNOWN:
@@ -1416,14 +1420,21 @@ class PullRequestModel(BaseModel):
         return vcs_diff
 
     def _is_merge_enabled(self, pull_request):
-        settings_model = VcsSettingsModel(repo=pull_request.target_repo)
-        settings = settings_model.get_general_settings()
-        return settings.get('rhodecode_pr_merge_enabled', False)
+        return self._get_general_setting(
+            pull_request, 'rhodecode_pr_merge_enabled')
 
     def _use_rebase_for_merging(self, pull_request):
+        return self._get_general_setting(
+            pull_request, 'rhodecode_hg_use_rebase_for_merging')
+
+    def _close_branch_before_merging(self, pull_request):
+        return self._get_general_setting(
+            pull_request, 'rhodecode_hg_close_branch_before_merging')
+
+    def _get_general_setting(self, pull_request, settings_key, default=False):
         settings_model = VcsSettingsModel(repo=pull_request.target_repo)
         settings = settings_model.get_general_settings()
-        return settings.get('rhodecode_hg_use_rebase_for_merging', False)
+        return settings.get(settings_key, default)
 
     def _log_audit_action(self, action, action_data, user, pull_request):
         audit_logger.store(

@@ -408,7 +408,8 @@ class VcsSettingsModel(object):
     GENERAL_SETTINGS = (
         'use_outdated_comments',
         'pr_merge_enabled',
-        'hg_use_rebase_for_merging')
+        'hg_use_rebase_for_merging',
+        'hg_close_branch_before_merging')
 
     HOOKS_SETTINGS = (
         ('hooks', 'changegroup.repo_size'),
