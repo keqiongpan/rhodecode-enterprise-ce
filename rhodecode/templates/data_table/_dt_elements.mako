@@ -148,12 +148,7 @@
   <div class="menu_items_container hidden">
     <ul class="menu_items">
       <li>
-         <a href="${h.route_path('repo_group_home', repo_group_name=repo_group_name)}">
-         <span class="icon">
-             <i class="icon-file-text"></i>
-         </span>
-         <span>${_('Summary')}</span>
-         </a>
+         <a href="${h.route_path('repo_group_home', repo_group_name=repo_group_name)}">${_('Summary')}</a>
       </li>
 
     </ul>
