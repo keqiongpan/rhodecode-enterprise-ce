@@ -127,7 +127,7 @@
             %for k, section_perm in sorter(permissions[section].items()):
                 %if section_perm.split('.')[-1] != 'none' or show_all:
                 <tr class="perm_row ${'%s_%s' % (section, section_perm.split('.')[-1])}">
-                    <td class="td-componentname">
+                    <td class="td-name"">
                         %if section == 'repositories':
                             <a href="${h.route_path('repo_summary',repo_name=k)}">${k}</a>
                         %elif section == 'repositories_groups':
