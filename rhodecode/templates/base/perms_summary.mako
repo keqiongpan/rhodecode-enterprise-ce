@@ -41,7 +41,7 @@
                 <tr>
                 <th colspan="2" class="left">${_('Permission')}</th>
                 %if actions:
-                <th>${_('Edit Permission')}</th>
+                <th colspan="2">${_('Edit Permission')}</th>
                 %endif
             </thead>
             <tbody>
@@ -56,7 +56,8 @@
                   _selected_vals = [x.partition(prefix)[-1] for x in _selected]
                   return admin, _selected_vals, _selected
             %>
-            <%def name="glob(lbl, val, val_lbl=None, custom_url=None)">
+
+            <%def name="glob(lbl, val, val_lbl=None, edit_url=None, edit_global_url=None)">
               <tr>
                 <td class="td-tags">
                     ${lbl}
@@ -64,7 +65,8 @@
                 <td class="td-tags">
                     %if val[0]:
                       %if not val_lbl:
-                          ${h.bool2icon(True)}
+                          ## super admin case
+                          True
                       %else:
                           <span class="perm_tag admin">${val_lbl}.admin</span>
                       %endif
@@ -82,24 +84,62 @@
                     %endif
                 </td>
                 %if actions:
-                <td class="td-action">
-                     <a href="${custom_url or h.route_path('admin_permissions_global')}">${_('edit')}</a>
-                </td>
+
+                    % if edit_url or edit_global_url:
+
+                        <td class="td-action">
+                            % if edit_url:
+                            <a href="${edit_url}">${_('edit')}</a>
+                            % else:
+                                -
+                            % endif
+                        </td>
+
+                        <td class="td-action">
+                            % if edit_global_url:
+                            <a href="${edit_global_url}">${_('edit global')}</a>
+                            % else:
+                                -
+                            % endif
+                        </td>
+
+                    % else:
+                        <td class="td-action"></td>
+                        <td class="td-action">
+                            <a href="${h.route_path('admin_permissions_global')}">${_('edit global')}</a>
+                        <td class="td-action">
+                    % endif
+
                 %endif
               </tr>
             </%def>
 
-           ${glob(_('Super admin'), get_section_perms('hg.admin', permissions[section]))}
+           ${glob(_('Repository default permission'), get_section_perms('repository.', permissions[section]), 'repository',
+                edit_url=None, edit_global_url=h.route_path('admin_permissions_object'))}
 
-           ${glob(_('Repository default permission'), get_section_perms('repository.', permissions[section]), 'repository', h.route_path('admin_permissions_object'))}
-           ${glob(_('Repository group default permission'), get_section_perms('group.', permissions[section]), 'group', h.route_path('admin_permissions_object'))}
-           ${glob(_('User group default permission'), get_section_perms('usergroup.', permissions[section]), 'usergroup', h.route_path('admin_permissions_object'))}
+           ${glob(_('Repository group default permission'), get_section_perms('group.', permissions[section]), 'group',
+                edit_url=None, edit_global_url=h.route_path('admin_permissions_object'))}
 
-           ${glob(_('Create repositories'), get_section_perms('hg.create.', permissions[section]), custom_url=h.route_path('admin_permissions_global'))}
-           ${glob(_('Fork repositories'), get_section_perms('hg.fork.', permissions[section]), custom_url=h.route_path('admin_permissions_global'))}
-           ${glob(_('Create repository groups'), get_section_perms('hg.repogroup.create.', permissions[section]), custom_url=h.route_path('admin_permissions_global'))}
-           ${glob(_('Create user groups'), get_section_perms('hg.usergroup.create.', permissions[section]), custom_url=h.route_path('admin_permissions_global'))}
+           ${glob(_('User group default permission'), get_section_perms('usergroup.', permissions[section]), 'usergroup',
+                edit_url=None, edit_global_url=h.route_path('admin_permissions_object'))}
 
+           ${glob(_('Super admin'), get_section_perms('hg.admin', permissions[section]),
+                edit_url=h.url('edit_user', user_id=c.user.user_id, anchor='admin'), edit_global_url=None)}
+
+           ${glob(_('Inherit permissions'), get_section_perms('hg.inherit_default_perms.', permissions[section]),
+                edit_url=h.url('edit_user_global_perms', user_id=c.user.user_id), edit_global_url=None)}
+
+           ${glob(_('Create repositories'), get_section_perms('hg.create.', permissions[section]),
+                edit_url=h.url('edit_user_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
+
+           ${glob(_('Fork repositories'), get_section_perms('hg.fork.', permissions[section]),
+                edit_url=h.url('edit_user_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
+
+           ${glob(_('Create repository groups'), get_section_perms('hg.repogroup.create.', permissions[section]),
+                edit_url=h.url('edit_user_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
+
+           ${glob(_('Create user groups'), get_section_perms('hg.usergroup.create.', permissions[section]),
+                edit_url=h.url('edit_user_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
 
            </tbody>
           %else:
