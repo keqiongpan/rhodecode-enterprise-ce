@@ -51,7 +51,7 @@ executeTask = function() {
     btn.attr('disabled', 'disabled');
     btn.addClass('disabled');
 
-    var url = "${h.route_path('repo_maintenance_execute', repo_name=c.repo_info.repo_name)}";
+    var url = "${h.route_path('edit_repo_maintenance_execute', repo_name=c.repo_info.repo_name)}";
     var success = function (data) {
         var displayHtml = $('<pre></pre>');
 
