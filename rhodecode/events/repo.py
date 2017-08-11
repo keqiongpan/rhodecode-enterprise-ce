@@ -201,6 +201,10 @@ class RepoVCSEvent(RepoEvent):
         if self.extras.get('server_url'):
             return self.extras['server_url']
 
+    @property
+    def request(self):
+        return self.extras.get('request') or self.get_request()
+
 
 class RepoPrePullEvent(RepoVCSEvent):
     """

@@ -511,6 +511,36 @@ class BaseController(WSGIController):
         return WSGIController.__call__(self, environ, start_response)
 
 
+def add_events_routes(config):
+    """
+    Adds routing that can be used in events. Because some events are triggered
+    outside of pyramid context, we need to bootstrap request with some
+    routing registered
+    """
+    config.add_route(name='home', pattern='/')
+
+    config.add_route(name='repo_summary', pattern='/{repo_name}')
+    config.add_route(name='repo_summary_explicit', pattern='/{repo_name}/summary')
+    config.add_route(name='repo_group_home', pattern='/{repo_group_name}')
+
+    config.add_route(name='pullrequest_show',
+                     pattern='/{repo_name}/pull-request/{pull_request_id}')
+    config.add_route(name='pull_requests_global',
+                     pattern='/pull-request/{pull_request_id}')
+
+    config.add_route(name='repo_commit',
+                     pattern='/{repo_name}/changeset/{commit_id}')
+    config.add_route(name='repo_files',
+                     pattern='/{repo_name}/files/{commit_id}/{f_path}')
+
+
+def bootstrap_request():
+    import pyramid.testing
+    request = pyramid.testing.DummyRequest()
+    config = pyramid.testing.setUp(request=request)
+    add_events_routes(config)
+
+
 class BaseRepoController(BaseController):
     """
     Base class for controllers responsible for loading all needed data for
