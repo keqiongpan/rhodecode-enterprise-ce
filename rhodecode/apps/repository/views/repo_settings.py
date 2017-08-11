@@ -29,9 +29,8 @@ from rhodecode.forms import RcForm
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
-    LoginRequired, HasRepoPermissionAnyDecorator,
-    HasRepoPermissionAllDecorator, CSRFRequired)
-from rhodecode.model.db import RepositoryField, RepoGroup
+    LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
+from rhodecode.model.db import RepositoryField, RepoGroup, Repository
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import RepoGroupList, ScmModel
@@ -109,7 +108,7 @@ class RepoSettingsView(RepoAppView):
         return self._get_template_context(c)
 
     @LoginRequired()
-    @HasRepoPermissionAllDecorator('repository.admin')
+    @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
     @view_config(
         route_name='edit_repo', request_method='POST',
@@ -176,4 +175,80 @@ class RepoSettingsView(RepoAppView):
                 old_repo_name), category='error')
 
         raise HTTPFound(
-            self.request.route_path('edit_repo', repo_name=new_repo_name))
+            h.route_path('edit_repo', repo_name=new_repo_name))
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
+    @view_config(
+        route_name='repo_edit_toggle_locking', request_method='GET',
+        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
+    def toggle_locking(self):
+        """
+        Toggle locking of repository by simple GET call to url
+        """
+        _ = self.request.translate
+        repo = self.db_repo
+
+        try:
+            if repo.enable_locking:
+                if repo.locked[0]:
+                    Repository.unlock(repo)
+                    action = _('Unlocked')
+                else:
+                    Repository.lock(
+                        repo, self._rhodecode_user.user_id,
+                        lock_reason=Repository.LOCK_WEB)
+                    action = _('Locked')
+
+                h.flash(_('Repository has been %s') % action,
+                        category='success')
+        except Exception:
+            log.exception("Exception during unlocking")
+            h.flash(_('An error occurred during unlocking'),
+                    category='error')
+        raise HTTPFound(
+            h.route_path('repo_summary', repo_name=self.db_repo_name))
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.admin')
+    @view_config(
+        route_name='edit_repo_statistics', request_method='GET',
+        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
+    def edit_statistics_form(self):
+        c = self.load_default_context()
+
+        if self.db_repo.stats:
+            # this is on what revision we ended up so we add +1 for count
+            last_rev = self.db_repo.stats.stat_on_revision + 1
+        else:
+            last_rev = 0
+
+        c.active = 'statistics'
+        c.stats_revision = last_rev
+        c.repo_last_rev = self.rhodecode_vcs_repo.count()
+
+        if last_rev == 0 or c.repo_last_rev == 0:
+            c.stats_percentage = 0
+        else:
+            c.stats_percentage = '%.2f' % (
+            (float((last_rev)) / c.repo_last_rev) * 100)
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='edit_repo_statistics_reset', request_method='POST',
+        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
+    def repo_statistics_reset(self):
+        _ = self.request.translate
+
+        try:
+            RepoModel().delete_stats(self.db_repo_name)
+            Session().commit()
+        except Exception:
+            log.exception('Edit statistics failure')
+            h.flash(_('An error occurred during deletion of repository stats'),
+                    category='error')
+        raise HTTPFound(
+            h.route_path('edit_repo_statistics', repo_name=self.db_repo_name))

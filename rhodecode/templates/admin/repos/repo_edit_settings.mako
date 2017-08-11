@@ -83,7 +83,7 @@
                     ${h.hidden('repo_clone_uri_change', 'NEW')}
                    %endif
                  <p id="alter_clone_uri_help_block" class="help-block">
-                     <% pull_link = h.literal(h.link_to('remote sync', h.url('edit_repo_remote', repo_name=c.repo_name))) %>
+                     <% pull_link = h.literal(h.link_to('remote sync', h.route_path('edit_repo_remote', repo_name=c.repo_name))) %>
                      ${_('http[s] url where from repository was imported, this field can used for doing {pull_link}.').format(pull_link=pull_link)|n} <br/>
                      ${_('This field is stored encrypted inside Database, a format of http://user:password@server.com/repo_name can be used and will be hidden from display.')}
                  </p>

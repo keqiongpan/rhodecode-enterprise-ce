@@ -12,7 +12,6 @@
  ******************************************************************************/
 function registerRCRoutes() {
     // routes registration
-    pyroutes.register('new_repo', '/_admin/create_repository', []);
     pyroutes.register('edit_user', '/_admin/users/%(user_id)s/edit', ['user_id']);
     pyroutes.register('favicon', '/favicon.ico', []);
     pyroutes.register('robots', '/robots.txt', []);
@@ -82,6 +81,9 @@ function registerRCRoutes() {
     pyroutes.register('user_group_members_data', '/_admin/user_groups/%(user_group_id)s/members', ['user_group_id']);
     pyroutes.register('edit_user_group_perms_summary', '/_admin/user_groups/%(user_group_id)s/edit/permissions_summary', ['user_group_id']);
     pyroutes.register('edit_user_group_perms_summary_json', '/_admin/user_groups/%(user_group_id)s/edit/permissions_summary/json', ['user_group_id']);
+    pyroutes.register('repos', '/_admin/repos', []);
+    pyroutes.register('repo_new', '/_admin/repos/new', []);
+    pyroutes.register('repo_create', '/_admin/repos/create', []);
     pyroutes.register('channelstream_connect', '/_admin/channelstream/connect', []);
     pyroutes.register('channelstream_subscribe', '/_admin/channelstream/subscribe', []);
     pyroutes.register('channelstream_proxy', '/_channelstream', []);
@@ -177,11 +179,26 @@ function registerRCRoutes() {
     pyroutes.register('edit_repo_advanced_fork', '/%(repo_name)s/settings/advanced/fork', ['repo_name']);
     pyroutes.register('edit_repo_caches', '/%(repo_name)s/settings/caches', ['repo_name']);
     pyroutes.register('edit_repo_perms', '/%(repo_name)s/settings/permissions', ['repo_name']);
+    pyroutes.register('edit_repo_maintenance', '/%(repo_name)s/settings/maintenance', ['repo_name']);
+    pyroutes.register('edit_repo_maintenance_execute', '/%(repo_name)s/settings/maintenance/execute', ['repo_name']);
+    pyroutes.register('edit_repo_fields', '/%(repo_name)s/settings/fields', ['repo_name']);
+    pyroutes.register('edit_repo_fields_create', '/%(repo_name)s/settings/fields/create', ['repo_name']);
+    pyroutes.register('edit_repo_fields_delete', '/%(repo_name)s/settings/fields/%(field_id)s/delete', ['repo_name', 'field_id']);
+    pyroutes.register('repo_edit_toggle_locking', '/%(repo_name)s/settings/toggle_locking', ['repo_name']);
+    pyroutes.register('edit_repo_remote', '/%(repo_name)s/settings/remote', ['repo_name']);
+    pyroutes.register('edit_repo_remote_pull', '/%(repo_name)s/settings/remote/pull', ['repo_name']);
+    pyroutes.register('edit_repo_statistics', '/%(repo_name)s/settings/statistics', ['repo_name']);
+    pyroutes.register('edit_repo_statistics_reset', '/%(repo_name)s/settings/statistics/update', ['repo_name']);
+    pyroutes.register('edit_repo_issuetracker', '/%(repo_name)s/settings/issue_trackers', ['repo_name']);
+    pyroutes.register('edit_repo_issuetracker_test', '/%(repo_name)s/settings/issue_trackers/test', ['repo_name']);
+    pyroutes.register('edit_repo_issuetracker_delete', '/%(repo_name)s/settings/issue_trackers/delete', ['repo_name']);
+    pyroutes.register('edit_repo_issuetracker_update', '/%(repo_name)s/settings/issue_trackers/update', ['repo_name']);
+    pyroutes.register('edit_repo_vcs', '/%(repo_name)s/settings/vcs', ['repo_name']);
+    pyroutes.register('edit_repo_vcs_update', '/%(repo_name)s/settings/vcs/update', ['repo_name']);
+    pyroutes.register('edit_repo_vcs_svn_pattern_delete', '/%(repo_name)s/settings/vcs/svn_pattern/delete', ['repo_name']);
     pyroutes.register('repo_reviewers', '/%(repo_name)s/settings/review/rules', ['repo_name']);
     pyroutes.register('repo_default_reviewers_data', '/%(repo_name)s/settings/review/default-reviewers', ['repo_name']);
-    pyroutes.register('repo_maintenance', '/%(repo_name)s/settings/maintenance', ['repo_name']);
-    pyroutes.register('repo_maintenance_execute', '/%(repo_name)s/settings/maintenance/execute', ['repo_name']);
-    pyroutes.register('strip', '/%(repo_name)s/settings/strip', ['repo_name']);
+    pyroutes.register('edit_repo_strip', '/%(repo_name)s/settings/strip', ['repo_name']);
     pyroutes.register('strip_check', '/%(repo_name)s/settings/strip_check', ['repo_name']);
     pyroutes.register('strip_execute', '/%(repo_name)s/settings/strip_execute', ['repo_name']);
     pyroutes.register('rss_feed_home', '/%(repo_name)s/feed/rss', ['repo_name']);

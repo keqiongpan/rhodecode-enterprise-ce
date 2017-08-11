@@ -1,7 +1,7 @@
 <%namespace name="vcss" file="/base/vcs_settings.mako"/>
 
 <div id="repo_vcs_settings" class="${'inherited' if c.inherit_global_settings else ''}">
-    ${h.secure_form(h.url('repo_vcs_settings', repo_name=c.repo_info.repo_name), method='post')}
+    ${h.secure_form(h.route_path('edit_repo_vcs_update', repo_name=c.repo_info.repo_name), method='POST', request=request)}
         <div class="form panel panel-default">
             <div class="fields panel-body">
                 <div class="field">
@@ -50,13 +50,12 @@
 <script type="text/javascript">
 
     function ajaxDeletePattern(pattern_id, field_id) {
-        var sUrl = "${h.url('repo_vcs_settings', repo_name=c.repo_info.repo_name)}";
+        var sUrl = "${h.route_path('edit_repo_vcs_svn_pattern_delete', repo_name=c.repo_info.repo_name)}";
         var callback =  function (o) {
             var elem = $("#"+field_id);
             elem.remove();
         };
         var postData = {
-            '_method': 'delete',
             'delete_svn_pattern': pattern_id,
             'csrf_token': CSRF_TOKEN
         };

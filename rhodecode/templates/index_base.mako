@@ -27,7 +27,7 @@
                 %if not c.repo_group:
                     ## no repository group context here
                     %if is_admin or create_repo:
-                        <a href="${h.url('new_repo')}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
+                        <a href="${h.route_path('repo_new')}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
                     %endif
 
                     %if is_admin or create_repo_group:
@@ -36,7 +36,7 @@
                 %else:
                     ##we're inside other repository group other terms apply
                     %if is_admin or group_admin or (group_write and create_on_write):
-                        <a href="${h.url('new_repo',parent_group=c.repo_group.group_id)}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
+                        <a href="${h.route_path('repo_new',parent_group=c.repo_group.group_id)}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
                     %endif
                     %if is_admin or group_admin:
                         <a href="${h.url('new_repo_group', parent_group=c.repo_group.group_id)}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>

@@ -852,30 +852,6 @@ class BasePasterCommand(Command):
         initialize_database(config)
 
 
-@decorator.decorator
-def jsonify(func, *args, **kwargs):
-    """Action decorator that formats output for JSON
-
-    Given a function that will return content, this decorator will turn
-    the result into JSON, with a content-type of 'application/json' and
-    output it.
-
-    """
-    from pylons.decorators.util import get_pylons
-    from rhodecode.lib.ext_json import json
-    pylons = get_pylons(args)
-    pylons.response.headers['Content-Type'] = 'application/json; charset=utf-8'
-    data = func(*args, **kwargs)
-    if isinstance(data, (list, tuple)):
-        msg = "JSON responses with Array envelopes are susceptible to " \
-              "cross-site data leak attacks, see " \
-              "http://wiki.pylonshq.com/display/pylonsfaq/Warnings"
-        warnings.warn(msg, Warning, 2)
-        log.warning(msg)
-    log.debug("Returning JSON wrapped action output")
-    return json.dumps(data, encoding='utf-8')
-
-
 class PartialRenderer(object):
     """
     Partial renderer used to render chunks of html used in datagrids

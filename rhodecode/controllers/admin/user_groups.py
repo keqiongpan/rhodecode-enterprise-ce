@@ -31,25 +31,19 @@ from pylons import request, tmpl_context as c, url, config
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
 
-from sqlalchemy.orm import joinedload
-
 from rhodecode.lib import auth
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
-from rhodecode.lib.ext_json import json
 from rhodecode.lib.exceptions import UserGroupAssignedException,\
     RepoGroupAssignmentError
-from rhodecode.lib.utils import jsonify
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, HasUserGroupPermissionAnyDecorator,
     HasPermissionAnyDecorator)
 from rhodecode.lib.base import BaseController, render
 from rhodecode.model.permission import PermissionModel
-from rhodecode.model.scm import UserGroupList
 from rhodecode.model.user_group import UserGroupModel
-from rhodecode.model.db import (
-    User, UserGroup, UserGroupRepoToPerm, UserGroupRepoGroupToPerm)
+from rhodecode.model.db import User, UserGroup
 from rhodecode.model.forms import (
     UserGroupForm, UserGroupPermsForm, UserIndividualPermissionsForm,
     UserPermissionsForm)

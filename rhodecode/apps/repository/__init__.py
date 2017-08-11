@@ -337,7 +337,76 @@ def includeme(config):
         name='edit_repo_perms',
         pattern='/{repo_name:.*?[^/]}/settings/permissions', repo_route=True)
 
-    # Repo Review Rules
+    # Maintenance
+    config.add_route(
+        name='edit_repo_maintenance',
+        pattern='/{repo_name:.*?[^/]}/settings/maintenance', repo_route=True)
+
+    config.add_route(
+        name='edit_repo_maintenance_execute',
+        pattern='/{repo_name:.*?[^/]}/settings/maintenance/execute', repo_route=True)
+
+    # Fields
+    config.add_route(
+        name='edit_repo_fields',
+        pattern='/{repo_name:.*?[^/]}/settings/fields', repo_route=True)
+    config.add_route(
+        name='edit_repo_fields_create',
+        pattern='/{repo_name:.*?[^/]}/settings/fields/create', repo_route=True)
+    config.add_route(
+        name='edit_repo_fields_delete',
+        pattern='/{repo_name:.*?[^/]}/settings/fields/{field_id}/delete', repo_route=True)
+
+    # Locking
+    config.add_route(
+        name='repo_edit_toggle_locking',
+        pattern='/{repo_name:.*?[^/]}/settings/toggle_locking', repo_route=True)
+
+    # Remote
+    config.add_route(
+        name='edit_repo_remote',
+        pattern='/{repo_name:.*?[^/]}/settings/remote', repo_route=True)
+    config.add_route(
+        name='edit_repo_remote_pull',
+        pattern='/{repo_name:.*?[^/]}/settings/remote/pull', repo_route=True)
+
+
+    # Statistics
+    config.add_route(
+        name='edit_repo_statistics',
+        pattern='/{repo_name:.*?[^/]}/settings/statistics', repo_route=True)
+    config.add_route(
+        name='edit_repo_statistics_reset',
+        pattern='/{repo_name:.*?[^/]}/settings/statistics/update', repo_route=True)
+
+    # Issue trackers
+    config.add_route(
+        name='edit_repo_issuetracker',
+        pattern='/{repo_name:.*?[^/]}/settings/issue_trackers', repo_route=True)
+    config.add_route(
+        name='edit_repo_issuetracker_test',
+        pattern='/{repo_name:.*?[^/]}/settings/issue_trackers/test', repo_route=True)
+    config.add_route(
+        name='edit_repo_issuetracker_delete',
+        pattern='/{repo_name:.*?[^/]}/settings/issue_trackers/delete', repo_route=True)
+    config.add_route(
+        name='edit_repo_issuetracker_update',
+        pattern='/{repo_name:.*?[^/]}/settings/issue_trackers/update', repo_route=True)
+
+    # VCS Settings
+    config.add_route(
+        name='edit_repo_vcs',
+        pattern='/{repo_name:.*?[^/]}/settings/vcs', repo_route=True)
+    config.add_route(
+        name='edit_repo_vcs_update',
+        pattern='/{repo_name:.*?[^/]}/settings/vcs/update', repo_route=True)
+
+    # svn pattern
+    config.add_route(
+        name='edit_repo_vcs_svn_pattern_delete',
+        pattern='/{repo_name:.*?[^/]}/settings/vcs/svn_pattern/delete', repo_route=True)
+
+    # Repo Review Rules (EE feature)
     config.add_route(
         name='repo_reviewers',
         pattern='/{repo_name:.*?[^/]}/settings/review/rules', repo_route=True)
@@ -346,18 +415,9 @@ def includeme(config):
         name='repo_default_reviewers_data',
         pattern='/{repo_name:.*?[^/]}/settings/review/default-reviewers', repo_route=True)
 
-    # Maintenance
-    config.add_route(
-        name='repo_maintenance',
-        pattern='/{repo_name:.*?[^/]}/settings/maintenance', repo_route=True)
-
-    config.add_route(
-        name='repo_maintenance_execute',
-        pattern='/{repo_name:.*?[^/]}/settings/maintenance/execute', repo_route=True)
-
     # Strip
     config.add_route(
-        name='strip',
+        name='edit_repo_strip',
         pattern='/{repo_name:.*?[^/]}/settings/strip', repo_route=True)
 
     config.add_route(

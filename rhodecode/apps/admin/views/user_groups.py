@@ -19,7 +19,6 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
-import datetime
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
@@ -28,12 +27,11 @@ from rhodecode.model.scm import UserGroupList
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib.auth import (
-    LoginRequired, HasPermissionAllDecorator, CSRFRequired, NotAnonymous,
+    LoginRequired, NotAnonymous,
     HasUserGroupPermissionAnyDecorator)
 from rhodecode.lib import helpers as h
 from rhodecode.lib.utils import PartialRenderer
-from rhodecode.lib.utils2 import safe_int, safe_unicode
-from rhodecode.model.user_group import UserGroupModel
+from rhodecode.lib.utils2 import safe_unicode
 from rhodecode.model.db import (
     joinedload, or_, count, User, UserGroup, UserGroupMember,
     UserGroupRepoToPerm, UserGroupRepoGroupToPerm)

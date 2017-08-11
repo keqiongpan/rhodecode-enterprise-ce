@@ -1,6 +1,6 @@
 ## -*- coding: utf-8 -*-
 
-${h.secure_form(h.url('repos'))}
+${h.secure_form(h.route_path('repo_create'), method='POST', request=request)}
 <div class="form">
     <!-- fields -->
     <div class="fields">

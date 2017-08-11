@@ -61,7 +61,7 @@ class RepoSettingsView(RepoAppView):
         c.default_user_id = User.get_default_user().user_id
         c.in_public_journal = UserFollowing.query() \
             .filter(UserFollowing.user_id == c.default_user_id) \
-            .filter(UserFollowing.follows_repository == c.repo_info).scalar()
+            .filter(UserFollowing.follows_repository == self.db_repo).scalar()
 
         c.has_origin_repo_read_perm = False
         if self.db_repo.fork:

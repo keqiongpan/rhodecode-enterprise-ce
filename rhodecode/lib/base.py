@@ -34,15 +34,6 @@ import pyramid.threadlocal
 from paste.auth.basic import AuthBasicAuthenticator
 from paste.httpexceptions import HTTPUnauthorized, HTTPForbidden, get_exception
 from paste.httpheaders import WWW_AUTHENTICATE, AUTHORIZATION
-from pylons import tmpl_context as c, request, url
-from pylons.controllers import WSGIController
-from pylons.controllers.util import redirect
-from pylons.i18n import translation
-# marcink: don't remove this import
-from pylons.templating import render_mako, pylons_globals, literal, cached_template
-from pylons.i18n.translation import _
-from webob.exc import HTTPFound
-
 
 import rhodecode
 from rhodecode.authentication.base import VCS_TYPE
@@ -55,13 +46,15 @@ from rhodecode.lib.utils import (
     get_enabled_hook_classes)
 from rhodecode.lib.utils2 import (
     str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist)
-from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import meta
 from rhodecode.model.db import Repository, User, ChangesetComment
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 
+# NOTE(marcink): remove after base controller is no longer required
+from pylons.controllers import WSGIController
+from pylons.i18n import translation
 
 log = logging.getLogger(__name__)
 
@@ -75,6 +68,9 @@ def render(template_name, extra_vars=None, cache_key=None,
     ``cache_expire``.
 
     """
+    from pylons.templating import literal
+    from pylons.templating import cached_template, pylons_globals
+
     # Create a render callable for the cache function
     def render_template():
         # Pull in extra vars if needed
@@ -411,10 +407,6 @@ def attach_context_attributes(context, request, user_id):
             'refresh_time': 120 * 1000,
             'cutoff_limit': 1000 * 60 * 60 * 24 * 7
         },
-        'pylons_dispatch': {
-            # 'controller': request.environ['pylons.routes_dict']['controller'],
-            # 'action': request.environ['pylons.routes_dict']['action'],
-        },
         'pyramid_dispatch': {
 
         },
@@ -512,6 +504,7 @@ class BaseController(WSGIController):
         """
         # on each call propagate settings calls into global settings.
         from pylons import config
+        from pylons import tmpl_context as c, request, url
         set_rhodecode_config(config)
         attach_context_attributes(c, request, self._rhodecode_user.user_id)
 
@@ -531,6 +524,7 @@ class BaseController(WSGIController):
                       user_lang, self._rhodecode_user)
 
     def _dispatch_redirect(self, with_url, environ, start_response):
+        from webob.exc import HTTPFound
         resp = HTTPFound(with_url)
         environ['SCRIPT_NAME'] = ''  # handle prefix middleware
         environ['PATH_INFO'] = with_url
@@ -542,6 +536,7 @@ class BaseController(WSGIController):
         # the request is routed to. This routing information is
         # available in environ['pylons.routes_dict']
         from rhodecode.lib import helpers as h
+        from pylons import tmpl_context as c, request, url
 
         # Provide the Pylons context to Pyramid's debugtoolbar if it asks
         if environ.get('debugtoolbar.wants_pylons_context', False):
@@ -620,93 +615,3 @@ def bootstrap_request(**kwargs):
 
     config = pyramid.testing.setUp(request=request)
     add_events_routes(config)
-
-
-class BaseRepoController(BaseController):
-    """
-    Base class for controllers responsible for loading all needed data for
-    repository loaded items are
-
-    c.rhodecode_repo: instance of scm repository
-    c.rhodecode_db_repo: instance of db
-    c.repository_requirements_missing: shows that repository specific data
-        could not be displayed due to the missing requirements
-    c.repository_pull_requests: show number of open pull requests
-    """
-
-    def __before__(self):
-        super(BaseRepoController, self).__before__()
-        if c.repo_name:  # extracted from routes
-            db_repo = Repository.get_by_repo_name(c.repo_name)
-            if not db_repo:
-                return
-
-            log.debug(
-                'Found repository in database %s with state `%s`',
-                safe_unicode(db_repo), safe_unicode(db_repo.repo_state))
-            route = getattr(request.environ.get('routes.route'), 'name', '')
-
-            # allow to delete repos that are somehow damages in filesystem
-            if route in ['delete_repo']:
-                return
-
-            if db_repo.repo_state in [Repository.STATE_PENDING]:
-                if route in ['repo_creating_home']:
-                    return
-                check_url = url('repo_creating_home', repo_name=c.repo_name)
-                return redirect(check_url)
-
-            self.rhodecode_db_repo = db_repo
-
-            missing_requirements = False
-            try:
-                self.rhodecode_repo = self.rhodecode_db_repo.scm_instance()
-            except RepositoryRequirementError as e:
-                missing_requirements = True
-                self._handle_missing_requirements(e)
-
-            if self.rhodecode_repo is None and not missing_requirements:
-                log.error('%s this repository is present in database but it '
-                          'cannot be created as an scm instance', c.repo_name)
-
-                h.flash(_(
-                    "The repository at %(repo_name)s cannot be located.") %
-                    {'repo_name': c.repo_name},
-                    category='error', ignore_duplicate=True)
-                redirect(h.route_path('home'))
-
-            # update last change according to VCS data
-            if not missing_requirements:
-                commit = db_repo.get_commit(
-                    pre_load=["author", "date", "message", "parents"])
-                db_repo.update_commit_cache(commit)
-
-            # Prepare context
-            c.rhodecode_db_repo = db_repo
-            c.rhodecode_repo = self.rhodecode_repo
-            c.repository_requirements_missing = missing_requirements
-
-            self._update_global_counters(self.scm_model, db_repo)
-
-    def _update_global_counters(self, scm_model, db_repo):
-        """
-        Base variables that are exposed to every page of repository
-        """
-        c.repository_pull_requests = scm_model.get_pull_requests(db_repo)
-
-    def _handle_missing_requirements(self, error):
-        self.rhodecode_repo = None
-        log.error(
-            'Requirements are missing for repository %s: %s',
-            c.repo_name, error.message)
-
-        summary_url = h.route_path('repo_summary', repo_name=c.repo_name)
-        statistics_url = url('edit_repo_statistics', repo_name=c.repo_name)
-        settings_update_url = url('repo', repo_name=c.repo_name)
-        path = request.path
-        should_redirect = (
-            path not in (summary_url, settings_update_url)
-            and '/settings' not in path or path == statistics_url
-        )
-        if should_redirect:
-            redirect(summary_url)

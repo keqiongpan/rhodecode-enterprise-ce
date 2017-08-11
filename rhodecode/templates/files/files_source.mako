@@ -74,6 +74,8 @@
      %else:
         % if c.file.size < c.visual.cut_off_limit_file:
             %if c.renderer and not c.annotate:
+                ## pick relative url based on renderer
+                    ${c.renderer} XXXX
                 <%
                     relative_urls = {
                         'raw': h.route_path('repo_file_raw',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path),

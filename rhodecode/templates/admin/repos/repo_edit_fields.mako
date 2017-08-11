@@ -18,7 +18,7 @@
                     <td class="td-hash">${field.field_key}</td>
                     <td class="td-type">${field.field_type}</td>
                     <td class="td-action">
-                      ${h.secure_form(h.url('delete_repo_fields', repo_name=c.repo_info.repo_name, field_id=field.repo_field_id),method='delete')}
+                      ${h.secure_form(h.route_path('edit_repo_fields_delete', repo_name=c.repo_info.repo_name, field_id=field.repo_field_id), method='POST', request=request)}
                             ${h.hidden('del_repo_field',field.repo_field_id)}
                             <button class="btn btn-link btn-danger" type="submit"
                                     onclick="return confirm('${_('Confirm to delete this field: %s') % field.field_key}');">
@@ -31,7 +31,7 @@
               </table>
             </div>
             %endif
-            ${h.secure_form(h.url('create_repo_fields', repo_name=c.repo_name),method='put')}
+            ${h.secure_form(h.route_path('edit_repo_fields_create', repo_name=c.repo_name), method='POST', request=request)}
             <div class="form">
                 <!-- fields -->
                 <div class="fields">

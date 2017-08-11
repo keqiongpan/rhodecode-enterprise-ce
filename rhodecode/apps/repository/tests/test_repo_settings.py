@@ -26,8 +26,7 @@ from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model.db import Repository, UserRepoToPerm, Permission, User
 from rhodecode.model.meta import Session
 from rhodecode.tests import (
-    url, HG_REPO, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN,
-    assert_session_flash)
+    TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN, assert_session_flash)
 from rhodecode.tests.fixture import Fixture
 
 fixture = Fixture()
@@ -41,6 +40,11 @@ def route_path(name, params=None, **kwargs):
         'edit_repo_advanced': '/{repo_name}/settings/advanced',
         'edit_repo_caches': '/{repo_name}/settings/caches',
         'edit_repo_perms': '/{repo_name}/settings/permissions',
+        'edit_repo_vcs': '/{repo_name}/settings/vcs',
+        'edit_repo_issuetracker': '/{repo_name}/settings/issue_trackers',
+        'edit_repo_fields': '/{repo_name}/settings/fields',
+        'edit_repo_remote': '/{repo_name}/settings/remote',
+        'edit_repo_statistics': '/{repo_name}/settings/statistics',
     }[name].format(**kwargs)
 
     if params:
@@ -64,6 +68,11 @@ class TestAdminRepoSettings(object):
         'edit_repo_caches',
         'edit_repo_perms',
         'edit_repo_advanced',
+        'edit_repo_vcs',
+        'edit_repo_issuetracker',
+        'edit_repo_fields',
+        'edit_repo_remote',
+        'edit_repo_statistics',
     ])
     def test_show_page(self, urlname, app, backend):
         app.get(route_path(urlname, repo_name=backend.repo_name), status=200)
@@ -74,16 +83,6 @@ class TestAdminRepoSettings(object):
             Repository, 'scm_instance', side_effect=RepositoryRequirementError)
         with scm_patcher:
             self.app.get(route_path('edit_repo', repo_name=backend_hg.repo_name))
-
-    @pytest.mark.parametrize('urlname', [
-        'repo_vcs_settings',
-        'repo_settings_issuetracker',
-        'edit_repo_fields',
-        'edit_repo_remote',
-        'edit_repo_statistics',
-    ])
-    def test_show_page_pylons(self, urlname, app):
-        app.get(url(urlname, repo_name=HG_REPO))
 
     @pytest.mark.parametrize('update_settings', [
         {'repo_description': 'alter-desc'},

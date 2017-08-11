@@ -176,23 +176,6 @@ def make_map(config):
     rmap.connect('ping', '%s/ping' % (ADMIN_PREFIX,), controller='home', action='ping')
     rmap.connect('error_test', '%s/error_test' % (ADMIN_PREFIX,), controller='home', action='error_test')
 
-    # ADMIN REPOSITORY ROUTES
-    with rmap.submapper(path_prefix=ADMIN_PREFIX,
-                        controller='admin/repos') as m:
-        m.connect('repos', '/repos',
-                  action='create', conditions={'method': ['POST']})
-        m.connect('repos', '/repos',
-                  action='index', conditions={'method': ['GET']})
-        m.connect('new_repo', '/create_repository', jsroute=True,
-                  action='create_repository', conditions={'method': ['GET']})
-        m.connect('delete_repo', '/repos/{repo_name}',
-                  action='delete', conditions={'method': ['DELETE']},
-                  requirements=URL_NAME_REQUIREMENTS)
-        m.connect('repo', '/repos/{repo_name}',
-                  action='show', conditions={'method': ['GET'],
-                                             'function': check_repo},
-                  requirements=URL_NAME_REQUIREMENTS)
-
     # ADMIN REPOSITORY GROUPS ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/repo_groups') as m:
@@ -406,81 +389,5 @@ def make_map(config):
         m.connect('my_account_password', '/my_account/password',
                   action='my_account_password', conditions={'method': ['GET']})
 
-    #==========================================================================
-    # REPOSITORY ROUTES
-    #==========================================================================
-
-    # repo edit options
-    rmap.connect('edit_repo_fields', '/{repo_name}/settings/fields',
-                 controller='admin/repos', action='edit_fields',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('create_repo_fields', '/{repo_name}/settings/fields/new',
-                 controller='admin/repos', action='create_repo_field',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('delete_repo_fields', '/{repo_name}/settings/fields/{field_id}',
-                 controller='admin/repos', action='delete_repo_field',
-                 conditions={'method': ['DELETE'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('toggle_locking', '/{repo_name}/settings/advanced/locking_toggle',
-                 controller='admin/repos', action='toggle_locking',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('edit_repo_remote', '/{repo_name}/settings/remote',
-                 controller='admin/repos', action='edit_remote_form',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('edit_repo_remote', '/{repo_name}/settings/remote',
-                 controller='admin/repos', action='edit_remote',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-
-    rmap.connect('edit_repo_statistics', '/{repo_name}/settings/statistics',
-                 controller='admin/repos', action='edit_statistics_form',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('edit_repo_statistics', '/{repo_name}/settings/statistics',
-                 controller='admin/repos', action='edit_statistics',
-                 conditions={'method': ['PUT'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('repo_settings_issuetracker',
-                 '/{repo_name}/settings/issue-tracker',
-                 controller='admin/repos', action='repo_issuetracker',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('repo_issuetracker_test',
-                 '/{repo_name}/settings/issue-tracker/test',
-                 controller='admin/repos', action='repo_issuetracker_test',
-                 conditions={'method': ['POST'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('repo_issuetracker_delete',
-                 '/{repo_name}/settings/issue-tracker/delete',
-                 controller='admin/repos', action='repo_issuetracker_delete',
-                 conditions={'method': ['DELETE'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('repo_issuetracker_save',
-                 '/{repo_name}/settings/issue-tracker/save',
-                 controller='admin/repos', action='repo_issuetracker_save',
-                 conditions={'method': ['POST'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('repo_vcs_settings', '/{repo_name}/settings/vcs',
-                 controller='admin/repos', action='repo_settings_vcs_update',
-                 conditions={'method': ['POST'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('repo_vcs_settings', '/{repo_name}/settings/vcs',
-                 controller='admin/repos', action='repo_settings_vcs',
-                 conditions={'method': ['GET'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('repo_vcs_settings', '/{repo_name}/settings/vcs',
-                 controller='admin/repos', action='repo_delete_svn_pattern',
-                 conditions={'method': ['DELETE'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
-    rmap.connect('repo_pullrequest_settings', '/{repo_name}/settings/pullrequest',
-                 controller='admin/repos', action='repo_settings_pullrequest',
-                 conditions={'method': ['GET', 'POST'], 'function': check_repo},
-                 requirements=URL_NAME_REQUIREMENTS)
 
     return rmap

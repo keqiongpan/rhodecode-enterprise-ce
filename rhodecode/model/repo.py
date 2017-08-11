@@ -18,10 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-Repository model for rhodecode
-"""
-
 import logging
 import os
 import re

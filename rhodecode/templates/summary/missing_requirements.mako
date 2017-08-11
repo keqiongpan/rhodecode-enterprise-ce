@@ -15,7 +15,7 @@
   <div class="alert alert-dismissable alert-warning">
     <strong>Missing requirements</strong>
     Commits cannot be displayed, because this repository uses one or more extensions, which was not enabled. <br/>
-    Please <a href="${h.url('repo_vcs_settings', repo_name=c.repo_name)}">enable extension in settings</a>, or contact the repository owner for help.
+    Please <a href="${h.route_path('edit_repo_vcs', repo_name=c.repo_name)}">enable extension in settings</a>, or contact the repository owner for help.
     Missing extensions could be:
 <pre>
 

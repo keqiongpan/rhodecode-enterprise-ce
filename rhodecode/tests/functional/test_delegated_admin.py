@@ -20,10 +20,7 @@
 
 import pytest
 
-from rhodecode.tests import (
-    TestController, url, assert_session_flash, link_to)
-from rhodecode.model.db import User, UserGroup
-from rhodecode.model.meta import Session
+from rhodecode.tests import TestController, url
 from rhodecode.tests.fixture import Fixture
 
 
@@ -33,6 +30,8 @@ def route_path(name, params=None, **kwargs):
 
     base_url = {
         'home': '/',
+        'repos':
+            ADMIN_PREFIX + '/repos',
         'user_groups':
             ADMIN_PREFIX + '/user_groups',
         'user_groups_data':
@@ -63,7 +62,7 @@ class TestAdminDelegatedUser(TestController):
         assert_response.no_element_exists('li.local-admin-repo-groups')
         assert_response.no_element_exists('li.local-admin-user-groups')
 
-        response = self.app.get(url('repos'), status=200)
+        response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('data: []')
 
         response = self.app.get(url('repo_groups'), status=200)
@@ -98,7 +97,7 @@ class TestAdminDelegatedUser(TestController):
         assert_response.one_element_exists('li.local-admin-user-groups')
 
         # admin interfaces have visible elements
-        response = self.app.get(url('repos'), status=200)
+        response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_name))
 
         response = self.app.get(url('repo_groups'), status=200)
@@ -140,7 +139,7 @@ class TestAdminDelegatedUser(TestController):
         assert_response.one_element_exists('li.local-admin-user-groups')
 
         # admin interfaces have visible elements
-        response = self.app.get(url('repos'), status=200)
+        response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_name))
 
         response = self.app.get(url('repo_groups'), status=200)

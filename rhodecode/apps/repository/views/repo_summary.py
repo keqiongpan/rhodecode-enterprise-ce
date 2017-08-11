@@ -22,12 +22,9 @@ import logging
 import string
 
 from pyramid.view import view_config
-
 from beaker.cache import cache_region
 
-
 from rhodecode.controllers import utils
-
 from rhodecode.apps._base import RepoAppView
 from rhodecode.config.conf import (LANGUAGES_EXTENSIONS_MAP)
 from rhodecode.lib import caches, helpers as h
@@ -74,11 +71,16 @@ class RepoSummaryView(RepoAppView):
                 log.debug("Searching for a README file.")
                 readme_node = ReadmeFinder(default_renderer).search(commit)
             if readme_node:
-                relative_url = h.route_path(
-                    'repo_file_raw', repo_name=repo_name,
-                    commit_id=commit.raw_id, f_path=readme_node.path)
+                relative_urls = {
+                    'raw': h.route_path(
+                        'repo_file_raw', repo_name=repo_name,
+                        commit_id=commit.raw_id, f_path=readme_node.path),
+                    'standard': h.route_path(
+                        'repo_files', repo_name=repo_name,
+                        commit_id=commit.raw_id, f_path=readme_node.path),
+                }
                 readme_data = self._render_readme_or_none(
-                    commit, readme_node, relative_url)
+                    commit, readme_node, relative_urls)
                 readme_filename = readme_node.path
             return readme_data, readme_filename
 
@@ -103,15 +105,15 @@ class RepoSummaryView(RepoAppView):
             log.exception(
                 "Problem getting commit when trying to render the README.")
 
-    def _render_readme_or_none(self, commit, readme_node, relative_url):
+    def _render_readme_or_none(self, commit, readme_node, relative_urls):
         log.debug(
             'Found README file `%s` rendering...', readme_node.path)
         renderer = MarkupRenderer()
         try:
             html_source = renderer.render(
                 readme_node.content, filename=readme_node.path)
-            if relative_url:
-                return relative_links(html_source, relative_url)
+            if relative_urls:
+                return relative_links(html_source, relative_urls)
             return html_source
         except Exception:
             log.exception(

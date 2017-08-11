@@ -1045,7 +1045,7 @@ class TestCreateOrUpdateRepoSettings(object):
     def test_cache_is_marked_for_invalidation(self, repo_stub):
         model = VcsSettingsModel(repo=repo_stub)
         invalidation_patcher = mock.patch(
-            'rhodecode.controllers.admin.repos.ScmModel.mark_for_invalidation')
+            'rhodecode.model.scm.ScmModel.mark_for_invalidation')
         with invalidation_patcher as invalidation_mock:
             model.create_or_update_repo_settings(
                 data=self.FORM_DATA, inherit_global_settings=True)

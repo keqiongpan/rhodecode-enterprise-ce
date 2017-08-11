@@ -3,7 +3,7 @@
         <h3 class="panel-title">${_('Repository statistics')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('edit_repo_statistics', repo_name=c.repo_info.repo_name), method='put')}
+        ${h.secure_form(h.route_path('edit_repo_statistics_reset', repo_name=c.repo_info.repo_name), method='POST', request=request)}
         <div class="form">
             <div class="fields">
                <div class="field" >

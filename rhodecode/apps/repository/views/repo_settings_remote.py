@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2017-2017 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -25,18 +25,14 @@ from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import helpers as h
-from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
-    LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
-from rhodecode.model.forms import RepoPermsForm
-from rhodecode.model.meta import Session
-from rhodecode.model.repo import RepoModel
+    LoginRequired, CSRFRequired, HasRepoPermissionAnyDecorator)
+from rhodecode.model.scm import ScmModel
 
 log = logging.getLogger(__name__)
 
 
-class RepoSettingsPermissionsView(RepoAppView):
-
+class RepoSettingsRemoteView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
@@ -49,44 +45,31 @@ class RepoSettingsPermissionsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
-        route_name='edit_repo_perms', request_method='GET',
+        route_name='edit_repo_remote', request_method='GET',
         renderer='rhodecode:templates/admin/repos/repo_edit.mako')
-    def edit_permissions(self):
+    def repo_remote_edit_form(self):
         c = self.load_default_context()
-        c.active = 'permissions'
+        c.active = 'remote'
+
         return self._get_template_context(c)
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
     @view_config(
-        route_name='edit_repo_perms', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
-    def edit_permissions_update(self):
+        route_name='edit_repo_remote_pull', request_method='POST',
+        renderer=None)
+    def repo_remote_pull_changes(self):
         _ = self.request.translate
-        c = self.load_default_context()
-        c.active = 'permissions'
-        data = self.request.POST
-        # store private flag outside of HTML to verify if we can modify
-        # default user permissions, prevents submission of FAKE post data
-        # into the form for private repos
-        data['repo_private'] = self.db_repo.private
-        form = RepoPermsForm()().to_python(data)
-        changes = RepoModel().update_permissions(
-            self.db_repo_name, form['perm_additions'], form['perm_updates'],
-            form['perm_deletions'])
+        self.load_default_context()
 
-        action_data = {
-            'added': changes['added'],
-            'updated': changes['updated'],
-            'deleted': changes['deleted'],
-        }
-        audit_logger.store_web(
-            'repo.edit.permissions', action_data=action_data,
-            user=self._rhodecode_user, repo=self.db_repo)
-
-        Session().commit()
-        h.flash(_('Repository permissions updated'), category='success')
-
+        try:
+            ScmModel().pull_changes(
+                self.db_repo_name, self._rhodecode_user.username)
+            h.flash(_('Pulled from remote location'), category='success')
+        except Exception:
+            log.exception("Exception during pull from remote")
+            h.flash(_('An error occurred during pull from remote location'),
+                    category='error')
         raise HTTPFound(
-            h.route_path('edit_repo_perms', repo_name=self.db_repo_name))
+            h.route_path('edit_repo_remote', repo_name=self.db_repo_name))

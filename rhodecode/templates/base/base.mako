@@ -73,7 +73,7 @@
 <%def name="admin_menu()">
   <ul class="admin_menu submenu">
       <li><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
-      <li><a href="${h.url('repos')}">${_('Repositories')}</a></li>
+      <li><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
       <li><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
       <li><a href="${h.route_path('users')}">${_('Users')}</a></li>
       <li><a href="${h.url('users_groups')}">${_('User groups')}</a></li>
@@ -145,7 +145,7 @@
 <%def name="admin_menu_simple(repositories=None, repository_groups=None, user_groups=None)">
   <ul class="submenu">
    %if repositories:
-      <li class="local-admin-repos"><a href="${h.url('repos')}">${_('Repositories')}</a></li>
+      <li class="local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
    %endif
    %if repository_groups:
       <li class="local-admin-repo-groups"><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
@@ -268,9 +268,9 @@
 
               %if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking:
                 %if c.rhodecode_db_repo.locked[0]:
-                  <li><a class="locking_del" href="${h.url('toggle_locking',repo_name=c.repo_name)}">${_('Unlock')}</a></li>
+                  <li><a class="locking_del" href="${h.route_path('repo_edit_toggle_locking',repo_name=c.repo_name)}">${_('Unlock')}</a></li>
                 %else:
-                  <li><a class="locking_add" href="${h.url('toggle_locking',repo_name=c.repo_name)}">${_('Lock')}</a></li>
+                  <li><a class="locking_add" href="${h.route_path('repo_edit_toggle_locking',repo_name=c.repo_name)}">${_('Lock')}</a></li>
                 %endif
               %endif
               %if c.rhodecode_user.username != h.DEFAULT_USER:

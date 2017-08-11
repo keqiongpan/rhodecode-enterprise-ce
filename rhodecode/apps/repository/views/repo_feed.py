@@ -29,10 +29,9 @@ from webhelpers.feedgenerator import Rss201rev2Feed, Atom1Feed
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import audit_logger
 from rhodecode.lib import helpers as h
-from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator,
-                                NotAnonymous, CSRFRequired)
+from rhodecode.lib.auth import (
+    LoginRequired, HasRepoPermissionAnyDecorator)
 from rhodecode.lib.diffs import DiffProcessor, LimitedDiffContainer
-from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils2 import str2bool, safe_int
 from rhodecode.model.db import UserApiKeys, CacheKey
 

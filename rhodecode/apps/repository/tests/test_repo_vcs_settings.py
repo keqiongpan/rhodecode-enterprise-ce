@@ -18,26 +18,21 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import urllib
-
 import mock
 import pytest
 
 from rhodecode.lib import auth
-from rhodecode.lib.utils2 import safe_str, str2bool
-from rhodecode.lib import helpers as h
+from rhodecode.lib.utils2 import str2bool
 from rhodecode.model.db import (
-    Repository, RepoGroup, UserRepoToPerm, User, Permission)
+    Repository, UserRepoToPerm, User)
 from rhodecode.model.meta import Session
-from rhodecode.model.repo import RepoModel
-from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.settings import SettingsModel, VcsSettingsModel
 from rhodecode.model.user import UserModel
 from rhodecode.tests import (
-    login_user_session, url, assert_session_flash, TEST_USER_ADMIN_LOGIN,
-    TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS, logout_user_session)
-from rhodecode.tests.fixture import Fixture, error_function
-from rhodecode.tests.utils import AssertResponse, repo_on_filesystem
+    login_user_session, logout_user_session,
+    TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
+from rhodecode.tests.fixture import Fixture
+from rhodecode.tests.utils import AssertResponse
 
 fixture = Fixture()
 
@@ -48,452 +43,15 @@ def route_path(name, params=None, **kwargs):
     base_url = {
         'repo_summary': '/{repo_name}',
         'repo_creating_check': '/{repo_name}/repo_creating_check',
+        'edit_repo': '/{repo_name}/settings',
+        'edit_repo_vcs': '/{repo_name}/settings/vcs',
+        'edit_repo_vcs_update': '/{repo_name}/settings/vcs/update',
+        'edit_repo_vcs_svn_pattern_delete': '/{repo_name}/settings/vcs/svn_pattern/delete'
     }[name].format(**kwargs)
 
     if params:
         base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
     return base_url
-
-
-@pytest.mark.usefixtures("app")
-class TestAdminRepos(object):
-
-    def test_index(self):
-        self.app.get(url('repos'))
-
-    def test_create_page_restricted(self, autologin_user, backend):
-        with mock.patch('rhodecode.BACKENDS', {'git': 'git'}):
-            response = self.app.get(url('new_repo'), status=200)
-        assert_response = AssertResponse(response)
-        element = assert_response.get_element('#repo_type')
-        assert element.text_content() == '\ngit\n'
-
-    def test_create_page_non_restricted(self, autologin_user, backend):
-        response = self.app.get(url('new_repo'), status=200)
-        assert_response = AssertResponse(response)
-        assert_response.element_contains('#repo_type', 'git')
-        assert_response.element_contains('#repo_type', 'svn')
-        assert_response.element_contains('#repo_type', 'hg')
-
-    @pytest.mark.parametrize("suffix",
-                             [u'', u'xxa'], ids=['', 'non-ascii'])
-    def test_create(self, autologin_user, backend, suffix, csrf_token):
-        repo_name_unicode = backend.new_repo_name(suffix=suffix)
-        repo_name = repo_name_unicode.encode('utf8')
-        description_unicode = u'description for newly created repo' + suffix
-        description = description_unicode.encode('utf8')
-        response = self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                csrf_token=csrf_token),
-            status=302)
-
-        self.assert_repository_is_created_correctly(
-            repo_name, description, backend)
-
-    def test_create_numeric(self, autologin_user, backend, csrf_token):
-        numeric_repo = '1234'
-        repo_name = numeric_repo
-        description = 'description for newly created repo' + numeric_repo
-        self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                csrf_token=csrf_token))
-
-        self.assert_repository_is_created_correctly(
-            repo_name, description, backend)
-
-    @pytest.mark.parametrize("suffix", [u'', u'ąćę'], ids=['', 'non-ascii'])
-    def test_create_in_group(
-            self, autologin_user, backend, suffix, csrf_token):
-        # create GROUP
-        group_name = 'sometest_%s' % backend.alias
-        gr = RepoGroupModel().create(group_name=group_name,
-                                     group_description='test',
-                                     owner=TEST_USER_ADMIN_LOGIN)
-        Session().commit()
-
-        repo_name = u'ingroup' + suffix
-        repo_name_full = RepoGroup.url_sep().join(
-            [group_name, repo_name])
-        description = u'description for newly created repo'
-        self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=safe_str(repo_name),
-                repo_type=backend.alias,
-                repo_description=description,
-                repo_group=gr.group_id,
-                csrf_token=csrf_token))
-
-        # TODO: johbo: Cleanup work to fixture
-        try:
-            self.assert_repository_is_created_correctly(
-                repo_name_full, description, backend)
-
-            new_repo = RepoModel().get_by_repo_name(repo_name_full)
-            inherited_perms = UserRepoToPerm.query().filter(
-                UserRepoToPerm.repository_id == new_repo.repo_id).all()
-            assert len(inherited_perms) == 1
-        finally:
-            RepoModel().delete(repo_name_full)
-            RepoGroupModel().delete(group_name)
-            Session().commit()
-
-    def test_create_in_group_numeric(
-            self, autologin_user, backend, csrf_token):
-        # create GROUP
-        group_name = 'sometest_%s' % backend.alias
-        gr = RepoGroupModel().create(group_name=group_name,
-                                     group_description='test',
-                                     owner=TEST_USER_ADMIN_LOGIN)
-        Session().commit()
-
-        repo_name = '12345'
-        repo_name_full = RepoGroup.url_sep().join([group_name, repo_name])
-        description = 'description for newly created repo'
-        self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                repo_group=gr.group_id,
-                csrf_token=csrf_token))
-
-        # TODO: johbo: Cleanup work to fixture
-        try:
-            self.assert_repository_is_created_correctly(
-                repo_name_full, description, backend)
-
-            new_repo = RepoModel().get_by_repo_name(repo_name_full)
-            inherited_perms = UserRepoToPerm.query()\
-                .filter(UserRepoToPerm.repository_id == new_repo.repo_id).all()
-            assert len(inherited_perms) == 1
-        finally:
-            RepoModel().delete(repo_name_full)
-            RepoGroupModel().delete(group_name)
-            Session().commit()
-
-    def test_create_in_group_without_needed_permissions(self, backend):
-        session = login_user_session(
-            self.app, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
-        csrf_token = auth.get_csrf_token(session)
-        # revoke
-        user_model = UserModel()
-        # disable fork and create on default user
-        user_model.revoke_perm(User.DEFAULT_USER, 'hg.create.repository')
-        user_model.grant_perm(User.DEFAULT_USER, 'hg.create.none')
-        user_model.revoke_perm(User.DEFAULT_USER, 'hg.fork.repository')
-        user_model.grant_perm(User.DEFAULT_USER, 'hg.fork.none')
-
-        # disable on regular user
-        user_model.revoke_perm(TEST_USER_REGULAR_LOGIN, 'hg.create.repository')
-        user_model.grant_perm(TEST_USER_REGULAR_LOGIN, 'hg.create.none')
-        user_model.revoke_perm(TEST_USER_REGULAR_LOGIN, 'hg.fork.repository')
-        user_model.grant_perm(TEST_USER_REGULAR_LOGIN, 'hg.fork.none')
-        Session().commit()
-
-        # create GROUP
-        group_name = 'reg_sometest_%s' % backend.alias
-        gr = RepoGroupModel().create(group_name=group_name,
-                                     group_description='test',
-                                     owner=TEST_USER_ADMIN_LOGIN)
-        Session().commit()
-
-        group_name_allowed = 'reg_sometest_allowed_%s' % backend.alias
-        gr_allowed = RepoGroupModel().create(
-            group_name=group_name_allowed,
-            group_description='test',
-            owner=TEST_USER_REGULAR_LOGIN)
-        Session().commit()
-
-        repo_name = 'ingroup'
-        description = 'description for newly created repo'
-        response = self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                repo_group=gr.group_id,
-                csrf_token=csrf_token))
-
-        response.mustcontain('Invalid value')
-
-        # user is allowed to create in this group
-        repo_name = 'ingroup'
-        repo_name_full = RepoGroup.url_sep().join(
-            [group_name_allowed, repo_name])
-        description = 'description for newly created repo'
-        response = self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                repo_group=gr_allowed.group_id,
-                csrf_token=csrf_token))
-
-        # TODO: johbo: Cleanup in pytest fixture
-        try:
-            self.assert_repository_is_created_correctly(
-                repo_name_full, description, backend)
-
-            new_repo = RepoModel().get_by_repo_name(repo_name_full)
-            inherited_perms = UserRepoToPerm.query().filter(
-                UserRepoToPerm.repository_id == new_repo.repo_id).all()
-            assert len(inherited_perms) == 1
-
-            assert repo_on_filesystem(repo_name_full)
-        finally:
-            RepoModel().delete(repo_name_full)
-            RepoGroupModel().delete(group_name)
-            RepoGroupModel().delete(group_name_allowed)
-            Session().commit()
-
-    def test_create_in_group_inherit_permissions(self, autologin_user, backend,
-                                                 csrf_token):
-        # create GROUP
-        group_name = 'sometest_%s' % backend.alias
-        gr = RepoGroupModel().create(group_name=group_name,
-                                     group_description='test',
-                                     owner=TEST_USER_ADMIN_LOGIN)
-        perm = Permission.get_by_key('repository.write')
-        RepoGroupModel().grant_user_permission(
-            gr, TEST_USER_REGULAR_LOGIN, perm)
-
-        # add repo permissions
-        Session().commit()
-
-        repo_name = 'ingroup_inherited_%s' % backend.alias
-        repo_name_full = RepoGroup.url_sep().join([group_name, repo_name])
-        description = 'description for newly created repo'
-        self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                repo_group=gr.group_id,
-                repo_copy_permissions=True,
-                csrf_token=csrf_token))
-
-        # TODO: johbo: Cleanup to pytest fixture
-        try:
-            self.assert_repository_is_created_correctly(
-                repo_name_full, description, backend)
-        except Exception:
-            RepoGroupModel().delete(group_name)
-            Session().commit()
-            raise
-
-        # check if inherited permissions are applied
-        new_repo = RepoModel().get_by_repo_name(repo_name_full)
-        inherited_perms = UserRepoToPerm.query().filter(
-            UserRepoToPerm.repository_id == new_repo.repo_id).all()
-        assert len(inherited_perms) == 2
-
-        assert TEST_USER_REGULAR_LOGIN in [
-            x.user.username for x in inherited_perms]
-        assert 'repository.write' in [
-            x.permission.permission_name for x in inherited_perms]
-
-        RepoModel().delete(repo_name_full)
-        RepoGroupModel().delete(group_name)
-        Session().commit()
-
-    @pytest.mark.xfail_backends(
-        "git", "hg", reason="Missing reposerver support")
-    def test_create_with_clone_uri(self, autologin_user, backend, reposerver,
-                                   csrf_token):
-        source_repo = backend.create_repo(number_of_commits=2)
-        source_repo_name = source_repo.repo_name
-        reposerver.serve(source_repo.scm_instance())
-
-        repo_name = backend.new_repo_name()
-        response = self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description='',
-                clone_uri=reposerver.url,
-                csrf_token=csrf_token),
-            status=302)
-
-        # Should be redirected to the creating page
-        response.mustcontain('repo_creating')
-
-        # Expecting that both repositories have same history
-        source_repo = RepoModel().get_by_repo_name(source_repo_name)
-        source_vcs = source_repo.scm_instance()
-        repo = RepoModel().get_by_repo_name(repo_name)
-        repo_vcs = repo.scm_instance()
-        assert source_vcs[0].message == repo_vcs[0].message
-        assert source_vcs.count() == repo_vcs.count()
-        assert source_vcs.commit_ids == repo_vcs.commit_ids
-
-    @pytest.mark.xfail_backends("svn", reason="Depends on import support")
-    def test_create_remote_repo_wrong_clone_uri(self, autologin_user, backend,
-                                                csrf_token):
-        repo_name = backend.new_repo_name()
-        description = 'description for newly created repo'
-        response = self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                clone_uri='http://repo.invalid/repo',
-                csrf_token=csrf_token))
-        response.mustcontain('invalid clone url')
-
-    @pytest.mark.xfail_backends("svn", reason="Depends on import support")
-    def test_create_remote_repo_wrong_clone_uri_hg_svn(
-            self, autologin_user, backend, csrf_token):
-        repo_name = backend.new_repo_name()
-        description = 'description for newly created repo'
-        response = self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                clone_uri='svn+http://svn.invalid/repo',
-                csrf_token=csrf_token))
-        response.mustcontain('invalid clone url')
-
-    def test_create_with_git_suffix(
-            self, autologin_user, backend, csrf_token):
-        repo_name = backend.new_repo_name() + ".git"
-        description = 'description for newly created repo'
-        response = self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                csrf_token=csrf_token))
-        response.mustcontain('Repository name cannot end with .git')
-
-    def test_show(self, autologin_user, backend):
-        self.app.get(url('repo', repo_name=backend.repo_name))
-
-    def test_default_user_cannot_access_private_repo_in_a_group(
-            self, autologin_user, user_util, backend, csrf_token):
-
-        group = user_util.create_repo_group()
-
-        repo = backend.create_repo(
-            repo_private=True, repo_group=group, repo_copy_permissions=True)
-
-        permissions = _get_permission_for_user(
-            user='default', repo=repo.repo_name)
-        assert len(permissions) == 1
-        assert permissions[0].permission.permission_name == 'repository.none'
-        assert permissions[0].repository.private is True
-
-    def test_create_on_top_level_without_permissions(self, backend):
-        session = login_user_session(
-            self.app, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
-        csrf_token = auth.get_csrf_token(session)
-
-        # revoke
-        user_model = UserModel()
-        # disable fork and create on default user
-        user_model.revoke_perm(User.DEFAULT_USER, 'hg.create.repository')
-        user_model.grant_perm(User.DEFAULT_USER, 'hg.create.none')
-        user_model.revoke_perm(User.DEFAULT_USER, 'hg.fork.repository')
-        user_model.grant_perm(User.DEFAULT_USER, 'hg.fork.none')
-
-        # disable on regular user
-        user_model.revoke_perm(TEST_USER_REGULAR_LOGIN, 'hg.create.repository')
-        user_model.grant_perm(TEST_USER_REGULAR_LOGIN, 'hg.create.none')
-        user_model.revoke_perm(TEST_USER_REGULAR_LOGIN, 'hg.fork.repository')
-        user_model.grant_perm(TEST_USER_REGULAR_LOGIN, 'hg.fork.none')
-        Session().commit()
-
-        repo_name = backend.new_repo_name()
-        description = 'description for newly created repo'
-        response = self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                csrf_token=csrf_token))
-
-        response.mustcontain(
-            u"You do not have the permission to store repositories in "
-            u"the root location.")
-
-    @mock.patch.object(RepoModel, '_create_filesystem_repo', error_function)
-    def test_create_repo_when_filesystem_op_fails(
-            self, autologin_user, backend, csrf_token):
-        repo_name = backend.new_repo_name()
-        description = 'description for newly created repo'
-
-        response = self.app.post(
-            url('repos'),
-            fixture._get_repo_create_params(
-                repo_private=False,
-                repo_name=repo_name,
-                repo_type=backend.alias,
-                repo_description=description,
-                csrf_token=csrf_token))
-
-        assert_session_flash(
-            response, 'Error creating repository %s' % repo_name)
-        # repo must not be in db
-        assert backend.repo is None
-        # repo must not be in filesystem !
-        assert not repo_on_filesystem(repo_name)
-
-    def assert_repository_is_created_correctly(
-            self, repo_name, description, backend):
-        repo_name_utf8 = safe_str(repo_name)
-
-        # run the check page that triggers the flash message
-        response = self.app.get(
-            route_path('repo_creating_check', repo_name=safe_str(repo_name)))
-        assert response.json == {u'result': True}
-
-        flash_msg = u'Created repository <a href="/{}">{}</a>'.format(
-            urllib.quote(repo_name_utf8), repo_name)
-        assert_session_flash(response, flash_msg)
-
-        # test if the repo was created in the database
-        new_repo = RepoModel().get_by_repo_name(repo_name)
-
-        assert new_repo.repo_name == repo_name
-        assert new_repo.description == description
-
-        # test if the repository is visible in the list ?
-        response = self.app.get(
-            h.route_path('repo_summary', repo_name=safe_str(repo_name)))
-        response.mustcontain(repo_name)
-        response.mustcontain(backend.alias)
-
-        assert repo_on_filesystem(repo_name)
 
 
 @pytest.mark.usefixtures("app")
@@ -515,7 +73,7 @@ class TestVcsSettings(object):
     @pytest.mark.skip_backends('svn')
     def test_global_settings_initial_values(self, autologin_user, backend):
         repo_name = backend.repo_name
-        response = self.app.get(url('repo_vcs_settings', repo_name=repo_name))
+        response = self.app.get(route_path('edit_repo_vcs', repo_name=repo_name))
 
         expected_settings = (
             'rhodecode_use_outdated_comments', 'rhodecode_pr_merge_enabled',
@@ -533,12 +91,12 @@ class TestVcsSettings(object):
         user_util.grant_user_permission_to_repo(repo, user, 'repository.admin')
         login_user_session(
             self.app, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
-        self.app.get(url('repo_vcs_settings', repo_name=repo_name), status=200)
+        self.app.get(route_path('edit_repo_vcs', repo_name=repo_name), status=200)
 
     def test_inherit_global_settings_flag_is_true_by_default(
             self, autologin_user, backend):
         repo_name = backend.repo_name
-        response = self.app.get(url('repo_vcs_settings', repo_name=repo_name))
+        response = self.app.get(route_path('edit_repo_vcs', repo_name=repo_name))
 
         assert_response = AssertResponse(response)
         element = assert_response.get_element('#inherit_global_settings')
@@ -551,7 +109,7 @@ class TestVcsSettings(object):
         repo_name = repo.repo_name
         settings_util.create_repo_rhodecode_setting(
             repo, 'inherit_vcs_settings', checked_value, 'bool')
-        response = self.app.get(url('repo_vcs_settings', repo_name=repo_name))
+        response = self.app.get(route_path('edit_repo_vcs', repo_name=repo_name))
 
         assert_response = AssertResponse(response)
         element = assert_response.get_element('#inherit_global_settings')
@@ -564,7 +122,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         settings = SettingsModel(repo=repo_name)
         try:
             for section, key in VcsSettingsModel.HOOKS_SETTINGS:
@@ -579,7 +137,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         settings = SettingsModel(repo=repo_name)
         try:
             for section, key in VcsSettingsModel.HOOKS_SETTINGS:
@@ -599,7 +157,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         try:
             for section, key in VcsSettingsModel.HOOKS_SETTINGS:
                 ui = settings.get_ui_by_section_and_key(section, key)
@@ -617,7 +175,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         try:
             for section, key in VcsSettingsModel.HOOKS_SETTINGS:
                 ui = settings.get_ui_by_section_and_key(section, key)
@@ -632,7 +190,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         settings = SettingsModel(repo=repo_name)
         try:
             for name in VcsSettingsModel.GENERAL_SETTINGS:
@@ -647,7 +205,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         settings = SettingsModel(repo=repo_name)
         try:
             for name in VcsSettingsModel.GENERAL_SETTINGS:
@@ -675,7 +233,7 @@ class TestVcsSettings(object):
 
         try:
             self.app.post(
-                url('repo_vcs_settings', repo_name=repo_name), data,
+                route_path('edit_repo_vcs_update', repo_name=repo_name), data,
                 status=302)
         finally:
             self._cleanup_repo_settings(settings)
@@ -691,7 +249,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         try:
             for name in VcsSettingsModel.GENERAL_SETTINGS:
                 setting = settings.get_setting_by_name(name)
@@ -709,7 +267,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         try:
             for name in VcsSettingsModel.GENERAL_SETTINGS:
                 setting = settings.get_setting_by_name(name)
@@ -733,7 +291,7 @@ class TestVcsSettings(object):
             VcsSettingsModel.SVN_TAG_SECTION, 'svn-tag')
 
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         settings = SettingsModel(repo=repo_name)
         try:
             svn_branches = settings.get_ui_by_section(
@@ -761,7 +319,7 @@ class TestVcsSettings(object):
             repo, VcsSettingsModel.SVN_TAG_SECTION, 'test_tag')
 
         response = self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=200)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=200)
         response.mustcontain('Pattern already exists')
 
     def test_svn_settings_with_empty_values_are_not_created(
@@ -770,7 +328,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         settings = SettingsModel(repo=repo_name)
         try:
             svn_branches = settings.get_ui_by_section(
@@ -786,7 +344,7 @@ class TestVcsSettings(object):
             self, autologin_user, backend_svn, csrf_token):
         repo_name = backend_svn.repo_name
         response = self.app.get(
-            url('repo_vcs_settings', repo_name=repo_name), status=200)
+            route_path('edit_repo_vcs', repo_name=repo_name), status=200)
         response.mustcontain('Subversion Settings')
 
     @pytest.mark.skip_backends('svn')
@@ -796,7 +354,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         settings = SettingsModel(repo=repo_name)
         try:
             svn_branches = settings.get_ui_by_section(
@@ -813,7 +371,7 @@ class TestVcsSettings(object):
             self, autologin_user, backend, csrf_token):
         repo_name = backend.repo_name
         response = self.app.get(
-            url('repo_vcs_settings', repo_name=repo_name), status=200)
+            route_path('edit_repo_vcs', repo_name=repo_name), status=200)
         response.mustcontain(no='Subversion Settings')
 
     def test_hg_settings_are_created(
@@ -824,7 +382,7 @@ class TestVcsSettings(object):
         data['new_svn_branch'] = 'svn-branch'
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         settings = SettingsModel(repo=repo_name)
         try:
             largefiles_ui = settings.get_ui_by_section_and_key(
@@ -848,7 +406,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         try:
             largefiles_ui = settings.get_ui_by_section_and_key(
                 'extensions', 'largefiles')
@@ -863,7 +421,7 @@ class TestVcsSettings(object):
             self, autologin_user, backend_hg, csrf_token):
         repo_name = backend_hg.repo_name
         response = self.app.get(
-            url('repo_vcs_settings', repo_name=repo_name), status=200)
+            route_path('edit_repo_vcs', repo_name=repo_name), status=200)
         response.mustcontain('Mercurial Settings')
 
     @pytest.mark.skip_backends('hg')
@@ -873,7 +431,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         settings = SettingsModel(repo=repo_name)
         try:
             largefiles_ui = settings.get_ui_by_section_and_key(
@@ -890,7 +448,7 @@ class TestVcsSettings(object):
             self, autologin_user, backend, csrf_token):
         repo_name = backend.repo_name
         response = self.app.get(
-            url('repo_vcs_settings', repo_name=repo_name), status=200)
+            route_path('edit_repo_vcs', repo_name=repo_name), status=200)
         response.mustcontain(no='Mercurial Settings')
 
     @pytest.mark.skip_backends('hg')
@@ -906,7 +464,7 @@ class TestVcsSettings(object):
         data = self.FORM_DATA.copy()
         data['csrf_token'] = csrf_token
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
         try:
             largefiles_ui = settings.get_ui_by_section_and_key(
                 'extensions', 'largefiles')
@@ -932,7 +490,7 @@ class TestVcsSettings(object):
             for i in range(10)]
 
         response = self.app.get(
-            url('repo_vcs_settings', repo_name=repo_name), status=200)
+            route_path('edit_repo_vcs', repo_name=repo_name), status=200)
         assert_response = AssertResponse(response)
         for branch in branches:
             css_selector = '[name=branch_value_{}]'.format(branch.ui_id)
@@ -948,7 +506,7 @@ class TestVcsSettings(object):
         repo = backend_svn.create_repo()
         repo_name = repo.repo_name
         response = self.app.get(
-            url('repo_vcs_settings', repo_name=repo_name), status=200)
+            route_path('edit_repo_vcs', repo_name=repo_name), status=200)
         response.mustcontain(no='<label>Hooks:</label>')
         response.mustcontain(no='<label>Pull Request Settings:</label>')
 
@@ -959,7 +517,7 @@ class TestVcsSettings(object):
         data['csrf_token'] = csrf_token
         data['inherit_global_settings'] = True
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
 
         settings = SettingsModel(repo=repo_name)
         vcs_settings = VcsSettingsModel(repo=repo_name)
@@ -977,10 +535,10 @@ class TestVcsSettings(object):
         settings = SettingsModel(repo=repo_name)
 
         invalidation_patcher = mock.patch(
-            'rhodecode.controllers.admin.repos.ScmModel.mark_for_invalidation')
+            'rhodecode.model.scm.ScmModel.mark_for_invalidation')
         with invalidation_patcher as invalidation_mock:
             self.app.post(
-                url('repo_vcs_settings', repo_name=repo_name), data,
+                route_path('edit_repo_vcs_update', repo_name=repo_name), data,
                 status=302)
         try:
             invalidation_mock.assert_called_once_with(repo_name, delete=True)
@@ -994,7 +552,7 @@ class TestVcsSettings(object):
         data['csrf_token'] = csrf_token
         data['inherit_global_settings'] = True
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data, status=302)
+            route_path('edit_repo_vcs_update', repo_name=repo_name), data, status=302)
 
         settings = SettingsModel(repo=repo_name)
         ui_settings = (
@@ -1019,7 +577,7 @@ class TestVcsSettings(object):
             self._cleanup_repo_settings(settings)
 
     def test_delete_svn_branch_and_tag_patterns(
-            self, autologin_user, backend_svn, settings_util, csrf_token):
+            self, autologin_user, backend_svn, settings_util, csrf_token, xhr_header):
         repo = backend_svn.create_repo()
         repo_name = repo.repo_name
         branch = settings_util.create_repo_rhodecode_ui(
@@ -1028,19 +586,18 @@ class TestVcsSettings(object):
         tag = settings_util.create_repo_rhodecode_ui(
             repo, VcsSettingsModel.SVN_TAG_SECTION, 'test_tag', cleanup=False)
         data = {
-            '_method': 'delete',
             'csrf_token': csrf_token
         }
         for id_ in (branch.ui_id, tag.ui_id):
             data['delete_svn_pattern'] = id_,
             self.app.post(
-                url('repo_vcs_settings', repo_name=repo_name), data,
-                headers={'X-REQUESTED-WITH': 'XMLHttpRequest', }, status=200)
+                route_path('edit_repo_vcs_svn_pattern_delete', repo_name=repo_name),
+                data, extra_environ=xhr_header, status=200)
         settings = VcsSettingsModel(repo=repo_name)
         assert settings.get_repo_svn_branch_patterns() == []
 
     def test_delete_svn_branch_requires_repo_admin_permission(
-            self, backend_svn, user_util, settings_util, csrf_token):
+            self, backend_svn, user_util, settings_util, csrf_token, xhr_header):
         repo = backend_svn.create_repo()
         repo_name = repo.repo_name
 
@@ -1056,36 +613,33 @@ class TestVcsSettings(object):
             repo, VcsSettingsModel.SVN_BRANCH_SECTION, 'test_branch',
             cleanup=False)
         data = {
-            '_method': 'delete',
             'csrf_token': csrf_token,
             'delete_svn_pattern': branch.ui_id
         }
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data,
-            headers={'X-REQUESTED-WITH': 'XMLHttpRequest', }, status=200)
+            route_path('edit_repo_vcs_svn_pattern_delete', repo_name=repo_name),
+            data, extra_environ=xhr_header, status=200)
 
     def test_delete_svn_branch_raises_400_when_not_found(
-            self, autologin_user, backend_svn, settings_util, csrf_token):
+            self, autologin_user, backend_svn, settings_util, csrf_token, xhr_header):
         repo_name = backend_svn.repo_name
         data = {
-            '_method': 'delete',
             'delete_svn_pattern': 123,
             'csrf_token': csrf_token
         }
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data,
-            headers={'X-REQUESTED-WITH': 'XMLHttpRequest', }, status=400)
+            route_path('edit_repo_vcs_svn_pattern_delete', repo_name=repo_name),
+            data, extra_environ=xhr_header, status=400)
 
     def test_delete_svn_branch_raises_400_when_no_id_specified(
-            self, autologin_user, backend_svn, settings_util, csrf_token):
+            self, autologin_user, backend_svn, settings_util, csrf_token, xhr_header):
         repo_name = backend_svn.repo_name
         data = {
-            '_method': 'delete',
             'csrf_token': csrf_token
         }
         self.app.post(
-            url('repo_vcs_settings', repo_name=repo_name), data,
-            headers={'X-REQUESTED-WITH': 'XMLHttpRequest', }, status=400)
+            route_path('edit_repo_vcs_svn_pattern_delete', repo_name=repo_name),
+            data, extra_environ=xhr_header, status=400)
 
     def _cleanup_repo_settings(self, settings_model):
         cleanup = []

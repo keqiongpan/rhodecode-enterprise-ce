@@ -143,6 +143,8 @@ def load_pyramid_environment(global_config, settings):
 
     # Store the settings to make them available to other modules.
     rhodecode.PYRAMID_SETTINGS = settings_merged
+    # NOTE(marcink): needs to be enabled after full port to pyramid
+    # rhodecode.CONFIG = config
 
     # If this is a test run we prepare the test environment like
     # creating a test database, test search index and test repositories.

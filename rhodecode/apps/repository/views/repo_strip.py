@@ -24,8 +24,8 @@ from pyramid.view import view_config
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import audit_logger
 from rhodecode.lib import helpers as h
-from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator,
-                                NotAnonymous, CSRFRequired)
+from rhodecode.lib.auth import (
+    LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib.ext_json import json
 
 log = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class StripView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
-        route_name='strip', request_method='GET',
+        route_name='edit_repo_strip', request_method='GET',
         renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def strip(self):
         c = self.load_default_context()
@@ -99,10 +99,10 @@ class StripView(RepoAppView):
                 continue
             try:
                 ScmModel().strip(
-                    repo=c.repo_info,
+                    repo=self.db_repo,
                     commit_id=commit['rev'], branch=commit['branch'])
                 log.info('Stripped commit %s from repo `%s` by %s' % (
-                    commit['rev'], c.repo_info.repo_name, user))
+                    commit['rev'], self.db_repo_name, user))
                 data[commit['rev']] = True
 
                 audit_logger.store_web(

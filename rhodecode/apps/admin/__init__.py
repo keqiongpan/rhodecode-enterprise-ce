@@ -205,6 +205,19 @@ def admin_routes(config):
         name='edit_user_group_perms_summary_json',
         pattern='/user_groups/{user_group_id:\d+}/edit/permissions_summary/json')
 
+    # repos admin
+    config.add_route(
+        name='repos',
+        pattern='/repos')
+
+    config.add_route(
+        name='repo_new',
+        pattern='/repos/new')
+
+    config.add_route(
+        name='repo_create',
+        pattern='/repos/create')
+
 
 def includeme(config):
     settings = config.get_settings()

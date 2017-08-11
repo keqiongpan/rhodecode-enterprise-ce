@@ -36,7 +36,7 @@ from rhodecode.lib.auth import (
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 import rhodecode.lib.helpers as h
-from rhodecode.lib.utils2 import safe_unicode, safe_int
+from rhodecode.lib.utils2 import safe_unicode
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
     RepositoryError, CommitDoesNotExistError, NodeDoesNotExistError)
