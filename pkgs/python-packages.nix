@@ -1654,7 +1654,7 @@
     };
   };
   rhodecode-enterprise-ce = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.8.0";
+    name = "rhodecode-enterprise-ce-4.9.0";
     buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage configobj];
     doCheck = true;
     propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress cssselect celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu lxml msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
