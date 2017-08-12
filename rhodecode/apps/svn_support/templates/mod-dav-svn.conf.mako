@@ -21,6 +21,9 @@
 #         DocumentRoot /var/www/html
 #         ErrorLog ${'${APACHE_LOG_DIR}'}/error.log
 #         CustomLog ${'${APACHE_LOG_DIR}'}/access.log combined
+#         LogLevel info
+#         # allows custom host names, prevents 400 errors on checkout
+#         HttpProtocolOptions Unsafe
 #         Include /path/to/generated/mod_dav_svn.conf
 #     </VirtualHost>
 #

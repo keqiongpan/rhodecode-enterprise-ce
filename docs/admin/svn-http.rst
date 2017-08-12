@@ -15,7 +15,21 @@ Prerequisites
   ``Apache HTTP Server`` and ``mod_dav_svn``.
 
 
-Using Ubuntu 14.04 Distribution as an example execute the following:
+.. tip::
+
+   We recommend using Wandisco repositories which provide latest SVN versions
+   for most platforms. Below is example how to add the wandisco repositories
+   for Ubuntu.
+
+    .. code-block:: bash
+
+        $ sudo sh -c 'echo "deb http://opensource.wandisco.com/ubuntu `lsb_release -cs` svn19" >> /etc/apt/sources.list.d/subversion19.list'
+        $ sudo wget -q http://opensource.wandisco.com/wandisco-debian.gpg -O- | sudo apt-key add -
+        $ sudo apt-get update
+
+
+Using Ubuntu 14.04/16.04 Distribution as an example execute the following to
+install required components:
 
 .. code-block:: bash
 
@@ -67,6 +81,9 @@ permission issues could occur. To do this edit the ``/etc/apache2/envvars``
         DocumentRoot /var/www/html
         ErrorLog ${'${APACHE_LOG_DIR}'}/error.log
         CustomLog ${'${APACHE_LOG_DIR}'}/access.log combined
+        LogLevel info
+        # allows custom host names, prevents 400 errors on checkout
+        HttpProtocolOptions Unsafe
         Include /home/user/.rccontrol/enterprise-1/mod_dav_svn.conf
     </VirtualHost>
 
