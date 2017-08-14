@@ -1160,13 +1160,13 @@
     };
   };
   pandocfilters = super.buildPythonPackage {
-    name = "pandocfilters-1.4.1";
+    name = "pandocfilters-1.4.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/e3/1f/21d1b7e8ca571e80b796c758d361fdf5554335ff138158654684bc5401d8/pandocfilters-1.4.1.tar.gz";
-      md5 = "7680d9f9ec07397dd17f380ee3818b9d";
+      url = "https://pypi.python.org/packages/4c/ea/236e2584af67bb6df960832731a6e5325fd4441de001767da328c33368ce/pandocfilters-1.4.2.tar.gz";
+      md5 = "dc391791ef54c7de1572d7b46b63361f";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
