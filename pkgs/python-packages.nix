@@ -1251,13 +1251,13 @@
     };
   };
   prompt-toolkit = super.buildPythonPackage {
-    name = "prompt-toolkit-1.0.14";
+    name = "prompt-toolkit-1.0.15";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six wcwidth];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/55/56/8c39509b614bda53e638b7500f12577d663ac1b868aef53426fc6a26c3f5/prompt_toolkit-1.0.14.tar.gz";
-      md5 = "f24061ae133ed32c6b764e92bd48c496";
+      url = "https://pypi.python.org/packages/8a/ad/cf6b128866e78ad6d7f1dc5b7f99885fb813393d9860778b2984582e81b5/prompt_toolkit-1.0.15.tar.gz";
+      md5 = "8fe70295006dbc8afedd43e5eba99032";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
