@@ -81,13 +81,13 @@
     };
   };
   Mako = super.buildPythonPackage {
-    name = "Mako-1.0.6";
+    name = "Mako-1.0.7";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [MarkupSafe];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/56/4b/cb75836863a6382199aefb3d3809937e21fa4cb0db15a4f4ba0ecc2e7e8e/Mako-1.0.6.tar.gz";
-      md5 = "a28e22a339080316b2acc352b9ee631c";
+      url = "https://pypi.python.org/packages/eb/f3/67579bb486517c0d49547f9697e36582cd19dafb5df9e687ed8e22de57fa/Mako-1.0.7.tar.gz";
+      md5 = "5836cc997b1b773ef389bf6629c30e65";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
