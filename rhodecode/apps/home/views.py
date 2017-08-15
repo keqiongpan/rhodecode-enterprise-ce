@@ -146,15 +146,16 @@ class HomeView(BaseAppView):
                 'text': obj.group_name,
                 'type': 'group',
                 'obj': {},
-                'url': h.route_path('repo_group_home', repo_group_name=obj.group_name)
+                'url': h.route_path(
+                    'repo_group_home', repo_group_name=obj.group_name)
             }
             for obj in repo_groups_iter]
 
-    def _get_hash_commit_list(self, auth_user, hash_starts_with=None):
-        if not hash_starts_with or len(hash_starts_with) < 3:
+    def _get_hash_commit_list(self, auth_user, query=None):
+        if not query or len(query) < 3:
             return []
 
-        commit_hashes = re.compile('([0-9a-f]{2,40})').findall(hash_starts_with)
+        commit_hashes = re.compile('(?:commit:)([0-9a-f]{2,40})').findall(query)
 
         if len(commit_hashes) != 1:
             return []
@@ -172,9 +173,9 @@ class HomeView(BaseAppView):
                 'text': entry['commit_id'],
                 'type': 'commit',
                 'obj': {'repo': entry['repository']},
-                'url': h.route_path('repo_commit',
-                             repo_name=entry['repository'],
-                             commit_id=entry['commit_id'])
+                'url': h.route_path(
+                    'repo_commit',
+                    repo_name=entry['repository'], commit_id=entry['commit_id'])
             }
             for entry in result['results']]
 
