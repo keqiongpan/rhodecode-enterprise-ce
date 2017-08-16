@@ -100,6 +100,24 @@ def _hash_key(k):
     return md5_safe(k)
 
 
+def in_filter_generator(qry, items, limit=500):
+    """
+    Splits IN() into multiple with OR
+    e.g.::
+    cnt = Repository.query().filter(
+        or_(
+            *in_filter_generator(Repository.repo_id, range(100000))
+        )).count()
+    """
+    parts = []
+    for chunk in xrange(0, len(items), limit):
+        parts.append(
+            qry.in_(items[chunk: chunk + limit])
+        )
+
+    return parts
+
+
 class EncryptedTextValue(TypeDecorator):
     """
     Special column for encrypted long text data, use like::
