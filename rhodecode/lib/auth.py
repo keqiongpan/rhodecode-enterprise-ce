@@ -34,6 +34,7 @@ import traceback
 from functools import wraps
 
 import ipaddress
+from beaker.cache import cache_region
 from pyramid.httpexceptions import HTTPForbidden, HTTPFound, HTTPNotFound
 from pylons.i18n.translation import _
 # NOTE(marcink): this has to be removed only after pyramid migration,
@@ -48,7 +49,7 @@ from rhodecode.model.meta import Session
 from rhodecode.model.user import UserModel
 from rhodecode.model.db import (
     User, Repository, Permission, UserToPerm, UserGroupToPerm, UserGroupMember,
-    UserIpMap, UserApiKeys, RepoGroup)
+    UserIpMap, UserApiKeys, RepoGroup, UserGroup)
 from rhodecode.lib import caches
 from rhodecode.lib.utils2 import safe_unicode, aslist, safe_str, md5
 from rhodecode.lib.utils import (
@@ -1002,6 +1003,66 @@ class AuthUser(object):
         return [
             x[0] for x in self.permissions['user_groups'].iteritems()
             if x[1] == 'usergroup.admin']
+
+    def repo_acl_ids(self, perms=None, cache=False):
+        """
+        Returns list of repository ids that user have access to based on given
+        perms. The cache flag should be only used in cases that are used for
+        display purposes, NOT IN ANY CASE for permission checks.
+        """
+        from rhodecode.model.scm import RepoList
+        if not perms:
+            perms = [
+                'repository.read', 'repository.write', 'repository.admin']
+
+        def _cached_repo_acl(user_id, perm_def):
+            return [x.repo_id for x in RepoList(
+                Repository.query().all(), perm_set=perm_def)]
+
+        compute = caches.conditional_cache(
+            'long_term', 'repo_acl_ids',
+            condition=cache, func=_cached_repo_acl)
+        return compute(self.user_id, perms)
+
+    def repo_group_acl_ids(self, perms=None, cache=False):
+        """
+        Returns list of repository group ids that user have access to based on given
+        perms. The cache flag should be only used in cases that are used for
+        display purposes, NOT IN ANY CASE for permission checks.
+        """
+        from rhodecode.model.scm import RepoGroupList
+        if not perms:
+            perms = [
+                'group.read', 'group.write', 'group.admin']
+
+        def _cached_repo_group_acl(user_id, perm_def):
+            return [x.group_id for x in RepoGroupList(
+                RepoGroup.query().all(), perm_set=perm_def)]
+
+        compute = caches.conditional_cache(
+            'long_term', 'repo_group_acl_ids',
+            condition=cache, func=_cached_repo_group_acl)
+        return compute(self.user_id, perms)
+
+    def user_group_acl_ids(self, perms=None, cache=False):
+        """
+        Returns list of user group ids that user have access to based on given
+        perms. The cache flag should be only used in cases that are used for
+        display purposes, NOT IN ANY CASE for permission checks.
+        """
+        from rhodecode.model.scm import UserGroupList
+        if not perms:
+            perms = [
+                'usergroup.read', 'usergroup.write', 'usergroup.admin']
+
+        def _cached_user_group_acl(user_id, perm_def):
+            return [x.users_group_id for x in UserGroupList(
+                UserGroup.query().all(), perm_set=perm_def)]
+
+        compute = caches.conditional_cache(
+            'long_term', 'user_group_acl_ids',
+            condition=cache, func=_cached_user_group_acl)
+        return compute(self.user_id, perms)
 
     @property
     def ip_allowed(self):
