@@ -1004,7 +1004,7 @@ class AuthUser(object):
             x[0] for x in self.permissions['user_groups'].iteritems()
             if x[1] == 'usergroup.admin']
 
-    def repo_acl_ids(self, perms=None, cache=False):
+    def repo_acl_ids(self, perms=None, name_filter=None, cache=False):
         """
         Returns list of repository ids that user have access to based on given
         perms. The cache flag should be only used in cases that are used for
@@ -1015,16 +1015,22 @@ class AuthUser(object):
             perms = [
                 'repository.read', 'repository.write', 'repository.admin']
 
-        def _cached_repo_acl(user_id, perm_def):
-            return [x.repo_id for x in RepoList(
-                Repository.query().all(), perm_set=perm_def)]
+        def _cached_repo_acl(user_id, perm_def, name_filter):
+            qry = Repository.query()
+            if name_filter:
+                ilike_expression = u'%{}%'.format(safe_unicode(name_filter))
+                qry = qry.filter(
+                    Repository.repo_name.ilike(ilike_expression))
+
+            return [x.repo_id for x in
+                    RepoList(qry, perm_set=perm_def)]
 
         compute = caches.conditional_cache(
             'long_term', 'repo_acl_ids',
             condition=cache, func=_cached_repo_acl)
-        return compute(self.user_id, perms)
+        return compute(self.user_id, perms, name_filter)
 
-    def repo_group_acl_ids(self, perms=None, cache=False):
+    def repo_group_acl_ids(self, perms=None, name_filter=None, cache=False):
         """
         Returns list of repository group ids that user have access to based on given
         perms. The cache flag should be only used in cases that are used for
@@ -1035,16 +1041,22 @@ class AuthUser(object):
             perms = [
                 'group.read', 'group.write', 'group.admin']
 
-        def _cached_repo_group_acl(user_id, perm_def):
-            return [x.group_id for x in RepoGroupList(
-                RepoGroup.query().all(), perm_set=perm_def)]
+        def _cached_repo_group_acl(user_id, perm_def, name_filter):
+            qry = RepoGroup.query()
+            if name_filter:
+                ilike_expression = u'%{}%'.format(safe_unicode(name_filter))
+                qry = qry.filter(
+                    RepoGroup.group_name.ilike(ilike_expression))
+
+            return [x.group_id for x in
+                    RepoGroupList(qry, perm_set=perm_def)]
 
         compute = caches.conditional_cache(
             'long_term', 'repo_group_acl_ids',
             condition=cache, func=_cached_repo_group_acl)
-        return compute(self.user_id, perms)
+        return compute(self.user_id, perms, name_filter)
 
-    def user_group_acl_ids(self, perms=None, cache=False):
+    def user_group_acl_ids(self, perms=None, name_filter=None, cache=False):
         """
         Returns list of user group ids that user have access to based on given
         perms. The cache flag should be only used in cases that are used for
@@ -1055,14 +1067,20 @@ class AuthUser(object):
             perms = [
                 'usergroup.read', 'usergroup.write', 'usergroup.admin']
 
-        def _cached_user_group_acl(user_id, perm_def):
-            return [x.users_group_id for x in UserGroupList(
-                UserGroup.query().all(), perm_set=perm_def)]
+        def _cached_user_group_acl(user_id, perm_def, name_filter):
+            qry = UserGroup.query()
+            if name_filter:
+                ilike_expression = u'%{}%'.format(safe_unicode(name_filter))
+                qry = qry.filter(
+                    UserGroup.users_group_name.ilike(ilike_expression))
+
+            return [x.users_group_id for x in
+                    UserGroupList(qry, perm_set=perm_def)]
 
         compute = caches.conditional_cache(
             'long_term', 'user_group_acl_ids',
             condition=cache, func=_cached_user_group_acl)
-        return compute(self.user_id, perms)
+        return compute(self.user_id, perms, name_filter)
 
     @property
     def ip_allowed(self):
