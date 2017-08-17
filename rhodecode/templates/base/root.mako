@@ -28,6 +28,13 @@ c.template_context['default_user'] = {
         <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
         <title>${self.title()}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+        % if 'safari' in request.user_agent.lower():
+            <meta name="referrer" content="origin">
+        % else:
+            <meta name="referrer" content="origin-when-cross-origin">
+        % endif
+
         <%def name="robots()">
             <meta name="robots" content="index, nofollow"/>
         </%def>
