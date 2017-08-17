@@ -20,6 +20,7 @@
 
 import time
 import logging
+import operator
 
 from pyramid.httpexceptions import HTTPFound
 
@@ -282,6 +283,15 @@ class DataGridAppView(object):
         length = safe_int(request.GET.get('length'), 25)
         draw = safe_int(request.GET.get('draw'))
         return draw, start, length
+
+    def _get_order_col(self, order_by, model):
+        if isinstance(order_by, basestring):
+            try:
+                return operator.attrgetter(order_by)(model)
+            except AttributeError:
+                return None
+        else:
+            return order_by
 
 
 class BaseReferencesView(RepoAppView):
