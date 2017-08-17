@@ -106,6 +106,16 @@ def admin_routes(config):
         name='admin_permissions_auth_token_access',
         pattern='/permissions/auth_token_access')
 
+    config.add_route(
+        name='admin_permissions_ssh_keys',
+        pattern='/permissions/ssh_keys')
+    config.add_route(
+        name='admin_permissions_ssh_keys_data',
+        pattern='/permissions/ssh_keys/data')
+    config.add_route(
+        name='admin_permissions_ssh_keys_update',
+        pattern='/permissions/ssh_keys/update')
+
     # users admin
     config.add_route(
         name='users',

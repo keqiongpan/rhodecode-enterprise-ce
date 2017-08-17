@@ -21,6 +21,7 @@
 import re
 import logging
 import formencode
+import datetime
 from pyramid.interfaces import IRoutesMapper
 
 from pyramid.view import view_config
@@ -28,13 +29,15 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.renderers import render
 from pyramid.response import Response
 
-from rhodecode.apps._base import BaseAppView
+from rhodecode.apps._base import BaseAppView, DataGridAppView
+from rhodecode.apps.ssh_support import SshKeyFileChangeEvent
+from rhodecode.events import trigger
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
-from rhodecode.lib.utils2 import aslist
-from rhodecode.model.db import User, UserIpMap
+from rhodecode.lib.utils2 import aslist, safe_unicode
+from rhodecode.model.db import or_, joinedload, coalesce, User, UserIpMap, UserSshKeys
 from rhodecode.model.forms import (
     ApplicationPermissionsForm, ObjectPermissionsForm, UserPermissionsForm)
 from rhodecode.model.meta import Session
@@ -45,7 +48,7 @@ from rhodecode.model.settings import SettingsModel
 log = logging.getLogger(__name__)
 
 
-class AdminPermissionsView(BaseAppView):
+class AdminPermissionsView(BaseAppView, DataGridAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
@@ -367,3 +370,106 @@ class AdminPermissionsView(BaseAppView):
 
         c.whitelist_views = whitelist_views
         return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='admin_permissions_ssh_keys', request_method='GET',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def ssh_keys(self):
+        c = self.load_default_context()
+        c.active = 'ssh_keys'
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='admin_permissions_ssh_keys_data', request_method='GET',
+        renderer='json_ext', xhr=True)
+    def ssh_keys_data(self):
+        _ = self.request.translate
+        column_map = {
+            'fingerprint': 'ssh_key_fingerprint',
+            'username': User.username
+        }
+        draw, start, limit = self._extract_chunk(self.request)
+        search_q, order_by, order_dir = self._extract_ordering(
+            self.request, column_map=column_map)
+
+        ssh_keys_data_total_count = UserSshKeys.query()\
+            .count()
+
+        # json generate
+        base_q = UserSshKeys.query().join(UserSshKeys.user)
+
+        if search_q:
+            like_expression = u'%{}%'.format(safe_unicode(search_q))
+            base_q = base_q.filter(or_(
+                User.username.ilike(like_expression),
+                UserSshKeys.ssh_key_fingerprint.ilike(like_expression),
+            ))
+
+        users_data_total_filtered_count = base_q.count()
+
+        sort_col = self._get_order_col(order_by, UserSshKeys)
+        if sort_col:
+            if order_dir == 'asc':
+                # handle null values properly to order by NULL last
+                if order_by in ['created_on']:
+                    sort_col = coalesce(sort_col, datetime.date.max)
+                sort_col = sort_col.asc()
+            else:
+                # handle null values properly to order by NULL last
+                if order_by in ['created_on']:
+                    sort_col = coalesce(sort_col, datetime.date.min)
+                sort_col = sort_col.desc()
+
+        base_q = base_q.order_by(sort_col)
+        base_q = base_q.offset(start).limit(limit)
+
+        ssh_keys = base_q.all()
+
+        ssh_keys_data = []
+        for ssh_key in ssh_keys:
+            ssh_keys_data.append({
+                "username": h.gravatar_with_user(self.request, ssh_key.user.username),
+                "fingerprint": ssh_key.ssh_key_fingerprint,
+                "description": ssh_key.description,
+                "created_on": h.format_date(ssh_key.created_on),
+                "action": h.link_to(
+                    _('Edit'), h.route_path('edit_user_ssh_keys',
+                                            user_id=ssh_key.user.user_id))
+            })
+
+        data = ({
+            'draw': draw,
+            'data': ssh_keys_data,
+            'recordsTotal': ssh_keys_data_total_count,
+            'recordsFiltered': users_data_total_filtered_count,
+        })
+
+        return data
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='admin_permissions_ssh_keys_update', request_method='POST',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def ssh_keys_update(self):
+        _ = self.request.translate
+        self.load_default_context()
+
+        ssh_enabled = self.request.registry.settings.get(
+            'ssh.generate_authorized_keyfile')
+        key_file = self.request.registry.settings.get(
+            'ssh.authorized_keys_file_path')
+        if ssh_enabled:
+            trigger(SshKeyFileChangeEvent(), self.request.registry)
+            h.flash(_('Updated SSH keys file: {}').format(key_file),
+                    category='success')
+        else:
+            h.flash(_('SSH key support is disabled in .ini file'),
+                    category='warning')
+
+        raise HTTPFound(h.route_path('admin_permissions_ssh_keys'))

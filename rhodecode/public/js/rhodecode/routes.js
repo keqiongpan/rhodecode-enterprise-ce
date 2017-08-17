@@ -56,6 +56,9 @@ function registerRCRoutes() {
     pyroutes.register('admin_permissions_ips', '/_admin/permissions/ips', []);
     pyroutes.register('admin_permissions_overview', '/_admin/permissions/overview', []);
     pyroutes.register('admin_permissions_auth_token_access', '/_admin/permissions/auth_token_access', []);
+    pyroutes.register('admin_permissions_ssh_keys', '/_admin/permissions/ssh_keys', []);
+    pyroutes.register('admin_permissions_ssh_keys_data', '/_admin/permissions/ssh_keys/data', []);
+    pyroutes.register('admin_permissions_ssh_keys_update', '/_admin/permissions/ssh_keys/update', []);
     pyroutes.register('users', '/_admin/users', []);
     pyroutes.register('users_data', '/_admin/users_data', []);
     pyroutes.register('edit_user_auth_tokens', '/_admin/users/%(user_id)s/edit/auth_tokens', ['user_id']);

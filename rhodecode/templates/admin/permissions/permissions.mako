@@ -44,6 +44,9 @@
           <li class="${'active' if c.active=='auth_token_access' else ''}">
             <a href="${h.route_path('admin_permissions_auth_token_access')}">${_('AuthToken Access')}</a>
           </li>
+          <li class="${'active' if c.active=='ssh_keys' else ''}">
+            <a href="${h.route_path('admin_permissions_ssh_keys')}">${_('SSH Keys')}</a>
+          </li>
           <li class="${'active' if c.active=='perms' else ''}">
             <a href="${h.route_path('admin_permissions_overview')}">${_('Overview')}</a>
           </li>

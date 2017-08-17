@@ -20,7 +20,9 @@
 
 import pytest
 from rhodecode.model.db import User, UserIpMap
+from rhodecode.model.meta import Session
 from rhodecode.model.permission import PermissionModel
+from rhodecode.model.ssh_key import SshKeyModel
 from rhodecode.tests import (
     TestController, clear_all_caches, assert_session_flash)
 
@@ -55,7 +57,14 @@ def route_path(name, params=None, **kwargs):
         'admin_permissions_ips':
             ADMIN_PREFIX + '/permissions/ips',
         'admin_permissions_overview':
-            ADMIN_PREFIX + '/permissions/overview'
+            ADMIN_PREFIX + '/permissions/overview',
+
+        'admin_permissions_ssh_keys':
+            ADMIN_PREFIX + '/permissions/ssh_keys',
+        'admin_permissions_ssh_keys_data':
+            ADMIN_PREFIX + '/permissions/ssh_keys/data',
+        'admin_permissions_ssh_keys_update':
+            ADMIN_PREFIX + '/permissions/ssh_keys/update'
 
     }[name].format(**kwargs)
 
@@ -248,3 +257,30 @@ class TestAdminPermissionsController(TestController):
     def test_index_overview(self):
         self.log_user()
         self.app.get(route_path('admin_permissions_overview'))
+
+    def test_ssh_keys(self):
+        self.log_user()
+        self.app.get(route_path('admin_permissions_ssh_keys'), status=200)
+
+    def test_ssh_keys_data(self, user_util, xhr_header):
+        self.log_user()
+        response = self.app.get(route_path('admin_permissions_ssh_keys_data'),
+                                extra_environ=xhr_header)
+        assert response.json == {u'data': [], u'draw': None,
+                                 u'recordsFiltered': 0, u'recordsTotal': 0}
+
+        dummy_user = user_util.create_user()
+        SshKeyModel().create(dummy_user, 'ab:cd:ef', 'KEYKEY', 'test_key')
+        Session().commit()
+        response = self.app.get(route_path('admin_permissions_ssh_keys_data'),
+                                extra_environ=xhr_header)
+        assert response.json['data'][0]['fingerprint'] == 'ab:cd:ef'
+
+    def test_ssh_keys_update(self):
+        self.log_user()
+        response = self.app.post(
+            route_path('admin_permissions_ssh_keys_update'),
+            dict(csrf_token=self.csrf_token), status=302)
+
+        assert_session_flash(
+            response, 'SSH key support is disabled in .ini file')
