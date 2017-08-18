@@ -31,8 +31,9 @@ from rhodecode.lib.utils2 import AttributeDict
 class TestSshKeyFileGeneration(object):
     @pytest.mark.parametrize('ssh_wrapper_cmd', ['/tmp/sshwrapper.py'])
     @pytest.mark.parametrize('allow_shell', [True, False])
+    @pytest.mark.parametrize('debug', [True, False])
     @pytest.mark.parametrize('ssh_opts', [None, 'mycustom,option'])
-    def test_write_keyfile(self, tmpdir, ssh_wrapper_cmd, allow_shell, ssh_opts):
+    def test_write_keyfile(self, tmpdir, ssh_wrapper_cmd, allow_shell, debug, ssh_opts):
 
         authorized_keys_file_path = os.path.join(str(tmpdir), 'authorized_keys')
 
@@ -43,26 +44,30 @@ class TestSshKeyFileGeneration(object):
                 AttributeDict({'user': AttributeDict(username='user'),
                                'ssh_key_data': 'ssh-rsa USER_KEY'}),
             ]
-
         with mock.patch('rhodecode.apps.ssh_support.utils.get_all_active_keys',
                         return_value=keys()):
-            utils._generate_ssh_authorized_keys_file(
-                authorized_keys_file_path, ssh_wrapper_cmd,
-                allow_shell, ssh_opts
-            )
+            with mock.patch.dict('rhodecode.CONFIG', {'__file__': '/tmp/file.ini'}):
+                utils._generate_ssh_authorized_keys_file(
+                    authorized_keys_file_path, ssh_wrapper_cmd,
+                    allow_shell, ssh_opts, debug
+                )
 
-            assert os.path.isfile(authorized_keys_file_path)
-            with open(authorized_keys_file_path) as f:
-                content = f.read()
+                assert os.path.isfile(authorized_keys_file_path)
+                with open(authorized_keys_file_path) as f:
+                    content = f.read()
 
-                assert 'command="/tmp/sshwrapper.py' in content
-                assert 'This file is managed by RhodeCode, ' \
-                       'please do not edit it manually.' in content
+                    assert 'command="/tmp/sshwrapper.py' in content
+                    assert 'This file is managed by RhodeCode, ' \
+                           'please do not edit it manually.' in content
 
-                if allow_shell:
-                    assert '--shell --user' in content
-                else:
+                    if allow_shell:
+                        assert '--shell' in content
+
+                    if debug:
+                        assert '--debug' in content
+
                     assert '--user' in content
+                    assert '--user-id' in content
 
-                if ssh_opts:
-                    assert ssh_opts in content
+                    if ssh_opts:
+                        assert ssh_opts in content

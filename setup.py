@@ -251,6 +251,7 @@ setup(
             'rcserver=rhodecode.rcserver:main',
             'rcsetup-app=rhodecode.lib.rc_commands.setup_rc:main',
             'rcupgrade-db=rhodecode.lib.rc_commands.upgrade_db:main',
+            'rcssh-wrapper=rhodecode.apps.ssh_support.lib.ssh_wrapper:main',
         ],
         'beaker.backends': [
             'memorylru_base=rhodecode.lib.memory_lru_debug:MemoryLRUNamespaceManagerBase',

@@ -48,11 +48,15 @@ def get_all_active_keys():
 
 
 def _generate_ssh_authorized_keys_file(
-        authorized_keys_file_path, ssh_wrapper_cmd, allow_shell, ssh_opts):
+        authorized_keys_file_path, ssh_wrapper_cmd, allow_shell, ssh_opts, debug):
+
+    import rhodecode
     all_active_keys = get_all_active_keys()
 
     if allow_shell:
         ssh_wrapper_cmd = ssh_wrapper_cmd + ' --shell'
+    if debug:
+        ssh_wrapper_cmd = ssh_wrapper_cmd + ' --debug'
 
     if not os.path.isfile(authorized_keys_file_path):
         with open(authorized_keys_file_path, 'w'):
@@ -62,7 +66,7 @@ def _generate_ssh_authorized_keys_file(
         raise OSError('Access to file {} is without read access'.format(
             authorized_keys_file_path))
 
-    line_tmpl = '{ssh_opts},command="{wrapper_command} --user {user}" {key}\n'
+    line_tmpl = '{ssh_opts},command="{wrapper_command} {ini_path} --user-id={user_id} --user={user}" {key}\n'
 
     fd, tmp_authorized_keys = tempfile.mkstemp(
         '.authorized_keys_write',
@@ -71,13 +75,18 @@ def _generate_ssh_authorized_keys_file(
     now = datetime.datetime.utcnow().isoformat()
     keys_file = os.fdopen(fd, 'wb')
     keys_file.write(HEADER.format(len(all_active_keys), now))
+    ini_path = rhodecode.CONFIG['__file__']
 
     for user_key in all_active_keys:
         username = user_key.user.username
+        user_id = user_key.user.user_id
+
         keys_file.write(
             line_tmpl.format(
                 ssh_opts=ssh_opts or SSH_OPTS,
                 wrapper_command=ssh_wrapper_cmd,
+                ini_path=ini_path,
+                user_id=user_id,
                 user=username, key=user_key.ssh_key_data))
         log.debug('addkey: Key added for user: `%s`', username)
     keys_file.close()
@@ -100,8 +109,11 @@ def generate_ssh_authorized_keys_file(registry):
         config_keys.wrapper_allow_shell)
     ssh_opts = registry.settings.get(
         config_keys.authorized_keys_line_ssh_opts)
+    debug = registry.settings.get(
+        config_keys.enable_debug_logging)
 
     _generate_ssh_authorized_keys_file(
-        authorized_keys_file_path, ssh_wrapper_cmd, allow_shell, ssh_opts)
+        authorized_keys_file_path, ssh_wrapper_cmd, allow_shell, ssh_opts,
+        debug)
 
     return 0
