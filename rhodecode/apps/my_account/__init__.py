@@ -56,6 +56,20 @@ def includeme(config):
         name='my_account_auth_tokens_delete',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens/delete')
 
+    # my account ssh keys
+    config.add_route(
+        name='my_account_ssh_keys',
+        pattern=ADMIN_PREFIX + '/my_account/ssh_keys')
+    config.add_route(
+        name='my_account_ssh_keys_generate',
+        pattern=ADMIN_PREFIX + '/my_account/ssh_keys/generate')
+    config.add_route(
+        name='my_account_ssh_keys_add',
+        pattern=ADMIN_PREFIX + '/my_account/ssh_keys/new')
+    config.add_route(
+        name='my_account_ssh_keys_delete',
+        pattern=ADMIN_PREFIX + '/my_account/ssh_keys/delete')
+
     # my account emails
     config.add_route(
         name='my_account_emails',

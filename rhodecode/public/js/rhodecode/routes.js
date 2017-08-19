@@ -221,6 +221,10 @@ function registerRCRoutes() {
     pyroutes.register('my_account_auth_tokens', '/_admin/my_account/auth_tokens', []);
     pyroutes.register('my_account_auth_tokens_add', '/_admin/my_account/auth_tokens/new', []);
     pyroutes.register('my_account_auth_tokens_delete', '/_admin/my_account/auth_tokens/delete', []);
+    pyroutes.register('my_account_ssh_keys', '/_admin/my_account/ssh_keys', []);
+    pyroutes.register('my_account_ssh_keys_generate', '/_admin/my_account/ssh_keys/generate', []);
+    pyroutes.register('my_account_ssh_keys_add', '/_admin/my_account/ssh_keys/new', []);
+    pyroutes.register('my_account_ssh_keys_delete', '/_admin/my_account/ssh_keys/delete', []);
     pyroutes.register('my_account_emails', '/_admin/my_account/emails', []);
     pyroutes.register('my_account_emails_add', '/_admin/my_account/emails/new', []);
     pyroutes.register('my_account_emails_delete', '/_admin/my_account/emails/delete', []);
