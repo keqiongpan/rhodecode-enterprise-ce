@@ -41,6 +41,9 @@ class MyAccountSshKeysView(BaseAppView, DataGridAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
         c.user = c.auth_user.get_instance()
+
+        c.ssh_enabled = self.request.registry.settings.get(
+            'ssh.generate_authorized_keyfile')
         self._register_global_c(c)
         return c
 

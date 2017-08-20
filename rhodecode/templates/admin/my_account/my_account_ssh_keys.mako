@@ -11,32 +11,37 @@
                 <th>${_('Created')}</th>
                 <th>${_('Action')}</th>
             </tr>
-            %if c.user_ssh_keys:
-                %for ssh_key in c.user_ssh_keys:
-                  <tr class="">
-                    <td class="">
-                        <code>${ssh_key.ssh_key_fingerprint}</code>
-                    </td>
-                    <td class="td-wrap">${ssh_key.description}</td>
-                    <td class="td-tags">${h.format_date(ssh_key.created_on)}</td>
+            % if not c.ssh_enabled:
+                <tr><td colspan="4"><div class="">${_('SSH Keys usage is currently disabled, please ask your administrator to enable them.')}</div></td></tr>
+            % else:
+                %if c.user_ssh_keys:
+                    %for ssh_key in c.user_ssh_keys:
+                      <tr class="">
+                        <td class="">
+                            <code>${ssh_key.ssh_key_fingerprint}</code>
+                        </td>
+                        <td class="td-wrap">${ssh_key.description}</td>
+                        <td class="td-tags">${h.format_date(ssh_key.created_on)}</td>
 
-                    <td class="td-action">
-                        ${h.secure_form(h.route_path('my_account_ssh_keys_delete'), method='POST', request=request)}
-                            ${h.hidden('del_ssh_key', ssh_key.ssh_key_id)}
-                            <button class="btn btn-link btn-danger" type="submit"
-                                    onclick="return confirm('${_('Confirm to remove ssh key %s') % ssh_key.ssh_key_fingerprint}');">
-                                ${_('Delete')}
-                            </button>
-                        ${h.end_form()}
-                    </td>
-                  </tr>
-                %endfor
-            %else:
-            <tr><td><div class="ip">${_('No additional ssh keys specified')}</div></td></tr>
-            %endif
+                        <td class="td-action">
+                            ${h.secure_form(h.route_path('my_account_ssh_keys_delete'), method='POST', request=request)}
+                                ${h.hidden('del_ssh_key', ssh_key.ssh_key_id)}
+                                <button class="btn btn-link btn-danger" type="submit"
+                                        onclick="return confirm('${_('Confirm to remove ssh key %s') % ssh_key.ssh_key_fingerprint}');">
+                                    ${_('Delete')}
+                                </button>
+                            ${h.end_form()}
+                        </td>
+                      </tr>
+                    %endfor
+                %else:
+                <tr><td colspan="4"><div class="">${_('No additional ssh keys specified')}</div></td></tr>
+                %endif
+            % endif
           </table>
         </div>
 
+        % if c.ssh_enabled:
         <div class="user_ssh_keys">
             ${h.secure_form(h.route_path('my_account_ssh_keys_add'), method='POST', request=request)}
             <div class="form form-vertical">
@@ -66,6 +71,7 @@
             </div>
             ${h.end_form()}
         </div>
+        % endif
     </div>
 </div>
 
