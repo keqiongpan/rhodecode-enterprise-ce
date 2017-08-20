@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import mock
 import pytest
 from rhodecode.model.db import User, UserIpMap
 from rhodecode.model.meta import Session
@@ -283,4 +284,17 @@ class TestAdminPermissionsController(TestController):
             dict(csrf_token=self.csrf_token), status=302)
 
         assert_session_flash(
-            response, 'SSH key support is disabled in .ini file')
+            response, 'Updated SSH keys file')
+
+    def test_ssh_keys_update_disabled(self):
+        self.log_user()
+
+        from rhodecode.apps.admin.views.permissions import AdminPermissionsView
+        with mock.patch.object(AdminPermissionsView, 'ssh_enabled',
+                               return_value=False):
+            response = self.app.post(
+                route_path('admin_permissions_ssh_keys_update'),
+                dict(csrf_token=self.csrf_token), status=302)
+
+            assert_session_flash(
+                response, 'SSH key support is disabled in .ini file')

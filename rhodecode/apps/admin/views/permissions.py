@@ -371,6 +371,10 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
         c.whitelist_views = whitelist_views
         return self._get_template_context(c)
 
+    def ssh_enabled(self):
+        return self.request.registry.settings.get(
+            'ssh.generate_authorized_keyfile')
+
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
@@ -379,6 +383,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
     def ssh_keys(self):
         c = self.load_default_context()
         c.active = 'ssh_keys'
+        c.ssh_enabled = self.ssh_enabled()
         return self._get_template_context(c)
 
     @LoginRequired()
@@ -460,8 +465,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
         _ = self.request.translate
         self.load_default_context()
 
-        ssh_enabled = self.request.registry.settings.get(
-            'ssh.generate_authorized_keyfile')
+        ssh_enabled = self.ssh_enabled()
         key_file = self.request.registry.settings.get(
             'ssh.authorized_keys_file_path')
         if ssh_enabled:
