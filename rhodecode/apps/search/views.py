@@ -123,7 +123,8 @@ class SearchRepoView(RepoAppView):
         return c
 
     @LoginRequired()
-    @HasRepoPermissionAnyDecorator('repository.admin')
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
     @view_config(
         route_name='search_repo', request_method='GET',
         renderer='rhodecode:templates/search/search.mako')
