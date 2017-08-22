@@ -1015,7 +1015,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             Session().commit()
             h.flash(_('Successfully deleted pull request'),
                     category='success')
-            raise HTTPFound(h.route_path('my_account_pullrequests'))
+            raise HTTPFound(h.route_path('pullrequest_show_all',
+                                         repo_name=self.db_repo_name))
 
         log.warning('user %s tried to delete pull request without access',
                     self._rhodecode_user)
