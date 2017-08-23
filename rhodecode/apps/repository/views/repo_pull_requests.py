@@ -812,12 +812,16 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             Session().commit()
             h.flash(_('Successfully opened new pull request'),
                     category='success')
-        except Exception as e:
+        except Exception:
             msg = _('Error occurred during creation of this pull request.')
             log.exception(msg)
             h.flash(msg, category='error')
+
+            # copy the args back to redirect
+            org_query = self.request.GET.mixed()
             raise HTTPFound(
-                h.route_path('pullrequest_new', repo_name=self.db_repo_name))
+                h.route_path('pullrequest_new', repo_name=self.db_repo_name,
+                             _query=org_query))
 
         raise HTTPFound(
             h.route_path('pullrequest_show', repo_name=target_repo,
