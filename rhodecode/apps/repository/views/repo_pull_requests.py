@@ -368,6 +368,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
 
+        c.pr_merge_info = MergeCheck.get_merge_conditions(pull_request_latest)
+
         c.pull_request_review_status = _merge_check.review_status
         if merge_checks:
             self.request.override_renderer = \

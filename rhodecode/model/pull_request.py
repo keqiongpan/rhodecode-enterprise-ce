@@ -1544,6 +1544,38 @@ class MergeCheck(object):
         log.debug('MergeCheck: is failed: %s', merge_check.failed)
         return merge_check
 
+    @classmethod
+    def get_merge_conditions(cls, pull_request):
+        merge_details = {}
+
+        model = PullRequestModel()
+        use_rebase = model._use_rebase_for_merging(pull_request)
+
+        if use_rebase:
+            merge_details['merge_strategy'] = dict(
+                details={},
+                message=_('Merge strategy: rebase')
+            )
+        else:
+            merge_details['merge_strategy'] = dict(
+                details={},
+                message=_('Merge strategy: explicit merge commit')
+            )
+
+        close_branch = model._close_branch_before_merging(pull_request)
+        if close_branch:
+            repo_type = pull_request.target_repo.repo_type
+            if repo_type == 'hg':
+                close_msg = _('Source branch will be closed after merge.')
+            elif repo_type == 'git':
+                close_msg = _('Source branch will be deleted after merge.')
+
+            merge_details['close_branch'] = dict(
+                details={},
+                message=close_msg
+            )
+
+        return merge_details
 
 ChangeTuple = namedtuple('ChangeTuple',
                          ['added', 'common', 'removed', 'total'])
