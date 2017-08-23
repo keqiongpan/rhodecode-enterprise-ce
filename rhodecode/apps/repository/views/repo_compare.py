@@ -68,8 +68,10 @@ class RepoCompareView(RepoAppView):
                 return repo.scm_instance().EMPTY_COMMIT
             h.flash(h.literal(_('There are no commits yet')),
                     category='warning')
-            raise HTTPFound(
-                h.route_path('repo_summary', repo_name=repo.repo_name))
+            if not partial:
+                raise HTTPFound(
+                    h.route_path('repo_summary', repo_name=repo.repo_name))
+            raise HTTPBadRequest()
 
         except RepositoryError as e:
             log.exception(safe_str(e))
