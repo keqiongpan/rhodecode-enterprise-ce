@@ -379,6 +379,10 @@ class UserGroupsController(BaseController):
             (x.group for x in c.user_group.users_group_repo_group_to_perm),
             key=lambda u: u.group_name.lower())
 
+        c.group_to_review_rules = sorted(
+            (x.users_group for x in c.user_group.user_group_review_rules),
+            key=lambda u: u.users_group_name.lower())
+
         return render('admin/user_groups/user_group_edit.mako')
 
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')

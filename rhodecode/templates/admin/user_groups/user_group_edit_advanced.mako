@@ -11,6 +11,7 @@
     (_('Assigned to repositories'), len(c.group_to_repos),'', [x for x in c.group_to_repos]),
     (_('Assigned to repo groups'), len(c.group_to_repo_groups), '', [x for x in c.group_to_repo_groups]),
 
+    (_('Assigned to review rules'), len(c.group_to_review_rules), '', [x for x in c.group_to_review_rules]),
  ]
 %>
 

@@ -385,6 +385,11 @@ class UsersController(BaseController):
         c.personal_repo_group = RepoGroup.get_user_personal_repo_group(user_id)
         c.personal_repo_group_name = RepoGroupModel()\
             .get_personal_group_name(user)
+
+        c.user_to_review_rules = sorted(
+            (x.user for x in c.user.user_review_rules),
+            key=lambda u: u.username.lower())
+
         c.first_admin = User.get_first_super_admin()
         defaults = user.get_dict()
 

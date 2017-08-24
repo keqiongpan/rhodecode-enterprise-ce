@@ -575,6 +575,8 @@ class User(Base, BaseModel):
         'ExternalIdentity',
         primaryjoin="User.user_id==ExternalIdentity.local_user_id",
         cascade='all')
+    # review rules
+    user_review_rules = relationship('RepoReviewRuleUser', cascade='all')
 
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (self.__class__.__name__,
@@ -1269,6 +1271,7 @@ class UserGroup(Base, BaseModel):
     user_user_group_to_perm = relationship('UserUserGroupToPerm', cascade='all')
     user_group_user_group_to_perm = relationship('UserGroupUserGroupToPerm ', primaryjoin="UserGroupUserGroupToPerm.target_user_group_id==UserGroup.users_group_id", cascade='all')
 
+    user_group_review_rules = relationship('RepoReviewRuleUserGroup', cascade='all')
     user = relationship('User', primaryjoin="User.user_id==UserGroup.user_id")
 
     @classmethod

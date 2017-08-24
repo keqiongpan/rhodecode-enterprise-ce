@@ -13,6 +13,8 @@
     (_('User groups'), len(c.user.user_groups), '', [x.users_group_name for x in c.user.user_groups]),
 
     (_('Reviewer of pull requests'), len(c.user.reviewer_pull_requests), '', ['Pull Request #{}'.format(x.pull_request.pull_request_id) for x in c.user.reviewer_pull_requests]),
+    (_('Assigned to review rules'), len(c.user_to_review_rules), '', [x for x in c.user_to_review_rules]),
+
     (_('Member of User groups'), len(c.user.group_member), '', [x.users_group.users_group_name for x in c.user.group_member]),
     (_('Force password change'), c.user.user_data.get('force_password_change', 'False'), '', ''),
  ]
