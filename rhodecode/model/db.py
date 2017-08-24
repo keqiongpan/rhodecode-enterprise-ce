@@ -84,7 +84,7 @@ PERMISSION_TYPE_SORT = {
 }
 
 
-def display_sort(obj):
+def display_user_sort(obj):
     """
     Sort function used to sort permissions in .permissions() function of
     Repository, RepoGroup, UserGroup. Also it put the default user in front
@@ -95,6 +95,17 @@ def display_sort(obj):
         return '#####'
     prefix = PERMISSION_TYPE_SORT.get(obj.permission.split('.')[-1], '')
     return prefix + obj.username
+
+
+def display_user_group_sort(obj):
+    """
+    Sort function used to sort permissions in .permissions() function of
+    Repository, RepoGroup, UserGroup. Also it put the default user in front
+    of all other resources
+    """
+
+    prefix = PERMISSION_TYPE_SORT.get(obj.permission.split('.')[-1], '')
+    return prefix + obj.users_group_name
 
 
 def _hash_key(k):
@@ -1351,7 +1362,7 @@ class UserGroup(Base, BaseModel):
         # filter the perm rows by 'default' first and then sort them by
         # admin,write,read,none permissions sorted again alphabetically in
         # each group
-        perm_rows = sorted(perm_rows, key=display_sort)
+        perm_rows = sorted(perm_rows, key=display_user_sort)
 
         _admin_perm = 'usergroup.admin'
         owner_row = []
@@ -1387,6 +1398,7 @@ class UserGroup(Base, BaseModel):
             usr.permission = _user_group.permission.permission_name
             perm_rows.append(usr)
 
+        perm_rows = sorted(perm_rows, key=display_user_group_sort)
         return perm_rows
 
     def _get_default_perms(self, user_group, suffix=''):
@@ -1837,7 +1849,7 @@ class Repository(Base, BaseModel):
         # filter the perm rows by 'default' first and then sort them by
         # admin,write,read,none permissions sorted again alphabetically in
         # each group
-        perm_rows = sorted(perm_rows, key=display_sort)
+        perm_rows = sorted(perm_rows, key=display_user_sort)
 
         _admin_perm = 'repository.admin'
         owner_row = []
@@ -1874,6 +1886,7 @@ class Repository(Base, BaseModel):
             usr.permission = _user_group.permission.permission_name
             perm_rows.append(usr)
 
+        perm_rows = sorted(perm_rows, key=display_user_group_sort)
         return perm_rows
 
     def get_api_data(self, include_secrets=False):
@@ -2489,7 +2502,7 @@ class RepoGroup(Base, BaseModel):
         # filter the perm rows by 'default' first and then sort them by
         # admin,write,read,none permissions sorted again alphabetically in
         # each group
-        perm_rows = sorted(perm_rows, key=display_sort)
+        perm_rows = sorted(perm_rows, key=display_user_sort)
 
         _admin_perm = 'group.admin'
         owner_row = []
@@ -2525,6 +2538,7 @@ class RepoGroup(Base, BaseModel):
             usr.permission = _user_group.permission.permission_name
             perm_rows.append(usr)
 
+        perm_rows = sorted(perm_rows, key=display_user_group_sort)
         return perm_rows
 
     def get_api_data(self):
