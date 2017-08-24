@@ -534,6 +534,8 @@ get_repo_settings
                "phases_publish": "True",
                "rhodecode_hg_use_rebase_for_merging": true,
                "rhodecode_hg_close_branch_before_merging": false,
+               "rhodecode_git_use_rebase_for_merging": true,
+               "rhodecode_git_close_branch_before_merging": false,
                "rhodecode_pr_merge_enabled": true,
                "rhodecode_use_outdated_comments": true
            }

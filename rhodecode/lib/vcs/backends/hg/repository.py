@@ -558,6 +558,7 @@ class MercurialRepository(BaseRepository):
         """
         Update the working copty to the specified revision.
         """
+        log.debug('Doing checkout to commit: `%s` for %s', revision, self)
         self._remote.update(revision, clean=clean)
 
     def _identify(self):
@@ -654,8 +655,8 @@ class MercurialRepository(BaseRepository):
         Returns the commit id of the close and a boolean indicating if the
         commit needs to be pushed.
         """
-        self._update(target_ref.commit_id)
-        message = close_message or "Closing branch"
+        self._update(source_ref.commit_id)
+        message = close_message or "Closing branch: `{}`".format(source_ref.name)
         try:
             self._remote.commit(
                 message=safe_str(message),
@@ -732,16 +733,26 @@ class MercurialRepository(BaseRepository):
                 False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
 
         merge_ref = None
+        merge_commit_id = None
+        close_commit_id = None
         merge_failure_reason = MergeFailureReason.NONE
 
-        if close_branch and not use_rebase:
+        # enforce that close branch should be used only in case we source from
+        # an actual Branch
+        close_branch = close_branch and source_ref.type == 'branch'
+
+        # don't allow to close branch if source and target are the same
+        close_branch = close_branch and source_ref.name != target_ref.name
+
+        needs_push_on_close = False
+        if close_branch and not use_rebase and not dry_run:
             try:
-                close_commit_id, needs_push = shadow_repo._local_close(
+                close_commit_id, needs_push_on_close = shadow_repo._local_close(
                     target_ref, merger_name, merger_email, source_ref)
-                target_ref.commit_id = close_commit_id
                 merge_possible = True
             except RepositoryError:
-                log.exception('Failure when doing close branch on hg shadow repo')
+                log.exception(
+                    'Failure when doing close branch on hg shadow repo')
                 merge_possible = False
                 merge_failure_reason = MergeFailureReason.MERGE_FAILED
         else:
@@ -754,9 +765,13 @@ class MercurialRepository(BaseRepository):
                     source_ref, use_rebase=use_rebase)
                 merge_possible = True
 
-                # Set a bookmark pointing to the merge commit. This bookmark may be
-                # used to easily identify the last successful merge commit in the
-                # shadow repository.
+                # read the state of the close action, if it
+                # maybe required a push
+                needs_push = needs_push or needs_push_on_close
+
+                # Set a bookmark pointing to the merge commit. This bookmark
+                # may be used to easily identify the last successful merge
+                # commit in the shadow repository.
                 shadow_repo.bookmark('pr-merge', revision=merge_commit_id)
                 merge_ref = Reference('book', 'pr-merge', merge_commit_id)
             except SubrepoMergeError:
@@ -776,7 +791,6 @@ class MercurialRepository(BaseRepository):
                 if target_ref.type == 'book':
                     shadow_repo.bookmark(
                         target_ref.name, revision=merge_commit_id)
-
                 try:
                     shadow_repo_with_hooks = self._get_shadow_instance(
                         shadow_repository_path,
@@ -788,6 +802,12 @@ class MercurialRepository(BaseRepository):
                     shadow_repo_with_hooks._local_push(
                         merge_commit_id, self.path, push_branches=True,
                         enable_hooks=True)
+
+                    # maybe we also need to push the close_commit_id
+                    if close_commit_id:
+                        shadow_repo_with_hooks._local_push(
+                            close_commit_id, self.path, push_branches=True,
+                            enable_hooks=True)
                     merge_succeeded = True
                 except RepositoryError:
                     log.exception(

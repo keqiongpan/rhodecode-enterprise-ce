@@ -164,7 +164,7 @@ class TestPullRequestModel(object):
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id, dry_run=True,
-            use_rebase=False)
+            use_rebase=False, close_branch=False)
 
         assert pull_request._last_merge_source_rev == self.source_commit
         assert pull_request._last_merge_target_rev == self.target_commit
@@ -193,7 +193,7 @@ class TestPullRequestModel(object):
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id, dry_run=True,
-            use_rebase=False)
+            use_rebase=False, close_branch=False)
 
         assert pull_request._last_merge_source_rev == self.source_commit
         assert pull_request._last_merge_target_rev == self.target_commit
@@ -225,7 +225,7 @@ class TestPullRequestModel(object):
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id, dry_run=True,
-            use_rebase=False)
+            use_rebase=False, close_branch=False)
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
@@ -299,7 +299,7 @@ class TestPullRequestModel(object):
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id,
             user_name=user.username, user_email=user.email, message=message,
-            use_rebase=False
+            use_rebase=False, close_branch=False
         )
         self.invalidation_mock.assert_called_once_with(
             pull_request.target_repo.repo_name)
@@ -338,7 +338,7 @@ class TestPullRequestModel(object):
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id,
             user_name=user.username, user_email=user.email, message=message,
-            use_rebase=False
+            use_rebase=False, close_branch=False
         )
 
         pull_request = PullRequest.get(pull_request.pull_request_id)

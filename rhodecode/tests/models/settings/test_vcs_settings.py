@@ -41,6 +41,9 @@ GENERAL_FORM_DATA = {
     'rhodecode_pr_merge_enabled': True,
     'rhodecode_use_outdated_comments': True,
     'rhodecode_hg_use_rebase_for_merging': True,
+    'rhodecode_hg_close_branch_before_merging': True,
+    'rhodecode_git_use_rebase_for_merging': True,
+    'rhodecode_git_close_branch_before_merging': True,
 }
 
 

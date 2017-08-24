@@ -394,6 +394,8 @@ class _BaseVcsSettingsForm(formencode.Schema):
 
     # git
     vcs_git_lfs_enabled = v.StringBoolean(if_missing=False)
+    rhodecode_git_use_rebase_for_merging = v.StringBoolean(if_missing=False)
+    rhodecode_git_close_branch_before_merging = v.StringBoolean(if_missing=False)
 
     # svn
     vcs_svn_proxy_http_requests_enabled = v.StringBoolean(if_missing=False)

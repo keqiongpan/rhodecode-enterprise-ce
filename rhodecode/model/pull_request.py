@@ -1424,12 +1424,26 @@ class PullRequestModel(BaseModel):
             pull_request, 'rhodecode_pr_merge_enabled')
 
     def _use_rebase_for_merging(self, pull_request):
-        return self._get_general_setting(
-            pull_request, 'rhodecode_hg_use_rebase_for_merging')
+        repo_type = pull_request.target_repo.repo_type
+        if repo_type == 'hg':
+            return self._get_general_setting(
+                pull_request, 'rhodecode_hg_use_rebase_for_merging')
+        elif repo_type == 'git':
+            return self._get_general_setting(
+                pull_request, 'rhodecode_git_use_rebase_for_merging')
+
+        return False
 
     def _close_branch_before_merging(self, pull_request):
-        return self._get_general_setting(
-            pull_request, 'rhodecode_hg_close_branch_before_merging')
+        repo_type = pull_request.target_repo.repo_type
+        if repo_type == 'hg':
+            return self._get_general_setting(
+                pull_request, 'rhodecode_hg_close_branch_before_merging')
+        elif repo_type == 'git':
+            return self._get_general_setting(
+                pull_request, 'rhodecode_git_close_branch_before_merging')
+
+        return False
 
     def _get_general_setting(self, pull_request, settings_key, default=False):
         settings_model = VcsSettingsModel(repo=pull_request.target_repo)
