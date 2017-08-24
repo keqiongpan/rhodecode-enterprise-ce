@@ -704,6 +704,19 @@ class GitRepository(BaseRepository):
         cmd.append(branch_name)
         self.run_git_command(cmd, fail_on_stderr=False)
 
+    def _identify(self):
+        """
+        Return the current state of the working directory.
+        """
+        if self.bare:
+            raise RepositoryError('Bare git repos do not have active branches')
+
+        if self.is_empty():
+            return None
+
+        stdout, _ = self.run_git_command(['rev-parse', 'HEAD'])
+        return stdout.strip()
+
     def _local_clone(self, clone_path, branch_name):
         """
         Create a local clone of the current repo.
