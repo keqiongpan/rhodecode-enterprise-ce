@@ -556,7 +556,7 @@ class MercurialRepository(BaseRepository):
 
     def _update(self, revision, clean=False):
         """
-        Update the working copty to the specified revision.
+        Update the working copy to the specified revision.
         """
         log.debug('Doing checkout to commit: `%s` for %s', revision, self)
         self._remote.update(revision, clean=clean)
@@ -592,7 +592,7 @@ class MercurialRepository(BaseRepository):
             push_branches=push_branches)
 
     def _local_merge(self, target_ref, merge_message, user_name, user_email,
-                     source_ref, use_rebase=False):
+                     source_ref, use_rebase=False, dry_run=False):
         """
         Merge the given source_revision into the checked out revision.
 
@@ -703,6 +703,9 @@ class MercurialRepository(BaseRepository):
                     source_repo, source_ref, merge_message,
                     merger_name, merger_email, dry_run=False,
                     use_rebase=False, close_branch=False):
+
+        log.debug('Executing merge_repo with %s strategy, dry_run mode:%s',
+                  'rebase' if use_rebase else 'merge', dry_run)
         if target_ref.commit_id not in self._heads():
             return MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
@@ -713,7 +716,7 @@ class MercurialRepository(BaseRepository):
                 return MergeResponse(
                     False, False, None,
                     MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS)
-        except CommitDoesNotExistError as e:
+        except CommitDoesNotExistError:
             log.exception('Failure when looking up branch heads on hg target')
             return MergeResponse(
                 False, False, None, MergeFailureReason.MISSING_TARGET_REF)
@@ -762,7 +765,7 @@ class MercurialRepository(BaseRepository):
             try:
                 merge_commit_id, needs_push = shadow_repo._local_merge(
                     target_ref, merge_message, merger_name, merger_email,
-                    source_ref, use_rebase=use_rebase)
+                    source_ref, use_rebase=use_rebase, dry_run=dry_run)
                 merge_possible = True
 
                 # read the state of the close action, if it
@@ -779,10 +782,12 @@ class MercurialRepository(BaseRepository):
                     'Subrepo merge error during local merge on hg shadow repo.')
                 merge_possible = False
                 merge_failure_reason = MergeFailureReason.SUBREPO_MERGE_FAILED
+                needs_push = False
             except RepositoryError:
                 log.exception('Failure when doing local merge on hg shadow repo')
                 merge_possible = False
                 merge_failure_reason = MergeFailureReason.MERGE_FAILED
+                needs_push = False
 
         if merge_possible and not dry_run:
             if needs_push:
@@ -795,6 +800,8 @@ class MercurialRepository(BaseRepository):
                     shadow_repo_with_hooks = self._get_shadow_instance(
                         shadow_repository_path,
                         enable_hooks=True)
+                    # This is the actual merge action, we push from shadow
+                    # into origin.
                     # Note: the push_branches option will push any new branch
                     # defined in the source repository to the target. This may
                     # be dangerous as branches are permanent in Mercurial.
