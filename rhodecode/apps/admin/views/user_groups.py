@@ -247,7 +247,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
     @view_config(
         route_name='edit_user_group_perms_summary_json', request_method='GET',
         renderer='json_ext')
-    def user_group_perms_summary(self):
+    def user_group_perms_summary_json(self):
         self.load_default_context()
 
         user_group_id = self.request.matchdict.get('user_group_id')
