@@ -181,11 +181,25 @@
                     </td>
                     <td class="td-tags">
                       %if hasattr(permissions[section], 'perm_origin_stack'):
+                         <div>
                          %for i, (perm, origin) in enumerate(reversed(permissions[section].perm_origin_stack[k])):
-                         <span class="${i > 0 and 'perm_overriden' or ''} perm_tag ${perm.split('.')[-1]}">
-                          ${perm} (${origin})
-                        </span>
+
+                         % if i > 0:
+                             <div style="color: #979797">
+                             <i class="icon-arrow_up"></i>
+                                 ${_('overridden by')}
+                             <i class="icon-arrow_up"></i>
+                             </div>
+                         % endif
+
+                         <div>
+                             <span class="${i > 0 and 'perm_overriden' or ''} perm_tag ${perm.split('.')[-1]}">
+                              ${perm} (${origin})
+                             </span>
+                         </div>
+
                          %endfor
+                         </div>
                       %else:
                          <span class="perm_tag ${section_perm.split('.')[-1]}">${section_perm}</span>
                       %endif
