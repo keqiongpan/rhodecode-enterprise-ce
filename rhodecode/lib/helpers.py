@@ -1151,7 +1151,7 @@ class InitialsGravatar(object):
 
         # check if prefix is maybe a 'first_name.last_name' syntax
         _dot_split = prefix.rsplit('.', 1)
-        if len(_dot_split) == 2:
+        if len(_dot_split) == 2 and _dot_split[1]:
             initials = [_dot_split[0][0], _dot_split[1][0]]
         else:
             initials = [prefix[0], server[0]]

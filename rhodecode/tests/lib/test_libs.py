@@ -281,6 +281,7 @@ def test_gravatar_url_builder(tmpl_url, email, expected, request_stub):
         ('admin@', 'Marcin', 'Śuzminski', 'MS', '#aa00ff'),
         ('marcin.śuzminski', '', '', 'MS', '#402020'),
         ('null', '', '', 'NL', '#8c4646'),
+        ('some.@abc.com', 'some', '', 'SA', '#664e33')
 ])
 def test_initials_gravatar_pick_of_initials_and_color_algo(
         email, first_name, last_name, expected_initials, expected_color):
