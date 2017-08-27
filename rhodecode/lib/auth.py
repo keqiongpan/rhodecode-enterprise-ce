@@ -296,16 +296,17 @@ class CookieStoreWrapper(object):
 
 
 def _cached_perms_data(user_id, scope, user_is_admin,
-                       user_inherit_default_permissions, explicit, algo):
+                       user_inherit_default_permissions, explicit, algo,
+                       calculate_super_admin):
 
     permissions = PermissionCalculator(
         user_id, scope, user_is_admin, user_inherit_default_permissions,
-        explicit, algo)
+        explicit, algo, calculate_super_admin)
     return permissions.calculate()
 
 
 class PermOrigin(object):
-    ADMIN = 'superadmin'
+    SUPER_ADMIN = 'superadmin'
 
     REPO_USER = 'user:%s'
     REPO_USERGROUP = 'usergroup:%s'
@@ -359,12 +360,15 @@ class PermissionCalculator(object):
 
     def __init__(
             self, user_id, scope, user_is_admin,
-            user_inherit_default_permissions, explicit, algo):
+            user_inherit_default_permissions, explicit, algo,
+            calculate_super_admin=False):
+
         self.user_id = user_id
         self.user_is_admin = user_is_admin
         self.inherit_default_permissions = user_inherit_default_permissions
         self.explicit = explicit
         self.algo = algo
+        self.calculate_super_admin = calculate_super_admin
 
         scope = scope or {}
         self.scope_repo_id = scope.get('repo_id')
@@ -387,7 +391,7 @@ class PermissionCalculator(object):
                 self.default_user_id, self.scope_user_group_id)
 
     def calculate(self):
-        if self.user_is_admin:
+        if self.user_is_admin and not self.calculate_super_admin:
             return self._admin_permissions()
 
         self._calculate_global_default_permissions()
@@ -410,19 +414,19 @@ class PermissionCalculator(object):
         for perm in self.default_repo_perms:
             r_k = perm.UserRepoToPerm.repository.repo_name
             p = 'repository.admin'
-            self.permissions_repositories[r_k] = p, PermOrigin.ADMIN
+            self.permissions_repositories[r_k] = p, PermOrigin.SUPER_ADMIN
 
         # repository groups
         for perm in self.default_repo_groups_perms:
             rg_k = perm.UserRepoGroupToPerm.group.group_name
             p = 'group.admin'
-            self.permissions_repository_groups[rg_k] = p, PermOrigin.ADMIN
+            self.permissions_repository_groups[rg_k] = p, PermOrigin.SUPER_ADMIN
 
         # user groups
         for perm in self.default_user_group_perms:
             u_k = perm.UserUserGroupToPerm.user_group.users_group_name
             p = 'usergroup.admin'
-            self.permissions_user_groups[u_k] = p, PermOrigin.ADMIN
+            self.permissions_user_groups[u_k] = p, PermOrigin.SUPER_ADMIN
 
         return self._permission_structure()
 
@@ -436,6 +440,10 @@ class PermissionCalculator(object):
 
         for perm in default_global_perms:
             self.permissions_global.add(perm.permission.permission_name)
+
+        if self.user_is_admin:
+            self.permissions_global.add('hg.admin')
+            self.permissions_global.add('hg.create.write_on_repogroup.true')
 
     def _calculate_global_permissions(self):
         """
@@ -558,6 +566,11 @@ class PermissionCalculator(object):
                 o = PermOrigin.REPO_OWNER
                 self.permissions_repositories[r_k] = p, o
 
+            if self.user_is_admin:
+                p = 'repository.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_repositories[r_k] = p, o
+
         # defaults for repository groups taken from `default` user permission
         # on given group
         for perm in self.default_repo_groups_perms:
@@ -579,6 +592,11 @@ class PermissionCalculator(object):
                 o = PermOrigin.REPOGROUP_OWNER
                 self.permissions_repository_groups[rg_k] = p, o
 
+            if self.user_is_admin:
+                p = 'group.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_repository_groups[rg_k] = p, o
+
         # defaults for user groups taken from `default` user permission
         # on given user group
         for perm in self.default_user_group_perms:
@@ -598,6 +616,11 @@ class PermissionCalculator(object):
                 # set admin if owner
                 p = 'usergroup.admin'
                 o = PermOrigin.USERGROUP_OWNER
+                self.permissions_user_groups[u_k] = p, o
+
+            if self.user_is_admin:
+                p = 'usergroup.admin'
+                o = PermOrigin.SUPER_ADMIN
                 self.permissions_user_groups[u_k] = p, o
 
     def _calculate_repository_permissions(self):
@@ -634,6 +657,11 @@ class PermissionCalculator(object):
                 o = PermOrigin.REPO_OWNER
                 self.permissions_repositories[r_k] = p, o
 
+            if self.user_is_admin:
+                p = 'repository.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_repositories[r_k] = p, o
+
         # user explicit permissions for repositories, overrides any specified
         # by the group permission
         user_repo_perms = Permission.get_default_repo_perms(
@@ -654,6 +682,11 @@ class PermissionCalculator(object):
                 # set admin if owner
                 p = 'repository.admin'
                 o = PermOrigin.REPO_OWNER
+                self.permissions_repositories[r_k] = p, o
+
+            if self.user_is_admin:
+                p = 'repository.admin'
+                o = PermOrigin.SUPER_ADMIN
                 self.permissions_repositories[r_k] = p, o
 
     def _calculate_repository_group_permissions(self):
@@ -688,6 +721,11 @@ class PermissionCalculator(object):
                 o = PermOrigin.REPOGROUP_OWNER
                 self.permissions_repository_groups[rg_k] = p, o
 
+            if self.user_is_admin:
+                p = 'group.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_repository_groups[rg_k] = p, o
+
         # user explicit permissions for repository groups
         user_repo_groups_perms = Permission.get_default_group_perms(
             self.user_id, self.scope_repo_group_id)
@@ -708,6 +746,11 @@ class PermissionCalculator(object):
                 # set admin if owner
                 p = 'group.admin'
                 o = PermOrigin.REPOGROUP_OWNER
+                self.permissions_repository_groups[rg_k] = p, o
+
+            if self.user_is_admin:
+                p = 'group.admin'
+                o = PermOrigin.SUPER_ADMIN
                 self.permissions_repository_groups[rg_k] = p, o
 
     def _calculate_user_group_permissions(self):
@@ -740,6 +783,11 @@ class PermissionCalculator(object):
                 o = PermOrigin.USERGROUP_OWNER
                 self.permissions_user_groups[ug_k] = p, o
 
+            if self.user_is_admin:
+                p = 'usergroup.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_user_groups[ug_k] = p, o
+
         # user explicit permission for user groups
         user_user_groups_perms = Permission.get_default_user_group_perms(
             self.user_id, self.scope_user_group_id)
@@ -760,6 +808,11 @@ class PermissionCalculator(object):
                 # set admin if owner
                 p = 'usergroup.admin'
                 o = PermOrigin.USERGROUP_OWNER
+                self.permissions_user_groups[ug_k] = p, o
+
+            if self.user_is_admin:
+                p = 'usergroup.admin'
+                o = PermOrigin.SUPER_ADMIN
                 self.permissions_user_groups[ug_k] = p, o
 
     def _choose_permission(self, new_perm, cur_perm):
@@ -874,6 +927,11 @@ class AuthUser(object):
     def permissions(self):
         return self.get_perms(user=self, cache=False)
 
+    @LazyProperty
+    def permissions_full_details(self):
+        return self.get_perms(
+            user=self, cache=False, calculate_super_admin=True)
+
     def permissions_with_scope(self, scope):
         """
         Call the get_perms function with scoped data. The scope in that function
@@ -957,7 +1015,7 @@ class AuthUser(object):
         log.debug('AuthUser: propagated user is now %s', self)
 
     def get_perms(self, user, scope=None, explicit=True, algo='higherwin',
-                  cache=False):
+                  calculate_super_admin=False, cache=False):
         """
         Fills user permission attribute with permissions taken from database
         works for permissions given for repositories, and for permissions that
@@ -984,7 +1042,8 @@ class AuthUser(object):
             'short_term', 'cache_desc',
             condition=cache, func=_cached_perms_data)
         result = compute(user_id, scope, user_is_admin,
-                         user_inherit_default_permissions, explicit, algo)
+                         user_inherit_default_permissions, explicit, algo,
+                         calculate_super_admin)
 
         result_repr = []
         for k in result:

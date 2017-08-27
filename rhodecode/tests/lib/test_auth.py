@@ -79,6 +79,14 @@ def test_cached_perms_data_with_admin_user(user_regular, backend_random):
     assert permissions['repositories'][repo_name] == 'repository.admin'
 
 
+def test_cached_perms_data_with_admin_user_extended_calculation(user_regular, backend_random):
+    permissions = get_permissions(user_regular, user_is_admin=True,
+                                  calculate_super_admin=True)
+    repo_name = backend_random.repo.repo_name
+    assert 'hg.admin' in permissions['global']
+    assert permissions['repositories'][repo_name] == 'repository.admin'
+
+
 def test_cached_perms_data_user_group_global_permissions(user_util):
     user, user_group = user_util.create_user_with_group()
     user_group.inherit_default_permissions = False
@@ -559,6 +567,7 @@ def get_permissions(user, **kwargs):
         'user_inherit_default_permissions': False,
         'explicit': False,
         'algo': 'higherwin',
+        'calculate_super_admin': False,
     }
     call_args.update(kwargs)
     permissions = auth._cached_perms_data(**call_args)
