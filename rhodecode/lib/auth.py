@@ -617,11 +617,11 @@ class PermissionCalculator(object):
         multiple_counter = collections.defaultdict(int)
         for perm in user_repo_perms_from_user_group:
             r_k = perm.UserGroupRepoToPerm.repository.repo_name
-            ug_k = perm.UserGroupRepoToPerm.users_group.users_group_name
             multiple_counter[r_k] += 1
-
             p = perm.Permission.permission_name
-            o = PermOrigin.REPO_USERGROUP % ug_k
+            o = PermOrigin.REPO_USERGROUP % perm.UserGroupRepoToPerm\
+                .users_group.users_group_name
+
             if multiple_counter[r_k] > 1:
                 cur_perm = self.permissions_repositories[r_k]
                 p = self._choose_permission(p, cur_perm)
@@ -671,30 +671,30 @@ class PermissionCalculator(object):
 
         multiple_counter = collections.defaultdict(int)
         for perm in user_repo_group_perms_from_user_group:
-            g_k = perm.UserGroupRepoGroupToPerm.group.group_name
-            ug_k = perm.UserGroupRepoGroupToPerm.users_group.users_group_name
-            multiple_counter[g_k] += 1
-            o = PermOrigin.REPOGROUP_USERGROUP % ug_k
+            rg_k = perm.UserGroupRepoGroupToPerm.group.group_name
+            multiple_counter[rg_k] += 1
+            o = PermOrigin.REPOGROUP_USERGROUP % perm.UserGroupRepoGroupToPerm\
+                .users_group.users_group_name
             p = perm.Permission.permission_name
 
-            if multiple_counter[g_k] > 1:
-                cur_perm = self.permissions_repository_groups[g_k]
+            if multiple_counter[rg_k] > 1:
+                cur_perm = self.permissions_repository_groups[rg_k]
                 p = self._choose_permission(p, cur_perm)
-            self.permissions_repository_groups[g_k] = p, o
+            self.permissions_repository_groups[rg_k] = p, o
 
             if perm.RepoGroup.user_id == self.user_id:
                 # set admin if owner, even for member of other user group
                 p = 'group.admin'
                 o = PermOrigin.REPOGROUP_OWNER
-                self.permissions_repository_groups[g_k] = p, o
+                self.permissions_repository_groups[rg_k] = p, o
 
         # user explicit permissions for repository groups
         user_repo_groups_perms = Permission.get_default_group_perms(
             self.user_id, self.scope_repo_group_id)
         for perm in user_repo_groups_perms:
             rg_k = perm.UserRepoGroupToPerm.group.group_name
-            u_k = perm.UserRepoGroupToPerm.user.username
-            o = PermOrigin.REPOGROUP_USER % u_k
+            o = PermOrigin.REPOGROUP_USER % perm.UserRepoGroupToPerm\
+                .user.username
             p = perm.Permission.permission_name
 
             if not self.explicit:
@@ -721,33 +721,32 @@ class PermissionCalculator(object):
 
         multiple_counter = collections.defaultdict(int)
         for perm in user_group_from_user_group:
-            g_k = perm.UserGroupUserGroupToPerm\
+            ug_k = perm.UserGroupUserGroupToPerm\
                 .target_user_group.users_group_name
-            u_k = perm.UserGroupUserGroupToPerm\
+            multiple_counter[ug_k] += 1
+            o = PermOrigin.USERGROUP_USERGROUP % perm.UserGroupUserGroupToPerm\
                 .user_group.users_group_name
-            multiple_counter[g_k] += 1
-            o = PermOrigin.USERGROUP_USERGROUP % u_k
             p = perm.Permission.permission_name
 
-            if multiple_counter[g_k] > 1:
-                cur_perm = self.permissions_user_groups[g_k]
+            if multiple_counter[ug_k] > 1:
+                cur_perm = self.permissions_user_groups[ug_k]
                 p = self._choose_permission(p, cur_perm)
 
-            self.permissions_user_groups[g_k] = p, o
+            self.permissions_user_groups[ug_k] = p, o
 
             if perm.UserGroup.user_id == self.user_id:
                 # set admin if owner, even for member of other user group
                 p = 'usergroup.admin'
                 o = PermOrigin.USERGROUP_OWNER
-                self.permissions_user_groups[g_k] = p, o
+                self.permissions_user_groups[ug_k] = p, o
 
         # user explicit permission for user groups
         user_user_groups_perms = Permission.get_default_user_group_perms(
             self.user_id, self.scope_user_group_id)
         for perm in user_user_groups_perms:
             ug_k = perm.UserUserGroupToPerm.user_group.users_group_name
-            u_k = perm.UserUserGroupToPerm.user.username
-            o = PermOrigin.USERGROUP_USER % u_k
+            o = PermOrigin.USERGROUP_USER % perm.UserUserGroupToPerm\
+                .user.username
             p = perm.Permission.permission_name
 
             if not self.explicit:
