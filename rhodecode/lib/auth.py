@@ -550,8 +550,7 @@ class PermissionCalculator(object):
             if not user_inherit_object_permissions:
                 p = 'repository.none'
                 o = PermOrigin.REPO_DEFAULT_NO_INHERIT
-
-            self.permissions_repositories[r_k] = p, o
+                self.permissions_repositories[r_k] = p, o
 
             if perm.Repository.private and not (
                     perm.Repository.user_id == self.user_id):
