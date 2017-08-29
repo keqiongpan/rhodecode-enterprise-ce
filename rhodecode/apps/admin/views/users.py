@@ -593,13 +593,14 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c.user = User.get_or_404(user_id)
         self._redirect_for_default_user(c.user.username)
 
-        users_groups = set(self.request.POST.getall('users_group_id'))
-        users_groups_model = []
+        user_groups = set(self.request.POST.getall('users_group_id'))
+        user_groups_objects = []
 
-        for ugid in users_groups:
-            users_groups_model.append(UserGroupModel().get_group(safe_int(ugid)))
+        for ugid in user_groups:
+            user_groups_objects.append(
+                UserGroupModel().get_group(safe_int(ugid)))
         user_group_model = UserGroupModel()
-        user_group_model.change_groups(c.user, users_groups_model)
+        user_group_model.change_groups(c.user, user_groups_objects)
 
         Session().commit()
         c.active = 'user_groups_management'
