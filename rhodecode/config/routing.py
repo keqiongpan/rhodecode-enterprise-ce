@@ -254,44 +254,6 @@ def make_map(config):
         m.connect('edit_user_global_perms', '/users/{user_id}/edit/global_permissions',
                   action='update_global_perms', conditions={'method': ['PUT']})
 
-    # ADMIN USER GROUPS REST ROUTES
-    with rmap.submapper(path_prefix=ADMIN_PREFIX,
-                        controller='admin/user_groups') as m:
-        m.connect('users_groups', '/user_groups',
-                  action='create', conditions={'method': ['POST']})
-        m.connect('new_users_group', '/user_groups/new',
-                  action='new', conditions={'method': ['GET']})
-        m.connect('update_users_group', '/user_groups/{user_group_id}',
-                  action='update', conditions={'method': ['PUT']})
-        m.connect('delete_users_group', '/user_groups/{user_group_id}',
-                  action='delete', conditions={'method': ['DELETE']})
-        m.connect('edit_users_group', '/user_groups/{user_group_id}/edit',
-                  action='edit', conditions={'method': ['GET']},
-                  function=check_user_group)
-
-        # EXTRAS USER GROUP ROUTES
-        m.connect('edit_user_group_global_perms',
-                  '/user_groups/{user_group_id}/edit/global_permissions',
-                  action='edit_global_perms', conditions={'method': ['GET']})
-        m.connect('edit_user_group_global_perms',
-                  '/user_groups/{user_group_id}/edit/global_permissions',
-                  action='update_global_perms', conditions={'method': ['PUT']})
-
-        m.connect('edit_user_group_perms',
-                  '/user_groups/{user_group_id}/edit/permissions',
-                  action='edit_perms', conditions={'method': ['GET']})
-        m.connect('edit_user_group_perms',
-                  '/user_groups/{user_group_id}/edit/permissions',
-                  action='update_perms', conditions={'method': ['PUT']})
-
-        m.connect('edit_user_group_advanced',
-                  '/user_groups/{user_group_id}/edit/advanced',
-                  action='edit_advanced', conditions={'method': ['GET']})
-
-        m.connect('edit_user_group_advanced_sync',
-                  '/user_groups/{user_group_id}/edit/advanced/sync',
-                  action='edit_advanced_set_synchronization', conditions={'method': ['POST']})
-
     # ADMIN DEFAULTS REST ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/defaults') as m:

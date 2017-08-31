@@ -29,6 +29,7 @@ from rhodecode.lib.utils2 import StrictAttributeDict, safe_int, datetime_to_time
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import repo
 from rhodecode.model import repo_group
+from rhodecode.model import user_group
 from rhodecode.model.db import User
 from rhodecode.model.scm import ScmModel
 
@@ -259,6 +260,13 @@ class RepoGroupAppView(BaseAppView):
         self.db_repo_group_name = self.db_repo_group.group_name
 
 
+class UserGroupAppView(BaseAppView):
+    def __init__(self, context, request):
+        super(UserGroupAppView, self).__init__(context, request)
+        self.db_user_group = request.db_user_group
+        self.db_user_group_name = self.db_user_group.users_group_name
+
+
 class DataGridAppView(object):
     """
     Common class to have re-usable grid rendering components
@@ -462,6 +470,33 @@ class RepoGroupRoutePredicate(object):
         return False
 
 
+class UserGroupRoutePredicate(object):
+    def __init__(self, val, config):
+        self.val = val
+
+    def text(self):
+        return 'user_group_route = %s' % self.val
+
+    phash = text
+
+    def __call__(self, info, request):
+        if hasattr(request, 'vcs_call'):
+            # skip vcs calls
+            return
+
+        user_group_id = info['match']['user_group_id']
+        user_group_model = user_group.UserGroup()
+        by_name_match = user_group_model.get(
+            user_group_id, cache=True)
+
+        if by_name_match:
+            # register this as request object we can re-use later
+            request.db_user_group = by_name_match
+            return True
+
+        return False
+
+
 def includeme(config):
     config.add_route_predicate(
         'repo_route', RepoRoutePredicate)
@@ -469,3 +504,5 @@ def includeme(config):
         'repo_accepted_types', RepoTypeRoutePredicate)
     config.add_route_predicate(
         'repo_group_route', RepoGroupRoutePredicate)
+    config.add_route_predicate(
+        'user_group_route', UserGroupRoutePredicate)

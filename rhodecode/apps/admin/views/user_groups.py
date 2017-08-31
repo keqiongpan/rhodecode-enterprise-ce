@@ -20,22 +20,28 @@
 
 import logging
 
+import formencode
+import formencode.htmlfill
+
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
-
-from rhodecode.model.scm import UserGroupList
+from pyramid.response import Response
+from pyramid.renderers import render
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib.auth import (
-    LoginRequired, NotAnonymous,
-    HasUserGroupPermissionAnyDecorator)
-from rhodecode.lib import helpers as h
+    LoginRequired, NotAnonymous, CSRFRequired, HasPermissionAnyDecorator)
+from rhodecode.lib import helpers as h, audit_logger
 from rhodecode.lib.utils import PartialRenderer
 from rhodecode.lib.utils2 import safe_unicode
+
+from rhodecode.model.forms import UserGroupForm
+from rhodecode.model.permission import PermissionModel
+from rhodecode.model.scm import UserGroupList
 from rhodecode.model.db import (
-    joinedload, or_, count, User, UserGroup, UserGroupMember,
-    UserGroupRepoToPerm, UserGroupRepoGroupToPerm)
+    or_, count, User, UserGroup, UserGroupMember)
 from rhodecode.model.meta import Session
+from rhodecode.model.user_group import UserGroupModel
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +50,10 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
+
+        PermissionModel().set_global_permission_choices(
+            c, gettext_translator=self.request.translate)
+
         self._register_global_c(c)
         return c
 
@@ -168,89 +178,70 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         return data
 
     @LoginRequired()
-    @HasUserGroupPermissionAnyDecorator('usergroup.admin')
+    @HasPermissionAnyDecorator('hg.admin', 'hg.usergroup.create.true')
     @view_config(
-        route_name='user_group_members_data', request_method='GET',
-        renderer='json_ext', xhr=True)
-    def user_group_members(self):
-        """
-        Return members of given user group
-        """
-        user_group_id = self.request.matchdict['user_group_id']
-        user_group = UserGroup.get_or_404(user_group_id)
-        group_members_obj = sorted((x.user for x in user_group.members),
-                                   key=lambda u: u.username.lower())
-
-        group_members = [
-            {
-                'id': user.user_id,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'username': user.username,
-                'icon_link': h.gravatar_url(user.email, 30),
-                'value_display': h.person(user.email),
-                'value': user.username,
-                'value_type': 'user',
-                'active': user.active,
-            }
-            for user in group_members_obj
-        ]
-
-        return {
-            'members': group_members
-        }
-
-    def _get_perms_summary(self, user_group_id):
-        permissions = {
-            'repositories': {},
-            'repositories_groups': {},
-        }
-        ugroup_repo_perms = UserGroupRepoToPerm.query()\
-            .options(joinedload(UserGroupRepoToPerm.permission))\
-            .options(joinedload(UserGroupRepoToPerm.repository))\
-            .filter(UserGroupRepoToPerm.users_group_id == user_group_id)\
-            .all()
-
-        for gr in ugroup_repo_perms:
-            permissions['repositories'][gr.repository.repo_name]  \
-                = gr.permission.permission_name
-
-        ugroup_group_perms = UserGroupRepoGroupToPerm.query()\
-            .options(joinedload(UserGroupRepoGroupToPerm.permission))\
-            .options(joinedload(UserGroupRepoGroupToPerm.group))\
-            .filter(UserGroupRepoGroupToPerm.users_group_id == user_group_id)\
-            .all()
-
-        for gr in ugroup_group_perms:
-            permissions['repositories_groups'][gr.group.group_name] \
-                = gr.permission.permission_name
-        return permissions
-
-    @LoginRequired()
-    @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    @view_config(
-        route_name='edit_user_group_perms_summary', request_method='GET',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
-    def user_group_perms_summary(self):
+        route_name='user_groups_new', request_method='GET',
+        renderer='rhodecode:templates/admin/user_groups/user_group_add.mako')
+    def user_groups_new(self):
         c = self.load_default_context()
-
-        user_group_id = self.request.matchdict.get('user_group_id')
-        c.user_group = UserGroup.get_or_404(user_group_id)
-
-        c.active = 'perms_summary'
-
-        c.permissions = self._get_perms_summary(c.user_group.users_group_id)
         return self._get_template_context(c)
 
     @LoginRequired()
-    @HasUserGroupPermissionAnyDecorator('usergroup.admin')
+    @HasPermissionAnyDecorator('hg.admin', 'hg.usergroup.create.true')
+    @CSRFRequired()
     @view_config(
-        route_name='edit_user_group_perms_summary_json', request_method='GET',
-        renderer='json_ext')
-    def user_group_perms_summary_json(self):
-        self.load_default_context()
+        route_name='user_groups_create', request_method='POST',
+        renderer='rhodecode:templates/admin/user_groups/user_group_add.mako')
+    def user_groups_create(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        users_group_form = UserGroupForm()()
 
-        user_group_id = self.request.matchdict.get('user_group_id')
-        user_group = UserGroup.get_or_404(user_group_id)
+        user_group_name = self.request.POST.get('users_group_name')
+        try:
+            form_result = users_group_form.to_python(dict(self.request.POST))
+            user_group = UserGroupModel().create(
+                name=form_result['users_group_name'],
+                description=form_result['user_group_description'],
+                owner=self._rhodecode_user.user_id,
+                active=form_result['users_group_active'])
+            Session().flush()
+            creation_data = user_group.get_api_data()
+            user_group_name = form_result['users_group_name']
 
-        return self._get_perms_summary(user_group.users_group_id)
+            audit_logger.store_web(
+                'user_group.create', action_data={'data': creation_data},
+                user=self._rhodecode_user)
+
+            user_group_link = h.link_to(
+                h.escape(user_group_name),
+                h.route_path(
+                    'edit_user_group', user_group_id=user_group.users_group_id))
+            h.flash(h.literal(_('Created user group %(user_group_link)s')
+                              % {'user_group_link': user_group_link}),
+                    category='success')
+            Session().commit()
+            user_group_id = user_group.users_group_id
+        except formencode.Invalid as errors:
+
+            data = render(
+                'rhodecode:templates/admin/user_groups/user_group_add.mako',
+                self._get_template_context(c), self.request)
+            html = formencode.htmlfill.render(
+                data,
+                defaults=errors.value,
+                errors=errors.error_dict or {},
+                prefix_error=False,
+                encoding="UTF-8",
+                force_defaults=False
+            )
+            return Response(html)
+
+        except Exception:
+            log.exception("Exception creating user group")
+            h.flash(_('Error occurred during creation of user group %s') \
+                    % user_group_name, category='error')
+            raise HTTPFound(h.route_path('user_groups_new'))
+
+        raise HTTPFound(
+            h.route_path('edit_user_group', user_group_id=user_group_id))

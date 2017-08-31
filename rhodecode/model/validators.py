@@ -221,7 +221,7 @@ def ValidUserGroup(edit=False, old_data={}):
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'invalid_group': _(u'Invalid user group name'),
-            'group_exist': _(u'User group "%(usergroup)s" already exists'),
+            'group_exist': _(u'User group `%(usergroup)s` already exists'),
             'invalid_usergroup_name':
                 _(u'user group name may only contain alphanumeric '
                   u'characters underscores, periods or dashes and must begin '

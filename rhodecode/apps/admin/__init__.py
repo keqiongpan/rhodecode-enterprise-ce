@@ -180,7 +180,7 @@ def admin_routes(config):
         name='edit_user_perms_summary_json',
         pattern='/users/{user_id:\d+}/edit/permissions_summary/json')
 
-    # user groups management
+    # user user groups management
     config.add_route(
         name='edit_user_groups_management',
         pattern='/users/{user_id:\d+}/edit/groups_management')
@@ -194,7 +194,7 @@ def admin_routes(config):
         name='edit_user_audit_logs',
         pattern='/users/{user_id:\d+}/edit/audit')
 
-    # user groups admin
+    # user-groups admin
     config.add_route(
         name='user_groups',
         pattern='/user_groups')
@@ -204,16 +204,12 @@ def admin_routes(config):
         pattern='/user_groups_data')
 
     config.add_route(
-        name='user_group_members_data',
-        pattern='/user_groups/{user_group_id:\d+}/members')
+        name='user_groups_new',
+        pattern='/user_groups/new')
 
-    # user groups perms
     config.add_route(
-        name='edit_user_group_perms_summary',
-        pattern='/user_groups/{user_group_id:\d+}/edit/permissions_summary')
-    config.add_route(
-        name='edit_user_group_perms_summary_json',
-        pattern='/user_groups/{user_group_id:\d+}/edit/permissions_summary/json')
+        name='user_groups_create',
+        pattern='/user_groups/create')
 
     # repos admin
     config.add_route(

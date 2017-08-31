@@ -21,98 +21,83 @@
 import pytest
 
 from rhodecode.tests import (
-    TestController, url, assert_session_flash, link_to, TEST_USER_ADMIN_LOGIN)
-from rhodecode.model.db import User, UserGroup
+    TestController, assert_session_flash, TEST_USER_ADMIN_LOGIN)
+from rhodecode.model.db import UserGroup
 from rhodecode.model.meta import Session
 from rhodecode.tests.fixture import Fixture
-
-TEST_USER_GROUP = 'admins_test'
 
 fixture = Fixture()
 
 
-class TestAdminUsersGroupsController(TestController):
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
 
-    def test_create(self):
+    base_url = {
+        'user_groups': ADMIN_PREFIX + '/user_groups',
+        'user_groups_data': ADMIN_PREFIX + '/user_groups_data',
+        'user_group_members_data': ADMIN_PREFIX + '/user_groups/{user_group_id}/members',
+        'user_groups_new': ADMIN_PREFIX + '/user_groups/new',
+        'user_groups_create': ADMIN_PREFIX + '/user_groups/create',
+        'edit_user_group': ADMIN_PREFIX + '/user_groups/{user_group_id}/edit',
+        'edit_user_group_advanced_sync': ADMIN_PREFIX + '/user_groups/{user_group_id}/edit/advanced/sync',
+        'edit_user_group_global_perms_update': ADMIN_PREFIX + '/user_groups/{user_group_id}/edit/global_permissions/update',
+        'user_groups_update': ADMIN_PREFIX + '/user_groups/{user_group_id}/update',
+        'user_groups_delete': ADMIN_PREFIX + '/user_groups/{user_group_id}/delete',
+
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
+
+class TestUserGroupsView(TestController):
+
+    def test_set_synchronization(self, user_util):
         self.log_user()
-        users_group_name = TEST_USER_GROUP
-        response = self.app.post(url('users_groups'), {
-            'users_group_name': users_group_name,
-            'user_group_description': 'DESC',
-            'active': True,
-            'csrf_token': self.csrf_token})
-
-        user_group_link = link_to(
-            users_group_name,
-            url('edit_users_group',
-                user_group_id=UserGroup.get_by_group_name(
-                    users_group_name).users_group_id))
-        assert_session_flash(
-            response,
-            'Created user group %s' % user_group_link)
-
-    def test_set_synchronization(self):
-        self.log_user()
-        users_group_name = TEST_USER_GROUP + 'sync'
-        response = self.app.post(url('users_groups'), {
-            'users_group_name': users_group_name,
-            'user_group_description': 'DESC',
-            'active': True,
-            'csrf_token': self.csrf_token})
+        user_group_name = user_util.create_user_group().users_group_name
 
         group = Session().query(UserGroup).filter(
-            UserGroup.users_group_name == users_group_name).one()
+            UserGroup.users_group_name == user_group_name).one()
 
         assert group.group_data.get('extern_type') is None
 
         # enable
         self.app.post(
-            url('edit_user_group_advanced_sync', user_group_id=group.users_group_id),
+            route_path('edit_user_group_advanced_sync',
+                       user_group_id=group.users_group_id),
             params={'csrf_token': self.csrf_token}, status=302)
 
         group = Session().query(UserGroup).filter(
-            UserGroup.users_group_name == users_group_name).one()
+            UserGroup.users_group_name == user_group_name).one()
         assert group.group_data.get('extern_type') == 'manual'
         assert group.group_data.get('extern_type_set_by') == TEST_USER_ADMIN_LOGIN
 
         # disable
         self.app.post(
-            url('edit_user_group_advanced_sync',
+            route_path('edit_user_group_advanced_sync',
                 user_group_id=group.users_group_id),
             params={'csrf_token': self.csrf_token}, status=302)
 
         group = Session().query(UserGroup).filter(
-            UserGroup.users_group_name == users_group_name).one()
+            UserGroup.users_group_name == user_group_name).one()
         assert group.group_data.get('extern_type') is None
         assert group.group_data.get('extern_type_set_by') == TEST_USER_ADMIN_LOGIN
 
-    def test_delete(self):
+    def test_delete_user_group(self, user_util):
         self.log_user()
-        users_group_name = TEST_USER_GROUP + 'another'
-        response = self.app.post(url('users_groups'), {
-            'users_group_name': users_group_name,
-            'user_group_description': 'DESC',
-            'active': True,
-            'csrf_token': self.csrf_token})
-
-        user_group_link = link_to(
-            users_group_name,
-            url('edit_users_group',
-                user_group_id=UserGroup.get_by_group_name(
-                    users_group_name).users_group_id))
-        assert_session_flash(
-            response,
-            'Created user group %s' % user_group_link)
+        user_group_id = user_util.create_user_group().users_group_id
 
         group = Session().query(UserGroup).filter(
-            UserGroup.users_group_name == users_group_name).one()
+            UserGroup.users_group_id == user_group_id).one()
 
         self.app.post(
-            url('delete_users_group', user_group_id=group.users_group_id),
-            params={'_method': 'delete', 'csrf_token': self.csrf_token})
+            route_path('user_groups_delete', user_group_id=group.users_group_id),
+            params={'csrf_token': self.csrf_token})
 
         group = Session().query(UserGroup).filter(
-            UserGroup.users_group_name == users_group_name).scalar()
+            UserGroup.users_group_id == user_group_id).scalar()
 
         assert group is None
 
@@ -122,26 +107,16 @@ class TestAdminUsersGroupsController(TestController):
         ('hg.create.XXX', 'hg.create.write_on_repogroup.true', 'hg.usergroup.create.true', 'hg.repogroup.create.true', 'hg.fork.repository', 'hg.inherit_default_perms.false', False, True),
         ('', '', '', '', '', '', True, False),
     ])
-    def test_global_perms_on_group(
+    def test_global_permissions_on_user_group(
             self, repo_create, repo_create_write, user_group_create,
             repo_group_create, fork_create, expect_error, expect_form_error,
-            inherit_default_permissions):
-        self.log_user()
-        users_group_name = TEST_USER_GROUP + 'another2'
-        response = self.app.post(url('users_groups'),
-                                 {'users_group_name': users_group_name,
-                                  'user_group_description': 'DESC',
-                                  'active': True,
-                                  'csrf_token': self.csrf_token})
+            inherit_default_permissions, user_util):
 
-        ug = UserGroup.get_by_group_name(users_group_name)
-        user_group_link = link_to(
-            users_group_name,
-            url('edit_users_group', user_group_id=ug.users_group_id))
-        assert_session_flash(
-            response,
-            'Created user group %s' % user_group_link)
-        response.follow()
+        self.log_user()
+        user_group = user_util.create_user_group()
+
+        user_group_name = user_group.users_group_name
+        user_group_id = user_group.users_group_id
 
         # ENABLE REPO CREATE ON A GROUP
         perm_params = {
@@ -153,12 +128,11 @@ class TestAdminUsersGroupsController(TestController):
             'default_fork_create': fork_create,
             'default_inherit_default_permissions': inherit_default_permissions,
 
-            '_method': 'put',
             'csrf_token': self.csrf_token,
         }
         response = self.app.post(
-            url('edit_user_group_global_perms',
-                user_group_id=ug.users_group_id),
+            route_path('edit_user_group_global_perms_update',
+                       user_group_id=user_group_id),
             params=perm_params)
 
         if expect_form_error:
@@ -169,21 +143,76 @@ class TestAdminUsersGroupsController(TestController):
                 msg = 'An error occurred during permissions saving'
             else:
                 msg = 'User Group global permissions updated successfully'
-                ug = UserGroup.get_by_group_name(users_group_name)
-                del perm_params['_method']
+                ug = UserGroup.get_by_group_name(user_group_name)
                 del perm_params['csrf_token']
                 del perm_params['inherit_default_permissions']
                 assert perm_params == ug.get_default_perms()
             assert_session_flash(response, msg)
 
-        fixture.destroy_user_group(users_group_name)
-
-    def test_edit_autocomplete(self):
+    def test_edit_view(self, user_util):
         self.log_user()
-        ug = fixture.create_user_group(TEST_USER_GROUP, skip_if_exists=True)
-        response = self.app.get(
-            url('edit_users_group', user_group_id=ug.users_group_id))
-        fixture.destroy_user_group(TEST_USER_GROUP)
+
+        user_group = user_util.create_user_group()
+        self.app.get(
+            route_path('edit_user_group',
+                       user_group_id=user_group.users_group_id),
+            status=200)
+
+    def test_update_user_group(self, user_util):
+        user = self.log_user()
+
+        user_group = user_util.create_user_group()
+        users_group_id = user_group.users_group_id
+        new_name = user_group.users_group_name + '_CHANGE'
+
+        params = [
+            ('users_group_active', False),
+            ('user_group_description', 'DESC'),
+            ('users_group_name', new_name),
+            ('user', user['username']),
+            ('csrf_token', self.csrf_token),
+            ('__start__', 'user_group_members:sequence'),
+            ('__start__', 'member:mapping'),
+            ('member_user_id', user['user_id']),
+            ('type', 'existing'),
+            ('__end__', 'member:mapping'),
+            ('__end__', 'user_group_members:sequence'),
+        ]
+
+        self.app.post(
+            route_path('user_groups_update',
+                       user_group_id=users_group_id),
+            params=params,
+            status=302)
+
+        user_group = UserGroup.get(users_group_id)
+        assert user_group
+
+        assert user_group.users_group_name == new_name
+        assert user_group.user_group_description == 'DESC'
+        assert user_group.users_group_active == False
+
+    def test_update_user_group_name_conflicts(self, user_util):
+        self.log_user()
+        user_group_old = user_util.create_user_group()
+        new_name = user_group_old.users_group_name
+
+        user_group = user_util.create_user_group()
+
+        params = dict(
+            users_group_active=False,
+            user_group_description='DESC',
+            users_group_name=new_name,
+            csrf_token=self.csrf_token)
+
+        response = self.app.post(
+            route_path('user_groups_update',
+                       user_group_id=user_group.users_group_id),
+            params=params,
+            status=200)
+
+        response.mustcontain('User group `{}` already exists'.format(
+            new_name))
 
     def test_update_members_from_user_ids(self, user_regular):
         uid = user_regular.user_id
@@ -197,7 +226,6 @@ class TestAdminUsersGroupsController(TestController):
 
         form_data = [
             ('csrf_token', self.csrf_token),
-            ('_method', 'put'),
             ('user', username),
             ('users_group_name', 'changed_name'),
             ('users_group_active', expected_active_state),
@@ -211,7 +239,8 @@ class TestAdminUsersGroupsController(TestController):
             ('__end__', 'user_group_members:sequence'),
         ]
         ugid = user_group.users_group_id
-        self.app.post(url('update_users_group', user_group_id=ugid), form_data)
+        self.app.post(
+            route_path('user_groups_update', user_group_id=ugid), form_data)
 
         user_group = UserGroup.get(ugid)
         assert user_group

@@ -38,6 +38,9 @@ def route_path(name, params=None, **kwargs):
         'user_groups': ADMIN_PREFIX + '/user_groups',
         'user_groups_data': ADMIN_PREFIX + '/user_groups_data',
         'user_group_members_data': ADMIN_PREFIX + '/user_groups/{user_group_id}/members',
+        'user_groups_new': ADMIN_PREFIX + '/user_groups/new',
+        'user_groups_create': ADMIN_PREFIX + '/user_groups/create',
+        'edit_user_group': ADMIN_PREFIX + '/user_groups/{user_group_id}/edit',
     }[name].format(**kwargs)
 
     if params:
@@ -107,7 +110,61 @@ class TestAdminUserGroupsView(TestController):
         members = [u.user_id for u in User.get_all()]
         ug = user_util.create_user_group(members=members)
         response = self.app.get(
-            route_path('user_group_members_data', user_group_id=ug.users_group_id),
+            route_path('user_group_members_data',
+                       user_group_id=ug.users_group_id),
             extra_environ=xhr_header)
 
         assert len(response.json['members']) == len(members)
+
+    def test_creation_page(self):
+        self.log_user()
+        self.app.get(route_path('user_groups_new'), status=200)
+
+    def test_create(self):
+        from rhodecode.lib import helpers as h
+
+        self.log_user()
+        users_group_name = 'test_user_group'
+        response = self.app.post(route_path('user_groups_create'), {
+            'users_group_name': users_group_name,
+            'user_group_description': 'DESC',
+            'active': True,
+            'csrf_token': self.csrf_token})
+
+        user_group_id = UserGroup.get_by_group_name(
+            users_group_name).users_group_id
+
+        user_group_link = h.link_to(
+            users_group_name,
+            route_path('edit_user_group', user_group_id=user_group_id))
+
+        assert_session_flash(
+            response,
+            'Created user group %s' % user_group_link)
+
+        fixture.destroy_user_group(users_group_name)
+
+    def test_create_with_empty_name(self):
+        self.log_user()
+
+        response = self.app.post(route_path('user_groups_create'), {
+            'users_group_name': '',
+            'user_group_description': 'DESC',
+            'active': True,
+            'csrf_token': self.csrf_token}, status=200)
+
+        response.mustcontain('Please enter a value')
+
+    def test_create_duplicate(self, user_util):
+        self.log_user()
+
+        user_group = user_util.create_user_group()
+        duplicate_name = user_group.users_group_name
+        response = self.app.post(route_path('user_groups_create'), {
+            'users_group_name': duplicate_name,
+            'user_group_description': 'DESC',
+            'active': True,
+            'csrf_token': self.csrf_token}, status=200)
+
+        response.mustcontain(
+            'User group `{}` already exists'.format(user_group.users_group_name))

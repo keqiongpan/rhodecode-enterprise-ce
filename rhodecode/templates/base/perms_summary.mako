@@ -175,7 +175,7 @@
                         %elif section == 'repositories_groups':
                             <a href="${h.route_path('repo_group_home', repo_group_name=k)}">${k}</a>
                         %elif section == 'user_groups':
-                            ##<a href="${h.url('edit_users_group',user_group_id=k)}">${k}</a>
+                            ##<a href="${h.route_path('edit_user_group',user_group_id=k)}">${k}</a>
                             ${k}
                         %endif
                     </td>
@@ -211,7 +211,7 @@
                         %elif section == 'repositories_groups':
                             <a href="${h.url('edit_repo_group_perms',group_name=k,anchor='permissions_manage')}">${_('edit')}</a>
                         %elif section == 'user_groups':
-                            ##<a href="${h.url('edit_users_group',user_group_id=k)}">${_('edit')}</a>
+                            ##<a href="${h.route_path('edit_user_group',user_group_id=k)}">${_('edit')}</a>
                         %endif
                     </td>
                     %endif

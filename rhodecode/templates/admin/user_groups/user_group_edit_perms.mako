@@ -5,7 +5,7 @@
         <h3 class="panel-title">${_('User Group Permissions')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('edit_user_group_perms', user_group_id=c.user_group.users_group_id),method='put')}
+        ${h.secure_form(h.route_path('edit_user_group_perms_update', user_group_id=c.user_group.users_group_id), method='POST', request=request)}
         <table id="permissions_manage" class="rctable permissions">
             <tr>
                 <th class="td-radio">${_('None')}</th>
@@ -96,7 +96,7 @@
                     <td class="td-user">
                         <i class="icon-group" ></i>
                         %if h.HasPermissionAny('hg.admin')():
-                         <a href="${h.url('edit_users_group',user_group_id=_user_group.users_group_id)}">
+                         <a href="${h.route_path('edit_user_group',user_group_id=_user_group.users_group_id)}">
                              ${_user_group.users_group_name}
                          </a>
                         %else:

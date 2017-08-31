@@ -94,7 +94,7 @@
 </%def>
 
 <%def name="default_perms_box(form_url)">
-  ${h.secure_form(form_url, method='put')}
+  ${h.secure_form(form_url, method='POST', request=request)}
     <div class="form">
       <div class="fields">
         <div class="field panel panel-default panel-body">

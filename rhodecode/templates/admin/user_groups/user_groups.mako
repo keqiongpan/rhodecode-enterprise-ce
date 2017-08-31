@@ -25,7 +25,7 @@
         <ul class="links">
         %if h.HasPermissionAny('hg.admin', 'hg.usergroup.create.true')():
           <li>
-            <a href="${h.url('new_users_group')}" class="btn btn-small btn-success">${_(u'Add User Group')}</a>
+            <a href="${h.route_path('user_groups_new')}" class="btn btn-small btn-success">${_(u'Add User Group')}</a>
           </li>
         %endif
         </ul>

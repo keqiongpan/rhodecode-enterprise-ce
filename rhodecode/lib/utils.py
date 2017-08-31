@@ -136,22 +136,29 @@ def get_repo_group_slug(request):
 
 
 def get_user_group_slug(request):
-    if isinstance(request, Request) and getattr(request, 'matchdict', None):
-        # pyramid
-        _group = request.matchdict.get('user_group_id')
-    else:
-        _group = request.environ['pylons.routes_dict'].get('user_group_id')
+    _user_group = ''
+    if isinstance(request, Request):
 
-    try:
-        _group = UserGroup.get(_group)
-        if _group:
-            _group = _group.users_group_name
-    except Exception:
-        log.exception('Failed to get user group by id')
-        # catch all failures here
-        return None
+        if hasattr(request, 'db_user_group'):
+            _user_group = request.db_user_group.users_group_name
+        elif getattr(request, 'matchdict', None):
+            # pyramid
+            _user_group = request.matchdict.get('user_group_id')
 
-    return _group
+            try:
+                _user_group = UserGroup.get(_user_group)
+                if _user_group:
+                    _user_group = _user_group.users_group_name
+            except Exception:
+                log.exception('Failed to get user group by id')
+                # catch all failures here
+                return None
+
+    # TODO(marcink): remove after pylons migration...
+    if not _user_group:
+        _user_group = request.environ['pylons.routes_dict'].get('user_group_id')
+
+    return _user_group
 
 
 def get_filesystem_repos(path, recursive=False, skip_removed_repos=True):

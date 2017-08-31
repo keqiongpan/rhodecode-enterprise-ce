@@ -200,10 +200,10 @@
 
 <%def name="user_group_actions(user_group_id, user_group_name)">
  <div class="grid_edit">
-    <a href="${h.url('edit_users_group', user_group_id=user_group_id)}" title="${_('Edit')}">Edit</a>
+    <a href="${h.route_path('edit_user_group', user_group_id=user_group_id)}" title="${_('Edit')}">Edit</a>
  </div>
  <div class="grid_delete">
-    ${h.secure_form(h.url('delete_users_group', user_group_id=user_group_id),method='delete')}
+    ${h.secure_form(h.route_path('user_groups_delete', user_group_id=user_group_id), method='POST', request=request)}
       ${h.submit('remove_',_('Delete'),id="remove_group_%s" % user_group_id, class_="btn btn-link btn-danger",
       onclick="return confirm('"+_('Confirm to delete this user group: %s') % user_group_name+"');")}
     ${h.end_form()}
@@ -221,7 +221,7 @@
 
 <%def name="user_group_name(user_group_id, user_group_name)">
   <div>
-  <a href="${h.url('edit_users_group', user_group_id=user_group_id)}">
+  <a href="${h.route_path('edit_user_group', user_group_id=user_group_id)}">
     <i class="icon-group" title="${_('User group')}"></i> ${user_group_name}</a>
   </div>
 </%def>

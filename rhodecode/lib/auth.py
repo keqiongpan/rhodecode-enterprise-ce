@@ -1305,7 +1305,7 @@ def get_csrf_token(session=None, force_new=False, save_if_missing=True):
     return session.get(csrf_token_key)
 
 
-def get_request(perm_class):
+def get_request(perm_class_instance):
     from pyramid.threadlocal import get_current_request
     pyramid_request = get_current_request()
     if not pyramid_request:

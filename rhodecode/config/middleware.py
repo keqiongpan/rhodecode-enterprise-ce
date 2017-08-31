@@ -296,6 +296,7 @@ def includeme(config):
     config.include('rhodecode.apps.journal')
     config.include('rhodecode.apps.repository')
     config.include('rhodecode.apps.repo_group')
+    config.include('rhodecode.apps.user_group')
     config.include('rhodecode.apps.search')
     config.include('rhodecode.apps.user_profile')
     config.include('rhodecode.apps.my_account')
