@@ -37,7 +37,7 @@ import rhodecode.lib.helpers as h
 from rhodecode.lib.helpers import Page
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
-from rhodecode.lib.utils2 import safe_int, AttributeDict
+from rhodecode.lib.utils2 import safe_int, AttributeDict, md5_safe
 from rhodecode.model.scm import ScmModel
 
 log = logging.getLogger(__name__)
@@ -121,6 +121,9 @@ class JournalView(BaseAppView):
 
         return journal
 
+    def feed_uid(self, entry_id):
+        return '{}:{}'.format('journal', md5_safe(entry_id))
+
     def _atom_feed(self, repos, search_term, public=True):
         _ = self.request.translate
         journal = self._get_journal_data(repos, search_term)
@@ -152,12 +155,14 @@ class JournalView(BaseAppView):
                 _url = h.route_url('repo_changelog',
                                    repo_name=entry.repository.repo_name)
 
-            feed.add_item(title=title,
-                          pubdate=entry.action_date,
-                          link=_url,
-                          author_email=user.email,
-                          author_name=user.full_contact,
-                          description=desc)
+            feed.add_item(
+                unique_id=self.feed_uid(entry.user_log_id),
+                title=title,
+                pubdate=entry.action_date,
+                link=_url,
+                author_email=user.email,
+                author_name=user.full_contact,
+                description=desc)
 
         response = Response(feed.writeString('utf-8'))
         response.content_type = feed.mime_type
@@ -195,12 +200,14 @@ class JournalView(BaseAppView):
                 _url = h.route_url('repo_changelog',
                                    repo_name=entry.repository.repo_name)
 
-            feed.add_item(title=title,
-                          pubdate=entry.action_date,
-                          link=_url,
-                          author_email=user.email,
-                          author_name=user.full_contact,
-                          description=desc)
+            feed.add_item(
+                unique_id=self.feed_uid(entry.user_log_id),
+                title=title,
+                pubdate=entry.action_date,
+                link=_url,
+                author_email=user.email,
+                author_name=user.full_contact,
+                description=desc)
 
         response = Response(feed.writeString('utf-8'))
         response.content_type = feed.mime_type

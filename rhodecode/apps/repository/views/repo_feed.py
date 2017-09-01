@@ -32,7 +32,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator)
 from rhodecode.lib.diffs import DiffProcessor, LimitedDiffContainer
-from rhodecode.lib.utils2 import str2bool, safe_int
+from rhodecode.lib.utils2 import str2bool, safe_int, md5_safe
 from rhodecode.model.db import UserApiKeys, CacheKey
 
 log = logging.getLogger(__name__)
@@ -109,6 +109,9 @@ class RepoFeedView(RepoAppView):
     def _get_commits(self):
         return list(self.rhodecode_vcs_repo[-self.feed_items_per_page:])
 
+    def uid(self, repo_id, commit_id):
+        return '{}:{}'.format(md5_safe(repo_id), md5_safe(commit_id))
+
     @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -134,6 +137,7 @@ class RepoFeedView(RepoAppView):
             for commit in reversed(self._get_commits()):
                 date = self._set_timezone(commit.date)
                 feed.add_item(
+                    unique_id=self.uid(self.db_repo.repo_id, commit.raw_id),
                     title=self._get_title(commit),
                     author_name=commit.author,
                     description=self._get_description(commit),
@@ -180,6 +184,7 @@ class RepoFeedView(RepoAppView):
             for commit in reversed(self._get_commits()):
                 date = self._set_timezone(commit.date)
                 feed.add_item(
+                    unique_id=self.uid(self.db_repo.repo_id, commit.raw_id),
                     title=self._get_title(commit),
                     author_name=commit.author,
                     description=self._get_description(commit),
