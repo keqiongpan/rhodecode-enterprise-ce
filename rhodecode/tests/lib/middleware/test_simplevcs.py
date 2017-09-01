@@ -45,8 +45,13 @@ class StubVCSController(simplevcs.SimpleVCS):
     def __init__(self, *args, **kwargs):
         super(StubVCSController, self).__init__(*args, **kwargs)
         self._action = 'pull'
+        self._is_shadow_repo_dir = True
         self._name = HG_REPO
         self.set_repo_names(None)
+
+    @property
+    def is_shadow_repo_dir(self):
+        return self._is_shadow_repo_dir
 
     def _get_repository_name(self, environ):
         return self._name
@@ -218,6 +223,7 @@ class TestShadowRepoExposure(object):
         controller._check_ssl = mock.Mock()
         controller.is_shadow_repo = True
         controller._action = 'pull'
+        controller._is_shadow_repo_dir = True
         controller.stub_response_body = 'dummy body value'
         environ_stub = {
             'HTTP_HOST': 'test.example.com',
@@ -231,6 +237,30 @@ class TestShadowRepoExposure(object):
 
         # Assert that we got the response from the wsgi app.
         assert response_body == controller.stub_response_body
+
+    def test_pull_on_shadow_repo_that_is_missing(self, pylonsapp):
+        """
+        Check that a pull action to a shadow repo is propagated to the
+        underlying wsgi app.
+        """
+        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller._check_ssl = mock.Mock()
+        controller.is_shadow_repo = True
+        controller._action = 'pull'
+        controller._is_shadow_repo_dir = False
+        controller.stub_response_body = 'dummy body value'
+        environ_stub = {
+            'HTTP_HOST': 'test.example.com',
+            'HTTP_ACCEPT': 'application/mercurial',
+            'REQUEST_METHOD': 'GET',
+            'wsgi.url_scheme': 'http',
+        }
+
+        response = controller(environ_stub, mock.Mock())
+        response_body = ''.join(response)
+
+        # Assert that we got the response from the wsgi app.
+        assert '404 Not Found' in response_body
 
     def test_push_on_shadow_repo_raises(self, pylonsapp):
         """

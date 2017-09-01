@@ -238,6 +238,10 @@ class SimpleVCS(object):
 
         return False
 
+    @property
+    def is_shadow_repo_dir(self):
+        return os.path.isdir(self.vcs_repo_name)
+
     def _check_permission(self, action, user, repo_name, ip_addr=None):
         """
         Checks permissions using action (push/pull) user and repository
@@ -330,6 +334,11 @@ class SimpleVCS(object):
             reason = 'Only pull action is allowed for shadow repositories.'
             log.debug('User not allowed to proceed, %s', reason)
             return HTTPNotAcceptable(reason)(environ, start_response)
+
+        # Check if the shadow repo actually exists, in case someone refers
+        # to it, and it has been deleted because of successful merge.
+        if self.is_shadow_repo and not self.is_shadow_repo_dir:
+            return HTTPNotFound()(environ, start_response)
 
         # ======================================================================
         # CHECK ANONYMOUS PERMISSION
