@@ -227,6 +227,7 @@ class DiffProcessor(object):
         self.parsed = False
         self.parsed_diff = []
 
+        log.debug('Initialized DiffProcessor with %s mode', format)
         if format == 'gitdiff':
             self.differ = self._highlight_line_difflib
             self._parser = self._parse_gitdiff
@@ -496,36 +497,26 @@ class DiffProcessor(object):
 
         return diff_container(sorted(_files, key=sorter))
 
-
-    # FIXME: NEWDIFFS: dan: this replaces the old _escaper function
-    def _process_line(self, string):
-        """
-        Process a diff line, checks the diff limit
-
-        :param string:
-        """
-
-        self.cur_diff_size += len(string)
-
+    def _check_large_diff(self):
+        log.debug('Diff exceeds current diff_limit of %s', self.diff_limit)
         if not self.show_full_diff and (self.cur_diff_size > self.diff_limit):
-            raise DiffLimitExceeded('Diff Limit Exceeded')
-
-        return safe_unicode(string)
+            raise DiffLimitExceeded('Diff Limit `%s` Exceeded', self.diff_limit)
 
     # FIXME: NEWDIFFS: dan: this replaces _parse_gitdiff
     def _new_parse_gitdiff(self, inline_diff=True):
         _files = []
+
+        # this can be overriden later to a LimitedDiffContainer type
         diff_container = lambda arg: arg
+
         for chunk in self._diff.chunks():
             head = chunk.header
             log.debug('parsing diff %r' % head)
 
-            diff = imap(self._process_line, chunk.diff.splitlines(1))
             raw_diff = chunk.raw
             limited_diff = False
             exceeds_limit = False
-            # if 'empty_file_to_modify_and_rename' in head['a_path']:
-            #     1/0
+
             op = None
             stats = {
                 'added': 0,
@@ -542,19 +533,22 @@ class DiffProcessor(object):
             if head['b_mode']:
                 stats['new_mode'] = head['b_mode']
 
+            # delete file
             if head['deleted_file_mode']:
                 op = OPS.DEL
                 stats['binary'] = True
                 stats['ops'][DEL_FILENODE] = 'deleted file'
 
+            # new file
             elif head['new_file_mode']:
                 op = OPS.ADD
                 stats['binary'] = True
                 stats['old_mode'] = None
                 stats['new_mode'] = head['new_file_mode']
                 stats['ops'][NEW_FILENODE] = 'new file %s' % head['new_file_mode']
-            else:  # modify operation, can be copy, rename or chmod
 
+            # modify operation, can be copy, rename or chmod
+            else:
                 # CHMOD
                 if head['new_mode'] and head['old_mode']:
                     op = OPS.MOD
@@ -602,7 +596,27 @@ class DiffProcessor(object):
 
             # a real non-binary diff
             if head['a_file'] or head['b_file']:
+                diff = iter(chunk.diff.splitlines(1))
+
+                # append each file to the diff size
+                raw_chunk_size = len(raw_diff)
+
+                exceeds_limit = raw_chunk_size > self.file_limit
+                self.cur_diff_size += raw_chunk_size
+
                 try:
+                    # Check each file instead of the whole diff.
+                    # Diff will hide big files but still show small ones.
+                    # From the tests big files are fairly safe to be parsed
+                    # but the browser is the bottleneck.
+                    if not self.show_full_diff and exceeds_limit:
+                        log.debug('File `%s` exceeds current file_limit of %s',
+                                  safe_unicode(head['b_path']), self.file_limit)
+                        raise DiffLimitExceeded(
+                            'File Limit %s Exceeded', self.file_limit)
+
+                    self._check_large_diff()
+
                     raw_diff, chunks, _stats = self._new_parse_lines(diff)
                     stats['binary'] = False
                     stats['added'] = _stats[0]
@@ -610,22 +624,12 @@ class DiffProcessor(object):
                     # explicit mark that it's a modified file
                     if op == OPS.MOD:
                         stats['ops'][MOD_FILENODE] = 'modified file'
-                    exceeds_limit = len(raw_diff) > self.file_limit
-
-                    # changed from _escaper function so we validate size of
-                    # each file instead of the whole diff
-                    # diff will hide big files but still show small ones
-                    # from my tests, big files are fairly safe to be parsed
-                    # but the browser is the bottleneck
-                    if not self.show_full_diff and exceeds_limit:
-                        raise DiffLimitExceeded('File Limit Exceeded')
 
                 except DiffLimitExceeded:
                     diff_container = lambda _diff: \
                         LimitedDiffContainer(
                             self.diff_limit, self.cur_diff_size, _diff)
 
-                    exceeds_limit = len(raw_diff) > self.file_limit
                     limited_diff = True
                     chunks = []
 
@@ -636,19 +640,20 @@ class DiffProcessor(object):
                     stats['ops'][BIN_FILENODE] = 'binary diff hidden'
                 chunks = []
 
+            # Hide content of deleted node by setting empty chunks
             if chunks and not self.show_full_diff and op == OPS.DEL:
                 # if not full diff mode show deleted file contents
                 # TODO: anderson: if the view is not too big, there is no way
                 # to see the content of the file
                 chunks = []
 
-            chunks.insert(0, [{
-                                  'old_lineno': '',
-                                  'new_lineno': '',
-                                  'action': Action.CONTEXT,
-                                  'line': msg,
-                              } for _op, msg in stats['ops'].iteritems()
-                              if _op not in [MOD_FILENODE]])
+            chunks.insert(
+                0, [{'old_lineno': '',
+                     'new_lineno': '',
+                     'action': Action.CONTEXT,
+                     'line': msg,
+                     } for _op, msg in stats['ops'].iteritems()
+                    if _op not in [MOD_FILENODE]])
 
             original_filename = safe_unicode(head['a_path'])
             _files.append({
@@ -663,7 +668,6 @@ class DiffProcessor(object):
                 'exceeds_limit': exceeds_limit,
                 'is_limited_diff': limited_diff,
             })
-
 
         sorter = lambda info: {OPS.ADD: 0, OPS.MOD: 1,
                                OPS.DEL: 2}.get(info['operation'])
@@ -766,18 +770,19 @@ class DiffProcessor(object):
         return ''.join(raw_diff), chunks, stats
 
     # FIXME: NEWDIFFS: dan: this replaces _parse_lines
-    def _new_parse_lines(self, diff):
+    def _new_parse_lines(self, diff_iter):
         """
         Parse the diff an return data for the template.
         """
 
-        lineiter = iter(diff)
         stats = [0, 0]
         chunks = []
         raw_diff = []
 
+        diff_iter = imap(lambda s: safe_unicode(s), diff_iter)
+
         try:
-            line = lineiter.next()
+            line = diff_iter.next()
 
             while line:
                 raw_diff.append(line)
@@ -808,7 +813,7 @@ class DiffProcessor(object):
                 old_end += old_line
                 new_end += new_line
 
-                line = lineiter.next()
+                line = diff_iter.next()
 
                 while old_line < old_end or new_line < new_end:
                     command = ' '
@@ -843,7 +848,7 @@ class DiffProcessor(object):
                         })
                         raw_diff.append(line)
 
-                    line = lineiter.next()
+                    line = diff_iter.next()
 
                     if self._newline_marker.match(line):
                         # we need to append to lines, since this is not
@@ -864,6 +869,7 @@ class DiffProcessor(object):
 
         except StopIteration:
             pass
+
         return ''.join(raw_diff), chunks, stats
 
     def _safe_id(self, idstring):
