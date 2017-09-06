@@ -68,6 +68,11 @@ link_config = [
         "external_target": "https://docs.rhodecode.com/RhodeCode-Enterprise/admin/svn-http.html",
     },
     {
+        "name": "enterprise_license_convert_from_old",
+        "target": "https://rhodecode.com/r1/enterprise/convert-license/",
+        "external_target": "https://rhodecode.com/u/license-upgrade",
+    },
+    {
         "name": "rst_help",
         "target": "http://docutils.sourceforge.net/docs/user/rst/quickref.html",
         "external_target": "http://docutils.sourceforge.net/docs/user/rst/quickref.html",
