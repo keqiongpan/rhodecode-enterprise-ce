@@ -280,6 +280,23 @@ def generate_auth_token(data, salt=None):
     return hashlib.sha1(safe_str(data) + salt).hexdigest()
 
 
+def get_came_from(request):
+    """
+    get query_string+path from request sanitized after removing auth_token
+    """
+    _req = request
+
+    path = _req.path
+    if 'auth_token' in _req.GET:
+        # sanitize the request and remove auth_token for redirection
+        _req.GET.pop('auth_token')
+    qs = _req.query_string
+    if qs:
+        path += '?' + qs
+
+    return path
+
+
 class CookieStoreWrapper(object):
 
     def __init__(self, cookie_store):
@@ -1465,7 +1482,8 @@ class LoginRequired(object):
                 % (user, reason, loc, ip_access_valid,
                    auth_token_access_valid))
             # we preserve the get PARAM
-            came_from = request.path_qs
+            came_from = get_came_from(request)
+
             log.debug('redirecting to login page with %s' % (came_from,))
             raise HTTPFound(
                 h.route_path('login', _query={'came_from': came_from}))
@@ -1494,7 +1512,7 @@ class NotAnonymous(object):
         anonymous = self.user.username == User.DEFAULT_USER
 
         if anonymous:
-            came_from = request.path_qs
+            came_from = get_came_from(request)
             h.flash(_('You need to be a registered user to '
                       'perform this action'),
                     category='warning')
@@ -1519,12 +1537,6 @@ class PermsDecorator(object):
     def _get_request(self):
         return get_request(self)
 
-    def _get_came_from(self):
-        _request = self._get_request()
-
-        # both pylons/pyramid has this attribute
-        return _request.path_qs
-
     def __wrapper(self, func, *fargs, **fkwargs):
         import rhodecode.lib.helpers as h
         cls = fargs[0]
@@ -1542,7 +1554,7 @@ class PermsDecorator(object):
             anonymous = _user.username == User.DEFAULT_USER
 
             if anonymous:
-                came_from = self._get_came_from()
+                came_from = get_came_from(self._get_request())
                 h.flash(_('You need to be signed in to view this page'),
                         category='warning')
                 raise HTTPFound(

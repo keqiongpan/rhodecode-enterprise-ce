@@ -42,4 +42,8 @@ def test_connect_redirection_links():
 
     for link_data in routing_links.link_config:
         response = requests.get(link_data['target'])
-        assert response.url == link_data['external_target']
+        if link_data['name'] == 'enterprise_license_convert_from_old':
+            # special case for a page that requires a valid login
+            assert response.url == 'https://rhodecode.com/login'
+        else:
+            assert response.url == link_data['external_target']
