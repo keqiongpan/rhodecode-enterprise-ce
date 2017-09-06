@@ -85,7 +85,7 @@
 </table>
 
 <script type="text/javascript">
-  $(document).pjax('#shortlog_data .pager_link','#shortlog_data', {timeout: 2000, scrollTo: false });
+  $(document).pjax('#shortlog_data .pager_link','#shortlog_data', {timeout: 2000, scrollTo: false, push: false});
   $(document).on('pjax:success', function(){ timeagoActivate(); });
 </script>
 
