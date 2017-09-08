@@ -65,7 +65,7 @@
                         </div>
                         <div class="input">
                             ${h.text('description', class_='medium', placeholder=_('Description'))}
-                            ${h.select('lifetime', '', c.lifetime_options)}
+                            ${h.hidden('lifetime')}
                             ${h.select('role', '', c.role_options)}
 
                             % if c.allow_scoped_tokens:
@@ -97,8 +97,27 @@ var select2Options = {
     'dropdownCssClass': "drop-menu-dropdown",
     'dropdownAutoWidth': true
 };
-$("#lifetime").select2(select2Options);
 $("#role").select2(select2Options);
+
+var preloadData = {
+    results: [
+        % for entry in c.lifetime_values:
+            {id:${entry[0]}, text:"${entry[1]}"}${'' if loop.last else ','}
+        % endfor
+    ]
+};
+
+$("#lifetime").select2({
+    containerCssClass: "drop-menu",
+    dropdownCssClass: "drop-menu-dropdown",
+    dropdownAutoWidth: true,
+    data: preloadData,
+    placeholder: ${_('Select or enter expiration date')},
+    query: function(query) {
+        feedLifetimeOptions(query, preloadData);
+    }
+});
+
 
 var repoFilter = function(data) {
     var results = [];

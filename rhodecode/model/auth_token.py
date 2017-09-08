@@ -37,6 +37,28 @@ log = logging.getLogger(__name__)
 class AuthTokenModel(BaseModel):
     cls = UserApiKeys
 
+    @classmethod
+    def get_lifetime_values(cls, translator):
+        from rhodecode.lib import helpers as h
+        _ = translator
+
+        def date_after_min(mins):
+            after = time.time() + (60 * mins)
+            return h.format_date(h.time_to_datetime(after))
+
+        return [
+            (str(-1),
+             _('forever')),
+            (str(5),
+             _('5 minutes {end_date}').format(end_date=date_after_min(5))),
+            (str(60),
+             _('1 hour {end_date}').format(end_date=date_after_min(60))),
+            (str(60 * 24),
+             _('1 day {end_date}').format(end_date=date_after_min(60 * 24))),
+            (str(60 * 24 * 30),
+             _('1 month {end_date}').format(end_date=date_after_min(60 * 24 * 30))),
+        ]
+
     def create(self, user, description, lifetime=-1, role=UserApiKeys.ROLE_ALL):
         """
         :param user: user or user_id

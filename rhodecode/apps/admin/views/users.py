@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import time
 import logging
 import datetime
 import formencode
@@ -177,14 +178,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
 
         c.active = 'auth_tokens'
 
-        c.lifetime_values = [
-            (str(-1), _('forever')),
-            (str(5), _('5 minutes')),
-            (str(60), _('1 hour')),
-            (str(60 * 24), _('1 day')),
-            (str(60 * 24 * 30), _('1 month')),
-        ]
-        c.lifetime_options = [(c.lifetime_values, _("Lifetime"))]
+        c.lifetime_values = AuthTokenModel.get_lifetime_values(translator=_)
         c.role_values = [
             (x, AuthTokenModel.cls._get_role_name(x))
             for x in AuthTokenModel.cls.ROLES]
