@@ -1091,8 +1091,10 @@ class PullRequestModel(BaseModel):
         Session().add(pull_request)
         self._trigger_pull_request_hook(
             pull_request, pull_request.author, 'close')
+
+        pr_data = pull_request.get_api_data(with_merge_state=False)
         self._log_audit_action(
-            'repo.pull_request.close', {}, user, pull_request)
+            'repo.pull_request.close', {'data': pr_data}, user, pull_request)
 
     def close_pull_request_with_comment(
             self, pull_request, user, repo, message=None):
