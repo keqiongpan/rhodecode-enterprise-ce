@@ -48,7 +48,7 @@ class RepositoryPermissionModel(BaseModel):
         permission = Permission.get_by_key(permission)
         current = self.get_user_permission(repository, user)
         if current:
-            if not current.permission is permission:
+            if current.permission is not permission:
                 current.permission = permission
         else:
             p = UserRepoToPerm()
@@ -73,7 +73,7 @@ class RepositoryPermissionModel(BaseModel):
         permission = Permission.get_by_key(permission)
         current = self.get_users_group_permission(repository, users_group)
         if current:
-            if not current.permission is permission:
+            if current.permission is not permission:
                 current.permission = permission
         else:
             p = UserGroupRepoToPerm()
@@ -93,10 +93,10 @@ class RepositoryPermissionModel(BaseModel):
         else:
             self.delete_user_permission(repository, user)
 
-    def update_or_delete_users_group_permission(self, repository, user_group,
-                                              permission):
+    def update_or_delete_users_group_permission(
+            self, repository, user_group, permission):
         if permission:
-            self.update_user_group_permission(repository, user_group,
-                                               permission)
+            self.update_user_group_permission(
+                repository, user_group, permission)
         else:
             self.delete_users_group_permission(repository, user_group)
