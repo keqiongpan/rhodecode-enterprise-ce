@@ -20,7 +20,6 @@
 
 import logging
 
-
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 

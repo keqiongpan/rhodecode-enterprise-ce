@@ -21,7 +21,6 @@
 import collections
 import logging
 
-
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView

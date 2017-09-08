@@ -22,6 +22,7 @@ import time
 import logging
 
 import formencode
+import formencode.htmlfill
 import peppercorn
 
 from pyramid.httpexceptions import HTTPNotFound, HTTPForbidden, HTTPFound

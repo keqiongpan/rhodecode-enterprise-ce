@@ -21,6 +21,7 @@
 import re
 import logging
 import formencode
+import formencode.htmlfill
 import datetime
 from pyramid.interfaces import IRoutesMapper
 
@@ -37,7 +38,8 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib.utils2 import aslist, safe_unicode
-from rhodecode.model.db import or_, joinedload, coalesce, User, UserIpMap, UserSshKeys
+from rhodecode.model.db import (
+    or_, coalesce, User, UserIpMap, UserSshKeys)
 from rhodecode.model.forms import (
     ApplicationPermissionsForm, ObjectPermissionsForm, UserPermissionsForm)
 from rhodecode.model.meta import Session

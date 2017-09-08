@@ -20,6 +20,7 @@
 
 import logging
 import formencode
+import formencode.htmlfill
 
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden
 from pyramid.view import view_config

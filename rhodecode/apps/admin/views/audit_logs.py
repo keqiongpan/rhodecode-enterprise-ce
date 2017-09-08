@@ -21,10 +21,9 @@
 import logging
 
 from pyramid.view import view_config
-from sqlalchemy.orm import joinedload
 
 from rhodecode.apps._base import BaseAppView
-from rhodecode.model.db import UserLog
+from rhodecode.model.db import joinedload, UserLog
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
 from rhodecode.lib.utils2 import safe_int
