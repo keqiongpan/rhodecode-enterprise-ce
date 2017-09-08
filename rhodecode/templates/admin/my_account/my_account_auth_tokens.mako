@@ -116,7 +116,7 @@ $("#lifetime").select2({
     dropdownCssClass: "drop-menu-dropdown",
     dropdownAutoWidth: true,
     data: preloadData,
-    placeholder: ${_('Select or enter expiration date')},
+    placeholder: "${_('Select or enter expiration date')}",
     query: function(query) {
         feedLifetimeOptions(query, preloadData);
     }
