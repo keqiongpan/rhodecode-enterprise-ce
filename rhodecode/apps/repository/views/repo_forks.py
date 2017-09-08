@@ -46,9 +46,6 @@ class RepoForksView(RepoAppView, DataGridAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
-
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo
         c.rhodecode_repo = self.rhodecode_vcs_repo
 
         acl_groups = RepoGroupList(
@@ -227,7 +224,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
             if isinstance(task, BaseAsyncResult):
                 task_id = task.task_id
         except formencode.Invalid as errors:
-            c.repo_info = self.db_repo
+            c.rhodecode_db_repo = self.db_repo
 
             data = render('rhodecode:templates/forks/fork.mako',
                           self._get_template_context(c), self.request)

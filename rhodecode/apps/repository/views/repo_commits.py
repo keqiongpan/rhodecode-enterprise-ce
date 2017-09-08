@@ -148,9 +148,6 @@ def _context_url(request, fileid=None):
 class RepoCommitsView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
-
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo
         c.rhodecode_repo = self.rhodecode_vcs_repo
 
         self._register_global_c(c)

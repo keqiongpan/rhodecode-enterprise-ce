@@ -33,9 +33,6 @@ class RepoMaintenanceView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo
-
         self._register_global_c(c)
         return c
 

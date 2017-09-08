@@ -44,9 +44,6 @@ class RepoSettingsView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo
-
         acl_groups = RepoGroupList(
             RepoGroup.query().all(),
             perm_set=['group.write', 'group.admin'])

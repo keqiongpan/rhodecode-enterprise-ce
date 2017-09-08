@@ -27,7 +27,7 @@
           ${self.breadcrumbs()}
       </div>
 
-    ${h.secure_form(h.route_path('repo_fork_create',repo_name=c.repo_info.repo_name), method='POST', request=request)}
+    ${h.secure_form(h.route_path('repo_fork_create',repo_name=c.rhodecode_db_repo.repo_name), method='POST', request=request)}
     <div class="form">
         <!-- fields -->
         <div class="fields">
@@ -38,8 +38,8 @@
               </div>
               <div class="input">
                   ${h.text('repo_name', class_="medium")}
-                  ${h.hidden('repo_type',c.repo_info.repo_type)}
-                  ${h.hidden('fork_parent_id',c.repo_info.repo_id)}
+                  ${h.hidden('repo_type',c.rhodecode_db_repo.repo_type)}
+                  ${h.hidden('fork_parent_id',c.rhodecode_db_repo.repo_id)}
               </div>
             </div>
 

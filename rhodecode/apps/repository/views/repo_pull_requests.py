@@ -57,8 +57,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo
         c.REVIEW_STATUS_APPROVED = ChangesetStatus.STATUS_APPROVED
         c.REVIEW_STATUS_REJECTED = ChangesetStatus.STATUS_REJECTED
         self._register_global_c(c)

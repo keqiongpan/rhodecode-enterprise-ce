@@ -72,8 +72,8 @@
             <div class="panel-body">
                     ${its.issue_tracker_settings_table(
                         patterns=c.repo_patterns.items(),
-                        form_url=h.route_path('edit_repo_issuetracker', repo_name=c.repo_info.repo_name),
-                        delete_url=h.route_path('edit_repo_issuetracker_delete', repo_name=c.repo_info.repo_name)
+                        form_url=h.route_path('edit_repo_issuetracker', repo_name=c.rhodecode_db_repo.repo_name),
+                        delete_url=h.route_path('edit_repo_issuetracker_delete', repo_name=c.rhodecode_db_repo.repo_name)
                     )}
                   <div class="buttons">
                       <button type="submit" class="btn btn-primary save-inheritance" id="save">${_('Save')}</button>
@@ -92,7 +92,7 @@
     </div>
     <div class="panel-body">
         ${its.issue_tracker_new_row()}
-        ${its.issue_tracker_settings_test(test_url=h.route_path('edit_repo_issuetracker_test', repo_name=c.repo_info.repo_name))}
+        ${its.issue_tracker_settings_test(test_url=h.route_path('edit_repo_issuetracker_test', repo_name=c.rhodecode_db_repo.repo_name))}
     </div>
 </div>
 

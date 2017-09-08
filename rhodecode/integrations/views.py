@@ -393,8 +393,7 @@ class RepoIntegrationsView(IntegrationSettingsViewBase):
         c.repo = self.repo
         c.repo_group = self.repo_group
 
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo = self.repo
+        self.db_repo = self.repo
         c.rhodecode_db_repo = self.repo
         c.repo_name = self.db_repo.repo_name
         c.repository_pull_requests = ScmModel().get_pull_requests(self.repo)

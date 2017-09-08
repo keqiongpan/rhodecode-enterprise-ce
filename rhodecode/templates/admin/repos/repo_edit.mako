@@ -5,7 +5,7 @@
 <%inherit file="/base/base.mako"/>
 
 <%def name="title()">
-    ${_('%s repository settings') % c.repo_info.repo_name}
+    ${_('%s repository settings') % c.rhodecode_db_repo.repo_name}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
@@ -63,7 +63,7 @@
           <li class="${'active' if c.active=='caches' else ''}">
               <a href="${h.route_path('edit_repo_caches', repo_name=c.repo_name)}">${_('Caches')}</a>
           </li>
-          %if c.repo_info.repo_type != 'svn':
+          %if c.rhodecode_db_repo.repo_type != 'svn':
           <li class="${'active' if c.active=='remote' else ''}">
               <a href="${h.route_path('edit_repo_remote', repo_name=c.repo_name)}">${_('Remote')}</a>
           </li>
@@ -74,7 +74,7 @@
           <li class="${'active' if c.active=='integrations' else ''}">
               <a href="${h.route_path('repo_integrations_home', repo_name=c.repo_name)}">${_('Integrations')}</a>
           </li>
-          %if c.repo_info.repo_type != 'svn':
+          %if c.rhodecode_db_repo.repo_type != 'svn':
           <li class="${'active' if c.active=='reviewers' else ''}">
               <a href="${h.route_path('repo_reviewers', repo_name=c.repo_name)}">${_('Reviewer Rules')}</a>
           </li>

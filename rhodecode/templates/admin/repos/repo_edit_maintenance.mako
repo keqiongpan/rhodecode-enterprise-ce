@@ -17,7 +17,7 @@
             ${_('Maintenance can be automated by such api call. Can be called periodically in crontab etc.')}
             <br/>
             <code>
-                ${h.api_call_example(method='maintenance', args={"repoid": c.repo_info.repo_name})}
+                ${h.api_call_example(method='maintenance', args={"repoid": c.rhodecode_db_repo.repo_name})}
             </code>
         </p>
 
@@ -51,7 +51,7 @@ executeTask = function() {
     btn.attr('disabled', 'disabled');
     btn.addClass('disabled');
 
-    var url = "${h.route_path('edit_repo_maintenance_execute', repo_name=c.repo_info.repo_name)}";
+    var url = "${h.route_path('edit_repo_maintenance_execute', repo_name=c.rhodecode_db_repo.repo_name)}";
     var success = function (data) {
         var displayHtml = $('<pre></pre>');
 

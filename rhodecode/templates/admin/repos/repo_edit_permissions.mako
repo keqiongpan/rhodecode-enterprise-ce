@@ -16,7 +16,7 @@
                 <th></th>
             </tr>
             ## USERS
-            %for _user in c.repo_info.permissions():
+            %for _user in c.rhodecode_db_repo.permissions():
                 %if getattr(_user, 'admin_row', None) or getattr(_user, 'owner_row', None):
                     <tr class="perm_admin_row">
                         <td class="td-radio">${h.radio('admin_perm_%s' % _user.user_id,'repository.none', disabled="disabled")}</td>
@@ -35,7 +35,7 @@
                         </td>
                         <td></td>
                     </tr>
-                %elif _user.username == h.DEFAULT_USER and c.repo_info.private:
+                %elif _user.username == h.DEFAULT_USER and c.rhodecode_db_repo.private:
                     <tr>
                         <td colspan="4">
                             <span class="private_repo_msg">
@@ -76,7 +76,7 @@
             %endfor
 
             ## USER GROUPS
-            %for _user_group in c.repo_info.permission_user_groups():
+            %for _user_group in c.rhodecode_db_repo.permission_user_groups():
                 <tr>
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.none', checked=_user_group.permission=='repository.none')}</td>
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.read', checked=_user_group.permission=='repository.read')}</td>
