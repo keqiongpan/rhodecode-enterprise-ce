@@ -24,8 +24,8 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
-from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator, \
-    CSRFRequired
+from rhodecode.lib.auth import (
+    LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h
 from rhodecode.model.meta import Session
 from rhodecode.model.scm import ScmModel

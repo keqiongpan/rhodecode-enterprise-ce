@@ -22,6 +22,7 @@ import time
 import collections
 import datetime
 import formencode
+import formencode.htmlfill
 import logging
 import urlparse
 

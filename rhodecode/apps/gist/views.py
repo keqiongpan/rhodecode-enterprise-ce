@@ -25,7 +25,7 @@ import formencode
 import formencode.htmlfill
 import peppercorn
 
-from pyramid.httpexceptions import HTTPNotFound, HTTPForbidden, HTTPFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPFound
 from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response

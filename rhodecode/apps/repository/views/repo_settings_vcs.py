@@ -21,6 +21,7 @@
 import logging
 
 import formencode
+import formencode.htmlfill
 from pyramid.httpexceptions import HTTPFound, HTTPBadRequest
 from pyramid.response import Response
 from pyramid.renderers import render

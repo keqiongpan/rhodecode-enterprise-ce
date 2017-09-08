@@ -26,7 +26,6 @@ from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
 
-
 from rhodecode.apps._base import RepoAppView
 from rhodecode.controllers.utils import parse_path_ref, get_commit_from_ref_name
 from rhodecode.lib import helpers as h

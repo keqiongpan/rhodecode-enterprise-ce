@@ -26,7 +26,7 @@ from webhelpers.util import update_params
 from rhodecode.apps._base import BaseAppView, RepoAppView
 from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator)
 from rhodecode.lib.helpers import Page
-from rhodecode.lib.utils2 import safe_str, safe_int
+from rhodecode.lib.utils2 import safe_str
 from rhodecode.lib.index import searcher_from_config
 from rhodecode.model import validation_schema
 from rhodecode.model.validation_schema.schemas import search_schema

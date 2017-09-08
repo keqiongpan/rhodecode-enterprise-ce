@@ -22,6 +22,7 @@ import logging
 import collections
 
 import formencode
+import formencode.htmlfill
 import peppercorn
 from pyramid.httpexceptions import (
     HTTPFound, HTTPNotFound, HTTPForbidden, HTTPBadRequest)

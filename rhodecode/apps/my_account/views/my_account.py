@@ -22,6 +22,7 @@ import logging
 import datetime
 
 import formencode
+import formencode.htmlfill
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 from pyramid.renderers import render
@@ -33,8 +34,8 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
-from rhodecode.lib.channelstream import channelstream_request, \
-    ChannelstreamException
+from rhodecode.lib.channelstream import (
+    channelstream_request, ChannelstreamException)
 from rhodecode.lib.utils2 import safe_int, md5, str2bool
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.comment import CommentsModel

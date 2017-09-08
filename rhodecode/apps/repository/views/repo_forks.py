@@ -21,19 +21,19 @@
 import logging
 import datetime
 import formencode
-from pyramid.httpexceptions import HTTPNotFound, HTTPBadRequest, HTTPFound
+import formencode.htmlfill
+
+from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
 
 from rhodecode.apps._base import RepoAppView, DataGridAppView
-
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous,
     HasRepoPermissionAny, HasPermissionAnyDecorator, CSRFRequired)
 import rhodecode.lib.helpers as h
-from rhodecode.model.db import (
-    coalesce, or_, Repository, RepoGroup, UserFollowing, User)
+from rhodecode.model.db import coalesce, or_, Repository, RepoGroup
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.forms import RepoForkForm
 from rhodecode.model.scm import ScmModel, RepoGroupList
