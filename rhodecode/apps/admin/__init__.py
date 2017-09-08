@@ -71,6 +71,14 @@ def admin_routes(config):
         name='admin_settings_process_management_signal',
         pattern='/settings/process_management/signal')
 
+    # default settings
+    config.add_route(
+        name='admin_defaults_repositories',
+        pattern='/defaults/repositories')
+    config.add_route(
+        name='admin_defaults_repositories_update',
+        pattern='/defaults/repositories/update')
+
     # global permissions
 
     config.add_route(

@@ -20,15 +20,31 @@
 
 import pytest
 
-from rhodecode.tests import assert_session_flash, url
+from rhodecode.tests import assert_session_flash
 from rhodecode.model.settings import SettingsModel
 
 
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
+
+    base_url = {
+        'admin_defaults_repositories':
+            ADMIN_PREFIX + '/defaults/repositories',
+        'admin_defaults_repositories_update':
+            ADMIN_PREFIX + '/defaults/repositories/update',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
+
+
 @pytest.mark.usefixtures("app")
-class TestDefaultsController:
+class TestDefaultsController(object):
 
     def test_index(self, autologin_user):
-        response = self.app.get(url('admin_defaults_repositories'))
+        response = self.app.get(route_path('admin_defaults_repositories'))
         response.mustcontain('default_repo_private')
         response.mustcontain('default_repo_enable_statistics')
         response.mustcontain('default_repo_enable_downloads')
@@ -44,7 +60,7 @@ class TestDefaultsController:
             'csrf_token': csrf_token,
         }
         response = self.app.post(
-            url('admin_defaults_repositories'), params=params)
+            route_path('admin_defaults_repositories_update'), params=params)
         assert_session_flash(response, 'Default settings updated successfully')
 
         defs = SettingsModel().get_default_repo_settings()
@@ -61,8 +77,9 @@ class TestDefaultsController:
             'csrf_token': csrf_token,
         }
         response = self.app.post(
-            url('admin_defaults_repositories'), params=params)
+            route_path('admin_defaults_repositories_update'), params=params)
         assert_session_flash(response, 'Default settings updated successfully')
+
         defs = SettingsModel().get_default_repo_settings()
         del params['csrf_token']
         assert params == defs

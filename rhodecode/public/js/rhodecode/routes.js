@@ -47,6 +47,8 @@ function registerRCRoutes() {
     pyroutes.register('admin_settings_sessions_cleanup', '/_admin/settings/sessions/cleanup', []);
     pyroutes.register('admin_settings_process_management', '/_admin/settings/process_management', []);
     pyroutes.register('admin_settings_process_management_signal', '/_admin/settings/process_management/signal', []);
+    pyroutes.register('admin_defaults_repositories', '/_admin/defaults/repositories', []);
+    pyroutes.register('admin_defaults_repositories_update', '/_admin/defaults/repositories/update', []);
     pyroutes.register('admin_permissions_application', '/_admin/permissions/application', []);
     pyroutes.register('admin_permissions_application_update', '/_admin/permissions/application/update', []);
     pyroutes.register('admin_permissions_global', '/_admin/permissions/global', []);

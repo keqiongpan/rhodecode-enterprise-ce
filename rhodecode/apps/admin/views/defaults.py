@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2016-2017  RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,22 +18,20 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-default settings controller for RhodeCode Enterprise
-"""
-
 import logging
+
 import formencode
-from formencode import htmlfill
+import formencode.htmlfill
 
-from pylons import request, tmpl_context as c, url
-from pylons.controllers.util import redirect
-from pylons.i18n.translation import _
+from pyramid.view import view_config
+from pyramid.httpexceptions import HTTPFound
+from pyramid.renderers import render
+from pyramid.response import Response
 
-from rhodecode.lib import auth
+from rhodecode.apps._base import BaseAppView
+from rhodecode.lib.auth import (
+    LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h
-from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
-from rhodecode.lib.base import BaseController, render
 from rhodecode.model.forms import DefaultsForm
 from rhodecode.model.meta import Session
 from rhodecode import BACKENDS
@@ -42,41 +40,49 @@ from rhodecode.model.settings import SettingsModel
 log = logging.getLogger(__name__)
 
 
-class DefaultsController(BaseController):
+class AdminDefaultSettingsView(BaseAppView):
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+
+        self._register_global_c(c)
+        return c
 
     @LoginRequired()
-    def __before__(self):
-        super(DefaultsController, self).__before__()
-
     @HasPermissionAllDecorator('hg.admin')
-    def index(self):
-        """GET /defaults: All items in the collection"""
-        # url('admin_defaults_repositories')
+    @view_config(
+        route_name='admin_defaults_repositories', request_method='GET',
+        renderer='rhodecode:templates/admin/defaults/defaults.mako')
+    def defaults_repository_show(self):
+        c = self.load_default_context()
         c.backends = BACKENDS.keys()
         c.active = 'repositories'
         defaults = SettingsModel().get_default_repo_settings()
 
-        return htmlfill.render(
-            render('admin/defaults/defaults.mako'),
+        data = render(
+            'rhodecode:templates/admin/defaults/defaults.mako',
+            self._get_template_context(c), self.request)
+        html = formencode.htmlfill.render(
+            data,
             defaults=defaults,
             encoding="UTF-8",
             force_defaults=False
         )
+        return Response(html)
 
+    @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @auth.CSRFRequired()
-    def update_repository_defaults(self):
-        """PUT /defaults/repositories: Update an existing item"""
-        # Forms posted to this method should contain a hidden field:
-        # Or using helpers:
-        #    h.form(url('admin_defaults_repositories'),
-        #           method='post')
-        # url('admin_defaults_repositories')
+    @CSRFRequired()
+    @view_config(
+        route_name='admin_defaults_repositories_update', request_method='POST',
+        renderer='rhodecode:templates/admin/defaults/defaults.mako')
+    def defaults_repository_update(self):
+        _ = self.request.translate
+        c = self.load_default_context()
         c.active = 'repositories'
-        _form = DefaultsForm()()
+        form = DefaultsForm()()
 
         try:
-            form_result = _form.to_python(dict(request.POST))
+            form_result = form.to_python(dict(self.request.POST))
             for k, v in form_result.iteritems():
                 setting = SettingsModel().create_or_update_setting(k, v)
                 Session().add(setting)
@@ -85,18 +91,21 @@ class DefaultsController(BaseController):
                     category='success')
 
         except formencode.Invalid as errors:
-            defaults = errors.value
-
-            return htmlfill.render(
-                render('admin/defaults/defaults.mako'),
-                defaults=defaults,
+            data = render(
+                'rhodecode:templates/admin/defaults/defaults.mako',
+                self._get_template_context(c), self.request)
+            html = formencode.htmlfill.render(
+                data,
+                defaults=errors.value,
                 errors=errors.error_dict or {},
                 prefix_error=False,
                 encoding="UTF-8",
-                force_defaults=False)
+                force_defaults=False
+            )
+            return Response(html)
         except Exception:
             log.exception('Exception in update action')
             h.flash(_('Error occurred during update of default values'),
                     category='error')
 
-        return redirect(url('admin_defaults_repositories'))
+        raise HTTPFound(h.route_path('admin_defaults_repositories'))

@@ -254,14 +254,6 @@ def make_map(config):
         m.connect('edit_user_global_perms', '/users/{user_id}/edit/global_permissions',
                   action='update_global_perms', conditions={'method': ['PUT']})
 
-    # ADMIN DEFAULTS REST ROUTES
-    with rmap.submapper(path_prefix=ADMIN_PREFIX,
-                        controller='admin/defaults') as m:
-        m.connect('admin_defaults_repositories', '/defaults/repositories',
-                  action='update_repository_defaults', conditions={'method': ['POST']})
-        m.connect('admin_defaults_repositories', '/defaults/repositories',
-                  action='index', conditions={'method': ['GET']})
-
     # ADMIN SETTINGS ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/settings') as m:
