@@ -44,7 +44,8 @@ def base_data():
 
 def test_webhook_parse_url_invalid_event():
     template_url = 'http://server.com/${repo_name}/build'
-    handler = WebhookHandler(template_url, 'secret_token')
+    handler = WebhookHandler(
+        template_url, 'secret_token', {'exmaple-header':'header-values'})
     with pytest.raises(ValueError) as err:
         handler(events.RepoDeleteEvent(''), {})
     assert str(err.value).startswith('event type not supported')
@@ -57,24 +58,32 @@ def test_webhook_parse_url_invalid_event():
     ('http://server.com/${branch}/build', ['http://server.com/${branch}/build']),
 ])
 def test_webook_parse_url_for_create_event(base_data, template, expected_urls):
-    handler = WebhookHandler(template, 'secret_token')
+    headers = {'exmaple-header': 'header-values'}
+    handler = WebhookHandler(
+        template, 'secret_token', headers)
     urls = handler(events.RepoCreateEvent(''), base_data)
-    assert urls == [(url, 'secret_token', base_data) for url in expected_urls]
+    assert urls == [
+        (url, 'secret_token', headers, base_data) for url in expected_urls]
 
 
 @pytest.mark.parametrize('template,expected_urls', [
     ('http://server.com/${repo_name}/${pull_request_id}', ['http://server.com/foo/999']),
     ('http://server.com/${repo_name}/${pull_request_url}', ['http://server.com/foo/http://pr-url.com']),
 ])
-def test_webook_parse_url_for_pull_request_event(base_data, template, expected_urls):
+def test_webook_parse_url_for_pull_request_event(
+        base_data, template, expected_urls):
+
     base_data['pullrequest'] = {
         'pull_request_id': 999,
         'url': 'http://pr-url.com',
     }
-    handler = WebhookHandler(template, 'secret_token')
+    headers = {'exmaple-header': 'header-values'}
+    handler = WebhookHandler(
+        template, 'secret_token', headers)
     urls = handler(events.PullRequestCreateEvent(
         AttributeDict({'target_repo': 'foo'})), base_data)
-    assert urls == [(url, 'secret_token', base_data) for url in expected_urls]
+    assert urls == [
+        (url, 'secret_token', headers, base_data) for url in expected_urls]
 
 
 @pytest.mark.parametrize('template,expected_urls', [
@@ -85,7 +94,8 @@ def test_webook_parse_url_for_pull_request_event(base_data, template, expected_u
                                                   'http://server.com/dev/dev-xxx',
                                                   'http://server.com/dev/dev-yyy']),
 ])
-def test_webook_parse_url_for_push_event(pylonsapp, repo_push_event, base_data, template, expected_urls):
+def test_webook_parse_url_for_push_event(
+        pylonsapp, repo_push_event, base_data, template, expected_urls):
     base_data['push'] = {
         'branches': [{'name': 'stable'}, {'name': 'dev'}],
         'commits': [{'branch': 'stable', 'raw_id': 'stable-xxx'},
@@ -93,6 +103,9 @@ def test_webook_parse_url_for_push_event(pylonsapp, repo_push_event, base_data, 
                     {'branch': 'dev', 'raw_id': 'dev-xxx'},
                     {'branch': 'dev', 'raw_id': 'dev-yyy'}]
     }
-    handler = WebhookHandler(template, 'secret_token')
+    headers = {'exmaple-header': 'header-values'}
+    handler = WebhookHandler(
+        template, 'secret_token', headers)
     urls = handler(repo_push_event, base_data)
-    assert urls == [(url, 'secret_token', base_data) for url in expected_urls]
+    assert urls == [
+        (url, 'secret_token', headers, base_data) for url in expected_urls]

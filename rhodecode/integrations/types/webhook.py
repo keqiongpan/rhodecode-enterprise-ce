@@ -29,6 +29,7 @@ import colander
 from celery.task import task
 from requests.packages.urllib3.util.retry import Retry
 
+import rhodecode
 from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.integrations.types.base import IntegrationTypeBase
@@ -61,9 +62,10 @@ URL_VARS = ', '.join('${' + x + '}' for x in WEBHOOK_URL_VARS)
 
 
 class WebhookHandler(object):
-    def __init__(self, template_url, secret_token):
+    def __init__(self, template_url, secret_token, headers):
         self.template_url = template_url
         self.secret_token = secret_token
+        self.headers = headers
 
     def get_base_parsed_template(self, data):
         """
@@ -117,18 +119,18 @@ class WebhookHandler(object):
                         # register per-commit call
                         log.debug(
                             'register webhook call(%s) to url %s', event, commit_url)
-                        url_cals.append((commit_url, self.secret_token, data))
+                        url_cals.append((commit_url, self.secret_token, self.headers, data))
 
                 else:
                     # register per-branch call
                     log.debug(
                         'register webhook call(%s) to url %s', event, branch_url)
-                    url_cals.append((branch_url, self.secret_token, data))
+                    url_cals.append((branch_url, self.secret_token, self.headers, data))
 
         else:
             log.debug(
                 'register webhook call(%s) to url %s', event, url)
-            url_cals.append((url, self.secret_token, data))
+            url_cals.append((url, self.secret_token, self.headers, data))
 
         return url_cals
 
@@ -136,7 +138,7 @@ class WebhookHandler(object):
         url = self.get_base_parsed_template(data)
         log.debug(
             'register webhook call(%s) to url %s', event, url)
-        return [(url, self.secret_token, data)]
+        return [(url, self.secret_token, self.headers, data)]
 
     def pull_request_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)
@@ -145,7 +147,7 @@ class WebhookHandler(object):
         url = string.Template(url).safe_substitute(
             pull_request_id=data['pullrequest']['pull_request_id'],
             pull_request_url=data['pullrequest']['url'])
-        return [(url, self.secret_token, data)]
+        return [(url, self.secret_token, self.headers, data)]
 
     def __call__(self, event, data):
         if isinstance(event, events.RepoPushEvent):
@@ -178,11 +180,32 @@ class WebhookSettingsSchema(colander.Schema):
     secret_token = colander.SchemaNode(
         colander.String(),
         title=_('Secret Token'),
-        description=_('String used to validate received payloads.'),
+        description=_('String used to validate received payloads. It will be '
+                      'sent together with event data in JSON'),
         default='',
         missing='',
         widget=deform.widget.TextInputWidget(
-            placeholder='secret_token'
+            placeholder='e.g. secret_token'
+        ),
+    )
+    custom_header_key = colander.SchemaNode(
+        colander.String(),
+        title=_('Custom Header Key'),
+        description=_('Custom Header name to be set when calling endpoint.'),
+        default='',
+        missing='',
+        widget=deform.widget.TextInputWidget(
+            placeholder='e.g.Authorization'
+        ),
+    )
+    custom_header_val = colander.SchemaNode(
+        colander.String(),
+        title=_('Custom Header Value'),
+        description=_('Custom Header value to be set when calling endpoint.'),
+        default='',
+        missing='',
+        widget=deform.widget.TextInputWidget(
+            placeholder='e.g. RcLogin auth=xxxx'
         ),
     )
     method_type = colander.SchemaNode(
@@ -245,7 +268,15 @@ class WebhookIntegrationType(IntegrationTypeBase):
         data = event.as_dict()
         template_url = self.settings['url']
 
-        handler = WebhookHandler(template_url, self.settings['secret_token'])
+        headers = {}
+        head_key = self.settings['custom_header_key']
+        head_val = self.settings['custom_header_val']
+        if head_key and head_val:
+            headers = {head_key: head_val}
+
+        handler = WebhookHandler(
+            template_url, self.settings['secret_token'], headers)
+
         url_calls = handler(event, data)
         log.debug('webhook: calling following urls: %s',
                   [x[0] for x in url_calls])
@@ -259,7 +290,12 @@ def post_to_webhook(url_calls, settings):
         total=max_retries,
         backoff_factor=0.15,
         status_forcelist=[500, 502, 503, 504])
-    for url, token, data in url_calls:
+    call_headers = {
+        'User-Agent': 'RhodeCode-webhook-caller/{}'.format(
+            rhodecode.__version__)
+    }  # updated below with custom ones, allows override
+
+    for url, token, headers, data in url_calls:
         req_session = requests.Session()
         req_session.mount(  # retry max N times
             'http://', requests.adapters.HTTPAdapter(max_retries=retries))
@@ -267,10 +303,14 @@ def post_to_webhook(url_calls, settings):
         method = settings.get('method_type') or 'post'
         call_method = getattr(req_session, method)
 
+        headers = headers or {}
+        call_headers.update(headers)
+
         log.debug('calling WEBHOOK with method: %s', call_method)
         resp = call_method(url, json={
             'token': token,
             'event': data
-        })
+        }, headers=call_headers)
         log.debug('Got WEBHOOK response: %s', resp)
+
         resp.raise_for_status()  # raise exception on a failed request
