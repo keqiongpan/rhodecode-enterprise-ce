@@ -43,6 +43,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.sql.expression import true
 from sqlalchemy.sql.functions import coalesce, count  # noqa
 from sqlalchemy.exc import IntegrityError  # noqa
+from sqlalchemy.dialects.mysql import LONGTEXT
 from beaker.cache import cache_region
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
@@ -1233,8 +1234,8 @@ class UserLog(Base, BaseModel):
     action_date = Column("action_date", DateTime(timezone=False), nullable=True, unique=None, default=None)
 
     version = Column("version", String(255), nullable=True, default=VERSION_1)
-    user_data = Column('user_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
-    action_data = Column('action_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
+    user_data = Column('user_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=LONGTEXT()))))
+    action_data = Column('action_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=LONGTEXT()))))
 
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (
