@@ -1890,7 +1890,7 @@ def form(url, method='post', needs_csrf_token=True, **attrs):
     return wh_form(url, method=method, **attrs)
 
 
-def secure_form(url, method="POST", multipart=False, **attrs):
+def secure_form(form_url, method="POST", multipart=False, **attrs):
     """Start a form tag that points the action to an url. This
     form tag will also include the hidden field containing
     the auth token.
@@ -1910,13 +1910,15 @@ def secure_form(url, method="POST", multipart=False, **attrs):
 
     """
     from webhelpers.pylonslib.secure_form import insecure_form
-    form = insecure_form(url, method, multipart, **attrs)
 
     session = None
+
     # TODO(marcink): after pyramid migration require request variable ALWAYS
     if 'request' in attrs:
         session = attrs['request'].session
+        del attrs['request']
 
+    form = insecure_form(form_url, method, multipart, **attrs)
     token = literal(
         '<input type="hidden" id="{}" name="{}" value="{}">'.format(
         csrf_token_key, csrf_token_key, get_csrf_token(session)))
