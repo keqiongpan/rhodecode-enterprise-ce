@@ -12,6 +12,7 @@
                 ('state','[featured]'),
                 ('state','[dev]'),
                 ('state','[dead]'),
+                ('state','[deprecated]'),
 
                 ('label','[personal]'),
                 ('generic','[v2.0.0]'),

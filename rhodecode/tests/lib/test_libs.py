@@ -279,12 +279,12 @@ def test_metatag_extraction(sample, expected_tags):
     (('license', '[license =&gt; MIT]'), '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/MIT">MIT</a></div>'),
     (('license', '[license =&gt; AGPLv3]'), '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/AGPLv3">AGPLv3</a></div>'),
 
-    (('ref', '[requires =&gt; RepoName]'), '<div class="metatag" tag="ref requires">requires =&gt; <a href="/RepoName">RepoName</a></div>'),
-    (('ref', '[recommends =&gt; GroupName]'), '<div class="metatag" tag="ref recommends">recommends =&gt; <a href="/GroupName">GroupName</a></div>'),
-    (('ref', '[conflicts =&gt; SomeName]'), '<div class="metatag" tag="ref conflicts">conflicts =&gt; <a href="/SomeName">SomeName</a></div>'),
-    (('ref', '[base =&gt; SomeName]'), '<div class="metatag" tag="ref base">base =&gt; <a href="/SomeName">SomeName</a></div>'),
+    (('ref', '[requires =&gt; RepoName]'), '<div class="metatag" tag="ref requires">requires: <a href="/RepoName">RepoName</a></div>'),
+    (('ref', '[recommends =&gt; GroupName]'), '<div class="metatag" tag="ref recommends">recommends: <a href="/GroupName">GroupName</a></div>'),
+    (('ref', '[conflicts =&gt; SomeName]'), '<div class="metatag" tag="ref conflicts">conflicts: <a href="/SomeName">SomeName</a></div>'),
+    (('ref', '[base =&gt; SomeName]'), '<div class="metatag" tag="ref base">base: <a href="/SomeName">SomeName</a></div>'),
 
-    (('see', '[see =&gt; http://rhodecode.com]'), '<div class="metatag" tag="see">see =&gt; http://rhodecode.com </div>'),
+    (('see', '[see =&gt; http://rhodecode.com]'), '<div class="metatag" tag="see">see: http://rhodecode.com </div>'),
 
     (('url', '[url =&gt; [linkName](https://rhodecode.com)]'), '<div class="metatag" tag="url"> <a href="https://rhodecode.com">linkName</a> </div>'),
     (('url', '[url =&gt; [example link](https://rhodecode.com)]'), '<div class="metatag" tag="url"> <a href="https://rhodecode.com">example link</a> </div>'),

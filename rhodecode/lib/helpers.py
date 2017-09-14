@@ -933,7 +933,7 @@ tags_paterns = OrderedDict((
              '<div class="metatag" tag="lang">\\2</div>')),
 
     ('see', (re.compile(r'\[see\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]'),
-            '<div class="metatag" tag="see">see =&gt; \\1 </div>')),
+            '<div class="metatag" tag="see">see: \\1 </div>')),
 
     ('url', (re.compile(r'\[url\ \=\&gt;\ \[([a-zA-Z0-9\ \.\-\_]+)\]\((.*?)\)\]'),
             '<div class="metatag" tag="url"> <a href="\\2">\\1</a> </div>')),
@@ -942,9 +942,9 @@ tags_paterns = OrderedDict((
                 '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/\\1">\\1</a></div>')),
 
     ('ref', (re.compile(r'\[(requires|recommends|conflicts|base)\ \=\&gt;\ *([a-zA-Z0-9\-\/]*)\]'),
-            '<div class="metatag" tag="ref \\1">\\1 =&gt; <a href="/\\2">\\2</a></div>')),
+            '<div class="metatag" tag="ref \\1">\\1: <a href="/\\2">\\2</a></div>')),
 
-    ('state', (re.compile(r'\[(stable|featured|stale|dead|dev)\]'),
+    ('state', (re.compile(r'\[(stable|featured|stale|dead|dev|deprecated)\]'),
               '<div class="metatag" tag="state \\1">\\1</div>')),
 
     # label in grey
