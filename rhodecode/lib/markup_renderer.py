@@ -177,6 +177,9 @@ class MarkupRenderer(object):
     JUPYTER_PAT = re.compile(r'\.(ipynb)$', re.IGNORECASE)
     PLAIN_PAT = re.compile(r'^readme$', re.IGNORECASE)
 
+    URL_PAT = re.compile(r'(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]'
+                         r'|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)')
+
     extensions = ['codehilite', 'extra', 'def_list', 'sane_lists']
     markdown_renderer = markdown.Markdown(
         extensions, safe_mode=True, enable_attributes=False)
@@ -300,14 +303,11 @@ class MarkupRenderer(object):
 
     @classmethod
     def urlify_text(cls, text):
-        url_pat = re.compile(r'(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]'
-                             r'|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)')
-
         def url_func(match_obj):
             url_full = match_obj.groups()[0]
             return '<a href="%(url)s">%(url)s</a>' % ({'url': url_full})
 
-        return url_pat.sub(url_func, text)
+        return cls.URL_PAT.sub(url_func, text)
 
     @classmethod
     def plain(cls, source, universal_newline=True):
