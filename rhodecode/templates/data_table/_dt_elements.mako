@@ -79,11 +79,11 @@
 
     ##TYPE OF REPO
     %if h.is_hg(rtype):
-        <span title="${_('Mercurial repository')}"><i class="icon-hg"></i></span>
+        <span title="${_('Mercurial repository')}"><i class="icon-hg" style="font-size: 14px;"></i></span>
     %elif h.is_git(rtype):
-        <span title="${_('Git repository')}"><i class="icon-git"></i></span>
+        <span title="${_('Git repository')}"><i class="icon-git" style="font-size: 14px"></i></span>
     %elif h.is_svn(rtype):
-        <span title="${_('Subversion repository')}"><i class="icon-svn"></i></span>
+        <span title="${_('Subversion repository')}"><i class="icon-svn" style="font-size: 14px"></i></span>
     %endif
 
     ##PRIVATE/PUBLIC
@@ -203,7 +203,7 @@
 <%def name="repo_group_name(repo_group_name, children_groups=None)">
   <div>
     <a href="${h.route_path('repo_group_home', repo_group_name=repo_group_name)}">
-    <i class="icon-folder-close" title="${_('Repository group')}"></i>
+    <i class="icon-folder-close" title="${_('Repository group')}" style="font-size: 16px"></i>
       %if children_groups:
           ${h.literal(' &raquo; '.join(children_groups))}
       %else:
