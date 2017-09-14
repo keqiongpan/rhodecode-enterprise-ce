@@ -16,7 +16,7 @@
             <span> | ${h.format_byte_size_binary(c.file.size)}</span>
             <span> | ${c.file.mimetype} </span>
             <span> | ${h.get_lexer_for_filenode(c.file).__class__.__name__}</span>
-            <span class="item last"> | <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.file.path}" title="${_('Copy the full path')}"></i></span>
+            <span class="item last"> | <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.f_path}" title="${_('Copy the full path')}"></i></span>
       </div>
       <div class="buttons">
         <a id="file_history_overview" href="#">
