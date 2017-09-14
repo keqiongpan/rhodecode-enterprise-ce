@@ -44,7 +44,12 @@ ${h.secure_form(h.route_path('repo_create'), method='POST', request=request)}
             </div>
             <div class="textarea editor">
                 ${h.textarea('repo_description')}
-                <span class="help-block">${_('Keep it short and to the point. Use a README file for longer descriptions.')}</span>
+                <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
+                <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
+                <span id="meta-tags-desc" style="display: none">
+                    <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+                    ${dt.metatags_help()}
+                </span>
             </div>
         </div>
         <div class="field">

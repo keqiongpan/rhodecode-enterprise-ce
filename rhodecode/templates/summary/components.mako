@@ -82,11 +82,10 @@
             ${_('Description')}:
           </div>
           <div class="right-content">
-             %if c.visual.stylify_metatags:
-               <div class="input ${summary(c.show_stats)} desc">${h.urlify_text(h.escaped_stylize(c.rhodecode_db_repo.description))}</div>
-             %else:
-               <div class="input ${summary(c.show_stats)} desc">${h.urlify_text(h.html_escape(c.rhodecode_db_repo.description))}</div>
-             %endif
+            <div class="input ${summary(c.show_stats)}">
+                <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+                ${dt.repo_desc(c.rhodecode_db_repo.description_safe, c.visual.stylify_metatags)}
+            </div>
           </div>
         </div>
 

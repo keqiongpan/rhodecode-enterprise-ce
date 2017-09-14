@@ -928,52 +928,67 @@ def gravatar_with_user(request, author, show_disabled=False):
     return _render('gravatar_with_user', author, show_disabled=show_disabled)
 
 
-def desc_stylize(value):
+tags_paterns = OrderedDict((
+    ('lang', (re.compile(r'\[(lang|language)\ \=\&gt;\ *([a-zA-Z\-\/\#\+\.]*)\]'),
+             '<div class="metatag" tag="lang">\\2</div>')),
+
+    ('see', (re.compile(r'\[see\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]'),
+            '<div class="metatag" tag="see">see =&gt; \\1 </div>')),
+
+    ('url', (re.compile(r'\[url\ \=\&gt;\ \[([a-zA-Z0-9\ \.\-\_]+)\]\((.*?)\)\]'),
+            '<div class="metatag" tag="url"> <a href="\\2">\\1</a> </div>')),
+
+    ('license', (re.compile(r'\[license\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]'),
+                '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/\\1">\\1</a></div>')),
+
+    ('ref', (re.compile(r'\[(requires|recommends|conflicts|base)\ \=\&gt;\ *([a-zA-Z0-9\-\/]*)\]'),
+            '<div class="metatag" tag="ref \\1">\\1 =&gt; <a href="/\\2">\\2</a></div>')),
+
+    ('state', (re.compile(r'\[(stable|featured|stale|dead|dev)\]'),
+              '<div class="metatag" tag="state \\1">\\1</div>')),
+
+    # label in grey
+    ('label', (re.compile(r'\[([a-z]+)\]'),
+              '<div class="metatag" tag="label">\\1</div>')),
+
+    # generic catch all in grey
+    ('generic', (re.compile(r'\[([a-zA-Z0-9\.\-\_]+)\]'),
+                '<div class="metatag" tag="generic">\\1</div>')),
+))
+
+
+def extract_metatags(value):
+    """
+    Extract supported meta-tags from given text value
+    """
+    if not value:
+        return ''
+
+    tags = []
+    for key, val in tags_paterns.items():
+        pat, replace_html = val
+        tags.extend([(key, x.group()) for x in pat.finditer(value)])
+        value = pat.sub('', value)
+
+    return tags, value
+
+
+def style_metatag(tag_type, value):
     """
     converts tags from value into html equivalent
-
-    :param value:
     """
     if not value:
         return ''
 
-    value = re.sub(r'\[see\ \=\>\ *([a-zA-Z0-9\/\=\?\&\ \:\/\.\-]*)\]',
-                   '<div class="metatag" tag="see">see =&gt; \\1 </div>', value)
-    value = re.sub(r'\[license\ \=\>\ *([a-zA-Z0-9\/\=\?\&\ \:\/\.\-]*)\]',
-                   '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/\\1">\\1</a></div>', value)
-    value = re.sub(r'\[(requires|recommends|conflicts|base)\ \=\>\ *([a-zA-Z0-9\-\/]*)\]',
-                   '<div class="metatag" tag="\\1">\\1 =&gt; <a href="/\\2">\\2</a></div>', value)
-    value = re.sub(r'\[(lang|language)\ \=\>\ *([a-zA-Z\-\/\#\+]*)\]',
-                   '<div class="metatag" tag="lang">\\2</div>', value)
-    value = re.sub(r'\[([a-z]+)\]',
-                   '<div class="metatag" tag="\\1">\\1</div>', value)
+    html_value = value
+    tag_data = tags_paterns.get(tag_type)
+    if tag_data:
+        pat, replace_html = tag_data
+        # convert to plain `unicode` instead of a markup tag to be used in
+        # regex expressions. safe_unicode doesn't work here
+        html_value = pat.sub(replace_html, unicode(value))
 
-    return value
-
-
-def escaped_stylize(value):
-    """
-    converts tags from value into html equivalent, but escaping its value first
-    """
-    if not value:
-        return ''
-
-    # Using default webhelper escape method, but has to force it as a
-    # plain unicode instead of a markup tag to be used in regex expressions
-    value = unicode(escape(safe_unicode(value)))
-
-    value = re.sub(r'\[see\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]',
-                   '<div class="metatag" tag="see">see =&gt; \\1 </div>', value)
-    value = re.sub(r'\[license\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]',
-                   '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/\\1">\\1</a></div>', value)
-    value = re.sub(r'\[(requires|recommends|conflicts|base)\ \=\&gt;\ *([a-zA-Z0-9\-\/]*)\]',
-                   '<div class="metatag" tag="\\1">\\1 =&gt; <a href="/\\2">\\2</a></div>', value)
-    value = re.sub(r'\[(lang|language)\ \=\&gt;\ *([a-zA-Z\-\/\#\+]*)\]',
-                   '<div class="metatag" tag="lang">\\2</div>', value)
-    value = re.sub(r'\[([a-z]+)\]',
-                   '<div class="metatag" tag="\\1">\\1</div>', value)
-
-    return value
+    return html_value
 
 
 def bool2icon(value):

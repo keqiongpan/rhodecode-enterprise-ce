@@ -3,6 +3,39 @@
 ## <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
 <%namespace name="base" file="/base/base.mako"/>
 
+<%def name="metatags_help()">
+    <table>
+        <%
+            example_tags = [
+                ('state','[stable]'),
+                ('state','[stale]'),
+                ('state','[featured]'),
+                ('state','[dev]'),
+                ('state','[dead]'),
+
+                ('label','[personal]'),
+                ('generic','[v2.0.0]'),
+
+                ('lang','[lang =&gt; JavaScript]'),
+                ('license','[license =&gt; LicenseName]'),
+
+                ('ref','[requires =&gt; RepoName]'),
+                ('ref','[recommends =&gt; GroupName]'),
+                ('ref','[conflicts =&gt; SomeName]'),
+                ('ref','[base =&gt; SomeName]'),
+                ('url','[url =&gt; [linkName](https://rhodecode.com)]'),
+                ('see','[see =&gt; http://rhodecode.com]'),
+            ]
+        %>
+        % for tag_type, tag in example_tags:
+            <tr>
+                <td>${tag|n}</td>
+                <td>${h.style_metatag(tag_type, tag)|n}</td>
+            </tr>
+        % endfor
+    </table>
+</%def>
+
 ## REPOSITORY RENDERERS
 <%def name="quick_menu(repo_name)">
   <i class="icon-more"></i>
@@ -74,8 +107,20 @@
   </div>
 </%def>
 
-<%def name="repo_desc(description)">
-    <div class="truncate-wrap">${description}</div>
+<%def name="repo_desc(description, stylify_metatags)">
+    <%
+    tags, description = h.extract_metatags(description)
+    %>
+
+    <div class="truncate-wrap">
+        % if stylify_metatags:
+            % for tag_type, tag in tags:
+                ${h.style_metatag(tag_type, tag)|n}
+            % endfor
+        % endif
+        ${description}
+    </div>
+
 </%def>
 
 <%def name="last_change(last_change)">
@@ -168,8 +213,25 @@
   </div>
 </%def>
 
-<%def name="repo_group_desc(description)">
-    <div class="truncate-wrap">${description}</div>
+<%def name="repo_group_desc(description, personal, stylify_metatags)">
+
+    <%
+    tags, description = h.extract_metatags(description)
+    %>
+
+    <div class="truncate-wrap">
+        % if personal:
+            <div class="metatag" tag="personal">${_('personal')}</div>
+        % endif
+
+        % if stylify_metatags:
+            % for tag_type, tag in tags:
+                ${h.style_metatag(tag_type, tag)|n}
+            % endfor
+        % endif
+        ${description}
+    </div>
+
 </%def>
 
 <%def name="repo_group_actions(repo_group_id, repo_group_name, gr_count)">

@@ -694,14 +694,8 @@ class RepoGroupModel(BaseModel):
             return _render("last_change", last_change)
 
         def desc(desc, personal):
-            prefix = h.escaped_stylize(u'[personal] ') if personal else ''
-
-            if c.visual.stylify_metatags:
-                desc = h.urlify_text(prefix + h.escaped_stylize(desc))
-            else:
-                desc = h.urlify_text(prefix + h.html_escape(desc))
-
-            return _render('repo_group_desc', desc)
+            return _render(
+                'repo_group_desc', desc, personal, c.visual.stylify_metatags)
 
         def repo_group_actions(repo_group_id, repo_group_name, gr_count):
             return _render(

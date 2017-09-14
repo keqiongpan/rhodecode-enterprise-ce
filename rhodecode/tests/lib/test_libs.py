@@ -186,31 +186,115 @@ def test_age_in_future(age_args, expected, kw, pylonsapp):
     assert translate(age(n + delt(**age_args), now=n, **kw)) == expected
 
 
-def test_tag_exctrator():
-    sample = (
-        "hello pta[tag] gog [[]] [[] sda ero[or]d [me =>>< sa]"
-        "[requires] [stale] [see<>=>] [see => http://url.com]"
-        "[requires => url] [lang => python] [just a tag] <html_tag first='abc' attr=\"my.url?attr=&another=\"></html_tag>"
-        "[,d] [ => ULR ] [obsolete] [desc]]"
-    )
-    from rhodecode.lib.helpers import desc_stylize, escaped_stylize
-    res = desc_stylize(sample)
-    assert '<div class="metatag" tag="tag">tag</div>' in res
-    assert '<div class="metatag" tag="obsolete">obsolete</div>' in res
-    assert '<div class="metatag" tag="stale">stale</div>' in res
-    assert '<div class="metatag" tag="lang">python</div>' in res
-    assert '<div class="metatag" tag="requires">requires =&gt; <a href="/url">url</a></div>' in res
-    assert '<div class="metatag" tag="tag">tag</div>' in res
-    assert '<html_tag first=\'abc\' attr=\"my.url?attr=&another=\"></html_tag>' in res
+@pytest.mark.parametrize("sample, expected_tags", [
+    ((
+        "hello world [stale]"
+     ),
+     [
+         ('state', '[stale]'),
+     ]),
+    # entry
+    ((
+         "hello world [v2.0.0] [v1.0.0]"
+     ),
+     [
+         ('generic', '[v2.0.0]'),
+         ('generic', '[v1.0.0]'),
+     ]),
+    # entry
+    ((
+             "he[ll]o wo[rl]d"
+     ),
+     [
+         ('label', '[ll]'),
+         ('label', '[rl]'),
+     ]),
+    # entry
+    ((
+        "hello world [stale]\n[featured]\n[stale] [dead] [dev]"
+     ),
+     [
+         ('state', '[stale]'),
+         ('state', '[featured]'),
+         ('state', '[stale]'),
+         ('state', '[dead]'),
+         ('state', '[dev]'),
+     ]),
+    # entry
+    ((
+        "hello world \n\n [stale] \n [url =&gt; [name](http://rc.com)]"
+     ),
+     [
+        ('state', '[stale]'),
+        ('url', '[url =&gt; [name](http://rc.com)]'),
+     ]),
+    # entry
+    ((
+        "hello pta[tag] gog [[]] [[] sda ero[or]d [me =&gt;>< sa]"
+        "[requires] [stale] [see<>=&gt;] [see =&gt; http://url.com]"
+        "[requires =&gt; url] [lang =&gt; python] [just a tag] "
+        "<html_tag first='abc' attr=\"my.url?attr=&another=\"></html_tag>"
+        "[,d] [ =&gt; ULR ] [obsolete] [desc]]"
+    ),
+     [
+        ('label', '[desc]'),
+        ('label', '[obsolete]'),
+        ('label', '[or]'),
+        ('label', '[requires]'),
+        ('label', '[tag]'),
+        ('state', '[stale]'),
+        ('lang', '[lang =&gt; python]'),
+        ('ref', '[requires =&gt; url]'),
+        ('see', '[see =&gt; http://url.com]'),
 
-    res_encoded = escaped_stylize(sample)
-    assert '<div class="metatag" tag="tag">tag</div>' in res_encoded
-    assert '<div class="metatag" tag="obsolete">obsolete</div>' in res_encoded
-    assert '<div class="metatag" tag="stale">stale</div>' in res_encoded
-    assert '<div class="metatag" tag="lang">python</div>' in res_encoded
-    assert '<div class="metatag" tag="requires">requires =&gt; <a href="/url">url</a></div>' in res_encoded
-    assert '<div class="metatag" tag="tag">tag</div>' in res_encoded
-    assert '&lt;html_tag first=&#39;abc&#39; attr=&#34;my.url?attr=&amp;another=&#34;&gt;&lt;/html_tag&gt;' in res_encoded
+     ]),
+
+], ids=no_newline_id_generator)
+def test_metatag_extraction(sample, expected_tags):
+    from rhodecode.lib.helpers import extract_metatags
+    tags, value = extract_metatags(sample)
+    assert sorted(tags) == sorted(expected_tags)
+
+
+@pytest.mark.parametrize("tag_data, expected_html", [
+
+    (('state', '[stable]'), '<div class="metatag" tag="state stable">stable</div>'),
+    (('state', '[stale]'), '<div class="metatag" tag="state stale">stale</div>'),
+    (('state', '[featured]'), '<div class="metatag" tag="state featured">featured</div>'),
+    (('state', '[dev]'), '<div class="metatag" tag="state dev">dev</div>'),
+    (('state', '[dead]'), '<div class="metatag" tag="state dead">dead</div>'),
+
+    (('label', '[personal]'), '<div class="metatag" tag="label">personal</div>'),
+    (('generic', '[v2.0.0]'), '<div class="metatag" tag="generic">v2.0.0</div>'),
+
+    (('lang', '[lang =&gt; JavaScript]'), '<div class="metatag" tag="lang">JavaScript</div>'),
+    (('lang', '[lang =&gt; C++]'), '<div class="metatag" tag="lang">C++</div>'),
+    (('lang', '[lang =&gt; C#]'), '<div class="metatag" tag="lang">C#</div>'),
+    (('lang', '[lang =&gt; Delphi/Object]'), '<div class="metatag" tag="lang">Delphi/Object</div>'),
+    (('lang', '[lang =&gt; Objective-C]'), '<div class="metatag" tag="lang">Objective-C</div>'),
+    (('lang', '[lang =&gt; .NET]'), '<div class="metatag" tag="lang">.NET</div>'),
+
+    (('license', '[license =&gt; BSD 3-clause]'), '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/BSD 3-clause">BSD 3-clause</a></div>'),
+    (('license', '[license =&gt; GPLv3]'), '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/GPLv3">GPLv3</a></div>'),
+    (('license', '[license =&gt; MIT]'), '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/MIT">MIT</a></div>'),
+    (('license', '[license =&gt; AGPLv3]'), '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/AGPLv3">AGPLv3</a></div>'),
+
+    (('ref', '[requires =&gt; RepoName]'), '<div class="metatag" tag="ref requires">requires =&gt; <a href="/RepoName">RepoName</a></div>'),
+    (('ref', '[recommends =&gt; GroupName]'), '<div class="metatag" tag="ref recommends">recommends =&gt; <a href="/GroupName">GroupName</a></div>'),
+    (('ref', '[conflicts =&gt; SomeName]'), '<div class="metatag" tag="ref conflicts">conflicts =&gt; <a href="/SomeName">SomeName</a></div>'),
+    (('ref', '[base =&gt; SomeName]'), '<div class="metatag" tag="ref base">base =&gt; <a href="/SomeName">SomeName</a></div>'),
+
+    (('see', '[see =&gt; http://rhodecode.com]'), '<div class="metatag" tag="see">see =&gt; http://rhodecode.com </div>'),
+
+    (('url', '[url =&gt; [linkName](https://rhodecode.com)]'), '<div class="metatag" tag="url"> <a href="https://rhodecode.com">linkName</a> </div>'),
+    (('url', '[url =&gt; [example link](https://rhodecode.com)]'), '<div class="metatag" tag="url"> <a href="https://rhodecode.com">example link</a> </div>'),
+    (('url', '[url =&gt; [v1.0.0](https://rhodecode.com)]'), '<div class="metatag" tag="url"> <a href="https://rhodecode.com">v1.0.0</a> </div>'),
+
+])
+def test_metatags_stylize(tag_data, expected_html):
+    from rhodecode.lib.helpers import style_metatag
+    tag_type,value = tag_data
+    assert style_metatag(tag_type, value) == expected_html
 
 
 @pytest.mark.parametrize("tmpl_url, email, expected", [
