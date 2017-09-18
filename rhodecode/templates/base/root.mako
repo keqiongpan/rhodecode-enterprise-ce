@@ -29,7 +29,7 @@ c.template_context['default_user'] = {
         <title>${self.title()}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 
-        % if 'safari' in request.user_agent.lower():
+        % if 'safari' in (request.user_agent or '').lower():
             <meta name="referrer" content="origin">
         % else:
             <meta name="referrer" content="origin-when-cross-origin">
