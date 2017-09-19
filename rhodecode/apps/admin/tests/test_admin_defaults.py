@@ -41,7 +41,7 @@ def route_path(name, params=None, **kwargs):
 
 
 @pytest.mark.usefixtures("app")
-class TestDefaultsController(object):
+class TestDefaultsView(object):
 
     def test_index(self, autologin_user):
         response = self.app.get(route_path('admin_defaults_repositories'))

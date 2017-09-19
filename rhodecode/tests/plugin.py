@@ -1669,8 +1669,8 @@ def request_stub():
     """
     Stub request object.
     """
-    request = pyramid.testing.DummyRequest()
-    request.scheme = 'https'
+    from rhodecode.lib.base import bootstrap_request
+    request = bootstrap_request(scheme='https')
     return request
 
 

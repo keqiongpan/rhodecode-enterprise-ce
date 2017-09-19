@@ -28,27 +28,16 @@ from os.path import join as jn
 
 from tempfile import _RandomNameSequence
 
-from paste.deploy import loadapp
-from paste.script.appinstall import SetupCommand
+from pylons import url
 
-import pylons
-import pylons.test
-from pylons import config, url
-from pylons.i18n.translation import _get_translator
-from pylons.util import ContextObj
-
-from routes.util import URLGenerator
 from nose.plugins.skip import SkipTest
 import pytest
 
-from rhodecode import is_windows
-from rhodecode.config.routing import ADMIN_PREFIX
-from rhodecode.model.meta import Session
 from rhodecode.model.db import User
 from rhodecode.lib import auth
 from rhodecode.lib import helpers as h
 from rhodecode.lib.helpers import flash, link_to
-from rhodecode.lib.utils2 import safe_unicode, safe_str
+from rhodecode.lib.utils2 import safe_str
 
 
 log = logging.getLogger(__name__)
@@ -117,6 +106,7 @@ try:
     import ldap
     ldap_lib_installed = True
 except ImportError:
+    ldap = None
     # means that python-ldap is not installed
     pass
 
@@ -196,18 +186,18 @@ def login_user(app, username=TEST_USER_ADMIN_LOGIN,
     return login_user_session(app, username, password)['rhodecode_user']
 
 
-def assert_session_flash(response=None, msg=None, category=None, no_=None):
+def assert_session_flash(response, msg=None, category=None, no_=None):
     """
     Assert on a flash message in the current session.
 
-    :param msg: Required. The expected message. Will be evaluated if a
+    :param response: Response from give calll, it will contain flash
+        messages or bound session with them.
+    :param msg: The expected message. Will be evaluated if a
         :class:`LazyString` is passed in.
-    :param response: Optional. For functional testing, pass in the response
-        object. Otherwise don't pass in any value.
     :param category: Optional. If passed, the message category will be
         checked as well.
-    :param no_: Optional. If passed, the message will be checked to NOT be in the
-        flash session
+    :param no_: Optional. If passed, the message will be checked to NOT
+        be in the flash session
     """
     if msg is None and no_ is None:
         raise ValueError("Parameter msg or no_ is required.")
@@ -215,7 +205,8 @@ def assert_session_flash(response=None, msg=None, category=None, no_=None):
     if msg and no_:
         raise ValueError("Please specify either msg or no_, but not both")
 
-    messages = flash.pop_messages()
+    session = response.get_session_from_response()
+    messages = flash.pop_messages(session=session)
     msg = _eval_if_lazy(msg)
 
     assert messages, 'unable to find message `%s` in empty flash list' % msg
@@ -240,14 +231,6 @@ def assert_session_flash(response=None, msg=None, category=None, no_=None):
 
 def _eval_if_lazy(value):
     return value.eval() if hasattr(value, 'eval') else value
-
-
-def assert_session_flash_is_empty(response):
-    assert 'flash' in response.session, 'Response session has no flash key'
-
-    msg = 'flash messages are present in session:%s' % \
-          response.session['flash'][0]
-    pytest.fail(safe_str(msg))
 
 
 def no_newline_id_generator(test_name):

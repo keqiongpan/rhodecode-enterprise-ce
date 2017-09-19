@@ -608,10 +608,20 @@ def add_events_routes(config):
 
 def bootstrap_request(**kwargs):
     import pyramid.testing
-    request = pyramid.testing.DummyRequest(**kwargs)
-    request.application_url = kwargs.pop('application_url', 'http://example.com')
-    request.host = kwargs.pop('host', 'example.com:80')
-    request.domain = kwargs.pop('domain', 'example.com')
+
+    class TestRequest(pyramid.testing.DummyRequest):
+        application_url = kwargs.pop('application_url', 'http://example.com')
+        host = kwargs.pop('host', 'example.com:80')
+        domain = kwargs.pop('domain', 'example.com')
+
+    class TestDummySession(pyramid.testing.DummySession):
+        def save(*arg, **kw):
+            pass
+
+    request = TestRequest(**kwargs)
+    request.session = TestDummySession()
 
     config = pyramid.testing.setUp(request=request)
     add_events_routes(config)
+    return request
+

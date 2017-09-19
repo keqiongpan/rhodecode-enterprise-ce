@@ -60,7 +60,6 @@ from webhelpers.html.tags import auto_discovery_link, checkbox, css_classes, \
     submit, text, password, textarea, title, ul, xml_declaration, radio
 from webhelpers.html.tools import auto_link, button_to, highlight, \
     js_obfuscate, mail_to, strip_links, strip_tags, tag_re
-from webhelpers.pylonslib import Flash as _Flash
 from webhelpers.text import chop_at, collapse, convert_accented_entities, \
     convert_misc_entities, lchop, plural, rchop, remove_formatting, \
     replace_whitespace, urlify, truncate, wrap_paragraphs
@@ -661,19 +660,48 @@ class _Message(object):
         return escape(safe_unicode(self.message))
 
 
-class Flash(_Flash):
+class Flash(object):
+    # List of allowed categories.  If None, allow any category.
+    categories = ["warning", "notice", "error", "success"]
 
-    def pop_messages(self, request=None):
-        """Return all accumulated messages and delete them from the session.
+    # Default category if none is specified.
+    default_category = "notice"
+
+    def __init__(self, session_key="flash", categories=None,
+                 default_category=None):
+        """
+        Instantiate a ``Flash`` object.
+
+        ``session_key`` is the key to save the messages under in the user's
+        session.
+
+        ``categories`` is an optional list which overrides the default list
+        of categories.
+
+        ``default_category`` overrides the default category used for messages
+        when none is specified.
+        """
+        self.session_key = session_key
+        if categories is not None:
+            self.categories = categories
+        if default_category is not None:
+            self.default_category = default_category
+        if self.categories and self.default_category not in self.categories:
+            raise ValueError(
+                "unrecognized default category %r" % (self.default_category,))
+
+    def pop_messages(self, session=None, request=None):
+        """
+        Return all accumulated messages and delete them from the session.
 
         The return value is a list of ``Message`` objects.
         """
         messages = []
 
-        if request:
+        if not session:
+            if not request:
+                request = get_current_request()
             session = request.session
-        else:
-            from pylons import session
 
         # Pop the 'old' pylons flash messages. They are tuples of the form
         # (category, message)
@@ -692,9 +720,9 @@ class Flash(_Flash):
         session.save()
         return messages
 
-    def json_alerts(self, request=None):
+    def json_alerts(self, session=None, request=None):
         payloads = []
-        messages = flash.pop_messages(request=request)
+        messages = flash.pop_messages(session=session, request=request)
         if messages:
             for message in messages:
                 subdata = {}
@@ -714,6 +742,18 @@ class Flash(_Flash):
                     }
                 })
         return json.dumps(payloads)
+
+    def __call__(self, message, category=None, ignore_duplicate=False,
+                 session=None, request=None):
+
+        if not session:
+            if not request:
+                request = get_current_request()
+            session = request.session
+
+        session.flash(
+            message, queue=category, allow_duplicate=not ignore_duplicate)
+
 
 flash = Flash()
 
