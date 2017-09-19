@@ -1298,7 +1298,7 @@ def set_available_permissions(config):
         meta.Session.remove()
 
 
-def get_csrf_token(session=None, force_new=False, save_if_missing=True):
+def get_csrf_token(session, force_new=False, save_if_missing=True):
     """
     Return the current authentication token, creating one if one doesn't
     already exist and the save_if_missing flag is present.
@@ -1310,9 +1310,6 @@ def get_csrf_token(session=None, force_new=False, save_if_missing=True):
     """
     # NOTE(marcink): probably should be replaced with below one from pyramid 1.9
     # from pyramid.csrf import get_csrf_token
-
-    if not session:
-        from pylons import session
 
     if (csrf_token_key not in session and save_if_missing) or force_new:
         token = hashlib.sha1(str(random.getrandbits(128))).hexdigest()
@@ -1372,7 +1369,7 @@ class CSRFRequired(object):
         if request.method in self.except_methods:
             return func(*fargs, **fkwargs)
 
-        cur_token = get_csrf_token(save_if_missing=False)
+        cur_token = get_csrf_token(request.session, save_if_missing=False)
         if self.check_csrf(request, cur_token):
             if request.POST.get(self.token):
                 del request.POST[self.token]
