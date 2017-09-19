@@ -41,6 +41,9 @@ class OpsView(BaseAppView):
     @view_config(
         route_name='ops_ping', request_method='GET',
         renderer='json_ext')
+    @view_config(
+        route_name='ops_ping_legacy', request_method='GET',
+        renderer='json_ext')
     def ops_ping(self):
         data = {
             'instance': self.request.registry.settings.get('instance_id'),
@@ -54,6 +57,9 @@ class OpsView(BaseAppView):
 
     @view_config(
         route_name='ops_error_test', request_method='GET',
+        renderer='json_ext')
+    @view_config(
+        route_name='ops_error_test_legacy', request_method='GET',
         renderer='json_ext')
     def ops_error_test(self):
         """

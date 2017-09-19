@@ -172,10 +172,6 @@ def make_map(config):
     # CUSTOM ROUTES HERE
     #==========================================================================
 
-    # ping and pylons error test
-    rmap.connect('ping', '%s/ping' % (ADMIN_PREFIX,), controller='home', action='ping')
-    rmap.connect('error_test', '%s/error_test' % (ADMIN_PREFIX,), controller='home', action='error_test')
-
     # ADMIN REPOSITORY GROUPS ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/repo_groups') as m:
