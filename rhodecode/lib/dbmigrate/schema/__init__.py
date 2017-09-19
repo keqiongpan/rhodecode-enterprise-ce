@@ -17,3 +17,11 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
+
+
+def url(*args, **kwargs):
+    """
+    Dummy url generator to be used inside the old db migration schemas that rely on it.
+    It would protect from errors after removal of pylons.
+    """
+    return '/'

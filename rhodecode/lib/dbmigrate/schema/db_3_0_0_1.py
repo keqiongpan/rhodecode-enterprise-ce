@@ -42,7 +42,7 @@ from Crypto.Cipher import AES
 from Crypto import Random
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
-from pylons.i18n.translation import lazy_ugettext as _
+from rhodecode.translation import _
 
 from rhodecode.lib.vcs import get_backend
 from rhodecode.lib.vcs.utils.helpers import get_scm

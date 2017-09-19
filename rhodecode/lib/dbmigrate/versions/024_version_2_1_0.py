@@ -38,9 +38,11 @@ def downgrade(migrate_engine):
 
 
 def fixups(models, _SESSION):
-    from pylons import config
     from rhodecode.lib.utils2 import str2bool
-
+    # fake config because we cannot extract the proper values from .ini here
+    config = {
+        'use_gravatar': 'true'
+    }
     Optional = models.Optional
 
     def get_by_name(cls, key):
