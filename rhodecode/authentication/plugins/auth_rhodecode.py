@@ -24,7 +24,7 @@ RhodeCode authentication plugin for built in internal auth
 
 import logging
 
-from pylons.i18n.translation import lazy_ugettext as _
+from rhodecode.translation import _
 
 from rhodecode.authentication.base import RhodeCodeAuthPluginBase, hybrid_property
 from rhodecode.authentication.routes import AuthnPluginResourceBase
