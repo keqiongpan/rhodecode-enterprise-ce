@@ -96,21 +96,6 @@ def url(*args, **kw):
     return pylons_url(*args, **kw)
 
 
-def pylons_url_current(*args, **kw):
-    """
-    This function overrides pylons.url.current() which returns the current
-    path so that it will also work from a pyramid only context. This
-    should be removed once port to pyramid is complete.
-    """
-    from pylons import url as pylons_url
-    if not args and not kw:
-        request = get_current_request()
-        return request.path
-    return pylons_url.current(*args, **kw)
-
-url.current = pylons_url_current
-
-
 def url_replace(**qargs):
     """ Returns the current request url while replacing query string args """
 
@@ -2051,6 +2036,12 @@ def route_path_or_none(*args, **kwargs):
         return route_path(*args, **kwargs)
     except KeyError:
         return None
+
+
+def current_route_path(request, **kw):
+    new_args = request.GET.mixed()
+    new_args.update(kw)
+    return request.current_route_path(_query=new_args)
 
 
 def static_url(*args, **kwds):

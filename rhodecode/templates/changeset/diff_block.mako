@@ -4,10 +4,10 @@
 ## ${diff_block.diff_block_changeset_table(change)}
 ##
 <%def name="changeset_message()">
-    <h5>${_('The requested commit is too big and content was truncated.')} <a href="${h.url.current(fulldiff=1, **request.GET.mixed())}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>
+    <h5>${_('The requested commit is too big and content was truncated.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>
 </%def>
 <%def name="file_message()">
-    <h5>${_('The requested file is too big and its content is not shown.')} <a href="${h.url.current(fulldiff=1, **request.GET.mixed())}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>
+    <h5>${_('The requested file is too big and its content is not shown.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>
 </%def>
 
 <%def name="diff_block_changeset_table(change)">
@@ -22,7 +22,7 @@
             % if file_data["exceeds_limit"]:
                 ${self.file_message()}
               % else:
-                <h5>${_('Diff was truncated. File content available only in full diff.')} <a href="${h.url.current(fulldiff=1, **request.GET.mixed())}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>
+                <h5>${_('Diff was truncated. File content available only in full diff.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>
             % endif
           % endif
       </div>
@@ -43,7 +43,7 @@
               % if file_data["exceeds_limit"]:
                   ${self.file_message()}
                 % else:
-                  <h5>${_('Diff was truncated. File content available only in full diff.')} <a href="${h.url.current(fulldiff=1, **request.GET.mixed())}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>
+                  <h5>${_('Diff was truncated. File content available only in full diff.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a></h5>
                 % endif
               % endif
         </div>

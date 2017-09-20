@@ -23,13 +23,7 @@ return '%s_%s_%i' % (h.safeid(filename), type, line)
 %>
 </%def>
 
-<%def name="link_for(**kw)">
-<%
-new_args = request.GET.mixed()
-new_args.update(kw)
-return request.current_route_path(_query=new_args)
-%>
-</%def>
+
 
 <%def name="render_diffset(diffset, commit=None,
 
@@ -68,7 +62,7 @@ return request.current_route_path(_query=new_args)
         ${h.form('', class_='inline-form comment-form-login', method='get')}
         <div class="pull-left">
             <div class="comment-help pull-right">
-              ${_('You need to be logged in to leave comments.')} <a href="${h.route_path('login', _query={'came_from': h.url.current()})}">${_('Login now')}</a>
+              ${_('You need to be logged in to leave comments.')} <a href="${h.route_path('login', _query={'came_from': h.current_route_path(request)})}">${_('Login now')}</a>
             </div>
         </div>
         <div class="comment-button pull-right">
@@ -129,7 +123,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             ${_('The requested commit is too big and content was truncated.')}
 
             ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
-            <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+            <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
         %else:
             ${_ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
                         '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
@@ -180,7 +174,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         %if filediff.limited_diff:
                 <tr class="cb-warning cb-collapser">
                     <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
-                        ${_('The requested commit is too big and content was truncated.')} <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+                        ${_('The requested commit is too big and content was truncated.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
                     </td>
                 </tr>
         %else:

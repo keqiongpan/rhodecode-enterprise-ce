@@ -2,7 +2,7 @@
 <div id="codeblock" class="browserblock">
     <div class="browser-header">
         <div class="browser-nav">
-            ${h.form(h.url.current(), method='GET', id='at_rev_form')}
+            ${h.form(h.current_route_path(request), method='GET', id='at_rev_form')}
             <div class="info_box">
               ${h.hidden('refs_filter')}
               <div class="info_box_elem previous">

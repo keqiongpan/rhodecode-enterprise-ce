@@ -280,7 +280,7 @@
                 <div id="edit-container">
                     <div style="padding: 40px 0">
                       ${_('You need to be logged in to leave comments.')}
-                      <a href="${h.route_path('login', _query={'came_from': h.url.current()})}">${_('Login now')}</a>
+                      <a href="${h.route_path('login', _query={'came_from': h.current_route_path(request)})}">${_('Login now')}</a>
                     </div>
                 </div>
                 <div id="preview-container" class="clearfix" style="display: none;">

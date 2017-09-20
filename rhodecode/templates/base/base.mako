@@ -307,7 +307,7 @@
       <div id="quick_login">
         %if c.rhodecode_user.username == h.DEFAULT_USER:
             <h4>${_('Sign in to your account')}</h4>
-            ${h.form(h.route_path('login', _query={'came_from': h.url.current()}), needs_csrf_token=False)}
+            ${h.form(h.route_path('login', _query={'came_from': h.current_route_path(request)}), needs_csrf_token=False)}
             <div class="form form-vertical">
                 <div class="fields">
                     <div class="field">
