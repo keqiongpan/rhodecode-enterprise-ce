@@ -286,16 +286,14 @@ class UserGroupModel(BaseModel):
         users = user_or_users
         if not isinstance(users, (list, tuple)):
             users = [users]
-        rhodecode_user = get_current_rhodecode_user()
-        ipaddr = getattr(rhodecode_user, 'ip_addr', '')
+
         group_name = user_group.users_group_name
 
         for user_or_user_id in users:
             user = self._get_user(user_or_user_id)
             log_text = 'User {user} {action} {group}'.format(
                 action=action, user=user.username, group=group_name)
-            log.info('Logging action: {0} by {1} ip:{2}'.format(
-                     log_text, rhodecode_user, ipaddr))
+            action_logger_generic(log_text)
 
     def _find_user_in_group(self, user, user_group):
         user_group_member = None

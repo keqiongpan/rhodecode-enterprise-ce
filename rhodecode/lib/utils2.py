@@ -32,7 +32,6 @@ import logging
 import re
 import sys
 import time
-import threading
 import urllib
 import urlobject
 import uuid
@@ -44,6 +43,7 @@ import sqlalchemy.exc
 import sqlalchemy.sql
 import webob
 import routes.util
+import pyramid.threadlocal
 
 import rhodecode
 from rhodecode.translation import _, _pluralize
@@ -798,12 +798,17 @@ def suuid(url=None, truncate_to=22, alphabet=None):
 
 def get_current_rhodecode_user():
     """
-    Gets rhodecode user from threadlocal tmpl_context variable if it's
-    defined, else returns None.
+    Gets rhodecode user from request
     """
-    from pylons import tmpl_context as c
-    if hasattr(c, 'rhodecode_user'):
-        return c.rhodecode_user
+    pyramid_request = pyramid.threadlocal.get_current_request()
+
+    # web case
+    if pyramid_request and hasattr(pyramid_request, 'user'):
+        return pyramid_request.user
+
+    # api case
+    if pyramid_request and hasattr(pyramid_request, 'rpc_user'):
+        return pyramid_request.rpc_user
 
     return None
 
