@@ -299,7 +299,7 @@ class CommentsModel(BaseModel):
                 'pullrequest_show',
                 repo_name=pr_target_repo.repo_name,
                 pull_request_id=pull_request_obj.pull_request_id,
-                anchor='comment-%s' % comment.comment_id)
+                _anchor='comment-%s' % comment.comment_id)
 
             # set some variables for email notification
             pr_target_repo_url = h.route_url(

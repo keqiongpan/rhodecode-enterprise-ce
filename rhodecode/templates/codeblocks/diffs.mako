@@ -27,7 +27,7 @@ return '%s_%s_%i' % (h.safeid(filename), type, line)
 <%
 new_args = request.GET.mixed()
 new_args.update(kw)
-return h.url('', **new_args)
+return request.current_route_path(_query=new_args)
 %>
 </%def>
 
@@ -124,15 +124,16 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">${'r%s:%s' % (commit.revision,h.short_id(commit.raw_id))}</a> -
             ${h.age_component(commit.date)} -
         %endif
-    %if diffset.limited_diff:
-        ${_('The requested commit is too big and content was truncated.')}
 
-        ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
-        <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
-    %else:
-        ${_ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
-                    '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
-    %endif
+        %if diffset.limited_diff:
+            ${_('The requested commit is too big and content was truncated.')}
+
+            ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
+            <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+        %else:
+            ${_ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
+                        '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
+        %endif
 
         </h2>
     </div>

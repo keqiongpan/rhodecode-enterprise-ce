@@ -38,7 +38,7 @@ and our server configuration are in sync.
 
 then you can retrieve the url by simply calling the URL function:
 
-`h.url('url_name')`
+`h.route_path('url_name')`
 
 The redirection must be first implemented in our servers before
 you can see it working.

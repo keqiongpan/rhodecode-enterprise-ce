@@ -34,6 +34,8 @@ function registerRCRoutes() {
     pyroutes.register('ops_ping', '/_admin/ops/ping', []);
     pyroutes.register('ops_error_test', '/_admin/ops/error', []);
     pyroutes.register('ops_redirect_test', '/_admin/ops/redirect', []);
+    pyroutes.register('ops_ping_legacy', '/_admin/ping', []);
+    pyroutes.register('ops_error_test_legacy', '/_admin/error_test', []);
     pyroutes.register('admin_home', '/_admin', []);
     pyroutes.register('admin_audit_logs', '/_admin/audit_logs', []);
     pyroutes.register('pull_requests_global_0', '/_admin/pull_requests/%(pull_request_id)s', ['pull_request_id']);

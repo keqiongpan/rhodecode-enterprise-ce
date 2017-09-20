@@ -52,6 +52,7 @@ class DebugStyleView(BaseAppView):
         t_path = self.request.matchdict['t_path']
         c = self.load_default_context()
         c.active = os.path.splitext(t_path)[0]
+        c.came_from = ''
 
         return render_to_response(
             'debug_style/' + t_path, self._get_template_context(c),
