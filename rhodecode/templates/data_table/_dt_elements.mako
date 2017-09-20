@@ -250,11 +250,11 @@
 
 <%def name="user_actions(user_id, username)">
  <div class="grid_edit">
-   <a href="${h.url('edit_user',user_id=user_id)}" title="${_('Edit')}">
-     <i class="icon-pencil"></i>Edit</a>
+   <a href="${h.route_path('user_edit',user_id=user_id)}" title="${_('Edit')}">
+     <i class="icon-pencil"></i>${_('Edit')}</a>
  </div>
  <div class="grid_delete">
-  ${h.secure_form(h.url('delete_user', user_id=user_id),method='delete')}
+  ${h.secure_form(h.route_path('user_delete', user_id=user_id), request=request)}
     ${h.submit('remove_',_('Delete'),id="remove_user_%s" % user_id, class_="btn btn-link btn-danger",
     onclick="return confirm('"+_('Confirm to delete this user: %s') % username+"');")}
   ${h.end_form()}
@@ -275,7 +275,7 @@
 
 
 <%def name="user_name(user_id, username)">
-    ${h.link_to(h.person(username, 'username_or_name_or_email'), h.url('edit_user', user_id=user_id))}
+    ${h.link_to(h.person(username, 'username_or_name_or_email'), h.route_path('user_edit', user_id=user_id))}
 </%def>
 
 <%def name="user_profile(username)">

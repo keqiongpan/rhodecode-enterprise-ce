@@ -124,22 +124,22 @@
                 edit_url=None, edit_global_url=h.route_path('admin_permissions_object'))}
 
            ${glob(_('Super admin'), get_section_perms('hg.admin', permissions[section]),
-                edit_url=h.url('edit_user', user_id=c.user.user_id, anchor='admin'), edit_global_url=None)}
+                edit_url=h.route_path('user_edit', user_id=c.user.user_id, _anchor='admin'), edit_global_url=None)}
 
            ${glob(_('Inherit permissions'), get_section_perms('hg.inherit_default_perms.', permissions[section]),
-                edit_url=h.url('edit_user_global_perms', user_id=c.user.user_id), edit_global_url=None)}
+                edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=None)}
 
            ${glob(_('Create repositories'), get_section_perms('hg.create.', permissions[section]),
-                edit_url=h.url('edit_user_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
+                edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
 
            ${glob(_('Fork repositories'), get_section_perms('hg.fork.', permissions[section]),
-                edit_url=h.url('edit_user_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
+                edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
 
            ${glob(_('Create repository groups'), get_section_perms('hg.repogroup.create.', permissions[section]),
-                edit_url=h.url('edit_user_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
+                edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
 
            ${glob(_('Create user groups'), get_section_perms('hg.usergroup.create.', permissions[section]),
-                edit_url=h.url('edit_user_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
+                edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
 
            </tbody>
           %else:

@@ -92,6 +92,7 @@
 <script>
 
 $(document).ready(function(){
+
 var select2Options = {
     'containerCssClass': "drop-menu",
     'dropdownCssClass': "drop-menu-dropdown",
@@ -167,8 +168,8 @@ $("#scope_repo_id").select2({
                 error: function(data, textStatus, errorThrown) {
                     alert("Error while fetching entries.\nError code {0} ({1}).".format(data.status, data.statusText));
                 }
-})
-        }
+            })
+       }
     })
 });
 

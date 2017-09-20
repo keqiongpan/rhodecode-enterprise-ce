@@ -61,19 +61,19 @@ $(document).ready(function() {
                  render: function (data,type,full,meta)
                     {return '<input type="hidden" name="users_group_id" value="'+data+'">'}},
          { data: {"_": "active",
-                  "sort": "active"}, title: "${_('Active')}", className: "td-active", className: "td-number"},
+                  "sort": "active"}, title: "${_('Active')}", className: "td-active"},
          { data: {"_": "owner_data"}, title: "${_('Owner')}", className: "td-user",
              render: function (data,type,full,meta)
                     {return '<div class="rc-user tooltip">'+
                             '<img class="gravatar" src="'+ data.owner_icon +'" height="16" width="16">'+
                              data.owner +'</div>'
                     }
-},
+         },
          { data: null,
              title: "${_('Action')}",
              className: "td-action",
-             defaultContent: '<a href="" class="btn btn-link btn-danger">Delete</a>'
-         },
+             defaultContent: '-'
+         }
       ],
       language: {
           paginate: DEFAULT_GRID_PAGINATION,

@@ -77,7 +77,7 @@
                               <td id="member_user_${user.user_id}" class="td-author">
                                 <div class="group_member">
                                   ${base.gravatar(user.email, 16)}
-                                  <span class="username user">${h.link_to(h.person(user), h.url( 'edit_user',user_id=user.user_id))}</span>
+                                  <span class="username user">${h.link_to(h.person(user), h.route_path('user_edit',user_id=user.user_id))}</span>
                                   <input type="hidden" name="__start__" value="member:mapping">
                                   <input type="hidden" name="member_user_id" value="${user.user_id}">
                                   <input type="hidden" name="type" value="existing" id="member_${user.user_id}">
@@ -134,7 +134,7 @@
                 function addMember(user, fromUserGroup) {
                     var gravatar = user.icon_link;
                     var username = user.value_display;
-                    var userLink = pyroutes.url('edit_user', {"user_id": user.id});
+                    var userLink = pyroutes.url('user_edit', {"user_id": user.id});
                     var uid = user.id;
 
                     if (fromUserGroup) {

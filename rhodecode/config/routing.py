@@ -219,37 +219,6 @@ def make_map(config):
                                                'function': check_group},
                   requirements=URL_NAME_REQUIREMENTS)
 
-    # ADMIN USER ROUTES
-    with rmap.submapper(path_prefix=ADMIN_PREFIX,
-                        controller='admin/users') as m:
-        m.connect('users', '/users',
-                  action='create', conditions={'method': ['POST']})
-        m.connect('new_user', '/users/new',
-                  action='new', conditions={'method': ['GET']})
-        m.connect('update_user', '/users/{user_id}',
-                  action='update', conditions={'method': ['PUT']})
-        m.connect('delete_user', '/users/{user_id}',
-                  action='delete', conditions={'method': ['DELETE']})
-        m.connect('edit_user', '/users/{user_id}/edit',
-                  action='edit', conditions={'method': ['GET']}, jsroute=True)
-        m.connect('user', '/users/{user_id}',
-                  action='show', conditions={'method': ['GET']})
-        m.connect('force_password_reset_user', '/users/{user_id}/password_reset',
-                  action='reset_password', conditions={'method': ['POST']})
-        m.connect('create_personal_repo_group', '/users/{user_id}/create_repo_group',
-                  action='create_personal_repo_group', conditions={'method': ['POST']})
-
-        # EXTRAS USER ROUTES
-        m.connect('edit_user_advanced', '/users/{user_id}/edit/advanced',
-                  action='edit_advanced', conditions={'method': ['GET']})
-        m.connect('edit_user_advanced', '/users/{user_id}/edit/advanced',
-                  action='update_advanced', conditions={'method': ['PUT']})
-
-        m.connect('edit_user_global_perms', '/users/{user_id}/edit/global_permissions',
-                  action='edit_global_perms', conditions={'method': ['GET']})
-        m.connect('edit_user_global_perms', '/users/{user_id}/edit/global_permissions',
-                  action='update_global_perms', conditions={'method': ['PUT']})
-
     # ADMIN SETTINGS ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/settings') as m:
@@ -338,6 +307,5 @@ def make_map(config):
         # handled in pylons controllers, remove after full migration to pyramid
         m.connect('my_account_password', '/my_account/password',
                   action='my_account_password', conditions={'method': ['GET']})
-
 
     return rmap

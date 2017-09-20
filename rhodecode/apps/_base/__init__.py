@@ -30,6 +30,7 @@ from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import repo
 from rhodecode.model import repo_group
 from rhodecode.model import user_group
+from rhodecode.model import user
 from rhodecode.model.db import User
 from rhodecode.model.scm import ScmModel
 
@@ -267,6 +268,20 @@ class UserGroupAppView(BaseAppView):
         self.db_user_group_name = self.db_user_group.users_group_name
 
 
+class UserAppView(BaseAppView):
+    def __init__(self, context, request):
+        super(UserAppView, self).__init__(context, request)
+        self.db_user = request.db_user
+        self.db_user_id = self.db_user.user_id
+
+        _ = self.request.translate
+        if not request.db_user_supports_default:
+            if self.db_user.username == User.DEFAULT_USER:
+                h.flash(_("Editing user `{}` is disabled.".format(
+                    User.DEFAULT_USER)), category='warning')
+                raise HTTPFound(h.route_path('users'))
+
+
 class DataGridAppView(object):
     """
     Common class to have re-usable grid rendering components
@@ -483,15 +498,61 @@ class UserGroupRoutePredicate(object):
 
         user_group_id = info['match']['user_group_id']
         user_group_model = user_group.UserGroup()
-        by_name_match = user_group_model.get(
+        by_id_match = user_group_model.get(
             user_group_id, cache=True)
 
-        if by_name_match:
+        if by_id_match:
             # register this as request object we can re-use later
-            request.db_user_group = by_name_match
+            request.db_user_group = by_id_match
             return True
 
         return False
+
+
+class UserRoutePredicateBase(object):
+    supports_default = None
+
+    def __init__(self, val, config):
+        self.val = val
+
+    def text(self):
+        raise NotImplementedError()
+
+    def __call__(self, info, request):
+        if hasattr(request, 'vcs_call'):
+            # skip vcs calls
+            return
+
+        user_id = info['match']['user_id']
+        user_model = user.User()
+        by_id_match = user_model.get(
+            user_id, cache=True)
+
+        if by_id_match:
+            # register this as request object we can re-use later
+            request.db_user = by_id_match
+            request.db_user_supports_default = self.supports_default
+            return True
+
+        return False
+
+
+class UserRoutePredicate(UserRoutePredicateBase):
+    supports_default = False
+
+    def text(self):
+        return 'user_route = %s' % self.val
+
+    phash = text
+
+
+class UserRouteWithDefaultPredicate(UserRoutePredicateBase):
+    supports_default = True
+
+    def text(self):
+        return 'user_with_default_route = %s' % self.val
+
+    phash = text
 
 
 def includeme(config):
@@ -503,3 +564,7 @@ def includeme(config):
         'repo_group_route', RepoGroupRoutePredicate)
     config.add_route_predicate(
         'user_group_route', UserGroupRoutePredicate)
+    config.add_route_predicate(
+        'user_route_with_default', UserRouteWithDefaultPredicate)
+    config.add_route_predicate(
+        'user_route', UserRoutePredicate)

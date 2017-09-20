@@ -554,15 +554,21 @@ class UserGroupModel(BaseModel):
         groups_to_remove = current_groups - groups
         groups_to_add = groups - current_groups
 
+        removed_from_groups = []
+        added_to_groups = []
         for gr in groups_to_remove:
             log.debug('Removing user %s from user group %s',
                       user.username, gr.users_group_name)
+            removed_from_groups.append(gr.users_group_id)
             self.remove_user_from_group(gr.users_group_name, user.username)
         for gr in groups_to_add:
             log.debug('Adding user %s to user group %s',
                       user.username, gr.users_group_name)
+            added_to_groups.append(gr.users_group_id)
             UserGroupModel().add_user_to_group(
                 gr.users_group_name, user.username)
+
+        return added_to_groups, removed_from_groups
 
     def _serialize_user_group(self, user_group):
         import rhodecode.lib.helpers as h

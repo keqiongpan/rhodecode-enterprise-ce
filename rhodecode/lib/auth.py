@@ -1012,13 +1012,16 @@ class AuthUser(object):
             log.debug('No data in %s that could been used to log in', self)
 
         if not is_user_loaded:
-            log.debug('Failed to load user. Fallback to default user')
+            log.debug(
+                'Failed to load user. Fallback to default user %s', anon_user)
             # if we cannot authenticate user try anonymous
             if anon_user.active:
+                log.debug('default user is active, using it as a session user')
                 user_model.fill_data(self, user_id=anon_user.user_id)
                 # then we set this user is logged in
                 self.is_authenticated = True
             else:
+                log.debug('default user is NOT active')
                 # in case of disabled anonymous user we reset some of the
                 # parameters so such user is "corrupted", skipping the fill_data
                 for attr in ['user_id', 'username', 'admin', 'active']:
@@ -1277,25 +1280,26 @@ class AuthUser(object):
         return _set or set(['0.0.0.0/0', '::/0'])
 
 
-def set_available_permissions(config):
+def set_available_permissions(settings):
     """
-    This function will propagate pylons globals with all available defined
+    This function will propagate pyramid settings with all available defined
     permission given in db. We don't want to check each time from db for new
     permissions since adding a new permission also requires application restart
     ie. to decorate new views with the newly created permission
 
-    :param config: current pylons config instance
+    :param settings: current pyramid registry.settings
 
     """
-    log.info('getting information about all available permissions')
+    log.debug('auth: getting information about all available permissions')
     try:
         sa = meta.Session
         all_perms = sa.query(Permission).all()
-        config['available_permissions'] = [x.permission_name for x in all_perms]
+        settings.setdefault('available_permissions',
+                            [x.permission_name for x in all_perms])
+        log.debug('auth: set available permissions')
     except Exception:
-        log.error(traceback.format_exc())
-    finally:
-        meta.Session.remove()
+        log.exception('Failed to fetch permissions from the database.')
+        raise
 
 
 def get_csrf_token(session, force_new=False, save_if_missing=True):

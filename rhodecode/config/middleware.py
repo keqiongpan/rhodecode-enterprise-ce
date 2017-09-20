@@ -41,6 +41,7 @@ import rhodecode
 
 from rhodecode.model import meta
 from rhodecode.config import patches
+from rhodecode.config import utils as config_utils
 from rhodecode.config.routing import STATIC_FILE_PREFIX
 from rhodecode.config.environment import (
     load_environment, load_pyramid_environment)
@@ -56,7 +57,7 @@ from rhodecode.lib.plugins.utils import register_rhodecode_plugin
 from rhodecode.lib.utils2 import aslist as rhodecode_aslist, AttributeDict
 from rhodecode.subscribers import (
     scan_repositories_if_enabled, write_js_routes_if_enabled,
-    write_metadata_if_needed)
+    write_metadata_if_needed, inject_app_settings)
 
 
 log = logging.getLogger(__name__)
@@ -146,10 +147,11 @@ def make_pyramid_app(global_config, **settings):
     settings_pylons = settings.copy()
 
     sanitize_settings_and_apply_defaults(settings)
-    config = Configurator(settings=settings)
-    add_pylons_compat_data(config.registry, global_config, settings_pylons)
 
+    config = Configurator(settings=settings)
     load_pyramid_environment(global_config, settings)
+
+    add_pylons_compat_data(config.registry, global_config, settings_pylons)
 
     includeme_first(config)
     includeme(config)
@@ -315,6 +317,7 @@ def includeme(config):
     settings['default_locale_name'] = settings.get('lang', 'en')
 
     # Add subscribers.
+    config.add_subscriber(inject_app_settings, ApplicationCreated)
     config.add_subscriber(scan_repositories_if_enabled, ApplicationCreated)
     config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
     config.add_subscriber(write_js_routes_if_enabled, ApplicationCreated)
@@ -471,6 +474,9 @@ def sanitize_settings_and_apply_defaults(settings):
     # Call split out functions that sanitize settings for each topic.
     _sanitize_appenlight_settings(settings)
     _sanitize_vcs_settings(settings)
+
+    # configure instance id
+    config_utils.set_instance_id(settings)
 
     return settings
 

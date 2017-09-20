@@ -35,6 +35,7 @@ from threading import Thread
 
 from rhodecode.translation import _ as tsf
 from rhodecode.config.jsroutes import generate_jsroutes_content
+from rhodecode.lib import auth
 
 import rhodecode
 
@@ -138,6 +139,12 @@ def add_pylons_context(event):
     context.rhodecode_user = request.user
     attach_context_attributes(context, request, request.user.user_id)
     pylons.tmpl_context._push_object(context)
+
+
+def inject_app_settings(event):
+    settings = event.app.registry.settings
+    # inject info about available permissions
+    auth.set_available_permissions(settings)
 
 
 def scan_repositories_if_enabled(event):

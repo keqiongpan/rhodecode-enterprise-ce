@@ -681,6 +681,17 @@ class User(Base, BaseModel):
         return 'NO_FEED_TOKEN_AVAILABLE'
 
     @classmethod
+    def get(cls, user_id, cache=False):
+        if not user_id:
+            return
+
+        user = cls.query()
+        if cache:
+            user = user.options(
+                FromCache("sql_cache_short", "get_users_%s" % user_id))
+        return user.get(user_id)
+
+    @classmethod
     def extra_valid_auth_tokens(cls, user, role=None):
         tokens = UserApiKeys.query().filter(UserApiKeys.user == user)\
                 .filter(or_(UserApiKeys.expires == -1,
@@ -1341,6 +1352,9 @@ class UserGroup(Base, BaseModel):
 
     @classmethod
     def get(cls, user_group_id, cache=False):
+        if not user_group_id:
+            return
+
         user_group = cls.query()
         if cache:
             user_group = user_group.options(

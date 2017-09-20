@@ -115,7 +115,6 @@ def load_environment(global_conf, app_conf, initial=False,
         'secret': config.get('channelstream.secret')
     }
 
-    set_available_permissions(config)
     db_cfg = make_db_config(clear_session=True)
 
     repos_path = list(db_cfg.items('paths'))[0][1]
@@ -178,5 +177,6 @@ def load_pyramid_environment(global_config, settings):
                          log_level=settings['vcs.server.log_level'])
 
     utils.configure_vcs(settings)
+
     if vcs_server_enabled:
         connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(settings))

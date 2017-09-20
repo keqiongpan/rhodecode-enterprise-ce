@@ -34,7 +34,7 @@
         <h3 class="panel-title">${_('Force Password Reset')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('force_password_reset_user', user_id=c.user.user_id), method='post')}
+        ${h.secure_form(h.route_path('user_force_password_reset', user_id=c.user.user_id), request=request)}
             <div class="field">
                 <button class="btn btn-default" type="submit">
                     <i class="icon-lock"></i>
@@ -59,7 +59,7 @@
         <h3 class="panel-title">${_('Personal Repository Group')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('create_personal_repo_group', user_id=c.user.user_id), method='post')}
+        ${h.secure_form(h.route_path('user_create_personal_repo_group', user_id=c.user.user_id), request=request)}
 
         %if c.personal_repo_group:
             <div class="panel-body-title-text">${_('Users personal repository group')} : ${h.link_to(c.personal_repo_group.group_name, h.route_path('repo_group_home', repo_group_name=c.personal_repo_group.group_name))}</div>
@@ -84,7 +84,7 @@
         <h3 class="panel-title">${_('Delete User')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('delete_user', user_id=c.user.user_id), method='delete')}
+        ${h.secure_form(h.route_path('user_delete', user_id=c.user.user_id), request=request)}
 
             <table class="display">
                 <tr>

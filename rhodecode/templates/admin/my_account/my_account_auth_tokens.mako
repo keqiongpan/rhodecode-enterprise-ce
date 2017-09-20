@@ -102,7 +102,6 @@ var select2Options = {
 };
 $("#role").select2(select2Options);
 
-
 var preloadData = {
     results: [
         % for entry in c.lifetime_values:

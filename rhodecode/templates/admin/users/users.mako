@@ -25,7 +25,7 @@
         ${self.breadcrumbs()}
         <ul class="links">
           <li>
-            <a href="${h.url('new_user')}" class="btn btn-small btn-success">${_(u'Add User')}</a>
+            <a href="${h.route_path('users_new')}" class="btn btn-small btn-success">${_(u'Add User')}</a>
           </li>
         </ul>
     </div>

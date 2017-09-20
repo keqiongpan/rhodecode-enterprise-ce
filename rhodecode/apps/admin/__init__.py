@@ -137,74 +137,133 @@ def admin_routes(config):
         name='users_data',
         pattern='/users_data')
 
+    config.add_route(
+        name='users_create',
+        pattern='/users/create')
+
+    config.add_route(
+        name='users_new',
+        pattern='/users/new')
+
+    # user management
+    config.add_route(
+        name='user_edit',
+        pattern='/users/{user_id:\d+}/edit',
+        user_route=True)
+    config.add_route(
+        name='user_edit_advanced',
+        pattern='/users/{user_id:\d+}/edit/advanced',
+        user_route=True)
+    config.add_route(
+        name='user_edit_global_perms',
+        pattern='/users/{user_id:\d+}/edit/global_permissions',
+        user_route=True)
+    config.add_route(
+        name='user_edit_global_perms_update',
+        pattern='/users/{user_id:\d+}/edit/global_permissions/update',
+        user_route=True)
+    config.add_route(
+        name='user_update',
+        pattern='/users/{user_id:\d+}/update',
+        user_route=True)
+    config.add_route(
+        name='user_delete',
+        pattern='/users/{user_id:\d+}/delete',
+        user_route=True)
+    config.add_route(
+        name='user_force_password_reset',
+        pattern='/users/{user_id:\d+}/password_reset',
+        user_route=True)
+    config.add_route(
+        name='user_create_personal_repo_group',
+        pattern='/users/{user_id:\d+}/create_repo_group',
+        user_route=True)
+
     # user auth tokens
     config.add_route(
         name='edit_user_auth_tokens',
-        pattern='/users/{user_id:\d+}/edit/auth_tokens')
+        pattern='/users/{user_id:\d+}/edit/auth_tokens',
+        user_route=True)
     config.add_route(
         name='edit_user_auth_tokens_add',
-        pattern='/users/{user_id:\d+}/edit/auth_tokens/new')
+        pattern='/users/{user_id:\d+}/edit/auth_tokens/new',
+        user_route=True)
     config.add_route(
         name='edit_user_auth_tokens_delete',
-        pattern='/users/{user_id:\d+}/edit/auth_tokens/delete')
+        pattern='/users/{user_id:\d+}/edit/auth_tokens/delete',
+        user_route=True)
 
     # user ssh keys
     config.add_route(
         name='edit_user_ssh_keys',
-        pattern='/users/{user_id:\d+}/edit/ssh_keys')
+        pattern='/users/{user_id:\d+}/edit/ssh_keys',
+        user_route=True)
     config.add_route(
         name='edit_user_ssh_keys_generate_keypair',
-        pattern='/users/{user_id:\d+}/edit/ssh_keys/generate')
+        pattern='/users/{user_id:\d+}/edit/ssh_keys/generate',
+        user_route=True)
     config.add_route(
         name='edit_user_ssh_keys_add',
-        pattern='/users/{user_id:\d+}/edit/ssh_keys/new')
+        pattern='/users/{user_id:\d+}/edit/ssh_keys/new',
+        user_route=True)
     config.add_route(
         name='edit_user_ssh_keys_delete',
-        pattern='/users/{user_id:\d+}/edit/ssh_keys/delete')
+        pattern='/users/{user_id:\d+}/edit/ssh_keys/delete',
+        user_route=True)
 
     # user emails
     config.add_route(
         name='edit_user_emails',
-        pattern='/users/{user_id:\d+}/edit/emails')
+        pattern='/users/{user_id:\d+}/edit/emails',
+        user_route=True)
     config.add_route(
         name='edit_user_emails_add',
-        pattern='/users/{user_id:\d+}/edit/emails/new')
+        pattern='/users/{user_id:\d+}/edit/emails/new',
+        user_route=True)
     config.add_route(
         name='edit_user_emails_delete',
-        pattern='/users/{user_id:\d+}/edit/emails/delete')
+        pattern='/users/{user_id:\d+}/edit/emails/delete',
+        user_route=True)
 
     # user IPs
     config.add_route(
         name='edit_user_ips',
-        pattern='/users/{user_id:\d+}/edit/ips')
+        pattern='/users/{user_id:\d+}/edit/ips',
+        user_route=True)
     config.add_route(
         name='edit_user_ips_add',
-        pattern='/users/{user_id:\d+}/edit/ips/new')
+        pattern='/users/{user_id:\d+}/edit/ips/new',
+        user_route_with_default=True)  # enabled for default user too
     config.add_route(
         name='edit_user_ips_delete',
-        pattern='/users/{user_id:\d+}/edit/ips/delete')
+        pattern='/users/{user_id:\d+}/edit/ips/delete',
+        user_route_with_default=True) # enabled for default user too
 
     # user perms
     config.add_route(
         name='edit_user_perms_summary',
-        pattern='/users/{user_id:\d+}/edit/permissions_summary')
+        pattern='/users/{user_id:\d+}/edit/permissions_summary',
+        user_route=True)
     config.add_route(
         name='edit_user_perms_summary_json',
-        pattern='/users/{user_id:\d+}/edit/permissions_summary/json')
+        pattern='/users/{user_id:\d+}/edit/permissions_summary/json',
+        user_route=True)
 
     # user user groups management
     config.add_route(
         name='edit_user_groups_management',
-        pattern='/users/{user_id:\d+}/edit/groups_management')
+        pattern='/users/{user_id:\d+}/edit/groups_management',
+        user_route=True)
 
     config.add_route(
         name='edit_user_groups_management_updates',
-        pattern='/users/{user_id:\d+}/edit/edit_user_groups_management/updates')
+        pattern='/users/{user_id:\d+}/edit/edit_user_groups_management/updates',
+        user_route=True)
 
     # user audit logs
     config.add_route(
         name='edit_user_audit_logs',
-        pattern='/users/{user_id:\d+}/edit/audit')
+        pattern='/users/{user_id:\d+}/edit/audit', user_route=True)
 
     # user-groups admin
     config.add_route(

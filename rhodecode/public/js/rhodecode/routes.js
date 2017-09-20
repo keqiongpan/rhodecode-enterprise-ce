@@ -12,7 +12,6 @@
  ******************************************************************************/
 function registerRCRoutes() {
     // routes registration
-    pyroutes.register('edit_user', '/_admin/users/%(user_id)s/edit', ['user_id']);
     pyroutes.register('favicon', '/favicon.ico', []);
     pyroutes.register('robots', '/robots.txt', []);
     pyroutes.register('auth_home', '/_admin/auth*traverse', []);
@@ -66,6 +65,16 @@ function registerRCRoutes() {
     pyroutes.register('admin_permissions_ssh_keys_update', '/_admin/permissions/ssh_keys/update', []);
     pyroutes.register('users', '/_admin/users', []);
     pyroutes.register('users_data', '/_admin/users_data', []);
+    pyroutes.register('users_create', '/_admin/users/create', []);
+    pyroutes.register('users_new', '/_admin/users/new', []);
+    pyroutes.register('user_edit', '/_admin/users/%(user_id)s/edit', ['user_id']);
+    pyroutes.register('user_edit_advanced', '/_admin/users/%(user_id)s/edit/advanced', ['user_id']);
+    pyroutes.register('user_edit_global_perms', '/_admin/users/%(user_id)s/edit/global_permissions', ['user_id']);
+    pyroutes.register('user_edit_global_perms_update', '/_admin/users/%(user_id)s/edit/global_permissions/update', ['user_id']);
+    pyroutes.register('user_update', '/_admin/users/%(user_id)s/update', ['user_id']);
+    pyroutes.register('user_delete', '/_admin/users/%(user_id)s/delete', ['user_id']);
+    pyroutes.register('user_force_password_reset', '/_admin/users/%(user_id)s/password_reset', ['user_id']);
+    pyroutes.register('user_create_personal_repo_group', '/_admin/users/%(user_id)s/create_repo_group', ['user_id']);
     pyroutes.register('edit_user_auth_tokens', '/_admin/users/%(user_id)s/edit/auth_tokens', ['user_id']);
     pyroutes.register('edit_user_auth_tokens_add', '/_admin/users/%(user_id)s/edit/auth_tokens/new', ['user_id']);
     pyroutes.register('edit_user_auth_tokens_delete', '/_admin/users/%(user_id)s/edit/auth_tokens/delete', ['user_id']);
