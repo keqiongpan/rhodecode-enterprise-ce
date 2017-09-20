@@ -464,6 +464,7 @@ def add_user_to_user_group(request, apiuser, usergroupid, userid):
             raise JSONRPCError('user group `%s` does not exist' % (
                 usergroupid,))
 
+    old_values = user_group.get_api_data()
     try:
         ugm = UserGroupModel().add_user_to_group(user_group, user)
         success = True if ugm is not True else False
@@ -474,7 +475,8 @@ def add_user_to_user_group(request, apiuser, usergroupid, userid):
         if success:
             user_data = user.get_api_data()
             audit_logger.store_api(
-                'user_group.edit.member.add', action_data={'user': user_data},
+                'user_group.edit.member.add',
+                action_data={'user': user_data, 'old_data': old_values},
                 user=apiuser)
 
         Session().commit()
@@ -534,6 +536,7 @@ def remove_user_from_user_group(request, apiuser, usergroupid, userid):
             raise JSONRPCError(
                 'user group `%s` does not exist' % (usergroupid,))
 
+    old_values = user_group.get_api_data()
     try:
         success = UserGroupModel().remove_user_from_group(user_group, user)
         msg = 'removed member `%s` from user group `%s`' % (
@@ -543,7 +546,8 @@ def remove_user_from_user_group(request, apiuser, usergroupid, userid):
         if success:
             user_data = user.get_api_data()
             audit_logger.store_api(
-                'user_group.edit.member.delete', action_data={'user': user_data},
+                'user_group.edit.member.delete',
+                action_data={'user': user_data, 'old_data': old_values},
                 user=apiuser)
 
         Session().commit()
