@@ -32,7 +32,6 @@ from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, CSRFRequired, HasPermissionAnyDecorator)
 from rhodecode.lib import helpers as h, audit_logger
-from rhodecode.lib.utils import PartialRenderer
 from rhodecode.lib.utils2 import safe_unicode
 
 from rhodecode.model.forms import UserGroupForm
@@ -86,7 +85,8 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         search_q, order_by, order_dir = self._extract_ordering(
             self.request, column_map=column_map)
 
-        _render = PartialRenderer('data_table/_dt_elements.mako')
+        _render = self.request.get_partial_renderer(
+            'data_table/_dt_elements.mako')
 
         def user_group_name(user_group_id, user_group_name):
             return _render("user_group_name", user_group_id, user_group_name)
