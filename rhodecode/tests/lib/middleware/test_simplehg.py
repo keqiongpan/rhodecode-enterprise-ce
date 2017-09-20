@@ -83,7 +83,7 @@ def test_get_config(pylonsapp, user_util):
     app = simplehg.SimpleHg(application=None,
                             config={'auth_ret_code': '', 'base_path': ''},
                             registry=None)
-    extras = {'foo': 'FOO', 'bar': 'BAR'}
+    extras = [('foo', 'FOO', 'bar', 'BAR')]
 
     hg_config = app._create_config(extras, repo_name=repo.repo_name)
 
@@ -110,7 +110,7 @@ def test_get_config(pylonsapp, user_util):
         ('phases', 'publish', 'True'),
         ('extensions', 'largefiles', ''),
         ('paths', '/', hg_config_org.get('paths', '/')),
-        ('rhodecode', 'RC_SCM_DATA', '{"foo": "FOO", "bar": "BAR"}')
+        ('rhodecode', 'RC_SCM_DATA', '[["foo", "FOO", "bar", "BAR"]]')
     ]
     for entry in expected_config:
         assert entry in hg_config

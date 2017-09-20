@@ -112,6 +112,7 @@ class TestGitServer(object):
         with patch('os.environ', {'SSH_CLIENT': '10.10.10.10 b'}):
             with patch('os.putenv') as putenv_mock:
                 server._update_environment()
+
         expected_data = {
             "username": git_server.user,
             "scm": "git",
@@ -122,8 +123,8 @@ class TestGitServer(object):
             "locked_by": [None, None],
             "config": ""
         }
-        putenv_mock.assert_called_once_with(
-            'RC_SCM_DATA', json.dumps(expected_data))
+        args, kwargs = putenv_mock.call_args
+        assert json.loads(args[1]) == expected_data
 
 
 class TestGitServerCheckPermissions(object):
