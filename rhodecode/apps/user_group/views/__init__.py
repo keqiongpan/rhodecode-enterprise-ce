@@ -186,11 +186,25 @@ class UserGroupsView(UserGroupAppView):
                 UserGroupModel().update(c.user_group, form_result)
             updated_user_group = form_result['users_group_name']
 
+            for user_id in added_members:
+                user = User.get(user_id)
+                user_data = user.get_api_data()
+                audit_logger.store_web(
+                    'user_group.edit.member.add',
+                    action_data={'user': user_data, 'old_data': old_values},
+                    user=self._rhodecode_user)
+
+            for user_id in removed_members:
+                user = User.get(user_id)
+                user_data = user.get_api_data()
+                audit_logger.store_web(
+                    'user_group.edit.member.delete',
+                    action_data={'user': user_data, 'old_data': old_values},
+                    user=self._rhodecode_user)
+
             audit_logger.store_web(
                 'user_group.edit', action_data={'old_data': old_values},
                 user=self._rhodecode_user)
-
-            # TODO(marcink): use added/removed to set user_group.edit.member.add
 
             h.flash(_('Updated user group %s') % updated_user_group,
                     category='success')
