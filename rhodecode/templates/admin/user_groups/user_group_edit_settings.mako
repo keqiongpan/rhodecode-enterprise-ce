@@ -6,7 +6,7 @@
         <h3 class="panel-title">${_('User Group: %s') % c.user_group.users_group_name}</h3>
     </div>
     <div class="panel-body">
-    ${h.secure_form(h.route_path('user_groups_update', user_group_id=c.user_group.users_group_id), id='edit_user_group', method='POST', request=request)}
+    ${h.secure_form(h.route_path('user_groups_update', user_group_id=c.user_group.users_group_id), id='edit_user_group', request=request)}
         <div class="form">
             <!-- fields -->
                 <div class="fields">

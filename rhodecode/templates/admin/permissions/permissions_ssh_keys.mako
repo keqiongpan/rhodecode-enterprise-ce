@@ -3,7 +3,7 @@
   <div class="panel-heading">
       <h3 class="panel-title">${_('SSH Keys')} - <span id="ssh_keys_count"></span></h3>
 
-      ${h.secure_form(h.route_path('admin_permissions_ssh_keys_update'), method='POST', request=request)}
+      ${h.secure_form(h.route_path('admin_permissions_ssh_keys_update'), request=request)}
         <button class="btn btn-link pull-right" type="submit">${_('Update SSH keys file')}</button>
       ${h.end_form()}
   </div>

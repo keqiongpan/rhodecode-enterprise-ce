@@ -167,7 +167,7 @@
         <i class="icon-pencil"></i>Edit</a>
     </div>
     <div class="grid_delete">
-      ${h.secure_form(h.route_path('edit_repo_advanced_delete', repo_name=repo_name), method='POST', request=request)}
+      ${h.secure_form(h.route_path('edit_repo_advanced_delete', repo_name=repo_name), request=request)}
         ${h.submit('remove_%s' % repo_name,_('Delete'),class_="btn btn-link btn-danger",
         onclick="return confirm('"+_('Confirm to delete this repository: %s') % repo_name+"');")}
       ${h.end_form()}
@@ -240,7 +240,7 @@
     <a href="${h.url('edit_repo_group',group_name=repo_group_name)}" title="${_('Edit')}">Edit</a>
  </div>
  <div class="grid_delete">
-    ${h.secure_form(h.url('delete_repo_group', group_name=repo_group_name),method='delete')}
+    ${h.secure_form(h.url('delete_repo_group', group_name=repo_group_name),method='delete', request=request)}
         ${h.submit('remove_%s' % repo_group_name,_('Delete'),class_="btn btn-link btn-danger",
         onclick="return confirm('"+_ungettext('Confirm to delete this group: %s with %s repository','Confirm to delete this group: %s with %s repositories',gr_count) % (repo_group_name, gr_count)+"');")}
     ${h.end_form()}
@@ -266,7 +266,7 @@
     <a href="${h.route_path('edit_user_group', user_group_id=user_group_id)}" title="${_('Edit')}">Edit</a>
  </div>
  <div class="grid_delete">
-    ${h.secure_form(h.route_path('user_groups_delete', user_group_id=user_group_id), method='POST', request=request)}
+    ${h.secure_form(h.route_path('user_groups_delete', user_group_id=user_group_id), request=request)}
       ${h.submit('remove_',_('Delete'),id="remove_group_%s" % user_group_id, class_="btn btn-link btn-danger",
       onclick="return confirm('"+_('Confirm to delete this user group: %s') % user_group_name+"');")}
     ${h.end_form()}

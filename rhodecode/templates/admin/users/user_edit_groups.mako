@@ -19,7 +19,7 @@
         </div>
 
         <div class="groups_management">
-            ${h.secure_form(h.route_path('edit_user_groups_management_updates', user_id=c.user.user_id), method='POST', request=request)}
+            ${h.secure_form(h.route_path('edit_user_groups_management_updates', user_id=c.user.user_id), request=request)}
             <div id="repos_list_wrap">
                 <table id="user_group_list_table" class="display"></table>
             </div>

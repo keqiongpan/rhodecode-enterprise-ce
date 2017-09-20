@@ -3,7 +3,7 @@
         <h3 class="panel-title">${_('System Wide Application Permissions')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.route_path('admin_permissions_application_update'), method='POST', request=request)}
+        ${h.secure_form(h.route_path('admin_permissions_application_update'), request=request)}
             <div class="form">
                 <!-- fields -->
                 <div class="fields">

@@ -19,7 +19,7 @@
                 </code>
             </p>
 
-            ${h.secure_form(h.route_path('edit_repo_remote_pull', repo_name=c.repo_name), method='POST', request=request)}
+            ${h.secure_form(h.route_path('edit_repo_remote_pull', repo_name=c.repo_name), request=request)}
             <div class="form">
                <div class="fields">
                    ${h.submit('remote_pull_%s' % c.rhodecode_db_repo.repo_name,_('Pull changes from remote location'),class_="btn btn-small",onclick="return confirm('"+_('Confirm to pull changes from remote side')+"');")}

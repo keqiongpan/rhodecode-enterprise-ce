@@ -1,4 +1,4 @@
-${h.secure_form(h.url('admin_settings_global'), method='post')}
+${h.secure_form(h.url('admin_settings_global'), request=request)}
 
 <div class="panel panel-default">
     <div class="panel-heading" id="branding-options">

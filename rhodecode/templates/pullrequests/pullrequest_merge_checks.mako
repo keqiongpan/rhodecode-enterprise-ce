@@ -47,7 +47,7 @@
           % endif
 
         <div>
-          ${h.secure_form(h.route_path('pullrequest_merge', repo_name=c.repo_name, pull_request_id=c.pull_request.pull_request_id), id='merge_pull_request_form', method='POST', request=request)}
+          ${h.secure_form(h.route_path('pullrequest_merge', repo_name=c.repo_name, pull_request_id=c.pull_request.pull_request_id), id='merge_pull_request_form', request=request)}
           <% merge_disabled = ' disabled' if c.pr_merge_possible is False else '' %>
           <a class="btn" href="#" onclick="refreshMergeChecks(); return false;">${_('refresh checks')}</a>
           <input type="submit" id="merge_pull_request" value="${_('Merge Pull Request')}" class="btn${merge_disabled}"${merge_disabled}>

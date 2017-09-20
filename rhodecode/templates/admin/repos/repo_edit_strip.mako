@@ -9,7 +9,7 @@
                 ${_('In the first step commits will be verified for existance in the repository')}. </br>
                 ${_('In the second step, correct commits will be available for stripping')}.
             </p>
-            ${h.secure_form(h.route_path('strip_check', repo_name=c.rhodecode_db_repo.repo_name), method='POST', request=request)}
+            ${h.secure_form(h.route_path('strip_check', repo_name=c.rhodecode_db_repo.repo_name), request=request)}
                 <div id="change_body" class="field">
                     <div id="box-1" class="inputx locked_input">
                         <input class="text" id="changeset_id-1" name="changeset_id-1" size="59"

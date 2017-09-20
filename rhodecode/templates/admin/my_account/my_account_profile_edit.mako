@@ -6,7 +6,7 @@
     </div>
 
     <div class="panel-body">
-    ${h.secure_form(h.route_path('my_account_update'), class_='form', method='POST', request=request)}
+    ${h.secure_form(h.route_path('my_account_update'), class_='form', request=request)}
     <% readonly = None %>
     <% disabled = "" %>
 

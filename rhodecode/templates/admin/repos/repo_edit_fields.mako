@@ -18,7 +18,7 @@
                     <td class="td-hash">${field.field_key}</td>
                     <td class="td-type">${field.field_type}</td>
                     <td class="td-action">
-                      ${h.secure_form(h.route_path('edit_repo_fields_delete', repo_name=c.rhodecode_db_repo.repo_name, field_id=field.repo_field_id), method='POST', request=request)}
+                      ${h.secure_form(h.route_path('edit_repo_fields_delete', repo_name=c.rhodecode_db_repo.repo_name, field_id=field.repo_field_id), request=request)}
                             ${h.hidden('del_repo_field',field.repo_field_id)}
                             <button class="btn btn-link btn-danger" type="submit"
                                     onclick="return confirm('${_('Confirm to delete this field: %s') % field.field_key}');">
@@ -31,7 +31,7 @@
               </table>
             </div>
             %endif
-            ${h.secure_form(h.route_path('edit_repo_fields_create', repo_name=c.repo_name), method='POST', request=request)}
+            ${h.secure_form(h.route_path('edit_repo_fields_create', repo_name=c.repo_name), request=request)}
             <div class="form">
                 <!-- fields -->
                 <div class="fields">

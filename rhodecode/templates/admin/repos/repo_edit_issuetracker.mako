@@ -1,7 +1,7 @@
 <%namespace name="its" file="/base/issue_tracker_settings.mako"/>
 
 <div id="repo_issue_tracker" class="${'inherited' if c.settings_model.inherit_global_settings else ''}">
-  ${h.secure_form(h.route_path('edit_repo_issuetracker_update', repo_name=c.repo_name), id="inherit-form", method='POST', request=request)}
+  ${h.secure_form(h.route_path('edit_repo_issuetracker_update', repo_name=c.repo_name), id="inherit-form", request=request)}
       <div class="panel panel-default panel-body">
           <div class="fields">
               <div class="field">

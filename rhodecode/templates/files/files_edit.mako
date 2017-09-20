@@ -42,7 +42,7 @@
     </div>
 
     <div class="table">
-        ${h.secure_form(h.route_path('repo_files_update_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path), id='eform', method='POST', request=request)}
+        ${h.secure_form(h.route_path('repo_files_update_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path), id='eform', request=request)}
         <div id="codeblock" class="codeblock" >
         <div class="code-header">
             <div class="stats">

@@ -5,7 +5,7 @@
         <h3 class="panel-title">${_('User Group Permissions')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.route_path('edit_user_group_perms_update', user_group_id=c.user_group.users_group_id), method='POST', request=request)}
+        ${h.secure_form(h.route_path('edit_user_group_perms_update', user_group_id=c.user_group.users_group_id), request=request)}
         <table id="permissions_manage" class="rctable permissions">
             <tr>
                 <th class="td-radio">${_('None')}</th>

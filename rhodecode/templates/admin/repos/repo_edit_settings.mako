@@ -6,7 +6,7 @@
         <h3 class="panel-title">${_('Settings for Repository: %s') % c.rhodecode_db_repo.repo_name}</h3>
     </div>
     <div class="panel-body">
-    ${h.secure_form(h.route_path('edit_repo', repo_name=c.rhodecode_db_repo.repo_name), method='POST', request=request)}
+    ${h.secure_form(h.route_path('edit_repo', repo_name=c.rhodecode_db_repo.repo_name), request=request)}
     <div class="form">
         <!-- fields -->
         <div class="fields">

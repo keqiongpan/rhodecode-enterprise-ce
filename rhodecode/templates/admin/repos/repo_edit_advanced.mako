@@ -24,7 +24,7 @@
         <h3 class="panel-title">${_('Fork Reference')} <a class="permalink" href="#advanced-fork"> ¶</a></h3>
     </div>
     <div class="panel-body">
-      ${h.secure_form(h.route_path('edit_repo_advanced_fork', repo_name=c.rhodecode_db_repo.repo_name), method='POST', request=request)}
+      ${h.secure_form(h.route_path('edit_repo_advanced_fork', repo_name=c.rhodecode_db_repo.repo_name), request=request)}
 
         % if c.rhodecode_db_repo.fork:
             <div class="panel-body-title-text">${h.literal(_('This repository is a fork of %(repo_link)s') % {'repo_link': h.link_to_if(c.has_origin_repo_read_perm,c.rhodecode_db_repo.fork.repo_name, h.route_path('repo_summary', repo_name=c.rhodecode_db_repo.fork.repo_name))})}
@@ -48,7 +48,7 @@
         <h3 class="panel-title">${_('Public Journal Visibility')} <a class="permalink" href="#advanced-journal"> ¶</a></h3>
     </div>
     <div class="panel-body">
-      ${h.secure_form(h.route_path('edit_repo_advanced_journal', repo_name=c.rhodecode_db_repo.repo_name), method='POST', request=request)}
+      ${h.secure_form(h.route_path('edit_repo_advanced_journal', repo_name=c.rhodecode_db_repo.repo_name), request=request)}
         <div class="field">
         %if c.in_public_journal:
           <button class="btn btn-small" type="submit">
@@ -73,7 +73,7 @@
         <h3 class="panel-title">${_('Locking state')} <a class="permalink" href="#advanced-locking"> ¶</a></h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.route_path('edit_repo_advanced_locking', repo_name=c.rhodecode_db_repo.repo_name), method='POST', request=request)}
+        ${h.secure_form(h.route_path('edit_repo_advanced_locking', repo_name=c.rhodecode_db_repo.repo_name), request=request)}
 
         %if c.rhodecode_db_repo.locked[0]:
              <div class="panel-body-title-text">${'Locked by %s on %s. Lock reason: %s' % (h.person_by_id(c.rhodecode_db_repo.locked[0]),
@@ -113,7 +113,7 @@
         <h3 class="panel-title">${_('Delete repository')} <a class="permalink" href="#advanced-delete"> ¶</a></h3>
     </div>
     <div class="panel-body">
-      ${h.secure_form(h.route_path('edit_repo_advanced_delete', repo_name=c.repo_name), method='POST', request=request)}
+      ${h.secure_form(h.route_path('edit_repo_advanced_delete', repo_name=c.repo_name), request=request)}
         <table class="display">
             <tr>
                 <td>

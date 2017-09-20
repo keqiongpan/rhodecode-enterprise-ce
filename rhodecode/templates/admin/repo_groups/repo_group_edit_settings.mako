@@ -6,7 +6,7 @@
         <h3 class="panel-title">${_('Settings for Repository Group: %s') % c.repo_group.name}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('update_repo_group',group_name=c.repo_group.group_name),method='put')}
+        ${h.secure_form(h.url('update_repo_group',group_name=c.repo_group.group_name),method='put', request=request)}
         <div class="form">
             <!-- fields -->
             <div class="fields">

@@ -3,7 +3,7 @@
         <h3 class="panel-title">${_('Default Settings For New Repositories')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.route_path('admin_defaults_repositories_update'), method='POST', request=request)}
+        ${h.secure_form(h.route_path('admin_defaults_repositories_update'), request=request)}
         <div class="form">
             <!-- fields -->
 

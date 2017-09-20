@@ -5,7 +5,7 @@
         <h3 class="panel-title">${_('Issue Tracker / Wiki Patterns')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('admin_settings_issuetracker_save'), method='post')}
+        ${h.secure_form(h.url('admin_settings_issuetracker_save'), request=request)}
             ${its.issue_tracker_settings_table(
                 patterns=c.issuetracker_entries.items(),
                 form_url=h.url('admin_settings_issuetracker'),

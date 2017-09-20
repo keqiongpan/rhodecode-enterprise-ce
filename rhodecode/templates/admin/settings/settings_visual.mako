@@ -1,4 +1,4 @@
-${h.secure_form(h.url('admin_settings_visual'), method='post')}
+${h.secure_form(h.url('admin_settings_visual'), request=request)}
 
 <div class="panel panel-default">
     <div class="panel-heading" id="general">

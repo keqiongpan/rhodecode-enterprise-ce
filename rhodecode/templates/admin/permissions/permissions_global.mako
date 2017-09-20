@@ -1,5 +1,5 @@
 
-${h.secure_form(h.route_path('admin_permissions_global_update'), method='POST', request=request)}
+${h.secure_form(h.route_path('admin_permissions_global_update'), request=request)}
     <div class="form permissions-global">
         <!-- fields -->
         <div class="fields">

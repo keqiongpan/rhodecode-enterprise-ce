@@ -21,7 +21,7 @@
                     <td class="td-tags">${h.format_date(ssh_key.created_on)}</td>
 
                     <td class="td-action">
-                        ${h.secure_form(h.route_path('edit_user_ssh_keys_delete', user_id=c.user.user_id), method='POST', request=request)}
+                        ${h.secure_form(h.route_path('edit_user_ssh_keys_delete', user_id=c.user.user_id), request=request)}
                             ${h.hidden('del_ssh_key', ssh_key.ssh_key_id)}
                             <button class="btn btn-link btn-danger" type="submit"
                                     onclick="return confirm('${_('Confirm to remove ssh key %s') % ssh_key.ssh_key_fingerprint}');">
@@ -38,7 +38,7 @@
         </div>
 
         <div class="user_ssh_keys">
-            ${h.secure_form(h.route_path('edit_user_ssh_keys_add', user_id=c.user.user_id), method='POST', request=request)}
+            ${h.secure_form(h.route_path('edit_user_ssh_keys_add', user_id=c.user.user_id), request=request)}
             <div class="form form-vertical">
                 <!-- fields -->
                 <div class="fields">

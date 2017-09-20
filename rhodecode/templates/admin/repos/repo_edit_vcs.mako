@@ -1,7 +1,7 @@
 <%namespace name="vcss" file="/base/vcs_settings.mako"/>
 
 <div id="repo_vcs_settings" class="${'inherited' if c.inherit_global_settings else ''}">
-    ${h.secure_form(h.route_path('edit_repo_vcs_update', repo_name=c.rhodecode_db_repo.repo_name), method='POST', request=request)}
+    ${h.secure_form(h.route_path('edit_repo_vcs_update', repo_name=c.rhodecode_db_repo.repo_name), request=request)}
         <div class="form panel panel-default">
             <div class="fields panel-body">
                 <div class="field">

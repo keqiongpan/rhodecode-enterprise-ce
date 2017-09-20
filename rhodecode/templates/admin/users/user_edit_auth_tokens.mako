@@ -38,7 +38,7 @@
                          %endif
                     </td>
                     <td class="td-action">
-                        ${h.secure_form(h.route_path('edit_user_auth_tokens_delete', user_id=c.user.user_id), method='POST', request=request)}
+                        ${h.secure_form(h.route_path('edit_user_auth_tokens_delete', user_id=c.user.user_id), request=request)}
                             ${h.hidden('del_auth_token', auth_token.user_api_key_id)}
                             <button class="btn btn-link btn-danger" type="submit"
                                     onclick="return confirm('${_('Confirm to remove this auth token: %s') % auth_token.token_obfuscated}');">
@@ -55,7 +55,7 @@
         </div>
 
         <div class="user_auth_tokens">
-            ${h.secure_form(h.route_path('edit_user_auth_tokens_add', user_id=c.user.user_id), method='POST', request=request)}
+            ${h.secure_form(h.route_path('edit_user_auth_tokens_add', user_id=c.user.user_id), request=request)}
             <div class="form form-vertical">
                 <!-- fields -->
                 <div class="fields">
