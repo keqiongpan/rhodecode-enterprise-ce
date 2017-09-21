@@ -237,9 +237,12 @@ def error_handler(exception, request):
         log.exception(
             'error occurred handling this request for path: %s', request.path)
 
+    error_explanation = base_response.explanation or str(base_response)
+    if base_response.status_code == 404:
+        error_explanation += " Or you don't have permission to access it."
     c = AttributeDict()
     c.error_message = base_response.status
-    c.error_explanation = base_response.explanation or str(base_response)
+    c.error_explanation = error_explanation
     c.visual = AttributeDict()
 
     c.visual.rhodecode_support_url = (
