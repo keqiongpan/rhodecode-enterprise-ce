@@ -17,6 +17,7 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
+
 import pytest
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.tests import TestController
@@ -40,16 +41,17 @@ class TestFeedView(TestController):
     @pytest.mark.parametrize("feed_type,response_types,content_type",[
         ('rss', ['<rss version="2.0">'],
          "application/rss+xml"),
-        ('atom', ['<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-us">'],
+        ('atom', ['xmlns="http://www.w3.org/2005/Atom"', 'xml:lang="en-us"'],
          "application/atom+xml"),
     ])
     def test_feed(self, backend, feed_type, response_types, content_type):
         self.log_user()
         response = self.app.get(
-            route_path('{}_feed_home'.format(feed_type), repo_name=backend.repo_name))
+            route_path('{}_feed_home'.format(feed_type),
+                       repo_name=backend.repo_name))
 
         for content in response_types:
-            assert content in response
+            response.mustcontain(content)
 
         assert response.content_type == content_type
 
@@ -64,7 +66,8 @@ class TestFeedView(TestController):
 
         response = self.app.get(
             route_path(
-                '{}_feed_home'.format(feed_type), repo_name=backend.repo_name,
+                '{}_feed_home'.format(feed_type),
+                repo_name=backend.repo_name,
                 params=dict(auth_token=auth_token)),
             status=200)
 
@@ -80,7 +83,8 @@ class TestFeedView(TestController):
 
         self.app.get(
             route_path(
-                '{}_feed_home'.format(feed_type), repo_name=backend.repo_name,
+                '{}_feed_home'.format(feed_type),
+                repo_name=backend.repo_name,
                 params=dict(auth_token=auth_token)),
             status=302)
 
@@ -89,6 +93,7 @@ class TestFeedView(TestController):
         auth_token = auth_token.api_key
         self.app.get(
             route_path(
-                '{}_feed_home'.format(feed_type), repo_name=backend.repo_name,
+                '{}_feed_home'.format(feed_type),
+                repo_name=backend.repo_name,
                 params=dict(auth_token=auth_token)),
             status=200)

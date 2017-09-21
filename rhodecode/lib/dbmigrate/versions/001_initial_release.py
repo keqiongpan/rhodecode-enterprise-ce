@@ -84,7 +84,7 @@ class UserLog(Base):
     __table_args__ = {'useexisting':True}
     user_log_id = Column("user_log_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey(u'users.user_id'), nullable=False, unique=None, default=None)
-    repository_id = Column("repository_id", Integer(length=None, convert_unicode=False, ), ForeignKey(u'repositories.repo_id'), nullable=False, unique=None, default=None)
+    repository_id = Column("repository_id", Integer(), ForeignKey(u'repositories.repo_id'), nullable=True, unique=None, default=None)
     repository_name = Column("repository_name", String(length=None, convert_unicode=False, ), nullable=True, unique=None, default=None)
     user_ip = Column("user_ip", String(length=None, convert_unicode=False, ), nullable=True, unique=None, default=None)
     action = Column("action", String(length=None, convert_unicode=False, ), nullable=True, unique=None, default=None)
