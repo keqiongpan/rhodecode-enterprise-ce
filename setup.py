@@ -248,10 +248,11 @@ setup(
             'enterprise=rhodecode.tests.plugin',
         ],
         'console_scripts': [
-            'rcserver=rhodecode.rcserver:main',
-            'rcsetup-app=rhodecode.lib.rc_commands.setup_rc:main',
-            'rcupgrade-db=rhodecode.lib.rc_commands.upgrade_db:main',
-            'rcssh-wrapper=rhodecode.apps.ssh_support.lib.ssh_wrapper:main',
+            'rc-server=rhodecode.rcserver:main',
+            'rc-setup-app=rhodecode.lib.rc_commands.setup_rc:main',
+            'rc-upgrade-db=rhodecode.lib.rc_commands.upgrade_db:main',
+            'rc-ishell=rhodecode.lib.rc_commands.ishell:main',
+            'rc-ssh-wrapper=rhodecode.apps.ssh_support.lib.ssh_wrapper:main',
         ],
         'beaker.backends': [
             'memorylru_base=rhodecode.lib.memory_lru_debug:MemoryLRUNamespaceManagerBase',
