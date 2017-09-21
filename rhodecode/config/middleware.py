@@ -255,8 +255,14 @@ def error_handler(exception, request):
         c.rhodecode_name = 'Rhodecode'
 
     c.causes = []
+    if is_http_error(base_response):
+        c.causes.append('Server is overloaded.')
+        c.causes.append('Server database connection is lost.')
+        c.causes.append('Server expected unhandled error.')
+
     if hasattr(base_response, 'causes'):
         c.causes = base_response.causes
+
     c.messages = helpers.flash.pop_messages(request=request)
     c.traceback = traceback.format_exc()
     response = render_to_response(
