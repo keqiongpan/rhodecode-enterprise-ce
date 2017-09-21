@@ -130,7 +130,8 @@ class HomeView(BaseAppView):
                 'id': obj.repo_name,
                 'text': obj.repo_name,
                 'type': 'repo',
-                'obj': {'repo_type': obj.repo_type, 'private': obj.private},
+                'obj': {'repo_type': obj.repo_type, 'private': obj.private,
+                        'repo_id': obj.repo_id},
                 'url': h.route_path('repo_summary', repo_name=obj.repo_name)
             }
             for obj in acl_repo_iter]
