@@ -326,22 +326,28 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
                  ## file was renamed, or copied
                 %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
                     <strong>${filediff.target_file_path}</strong> ⬅ <del>${filediff.source_file_path}</del>
+                    <% final_path = filediff.target_file_path %>
                 %elif COPIED_FILENODE in filediff.patch['stats']['ops']:
                     <strong>${filediff.target_file_path}</strong> ⬅ ${filediff.source_file_path}
+                    <% final_path = filediff.target_file_path %>
                 %endif
             %else:
                 ## file was modified
                 <strong>${filediff.source_file_path}</strong>
+                <% final_path = filediff.source_file_path %>
             %endif
         %else:
             %if filediff.source_file_path:
                 ## file was deleted
                 <strong>${filediff.source_file_path}</strong>
+                <% final_path = filediff.source_file_path %>
             %else:
                 ## file was added
                 <strong>${filediff.target_file_path}</strong>
+                <% final_path = filediff.target_file_path %>
             %endif
         %endif
+        <i style="color: #aaa" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy the full path')}" onclick="return false;"></i>
     </span>
     <span class="pill-group" style="float: left">
         %if filediff.limited_diff:
