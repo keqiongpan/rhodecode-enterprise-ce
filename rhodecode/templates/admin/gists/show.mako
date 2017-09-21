@@ -52,6 +52,8 @@
                        %endif
                         <div class="buttons">
                           ## only owner should see that
+                          <a href="#copySource" onclick="return false;" class="btn btn-mini icon-clipboard clipboard-action" data-clipboard-text="${c.files[0].content}">${_('Copy Content')}</a>
+
                           %if h.HasPermissionAny('hg.admin')() or c.gist.gist_owner == c.rhodecode_user.user_id:
                             ${h.link_to(_('Edit'), h.route_path('gist_edit', gist_id=c.gist.gist_access_id), class_="btn btn-mini")}
                           %endif
