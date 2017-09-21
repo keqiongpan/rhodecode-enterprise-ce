@@ -16,15 +16,14 @@ E.g. adding `RepoFilesView.repo_file_raw` allows to access a raw diff using such
     http[s]://server.com/{repo_name}/raw/{commit_id}/{file_path}?auth_token=SECRET_TOKEN
 
 White list can be defined inside `${c.whitelist_file}` under `${c.whitelist_key}=` setting
-
-Currently under this settings following views are set:
+Currently the following views are set:
 </p>
 
-    <pre>
+<pre>
 % for entry in c.whitelist_views:
 ${entry}
 % endfor
-    </pre>
+</pre>
 
     </div>
 
@@ -49,7 +48,11 @@ ${entry}
 
         % for route_name, view_fqn, view_url, active in c.view_data:
         <tr>
-            <td class="td-x">${h.bool2icon(active)}</td>
+            <td class="td-x">
+                % if active:
+                    ${h.bool2icon(active)}
+                % endif
+            </td>
             <td class="td-x">${view_fqn}</td>
             <td class="td-x" title="${route_name}">${view_url}</td>
         </tr>
