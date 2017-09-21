@@ -1225,9 +1225,9 @@ class UserLog(Base, BaseModel):
     VERSIONS = [VERSION_1, VERSION_2]
 
     user_log_id = Column("user_log_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
-    user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=True, unique=None, default=None)
+    user_id = Column("user_id", Integer(), ForeignKey('users.user_id',ondelete='SET NULL'), nullable=True, unique=None, default=None)
     username = Column("username", String(255), nullable=True, unique=None, default=None)
-    repository_id = Column("repository_id", Integer(), ForeignKey('repositories.repo_id'), nullable=True)
+    repository_id = Column("repository_id", Integer(), ForeignKey('repositories.repo_id', ondelete='SET NULL'), nullable=True, unique=None, default=None)
     repository_name = Column("repository_name", String(255), nullable=True, unique=None, default=None)
     user_ip = Column("user_ip", String(255), nullable=True, unique=None, default=None)
     action = Column("action", Text().with_variant(Text(1200000), 'mysql'), nullable=True, unique=None, default=None)
