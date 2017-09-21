@@ -699,6 +699,7 @@ class UsersView(UserAppView):
         c.role_options = [(c.role_values, _("Role"))]
         c.user_auth_tokens = AuthTokenModel().get_auth_tokens(
             c.user.user_id, show_expired=True)
+        c.role_vcs = AuthTokenModel.cls.ROLE_VCS
         return self._get_template_context(c)
 
     def maybe_attach_token_scope(self, token):

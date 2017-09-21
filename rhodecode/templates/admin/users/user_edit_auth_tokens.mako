@@ -139,6 +139,12 @@ var repoFilter = function(data) {
 
 $("#scope_repo_id_disabled").select2(select2Options);
 
+var selectVcsScope = function() {
+    // select vcs scope and disable input
+    $("#role").select2("val", "${c.role_vcs}").trigger('change');
+    $("#role").select2("readonly", true)
+};
+
 $("#scope_repo_id").select2({
     cachedDataSource: {},
     minimumInputLength: 2,
@@ -171,6 +177,9 @@ $("#scope_repo_id").select2({
             })
        }
     })
+});
+$("#scope_repo_id").on('select2-selecting', function(e){
+    selectVcsScope()
 });
 
 });
