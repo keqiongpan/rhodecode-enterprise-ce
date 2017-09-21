@@ -34,6 +34,10 @@ def admin_routes(config):
         pattern='/audit_logs')
 
     config.add_route(
+        name='admin_audit_log_entry',
+        pattern='/audit_logs/{audit_log_id}')
+
+    config.add_route(
         name='pull_requests_global_0',  # backward compat
         pattern='/pull_requests/{pull_request_id:\d+}')
     config.add_route(

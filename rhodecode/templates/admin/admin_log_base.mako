@@ -3,6 +3,7 @@
 %if c.audit_logs:
 <table class="rctable admin_log">
     <tr>
+        <th>${_('Uid')}</th>
         <th>${_('Username')}</th>
         <th>${_('Action')}</th>
         <th>${_('Action Data')}</th>
@@ -13,6 +14,9 @@
 
     %for cnt,l in enumerate(c.audit_logs):
     <tr class="parity${cnt%2}">
+        <td class="td-col">
+            <a href="${h.route_path('admin_audit_log_entry', audit_log_id=l.entry_id)}">${l.entry_id}</a>
+        </td>
         <td class="td-user">
             %if l.user is not None:
               ${base.gravatar_with_user(l.user.email)}

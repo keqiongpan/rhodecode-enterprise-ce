@@ -1252,6 +1252,10 @@ class UserLog(Base, BaseModel):
             'action': self.action,
         }
 
+    @hybrid_property
+    def entry_id(self):
+        return self.user_log_id
+
     @property
     def action_as_day(self):
         return datetime.date(*self.action_date.timetuple()[:3])

@@ -38,6 +38,7 @@ function registerRCRoutes() {
     pyroutes.register('ops_error_test_legacy', '/_admin/error_test', []);
     pyroutes.register('admin_home', '/_admin', []);
     pyroutes.register('admin_audit_logs', '/_admin/audit_logs', []);
+    pyroutes.register('admin_audit_log_entry', '/_admin/audit_logs/%(audit_log_id)s', ['audit_log_id']);
     pyroutes.register('pull_requests_global_0', '/_admin/pull_requests/%(pull_request_id)s', ['pull_request_id']);
     pyroutes.register('pull_requests_global_1', '/_admin/pull-requests/%(pull_request_id)s', ['pull_request_id']);
     pyroutes.register('pull_requests_global', '/_admin/pull-request/%(pull_request_id)s', ['pull_request_id']);

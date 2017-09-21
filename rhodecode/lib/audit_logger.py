@@ -133,9 +133,6 @@ def _store_log(action_name, action_data, user_id, username, user_data,
 
     user_log.action_date = datetime.datetime.now()
 
-    log.info('AUDIT: Logging action: `%s` by user:id:%s[%s] ip:%s',
-             action_name, user_id, username, ip_address)
-
     return user_log
 
 
@@ -239,19 +236,27 @@ def store(action, user, action_data=None, user_data=None, ip_addr=None,
                 repository_id = getattr(
                     Repository.get_by_repo_name(repository_name), 'repo_id', None)
 
+        action_name = safe_unicode(action)
+        ip_address = safe_unicode(ip_addr)
+
         user_log = _store_log(
-            action_name=safe_unicode(action),
+            action_name=action_name,
             action_data=action_data or {},
             user_id=user_id,
             username=username,
             user_data=user_data or {},
-            ip_address=safe_unicode(ip_addr),
+            ip_address=ip_address,
             repository_id=repository_id,
             repository_name=repository_name
         )
+
         sa_session.add(user_log)
         if commit:
             sa_session.commit()
+
+        entry_id = user_log.entry_id or ''
+        log.info('AUDIT[%s]: Logging action: `%s` by user:id:%s[%s] ip:%s',
+                 entry_id, action_name, user_id, username, ip_address)
 
     except Exception:
         log.exception('AUDIT: failed to store audit log')
