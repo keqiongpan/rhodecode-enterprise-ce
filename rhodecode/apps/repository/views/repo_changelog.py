@@ -119,14 +119,22 @@ class RepoChangelogView(RepoAppView):
 
     def _load_changelog_data(
             self, c, collection, page, chunk_size, branch_name=None,
-            dynamic=False):
+            dynamic=False, f_path=None, commit_id=None):
 
         def url_generator(**kw):
             query_params = {}
             query_params.update(kw)
-            return h.route_path(
-                'repo_changelog',
-                repo_name=c.rhodecode_db_repo.repo_name, _query=query_params)
+            if f_path:
+                # changelog for file
+                return h.route_path(
+                    'repo_changelog_file',
+                    repo_name=c.rhodecode_db_repo.repo_name,
+                    commit_id=commit_id, f_path=f_path,
+                    _query=query_params)
+            else:
+                return h.route_path(
+                    'repo_changelog',
+                    repo_name=c.rhodecode_db_repo.repo_name, _query=query_params)
 
         c.total_cs = len(collection)
         c.showing_commits = min(chunk_size, c.total_cs)
@@ -215,12 +223,15 @@ class RepoChangelogView(RepoAppView):
                     branch_name=branch_name, pre_load=pre_load)
 
             self._load_changelog_data(
-                c, collection, p, chunk_size, c.branch_name, dynamic=f_path)
+                c, collection, p, chunk_size, c.branch_name,
+                f_path=f_path, commit_id=commit_id)
 
         except EmptyRepositoryError as e:
             h.flash(safe_str(h.escape(e)), category='warning')
             raise HTTPFound(
                 h.route_path('repo_summary', repo_name=self.db_repo_name))
+        except HTTPFound:
+            raise
         except (RepositoryError, CommitDoesNotExistError, Exception) as e:
             log.exception(safe_str(e))
             h.flash(safe_str(h.escape(e)), category='error')
