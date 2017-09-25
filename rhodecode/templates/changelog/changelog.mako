@@ -71,7 +71,7 @@
     </div>
 
     % if c.pagination:
-        <script type="text/javascript" src="${h.asset('js/jquery.commits-graph.js')}"></script>
+        <script type="text/javascript" src="${h.asset('js/src/plugins/jquery.commits-graph.js')}"></script>
 
         <div class="graph-header">
             <div id="filter_changelog">

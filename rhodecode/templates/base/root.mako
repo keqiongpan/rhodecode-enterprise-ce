@@ -117,7 +117,7 @@ c.template_context['default_user'] = {
             </script>
             <%include file="/base/plugins_base.mako"/>
             <!--[if lt IE 9]>
-            <script language="javascript" type="text/javascript" src="${h.asset('js/excanvas.min.js')}"></script>
+            <script language="javascript" type="text/javascript" src="${h.asset('js/src/excanvas.min.js')}"></script>
             <![endif]-->
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode/routes.js', ver=c.rhodecode_version_hash)}"></script>
             <script> var alertMessagePayloads = ${h.flash.json_alerts(request=request)|n}; </script>
