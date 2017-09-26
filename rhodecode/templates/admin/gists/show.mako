@@ -37,11 +37,16 @@
         </ul>
         %endif
     </div>
-    <code>${c.gist.gist_url()}</code>
+
     <div class="table">
         <div id="files_data">
             <div id="codeblock" class="codeblock">
                 <div class="code-header">
+                    <div class="gist_url">
+                        <code>
+                            ${c.gist.gist_url()} <span class="icon-clipboard clipboard-action" data-clipboard-text="${c.gist.gist_url()}" title="${_('Copy the url')}"></span>
+                        </code>
+                    </div>
                     <div class="stats">
                        %if h.HasPermissionAny('hg.admin')() or c.gist.gist_owner == c.rhodecode_user.user_id:
                         <div class="remove_gist">
@@ -52,7 +57,7 @@
                        %endif
                         <div class="buttons">
                           ## only owner should see that
-                          <a href="#copySource" onclick="return false;" class="btn btn-mini icon-clipboard clipboard-action" data-clipboard-text="${c.files[0].content}">${_('Copy Content')}</a>
+                          <a href="#copySource" onclick="return false;" class="btn btn-mini icon-clipboard clipboard-action" data-clipboard-text="${c.files[0].content}">${_('Copy content')}</a>
 
                           %if h.HasPermissionAny('hg.admin')() or c.gist.gist_owner == c.rhodecode_user.user_id:
                             ${h.link_to(_('Edit'), h.route_path('gist_edit', gist_id=c.gist.gist_access_id), class_="btn btn-mini")}
@@ -71,6 +76,7 @@
                               ${h.age_component(h.time_to_utcdatetime(c.gist.gist_expires))}
                           %endif
                           </span>
+
                        </div>
                     </div>
 
