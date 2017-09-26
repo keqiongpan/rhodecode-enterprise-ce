@@ -57,6 +57,7 @@
         "<%= dirs.js.src %>/codemirror/codemirror_hint.js",
         "<%= dirs.js.src %>/codemirror/codemirror_overlay.js",
         "<%= dirs.js.src %>/codemirror/codemirror_placeholder.js",
+        "<%= dirs.js.src %>/codemirror/codemirror_simplemode.js",
         "<%= dirs.js.dest %>/mode/meta.js",
         "<%= dirs.js.dest %>/mode/meta_ext.js",
         "<%= dirs.js.src_rc %>/i18n/select2/translations.js",
