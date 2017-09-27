@@ -198,7 +198,6 @@ class RepoChangelogView(RepoAppView):
 
         c.changelog_for_path = f_path
         pre_load = self._get_preload_attrs()
-        commit_ids = []
 
         partial_xhr = self.request.environ.get('HTTP_X_PARTIAL_XHR')
 
@@ -255,7 +254,9 @@ class RepoChangelogView(RepoAppView):
                 self._get_template_context(c), self.request)
             return Response(html)
 
+        commit_ids = []
         if not f_path:
+            # only load graph data when not in file history mode
             commit_ids = c.pagination
 
         c.graph_data, c.graph_commits = self._graph(
@@ -329,8 +330,13 @@ class RepoChangelogView(RepoAppView):
         elif self.request.GET.get('chunk') == 'next':
             prev_data = prev_graph
 
+        commit_ids = []
+        if not f_path:
+            # only load graph data when not in file history mode
+            commit_ids = c.pagination
+
         c.graph_data, c.graph_commits = self._graph(
-            self.rhodecode_vcs_repo, c.pagination,
+            self.rhodecode_vcs_repo, commit_ids,
             prev_data=prev_data, next_data=next_data)
 
         return self._get_template_context(c)
