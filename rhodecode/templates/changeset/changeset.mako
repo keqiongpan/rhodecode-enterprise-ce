@@ -32,32 +32,34 @@
   <div id="changeset_compare_view_content"  class="summary changeset">
     <div class="summary-detail">
       <div class="summary-detail-header">
-          <span class="breadcrumbs files_location">
-            <h4>${_('Commit')}
-              <code>
+          <div class="breadcrumbs files_location">
+            <h4>
+            ${_('Commit')}
+
+            <code>
                 ${h.show_id(c.commit)}
-                <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.commit.raw_id}" title="${_('Copy the full commit id')}"></i>
-                % if hasattr(c.commit, 'phase'):
-                      <span class="tag phase-${c.commit.phase} tooltip" title="${_('Commit phase')}">${c.commit.phase}</span>
-                % endif
+            </code>
+            <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.commit.raw_id}" title="${_('Copy the full commit id')}"></i>
+            % if hasattr(c.commit, 'phase'):
+                  <span class="tag phase-${c.commit.phase} tooltip" title="${_('Commit phase')}">${c.commit.phase}</span>
+            % endif
 
-                ## obsolete commits
-                % if hasattr(c.commit, 'obsolete'):
-                  % if c.commit.obsolete:
-                      <span class="tag obsolete-${c.commit.obsolete} tooltip" title="${_('Evolve State')}">${_('obsolete')}</span>
-                  % endif
-                % endif
+            ## obsolete commits
+            % if hasattr(c.commit, 'obsolete'):
+              % if c.commit.obsolete:
+                  <span class="tag obsolete-${c.commit.obsolete} tooltip" title="${_('Evolve State')}">${_('obsolete')}</span>
+              % endif
+            % endif
 
-                ## hidden commits
-                % if hasattr(c.commit, 'hidden'):
-                  % if c.commit.hidden:
-                      <span class="tag hidden-${c.commit.hidden} tooltip" title="${_('Evolve State')}">${_('hidden')}</span>
-                  % endif
-                % endif
-
-              </code>
+            ## hidden commits
+            % if hasattr(c.commit, 'hidden'):
+              % if c.commit.hidden:
+                  <span class="tag hidden-${c.commit.hidden} tooltip" title="${_('Evolve State')}">${_('hidden')}</span>
+              % endif
+            % endif
             </h4>
-          </span>
+
+          </div>
           <div class="pull-right">
               <span id="parent_link">
                 <a href="#parentCommit" title="${_('Parent Commit')}">${_('Parent')}</a>
