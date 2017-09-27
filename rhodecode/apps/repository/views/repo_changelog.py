@@ -162,6 +162,11 @@ class RepoChangelogView(RepoAppView):
         self._register_global_c(c)
         return c
 
+    def _get_preload_attrs(self):
+        pre_load = ['author', 'branch', 'date', 'message', 'parents',
+                    'obsolete', 'phase', 'hidden']
+        return pre_load
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -181,6 +186,8 @@ class RepoChangelogView(RepoAppView):
 
         c.branch_name = branch_name = self.request.GET.get('branch') or ''
         c.book_name = book_name = self.request.GET.get('bookmark') or ''
+        c.f_path = f_path
+        c.commit_id = commit_id
         hist_limit = safe_int(self.request.GET.get('limit')) or None
 
         p = safe_int(self.request.GET.get('page', 1), 1)
@@ -190,7 +197,7 @@ class RepoChangelogView(RepoAppView):
             self._check_if_valid_branch(branch_name, self.db_repo_name, f_path)
 
         c.changelog_for_path = f_path
-        pre_load = ['author', 'branch', 'date', 'message', 'parents']
+        pre_load = self._get_preload_attrs()
         commit_ids = []
 
         partial_xhr = self.request.environ.get('HTTP_X_PARTIAL_XHR')
@@ -200,6 +207,7 @@ class RepoChangelogView(RepoAppView):
                 log.debug('generating changelog for path %s', f_path)
                 # get the history for the file !
                 base_commit = self.rhodecode_vcs_repo.get_commit(commit_id)
+
                 try:
                     collection = base_commit.get_file_history(
                         f_path, limit=hist_limit, pre_load=pre_load)
@@ -239,6 +247,7 @@ class RepoChangelogView(RepoAppView):
                 h.route_path('repo_changelog', repo_name=self.db_repo_name))
 
         if partial_xhr or self.request.environ.get('HTTP_X_PJAX'):
+            # case when loading dynamic file history in file view
             # loading from ajax, we don't want the first result, it's popped
             # in the code above
             html = render(
@@ -261,9 +270,16 @@ class RepoChangelogView(RepoAppView):
         route_name='repo_changelog_elements', request_method=('GET', 'POST'),
         renderer='rhodecode:templates/changelog/changelog_elements.mako',
         xhr=True)
+    @view_config(
+        route_name='repo_changelog_elements_file', request_method=('GET', 'POST'),
+        renderer='rhodecode:templates/changelog/changelog_elements.mako',
+        xhr=True)
     def repo_changelog_elements(self):
         c = self.load_default_context()
+        commit_id = self.request.matchdict.get('commit_id')
+        f_path = self._get_f_path(self.request.matchdict)
         chunk_size = 20
+        hist_limit = safe_int(self.request.GET.get('limit')) or None
 
         def wrap_for_error(err):
             html = '<tr>' \
@@ -273,20 +289,30 @@ class RepoChangelogView(RepoAppView):
 
         c.branch_name = branch_name = self.request.GET.get('branch') or ''
         c.book_name = book_name = self.request.GET.get('bookmark') or ''
+        c.f_path = f_path
+        c.commit_id = commit_id
 
         c.selected_name = branch_name or book_name
         if branch_name and branch_name not in self.rhodecode_vcs_repo.branches_all:
             return wrap_for_error(
                 safe_str('Branch: {} is not valid'.format(branch_name)))
 
-        pre_load = ['author', 'branch', 'date', 'message', 'parents']
-        collection = self.rhodecode_vcs_repo.get_commits(
-            branch_name=branch_name, pre_load=pre_load)
+        pre_load = self._get_preload_attrs()
+
+        if f_path:
+            base_commit = self.rhodecode_vcs_repo.get_commit(commit_id)
+            collection = base_commit.get_file_history(
+                f_path, limit=hist_limit, pre_load=pre_load)
+            collection = list(reversed(collection))
+        else:
+            collection = self.rhodecode_vcs_repo.get_commits(
+                branch_name=branch_name, pre_load=pre_load)
 
         p = safe_int(self.request.GET.get('page', 1), 1)
         try:
             self._load_changelog_data(
-                c, collection, p, chunk_size, dynamic=True)
+                c, collection, p, chunk_size, dynamic=True,
+                f_path=f_path, commit_id=commit_id)
         except EmptyRepositoryError as e:
             return wrap_for_error(safe_str(e))
         except (RepositoryError, CommitDoesNotExistError, Exception) as e:
@@ -296,7 +322,7 @@ class RepoChangelogView(RepoAppView):
         prev_data = None
         next_data = None
 
-        prev_graph = json.loads(self.request.POST.get('graph', ''))
+        prev_graph = json.loads(self.request.POST.get('graph') or '{}')
 
         if self.request.GET.get('chunk') == 'prev':
             next_data = prev_graph

@@ -94,7 +94,7 @@ var CommitsController = function () {
         $('#graph_nodes').css({'padding-top': padding});
     };
 
-    this.getChunkUrl = function (page, chunk, branch) {
+    this.getChunkUrl = function (page, chunk, branch, commit_id, f_path) {
         var urlData = {
             'repo_name': templateContext.repo_name,
             'page': page,
@@ -104,12 +104,24 @@ var CommitsController = function () {
         if (branch !== undefined && branch !== '') {
             urlData['branch'] = branch;
         }
+        if (commit_id !== undefined && commit_id !== '') {
+            urlData['commit_id'] = commit_id;
+        }
+        if (f_path !== undefined && f_path !== '') {
+            urlData['f_path'] = f_path;
+        }
 
-        return pyroutes.url('repo_changelog_elements', urlData);
+        if (urlData['commit_id'] && urlData['f_path']) {
+            return pyroutes.url('repo_changelog_elements_file', urlData);
+        }
+        else {
+            return pyroutes.url('repo_changelog_elements', urlData);
+        }
+
     };
 
-    this.loadNext = function (node, page, branch) {
-        var loadUrl = this.getChunkUrl(page, 'next', branch);
+    this.loadNext = function (node, page, branch, commit_id, f_path) {
+        var loadUrl = this.getChunkUrl(page, 'next', branch, commit_id, f_path);
         var postData = {'graph': JSON.stringify(this.getCurrentGraphData())};
 
         $.post(loadUrl, postData, function (data) {
@@ -119,8 +131,8 @@ var CommitsController = function () {
         })
     };
 
-    this.loadPrev = function (node, page, branch) {
-        var loadUrl = this.getChunkUrl(page, 'prev', branch);
+    this.loadPrev = function (node, page, branch, commit_id, f_path) {
+        var loadUrl = this.getChunkUrl(page, 'prev', branch, commit_id, f_path);
         var postData = {'graph': JSON.stringify(this.getCurrentGraphData())};
 
         $.post(loadUrl, postData, function (data) {

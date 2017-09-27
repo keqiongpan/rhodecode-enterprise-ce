@@ -199,6 +199,9 @@ def includeme(config):
     config.add_route(
         name='repo_changelog_elements',
         pattern='/{repo_name:.*?[^/]}/changelog_elements', repo_route=True)
+    config.add_route(
+        name='repo_changelog_elements_file',
+        pattern='/{repo_name:.*?[^/]}/changelog_elements/{commit_id}/{f_path:.*}', repo_route=True)
 
     # Compare
     config.add_route(

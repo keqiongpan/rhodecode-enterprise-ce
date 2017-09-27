@@ -5,7 +5,7 @@
 % if c.prev_page:
     <tr>
         <td colspan="9" class="load-more-commits">
-            <a class="prev-commits" href="#loadPrevCommits" onclick="commitsController.loadPrev(this, ${c.prev_page}, '${c.branch_name}');return false">
+            <a class="prev-commits" href="#loadPrevCommits" onclick="commitsController.loadPrev(this, ${c.prev_page}, '${c.branch_name}', '${c.commit_id}', '${c.f_path}');return false">
             ${_('load previous')}
             </a>
         </td>
@@ -131,7 +131,7 @@
 % if c.next_page:
     <tr>
         <td colspan="9" class="load-more-commits">
-            <a  class="next-commits" href="#loadNextCommits" onclick="commitsController.loadNext(this, ${c.next_page}, '${c.branch_name}');return false">
+            <a  class="next-commits" href="#loadNextCommits" onclick="commitsController.loadNext(this, ${c.next_page}, '${c.branch_name}', '${c.commit_id}', '${c.f_path}');return false">
             ${_('load next')}
             </a>
         </td>

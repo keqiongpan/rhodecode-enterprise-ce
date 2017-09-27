@@ -166,6 +166,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_changelog', '/%(repo_name)s/changelog', ['repo_name']);
     pyroutes.register('repo_changelog_file', '/%(repo_name)s/changelog/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_changelog_elements', '/%(repo_name)s/changelog_elements', ['repo_name']);
+    pyroutes.register('repo_changelog_elements_file', '/%(repo_name)s/changelog_elements/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_compare_select', '/%(repo_name)s/compare', ['repo_name']);
     pyroutes.register('repo_compare', '/%(repo_name)s/compare/%(source_ref_type)s@%(source_ref)s...%(target_ref_type)s@%(target_ref)s', ['repo_name', 'source_ref_type', 'source_ref', 'target_ref_type', 'target_ref']);
     pyroutes.register('tags_home', '/%(repo_name)s/tags', ['repo_name']);
