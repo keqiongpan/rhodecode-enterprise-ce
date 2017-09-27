@@ -90,6 +90,7 @@ def LoginForm():
         password = v.UnicodeString(
             strip=False,
             min=3,
+            max=72,
             not_empty=True,
             messages={
                 'empty': _(u'Please enter a password'),
@@ -111,21 +112,21 @@ def UserForm(edit=False, available_languages=[], old_data={}):
         if edit:
             new_password = All(
                 v.ValidPassword(),
-                v.UnicodeString(strip=False, min=6, not_empty=False)
+                v.UnicodeString(strip=False, min=6, max=72, not_empty=False)
             )
             password_confirmation = All(
                 v.ValidPassword(),
-                v.UnicodeString(strip=False, min=6, not_empty=False),
+                v.UnicodeString(strip=False, min=6, max=72, not_empty=False),
             )
             admin = v.StringBoolean(if_missing=False)
         else:
             password = All(
                 v.ValidPassword(),
-                v.UnicodeString(strip=False, min=6, not_empty=True)
+                v.UnicodeString(strip=False, min=6, max=72, not_empty=True)
             )
             password_confirmation = All(
                 v.ValidPassword(),
-                v.UnicodeString(strip=False, min=6, not_empty=False)
+                v.UnicodeString(strip=False, min=6, max=72, not_empty=False)
             )
 
         password_change = v.StringBoolean(if_missing=False)
@@ -207,11 +208,11 @@ def RegisterForm(edit=False, old_data={}):
         )
         password = All(
             v.ValidPassword(),
-            v.UnicodeString(strip=False, min=6, not_empty=True)
+            v.UnicodeString(strip=False, min=6, max=72, not_empty=True)
         )
         password_confirmation = All(
             v.ValidPassword(),
-            v.UnicodeString(strip=False, min=6, not_empty=True)
+            v.UnicodeString(strip=False, min=6, max=72, not_empty=True)
         )
         active = v.StringBoolean(if_missing=False)
         firstname = v.UnicodeString(strip=True, min=1, not_empty=False)
