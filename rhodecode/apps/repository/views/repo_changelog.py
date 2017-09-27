@@ -83,7 +83,7 @@ class RepoChangelogView(RepoAppView):
         :param commits: list of commits
         """
         if not commits:
-            return json.dumps([])
+            return json.dumps([]), json.dumps([])
 
         def serialize(commit, parents=True):
             data = dict(
