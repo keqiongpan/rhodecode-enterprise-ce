@@ -443,6 +443,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
                 "fingerprint": ssh_key.ssh_key_fingerprint,
                 "description": ssh_key.description,
                 "created_on": h.format_date(ssh_key.created_on),
+                "accessed_on": h.format_date(ssh_key.accessed_on),
                 "action": h.link_to(
                     _('Edit'), h.route_path('edit_user_ssh_keys',
                                             user_id=ssh_key.user.user_id))

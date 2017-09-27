@@ -49,6 +49,8 @@ $(document).ready(function() {
                   "sort": "description"}, title: "${_('Description')}", className: "td-type"  },
          { data: {"_": "created_on",
                   "sort": "created_on"}, title: "${_('Created on')}", className: "td-time" },
+         { data: {"_": "accessed_on",
+                  "sort": "accessed_on"}, title: "${_('Accessed on')}", className: "td-time" },
          { data: {"_": "action",
                   "sort": "action"}, title: "${_('Action')}", className: "td-action", orderable: false }
       ],
