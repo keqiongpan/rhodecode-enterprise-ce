@@ -23,8 +23,10 @@ import string
 from collections import OrderedDict
 
 import deform
+import deform.widget
 import logging
 import requests
+import requests.adapters
 import colander
 from celery.task import task
 from requests.packages.urllib3.util.retry import Retry
@@ -59,6 +61,15 @@ WEBHOOK_URL_VARS = [
 
 ]
 URL_VARS = ', '.join('${' + x + '}' for x in WEBHOOK_URL_VARS)
+
+
+def get_auth(settings):
+    from requests.auth import HTTPBasicAuth
+    username = settings.get('username')
+    password = settings.get('password')
+    if username and password:
+        return HTTPBasicAuth(username, password)
+    return None
 
 
 class WebhookHandler(object):
@@ -188,6 +199,27 @@ class WebhookSettingsSchema(colander.Schema):
             placeholder='e.g. secret_token'
         ),
     )
+    username = colander.SchemaNode(
+        colander.String(),
+        title=_('Username'),
+        description=_('Optional username to authenticate the call.'),
+        default='',
+        missing='',
+        widget=deform.widget.TextInputWidget(
+            placeholder='e.g. admin'
+        ),
+    )
+    password = colander.SchemaNode(
+        colander.String(),
+        title=_('Password'),
+        description=_('Optional password to authenticate the call.'),
+        default='',
+        missing='',
+        widget=deform.widget.PasswordWidget(
+            placeholder='e.g. secret.',
+            redisplay=True,
+        ),
+    )
     custom_header_key = colander.SchemaNode(
         colander.String(),
         title=_('Custom Header Key'),
@@ -269,8 +301,8 @@ class WebhookIntegrationType(IntegrationTypeBase):
         template_url = self.settings['url']
 
         headers = {}
-        head_key = self.settings['custom_header_key']
-        head_val = self.settings['custom_header_val']
+        head_key = self.settings.get('custom_header_key')
+        head_val = self.settings.get('custom_header_val')
         if head_key and head_val:
             headers = {head_key: head_val}
 
@@ -305,12 +337,14 @@ def post_to_webhook(url_calls, settings):
 
         headers = headers or {}
         call_headers.update(headers)
+        auth = get_auth(settings)
 
-        log.debug('calling Webhook with method: %s', call_method)
+        log.debug('calling Webhook with method: %s, and auth:%s',
+                  call_method, auth)
         resp = call_method(url, json={
             'token': token,
             'event': data
-        }, headers=call_headers)
+        }, headers=call_headers, auth=auth)
         log.debug('Got Webhook response: %s', resp)
 
         resp.raise_for_status()  # raise exception on a failed request
