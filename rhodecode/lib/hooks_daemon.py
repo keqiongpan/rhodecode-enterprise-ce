@@ -109,6 +109,7 @@ class ThreadedHookCallbackDaemon(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        log.debug('Callback daemon exiting now...')
         self._stop()
 
     def _prepare(self):
@@ -135,7 +136,7 @@ class HttpHooksCallbackDaemon(ThreadedHookCallbackDaemon):
     POLL_INTERVAL = 0.1
 
     def _prepare(self):
-        log.debug("Preparing callback daemon and registering hook object")
+        log.debug("Preparing HTTP callback daemon and registering hook object")
 
         self._done = False
         self._daemon = TCPServer((self.IP_ADDRESS, 0), HooksHttpHandler)
@@ -177,6 +178,7 @@ def prepare_callback_daemon(extras, protocol, use_direct_calls):
         extras['hooks_uri'] = callback_daemon.hooks_uri
         extras['hooks_protocol'] = protocol
 
+    log.debug('Prepared a callback daemon: %s', callback_daemon)
     return callback_daemon, extras
 
 
