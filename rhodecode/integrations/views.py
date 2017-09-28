@@ -23,7 +23,7 @@ import logging
 import peppercorn
 import webhelpers.paginate
 
-from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPNotFound
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.integrations import integration_type_registry
@@ -76,7 +76,12 @@ class IntegrationSettingsViewBase(BaseAppView):
 
         if 'integration' in request.matchdict:  # integration type context
             integration_type = request.matchdict['integration']
+            if integration_type not in integration_type_registry:
+                raise HTTPNotFound()
+
             self.IntegrationType = integration_type_registry[integration_type]
+            if self.IntegrationType.is_dummy:
+                raise HTTPNotFound()
 
         if 'integration_id' in request.matchdict:  # single integration context
             integration_id = request.matchdict['integration_id']

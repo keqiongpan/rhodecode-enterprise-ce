@@ -64,23 +64,25 @@
     <a href="${home_url}" class="btn ${not c.current_IntegrationType and 'btn-primary' or ''}">${_('All')}</a>
 
     %for integration_key, IntegrationType in c.available_integrations.items():
-        <%
-        if c.repo:
-          list_url = request.route_path('repo_integrations_list',
-                                        repo_name=c.repo.repo_name,
-                                        integration=integration_key)
-        elif c.repo_group:
-          list_url = request.route_path('repo_group_integrations_list',
-                                        repo_group_name=c.repo_group.group_name,
-                                        integration=integration_key)
-        else:
-          list_url = request.route_path('global_integrations_list',
-                                       integration=integration_key)
-        %>
-      <a href="${list_url}"
-         class="btn ${c.current_IntegrationType and integration_key == c.current_IntegrationType.key and 'btn-primary' or ''}">
-        ${IntegrationType.display_name}
-      </a>
+        % if not IntegrationType.is_dummy:
+            <%
+            if c.repo:
+              list_url = request.route_path('repo_integrations_list',
+                                            repo_name=c.repo.repo_name,
+                                            integration=integration_key)
+            elif c.repo_group:
+              list_url = request.route_path('repo_group_integrations_list',
+                                            repo_group_name=c.repo_group.group_name,
+                                            integration=integration_key)
+            else:
+              list_url = request.route_path('global_integrations_list',
+                                           integration=integration_key)
+            %>
+            <a href="${list_url}"
+             class="btn ${c.current_IntegrationType and integration_key == c.current_IntegrationType.key and 'btn-primary' or ''}">
+            ${IntegrationType.display_name}
+            </a>
+        % endif
     %endfor
 
     <%

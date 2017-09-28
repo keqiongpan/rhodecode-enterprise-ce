@@ -18,11 +18,12 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
+import collections
 
 log = logging.getLogger(__name__)
 
 
-class IntegrationTypeRegistry(dict):
+class IntegrationTypeRegistry(collections.OrderedDict):
     """
     Registry Class to hold IntegrationTypes
     """

@@ -36,7 +36,7 @@
         %endif
     </%def>
 
-    %for integration, IntegrationType in c.available_integrations.items():
+    %for integration, IntegrationObject in c.available_integrations.items():
       <%
       if c.repo:
         create_url = request.route_path('repo_integrations_create',
@@ -49,16 +49,18 @@
       else:
         create_url = request.route_path('global_integrations_create',
                                         integration=integration)
+      if IntegrationObject.is_dummy:
+        create_url = request.current_route_path()
       %>
-        <a href="${create_url}" class="integration-box">
+        <a href="${create_url}" class="integration-box ${'dummy-integration' if IntegrationObject.is_dummy else ''}">
           <%widgets:panel>
             <h2>
               <div class="integration-icon">
-                  ${IntegrationType.icon|n}
+                  ${IntegrationObject.icon|n}
               </div>
-              ${IntegrationType.display_name}
+              ${IntegrationObject.display_name}
             </h2>
-            ${IntegrationType.description or _('No description available')}
+            ${IntegrationObject.description or _('No description available')}
           </%widgets:panel>
         </a>
     %endfor

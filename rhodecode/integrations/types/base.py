@@ -24,7 +24,7 @@ from rhodecode.translation import _
 
 class IntegrationTypeBase(object):
     """ Base class for IntegrationType plugins """
-
+    is_dummy = False
     description = ''
     icon = '''
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -99,3 +99,12 @@ class IntegrationTypeBase(object):
         A colander schema of settings for the integration type
         """
         return colander.Schema()
+
+
+class EEIntegration(IntegrationTypeBase):
+    description = 'Integration available in RhodeCode EE edition.'
+    is_dummy = True
+
+    def __init__(self, name, key, settings=None):
+        self.display_name = name
+        self.key = key
