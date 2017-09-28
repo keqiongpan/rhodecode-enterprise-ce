@@ -37,13 +37,37 @@ connection_available = pytest.mark.skipif(
     not check_connection(), reason="No outside internet connection available")
 
 
-@connection_available
-def test_connect_redirection_links():
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
-    for link_data in routing_links.link_config:
-        response = requests.get(link_data['target'])
-        if link_data['name'] == 'enterprise_license_convert_from_old':
-            # special case for a page that requires a valid login
-            assert response.url == 'https://rhodecode.com/login'
-        else:
-            assert response.url == link_data['external_target']
+
+def requests_retry_session(
+    retries=3,
+    backoff_factor=0.3,
+    status_forcelist=(500, 502, 504),
+    session=None,
+):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
+
+
+@connection_available
+@pytest.mark.parametrize('link_data', routing_links.link_config)
+def test_connect_redirection_links(link_data):
+    response = requests_retry_session().get(link_data['target'])
+    if link_data['name'] == 'enterprise_license_convert_from_old':
+        # special case for a page that requires a valid login
+        assert response.url == 'https://rhodecode.com/login'
+    else:
+        assert response.url == link_data['external_target']
