@@ -45,7 +45,7 @@ from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.middleware import appenlight
 from rhodecode.lib.middleware.utils import scm_app_http
 from rhodecode.lib.utils import (
-    is_valid_repo, get_rhodecode_realm, get_rhodecode_base_path, SLUG_RE)
+    is_valid_repo, get_rhodecode_base_path, SLUG_RE)
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool, safe_unicode
 from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.backends import base
@@ -53,7 +53,7 @@ from rhodecode.model import meta
 from rhodecode.model.db import User, Repository, PullRequest
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.pull_request import PullRequestModel
-
+from rhodecode.model.settings import SettingsModel
 
 log = logging.getLogger(__name__)
 
@@ -107,9 +107,9 @@ class SimpleVCS(object):
         self.config = config
         # re-populated by specialized middleware
         self.repo_vcs_config = base.Config()
-
-        # base path of repo locations
-        self.basepath = get_rhodecode_base_path()
+        self.rhodecode_settings = SettingsModel().get_all_settings(cache=True)
+        self.basepath = rhodecode.CONFIG['base_path']
+        registry.rhodecode_settings = self.rhodecode_settings
         # authenticate this VCS request using authfunc
         auth_ret_code_detection = \
             str2bool(self.config.get('auth_ret_code_detection', False))
@@ -381,7 +381,7 @@ class SimpleVCS(object):
                 # before inject the calling repo_name for special scope checks
                 self.authenticate.acl_repo_name = self.acl_repo_name
                 if not username:
-                    self.authenticate.realm = get_rhodecode_realm()
+                    self.authenticate.realm = self.authenticate.get_rc_realm()
 
                     try:
                         result = self.authenticate(environ)

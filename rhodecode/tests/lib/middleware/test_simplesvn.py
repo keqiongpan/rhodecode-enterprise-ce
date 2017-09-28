@@ -29,12 +29,12 @@ from rhodecode.lib.middleware.simplesvn import SimpleSvn, SimpleSvnApp
 
 class TestSimpleSvn(object):
     @pytest.fixture(autouse=True)
-    def simple_svn(self, pylonsapp):
+    def simple_svn(self, pylonsapp, request_stub):
         self.app = SimpleSvn(
             application='None',
             config={'auth_ret_code': '',
                     'base_path': rhodecode.CONFIG['base_path']},
-            registry=None)
+            registry=request_stub.registry)
 
     def test_get_config(self):
         extras = {'foo': 'FOO', 'bar': 'BAR'}

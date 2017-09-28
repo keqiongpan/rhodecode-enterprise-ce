@@ -45,7 +45,7 @@ from rhodecode.lib.utils import (
     get_repo_slug, set_rhodecode_config, password_changed,
     get_enabled_hook_classes)
 from rhodecode.lib.utils2 import (
-    str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist)
+    str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist, safe_str)
 from rhodecode.model import meta
 from rhodecode.model.db import Repository, User, ChangesetComment
 from rhodecode.model.notification import NotificationModel
@@ -251,6 +251,9 @@ class BasicAuth(AuthBasicAuthenticator):
         except Exception:
             log.exception('Failed to fetch response for code %s' % http_code)
             return HTTPForbidden
+
+    def get_rc_realm(self):
+        return safe_str(self.registry.rhodecode_settings.get('rhodecode_realm'))
 
     def build_authentication(self):
         head = WWW_AUTHENTICATE.tuples('Basic realm="%s"' % self.realm)

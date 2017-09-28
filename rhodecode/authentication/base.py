@@ -31,6 +31,7 @@ import warnings
 import functools
 
 from pyramid.threadlocal import get_current_registry
+from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode.authentication.interface import IAuthnPluginRegistry
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
@@ -168,6 +169,11 @@ class RhodeCodeAuthPluginBase(object):
             db_type = '{}.encrypted'.format(db_type)
         return db_type
 
+    @LazyProperty
+    def plugin_settings(self):
+        settings = SettingsModel().get_all_settings()
+        return settings
+
     def is_enabled(self):
         """
         Returns true if this plugin is enabled. An enabled plugin can be
@@ -206,9 +212,10 @@ class RhodeCodeAuthPluginBase(object):
         """
         Returns a plugin setting by name.
         """
-        full_name = self._get_setting_full_name(name)
-        db_setting = SettingsModel().get_setting_by_name(full_name)
-        return db_setting.app_settings_value if db_setting else default
+        full_name = 'rhodecode_{}'.format(self._get_setting_full_name(name))
+        plugin_settings = self.plugin_settings
+
+        return plugin_settings.get(full_name) or default
 
     def create_or_update_setting(self, name, value):
         """
