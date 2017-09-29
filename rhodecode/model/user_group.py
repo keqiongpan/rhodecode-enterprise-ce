@@ -504,18 +504,22 @@ class UserGroupModel(BaseModel):
 
     def enforce_groups(self, user, groups, extern_type=None):
         user = self._get_user(user)
-        log.debug('Enforcing groups %s on user %s', groups, user)
         current_groups = user.group_member
-        # find the external created groups
-        externals = [x.users_group for x in current_groups
-                     if 'extern_type' in x.users_group.group_data]
 
+        # find the external created groups, i.e automatically created
+        log.debug('Enforcing user group set `%s` on user %s', groups, user)
         # calculate from what groups user should be removed
-        # externals that are not in groups
-        for gr in externals:
-            if gr.users_group_name not in groups:
-                log.debug('Removing user %s from user group %s', user, gr)
-                self.remove_user_from_group(gr, user)
+        # external_groups that are not in groups
+        for gr in [x.users_group for x in current_groups]:
+            managed = gr.group_data.get('extern_type')
+            if managed:
+                if gr.users_group_name not in groups:
+                    log.debug('Removing user %s from user group %s. '
+                              'Group sync managed by: %s', user, gr, managed)
+                    self.remove_user_from_group(gr, user)
+            else:
+                log.debug('Skipping removal from group %s since it is '
+                          'not set to be automatically synchronized' % gr)
 
         # now we calculate in which groups user should be == groups params
         owner = User.get_first_super_admin().username
@@ -527,8 +531,10 @@ class UserGroupModel(BaseModel):
                 existing_group = UserGroupModel().create(
                     gr, desc, owner, group_data={'extern_type': extern_type})
 
-            # we can only add users to special groups created via plugins
-            managed = 'extern_type' in existing_group.group_data
+            # we can only add users to groups which have set sync flag via
+            # extern_type attribute.
+            # This is either set and created via plugins, or manually
+            managed = existing_group.group_data.get('extern_type')
             if managed:
                 log.debug('Adding user %s to user group %s', user, gr)
                 UserGroupModel().add_user_to_group(existing_group, user)
