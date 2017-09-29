@@ -472,6 +472,7 @@ class RhodeCodeExternalAuthPlugin(RhodeCodeAuthPluginBase):
         # at this point _authenticate calls plugin's `auth()` function
         auth = super(RhodeCodeExternalAuthPlugin, self)._authenticate(
             userobj, username, passwd, settings, **kwargs)
+
         if auth:
             # maybe plugin will clean the username ?
             # we should use the return value
@@ -540,6 +541,9 @@ class RhodeCodeExternalAuthPlugin(RhodeCodeAuthPluginBase):
             # field
             try:
                 groups = auth['groups'] or []
+                log.debug(
+                    'Performing user_group sync based on set `%s` '
+                    'returned by this plugin', groups)
                 UserGroupModel().enforce_groups(user, groups, self.name)
             except Exception:
                 # for any reason group syncing fails, we should
@@ -593,7 +597,10 @@ def authenticate(username, password, environ=None, auth_type=None,
     headers_only = environ and not (username and password)
 
     authn_registry = get_authn_registry(registry)
-    for plugin in authn_registry.get_plugins_for_authentication():
+    plugins_to_check = authn_registry.get_plugins_for_authentication()
+    log.debug('Starting ordered authentication chain using %s plugins',
+              plugins_to_check)
+    for plugin in plugins_to_check:
         plugin.set_auth_type(auth_type)
         plugin.set_calling_scope_repo(acl_repo_name)
 
