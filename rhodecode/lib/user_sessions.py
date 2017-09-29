@@ -19,9 +19,11 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import os
+import re
 import time
 import datetime
 import dateutil
+
 from rhodecode.model.db import DbSession, Session
 
 
@@ -140,11 +142,51 @@ class FileAuthSessions(BaseAuthSessions):
         return stats['callbacks']
 
 
+
 class MemcachedAuthSessions(BaseAuthSessions):
     SESSION_TYPE = 'ext:memcached'
+    _key_regex = re.compile(r'ITEM (.*_session) \[(.*); (.*)\]')
+
+    def _get_client(self):
+        import memcache
+        client = memcache.Client([self.config.get('beaker.session.url')])
+        return client
+
+    def _get_telnet_client(self, host, port):
+        import telnetlib
+        client = telnetlib.Telnet(host, port, None)
+        return client
+
+    def _run_telnet_cmd(self, client, cmd):
+        client.write("%s\n" % cmd)
+        return client.read_until('END')
+
+    def key_details(self, client, slab_ids, limit=100):
+        """  Return a list of tuples containing keys and details """
+        cmd = 'stats cachedump %s %s'
+        for slab_id in slab_ids:
+            for key in self._key_regex.finditer(
+                    self._run_telnet_cmd(client, cmd % (slab_id, limit))):
+                yield key
 
     def get_count(self):
-        return self.NOT_AVAILABLE
+        client = self._get_client()
+        count = self.NOT_AVAILABLE
+        try:
+            slabs = []
+            for server, slabs_data in client.get_slabs():
+                slabs.extend(slabs_data.keys())
+
+            host, port = client.servers[0].address
+            telnet_client = self._get_telnet_client(host, port)
+            keys = self.key_details(telnet_client, slabs)
+            count = 0
+            for _k in keys:
+                count += 1
+        except Exception:
+            return count
+
+        return count
 
     def get_expired_count(self, older_than_seconds=None):
         return self.NOT_AVAILABLE
