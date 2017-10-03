@@ -50,6 +50,10 @@
         <span class="${'commit_hash obsolete' if getattr(commit, 'obsolete', None) else 'commit_hash'}">${h.show_id(commit)}</span>
       </a>
       <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${commit.raw_id}" title="${_('Copy the full commit id')}"></i>
+    </code>
+    </td>
+    <td class="td-tags tags-col">
+      ## phase
       % if hasattr(commit, 'phase'):
           % if commit.phase != 'public':
               <span class="tag phase-${commit.phase} tooltip" title="${_('Commit phase')}">${commit.phase}</span>
@@ -69,8 +73,6 @@
               <span class="tag obsolete-${commit.hidden} tooltip" title="${_('Evolve State')}">${_('hidden')}</span>
           % endif
       % endif
-
-    </code>
     </td>
     <td class="td-message expand_commit" data-commit-id="${commit.raw_id}" title="${_('Expand commit message')}" onclick="commitsController.expandCommit(this); return false">
       <div class="show_more_col">
@@ -130,7 +132,7 @@
 
 % if c.next_page:
     <tr>
-        <td colspan="9" class="load-more-commits">
+        <td colspan="10" class="load-more-commits">
             <a  class="next-commits" href="#loadNextCommits" onclick="commitsController.loadNext(this, ${c.next_page}, '${c.branch_name}', '${c.commit_id}', '${c.f_path}');return false">
             ${_('load next')}
             </a>

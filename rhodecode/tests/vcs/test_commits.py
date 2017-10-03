@@ -390,6 +390,11 @@ class TestCommits(BackendTestMixin):
         with pytest.raises(EmptyRepositoryError):
             list(repo.get_commits(start_id='foobar'))
 
+    def test_get_commits_respects_hidden(self):
+        commits = self.repo.get_commits(show_hidden=True)
+        assert isinstance(commits, CollectionGenerator)
+        assert len(commits) == 5
+
     def test_get_commits_includes_end_commit(self):
         second_id = self.repo.commit_ids[1]
         commits = self.repo.get_commits(end_id=second_id)
@@ -401,6 +406,16 @@ class TestCommits(BackendTestMixin):
     def test_get_commits_respects_start_date(self):
         start_date = datetime.datetime(2010, 1, 2)
         commits = self.repo.get_commits(start_date=start_date)
+        assert isinstance(commits, CollectionGenerator)
+        # Should be 4 commits after 2010-01-02 00:00:00
+        assert len(commits) == 4
+        for c in commits:
+            assert c.date >= start_date
+
+    def test_get_commits_respects_start_date_with_branch(self):
+        start_date = datetime.datetime(2010, 1, 2)
+        commits = self.repo.get_commits(
+            start_date=start_date, branch_name=self.repo.DEFAULT_BRANCH_NAME)
         assert isinstance(commits, CollectionGenerator)
         # Should be 4 commits after 2010-01-02 00:00:00
         assert len(commits) == 4

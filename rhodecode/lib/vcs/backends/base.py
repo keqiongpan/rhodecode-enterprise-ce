@@ -298,7 +298,7 @@ class BaseRepository(object):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None):
         """
         Returns iterator of `BaseCommit` objects from start to end
         not inclusive. This should behave just like a list, ie. end is not
@@ -309,6 +309,7 @@ class BaseRepository(object):
         :param start_date:
         :param end_date:
         :param branch_name:
+        :param show_hidden:
         :param pre_load:
         """
         raise NotImplementedError

@@ -462,7 +462,7 @@ class MercurialRepository(BaseRepository):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None):
         """
         Returns generator of ``MercurialCommit`` objects from start to end
         (both are inclusive)
@@ -475,7 +475,8 @@ class MercurialRepository(BaseRepository):
           ``end_date`` would be filtered out from returned set
         :param branch_name: if specified, commits not reachable from given
           branch would be filtered out from returned set
-
+        :param show_hidden: Show hidden commits such as obsolete or hidden from
+            Mercurial evolve
         :raise BranchDoesNotExistError: If given ``branch_name`` does not
             exist.
         :raise CommitDoesNotExistError: If commit for given ``start`` or
@@ -510,23 +511,29 @@ class MercurialRepository(BaseRepository):
             end_pos += 1
 
         commit_filter = []
+
         if branch_name and not branch_ancestors:
-            commit_filter.append('branch("%s")' % branch_name)
+            commit_filter.append('branch("%s")' % (branch_name,))
         elif branch_name and branch_ancestors:
-            commit_filter.append('ancestors(branch("%s"))' % branch_name)
+            commit_filter.append('ancestors(branch("%s"))' % (branch_name,))
+
         if start_date and not end_date:
-            commit_filter.append('date(">%s")' % start_date)
+            commit_filter.append('date(">%s")' % (start_date,))
         if end_date and not start_date:
-            commit_filter.append('date("<%s")' % end_date)
+            commit_filter.append('date("<%s")' % (end_date,))
         if start_date and end_date:
             commit_filter.append(
                 'date(">%s") and date("<%s")' % (start_date, end_date))
 
+        if not show_hidden:
+            commit_filter.append('not obsolete()')
+            commit_filter.append('not hidden()')
+
         # TODO: johbo: Figure out a simpler way for this solution
         collection_generator = CollectionGenerator
         if commit_filter:
-            commit_filter = map(safe_str, commit_filter)
-            revisions = self._remote.rev_range(commit_filter)
+            commit_filter = ' and '.join(map(safe_str, commit_filter))
+            revisions = self._remote.rev_range([commit_filter])
             collection_generator = MercurialIndexBasedCollectionGenerator
         else:
             revisions = self.commit_ids

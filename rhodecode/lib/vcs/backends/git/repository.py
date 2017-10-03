@@ -420,7 +420,7 @@ class GitRepository(BaseRepository):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None):
         """
         Returns generator of `GitCommit` objects from start to end (both
         are inclusive), in ascending date order.
@@ -433,7 +433,8 @@ class GitRepository(BaseRepository):
           ``end_date`` would be filtered out from returned set
         :param branch_name: if specified, commits not reachable from given
           branch would be filtered out from returned set
-
+        :param show_hidden: Show hidden commits such as obsolete or hidden from
+            Mercurial evolve
         :raise BranchDoesNotExistError: If given `branch_name` does not
             exist.
         :raise CommitDoesNotExistError: If commits for given `start` or

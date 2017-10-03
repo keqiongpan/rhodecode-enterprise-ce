@@ -34,7 +34,7 @@ from rhodecode.lib.auth import (
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.graphmod import _colored, _dagwalker
 from rhodecode.lib.helpers import RepoPage
-from rhodecode.lib.utils2 import safe_int, safe_str
+from rhodecode.lib.utils2 import safe_int, safe_str, str2bool
 from rhodecode.lib.vcs.exceptions import (
     RepositoryError, CommitDoesNotExistError,
     CommitError, NodeDoesNotExistError, EmptyRepositoryError)
@@ -181,6 +181,7 @@ class RepoChangelogView(RepoAppView):
 
         commit_id = self.request.matchdict.get('commit_id')
         f_path = self._get_f_path(self.request.matchdict)
+        show_hidden = str2bool(self.request.GET.get('evolve'))
 
         chunk_size = 20
 
@@ -188,6 +189,8 @@ class RepoChangelogView(RepoAppView):
         c.book_name = book_name = self.request.GET.get('bookmark') or ''
         c.f_path = f_path
         c.commit_id = commit_id
+        c.show_hidden = show_hidden
+
         hist_limit = safe_int(self.request.GET.get('limit')) or None
 
         p = safe_int(self.request.GET.get('page', 1), 1)
@@ -227,7 +230,8 @@ class RepoChangelogView(RepoAppView):
                 collection = list(reversed(collection))
             else:
                 collection = self.rhodecode_vcs_repo.get_commits(
-                    branch_name=branch_name, pre_load=pre_load)
+                    branch_name=branch_name, show_hidden=show_hidden,
+                    pre_load=pre_load)
 
             self._load_changelog_data(
                 c, collection, p, chunk_size, c.branch_name,
@@ -279,6 +283,8 @@ class RepoChangelogView(RepoAppView):
         c = self.load_default_context()
         commit_id = self.request.matchdict.get('commit_id')
         f_path = self._get_f_path(self.request.matchdict)
+        show_hidden = str2bool(self.request.GET.get('evolve'))
+
         chunk_size = 20
         hist_limit = safe_int(self.request.GET.get('limit')) or None
 
@@ -292,6 +298,7 @@ class RepoChangelogView(RepoAppView):
         c.book_name = book_name = self.request.GET.get('bookmark') or ''
         c.f_path = f_path
         c.commit_id = commit_id
+        c.show_hidden = show_hidden
 
         c.selected_name = branch_name or book_name
         if branch_name and branch_name not in self.rhodecode_vcs_repo.branches_all:
@@ -307,7 +314,7 @@ class RepoChangelogView(RepoAppView):
             collection = list(reversed(collection))
         else:
             collection = self.rhodecode_vcs_repo.get_commits(
-                branch_name=branch_name, pre_load=pre_load)
+                branch_name=branch_name, show_hidden=show_hidden, pre_load=pre_load)
 
         p = safe_int(self.request.GET.get('page', 1), 1)
         try:

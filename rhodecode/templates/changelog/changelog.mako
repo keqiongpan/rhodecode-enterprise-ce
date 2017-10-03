@@ -83,6 +83,17 @@
                 %endif
             </div>
             ${self.breadcrumbs('breadcrumbs_light')}
+            <div class="pull-right">
+                % if h.is_hg(c.rhodecode_repo):
+                    % if c.show_hidden:
+                        <a class="action-link" href="${h.current_route_path(request, evolve=0)}">${_('Hide obsolete/hidden')}</a>
+                    % else:
+                        <a class="action-link" href="${h.current_route_path(request, evolve=1)}">${_('Show obsolete/hidden')}</a>
+                    % endif
+                % else:
+                        <span class="action-link disabled">${_('Show hidden')}</span>
+                % endif
+            </div>
             <div id="commit-counter" data-total=${c.total_cs} class="pull-right">
                 ${_ungettext('showing %d out of %d commit', 'showing %d out of %d commits', c.showing_commits) % (c.showing_commits, c.total_cs)}
             </div>
@@ -103,6 +114,8 @@
                       <th colspan="2"></th>
 
                       <th>${_('Commit')}</th>
+                      ## Mercurial phase/evolve state
+                      <th></th>
                       ## commit message expand arrow
                       <th></th>
                       <th>${_('Commit Message')}</th>
@@ -270,10 +283,14 @@
             });
             $('#branch_filter').on('change', function(e){
                 var data = $('#branch_filter').select2('data');
+                //type: branch_closed
                 var selected = data.text;
                 var filter = {'repo_name': '${c.repo_name}'};
                 if(data.type == 'branch' || data.type == 'branch_closed'){
                     filter["branch"] = selected;
+                    if (data.type == 'branch_closed') {
+                        filter["evolve"] = '1';
+                    }
                 }
                 else if (data.type == 'book'){
                     filter["bookmark"] = selected;
