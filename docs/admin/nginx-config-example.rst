@@ -127,7 +127,8 @@ Use the following example to configure Nginx as a your web server.
             proxy_pass      http://rc;
         }
 
-        ## custom 502 error page
+        ## custom 502 error page. Will be displayed while RhodeCode server
+        ## is turned off
         error_page 502 /502.html;
         location = /502.html {
            root  /path/to/.rccontrol/enterprise-1/static;

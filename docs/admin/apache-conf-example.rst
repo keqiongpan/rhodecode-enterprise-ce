@@ -95,5 +95,9 @@ Below config if for an Apache Reverse Proxy configuration.
         # Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
         #SSLOpenSSLConfCmd DHParameters "/etc/apache2/dhparam.pem"
 
+        ## custom 502 error page. Will be displayed while RhodeCode server
+        ## is turned off
+        ErrorDocument 502 /path/to/.rccontrol/enterprise-1/static/502.html
+
     </VirtualHost>
 
