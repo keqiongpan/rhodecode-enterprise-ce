@@ -89,6 +89,13 @@ Use the following example to configure Nginx as a your web server.
 
         ## serve static files by Nginx, recommended for performance
         # location /_static/rhodecode {
+        #    gzip on;
+        #    gzip_min_length  500;
+        #    gzip_proxied     any;
+        #    gzip_comp_level 4;
+        #    gzip_types  text/css text/javascript text/xml text/plain text/x-component application/javascript application/json application/xml application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
+        #    gzip_vary on;
+        #    gzip_disable     "msie6";
         #    alias /path/to/.rccontrol/enterprise-1/static;
         # }
 
