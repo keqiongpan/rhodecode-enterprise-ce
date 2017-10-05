@@ -27,4 +27,4 @@ class ModDavSvnConfigChange(RhodecodeEvent):
     configuration.
     """
     name = 'mod-dav-svn-config-change'
-    display_name = _('Configuration for Apaache mad_dav_svn changed.')
+    display_name = _('Configuration for Apache mad_dav_svn changed.')
