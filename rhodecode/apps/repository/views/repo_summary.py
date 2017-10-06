@@ -34,7 +34,8 @@ from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
 from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs.backends.base import EmptyCommit
-from rhodecode.lib.vcs.exceptions import CommitError, EmptyRepositoryError
+from rhodecode.lib.vcs.exceptions import CommitError, EmptyRepositoryError, \
+    CommitDoesNotExistError
 from rhodecode.model.db import Statistics, CacheKey, User
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import ReadmeFinder
@@ -272,7 +273,7 @@ class RepoSummaryView(RepoAppView):
                             code_stats[ext]['count'] += 1
                         else:
                             code_stats[ext] = {"count": 1, "desc": ext_info}
-            except EmptyRepositoryError:
+            except (EmptyRepositoryError, CommitDoesNotExistError):
                 pass
             return {'size': h.format_byte_size_binary(size),
                     'code_stats': code_stats}
