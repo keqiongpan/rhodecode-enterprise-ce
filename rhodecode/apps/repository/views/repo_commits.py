@@ -535,8 +535,13 @@ class RepoCommitsView(RepoAppView):
         commit_id = self.request.matchdict['commit_id']
         self.load_default_context()
 
-        commit = self.rhodecode_vcs_repo.get_commit(commit_id=commit_id)
-        result = {"results": commit.children}
+        try:
+            commit = self.rhodecode_vcs_repo.get_commit(commit_id=commit_id)
+            children = commit.children
+        except CommitDoesNotExistError:
+            children = []
+
+        result = {"results": children}
         return result
 
     @LoginRequired()
@@ -549,6 +554,10 @@ class RepoCommitsView(RepoAppView):
         commit_id = self.request.matchdict['commit_id']
         self.load_default_context()
 
-        commit = self.rhodecode_vcs_repo.get_commit(commit_id=commit_id)
-        result = {"results": commit.parents}
+        try:
+            commit = self.rhodecode_vcs_repo.get_commit(commit_id=commit_id)
+            parents = commit.parents
+        except CommitDoesNotExistError:
+            parents = []
+        result = {"results": parents}
         return result
