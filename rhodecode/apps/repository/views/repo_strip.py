@@ -70,8 +70,8 @@ class StripView(RepoAppView):
                     data[i] = {'rev': None, 'commit': h.escape(rp[chset])}
                 else:
                     data[i] = {'rev': data[i].raw_id, 'branch': data[i].branch,
-                               'author': data[i].author,
-                               'comment': data[i].message}
+                               'author': h.escape(data[i].author),
+                               'comment': h.escape(data[i].message)}
             else:
                 break
         return data
