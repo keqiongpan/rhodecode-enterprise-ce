@@ -24,17 +24,20 @@ It's implemented with basic auth function
 """
 
 import os
+import re
 import logging
 import importlib
-import re
 from functools import wraps
 
+import time
 from paste.httpheaders import REMOTE_USER, AUTH_TYPE
 from webob.exc import (
     HTTPNotFound, HTTPForbidden, HTTPNotAcceptable, HTTPInternalServerError)
 
 import rhodecode
-from rhodecode.authentication.base import authenticate, VCS_TYPE
+from rhodecode.authentication.base import (
+    authenticate, get_perms_cache_manager, VCS_TYPE)
+from rhodecode.lib import caches
 from rhodecode.lib.auth import AuthUser, HasPermissionAnyMiddleware
 from rhodecode.lib.base import (
     BasicAuth, get_ip_addr, get_user_agent, vcs_operation_context)
@@ -44,8 +47,7 @@ from rhodecode.lib.exceptions import (
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.middleware import appenlight
 from rhodecode.lib.middleware.utils import scm_app_http
-from rhodecode.lib.utils import (
-    is_valid_repo, get_rhodecode_base_path, SLUG_RE)
+from rhodecode.lib.utils import is_valid_repo, SLUG_RE
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool, safe_unicode
 from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.backends import base
@@ -242,39 +244,80 @@ class SimpleVCS(object):
     def is_shadow_repo_dir(self):
         return os.path.isdir(self.vcs_repo_name)
 
-    def _check_permission(self, action, user, repo_name, ip_addr=None):
+    def _check_permission(self, action, user, repo_name, ip_addr=None,
+                          plugin_id='', plugin_cache_active=False, cache_ttl=0):
         """
         Checks permissions using action (push/pull) user and repository
-        name
+        name. If plugin_cache and ttl is set it will use the plugin which
+        authenticated the user to store the cached permissions result for N
+        amount of seconds as in cache_ttl
 
         :param action: push or pull action
         :param user: user instance
         :param repo_name: repository name
         """
-        # check IP
-        inherit = user.inherit_default_permissions
-        ip_allowed = AuthUser.check_ip_allowed(user.user_id, ip_addr,
-                                               inherit_from_default=inherit)
-        if ip_allowed:
-            log.info('Access for IP:%s allowed', ip_addr)
-        else:
-            return False
 
-        if action == 'push':
-            if not HasPermissionAnyMiddleware('repository.write',
-                                              'repository.admin')(user,
-                                                                  repo_name):
+        # get instance of cache manager configured for a namespace
+        cache_manager = get_perms_cache_manager(custom_ttl=cache_ttl)
+        log.debug('AUTH_CACHE_TTL for permissions `%s` active: %s (TTL: %s)',
+                  plugin_id, plugin_cache_active, cache_ttl)
+
+        # for environ based password can be empty, but then the validation is
+        # on the server that fills in the env data needed for authentication
+        _perm_calc_hash = caches.compute_key_from_params(
+            plugin_id, action, user.user_id, repo_name, ip_addr)
+
+        # _authenticate is a wrapper for .auth() method of plugin.
+        # it checks if .auth() sends proper data.
+        # For RhodeCodeExternalAuthPlugin it also maps users to
+        # Database and maps the attributes returned from .auth()
+        # to RhodeCode database. If this function returns data
+        # then auth is correct.
+        start = time.time()
+        log.debug('Running plugin `%s` permissions check', plugin_id)
+
+        def perm_func():
+            """
+            This function is used internally in Cache of Beaker to calculate
+            Results
+            """
+            log.debug('auth: calculating permission access now...')
+            # check IP
+            inherit = user.inherit_default_permissions
+            ip_allowed = AuthUser.check_ip_allowed(
+                user.user_id, ip_addr, inherit_from_default=inherit)
+            if ip_allowed:
+                log.info('Access for IP:%s allowed', ip_addr)
+            else:
                 return False
 
-        else:
-            # any other action need at least read permission
-            if not HasPermissionAnyMiddleware('repository.read',
-                                              'repository.write',
-                                              'repository.admin')(user,
-                                                                  repo_name):
-                return False
+            if action == 'push':
+                perms = ('repository.write', 'repository.admin')
+                if not HasPermissionAnyMiddleware(*perms)(user, repo_name):
+                    return False
 
-        return True
+            else:
+                # any other action need at least read permission
+                perms = (
+                    'repository.read', 'repository.write', 'repository.admin')
+                if not HasPermissionAnyMiddleware(*perms)(user, repo_name):
+                    return False
+
+            return True
+
+        if plugin_cache_active:
+            log.debug('Trying to fetch cached perms by %s', _perm_calc_hash[:6])
+            perm_result = cache_manager.get(
+                _perm_calc_hash, createfunc=perm_func)
+        else:
+            perm_result = perm_func()
+
+        auth_time = time.time() - start
+        log.debug('Permissions for plugin `%s` completed in %.3fs, '
+                  'expiration time of fetched cache %.1fs.',
+                  plugin_id, auth_time, cache_ttl)
+
+        return perm_result
 
     def _check_ssl(self, environ, start_response):
         """
@@ -376,26 +419,41 @@ class SimpleVCS(object):
                 if pre_auth and pre_auth.get('username'):
                     username = pre_auth['username']
                 log.debug('PRE-AUTH got %s as username', username)
+                if pre_auth:
+                    log.debug('PRE-AUTH successful from %s',
+                              pre_auth.get('auth_data', {}).get('_plugin'))
 
                 # If not authenticated by the container, running basic auth
                 # before inject the calling repo_name for special scope checks
                 self.authenticate.acl_repo_name = self.acl_repo_name
+
+                plugin_cache_active, cache_ttl = False, 0
+                plugin = None
                 if not username:
                     self.authenticate.realm = self.authenticate.get_rc_realm()
 
                     try:
-                        result = self.authenticate(environ)
+                        auth_result = self.authenticate(environ)
                     except (UserCreationError, NotAllowedToCreateUserError) as e:
                         log.error(e)
                         reason = safe_str(e)
                         return HTTPNotAcceptable(reason)(environ, start_response)
 
-                    if isinstance(result, str):
+                    if isinstance(auth_result, dict):
                         AUTH_TYPE.update(environ, 'basic')
-                        REMOTE_USER.update(environ, result)
-                        username = result
+                        REMOTE_USER.update(environ, auth_result['username'])
+                        username = auth_result['username']
+                        plugin = auth_result.get('auth_data', {}).get('_plugin')
+                        log.info(
+                            'MAIN-AUTH successful for user `%s` from %s plugin',
+                            username, plugin)
+
+                        plugin_cache_active, cache_ttl = auth_result.get(
+                            'auth_data', {}).get('_ttl_cache') or (False, 0)
                     else:
-                        return result.wsgi_application(environ, start_response)
+                        return auth_result.wsgi_application(
+                            environ, start_response)
+
 
                 # ==============================================================
                 # CHECK PERMISSIONS FOR THIS REQUEST USING GIVEN USERNAME
@@ -417,12 +475,13 @@ class SimpleVCS(object):
 
                 # check permissions for this repository
                 perm = self._check_permission(
-                    action, user, self.acl_repo_name, ip_addr)
+                    action, user, self.acl_repo_name, ip_addr,
+                    plugin, plugin_cache_active, cache_ttl)
                 if not perm:
                     return HTTPForbidden()(environ, start_response)
 
         # extras are injected into UI object and later available
-        # in hooks executed by rhodecode
+        # in hooks executed by RhodeCode
         check_locking = _should_check_locking(environ.get('QUERY_STRING'))
         extras = vcs_operation_context(
             environ, repo_name=self.acl_repo_name, username=username,

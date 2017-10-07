@@ -277,10 +277,11 @@ class BasicAuth(AuthBasicAuthenticator):
         _parts = auth.split(':', 1)
         if len(_parts) == 2:
             username, password = _parts
-            if self.authfunc(
+            auth_data = self.authfunc(
                     username, password, environ, VCS_TYPE,
-                    registry=self.registry, acl_repo_name=self.acl_repo_name):
-                return username
+                    registry=self.registry, acl_repo_name=self.acl_repo_name)
+            if auth_data:
+                return {'username': username, 'auth_data': auth_data}
             if username and password:
                 # we mark that we actually executed authentication once, at
                 # that point we can use the alternative auth code
