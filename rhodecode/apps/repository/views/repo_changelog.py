@@ -308,7 +308,13 @@ class RepoChangelogView(RepoAppView):
         pre_load = self._get_preload_attrs()
 
         if f_path:
-            base_commit = self.rhodecode_vcs_repo.get_commit(commit_id)
+            try:
+                base_commit = self.rhodecode_vcs_repo.get_commit(commit_id)
+            except (RepositoryError, CommitDoesNotExistError, Exception) as e:
+                log.exception(safe_str(e))
+                raise HTTPFound(
+                    h.route_path('repo_changelog', repo_name=self.db_repo_name))
+
             collection = base_commit.get_file_history(
                 f_path, limit=hist_limit, pre_load=pre_load)
             collection = list(reversed(collection))
@@ -330,7 +336,10 @@ class RepoChangelogView(RepoAppView):
         prev_data = None
         next_data = None
 
-        prev_graph = json.loads(self.request.POST.get('graph') or '{}')
+        try:
+            prev_graph = json.loads(self.request.POST.get('graph') or '{}')
+        except json.JSONDecodeError:
+            prev_graph = {}
 
         if self.request.GET.get('chunk') == 'prev':
             next_data = prev_graph
