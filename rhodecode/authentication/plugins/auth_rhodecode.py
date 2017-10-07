@@ -114,7 +114,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             crypto_backend = auth.crypto_backend()
             password_encoded = safe_str(password)
             password_match, new_hash = crypto_backend.hash_check_with_upgrade(
-                password_encoded, userobj.password)
+                password_encoded, userobj.password or '')
 
             if password_match and new_hash:
                 log.debug('user %s properly authenticated, but '

@@ -256,8 +256,9 @@ class UserModel(BaseModel):
             log_create_user, check_allowed_create_user)
 
         def _password_change(new_user, password):
+            old_password = new_user.password or ''
             # empty password
-            if not new_user.password:
+            if not old_password:
                 return False
 
             # password check is only needed for RhodeCode internal auth calls
@@ -269,7 +270,7 @@ class UserModel(BaseModel):
                 if new_user.password == password:
                     return False
 
-                password_match = check_password(password, new_user.password)
+                password_match = check_password(password, old_password)
                 if not password_match:
                     return True
 
