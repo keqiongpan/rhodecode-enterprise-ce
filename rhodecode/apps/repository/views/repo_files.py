@@ -789,11 +789,19 @@ class RepoFilesView(RepoAppView):
         def _cached_nodes():
             log.debug('Generating cached nodelist for %s, %s, %s',
                       repo_name, commit_id, f_path)
-            _d, _f = ScmModel().get_nodes(
-                repo_name, commit_id, f_path, flat=False)
+            try:
+                _d, _f = ScmModel().get_nodes(
+                    repo_name, commit_id, f_path, flat=False)
+            except (RepositoryError, CommitDoesNotExistError, Exception) as e:
+                log.exception(safe_str(e))
+                h.flash(safe_str(h.escape(e)), category='error')
+                raise HTTPFound(h.route_path(
+                    'repo_files', repo_name=self.db_repo_name,
+                    commit_id='tip', f_path='/'))
             return _d + _f
 
-        cache_manager = self._get_tree_cache_manager(caches.FILE_SEARCH_TREE_META)
+        cache_manager = self._get_tree_cache_manager(
+            caches.FILE_SEARCH_TREE_META)
 
         cache_key = caches.compute_key_from_params(
             repo_name, commit_id, f_path)
