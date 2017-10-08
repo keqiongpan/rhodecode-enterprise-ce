@@ -944,6 +944,24 @@ class AuthUser(object):
         return self.get_perms(user=self, cache=False)
 
     @LazyProperty
+    def permissions_safe(self):
+        """
+        Filtered permissions excluding not allowed repositories
+        """
+        perms = self.get_perms(user=self, cache=False)
+
+        perms['repositories'] = {
+            k: v for k, v in perms['repositories'].iteritems()
+            if v != 'repository.none'}
+        perms['repositories_groups'] = {
+            k: v for k, v in perms['repositories_groups'].iteritems()
+            if v != 'group.none'}
+        perms['user_groups'] = {
+            k: v for k, v in perms['user_groups'].iteritems()
+            if v != 'usergroup.none'}
+        return perms
+
+    @LazyProperty
     def permissions_full_details(self):
         return self.get_perms(
             user=self, cache=False, calculate_super_admin=True)

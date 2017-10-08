@@ -71,6 +71,7 @@ class ChannelstreamView(object):
         except Exception:
             log.exception('Failed to decode json from request')
             raise HTTPBadRequest()
+
         try:
             channels = check_channel_permissions(
                 json_body.get('channels'),
@@ -92,7 +93,7 @@ class ChannelstreamView(object):
                 'display_name': None,
                 'display_link': None,
             }
-        user_data['permissions'] = self._rhodecode_user.permissions
+        user_data['permissions'] = self._rhodecode_user.permissions_safe
         payload = {
             'username': user.username,
             'user_state': user_data,
