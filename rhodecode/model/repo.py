@@ -18,11 +18,11 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import logging
 import os
 import re
 import shutil
 import time
+import logging
 import traceback
 import datetime
 
@@ -30,21 +30,22 @@ from pyramid.threadlocal import get_current_request
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode import events
-from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import HasUserGroupPermissionAny
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.exceptions import AttachedForksError
 from rhodecode.lib.hooks_base import log_delete_repository
+from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.utils import make_db_config
 from rhodecode.lib.utils2 import (
     safe_str, safe_unicode, remove_prefix, obfuscate_url_pw,
-    get_current_rhodecode_user, safe_int, datetime_to_time, action_logger_generic)
+    get_current_rhodecode_user, safe_int, datetime_to_time,
+    action_logger_generic)
 from rhodecode.lib.vcs.backends import get_backend
 from rhodecode.model import BaseModel
-from rhodecode.model.db import (_hash_key,
-    Repository, UserRepoToPerm, UserGroupRepoToPerm, UserRepoGroupToPerm,
-    UserGroupRepoGroupToPerm, User, Permission, Statistics, UserGroup,
-    RepoGroup, RepositoryField)
+from rhodecode.model.db import (
+    _hash_key, joinedload, or_, Repository, UserRepoToPerm, UserGroupRepoToPerm,
+    UserRepoGroupToPerm, UserGroupRepoGroupToPerm, User, Permission,
+    Statistics, UserGroup, RepoGroup, RepositoryField, UserLog)
 
 from rhodecode.model.settings import VcsSettingsModel
 
@@ -181,6 +182,17 @@ class RepoModel(BaseModel):
             return request.route_url(
                 'repo_commit', repo_name=safe_str(repo.repo_name),
                 commit_id=commit_id)
+
+    def get_repo_log(self, repo, filter_term):
+        repo_log = UserLog.query()\
+            .filter(or_(UserLog.repository_id == repo.repo_id,
+                        UserLog.repository_name == repo.repo_name))\
+            .options(joinedload(UserLog.user))\
+            .options(joinedload(UserLog.repository))\
+            .order_by(UserLog.action_date.desc())
+
+        repo_log = user_log_filter(repo_log, filter_term)
+        return repo_log
 
     @classmethod
     def update_repoinfo(cls, repositories=None):

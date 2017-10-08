@@ -431,6 +431,11 @@ def includeme(config):
         name='strip_execute',
         pattern='/{repo_name:.*?[^/]}/settings/strip_execute', repo_route=True)
 
+    # Audit logs
+    config.add_route(
+        name='edit_repo_audit_logs',
+        pattern='/{repo_name:.*?[^/]}/settings/audit_logs', repo_route=True)
+
     # ATOM/RSS Feed
     config.add_route(
         name='rss_feed_home',

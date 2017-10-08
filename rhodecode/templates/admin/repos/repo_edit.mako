@@ -85,6 +85,9 @@
           <li class="${'active' if c.active=='strip' else ''}">
               <a href="${h.route_path('edit_repo_strip', repo_name=c.repo_name)}">${_('Strip')}</a>
           </li>
+          <li class="${'active' if c.active=='audit' else ''}">
+              <a href="${h.route_path('edit_repo_audit_logs', repo_name=c.repo_name)}">${_('Audit logs')}</a>
+          </li>
 
         </ul>
     </div>
