@@ -824,6 +824,24 @@ class AuthUser(object):
     def permissions(self):
         return self.get_perms(user=self, cache=False)
 
+    @LazyProperty
+    def permissions_safe(self):
+        """
+        Filtered permissions excluding not allowed repositories
+        """
+        perms = self.get_perms(user=self, cache=False)
+
+        perms['repositories'] = {
+            k: v for k, v in perms['repositories'].iteritems()
+            if v != 'repository.none'}
+        perms['repositories_groups'] = {
+            k: v for k, v in perms['repositories_groups'].iteritems()
+            if v != 'group.none'}
+        perms['user_groups'] = {
+            k: v for k, v in perms['user_groups'].iteritems()
+            if v != 'usergroup.none'}
+        return perms
+
     def permissions_with_scope(self, scope):
         """
         Call the get_perms function with scoped data. The scope in that function
