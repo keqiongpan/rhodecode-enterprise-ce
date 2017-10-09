@@ -262,12 +262,14 @@ class RepoFilesView(RepoAppView):
             commit_id, ext, fileformat, content_type = \
                 self._get_archive_spec(fname)
         except ValueError:
-            return Response(_('Unknown archive type for: `{}`').format(fname))
+            return Response(_('Unknown archive type for: `{}`').format(
+                h.escape(fname)))
 
         try:
             commit = self.rhodecode_vcs_repo.get_commit(commit_id)
         except CommitDoesNotExistError:
-            return Response(_('Unknown commit_id %s') % commit_id)
+            return Response(_('Unknown commit_id {}').format(
+                h.escape(commit_id)))
         except EmptyRepositoryError:
             return Response(_('Empty repository'))
 
@@ -657,7 +659,7 @@ class RepoFilesView(RepoAppView):
         try:
             dir_node = commit.get_node(f_path)
         except RepositoryError as e:
-            return Response('error: {}'.format(safe_str(e)))
+            return Response('error: {}'.format(h.escape(safe_str(e))))
 
         if dir_node.is_file():
             return Response('')
