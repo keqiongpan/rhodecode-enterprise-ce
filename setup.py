@@ -131,6 +131,7 @@ install_requirements = [
     'python-memcached',
     'python-pam',
     'recaptcha-client',
+    'redis',
     'repoze.lru',
     'requests',
     'simplejson',
