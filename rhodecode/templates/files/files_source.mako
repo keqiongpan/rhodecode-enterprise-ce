@@ -6,7 +6,7 @@
             <span>
                 <strong>
                     <i class="icon-file-text"></i>
-                    ${c.file}
+                    ${c.file.unicode_path_safe}
                 </strong>
             </span>
             % if c.lf_node:

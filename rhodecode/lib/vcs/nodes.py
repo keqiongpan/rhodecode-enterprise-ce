@@ -114,7 +114,8 @@ class Node(object):
     only. Moreover, every single node is identified by the ``path`` attribute,
     so it cannot end with slash, too. Otherwise, path could lead to mistakes.
     """
-
+    RTLO_MARKER = u"\u202E"  # RTLO marker allows swapping text, and certain
+                             # security attacks could be used with this
     commit = None
 
     def __init__(self, path, kind):
@@ -147,6 +148,20 @@ class Node(object):
     @LazyProperty
     def unicode_path(self):
         return safe_unicode(self.path)
+
+    @LazyProperty
+    def has_rtlo(self):
+        """Detects if a path has right-to-left-override marker"""
+        return self.RTLO_MARKER in self.unicode_path
+
+    @LazyProperty
+    def unicode_path_safe(self):
+        """
+        Special SAFE representation of path without the right-to-left-override.
+        This should be only used for "showing" the file, cannot be used for any
+        urls etc.
+        """
+        return safe_unicode(self.path).replace(self.RTLO_MARKER, '')
 
     @LazyProperty
     def dir_path(self):
