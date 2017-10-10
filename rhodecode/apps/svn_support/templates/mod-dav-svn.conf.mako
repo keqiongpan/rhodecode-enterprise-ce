@@ -28,7 +28,7 @@
 #     </VirtualHost>
 #
 # Depending on the apache configuration you may encounter the following error if
-# you are using speecial characters in your repository or repository group
+# you are using special characters in your repository or repository group
 # names.
 #
 #    ``Error converting entry in directory '/path/to/repo' to UTF-8``

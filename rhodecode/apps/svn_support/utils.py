@@ -51,7 +51,7 @@ def generate_mod_dav_svn_config(registry):
         list_parent_path=settings[config_keys.list_parent_path],
         location_root=settings[config_keys.location_root],
         repo_groups=RepoGroup.get_all_repo_groups(),
-        realm=get_rhodecode_realm())
+        realm=get_rhodecode_realm(), template=settings[config_keys.template])
     _write_mod_dav_svn_config(config, settings[config_keys.config_file_path])
 
     # Trigger an event on mod dav svn configuration change.
@@ -60,7 +60,7 @@ def generate_mod_dav_svn_config(registry):
 
 def _render_mod_dav_svn_config(
         parent_path_root, list_parent_path, location_root, repo_groups, realm,
-        use_ssl):
+        use_ssl, template):
     """
     Render mod_dav_svn configuration to string.
     """
@@ -77,11 +77,11 @@ def _render_mod_dav_svn_config(
         'repo_group_paths': repo_group_paths,
         'svn_list_parent_path': list_parent_path,
         'rhodecode_realm': realm,
-        'use_https': use_ssl
+        'use_https': use_ssl,
     }
-
+    template = template or \
+               'rhodecode:apps/svn_support/templates/mod-dav-svn.conf.mako'
     # Render the configuration template to string.
-    template = 'rhodecode:apps/svn_support/templates/mod-dav-svn.conf.mako'
     return render(template, context)
 
 

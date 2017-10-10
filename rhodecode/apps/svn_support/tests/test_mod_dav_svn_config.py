@@ -18,10 +18,10 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
+import re
+import os
 import mock
 import pytest
-import re
 
 from pyramid import testing
 
@@ -69,7 +69,8 @@ class TestModDavSvnConfig(object):
             location_root=self.location_root,
             repo_groups=repo_groups,
             realm=self.realm,
-            use_ssl=True
+            use_ssl=True,
+            template=''
         )
         # Assert that one location directive exists for each repository group.
         for group in repo_groups:
@@ -78,6 +79,23 @@ class TestModDavSvnConfig(object):
 
         # Assert that the root location directive exists.
         self.assert_root_location_directive(generated_config)
+
+    def test_render_mod_dav_svn_config_with_alternative_template(self, tmpdir):
+        repo_groups = self.get_repo_group_mocks(count=10)
+        test_file_path = os.path.join(str(tmpdir), 'example.mako')
+        with open(test_file_path, 'wb') as f:
+            f.write('TEST_EXAMPLE\n')
+
+        generated_config = utils._render_mod_dav_svn_config(
+            parent_path_root=self.parent_path_root,
+            list_parent_path=True,
+            location_root=self.location_root,
+            repo_groups=repo_groups,
+            realm=self.realm,
+            use_ssl=True,
+            template=test_file_path
+        )
+        assert 'TEST_EXAMPLE' in generated_config
 
     @pytest.mark.parametrize('list_parent_path', [True, False])
     @pytest.mark.parametrize('use_ssl', [True, False])
@@ -88,7 +106,8 @@ class TestModDavSvnConfig(object):
             location_root=self.location_root,
             repo_groups=self.get_repo_group_mocks(count=10),
             realm=self.realm,
-            use_ssl=use_ssl
+            use_ssl=use_ssl,
+            template=''
         )
 
         # Assert that correct configuration directive is present.
