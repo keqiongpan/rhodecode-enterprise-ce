@@ -31,7 +31,7 @@ import logging
 import uuid
 
 from pyramid.view import view_config
-from webob.exc import HTTPBadRequest, HTTPForbidden, HTTPBadGateway
+from pyramid.httpexceptions import HTTPBadRequest, HTTPForbidden, HTTPBadGateway
 
 from rhodecode.lib.channelstream import (
     channelstream_request,
