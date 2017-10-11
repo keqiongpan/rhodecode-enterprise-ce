@@ -11,22 +11,31 @@
     </div>
     <div class="panel-body" id="app">
         <h3>List of Gunicorn processes on this machine</h3>
+        <%
+            def get_name(proc, cmd):
+                if 'vcsserver.ini' in cmd:
+                    return 'VCSServer'
+                elif 'rhodecode.ini' in cmd:
+                    return 'RhodeCode'
+                return proc.name()
+        %>
         <table>
         % for proc in c.gunicorn_processes:
             <% mem = proc.memory_info()%>
             <% children = proc.children(recursive=True) %>
+            <% cmd = ' '.join(proc.cmdline()) %>
             % if children:
 
             <tr>
                 <td>
                     <code>
-                    ${proc.pid} - ${proc.name()}
+                    ${proc.pid} - ${get_name(proc, cmd)}
                     </code>
                 </td>
                 <td>
                     <a href="#showCommand" onclick="$('#pid'+${proc.pid}).toggle();return false"> command </a>
                     <code id="pid${proc.pid}" style="display: none">
-                    ${' '.join(proc.cmdline())}
+                    ${cmd}
                     </code>
                 </td>
                 <td></td>
@@ -78,7 +87,7 @@
                 <td><strong>RSS:${h.format_byte_size_binary(mem_sum)}</strong></td>
                 <td></td>
             </tr>
-            <tr><td> <code> - </code> </td></tr>
+            <tr><td> <code> -- </code> </td></tr>
 
             % endif
         % endfor
