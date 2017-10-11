@@ -12,7 +12,8 @@
     <div class="panel-body" id="app">
         <h3>List of Gunicorn processes on this machine</h3>
         <%
-            def get_name(proc, cmd):
+            def get_name(proc):
+                cmd = ' '.join(proc.cmdline())
                 if 'vcsserver.ini' in cmd:
                     return 'VCSServer'
                 elif 'rhodecode.ini' in cmd:
@@ -23,19 +24,18 @@
         % for proc in c.gunicorn_processes:
             <% mem = proc.memory_info()%>
             <% children = proc.children(recursive=True) %>
-            <% cmd = ' '.join(proc.cmdline()) %>
             % if children:
 
             <tr>
                 <td>
                     <code>
-                    ${proc.pid} - ${get_name(proc, cmd)}
+                    ${proc.pid} - ${get_name(proc)}
                     </code>
                 </td>
                 <td>
                     <a href="#showCommand" onclick="$('#pid'+${proc.pid}).toggle();return false"> command </a>
                     <code id="pid${proc.pid}" style="display: none">
-                    ${cmd}
+                    ${' '.join(proc.cmdline())}
                     </code>
                 </td>
                 <td></td>
@@ -55,7 +55,7 @@
                 <tr>
                     <td>
                         <code>
-                          | ${proc_child.pid} - ${proc_child.name()}
+                          | ${proc_child.pid} - ${get_name(proc_child)}
                         </code>
                     </td>
                     <td>
