@@ -104,7 +104,7 @@ class HomeView(BaseAppView):
     def _get_repo_list(self, name_contains=None, repo_type=None, limit=20):
         allowed_ids = self._rhodecode_user.repo_acl_ids(
             ['repository.read', 'repository.write', 'repository.admin'],
-            cache=False, name_filter=name_contains)
+            cache=False, name_filter=name_contains) or [-1]
 
         query = Repository.query()\
             .order_by(func.length(Repository.repo_name))\
@@ -139,7 +139,7 @@ class HomeView(BaseAppView):
     def _get_repo_group_list(self, name_contains=None, limit=20):
         allowed_ids = self._rhodecode_user.repo_group_acl_ids(
             ['group.read', 'group.write', 'group.admin'],
-            cache=False, name_filter=name_contains)
+            cache=False, name_filter=name_contains) or [-1]
 
         query = RepoGroup.query()\
             .order_by(func.length(RepoGroup.group_name))\

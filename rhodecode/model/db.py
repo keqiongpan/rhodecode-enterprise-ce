@@ -122,6 +122,11 @@ def in_filter_generator(qry, items, limit=500):
             *in_filter_generator(Repository.repo_id, range(100000))
         )).count()
     """
+    if not items:
+        # empty list will cause empty query which might cause security issues
+        # this can lead to hidden unpleasant results
+        items = [-1]
+
     parts = []
     for chunk in xrange(0, len(items), limit):
         parts.append(
