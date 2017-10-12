@@ -160,7 +160,7 @@ class TestPullRequestModel(object):
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is True
         assert msg.eval() == 'This pull request can be automatically merged.'
-        self.merge_mock.assert_called_once_with(
+        self.merge_mock.assert_called_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id, dry_run=True,
@@ -189,7 +189,7 @@ class TestPullRequestModel(object):
         assert (
             msg.eval() ==
             'This pull request cannot be merged because of merge conflicts.')
-        self.merge_mock.assert_called_once_with(
+        self.merge_mock.assert_called_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id, dry_run=True,
@@ -221,7 +221,7 @@ class TestPullRequestModel(object):
         assert msg.eval() == (
             'This pull request cannot be merged because of an unhandled'
             ' exception.')
-        self.merge_mock.assert_called_once_with(
+        self.merge_mock.assert_called_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id, dry_run=True,
@@ -294,7 +294,7 @@ class TestPullRequestModel(object):
                 pr_title=safe_unicode(pull_request.title)
             )
         )
-        self.merge_mock.assert_called_once_with(
+        self.merge_mock.assert_called_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id,
@@ -333,7 +333,7 @@ class TestPullRequestModel(object):
                 pr_title=safe_unicode(pull_request.title)
             )
         )
-        self.merge_mock.assert_called_once_with(
+        self.merge_mock.assert_called_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id,

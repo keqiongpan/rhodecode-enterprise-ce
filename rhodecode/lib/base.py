@@ -618,12 +618,16 @@ def bootstrap_request(**kwargs):
         host = kwargs.pop('host', 'example.com:80')
         domain = kwargs.pop('domain', 'example.com')
 
+        def translate(self, msg):
+            return msg
+
     class TestDummySession(pyramid.testing.DummySession):
         def save(*arg, **kw):
             pass
 
     request = TestRequest(**kwargs)
     request.session = TestDummySession()
+
 
     config = pyramid.testing.setUp(request=request)
     add_events_routes(config)

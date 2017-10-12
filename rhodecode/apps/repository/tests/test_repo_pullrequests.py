@@ -232,8 +232,8 @@ class TestPullrequestsView(object):
             params={'update_commits': 'true',
                     'csrf_token': csrf_token})
 
-        expected_msg = PullRequestModel.UPDATE_STATUS_MESSAGES[
-            UpdateFailureReason.MISSING_SOURCE_REF]
+        expected_msg = str(PullRequestModel.UPDATE_STATUS_MESSAGES[
+            UpdateFailureReason.MISSING_SOURCE_REF])
         assert_session_flash(response, expected_msg, category='error')
 
     def test_missing_target_reference(self, pr_util, csrf_token):

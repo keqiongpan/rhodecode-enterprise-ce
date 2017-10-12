@@ -27,8 +27,20 @@ class LazyString(object):
         self.args = args
         self.kw = kw
 
-    def __str__(self):
+    def eval(self):
         return _(*self.args, **self.kw)
+
+    def __unicode__(self):
+        return unicode(self.eval())
+
+    def __str__(self):
+        return self.eval()
+
+    def __mod__(self, other):
+        return self.eval() % other
+
+    def format(self, *args):
+        return self.eval().format(*args)
 
 
 def lazy_ugettext(*args, **kw):

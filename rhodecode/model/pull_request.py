@@ -23,18 +23,17 @@
 pull request model for RhodeCode
 """
 
-from collections import namedtuple
+
 import json
 import logging
 import datetime
 import urllib
+import collections
 
-from pylons.i18n.translation import _
-from pylons.i18n.translation import lazy_ugettext
 from pyramid.threadlocal import get_current_request
-from sqlalchemy import or_
 
 from rhodecode import events
+from rhodecode.translation import lazy_ugettext#, _
 from rhodecode.lib import helpers as h, hooks_utils, diffs
 from rhodecode.lib import audit_logger
 from rhodecode.lib.compat import OrderedDict
@@ -51,7 +50,7 @@ from rhodecode.model import BaseModel
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    PullRequest, PullRequestReviewers, ChangesetStatus,
+    or_, PullRequest, PullRequestReviewers, ChangesetStatus,
     PullRequestVersion, ChangesetComment, Repository)
 from rhodecode.model.meta import Session
 from rhodecode.model.notification import NotificationModel, \
@@ -65,7 +64,7 @@ log = logging.getLogger(__name__)
 
 # Data structure to hold the response data when updating commits during a pull
 # request update.
-UpdateResponse = namedtuple('UpdateResponse', [
+UpdateResponse = collections.namedtuple('UpdateResponse', [
     'executed', 'reason', 'new', 'old', 'changes',
     'source_changed', 'target_changed'])
 
@@ -361,7 +360,7 @@ class PullRequestModel(BaseModel):
             reviewers_subquery = Session().query(
                 PullRequestReviewers.pull_request_id).filter(
                 PullRequestReviewers.user_id == user_id).subquery()
-            user_filter= or_(
+            user_filter = or_(
                 PullRequest.user_id == user_id,
                 PullRequest.pull_request_id.in_(reviewers_subquery)
             )
@@ -418,7 +417,8 @@ class PullRequestModel(BaseModel):
 
     def create(self, created_by, source_repo, source_ref, target_repo,
                target_ref, revisions, reviewers, title, description=None,
-               reviewer_data=None):
+               reviewer_data=None, translator=None):
+        translator = translator or get_current_request().translate
 
         created_by_user = self._get_user(created_by)
         source_repo = self._get_repo(source_repo)
@@ -465,6 +465,9 @@ class PullRequestModel(BaseModel):
             user=created_by_user,
             pull_request=pull_request
         )
+
+        MergeCheck.validate(
+            pull_request, user=created_by_user, translator=translator)
 
         self.notify_reviewers(pull_request, reviewer_ids)
         self._trigger_pull_request_hook(
@@ -535,13 +538,13 @@ class PullRequestModel(BaseModel):
             log.warn("Merge failed, not updating the pull request.")
         return merge_state
 
-    def _merge_pull_request(self, pull_request, user, extras):
+    def _merge_pull_request(self, pull_request, user, extras, merge_msg=None):
         target_vcs = pull_request.target_repo.scm_instance()
         source_vcs = pull_request.source_repo.scm_instance()
         target_ref = self._refresh_reference(
             pull_request.target_ref_parts, target_vcs)
 
-        message = _(
+        message = merge_msg or (
             'Merge pull request #%(pr_id)s from '
             '%(source_repo)s %(source_ref_name)s\n\n %(pr_title)s') % {
                 'pr_id': pull_request.pull_request_id,
@@ -570,12 +573,13 @@ class PullRequestModel(BaseModel):
                 close_branch=close_branch)
         return merge_state
 
-    def _comment_and_close_pr(self, pull_request, user, merge_state):
+    def _comment_and_close_pr(self, pull_request, user, merge_state, close_msg=None):
         pull_request.merge_rev = merge_state.merge_ref.commit_id
         pull_request.updated_on = datetime.datetime.now()
+        close_msg = close_msg or 'Pull request merged and closed'
 
         CommentsModel().create(
-            text=unicode(_('Pull request merged and closed')),
+            text=safe_unicode(close_msg),
             repo=pull_request.target_repo.repo_id,
             user=user.user_id,
             pull_request=pull_request.pull_request_id,
@@ -1109,7 +1113,7 @@ class PullRequestModel(BaseModel):
         status_lbl = ChangesetStatus.get_status_lbl(status)
 
         default_message = (
-            _('Closing with status change {transition_icon} {status}.')
+            'Closing with status change {transition_icon} {status}.'
         ).format(transition_icon='>', status=status_lbl)
         text = message or default_message
 
@@ -1151,13 +1155,16 @@ class PullRequestModel(BaseModel):
 
         return comment, status
 
-    def merge_status(self, pull_request):
+    def merge_status(self, pull_request, translator=None):
+        _ = translator or get_current_request().translate
+
         if not self._is_merge_enabled(pull_request):
             return False, _('Server-side pull request merging is disabled.')
         if pull_request.is_closed():
             return False, _('This pull request is closed.')
         merge_possible, msg = self._check_repo_requirements(
-            target=pull_request.target_repo, source=pull_request.source_repo)
+            target=pull_request.target_repo, source=pull_request.source_repo,
+            translator=_)
         if not merge_possible:
             return merge_possible, msg
 
@@ -1171,12 +1178,13 @@ class PullRequestModel(BaseModel):
 
         return status
 
-    def _check_repo_requirements(self, target, source):
+    def _check_repo_requirements(self, target, source, translator):
         """
         Check if `target` and `source` have compatible requirements.
 
         Currently this is just checking for largefiles.
         """
+        _ = translator
         target_has_largefiles = self._has_largefiles(target)
         source_has_largefiles = self._has_largefiles(source)
         merge_possible = True
@@ -1282,11 +1290,12 @@ class PullRequestModel(BaseModel):
         return self.MERGE_STATUS_MESSAGES[status_code]
 
     def generate_repo_data(self, repo, commit_id=None, branch=None,
-                           bookmark=None):
+                           bookmark=None, translator=None):
+
         all_refs, selected_ref = \
             self._get_repo_pullrequest_sources(
                 repo.scm_instance(), commit_id=commit_id,
-                branch=branch, bookmark=bookmark)
+                branch=branch, bookmark=bookmark, translator=translator)
 
         refs_select2 = []
         for element in all_refs:
@@ -1327,7 +1336,8 @@ class PullRequestModel(BaseModel):
             pass
 
     def _get_repo_pullrequest_sources(
-            self, repo, commit_id=None, branch=None, bookmark=None):
+            self, repo, commit_id=None, branch=None, bookmark=None,
+            translator=None):
         """
         Return a structure with repo's interesting commits, suitable for
         the selectors in pullrequest controller
@@ -1338,6 +1348,7 @@ class PullRequestModel(BaseModel):
             by default - even if closed
         :param bookmark: a bookmark that must be in the list and selected
         """
+        _ = translator or get_current_request().translate
 
         commit_id = safe_str(commit_id) if commit_id else None
         branch = safe_str(branch) if branch else None
@@ -1505,10 +1516,8 @@ class MergeCheck(object):
         )
 
     @classmethod
-    def validate(cls, pull_request, user, fail_early=False, translator=None):
-        # if migrated to pyramid...
-        # _ = lambda: translator or _  # use passed in translator if any
-
+    def validate(cls, pull_request, user, translator, fail_early=False):
+        _ = translator
         merge_check = cls()
 
         # permissions to merge
@@ -1557,7 +1566,8 @@ class MergeCheck(object):
                 return merge_check
 
         # merge possible
-        merge_status, msg = PullRequestModel().merge_status(pull_request)
+        merge_status, msg = PullRequestModel().merge_status(
+            pull_request, translator=translator)
         merge_check.merge_possible = merge_status
         merge_check.merge_msg = msg
         if not merge_status:
@@ -1572,7 +1582,8 @@ class MergeCheck(object):
         return merge_check
 
     @classmethod
-    def get_merge_conditions(cls, pull_request):
+    def get_merge_conditions(cls, pull_request, translator):
+        _ = translator
         merge_details = {}
 
         model = PullRequestModel()
@@ -1604,8 +1615,8 @@ class MergeCheck(object):
 
         return merge_details
 
-ChangeTuple = namedtuple('ChangeTuple',
-                         ['added', 'common', 'removed', 'total'])
+ChangeTuple = collections.namedtuple(
+    'ChangeTuple', ['added', 'common', 'removed', 'total'])
 
-FileChangeTuple = namedtuple('FileChangeTuple',
-                             ['added', 'modified', 'removed'])
+FileChangeTuple = collections.namedtuple(
+    'FileChangeTuple', ['added', 'modified', 'removed'])

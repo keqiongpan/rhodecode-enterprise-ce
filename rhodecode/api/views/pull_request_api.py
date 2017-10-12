@@ -274,7 +274,8 @@ def merge_pull_request(
 
     pull_request = get_pull_request_or_error(pullrequestid)
 
-    check = MergeCheck.validate(pull_request, user=apiuser)
+    check = MergeCheck.validate(
+        pull_request, user=apiuser, translator=request.translate)
     merge_possible = not check.failed
 
     if not merge_possible:

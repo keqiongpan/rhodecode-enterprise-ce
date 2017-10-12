@@ -362,12 +362,14 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         # check merge capabilities
         _merge_check = MergeCheck.validate(
-            pull_request_latest, user=self._rhodecode_user)
+            pull_request_latest, user=self._rhodecode_user,
+            translator=self.request.translate)
         c.pr_merge_errors = _merge_check.error_details
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
 
-        c.pr_merge_info = MergeCheck.get_merge_conditions(pull_request_latest)
+        c.pr_merge_info = MergeCheck.get_merge_conditions(
+            pull_request_latest, translator=self.request.translate)
 
         c.pull_request_review_status = _merge_check.review_status
         if merge_checks:
@@ -627,7 +629,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         try:
             source_repo_data = PullRequestModel().generate_repo_data(
                 source_repo, commit_id=commit_id,
-                branch=branch_ref, bookmark=bookmark_ref)
+                branch=branch_ref, bookmark=bookmark_ref, translator=self.request.translate)
         except CommitDoesNotExistError as e:
             log.exception(e)
             h.flash(_('Commit does not exist'), 'error')
@@ -643,7 +645,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 default_target_repo = source_repo.parent
 
         target_repo_data = PullRequestModel().generate_repo_data(
-            default_target_repo)
+            default_target_repo, translator=self.request.translate)
 
         selected_source_ref = source_repo_data['refs']['selected_ref']
 
@@ -676,7 +678,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         repo = Repository.get_by_repo_name(target_repo_name)
         if not repo:
             raise HTTPNotFound()
-        return PullRequestModel().generate_repo_data(repo)
+        return PullRequestModel().generate_repo_data(repo, translator=self.request.translate)
 
     @LoginRequired()
     @NotAnonymous()
@@ -806,11 +808,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         try:
             pull_request = PullRequestModel().create(
-                self._rhodecode_user.user_id, source_repo, source_ref, target_repo,
-                target_ref, commit_ids, reviewers, pullrequest_title,
-                description, reviewer_rules
+                self._rhodecode_user.user_id, source_repo, source_ref,
+                target_repo, target_ref, commit_ids, reviewers,
+                pullrequest_title, description, reviewer_rules
             )
             Session().commit()
+
             h.flash(_('Successfully opened new pull request'),
                     category='success')
         except Exception:
@@ -938,7 +941,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
 
-        check = MergeCheck.validate(pull_request, self._rhodecode_db_user)
+        check = MergeCheck.validate(pull_request, self._rhodecode_db_user,
+                                    translator=self.request.translate)
         merge_possible = not check.failed
 
         for err_type, error_msg in check.errors:
