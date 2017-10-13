@@ -208,12 +208,15 @@ class RhodeCodeAuthPluginBase(object):
         """
         return AuthnPluginSettingsSchemaBase()
 
-    def get_setting_by_name(self, name, default=None):
+    def get_setting_by_name(self, name, default=None, cache=True):
         """
         Returns a plugin setting by name.
         """
         full_name = 'rhodecode_{}'.format(self._get_setting_full_name(name))
-        plugin_settings = self.plugin_settings
+        if cache:
+            plugin_settings = self.plugin_settings
+        else:
+            plugin_settings = SettingsModel().get_all_settings()
 
         return plugin_settings.get(full_name) or default
 

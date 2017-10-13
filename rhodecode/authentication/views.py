@@ -61,7 +61,7 @@ class AuthnPluginViewBase(object):
         for node in schema:
             if node.name not in defaults:
                 defaults[node.name] = self.plugin.get_setting_by_name(
-                    node.name, node.default)
+                    node.name, node.default, cache=False)
 
         template_context = {
             'defaults': defaults,
