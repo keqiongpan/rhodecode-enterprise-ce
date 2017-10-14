@@ -125,8 +125,8 @@ class RepoSettingsView(RepoAppView):
                     % self.db_repo_name, category='error')
             # redirect to advanced for more deletion options
             raise HTTPFound(
-                h.route_path('edit_repo_advanced', repo_name=self.db_repo_name),
-                _anchor='advanced-delete')
+                h.route_path('edit_repo_advanced', repo_name=self.db_repo_name,
+                             _anchor='advanced-delete'))
 
         raise HTTPFound(h.route_path('home'))
 
