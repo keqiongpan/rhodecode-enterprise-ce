@@ -27,7 +27,8 @@ from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
-    LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
+    LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired,
+    HasRepoPermissionAny)
 from rhodecode.lib.exceptions import AttachedForksError
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.lib.vcs import RepositoryError
@@ -169,23 +170,32 @@ class RepoSettingsView(RepoAppView):
         """
         _ = self.request.translate
 
-        new_fork_id = self.request.POST.get('id_fork_of')
+        new_fork_id = safe_int(self.request.POST.get('id_fork_of'))
+
+        # valid repo, re-check permissions
+        if new_fork_id:
+            repo = Repository.get(new_fork_id)
+            # ensure we have at least read access to the repo we mark
+            perm_check = HasRepoPermissionAny(
+                'repository.read', 'repository.write', 'repository.admin')
+
+            if repo and perm_check(repo_name=repo.repo_name):
+                new_fork_id = repo.repo_id
+            else:
+                new_fork_id = None
+
         try:
-
-            if new_fork_id and not new_fork_id.isdigit():
-                log.error('Given fork id %s is not an INT', new_fork_id)
-
-            fork_id = safe_int(new_fork_id)
             repo = ScmModel().mark_as_fork(
-                self.db_repo_name, fork_id, self._rhodecode_user.user_id)
+                self.db_repo_name, new_fork_id, self._rhodecode_user.user_id)
             fork = repo.fork.repo_name if repo.fork else _('Nothing')
             Session().commit()
-            h.flash(_('Marked repo %s as fork of %s') % (self.db_repo_name, fork),
-                    category='success')
+            h.flash(
+                _('Marked repo %s as fork of %s') % (self.db_repo_name, fork),
+                category='success')
         except RepositoryError as e:
             log.exception("Repository Error occurred")
             h.flash(str(e), category='error')
-        except Exception as e:
+        except Exception:
             log.exception("Exception while editing fork")
             h.flash(_('An error occurred during this operation'),
                     category='error')
