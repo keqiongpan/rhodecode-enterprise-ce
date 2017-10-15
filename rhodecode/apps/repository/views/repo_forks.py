@@ -212,10 +212,15 @@ class RepoForksView(RepoAppView, DataGridAppView):
         _form = RepoForkForm(old_data={'repo_type': self.db_repo.repo_type},
                              repo_groups=c.repo_groups_choices,
                              landing_revs=c.landing_revs_choices)()
+        post_data = dict(self.request.POST)
+
+        # forbid injecting other repo by forging a request
+        post_data['fork_parent_id'] = self.db_repo.repo_id
+
         form_result = {}
         task_id = None
         try:
-            form_result = _form.to_python(dict(self.request.POST))
+            form_result = _form.to_python(post_data)
             # create fork is done sometimes async on celery, db transaction
             # management is handled there.
             task = RepoModel().create_fork(

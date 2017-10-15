@@ -63,6 +63,7 @@ class AdminReposView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
+    # perms check inside
     @view_config(
         route_name='repos', request_method='GET',
         renderer='rhodecode:templates/admin/repos/repos.mako')
