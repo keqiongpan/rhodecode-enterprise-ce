@@ -90,7 +90,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
         acl_check = HasRepoPermissionAny(
             'repository.read', 'repository.write', 'repository.admin')
         repo_id = self.db_repo.repo_id
-        allowed_ids = []
+        allowed_ids = [-1]
         for f in Repository.query().filter(Repository.fork_id == repo_id):
             if acl_check(f.repo_name, 'get forks check'):
                 allowed_ids.append(f.repo_id)

@@ -100,7 +100,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         auth_user_group_list = UserGroupList(
             UserGroup.query().all(), perm_set=['usergroup.admin'])
 
-        allowed_ids = []
+        allowed_ids = [-1]
         for user_group in auth_user_group_list:
                 allowed_ids.append(user_group.users_group_id)
 
