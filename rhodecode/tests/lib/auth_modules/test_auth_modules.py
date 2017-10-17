@@ -27,13 +27,14 @@ from rhodecode.authentication.plugins.auth_ldap import RhodeCodeAuthPlugin
 from rhodecode.model import db
 
 
-class TestAuthPlugin(RhodeCodeAuthPluginBase):
+class RcTestAuthPlugin(RhodeCodeAuthPluginBase):
 
     def name(self):
         return 'stub_auth'
 
+
 def test_authenticate_returns_from_auth(stub_auth_data):
-    plugin = TestAuthPlugin('stub_id')
+    plugin = RcTestAuthPlugin('stub_id')
     with mock.patch.object(plugin, 'auth') as auth_mock:
         auth_mock.return_value = stub_auth_data
         result = plugin._authenticate(mock.Mock(), 'test', 'password', {})
@@ -42,7 +43,7 @@ def test_authenticate_returns_from_auth(stub_auth_data):
 
 def test_authenticate_returns_empty_auth_data():
     auth_data = {}
-    plugin = TestAuthPlugin('stub_id')
+    plugin = RcTestAuthPlugin('stub_id')
     with mock.patch.object(plugin, 'auth') as auth_mock:
         auth_mock.return_value = auth_data
         result = plugin._authenticate(mock.Mock(), 'test', 'password', {})
@@ -51,7 +52,7 @@ def test_authenticate_returns_empty_auth_data():
 
 def test_authenticate_skips_hash_migration_if_mismatch(stub_auth_data):
     stub_auth_data['_hash_migrate'] = 'new-hash'
-    plugin = TestAuthPlugin('stub_id')
+    plugin = RcTestAuthPlugin('stub_id')
     with mock.patch.object(plugin, 'auth') as auth_mock:
         auth_mock.return_value = stub_auth_data
         result = plugin._authenticate(mock.Mock(), 'test', 'password', {})
@@ -65,7 +66,7 @@ def test_authenticate_migrates_to_new_hash(stub_auth_data):
     new_password = b'new-password'
     new_hash = _RhodeCodeCryptoBCrypt().hash_create(new_password)
     stub_auth_data['_hash_migrate'] = new_hash
-    plugin = TestAuthPlugin('stub_id')
+    plugin = RcTestAuthPlugin('stub_id')
     with mock.patch.object(plugin, 'auth') as auth_mock:
         auth_mock.return_value = stub_auth_data
         result = plugin._authenticate(
