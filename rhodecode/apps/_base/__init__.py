@@ -260,6 +260,20 @@ class RepoGroupAppView(BaseAppView):
         self.db_repo_group = request.db_repo_group
         self.db_repo_group_name = self.db_repo_group.group_name
 
+    def _revoke_perms_on_yourself(self, form_result):
+        _updates = filter(lambda u: self._rhodecode_user.user_id == int(u[0]),
+                          form_result['perm_updates'])
+        _additions = filter(lambda u: self._rhodecode_user.user_id == int(u[0]),
+                            form_result['perm_additions'])
+        _deletions = filter(lambda u: self._rhodecode_user.user_id == int(u[0]),
+                            form_result['perm_deletions'])
+        admin_perm = 'group.admin'
+        if _updates and _updates[0][1] != admin_perm or \
+           _additions and _additions[0][1] != admin_perm or \
+           _deletions and _deletions[0][1] != admin_perm:
+            return True
+        return False
+
 
 class UserGroupAppView(BaseAppView):
     def __init__(self, context, request):

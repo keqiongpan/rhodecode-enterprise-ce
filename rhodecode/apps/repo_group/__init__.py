@@ -22,7 +22,36 @@ from rhodecode.apps._base import add_route_with_slash
 
 def includeme(config):
 
-    # Summary
+    # Settings
+    config.add_route(
+        name='edit_repo_group',
+        pattern='/{repo_group_name:.*?[^/]}/_edit',
+        repo_group_route=True)
+    # update is POST on edit_repo_group
+
+    # Settings advanced
+    config.add_route(
+        name='edit_repo_group_advanced',
+        pattern='/{repo_group_name:.*?[^/]}/_settings/advanced',
+        repo_group_route=True)
+
+    config.add_route(
+        name='edit_repo_group_advanced_delete',
+        pattern='/{repo_group_name:.*?[^/]}/_settings/advanced/delete',
+        repo_group_route=True)
+
+    # settings permissions
+    config.add_route(
+        name='edit_repo_group_perms',
+        pattern='/{repo_group_name:.*?[^/]}/_settings/permissions',
+        repo_group_route=True)
+
+    config.add_route(
+        name='edit_repo_group_perms_update',
+        pattern='/{repo_group_name:.*?[^/]}/_settings/permissions/update',
+        repo_group_route=True)
+
+    # Summary, NOTE(marcink): needs to be at the end for catch-all
     add_route_with_slash(
         config,
         name='repo_group_home',
@@ -30,4 +59,3 @@ def includeme(config):
 
     # Scan module for configuration decorators.
     config.scan('.views', ignore='.tests')
-

@@ -1830,3 +1830,29 @@ def disable_anonymous_user(request, pylonsapp):
     @request.addfinalizer
     def cleanup():
         set_anonymous_access(True)
+
+
+@pytest.fixture
+def rc_fixture(request):
+    return Fixture()
+
+
+@pytest.fixture
+def repo_groups(request):
+    fixture = Fixture()
+
+    session = Session()
+    zombie_group = fixture.create_repo_group('zombie')
+    parent_group = fixture.create_repo_group('parent')
+    child_group = fixture.create_repo_group('parent/child')
+    groups_in_db = session.query(RepoGroup).all()
+    assert len(groups_in_db) == 3
+    assert child_group.group_parent_id == parent_group.group_id
+
+    @request.addfinalizer
+    def cleanup():
+        fixture.destroy_repo_group(zombie_group)
+        fixture.destroy_repo_group(child_group)
+        fixture.destroy_repo_group(parent_group)
+
+    return zombie_group, parent_group, child_group

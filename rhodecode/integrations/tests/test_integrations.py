@@ -145,7 +145,7 @@ class TestRepoIntegrationsView(TestIntegrationsView):
 
 class TestRepoGroupIntegrationsView(TestIntegrationsView):
     def test_index_no_integrations(self, test_repo_group):
-        url = '/{repo_group_name}/settings/integrations'.format(
+        url = '/{repo_group_name}/_settings/integrations'.format(
             repo_group_name=test_repo_group.group_name)
         response = self.app.get(url)
 
@@ -155,7 +155,7 @@ class TestRepoGroupIntegrationsView(TestIntegrationsView):
     def test_index_with_integrations(
             self, test_repo_group, repogroup_integration_stub):
 
-        url = '/{repo_group_name}/settings/integrations'.format(
+        url = '/{repo_group_name}/_settings/integrations'.format(
             repo_group_name=test_repo_group.group_name)
 
         stub_name = repogroup_integration_stub.name
@@ -167,7 +167,7 @@ class TestRepoGroupIntegrationsView(TestIntegrationsView):
 
     def test_new_integration_page(self, test_repo_group):
         repo_group_name = test_repo_group.group_name
-        url = '/{repo_group_name}/settings/integrations/new'.format(
+        url = '/{repo_group_name}/_settings/integrations/new'.format(
             repo_group_name=test_repo_group.group_name)
 
         response = self.app.get(url)
@@ -177,7 +177,7 @@ class TestRepoGroupIntegrationsView(TestIntegrationsView):
         for integration_key, integration_obj in integration_type_registry.items():
             if not integration_obj.is_dummy:
                 nurl = (
-                    '/{repo_group_name}/settings/integrations/{integration}/new').format(
+                    '/{repo_group_name}/_settings/integrations/{integration}/new').format(
                     repo_group_name=repo_group_name,
                     integration=integration_key)
                 response.mustcontain(nurl)
@@ -188,7 +188,7 @@ class TestRepoGroupIntegrationsView(TestIntegrationsView):
             self, test_repo_group, IntegrationType):
 
         repo_group_name = test_repo_group.group_name
-        url = ('/{repo_group_name}/settings/integrations/{integration_key}/new'
+        url = ('/{repo_group_name}/_settings/integrations/{integration_key}/new'
                ).format(repo_group_name=repo_group_name,
                         integration_key=IntegrationType.key)
 
@@ -202,7 +202,7 @@ class TestRepoGroupIntegrationsView(TestIntegrationsView):
                                    StubIntegrationType, csrf_token):
 
         repo_group_name = test_repo_group.group_name
-        url = ('/{repo_group_name}/settings/integrations/{integration_key}/new'
+        url = ('/{repo_group_name}/_settings/integrations/{integration_key}/new'
                ).format(repo_group_name=repo_group_name,
                         integration_key=StubIntegrationType.key)
 
@@ -232,9 +232,9 @@ def _post_integration_test_helper(app, url, csrf_token, repo, repo_group,
         ('repo:%s' % repo_name,
                 '/%s/settings/integrations' % repo_name),
         ('repogroup:%s' % repo_group_name,
-                '/%s/settings/integrations' % repo_group_name),
+                '/%s/_settings/integrations' % repo_group_name),
         ('repogroup-recursive:%s' % repo_group_name,
-                '/%s/settings/integrations' % repo_group_name),
+                '/%s/_settings/integrations' % repo_group_name),
     ]
 
     for scope, destination in scopes_destinations:

@@ -20,7 +20,7 @@
 
 import pytest
 
-from rhodecode.tests import TestController, url
+from rhodecode.tests import TestController
 from rhodecode.tests.fixture import Fixture
 
 
@@ -32,6 +32,8 @@ def route_path(name, params=None, **kwargs):
         'home': '/',
         'repos':
             ADMIN_PREFIX + '/repos',
+        'repo_groups':
+            ADMIN_PREFIX + '/repo_groups',
         'user_groups':
             ADMIN_PREFIX + '/user_groups',
         'user_groups_data':
@@ -65,7 +67,7 @@ class TestAdminDelegatedUser(TestController):
         response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('data: []')
 
-        response = self.app.get(url('repo_groups'), status=200)
+        response = self.app.get(route_path('repo_groups'), status=200)
         response.mustcontain('data: []')
 
         response = self.app.get(route_path('user_groups_data'),
@@ -100,7 +102,7 @@ class TestAdminDelegatedUser(TestController):
         response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_name))
 
-        response = self.app.get(url('repo_groups'), status=200)
+        response = self.app.get(route_path('repo_groups'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_group_name))
 
         response = self.app.get(route_path('user_groups_data'),
@@ -142,7 +144,7 @@ class TestAdminDelegatedUser(TestController):
         response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_name))
 
-        response = self.app.get(url('repo_groups'), status=200)
+        response = self.app.get(route_path('repo_groups'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_group_name))
 
         response = self.app.get(route_path('user_groups_data'),

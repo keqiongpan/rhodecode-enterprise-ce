@@ -71,7 +71,7 @@ def includeme(config):
 
     # repo group integrations
     config.add_route('repo_group_integrations_home',
-                     add_route_requirements('/{repo_group_name}/settings/integrations'),
+                     add_route_requirements('/{repo_group_name}/_settings/integrations'),
                      repo_group_route=True)
 
     config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
@@ -81,7 +81,7 @@ def includeme(config):
                     route_name='repo_group_integrations_home')
 
     config.add_route('repo_group_integrations_new',
-                     add_route_requirements('/{repo_group_name}/settings/integrations/new'),
+                     add_route_requirements('/{repo_group_name}/_settings/integrations/new'),
                      repo_group_route=True)
     config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
                     attr='new_integration',
@@ -90,7 +90,7 @@ def includeme(config):
                     route_name='repo_group_integrations_new')
 
     config.add_route('repo_group_integrations_list',
-                     add_route_requirements('/{repo_group_name}/settings/integrations/{integration}'),
+                     add_route_requirements('/{repo_group_name}/_settings/integrations/{integration}'),
                      repo_group_route=True,
                      custom_predicates=(valid_integration,))
     config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
@@ -100,7 +100,7 @@ def includeme(config):
                     route_name='repo_group_integrations_list')
 
     config.add_route('repo_group_integrations_create',
-                     add_route_requirements('/{repo_group_name}/settings/integrations/{integration}/new'),
+                     add_route_requirements('/{repo_group_name}/_settings/integrations/{integration}/new'),
                      repo_group_route=True,
                      custom_predicates=(valid_integration,))
     config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
@@ -115,7 +115,7 @@ def includeme(config):
                     route_name='repo_group_integrations_create')
 
     config.add_route('repo_group_integrations_edit',
-                     add_route_requirements('/{repo_group_name}/settings/integrations/{integration}/{integration_id}'),
+                     add_route_requirements('/{repo_group_name}/_settings/integrations/{integration}/{integration_id}'),
                      repo_group_route=True,
                      custom_predicates=(valid_integration,))
 

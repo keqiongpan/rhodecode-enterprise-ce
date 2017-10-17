@@ -295,6 +295,19 @@ def admin_routes(config):
         name='repo_create',
         pattern='/repos/create')
 
+    # repo groups admin
+    config.add_route(
+        name='repo_groups',
+        pattern='/repo_groups')
+
+    config.add_route(
+        name='repo_group_new',
+        pattern='/repo_group/new')
+
+    config.add_route(
+        name='repo_group_create',
+        pattern='/repo_group/create')
+
 
 def includeme(config):
     settings = config.get_settings()

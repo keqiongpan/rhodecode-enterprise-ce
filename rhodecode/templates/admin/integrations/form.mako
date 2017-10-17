@@ -14,9 +14,9 @@
   %elif c.repo_group:
     ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
-    ${h.link_to(_('Repository Groups'),h.url('repo_groups'))}
+    ${h.link_to(_('Repository Groups'),h.route_path('repo_groups'))}
     &raquo;
-    ${h.link_to(c.repo_group.group_name,h.url('edit_repo_group', group_name=c.repo_group.group_name))}
+    ${h.link_to(c.repo_group.group_name,h.route_path('edit_repo_group', repo_group_name=c.repo_group.group_name))}
     &raquo;
     ${h.link_to(_('Integrations'),request.route_url(route_name='repo_group_integrations_home', repo_group_name=c.repo_group.group_name))}
     &raquo;

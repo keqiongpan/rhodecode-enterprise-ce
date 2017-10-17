@@ -74,7 +74,7 @@
   <ul class="admin_menu submenu">
       <li><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
       <li><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
-      <li><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
+      <li><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
       <li><a href="${h.route_path('users')}">${_('Users')}</a></li>
       <li><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
       <li><a href="${h.route_path('admin_permissions_application')}">${_('Permissions')}</a></li>
@@ -148,7 +148,7 @@
       <li class="local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
    %endif
    %if repository_groups:
-      <li class="local-admin-repo-groups"><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
+      <li class="local-admin-repo-groups"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
    %endif
    %if user_groups:
       <li class="local-admin-user-groups"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>

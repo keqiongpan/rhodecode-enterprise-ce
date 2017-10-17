@@ -59,7 +59,7 @@ def _update_repo(name, **kwargs):
     return r
 
 
-class TestRepoGroups:
+class TestRepoGroups(object):
 
     @pytest.fixture(autouse=True)
     def prepare(self, request):

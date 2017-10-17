@@ -5,14 +5,14 @@
         <h3 class="panel-title">${_('Repository Group Permissions')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('edit_repo_group_perms', group_name=c.repo_group.group_name),method='put', request=request)}
+        ${h.secure_form(h.route_path('edit_repo_group_perms_update', repo_group_name=c.repo_group.group_name), request=request)}
         <table id="permissions_manage" class="rctable permissions">
             <tr>
                 <th class="td-radio">${_('None')}</th>
                 <th class="td-radio">${_('Read')}</th>
                 <th class="td-radio">${_('Write')}</th>
                 <th class="td-radio">${_('Admin')}</th>
-                <th class="td-user">${_('User/User Group')}</th>
+                <th class="td-owner">${_('User/User Group')}</th>
                 <th></th>
             </tr>
             ## USERS
@@ -25,7 +25,6 @@
                         <td class="td-radio">${h.radio('admin_perm_%s' % _user.user_id,'repository.admin', 'repository.admin', disabled="disabled")}</td>
                         <td class="td-user">
                             ${base.gravatar(_user.email, 16)}
-                            <span class="user">
                                 ${h.link_to_user(_user.username)}
                                 %if getattr(_user, 'admin_row', None):
                                     (${_('super admin')})
@@ -33,18 +32,17 @@
                                 %if getattr(_user, 'owner_row', None):
                                     (${_('owner')})
                                 %endif
-                            </span>
                         </td>
                         <td></td>
                     </tr>
                 %else:
-                    ##forbid revoking permission from yourself, except if you're an super admin
                     <tr>
+                        ##forbid revoking permission from yourself, except if you're an super admin
                         %if c.rhodecode_user.user_id != _user.user_id or c.rhodecode_user.is_admin:
-                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.none')}</td>
-                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.read')}</td>
-                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.write')}</td>
-                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.admin')}</td>
+                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.none', checked=_user.permission=='group.none')}</td>
+                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.read', checked=_user.permission=='group.read')}</td>
+                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.write', checked=_user.permission=='group.write')}</td>
+                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.admin', checked=_user.permission=='group.admin')}</td>
                         <td class="td-user">
                             ${base.gravatar(_user.email, 16)}
                             <span class="user">
@@ -89,10 +87,10 @@
             ## USER GROUPS
             %for _user_group in c.repo_group.permission_user_groups():
                 <tr id="id${id(_user_group.users_group_name)}">
-                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.none')}</td>
-                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.read')}</td>
-                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.write')}</td>
-                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.admin')}</td>
+                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.none', checked=_user_group.permission=='group.none')}</td>
+                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.read', checked=_user_group.permission=='group.read')}</td>
+                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.write', checked=_user_group.permission=='group.write')}</td>
+                    <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.admin', checked=_user_group.permission=='group.admin')}</td>
                     <td class="td-componentname">
                         <i class="icon-group" ></i>
                         %if h.HasPermissionAny('hg.admin')():

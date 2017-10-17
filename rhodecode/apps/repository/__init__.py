@@ -312,6 +312,7 @@ def includeme(config):
     config.add_route(
         name='edit_repo',
         pattern='/{repo_name:.*?[^/]}/settings', repo_route=True)
+    # update is POST on edit_repo
 
     # Settings advanced
     config.add_route(
@@ -372,7 +373,6 @@ def includeme(config):
     config.add_route(
         name='edit_repo_remote_pull',
         pattern='/{repo_name:.*?[^/]}/settings/remote/pull', repo_route=True)
-
 
     # Statistics
     config.add_route(

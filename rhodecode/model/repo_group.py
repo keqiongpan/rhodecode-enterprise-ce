@@ -254,8 +254,11 @@ class RepoGroupModel(BaseModel):
         # functions can delete this
         cleanup_group = self.check_exist_filesystem(group_name,
                                                     exc_on_failure=False)
+        user = self._get_user(owner)
+        if not user:
+            raise ValueError('Owner %s not found as rhodecode user', owner)
+
         try:
-            user = self._get_user(owner)
             new_repo_group = RepoGroup()
             new_repo_group.user = user
             new_repo_group.group_description = group_description or group_name
@@ -736,3 +739,26 @@ class RepoGroupModel(BaseModel):
             repo_group_data.append(row)
 
         return repo_group_data
+
+    def _get_defaults(self, repo_group_name):
+        repo_group = RepoGroup.get_by_group_name(repo_group_name)
+
+        if repo_group is None:
+            return None
+
+        defaults = repo_group.get_dict()
+        defaults['repo_group_name'] = repo_group.name
+        defaults['repo_group_description'] = repo_group.group_description
+        defaults['repo_group_enable_locking'] = repo_group.enable_locking
+
+        # we use -1 as this is how in HTML, we mark an empty group
+        defaults['repo_group'] = defaults['group_parent_id'] or -1
+
+        # fill owner
+        if repo_group.user:
+            defaults.update({'user': repo_group.user.username})
+        else:
+            replacement_user = User.get_first_super_admin().username
+            defaults.update({'user': replacement_user})
+
+        return defaults

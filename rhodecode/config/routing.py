@@ -172,53 +172,6 @@ def make_map(config):
     # CUSTOM ROUTES HERE
     #==========================================================================
 
-    # ADMIN REPOSITORY GROUPS ROUTES
-    with rmap.submapper(path_prefix=ADMIN_PREFIX,
-                        controller='admin/repo_groups') as m:
-        m.connect('repo_groups', '/repo_groups',
-                  action='create', conditions={'method': ['POST']})
-        m.connect('repo_groups', '/repo_groups',
-                  action='index', conditions={'method': ['GET']})
-        m.connect('new_repo_group', '/repo_groups/new',
-                  action='new', conditions={'method': ['GET']})
-        m.connect('update_repo_group', '/repo_groups/{group_name}',
-                  action='update', conditions={'method': ['PUT'],
-                                               'function': check_group},
-                  requirements=URL_NAME_REQUIREMENTS)
-
-        # EXTRAS REPO GROUP ROUTES
-        m.connect('edit_repo_group', '/repo_groups/{group_name}/edit',
-                  action='edit',
-                  conditions={'method': ['GET'], 'function': check_group},
-                  requirements=URL_NAME_REQUIREMENTS)
-        m.connect('edit_repo_group', '/repo_groups/{group_name}/edit',
-                  action='edit',
-                  conditions={'method': ['PUT'], 'function': check_group},
-                  requirements=URL_NAME_REQUIREMENTS)
-
-        m.connect('edit_repo_group_advanced', '/repo_groups/{group_name}/edit/advanced',
-                  action='edit_repo_group_advanced',
-                  conditions={'method': ['GET'], 'function': check_group},
-                  requirements=URL_NAME_REQUIREMENTS)
-        m.connect('edit_repo_group_advanced', '/repo_groups/{group_name}/edit/advanced',
-                  action='edit_repo_group_advanced',
-                  conditions={'method': ['PUT'], 'function': check_group},
-                  requirements=URL_NAME_REQUIREMENTS)
-
-        m.connect('edit_repo_group_perms', '/repo_groups/{group_name}/edit/permissions',
-                  action='edit_repo_group_perms',
-                  conditions={'method': ['GET'], 'function': check_group},
-                  requirements=URL_NAME_REQUIREMENTS)
-        m.connect('edit_repo_group_perms', '/repo_groups/{group_name}/edit/permissions',
-                  action='update_perms',
-                  conditions={'method': ['PUT'], 'function': check_group},
-                  requirements=URL_NAME_REQUIREMENTS)
-
-        m.connect('delete_repo_group', '/repo_groups/{group_name}',
-                  action='delete', conditions={'method': ['DELETE'],
-                                               'function': check_group},
-                  requirements=URL_NAME_REQUIREMENTS)
-
     # ADMIN SETTINGS ROUTES
     with rmap.submapper(path_prefix=ADMIN_PREFIX,
                         controller='admin/settings') as m:

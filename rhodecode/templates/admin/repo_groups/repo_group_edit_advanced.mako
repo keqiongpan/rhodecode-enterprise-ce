@@ -28,7 +28,7 @@
         <h3 class="panel-title">${_('Delete repository group')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('delete_repo_group', group_name=c.repo_group.group_name),method='delete', request=request)}
+        ${h.secure_form(h.route_path('edit_repo_group_advanced_delete', repo_group_name=c.repo_group.group_name), request=request)}
             <table class="display">
 
                 <tr>

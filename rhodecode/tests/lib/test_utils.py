@@ -37,7 +37,6 @@ from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import UiSetting, SettingsModel
 from rhodecode.tests.fixture import Fixture
-from rhodecode.tests import TEST_USER_ADMIN_LOGIN
 
 
 fixture = Fixture()
@@ -221,23 +220,6 @@ def platform_encodes_filenames():
     return path_with_latin1 != read_path
 
 
-@pytest.fixture
-def repo_groups(request):
-    session = meta.Session()
-    zombie_group = fixture.create_repo_group('zombie')
-    parent_group = fixture.create_repo_group('parent')
-    child_group = fixture.create_repo_group('parent/child')
-    groups_in_db = session.query(db.RepoGroup).all()
-    assert len(groups_in_db) == 3
-    assert child_group.group_parent_id == parent_group.group_id
-
-    @request.addfinalizer
-    def cleanup():
-        fixture.destroy_repo_group(zombie_group)
-        fixture.destroy_repo_group(child_group)
-        fixture.destroy_repo_group(parent_group)
-
-    return (zombie_group, parent_group, child_group)
 
 
 def test_repo2db_mapper_groups(repo_groups):

@@ -197,7 +197,7 @@ class TestAdminRepoSettings(object):
 
         assert_session_flash(
             response,
-            msg='Repository %s updated successfully' % (backend.repo_name))
+            msg='Repository `%s` updated successfully' % (backend.repo_name))
 
         repo = Repository.get_by_repo_name(backend.repo_name)
         assert repo.private is True
@@ -218,7 +218,7 @@ class TestAdminRepoSettings(object):
 
         assert_session_flash(
             response,
-            msg='Repository %s updated successfully' % (backend.repo_name))
+            msg='Repository `%s` updated successfully' % (backend.repo_name))
         assert backend.repo.private is False
 
         # we turn off private now the repo default permission should stay None

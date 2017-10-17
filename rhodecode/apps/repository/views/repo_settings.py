@@ -164,7 +164,7 @@ class RepoSettingsView(RepoAppView):
 
             Session().commit()
 
-            h.flash(_('Repository {} updated successfully').format(
+            h.flash(_('Repository `{}` updated successfully').format(
                 old_repo_name), category='success')
         except Exception:
             log.exception("Exception during update of repository")

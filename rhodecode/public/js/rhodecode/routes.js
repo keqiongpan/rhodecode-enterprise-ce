@@ -20,11 +20,11 @@ function registerRCRoutes() {
     pyroutes.register('global_integrations_list', '/_admin/integrations/%(integration)s', ['integration']);
     pyroutes.register('global_integrations_create', '/_admin/integrations/%(integration)s/new', ['integration']);
     pyroutes.register('global_integrations_edit', '/_admin/integrations/%(integration)s/%(integration_id)s', ['integration', 'integration_id']);
-    pyroutes.register('repo_group_integrations_home', '/%(repo_group_name)s/settings/integrations', ['repo_group_name']);
-    pyroutes.register('repo_group_integrations_new', '/%(repo_group_name)s/settings/integrations/new', ['repo_group_name']);
-    pyroutes.register('repo_group_integrations_list', '/%(repo_group_name)s/settings/integrations/%(integration)s', ['repo_group_name', 'integration']);
-    pyroutes.register('repo_group_integrations_create', '/%(repo_group_name)s/settings/integrations/%(integration)s/new', ['repo_group_name', 'integration']);
-    pyroutes.register('repo_group_integrations_edit', '/%(repo_group_name)s/settings/integrations/%(integration)s/%(integration_id)s', ['repo_group_name', 'integration', 'integration_id']);
+    pyroutes.register('repo_group_integrations_home', '/%(repo_group_name)s/_settings/integrations', ['repo_group_name']);
+    pyroutes.register('repo_group_integrations_new', '/%(repo_group_name)s/_settings/integrations/new', ['repo_group_name']);
+    pyroutes.register('repo_group_integrations_list', '/%(repo_group_name)s/_settings/integrations/%(integration)s', ['repo_group_name', 'integration']);
+    pyroutes.register('repo_group_integrations_create', '/%(repo_group_name)s/_settings/integrations/%(integration)s/new', ['repo_group_name', 'integration']);
+    pyroutes.register('repo_group_integrations_edit', '/%(repo_group_name)s/_settings/integrations/%(integration)s/%(integration_id)s', ['repo_group_name', 'integration', 'integration_id']);
     pyroutes.register('repo_integrations_home', '/%(repo_name)s/settings/integrations', ['repo_name']);
     pyroutes.register('repo_integrations_new', '/%(repo_name)s/settings/integrations/new', ['repo_name']);
     pyroutes.register('repo_integrations_list', '/%(repo_name)s/settings/integrations/%(integration)s', ['repo_name', 'integration']);
@@ -100,6 +100,9 @@ function registerRCRoutes() {
     pyroutes.register('repos', '/_admin/repos', []);
     pyroutes.register('repo_new', '/_admin/repos/new', []);
     pyroutes.register('repo_create', '/_admin/repos/create', []);
+    pyroutes.register('repo_groups', '/_admin/repo_groups', []);
+    pyroutes.register('repo_group_new', '/_admin/repo_group/new', []);
+    pyroutes.register('repo_group_create', '/_admin/repo_group/create', []);
     pyroutes.register('channelstream_connect', '/_admin/channelstream/connect', []);
     pyroutes.register('channelstream_subscribe', '/_admin/channelstream/subscribe', []);
     pyroutes.register('channelstream_proxy', '/_channelstream', []);
@@ -223,6 +226,11 @@ function registerRCRoutes() {
     pyroutes.register('atom_feed_home', '/%(repo_name)s/feed/atom', ['repo_name']);
     pyroutes.register('repo_summary', '/%(repo_name)s', ['repo_name']);
     pyroutes.register('repo_summary_slash', '/%(repo_name)s/', ['repo_name']);
+    pyroutes.register('edit_repo_group', '/%(repo_group_name)s/_edit', ['repo_group_name']);
+    pyroutes.register('edit_repo_group_advanced', '/%(repo_group_name)s/_settings/advanced', ['repo_group_name']);
+    pyroutes.register('edit_repo_group_advanced_delete', '/%(repo_group_name)s/_settings/advanced/delete', ['repo_group_name']);
+    pyroutes.register('edit_repo_group_perms', '/%(repo_group_name)s/_settings/permissions', ['repo_group_name']);
+    pyroutes.register('edit_repo_group_perms_update', '/%(repo_group_name)s/_settings/permissions/update', ['repo_group_name']);
     pyroutes.register('repo_group_home', '/%(repo_group_name)s', ['repo_group_name']);
     pyroutes.register('repo_group_home_slash', '/%(repo_group_name)s/', ['repo_group_name']);
     pyroutes.register('user_group_members_data', '/_admin/user_groups/%(user_group_id)s/members', ['user_group_id']);

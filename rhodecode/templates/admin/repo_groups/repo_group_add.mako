@@ -11,7 +11,7 @@
 <%def name="breadcrumbs_links()">
     ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
-    ${h.link_to(_('Repository groups'),h.url('repo_groups'))}
+    ${h.link_to(_('Repository groups'),h.route_path('repo_groups'))}
     &raquo;
     ${_('Add Repository Group')}
 </%def>
@@ -27,7 +27,7 @@
         ${self.breadcrumbs()}
     </div>
     <!-- end box / title -->
-    ${h.secure_form(h.url('repo_groups'), request=request)}
+    ${h.secure_form(h.route_path('repo_group_create'), request=request)}
     <div class="form">
         <!-- fields -->
         <div class="fields">
