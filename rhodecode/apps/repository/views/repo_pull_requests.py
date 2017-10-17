@@ -36,7 +36,8 @@ from rhodecode.lib import helpers as h, diffs, codeblocks, channelstream
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
-    LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous, CSRFRequired)
+    LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
+    NotAnonymous, CSRFRequired)
 from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode
 from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
 from rhodecode.lib.vcs.exceptions import (CommitDoesNotExistError,
@@ -771,6 +772,36 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         # find the ancestor for this pr
         source_db_repo = Repository.get_by_repo_name(_form['source_repo'])
         target_db_repo = Repository.get_by_repo_name(_form['target_repo'])
+
+        # re-check permissions again here
+        # source_repo we must have read permissions
+
+        source_perm = HasRepoPermissionAny(
+            'repository.read',
+            'repository.write', 'repository.admin')(source_db_repo.repo_name)
+        if not source_perm:
+            msg = _('Not Enough permissions to source repo `{}`.'.format(
+                source_db_repo.repo_name))
+            h.flash(msg, category='error')
+            # copy the args back to redirect
+            org_query = self.request.GET.mixed()
+            raise HTTPFound(
+                h.route_path('pullrequest_new', repo_name=self.db_repo_name,
+                             _query=org_query))
+
+        # target repo we must have write permissions, and also later on
+        # we want to check branch permissions here
+        target_perm = HasRepoPermissionAny(
+            'repository.write', 'repository.admin')(target_db_repo.repo_name)
+        if not target_perm:
+            msg = _('Not Enough permissions to target repo `{}`.'.format(
+                target_db_repo.repo_name))
+            h.flash(msg, category='error')
+            # copy the args back to redirect
+            org_query = self.request.GET.mixed()
+            raise HTTPFound(
+                h.route_path('pullrequest_new', repo_name=self.db_repo_name,
+                             _query=org_query))
 
         source_scm = source_db_repo.scm_instance()
         target_scm = target_db_repo.scm_instance()
