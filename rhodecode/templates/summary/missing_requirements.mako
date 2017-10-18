@@ -1,4 +1,4 @@
-<%inherit file="/summary/base.mako"/>
+<%inherit file="/summary/summary_base.mako"/>
 
 <%namespace name="components" file="/summary/components.mako"/>
 
