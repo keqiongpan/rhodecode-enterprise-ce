@@ -35,7 +35,6 @@ var select2RefBaseSwitcher = function(targetElement, loadUrl, initialData){
   $(targetElement).select2({
     cachedDataSource: {},
     dropdownAutoWidth: true,
-    formatResult: formatResult,
     width: "resolve",
     containerCssClass: "drop-menu",
     dropdownCssClass: "drop-menu-dropdown",
@@ -59,11 +58,10 @@ var select2RefBaseSwitcher = function(targetElement, loadUrl, initialData){
         });
       }
     },
-
     initSelection: function(element, callback) {
       callback(initialData);
     },
-
+    formatResult: formatResult,
     formatSelection: formatSelection
   });
 

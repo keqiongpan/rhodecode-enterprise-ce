@@ -241,7 +241,7 @@ var formatSelect2SelectionRefs = function(commit_ref){
   } else if (commit_ref.type === 'book'){
     tmpl = tmpl.concat('<i class="icon-bookmark"></i> ');
   }
-  return tmpl.concat(commit_ref.text);
+  return tmpl.concat(escapeHtml(commit_ref.text));
 };
 
 // takes a given html element and scrolls it down offset pixels
