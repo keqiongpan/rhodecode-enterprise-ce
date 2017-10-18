@@ -635,13 +635,24 @@ class TestCreateOrUpdateGlobalGitSettings(object):
 
 
 class TestDeleteRepoSvnPattern(object):
-    def test_success_when_repo_is_set(self, backend_svn):
+    def test_success_when_repo_is_set(self, backend_svn, settings_util):
+        repo = backend_svn.create_repo()
+        repo_name = repo.repo_name
+
+        model = VcsSettingsModel(repo=repo_name)
+        entry = settings_util.create_repo_rhodecode_ui(
+            repo, VcsSettingsModel.SVN_BRANCH_SECTION, 'svn-branch')
+        Session().commit()
+
+        model.delete_repo_svn_pattern(entry.ui_id)
+
+    def test_fail_when_delete_id_from_other_repo(self, backend_svn):
         repo_name = backend_svn.repo_name
         model = VcsSettingsModel(repo=repo_name)
         delete_ui_patch = mock.patch.object(model.repo_settings, 'delete_ui')
         with delete_ui_patch as delete_ui_mock:
             model.delete_repo_svn_pattern(123)
-        delete_ui_mock.assert_called_once_with(123)
+        delete_ui_mock.assert_called_once_with(-1)
 
     def test_raises_exception_when_repository_is_not_specified(self):
         model = VcsSettingsModel()

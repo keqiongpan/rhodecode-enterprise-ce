@@ -44,8 +44,9 @@ SOCIAL_PLUGINS_LIST = ['github', 'bitbucket', 'twitter', 'google']
 
 
 class SettingNotFound(Exception):
-    def __init__(self):
-        super(SettingNotFound, self).__init__('Setting is not found')
+    def __init__(self, setting_id):
+        msg = 'Setting `{}` is not found'.format(setting_id)
+        super(SettingNotFound, self).__init__(msg)
 
 
 class SettingsModel(BaseModel):
@@ -155,7 +156,7 @@ class SettingsModel(BaseModel):
     def delete_ui(self, id_):
         ui = self.UiDbModel.get(id_)
         if not ui:
-            raise SettingNotFound()
+            raise SettingNotFound(id_)
         Session().delete(ui)
 
     def get_setting_by_name(self, name):
@@ -635,7 +636,13 @@ class VcsSettingsModel(object):
 
     @assert_repo_settings
     def delete_repo_svn_pattern(self, id_):
-        self.repo_settings.delete_ui(id_)
+        ui = self.repo_settings.UiDbModel.get(id_)
+        if ui and ui.repository.repo_name == self.repo_settings.repo:
+            # only delete if it's the same repo as initialized settings
+            self.repo_settings.delete_ui(id_)
+        else:
+            # raise error as if we wouldn't find this option
+            self.repo_settings.delete_ui(-1)
 
     def delete_global_svn_pattern(self, id_):
         self.global_settings.delete_ui(id_)
