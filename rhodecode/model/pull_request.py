@@ -164,6 +164,10 @@ class PullRequestModel(BaseModel):
                                     pull_request.reviewers]
         return self.check_user_update(pull_request, user, api) or reviewer
 
+    def check_user_comment(self, pull_request, user):
+        owner = user.user_id == pull_request.user_id
+        return self.check_user_read(pull_request, user) or owner
+
     def get(self, pull_request):
         return self.__get_pull_request(pull_request)
 

@@ -679,7 +679,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         repo = Repository.get_by_repo_name(target_repo_name)
         if not repo:
             raise HTTPNotFound()
-        return PullRequestModel().generate_repo_data(repo, translator=self.request.translate)
+        return PullRequestModel().generate_repo_data(
+            repo, translator=self.request.translate)
 
     @LoginRequired()
     @NotAnonymous()
@@ -1079,6 +1080,13 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         if pull_request.is_closed():
             log.debug('comment: forbidden because pull request is closed')
+            raise HTTPForbidden()
+
+        allowed_to_comment = PullRequestModel().check_user_comment(
+            pull_request, self._rhodecode_user)
+        if not allowed_to_comment:
+            log.debug(
+                'comment: forbidden because pull request is from forbidden repo')
             raise HTTPForbidden()
 
         c = self.load_default_context()
