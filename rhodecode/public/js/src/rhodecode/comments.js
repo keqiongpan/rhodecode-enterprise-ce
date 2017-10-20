@@ -670,7 +670,7 @@ var CommentsController = function() {
           var lineno = self.getLineNumber(node);
           // create a new HTML from template
           var tmpl = $('#cb-comment-inline-form-template').html();
-          tmpl = tmpl.format(f_path, lineno);
+          tmpl = tmpl.format(escapeHtml(f_path), lineno);
           $form = $(tmpl);
 
           var $comments = $td.find('.inline-comments');
