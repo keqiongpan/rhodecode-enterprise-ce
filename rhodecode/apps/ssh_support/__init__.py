@@ -45,10 +45,6 @@ def _sanitize_settings_and_apply_defaults(settings):
     _string_setting(settings, config_keys.authorized_keys_line_ssh_opts, '',
                     lower=False)
 
-    _string_setting(settings, config_keys.ssh_api_key, '',
-                    lower=False)
-    _string_setting(settings, config_keys.ssh_api_host, '',
-                    lower=False)
     _string_setting(settings, config_keys.ssh_hg_bin,
                     '~/.rccontrol/vcsserver-1/profile/bin/hg',
                     lower=False)

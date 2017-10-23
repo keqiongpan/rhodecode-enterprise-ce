@@ -26,7 +26,7 @@ from time import sleep
 import pytest
 from mock import patch, Mock, MagicMock, call
 
-from rhodecode.apps.ssh_support.lib.ssh_wrapper import SubversionTunnelWrapper
+from rhodecode.apps.ssh_support.lib.backends.svn import SubversionTunnelWrapper
 from rhodecode.tests import no_newline_id_generator
 
 

@@ -66,7 +66,7 @@ def _generate_ssh_authorized_keys_file(
         raise OSError('Access to file {} is without read access'.format(
             authorized_keys_file_path))
 
-    line_tmpl = '{ssh_opts},command="{wrapper_command} {ini_path} --user-id={user_id} --user={user}" {key}\n'
+    line_tmpl = '{ssh_opts},command="{wrapper_command} {ini_path} --user-id={user_id} --user={user} --key-id={user_key_id}" {key}\n'
 
     fd, tmp_authorized_keys = tempfile.mkstemp(
         '.authorized_keys_write',
@@ -87,7 +87,9 @@ def _generate_ssh_authorized_keys_file(
                 wrapper_command=ssh_wrapper_cmd,
                 ini_path=ini_path,
                 user_id=user_id,
-                user=username, key=user_key.ssh_key_data))
+                user=username,
+                user_key_id=user_key.ssh_key_id,
+                key=user_key.ssh_key_data))
         log.debug('addkey: Key added for user: `%s`', username)
     keys_file.close()
 

@@ -28,9 +28,6 @@ wrapper_cmd = 'ssh.wrapper_cmd'
 wrapper_allow_shell = 'ssh.wrapper_cmd_allow_shell'
 enable_debug_logging = 'ssh.enable_debug_logging'
 
-ssh_api_key = 'ssh.api_key'
-ssh_api_host = 'ssh.api_host'
-
 ssh_hg_bin = 'ssh.executable.hg'
 ssh_git_bin = 'ssh.executable.git'
 ssh_svn_bin = 'ssh.executable.svn'

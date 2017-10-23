@@ -21,9 +21,9 @@
 import json
 
 import pytest
-from mock import Mock, patch, call
+from mock import Mock, patch
 
-from rhodecode.apps.ssh_support.lib.ssh_wrapper import GitServer
+from rhodecode.apps.ssh_support.lib.backends.git import GitServer
 
 
 @pytest.fixture

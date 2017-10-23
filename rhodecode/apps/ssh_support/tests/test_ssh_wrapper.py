@@ -33,9 +33,6 @@ def dummy_conf(tmpdir):
     conf.set('app:main', 'ssh.executable.git', '/usr/bin/git')
     conf.set('app:main', 'ssh.executable.svn', '/usr/bin/svnserve')
 
-    conf.set('app:main', 'ssh.api_key', 'xxx')
-    conf.set('app:main', 'ssh.api_host', 'http://localhost')
-
     f_path = os.path.join(str(tmpdir), 'ssh_wrapper_test.ini')
     with open(f_path, 'wb') as f:
         conf.write(f)

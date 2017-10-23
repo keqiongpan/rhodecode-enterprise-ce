@@ -19,9 +19,9 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import pytest
-from mock import Mock, patch, call
+from mock import Mock, patch
 
-from rhodecode.apps.ssh_support.lib.ssh_wrapper import SubversionServer
+from rhodecode.apps.ssh_support.lib.backends.svn import SubversionServer
 
 
 @pytest.fixture
