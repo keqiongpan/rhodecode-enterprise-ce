@@ -21,6 +21,7 @@
 import logging
 import datetime
 
+from rhodecode.lib.jsonalchemy import JsonRaw
 from rhodecode.model import meta
 from rhodecode.model.db import User, UserLog, Repository
 
@@ -120,13 +121,13 @@ def _store_log(action_name, action_data, user_id, username, user_data,
     user_log.version = UserLog.VERSION_2
 
     user_log.action = action_name
-    user_log.action_data = action_data
+    user_log.action_data = action_data or JsonRaw(u'{}')
 
     user_log.user_ip = ip_address
 
     user_log.user_id = user_id
     user_log.username = username
-    user_log.user_data = user_data
+    user_log.user_data = user_data or JsonRaw(u'{}')
 
     user_log.repository_id = repository_id
     user_log.repository_name = repository_name
