@@ -209,9 +209,9 @@ class Hooks(object):
 
     def _call_hook(self, hook, extras):
         extras = AttributeDict(extras)
+        server_url = extras['server_url']
 
-        extras.request = bootstrap_request(
-            application_url=extras['server_url'])
+        extras.request = bootstrap_request(application_url=server_url)
 
         try:
             result = hook(extras)
@@ -229,6 +229,7 @@ class Hooks(object):
         finally:
             meta.Session.remove()
 
+        log.debug('Got hook call response %s', result)
         return {
             'status': result.status,
             'output': result.output,

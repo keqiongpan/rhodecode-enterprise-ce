@@ -17,185 +17,38 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-import os
-import mock
+
 import pytest
-import ConfigParser
-
-from rhodecode.apps.ssh_support.lib.ssh_wrapper import SshWrapper
 
 
-@pytest.fixture
-def dummy_conf(tmpdir):
-    conf = ConfigParser.ConfigParser()
-    conf.add_section('app:main')
-    conf.set('app:main', 'ssh.executable.hg', '/usr/bin/hg')
-    conf.set('app:main', 'ssh.executable.git', '/usr/bin/git')
-    conf.set('app:main', 'ssh.executable.svn', '/usr/bin/svnserve')
+class TestSSHWrapper(object):
 
-    f_path = os.path.join(str(tmpdir), 'ssh_wrapper_test.ini')
-    with open(f_path, 'wb') as f:
-        conf.write(f)
+    def test_serve_raises_an_exception_when_vcs_is_not_recognized(self, ssh_wrapper):
+        with pytest.raises(Exception) as exc_info:
+            ssh_wrapper.serve(
+                vcs='microsoft-tfs', repo='test-repo', mode=None, user='test',
+                permissions={})
+        assert exc_info.value.message == 'Unrecognised VCS: microsoft-tfs'
 
-    return os.path.join(f_path)
+    def test_parse_config(self, ssh_wrapper):
+        config = ssh_wrapper.parse_config(ssh_wrapper.ini_path)
+        assert config
 
+    def test_get_connection_info(self, ssh_wrapper):
+        conn_info = ssh_wrapper.get_connection_info()
+        assert {'client_ip': '127.0.0.1',
+                'client_port': '22',
+                'server_ip': '10.0.0.1',
+                'server_port': '443'} == conn_info
 
-class TestGetRepoDetails(object):
-    @pytest.mark.parametrize(
-        'command', [
-            'hg -R test-repo serve --stdio',
-            'hg     -R      test-repo      serve       --stdio'
-        ])
-    def test_hg_command_matched(self, command, dummy_conf):
-        wrapper = SshWrapper(command, 'auto', 'admin', '3', 'False', dummy_conf)
-        type_, name, mode = wrapper.get_repo_details('auto')
-        assert type_ == 'hg'
-        assert name == 'test-repo'
-        assert mode is 'auto'
+    @pytest.mark.parametrize('command, vcs', [
+        ('xxx', None),
+        ('svnserve -t', 'svn'),
+        ('hg -R repo serve --stdio', 'hg'),
+        ('git-receive-pack \'repo.git\'', 'git'),
 
-    @pytest.mark.parametrize(
-        'command', [
-            'hg test-repo serve --stdio',
-            'hg -R test-repo serve',
-            'hg serve --stdio',
-            'hg serve -R test-repo'
-        ])
-    def test_hg_command_not_matched(self, command, dummy_conf):
-        wrapper = SshWrapper(command, 'auto', 'admin', '3', 'False', dummy_conf)
-        type_, name, mode = wrapper.get_repo_details('auto')
-        assert type_ is None
-        assert name is None
-        assert mode is 'auto'
-
-
-class TestServe(object):
-    def test_serve_raises_an_exception_when_vcs_is_not_recognized(self, dummy_conf):
-        with mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_repo_store'):
-            wrapper = SshWrapper('random command', 'auto', 'admin', '3', 'False', dummy_conf)
-
-            with pytest.raises(Exception) as exc_info:
-                wrapper.serve(
-                    vcs='microsoft-tfs', repo='test-repo', mode=None, user='test',
-                    permissions={})
-            assert exc_info.value.message == 'Unrecognised VCS: microsoft-tfs'
-
-
-class TestServeHg(object):
-
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.invalidate_cache')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_user_permissions')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_repo_store')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.MercurialServer.run')
-    def test_serve_creates_hg_instance(
-            self, mercurial_run_mock, get_repo_store_mock, get_user_mock,
-            invalidate_cache_mock, dummy_conf):
-
-        repo_name = None
-        mercurial_run_mock.return_value = 0, True
-        get_user_mock.return_value = {repo_name: 'repository.admin'}
-        get_repo_store_mock.return_value = {'path': '/tmp'}
-
-        wrapper = SshWrapper('date', 'hg', 'admin', '3', 'False',
-                             dummy_conf)
-        exit_code = wrapper.wrap()
-        assert exit_code == 0
-        assert mercurial_run_mock.called
-
-        assert get_repo_store_mock.called
-        assert get_user_mock.called
-        invalidate_cache_mock.assert_called_once_with(repo_name)
-
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.invalidate_cache')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_user_permissions')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_repo_store')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.MercurialServer.run')
-    def test_serve_hg_invalidates_cache(
-            self, mercurial_run_mock, get_repo_store_mock, get_user_mock,
-            invalidate_cache_mock, dummy_conf):
-
-        repo_name = None
-        mercurial_run_mock.return_value = 0, True
-        get_user_mock.return_value = {repo_name: 'repository.admin'}
-        get_repo_store_mock.return_value = {'path': '/tmp'}
-
-        wrapper = SshWrapper('date', 'hg', 'admin', '3', 'False',
-                             dummy_conf)
-        exit_code = wrapper.wrap()
-        assert exit_code == 0
-        assert mercurial_run_mock.called
-
-        assert get_repo_store_mock.called
-        assert get_user_mock.called
-        invalidate_cache_mock.assert_called_once_with(repo_name)
-
-
-class TestServeGit(object):
-
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.invalidate_cache')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_user_permissions')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_repo_store')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.GitServer.run')
-    def test_serve_creates_git_instance(self, git_run_mock, get_repo_store_mock, get_user_mock,
-            invalidate_cache_mock, dummy_conf):
-        repo_name = None
-        git_run_mock.return_value = 0, True
-        get_user_mock.return_value = {repo_name: 'repository.admin'}
-        get_repo_store_mock.return_value = {'path': '/tmp'}
-
-        wrapper = SshWrapper('date', 'git', 'admin', '3', 'False',
-                             dummy_conf)
-
-        exit_code = wrapper.wrap()
-        assert exit_code == 0
-        assert git_run_mock.called
-        assert get_repo_store_mock.called
-        assert get_user_mock.called
-        invalidate_cache_mock.assert_called_once_with(repo_name)
-
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.invalidate_cache')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_user_permissions')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_repo_store')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.GitServer.run')
-    def test_serve_git_invalidates_cache(
-            self, git_run_mock, get_repo_store_mock, get_user_mock,
-            invalidate_cache_mock, dummy_conf):
-        repo_name = None
-        git_run_mock.return_value = 0, True
-        get_user_mock.return_value = {repo_name: 'repository.admin'}
-        get_repo_store_mock.return_value = {'path': '/tmp'}
-
-        wrapper = SshWrapper('date', 'git', 'admin', '3', 'False', dummy_conf)
-
-        exit_code = wrapper.wrap()
-        assert exit_code == 0
-        assert git_run_mock.called
-
-        assert get_repo_store_mock.called
-        assert get_user_mock.called
-        invalidate_cache_mock.assert_called_once_with(repo_name)
-
-
-class TestServeSvn(object):
-
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.invalidate_cache')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_user_permissions')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.RhodeCodeApiClient.get_repo_store')
-    @mock.patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.SubversionServer.run')
-    def test_serve_creates_svn_instance(
-            self, svn_run_mock, get_repo_store_mock, get_user_mock,
-            invalidate_cache_mock, dummy_conf):
-
-        repo_name = None
-        svn_run_mock.return_value = 0, True
-        get_user_mock.return_value = {repo_name: 'repository.admin'}
-        get_repo_store_mock.return_value = {'path': '/tmp'}
-
-        wrapper = SshWrapper('date', 'svn', 'admin', '3', 'False', dummy_conf)
-
-        exit_code = wrapper.wrap()
-        assert exit_code == 0
-        assert svn_run_mock.called
-
-        assert get_repo_store_mock.called
-        assert get_user_mock.called
-        invalidate_cache_mock.assert_called_once_with(repo_name)
+    ])
+    def test_get_repo_details(self, ssh_wrapper, command, vcs):
+        ssh_wrapper.command = command
+        vcs_type, repo_name, mode = ssh_wrapper.get_repo_details(mode='auto')
+        assert vcs_type == vcs

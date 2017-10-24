@@ -628,7 +628,6 @@ def bootstrap_request(**kwargs):
     request = TestRequest(**kwargs)
     request.session = TestDummySession()
 
-
     config = pyramid.testing.setUp(request=request)
     add_events_routes(config)
     return request

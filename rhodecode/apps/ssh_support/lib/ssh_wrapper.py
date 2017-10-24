@@ -67,12 +67,14 @@ def main(ini_path, mode, user, user_id, key_id, shell, debug):
             'Please make sure this is set and available during execution '
             'of this script.')
     connection_info = os.environ.get('SSH_CONNECTION', '')
-    request = Request.blank('/', base_url='http://rhodecode-ssh-wrapper/')
+
+    # TODO(marcink): configure the running host...
+    request = Request.blank('/', base_url='http://localhost:8080')
     with bootstrap(ini_path, request=request) as env:
         try:
             ssh_wrapper = SshWrapper(
                 command, connection_info, mode,
-                user, user_id, key_id, shell, ini_path)
+                user, user_id, key_id, shell, ini_path, env)
         except Exception:
             log.exception('Failed to execute SshWrapper')
             sys.exit(-5)

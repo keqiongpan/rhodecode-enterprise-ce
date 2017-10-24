@@ -18,15 +18,11 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import mock
 import pytest
-from mock import Mock, patch
 
 from rhodecode.apps.ssh_support.lib.backends.hg import MercurialServer
-
-
-@pytest.fixture
-def hg_server():
-    return MercurialServerCreator()
+from rhodecode.apps.ssh_support.tests.conftest import dummy_env, dummy_user
 
 
 class MercurialServerCreator(object):
@@ -35,112 +31,86 @@ class MercurialServerCreator(object):
 
     config_data = {
         'app:main': {
-            'ssh.executable.hg': hg_path
+            'ssh.executable.hg': hg_path,
+            'vcs.hooks.protocol': 'http',
         }
     }
     repo_name = 'test_hg'
-    user = 'vcs'
+    user = dummy_user()
 
     def __init__(self):
         def config_get(part, key):
             return self.config_data.get(part, {}).get(key)
-        self.config_mock = Mock()
-        self.config_mock.get = Mock(side_effect=config_get)
+        self.config_mock = mock.Mock()
+        self.config_mock.get = mock.Mock(side_effect=config_get)
 
     def create(self, **kwargs):
         parameters = {
-            'store': {'path': self.root},
+            'store': self.root,
             'ini_path': '',
             'user': self.user,
             'repo_name': self.repo_name,
             'user_permissions': {
-                'test_hg': 'repo_admin'
+                'test_hg': 'repository.admin'
             },
             'config': self.config_mock,
+            'env': dummy_env()
         }
         parameters.update(kwargs)
         server = MercurialServer(**parameters)
         return server
 
 
+@pytest.fixture
+def hg_server(app):
+    return MercurialServerCreator()
+
+
 class TestMercurialServer(object):
-    def test_read_only_command(self, hg_server):
+
+    def test_command(self, hg_server):
         server = hg_server.create()
-        server.read_only = True
         expected_command = (
-            'cd {root}; {hg_path} -R {root}{repo_name} serve --stdio'
-            ' --config hooks.pretxnchangegroup="false"'.format(
+            'cd {root}; {hg_path} -R {root}{repo_name} serve --stdio'.format(
                 root=hg_server.root, hg_path=hg_server.hg_path,
                 repo_name=hg_server.repo_name)
         )
-        assert expected_command == server.command
+        assert expected_command == server.tunnel.command()
 
-    def test_normal_command(self, hg_server):
+    @pytest.mark.parametrize('permissions, action, code', [
+        ({}, 'pull', -2),
+        ({'test_hg': 'repository.read'}, 'pull', 0),
+        ({'test_hg': 'repository.read'}, 'push', -2),
+        ({'test_hg': 'repository.write'}, 'push', 0),
+        ({'test_hg': 'repository.admin'}, 'push', 0),
+
+    ])
+    def test_permission_checks(self, hg_server, permissions, action, code):
+        server = hg_server.create(user_permissions=permissions)
+        result = server._check_permissions(action)
+        assert result is code
+
+    @pytest.mark.parametrize('permissions, value', [
+        ({}, False),
+        ({'test_hg': 'repository.read'}, False),
+        ({'test_hg': 'repository.write'}, True),
+        ({'test_hg': 'repository.admin'}, True),
+
+    ])
+    def test_has_write_permissions(self, hg_server, permissions, value):
+        server = hg_server.create(user_permissions=permissions)
+        result = server.has_write_perm()
+        assert result is value
+
+    def test_run_returns_executes_command(self, hg_server):
         server = hg_server.create()
-        server.read_only = False
-        expected_command = (
-            'cd {root}; {hg_path} -R {root}{repo_name} serve --stdio '.format(
-                root=hg_server.root, hg_path=hg_server.hg_path,
-                repo_name=hg_server.repo_name)
-        )
-        assert expected_command == server.command
-
-    def test_access_rejected_when_permissions_are_not_found(self, hg_server, caplog):
-        user_permissions = {}
-        server = hg_server.create(user_permissions=user_permissions)
-        result = server._check_permissions()
-        assert result is False
-
-        log_msg = 'repo not found or no permissions'
-        assert log_msg in [t[2] for t in caplog.record_tuples]
-
-    def test_access_rejected_when_no_permissions(self, hg_server, caplog):
-        user_permissions = {hg_server.repo_name: 'repository.none'}
-        server = hg_server.create(user_permissions=user_permissions)
-        result = server._check_permissions()
-        assert result is False
-
-        log_msg = 'repo not found or no permissions'
-        assert log_msg in [t[2] for t in caplog.record_tuples]
-
-    @pytest.mark.parametrize(
-        'permission', ['repository.admin', 'repository.write'])
-    def test_access_allowed_when_user_has_write_permissions(
-            self, hg_server, permission, caplog):
-        user_permissions = {hg_server.repo_name: permission}
-        server = hg_server.create(user_permissions=user_permissions)
-        result = server._check_permissions()
-        assert result is True
-
-        assert server.read_only is False
-        log_msg = 'Write Permissions for User "vcs" granted to repo "test_hg"!'
-        assert log_msg in [t[2] for t in caplog.record_tuples]
-
-    def test_access_allowed_when_user_has_read_permissions(self, hg_server, caplog):
-        user_permissions = {hg_server.repo_name: 'repository.read'}
-        server = hg_server.create(user_permissions=user_permissions)
-        result = server._check_permissions()
-        assert result is True
-
-        assert server.read_only is True
-        log_msg = 'Only Read Only access for User "%s" granted to repo "%s"!' % (
-            hg_server.user, hg_server.repo_name)
-        assert log_msg in [t[2] for t in caplog.record_tuples]
-
-    def test_run_returns_exit_code_2_when_no_permissions(self, hg_server, caplog):
-        server = hg_server.create()
-        with patch.object(server, '_check_permissions') as permissions_mock:
-            permissions_mock.return_value = False
-            exit_code = server.run()
-            assert exit_code == (2, False)
-
-    def test_run_returns_executes_command(self, hg_server, caplog):
-        server = hg_server.create()
-        with patch.object(server, '_check_permissions') as permissions_mock:
-            with patch('os.system') as system_mock:
-                permissions_mock.return_value = True
-                system_mock.return_value = 0
+        from rhodecode.apps.ssh_support.lib.backends.hg import MercurialTunnelWrapper
+        with mock.patch.object(MercurialTunnelWrapper, 'create_hooks_env') as _patch:
+            _patch.return_value = 0
+            with mock.patch.object(MercurialTunnelWrapper, 'command', return_value='date'):
                 exit_code = server.run()
 
-        system_mock.assert_called_once_with(server.command)
         assert exit_code == (0, False)
+
+
+

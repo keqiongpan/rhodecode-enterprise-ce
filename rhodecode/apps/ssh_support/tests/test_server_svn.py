@@ -18,15 +18,11 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import mock
 import pytest
-from mock import Mock, patch
 
 from rhodecode.apps.ssh_support.lib.backends.svn import SubversionServer
-
-
-@pytest.fixture
-def svn_server():
-    return SubversionServerCreator()
+from rhodecode.apps.ssh_support.tests.conftest import dummy_env, dummy_user
 
 
 class SubversionServerCreator(object):
@@ -34,103 +30,95 @@ class SubversionServerCreator(object):
     svn_path = '/usr/local/bin/svnserve'
     config_data = {
         'app:main': {
-            'ssh.executable.svn': svn_path
+            'ssh.executable.svn': svn_path,
+            'vcs.hooks.protocol': 'http',
         }
     }
     repo_name = 'test-svn'
-    user = 'vcs'
+    user = dummy_user()
 
     def __init__(self):
         def config_get(part, key):
             return self.config_data.get(part, {}).get(key)
-        self.config_mock = Mock()
-        self.config_mock.get = Mock(side_effect=config_get)
+        self.config_mock = mock.Mock()
+        self.config_mock.get = mock.Mock(side_effect=config_get)
 
     def create(self, **kwargs):
         parameters = {
-            'store': {'path': self.root},
+            'store': self.root,
+            'repo_name': self.repo_name,
             'ini_path': '',
             'user': self.user,
             'user_permissions': {
-                self.repo_name: 'repo_admin'
+                self.repo_name: 'repository.admin'
             },
             'config': self.config_mock,
+            'env': dummy_env()
         }
+
         parameters.update(kwargs)
         server = SubversionServer(**parameters)
         return server
 
 
+@pytest.fixture
+def svn_server(app):
+    return SubversionServerCreator()
+
+
 class TestSubversionServer(object):
-    def test_timeout_returns_value_from_config(self, svn_server):
+    def test_command(self, svn_server):
         server = svn_server.create()
-        assert server.timeout == 30
+        expected_command = [
+            svn_server.svn_path, '-t', '--config-file',
+            server.tunnel.svn_conf_path, '-r', svn_server.root
+        ]
 
-    @pytest.mark.parametrize(
-        'permission', ['repository.admin', 'repository.write'])
-    def test_check_permissions_with_write_permissions(
-            self, svn_server, permission):
-        user_permissions = {svn_server.repo_name: permission}
-        server = svn_server.create(user_permissions=user_permissions)
-        server.tunnel = Mock()
-        server.repo_name = svn_server.repo_name
-        result = server._check_permissions()
-        assert result is True
-        assert server.tunnel.read_only is False
+        assert expected_command == server.tunnel.command()
 
-    def test_check_permissions_with_read_permissions(self, svn_server):
-        user_permissions = {svn_server.repo_name: 'repository.read'}
-        server = svn_server.create(user_permissions=user_permissions)
-        server.tunnel = Mock()
-        server.repo_name = svn_server.repo_name
-        result = server._check_permissions()
-        assert result is True
-        assert server.tunnel.read_only is True
+    @pytest.mark.parametrize('permissions, action, code', [
+        ({}, 'pull', -2),
+        ({'test-svn': 'repository.read'}, 'pull', 0),
+        ({'test-svn': 'repository.read'}, 'push', -2),
+        ({'test-svn': 'repository.write'}, 'push', 0),
+        ({'test-svn': 'repository.admin'}, 'push', 0),
 
-    def test_check_permissions_with_no_permissions(self, svn_server, caplog):
-        tunnel_mock = Mock()
-        user_permissions = {}
-        server = svn_server.create(user_permissions=user_permissions)
-        server.tunnel = tunnel_mock
-        server.repo_name = svn_server.repo_name
-        result = server._check_permissions()
-        assert result is False
-        tunnel_mock.fail.assert_called_once_with(
-            "Not enough permissions for repository {}".format(
-                svn_server.repo_name))
+    ])
+    def test_permission_checks(self, svn_server, permissions, action, code):
+        server = svn_server.create(user_permissions=permissions)
+        result = server._check_permissions(action)
+        assert result is code
 
-    def test_run_returns_1_when_repository_name_cannot_be_extracted(
-            self, svn_server):
+    def test_run_returns_executes_command(self, svn_server):
         server = svn_server.create()
-        with patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.SubversionTunnelWrapper') as tunnel_mock:
-            tunnel_mock().get_first_client_response.return_value = None
-            exit_code = server.run()
+        from rhodecode.apps.ssh_support.lib.backends.svn import SubversionTunnelWrapper
+        with mock.patch.object(
+                SubversionTunnelWrapper, 'get_first_client_response',
+                return_value={'url': 'http://server/test-svn'}):
+            with mock.patch.object(
+                    SubversionTunnelWrapper, 'patch_first_client_response',
+                    return_value=0):
+                with mock.patch.object(
+                        SubversionTunnelWrapper, 'sync',
+                        return_value=0):
+                    with mock.patch.object(
+                            SubversionTunnelWrapper, 'command',
+                            return_value='date'):
+
+                        exit_code = server.run()
+        # SVN has this differently configured, and we get in our mock env
+        # None as return code
+        assert exit_code == (None, False)
+
+    def test_run_returns_executes_command_that_cannot_extract_repo_name(self, svn_server):
+        server = svn_server.create()
+        from rhodecode.apps.ssh_support.lib.backends.svn import SubversionTunnelWrapper
+        with mock.patch.object(
+                SubversionTunnelWrapper, 'command',
+                return_value='date'):
+            with mock.patch.object(
+                    SubversionTunnelWrapper, 'get_first_client_response',
+                    return_value=None):
+                    exit_code = server.run()
+
         assert exit_code == (1, False)
-        tunnel_mock().fail.assert_called_once_with(
-            'Repository name cannot be extracted')
-
-    def test_run_returns_tunnel_return_code(self, svn_server, caplog):
-        server = svn_server.create()
-        fake_response = {
-            'url': 'ssh+svn://test@example.com/test-svn/'
-        }
-        with patch('rhodecode.apps.ssh_support.lib.ssh_wrapper.SubversionTunnelWrapper') as tunnel_mock:
-            with patch.object(server, '_check_permissions') as (
-                    permissions_mock):
-                permissions_mock.return_value = True
-                tunnel = tunnel_mock()
-                tunnel.get_first_client_response.return_value = fake_response
-                tunnel.return_code = 0
-                exit_code = server.run()
-        permissions_mock.assert_called_once_with()
-
-        expected_log_calls = sorted([
-            "Using subversion binaries from '%s'" % svn_server.svn_path
-        ])
-
-        assert expected_log_calls == [t[2] for t in caplog.record_tuples]
-
-        assert exit_code == (0, False)
-        tunnel.patch_first_client_response.assert_called_once_with(
-            fake_response)
-        tunnel.sync.assert_called_once_with()
