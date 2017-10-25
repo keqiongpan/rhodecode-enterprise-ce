@@ -20,8 +20,7 @@
 
 import click
 
-from pyramid.paster import bootstrap
-from pyramid.request import Request
+from rhodecode.lib.pyramid_utils import bootstrap
 import pyramid.paster
 
 
@@ -30,8 +29,7 @@ import pyramid.paster
 def main(ini_path):
     pyramid.paster.setup_logging(ini_path)
 
-    request = Request.blank('/', base_url='https://rhodecode-app.com/')
-    with bootstrap(ini_path, request=request) as env:
+    with bootstrap(ini_path) as env:
         print(env['request'].application_url)
 
 
