@@ -24,9 +24,9 @@ import logging
 
 import click
 
-from pyramid.paster import bootstrap, setup_logging
-from pyramid.request import Request
+from pyramid.paster import setup_logging
 
+from rhodecode.lib.pyramid_utils import bootstrap
 from .backends import SshWrapper
 
 log = logging.getLogger(__name__)
@@ -68,9 +68,7 @@ def main(ini_path, mode, user, user_id, key_id, shell, debug):
             'of this script.')
     connection_info = os.environ.get('SSH_CONNECTION', '')
 
-    # TODO(marcink): configure the running host...
-    request = Request.blank('/', base_url='http://localhost:8080')
-    with bootstrap(ini_path, request=request) as env:
+    with bootstrap(ini_path) as env:
         try:
             ssh_wrapper = SshWrapper(
                 command, connection_info, mode,
