@@ -16,19 +16,19 @@ In order to have install and configure Celery, follow these steps:
 
 1. Install RabbitMQ, see the documentation on the Celery website for
    `rabbitmq installation`_.
+
 2. Configure Celery in the
    :file:`home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file.
-    Set the following minimal settings, that are set during
-    rabbitmq_ installation::
+   Set the following minimal settings, that are set during rabbitmq_ installation::
 
         broker.host =
         broker.vhost =
         broker.user =
         broker.password =
 
-    Full configuration example is below:
+   Full configuration example is below:
 
-    .. code-block:: ini
+   .. code-block:: ini
 
         # Set this section of the ini file to match your Celery installation
         ####################################
