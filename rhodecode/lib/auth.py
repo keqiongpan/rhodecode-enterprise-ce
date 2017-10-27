@@ -1245,7 +1245,7 @@ class AuthUser(object):
     def get_cookie_store(self):
         return {
             'username': self.username,
-            'password': md5(self.password),
+            'password': md5(self.password or ''),
             'user_id': self.user_id,
             'is_authenticated': self.is_authenticated
         }
