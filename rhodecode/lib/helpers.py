@@ -2091,3 +2091,20 @@ def notification_description(notification, request):
     from rhodecode.model.notification import NotificationModel
     return NotificationModel().make_description(
         notification, translate=request.translate)
+
+
+def go_import_header(request, db_repo=None):
+    """
+    Creates a header for go-import functionality in Go Lang
+    """
+
+    if not db_repo:
+        return
+    if 'go-get' not in request.GET:
+        return
+
+    clone_url = db_repo.clone_url()
+    prefix = re.split(r'^https?:\/\/', clone_url)[-1]
+    # we have a repo and go-get flag,
+    return literal('<meta name="go-import" content="{} {} {}">'.format(
+        prefix, db_repo.repo_type, clone_url))
