@@ -15,14 +15,12 @@ We keep the calls in the form ``{verb}_{noun}``.
 Change and Deprecation
 ======================
 
-API deprecation is documented in the section :ref:`deprecated` together with
+API deprecation is documented in the section `deprecated` together with
 other notes about deprecated parts of the application.
 
 
 Deprecated API calls
 --------------------
-
-- Make sure to add them into the section :ref:`deprecated`.
 
 - Use `deprecated` inside of the call docstring to make our users aware of the
   deprecation::
