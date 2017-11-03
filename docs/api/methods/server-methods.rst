@@ -137,6 +137,30 @@ get_method
      error :  null
 
 
+get_repo_store 
+--------------
+
+.. py:function:: get_repo_store(apiuser)
+
+   Returns the |RCE| repository storage information.
+
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+
+   Example output:
+
+   .. code-block:: bash
+
+     id : <id_given_in_input>
+     result : {
+       'modules': [<module name>,...]
+       'py_version': <python version>,
+       'platform': <platform type>,
+       'rhodecode_version': <rhodecode version>
+     }
+     error :  null
+
+
 get_server_info 
 ---------------
 
