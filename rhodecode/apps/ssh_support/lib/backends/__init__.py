@@ -180,6 +180,11 @@ class SshWrapper(object):
 
         elif scm_detected:
             user = User.get(user_id)
+            if not user:
+                log.warning('User with id %s not found', user_id)
+                exit_code = -1
+                return exit_code
+
             auth_user = user.AuthUser()
             permissions = auth_user.permissions['repositories']
 

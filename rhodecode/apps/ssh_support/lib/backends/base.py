@@ -83,8 +83,9 @@ class VcsServer(object):
                     self.user, self.repo_name)
                 return 0
 
-        log.error('Cannot properly fetch or allow user permissions. '
-                  'Return value is: %s, req action: %s', permission, action)
+        log.error('Cannot properly fetch or allow user %s permissions. '
+                  'Return value is: %s, req action: %s',
+                  self.user, permission, action)
         return -2
 
     def update_environment(self, action, extras=None):
