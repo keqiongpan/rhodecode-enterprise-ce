@@ -991,13 +991,13 @@
     };
   };
   jupyter-core = super.buildPythonPackage {
-    name = "jupyter-core-4.3.0";
+    name = "jupyter-core-4.4.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [traitlets];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/2f/39/5138f975100ce14d150938df48a83cd852a3fd8e24b1244f4113848e69e2/jupyter_core-4.3.0.tar.gz";
-      md5 = "18819511a809afdeed9a995a9c27bcfb";
+      url = "https://pypi.python.org/packages/b6/2d/2804f4de3a95583f65e5dcb4d7c8c7183124882323758996e867f47e72af/jupyter_core-4.4.0.tar.gz";
+      md5 = "7829fc07884ed98459e170f217e2a5ba";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1043,13 +1043,13 @@
     };
   };
   mistune = super.buildPythonPackage {
-    name = "mistune-0.7.4";
+    name = "mistune-0.8";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/25/a4/12a584c0c59c9fed529f8b3c47ca8217c0cf8bcc5e1089d3256410cfbdbc/mistune-0.7.4.tar.gz";
-      md5 = "92d01cb717e9e74429e9bde9d29ac43b";
+      url = "https://pypi.python.org/packages/d3/66/a45d1c7c50fd63a707cd1bd340b969523137c5284d9466c41012fe54c621/mistune-0.8.tar.gz";
+      md5 = "8bd955fe74ce37af54b16c0d9b89a2ef";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1212,13 +1212,13 @@
     };
   };
   plaster = super.buildPythonPackage {
-    name = "plaster-0.5";
+    name = "plaster-1.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/99/b3/d7ca1fe31d2b56dba68a238721fda6820770f9c2a3de17a582d4b5b2edcc/plaster-0.5.tar.gz";
-      md5 = "c59345a67a860cfcaa1bd6a81451399d";
+      url = "https://pypi.python.org/packages/37/e1/56d04382d718d32751017d32f351214384e529b794084eee20bb52405563/plaster-1.0.tar.gz";
+      md5 = "80e6beb4760c16fea31754babcc0576e";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1706,7 +1706,7 @@
     };
   };
   rhodecode-enterprise-ce = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.10.0";
+    name = "rhodecode-enterprise-ce-4.11.0";
     buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage configobj];
     doCheck = true;
     propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic cssselect celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu lxml msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client redis repoze.lru requests simplejson sshpubkeys subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
@@ -1729,13 +1729,13 @@
     };
   };
   scandir = super.buildPythonPackage {
-    name = "scandir-1.5";
+    name = "scandir-1.6";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/bd/f4/3143e0289faf0883228017dbc6387a66d0b468df646645e29e1eb89ea10e/scandir-1.5.tar.gz";
-      md5 = "a2713043de681bba6b084be42e7a8a44";
+      url = "https://pypi.python.org/packages/77/3f/916f524f50ee65e3f465a280d2851bd63685250fddb3020c212b3977664d/scandir-1.6.tar.gz";
+      md5 = "0180ddb97c96cbb2d4f25d2ae11c64ac";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "New BSD License"; } ];
@@ -2002,13 +2002,13 @@
     };
   };
   ws4py = super.buildPythonPackage {
-    name = "ws4py-0.3.5";
+    name = "ws4py-0.4.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/b6/4f/34af703be86939629479e74d6e650e39f3bd73b3b09212c34e5125764cbc/ws4py-0.3.5.zip";
-      md5 = "a261b75c20b980e55ce7451a3576a867";
+      url = "https://pypi.python.org/packages/b8/98/a90f1d96ffcb15dfc220af524ce23e0a5881258dafa197673357ce1683dd/ws4py-0.4.2.tar.gz";
+      md5 = "f0603ae376707a58d205bd87a67758a2";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
