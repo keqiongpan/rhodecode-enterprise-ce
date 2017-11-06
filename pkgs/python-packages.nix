@@ -939,13 +939,13 @@
     };
   };
   iso8601 = super.buildPythonPackage {
-    name = "iso8601-0.1.11";
+    name = "iso8601-0.1.12";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/c0/75/c9209ee4d1b5975eb8c2cba4428bde6b61bd55664a98290dd015cdb18e98/iso8601-0.1.11.tar.gz";
-      md5 = "b06d11cd14a64096f907086044f0fe38";
+      url = "https://pypi.python.org/packages/45/13/3db24895497345fb44c4248c08b16da34a9eb02643cea2754b21b5ed08b0/iso8601-0.1.12.tar.gz";
+      md5 = "4de940f691c5ea759fb254384c8ddcf6";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
