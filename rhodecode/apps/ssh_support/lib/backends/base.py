@@ -24,7 +24,7 @@ import json
 import logging
 
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
-from rhodecode.lib import hooks_utils
+from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.model.scm import ScmModel
 
 log = logging.getLogger(__name__)
@@ -135,10 +135,9 @@ class VcsServer(object):
 
     def run(self):
         extras = {}
-        HOOKS_PROTOCOL = self.config.get('app:main', 'vcs.hooks.protocol')
 
         callback_daemon, extras = prepare_callback_daemon(
-            extras, protocol=HOOKS_PROTOCOL,
+            extras, protocol=vcs_settings.HOOKS_PROTOCOL,
             use_direct_calls=False)
 
         with callback_daemon:
