@@ -46,6 +46,9 @@
                     VMS:${h.format_byte_size_binary(mem.vms)}
                 </td>
                 <td>
+                    AGE: ${h.age_component(h.time_to_utcdatetime(proc.create_time()))}
+                </td>
+                <td>
                     MASTER
                 </td>
             </tr>
@@ -73,6 +76,9 @@
                     </td>
                     <td>
                         VMS:${h.format_byte_size_binary(mem.vms)}
+                    </td>
+                    <td>
+                        AGE: ${h.age_component(h.time_to_utcdatetime(proc_child.create_time()))}
                     </td>
                     <td>
                         <a href="#restartProcess" onclick="restart(this, ${proc_child.pid});return false">
