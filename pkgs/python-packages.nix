@@ -796,13 +796,13 @@
     };
   };
   graphviz = super.buildPythonPackage {
-    name = "graphviz-0.8";
+    name = "graphviz-0.8.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/da/84/0e997520323d6b01124eb01c68d5c101814d0aab53083cd62bd75a90f70b/graphviz-0.8.zip";
-      md5 = "9486a885360a5ee54a81eb2950470c71";
+      url = "https://pypi.python.org/packages/a9/a6/ee6721349489a2da6eedd3dba124f2b5ac15ee1e0a7bd4d3cfdc4fff0327/graphviz-0.8.1.zip";
+      md5 = "88d8efa88c02a735b3659fe0feaf0b96";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1121,13 +1121,13 @@
     };
   };
   objgraph = super.buildPythonPackage {
-    name = "objgraph-3.1.0";
+    name = "objgraph-3.1.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [graphviz];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f4/b3/082e54e62094cb2ec84f8d5a49e0142cef99016491cecba83309cff920ae/objgraph-3.1.0.tar.gz";
-      md5 = "eddbd96039796bfbd13eee403701e64a";
+      url = "https://pypi.python.org/packages/be/58/9ca81a20cc837054e94866df1475d899caaa94f3732b8a46006858b015f7/objgraph-3.1.1.tar.gz";
+      md5 = "253af9944763377877c3678d8aaebb8b";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
