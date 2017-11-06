@@ -1264,13 +1264,13 @@
     };
   };
   psycopg2 = super.buildPythonPackage {
-    name = "psycopg2-2.7.1";
+    name = "psycopg2-2.7.3.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f8/e9/5793369ce8a41bf5467623ded8d59a434dfef9c136351aca4e70c2657ba0/psycopg2-2.7.1.tar.gz";
-      md5 = "67848ac33af88336046802f6ef7081f3";
+      url = "https://pypi.python.org/packages/dd/47/000b405d73ca22980684fd7bd3318690cc03cfa3b2ae1c5b7fff8050b28a/psycopg2-2.7.3.2.tar.gz";
+      md5 = "8114e672d5f23fa5329874a4314fbd6f";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpt21 { fullName = "GNU Library or Lesser General Public License (LGPL)"; } { fullName = "LGPL with exceptions or ZPL"; } ];
