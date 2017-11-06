@@ -69,7 +69,7 @@ redis==2.10.6
 repoze.lru==0.7
 requests==2.9.1
 Routes==1.13
-setproctitle==1.1.8
+setproctitle==1.1.10
 simplejson==3.11.1
 six==1.9.0
 SQLAlchemy==1.1.15

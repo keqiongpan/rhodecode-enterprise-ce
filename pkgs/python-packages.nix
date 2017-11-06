@@ -1742,13 +1742,13 @@
     };
   };
   setproctitle = super.buildPythonPackage {
-    name = "setproctitle-1.1.8";
+    name = "setproctitle-1.1.10";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/33/c3/ad367a4f4f1ca90468863ae727ac62f6edb558fc09a003d344a02cfc6ea6/setproctitle-1.1.8.tar.gz";
-      md5 = "728f4c8c6031bbe56083a48594027edd";
+      url = "https://pypi.python.org/packages/5a/0d/dc0d2234aacba6cf1a729964383e3452c52096dc695581248b548786f2b3/setproctitle-1.1.10.tar.gz";
+      md5 = "2dcdd1b761700a5a13252fea3dfd1977";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
