@@ -223,19 +223,6 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
-  Sphinx = super.buildPythonPackage {
-    name = "Sphinx-1.2.2";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [Pygments docutils Jinja2];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/0a/50/34017e6efcd372893a416aba14b84a1a149fc7074537b0e9cb6ca7b7abe9/Sphinx-1.2.2.tar.gz";
-      md5 = "3dc73ccaa8d0bfb2d62fb671b1f7e8a4";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
-    };
-  };
   Tempita = super.buildPythonPackage {
     name = "Tempita-0.5.2";
     buildInputs = with self; [];
