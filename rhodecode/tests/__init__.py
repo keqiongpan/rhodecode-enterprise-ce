@@ -30,7 +30,6 @@ from tempfile import _RandomNameSequence
 
 from pylons import url
 
-from nose.plugins.skip import SkipTest
 import pytest
 
 from rhodecode.model.db import User
@@ -43,7 +42,7 @@ from rhodecode.lib.utils2 import safe_str
 log = logging.getLogger(__name__)
 
 __all__ = [
-    'get_new_dir', 'TestController', 'SkipTest',
+    'get_new_dir', 'TestController',
     'url', 'link_to', 'ldap_lib_installed', 'clear_all_caches',
     'assert_session_flash', 'login_user', 'no_newline_id_generator',
     'TESTS_TMP_PATH', 'HG_REPO', 'GIT_REPO', 'SVN_REPO',
