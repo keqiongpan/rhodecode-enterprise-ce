@@ -1976,13 +1976,13 @@
     };
   };
   waitress = super.buildPythonPackage {
-    name = "waitress-1.0.2";
+    name = "waitress-1.1.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/cd/f4/400d00863afa1e03618e31fd7e2092479a71b8c9718b00eb1eeb603746c6/waitress-1.0.2.tar.gz";
-      md5 = "b968f39e95d609f6194c6e50425d4bb7";
+      url = "https://pypi.python.org/packages/3c/68/1c10dd5c556872ceebe88483b0436140048d39de83a84a06a8baa8136f4f/waitress-1.1.0.tar.gz";
+      md5 = "0f1eb7fdfdbf2e6d18decbda1733045c";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpt21 ];
