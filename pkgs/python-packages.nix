@@ -1898,13 +1898,13 @@
     };
   };
   transifex-client = super.buildPythonPackage {
-    name = "transifex-client-0.10";
+    name = "transifex-client-0.12.5";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [];
+    propagatedBuildInputs = with self; [urllib3 six];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f3/4e/7b925192aee656fb3e04fa6381c8b3dc40198047c3b4a356f6cfd642c809/transifex-client-0.10.tar.gz";
-      md5 = "5549538d84b8eede6b254cd81ae024fa";
+      url = "https://pypi.python.org/packages/7b/86/60f31a0c9b8d0b1266ce15b6c80b55f88522140c8acfc395d5aec5e23475/transifex-client-0.12.5.tar.gz";
+      md5 = "e6e278117b23f60702c06e203b7e51ae";
     };
     meta = {
       license = [ pkgs.lib.licenses.gpl2 ];
