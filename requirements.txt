@@ -54,8 +54,8 @@ pygments-markdown-lexer==0.1.0.dev39
 Pygments==2.2.0
 pyparsing==1.5.7
 pyramid-beaker==0.8
-pyramid-debugtoolbar==4.2.1
 pyramid-jinja2==2.5
+pyramid-debugtoolbar==4.3.0
 pyramid-mako==1.0.2
 pyramid==1.9.1
 pysqlite==2.8.3
