@@ -324,18 +324,6 @@ class TestAdminSettingsVcs(object):
         setting = SettingsModel().get_setting_by_name(setting_key)
         assert setting.app_settings_value is new_value
 
-    def test_has_a_section_for_labs_settings_if_enabled(self, app):
-        with mock.patch.dict(
-                rhodecode.CONFIG, {'labs_settings_active': 'true'}):
-            response = self.app.get(url('admin_settings_vcs'))
-        response.mustcontain('Labs Settings')
-
-    def test_has_not_a_section_for_labs_settings_if_disables(self, app):
-        with mock.patch.dict(
-                rhodecode.CONFIG, {'labs_settings_active': 'false'}):
-            response = self.app.get(url('admin_settings_vcs'))
-        response.mustcontain(no='Labs Settings')
-
     @pytest.mark.parametrize('new_value', [True, False])
     def test_allows_to_change_hg_rebase_merge_strategy(
             self, app, form_defaults, csrf_token, new_value):

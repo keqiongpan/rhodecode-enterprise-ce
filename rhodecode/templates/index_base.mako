@@ -27,22 +27,22 @@
                 %if not c.repo_group:
                     ## no repository group context here
                     %if is_admin or create_repo:
-                        <a href="${h.url('new_repo')}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
+                        <a href="${h.route_path('repo_new')}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
                     %endif
 
                     %if is_admin or create_repo_group:
-                        <a href="${h.url('new_repo_group')}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>
+                        <a href="${h.route_path('repo_group_new')}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>
                     %endif
                 %else:
                     ##we're inside other repository group other terms apply
                     %if is_admin or group_admin or (group_write and create_on_write):
-                        <a href="${h.url('new_repo',parent_group=c.repo_group.group_id)}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
+                        <a href="${h.route_path('repo_new',_query=dict(parent_group=c.repo_group.group_id))}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
                     %endif
                     %if is_admin or group_admin:
-                        <a href="${h.url('new_repo_group', parent_group=c.repo_group.group_id)}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>
+                        <a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.repo_group.group_id))}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>
                     %endif
                     %if is_admin or group_admin:
-                        <a href="${h.url('edit_repo_group',group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}" class="btn btn-small btn-primary">${_('Edit Repository Group')}</a>
+                        <a href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}" class="btn btn-small btn-primary">${_('Edit Repository Group')}</a>
                     %endif
                 %endif
               </div>
@@ -98,6 +98,9 @@
              { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
              { data: {"_": "desc",
                       "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
+             { data: {"_": "last_change",
+                      "sort": "last_change_raw",
+                      "type": Number}, title: "${_('Last Change')}", className: "td-time" },
              { data: {"_": "owner",
                       "sort": "owner"}, title: "${_('Owner')}", className: "td-user" }
           ],

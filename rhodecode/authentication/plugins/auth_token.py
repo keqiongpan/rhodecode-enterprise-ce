@@ -74,7 +74,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
         return "authtoken"
 
     def user_activation_state(self):
-        def_user_perms = User.get_default_user().AuthUser.permissions['global']
+        def_user_perms = User.get_default_user().AuthUser().permissions['global']
         return 'hg.register.auto_activate' in def_user_perms
 
     def allows_authentication_from(

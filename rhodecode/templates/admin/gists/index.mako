@@ -41,7 +41,7 @@
       %if c.rhodecode_user.username != h.DEFAULT_USER:
       <ul class="links block-right">
         <li>
-           <a href="${h.url('new_gist')}" class="btn btn-primary">${_(u'Create New Gist')}</a>
+           <a href="${h.route_path('gists_new')}" class="btn btn-primary">${_(u'Create New Gist')}</a>
         </li>
       </ul>
       %endif
@@ -53,13 +53,13 @@
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
           % if h.HasPermissionAll('hg.admin')('access admin gists page'):
-            <li class="${'active' if c.active=='all' else ''}"><a href="${h.url('gists', all=1)}">${_('All gists')}</a></li>
+            <li class="${'active' if c.active=='all' else ''}"><a href="${h.route_path('gists_show', _query={'all': 1})}">${_('All gists')}</a></li>
           %endif
-          <li class="${'active' if c.active=='public' else ''}"><a href="${h.url('gists')}">${_('All public')}</a></li>
+          <li class="${'active' if c.active=='public' else ''}"><a href="${h.route_path('gists_show')}">${_('All public')}</a></li>
           %if c.rhodecode_user.username != h.DEFAULT_USER:
-            <li class="${'active' if c.active=='my_all' else ''}"><a href="${h.url('gists', public=1, private=1)}">${_('My gists')}</a></li>
-            <li class="${'active' if c.active=='my_private' else ''}"><a href="${h.url('gists', private=1)}">${_('My private')}</a></li>
-            <li class="${'active' if c.active=='my_public' else ''}"><a href="${h.url('gists', public=1)}">${_('My public')}</a></li>
+            <li class="${'active' if c.active=='my_all' else ''}"><a href="${h.route_path('gists_show', _query={'public':1, 'private': 1})}">${_('My gists')}</a></li>
+            <li class="${'active' if c.active=='my_private' else ''}"><a href="${h.route_path('gists_show', _query={'private': 1})}">${_('My private')}</a></li>
+            <li class="${'active' if c.active=='my_public' else ''}"><a href="${h.route_path('gists_show', _query={'public': 1})}">${_('My public')}</a></li>
           %endif
         </ul>
     </div>

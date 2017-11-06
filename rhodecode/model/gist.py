@@ -28,6 +28,8 @@ import logging
 import traceback
 import shutil
 
+from pyramid.threadlocal import get_current_request
+
 from rhodecode.lib.utils2 import (
     safe_unicode, unique_id, safe_int, time_to_datetime, AttributeDict)
 from rhodecode.lib.ext_json import json
@@ -233,3 +235,16 @@ class GistModel(BaseModel):
         )
 
         return gist
+
+    def get_url(self, gist, request=None):
+        import rhodecode
+
+        if not request:
+            request = get_current_request()
+
+        alias_url = rhodecode.CONFIG.get('gist_alias_url')
+        if alias_url:
+            return alias_url.replace('{gistid}', gist.gist_access_id)
+
+        return request.route_url('gist_show', gist_id=gist.gist_access_id)
+

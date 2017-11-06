@@ -20,11 +20,11 @@
 
 import logging
 
+from pyramid.httpexceptions import HTTPNotFound
 from pyramid.view import view_config
-from sqlalchemy.orm import joinedload
 
 from rhodecode.apps._base import BaseAppView
-from rhodecode.model.db import UserLog
+from rhodecode.model.db import joinedload, UserLog
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
 from rhodecode.lib.utils2 import safe_int
@@ -70,4 +70,22 @@ class AdminAuditLogsView(BaseAppView):
 
         c.audit_logs = Page(users_log, page=p, items_per_page=10,
                             url=url_generator)
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='admin_audit_log_entry', request_method='GET',
+        renderer='rhodecode:templates/admin/admin_audit_log_entry.mako')
+    def admin_audit_log_entry(self):
+        c = self.load_default_context()
+        audit_log_id = self.request.matchdict['audit_log_id']
+
+        c.audit_log_entry = UserLog.query()\
+            .options(joinedload(UserLog.user))\
+            .options(joinedload(UserLog.repository))\
+            .filter(UserLog.user_log_id == audit_log_id).scalar()
+        if not c.audit_log_entry:
+            raise HTTPNotFound()
+
         return self._get_template_context(c)

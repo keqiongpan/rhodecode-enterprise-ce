@@ -40,8 +40,17 @@ Below config if for an Apache Reverse Proxy configuration.
         ServerName rhodecode.myserver.com
         ServerAlias rhodecode.myserver.com
 
+        ## Skip ProxyPass the _static to backend server
+        #ProxyPass /_static !
+
         ## serve static files by Apache, recommended for performance
-        #Alias /_static /home/ubuntu/.rccontrol/community-1/static
+        #Alias /_static/rhodecode /home/ubuntu/.rccontrol/community-1/static
+
+        ## Allow Apache to access the static files in this directory
+        #<Directory /home/ubuntu/.rccontrol/community-1/static/>
+        #    AllowOverride none
+        #    Require all granted
+        #</Directory>
 
         RequestHeader set X-Forwarded-Proto "https"
 
@@ -85,6 +94,10 @@ Below config if for an Apache Reverse Proxy configuration.
 
         # Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
         #SSLOpenSSLConfCmd DHParameters "/etc/apache2/dhparam.pem"
+
+        ## custom 502 error page. Will be displayed while RhodeCode server
+        ## is turned off
+        ErrorDocument 502 /path/to/.rccontrol/enterprise-1/static/502.html
 
     </VirtualHost>
 

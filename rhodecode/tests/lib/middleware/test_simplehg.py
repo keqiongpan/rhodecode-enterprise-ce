@@ -53,10 +53,10 @@ def get_environ(url):
         # Edge case: not cmd argument
         ('/foo/bar?key=tip', 'pull'),
     ])
-def test_get_action(url, expected_action):
+def test_get_action(url, expected_action, request_stub):
     app = simplehg.SimpleHg(application=None,
                             config={'auth_ret_code': '', 'base_path': ''},
-                            registry=None)
+                            registry=request_stub.registry)
     assert expected_action == app._get_action(get_environ(url))
 
 
@@ -71,19 +71,19 @@ def test_get_action(url, expected_action):
         ('/foo/bar/?cmd=pushkey&key=tip', 'foo/bar'),
         ('/foo/bar/baz/?cmd=listkeys&key=tip', 'foo/bar/baz'),
     ])
-def test_get_repository_name(url, expected_repo_name):
+def test_get_repository_name(url, expected_repo_name, request_stub):
     app = simplehg.SimpleHg(application=None,
                             config={'auth_ret_code': '', 'base_path': ''},
-                            registry=None)
+                            registry=request_stub.registry)
     assert expected_repo_name == app._get_repository_name(get_environ(url))
 
 
-def test_get_config(pylonsapp, user_util):
+def test_get_config(user_util, pylonsapp, request_stub):
     repo = user_util.create_repo(repo_type='git')
     app = simplehg.SimpleHg(application=None,
                             config={'auth_ret_code': '', 'base_path': ''},
-                            registry=None)
-    extras = {'foo': 'FOO', 'bar': 'BAR'}
+                            registry=request_stub.registry)
+    extras = [('foo', 'FOO', 'bar', 'BAR')]
 
     hg_config = app._create_config(extras, repo_name=repo.repo_name)
 
@@ -110,19 +110,20 @@ def test_get_config(pylonsapp, user_util):
         ('phases', 'publish', 'True'),
         ('extensions', 'largefiles', ''),
         ('paths', '/', hg_config_org.get('paths', '/')),
-        ('rhodecode', 'RC_SCM_DATA', '{"foo": "FOO", "bar": "BAR"}')
+        ('rhodecode', 'RC_SCM_DATA', '[["foo", "FOO", "bar", "BAR"]]')
     ]
     for entry in expected_config:
         assert entry in hg_config
 
 
-def test_create_wsgi_app_uses_scm_app_from_simplevcs():
+def test_create_wsgi_app_uses_scm_app_from_simplevcs(request_stub):
     config = {
         'auth_ret_code': '',
         'base_path': '',
         'vcs.scm_app_implementation':
             'rhodecode.tests.lib.middleware.mock_scm_app',
     }
-    app = simplehg.SimpleHg(application=None, config=config, registry=None)
+    app = simplehg.SimpleHg(
+        application=None, config=config, registry=request_stub.registry)
     wsgi_app = app._create_wsgi_app('/tmp/test', 'test_repo', {})
     assert wsgi_app is mock_scm_app.mock_hg_wsgi

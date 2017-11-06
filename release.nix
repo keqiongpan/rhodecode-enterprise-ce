@@ -145,9 +145,9 @@ let
         --repos=$PWD/repos \
         enterprise.ini > /dev/null
 
-      echo "Starting rcserver"
+      echo "Starting rc-server"
       vcsserver --config ${vcsserverCfg} >vcsserver.log 2>&1 &
-      rcserver enterprise.ini >rcserver.log 2>&1 &
+      rc-server enterprise.ini >rc-server.log 2>&1 &
 
       while ! curl -f -s http://localhost:5000 > /dev/null
       do
@@ -159,7 +159,7 @@ let
       echo "Starting the test run"
       py.test -c example.ini -vs --maxfail=5 tests
 
-      echo "Kill rcserver"
+      echo "Kill rc-server"
       kill %2
       kill %1
     '';
@@ -170,13 +170,13 @@ let
       mkdir -p $out
       cp enterprise.ini $out
       cp ${vcsserverCfg} $out/vcsserver.ini
-      cp rcserver.log $out
+      cp rc-server.log $out
       cp vcsserver.log $out
 
       mkdir -p $out/nix-support
       echo "report config $out enterprise.ini" >> $out/nix-support/hydra-build-products
       echo "report config $out vcsserver.ini" >> $out/nix-support/hydra-build-products
-      echo "report rcserver $out rcserver.log" >> $out/nix-support/hydra-build-products
+      echo "report rc-server $out rc-server.log" >> $out/nix-support/hydra-build-products
       echo "report vcsserver $out vcsserver.log" >> $out/nix-support/hydra-build-products
     '';
   };

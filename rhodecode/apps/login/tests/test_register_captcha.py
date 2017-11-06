@@ -60,7 +60,7 @@ class TestRegisterCaptcha(object):
     ])
     def test_get_captcha_data(self, private_key, public_key, expected, db,
                               request_stub, user_util):
-        request_stub.user = user_util.create_user().AuthUser
+        request_stub.user = user_util.create_user().AuthUser()
         request_stub.matched_route = AttributeDict({'name': 'login'})
         login_view = LoginView(mock.Mock(), request_stub)
 

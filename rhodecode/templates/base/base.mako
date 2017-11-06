@@ -73,14 +73,14 @@
 <%def name="admin_menu()">
   <ul class="admin_menu submenu">
       <li><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
-      <li><a href="${h.url('repos')}">${_('Repositories')}</a></li>
-      <li><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
+      <li><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
+      <li><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
       <li><a href="${h.route_path('users')}">${_('Users')}</a></li>
-      <li><a href="${h.url('users_groups')}">${_('User groups')}</a></li>
-      <li><a href="${h.url('admin_permissions_application')}">${_('Permissions')}</a></li>
+      <li><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
+      <li><a href="${h.route_path('admin_permissions_application')}">${_('Permissions')}</a></li>
       <li><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
       <li><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>
-      <li><a href="${h.url('admin_defaults_repositories')}">${_('Defaults')}</a></li>
+      <li><a href="${h.route_path('admin_defaults_repositories')}">${_('Defaults')}</a></li>
       <li class="last"><a href="${h.url('admin_settings')}">${_('Settings')}</a></li>
   </ul>
 </%def>
@@ -145,13 +145,13 @@
 <%def name="admin_menu_simple(repositories=None, repository_groups=None, user_groups=None)">
   <ul class="submenu">
    %if repositories:
-      <li class="local-admin-repos"><a href="${h.url('repos')}">${_('Repositories')}</a></li>
+      <li class="local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
    %endif
    %if repository_groups:
-      <li class="local-admin-repo-groups"><a href="${h.url('repo_groups')}">${_('Repository groups')}</a></li>
+      <li class="local-admin-repo-groups"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
    %endif
    %if user_groups:
-      <li class="local-admin-user-groups"><a href="${h.url('users_groups')}">${_('User groups')}</a></li>
+      <li class="local-admin-user-groups"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
    %endif
   </ul>
 </%def>
@@ -226,11 +226,9 @@
     <div class="wrapper">
       <ul id="context-pages" class="horizontal-list navigation">
         <li class="${is_active('summary')}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
-        <li class="${is_active('changelog')}"><a class="menulink" href="${h.url('changelog_home', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
-        <li class="${is_active('files')}"><a class="menulink" href="${h.url('files_home', repo_name=c.repo_name, revision=c.rhodecode_db_repo.landing_rev[1])}"><div class="menulabel">${_('Files')}</div></a></li>
-        <li class="${is_active('compare')}">
-            <a class="menulink" href="${h.url('compare_home',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a>
-        </li>
+        <li class="${is_active('changelog')}"><a class="menulink" href="${h.route_path('repo_changelog', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
+        <li class="${is_active('files')}"><a class="menulink" href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.rhodecode_db_repo.landing_rev[1], f_path='')}"><div class="menulabel">${_('Files')}</div></a></li>
+        <li class="${is_active('compare')}"><a class="menulink" href="${h.route_path('repo_compare_select',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a></li>
         ## TODO: anderson: ideally it would have a function on the scm_instance "enable_pullrequest() and enable_fork()"
         %if c.rhodecode_db_repo.repo_type in ['git','hg']:
           <li class="${is_active('showpullrequest')}">
@@ -251,23 +249,34 @@
                    <li><a href="${h.route_path('edit_repo',repo_name=c.repo_name)}">${_('Settings')}</a></li>
              %endif
               %if c.rhodecode_db_repo.fork:
-               <li><a href="${h.url('compare_url',repo_name=c.rhodecode_db_repo.fork.repo_name,source_ref_type=c.rhodecode_db_repo.landing_rev[0],source_ref=c.rhodecode_db_repo.landing_rev[1], target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1], merge=1)}">
-                   ${_('Compare fork')}</a></li>
+               <li>
+                   <a title="${h.tooltip(_('Compare fork with %s' % c.rhodecode_db_repo.fork.repo_name))}"
+                      href="${h.route_path('repo_compare',
+                            repo_name=c.rhodecode_db_repo.fork.repo_name,
+                            source_ref_type=c.rhodecode_db_repo.landing_rev[0],
+                            source_ref=c.rhodecode_db_repo.landing_rev[1],
+                            target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],
+                            target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1],
+                            _query=dict(merge=1))}"
+                    >
+                   ${_('Compare fork')}
+                   </a>
+               </li>
               %endif
 
               <li><a href="${h.route_path('search_repo',repo_name=c.repo_name)}">${_('Search')}</a></li>
 
               %if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking:
                 %if c.rhodecode_db_repo.locked[0]:
-                  <li><a class="locking_del" href="${h.url('toggle_locking',repo_name=c.repo_name)}">${_('Unlock')}</a></li>
+                  <li><a class="locking_del" href="${h.route_path('repo_edit_toggle_locking',repo_name=c.repo_name)}">${_('Unlock')}</a></li>
                 %else:
-                  <li><a class="locking_add" href="${h.url('toggle_locking',repo_name=c.repo_name)}">${_('Lock')}</a></li>
+                  <li><a class="locking_add" href="${h.route_path('repo_edit_toggle_locking',repo_name=c.repo_name)}">${_('Lock')}</a></li>
                 %endif
               %endif
               %if c.rhodecode_user.username != h.DEFAULT_USER:
                 %if c.rhodecode_db_repo.repo_type in ['git','hg']:
-                  <li><a href="${h.url('repo_fork_home',repo_name=c.repo_name)}">${_('Fork')}</a></li>
-                  <li><a href="${h.url('pullrequest_home',repo_name=c.repo_name)}">${_('Create Pull Request')}</a></li>
+                  <li><a href="${h.route_path('repo_fork_new',repo_name=c.repo_name)}">${_('Fork')}</a></li>
+                  <li><a href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">${_('Create Pull Request')}</a></li>
                 %endif
               %endif
              </ul>
@@ -298,7 +307,7 @@
       <div id="quick_login">
         %if c.rhodecode_user.username == h.DEFAULT_USER:
             <h4>${_('Sign in to your account')}</h4>
-            ${h.form(h.route_path('login', _query={'came_from': h.url.current()}), needs_csrf_token=False)}
+            ${h.form(h.route_path('login', _query={'came_from': h.current_route_path(request)}), needs_csrf_token=False)}
             <div class="form form-vertical">
                 <div class="fields">
                     <div class="field">
@@ -348,7 +357,7 @@
                 <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
               % endif
               <li class="logout">
-              ${h.secure_form(h.route_path('logout'))}
+              ${h.secure_form(h.route_path('logout'), request=request)}
                   ${h.submit('log_out', _(u'Sign Out'),class_="btn btn-primary")}
               ${h.end_form()}
               </li>
@@ -359,11 +368,7 @@
   </div>
       %if c.rhodecode_user.username != h.DEFAULT_USER:
         <div class="pill_container">
-        % if c.unread_notifications == 0:
-          <a class="menu_link_notifications empty" href="${h.url('notifications')}">${c.unread_notifications}</a>
-        % else:
-          <a class="menu_link_notifications" href="${h.url('notifications')}">${c.unread_notifications}</a>
-        % endif
+          <a class="menu_link_notifications ${'empty' if c.unread_notifications == 0 else ''}" href="${h.route_path('notifications_show_all')}">${c.unread_notifications}</a>
         </div>
       % endif
     </li>
@@ -385,19 +390,19 @@
       ## ROOT MENU
       %if c.rhodecode_user.username != h.DEFAULT_USER:
         <li class="${is_active('journal')}">
-          <a class="menulink" title="${_('Show activity journal')}" href="${h.url('journal')}">
+          <a class="menulink" title="${_('Show activity journal')}" href="${h.route_path('journal')}">
             <div class="menulabel">${_('Journal')}</div>
           </a>
         </li>
       %else:
         <li class="${is_active('journal')}">
-          <a class="menulink" title="${_('Show Public activity journal')}" href="${h.url('public_journal')}">
+          <a class="menulink" title="${_('Show Public activity journal')}" href="${h.route_path('journal_public')}">
             <div class="menulabel">${_('Public journal')}</div>
           </a>
         </li>
       %endif
         <li class="${is_active('gists')}">
-          <a class="menulink childs" title="${_('Show Gists')}" href="${h.url('gists')}">
+          <a class="menulink childs" title="${_('Show Gists')}" href="${h.route_path('gists_show')}">
             <div class="menulabel">${_('Gists')}</div>
           </a>
         </li>
@@ -425,7 +430,7 @@
       % endif
       % if c.debug_style:
       <li class="${is_active('debug_style')}">
-          <a class="menulink" title="${_('Style')}" href="${h.url('debug_style_home')}">
+          <a class="menulink" title="${_('Style')}" href="${h.route_path('debug_style_home')}">
             <div class="menulabel">${_('Style')}</div>
           </a>
       </li>

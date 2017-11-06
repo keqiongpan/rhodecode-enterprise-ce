@@ -16,26 +16,26 @@
     };
   };
   Beaker = super.buildPythonPackage {
-    name = "Beaker-1.7.0";
+    name = "Beaker-1.9.0";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [];
+    propagatedBuildInputs = with self; [funcsigs];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/97/8e/409d2e7c009b8aa803dc9e6f239f1db7c3cdf578249087a404e7c27a505d/Beaker-1.7.0.tar.gz";
-      md5 = "386be3f7fe427358881eee4622b428b3";
+      url = "https://pypi.python.org/packages/93/b2/12de6937b06e9615dbb3cb3a1c9af17f133f435bdef59f4ad42032b6eb49/Beaker-1.9.0.tar.gz";
+      md5 = "38b3fcdfa24faf97c6cf66991eb54e9c";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   CProfileV = super.buildPythonPackage {
-    name = "CProfileV-1.0.6";
+    name = "CProfileV-1.0.7";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [bottle];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/eb/df/983a0b6cfd3ac94abf023f5011cb04f33613ace196e33f53c86cf91850d5/CProfileV-1.0.6.tar.gz";
-      md5 = "08c7c242b6e64237bc53c5d13537e03d";
+      url = "https://pypi.python.org/packages/df/50/d8c1ada7d537c64b0f76453fa31dedb6af6e27b82fcf0331e5f71a4cf98b/CProfileV-1.0.7.tar.gz";
+      md5 = "db4c7640438aa3d8887e194c81c7a019";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -81,26 +81,26 @@
     };
   };
   Mako = super.buildPythonPackage {
-    name = "Mako-1.0.6";
+    name = "Mako-1.0.7";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [MarkupSafe];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/56/4b/cb75836863a6382199aefb3d3809937e21fa4cb0db15a4f4ba0ecc2e7e8e/Mako-1.0.6.tar.gz";
-      md5 = "a28e22a339080316b2acc352b9ee631c";
+      url = "https://pypi.python.org/packages/eb/f3/67579bb486517c0d49547f9697e36582cd19dafb5df9e687ed8e22de57fa/Mako-1.0.7.tar.gz";
+      md5 = "5836cc997b1b773ef389bf6629c30e65";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   Markdown = super.buildPythonPackage {
-    name = "Markdown-2.6.7";
+    name = "Markdown-2.6.8";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/48/a4/fc6b002789c2239ac620ca963694c95b8f74e4747769cdf6021276939e74/Markdown-2.6.7.zip";
-      md5 = "632710a7474bbb74a82084392251061f";
+      url = "https://pypi.python.org/packages/1d/25/3f6d2cb31ec42ca5bd3bfbea99b63892b735d76e26f20dd2dcc34ffe4f0d/Markdown-2.6.8.tar.gz";
+      md5 = "d9ef057a5bd185f6f536400a31fc5d45";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -211,13 +211,13 @@
     };
   };
   SQLAlchemy = super.buildPythonPackage {
-    name = "SQLAlchemy-0.9.9";
+    name = "SQLAlchemy-1.1.11";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/28/f7/1bbfd0d8597e8c358d5e15a166a486ad82fc5579b4e67b6ef7c05b1d182b/SQLAlchemy-0.9.9.tar.gz";
-      md5 = "8a10a9bd13ed3336ef7333ac2cc679ff";
+      url = "https://pypi.python.org/packages/59/f1/28f2205c3175e6bf32300c0f30f9d91dbc9eb910debbff3ffecb88d18528/SQLAlchemy-1.1.11.tar.gz";
+      md5 = "3de387eddb4012083a4562928c511e43";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -302,26 +302,26 @@
     };
   };
   WebOb = super.buildPythonPackage {
-    name = "WebOb-1.3.1";
+    name = "WebOb-1.7.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/16/78/adfc0380b8a0d75b2d543fa7085ba98a573b1ae486d9def88d172b81b9fa/WebOb-1.3.1.tar.gz";
-      md5 = "20918251c5726956ba8fef22d1556177";
+      url = "https://pypi.python.org/packages/46/87/2f96d8d43b2078fae6e1d33fa86b95c228cebed060f4e3c7576cc44ea83b/WebOb-1.7.3.tar.gz";
+      md5 = "350028baffc508e3d23c078118e35316";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   WebTest = super.buildPythonPackage {
-    name = "WebTest-1.4.3";
+    name = "WebTest-2.0.27";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [WebOb];
+    propagatedBuildInputs = with self; [six WebOb waitress beautifulsoup4];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/51/3d/84fd0f628df10b30c7db87895f56d0158e5411206b721ca903cb51bfd948/WebTest-1.4.3.zip";
-      md5 = "631ce728bed92c681a4020a36adbc353";
+      url = "https://pypi.python.org/packages/80/fa/ca3a759985c72e3a124cbca3e1f8a2e931a07ffd31fd45d8f7bf21cb95cf/WebTest-2.0.27.tar.gz";
+      md5 = "54e6515ac71c51b6fc90179483c749ad";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -341,13 +341,13 @@
     };
   };
   alembic = super.buildPythonPackage {
-    name = "alembic-0.8.4";
+    name = "alembic-0.9.2";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [SQLAlchemy Mako python-editor];
+    propagatedBuildInputs = with self; [SQLAlchemy Mako python-editor python-dateutil];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/ca/7e/299b4499b5c75e5a38c5845145ad24755bebfb8eec07a2e1c366b7181eeb/alembic-0.8.4.tar.gz";
-      md5 = "5f95d8ee62b443f9b37eb5bee76c582d";
+      url = "https://pypi.python.org/packages/78/48/b5b26e7218b415f40b60b92c53853d242e5456c0f19f6c66101d98ff5f2a/alembic-0.9.2.tar.gz";
+      md5 = "40daf8bae50969beea40efaaf0839ff4";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -380,16 +380,16 @@
     };
   };
   appenlight-client = super.buildPythonPackage {
-    name = "appenlight-client-0.6.14";
+    name = "appenlight-client-0.6.21";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [WebOb requests];
+    propagatedBuildInputs = with self; [WebOb requests six];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/4d/e0/23fee3ebada8143f707e65c06bcb82992040ee64ea8355e044ed55ebf0c1/appenlight_client-0.6.14.tar.gz";
-      md5 = "578c69b09f4356d898fff1199b98a95c";
+      url = "https://pypi.python.org/packages/c9/23/91b66cfa0b963662c10b2a06ccaadf3f3a4848a7a2aa16255cb43d5160ec/appenlight_client-0.6.21.tar.gz";
+      md5 = "273999ac854fdaefa8d0fb61965a4ed9";
     };
     meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal { fullName = "DFSG approved"; } ];
+      license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   authomatic = super.buildPythonPackage {
@@ -405,19 +405,6 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
-  backport-ipaddress = super.buildPythonPackage {
-    name = "backport-ipaddress-0.1";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/d3/30/54c6dab05a4dec44db25ff309f1fbb6b7a8bde3f2bade38bb9da67bbab8f/backport_ipaddress-0.1.tar.gz";
-      md5 = "9c1f45f4361f71b124d7293a60006c05";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.psfl ];
-    };
-  };
   backports.shutil-get-terminal-size = super.buildPythonPackage {
     name = "backports.shutil-get-terminal-size-1.0.0";
     buildInputs = with self; [];
@@ -426,6 +413,19 @@
     src = fetchurl {
       url = "https://pypi.python.org/packages/ec/9c/368086faa9c016efce5da3e0e13ba392c9db79e3ab740b763fe28620b18b/backports.shutil_get_terminal_size-1.0.0.tar.gz";
       md5 = "03267762480bd86b50580dc19dff3c66";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  beautifulsoup4 = super.buildPythonPackage {
+    name = "beautifulsoup4-4.6.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/fa/8d/1d14391fdaed5abada4e0f63543fef49b8331a34ca60c88bd521bcf7f782/beautifulsoup4-4.6.0.tar.gz";
+      md5 = "c17714d0f91a23b708a592cb3c697728";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -510,13 +510,13 @@
     };
   };
   colander = super.buildPythonPackage {
-    name = "colander-1.2";
+    name = "colander-1.3.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [translationstring iso8601];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/14/23/c9ceba07a6a1dc0eefbb215fc0dc64aabc2b22ee756bc0f0c13278fa0887/colander-1.2.tar.gz";
-      md5 = "83db21b07936a0726e588dae1914b9ed";
+      url = "https://pypi.python.org/packages/54/a9/9862a561e015b2c7b56404c0b13828a8bdc51e05ab3703bd792cec064487/colander-1.3.3.tar.gz";
+      md5 = "f5d783768c51d73695f49bbe95778ab4";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
@@ -614,26 +614,26 @@
     };
   };
   docutils = super.buildPythonPackage {
-    name = "docutils-0.12";
+    name = "docutils-0.13.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/37/38/ceda70135b9144d84884ae2fc5886c6baac4edea39550f28bcd144c1234d/docutils-0.12.tar.gz";
-      md5 = "4622263b62c5c771c03502afa3157768";
+      url = "https://pypi.python.org/packages/05/25/7b5484aca5d46915493f1fd4ecb63c38c333bd32aa9ad6e19da8d08895ae/docutils-0.13.1.tar.gz";
+      md5 = "ea4a893c633c788be9b8078b6b305d53";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.publicDomain pkgs.lib.licenses.gpl1 { fullName = "public domain, Python, 2-Clause BSD, GPL 3 (see COPYING.txt)"; } pkgs.lib.licenses.psfl ];
     };
   };
   dogpile.cache = super.buildPythonPackage {
-    name = "dogpile.cache-0.6.1";
+    name = "dogpile.cache-0.6.4";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f6/a0/6f2142c58c6588d17c734265b103ae1cd0741e1681dd9483a63f22033375/dogpile.cache-0.6.1.tar.gz";
-      md5 = "35d7fb30f22bbd0685763d894dd079a9";
+      url = "https://pypi.python.org/packages/b6/3d/35c05ca01c070bb70d9d422f2c4858ecb021b05b21af438fec5ccd7b945c/dogpile.cache-0.6.4.tar.gz";
+      md5 = "66e0a6cae6c08cb1ea25f89d0eadfeb0";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -653,13 +653,13 @@
     };
   };
   ecdsa = super.buildPythonPackage {
-    name = "ecdsa-0.11";
+    name = "ecdsa-0.13";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/6c/3f/92fe5dcdcaa7bd117be21e5520c9a54375112b66ec000d209e9e9519fad1/ecdsa-0.11.tar.gz";
-      md5 = "8ef586fe4dbb156697d756900cb41d7c";
+      url = "https://pypi.python.org/packages/f9/e5/99ebb176e47f150ac115ffeda5fedb6a3dbb3c00c74a59fd84ddf12f5857/ecdsa-0.13.tar.gz";
+      md5 = "1f60eda9cb5c46722856db41a3ae6670";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -717,6 +717,19 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  funcsigs = super.buildPythonPackage {
+    name = "funcsigs-1.0.2";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/94/4a/db842e7a0545de1cdb0439bb80e6e42dfe82aaeaadd4072f2263a4fbed23/funcsigs-1.0.2.tar.gz";
+      md5 = "7e583285b1fb8a76305d6d68f4ccc14e";
+    };
+    meta = {
+      license = [ { fullName = "ASL"; } pkgs.lib.licenses.asl20 ];
+    };
+  };
   functools32 = super.buildPythonPackage {
     name = "functools32-3.2.3.post2";
     buildInputs = with self; [];
@@ -757,13 +770,13 @@
     };
   };
   gevent = super.buildPythonPackage {
-    name = "gevent-1.1.2";
+    name = "gevent-1.2.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [greenlet];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/43/8f/cb3224a0e6ab663547f45c10d0651cfd52633fde4283bf68d627084df8cc/gevent-1.1.2.tar.gz";
-      md5 = "bb32a2f852a4997138014d5007215c6e";
+      url = "https://pypi.python.org/packages/1b/92/b111f76e54d2be11375b47b213b56687214f258fd9dae703546d30b837be/gevent-1.2.2.tar.gz";
+      md5 = "7f0baf355384fe5ff2ecf66853422554";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -796,39 +809,39 @@
     };
   };
   graphviz = super.buildPythonPackage {
-    name = "graphviz-0.7.1";
+    name = "graphviz-0.8";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/7d/2d/f5cfa56467ca5a65eb44e1103d89d2f65dbc4f04cf7a1f3d38e973c3d1a8/graphviz-0.7.1.zip";
-      md5 = "d5926e89975121d56dec777a79bfc9d1";
+      url = "https://pypi.python.org/packages/da/84/0e997520323d6b01124eb01c68d5c101814d0aab53083cd62bd75a90f70b/graphviz-0.8.zip";
+      md5 = "9486a885360a5ee54a81eb2950470c71";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   greenlet = super.buildPythonPackage {
-    name = "greenlet-0.4.10";
+    name = "greenlet-0.4.12";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/67/62/ca2a95648666eaa2ffeb6a9b3964f21d419ae27f82f2e66b53da5b943fc4/greenlet-0.4.10.zip";
-      md5 = "bed0c4b3b896702131f4d5c72f87c41d";
+      url = "https://pypi.python.org/packages/be/76/82af375d98724054b7e273b5d9369346937324f9bcc20980b45b068ef0b0/greenlet-0.4.12.tar.gz";
+      md5 = "e8637647d58a26c4a1f51ca393e53c00";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   gunicorn = super.buildPythonPackage {
-    name = "gunicorn-19.6.0";
+    name = "gunicorn-19.7.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/84/ce/7ea5396efad1cef682bbc4068e72a0276341d9d9d0f501da609fab9fcb80/gunicorn-19.6.0.tar.gz";
-      md5 = "338e5e8a83ea0f0625f768dba4597530";
+      url = "https://pypi.python.org/packages/30/3a/10bb213cede0cc4d13ac2263316c872a64bf4c819000c8ccd801f1d5f822/gunicorn-19.7.1.tar.gz";
+      md5 = "174d3c3cd670a5be0404d84c484e590c";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -842,6 +855,19 @@
     src = fetchurl {
       url = "https://pypi.python.org/packages/ae/ae/bcb60402c60932b32dfaf19bb53870b29eda2cd17551ba5639219fb5ebf9/html5lib-0.9999999.tar.gz";
       md5 = "ef43cb05e9e799f25d65d1135838a96f";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  hupper = super.buildPythonPackage {
+    name = "hupper-1.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/2e/07/df892c564dc09bb3cf6f6deb976c26adf9117db75ba218cb4353dbc9d826/hupper-1.0.tar.gz";
+      md5 = "26e77da7d5ac5858f59af050d1a6eb5a";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -873,14 +899,27 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  ipdb = super.buildPythonPackage {
-    name = "ipdb-0.10.1";
+  ipaddress = super.buildPythonPackage {
+    name = "ipaddress-1.0.18";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [ipython setuptools];
+    propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/eb/0a/0a37dc19572580336ad3813792c0d18c8d7117c2d66fc63c501f13a7a8f8/ipdb-0.10.1.tar.gz";
-      md5 = "4aeab65f633ddc98ebdb5eebf08dc713";
+      url = "https://pypi.python.org/packages/4e/13/774faf38b445d0b3a844b65747175b2e0500164b7c28d78e34987a5bfe06/ipaddress-1.0.18.tar.gz";
+      md5 = "310c2dfd64eb6f0df44aa8c59f2334a7";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.psfl ];
+    };
+  };
+  ipdb = super.buildPythonPackage {
+    name = "ipdb-0.10.3";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [setuptools ipython];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/ad/cc/0e7298e1fbf2efd52667c9354a12aa69fb6f796ce230cca03525051718ef/ipdb-0.10.3.tar.gz";
+      md5 = "def1f6ac075d54bdee07e6501263d4fa";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1121,39 +1160,26 @@
     };
   };
   pandocfilters = super.buildPythonPackage {
-    name = "pandocfilters-1.4.1";
+    name = "pandocfilters-1.4.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/e3/1f/21d1b7e8ca571e80b796c758d361fdf5554335ff138158654684bc5401d8/pandocfilters-1.4.1.tar.gz";
-      md5 = "7680d9f9ec07397dd17f380ee3818b9d";
+      url = "https://pypi.python.org/packages/4c/ea/236e2584af67bb6df960832731a6e5325fd4441de001767da328c33368ce/pandocfilters-1.4.2.tar.gz";
+      md5 = "dc391791ef54c7de1572d7b46b63361f";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  paramiko = super.buildPythonPackage {
-    name = "paramiko-1.15.1";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [pycrypto ecdsa];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/04/2b/a22d2a560c1951abbbf95a0628e245945565f70dc082d9e784666887222c/paramiko-1.15.1.tar.gz";
-      md5 = "48c274c3f9b1282932567b21f6acf3b5";
-    };
-    meta = {
-      license = [ { fullName = "LGPL"; } { fullName = "GNU Library or Lesser General Public License (LGPL)"; } ];
-    };
-  };
   pathlib2 = super.buildPythonPackage {
-    name = "pathlib2-2.1.0";
+    name = "pathlib2-2.3.0";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [six];
+    propagatedBuildInputs = with self; [six scandir];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/c9/27/8448b10d8440c08efeff0794adf7d0ed27adb98372c70c7b38f3947d4749/pathlib2-2.1.0.tar.gz";
-      md5 = "38e4f58b4d69dfcb9edb49a54a8b28d2";
+      url = "https://pypi.python.org/packages/a1/14/df0deb867c2733f7d857523c10942b3d6612a1b222502fdffa9439943dfb/pathlib2-2.3.0.tar.gz";
+      md5 = "89c90409d11fd5947966b6a30a47d18c";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1198,14 +1224,40 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  plaster = super.buildPythonPackage {
+    name = "plaster-0.5";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [setuptools];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/99/b3/d7ca1fe31d2b56dba68a238721fda6820770f9c2a3de17a582d4b5b2edcc/plaster-0.5.tar.gz";
+      md5 = "c59345a67a860cfcaa1bd6a81451399d";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  plaster-pastedeploy = super.buildPythonPackage {
+    name = "plaster-pastedeploy-0.4.1";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [PasteDeploy plaster];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/9d/6e/f8be01ed41c94e6c54ac97cf2eb142a702aae0c8cce31c846f785e525b40/plaster_pastedeploy-0.4.1.tar.gz";
+      md5 = "f48d5344b922e56c4978eebf1cd2e0d3";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   prompt-toolkit = super.buildPythonPackage {
-    name = "prompt-toolkit-1.0.14";
+    name = "prompt-toolkit-1.0.15";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six wcwidth];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/55/56/8c39509b614bda53e638b7500f12577d663ac1b868aef53426fc6a26c3f5/prompt_toolkit-1.0.14.tar.gz";
-      md5 = "f24061ae133ed32c6b764e92bd48c496";
+      url = "https://pypi.python.org/packages/8a/ad/cf6b128866e78ad6d7f1dc5b7f99885fb813393d9860778b2984582e81b5/prompt_toolkit-1.0.15.tar.gz";
+      md5 = "8fe70295006dbc8afedd43e5eba99032";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1225,39 +1277,39 @@
     };
   };
   psycopg2 = super.buildPythonPackage {
-    name = "psycopg2-2.6.1";
+    name = "psycopg2-2.7.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/86/fd/cc8315be63a41fe000cce20482a917e874cdc1151e62cb0141f5e55f711e/psycopg2-2.6.1.tar.gz";
-      md5 = "842b44f8c95517ed5b792081a2370da1";
+      url = "https://pypi.python.org/packages/f8/e9/5793369ce8a41bf5467623ded8d59a434dfef9c136351aca4e70c2657ba0/psycopg2-2.7.1.tar.gz";
+      md5 = "67848ac33af88336046802f6ef7081f3";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpt21 { fullName = "GNU Library or Lesser General Public License (LGPL)"; } { fullName = "LGPL with exceptions or ZPL"; } ];
     };
   };
   ptyprocess = super.buildPythonPackage {
-    name = "ptyprocess-0.5.1";
+    name = "ptyprocess-0.5.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/db/d7/b465161910f3d1cef593c5e002bff67e0384898f597f1a7fdc8db4c02bf6/ptyprocess-0.5.1.tar.gz";
-      md5 = "94e537122914cc9ec9c1eadcd36e73a1";
+      url = "https://pypi.python.org/packages/51/83/5d07dc35534640b06f9d9f1a1d2bc2513fb9cc7595a1b0e28ae5477056ce/ptyprocess-0.5.2.tar.gz";
+      md5 = "d3b8febae1b8c53b054bd818d0bb8665";
     };
     meta = {
       license = [  ];
     };
   };
   py = super.buildPythonPackage {
-    name = "py-1.4.31";
+    name = "py-1.4.34";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f4/9a/8dfda23f36600dd701c6722316ba8a3ab4b990261f83e7d3ffc6dfedf7ef/py-1.4.31.tar.gz";
-      md5 = "5d2c63c56dc3f2115ec35c066ecd582b";
+      url = "https://pypi.python.org/packages/68/35/58572278f1c097b403879c1e9369069633d1cbad5239b9057944bb764782/py-1.4.34.tar.gz";
+      md5 = "d9c3d8f734b0819ff48e355d77bf1730";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1355,13 +1407,13 @@
     };
   };
   pyramid = super.buildPythonPackage {
-    name = "pyramid-1.7.4";
+    name = "pyramid-1.9.1";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [setuptools WebOb repoze.lru zope.interface zope.deprecation venusian translationstring PasteDeploy];
+    propagatedBuildInputs = with self; [setuptools WebOb repoze.lru zope.interface zope.deprecation venusian translationstring PasteDeploy plaster plaster-pastedeploy hupper];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/33/91/55f5c661f8923902cd1f68d75f2b937c45e7682857356cf18f0be5493899/pyramid-1.7.4.tar.gz";
-      md5 = "6ef1dfdcff9136d04490410757c4c446";
+      url = "https://pypi.python.org/packages/9a/57/73447be9e7d0512d601e3f0a1fb9d7d1efb941911f49efdfe036d2826507/pyramid-1.9.1.tar.gz";
+      md5 = "0163e19c58c2d12976a3b6fdb57e052d";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
@@ -1381,13 +1433,13 @@
     };
   };
   pyramid-debugtoolbar = super.buildPythonPackage {
-    name = "pyramid-debugtoolbar-3.0.5";
+    name = "pyramid-debugtoolbar-4.2.1";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [pyramid pyramid-mako repoze.lru Pygments];
+    propagatedBuildInputs = with self; [pyramid pyramid-mako repoze.lru Pygments ipaddress];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/64/0e/df00bfb55605900e7a2f7e4a18dd83575a6651688e297d5a0aa4c208fd7d/pyramid_debugtoolbar-3.0.5.tar.gz";
-      md5 = "aebab8c3bfdc6f89e4d3adc1d126538e";
+      url = "https://pypi.python.org/packages/db/26/94620b7752936e2cd74838263ff366db9b454f7394bfb62d1eb2f84b29c1/pyramid_debugtoolbar-4.2.1.tar.gz";
+      md5 = "3dfaced2fab1644ff5284017be9d92b9";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } pkgs.lib.licenses.bsdOriginal ];
@@ -1420,26 +1472,26 @@
     };
   };
   pysqlite = super.buildPythonPackage {
-    name = "pysqlite-2.6.3";
+    name = "pysqlite-2.8.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/5c/a6/1c429cd4c8069cf4bfbd0eb4d592b3f4042155a8202df83d7e9b93aa3dc2/pysqlite-2.6.3.tar.gz";
-      md5 = "7ff1cedee74646b50117acff87aa1cfa";
+      url = "https://pypi.python.org/packages/42/02/981b6703e3c83c5b25a829c6e77aad059f9481b0bbacb47e6e8ca12bd731/pysqlite-2.8.3.tar.gz";
+      md5 = "033f17b8644577715aee55e8832ac9fc";
     };
     meta = {
       license = [ { fullName = "zlib/libpng License"; } { fullName = "zlib/libpng license"; } ];
     };
   };
   pytest = super.buildPythonPackage {
-    name = "pytest-3.0.5";
+    name = "pytest-3.1.2";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [py];
+    propagatedBuildInputs = with self; [py setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/a8/87/b7ca49efe52d2b4169f2bfc49aa5e384173c4619ea8e635f123a0dac5b75/pytest-3.0.5.tar.gz";
-      md5 = "cefd527b59332688bf5db4a10aa8a7cb";
+      url = "https://pypi.python.org/packages/72/2b/2d3155e01f45a5a04427857352ee88220ee39550b2bc078f9db3190aea46/pytest-3.1.2.tar.gz";
+      md5 = "c4d179f89043cc925e1c169d03128e02";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1459,52 +1511,52 @@
     };
   };
   pytest-cov = super.buildPythonPackage {
-    name = "pytest-cov-2.4.0";
+    name = "pytest-cov-2.5.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pytest coverage];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/00/c0/2bfd1fcdb9d407b8ac8185b1cb5ff458105c6b207a9a7f0e13032de9828f/pytest-cov-2.4.0.tar.gz";
-      md5 = "2fda09677d232acc99ec1b3c5831e33f";
+      url = "https://pypi.python.org/packages/24/b4/7290d65b2f3633db51393bdf8ae66309b37620bc3ec116c5e357e3e37238/pytest-cov-2.5.1.tar.gz";
+      md5 = "5acf38d4909e19819eb5c1754fbfc0ac";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.mit ];
     };
   };
   pytest-profiling = super.buildPythonPackage {
-    name = "pytest-profiling-1.2.2";
+    name = "pytest-profiling-1.2.6";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six pytest gprof2dot];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/73/e8/804681323bac0bc45c520ec34185ba8469008942266d0074699b204835c1/pytest-profiling-1.2.2.tar.gz";
-      md5 = "0a16d7dda2d23b91e9730fa4558cf728";
+      url = "https://pypi.python.org/packages/f9/0d/df67fb9ce16c2cef201693da956321b1bccfbf9a4ead39748b9f9d1d74cb/pytest-profiling-1.2.6.tar.gz";
+      md5 = "50eb4c66c3762a2f1a49669bedc0b894";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   pytest-runner = super.buildPythonPackage {
-    name = "pytest-runner-2.9";
+    name = "pytest-runner-2.11.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/11/d4/c335ddf94463e451109e3494e909765c3e5205787b772e3b25ee8601b86a/pytest-runner-2.9.tar.gz";
-      md5 = "2212a2e34404b0960b2fdc2c469247b2";
+      url = "https://pypi.python.org/packages/9e/4d/08889e5e27a9f5d6096b9ad257f4dea1faabb03c5ded8f665ead448f5d8a/pytest-runner-2.11.1.tar.gz";
+      md5 = "bdb73eb18eca2727944a2dcf963c5a81";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   pytest-sugar = super.buildPythonPackage {
-    name = "pytest-sugar-0.7.1";
+    name = "pytest-sugar-0.8.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pytest termcolor];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/03/97/05d988b4fa870e7373e8ee4582408543b9ca2bd35c3c67b569369c6f9c49/pytest-sugar-0.7.1.tar.gz";
-      md5 = "7400f7c11f3d572b2c2a3b60352d35fe";
+      url = "https://pypi.python.org/packages/a5/b0/b2773dee078f17773a5bf2dfad49b0be57b6354bbd84bbefe4313e509d87/pytest-sugar-0.8.0.tar.gz";
+      md5 = "8cafbdad648068e0e44b8fc5f9faae42";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1550,26 +1602,26 @@
     };
   };
   python-ldap = super.buildPythonPackage {
-    name = "python-ldap-2.4.19";
+    name = "python-ldap-2.4.40";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/42/81/1b64838c82e64f14d4e246ff00b52e650a35c012551b891ada2b85d40737/python-ldap-2.4.19.tar.gz";
-      md5 = "b941bf31d09739492aa19ef679e94ae3";
+      url = "https://pypi.python.org/packages/4a/d8/7d70a7469058a3987d224061a81d778951ac2b48220bdcc511e4b1b37176/python-ldap-2.4.40.tar.gz";
+      md5 = "aea0233f7d39b0c7549fcd310deeb0e5";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
     };
   };
   python-memcached = super.buildPythonPackage {
-    name = "python-memcached-1.57";
+    name = "python-memcached-1.58";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/52/9d/eebc0dcbc5c7c66840ad207dfc1baa376dadb74912484bff73819cce01e6/python-memcached-1.57.tar.gz";
-      md5 = "de21f64b42b2d961f3d4ad7beb5468a1";
+      url = "https://pypi.python.org/packages/f7/62/14b2448cfb04427366f24104c9da97cf8ea380d7258a3233f066a951a8d8/python-memcached-1.58.tar.gz";
+      md5 = "23b258105013d14d899828d334e6b044";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
@@ -1627,6 +1679,19 @@
       license = [ { fullName = "MIT/X11"; } ];
     };
   };
+  redis = super.buildPythonPackage {
+    name = "redis-2.10.6";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/09/8d/6d34b75326bf96d4139a2ddd8e74b80840f800a0a79f9294399e212cb9a7/redis-2.10.6.tar.gz";
+      md5 = "048348d8cfe0b5d0bba2f4d835005c3b";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   repoze.lru = super.buildPythonPackage {
     name = "repoze.lru-0.6";
     buildInputs = with self; [];
@@ -1654,26 +1719,39 @@
     };
   };
   rhodecode-enterprise-ce = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.9.1";
+    name = "rhodecode-enterprise-ce-4.10.0";
     buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage configobj];
     doCheck = true;
-    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic backport-ipaddress cssselect celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu lxml msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client repoze.lru requests simplejson subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
+    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic cssselect celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu lxml msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client redis repoze.lru requests simplejson sshpubkeys subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
     src = ./.;
     meta = {
       license = [ { fullName = "Affero GNU General Public License v3 or later (AGPLv3+)"; } { fullName = "AGPLv3, and Commercial License"; } ];
     };
   };
   rhodecode-tools = super.buildPythonPackage {
-    name = "rhodecode-tools-0.12.0";
+    name = "rhodecode-tools-0.13.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [click future six Mako MarkupSafe requests elasticsearch elasticsearch-dsl urllib3 Whoosh];
     src = fetchurl {
-      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.12.0.tar.gz?md5=9ca040356fa7e38d3f64529a4cffdca4";
-      md5 = "9ca040356fa7e38d3f64529a4cffdca4";
+      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.13.0.tar.gz?md5=f937b0cb34d0779103895a5ec5689ee4";
+      md5 = "f937b0cb34d0779103895a5ec5689ee4";
     };
     meta = {
       license = [ { fullName = "AGPLv3 and Proprietary"; } ];
+    };
+  };
+  scandir = super.buildPythonPackage {
+    name = "scandir-1.5";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/bd/f4/3143e0289faf0883228017dbc6387a66d0b468df646645e29e1eb89ea10e/scandir-1.5.tar.gz";
+      md5 = "a2713043de681bba6b084be42e7a8a44";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal { fullName = "New BSD License"; } ];
     };
   };
   setproctitle = super.buildPythonPackage {
@@ -1729,13 +1807,13 @@
     };
   };
   simplejson = super.buildPythonPackage {
-    name = "simplejson-3.7.2";
+    name = "simplejson-3.11.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/6d/89/7f13f099344eea9d6722779a1f165087cb559598107844b1ac5dbd831fb1/simplejson-3.7.2.tar.gz";
-      md5 = "a5fc7d05d4cb38492285553def5d4b46";
+      url = "https://pypi.python.org/packages/08/48/c97b668d6da7d7bebe7ea1817a6f76394b0ec959cb04214ca833c34359df/simplejson-3.11.1.tar.gz";
+      md5 = "6e2f1bd5fb0a926facf5d89d217a7183";
     };
     meta = {
       license = [ { fullName = "Academic Free License (AFL)"; } pkgs.lib.licenses.mit ];
@@ -1754,27 +1832,40 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  sshpubkeys = super.buildPythonPackage {
+    name = "sshpubkeys-2.2.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [pycrypto ecdsa];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/27/da/337fabeb3dca6b62039a93ceaa636f25065e0ae92b575b1235342076cf0a/sshpubkeys-2.2.0.tar.gz";
+      md5 = "458e45f6b92b1afa84f0ffe1f1c90935";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
   subprocess32 = super.buildPythonPackage {
-    name = "subprocess32-3.2.6";
+    name = "subprocess32-3.2.7";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/28/8d/33ccbff51053f59ae6c357310cac0e79246bbed1d345ecc6188b176d72c3/subprocess32-3.2.6.tar.gz";
-      md5 = "754c5ab9f533e764f931136974b618f1";
+      url = "https://pypi.python.org/packages/b8/2f/49e53b0d0e94611a2dc624a1ad24d41b6d94d0f1b0a078443407ea2214c2/subprocess32-3.2.7.tar.gz";
+      md5 = "824c801e479d3e916879aae3e9c15e16";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
     };
   };
   supervisor = super.buildPythonPackage {
-    name = "supervisor-3.3.1";
+    name = "supervisor-3.3.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [meld3];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/80/37/964c0d53cbd328796b1aeb7abea4c0f7b0e8c7197ea9b0b9967b7d004def/supervisor-3.3.1.tar.gz";
-      md5 = "202f760f9bf4930ec06557bac73e5cf2";
+      url = "https://pypi.python.org/packages/31/7e/788fc6566211e77c395ea272058eb71299c65cc5e55b6214d479c6c2ec9a/supervisor-3.3.3.tar.gz";
+      md5 = "0fe86dfec4e5c5d98324d24c4cf944bd";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
@@ -1794,13 +1885,13 @@
     };
   };
   testpath = super.buildPythonPackage {
-    name = "testpath-0.1";
+    name = "testpath-0.3.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f9/c4/c0b22f35138bc26a6058c39cb61db1e8977e5e9550b12cd2cb02ef56fc51/testpath-0.1.tar.gz";
-      md5 = "401918bcd0b0e5b71a9b909835117bc6";
+      url = "https://pypi.python.org/packages/f4/8b/b71e9ee10e5f751e9d959bc750ab122ba04187f5aa52aabdc4e63b0e31a7/testpath-0.3.1.tar.gz";
+      md5 = "2cd5ed5522fda781bb497c9d80ae2fc9";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1859,13 +1950,13 @@
     };
   };
   uWSGI = super.buildPythonPackage {
-    name = "uWSGI-2.0.11.2";
+    name = "uWSGI-2.0.15";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/9b/78/918db0cfab0546afa580c1e565209c49aaf1476bbfe491314eadbe47c556/uwsgi-2.0.11.2.tar.gz";
-      md5 = "1f02dcbee7f6f61de4b1fd68350cf16f";
+      url = "https://pypi.python.org/packages/bb/0a/45e5aa80dc135889594bb371c082d20fb7ee7303b174874c996888cc8511/uwsgi-2.0.15.tar.gz";
+      md5 = "fc50bd9e83b7602fa474b032167010a7";
     };
     meta = {
       license = [ pkgs.lib.licenses.gpl2 ];
@@ -1885,26 +1976,26 @@
     };
   };
   venusian = super.buildPythonPackage {
-    name = "venusian-1.0";
+    name = "venusian-1.1.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/86/20/1948e0dfc4930ddde3da8c33612f6a5717c0b4bc28f591a5c5cf014dd390/venusian-1.0.tar.gz";
-      md5 = "dccf2eafb7113759d60c86faf5538756";
+      url = "https://pypi.python.org/packages/38/24/b4b470ab9e0a2e2e9b9030c7735828c8934b4c6b45befd1bb713ec2aeb2d/venusian-1.1.0.tar.gz";
+      md5 = "56bc5e6756e4bda37bcdb94f74a72b8f";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
     };
   };
   waitress = super.buildPythonPackage {
-    name = "waitress-1.0.1";
+    name = "waitress-1.0.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/78/7d/84d11b96c3f60164dec3bef4a859a03aeae0231aa93f57fbe0d05fa4ff36/waitress-1.0.1.tar.gz";
-      md5 = "dda92358a7569669086155923a46e57c";
+      url = "https://pypi.python.org/packages/cd/f4/400d00863afa1e03618e31fd7e2092479a71b8c9718b00eb1eeb603746c6/waitress-1.0.2.tar.gz";
+      md5 = "b968f39e95d609f6194c6e50425d4bb7";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpt21 ];

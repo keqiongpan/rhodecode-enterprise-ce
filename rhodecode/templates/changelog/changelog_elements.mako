@@ -5,7 +5,7 @@
 % if c.prev_page:
     <tr>
         <td colspan="9" class="load-more-commits">
-            <a class="prev-commits" href="#loadPrevCommits" onclick="commitsController.loadPrev(this, ${c.prev_page}, '${c.branch_name}');return false">
+            <a class="prev-commits" href="#loadPrevCommits" onclick="commitsController.loadPrev(this, ${c.prev_page}, '${c.branch_name}', '${c.commit_id}', '${c.f_path}');return false">
             ${_('load previous')}
             </a>
         </td>
@@ -24,11 +24,11 @@
       <div class="changeset-status-ico">
         %if c.statuses.get(commit.raw_id)[2]:
           <a class="tooltip" title="${_('Commit status: %s\nClick to open associated pull request #%s') % (h.commit_status_lbl(c.statuses.get(commit.raw_id)[0]), c.statuses.get(commit.raw_id)[2])}" href="${h.route_path('pullrequest_show',repo_name=c.statuses.get(commit.raw_id)[3],pull_request_id=c.statuses.get(commit.raw_id)[2])}">
-            <div class="${'flag_status %s' % c.statuses.get(commit.raw_id)[0]}"></div>
+            <div class="${'flag_status {}'.format(c.statuses.get(commit.raw_id)[0])}"></div>
           </a>
         %else:
-          <a class="tooltip" title="${_('Commit status: %s') % h.commit_status_lbl(c.statuses.get(commit.raw_id)[0])}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id,anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
-            <div class="${'flag_status %s' % c.statuses.get(commit.raw_id)[0]}"></div>
+          <a class="tooltip" title="${_('Commit status: {}').format(h.commit_status_lbl(c.statuses.get(commit.raw_id)[0]))}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id,_anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
+            <div class="${'flag_status {}'.format(c.statuses.get(commit.raw_id)[0])}"></div>
           </a>
         %endif
       </div>
@@ -38,16 +38,22 @@
     </td>
     <td class="td-comments comments-col">
     %if c.comments.get(commit.raw_id):
-      <a title="${_('Commit has comments')}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id,anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
+      <a title="${_('Commit has comments')}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id,_anchor='comment-%s' % c.comments[commit.raw_id][0].comment_id)}">
           <i class="icon-comment"></i> ${len(c.comments[commit.raw_id])}
       </a>
     %endif
     </td>
     <td class="td-hash">
     <code>
-      <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id)}">
+
+      <a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">
         <span class="${'commit_hash obsolete' if getattr(commit, 'obsolete', None) else 'commit_hash'}">${h.show_id(commit)}</span>
       </a>
+      <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${commit.raw_id}" title="${_('Copy the full commit id')}"></i>
+    </code>
+    </td>
+    <td class="td-tags tags-col">
+      ## phase
       % if hasattr(commit, 'phase'):
           % if commit.phase != 'public':
               <span class="tag phase-${commit.phase} tooltip" title="${_('Commit phase')}">${commit.phase}</span>
@@ -67,8 +73,6 @@
               <span class="tag obsolete-${commit.hidden} tooltip" title="${_('Evolve State')}">${_('hidden')}</span>
           % endif
       % endif
-
-    </code>
     </td>
     <td class="td-message expand_commit" data-commit-id="${commit.raw_id}" title="${_('Expand commit message')}" onclick="commitsController.expandCommit(this); return false">
       <div class="show_more_col">
@@ -101,7 +105,7 @@
         ## branch
         %if commit.branch:
           <span class="tag branchtag" title="${h.tooltip(_('Branch %s') % commit.branch)}">
-             <a href="${h.url('changelog_home',repo_name=c.repo_name,branch=commit.branch)}"><i class="icon-code-fork"></i>${h.shorter(commit.branch)}</a>
+             <a href="${h.route_path('repo_changelog',repo_name=c.repo_name,_query=dict(branch=commit.branch))}"><i class="icon-code-fork"></i>${h.shorter(commit.branch)}</a>
           </span>
         %endif
 
@@ -109,7 +113,7 @@
         %if h.is_hg(c.rhodecode_repo):
             %for book in commit.bookmarks:
                 <span class="tag booktag" title="${h.tooltip(_('Bookmark %s') % book)}">
-                  <a href="${h.url('files_home',repo_name=c.repo_name,revision=commit.raw_id)}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
+                  <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=commit.raw_id, _query=dict(at=book))}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
                 </span>
             %endfor
         %endif
@@ -117,7 +121,7 @@
         ## tags
         %for tag in commit.tags:
           <span class="tag tagtag"  title="${h.tooltip(_('Tag %s') % tag)}">
-            <a href="${h.url('files_home',repo_name=c.repo_name,revision=commit.raw_id)}"><i class="icon-tag"></i>${h.shorter(tag)}</a>
+            <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=commit.raw_id, _query=dict(at=tag))}"><i class="icon-tag"></i>${h.shorter(tag)}</a>
           </span>
         %endfor
 
@@ -128,8 +132,8 @@
 
 % if c.next_page:
     <tr>
-        <td colspan="9" class="load-more-commits">
-            <a  class="next-commits" href="#loadNextCommits" onclick="commitsController.loadNext(this, ${c.next_page}, '${c.branch_name}');return false">
+        <td colspan="10" class="load-more-commits">
+            <a  class="next-commits" href="#loadNextCommits" onclick="commitsController.loadNext(this, ${c.next_page}, '${c.branch_name}', '${c.commit_id}', '${c.f_path}');return false">
             ${_('load next')}
             </a>
         </td>

@@ -23,13 +23,7 @@ return '%s_%s_%i' % (h.safeid(filename), type, line)
 %>
 </%def>
 
-<%def name="link_for(**kw)">
-<%
-new_args = request.GET.mixed()
-new_args.update(kw)
-return h.url('', **new_args)
-%>
-</%def>
+
 
 <%def name="render_diffset(diffset, commit=None,
 
@@ -68,7 +62,7 @@ return h.url('', **new_args)
         ${h.form('', class_='inline-form comment-form-login', method='get')}
         <div class="pull-left">
             <div class="comment-help pull-right">
-              ${_('You need to be logged in to leave comments.')} <a href="${h.route_path('login', _query={'came_from': h.url.current()})}">${_('Login now')}</a>
+              ${_('You need to be logged in to leave comments.')} <a href="${h.route_path('login', _query={'came_from': h.current_route_path(request)})}">${_('Login now')}</a>
             </div>
         </div>
         <div class="comment-button pull-right">
@@ -114,25 +108,26 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     <div class="diffset-heading ${diffset.limited_diff and 'diffset-heading-warning' or ''}">
         %if commit:
             <div class="pull-right">
-                <a class="btn tooltip" title="${h.tooltip(_('Browse Files at revision {}').format(commit.raw_id))}" href="${h.url('files_home',repo_name=diffset.repo_name, revision=commit.raw_id, f_path='')}">
+                <a class="btn tooltip" title="${h.tooltip(_('Browse Files at revision {}').format(commit.raw_id))}" href="${h.route_path('repo_files',repo_name=diffset.repo_name, commit_id=commit.raw_id, f_path='')}">
                     ${_('Browse Files')}
                 </a>
             </div>
         %endif
         <h2 class="clearinner">
         %if commit:
-            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=commit.raw_id)}">${'r%s:%s' % (commit.revision,h.short_id(commit.raw_id))}</a> -
+            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">${'r%s:%s' % (commit.revision,h.short_id(commit.raw_id))}</a> -
             ${h.age_component(commit.date)} -
         %endif
-    %if diffset.limited_diff:
-        ${_('The requested commit is too big and content was truncated.')}
 
-        ${ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
-        <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
-    %else:
-        ${ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
-                    '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
-    %endif
+        %if diffset.limited_diff:
+            ${_('The requested commit is too big and content was truncated.')}
+
+            ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
+            <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+        %else:
+            ${_ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
+                        '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
+        %endif
 
         </h2>
     </div>
@@ -179,7 +174,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         %if filediff.limited_diff:
                 <tr class="cb-warning cb-collapser">
                     <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
-                        ${_('The requested commit is too big and content was truncated.')} <a href="${link_for(fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+                        ${_('The requested commit is too big and content was truncated.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
                     </td>
                 </tr>
         %else:
@@ -331,22 +326,28 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
                  ## file was renamed, or copied
                 %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
                     <strong>${filediff.target_file_path}</strong> ⬅ <del>${filediff.source_file_path}</del>
+                    <% final_path = filediff.target_file_path %>
                 %elif COPIED_FILENODE in filediff.patch['stats']['ops']:
                     <strong>${filediff.target_file_path}</strong> ⬅ ${filediff.source_file_path}
+                    <% final_path = filediff.target_file_path %>
                 %endif
             %else:
                 ## file was modified
                 <strong>${filediff.source_file_path}</strong>
+                <% final_path = filediff.source_file_path %>
             %endif
         %else:
             %if filediff.source_file_path:
                 ## file was deleted
                 <strong>${filediff.source_file_path}</strong>
+                <% final_path = filediff.source_file_path %>
             %else:
                 ## file was added
                 <strong>${filediff.target_file_path}</strong>
+                <% final_path = filediff.target_file_path %>
             %endif
         %endif
+        <i style="color: #aaa" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy the full path')}" onclick="return false;"></i>
     </span>
     <span class="pill-group" style="float: left">
         %if filediff.limited_diff:
@@ -410,7 +411,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     %if filediff.operation in ['D', 'M']:
         <a
             class="tooltip"
-            href="${h.url('files_home',repo_name=filediff.diffset.repo_name,f_path=filediff.source_file_path,revision=filediff.diffset.source_ref)}"
+            href="${h.route_path('repo_files',repo_name=filediff.diffset.repo_name,commit_id=filediff.diffset.source_ref,f_path=filediff.source_file_path)}"
             title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
         >
             ${_('Show file before')}
@@ -426,7 +427,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     %if filediff.operation in ['A', 'M']:
         <a
             class="tooltip"
-            href="${h.url('files_home',repo_name=filediff.diffset.source_repo_name,f_path=filediff.target_file_path,revision=filediff.diffset.target_ref)}"
+            href="${h.route_path('repo_files',repo_name=filediff.diffset.source_repo_name,commit_id=filediff.diffset.target_ref,f_path=filediff.target_file_path)}"
             title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
         >
             ${_('Show file after')}
@@ -442,14 +443,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         <a
             class="tooltip"
             title="${h.tooltip(_('Raw diff'))}"
-            href="${h.url('files_diff_home',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path,diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='raw')}"
+            href="${h.route_path('repo_files_diff',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path, _query=dict(diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='raw'))}"
         >
             ${_('Raw diff')}
         </a> |
         <a
             class="tooltip"
             title="${h.tooltip(_('Download diff'))}"
-            href="${h.url('files_diff_home',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path,diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='download')}"
+            href="${h.route_path('repo_files_diff',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path, _query=dict(diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='download'))}"
         >
             ${_('Download diff')}
         </a>
@@ -459,10 +460,10 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 
         ## TODO: dan: refactor ignorews_url and context_url into the diff renderer same as diffmode=unified/sideside. Also use ajax to load more context (by clicking hunks)
         %if hasattr(c, 'ignorews_url'):
-        ${c.ignorews_url(request.GET, h.FID('', filediff.patch['filename']))}
+        ${c.ignorews_url(request, h.FID('', filediff.patch['filename']))}
         %endif
         %if hasattr(c, 'context_url'):
-        ${c.context_url(request.GET, h.FID('', filediff.patch['filename']))}
+        ${c.context_url(request, h.FID('', filediff.patch['filename']))}
         %endif
 
         %if use_comments:

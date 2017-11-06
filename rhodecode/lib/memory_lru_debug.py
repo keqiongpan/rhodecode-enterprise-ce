@@ -71,7 +71,7 @@ class MemoryLRUNamespaceManagerBase(MemoryNamespaceManager):
 
     def __init__(self, namespace, **kwargs):
         AbstractDictionaryNSManager.__init__(self, namespace)
-        if kwargs.has_key('max_items'):
+        if 'max_items' in kwargs:
             max_items = kwargs['max_items']
         else:
             max_items = self.default_max_items

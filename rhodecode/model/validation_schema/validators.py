@@ -27,7 +27,7 @@ import ipaddress
 import colander
 
 from rhodecode.translation import _
-from rhodecode.lib.utils2 import glob2re
+from rhodecode.lib.utils2 import glob2re, safe_unicode
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 def ip_addr_validator(node, value):
     try:
         # this raises an ValueError if address is not IpV4 or IpV6
-        ipaddress.ip_network(value, strict=False)
+        ipaddress.ip_network(safe_unicode(value), strict=False)
     except ValueError:
         msg = _(u'Please enter a valid IPv4 or IpV6 address')
         raise colander.Invalid(node, msg)
@@ -48,7 +48,7 @@ class IpAddrValidator(object):
     def __call__(self, node, value):
         try:
             # this raises an ValueError if address is not IpV4 or IpV6
-            ipaddress.ip_network(value, strict=self.strict)
+            ipaddress.ip_network(safe_unicode(value), strict=self.strict)
         except ValueError:
             msg = _(u'Please enter a valid IPv4 or IpV6 address')
             raise colander.Invalid(node, msg)

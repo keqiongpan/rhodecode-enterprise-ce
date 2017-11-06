@@ -62,62 +62,63 @@ class PermissionModel(BaseModel):
     }
 
     def set_global_permission_choices(self, c_obj, gettext_translator):
+        _ = gettext_translator
 
         c_obj.repo_perms_choices = [
-            ('repository.none', gettext_translator('None'),),
-            ('repository.read', gettext_translator('Read'),),
-            ('repository.write', gettext_translator('Write'),),
-            ('repository.admin', gettext_translator('Admin'),)]
+            ('repository.none', _('None'),),
+            ('repository.read', _('Read'),),
+            ('repository.write', _('Write'),),
+            ('repository.admin', _('Admin'),)]
 
         c_obj.group_perms_choices = [
-            ('group.none', gettext_translator('None'),),
-            ('group.read', gettext_translator('Read'),),
-            ('group.write', gettext_translator('Write'),),
-            ('group.admin', gettext_translator('Admin'),)]
+            ('group.none', _('None'),),
+            ('group.read', _('Read'),),
+            ('group.write', _('Write'),),
+            ('group.admin', _('Admin'),)]
 
         c_obj.user_group_perms_choices = [
-            ('usergroup.none', gettext_translator('None'),),
-            ('usergroup.read', gettext_translator('Read'),),
-            ('usergroup.write', gettext_translator('Write'),),
-            ('usergroup.admin', gettext_translator('Admin'),)]
+            ('usergroup.none', _('None'),),
+            ('usergroup.read', _('Read'),),
+            ('usergroup.write', _('Write'),),
+            ('usergroup.admin', _('Admin'),)]
 
         c_obj.register_choices = [
-            ('hg.register.none', gettext_translator('Disabled')),
-            ('hg.register.manual_activate', gettext_translator('Allowed with manual account activation')),
-            ('hg.register.auto_activate', gettext_translator('Allowed with automatic account activation')),]
+            ('hg.register.none', _('Disabled')),
+            ('hg.register.manual_activate', _('Allowed with manual account activation')),
+            ('hg.register.auto_activate', _('Allowed with automatic account activation')),]
 
         c_obj.password_reset_choices = [
-            ('hg.password_reset.enabled', gettext_translator('Allow password recovery')),
-            ('hg.password_reset.hidden', gettext_translator('Hide password recovery link')),
-            ('hg.password_reset.disabled', gettext_translator('Disable password recovery')),]
+            ('hg.password_reset.enabled', _('Allow password recovery')),
+            ('hg.password_reset.hidden', _('Hide password recovery link')),
+            ('hg.password_reset.disabled', _('Disable password recovery')),]
 
         c_obj.extern_activate_choices = [
-            ('hg.extern_activate.manual', gettext_translator('Manual activation of external account')),
-            ('hg.extern_activate.auto', gettext_translator('Automatic activation of external account')),]
+            ('hg.extern_activate.manual', _('Manual activation of external account')),
+            ('hg.extern_activate.auto', _('Automatic activation of external account')),]
 
         c_obj.repo_create_choices = [
-            ('hg.create.none', gettext_translator('Disabled')),
-            ('hg.create.repository', gettext_translator('Enabled'))]
+            ('hg.create.none', _('Disabled')),
+            ('hg.create.repository', _('Enabled'))]
 
         c_obj.repo_create_on_write_choices = [
-            ('hg.create.write_on_repogroup.false', gettext_translator('Disabled')),
-            ('hg.create.write_on_repogroup.true', gettext_translator('Enabled'))]
+            ('hg.create.write_on_repogroup.false', _('Disabled')),
+            ('hg.create.write_on_repogroup.true', _('Enabled'))]
 
         c_obj.user_group_create_choices = [
-            ('hg.usergroup.create.false', gettext_translator('Disabled')),
-            ('hg.usergroup.create.true', gettext_translator('Enabled'))]
+            ('hg.usergroup.create.false', _('Disabled')),
+            ('hg.usergroup.create.true', _('Enabled'))]
 
         c_obj.repo_group_create_choices = [
-            ('hg.repogroup.create.false', gettext_translator('Disabled')),
-            ('hg.repogroup.create.true', gettext_translator('Enabled'))]
+            ('hg.repogroup.create.false', _('Disabled')),
+            ('hg.repogroup.create.true', _('Enabled'))]
 
         c_obj.fork_choices = [
-            ('hg.fork.none', gettext_translator('Disabled')),
-            ('hg.fork.repository', gettext_translator('Enabled'))]
+            ('hg.fork.none', _('Disabled')),
+            ('hg.fork.repository', _('Enabled'))]
 
         c_obj.inherit_default_permission_choices = [
-            ('hg.inherit_default_perms.false', gettext_translator('Disabled')),
-            ('hg.inherit_default_perms.true', gettext_translator('Enabled'))]
+            ('hg.inherit_default_perms.false', _('Disabled')),
+            ('hg.inherit_default_perms.true', _('Enabled'))]
 
     def get_default_perms(self, object_perms, suffix):
         defaults = {}

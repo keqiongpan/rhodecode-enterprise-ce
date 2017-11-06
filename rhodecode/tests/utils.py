@@ -29,9 +29,10 @@ from lxml.html import fromstring, tostring
 from lxml.cssselect import CSSSelector
 from urlparse import urlparse, parse_qsl
 from urllib import unquote_plus
+import webob
 
-from webtest.app import (
-    Request, TestResponse, TestApp, print_stderr, string_types)
+from webtest.app import TestResponse, TestApp, string_types
+from webtest.compat import print_stderr
 
 import pytest
 import rc_testdata
@@ -103,7 +104,7 @@ class CustomTestResponse(TestResponse):
         return self.request.environ['beaker.session']
 
 
-class TestRequest(Request):
+class TestRequest(webob.BaseRequest):
 
     # for py.test
     disabled = True
@@ -408,9 +409,13 @@ def commit_change(
 def add_test_routes(config):
     """
     Adds test routing that can be used in different functional tests
-
     """
+    from rhodecode.apps._base import ADMIN_PREFIX
+
     config.add_route(name='home', pattern='/')
+
+    config.add_route(name='login', pattern=ADMIN_PREFIX + '/login')
+    config.add_route(name='logout', pattern=ADMIN_PREFIX + '/logout')
     config.add_route(name='repo_summary', pattern='/{repo_name}')
     config.add_route(name='repo_summary_explicit', pattern='/{repo_name}/summary')
     config.add_route(name='repo_group_home', pattern='/{repo_group_name}')
@@ -421,3 +426,6 @@ def add_test_routes(config):
                      pattern='/pull-request/{pull_request_id}')
     config.add_route(name='repo_commit',
                      pattern='/{repo_name}/changeset/{commit_id}')
+
+    config.add_route(name='repo_files',
+                     pattern='/{repo_name}/files/{commit_id}/{f_path}')

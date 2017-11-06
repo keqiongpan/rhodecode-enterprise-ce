@@ -28,7 +28,7 @@
     </div>
     <div class="panel-body">
         % if c.visual.allow_custom_hooks_settings:
-        ${h.secure_form(url('admin_settings_hooks'), method='post')}
+        ${h.secure_form(h.url('admin_settings_hooks'), request=request)}
         <div class="form">
             <div class="fields">
 

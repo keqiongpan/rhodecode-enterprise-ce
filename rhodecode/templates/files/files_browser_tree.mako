@@ -14,8 +14,8 @@
           %if c.file.parent:
           <tr class="parity0">
             <td class="td-componentname">
-              <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.file.parent.path)}" class="pjax-link">
-                <i class="icon-folder"></i>..
+              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.file.parent.path)}" class="pjax-link">
+                <i class="icon-directory"></i>..
               </a>
             </td>
             <td></td>
@@ -31,15 +31,15 @@
               <span class="submodule-dir">
                 % if node.url.startswith('http://') or node.url.startswith('https://'):
                   <a href="${node.url}">
-                      <i class="icon-folder browser-dir"></i>${node.name}
+                      <i class="icon-directory browser-dir"></i>${node.name}
                   </a>
                 % else:
-                  <i class="icon-folder browser-dir"></i>${node.name}
+                  <i class="icon-directory browser-dir"></i>${node.name}
                 % endif
               </span>
             % else:
-              <a href="${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=h.safe_unicode(node.path))}" class="pjax-link">
-                <i class="${'icon-file browser-file' if node.is_file() else 'icon-folder browser-dir'}"></i>${node.name}
+              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=h.safe_unicode(node.path))}" class="pjax-link">
+                <i class="${'icon-file-text browser-file' if node.is_file() else 'icon-directory browser-dir'}"></i>${node.name}
               </a>
             % endif
             </td>
@@ -65,7 +65,7 @@
               </td>
               <td class="td-user" data-attr-name="author">
                   % if c.full_load:
-                  <span data-author="${node.last_commit.author}" title="${h.tooltip(node.last_commit.author)}">${h.gravatar_with_user(node.last_commit.author)|n}</span>
+                  <span data-author="${node.last_commit.author}" title="${h.tooltip(node.last_commit.author)}">${h.gravatar_with_user(request, node.last_commit.author)|n}</span>
                   % endif
               </td>
             %else:

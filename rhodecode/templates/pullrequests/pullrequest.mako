@@ -22,7 +22,7 @@
         ${self.repo_page_title(c.rhodecode_db_repo)}
     </div>
 
-    ${h.secure_form(url('pullrequest', repo_name=c.repo_name), method='post', id='pull_request_form')}
+    ${h.secure_form(h.route_path('pullrequest_create', repo_name=c.repo_name, _query=request.GET.mixed()), id='pull_request_form', request=request)}
 
         ${self.breadcrumbs()}
 
@@ -302,7 +302,7 @@ $(function(){
           prButtonLock(true, "${_('Please select source and target')}");
           return;
       }
-      var url = pyroutes.url('compare_url', url_data);
+      var url = pyroutes.url('repo_compare', url_data);
 
       // lock PR button, so we cannot send PR before it's calculated
       prButtonLock(true, "${_('Loading compare ...')}", 'compare');
@@ -353,9 +353,9 @@ $(function(){
 
               var msg = '';
               if (commitElements.length === 1) {
-                  msg = "${ungettext('This pull request will consist of __COMMITS__ commit.', 'This pull request will consist of __COMMITS__ commits.', 1)}";
+                  msg = "${_ungettext('This pull request will consist of __COMMITS__ commit.', 'This pull request will consist of __COMMITS__ commits.', 1)}";
               } else {
-                  msg = "${ungettext('This pull request will consist of __COMMITS__ commit.', 'This pull request will consist of __COMMITS__ commits.', 2)}";
+                  msg = "${_ungettext('This pull request will consist of __COMMITS__ commit.', 'This pull request will consist of __COMMITS__ commits.', 2)}";
               }
 
               msg += ' <a id="pull_request_overview_url" href="{0}" target="_blank">${_('Show detailed compare.')}</a>'.format(url);

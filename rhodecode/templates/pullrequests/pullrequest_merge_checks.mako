@@ -3,7 +3,7 @@
 
     % if c.pr_merge_possible:
         <h2 class="merge-status">
-            <span class="merge-icon success"><i class="icon-true"></i></span>
+            <span class="merge-icon success"><i class="icon-ok"></i></span>
             ${_('This pull request can be merged automatically.')}
         </h2>
     % else:
@@ -13,6 +13,7 @@
         </h2>
     % endif
 
+    % if c.pr_merge_errors.items():
     <ul>
         % for pr_check_key, pr_check_details in c.pr_merge_errors.items():
             <% pr_check_type = pr_check_details['error_type'] %>
@@ -28,11 +29,25 @@
             </li>
         % endfor
     </ul>
+    % endif
 
     <div class="pull-request-merge-actions">
         % if c.allowed_to_merge:
-        <div class="pull-right">
-          ${h.secure_form(url('pullrequest_merge', repo_name=c.repo_name, pull_request_id=c.pull_request.pull_request_id), id='merge_pull_request_form')}
+          ## Merge info, show only if all errors are taken care of
+          % if not c.pr_merge_errors and c.pr_merge_info:
+              <div class="pull-request-merge-info">
+                  <ul>
+                    % for pr_merge_key, pr_merge_details in c.pr_merge_info.items():
+                    <li>
+                        - ${pr_merge_details['message']}
+                    </li>
+                    % endfor
+                  </ul>
+              </div>
+          % endif
+
+        <div>
+          ${h.secure_form(h.route_path('pullrequest_merge', repo_name=c.repo_name, pull_request_id=c.pull_request.pull_request_id), id='merge_pull_request_form', request=request)}
           <% merge_disabled = ' disabled' if c.pr_merge_possible is False else '' %>
           <a class="btn" href="#" onclick="refreshMergeChecks(); return false;">${_('refresh checks')}</a>
           <input type="submit" id="merge_pull_request" value="${_('Merge Pull Request')}" class="btn${merge_disabled}"${merge_disabled}>

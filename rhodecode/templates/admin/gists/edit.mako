@@ -26,7 +26,7 @@
     <div class="table">
 
         <div id="files_data">
-          ${h.secure_form(h.url('edit_gist', gist_id=c.gist.gist_access_id), method='post', id='eform')}
+          ${h.secure_form(h.route_path('gist_update', gist_id=c.gist.gist_access_id), id='eform', request=request)}
             <div>
                 <input type="hidden" value="${c.file_last_commit.raw_id}" name="parent_hash">
                 <textarea id="description" name="description"
@@ -99,7 +99,7 @@
 
             <div class="pull-right">
             ${h.submit('update',_('Update Gist'),class_="btn btn-success")}
-            <a class="btn" href="${h.url('gist', gist_id=c.gist.gist_access_id)}">${_('Cancel')}</a>
+            <a class="btn" href="${h.route_path('gist_show', gist_id=c.gist.gist_access_id)}">${_('Cancel')}</a>
             </div>
           ${h.end_form()}
         </div>
@@ -109,9 +109,12 @@
 <script>
   $('#update').on('click', function(e){
       e.preventDefault();
+
+      $(this).val('Updating...');
+      $(this).attr('disabled', 'disabled');
       // check for newer version.
       $.ajax({
-        url: "${h.url('edit_gist_check_revision', gist_id=c.gist.gist_access_id)}",
+        url: "${h.route_path('gist_edit_check_revision', gist_id=c.gist.gist_access_id)}",
         data: {
             'revision': '${c.file_last_commit.raw_id}'
         },
@@ -120,7 +123,7 @@
         success: function(data) {
           if(data.success === false){
             message = '${h.literal(_('Gist was updated since you started editing. Copy your changes and click %(here)s to reload the new version.')
-              % {'here': h.link_to('here',h.url('edit_gist', gist_id=c.gist.gist_access_id))})}'
+              % {'here': h.link_to('here', h.route_path('gist_edit', gist_id=c.gist.gist_access_id))})}'
             alertMessage = [{"message": {
               "message": message, "force": "true", "level": "warning"}}];
             $.Topic('/notifications').publish(alertMessage[0]);

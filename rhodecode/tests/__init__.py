@@ -28,26 +28,16 @@ from os.path import join as jn
 
 from tempfile import _RandomNameSequence
 
-from paste.deploy import loadapp
-from paste.script.appinstall import SetupCommand
+from pylons import url
 
-import pylons
-import pylons.test
-from pylons import config, url
-from pylons.i18n.translation import _get_translator
-from pylons.util import ContextObj
-
-from routes.util import URLGenerator
 from nose.plugins.skip import SkipTest
 import pytest
 
-from rhodecode import is_windows
-from rhodecode.config.routing import ADMIN_PREFIX
-from rhodecode.model.meta import Session
 from rhodecode.model.db import User
 from rhodecode.lib import auth
+from rhodecode.lib import helpers as h
 from rhodecode.lib.helpers import flash, link_to
-from rhodecode.lib.utils2 import safe_unicode, safe_str
+from rhodecode.lib.utils2 import safe_str
 
 
 log = logging.getLogger(__name__)
@@ -116,6 +106,7 @@ try:
     import ldap
     ldap_lib_installed = True
 except ImportError:
+    ldap = None
     # means that python-ldap is not installed
     pass
 
@@ -166,9 +157,9 @@ class TestController(object):
 
 def login_user_session(
         app, username=TEST_USER_ADMIN_LOGIN, password=TEST_USER_ADMIN_PASS):
-    from rhodecode.tests.functional.test_login import login_url
+
     response = app.post(
-        login_url,
+        h.route_path('login'),
         {'username': username, 'password': password})
     if 'invalid user name' in response.body:
         pytest.fail('could not login using %s %s' % (username, password))
@@ -187,8 +178,7 @@ def login_user_session(
 
 
 def logout_user_session(app, csrf_token):
-    from rhodecode.tests.functional.test_login import logut_url
-    app.post(logut_url, {'csrf_token': csrf_token}, status=302)
+    app.post(h.route_path('logout'), {'csrf_token': csrf_token}, status=302)
 
 
 def login_user(app, username=TEST_USER_ADMIN_LOGIN,
@@ -196,58 +186,51 @@ def login_user(app, username=TEST_USER_ADMIN_LOGIN,
     return login_user_session(app, username, password)['rhodecode_user']
 
 
-def assert_session_flash(response=None, msg=None, category=None):
+def assert_session_flash(response, msg=None, category=None, no_=None):
     """
     Assert on a flash message in the current session.
 
-    :param msg: Required. The expected message. Will be evaluated if a
+    :param response: Response from give calll, it will contain flash
+        messages or bound session with them.
+    :param msg: The expected message. Will be evaluated if a
         :class:`LazyString` is passed in.
-    :param response: Optional. For functional testing, pass in the response
-        object. Otherwise don't pass in any value.
     :param category: Optional. If passed, the message category will be
         checked as well.
+    :param no_: Optional. If passed, the message will be checked to NOT
+        be in the flash session
     """
-    if msg is None:
-        raise ValueError("Parameter msg is required.")
+    if msg is None and no_ is None:
+        raise ValueError("Parameter msg or no_ is required.")
 
-    messages = flash.pop_messages()
+    if msg and no_:
+        raise ValueError("Please specify either msg or no_, but not both")
+
+    session = response.get_session_from_response()
+    messages = flash.pop_messages(session=session)
     msg = _eval_if_lazy(msg)
 
     assert messages, 'unable to find message `%s` in empty flash list' % msg
     message = messages[0]
 
-    message_text = _eval_if_lazy(message.message)
+    message_text = _eval_if_lazy(message.message) or ''
 
-    if msg not in message_text:
-        fail_msg = u'msg `%s` not found in session ' \
-                   u'flash: got `%s` (type:%s) instead' % (
-            msg, message_text, type(message_text))
+    if no_:
+        if no_ in message_text:
+            msg = u'msg `%s` found in session flash.' % (no_,)
+            pytest.fail(safe_str(msg))
+    else:
+        if msg not in message_text:
+            fail_msg = u'msg `%s` not found in session ' \
+                       u'flash: got `%s` (type:%s) instead' % (
+                msg, message_text, type(message_text))
 
-        pytest.fail(safe_str(fail_msg))
-    if category:
-        assert category == message.category
+            pytest.fail(safe_str(fail_msg))
+        if category:
+            assert category == message.category
 
 
 def _eval_if_lazy(value):
     return value.eval() if hasattr(value, 'eval') else value
-
-
-def assert_not_in_session_flash(response, msg, category=None):
-    assert 'flash' in response.session, 'Response session has no flash key'
-    message_category, message_text = response.session['flash'][0]
-    if msg in message_text:
-        msg = u'msg `%s` found in session flash: got `%s` instead' % (
-            msg, message_text)
-        pytest.fail(safe_str(msg))
-    if category:
-        assert category == message_category
-
-
-def assert_session_flash_is_empty(response):
-    if 'flash' in response.session:
-        msg = 'flash messages are present in session:%s' % \
-              response.session['flash'][0]
-        pytest.fail(safe_str(msg))
 
 
 def no_newline_id_generator(test_name):
@@ -258,6 +241,7 @@ def no_newline_id_generator(test_name):
     org_name = test_name
     test_name = test_name\
         .replace('\n', '_N') \
+        .replace('\r', '_N') \
         .replace('\t', '_T') \
         .replace(' ', '_S')
 

@@ -100,6 +100,15 @@ input + .action-link, .action-link.first{
 	color: @grey4;
 }
 
+.action-link.disabled {
+    color: @grey4;
+    cursor: inherit;
+}
+
+.clipboard-action {
+  cursor: pointer;
+}
+
 ul.simple-list{
 	list-style: none;
 	margin: 0;
@@ -285,6 +294,9 @@ input.inline[type="file"] {
 		margin: 0 0 @padding;
 		padding:.5em;
 		background-color: @grey6;
+        &.pre-formatting {
+            white-space: pre;
+        }
 	}
 }
 
@@ -360,26 +372,23 @@ ul.auth_plugins {
 }
 
 .pr-mergeinfo {
-    clear: both;
-    margin: .5em 0;
-
-    input {
-      min-width: 100% !important;
+      min-width: 95% !important;
       padding: 0 !important;
       border: 0;
-    }
+}
+.pr-mergeinfo-copy {
+    padding: 0 0;
 }
 
 .pr-pullinfo {
-    clear: both;
-    margin: .5em 0;
-
-    input {
-      min-width: 100% !important;
+      min-width: 95% !important;
       padding: 0 !important;
       border: 0;
-    }
 }
+.pr-pullinfo-copy {
+    padding: 0 0;
+}
+
 
 #pr-title-input {
     width: 72%;
@@ -452,7 +461,6 @@ ul.auth_plugins {
     }
 
     .radios {
-	   float: right;
         position: relative;
         width: 405px;
     }
@@ -1192,6 +1200,9 @@ table.integrations {
             min-width: 140px;
         }
     }
+    a.integration-box.dummy-integration {
+      color: @grey4
+    }
 }
 
 //Permissions Settings
@@ -1738,8 +1749,12 @@ BIN_FILENODE = 7
 }
 
 .pull-request-merge-actions {
-    height: 30px;
+    min-height: 30px;
     padding: 0px 0px;
+}
+
+.pull-request-merge-info {
+  padding: 0px 5px 5px 0px;
 }
 
 .merge-status {
@@ -1805,6 +1820,9 @@ BIN_FILENODE = 7
     .help-block {
         margin: @padding 0;
         color: @text-color;
+        &.pre-formatting {
+            white-space: pre;
+        }
     }
 
     .empty_data {
@@ -1824,6 +1842,11 @@ BIN_FILENODE = 7
 			float: left;
 		}
 	}
+}
+
+
+.creation_in_progress {
+  color: @grey4
 }
 
 .status_box_menu {

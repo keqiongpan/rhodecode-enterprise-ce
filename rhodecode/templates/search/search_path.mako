@@ -20,7 +20,7 @@
                 </td>
                 <td class="td-componentname">
                     ${h.link_to(h.literal(entry['f_path']),
-                        h.url('files_home',repo_name=entry['repository'],revision='tip',f_path=entry['f_path']))}
+                        h.route_path('repo_files',repo_name=entry['repository'],commit_id='tip',f_path=entry['f_path']))}
                 </td>
             </tr>
         % endif

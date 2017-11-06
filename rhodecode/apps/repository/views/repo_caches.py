@@ -24,8 +24,8 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
-from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator, \
-    CSRFRequired
+from rhodecode.lib.auth import (
+    LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h
 from rhodecode.model.meta import Session
 from rhodecode.model.scm import ScmModel
@@ -36,9 +36,6 @@ log = logging.getLogger(__name__)
 class RepoCachesView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo
 
         self._register_global_c(c)
         return c

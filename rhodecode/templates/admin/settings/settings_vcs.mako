@@ -1,6 +1,6 @@
 <%namespace name="vcss" file="/base/vcs_settings.mako"/>
 
-${h.secure_form(url('admin_settings_vcs'), method='post')}
+${h.secure_form(h.url('admin_settings_vcs'), request=request)}
     <div>
         ${vcss.vcs_settings_fields(
             suffix='',

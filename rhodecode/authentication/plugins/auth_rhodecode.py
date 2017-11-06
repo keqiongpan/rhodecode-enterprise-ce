@@ -24,7 +24,7 @@ RhodeCode authentication plugin for built in internal auth
 
 import logging
 
-from pylons.i18n.translation import lazy_ugettext as _
+from rhodecode.translation import _
 
 from rhodecode.authentication.base import RhodeCodeAuthPluginBase, hybrid_property
 from rhodecode.authentication.routes import AuthnPluginResourceBase
@@ -71,7 +71,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
         return "rhodecode"
 
     def user_activation_state(self):
-        def_user_perms = User.get_default_user().AuthUser.permissions['global']
+        def_user_perms = User.get_default_user().AuthUser().permissions['global']
         return 'hg.register.auto_activate' in def_user_perms
 
     def allows_authentication_from(
@@ -114,7 +114,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             crypto_backend = auth.crypto_backend()
             password_encoded = safe_str(password)
             password_match, new_hash = crypto_backend.hash_check_with_upgrade(
-                password_encoded, userobj.password)
+                password_encoded, userobj.password or '')
 
             if password_match and new_hash:
                 log.debug('user %s properly authenticated, but '

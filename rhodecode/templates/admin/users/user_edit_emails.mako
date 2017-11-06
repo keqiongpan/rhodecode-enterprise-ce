@@ -24,7 +24,7 @@
                         <span class="user email">${em.email}</span>
                     </td>
                     <td class="td-action">
-                        ${h.secure_form(h.route_path('edit_user_emails_delete', user_id=c.user.user_id), method='POST')}
+                        ${h.secure_form(h.route_path('edit_user_emails_delete', user_id=c.user.user_id), request=request)}
                             ${h.hidden('del_email_id', em.email_id)}
                             <button class="btn btn-link btn-danger" type="submit"
                                     onclick="return confirm('${_('Confirm to delete this email: %s') % em.email}');">
@@ -46,7 +46,7 @@
           </table>
         </div>
 
-        ${h.secure_form(h.route_path('edit_user_emails_add', user_id=c.user.user_id), method='POST')}
+        ${h.secure_form(h.route_path('edit_user_emails_add', user_id=c.user.user_id), request=request)}
         <div class="form">
             <!-- fields -->
             <div class="fields">

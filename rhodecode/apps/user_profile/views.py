@@ -39,7 +39,7 @@ class UserProfileView(BaseAppView):
     @view_config(
         route_name='user_profile', request_method='GET',
         renderer='rhodecode:templates/users/user.mako')
-    def login(self):
+    def user_profile(self):
         # register local template context
         c = self._get_local_tmpl_context()
         c.active = 'user_profile'

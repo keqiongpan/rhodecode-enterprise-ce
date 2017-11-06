@@ -256,8 +256,9 @@ class UserModel(BaseModel):
             log_create_user, check_allowed_create_user)
 
         def _password_change(new_user, password):
+            old_password = new_user.password or ''
             # empty password
-            if not new_user.password:
+            if not old_password:
                 return False
 
             # password check is only needed for RhodeCode internal auth calls
@@ -269,7 +270,7 @@ class UserModel(BaseModel):
                 if new_user.password == password:
                     return False
 
-                password_match = check_password(password, new_user.password)
+                password_match = check_password(password, old_password)
                 if not password_match:
                     return True
 
@@ -370,9 +371,12 @@ class UserModel(BaseModel):
             if not edit:
                 # add the RSS token
                 AuthTokenModel().create(username,
-                                        description='Generated feed token',
+                                        description=u'Generated feed token',
                                         role=AuthTokenModel.cls.ROLE_FEED)
-                log_create_user(created_by=cur_user, **new_user.get_dict())
+                kwargs = new_user.get_dict()
+                # backward compat, require api_keys present
+                kwargs['api_keys'] = kwargs['auth_tokens']
+                log_create_user(created_by=cur_user, **kwargs)
                 events.trigger(events.UserPostCreate(user_data))
             return new_user
         except (DatabaseError,):
@@ -653,8 +657,8 @@ class UserModel(BaseModel):
             raise Exception('You need to pass user_id, api_key or username')
 
         log.debug(
-            'doing fill data based on: user_id:%s api_key:%s username:%s',
-            user_id, api_key, username)
+            'AuthUser: fill data execution based on: '
+            'user_id:%s api_key:%s username:%s', user_id, api_key, username)
         try:
             dbuser = None
             if user_id:
@@ -674,18 +678,16 @@ class UserModel(BaseModel):
                           username, user_id)
                 return False
 
-            log.debug('filling user:%s data', dbuser)
-
-            # TODO: johbo: Think about this and find a clean solution
+            log.debug('AuthUser: filling found user:%s data', dbuser)
             user_data = dbuser.get_dict()
-            user_data.update(dbuser.get_api_data(include_secrets=True))
+
             user_data.update({
                 # set explicit the safe escaped values
                 'first_name': dbuser.first_name,
                 'last_name': dbuser.last_name,
             })
 
-            for k, v in user_data.iteritems():
+            for k, v in user_data.items():
                 # properties of auth user we dont update
                 if k not in ['auth_tokens', 'permissions']:
                     setattr(auth_user, k, v)
@@ -777,6 +779,7 @@ class UserModel(BaseModel):
 
     def parse_ip_range(self, ip_range):
         ip_list = []
+
         def make_unique(value):
             seen = []
             return [c for c in value if not (c in seen or seen.append(c))]
@@ -788,8 +791,8 @@ class UserModel(BaseModel):
             ip_range = ip_range.strip()
             if '-' in ip_range:
                 start_ip, end_ip = ip_range.split('-', 1)
-                start_ip = ipaddress.ip_address(start_ip.strip())
-                end_ip = ipaddress.ip_address(end_ip.strip())
+                start_ip = ipaddress.ip_address(safe_unicode(start_ip.strip()))
+                end_ip = ipaddress.ip_address(safe_unicode(end_ip.strip()))
                 parsed_ip_range = []
 
                 for index in xrange(int(start_ip), int(end_ip) + 1):
@@ -869,7 +872,7 @@ class UserModel(BaseModel):
 
         return list_of_accounts
 
-    def deactivate_last_users(self, expected_users):
+    def deactivate_last_users(self, expected_users, current_user=None):
         """
         Deactivate accounts that are over the license limits.
         Algorithm of which accounts to disabled is based on the formula:
@@ -884,7 +887,8 @@ class UserModel(BaseModel):
             the end N ammoun of users from that list
         """
 
-        list_of_accounts = self.get_accounts_in_creation_order()
+        list_of_accounts = self.get_accounts_in_creation_order(
+            current_user=current_user)
 
         for acc_id in list_of_accounts[expected_users + 1:]:
             user = User.get(acc_id)

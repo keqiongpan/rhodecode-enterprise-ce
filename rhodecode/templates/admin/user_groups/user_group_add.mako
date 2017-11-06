@@ -10,7 +10,7 @@
 <%def name="breadcrumbs_links()">
     ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
-    ${h.link_to(_('User groups'),h.url('users_groups'))}
+    ${h.link_to(_('User groups'),h.route_path('user_groups'))}
     &raquo;
     ${_('Add User Group')}
 </%def>
@@ -26,7 +26,7 @@
         ${self.breadcrumbs()}
     </div>
     <!-- end box / title -->
-    ${h.secure_form(url('users_groups'))}
+    ${h.secure_form(h.route_path('user_groups_create'), request=request)}
     <div class="form">
         <!-- fields -->
         <div class="fields">

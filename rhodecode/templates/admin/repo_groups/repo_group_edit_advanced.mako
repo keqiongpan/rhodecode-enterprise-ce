@@ -28,12 +28,12 @@
         <h3 class="panel-title">${_('Delete repository group')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('delete_repo_group', group_name=c.repo_group.group_name),method='delete')}
+        ${h.secure_form(h.route_path('edit_repo_group_advanced_delete', repo_group_name=c.repo_group.group_name), request=request)}
             <table class="display">
 
                 <tr>
                     <td>
-                        ${ungettext('This repository group includes %s children repository group.', 'This repository group includes %s children repository groups.', c.repo_group.children.count()) % c.repo_group.children.count()}
+                        ${_ungettext('This repository group includes %s children repository group.', 'This repository group includes %s children repository groups.', c.repo_group.children.count()) % c.repo_group.children.count()}
                     </td>
                     <td>
                     </td>
@@ -42,7 +42,7 @@
                 </tr>
                 <tr>
                     <td>
-                        ${ungettext('This repository group includes %s repository.', 'This repository group includes %s repositories.', c.repo_group.repositories_recursive_count) % c.repo_group.repositories_recursive_count}
+                        ${_ungettext('This repository group includes %s repository.', 'This repository group includes %s repositories.', c.repo_group.repositories_recursive_count) % c.repo_group.repositories_recursive_count}
                     </td>
                     <td>
                     </td>

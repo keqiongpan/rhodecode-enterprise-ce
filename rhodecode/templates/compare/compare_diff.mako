@@ -14,7 +14,7 @@
 </%def>
 
 <%def name="breadcrumbs_links()">
-  ${ungettext('%s commit','%s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+  ${_ungettext('%s commit','%s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -137,15 +137,15 @@
                 </div>
                 <div class="right-content">
                     <div class="diff-actions">
-                      <a href="${h.url('changeset_raw_home',repo_name=c.repo_name,revision='?')}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
+                      <a href="${h.route_path('repo_commit_raw',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
                         ${_('Raw Diff')}
                       </a>
                        |
-                      <a href="${h.url('changeset_patch_home',repo_name=c.repo_name,revision='?')}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
+                      <a href="${h.route_path('repo_commit_patch',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
                         ${_('Patch Diff')}
                       </a>
                        |
-                      <a href="${h.url('changeset_download_home',repo_name=c.repo_name,revision='?',diff='download')}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
+                      <a href="${h.route_path('repo_commit_download',repo_name=c.repo_name,commit_id='?',_query=dict(diff='download'))}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
                         ${_('Download Diff')}
                       </a>
                     </div>
@@ -170,7 +170,7 @@
                         return form_inputs
                     %>
                     <div>
-                        ${comment.comments(h.url('changeset_comment', repo_name=c.repo_name, revision='0'*16), None, is_compare=True, form_extras=revs(c.commit_ranges))}
+                        ${comment.comments(h.route_path('repo_commit_comment_create', repo_name=c.repo_name, commit_id='0'*16), None, is_compare=True, form_extras=revs(c.commit_ranges))}
                     </div>
                 </div>
               </div>
@@ -288,7 +288,7 @@
                             target_ref: target.id,
                             target_ref_type: target.type
                         };
-                        window.location = pyroutes.url('compare_url', url_data);
+                        window.location = pyroutes.url('repo_compare', url_data);
                     }
                 });
                 $('#compare_changeset_status_toggle').on('click', function(e) {
@@ -309,13 +309,13 @@
                               class="btn"
                               href="#"
                               onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">
-                              ${ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                              ${_ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
                           </a>
                           <a
                               class="btn"
                               href="#"
                               onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
-                              ${ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                              ${_ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
                           </a>
                       </div>
                     </div>

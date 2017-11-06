@@ -6,7 +6,7 @@
     r${c.commit_ranges[0].revision}:${h.short_id(c.commit_ranges[0].raw_id)}
     ...
     r${c.commit_ranges[-1].revision}:${h.short_id(c.commit_ranges[-1].raw_id)}
-    ${ungettext('(%s commit)','(%s commits)', len(c.commit_ranges)) % len(c.commit_ranges)}
+    ${_ungettext('(%s commit)','(%s commits)', len(c.commit_ranges)) % len(c.commit_ranges)}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
@@ -17,7 +17,7 @@
     r${c.commit_ranges[0].revision}:${h.short_id(c.commit_ranges[0].raw_id)}
     ...
     r${c.commit_ranges[-1].revision}:${h.short_id(c.commit_ranges[-1].raw_id)}
-    ${ungettext('(%s commit)','(%s commits)', len(c.commit_ranges)) % len(c.commit_ranges)}
+    ${_ungettext('(%s commit)','(%s commits)', len(c.commit_ranges)) % len(c.commit_ranges)}
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -55,7 +55,13 @@
             </div>
             <div class="right-content">
               <div class="header-buttons">
-                <a href="${h.url('compare_url', repo_name=c.repo_name, source_ref_type='rev', source_ref=getattr(c.commit_ranges[0].parents[0] if c.commit_ranges[0].parents else h.EmptyCommit(), 'raw_id'), target_ref_type='rev', target_ref=c.commit_ranges[-1].raw_id)}">
+                <a href="${h.route_path('repo_compare',
+                repo_name=c.repo_name,
+                source_ref_type='rev',
+                source_ref=getattr(c.commit_ranges[0].parents[0] if c.commit_ranges[0].parents else h.EmptyCommit(), 'raw_id'),
+                target_ref_type='rev',
+                target_ref=c.commit_ranges[-1].raw_id)}"
+                >
                     ${_('Show combined compare')}
                 </a>
               </div>
@@ -70,15 +76,15 @@
             </div>
             <div class="right-content">
                 <div class="diff-actions">
-                  <a href="${h.url('changeset_raw_home',repo_name=c.repo_name,revision='?')}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
+                  <a href="${h.route_path('repo_commit_raw',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
                     ${_('Raw Diff')}
                   </a>
                    |
-                  <a href="${h.url('changeset_patch_home',repo_name=c.repo_name,revision='?')}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
+                  <a href="${h.route_path('repo_commit_patch',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
                     ${_('Patch Diff')}
                   </a>
                    |
-                  <a href="${h.url('changeset_download_home',repo_name=c.repo_name,revision='?',diff='download')}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
+                  <a href="${h.route_path('repo_commit_download',repo_name=c.repo_name,commit_id='?',_query=dict(diff='download'))}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
                     ${_('Download Diff')}
                   </a>
                 </div>
@@ -96,13 +102,13 @@
               class="btn"
               href="#"
               onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">
-              ${ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+              ${_ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
           </a>
           <a
               class="btn"
               href="#"
               onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
-              ${ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+              ${_ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
           </a>
       </div>
     </div>

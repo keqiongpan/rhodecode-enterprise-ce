@@ -35,6 +35,7 @@ from threading import Thread
 
 from rhodecode.translation import _ as tsf
 from rhodecode.config.jsroutes import generate_jsroutes_content
+from rhodecode.lib import auth
 
 import rhodecode
 
@@ -48,12 +49,12 @@ log = logging.getLogger(__name__)
 
 
 def add_renderer_globals(event):
+    from rhodecode.lib import helpers
+
+    # NOTE(marcink):
     # Put pylons stuff into the context. This will be removed as soon as
     # migration to pyramid is finished.
-    conf = pylons.config._current_obj()
-    event['h'] = conf.get('pylons.h')
     event['c'] = pylons.tmpl_context
-    event['url'] = pylons.url
 
     # TODO: When executed in pyramid view context the request is not available
     # in the event. Find a better solution to get the request.
@@ -62,6 +63,7 @@ def add_renderer_globals(event):
     # Add Pyramid translation as '_' to context
     event['_'] = request.translate
     event['_ungettext'] = request.plularize
+    event['h'] = helpers
 
 
 def add_localizer(event):
@@ -85,6 +87,25 @@ def set_user_lang(event):
         if user_lang:
             log.debug('lang: setting current user:%s language to: %s', cur_user, user_lang)
             event.request._LOCALE_ = user_lang
+
+
+def add_request_user_context(event):
+    """
+    Adds auth user into request context
+    """
+    request = event.request
+
+    if hasattr(request, 'vcs_call'):
+        # skip vcs calls
+        return
+
+    if hasattr(request, 'rpc_method'):
+        # skip api calls
+        return
+
+    auth_user = get_auth_user(request)
+    request.user = auth_user
+    request.environ['rc_auth_user'] = auth_user
 
 
 def add_pylons_context(event):
@@ -113,16 +134,17 @@ def add_pylons_context(event):
         # skip api calls
         return
 
-    # Get the rhodecode auth user object and make it available.
-    auth_user = get_auth_user(environ)
-    request.user = auth_user
-    environ['rc_auth_user'] = auth_user
-
     # Setup the pylons context object ('c')
     context = ContextObj()
-    context.rhodecode_user = auth_user
+    context.rhodecode_user = request.user
     attach_context_attributes(context, request, request.user.user_id)
     pylons.tmpl_context._push_object(context)
+
+
+def inject_app_settings(event):
+    settings = event.app.registry.settings
+    # inject info about available permissions
+    auth.set_available_permissions(settings)
 
 
 def scan_repositories_if_enabled(event):
@@ -205,6 +227,9 @@ def write_js_routes_if_enabled(event):
 
         routepath = _argument_prog.sub(replace, routepath)
 
+        if not routepath.startswith('/'):
+            routepath = '/'+routepath
+
         return (
             route.name,
             routepath,
@@ -214,8 +239,10 @@ def write_js_routes_if_enabled(event):
 
     def get_routes():
         # pylons routes
-        for route in rhodecode.CONFIG['routes.map'].jsroutes():
-            yield route
+        # TODO(marcink): remove when pyramid migration is finished
+        if 'routes.map' in rhodecode.CONFIG:
+            for route in rhodecode.CONFIG['routes.map'].jsroutes():
+                yield route
 
         # pyramid routes
         for route in mapper.get_routes():

@@ -25,4 +25,4 @@ def includeme(config):
         pattern='/_profiles/{username}')
 
     # Scan module for configuration decorators.
-    config.scan()
+    config.scan('.views', ignore='.tests')

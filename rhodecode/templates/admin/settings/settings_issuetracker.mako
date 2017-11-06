@@ -5,11 +5,11 @@
         <h3 class="panel-title">${_('Issue Tracker / Wiki Patterns')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(url('admin_settings_issuetracker_save'), method='post')}
+        ${h.secure_form(h.url('admin_settings_issuetracker_save'), request=request)}
             ${its.issue_tracker_settings_table(
                 patterns=c.issuetracker_entries.items(),
-                form_url=url('admin_settings_issuetracker'),
-                delete_url=url('admin_issuetracker_delete')
+                form_url=h.url('admin_settings_issuetracker'),
+                delete_url=h.url('admin_issuetracker_delete')
             )}
               <div class="buttons">
                   <button type="submit" class="btn btn-primary" id="save">${_('Save')}</button>
@@ -25,7 +25,7 @@
     </div>
     <div class="panel-body">
         ${its.issue_tracker_new_row()}
-        ${its.issue_tracker_settings_test(test_url=url('admin_issuetracker_test'))}
+        ${its.issue_tracker_settings_test(test_url=h.url('admin_issuetracker_test'))}
     </div>
 </div>
 

@@ -20,23 +20,17 @@
 
 import logging
 
-import deform
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
-from rhodecode.forms import RcForm
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
-    LoginRequired, HasRepoPermissionAnyDecorator,
-    HasRepoPermissionAllDecorator, CSRFRequired)
-from rhodecode.model.db import RepositoryField, RepoGroup
+    LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.model.forms import RepoPermsForm
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
-from rhodecode.model.scm import RepoGroupList, ScmModel
-from rhodecode.model.validation_schema.schemas import repo_schema
 
 log = logging.getLogger(__name__)
 
@@ -45,9 +39,6 @@ class RepoSettingsPermissionsView(RepoAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo
 
         self._register_global_c(c)
         return c
@@ -63,7 +54,7 @@ class RepoSettingsPermissionsView(RepoAppView):
         return self._get_template_context(c)
 
     @LoginRequired()
-    @HasRepoPermissionAllDecorator('repository.admin')
+    @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
     @view_config(
         route_name='edit_repo_perms', request_method='POST',
@@ -74,7 +65,7 @@ class RepoSettingsPermissionsView(RepoAppView):
         c.active = 'permissions'
         data = self.request.POST
         # store private flag outside of HTML to verify if we can modify
-        # default user permissions, prevents submition of FAKE post data
+        # default user permissions, prevents submission of FAKE post data
         # into the form for private repos
         data['repo_private'] = self.db_repo.private
         form = RepoPermsForm()().to_python(data)
@@ -95,4 +86,4 @@ class RepoSettingsPermissionsView(RepoAppView):
         h.flash(_('Repository permissions updated'), category='success')
 
         raise HTTPFound(
-            self.request.route_path('edit_repo_perms', repo_name=self.db_repo_name))
+            h.route_path('edit_repo_perms', repo_name=self.db_repo_name))

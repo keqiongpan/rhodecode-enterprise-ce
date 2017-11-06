@@ -245,11 +245,14 @@ def test_relative_path(src_path, server_path, is_path, expected):
         ('<div></div>', '<div></div>'),
         ('<img src="/file.png"></img>', '<img src="/path/raw/file.png">'),
         ('<img src="data:abcd"/>', '<img src="data:abcd">'),
-        ('<a href="/file.png"></a>', '<a href="/path/raw/file.png"></a>'),
+        ('<a href="/file.png?raw=1"></a>', '<a href="/path/raw/file.png?raw=1"></a>'),
+        ('<a href="/file.png"></a>', '<a href="/path/file.png"></a>'),
         ('<a href="#anchor"></a>', '<a href="#anchor"></a>'),
-        ('<a href="./README.md"></a>', '<a href="/path/raw/README.md"></a>'),
-        ('<a href="../README.md"></a>', '<a href="/path/README.md"></a>'),
+        ('<a href="./README.md?raw=1"></a>', '<a href="/path/raw/README.md?raw=1"></a>'),
+        ('<a href="./README.md"></a>', '<a href="/path/README.md"></a>'),
+        ('<a href="../README.md"></a>', '<a href="/README.md"></a>'),
 
     ])
 def test_relative_links(src_html, expected_html):
-    assert relative_links(src_html, '/path/raw/file.md') == expected_html
+    server_paths = {'raw': '/path/raw/file.md', 'standard': '/path/file.md'}
+    assert relative_links(src_html, server_paths=server_paths) == expected_html

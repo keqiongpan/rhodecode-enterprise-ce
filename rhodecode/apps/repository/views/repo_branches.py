@@ -22,6 +22,7 @@ import logging
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseReferencesView
+from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator)
 
 
@@ -38,14 +39,11 @@ class RepoBranchesView(BaseReferencesView):
         renderer='rhodecode:templates/branches/branches.mako')
     def branches(self):
         c = self.load_default_context()
-        c.closed_branches = self.rhodecode_vcs_repo.branches_closed
-        # NOTE(marcink):
-        # we need this trick because of PartialRenderer still uses the
-        # global 'c', we might not need this after full pylons migration
-        self._register_global_c(c)
 
         ref_items = self.rhodecode_vcs_repo.branches_all.items()
-        self.load_refs_context(
+        data = self.load_refs_context(
             ref_items=ref_items, partials_template='branches/branches_data.mako')
 
+        c.has_references = bool(data)
+        c.data = json.dumps(data)
         return self._get_template_context(c)

@@ -11,7 +11,7 @@
 <%def name="breadcrumbs_links()">
     ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
-    ${h.link_to(_('Repository groups'),h.url('repo_groups'))}
+    ${h.link_to(_('Repository groups'),h.route_path('repo_groups'))}
     &raquo;
     ${_('Add Repository Group')}
 </%def>
@@ -27,7 +27,7 @@
         ${self.breadcrumbs()}
     </div>
     <!-- end box / title -->
-    ${h.secure_form(url('repo_groups'), method='post')}
+    ${h.secure_form(h.route_path('repo_group_create'), request=request)}
     <div class="form">
         <!-- fields -->
         <div class="fields">
@@ -46,6 +46,12 @@
                 </div>
                 <div class="textarea editor">
                     ${h.textarea('group_description',cols=23,rows=5,class_="medium")}
+                    <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
+                    <span class="help-block">${_('Plain text format with support of {metatags}').format(metatags=metatags_url)|n}</span>
+                    <span id="meta-tags-desc" style="display: none">
+                        <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+                        ${dt.metatags_help()}
+                    </span>
                 </div>
             </div>
 

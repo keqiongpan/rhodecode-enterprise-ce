@@ -27,7 +27,7 @@
           ${self.breadcrumbs()}
       </div>
 
-    ${h.secure_form(url('repo_fork_create_home',repo_name=c.repo_info.repo_name))}
+    ${h.secure_form(h.route_path('repo_fork_create',repo_name=c.rhodecode_db_repo.repo_name), request=request)}
     <div class="form">
         <!-- fields -->
         <div class="fields">
@@ -38,8 +38,8 @@
               </div>
               <div class="input">
                   ${h.text('repo_name', class_="medium")}
-                  ${h.hidden('repo_type',c.repo_info.repo_type)}
-                  ${h.hidden('fork_parent_id',c.repo_info.repo_id)}
+                  ${h.hidden('repo_type',c.rhodecode_db_repo.repo_type)}
+                  ${h.hidden('fork_parent_id',c.rhodecode_db_repo.repo_id)}
               </div>
             </div>
 
@@ -49,7 +49,12 @@
                 </div>
                 <div class="textarea-repo textarea text-area editor">
                     ${h.textarea('description')}
-                    <span class="help-block">${_('Keep it short and to the point. Use a README file for longer descriptions.')}</span>
+                    <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
+                    <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
+                    <span id="meta-tags-desc" style="display: none">
+                        <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+                        ${dt.metatags_help()}
+                    </span>
                 </div>
             </div>
 

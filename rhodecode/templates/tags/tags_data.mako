@@ -8,7 +8,7 @@
     <input class="compare-radio-button" type="radio" name="compare_target" value="${commit_id}"/>
 </%def>
 
-<%def name="name(name, files_url)">
+<%def name="name(name, files_url, closed)">
      <span class="tagtag tag" title="${h.tooltip(_('Tag %s') % (name,))}">
      <a href="${files_url}"><i class="icon-tag"></i>${name}</a>
      </span>
@@ -24,6 +24,6 @@
 
 <%def name="commit(message, commit_id, commit_idx)">
     <div>
-        <pre><a title="${h.tooltip(message)}" href="${h.url('files_home',repo_name=c.repo_name,revision=commit_id)}">r${commit_idx}:${h.short_id(commit_id)}</a></pre>
+        <pre><a title="${h.tooltip(message)}" href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=commit_id)}">r${commit_idx}:${h.short_id(commit_id)}</a></pre>
     </div>
 </%def>

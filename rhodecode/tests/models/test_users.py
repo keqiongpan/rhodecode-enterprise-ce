@@ -190,13 +190,13 @@ def test_get_api_data_replaces_secret_data_by_default(test_user):
     api_key_length = 40
     expected_replacement = '*' * api_key_length
 
-    for key in api_data['api_keys']:
+    for key in api_data['auth_tokens']:
         assert key == expected_replacement
 
 
 def test_get_api_data_includes_secret_data_if_activated(test_user):
     api_data = test_user.get_api_data(include_secrets=True)
-    assert api_data['api_keys'] == test_user.auth_tokens
+    assert api_data['auth_tokens'] == test_user.auth_tokens
 
 
 def test_add_perm(test_user):
@@ -261,7 +261,7 @@ def test_revoke_perm(test_user):
 def test_ip_range_generator(ip_range, expected, expect_errors):
     func = UserModel().parse_ip_range
     if expect_errors:
-        pytest.raises(Exception, func, ip_range)
+        pytest.raises(ValueError, func, ip_range)
     else:
         parsed_list = func(ip_range)
         assert parsed_list == expected

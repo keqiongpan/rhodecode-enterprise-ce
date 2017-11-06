@@ -49,6 +49,7 @@ from pkg_resources import resource_filename
 from formencode import All, Pipe
 
 from pylons.i18n.translation import _
+from pyramid.threadlocal import get_current_request
 
 from rhodecode import BACKENDS
 from rhodecode.lib import helpers
@@ -66,6 +67,7 @@ class RhodecodeFormZPTRendererFactory(deform.ZPTRendererFactory):
     """ Subclass of ZPTRendererFactory to add rhodecode context variables """
     def __call__(self, template_name, **kw):
         kw['h'] = helpers
+        kw['request'] = get_current_request()
         return self.load(template_name)(**kw)
 
 
@@ -387,10 +389,14 @@ class _BaseVcsSettingsForm(formencode.Schema):
     extensions_largefiles = v.StringBoolean(if_missing=False)
     extensions_evolve = v.StringBoolean(if_missing=False)
     phases_publish = v.StringBoolean(if_missing=False)
+
     rhodecode_hg_use_rebase_for_merging = v.StringBoolean(if_missing=False)
+    rhodecode_hg_close_branch_before_merging = v.StringBoolean(if_missing=False)
 
     # git
     vcs_git_lfs_enabled = v.StringBoolean(if_missing=False)
+    rhodecode_git_use_rebase_for_merging = v.StringBoolean(if_missing=False)
+    rhodecode_git_close_branch_before_merging = v.StringBoolean(if_missing=False)
 
     # svn
     vcs_svn_proxy_http_requests_enabled = v.StringBoolean(if_missing=False)

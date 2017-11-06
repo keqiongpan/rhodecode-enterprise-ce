@@ -18,20 +18,11 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-Channel Stream controller for rhodecode
-
-:created_on: Oct 10, 2015
-:author: marcinl
-:copyright: (c) 2013-2015 RhodeCode GmbH.
-:license: Commercial License, see LICENSE for more details.
-"""
-
 import logging
 import uuid
 
 from pyramid.view import view_config
-from webob.exc import HTTPBadRequest, HTTPForbidden, HTTPBadGateway
+from pyramid.httpexceptions import HTTPBadRequest, HTTPForbidden, HTTPBadGateway
 
 from rhodecode.lib.channelstream import (
     channelstream_request,

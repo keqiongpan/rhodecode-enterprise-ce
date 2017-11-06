@@ -10,14 +10,14 @@
             ${_('Cache purge can be automated by such api call. Can be called periodically in crontab etc.')}
             <br/>
             <code>
-            ${h.api_call_example(method='invalidate_cache', args={"repoid": c.repo_info.repo_name})}
+            ${h.api_call_example(method='invalidate_cache', args={"repoid": c.rhodecode_db_repo.repo_name})}
             </code>
         </p>
 
-        ${h.secure_form(h.route_path('edit_repo_caches', repo_name=c.repo_name), method='POST')}
+        ${h.secure_form(h.route_path('edit_repo_caches', repo_name=c.repo_name), request=request)}
         <div class="form">
            <div class="fields">
-               ${h.submit('reset_cache_%s' % c.repo_info.repo_name,_('Invalidate repository cache'),class_="btn btn-small",onclick="return confirm('"+_('Confirm to invalidate repository cache')+"');")}
+               ${h.submit('reset_cache_%s' % c.rhodecode_db_repo.repo_name,_('Invalidate repository cache'),class_="btn btn-small",onclick="return confirm('"+_('Confirm to invalidate repository cache')+"');")}
            </div>
         </div>
         ${h.end_form()}
@@ -29,7 +29,7 @@
 <div class="panel panel-default">
     <div class="panel-heading">
         <h3 class="panel-title">
-            ${(_ungettext('List of repository caches (%(count)s entry)', 'List of repository caches (%(count)s entries)' ,len(c.repo_info.cache_keys)) % {'count': len(c.repo_info.cache_keys)})}
+            ${(_ungettext('List of repository caches (%(count)s entry)', 'List of repository caches (%(count)s entries)' ,len(c.rhodecode_db_repo.cache_keys)) % {'count': len(c.rhodecode_db_repo.cache_keys)})}
         </h3>
     </div>
     <div class="panel-body">
@@ -40,7 +40,7 @@
             <th>${_('Key')}</th>
             <th>${_('Active')}</th>
             </tr>
-          %for cache in c.repo_info.cache_keys:
+          %for cache in c.rhodecode_db_repo.cache_keys:
               <tr>
                 <td class="td-prefix">${cache.get_prefix() or '-'}</td>
                 <td class="td-cachekey">${cache.cache_key}</td>

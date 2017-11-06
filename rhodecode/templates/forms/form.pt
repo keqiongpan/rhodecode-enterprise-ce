@@ -27,7 +27,7 @@
 
     <legend tal:condition="title">${title}</legend>
 
-    <input type="hidden" name="${h.csrf_token_key}" value="${h.get_csrf_token()}" />
+    <input type="hidden" name="${h.csrf_token_key}" value="${h.get_csrf_token(request.session)}" />
     <input type="hidden" name="_charset_" />
     <input type="hidden" name="__formid__" value="${formid}"/>
 

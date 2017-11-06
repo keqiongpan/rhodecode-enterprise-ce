@@ -24,7 +24,7 @@
         <ul class="links">
             %if h.HasPermissionAny('hg.admin','hg.create.repository')():
              <li>
-               <a href="${h.url('new_repo')}" class="btn btn-small btn-success">${_(u'Add Repository')}</a>
+               <a href="${h.route_path('repo_new')}" class="btn btn-small btn-success">${_(u'Add Repository')}</a>
              </li>
             %endif
         </ul>

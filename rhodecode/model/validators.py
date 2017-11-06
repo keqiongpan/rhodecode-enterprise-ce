@@ -44,7 +44,7 @@ from rhodecode.authentication.base import loadplugin
 from rhodecode.config.routing import ADMIN_PREFIX
 from rhodecode.lib.auth import HasRepoGroupPermissionAny, HasPermissionAny
 from rhodecode.lib.utils import repo_name_slug, make_db_config
-from rhodecode.lib.utils2 import safe_int, str2bool, aslist, md5
+from rhodecode.lib.utils2 import safe_int, str2bool, aslist, md5, safe_unicode
 from rhodecode.lib.vcs.backends.git.repository import GitRepository
 from rhodecode.lib.vcs.backends.hg.repository import MercurialRepository
 from rhodecode.lib.vcs.backends.svn.repository import SubversionRepository
@@ -221,7 +221,7 @@ def ValidUserGroup(edit=False, old_data={}):
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'invalid_group': _(u'Invalid user group name'),
-            'group_exist': _(u'User group "%(usergroup)s" already exists'),
+            'group_exist': _(u'User group `%(usergroup)s` already exists'),
             'invalid_usergroup_name':
                 _(u'user group name may only contain alphanumeric '
                   u'characters underscores, periods or dashes and must begin '
@@ -972,13 +972,13 @@ def ValidIp():
         # we ovveride the default to_python() call
         def to_python(self, value, state):
             v = super(_validator, self).to_python(value, state)
-            v = v.strip()
+            v = safe_unicode(v.strip())
             net = ipaddress.ip_network(address=v, strict=False)
             return str(net)
 
         def validate_python(self, value, state):
             try:
-                addr = value.strip()
+                addr = safe_unicode(value.strip())
                 # this raises an ValueError if address is not IpV4 or IpV6
                 ipaddress.ip_network(addr, strict=False)
             except ValueError:

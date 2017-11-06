@@ -47,7 +47,7 @@
           <div class="panel-body">
             <div class="plugin_form">
               <div class="fields">
-                ${h.secure_form(request.resource_path(resource, route_name='auth_home'))}
+                ${h.secure_form(request.resource_path(resource, route_name='auth_home'), request=request)}
                 <div class="form">
 
                   %for node in plugin.get_settings_schema():

@@ -22,7 +22,7 @@ section.
     gunicorn       rhodecode-extensions      svn              svnversion
     hg             rhodecode-gist            svnadmin         vcsserver
     paster         rhodecode-index           svndumpfilter
-    rcserver       rhodecode-list-instances  svnlook
+    rc-server      rhodecode-list-instances  svnlook
     rhodecode-api  rhodecode-setup-config    svnmucc
 
 You can then use the tools as described in the :ref:`rc-tools` section using the

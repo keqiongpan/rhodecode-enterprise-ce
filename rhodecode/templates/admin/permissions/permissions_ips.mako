@@ -6,6 +6,9 @@
   </div>
   <div class="panel-body">
     <div class="ips_wrap">
+    <h5>${_('Current IP address')}: <code>${c.rhodecode_user.ip_addr}</code></h5>
+
+
       <table class="rctable ip-whitelist">
         <tr>
           <th>IP Address</th>
@@ -20,7 +23,7 @@
               <td class="td-iprange"><div class="ip">${h.ip_range(ip.ip_addr)}</div></td>
               <td class="td-description"><div class="ip">${ip.description}</div></td>
               <td class="td-action">
-                ${h.secure_form(h.route_path('edit_user_ips_delete', user_id=c.user.user_id), method='POST')}
+                ${h.secure_form(h.route_path('edit_user_ips_delete', user_id=c.user.user_id), request=request)}
                     ${h.hidden('del_ip_id',ip.ip_id)}
                     ${h.hidden('default_user', 'True')}
                     ${h.submit('remove_',_('Delete'),id="remove_ip_%s" % ip.ip_id,
@@ -40,7 +43,7 @@
       </table>
     </div>
 
-    ${h.secure_form(h.route_path('edit_user_ips_add', user_id=c.user.user_id), method='POST')}
+    ${h.secure_form(h.route_path('edit_user_ips_add', user_id=c.user.user_id), request=request)}
       <div class="form">
         <!-- fields -->
         <div class="fields">

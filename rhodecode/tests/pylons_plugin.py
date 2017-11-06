@@ -55,7 +55,7 @@ def pytest_addoption(parser):
         '--with-pylons', dest='pylons_config',
         help="Set up a Pylons environment with the specified config file.")
     group.addoption(
-        '--pylons-config-override', action='store', type=_parse_json,
+        '--ini-config-override', action='store', type=_parse_json,
         default=None, dest='pylons_config_override', help=(
             "Overrides the .ini file settings. Should be specified in JSON"
             " format, e.g. '{\"section\": {\"parameter\": \"value\", ...}}'"

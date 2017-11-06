@@ -73,8 +73,15 @@ class RhodeCodeWriter(writers.html4css1.Writer):
         self.translator_class = CustomHTMLTranslator
 
 
-def relative_links(html_source, server_path):
+def relative_links(html_source, server_paths):
     if not html_source:
+        return html_source
+
+    try:
+        from lxml.html import fromstring
+        from lxml.html import tostring
+    except ImportError:
+        log.exception('Failed to import lxml')
         return html_source
 
     try:
@@ -85,12 +92,16 @@ def relative_links(html_source, server_path):
     for el in doc.cssselect('img, video'):
         src = el.attrib.get('src')
         if src:
-            el.attrib['src'] = relative_path(src, server_path)
+            el.attrib['src'] = relative_path(src, server_paths['raw'])
 
     for el in doc.cssselect('a:not(.gfm)'):
         src = el.attrib.get('href')
         if src:
-            el.attrib['href'] = relative_path(src, server_path)
+            raw_mode = el.attrib['href'].endswith('?raw=1')
+            if raw_mode:
+                el.attrib['href'] = relative_path(src, server_paths['raw'])
+            else:
+                el.attrib['href'] = relative_path(src, server_paths['standard'])
 
     return lxml.html.tostring(doc)
 
@@ -165,6 +176,9 @@ class MarkupRenderer(object):
     RST_PAT = re.compile(r'\.re?st$', re.IGNORECASE)
     JUPYTER_PAT = re.compile(r'\.(ipynb)$', re.IGNORECASE)
     PLAIN_PAT = re.compile(r'^readme$', re.IGNORECASE)
+
+    URL_PAT = re.compile(r'(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]'
+                         r'|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)')
 
     extensions = ['codehilite', 'extra', 'def_list', 'sane_lists']
     markdown_renderer = markdown.Markdown(
@@ -289,14 +303,11 @@ class MarkupRenderer(object):
 
     @classmethod
     def urlify_text(cls, text):
-        url_pat = re.compile(r'(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]'
-                             r'|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)')
-
         def url_func(match_obj):
             url_full = match_obj.groups()[0]
             return '<a href="%(url)s">%(url)s</a>' % ({'url': url_full})
 
-        return url_pat.sub(url_func, text)
+        return cls.URL_PAT.sub(url_func, text)
 
     @classmethod
     def plain(cls, source, universal_newline=True):

@@ -27,7 +27,7 @@
     <div class="edit-file-title">
         ${self.breadcrumbs()}
     </div>
-    ${h.secure_form(h.url.current(),method='post',class_="form-horizontal")}
+    ${h.secure_form(h.route_path('repo_files_delete_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path), id='eform', class_="form-horizontal", request=request)}
     <div class="edit-file-fieldset">
         <div class="fieldset">
             <div id="destination-label" class="left-label">
@@ -44,11 +44,11 @@
             %if c.file.is_binary:
                 ${_('Binary file (%s)') % c.file.mimetype}
             %else:
-                %if c.file.size < c.cut_off_limit:
+                %if c.file.size < c.visual.cut_off_limit_file:
                     ${h.pygmentize(c.file,linenos=True,anchorlinenos=False,cssclass="code-highlight")}
                 %else:
-                    ${_('File is too big to display')} ${h.link_to(_('Show as raw'),
-                    h.url('files_raw_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path))}
+                    ${_('File size {} is bigger then allowed limit {}. ').format(h.format_byte_size_binary(c.file.size), h.format_byte_size_binary(c.visual.cut_off_limit_file))} ${h.link_to(_('Show as raw'),
+                    h.route_path('repo_file_raw',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path))}
                 %endif
             %endif
         </div>

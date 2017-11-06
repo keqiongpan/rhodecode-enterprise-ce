@@ -336,7 +336,7 @@ def test_repo_group(request):
     usage automatically
     """
     fixture = Fixture()
-    repogroupid = 'test_repo_group_%s' % int(time.time())
+    repogroupid = 'test_repo_group_%s' % str(time.time()).replace('.', '')
     repo_group = fixture.create_repo_group(repogroupid)
 
     def _cleanup():
@@ -353,7 +353,7 @@ def test_user_group(request):
     usage automatically
     """
     fixture = Fixture()
-    usergroupid = 'test_user_group_%s' % int(time.time())
+    usergroupid = 'test_user_group_%s' % str(time.time()).replace('.', '')
     user_group = fixture.create_user_group(usergroupid)
 
     def _cleanup():
@@ -1669,8 +1669,8 @@ def request_stub():
     """
     Stub request object.
     """
-    request = pyramid.testing.DummyRequest()
-    request.scheme = 'https'
+    from rhodecode.lib.base import bootstrap_request
+    request = bootstrap_request(scheme='https')
     return request
 
 
@@ -1830,3 +1830,29 @@ def disable_anonymous_user(request, pylonsapp):
     @request.addfinalizer
     def cleanup():
         set_anonymous_access(True)
+
+
+@pytest.fixture
+def rc_fixture(request):
+    return Fixture()
+
+
+@pytest.fixture
+def repo_groups(request):
+    fixture = Fixture()
+
+    session = Session()
+    zombie_group = fixture.create_repo_group('zombie')
+    parent_group = fixture.create_repo_group('parent')
+    child_group = fixture.create_repo_group('parent/child')
+    groups_in_db = session.query(RepoGroup).all()
+    assert len(groups_in_db) == 3
+    assert child_group.group_parent_id == parent_group.group_id
+
+    @request.addfinalizer
+    def cleanup():
+        fixture.destroy_repo_group(zombie_group)
+        fixture.destroy_repo_group(child_group)
+        fixture.destroy_repo_group(parent_group)
+
+    return zombie_group, parent_group, child_group

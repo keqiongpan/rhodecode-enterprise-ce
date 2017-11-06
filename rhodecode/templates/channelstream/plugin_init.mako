@@ -4,13 +4,14 @@
     var CHANNELSTREAM_SETTINGS = {
         'enabled': true,
         'ws_location': '${request.registry.settings.get('channelstream.ws_url')}',
-            'webapp_location': '${h.url('/', qualified=True)[:-1]}'
+        'webapp_location': '${h.route_url('home').rstrip('/')}'
     };
     %else:
     var CHANNELSTREAM_SETTINGS = {
         'enabled':false,
         'ws_location': '',
-        'webapp_location': ''};
+        'webapp_location': '${h.route_url('home').rstrip('/')}'
+    };
     %endif
 
 </script>

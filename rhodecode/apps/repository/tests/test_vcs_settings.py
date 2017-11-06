@@ -22,8 +22,8 @@ import mock
 import pytest
 
 import rhodecode
+from rhodecode.model.db import Repository
 from rhodecode.model.settings import SettingsModel
-from rhodecode.tests import url
 from rhodecode.tests.utils import AssertResponse
 
 
@@ -32,6 +32,8 @@ def route_path(name, params=None, **kwargs):
 
     base_url = {
         'edit_repo': '/{repo_name}/settings',
+        'edit_repo_vcs': '/{repo_name}/settings/vcs',
+        'edit_repo_vcs_update': '/{repo_name}/settings/vcs/update',
     }[name].format(**kwargs)
 
     if params:
@@ -50,8 +52,8 @@ class TestAdminRepoVcsSettings(object):
         if backend.alias not in setting_backends:
             pytest.skip('Setting not available for backend {}'.format(backend))
 
-        vcs_settings_url = url(
-            'repo_vcs_settings', repo_name=backend.repo.repo_name)
+        vcs_settings_url = route_path(
+            'edit_repo_vcs', repo_name=backend.repo.repo_name)
 
         with mock.patch.dict(
                 rhodecode.CONFIG, {'labs_settings_active': 'true'}):
@@ -63,34 +65,17 @@ class TestAdminRepoVcsSettings(object):
     @pytest.mark.parametrize('setting_name, setting_backends', [
         ('hg_use_rebase_for_merging', ['hg']),
     ])
-    def test_labs_settings_not_visible_if_disabled(
-            self, setting_name, setting_backends, backend):
-        if backend.alias not in setting_backends:
-            pytest.skip('Setting not available for backend {}'.format(backend))
-
-        vcs_settings_url = url(
-            'repo_vcs_settings', repo_name=backend.repo.repo_name)
-
-        with mock.patch.dict(
-                rhodecode.CONFIG, {'labs_settings_active': 'false'}):
-            response = self.app.get(vcs_settings_url)
-
-        assertr = AssertResponse(response)
-        assertr.no_element_exists('#rhodecode_{}'.format(setting_name))
-
-    @pytest.mark.parametrize('setting_name, setting_backends', [
-        ('hg_use_rebase_for_merging', ['hg']),
-    ])
     def test_update_boolean_settings(
             self, csrf_token, setting_name, setting_backends, backend):
         if backend.alias not in setting_backends:
             pytest.skip('Setting not available for backend {}'.format(backend))
 
         repo = backend.create_repo()
+        repo_name = repo.repo_name
 
         settings_model = SettingsModel(repo=repo)
-        vcs_settings_url = url(
-            'repo_vcs_settings', repo_name=repo.repo_name)
+        vcs_settings_url = route_path(
+            'edit_repo_vcs_update', repo_name=repo_name)
 
         self.app.post(
             vcs_settings_url,
@@ -101,6 +86,7 @@ class TestAdminRepoVcsSettings(object):
                 'rhodecode_{}'.format(setting_name): 'true',
                 'csrf_token': csrf_token,
             })
+        settings_model = SettingsModel(repo=Repository.get_by_repo_name(repo_name))
         setting = settings_model.get_setting_by_name(setting_name)
         assert setting.app_settings_value
 
@@ -113,5 +99,6 @@ class TestAdminRepoVcsSettings(object):
                 'rhodecode_{}'.format(setting_name): 'false',
                 'csrf_token': csrf_token,
             })
+        settings_model = SettingsModel(repo=Repository.get_by_repo_name(repo_name))
         setting = settings_model.get_setting_by_name(setting_name)
         assert not setting.app_settings_value

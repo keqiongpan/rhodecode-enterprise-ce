@@ -2,14 +2,14 @@
 <%inherit file="/base/base.mako"/>
 
 <%def name="title()">
-    ${_('%s Creating repository') % c.repo_name}
+    ${_('{} Creating repository').format(c.repo_name)}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
 </%def>
 
 <%def name="breadcrumbs_links()">
-    ${_('Creating repository')} ${c.repo}
+    ${_('Creating repository')} ${c.repo_name}
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -38,7 +38,7 @@
 <script>
 (function worker() {
   var skipCheck = false;
-  var url = "${h.url('repo_check_home', repo_name=c.repo_name, repo=c.repo, task_id=c.task_id)}";
+  var url = "${h.route_path('repo_creating_check', repo_name=c.repo_name, _query=dict(task_id=c.task_id))}";
   $.ajax({
     url: url,
     complete: function(resp) {
@@ -48,12 +48,12 @@
             if (jsonResponse === undefined) {
                 setTimeout(function () {
                     // we might have a backend problem, try dashboard again
-                    window.location = "${h.route_path('repo_summary', repo_name = c.repo)}";
+                    window.location = "${h.route_path('repo_summary', repo_name = c.repo_name)}";
                 }, 3000);
             } else {
                 if (skipCheck || jsonResponse.result === true) {
                     // success, means go to dashboard
-                    window.location = "${h.route_path('repo_summary', repo_name = c.repo)}";
+                    window.location = "${h.route_path('repo_summary', repo_name = c.repo_name)}";
                 } else {
                     // Schedule the next request when the current one's complete
                     setTimeout(worker, 1000);
@@ -61,7 +61,14 @@
             }
         }
         else {
-            window.location = "${h.route_path('home')}";
+            var payload = {
+                message: {
+                    message: _gettext('Fetching repository state failed. Error code: {0} {1}. Try refreshing this page.').format(resp.status, resp.statusText),
+                    level: 'error',
+                    force: true
+                }
+            };
+            $.Topic('/notifications').publish(payload);
         }
     }
   });

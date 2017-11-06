@@ -21,6 +21,9 @@
  * Deferred functions that must run before any rhodecode javascript go here
  */
 
-registerRCRoutes();
+
+if (typeof window['registerRCRoutes'] != 'undefined') {
+    registerRCRoutes();
+}
 
 // TODO: move i18n here

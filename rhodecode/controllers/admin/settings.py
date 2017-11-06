@@ -32,6 +32,7 @@ from formencode import htmlfill
 from pylons import request, tmpl_context as c, url, config
 from pylons.controllers.util import redirect
 from pylons.i18n.translation import _
+from pylons.decorators import jsonify
 from pyramid.threadlocal import get_current_registry
 from webob.exc import HTTPBadRequest
 
@@ -47,7 +48,6 @@ from rhodecode.lib.utils import repo2db_mapper
 from rhodecode.lib.utils2 import (
     str2bool, safe_unicode, AttributeDict, safe_int)
 from rhodecode.lib.compat import OrderedDict
-from rhodecode.lib.utils import jsonify
 
 from rhodecode.model.db import RhodeCodeUi, Repository
 from rhodecode.model.forms import ApplicationSettingsForm, \

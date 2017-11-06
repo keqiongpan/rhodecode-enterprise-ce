@@ -20,25 +20,38 @@
 
 import pytest
 
-from rhodecode.tests import (
-    TestController, url, assert_session_flash, link_to)
-from rhodecode.model.db import User, UserGroup
-from rhodecode.model.meta import Session
+from rhodecode.tests import TestController
 from rhodecode.tests.fixture import Fixture
+
+
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
+
+    base_url = {
+        'home': '/',
+        'repos':
+            ADMIN_PREFIX + '/repos',
+        'repo_groups':
+            ADMIN_PREFIX + '/repo_groups',
+        'user_groups':
+            ADMIN_PREFIX + '/user_groups',
+        'user_groups_data':
+            ADMIN_PREFIX + '/user_groups_data',
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
 
 
 fixture = Fixture()
 
 
-def route_path(name, **kwargs):
-    return {
-        'home': '/',
-    }[name].format(**kwargs)
+class TestAdminDelegatedUser(TestController):
 
-
-class TestAdminUsersGroupsController(TestController):
-
-    def test_regular_user_cannot_see_admin_interfaces(self, user_util):
+    def test_regular_user_cannot_see_admin_interfaces(
+            self, user_util, xhr_header):
         user = user_util.create_user(password='qweqwe')
         self.log_user(user.username, 'qweqwe')
 
@@ -51,16 +64,18 @@ class TestAdminUsersGroupsController(TestController):
         assert_response.no_element_exists('li.local-admin-repo-groups')
         assert_response.no_element_exists('li.local-admin-user-groups')
 
-        response = self.app.get(url('repos'), status=200)
+        response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('data: []')
 
-        response = self.app.get(url('repo_groups'), status=200)
+        response = self.app.get(route_path('repo_groups'), status=200)
         response.mustcontain('data: []')
 
-        response = self.app.get(url('users_groups'), status=200)
-        response.mustcontain('data: []')
+        response = self.app.get(route_path('user_groups_data'),
+                                status=200, extra_environ=xhr_header)
+        assert response.json['data'] == []
 
-    def test_regular_user_can_see_admin_interfaces_if_owner(self, user_util):
+    def test_regular_user_can_see_admin_interfaces_if_owner(
+            self, user_util, xhr_header):
         user = user_util.create_user(password='qweqwe')
         username = user.username
 
@@ -84,16 +99,18 @@ class TestAdminUsersGroupsController(TestController):
         assert_response.one_element_exists('li.local-admin-user-groups')
 
         # admin interfaces have visible elements
-        response = self.app.get(url('repos'), status=200)
+        response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_name))
 
-        response = self.app.get(url('repo_groups'), status=200)
+        response = self.app.get(route_path('repo_groups'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_group_name))
 
-        response = self.app.get(url('users_groups'), status=200)
-        response.mustcontain('"group_name_raw": "{}"'.format(user_group_name))
+        response = self.app.get(route_path('user_groups_data'),
+                                extra_environ=xhr_header, status=200)
+        response.mustcontain('"name_raw": "{}"'.format(user_group_name))
 
-    def test_regular_user_can_see_admin_interfaces_if_admin_perm(self, user_util):
+    def test_regular_user_can_see_admin_interfaces_if_admin_perm(
+            self, user_util, xhr_header):
         user = user_util.create_user(password='qweqwe')
         username = user.username
 
@@ -124,11 +141,12 @@ class TestAdminUsersGroupsController(TestController):
         assert_response.one_element_exists('li.local-admin-user-groups')
 
         # admin interfaces have visible elements
-        response = self.app.get(url('repos'), status=200)
+        response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_name))
 
-        response = self.app.get(url('repo_groups'), status=200)
+        response = self.app.get(route_path('repo_groups'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_group_name))
 
-        response = self.app.get(url('users_groups'), status=200)
-        response.mustcontain('"group_name_raw": "{}"'.format(user_group_name))
+        response = self.app.get(route_path('user_groups_data'),
+                                extra_environ=xhr_header, status=200)
+        response.mustcontain('"name_raw": "{}"'.format(user_group_name))

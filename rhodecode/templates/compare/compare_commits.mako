@@ -3,7 +3,7 @@
 
 %if c.ancestor:
 <div class="ancestor">${_('Common Ancestor Commit')}:
-    <a href="${h.url('changeset_home', repo_name=c.repo_name, revision=c.ancestor)}">
+    <a href="${h.route_path('repo_commit', repo_name=c.repo_name, commit_id=c.ancestor)}">
         ${h.short_id(c.ancestor)}
     </a>. ${_('Compare was calculated based on this shared commit.')}
     <input id="common_ancestor" type="hidden" name="common_ancestor" value="${c.ancestor}">
@@ -34,9 +34,7 @@
             </td>
             <td class="td-hash">
                 <code>
-                    <a href="${h.url('changeset_home',
-                                     repo_name=c.target_repo.repo_name,
-                                     revision=commit.raw_id)}">
+                    <a href="${h.route_path('repo_commit', repo_name=c.target_repo.repo_name, commit_id=commit.raw_id)}">
                         r${commit.revision}:${h.short_id(commit.raw_id)}
                     </a>
                     ${h.hidden('revisions',commit.raw_id)}
@@ -65,8 +63,8 @@
     %endfor
         <tr class="compare_select_hidden" style="${'' if c.collapse_all_commits else 'display: none'}">
             <td colspan="5">
-                ${ungettext('%s commit hidden','%s commits hidden', len(c.commit_ranges)) % len(c.commit_ranges)},
-                <a href="#" onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">${ungettext('show it','show them', len(c.commit_ranges))}</a>
+                ${_ungettext('%s commit hidden','%s commits hidden', len(c.commit_ranges)) % len(c.commit_ranges)},
+                <a href="#" onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">${_ungettext('show it','show them', len(c.commit_ranges))}</a>
             </td>
         </tr>
     % if not c.commit_ranges:

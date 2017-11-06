@@ -50,9 +50,14 @@
             </div>
             <div class="right-content disabled">
                 <input type="text" class="input-monospace" id="clone_url" disabled value="${c.clone_repo_url}"/>
+                <i id="clone_by_name_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url}" title="${_('Copy the clone url')}"></i>
+
                 <input type="text" class="input-monospace" id="clone_url_id" disabled value="${c.clone_repo_url_id}" style="display: none;"/>
+                <i id="clone_by_id_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url_id}" title="${_('Copy the clone by id url')}" style="display: none"></i>
+
                 <a id="clone_by_name" class="clone" style="display: none;">${_('Show by Name')}</a>
                 <a id="clone_by_id" class="clone">${_('Show by ID')}</a>
+
                 <p class="help-block">${_('SVN Protocol is disabled. To enable it, see the')} <a href="${h.route_url('enterprise_svn_setup')}" target="_blank">${_('documentation here')}</a>.</p>
             </div>
           %else:
@@ -61,7 +66,11 @@
             </div>
             <div class="right-content">
                 <input type="text" class="input-monospace" id="clone_url" readonly="readonly" value="${c.clone_repo_url}"/>
+                <i id="clone_by_name_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url}" title="${_('Copy the clone url')}"></i>
+
                 <input type="text" class="input-monospace" id="clone_url_id" readonly="readonly" value="${c.clone_repo_url_id}" style="display: none;"/>
+                <i id="clone_by_id_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url_id}" title="${_('Copy the clone by id url')}" style="display: none"></i>
+
                 <a id="clone_by_name" class="clone" style="display: none;">${_('Show by Name')}</a>
                 <a id="clone_by_id" class="clone">${_('Show by ID')}</a>
             </div>
@@ -73,11 +82,10 @@
             ${_('Description')}:
           </div>
           <div class="right-content">
-             %if c.visual.stylify_metatags:
-               <div class="input ${summary(c.show_stats)} desc">${h.urlify_text(h.escaped_stylize(c.rhodecode_db_repo.description))}</div>
-             %else:
-               <div class="input ${summary(c.show_stats)} desc">${h.urlify_text(h.html_escape(c.rhodecode_db_repo.description))}</div>
-             %endif
+            <div class="input ${summary(c.show_stats)}">
+                <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+                ${dt.repo_desc(c.rhodecode_db_repo.description_safe, c.visual.stylify_metatags)}
+            </div>
           </div>
         </div>
 
@@ -94,12 +102,12 @@
                   % if commit_rev == -1:
                       ${_ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}},
                   % else:
-                      <a href="${h.url('changelog_home', repo_name=c.repo_name)}">
+                      <a href="${h.route_path('repo_changelog', repo_name=c.repo_name)}">
                         ${_ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>,
                   % endif
 
                   ## forks
-                  <a title="${_('Number of Repository Forks')}" href="${h.url('repo_forks_home', repo_name=c.repo_name)}">
+                  <a title="${_('Number of Repository Forks')}" href="${h.route_path('repo_forks_show_all', repo_name=c.repo_name)}">
                      ${c.repository_forks} ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>,
 
                   ## repo size
@@ -145,7 +153,7 @@
                       ${_('Statistics are disabled for this repository')}
                   </span>
                   % if h.HasPermissionAll('hg.admin')('enable stats on from summary'):
-                     , ${h.link_to(_('enable statistics'),h.route_path('edit_repo',repo_name=c.repo_name, anchor='repo_enable_statistics'))}
+                     , ${h.link_to(_('enable statistics'),h.route_path('edit_repo',repo_name=c.repo_name, _anchor='repo_enable_statistics'))}
                   % endif
               % endif
             </div>
@@ -169,11 +177,11 @@
                         ${_('Downloads are disabled for this repository')}
                     </span>
                     % if h.HasPermissionAll('hg.admin')('enable downloads on from summary'):
-                       , ${h.link_to(_('enable downloads'),h.route_path('edit_repo',repo_name=c.repo_name, anchor='repo_enable_downloads'))}
+                       , ${h.link_to(_('enable downloads'),h.route_path('edit_repo',repo_name=c.repo_name, _anchor='repo_enable_downloads'))}
                     % endif
                 % else:
                     <span class="enabled">
-                        <a id="archive_link" class="btn btn-small" href="${h.url('files_archive_home',repo_name=c.rhodecode_db_repo.repo_name,fname='tip.zip')}">
+                        <a id="archive_link" class="btn btn-small" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name,fname='tip.zip')}">
                             <i class="icon-archive"></i> tip.zip
                             ## replaced by some JS on select
                         </a>

@@ -33,6 +33,7 @@ from rhodecode.lib import user_sessions
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.model.db import UserIpMap
 from rhodecode.model.scm import ScmModel
+from rhodecode.model.settings import VcsSettingsModel
 
 log = logging.getLogger(__name__)
 
@@ -72,6 +73,35 @@ def get_server_info(request, apiuser):
     server_info['storage'] = server_info['storage']['value']['path']
 
     return server_info
+
+
+@jsonrpc_method()
+def get_repo_store(request, apiuser):
+    """
+    Returns the |RCE| repository storage information.
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+
+    Example output:
+
+    .. code-block:: bash
+
+      id : <id_given_in_input>
+      result : {
+        'modules': [<module name>,...]
+        'py_version': <python version>,
+        'platform': <platform type>,
+        'rhodecode_version': <rhodecode version>
+      }
+      error :  null
+    """
+
+    if not has_superadmin_permission(apiuser):
+        raise JSONRPCForbidden()
+
+    path = VcsSettingsModel().get_repos_location()
+    return {"path": path}
 
 
 @jsonrpc_method()

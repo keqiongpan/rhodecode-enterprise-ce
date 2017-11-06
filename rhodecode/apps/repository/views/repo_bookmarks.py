@@ -23,8 +23,10 @@ from pyramid.httpexceptions import HTTPNotFound
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseReferencesView
-from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator)
+from rhodecode.lib.ext_json import json
 from rhodecode.lib import helpers as h
+from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator)
+
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +46,9 @@ class RepoBookmarksView(BaseReferencesView):
             raise HTTPNotFound()
 
         ref_items = self.rhodecode_vcs_repo.bookmarks.items()
-        self.load_refs_context(
+        data = self.load_refs_context(
             ref_items=ref_items, partials_template='bookmarks/bookmarks_data.mako')
 
+        c.has_references = bool(data)
+        c.data = json.dumps(data)
         return self._get_template_context(c)

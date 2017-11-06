@@ -22,6 +22,7 @@
 Pylons middleware initialization
 """
 import logging
+import traceback
 from collections import OrderedDict
 
 from paste.registry import RegistryManager
@@ -36,19 +37,17 @@ from pyramid.httpexceptions import (
 from pyramid.events import ApplicationCreated
 from pyramid.renderers import render_to_response
 from routes.middleware import RoutesMiddleware
-import routes.util
-
 import rhodecode
 
 from rhodecode.model import meta
 from rhodecode.config import patches
+from rhodecode.config import utils as config_utils
 from rhodecode.config.routing import STATIC_FILE_PREFIX
 from rhodecode.config.environment import (
     load_environment, load_pyramid_environment)
 
 from rhodecode.lib.vcs import VCSCommunicationError
 from rhodecode.lib.exceptions import VCSServerUnavailable
-from rhodecode.lib.middleware import csrf
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
 from rhodecode.lib.middleware.error_handling import (
     PylonsErrorHandlingMiddleware)
@@ -58,7 +57,7 @@ from rhodecode.lib.plugins.utils import register_rhodecode_plugin
 from rhodecode.lib.utils2 import aslist as rhodecode_aslist, AttributeDict
 from rhodecode.subscribers import (
     scan_repositories_if_enabled, write_js_routes_if_enabled,
-    write_metadata_if_needed)
+    write_metadata_if_needed, inject_app_settings)
 
 
 log = logging.getLogger(__name__)
@@ -111,14 +110,6 @@ def make_app(global_conf, static_files=True, **app_conf):
 
     # The Pylons WSGI app
     app = PylonsApp(config=config)
-    if rhodecode.is_test:
-        app = csrf.CSRFDetector(app)
-
-    expected_origin = config.get('expected_origin')
-    if expected_origin:
-        # The API can be accessed from other Origins.
-        app = csrf.OriginChecker(app, expected_origin,
-                                 skip_urls=[routes.util.url_for('api')])
 
     # Establish the Registry for this application
     app = RegistryManager(app)
@@ -156,13 +147,15 @@ def make_pyramid_app(global_config, **settings):
     settings_pylons = settings.copy()
 
     sanitize_settings_and_apply_defaults(settings)
-    config = Configurator(settings=settings)
-    add_pylons_compat_data(config.registry, global_config, settings_pylons)
 
+    config = Configurator(settings=settings)
     load_pyramid_environment(global_config, settings)
+
+    add_pylons_compat_data(config.registry, global_config, settings_pylons)
 
     includeme_first(config)
     includeme(config)
+
     pyramid_app = config.make_wsgi_app()
     pyramid_app = wrap_app_in_wsgi_middlewares(pyramid_app, config)
     pyramid_app.config = config
@@ -244,9 +237,12 @@ def error_handler(exception, request):
         log.exception(
             'error occurred handling this request for path: %s', request.path)
 
+    error_explanation = base_response.explanation or str(base_response)
+    if base_response.status_code == 404:
+        error_explanation += " Or you don't have permission to access it."
     c = AttributeDict()
     c.error_message = base_response.status
-    c.error_explanation = base_response.explanation or str(base_response)
+    c.error_explanation = error_explanation
     c.visual = AttributeDict()
 
     c.visual.rhodecode_support_url = (
@@ -259,10 +255,16 @@ def error_handler(exception, request):
         c.rhodecode_name = 'Rhodecode'
 
     c.causes = []
+    if is_http_error(base_response):
+        c.causes.append('Server is overloaded.')
+        c.causes.append('Server database connection is lost.')
+        c.causes.append('Server expected unhandled error.')
+
     if hasattr(base_response, 'causes'):
         c.causes = base_response.causes
-    c.messages = helpers.flash.pop_messages()
 
+    c.messages = helpers.flash.pop_messages(request=request)
+    c.traceback = traceback.format_exc()
     response = render_to_response(
         '/errors/error_document.mako', {'c': c, 'h': helpers}, request=request,
         response=base_response)
@@ -282,6 +284,11 @@ def includeme(config):
     if asbool(settings.get('appenlight', 'false')):
         config.include('appenlight_client.ext.pyramid_tween')
 
+    if 'mako.default_filters' not in settings:
+        # set custom default filters if we don't have it defined
+        settings['mako.imports'] = 'from rhodecode.lib.base import h_filter'
+        settings['mako.default_filters'] = 'h_filter'
+
     # Includes which are required. The application would fail without them.
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
@@ -297,13 +304,18 @@ def includeme(config):
     config.include('rhodecode.apps.channelstream')
     config.include('rhodecode.apps.login')
     config.include('rhodecode.apps.home')
+    config.include('rhodecode.apps.journal')
     config.include('rhodecode.apps.repository')
     config.include('rhodecode.apps.repo_group')
+    config.include('rhodecode.apps.user_group')
     config.include('rhodecode.apps.search')
     config.include('rhodecode.apps.user_profile')
     config.include('rhodecode.apps.my_account')
     config.include('rhodecode.apps.svn_support')
+    config.include('rhodecode.apps.ssh_support')
+    config.include('rhodecode.apps.gist')
 
+    config.include('rhodecode.apps.debug_style')
     config.include('rhodecode.tweens')
     config.include('rhodecode.api')
 
@@ -314,9 +326,14 @@ def includeme(config):
     settings['default_locale_name'] = settings.get('lang', 'en')
 
     # Add subscribers.
+    config.add_subscriber(inject_app_settings, ApplicationCreated)
     config.add_subscriber(scan_repositories_if_enabled, ApplicationCreated)
     config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
     config.add_subscriber(write_js_routes_if_enabled, ApplicationCreated)
+
+    config.add_request_method(
+        'rhodecode.lib.partial_renderer.get_partial_renderer',
+        'get_partial_renderer')
 
     # events
     # TODO(marcink): this should be done when pyramid migration is finished
@@ -347,7 +364,7 @@ def includeme(config):
     config.add_notfound_view(make_not_found_view(config))
 
     if not settings.get('debugtoolbar.enabled', False):
-        # if no toolbar, then any exception gets caught and rendered
+        # disabled debugtoolbar handle all exceptions via the error_handlers
         config.add_view(error_handler, context=Exception)
 
     config.add_view(error_handler, context=HTTPError)
@@ -390,9 +407,13 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
 
     # Add RoutesMiddleware to support the pylons compatibility tween during
     # migration to pyramid.
-    pyramid_app = SkippableRoutesMiddleware(
-        pyramid_app, config.registry._pylons_compat_config['routes.map'],
-        skip_prefixes=(STATIC_FILE_PREFIX, '/_debug_toolbar'))
+
+    # TODO(marcink): remove after migration to pyramid
+    if hasattr(config.registry, '_pylons_compat_config'):
+        routes_map = config.registry._pylons_compat_config['routes.map']
+        pyramid_app = SkippableRoutesMiddleware(
+            pyramid_app, routes_map,
+            skip_prefixes=(STATIC_FILE_PREFIX, '/_debug_toolbar'))
 
     pyramid_app, _ = wrap_in_appenlight_if_enabled(pyramid_app, settings)
 
@@ -462,6 +483,9 @@ def sanitize_settings_and_apply_defaults(settings):
     # Call split out functions that sanitize settings for each topic.
     _sanitize_appenlight_settings(settings)
     _sanitize_vcs_settings(settings)
+
+    # configure instance id
+    config_utils.set_instance_id(settings)
 
     return settings
 

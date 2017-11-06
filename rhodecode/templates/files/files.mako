@@ -43,8 +43,8 @@
 
         var getState = function(context) {
             var url = $(location).attr('href');
-            var _base_url = '${h.url("files_home",repo_name=c.repo_name,revision='',f_path='')}';
-            var _annotate_url = '${h.url("files_annotate_home",repo_name=c.repo_name,revision='',f_path='')}';
+            var _base_url = '${h.route_path("repo_files",repo_name=c.repo_name,commit_id='',f_path='')}';
+            var _annotate_url = '${h.route_path("repo_files:annotated",repo_name=c.repo_name,commit_id='',f_path='')}';
             _base_url = _base_url.replace('//', '/');
             _annotate_url = _annotate_url.replace('//', '/');
 
@@ -67,12 +67,12 @@
                 var f_path = parts2.join('/');
             }
 
-            var _node_list_url = pyroutes.url('files_nodelist_home',
+            var _node_list_url = pyroutes.url('repo_files_nodelist',
                     {repo_name: templateContext.repo_name,
-                     revision: rev, f_path: f_path});
-            var _url_base = pyroutes.url('files_home',
+                     commit_id: rev, f_path: f_path});
+            var _url_base = pyroutes.url('repo_files',
                     {repo_name: templateContext.repo_name,
-                     revision: rev, f_path:'__FPATH__'});
+                     commit_id: rev, f_path:'__FPATH__'});
             return {
                 url: url,
                 f_path: f_path,
@@ -105,7 +105,7 @@
                 'f_path': state.f_path
             };
 
-            var url = pyroutes.url('files_nodetree_full', url_data);
+            var url = pyroutes.url('repo_nodetree_full', url_data);
 
             metadataRequest = $.ajax({url: url});
 
@@ -174,7 +174,7 @@
                         merge: 1,
                         f_path: state.f_path
                     };
-                    window.location = pyroutes.url('compare_url', url_data);
+                    window.location = pyroutes.url('repo_compare', url_data);
                 });
 
                 $('#show_at_commit').on('click', function(e) {
@@ -182,13 +182,13 @@
 
                     var annotate = $('#annotate').val();
                     if (annotate === "True") {
-                        var url = pyroutes.url('files_annotate_home',
+                        var url = pyroutes.url('repo_files:annotated',
                                 {'repo_name': templateContext.repo_name,
-                                 'revision': diff1, 'f_path': state.f_path});
+                                 'commit_id': diff1, 'f_path': state.f_path});
                     } else {
-                        var url = pyroutes.url('files_home',
+                        var url = pyroutes.url('repo_files',
                                 {'repo_name': templateContext.repo_name,
-                                 'revision': diff1, 'f_path': state.f_path});
+                                 'commit_id': diff1, 'f_path': state.f_path});
                     }
                     window.location = url;
 
@@ -197,9 +197,9 @@
                 // show more authors
                 $('#show_authors').on('click', function(e) {
                     e.preventDefault();
-                    var url = pyroutes.url('files_authors_home',
+                    var url = pyroutes.url('repo_file_authors',
                                 {'repo_name': templateContext.repo_name,
-                                 'revision': state.rev, 'f_path': state.f_path});
+                                 'commit_id': state.rev, 'f_path': state.f_path});
 
                     $.pjax({
                         url: url,
@@ -219,9 +219,9 @@
                     if (path.indexOf("#") >= 0) {
                         path = path.slice(0, path.indexOf("#"));
                     }
-                    var url = pyroutes.url('changelog_file_home',
+                    var url = pyroutes.url('repo_changelog_file',
                             {'repo_name': templateContext.repo_name,
-                             'revision': state.rev, 'f_path': path, 'limit': 6});
+                             'commit_id': state.rev, 'f_path': path, 'limit': 6});
                     $('#file_history_container').show();
                     $('#file_history_container').html('<div class="file-history-inner">{0}</div>'.format(_gettext('Loading ...')));
 
@@ -264,9 +264,9 @@
                         var rev = $('#at_rev').val();
                         // explicit reload page here. with pjax entering bad input
                         // produces not so nice results
-                        window.location = pyroutes.url('files_home',
+                        window.location = pyroutes.url('repo_files',
                                 {'repo_name': templateContext.repo_name,
-                                 'revision': rev, 'f_path': state.f_path});
+                                 'commit_id': rev, 'f_path': state.f_path});
                     }
                 });
             }

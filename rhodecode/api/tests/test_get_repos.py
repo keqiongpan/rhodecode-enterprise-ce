@@ -116,7 +116,7 @@ class TestGetRepos(object):
         response = api_call(self.app, params)
 
         user = User.get_by_username(self.TEST_USER_LOGIN)
-        allowed_repos = user.AuthUser.permissions['repositories']
+        allowed_repos = user.AuthUser().permissions['repositories']
 
         result = []
         for repo in RepoModel().get_all():

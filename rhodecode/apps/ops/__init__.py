@@ -25,11 +25,22 @@ def admin_routes(config):
     config.add_route(
         name='ops_ping',
         pattern='/ping')
+    config.add_route(
+        name='ops_error_test',
+        pattern='/error')
+    config.add_route(
+        name='ops_redirect_test',
+        pattern='/redirect')
 
 
 def includeme(config):
 
     config.include(admin_routes, route_prefix=ADMIN_PREFIX + '/ops')
+    # make OLD entries from pylons work
+    config.add_route(
+        name='ops_ping_legacy', pattern=ADMIN_PREFIX + '/ping')
+    config.add_route(
+        name='ops_error_test_legacy', pattern=ADMIN_PREFIX + '/error_test')
 
     # Scan module for configuration decorators.
-    config.scan()
+    config.scan('.views', ignore='.tests')

@@ -23,8 +23,7 @@ import logging
 from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
-from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator,
-    NotAnonymous)
+from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
 from rhodecode.lib import repo_maintenance
 
 log = logging.getLogger(__name__)
@@ -34,16 +33,13 @@ class RepoMaintenanceView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo
-
         self._register_global_c(c)
         return c
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
-        route_name='repo_maintenance', request_method='GET',
+        route_name='edit_repo_maintenance', request_method='GET',
         renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_maintenance(self):
         c = self.load_default_context()
@@ -55,7 +51,7 @@ class RepoMaintenanceView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
-        route_name='repo_maintenance_execute', request_method='GET',
+        route_name='edit_repo_maintenance_execute', request_method='GET',
         renderer='json', xhr=True)
     def repo_maintenance_execute(self):
         c = self.load_default_context()

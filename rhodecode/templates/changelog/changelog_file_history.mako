@@ -15,7 +15,7 @@
             <td class="td-message">
                 <div class="log-container">
                     <div class="message_history" title="${h.tooltip(cs.message)}">
-                        <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=cs.raw_id)}">
+                        <a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id)}">
                             ${h.shorter(cs.message, 75)}
                         </a>
                     </div>
@@ -23,13 +23,13 @@
             </td>
             <td class="td-hash">
                 <code>
-                    <a href="${h.url('changeset_home',repo_name=c.repo_name,revision=cs.raw_id)}">
+                    <a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id)}">
                         <span>${h.show_id(cs)}</span>
                     </a>
                 </code>
             </td>
             <td class="td-actions">
-                <a href="${h.url('files_home',repo_name=c.repo_name,f_path=c.changelog_for_path,revision=cs.raw_id)}">
+                <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=cs.raw_id,f_path=c.changelog_for_path)}">
                     ${_('Show File')}
                 </a>
             </td>

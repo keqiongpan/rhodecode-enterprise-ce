@@ -40,7 +40,7 @@ from rhodecode.model.db import (_hash_key,
     UserGroup, Repository)
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 from rhodecode.lib.caching_query import FromCache
-from rhodecode.lib.utils2 import action_logger_generic
+from rhodecode.lib.utils2 import action_logger_generic, datetime_to_time
 
 log = logging.getLogger(__name__)
 
@@ -254,8 +254,11 @@ class RepoGroupModel(BaseModel):
         # functions can delete this
         cleanup_group = self.check_exist_filesystem(group_name,
                                                     exc_on_failure=False)
+        user = self._get_user(owner)
+        if not user:
+            raise ValueError('Owner %s not found as rhodecode user', owner)
+
         try:
-            user = self._get_user(owner)
             new_repo_group = RepoGroup()
             new_repo_group.user = user
             new_repo_group.group_description = group_description or group_name
@@ -501,7 +504,7 @@ class RepoGroupModel(BaseModel):
 
             if 'user' in form_data:
                 repo_group.user = User.get_by_username(form_data['user'])
-
+            repo_group.updated_on = datetime.datetime.now()
             self.sa.add(repo_group)
 
             # iterate over all members of this groups and do fixes
@@ -518,6 +521,7 @@ class RepoGroupModel(BaseModel):
                     log.debug('Fixing group %s to new name %s',
                               obj.group_name, new_name)
                     obj.group_name = new_name
+                    obj.updated_on = datetime.datetime.now()
                 elif isinstance(obj, Repository):
                     # we need to get all repositories from this new group and
                     # rename them accordingly to new group path
@@ -525,6 +529,7 @@ class RepoGroupModel(BaseModel):
                     log.debug('Fixing repo %s to new name %s',
                               obj.repo_name, new_name)
                     obj.repo_name = new_name
+                    obj.updated_on = datetime.datetime.now()
                 self.sa.add(obj)
 
             self._rename_group(old_path, new_path)
@@ -673,10 +678,11 @@ class RepoGroupModel(BaseModel):
     def get_repo_groups_as_dict(self, repo_group_list=None, admin=False,
                                 super_user_actions=False):
 
-        from rhodecode.lib.utils import PartialRenderer
-        _render = PartialRenderer('data_table/_dt_elements.mako')
-        c = _render.c
-        h = _render.h
+        from pyramid.threadlocal import get_current_request
+        _render = get_current_request().get_partial_renderer(
+            'data_table/_dt_elements.mako')
+        c = _render.get_call_context()
+        h = _render.get_helpers()
 
         def quick_menu(repo_group_name):
             return _render('quick_repo_group_menu', repo_group_name)
@@ -684,15 +690,15 @@ class RepoGroupModel(BaseModel):
         def repo_group_lnk(repo_group_name):
             return _render('repo_group_name', repo_group_name)
 
+        def last_change(last_change):
+            if admin and isinstance(last_change, datetime.datetime) and not last_change.tzinfo:
+                last_change = last_change + datetime.timedelta(seconds=
+                    (datetime.datetime.now() - datetime.datetime.utcnow()).seconds)
+            return _render("last_change", last_change)
+
         def desc(desc, personal):
-            prefix = h.escaped_stylize(u'[personal] ') if personal else ''
-
-            if c.visual.stylify_metatags:
-                desc = h.urlify_text(prefix + h.escaped_stylize(desc))
-            else:
-                desc = h.urlify_text(prefix + h.html_escape(desc))
-
-            return _render('repo_group_desc', desc)
+            return _render(
+                'repo_group_desc', desc, personal, c.visual.stylify_metatags)
 
         def repo_group_actions(repo_group_id, repo_group_name, gr_count):
             return _render(
@@ -711,6 +717,8 @@ class RepoGroupModel(BaseModel):
                 "menu": quick_menu(group.group_name),
                 "name": repo_group_lnk(group.group_name),
                 "name_raw": group.group_name,
+                "last_change": last_change(group.last_db_change),
+                "last_change_raw": datetime_to_time(group.last_db_change),
                 "desc": desc(group.description_safe, group.personal),
                 "top_level_repos": 0,
                 "owner": user_profile(group.user.username)
@@ -731,3 +739,26 @@ class RepoGroupModel(BaseModel):
             repo_group_data.append(row)
 
         return repo_group_data
+
+    def _get_defaults(self, repo_group_name):
+        repo_group = RepoGroup.get_by_group_name(repo_group_name)
+
+        if repo_group is None:
+            return None
+
+        defaults = repo_group.get_dict()
+        defaults['repo_group_name'] = repo_group.name
+        defaults['repo_group_description'] = repo_group.group_description
+        defaults['repo_group_enable_locking'] = repo_group.enable_locking
+
+        # we use -1 as this is how in HTML, we mark an empty group
+        defaults['repo_group'] = defaults['group_parent_id'] or -1
+
+        # fill owner
+        if repo_group.user:
+            defaults.update({'user': repo_group.user.username})
+        else:
+            replacement_user = User.get_first_super_admin().username
+            defaults.update({'user': replacement_user})
+
+        return defaults

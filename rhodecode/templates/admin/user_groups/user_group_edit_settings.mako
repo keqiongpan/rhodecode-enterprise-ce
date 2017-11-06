@@ -6,7 +6,7 @@
         <h3 class="panel-title">${_('User Group: %s') % c.user_group.users_group_name}</h3>
     </div>
     <div class="panel-body">
-    ${h.secure_form(url('update_users_group', user_group_id=c.user_group.users_group_id),method='put', id='edit_users_group')}
+    ${h.secure_form(h.route_path('user_groups_update', user_group_id=c.user_group.users_group_id), id='edit_user_group', request=request)}
         <div class="form">
             <!-- fields -->
                 <div class="fields">
@@ -77,7 +77,7 @@
                               <td id="member_user_${user.user_id}" class="td-author">
                                 <div class="group_member">
                                   ${base.gravatar(user.email, 16)}
-                                  <span class="username user">${h.link_to(h.person(user), h.url( 'edit_user',user_id=user.user_id))}</span>
+                                  <span class="username user">${h.link_to(h.person(user), h.route_path('user_edit',user_id=user.user_id))}</span>
                                   <input type="hidden" name="__start__" value="member:mapping">
                                   <input type="hidden" name="member_user_id" value="${user.user_id}">
                                   <input type="hidden" name="type" value="existing" id="member_${user.user_id}">
@@ -134,7 +134,7 @@
                 function addMember(user, fromUserGroup) {
                     var gravatar = user.icon_link;
                     var username = user.value_display;
-                    var userLink = pyroutes.url('edit_user', {"user_id": user.id});
+                    var userLink = pyroutes.url('user_edit', {"user_id": user.id});
                     var uid = user.id;
 
                     if (fromUserGroup) {
@@ -166,7 +166,7 @@
 
                 if (suggestion.value_type == 'user_group') {
                     $.getJSON(
-                        pyroutes.url('edit_user_group_members',
+                        pyroutes.url('user_group_members_data',
                                     {'user_group_id': suggestion.id}),
                         function(data) {
                             $.each(data.members, function(idx, user) {

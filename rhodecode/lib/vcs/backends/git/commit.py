@@ -64,6 +64,12 @@ class GitCommit(base.BaseCommit):
         "status",
         # mercurial specific property not supported here
         "_file_paths",
+        # mercurial specific property not supported here
+        'obsolete',
+        # mercurial specific property not supported here
+        'phase',
+        # mercurial specific property not supported here
+        'hidden'
     ]
 
     def __init__(self, repository, raw_id, idx, pre_load=None):
@@ -261,9 +267,10 @@ class GitCommit(base.BaseCommit):
                 child_ids.extend(found_ids)
         return self._make_commits(child_ids)
 
-    def _make_commits(self, commit_ids):
-        return [self.repository.get_commit(commit_id=commit_id)
-                for commit_id in commit_ids]
+    def _make_commits(self, commit_ids, pre_load=None):
+        return [
+            self.repository.get_commit(commit_id=commit_id, pre_load=pre_load)
+            for commit_id in commit_ids]
 
     def get_file_mode(self, path):
         """

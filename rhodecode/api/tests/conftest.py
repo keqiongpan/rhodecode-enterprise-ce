@@ -45,7 +45,7 @@ def testuser_api(request, pylonsapp):
     # create TOKEN for user, if he doesn't have one
     if not cls.test_user.api_key:
         AuthTokenModel().create(
-            user=cls.test_user, description='TEST_USER_TOKEN')
+            user=cls.test_user, description=u'TEST_USER_TOKEN')
 
     Session().commit()
     cls.TEST_USER_LOGIN = cls.test_user.username

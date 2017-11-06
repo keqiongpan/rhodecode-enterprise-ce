@@ -3,7 +3,7 @@
         <h3 class="panel-title">${_('System Wide Application Permissions')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(url('admin_permissions_application'), method='post')}
+        ${h.secure_form(h.route_path('admin_permissions_application_update'), request=request)}
             <div class="form">
                 <!-- fields -->
                 <div class="fields">
@@ -15,7 +15,7 @@
                             <div class="checkbox">
                                 ${h.checkbox('anonymous',True)} Allow Anonymous Access
                             </div>
-                             <span class="help-block">${h.literal(_('Allow access to RhodeCode Enterprise without requiring users to login. Anonymous users get the %s permission settings.' % (h.link_to('"default user"',h.url('admin_permissions_object')))))}</span>
+                             <span class="help-block">${h.literal(_('Allow access to RhodeCode Enterprise without requiring users to login. Anonymous users get the %s permission settings.' % (h.link_to('"default user"',h.route_path('admin_permissions_object')))))}</span>
                         </div>
                     </div>
 

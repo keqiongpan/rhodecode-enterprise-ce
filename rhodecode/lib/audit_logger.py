@@ -21,6 +21,7 @@
 import logging
 import datetime
 
+from rhodecode.lib.jsonalchemy import JsonRaw
 from rhodecode.model import meta
 from rhodecode.model.db import User, UserLog, Repository
 
@@ -46,6 +47,8 @@ ACTIONS_V1 = {
     'user.edit.token.delete': {'token': {}, 'user': {}},
     'user.edit.email.add': {'email': ''},
     'user.edit.email.delete': {'email': ''},
+    'user.edit.ssh_key.add': {'token': {}, 'user': {}},
+    'user.edit.ssh_key.delete': {'token': {}, 'user': {}},
     'user.edit.password_reset.enabled': {},
     'user.edit.password_reset.disabled': {},
 
@@ -118,21 +121,18 @@ def _store_log(action_name, action_data, user_id, username, user_data,
     user_log.version = UserLog.VERSION_2
 
     user_log.action = action_name
-    user_log.action_data = action_data
+    user_log.action_data = action_data or JsonRaw(u'{}')
 
     user_log.user_ip = ip_address
 
     user_log.user_id = user_id
     user_log.username = username
-    user_log.user_data = user_data
+    user_log.user_data = user_data or JsonRaw(u'{}')
 
     user_log.repository_id = repository_id
     user_log.repository_name = repository_name
 
     user_log.action_date = datetime.datetime.now()
-
-    log.info('AUDIT: Logging action: `%s` by user:id:%s[%s] ip:%s',
-             action_name, user_id, username, ip_address)
 
     return user_log
 
@@ -237,19 +237,27 @@ def store(action, user, action_data=None, user_data=None, ip_addr=None,
                 repository_id = getattr(
                     Repository.get_by_repo_name(repository_name), 'repo_id', None)
 
+        action_name = safe_unicode(action)
+        ip_address = safe_unicode(ip_addr)
+
         user_log = _store_log(
-            action_name=safe_unicode(action),
+            action_name=action_name,
             action_data=action_data or {},
             user_id=user_id,
             username=username,
             user_data=user_data or {},
-            ip_address=safe_unicode(ip_addr),
+            ip_address=ip_address,
             repository_id=repository_id,
             repository_name=repository_name
         )
+
         sa_session.add(user_log)
         if commit:
             sa_session.commit()
+
+        entry_id = user_log.entry_id or ''
+        log.info('AUDIT[%s]: Logging action: `%s` by user:id:%s[%s] ip:%s',
+                 entry_id, action_name, user_id, username, ip_address)
 
     except Exception:
         log.exception('AUDIT: failed to store audit log')

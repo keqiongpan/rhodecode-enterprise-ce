@@ -18,45 +18,40 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import pylons
 import deform
 import logging
-import colander
 import peppercorn
 import webhelpers.paginate
 
-from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPBadRequest
-from pyramid.renderers import render
-from pyramid.response import Response
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPNotFound
 
+from rhodecode.apps._base import BaseAppView
+from rhodecode.integrations import integration_type_registry
 from rhodecode.apps.admin.navigation import navigation_list
-from rhodecode.lib import auth
-from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
+from rhodecode.lib.auth import (
+    LoginRequired, CSRFRequired, HasPermissionAnyDecorator,
+    HasRepoPermissionAnyDecorator, HasRepoGroupPermissionAnyDecorator)
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.lib.helpers import Page
 from rhodecode.model.db import Repository, RepoGroup, Session, Integration
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.integration import IntegrationModel
-from rhodecode.translation import _
-from rhodecode.integrations import integration_type_registry
 from rhodecode.model.validation_schema.schemas.integration_schema import (
     make_integration_schema, IntegrationScopeType)
 
 log = logging.getLogger(__name__)
 
 
-class IntegrationSettingsViewBase(object):
-    """ Base Integration settings view used by both repo / global settings """
+class IntegrationSettingsViewBase(BaseAppView):
+    """
+    Base Integration settings view used by both repo / global settings
+    """
 
     def __init__(self, context, request):
-        self.context = context
-        self.request = request
-        self._load_general_context()
+        super(IntegrationSettingsViewBase, self).__init__(context, request)
+        self._load_view_context()
 
-        if not self.perm_check(request.user):
-            raise HTTPForbidden()
-
-    def _load_general_context(self):
+    def _load_view_context(self):
         """
         This avoids boilerplate for repo/global+list/edit+views/templates
         by doing all possible contexts at the same time however it should
@@ -81,7 +76,12 @@ class IntegrationSettingsViewBase(object):
 
         if 'integration' in request.matchdict:  # integration type context
             integration_type = request.matchdict['integration']
+            if integration_type not in integration_type_registry:
+                raise HTTPNotFound()
+
             self.IntegrationType = integration_type_registry[integration_type]
+            if self.IntegrationType.is_dummy:
+                raise HTTPNotFound()
 
         if 'integration_id' in request.matchdict:  # single integration context
             integration_id = request.matchdict['integration_id']
@@ -110,25 +110,12 @@ class IntegrationSettingsViewBase(object):
 
         return False
 
-    def _template_c_context(self):
-        # TODO: dan: this is a stopgap in order to inherit from current pylons
-        # based admin/repo settings templates - this should be removed entirely
-        # after port to pyramid
+    def _get_local_tmpl_context(self, include_app_defaults=False):
+        _ = self.request.translate
+        c = super(IntegrationSettingsViewBase, self)._get_local_tmpl_context(
+            include_app_defaults=include_app_defaults)
 
-        c = pylons.tmpl_context
         c.active = 'integrations'
-        c.rhodecode_user = self.request.user
-        c.repo = self.repo
-        c.repo_group = self.repo_group
-        c.repo_name = self.repo and self.repo.repo_name or None
-        c.repo_group_name = self.repo_group and self.repo_group.group_name or None
-
-        if self.repo:
-            c.repo_info = self.repo
-            c.rhodecode_db_repo = self.repo
-            c.repository_pull_requests = ScmModel().get_pull_requests(self.repo)
-        else:
-            c.navlist = navigation_list(self.request)
 
         return c
 
@@ -142,6 +129,7 @@ class IntegrationSettingsViewBase(object):
             no_scope=not self.admin_view)
 
     def _form_defaults(self):
+        _ = self.request.translate
         defaults = {}
 
         if self.integration:
@@ -178,28 +166,79 @@ class IntegrationSettingsViewBase(object):
         return defaults
 
     def _delete_integration(self, integration):
-        Session().delete(self.integration)
+        _ = self.request.translate
+        Session().delete(integration)
         Session().commit()
         self.request.session.flash(
             _('Integration {integration_name} deleted successfully.').format(
-                integration_name=self.integration.name),
+                integration_name=integration.name),
             queue='success')
 
         if self.repo:
-            redirect_to = self.request.route_url(
+            redirect_to = self.request.route_path(
                 'repo_integrations_home', repo_name=self.repo.repo_name)
         elif self.repo_group:
-            redirect_to = self.request.route_url(
+            redirect_to = self.request.route_path(
                 'repo_group_integrations_home',
                 repo_group_name=self.repo_group.group_name)
         else:
-            redirect_to = self.request.route_url('global_integrations_home')
+            redirect_to = self.request.route_path('global_integrations_home')
         raise HTTPFound(redirect_to)
 
-    def settings_get(self, defaults=None, form=None):
+    def _integration_list(self):
+        """ List integrations """
+
+        c = self.load_default_context()
+        if self.repo:
+            scope = self.repo
+        elif self.repo_group:
+            scope = self.repo_group
+        else:
+            scope = 'all'
+
+        integrations = []
+
+        for IntType, integration in IntegrationModel().get_integrations(
+                        scope=scope, IntegrationType=self.IntegrationType):
+
+            # extra permissions check *just in case*
+            if not self._has_perms_for_integration(integration):
+                continue
+
+            integrations.append((IntType, integration))
+
+        sort_arg = self.request.GET.get('sort', 'name:asc')
+        if ':' in sort_arg:
+            sort_field, sort_dir = sort_arg.split(':')
+        else:
+            sort_field = sort_arg, 'asc'
+
+        assert sort_field in ('name', 'integration_type', 'enabled', 'scope')
+
+        integrations.sort(
+            key=lambda x: getattr(x[1], sort_field),
+            reverse=(sort_dir == 'desc'))
+
+        page_url = webhelpers.paginate.PageURL(
+            self.request.path, self.request.GET)
+        page = safe_int(self.request.GET.get('page', 1), 1)
+
+        integrations = Page(
+            integrations, page=page, items_per_page=10, url=page_url)
+
+        c.rev_sort_dir = sort_dir != 'desc' and 'desc' or 'asc'
+
+        c.current_IntegrationType = self.IntegrationType
+        c.integrations_list = integrations
+        c.available_integrations = integration_type_registry
+
+        return self._get_template_context(c)
+
+    def _settings_get(self, defaults=None, form=None):
         """
         View that displays the integration settings as a form.
         """
+        c = self.load_default_context()
 
         defaults = defaults or self._form_defaults()
         schema = self._form_schema()
@@ -211,20 +250,18 @@ class IntegrationSettingsViewBase(object):
 
         form = form or deform.Form(schema, appstruct=defaults, buttons=buttons)
 
-        template_context = {
-            'form': form,
-            'current_IntegrationType': self.IntegrationType,
-            'integration': self.integration,
-            'c': self._template_c_context(),
-        }
+        c.form = form
+        c.current_IntegrationType = self.IntegrationType
+        c.integration = self.integration
 
-        return template_context
+        return self._get_template_context(c)
 
-    @auth.CSRFRequired()
-    def settings_post(self):
+    def _settings_post(self):
         """
         View that validates and stores the integration settings.
         """
+        _ = self.request.translate
+
         controls = self.request.POST.items()
         pstruct = peppercorn.parse(controls)
 
@@ -264,7 +301,7 @@ class IntegrationSettingsViewBase(object):
                 _('Errors exist when saving integration settings. '
                   'Please check the form inputs.'),
                 queue='error')
-            return self.settings_get(form=e)
+            return self._settings_get(form=e)
 
         if not self.integration:
             self.integration = Integration()
@@ -314,77 +351,109 @@ class IntegrationSettingsViewBase(object):
 
         return HTTPFound(redirect_to)
 
-    def index(self):
-        """ List integrations """
-        if self.repo:
-            scope = self.repo
-        elif self.repo_group:
-            scope = self.repo_group
-        else:
-            scope = 'all'
+    def _new_integration(self):
+        c = self.load_default_context()
+        c.available_integrations = integration_type_registry
+        return self._get_template_context(c)
 
-        integrations = []
-
-        for IntType, integration in IntegrationModel().get_integrations(
-                        scope=scope, IntegrationType=self.IntegrationType):
-
-            # extra permissions check *just in case*
-            if not self._has_perms_for_integration(integration):
-                continue
-
-            integrations.append((IntType, integration))
-
-        sort_arg = self.request.GET.get('sort', 'name:asc')
-        if ':' in sort_arg:
-            sort_field, sort_dir = sort_arg.split(':')
-        else:
-            sort_field = sort_arg, 'asc'
-
-        assert sort_field in ('name', 'integration_type', 'enabled', 'scope')
-
-        integrations.sort(
-            key=lambda x: getattr(x[1], sort_field),
-            reverse=(sort_dir == 'desc'))
-
-        page_url = webhelpers.paginate.PageURL(
-            self.request.path, self.request.GET)
-        page = safe_int(self.request.GET.get('page', 1), 1)
-
-        integrations = Page(integrations, page=page, items_per_page=10,
-                               url=page_url)
-
-        template_context = {
-            'sort_field': sort_field,
-            'rev_sort_dir': sort_dir != 'desc' and 'desc' or 'asc',
-            'current_IntegrationType': self.IntegrationType,
-            'integrations_list': integrations,
-            'available_integrations': integration_type_registry,
-            'c': self._template_c_context(),
-            'request': self.request,
-        }
-        return template_context
-
-    def new_integration(self):
-        template_context = {
-            'available_integrations': integration_type_registry,
-            'c': self._template_c_context(),
-        }
-        return template_context
+    def load_default_context(self):
+        raise NotImplementedError()
 
 
 class GlobalIntegrationsView(IntegrationSettingsViewBase):
-    def perm_check(self, user):
-        return auth.HasPermissionAll('hg.admin').check_permissions(user=user)
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+        c.repo = self.repo
+        c.repo_group = self.repo_group
+        c.navlist = navigation_list(self.request)
+        self._register_global_c(c)
+        return c
+
+    @LoginRequired()
+    @HasPermissionAnyDecorator('hg.admin')
+    def integration_list(self):
+        return self._integration_list()
+
+    @LoginRequired()
+    @HasPermissionAnyDecorator('hg.admin')
+    def settings_get(self):
+        return self._settings_get()
+
+    @LoginRequired()
+    @HasPermissionAnyDecorator('hg.admin')
+    @CSRFRequired()
+    def settings_post(self):
+        return self._settings_post()
+
+    @LoginRequired()
+    @HasPermissionAnyDecorator('hg.admin')
+    def new_integration(self):
+        return self._new_integration()
 
 
 class RepoIntegrationsView(IntegrationSettingsViewBase):
-    def perm_check(self, user):
-        return auth.HasRepoPermissionAll('repository.admin')(
-            repo_name=self.repo.repo_name, user=user)
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+
+        c.repo = self.repo
+        c.repo_group = self.repo_group
+
+        self.db_repo = self.repo
+        c.rhodecode_db_repo = self.repo
+        c.repo_name = self.db_repo.repo_name
+        c.repository_pull_requests = ScmModel().get_pull_requests(self.repo)
+
+        self._register_global_c(c)
+        return c
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.admin')
+    def integration_list(self):
+        return self._integration_list()
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.admin')
+    def settings_get(self):
+        return self._settings_get()
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.admin')
+    @CSRFRequired()
+    def settings_post(self):
+        return self._settings_post()
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.admin')
+    def new_integration(self):
+        return self._new_integration()
 
 
 class RepoGroupIntegrationsView(IntegrationSettingsViewBase):
-    def perm_check(self, user):
-        return auth.HasRepoGroupPermissionAll('group.admin')(
-            group_name=self.repo_group.group_name, user=user)
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+        c.repo = self.repo
+        c.repo_group = self.repo_group
+        c.navlist = navigation_list(self.request)
+        self._register_global_c(c)
+        return c
 
+    @LoginRequired()
+    @HasRepoGroupPermissionAnyDecorator('group.admin')
+    def integration_list(self):
+        return self._integration_list()
+
+    @LoginRequired()
+    @HasRepoGroupPermissionAnyDecorator('group.admin')
+    def settings_get(self):
+        return self._settings_get()
+
+    @LoginRequired()
+    @HasRepoGroupPermissionAnyDecorator('group.admin')
+    @CSRFRequired()
+    def settings_post(self):
+        return self._settings_post()
+
+    @LoginRequired()
+    @HasRepoGroupPermissionAnyDecorator('group.admin')
+    def new_integration(self):
+        return self._new_integration()

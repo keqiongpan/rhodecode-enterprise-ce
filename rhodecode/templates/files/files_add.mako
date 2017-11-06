@@ -27,7 +27,7 @@
     <div class="edit-file-title">
         ${self.breadcrumbs()}
     </div>
-    ${h.secure_form(h.url.current(),method='post',id='eform',enctype="multipart/form-data", class_="form-horizontal")}
+    ${h.secure_form(h.route_path('repo_files_create_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path), id='eform', enctype="multipart/form-data", class_="form-horizontal", request=request)}
     <div class="edit-file-fieldset">
         <div class="fieldset">
             <div id="destination-label" class="left-label">
@@ -121,7 +121,7 @@
             button.addClass('clicked');
         }
     });
-    
+
     $('#specify-custom-path').on('click', function(e){
         e.preventDefault();
         $('#specify-custom-path-container').hide();
@@ -169,7 +169,7 @@
     hide_upload();
 
     var renderer = "";
-    var reset_url = "${h.url('files_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path)}";
+    var reset_url = "${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}";
     var myCodeMirror = initCodeMirror('editor', reset_url, false);
 
     var modes_select = $('#set_mode');
@@ -217,7 +217,9 @@
             var _renderer = possible_renderer || DEFAULT_RENDERER;
             var post_data = {'text': _text, 'renderer': _renderer, 'csrf_token': CSRF_TOKEN};
             $('#editor_preview').html(_gettext('Loading ...'));
-            var url = pyroutes.url('changeset_comment_preview', {'repo_name': '${c.repo_name}'});
+            var url = pyroutes.url('repo_commit_comment_preview',
+                    {'repo_name': '${c.repo_name}',
+                     'commit_id': '${c.commit.raw_id}'});
 
             ajaxPOST(url, post_data, function(o){
                 $('#editor_preview').html(o);

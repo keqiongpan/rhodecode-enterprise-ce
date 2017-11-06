@@ -41,12 +41,15 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
 from sqlalchemy.sql.expression import true
+from sqlalchemy.sql.functions import coalesce, count  # noqa
+from sqlalchemy.exc import IntegrityError  # noqa
+from sqlalchemy.dialects.mysql import LONGTEXT
 from beaker.cache import cache_region
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
-from pylons.i18n.translation import lazy_ugettext as _
 from pyramid.threadlocal import get_current_request
 
+from rhodecode.translation import _
 from rhodecode.lib.vcs import get_vcs_instance
 from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
@@ -82,7 +85,7 @@ PERMISSION_TYPE_SORT = {
 }
 
 
-def display_sort(obj):
+def display_user_sort(obj):
     """
     Sort function used to sort permissions in .permissions() function of
     Repository, RepoGroup, UserGroup. Also it put the default user in front
@@ -95,8 +98,42 @@ def display_sort(obj):
     return prefix + obj.username
 
 
+def display_user_group_sort(obj):
+    """
+    Sort function used to sort permissions in .permissions() function of
+    Repository, RepoGroup, UserGroup. Also it put the default user in front
+    of all other resources
+    """
+
+    prefix = PERMISSION_TYPE_SORT.get(obj.permission.split('.')[-1], '')
+    return prefix + obj.users_group_name
+
+
 def _hash_key(k):
     return md5_safe(k)
+
+
+def in_filter_generator(qry, items, limit=500):
+    """
+    Splits IN() into multiple with OR
+    e.g.::
+    cnt = Repository.query().filter(
+        or_(
+            *in_filter_generator(Repository.repo_id, range(100000))
+        )).count()
+    """
+    if not items:
+        # empty list will cause empty query which might cause security issues
+        # this can lead to hidden unpleasant results
+        items = [-1]
+
+    parts = []
+    for chunk in xrange(0, len(items), limit):
+        parts.append(
+            qry.in_(items[chunk: chunk + limit])
+        )
+
+    return parts
 
 
 class EncryptedTextValue(TypeDecorator):
@@ -206,22 +243,17 @@ class BaseModel(object):
             return cls.query().get(id_)
 
     @classmethod
-    def get_or_404(cls, id_, pyramid_exc=False):
-        if pyramid_exc:
-            # NOTE(marcink): backward compat, once migration to pyramid
-            # this should only use pyramid exceptions
-            from pyramid.httpexceptions import HTTPNotFound
-        else:
-            from webob.exc import HTTPNotFound
+    def get_or_404(cls, id_):
+        from pyramid.httpexceptions import HTTPNotFound
 
         try:
             id_ = int(id_)
         except (TypeError, ValueError):
-            raise HTTPNotFound
+            raise HTTPNotFound()
 
         res = cls.query().get(id_)
         if not res:
-            raise HTTPNotFound
+            raise HTTPNotFound()
         return res
 
     @classmethod
@@ -549,6 +581,8 @@ class User(Base, BaseModel):
     user_emails = relationship('UserEmailMap', cascade='all')
     user_ip_map = relationship('UserIpMap', cascade='all')
     user_auth_tokens = relationship('UserApiKeys', cascade='all')
+    user_ssh_keys = relationship('UserSshKeys', cascade='all')
+
     # gists
     user_gists = relationship('Gist', cascade='all')
     # user pull requests
@@ -558,6 +592,8 @@ class User(Base, BaseModel):
         'ExternalIdentity',
         primaryjoin="User.user_id==ExternalIdentity.local_user_id",
         cascade='all')
+    # review rules
+    user_review_rules = relationship('RepoReviewRuleUser', cascade='all')
 
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (self.__class__.__name__,
@@ -606,22 +642,35 @@ class User(Base, BaseModel):
         self._api_key = None
 
     @property
+    def reviewer_pull_requests(self):
+        return PullRequestReviewers.query() \
+            .options(joinedload(PullRequestReviewers.pull_request)) \
+            .filter(PullRequestReviewers.user_id == self.user_id) \
+            .all()
+
+    @property
     def firstname(self):
         # alias for future
         return self.name
 
     @property
     def emails(self):
-        other = UserEmailMap.query().filter(UserEmailMap.user==self).all()
+        other = UserEmailMap.query()\
+            .filter(UserEmailMap.user == self) \
+            .order_by(UserEmailMap.email_id.asc()) \
+            .all()
         return [self.email] + [x.email for x in other]
 
     @property
     def auth_tokens(self):
-        return [x.api_key for x in self.extra_auth_tokens]
+        auth_tokens = self.get_auth_tokens()
+        return [x.api_key for x in auth_tokens]
 
-    @property
-    def extra_auth_tokens(self):
-        return UserApiKeys.query().filter(UserApiKeys.user == self).all()
+    def get_auth_tokens(self):
+        return UserApiKeys.query()\
+            .filter(UserApiKeys.user == self)\
+            .order_by(UserApiKeys.user_api_key_id.asc())\
+            .all()
 
     @property
     def feed_token(self):
@@ -635,6 +684,17 @@ class User(Base, BaseModel):
         if feed_tokens:
             return feed_tokens[0].api_key
         return 'NO_FEED_TOKEN_AVAILABLE'
+
+    @classmethod
+    def get(cls, user_id, cache=False):
+        if not user_id:
+            return
+
+        user = cls.query()
+        if cache:
+            user = user.options(
+                FromCache("sql_cache_short", "get_users_%s" % user_id))
+        return user.get(user_id)
 
     @classmethod
     def extra_valid_auth_tokens(cls, user, role=None):
@@ -732,13 +792,12 @@ class User(Base, BaseModel):
     def is_admin(self):
         return self.admin
 
-    @property
-    def AuthUser(self):
+    def AuthUser(self, **kwargs):
         """
         Returns instance of AuthUser for this user
         """
         from rhodecode.lib.auth import AuthUser
-        return AuthUser(user_id=self.user_id, username=self.username)
+        return AuthUser(user_id=self.user_id, username=self.username, **kwargs)
 
     @hybrid_property
     def user_data(self):
@@ -864,7 +923,7 @@ class User(Base, BaseModel):
         """Update user lastactivity"""
         self.last_activity = datetime.datetime.now()
         Session().add(self)
-        log.debug('updated user %s lastactivity', self.username)
+        log.debug('updated user `%s` last activity', self.username)
 
     def update_password(self, new_password):
         from rhodecode.lib.auth import get_crypt_password
@@ -931,12 +990,11 @@ class User(Base, BaseModel):
         if details == 'basic':
             return data
 
-        api_key_length = 40
-        api_key_replacement = '*' * api_key_length
+        auth_token_length = 40
+        auth_token_replacement = '*' * auth_token_length
 
         extras = {
-            'api_keys': [api_key_replacement],
-            'auth_tokens': [api_key_replacement],
+            'auth_tokens': [auth_token_replacement],
             'active': user.active,
             'admin': user.admin,
             'extern_type': user.extern_type,
@@ -949,8 +1007,7 @@ class User(Base, BaseModel):
         data.update(extras)
 
         if include_secrets:
-            data['api_keys'] = user.auth_tokens
-            data['auth_tokens'] = user.extra_auth_tokens
+            data['auth_tokens'] = user.auth_tokens
         return data
 
     def __json__(self):
@@ -967,9 +1024,8 @@ class User(Base, BaseModel):
 class UserApiKeys(Base, BaseModel):
     __tablename__ = 'user_api_keys'
     __table_args__ = (
-        Index('uak_api_key_idx', 'api_key'),
+        Index('uak_api_key_idx', 'api_key', unique=True),
         Index('uak_api_key_expires_idx', 'api_key', 'expires'),
-        UniqueConstraint('api_key'),
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
@@ -1123,7 +1179,7 @@ class UserIpMap(Base, BaseModel):
 
     @classmethod
     def _get_ip_range(cls, ip_addr):
-        net = ipaddress.ip_network(ip_addr, strict=False)
+        net = ipaddress.ip_network(safe_unicode(ip_addr), strict=False)
         return [str(net.network_address), str(net.broadcast_address)]
 
     def __json__(self):
@@ -1137,6 +1193,43 @@ class UserIpMap(Base, BaseModel):
                                             self.user_id, self.ip_addr)
 
 
+class UserSshKeys(Base, BaseModel):
+    __tablename__ = 'user_ssh_keys'
+    __table_args__ = (
+        Index('usk_ssh_key_fingerprint_idx', 'ssh_key_fingerprint'),
+
+        UniqueConstraint('ssh_key_fingerprint'),
+
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
+    )
+    __mapper_args__ = {}
+
+    ssh_key_id = Column('ssh_key_id', Integer(), nullable=False, unique=True, default=None, primary_key=True)
+    ssh_key_data = Column('ssh_key_data', String(10240), nullable=False, unique=None, default=None)
+    ssh_key_fingerprint = Column('ssh_key_fingerprint', String(1024), nullable=False, unique=None, default=None)
+
+    description = Column('description', UnicodeText().with_variant(UnicodeText(1024), 'mysql'))
+
+    created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
+    accessed_on = Column('accessed_on', DateTime(timezone=False), nullable=True, default=None)
+    user_id = Column('user_id', Integer(), ForeignKey('users.user_id'), nullable=True, unique=None, default=None)
+
+    user = relationship('User', lazy='joined')
+
+    def __json__(self):
+        data = {
+            'ssh_fingerprint': self.ssh_key_fingerprint,
+            'description': self.description,
+            'created_on': self.created_on
+        }
+        return data
+
+    def get_api_data(self):
+        data = self.__json__()
+        return data
+
+
 class UserLog(Base, BaseModel):
     __tablename__ = 'user_logs'
     __table_args__ = (
@@ -1148,17 +1241,17 @@ class UserLog(Base, BaseModel):
     VERSIONS = [VERSION_1, VERSION_2]
 
     user_log_id = Column("user_log_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
-    user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=True, unique=None, default=None)
+    user_id = Column("user_id", Integer(), ForeignKey('users.user_id',ondelete='SET NULL'), nullable=True, unique=None, default=None)
     username = Column("username", String(255), nullable=True, unique=None, default=None)
-    repository_id = Column("repository_id", Integer(), ForeignKey('repositories.repo_id'), nullable=True)
+    repository_id = Column("repository_id", Integer(), ForeignKey('repositories.repo_id', ondelete='SET NULL'), nullable=True, unique=None, default=None)
     repository_name = Column("repository_name", String(255), nullable=True, unique=None, default=None)
     user_ip = Column("user_ip", String(255), nullable=True, unique=None, default=None)
     action = Column("action", Text().with_variant(Text(1200000), 'mysql'), nullable=True, unique=None, default=None)
     action_date = Column("action_date", DateTime(timezone=False), nullable=True, unique=None, default=None)
 
     version = Column("version", String(255), nullable=True, default=VERSION_1)
-    user_data = Column('user_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
-    action_data = Column('action_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
+    user_data = Column('user_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=LONGTEXT()))))
+    action_data = Column('action_data_json', MutationObj.as_mutable(JsonType(dialect_map=dict(mysql=LONGTEXT()))))
 
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (
@@ -1174,6 +1267,10 @@ class UserLog(Base, BaseModel):
             'action_date': self.action_date,
             'action': self.action,
         }
+
+    @hybrid_property
+    def entry_id(self):
+        return self.user_log_id
 
     @property
     def action_as_day(self):
@@ -1206,7 +1303,18 @@ class UserGroup(Base, BaseModel):
     user_user_group_to_perm = relationship('UserUserGroupToPerm', cascade='all')
     user_group_user_group_to_perm = relationship('UserGroupUserGroupToPerm ', primaryjoin="UserGroupUserGroupToPerm.target_user_group_id==UserGroup.users_group_id", cascade='all')
 
-    user = relationship('User')
+    user_group_review_rules = relationship('RepoReviewRuleUserGroup', cascade='all')
+    user = relationship('User', primaryjoin="User.user_id==UserGroup.user_id")
+
+    @classmethod
+    def _load_group_data(cls, column):
+        if not column:
+            return {}
+
+        try:
+            return json.loads(column) or {}
+        except TypeError:
+            return {}
 
     @hybrid_property
     def description_safe(self):
@@ -1215,13 +1323,11 @@ class UserGroup(Base, BaseModel):
 
     @hybrid_property
     def group_data(self):
-        if not self._group_data:
-            return {}
+        return self._load_group_data(self._group_data)
 
-        try:
-            return json.loads(self._group_data)
-        except TypeError:
-            return {}
+    @group_data.expression
+    def group_data(self, **kwargs):
+        return self._group_data
 
     @group_data.setter
     def group_data(self, val):
@@ -1251,6 +1357,9 @@ class UserGroup(Base, BaseModel):
 
     @classmethod
     def get(cls, user_group_id, cache=False):
+        if not user_group_id:
+            return
+
         user_group = cls.query()
         if cache:
             user_group = user_group.options(
@@ -1277,7 +1386,7 @@ class UserGroup(Base, BaseModel):
         # filter the perm rows by 'default' first and then sort them by
         # admin,write,read,none permissions sorted again alphabetically in
         # each group
-        perm_rows = sorted(perm_rows, key=display_sort)
+        perm_rows = sorted(perm_rows, key=display_user_sort)
 
         _admin_perm = 'usergroup.admin'
         owner_row = []
@@ -1313,6 +1422,7 @@ class UserGroup(Base, BaseModel):
             usr.permission = _user_group.permission.permission_name
             perm_rows.append(usr)
 
+        perm_rows = sorted(perm_rows, key=display_user_group_sort)
         return perm_rows
 
     def _get_default_perms(self, user_group, suffix=''):
@@ -1763,7 +1873,7 @@ class Repository(Base, BaseModel):
         # filter the perm rows by 'default' first and then sort them by
         # admin,write,read,none permissions sorted again alphabetically in
         # each group
-        perm_rows = sorted(perm_rows, key=display_sort)
+        perm_rows = sorted(perm_rows, key=display_user_sort)
 
         _admin_perm = 'repository.admin'
         owner_row = []
@@ -1800,6 +1910,7 @@ class Repository(Base, BaseModel):
             usr.permission = _user_group.permission.permission_name
             perm_rows.append(usr)
 
+        perm_rows = sorted(perm_rows, key=display_user_group_sort)
         return perm_rows
 
     def get_api_data(self, include_secrets=False):
@@ -1957,6 +2068,7 @@ class Repository(Base, BaseModel):
         return clone_uri
 
     def clone_url(self, **override):
+        from rhodecode.model.settings import SettingsModel
 
         uri_tmpl = None
         if 'with_id' in override:
@@ -1969,14 +2081,9 @@ class Repository(Base, BaseModel):
 
         # we didn't override our tmpl from **overrides
         if not uri_tmpl:
-            uri_tmpl = self.DEFAULT_CLONE_URI
-            try:
-                from pylons import tmpl_context as c
-                uri_tmpl = c.clone_uri_tmpl
-            except Exception:
-                # in any case if we call this outside of request context,
-                # ie, not having tmpl_context set up
-                pass
+            rc_config = SettingsModel().get_all_settings(cache=True)
+            uri_tmpl = rc_config.get(
+                'rhodecode_clone_uri_tmpl') or self.DEFAULT_CLONE_URI
 
         request = get_current_request()
         return get_clone_url(request=request,
@@ -2210,6 +2317,7 @@ class RepoGroup(Base, BaseModel):
     enable_locking = Column("enable_locking", Boolean(), nullable=False, unique=None, default=False)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False, unique=False, default=None)
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
+    updated_on = Column('updated_on', DateTime(timezone=False), nullable=True, unique=None, default=datetime.datetime.now)
     personal = Column('personal', Boolean(), nullable=True, unique=None, default=None)
 
     repo_group_to_perm = relationship('UserRepoGroupToPerm', cascade='all', order_by='UserRepoGroupToPerm.group_to_perm_id')
@@ -2322,6 +2430,10 @@ class RepoGroup(Base, BaseModel):
         return groups
 
     @property
+    def last_db_change(self):
+        return self.updated_on
+
+    @property
     def children(self):
         return RepoGroup.query().filter(RepoGroup.parent_group == self)
 
@@ -2414,7 +2526,7 @@ class RepoGroup(Base, BaseModel):
         # filter the perm rows by 'default' first and then sort them by
         # admin,write,read,none permissions sorted again alphabetically in
         # each group
-        perm_rows = sorted(perm_rows, key=display_sort)
+        perm_rows = sorted(perm_rows, key=display_user_sort)
 
         _admin_perm = 'group.admin'
         owner_row = []
@@ -2450,6 +2562,7 @@ class RepoGroup(Base, BaseModel):
             usr.permission = _user_group.permission.permission_name
             perm_rows.append(usr)
 
+        perm_rows = sorted(perm_rows, key=display_user_group_sort)
         return perm_rows
 
     def get_api_data(self):
@@ -2904,7 +3017,6 @@ class UserGroupRepoGroupToPerm(Base, BaseModel):
 class Statistics(Base, BaseModel):
     __tablename__ = 'statistics'
     __table_args__ = (
-         UniqueConstraint('repository_id'),
          {'extend_existing': True, 'mysql_engine': 'InnoDB',
           'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
@@ -3340,6 +3452,14 @@ class _PullRequestBase(BaseModel):
     def revisions(self, val):
         self._revisions = ':'.join(val)
 
+    @hybrid_property
+    def last_merge_status(self):
+        return safe_int(self._last_merge_status)
+
+    @last_merge_status.setter
+    def last_merge_status(self, val):
+        self._last_merge_status = val
+
     @declared_attr
     def author(cls):
         return relationship('User', lazy='joined')
@@ -3712,11 +3832,6 @@ class Notification(Base, BaseModel):
 
         return notification
 
-    @property
-    def description(self):
-        from rhodecode.model.notification import NotificationModel
-        return NotificationModel().make_description(self)
-
 
 class UserNotification(Base, BaseModel):
     __tablename__ = 'user_to_notification'
@@ -3775,16 +3890,12 @@ class Gist(Base, BaseModel):
         return h.escape(self.gist_description)
 
     @classmethod
-    def get_or_404(cls, id_, pyramid_exc=False):
-
-        if pyramid_exc:
-            from pyramid.httpexceptions import HTTPNotFound
-        else:
-            from webob.exc import HTTPNotFound
+    def get_or_404(cls, id_):
+        from pyramid.httpexceptions import HTTPNotFound
 
         res = cls.query().filter(cls.gist_access_id == id_).scalar()
         if not res:
-            raise HTTPNotFound
+            raise HTTPNotFound()
         return res
 
     @classmethod
@@ -3792,14 +3903,8 @@ class Gist(Base, BaseModel):
         return cls.query().filter(cls.gist_access_id == gist_access_id).scalar()
 
     def gist_url(self):
-        import rhodecode
-        from pylons import url
-
-        alias_url = rhodecode.CONFIG.get('gist_alias_url')
-        if alias_url:
-            return alias_url.replace('{gistid}', self.gist_access_id)
-
-        return url('gist', gist_id=self.gist_access_id, qualified=True)
+        from rhodecode.model.gist import GistModel
+        return GistModel().get_url(self)
 
     @classmethod
     def base_path(cls):

@@ -145,26 +145,6 @@
 
             </div>
         </div>
-        ## LABS for HG
-        % if c.labs_active:
-            <div class="panel panel-danger">
-                <div class="panel-heading">
-                    <h3 class="panel-title">${_('Mercurial Labs Settings')} (${_('These features are considered experimental and may not work as expected.')})</h3>
-                </div>
-                <div class="panel-body">
-
-                    <div class="checkbox">
-                        ${h.checkbox('rhodecode_hg_use_rebase_for_merging' + suffix, 'True', **kwargs)}
-                        <label for="rhodecode_hg_use_rebase_for_merging${suffix}">${_('Use rebase as merge strategy')}</label>
-                    </div>
-                    <div class="label">
-                        <span class="help-block">${_('Use rebase instead of creating a merge commit when merging via web interface.')}</span>
-                    </div>
-
-                </div>
-            </div>
-        % endif
-
     % endif
 
     % if display_globals or repo_type in ['git']:
@@ -331,5 +311,60 @@
             </div>
         </div>
     % endif
+
+    % if display_globals or repo_type in ['hg',]:
+        <div class="panel panel-default">
+            <div class="panel-heading" id="vcs-pull-requests-options">
+                <h3 class="panel-title">${_('Mercurial Pull Request Settings')}<a class="permalink" href="#vcs-hg-pull-requests-options"> ¶</a></h3>
+            </div>
+            <div class="panel-body">
+                ## Specific HG settings
+                <div class="checkbox">
+                    ${h.checkbox('rhodecode_hg_use_rebase_for_merging' + suffix, 'True', **kwargs)}
+                    <label for="rhodecode_hg_use_rebase_for_merging${suffix}">${_('Use rebase as merge strategy')}</label>
+                </div>
+                <div class="label">
+                    <span class="help-block">${_('Use rebase instead of creating a merge commit when merging via web interface.')}</span>
+                </div>
+
+                <div class="checkbox">
+                    ${h.checkbox('rhodecode_hg_close_branch_before_merging' + suffix, 'True', **kwargs)}
+                    <label for="rhodecode_hg_close_branch_before_merging{suffix}">${_('Close branch before merging it')}</label>
+                </div>
+                <div class="label">
+                    <span class="help-block">${_('Close branch before merging it into destination branch. No effect when rebase strategy is use.')}</span>
+                </div>
+
+
+            </div>
+        </div>
+    % endif
+
+## DISABLED FOR GIT FOR NOW as the rebase/close is not supported yet
+##     % if display_globals or repo_type in ['git']:
+##         <div class="panel panel-default">
+##             <div class="panel-heading" id="vcs-pull-requests-options">
+##                 <h3 class="panel-title">${_('Git Pull Request Settings')}<a class="permalink" href="#vcs-git-pull-requests-options"> ¶</a></h3>
+##             </div>
+##             <div class="panel-body">
+##                 <div class="checkbox">
+##                     ${h.checkbox('rhodecode_git_use_rebase_for_merging' + suffix, 'True', **kwargs)}
+##                     <label for="rhodecode_git_use_rebase_for_merging${suffix}">${_('Use rebase as merge strategy')}</label>
+##                 </div>
+##                 <div class="label">
+##                     <span class="help-block">${_('Use rebase instead of creating a merge commit when merging via web interface.')}</span>
+##                 </div>
+##
+##                 <div class="checkbox">
+##                     ${h.checkbox('rhodecode_git_close_branch_before_merging' + suffix, 'True', **kwargs)}
+##                     <label for="rhodecode_git_close_branch_before_merging{suffix}">${_('Delete branch after merging it')}</label>
+##                 </div>
+##                 <div class="label">
+##                     <span class="help-block">${_('Delete branch after merging it into destination branch. No effect when rebase strategy is use.')}</span>
+##                 </div>
+##             </div>
+##         </div>
+##     % endif
+
 
 </%def>

@@ -25,6 +25,15 @@ depending on your available resources.
 
 .. _move-tmp:
 
+
+In order to make this change permanent it's recommend to set it as /etc/fstab
+entry.
+
+.. code-block:: bash
+
+    tmpfs   /home/user/.rccontrol/enterprise-1/data tmpfs   nodev,nosuid,noexec,nodiratime,size=2G   0 0
+
+
 Move ``tmp`` to TMPFS
 ---------------------
 

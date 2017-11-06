@@ -27,7 +27,7 @@ from pyramid.renderers import render
 from pyramid.response import Response
 
 from rhodecode.authentication.base import (
-    get_auth_cache_manager, get_authn_registry)
+    get_auth_cache_manager, get_perms_cache_manager, get_authn_registry)
 from rhodecode.lib import auth
 from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
 from rhodecode.model.forms import AuthSettingsForm
@@ -61,7 +61,7 @@ class AuthnPluginViewBase(object):
         for node in schema:
             if node.name not in defaults:
                 defaults[node.name] = self.plugin.get_setting_by_name(
-                    node.name, node.default)
+                    node.name, node.default, cache=False)
 
         template_context = {
             'defaults': defaults,
@@ -168,6 +168,10 @@ class AuthSettingsView(object):
 
             cache_manager = get_auth_cache_manager()
             cache_manager.clear()
+
+            cache_manager = get_perms_cache_manager()
+            cache_manager.clear()
+
             self.request.session.flash(
                 _('Auth settings updated successfully.'),
                 queue='success')

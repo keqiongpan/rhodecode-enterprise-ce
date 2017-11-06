@@ -24,7 +24,7 @@
         <ul class="links">
             %if h.HasPermissionAny('hg.admin','hg.repogroup.create.true')():
              <li>
-               <a href="${h.url('new_repo_group')}" class="btn btn-small btn-success">${_(u'Add Repository Group')}</a>
+               <a href="${h.route_path('repo_group_new')}" class="btn btn-small btn-success">${_(u'Add Repository Group')}</a>
              </li>
             %endif
         </ul>
@@ -54,6 +54,9 @@ $(document).ready(function() {
          { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
          { data: {"_": "desc",
                   "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
+         { data: {"_": "last_change",
+                  "sort": "last_change_raw",
+                  "type": Number}, title: "${_('Last Change')}", className: "td-time" },
          { data: {"_": "top_level_repos",
                   "sort": "top_level_repos"}, title: "${_('Number of top level repositories')}" },
          { data: {"_": "owner",

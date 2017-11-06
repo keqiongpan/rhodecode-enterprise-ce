@@ -264,7 +264,7 @@ class Fixture(object):
 
         # create token for user
         AuthTokenModel().create(
-                user=user, description='TEST_USER_TOKEN')
+                user=user, description=u'TEST_USER_TOKEN')
 
         Session().commit()
         user = User.get_by_username(user.username)

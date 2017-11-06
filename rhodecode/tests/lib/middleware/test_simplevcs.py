@@ -23,6 +23,7 @@ import base64
 import mock
 import pytest
 
+from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.tests.utils import CustomTestApp
 
 from rhodecode.lib.caching_query import FromCache
@@ -45,8 +46,13 @@ class StubVCSController(simplevcs.SimpleVCS):
     def __init__(self, *args, **kwargs):
         super(StubVCSController, self).__init__(*args, **kwargs)
         self._action = 'pull'
+        self._is_shadow_repo_dir = True
         self._name = HG_REPO
         self.set_repo_names(None)
+
+    @property
+    def is_shadow_repo_dir(self):
+        return self._is_shadow_repo_dir
 
     def _get_repository_name(self, environ):
         return self._name
@@ -56,7 +62,10 @@ class StubVCSController(simplevcs.SimpleVCS):
 
     def _create_wsgi_app(self, repo_path, repo_name, config):
         def fake_app(environ, start_response):
-            start_response('200 OK', [])
+            headers = [
+                ('Http-Accept', 'application/mercurial')
+            ]
+            start_response('200 OK', headers)
             return self.stub_response_body
         return fake_app
 
@@ -65,12 +74,12 @@ class StubVCSController(simplevcs.SimpleVCS):
 
 
 @pytest.fixture
-def vcscontroller(pylonsapp, config_stub):
+def vcscontroller(pylonsapp, config_stub, request_stub):
     config_stub.testing_securitypolicy()
     config_stub.include('rhodecode.authentication')
 
-    #set_anonymous_access(True)
-    controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+    controller = StubVCSController(
+        pylonsapp, pylonsapp.config, request_stub.registry)
     app = HttpsFixup(controller, pylonsapp.config)
     app = CustomTestApp(app)
 
@@ -90,8 +99,6 @@ def _remove_default_user_from_query_cache():
         FromCache("sql_cache_short", "get_user_%s" % _hash_key(user.username)))
     query.invalidate()
     Session().expire(user)
-
-
 
 
 def test_handles_exceptions_during_permissions_checks(
@@ -128,7 +135,8 @@ class StubFailVCSController(simplevcs.SimpleVCS):
 
 @pytest.fixture(scope='module')
 def fail_controller(pylonsapp):
-    controller = StubFailVCSController(pylonsapp, pylonsapp.config, None)
+    controller = StubFailVCSController(
+        pylonsapp, pylonsapp.config, pylonsapp.config)
     controller = HttpsFixup(controller, pylonsapp.config)
     controller = CustomTestApp(controller)
     return controller
@@ -144,16 +152,18 @@ def test_provides_traceback_for_appenlight(fail_controller):
     assert 'appenlight.__traceback' in response.request.environ
 
 
-def test_provides_utils_scm_app_as_scm_app_by_default(pylonsapp):
-    controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+def test_provides_utils_scm_app_as_scm_app_by_default(pylonsapp, request_stub):
+    controller = StubVCSController(
+        pylonsapp, pylonsapp.config, request_stub.registry)
     assert controller.scm_app is scm_app_http
 
 
-def test_allows_to_override_scm_app_via_config(pylonsapp):
+def test_allows_to_override_scm_app_via_config(pylonsapp, request_stub):
     config = pylonsapp.config.copy()
     config['vcs.scm_app_implementation'] = (
         'rhodecode.tests.lib.middleware.mock_scm_app')
-    controller = StubVCSController(pylonsapp, config, None)
+    controller = StubVCSController(
+        pylonsapp, config, request_stub.registry)
     assert controller.scm_app is mock_scm_app
 
 
@@ -208,18 +218,22 @@ class TestShadowRepoRegularExpression(object):
 @pytest.mark.backends('git', 'hg')
 class TestShadowRepoExposure(object):
 
-    def test_pull_on_shadow_repo_propagates_to_wsgi_app(self, pylonsapp):
+    def test_pull_on_shadow_repo_propagates_to_wsgi_app(
+            self, pylonsapp, request_stub):
         """
         Check that a pull action to a shadow repo is propagated to the
         underlying wsgi app.
         """
-        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller = StubVCSController(
+            pylonsapp, pylonsapp.config, request_stub.registry)
         controller._check_ssl = mock.Mock()
         controller.is_shadow_repo = True
         controller._action = 'pull'
+        controller._is_shadow_repo_dir = True
         controller.stub_response_body = 'dummy body value'
         environ_stub = {
             'HTTP_HOST': 'test.example.com',
+            'HTTP_ACCEPT': 'application/mercurial',
             'REQUEST_METHOD': 'GET',
             'wsgi.url_scheme': 'http',
         }
@@ -230,17 +244,44 @@ class TestShadowRepoExposure(object):
         # Assert that we got the response from the wsgi app.
         assert response_body == controller.stub_response_body
 
-    def test_push_on_shadow_repo_raises(self, pylonsapp):
+    def test_pull_on_shadow_repo_that_is_missing(self, pylonsapp, request_stub):
+        """
+        Check that a pull action to a shadow repo is propagated to the
+        underlying wsgi app.
+        """
+        controller = StubVCSController(
+            pylonsapp, pylonsapp.config, request_stub.registry)
+        controller._check_ssl = mock.Mock()
+        controller.is_shadow_repo = True
+        controller._action = 'pull'
+        controller._is_shadow_repo_dir = False
+        controller.stub_response_body = 'dummy body value'
+        environ_stub = {
+            'HTTP_HOST': 'test.example.com',
+            'HTTP_ACCEPT': 'application/mercurial',
+            'REQUEST_METHOD': 'GET',
+            'wsgi.url_scheme': 'http',
+        }
+
+        response = controller(environ_stub, mock.Mock())
+        response_body = ''.join(response)
+
+        # Assert that we got the response from the wsgi app.
+        assert '404 Not Found' in response_body
+
+    def test_push_on_shadow_repo_raises(self, pylonsapp, request_stub):
         """
         Check that a push action to a shadow repo is aborted.
         """
-        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller = StubVCSController(
+            pylonsapp, pylonsapp.config, request_stub.registry)
         controller._check_ssl = mock.Mock()
         controller.is_shadow_repo = True
         controller._action = 'push'
         controller.stub_response_body = 'dummy body value'
         environ_stub = {
             'HTTP_HOST': 'test.example.com',
+            'HTTP_ACCEPT': 'application/mercurial',
             'REQUEST_METHOD': 'GET',
             'wsgi.url_scheme': 'http',
         }
@@ -252,13 +293,14 @@ class TestShadowRepoExposure(object):
         # Assert that a 406 error is returned.
         assert '406 Not Acceptable' in response_body
 
-    def test_set_repo_names_no_shadow(self, pylonsapp):
+    def test_set_repo_names_no_shadow(self, pylonsapp, request_stub):
         """
         Check that the set_repo_names method sets all names to the one returned
         by the _get_repository_name method on a request to a non shadow repo.
         """
         environ_stub = {}
-        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller = StubVCSController(
+            pylonsapp, pylonsapp.config, request_stub.registry)
         controller._name = 'RepoGroup/MyRepo'
         controller.set_repo_names(environ_stub)
         assert not controller.is_shadow_repo
@@ -267,7 +309,8 @@ class TestShadowRepoExposure(object):
                 controller.vcs_repo_name ==
                 controller._get_repository_name(environ_stub))
 
-    def test_set_repo_names_with_shadow(self, pylonsapp, pr_util, config_stub):
+    def test_set_repo_names_with_shadow(
+            self, pylonsapp, pr_util, config_stub, request_stub):
         """
         Check that the set_repo_names method sets correct names on a request
         to a shadow repo.
@@ -280,7 +323,8 @@ class TestShadowRepoExposure(object):
             pr_id=pull_request.pull_request_id,
             pr_segment=TestShadowRepoRegularExpression.pr_segment,
             shadow_segment=TestShadowRepoRegularExpression.shadow_segment)
-        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller = StubVCSController(
+            pylonsapp, pylonsapp.config, request_stub.registry)
         controller._name = shadow_url
         controller.set_repo_names({})
 
@@ -296,7 +340,7 @@ class TestShadowRepoExposure(object):
         assert controller.is_shadow_repo
 
     def test_set_repo_names_with_shadow_but_missing_pr(
-            self, pylonsapp, pr_util, config_stub):
+            self, pylonsapp, pr_util, config_stub, request_stub):
         """
         Checks that the set_repo_names method enforces matching target repos
         and pull request IDs.
@@ -307,7 +351,8 @@ class TestShadowRepoExposure(object):
             pr_id=999999999,
             pr_segment=TestShadowRepoRegularExpression.pr_segment,
             shadow_segment=TestShadowRepoRegularExpression.shadow_segment)
-        controller = StubVCSController(pylonsapp, pylonsapp.config, None)
+        controller = StubVCSController(
+            pylonsapp, pylonsapp.config, request_stub.registry)
         controller._name = shadow_url
         controller.set_repo_names({})
 
@@ -383,7 +428,8 @@ class TestGenerateVcsResponse(object):
             'vcs.hooks.protocol': 'http',
             'vcs.hooks.direct_calls': False,
         }
-        controller = StubVCSController(None, settings, None)
+        registry = AttributeDict()
+        controller = StubVCSController(None, settings, registry)
         controller._invalidate_cache = mock.Mock()
         controller.stub_response_body = response_body
         self.start_response = mock.Mock()
@@ -432,11 +478,11 @@ class TestInitializeGenerator(object):
 
 
 class TestPrepareHooksDaemon(object):
-    def test_calls_imported_prepare_callback_daemon(self, app_settings):
+    def test_calls_imported_prepare_callback_daemon(self, app_settings, request_stub):
         expected_extras = {'extra1': 'value1'}
         daemon = DummyHooksCallbackDaemon()
 
-        controller = StubVCSController(None, app_settings, None)
+        controller = StubVCSController(None, app_settings, request_stub.registry)
         prepare_patcher = mock.patch.object(
             simplevcs, 'prepare_callback_daemon',
             return_value=(daemon, expected_extras))

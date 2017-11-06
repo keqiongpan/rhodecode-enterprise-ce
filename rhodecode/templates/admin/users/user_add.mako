@@ -26,7 +26,7 @@
         ${self.breadcrumbs()}
     </div>
     <!-- end box / title -->
-    ${h.secure_form(url('users'))}
+    ${h.secure_form(h.route_path('users_create'), request=request)}
     <div class="form">
         <!-- fields -->
         <div class="fields">

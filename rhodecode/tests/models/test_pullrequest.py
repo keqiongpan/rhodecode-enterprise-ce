@@ -155,20 +155,20 @@ class TestPullRequestModel(object):
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
-        assert pull_request._last_merge_status is None
+        assert pull_request.last_merge_status is None
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is True
         assert msg.eval() == 'This pull request can be automatically merged.'
-        self.merge_mock.assert_called_once_with(
+        self.merge_mock.assert_called_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id, dry_run=True,
-            use_rebase=False)
+            use_rebase=False, close_branch=False)
 
         assert pull_request._last_merge_source_rev == self.source_commit
         assert pull_request._last_merge_target_rev == self.target_commit
-        assert pull_request._last_merge_status is MergeFailureReason.NONE
+        assert pull_request.last_merge_status is MergeFailureReason.NONE
 
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
@@ -182,23 +182,23 @@ class TestPullRequestModel(object):
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
-        assert pull_request._last_merge_status is None
+        assert pull_request.last_merge_status is None
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
         assert (
             msg.eval() ==
             'This pull request cannot be merged because of merge conflicts.')
-        self.merge_mock.assert_called_once_with(
+        self.merge_mock.assert_called_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id, dry_run=True,
-            use_rebase=False)
+            use_rebase=False, close_branch=False)
 
         assert pull_request._last_merge_source_rev == self.source_commit
         assert pull_request._last_merge_target_rev == self.target_commit
         assert (
-            pull_request._last_merge_status is MergeFailureReason.MERGE_FAILED)
+            pull_request.last_merge_status is MergeFailureReason.MERGE_FAILED)
 
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
@@ -214,22 +214,22 @@ class TestPullRequestModel(object):
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
-        assert pull_request._last_merge_status is None
+        assert pull_request.last_merge_status is None
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
         assert msg.eval() == (
             'This pull request cannot be merged because of an unhandled'
             ' exception.')
-        self.merge_mock.assert_called_once_with(
+        self.merge_mock.assert_called_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id, dry_run=True,
-            use_rebase=False)
+            use_rebase=False, close_branch=False)
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
-        assert pull_request._last_merge_status is None
+        assert pull_request.last_merge_status is None
 
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
@@ -294,12 +294,12 @@ class TestPullRequestModel(object):
                 pr_title=safe_unicode(pull_request.title)
             )
         )
-        self.merge_mock.assert_called_once_with(
+        self.merge_mock.assert_called_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id,
             user_name=user.username, user_email=user.email, message=message,
-            use_rebase=False
+            use_rebase=False, close_branch=False
         )
         self.invalidation_mock.assert_called_once_with(
             pull_request.target_repo.repo_name)
@@ -333,12 +333,12 @@ class TestPullRequestModel(object):
                 pr_title=safe_unicode(pull_request.title)
             )
         )
-        self.merge_mock.assert_called_once_with(
+        self.merge_mock.assert_called_with(
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts, self.workspace_id,
             user_name=user.username, user_email=user.email, message=message,
-            use_rebase=False
+            use_rebase=False, close_branch=False
         )
 
         pull_request = PullRequest.get(pull_request.pull_request_id)
@@ -760,7 +760,7 @@ def test_create_version_from_snapshot_updates_attributes(pr_util, config_stub):
     pull_request.status = PullRequest.STATUS_CLOSED
     pull_request._last_merge_source_rev = "0" * 40
     pull_request._last_merge_target_rev = "1" * 40
-    pull_request._last_merge_status = 1
+    pull_request.last_merge_status = 1
     pull_request.merge_rev = "2" * 40
 
     # Remember automatic values
@@ -787,7 +787,7 @@ def test_create_version_from_snapshot_updates_attributes(pr_util, config_stub):
     assert version.target_ref == pr_util.create_parameters['target_ref']
     assert version._last_merge_source_rev == pull_request._last_merge_source_rev
     assert version._last_merge_target_rev == pull_request._last_merge_target_rev
-    assert version._last_merge_status == pull_request._last_merge_status
+    assert version.last_merge_status == pull_request.last_merge_status
     assert version.merge_rev == pull_request.merge_rev
     assert version.pull_request == pull_request
 

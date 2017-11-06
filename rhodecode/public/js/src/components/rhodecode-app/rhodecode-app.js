@@ -61,13 +61,22 @@ var rhodeCodeApp = Polymer({
     },
 
     checkViewChannels: function () {
-        var channels = []
+        // subscribe to different channels data is sent.
+
+        var channels = [];
         // subscribe to PR repo channel for PR's'
         if (templateContext.pull_request_data.pull_request_id) {
             var channelName = '/repo$' + templateContext.repo_name + '$/pr/' +
                 String(templateContext.pull_request_data.pull_request_id);
             channels.push(channelName);
         }
+
+        if (templateContext.commit_data.commit_id) {
+            var channelName = '/repo$' + templateContext.repo_name + '$/commit/' +
+                String(templateContext.commit_data.commit_id);
+            channels.push(channelName);
+        }
+
         return channels;
     },
 

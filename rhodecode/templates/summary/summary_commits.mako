@@ -19,11 +19,11 @@
                 <div class="changeset-status-ico shortlog">
                     %if c.statuses.get(cs.raw_id)[2]:
                     <a class="tooltip" title="${_('Commit status: %s\nClick to open associated pull request #%s') % (c.statuses.get(cs.raw_id)[0], c.statuses.get(cs.raw_id)[2])}" href="${h.route_path('pullrequest_show',repo_name=c.statuses.get(cs.raw_id)[3],pull_request_id=c.statuses.get(cs.raw_id)[2])}">
-                        <div class="${'flag_status %s' % c.statuses.get(cs.raw_id)[0]}"></div>
+                        <div class="${'flag_status {}'.format(c.statuses.get(cs.raw_id)[0])}"></div>
                     </a>
                     %else:
-                    <a class="tooltip" title="${_('Commit status: %s') % h.commit_status_lbl(c.statuses.get(cs.raw_id)[0])}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=cs.raw_id,anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
-                        <div class="${'flag_status %s' % c.statuses.get(cs.raw_id)[0]}"></div>
+                    <a class="tooltip" title="${_('Commit status: {}').format(h.commit_status_lbl(c.statuses.get(cs.raw_id)[0]))}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
+                        <div class="${'flag_status {}'.format(c.statuses.get(cs.raw_id)[0])}"></div>
                     </a>
                     %endif
                 </div>
@@ -33,13 +33,13 @@
         </td>
         <td class="td-comments">
             %if c.comments.get(cs.raw_id,[]):
-            <a title="${_('Commit has comments')}" href="${h.url('changeset_home',repo_name=c.repo_name,revision=cs.raw_id,anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
+            <a title="${_('Commit has comments')}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
                 <i class="icon-comment"></i> ${len(c.comments[cs.raw_id])}
             </a>
             %endif
         </td>
         <td class="td-commit">
-            <pre><a href="${h.url('changeset_home', repo_name=c.repo_name, revision=cs.raw_id)}">${h.show_id(cs)}</a></pre>
+            <pre><a href="${h.route_path('repo_commit', repo_name=c.repo_name, commit_id=cs.raw_id)}">${h.show_id(cs)}</a></pre>
         </td>
 
         <td class="td-description mid">
@@ -60,21 +60,21 @@
             %if h.is_hg(c.rhodecode_repo):
                 %for book in cs.bookmarks:
                      <span class="booktag tag" title="${h.tooltip(_('Bookmark %s') % book)}">
-                     <a href="${h.url('files_home',repo_name=c.repo_name,revision=cs.raw_id)}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
+                     <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=cs.raw_id, _query=dict(at=book))}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
                      </span>
                 %endfor
             %endif
             ## tags
             %for tag in cs.tags:
              <span class="tagtag tag" title="${h.tooltip(_('Tag %s') % tag)}">
-             <a href="${h.url('files_home',repo_name=c.repo_name,revision=cs.raw_id)}"><i class="icon-tag"></i>${h.shorter(tag)}</a>
+             <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=cs.raw_id, _query=dict(at=tag))}"><i class="icon-tag"></i>${h.shorter(tag)}</a>
              </span>
             %endfor
 
             ## branch
             %if cs.branch:
              <span class="branchtag tag" title="${h.tooltip(_('Branch %s') % cs.branch)}">
-              <a href="${h.url('changelog_home',repo_name=c.repo_name,branch=cs.branch)}"><i class="icon-code-fork"></i>${h.shorter(cs.branch)}</a>
+              <a href="${h.route_path('repo_changelog',repo_name=c.repo_name,_query=dict(branch=cs.branch))}"><i class="icon-code-fork"></i>${h.shorter(cs.branch)}</a>
              </span>
             %endif
           </div>
@@ -85,7 +85,7 @@
 </table>
 
 <script type="text/javascript">
-  $(document).pjax('#shortlog_data .pager_link','#shortlog_data', {timeout: 2000, scrollTo: false });
+  $(document).pjax('#shortlog_data .pager_link','#shortlog_data', {timeout: 2000, scrollTo: false, push: false});
   $(document).on('pjax:success', function(){ timeagoActivate(); });
 </script>
 
@@ -100,7 +100,7 @@ ${c.repo_commits.pager('$link_previous ~2~ $link_next')}
     <div class="left-label">${_('Add or upload files directly via RhodeCode:')}</div>
     <div class="right-content">
       <div id="add_node_id" class="add_node">
-          <a href="${h.url('files_add_home',repo_name=c.repo_name,revision=0,f_path='', anchor='edit')}" class="btn btn-default">${_('Add New File')}</a>
+          <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=0, f_path='', _anchor='edit')}" class="btn btn-default">${_('Add New File')}</a>
       </div>
     </div>
     %endif

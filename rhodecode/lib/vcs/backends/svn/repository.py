@@ -264,7 +264,7 @@ class SubversionRepository(base.BaseRepository):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None):
         if self.is_empty():
             raise EmptyRepositoryError("There are no commit_ids yet")
         self._validate_branch_name(branch_name)

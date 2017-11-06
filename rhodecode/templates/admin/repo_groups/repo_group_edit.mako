@@ -11,7 +11,7 @@
 <%def name="breadcrumbs_links()">
     ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
-    ${h.link_to(_('Repository Groups'),h.url('repo_groups'))}
+    ${h.link_to(_('Repository Groups'),h.route_path('repo_groups'))}
     %if c.repo_group.parent_group:
         &raquo; ${h.link_to(c.repo_group.parent_group.name, h.route_path('repo_group_home', repo_group_name=c.repo_group.parent_group.group_name))}
     %endif
@@ -21,7 +21,7 @@
 <%def name="breadcrumbs_side_links()">
     <ul class="links">
       <li>
-          <a href="${h.url('new_repo_group', parent_group=c.repo_group.group_id)}" class="btn btn-small btn-success">${_(u'Add Child Group')}</a>
+          <a href="${h.route_path('repo_group_new', _query=dict(parent_group=c.repo_group.group_id))}" class="btn btn-small btn-success">${_(u'Add Child Group')}</a>
       </li>
     </ul>
 </%def>
@@ -45,9 +45,9 @@
     ##main
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
-          <li class="${'active' if c.active=='settings' else ''}"><a href="${h.url('edit_repo_group', group_name=c.repo_group.group_name)}">${_('Settings')}</a></li>
-          <li class="${'active' if c.active=='perms' else ''}"><a href="${h.url('edit_repo_group_perms', group_name=c.repo_group.group_name)}">${_('Permissions')}</a></li>
-          <li class="${'active' if c.active=='advanced' else ''}"><a href="${h.url('edit_repo_group_advanced', group_name=c.repo_group.group_name)}">${_('Advanced')}</a></li>
+          <li class="${'active' if c.active=='settings' else ''}"><a href="${h.route_path('edit_repo_group', repo_group_name=c.repo_group.group_name)}">${_('Settings')}</a></li>
+          <li class="${'active' if c.active=='permissions' else ''}"><a href="${h.route_path('edit_repo_group_perms', repo_group_name=c.repo_group.group_name)}">${_('Permissions')}</a></li>
+          <li class="${'active' if c.active=='advanced' else ''}"><a href="${h.route_path('edit_repo_group_advanced', repo_group_name=c.repo_group.group_name)}">${_('Advanced')}</a></li>
           <li class="${'active' if c.active=='integrations' else ''}"><a href="${h.route_path('repo_group_integrations_home', repo_group_name=c.repo_group.group_name)}">${_('Integrations')}</a></li>
         </ul>
     </div>

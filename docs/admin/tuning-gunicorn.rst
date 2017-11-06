@@ -3,16 +3,19 @@
 Increase Gunicorn Workers
 -------------------------
 
-.. important::
 
-   If you increase the number of :term:`Gunicorn` workers, you also need to
-   increase the threadpool size of the VCS Server. The recommended size is
-   6 times the number of Gunicorn workers. To set this, see
-   :ref:`vcs-server-config-file`.
+|RCE| comes with `Gunicorn`_ packaged in its Nix environment.
+Gunicorn is a Python WSGI HTTP Server for UNIX.
 
-|RCE| comes with `Gunicorn`_ packaged in its Nix environment. To improve
-performance you can increase the number of workers. To do this, use the
-following steps:
+To improve |RCE| performance you can increase the number of `Gunicorn`_  workers.
+This allows to handle more connections concurently, and provide better
+responsiveness and performance.
+
+By default during installation |RCC|  tries to detect how many CPUs are
+available in the system, and set the number workers based on that information.
+However sometimes it's better to manually set the number of workers.
+
+To do this, use the following steps:
 
 1. Open the :file:`home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file.
 2. In the ``[server:main]`` section, increase the number of Gunicorn
@@ -20,16 +23,26 @@ following steps:
 
 .. code-block:: ini
 
-    [server:main]
-    host = 127.0.0.1
-    port = 10002
     use = egg:gunicorn#main
-    workers = 1
-    threads = 1
-    proc_name = RhodeCodeEnterprise
+    ## Sets the number of process workers. You must set `instance_id = *`
+    ## when this option is set to more than one worker, recommended
+    ## value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers
+    ## The `instance_id = *` must be set in the [app:main] section below
+    workers = 4
+    ## process name
+    proc_name = rhodecode
+    ## type of worker class, one of sync, gevent
+    ## recommended for bigger setup is using of of other than sync one
     worker_class = sync
+    ## The maximum number of simultaneous clients. Valid only for Gevent
+    #worker_connections = 10
+    ## max number of requests that worker will handle before being gracefully
+    ## restarted, could prevent memory leaks
     max_requests = 1000
-    timeout = 3600
+    max_requests_jitter = 30
+    ## amount of time a worker can spend with handling a request before it
+    ## gets killed and restarted. Set to 6hrs
+    timeout = 21600
 
 3. In the ``[app:main]`` section, set the ``instance_id`` property to ``*``.
 
@@ -40,72 +53,72 @@ following steps:
     # You must set `instance_id = *`
     instance_id = *
 
-4. Save your changes.
-5. Restart your |RCE| instance, using the following command:
+4. Change the VCSServer workers too. Open the
+   :file:`home/{user}/.rccontrol/{instance-id}/vcsserver.ini` file.
 
-.. code-block:: bash
-
-    $ rccontrol restart enterprise-1
-
-If you scale across different machines, each |RCM| instance
-needs to store its data on a shared disk, preferably together with your
-|repos|. This data directory contains template caches, a whoosh index,
-and is used for task locking to ensure safety across multiple instances.
-To do this, set the following properties in the :file:`rhodecode.ini` file to
-set the shared location across all |RCM| instances.
+5. In the ``[server:main]`` section, increase the number of Gunicorn
+   ``workers`` using the following formula :math:`(2 * Cores) + 1`.
 
 .. code-block:: ini
 
-    cache_dir = /file/path           # set to shared location
-    search.location = /file/path           # set to shared location
+    ## run with gunicorn --log-config vcsserver.ini --paste vcsserver.ini
+    use = egg:gunicorn#main
+    ## Sets the number of process workers. Recommended
+    ## value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers
+    workers = 4
+    ## process name
+    proc_name = rhodecode_vcsserver
+    ## type of worker class, currently `sync` is the only option allowed.
+    worker_class = sync
+    ## The maximum number of simultaneous clients. Valid only for Gevent
+    #worker_connections = 10
+    ## max number of requests that worker will handle before being gracefully
+    ## restarted, could prevent memory leaks
+    max_requests = 1000
+    max_requests_jitter = 30
+    ## amount of time a worker can spend with handling a request before it
+    ## gets killed and restarted. Set to 6hrs
+    timeout = 21600
 
-    ####################################
-    ###         BEAKER CACHE        ####
-    ####################################
-    beaker.cache.data_dir = /file/path       # set to shared location
-    beaker.cache.lock_dir = /file/path       # set to shared location
+6. Save your changes.
+7. Restart your |RCE| instances, using the following command:
+
+.. code-block:: bash
+
+    $ rccontrol restart '*'
 
 
+Gunicorn Gevent Backend
+-----------------------
 
-Gunicorn SSL support
---------------------
+Gevent is an asynchronous worker type for Gunicorn. It allows accepting multiple
+connections on a single `Gunicorn`_  worker. This means you can handle 100s
+of concurrent clones, or API calls using just few workers. A setting called
+`worker_connections` defines on how many connections each worker can
+handle using `Gevent`.
 
 
-:term:`Gunicorn` wsgi server allows users to use HTTPS connection directly
-without a need to use HTTP server like Nginx or Apache. To Configure
-SSL support directly with :term:`Gunicorn` you need to simply add the key
-and certificate paths to your configuration file.
+To enable `Gevent` on |RCE| do the following:
+
 
 1. Open the :file:`home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file.
-2. In the ``[server:main]`` section, add two new variables
-   called `certfile` and `keyfile`.
+2. In the ``[server:main]`` section, change `worker_class` for Gunicorn.
+
 
 .. code-block:: ini
 
-    [server:main]
-    host = 127.0.0.1
-    port = 10002
-    use = egg:gunicorn#main
-    workers = 1
-    threads = 1
-    proc_name = RhodeCodeEnterprise
-    worker_class = sync
-    max_requests = 1000
-    timeout = 3600
-    # adding ssl support
-    certfile = /home/ssl/my_server_com.pem
-    keyfile = /home/ssl/my_server_com.key
+    ## type of worker class, one of sync, gevent
+    ## recommended for bigger setup is using of of other than sync one
+    worker_class = gevent
+    ## The maximum number of simultaneous clients. Valid only for Gevent
+    worker_connections = 30
 
-4. Save your changes.
-5. Restart your |RCE| instance, using the following command:
 
-.. code-block:: bash
+.. note::
 
-    $ rccontrol restart enterprise-1
+    `Gevent` is currently only supported for Enterprise/Community instances.
+    VCSServer doesn't yet support gevent.
 
-After this is enabled you can *only* access your instances via https://
-protocol. Check out more docs here `Gunicorn SSL Docs`_
 
 
 .. _Gunicorn: http://gunicorn.org/
-.. _Gunicorn SSL Docs: http://docs.gunicorn.org/en/stable/settings.html#ssl

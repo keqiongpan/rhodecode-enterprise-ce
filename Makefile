@@ -1,5 +1,5 @@
 
-.PHONY: clean docs docs-clean docs-cleanup test test-clean test-only web-build
+.PHONY: clean docs docs-clean docs-cleanup test test-clean test-only test-only-postgres test-only-mysql web-build
 
 WEBPACK=./node_modules/webpack/bin/webpack.js
 GRUNT=grunt
@@ -19,7 +19,25 @@ test-clean:
 	find . -type d -name "__pycache__" -prune -exec rm -rf '{}' ';'
 
 test-only:
-	PYTHONHASHSEED=random py.test -vv -r xw --cov=rhodecode --cov-report=term-missing --cov-report=html rhodecode
+	PYTHONHASHSEED=random \
+	py.test -x -vv -r xw -p no:sugar --cov=rhodecode \
+    --cov-report=term-missing --cov-report=html \
+    rhodecode
+
+test-only-mysql:
+	PYTHONHASHSEED=random \
+	py.test -x -vv -r xw -p no:sugar --cov=rhodecode \
+    --cov-report=term-missing --cov-report=html \
+    --ini-config-override='{"app:main": {"sqlalchemy.db1.url": "mysql://root:qweqwe@localhost/rhodecode_test"}}' \
+    rhodecode
+
+test-only-postgres:
+	PYTHONHASHSEED=random \
+	py.test -x -vv -r xw -p no:sugar --cov=rhodecode \
+    --cov-report=term-missing --cov-report=html \
+    --ini-config-override='{"app:main": {"sqlalchemy.db1.url": "postgresql://postgres:qweqwe@localhost/rhodecode_test"}}' \
+    rhodecode
+
 
 docs:
 	(cd docs; nix-build default.nix -o result; make clean html)

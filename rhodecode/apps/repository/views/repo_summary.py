@@ -22,12 +22,9 @@ import logging
 import string
 
 from pyramid.view import view_config
-
 from beaker.cache import cache_region
 
-
 from rhodecode.controllers import utils
-
 from rhodecode.apps._base import RepoAppView
 from rhodecode.config.conf import (LANGUAGES_EXTENSIONS_MAP)
 from rhodecode.lib import caches, helpers as h
@@ -37,7 +34,8 @@ from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
 from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs.backends.base import EmptyCommit
-from rhodecode.lib.vcs.exceptions import CommitError, EmptyRepositoryError
+from rhodecode.lib.vcs.exceptions import CommitError, EmptyRepositoryError, \
+    CommitDoesNotExistError
 from rhodecode.model.db import Statistics, CacheKey, User
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import ReadmeFinder
@@ -51,8 +49,6 @@ class RepoSummaryView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
 
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo
         c.rhodecode_repo = None
         if not c.repository_requirements_missing:
             c.rhodecode_repo = self.rhodecode_vcs_repo
@@ -74,12 +70,16 @@ class RepoSummaryView(RepoAppView):
                 log.debug("Searching for a README file.")
                 readme_node = ReadmeFinder(default_renderer).search(commit)
             if readme_node:
-                relative_url = h.url('files_raw_home',
-                                     repo_name=repo_name,
-                                     revision=commit.raw_id,
-                                     f_path=readme_node.path)
+                relative_urls = {
+                    'raw': h.route_path(
+                        'repo_file_raw', repo_name=repo_name,
+                        commit_id=commit.raw_id, f_path=readme_node.path),
+                    'standard': h.route_path(
+                        'repo_files', repo_name=repo_name,
+                        commit_id=commit.raw_id, f_path=readme_node.path),
+                }
                 readme_data = self._render_readme_or_none(
-                    commit, readme_node, relative_url)
+                    commit, readme_node, relative_urls)
                 readme_filename = readme_node.path
             return readme_data, readme_filename
 
@@ -104,15 +104,15 @@ class RepoSummaryView(RepoAppView):
             log.exception(
                 "Problem getting commit when trying to render the README.")
 
-    def _render_readme_or_none(self, commit, readme_node, relative_url):
+    def _render_readme_or_none(self, commit, readme_node, relative_urls):
         log.debug(
             'Found README file `%s` rendering...', readme_node.path)
         renderer = MarkupRenderer()
         try:
             html_source = renderer.render(
                 readme_node.content, filename=readme_node.path)
-            if relative_url:
-                return relative_links(html_source, relative_url)
+            if relative_urls:
+                return relative_links(html_source, relative_urls)
             return html_source
         except Exception:
             log.exception(
@@ -162,6 +162,9 @@ class RepoSummaryView(RepoAppView):
         renderer='rhodecode:templates/summary/summary.mako')
     @view_config(
         route_name='repo_summary_slash', request_method='GET',
+        renderer='rhodecode:templates/summary/summary.mako')
+    @view_config(
+        route_name='repo_summary_explicit', request_method='GET',
         renderer='rhodecode:templates/summary/summary.mako')
     def summary(self):
         c = self.load_default_context()
@@ -270,7 +273,7 @@ class RepoSummaryView(RepoAppView):
                             code_stats[ext]['count'] += 1
                         else:
                             code_stats[ext] = {"count": 1, "desc": ext_info}
-            except EmptyRepositoryError:
+            except (EmptyRepositoryError, CommitDoesNotExistError):
                 pass
             return {'size': h.format_byte_size_binary(size),
                     'code_stats': code_stats}
@@ -360,9 +363,9 @@ class RepoSummaryView(RepoAppView):
 
     def _create_files_url(self, repo, full_repo_name, ref_name, raw_id, is_svn):
         use_commit_id = '/' in ref_name or is_svn
-        return h.url(
-            'files_home',
+        return h.route_path(
+            'repo_files',
             repo_name=full_repo_name,
             f_path=ref_name if is_svn else '',
-            revision=raw_id if use_commit_id else ref_name,
-            at=ref_name)
+            commit_id=raw_id if use_commit_id else ref_name,
+            _query=dict(at=ref_name))

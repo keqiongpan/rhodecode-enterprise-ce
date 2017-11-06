@@ -44,7 +44,7 @@ def test_post_push_truncates_commits(user_regular, repo_stub):
     hooks_base.post_push(extras)
 
     # Calculate appropriate action string here
-    commit_ids = extras.commit_ids[:10000]
+    commit_ids = extras.commit_ids[:400]
 
     entry = UserLog.query().order_by('-user_log_id').first()
     assert entry.action == 'user.push'

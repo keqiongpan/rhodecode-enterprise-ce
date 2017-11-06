@@ -94,7 +94,7 @@
 </%def>
 
 <%def name="default_perms_box(form_url)">
-  ${h.secure_form(form_url, method='put')}
+  ${h.secure_form(form_url, request=request)}
     <div class="form">
       <div class="fields">
         <div class="field panel panel-default panel-body">
@@ -106,7 +106,7 @@
               <span class="help-block">
               ${h.literal(_('Select to inherit permissions from %s permissions settings, '
                             'including default IP address whitelist and inheritance of \npermission by members of user groups.')
-                          % h.link_to('default user', url('admin_permissions_global')))}
+                          % h.link_to('default user', h.route_path('admin_permissions_global')))}
               </span>
           </div>
         </div>

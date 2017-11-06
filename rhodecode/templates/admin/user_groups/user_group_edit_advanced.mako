@@ -11,6 +11,7 @@
     (_('Assigned to repositories'), len(c.group_to_repos),'', [x for x in c.group_to_repos]),
     (_('Assigned to repo groups'), len(c.group_to_repo_groups), '', [x for x in c.group_to_repo_groups]),
 
+    (_('Assigned to review rules'), len(c.group_to_review_rules), '', [x for x in c.group_to_review_rules]),
  ]
 %>
 
@@ -43,7 +44,7 @@
         % endif
 
         <div>
-        ${h.secure_form(h.url('edit_user_group_advanced_sync', user_group_id=c.user_group.users_group_id), method='post')}
+        ${h.secure_form(h.route_path('edit_user_group_advanced_sync', user_group_id=c.user_group.users_group_id), request=request)}
             <div class="field">
                 <button class="btn btn-default" type="submit">
                     %if sync_type:
@@ -71,7 +72,7 @@
         <h3 class="panel-title">${_('Delete User Group')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('delete_users_group', user_group_id=c.user_group.users_group_id),method='delete')}
+        ${h.secure_form(h.route_path('user_groups_delete', user_group_id=c.user_group.users_group_id), request=request)}
             ${h.hidden('force', 1)}
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to delete user group `%(ugroup)s` with all permission assignments') % {'ugroup': c.user_group.users_group_name}}');">

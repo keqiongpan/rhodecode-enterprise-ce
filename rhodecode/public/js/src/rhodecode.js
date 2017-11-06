@@ -58,7 +58,7 @@ var compare_radio_buttons = function(repo_name, compare_ref_type){
                 target_ref_type: compare_ref_type,
                 merge: 1
             };
-            window.location = pyroutes.url('compare_url', url_data);
+            window.location = pyroutes.url('repo_compare', url_data);
         }
     });
     $('.compare-radio-button').on('click', function(e){
@@ -209,6 +209,24 @@ function collapsableContent() {
 var timeagoActivate = function() {
     $("time.timeago").timeago();
 };
+
+
+var clipboardActivate = function() {
+    /*
+    *
+    * <i class="tooltip icon-plus clipboard-action" data-clipboard-text="${commit.raw_id}" title="${_('Copy the full commit id')}"></i>
+    * */
+    var clipboard = new Clipboard('.clipboard-action');
+
+    clipboard.on('success', function(e) {
+        var callback = function () {
+            $(e.trigger).animate({'opacity': 1.00}, 200)
+        };
+        $(e.trigger).animate({'opacity': 0.15}, 200, callback);
+        e.clearSelection();
+    });
+};
+
 
 // Formatting values in a Select2 dropdown of commit references
 var formatSelect2SelectionRefs = function(commit_ref){
@@ -481,3 +499,62 @@ $(document).ready(function() {
     }
     collapsableContent();
 });
+
+var feedLifetimeOptions = function(query, initialData){
+    var data = {results: []};
+    var isQuery = typeof query.term !== 'undefined';
+
+    var section = _gettext('Lifetime');
+    var children = [];
+
+    //filter results
+    $.each(initialData.results, function(idx, value) {
+
+        if (!isQuery || query.term.length === 0 || value.text.toUpperCase().indexOf(query.term.toUpperCase()) >= 0) {
+            children.push({
+                'id': this.id,
+                'text': this.text
+            })
+        }
+
+    });
+    data.results.push({
+        'text': section,
+        'children': children
+    });
+
+    if (isQuery) {
+
+        var now = moment.utc();
+
+        var parseQuery = function(entry, now){
+            var fmt = 'DD/MM/YYYY H:mm';
+            var parsed = moment.utc(entry, fmt);
+            var diffInMin = parsed.diff(now, 'minutes');
+
+            if (diffInMin > 0){
+                return {
+                    id: diffInMin,
+                    text: parsed.format(fmt)
+                }
+            } else {
+                return {
+                    id: undefined,
+                    text: parsed.format('DD/MM/YYYY') + ' ' + _gettext('date not in future')
+                }
+            }
+
+
+        };
+
+        data.results.push({
+            'text': _gettext('Specified expiration date'),
+            'children': [{
+                'id': parseQuery(query.term, now).id,
+                'text': parseQuery(query.term, now).text
+            }]
+        });
+    }
+
+    query.callback(data);
+};

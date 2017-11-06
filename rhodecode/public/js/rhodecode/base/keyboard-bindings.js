@@ -46,16 +46,16 @@ function setRCMouseBindings(repoName, repoLandingRev) {
         window.location = pyroutes.url('home');
     });
     Mousetrap.bind(['g g'], function(e) {
-        window.location = pyroutes.url('gists', {'private': 1});
+        window.location = pyroutes.url('gists_show', {'private': 1});
     });
     Mousetrap.bind(['g G'], function(e) {
-        window.location = pyroutes.url('gists', {'public': 1});
+        window.location = pyroutes.url('gists_show', {'public': 1});
     });
     Mousetrap.bind(['n g'], function(e) {
-        window.location = pyroutes.url('new_gist');
+        window.location = pyroutes.url('gists_new');
     });
     Mousetrap.bind(['n r'], function(e) {
-        window.location = pyroutes.url('new_repo');
+        window.location = pyroutes.url('repo_new');
     });
 
     if (repoName && repoName != '') {
@@ -66,24 +66,24 @@ function setRCMouseBindings(repoName, repoLandingRev) {
         });
         Mousetrap.bind(['g c'], function(e) {
             window.location = pyroutes.url(
-                'changelog_home', {'repo_name': repoName});
+                'repo_changelog', {'repo_name': repoName});
         });
         Mousetrap.bind(['g F'], function(e) {
             window.location = pyroutes.url(
-                'files_home',
+                'repo_files',
                 {
                     'repo_name': repoName,
-                    'revision': repoLandingRev,
+                    'commit_id': repoLandingRev,
                     'f_path': '',
                     'search': '1'
                 });
         });
         Mousetrap.bind(['g f'], function(e) {
             window.location = pyroutes.url(
-                'files_home',
+                'repo_files',
                 {
                     'repo_name': repoName,
-                    'revision': repoLandingRev,
+                    'commit_id': repoLandingRev,
                     'f_path': ''
                 });
         });

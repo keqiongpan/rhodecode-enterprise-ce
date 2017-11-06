@@ -15,8 +15,11 @@ available post the .ini config.
 
 import multiprocessing
 import sys
+import time
+import datetime
 import threading
 import traceback
+from gunicorn.glogging import Logger
 
 
 # GLOBAL
@@ -88,3 +91,23 @@ def post_request(worker, req, environ, resp):
     return
     worker.log.debug("[<%-10s>] POST WORKER: %s %s resp: %s", worker.pid,
                      req.method, req.path, resp.status_code)
+
+
+class RhodeCodeLogger(Logger):
+    """
+    Custom Logger that allows some customization that gunicorn doesn't allow
+    """
+
+    datefmt = r"%Y-%m-%d %H:%M:%S"
+
+    def __init__(self, cfg):
+        Logger.__init__(self, cfg)
+
+    def now(self):
+        """ return date in RhodeCode Log format """
+        now = time.time()
+        msecs = int((now - long(now)) * 1000)
+        return time.strftime(self.datefmt, time.localtime(now)) + '.{0:03d}'.format(msecs)
+
+
+logger_class = RhodeCodeLogger

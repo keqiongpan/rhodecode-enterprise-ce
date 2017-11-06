@@ -1,4 +1,4 @@
-<%inherit file="/summary/base.mako"/>
+<%inherit file="/summary/summary_base.mako"/>
 
 <%namespace name="components" file="/summary/components.mako"/>
 
@@ -14,9 +14,9 @@
     <ul class="links icon-only-links block-right">
       <li>
      %if c.rhodecode_user.username != h.DEFAULT_USER:
-       <a href="${h.url('atom_feed_home',repo_name=c.rhodecode_db_repo.repo_name,auth_token=c.rhodecode_user.feed_token)}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
+       <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
      %else:
-       <a href="${h.url('atom_feed_home',repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
+       <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
      %endif
       </li>
     </ul>
@@ -46,7 +46,7 @@
 <div class="box" >
     <div class="title" title="${h.tooltip(_('Readme file from commit %s:%s') % (c.rhodecode_db_repo.landing_rev[0], c.rhodecode_db_repo.landing_rev[1]))}">
         <h3 class="breadcrumbs">
-            <a href="${h.url('files_home',repo_name=c.repo_name,revision='tip',f_path=c.readme_file)}">${c.readme_file}</a>
+            <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.landing_rev[1],f_path=c.readme_file)}">${c.readme_file}</a>
         </h3>
     </div>
     <div class="readme codeblock">
@@ -69,6 +69,10 @@ $(document).ready(function(){
         $('#clone_by_id').show();
         $('#clone_url_id').hide();
 
+        // hide copy by id
+        $('#clone_by_name_copy').show();
+        $('#clone_by_id_copy').hide();
+
     });
     $('#clone_by_id').on('click',function(e){
 
@@ -79,6 +83,10 @@ $(document).ready(function(){
         // hide url by name and show id button
         $('#clone_by_name').show();
         $('#clone_url').hide();
+
+        // hide copy by id
+        $('#clone_by_id_copy').show();
+        $('#clone_by_name_copy').hide();
     });
 
     var initialCommitData = {
@@ -96,7 +104,7 @@ $(document).ready(function(){
         // format of Object {text: "v0.0.3", type: "tag", id: "rev"}
         var selected_cs = e.added;
         var fname= e.added.raw_id + ".zip";
-        var href = pyroutes.url('files_archive_home', {'repo_name': templateContext.repo_name, 'fname':fname});
+        var href = pyroutes.url('repo_archivefile', {'repo_name': templateContext.repo_name, 'fname':fname});
         // set new label
         $('#archive_link').html('<i class="icon-archive"></i> '+ e.added.text+".zip");
 

@@ -462,7 +462,7 @@ class MercurialRepository(BaseRepository):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None):
         """
         Returns generator of ``MercurialCommit`` objects from start to end
         (both are inclusive)
@@ -475,7 +475,8 @@ class MercurialRepository(BaseRepository):
           ``end_date`` would be filtered out from returned set
         :param branch_name: if specified, commits not reachable from given
           branch would be filtered out from returned set
-
+        :param show_hidden: Show hidden commits such as obsolete or hidden from
+            Mercurial evolve
         :raise BranchDoesNotExistError: If given ``branch_name`` does not
             exist.
         :raise CommitDoesNotExistError: If commit for given ``start`` or
@@ -510,23 +511,29 @@ class MercurialRepository(BaseRepository):
             end_pos += 1
 
         commit_filter = []
+
         if branch_name and not branch_ancestors:
-            commit_filter.append('branch("%s")' % branch_name)
+            commit_filter.append('branch("%s")' % (branch_name,))
         elif branch_name and branch_ancestors:
-            commit_filter.append('ancestors(branch("%s"))' % branch_name)
+            commit_filter.append('ancestors(branch("%s"))' % (branch_name,))
+
         if start_date and not end_date:
-            commit_filter.append('date(">%s")' % start_date)
+            commit_filter.append('date(">%s")' % (start_date,))
         if end_date and not start_date:
-            commit_filter.append('date("<%s")' % end_date)
+            commit_filter.append('date("<%s")' % (end_date,))
         if start_date and end_date:
             commit_filter.append(
                 'date(">%s") and date("<%s")' % (start_date, end_date))
 
+        if not show_hidden:
+            commit_filter.append('not obsolete()')
+            commit_filter.append('not hidden()')
+
         # TODO: johbo: Figure out a simpler way for this solution
         collection_generator = CollectionGenerator
         if commit_filter:
-            commit_filter = map(safe_str, commit_filter)
-            revisions = self._remote.rev_range(commit_filter)
+            commit_filter = ' and '.join(map(safe_str, commit_filter))
+            revisions = self._remote.rev_range([commit_filter])
             collection_generator = MercurialIndexBasedCollectionGenerator
         else:
             revisions = self.commit_ids
@@ -556,8 +563,9 @@ class MercurialRepository(BaseRepository):
 
     def _update(self, revision, clean=False):
         """
-        Update the working copty to the specified revision.
+        Update the working copy to the specified revision.
         """
+        log.debug('Doing checkout to commit: `%s` for %s', revision, self)
         self._remote.update(revision, clean=clean)
 
     def _identify(self):
@@ -591,7 +599,7 @@ class MercurialRepository(BaseRepository):
             push_branches=push_branches)
 
     def _local_merge(self, target_ref, merge_message, user_name, user_email,
-                     source_ref, use_rebase=False):
+                     source_ref, use_rebase=False, dry_run=False):
         """
         Merge the given source_revision into the checked out revision.
 
@@ -646,6 +654,28 @@ class MercurialRepository(BaseRepository):
                 self._remote.update(clean=True)
                 raise
 
+    def _local_close(self, target_ref, user_name, user_email,
+                     source_ref, close_message=''):
+        """
+        Close the branch of the given source_revision
+
+        Returns the commit id of the close and a boolean indicating if the
+        commit needs to be pushed.
+        """
+        self._update(source_ref.commit_id)
+        message = close_message or "Closing branch: `{}`".format(source_ref.name)
+        try:
+            self._remote.commit(
+                message=safe_str(message),
+                username=safe_str('%s <%s>' % (user_name, user_email)),
+                close_branch=True)
+            self._remote.invalidate_vcs_cache()
+            return self._identify(), True
+        except RepositoryError:
+            # Cleanup any commit leftovers
+            self._remote.update(clean=True)
+            raise
+
     def _is_the_same_branch(self, target_ref, source_ref):
         return (
             self._get_branch_name(target_ref) ==
@@ -679,7 +709,10 @@ class MercurialRepository(BaseRepository):
     def _merge_repo(self, shadow_repository_path, target_ref,
                     source_repo, source_ref, merge_message,
                     merger_name, merger_email, dry_run=False,
-                    use_rebase=False):
+                    use_rebase=False, close_branch=False):
+
+        log.debug('Executing merge_repo with %s strategy, dry_run mode:%s',
+                  'rebase' if use_rebase else 'merge', dry_run)
         if target_ref.commit_id not in self._heads():
             return MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
@@ -690,7 +723,7 @@ class MercurialRepository(BaseRepository):
                 return MergeResponse(
                     False, False, None,
                     MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS)
-        except CommitDoesNotExistError as e:
+        except CommitDoesNotExistError:
             log.exception('Failure when looking up branch heads on hg target')
             return MergeResponse(
                 False, False, None, MergeFailureReason.MISSING_TARGET_REF)
@@ -710,28 +743,58 @@ class MercurialRepository(BaseRepository):
                 False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
 
         merge_ref = None
+        merge_commit_id = None
+        close_commit_id = None
         merge_failure_reason = MergeFailureReason.NONE
 
-        try:
-            merge_commit_id, needs_push = shadow_repo._local_merge(
-                target_ref, merge_message, merger_name, merger_email,
-                source_ref, use_rebase=use_rebase)
+        # enforce that close branch should be used only in case we source from
+        # an actual Branch
+        close_branch = close_branch and source_ref.type == 'branch'
+
+        # don't allow to close branch if source and target are the same
+        close_branch = close_branch and source_ref.name != target_ref.name
+
+        needs_push_on_close = False
+        if close_branch and not use_rebase and not dry_run:
+            try:
+                close_commit_id, needs_push_on_close = shadow_repo._local_close(
+                    target_ref, merger_name, merger_email, source_ref)
+                merge_possible = True
+            except RepositoryError:
+                log.exception(
+                    'Failure when doing close branch on hg shadow repo')
+                merge_possible = False
+                merge_failure_reason = MergeFailureReason.MERGE_FAILED
+        else:
             merge_possible = True
 
-            # Set a bookmark pointing to the merge commit. This bookmark may be
-            # used to easily identify the last successful merge commit in the
-            # shadow repository.
-            shadow_repo.bookmark('pr-merge', revision=merge_commit_id)
-            merge_ref = Reference('book', 'pr-merge', merge_commit_id)
-        except SubrepoMergeError:
-            log.exception(
-                'Subrepo merge error during local merge on hg shadow repo.')
-            merge_possible = False
-            merge_failure_reason = MergeFailureReason.SUBREPO_MERGE_FAILED
-        except RepositoryError:
-            log.exception('Failure when doing local merge on hg shadow repo')
-            merge_possible = False
-            merge_failure_reason = MergeFailureReason.MERGE_FAILED
+        if merge_possible:
+            try:
+                merge_commit_id, needs_push = shadow_repo._local_merge(
+                    target_ref, merge_message, merger_name, merger_email,
+                    source_ref, use_rebase=use_rebase, dry_run=dry_run)
+                merge_possible = True
+
+                # read the state of the close action, if it
+                # maybe required a push
+                needs_push = needs_push or needs_push_on_close
+
+                # Set a bookmark pointing to the merge commit. This bookmark
+                # may be used to easily identify the last successful merge
+                # commit in the shadow repository.
+                shadow_repo.bookmark('pr-merge', revision=merge_commit_id)
+                merge_ref = Reference('book', 'pr-merge', merge_commit_id)
+            except SubrepoMergeError:
+                log.exception(
+                    'Subrepo merge error during local merge on hg shadow repo.')
+                merge_possible = False
+                merge_failure_reason = MergeFailureReason.SUBREPO_MERGE_FAILED
+                needs_push = False
+            except RepositoryError:
+                log.exception('Failure when doing local merge on hg shadow repo')
+                merge_possible = False
+                merge_failure_reason = MergeFailureReason.MERGE_FAILED
+                needs_push = False
 
         if merge_possible and not dry_run:
             if needs_push:
@@ -740,11 +803,12 @@ class MercurialRepository(BaseRepository):
                 if target_ref.type == 'book':
                     shadow_repo.bookmark(
                         target_ref.name, revision=merge_commit_id)
-
                 try:
                     shadow_repo_with_hooks = self._get_shadow_instance(
                         shadow_repository_path,
                         enable_hooks=True)
+                    # This is the actual merge action, we push from shadow
+                    # into origin.
                     # Note: the push_branches option will push any new branch
                     # defined in the source repository to the target. This may
                     # be dangerous as branches are permanent in Mercurial.
@@ -752,6 +816,12 @@ class MercurialRepository(BaseRepository):
                     shadow_repo_with_hooks._local_push(
                         merge_commit_id, self.path, push_branches=True,
                         enable_hooks=True)
+
+                    # maybe we also need to push the close_commit_id
+                    if close_commit_id:
+                        shadow_repo_with_hooks._local_push(
+                            close_commit_id, self.path, push_branches=True,
+                            enable_hooks=True)
                     merge_succeeded = True
                 except RepositoryError:
                     log.exception(

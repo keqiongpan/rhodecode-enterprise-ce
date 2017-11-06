@@ -100,7 +100,7 @@
               % endif
             % if inline:
                   <div class="pr-version-inline">
-                    <a href="${h.url.current(version=comment.pull_request_version_id, anchor='comment-{}'.format(comment.comment_id))}">
+                    <a href="${request.current_route_path(_query=dict(version=comment.pull_request_version_id), _anchor='comment-{}'.format(comment.comment_id))}">
                     % if outdated_at_ver:
                         <code class="pr-version-num" title="${_('Outdated comment from pull request version {0}').format(pr_index_ver)}">
                             outdated ${'v{}'.format(pr_index_ver)} |
@@ -280,7 +280,7 @@
                 <div id="edit-container">
                     <div style="padding: 40px 0">
                       ${_('You need to be logged in to leave comments.')}
-                      <a href="${h.route_path('login', _query={'came_from': h.url.current()})}">${_('Login now')}</a>
+                      <a href="${h.route_path('login', _query={'came_from': h.current_route_path(request)})}">${_('Login now')}</a>
                     </div>
                 </div>
                 <div id="preview-container" class="clearfix" style="display: none;">

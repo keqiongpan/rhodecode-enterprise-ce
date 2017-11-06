@@ -17,7 +17,7 @@ ${_('%(user)s commited on %(date)s UTC') % {
     tag: ${tag} <br/>
 % endfor
 
-commit: <a href="${h.url('changeset_home', repo_name=c.rhodecode_db_repo.repo_name, revision=commit.raw_id, qualified=True)}">${h.show_id(commit)}</a>
+commit: <a href="${h.route_url('repo_commit', repo_name=c.rhodecode_db_repo.repo_name, commit_id=commit.raw_id)}">${h.show_id(commit)}</a>
 <pre>
 ${h.urlify_commit_message(commit.message)}
 

@@ -71,14 +71,32 @@
     }
 }
 
-[tag="featured"] { &:extend(.tag1); }
-[tag="stale"] { &:extend(.tag2); }
-[tag="dead"] { &:extend(.tag3); }
-[tag="lang"] { &:extend(.tag4); }
-[tag="license"] { &:extend(.tag5); }
-[tag="requires"] { &:extend(.tag6); }
-[tag="recommends"] { &:extend(.tag7); }
+[tag="generic"] { &:extend(.tag0); }
+[tag="label"] { &:extend(.tag0); }
+
+[tag="state featured"] { &:extend(.tag1); }
+[tag="state dev"] { &:extend(.tag1); }
+[tag="ref base"] { &:extend(.tag1); }
+
+[tag="state stable"] { &:extend(.tag2); }
+[tag="state stale"] { &:extend(.tag2); }
+
+[tag="ref requires"] { &:extend(.tag3); }
+
+[tag="state dead"] { &:extend(.tag4); }
+[tag="state deprecated"] { &:extend(.tag4); }
+
+[tag="ref conflicts"] { &:extend(.tag4); }
+
+[tag="license"] { &:extend(.tag6); }
+
+[tag="lang"] { &:extend(.tag7); }
+[tag="language"] { &:extend(.tag7); }
+[tag="ref recommends"] { &:extend(.tag7); }
+
 [tag="see"] { &:extend(.tag8); }
+[tag="url"] { &:extend(.tag8); }
+
 
 .perm_overriden {
     text-decoration: line-through;

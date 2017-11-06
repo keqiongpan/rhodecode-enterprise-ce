@@ -22,6 +22,7 @@ import time
 import collections
 import datetime
 import formencode
+import formencode.htmlfill
 import logging
 import urlparse
 
@@ -160,7 +161,7 @@ class LoginView(BaseAppView):
 
         try:
             self.session.invalidate()
-            form_result = login_form.to_python(self.request.params)
+            form_result = login_form.to_python(self.request.POST)
             # form checks for username/password, now we're authenticated
             headers = _store_user_in_session(
                 self.session,
@@ -169,7 +170,7 @@ class LoginView(BaseAppView):
             log.debug('Redirecting to "%s" after login.', c.came_from)
 
             audit_user = audit_logger.UserWrap(
-                username=self.request.params.get('username'),
+                username=self.request.POST.get('username'),
                 ip_addr=self.request.remote_addr)
             action_data = {'user_agent': self.request.user_agent}
             audit_logger.store_web(
@@ -188,7 +189,7 @@ class LoginView(BaseAppView):
             })
 
             audit_user = audit_logger.UserWrap(
-                username=self.request.params.get('username'),
+                username=self.request.POST.get('username'),
                 ip_addr=self.request.remote_addr)
             action_data = {'user_agent': self.request.user_agent}
             audit_logger.store_web(
@@ -231,7 +232,7 @@ class LoginView(BaseAppView):
         register_message = settings.get('rhodecode_register_message') or ''
         captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
-            .AuthUser.permissions['global']
+            .AuthUser().permissions['global']
 
         render_ctx = self._get_template_context(c)
         render_ctx.update({
@@ -252,17 +253,18 @@ class LoginView(BaseAppView):
     def register_post(self):
         captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
-            .AuthUser.permissions['global']
+            .AuthUser().permissions['global']
 
         register_form = RegisterForm()()
         try:
-            form_result = register_form.to_python(self.request.params)
+
+            form_result = register_form.to_python(self.request.POST)
             form_result['active'] = auto_active
 
             if captcha.active:
                 response = submit(
-                    self.request.params.get('recaptcha_challenge_field'),
-                    self.request.params.get('recaptcha_response_field'),
+                    self.request.POST.get('recaptcha_challenge_field'),
+                    self.request.POST.get('recaptcha_response_field'),
                     private_key=captcha.private_key,
                     remoteip=get_ip_addr(self.request.environ))
                 if not response.is_valid:
@@ -325,13 +327,13 @@ class LoginView(BaseAppView):
             password_reset_form = PasswordResetForm()()
             try:
                 form_result = password_reset_form.to_python(
-                    self.request.params)
+                    self.request.POST)
                 user_email = form_result['email']
 
                 if captcha.active:
                     response = submit(
-                        self.request.params.get('recaptcha_challenge_field'),
-                        self.request.params.get('recaptcha_response_field'),
+                        self.request.POST.get('recaptcha_challenge_field'),
+                        self.request.POST.get('recaptcha_response_field'),
                         private_key=captcha.private_key,
                         remoteip=get_ip_addr(self.request.environ))
                     if not response.is_valid:
@@ -374,7 +376,7 @@ class LoginView(BaseAppView):
                     'defaults': errors.value,
                     'errors': errors.error_dict,
                 })
-                if not self.request.params.get('email'):
+                if not self.request.POST.get('email'):
                     # case of empty email, we want to report that
                     return render_ctx
 

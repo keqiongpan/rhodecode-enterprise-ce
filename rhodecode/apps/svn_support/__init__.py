@@ -66,6 +66,7 @@ def _sanitize_settings_and_apply_defaults(settings):
     _string_setting(settings, config_keys.config_file_path, '', lower=False)
     _string_setting(settings, config_keys.location_root, '/', lower=False)
     _string_setting(settings, config_keys.reload_command, '', lower=False)
+    _string_setting(settings, config_keys.template, '', lower=False)
 
     # Convert negative timeout values to zero.
     if settings[config_keys.reload_timeout] < 0:

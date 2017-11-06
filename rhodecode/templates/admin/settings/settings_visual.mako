@@ -1,4 +1,4 @@
-${h.secure_form(url('admin_settings_visual'), method='post')}
+${h.secure_form(h.url('admin_settings_visual'), request=request)}
 
 <div class="panel panel-default">
     <div class="panel-heading" id="general">
@@ -63,21 +63,10 @@ ${h.secure_form(url('admin_settings_visual'), method='post')}
             ${h.checkbox('rhodecode_stylify_metatags','True')}
             <label for="rhodecode_stylify_metatags">${_('Stylify recognised meta tags')}</label>
         </div>
-        <span class="help-block">${_('Parses meta tags from repository description field and turns them into colored tags.')}</span>
+        <span class="help-block">${_('Parses meta tags from repository or repository group description fields and turns them into colored tags.')}</span>
         <div>
-            <table>
-                <tr><td>[featured] </td><td><span class="metatag" tag="featured">featured</span></td></tr>
-                <tr><td>[stale] </td><td><span class="metatag" tag="stale">stale</span></td></tr>
-                <tr><td>[dead] </td><td><span class="metatag" tag="dead">dead</span></td></tr>
-                <tr><td>[personal] </td><td><span class="metatag" tag="personal">personal</span></td></tr>
-
-                <tr><td>[lang =&gt; lang] </td><td><span class="metatag" tag="lang" >lang</span></td></tr>
-
-                <tr><td>[license =&gt; License] </td><td><span class="metatag" tag="license"><a href="http://www.opensource.org/licenses/License" >License</a></span></td></tr>
-                <tr><td>[requires =&gt; Repo] </td><td><span class="metatag" tag="requires" >requires =&gt; <a href="#" >Repo</a></span></td></tr>
-                <tr><td>[recommends =&gt; Repo] </td><td><span class="metatag" tag="recommends" >recommends =&gt; <a href="#" >Repo</a></span></td></tr>
-                <tr><td>[see =&gt; URI] </td><td><span class="metatag" tag="see">see =&gt; <a href="#">URI</a> </span></td></tr>
-            </table>
+            <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+            ${dt.metatags_help()}
         </div>
     </div>
 </div>

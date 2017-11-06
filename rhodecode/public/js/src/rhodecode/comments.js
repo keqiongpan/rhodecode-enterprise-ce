@@ -103,8 +103,9 @@ var bindToggleButtons = function() {
         this.submitButton = $(this.submitForm).find('input[type="submit"]');
         this.submitButtonText = this.submitButton.val();
 
-        this.previewUrl = pyroutes.url('changeset_comment_preview',
-            {'repo_name': templateContext.repo_name});
+        this.previewUrl = pyroutes.url('repo_commit_comment_preview',
+            {'repo_name': templateContext.repo_name,
+             'commit_id': templateContext.commit_data.commit_id});
 
         if (resolvesCommentId){
             this.resolvesId = '#resolve_comment_{0}'.format(resolvesCommentId);
@@ -129,15 +130,15 @@ var bindToggleButtons = function() {
         // based on commitId, or pullRequestId decide where do we submit
         // out data
         if (this.commitId){
-            this.submitUrl = pyroutes.url('changeset_comment',
+            this.submitUrl = pyroutes.url('repo_commit_comment_create',
                 {'repo_name': templateContext.repo_name,
-                 'revision': this.commitId});
-            this.selfUrl = pyroutes.url('changeset_home',
+                 'commit_id': this.commitId});
+            this.selfUrl = pyroutes.url('repo_commit',
                 {'repo_name': templateContext.repo_name,
-                 'revision': this.commitId});
+                 'commit_id': this.commitId});
 
         } else if (this.pullRequestId) {
-            this.submitUrl = pyroutes.url('pullrequest_comment',
+            this.submitUrl = pyroutes.url('pullrequest_comment_create',
                 {'repo_name': templateContext.repo_name,
                  'pull_request_id': this.pullRequestId});
             this.selfUrl = pyroutes.url('pullrequest_show',
@@ -543,7 +544,6 @@ var CommentsController = function() {
       var comment_id = $comment.attr('data-comment-id');
       var url = AJAX_COMMENT_DELETE_URL.replace('__COMMENT_ID__', comment_id);
       var postData = {
-        '_method': 'delete',
         'csrf_token': CSRF_TOKEN
       };
 
@@ -670,7 +670,7 @@ var CommentsController = function() {
           var lineno = self.getLineNumber(node);
           // create a new HTML from template
           var tmpl = $('#cb-comment-inline-form-template').html();
-          tmpl = tmpl.format(f_path, lineno);
+          tmpl = tmpl.format(escapeHtml(f_path), lineno);
           $form = $(tmpl);
 
           var $comments = $td.find('.inline-comments');

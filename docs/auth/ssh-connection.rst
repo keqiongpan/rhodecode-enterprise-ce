@@ -3,127 +3,136 @@
 SSH Connection
 --------------
 
-If you wish to connect to your Git or Mercurial |repos| using SSH, use the
+If you wish to connect to your |repos| using SSH protocol, use the
 following instructions.
 
-.. note::
+1. Include |RCE| generated `authorized_keys` file into your sshd_config.
 
-   SSH access with full |RCE| permissions will require an Admin |authtoken|.
+   By default a file `authorized_keys_rhodecode` is created containing
+   configuration and all allowed user connection keys are stored inside.
+   On each change of stored keys inside |RCE| this file is updated with
+   proper data.
 
-   You need to install the |RC| SSH tool on the server which is running
-   the |RCE| instance.
+   .. code-block:: bash
 
-1. Gather the following information about the instance you wish to connect to:
+       # Edit sshd_config file most likely at /etc/ssh/sshd_config
+       # add or edit the AuthorizedKeysFile, and set to use custom files
 
-   * *Hostname*: Use the ``rccontrol status`` command to view instance details.
-   * *API key*: From the |RCE|, go to
-     :menuselection:`username --> My Account --> Auth Tokens`
-   * *Configuration file*: Identify the configuration file for that instance,
-     the default is :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini`
-   * Identify which |git| and |hg| packages your |RCM| instance is using.
+       AuthorizedKeysFile %h/.ssh/authorized_keys %h/.ssh/authorized_keys_rhodecode
 
-       * For |git|, see
-         :menuselection:`Admin --> Settings --> System Info`
-       * For |hg|, use the ``which hg`` command.
+   This way we use a separate file for SSH access and separate one for
+   SSH access to |RCE| repositories.
 
-2. Clone the |RC| SSH script,
-   ``hg clone https://code.rhodecode.com/rhodecode-ssh``
-3. Copy the ``sshwrapper.sample.ini``, and save it as ``sshwrapper.ini``
-4. Configure the :file:`sshwrapper.ini` file using the following example:
 
-.. code-block:: ini
+2. Enable the SSH module on instance.
 
-    [api]
-    host=http://localhost:10005
-    key=24a67076d69c84670132f55166ac79d1faafd660
+   On the server where |RCE| is running executing:
 
-    [shell]
-    shell=/bin/bash -l
+   .. code-block:: bash
 
-    [vcs]
-    root=/path/to/repos/
+       rccontrol enable-module ssh {instance-id}
 
-    [rhodecode]
-    config=/home/user/.rccontrol/enterprise-3/rhodecode.ini
+   This will add the following configuration into :file:`rhodecode.ini`.
+   This also can be done manually:
 
-    [vcs:hg]
-    path=/usr/bin/hg
+   .. code-block:: ini
 
-    # should be a base dir for all git binaries, i.e. not ../bin/git
-    [vcs:git]
-    path=/usr/bin
+        ############################################################
+        ### SSH Support Settings                                 ###
+        ############################################################
 
-    [keys]
-    path=/home/user/.ssh/authorized_keys
+        ## Defines if a custom authorized_keys file should be created and written on
+        ## any change user ssh keys. Setting this to false also disables posibility
+        ## of adding SSH keys by users from web interface. Super admins can still
+        ## manage SSH Keys.
+        ssh.generate_authorized_keyfile = true
 
-5. Add the public key to your |RCE| instance server using the
-   :file:`addkey.py` script. This script automatically creates
-   the :file:`authorized_keys` file which was specified in your
-   :file:`sshwrapper.ini` configuration. Use the following example:
+        ## Options for ssh, default is `no-pty,no-port-forwarding,no-X11-forwarding,no-agent-forwarding`
+        # ssh.authorized_keys_ssh_opts =
 
-.. code-block:: bash
+        ## Path to the authrozied_keys file where the generate entries are placed.
+        ## It is possible to have multiple key files specified in `sshd_config` e.g.
+        ## AuthorizedKeysFile %h/.ssh/authorized_keys %h/.ssh/authorized_keys_rhodecode
+        ssh.authorized_keys_file_path = ~/.ssh/authorized_keys_rhodecode
 
-   $ ./addkey.py --user username --shell --key /home/username/.ssh/id_rsa.pub
+        ## Command to execute the SSH wrapper. The binary is available in the
+        ## rhodecode installation directory.
+        ## e.g ~/.rccontrol/community-1/profile/bin/rc-ssh-wrapper
+        ssh.wrapper_cmd = ~/.rccontrol/community-1/rc-ssh-wrapper
 
-.. important::
+        ## Allow shell when executing the ssh-wrapper command
+        ssh.wrapper_cmd_allow_shell = false
 
-   To give SSH access to all users, you will need to maintain
-   each users |authtoken| in the :file:`authorized_keys` file.
+        ## Enables logging, and detailed output send back to the client during SSH
+        ## operations. Usefull for debugging, shouldn't be used in production.
+        ssh.enable_debug_logging = false
 
-6. Connect to your server using SSH from your local machine.
+        ## Paths to binary executable, by default they are the names, but we can
+        ## override them if we want to use a custom one
+        ssh.executable.hg = ~/.rccontrol/vcsserver-1/profile/bin/hg
+        ssh.executable.git = ~/.rccontrol/vcsserver-1/profile/bin/git
+        ssh.executable.svn = ~/.rccontrol/vcsserver-1/profile/bin/svnserve
 
-.. code-block:: bash
 
-    $ ssh user@localhost
-    Enter passphrase for key '/home/username/.ssh/id_rsa':
+3. Set base_url for instance to enable proper event handling (Optional):
 
-If you need to manually configure the ``authorized_keys`` file,
-add a line for each key using the following example:
+   If you wish to have integrations working correctly via SSH please configure
+   The Application base_url.
 
-.. code-block:: vim
+   Use the ``rccontrol status`` command to view instance details.
+   Hostname is required for the integration to properly set the instance URL.
 
-   command="/home/user/.rhodecode-ssh/sshwrapper.py --user username --shell",
-   no-port-forwarding,no-X11-forwarding,no-agent-forwarding ssh-rsa yourpublickey
+   When your hostname is known (e.g https://code.rhodecode.com) please set it
+   inside :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini`
 
-.. tip::
+   add into `[app:main]` section the following configuration:
 
-   Best practice would be to create a special SSH user account with each
-   users |authtoken| attached.
+   .. code-block:: ini
 
-   |RCE| will manage the user permissions based on the |authtoken| supplied.
-   This would allow you to immediately revoke all SSH access by removing one
-   user from your server if you needed to.
+       app.base_url = https://code.rhodecode.com
 
-See the following command line example of setting this up. These steps
-take place on the server.
 
-.. code-block:: bash
+4. Add the public key to your user account for testing.
+   First generate a new key, or use your existing one and have your public key
+   at hand.
 
-    # On the RhodeCode Enterprise server
-    # set up user and clone SSH tool
-    $ sudo adduser testuser
-    $ sudo su - testuser
-    $ hg clone https://code.rhodecode.com/rhodecode-ssh
-    $ cd rhodecode-ssh
+   Go to
+   :menuselection:`My Account --> SSH Keys` and add the public key with proper description.
 
-    # Copy and modify the sshwrapper.ini as explained in step 4
-    $ cp sshwrapper.sample.ini sshwrapper.ini
+   This will generate a new entry inside our configured `authorized_keys_rhodecode` file.
 
-    $ cd ~
-    $ mkdir .ssh
-    $ touch .ssh/authorized_keys
+   Test the connection from your local machine using the following example:
 
-    # copy your ssh public key, id_rsa.pub, from your local machine
-    # to the server. We’ll use it in the next step
+   .. note::
 
-    $ python addkey.py --user testuser --shell --key /path/to/id_rsa.pub
+       In case of connection problems please set
+       `ssh.enable_debug_logging = true` inside the SSH configuration of
+       :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini`
+       Then add, remove your SSH key and try connecting again.
+       Debug logging will be printed to help find the problems on the server side.
 
-    # Note: testssh - user on the rhodecode instance
-    $ chmod 755 sshwrapper.py
+   Test connection using the ssh command from the local machine
 
-Test the connection from your local machine using the following example:
 
-.. code-block:: bash
+   For SVN:
 
-    # Test connection using the ssh command from the local machine
-    $ ssh testuser@my-server.example.com
+   .. code-block:: bash
+
+       SVN_SSH="ssh -i ~/.ssh/id_rsa_test_ssh" svn checkout svn+ssh://rhodecode@rc-server/repo_name
+
+   For GIT:
+
+   .. code-block:: bash
+
+       GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_test_ssh' git clone ssh://rhodecode@rc-server/repo_name
+
+   For Mercurial:
+
+   .. code-block:: bash
+
+       Add to hgrc:
+
+       [ui]
+       ssh = ssh -C -i ~/.ssh/id_rsa_test_ssh
+
+       hg clone ssh://rhodecode@rc-server/repo_name

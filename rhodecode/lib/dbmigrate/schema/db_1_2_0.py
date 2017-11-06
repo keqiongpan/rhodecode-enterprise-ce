@@ -378,7 +378,6 @@ class UserGroup(Base, BaseModel):
                                           "get_user_%s" % group_name))
         return gr.scalar()
 
-
     @classmethod
     def get(cls, users_group_id, cache=False):
         users_group = cls.query()
@@ -390,13 +389,13 @@ class UserGroup(Base, BaseModel):
     @classmethod
     def create(cls, form_data):
         try:
-            new_users_group = cls()
+            new_user_group = cls()
             for k, v in form_data.items():
-                setattr(new_users_group, k, v)
+                setattr(new_user_group, k, v)
 
-            Session.add(new_users_group)
+            Session.add(new_user_group)
             Session.commit()
-            return new_users_group
+            return new_user_group
         except:
             log.error(traceback.format_exc())
             Session.rollback()

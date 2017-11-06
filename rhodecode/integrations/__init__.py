@@ -21,8 +21,7 @@
 import logging
 
 from rhodecode.integrations.registry import IntegrationTypeRegistry
-from rhodecode.integrations.types import webhook, slack, hipchat, email
-
+from rhodecode.integrations.types import webhook, slack, hipchat, email, base
 log = logging.getLogger(__name__)
 
 
@@ -41,6 +40,13 @@ integration_type_registry.register_integration_type(
     email.EmailIntegrationType)
 
 
+# dummy EE integration to show users what we have in EE edition
+integration_type_registry.register_integration_type(
+    base.EEIntegration('Jira Issues integration', 'jira'))
+integration_type_registry.register_integration_type(
+    base.EEIntegration('Redmine Tracker integration', 'redmine'))
+
+
 def integrations_event_handler(event):
     """
     Takes an event and passes it to all enabled integrations
@@ -54,7 +60,7 @@ def integrations_event_handler(event):
             integration_model.send_event(integration, event)
         except Exception:
             log.exception(
-                'failure occured when sending event %s to integration %s' % (
+                'failure occurred when sending event %s to integration %s' % (
                     event, integration))
 
 

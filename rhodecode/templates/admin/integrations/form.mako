@@ -7,23 +7,23 @@
     &raquo;
     ${h.link_to(_('Integrations'),request.route_url(route_name='repo_integrations_home', repo_name=c.repo.repo_name))}
     &raquo;
-    ${h.link_to(current_IntegrationType.display_name,
+    ${h.link_to(c.current_IntegrationType.display_name,
       request.route_url(route_name='repo_integrations_list',
                         repo_name=c.repo.repo_name,
-                        integration=current_IntegrationType.key))}
+                        integration=c.current_IntegrationType.key))}
   %elif c.repo_group:
     ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
-    ${h.link_to(_('Repository Groups'),h.url('repo_groups'))}
+    ${h.link_to(_('Repository Groups'),h.route_path('repo_groups'))}
     &raquo;
-    ${h.link_to(c.repo_group.group_name,h.url('edit_repo_group', group_name=c.repo_group.group_name))}
+    ${h.link_to(c.repo_group.group_name,h.route_path('edit_repo_group', repo_group_name=c.repo_group.group_name))}
     &raquo;
     ${h.link_to(_('Integrations'),request.route_url(route_name='repo_group_integrations_home', repo_group_name=c.repo_group.group_name))}
     &raquo;
-    ${h.link_to(current_IntegrationType.display_name,
+    ${h.link_to(c.current_IntegrationType.display_name,
       request.route_url(route_name='repo_group_integrations_list',
                         repo_group_name=c.repo_group.group_name,
-                        integration=current_IntegrationType.key))}
+                        integration=c.current_IntegrationType.key))}
   %else:
     ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
@@ -31,17 +31,17 @@
     &raquo;
     ${h.link_to(_('Integrations'),request.route_url(route_name='global_integrations_home'))}
     &raquo;
-    ${h.link_to(current_IntegrationType.display_name,
+    ${h.link_to(c.current_IntegrationType.display_name,
       request.route_url(route_name='global_integrations_list',
-                        integration=current_IntegrationType.key))}
+                        integration=c.current_IntegrationType.key))}
   %endif
 
-  %if integration:
+  %if c.integration:
     &raquo;
-    ${integration.name}
-  %elif current_IntegrationType:
+    ${c.integration.name}
+  %elif c.current_IntegrationType:
     &raquo;
-    ${current_IntegrationType.display_name}
+    ${c.current_IntegrationType.display_name}
   %endif
 </%def>
 
@@ -54,16 +54,16 @@
 <div class="panel panel-default">
   <div class="panel-heading">
     <h2 class="panel-title">
-      %if integration:
-        ${current_IntegrationType.display_name} - ${integration.name}
+      %if c.integration:
+        ${c.current_IntegrationType.display_name} - ${c.integration.name}
       %else:
         ${_('Create New %(integration_type)s Integration') % {
-          'integration_type': current_IntegrationType.display_name
+          'integration_type': c.current_IntegrationType.display_name
         }}
       %endif
     </h2>
   </div>
   <div class="panel-body">
-    ${form.render() | n}
+    ${c.form.render() | n}
   </div>
 </div>

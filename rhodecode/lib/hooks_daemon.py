@@ -25,14 +25,10 @@ import threading
 from BaseHTTPServer import BaseHTTPRequestHandler
 from SocketServer import TCPServer
 
-import pylons
 import rhodecode
-
 from rhodecode.model import meta
 from rhodecode.lib.base import bootstrap_request
 from rhodecode.lib import hooks_base
-from rhodecode.lib.utils2 import (
-    AttributeDict, safe_str, get_routes_generator_for_server_url)
 from rhodecode.lib.utils2 import AttributeDict
 
 
@@ -113,6 +109,7 @@ class ThreadedHookCallbackDaemon(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        log.debug('Callback daemon exiting now...')
         self._stop()
 
     def _prepare(self):
@@ -139,7 +136,7 @@ class HttpHooksCallbackDaemon(ThreadedHookCallbackDaemon):
     POLL_INTERVAL = 0.1
 
     def _prepare(self):
-        log.debug("Preparing callback daemon and registering hook object")
+        log.debug("Preparing HTTP callback daemon and registering hook object")
 
         self._done = False
         self._daemon = TCPServer((self.IP_ADDRESS, 0), HooksHttpHandler)
@@ -181,6 +178,7 @@ def prepare_callback_daemon(extras, protocol, use_direct_calls):
         extras['hooks_uri'] = callback_daemon.hooks_uri
         extras['hooks_protocol'] = protocol
 
+    log.debug('Prepared a callback daemon: %s', callback_daemon)
     return callback_daemon, extras
 
 
@@ -211,10 +209,9 @@ class Hooks(object):
 
     def _call_hook(self, hook, extras):
         extras = AttributeDict(extras)
-        pylons_router = get_routes_generator_for_server_url(extras.server_url)
-        pylons.url._push_object(pylons_router)
-        extras.request = bootstrap_request(
-            application_url=extras['server_url'])
+        server_url = extras['server_url']
+
+        extras.request = bootstrap_request(application_url=server_url)
 
         try:
             result = hook(extras)
@@ -230,9 +227,9 @@ class Hooks(object):
                 'exception_args': error_args,
             }
         finally:
-            pylons.url._pop_object()
             meta.Session.remove()
 
+        log.debug('Got hook call response %s', result)
         return {
             'status': result.status,
             'output': result.output,

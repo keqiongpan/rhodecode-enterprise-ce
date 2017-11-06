@@ -42,7 +42,7 @@
                      %endif
                 </td>
                 <td class="td-action">
-                    ${h.secure_form(h.route_path('my_account_auth_tokens_delete'), method='post')}
+                    ${h.secure_form(h.route_path('my_account_auth_tokens_delete'), request=request)}
                         ${h.hidden('del_auth_token', auth_token.user_api_key_id)}
                         <button class="btn btn-link btn-danger" type="submit"
                                 onclick="return confirm('${_('Confirm to remove this auth token: %s') % auth_token.token_obfuscated}');">
@@ -59,7 +59,7 @@
     </div>
 
         <div class="user_auth_tokens">
-            ${h.secure_form(h.route_path('my_account_auth_tokens_add'), method='post')}
+            ${h.secure_form(h.route_path('my_account_auth_tokens_add'), request=request)}
             <div class="form form-vertical">
                 <!-- fields -->
                 <div class="fields">
@@ -69,7 +69,7 @@
                         </div>
                         <div class="input">
                             ${h.text('description', class_='medium', placeholder=_('Description'))}
-                            ${h.select('lifetime', '', c.lifetime_options)}
+                            ${h.hidden('lifetime')}
                             ${h.select('role', '', c.role_options)}
 
                             % if c.allow_scoped_tokens:
@@ -100,8 +100,27 @@ var select2Options = {
     'dropdownCssClass': "drop-menu-dropdown",
     'dropdownAutoWidth': true
 };
-$("#lifetime").select2(select2Options);
 $("#role").select2(select2Options);
+
+var preloadData = {
+    results: [
+        % for entry in c.lifetime_values:
+            {id:${entry[0]}, text:"${entry[1]}"}${'' if loop.last else ','}
+        % endfor
+    ]
+};
+
+$("#lifetime").select2({
+    containerCssClass: "drop-menu",
+    dropdownCssClass: "drop-menu-dropdown",
+    dropdownAutoWidth: true,
+    data: preloadData,
+    placeholder: "${_('Select or enter expiration date')}",
+    query: function(query) {
+        feedLifetimeOptions(query, preloadData);
+    }
+});
+
 
 var repoFilter = function(data) {
     var results = [];
@@ -121,6 +140,12 @@ var repoFilter = function(data) {
 };
 
 $("#scope_repo_id_disabled").select2(select2Options);
+
+var selectVcsScope = function() {
+    // select vcs scope and disable input
+    $("#role").select2("val", "${c.role_vcs}").trigger('change');
+    $("#role").select2("readonly", true)
+};
 
 $("#scope_repo_id").select2({
     cachedDataSource: {},
@@ -154,6 +179,9 @@ $("#scope_repo_id").select2({
             })
         }
     })
+});
+$("#scope_repo_id").on('select2-selecting', function(e){
+    selectVcsScope()
 });
 
 });

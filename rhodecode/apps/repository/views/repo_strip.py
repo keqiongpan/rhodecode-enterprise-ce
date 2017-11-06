@@ -24,8 +24,8 @@ from pyramid.view import view_config
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import audit_logger
 from rhodecode.lib import helpers as h
-from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator,
-                                NotAnonymous, CSRFRequired)
+from rhodecode.lib.auth import (
+    LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib.ext_json import json
 
 log = logging.getLogger(__name__)
@@ -35,16 +35,13 @@ class StripView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        # TODO(marcink): remove repo_info and use c.rhodecode_db_repo instead
-        c.repo_info = self.db_repo
-
         self._register_global_c(c)
         return c
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
-        route_name='strip', request_method='GET',
+        route_name='edit_repo_strip', request_method='GET',
         renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def strip(self):
         c = self.load_default_context()
@@ -73,8 +70,8 @@ class StripView(RepoAppView):
                     data[i] = {'rev': None, 'commit': h.escape(rp[chset])}
                 else:
                     data[i] = {'rev': data[i].raw_id, 'branch': data[i].branch,
-                               'author': data[i].author,
-                               'comment': data[i].message}
+                               'author': h.escape(data[i].author),
+                               'comment': h.escape(data[i].message)}
             else:
                 break
         return data
@@ -99,10 +96,10 @@ class StripView(RepoAppView):
                 continue
             try:
                 ScmModel().strip(
-                    repo=c.repo_info,
+                    repo=self.db_repo,
                     commit_id=commit['rev'], branch=commit['branch'])
                 log.info('Stripped commit %s from repo `%s` by %s' % (
-                    commit['rev'], c.repo_info.repo_name, user))
+                    commit['rev'], self.db_repo_name, user))
                 data[commit['rev']] = True
 
                 audit_logger.store_web(

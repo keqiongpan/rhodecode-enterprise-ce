@@ -108,8 +108,8 @@
                   alert("Error while deleting entry.\nError code {0} ({1}). URL: {2}".format(data.status,data.statusText,$(entry)[0].url));
               }
             });
-          }; 
-        }
+          }
+        };
 
         $('.delete_issuetracker_entry').on('click', function(e){
           e.preventDefault();

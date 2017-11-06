@@ -2,7 +2,7 @@
 <%inherit file="/debug_style/index.html"/>
 
 <%def name="breadcrumbs_links()">
-    ${h.link_to(_('Style'), h.url('debug_style_home'))}
+    ${h.link_to(_('Style'), h.route_path('debug_style_home'))}
     &raquo;
     ${c.active}
 </%def>
@@ -840,7 +840,8 @@ $(document).ready(function() {
         $('#edit-container').hide();
         $('#preview-container').show();
 
-        var url = pyroutes.url('changeset_comment_preview', {'repo_name': 'rhodecode-momentum'});
+        var url = pyroutes.url('repo_commit_comment_preview',
+            {'repo_name': 'rhodecode-momentum', 'commit_id': '000000'});
 
         ajaxPOST(url, post_data, function(o) {
             previewbox.html(o);

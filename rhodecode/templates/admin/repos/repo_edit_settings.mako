@@ -6,7 +6,7 @@
         <h3 class="panel-title">${_('Settings for Repository: %s') % c.rhodecode_db_repo.repo_name}</h3>
     </div>
     <div class="panel-body">
-    ${h.secure_form(h.route_path('edit_repo', repo_name=c.rhodecode_db_repo.repo_name), method='POST')}
+    ${h.secure_form(h.route_path('edit_repo', repo_name=c.rhodecode_db_repo.repo_name), request=request)}
     <div class="form">
         <!-- fields -->
         <div class="fields">
@@ -83,7 +83,7 @@
                     ${h.hidden('repo_clone_uri_change', 'NEW')}
                    %endif
                  <p id="alter_clone_uri_help_block" class="help-block">
-                     <% pull_link = h.literal(h.link_to('remote sync', h.url('edit_repo_remote', repo_name=c.repo_name))) %>
+                     <% pull_link = h.literal(h.link_to('remote sync', h.route_path('edit_repo_remote', repo_name=c.repo_name))) %>
                      ${_('http[s] url where from repository was imported, this field can used for doing {pull_link}.').format(pull_link=pull_link)|n} <br/>
                      ${_('This field is stored encrypted inside Database, a format of http://user:password@server.com/repo_name can be used and will be hidden from display.')}
                  </p>
@@ -129,7 +129,13 @@
                 <div class="textarea text-area editor">
                     ${c.form['repo_description'].render(css_class='medium', oid='repo_description')|n}
                     ${c.form.render_error(request, c.form['repo_description'])|n}
-                    <p class="help-block">${_('Keep it short and to the point. Use a README file for longer descriptions.')}</p>
+
+                    <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
+                    <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
+                    <span id="meta-tags-desc" style="display: none">
+                        <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+                        ${dt.metatags_help()}
+                    </span>
                 </div>
             </div>
 

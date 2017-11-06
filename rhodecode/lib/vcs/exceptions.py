@@ -182,7 +182,10 @@ def map_vcs_exceptions(func):
             # __traceback_info__ in a frame object. This way the remote
             # traceback information is made available in error reports.
             remote_tb = getattr(e, '_vcs_server_traceback', None)
+            __traceback_info__ = None
             if remote_tb:
+                if isinstance(remote_tb, basestring):
+                    remote_tb = [remote_tb]
                 __traceback_info__ = (
                     'Found VCSServer remote traceback information:\n\n' +
                     '\n'.join(remote_tb))
@@ -194,8 +197,14 @@ def map_vcs_exceptions(func):
             # to translate them to the proper exception class in the vcs
             # client layer.
             kind = getattr(e, '_vcs_kind', None)
+
             if kind:
-                raise _EXCEPTION_MAP[kind](*e.args)
+                if any(e.args):
+                    args = e.args
+                else:
+                    args = [__traceback_info__ or 'unhandledException']
+
+                raise _EXCEPTION_MAP[kind](*args)
             else:
                 raise
     return wrapper

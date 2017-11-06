@@ -3,11 +3,13 @@
 LDAP
 ----
 
-|RCM| supports LDAP (Lightweight Directory Access Protocol) authentication.
+|RCM| supports LDAP (Lightweight Directory Access Protocol) or
+AD (active Directory) authentication.
 All LDAP versions are supported, with the following |RCM| plugins managing each:
 
-* For LDAPv3 use ``rhodecode.lib.auth_modules.auth_ldap_group``
-* For older LDAP versions use ``rhodecode.lib.auth_modules.auth_ldap``
+* For LDAPv3 use ``LDAP (egg:rhodecode-enterprise-ce#ldap)``
+* For LDAPv3 with user group sync use ``LDAP + User Groups (egg:rhodecode-enterprise-ee#ldap_group)``
+
 
 .. important::
 

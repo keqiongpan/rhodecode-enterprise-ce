@@ -442,7 +442,7 @@ class ScmModel(BaseModel):
             f_path = os.path.normpath(f_path)
         return f_path
 
-    def get_dirnode_metadata(self, commit, dir_node):
+    def get_dirnode_metadata(self, request, commit, dir_node):
         if not dir_node.is_dir():
             return []
 
@@ -463,7 +463,8 @@ class ScmModel(BaseModel):
                 'short_id': last_commit.short_id,
                 'message': h.escape(last_commit.message),
                 'author': h.escape(last_commit.author),
-                'user_profile': h.gravatar_with_user(last_commit.author),
+                'user_profile': h.gravatar_with_user(
+                    request, last_commit.author),
             })
 
         return data

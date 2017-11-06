@@ -3,12 +3,17 @@
 ##    <%namespace name="p" file="/base/perms_summary.mako"/>
 ##    ${p.perms_summary(c.perm_user.permissions)}
 
-<%def name="perms_summary(permissions, show_all=False, actions=True)">
+<%def name="perms_summary(permissions, show_all=False, actions=True, side_link=None)">
 <div id="perms" class="table fields">
   %for section in sorted(permissions.keys()):
   <div class="panel panel-default">
     <div class="panel-heading">
         <h3 class="panel-title">${section.replace("_"," ").capitalize()}</h3>
+        % if side_link:
+            <div class="pull-right">
+                <a href="${side_link}">${_('in JSON format')}</a>
+            </div>
+        % endif
     </div>
     <div class="panel-body">
       <div class="perms_section_head field">
@@ -36,7 +41,7 @@
                 <tr>
                 <th colspan="2" class="left">${_('Permission')}</th>
                 %if actions:
-                <th>${_('Edit Permission')}</th>
+                <th colspan="2">${_('Edit Permission')}</th>
                 %endif
             </thead>
             <tbody>
@@ -51,7 +56,8 @@
                   _selected_vals = [x.partition(prefix)[-1] for x in _selected]
                   return admin, _selected_vals, _selected
             %>
-            <%def name="glob(lbl, val, val_lbl=None, custom_url=None)">
+
+            <%def name="glob(lbl, val, val_lbl=None, edit_url=None, edit_global_url=None)">
               <tr>
                 <td class="td-tags">
                     ${lbl}
@@ -59,40 +65,81 @@
                 <td class="td-tags">
                     %if val[0]:
                       %if not val_lbl:
-                          ${h.bool2icon(True)}
+                          ## super admin case
+                          True
                       %else:
                           <span class="perm_tag admin">${val_lbl}.admin</span>
                       %endif
                     %else:
                       %if not val_lbl:
-                          ${h.bool2icon({'false': False,
-                                         'true': True,
-                                         'none': False,
-                                         'repository': True}.get(val[1][0] if 0 < len(val[1]) else 'false'))}
+                          ${
+                             {'false': False,
+                             'true': True,
+                             'none': False,
+                             'repository': True}.get(val[1][0] if 0 < len(val[1]) else 'false')
+                          }
                       %else:
                           <span class="perm_tag ${val[1][0]}">${val_lbl}.${val[1][0]}</span>
                       %endif
                     %endif
                 </td>
                 %if actions:
-                <td class="td-action">
-                     <a href="${custom_url or h.url('admin_permissions_global')}">${_('edit')}</a>
-                </td>
+
+                    % if edit_url or edit_global_url:
+
+                        <td class="td-action">
+                            % if edit_url:
+                            <a href="${edit_url}">${_('edit')}</a>
+                            % else:
+                                -
+                            % endif
+                        </td>
+
+                        <td class="td-action">
+                            % if edit_global_url:
+                            <a href="${edit_global_url}">${_('edit global')}</a>
+                            % else:
+                                -
+                            % endif
+                        </td>
+
+                    % else:
+                        <td class="td-action"></td>
+                        <td class="td-action">
+                            <a href="${h.route_path('admin_permissions_global')}">${_('edit global')}</a>
+                        <td class="td-action">
+                    % endif
+
                 %endif
               </tr>
             </%def>
 
-           ${glob(_('Super admin'), get_section_perms('hg.admin', permissions[section]))}
+           ${glob(_('Repository default permission'), get_section_perms('repository.', permissions[section]), 'repository',
+                edit_url=None, edit_global_url=h.route_path('admin_permissions_object'))}
 
-           ${glob(_('Repository default permission'), get_section_perms('repository.', permissions[section]), 'repository', h.url('admin_permissions_object'))}
-           ${glob(_('Repository group default permission'), get_section_perms('group.', permissions[section]), 'group', h.url('admin_permissions_object'))}
-           ${glob(_('User group default permission'), get_section_perms('usergroup.', permissions[section]), 'usergroup', h.url('admin_permissions_object'))}
+           ${glob(_('Repository group default permission'), get_section_perms('group.', permissions[section]), 'group',
+                edit_url=None, edit_global_url=h.route_path('admin_permissions_object'))}
 
-           ${glob(_('Create repositories'), get_section_perms('hg.create.', permissions[section]), custom_url=h.url('admin_permissions_global'))}
-           ${glob(_('Fork repositories'), get_section_perms('hg.fork.', permissions[section]), custom_url=h.url('admin_permissions_global'))}
-           ${glob(_('Create repository groups'), get_section_perms('hg.repogroup.create.', permissions[section]), custom_url=h.url('admin_permissions_global'))}
-           ${glob(_('Create user groups'), get_section_perms('hg.usergroup.create.', permissions[section]), custom_url=h.url('admin_permissions_global'))}
+           ${glob(_('User group default permission'), get_section_perms('usergroup.', permissions[section]), 'usergroup',
+                edit_url=None, edit_global_url=h.route_path('admin_permissions_object'))}
 
+           ${glob(_('Super admin'), get_section_perms('hg.admin', permissions[section]),
+                edit_url=h.route_path('user_edit', user_id=c.user.user_id, _anchor='admin'), edit_global_url=None)}
+
+           ${glob(_('Inherit permissions'), get_section_perms('hg.inherit_default_perms.', permissions[section]),
+                edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=None)}
+
+           ${glob(_('Create repositories'), get_section_perms('hg.create.', permissions[section]),
+                edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
+
+           ${glob(_('Fork repositories'), get_section_perms('hg.fork.', permissions[section]),
+                edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
+
+           ${glob(_('Create repository groups'), get_section_perms('hg.repogroup.create.', permissions[section]),
+                edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
+
+           ${glob(_('Create user groups'), get_section_perms('hg.usergroup.create.', permissions[section]),
+                edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
 
            </tbody>
           %else:
@@ -122,23 +169,37 @@
             %for k, section_perm in sorter(permissions[section].items()):
                 %if section_perm.split('.')[-1] != 'none' or show_all:
                 <tr class="perm_row ${'%s_%s' % (section, section_perm.split('.')[-1])}">
-                    <td class="td-componentname">
+                    <td class="td-name">
                         %if section == 'repositories':
                             <a href="${h.route_path('repo_summary',repo_name=k)}">${k}</a>
                         %elif section == 'repositories_groups':
                             <a href="${h.route_path('repo_group_home', repo_group_name=k)}">${k}</a>
                         %elif section == 'user_groups':
-                            ##<a href="${h.url('edit_users_group',user_group_id=k)}">${k}</a>
+                            ##<a href="${h.route_path('edit_user_group',user_group_id=k)}">${k}</a>
                             ${k}
                         %endif
                     </td>
                     <td class="td-tags">
                       %if hasattr(permissions[section], 'perm_origin_stack'):
+                         <div>
                          %for i, (perm, origin) in enumerate(reversed(permissions[section].perm_origin_stack[k])):
-                         <span class="${i > 0 and 'perm_overriden' or ''} perm_tag ${perm.split('.')[-1]}">
-                          ${perm} (${origin})
-                        </span>
+
+                         % if i > 0:
+                             <div style="color: #979797">
+                             <i class="icon-arrow_up"></i>
+                                 ${_('overridden by')}
+                             <i class="icon-arrow_up"></i>
+                             </div>
+                         % endif
+
+                         <div>
+                             <span class="${i > 0 and 'perm_overriden' or ''} perm_tag ${perm.split('.')[-1]}">
+                              ${perm} (${origin})
+                             </span>
+                         </div>
+
                          %endfor
+                         </div>
                       %else:
                          <span class="perm_tag ${section_perm.split('.')[-1]}">${section_perm}</span>
                       %endif
@@ -146,11 +207,11 @@
                     %if actions:
                     <td class="td-action">
                         %if section == 'repositories':
-                            <a href="${h.route_path('edit_repo_perms',repo_name=k,anchor='permissions_manage')}">${_('edit')}</a>
+                            <a href="${h.route_path('edit_repo_perms',repo_name=k,_anchor='permissions_manage')}">${_('edit')}</a>
                         %elif section == 'repositories_groups':
-                            <a href="${h.url('edit_repo_group_perms',group_name=k,anchor='permissions_manage')}">${_('edit')}</a>
+                            <a href="${h.route_path('edit_repo_group_perms',repo_group_name=k,_anchor='permissions_manage')}">${_('edit')}</a>
                         %elif section == 'user_groups':
-                            ##<a href="${h.url('edit_users_group',user_group_id=k)}">${_('edit')}</a>
+                            ##<a href="${h.route_path('edit_user_group',user_group_id=k)}">${_('edit')}</a>
                         %endif
                     </td>
                     %endif

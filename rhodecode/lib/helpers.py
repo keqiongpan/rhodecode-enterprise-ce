@@ -48,8 +48,7 @@ from pygments.formatters.html import HtmlFormatter
 from pygments import highlight as code_highlight
 from pygments.lexers import (
     get_lexer_by_name, get_lexer_for_filename, get_lexer_for_mimetype)
-from pylons import url as pylons_url
-from pylons.i18n.translation import _, ungettext
+
 from pyramid.threadlocal import get_current_request
 
 from webhelpers.html import literal, HTML, escape
@@ -61,7 +60,6 @@ from webhelpers.html.tags import auto_discovery_link, checkbox, css_classes, \
     submit, text, password, textarea, title, ul, xml_declaration, radio
 from webhelpers.html.tools import auto_link, button_to, highlight, \
     js_obfuscate, mail_to, strip_links, strip_tags, tag_re
-from webhelpers.pylonslib import Flash as _Flash
 from webhelpers.text import chop_at, collapse, convert_accented_entities, \
     convert_misc_entities, lchop, plural, rchop, remove_formatting, \
     replace_whitespace, urlify, truncate, wrap_paragraphs
@@ -94,21 +92,8 @@ DEFAULT_USER_EMAIL = User.DEFAULT_USER_EMAIL
 
 
 def url(*args, **kw):
+    from pylons import url as pylons_url
     return pylons_url(*args, **kw)
-
-
-def pylons_url_current(*args, **kw):
-    """
-    This function overrides pylons.url.current() which returns the current
-    path so that it will also work from a pyramid only context. This
-    should be removed once port to pyramid is complete.
-    """
-    if not args and not kw:
-        request = get_current_request()
-        return request.path
-    return pylons_url.current(*args, **kw)
-
-url.current = pylons_url_current
 
 
 def url_replace(**qargs):
@@ -257,9 +242,10 @@ def files_breadcrumbs(repo_name, commit_id, file_path):
         url_segments = [
             link_to(
                 repo_name_html,
-                url('files_home',
+                route_path(
+                    'repo_files',
                     repo_name=repo_name,
-                    revision=commit_id,
+                    commit_id=commit_id,
                     f_path=''),
                 class_='pjax-link')]
 
@@ -273,9 +259,10 @@ def files_breadcrumbs(repo_name, commit_id, file_path):
             url_segments.append(
                 link_to(
                     segment_html,
-                    url('files_home',
+                    route_path(
+                        'repo_files',
                         repo_name=repo_name,
-                        revision=commit_id,
+                        commit_id=commit_id,
                         f_path='/'.join(path_segments[:cnt + 1])),
                     class_='pjax-link'))
         else:
@@ -658,16 +645,48 @@ class _Message(object):
         return escape(safe_unicode(self.message))
 
 
-class Flash(_Flash):
+class Flash(object):
+    # List of allowed categories.  If None, allow any category.
+    categories = ["warning", "notice", "error", "success"]
 
-    def pop_messages(self):
-        """Return all accumulated messages and delete them from the session.
+    # Default category if none is specified.
+    default_category = "notice"
+
+    def __init__(self, session_key="flash", categories=None,
+                 default_category=None):
+        """
+        Instantiate a ``Flash`` object.
+
+        ``session_key`` is the key to save the messages under in the user's
+        session.
+
+        ``categories`` is an optional list which overrides the default list
+        of categories.
+
+        ``default_category`` overrides the default category used for messages
+        when none is specified.
+        """
+        self.session_key = session_key
+        if categories is not None:
+            self.categories = categories
+        if default_category is not None:
+            self.default_category = default_category
+        if self.categories and self.default_category not in self.categories:
+            raise ValueError(
+                "unrecognized default category %r" % (self.default_category,))
+
+    def pop_messages(self, session=None, request=None):
+        """
+        Return all accumulated messages and delete them from the session.
 
         The return value is a list of ``Message`` objects.
         """
-        from pylons import session
-
         messages = []
+
+        if not session:
+            if not request:
+                request = get_current_request()
+            session = request.session
 
         # Pop the 'old' pylons flash messages. They are tuples of the form
         # (category, message)
@@ -686,9 +705,9 @@ class Flash(_Flash):
         session.save()
         return messages
 
-    def json_alerts(self):
+    def json_alerts(self, session=None, request=None):
         payloads = []
-        messages = flash.pop_messages()
+        messages = flash.pop_messages(session=session, request=request)
         if messages:
             for message in messages:
                 subdata = {}
@@ -708,6 +727,18 @@ class Flash(_Flash):
                     }
                 })
         return json.dumps(payloads)
+
+    def __call__(self, message, category=None, ignore_duplicate=False,
+                 session=None, request=None):
+
+        if not session:
+            if not request:
+                request = get_current_request()
+            session = request.session
+
+        session.flash(
+            message, queue=category, allow_duplicate=not ignore_duplicate)
+
 
 flash = Flash()
 
@@ -917,58 +948,72 @@ def person_by_id(id_, show_attr="username_and_name"):
     return id_
 
 
-def gravatar_with_user(author, show_disabled=False):
-    from rhodecode.lib.utils import PartialRenderer
-    _render = PartialRenderer('base/base.mako')
+def gravatar_with_user(request, author, show_disabled=False):
+    _render = request.get_partial_renderer('base/base.mako')
     return _render('gravatar_with_user', author, show_disabled=show_disabled)
 
 
-def desc_stylize(value):
+tags_paterns = OrderedDict((
+    ('lang', (re.compile(r'\[(lang|language)\ \=\&gt;\ *([a-zA-Z\-\/\#\+\.]*)\]'),
+             '<div class="metatag" tag="lang">\\2</div>')),
+
+    ('see', (re.compile(r'\[see\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]'),
+            '<div class="metatag" tag="see">see: \\1 </div>')),
+
+    ('url', (re.compile(r'\[url\ \=\&gt;\ \[([a-zA-Z0-9\ \.\-\_]+)\]\((.*?)\)\]'),
+            '<div class="metatag" tag="url"> <a href="\\2">\\1</a> </div>')),
+
+    ('license', (re.compile(r'\[license\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]'),
+                '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/\\1">\\1</a></div>')),
+
+    ('ref', (re.compile(r'\[(requires|recommends|conflicts|base)\ \=\&gt;\ *([a-zA-Z0-9\-\/]*)\]'),
+            '<div class="metatag" tag="ref \\1">\\1: <a href="/\\2">\\2</a></div>')),
+
+    ('state', (re.compile(r'\[(stable|featured|stale|dead|dev|deprecated)\]'),
+              '<div class="metatag" tag="state \\1">\\1</div>')),
+
+    # label in grey
+    ('label', (re.compile(r'\[([a-z]+)\]'),
+              '<div class="metatag" tag="label">\\1</div>')),
+
+    # generic catch all in grey
+    ('generic', (re.compile(r'\[([a-zA-Z0-9\.\-\_]+)\]'),
+                '<div class="metatag" tag="generic">\\1</div>')),
+))
+
+
+def extract_metatags(value):
+    """
+    Extract supported meta-tags from given text value
+    """
+    if not value:
+        return ''
+
+    tags = []
+    for key, val in tags_paterns.items():
+        pat, replace_html = val
+        tags.extend([(key, x.group()) for x in pat.finditer(value)])
+        value = pat.sub('', value)
+
+    return tags, value
+
+
+def style_metatag(tag_type, value):
     """
     converts tags from value into html equivalent
-
-    :param value:
     """
     if not value:
         return ''
 
-    value = re.sub(r'\[see\ \=\>\ *([a-zA-Z0-9\/\=\?\&\ \:\/\.\-]*)\]',
-                   '<div class="metatag" tag="see">see =&gt; \\1 </div>', value)
-    value = re.sub(r'\[license\ \=\>\ *([a-zA-Z0-9\/\=\?\&\ \:\/\.\-]*)\]',
-                   '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/\\1">\\1</a></div>', value)
-    value = re.sub(r'\[(requires|recommends|conflicts|base)\ \=\>\ *([a-zA-Z0-9\-\/]*)\]',
-                   '<div class="metatag" tag="\\1">\\1 =&gt; <a href="/\\2">\\2</a></div>', value)
-    value = re.sub(r'\[(lang|language)\ \=\>\ *([a-zA-Z\-\/\#\+]*)\]',
-                   '<div class="metatag" tag="lang">\\2</div>', value)
-    value = re.sub(r'\[([a-z]+)\]',
-                   '<div class="metatag" tag="\\1">\\1</div>', value)
+    html_value = value
+    tag_data = tags_paterns.get(tag_type)
+    if tag_data:
+        pat, replace_html = tag_data
+        # convert to plain `unicode` instead of a markup tag to be used in
+        # regex expressions. safe_unicode doesn't work here
+        html_value = pat.sub(replace_html, unicode(value))
 
-    return value
-
-
-def escaped_stylize(value):
-    """
-    converts tags from value into html equivalent, but escaping its value first
-    """
-    if not value:
-        return ''
-
-    # Using default webhelper escape method, but has to force it as a
-    # plain unicode instead of a markup tag to be used in regex expressions
-    value = unicode(escape(safe_unicode(value)))
-
-    value = re.sub(r'\[see\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]',
-                   '<div class="metatag" tag="see">see =&gt; \\1 </div>', value)
-    value = re.sub(r'\[license\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]',
-                   '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/\\1">\\1</a></div>', value)
-    value = re.sub(r'\[(requires|recommends|conflicts|base)\ \=\&gt;\ *([a-zA-Z0-9\-\/]*)\]',
-                   '<div class="metatag" tag="\\1">\\1 =&gt; <a href="/\\2">\\2</a></div>', value)
-    value = re.sub(r'\[(lang|language)\ \=\&gt;\ *([a-zA-Z\-\/\#\+]*)\]',
-                   '<div class="metatag" tag="lang">\\2</div>', value)
-    value = re.sub(r'\[([a-z]+)\]',
-                   '<div class="metatag" tag="\\1">\\1</div>', value)
-
-    return value
+    return html_value
 
 
 def bool2icon(value):
@@ -1146,7 +1191,7 @@ class InitialsGravatar(object):
 
         # check if prefix is maybe a 'first_name.last_name' syntax
         _dot_split = prefix.rsplit('.', 1)
-        if len(_dot_split) == 2:
+        if len(_dot_split) == 2 and _dot_split[1]:
             initials = [_dot_split[0][0], _dot_split[1][0]]
         else:
             initials = [prefix[0], server[0]]
@@ -1513,24 +1558,6 @@ class RepoPage(Page):
         list.__init__(self, reversed(self.items))
 
 
-def changed_tooltip(nodes):
-    """
-    Generates a html string for changed nodes in commit page.
-    It limits the output to 30 entries
-
-    :param nodes: LazyNodesGenerator
-    """
-    if nodes:
-        pref = ': <br/> '
-        suf = ''
-        if len(nodes) > 30:
-            suf = '<br/>' + _(' and %s more') % (len(nodes) - 30)
-        return literal(pref + '<br/> '.join([safe_unicode(x.path)
-                                             for x in nodes[:30]]) + suf)
-    else:
-        return ': ' + _('No Files')
-
-
 def breadcrumb_repo_link(repo):
     """
     Makes a breadcrumbs path link to repo
@@ -1555,6 +1582,9 @@ def format_byte_size_binary(file_size):
     """
     Formats file/folder sizes to standard.
     """
+    if file_size is None:
+        file_size = 0
+
     formatted_size = format_byte_size(file_size, binary=True)
     return formatted_size
 
@@ -1585,7 +1615,7 @@ def urlify_commits(text_, repository):
     :param text_:
     :param repository: repo name to build the URL with
     """
-    from pylons import url  # doh, we need to re-import url to mock it later
+
     URL_PAT = re.compile(r'(^|\s)([0-9a-fA-F]{12,40})($|\s)')
 
     def url_func(match_obj):
@@ -1600,8 +1630,8 @@ def urlify_commits(text_, repository):
         return tmpl % {
             'pref': pref,
             'cls': 'revision-link',
-            'url': url('changeset_home', repo_name=repository,
-                       revision=commit_id, qualified=True),
+            'url': route_url('repo_commit', repo_name=repository,
+                             commit_id=commit_id),
             'commit_id': commit_id,
             'suf': suf
         }
@@ -1754,8 +1784,9 @@ def render_binary(repo_name, file_obj):
     for ext in ['*.png', '*.jpg', '*.ico', '*.gif']:
         if fnmatch.fnmatch(filename, pat=ext):
             alt = filename
-            src = url('files_raw_home', repo_name=repo_name,
-                      revision=file_obj.commit.raw_id, f_path=file_obj.path)
+            src = route_path(
+                'repo_file_raw', repo_name=repo_name,
+                commit_id=file_obj.commit.raw_id, f_path=file_obj.path)
             return literal('<img class="rendered-binary" alt="{}" src="{}">'.format(alt, src))
 
 
@@ -1775,12 +1806,12 @@ def renderer_from_filename(filename, exclude=None):
     return None
 
 
-def render(source, renderer='rst', mentions=False, relative_url=None,
+def render(source, renderer='rst', mentions=False, relative_urls=None,
            repo_name=None):
 
     def maybe_convert_relative_links(html_source):
-        if relative_url:
-            return relative_links(html_source, relative_url)
+        if relative_urls:
+            return relative_links(html_source, relative_urls)
         return html_source
 
     if renderer == 'rst':
@@ -1832,7 +1863,9 @@ def get_permission_name(key):
     return dict(Permission.PERMS).get(key)
 
 
-def journal_filter_help():
+def journal_filter_help(request):
+    _ = request.translate
+
     return _(
         'Example filter terms:\n' +
         '     repository:vcs\n' +
@@ -1853,7 +1886,8 @@ def journal_filter_help():
     )
 
 
-def search_filter_help(searcher):
+def search_filter_help(searcher, request):
+    _ = request.translate
 
     terms = ''
     return _(
@@ -1872,6 +1906,7 @@ def search_filter_help(searcher):
 
 
 def not_mapped_error(repo_name):
+    from rhodecode.translation import _
     flash(_('%s repository is not mapped to db perhaps'
             ' it was created or renamed from the filesystem'
             ' please run the application again'
@@ -1895,7 +1930,7 @@ def form(url, method='post', needs_csrf_token=True, **attrs):
     return wh_form(url, method=method, **attrs)
 
 
-def secure_form(url, method="POST", multipart=False, **attrs):
+def secure_form(form_url, method="POST", multipart=False, **attrs):
     """Start a form tag that points the action to an url. This
     form tag will also include the hidden field containing
     the auth token.
@@ -1915,14 +1950,21 @@ def secure_form(url, method="POST", multipart=False, **attrs):
 
     """
     from webhelpers.pylonslib.secure_form import insecure_form
-    form = insecure_form(url, method, multipart, **attrs)
-    token = csrf_input()
+
+    session = None
+
+    # TODO(marcink): after pyramid migration require request variable ALWAYS
+    if 'request' in attrs:
+        session = attrs['request'].session
+        del attrs['request']
+
+    form = insecure_form(form_url, method, multipart, **attrs)
+    token = literal(
+        '<input type="hidden" id="{}" name="{}" value="{}">'.format(
+        csrf_token_key, csrf_token_key, get_csrf_token(session)))
+
     return literal("%s\n%s" % (form, token))
 
-def csrf_input():
-    return literal(
-        '<input type="hidden" id="{}" name="{}" value="{}">'.format(
-        csrf_token_key, csrf_token_key, get_csrf_token()))
 
 def dropdownmenu(name, selected, options, enable_filter=False, **attrs):
     select_html = select(name, selected, options, **attrs)
@@ -1996,6 +2038,12 @@ def route_path_or_none(*args, **kwargs):
         return None
 
 
+def current_route_path(request, **kw):
+    new_args = request.GET.mixed()
+    new_args.update(kw)
+    return request.current_route_path(_query=new_args)
+
+
 def static_url(*args, **kwds):
     """
     Wrapper around pyramids `route_path` function. It is used to generate
@@ -2034,3 +2082,29 @@ def api_call_example(method, args):
             api_url=route_url('apiv2'),
             token_url=route_url('my_account_auth_tokens'),
             data=args_json))
+
+
+def notification_description(notification, request):
+    """
+    Generate notification human readable description based on notification type
+    """
+    from rhodecode.model.notification import NotificationModel
+    return NotificationModel().make_description(
+        notification, translate=request.translate)
+
+
+def go_import_header(request, db_repo=None):
+    """
+    Creates a header for go-import functionality in Go Lang
+    """
+
+    if not db_repo:
+        return
+    if 'go-get' not in request.GET:
+        return
+
+    clone_url = db_repo.clone_url()
+    prefix = re.split(r'^https?:\/\/', clone_url)[-1]
+    # we have a repo and go-get flag,
+    return literal('<meta name="go-import" content="{} {} {}">'.format(
+        prefix, db_repo.repo_type, clone_url))

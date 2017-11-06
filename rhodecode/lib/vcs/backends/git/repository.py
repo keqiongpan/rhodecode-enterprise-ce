@@ -420,7 +420,7 @@ class GitRepository(BaseRepository):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None):
         """
         Returns generator of `GitCommit` objects from start to end (both
         are inclusive), in ascending date order.
@@ -433,7 +433,8 @@ class GitRepository(BaseRepository):
           ``end_date`` would be filtered out from returned set
         :param branch_name: if specified, commits not reachable from given
           branch would be filtered out from returned set
-
+        :param show_hidden: Show hidden commits such as obsolete or hidden from
+            Mercurial evolve
         :raise BranchDoesNotExistError: If given `branch_name` does not
             exist.
         :raise CommitDoesNotExistError: If commits for given `start` or
@@ -704,6 +705,19 @@ class GitRepository(BaseRepository):
         cmd.append(branch_name)
         self.run_git_command(cmd, fail_on_stderr=False)
 
+    def _identify(self):
+        """
+        Return the current state of the working directory.
+        """
+        if self.bare:
+            raise RepositoryError('Bare git repos do not have active branches')
+
+        if self.is_empty():
+            return None
+
+        stdout, _ = self.run_git_command(['rev-parse', 'HEAD'])
+        return stdout.strip()
+
     def _local_clone(self, clone_path, branch_name):
         """
         Create a local clone of the current repo.
@@ -849,7 +863,7 @@ class GitRepository(BaseRepository):
     def _merge_repo(self, shadow_repository_path, target_ref,
                     source_repo, source_ref, merge_message,
                     merger_name, merger_email, dry_run=False,
-                    use_rebase=False):
+                    use_rebase=False, close_branch=False):
         if target_ref.commit_id != self.branches[target_ref.name]:
             return MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)

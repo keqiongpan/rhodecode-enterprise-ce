@@ -10,5 +10,5 @@ the information in these sections to configure your instance of |RCM|.
 
    setup-email
    database-string
-   install-celery
+   configure-celery
    migrate-repos

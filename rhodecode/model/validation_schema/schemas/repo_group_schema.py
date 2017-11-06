@@ -20,6 +20,7 @@
 
 
 import colander
+import deform.widget
 
 from rhodecode.translation import _
 from rhodecode.model.validation_schema import validators, preparers, types
@@ -143,6 +144,19 @@ def deferred_repo_group_name_validator(node, kw):
     return validators.valid_name_validator
 
 
+@colander.deferred
+def deferred_repo_group_validator(node, kw):
+    options = kw.get(
+        'repo_group_repo_group_options')
+    return colander.OneOf([x for x in options])
+
+
+@colander.deferred
+def deferred_repo_group_widget(node, kw):
+    items = kw.get('repo_group_repo_group_items')
+    return deform.widget.Select2Widget(values=items)
+
+
 class GroupType(colander.Mapping):
     def _validate(self, node, value):
         try:
@@ -208,15 +222,15 @@ class RepoGroupSchema(colander.Schema):
         validator=deferred_repo_group_owner_validator)
 
     repo_group_description = colander.SchemaNode(
-        colander.String(), missing='')
+        colander.String(), missing='', widget=deform.widget.TextAreaWidget())
 
     repo_group_copy_permissions = colander.SchemaNode(
         types.StringBooleanType(),
-        missing=False)
+        missing=False, widget=deform.widget.CheckboxWidget())
 
     repo_group_enable_locking = colander.SchemaNode(
         types.StringBooleanType(),
-        missing=False)
+        missing=False, widget=deform.widget.CheckboxWidget())
 
     def deserialize(self, cstruct):
         """
@@ -224,6 +238,36 @@ class RepoGroupSchema(colander.Schema):
         permissions, and as last step uniqueness
         """
 
+        appstruct = super(RepoGroupSchema, self).deserialize(cstruct)
+        validated_name = appstruct['repo_group_name']
+
+        # second pass to validate permissions to repo_group
+        second = RepoGroupAccessSchema().bind(**self.bindings)
+        appstruct_second = second.deserialize({'repo_group': validated_name})
+        # save result
+        appstruct['repo_group'] = appstruct_second['repo_group']
+
+        # thirds to validate uniqueness
+        third = RepoGroupNameUniqueSchema().bind(**self.bindings)
+        third.deserialize({'unique_repo_group_name': validated_name})
+
+        return appstruct
+
+
+class RepoGroupSettingsSchema(RepoGroupSchema):
+    repo_group = colander.SchemaNode(
+        colander.Integer(),
+        validator=deferred_repo_group_validator,
+        widget=deferred_repo_group_widget,
+        missing='')
+
+    def deserialize(self, cstruct):
+        """
+        Custom deserialize that allows to chain validation, and verify
+        permissions, and as last step uniqueness
+        """
+
+        # first pass, to validate given data
         appstruct = super(RepoGroupSchema, self).deserialize(cstruct)
         validated_name = appstruct['repo_group_name']
 

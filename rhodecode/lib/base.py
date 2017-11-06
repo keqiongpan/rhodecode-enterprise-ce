@@ -27,21 +27,13 @@ controllers
 import logging
 import socket
 
+import markupsafe
 import ipaddress
 import pyramid.threadlocal
 
 from paste.auth.basic import AuthBasicAuthenticator
 from paste.httpexceptions import HTTPUnauthorized, HTTPForbidden, get_exception
 from paste.httpheaders import WWW_AUTHENTICATE, AUTHORIZATION
-from pylons import config, tmpl_context as c, request, session, url
-from pylons.controllers import WSGIController
-from pylons.controllers.util import redirect
-from pylons.i18n import translation
-# marcink: don't remove this import
-from pylons.templating import render_mako as render  # noqa
-from pylons.i18n.translation import _
-from webob.exc import HTTPFound
-
 
 import rhodecode
 from rhodecode.authentication.base import VCS_TYPE
@@ -53,17 +45,48 @@ from rhodecode.lib.utils import (
     get_repo_slug, set_rhodecode_config, password_changed,
     get_enabled_hook_classes)
 from rhodecode.lib.utils2 import (
-    str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist)
-from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
+    str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist, safe_str)
 from rhodecode.model import meta
 from rhodecode.model.db import Repository, User, ChangesetComment
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 
+# NOTE(marcink): remove after base controller is no longer required
+from pylons.controllers import WSGIController
+from pylons.i18n import translation
 
 log = logging.getLogger(__name__)
 
+
+# hack to make the migration to pyramid easier
+def render(template_name, extra_vars=None, cache_key=None,
+           cache_type=None, cache_expire=None):
+    """Render a template with Mako
+
+    Accepts the cache options ``cache_key``, ``cache_type``, and
+    ``cache_expire``.
+
+    """
+    from pylons.templating import literal
+    from pylons.templating import cached_template, pylons_globals
+
+    # Create a render callable for the cache function
+    def render_template():
+        # Pull in extra vars if needed
+        globs = extra_vars or {}
+
+        # Second, get the globals
+        globs.update(pylons_globals())
+
+        globs['_ungettext'] = globs['ungettext']
+        # Grab a template reference
+        template = globs['app_globals'].mako_lookup.get_template(template_name)
+
+        return literal(template.render_unicode(**globs))
+
+    return cached_template(template_name, render_template, cache_key=cache_key,
+                           cache_type=cache_type, cache_expire=cache_expire)
 
 def _filter_proxy(ip):
     """
@@ -101,7 +124,7 @@ def _filter_port(ip):
         else:
             # fallback to ipaddress
             try:
-                ipaddress.IPv6Address(ip_addr)
+                ipaddress.IPv6Address(safe_unicode(ip_addr))
             except Exception:
                 return False
         return True
@@ -229,6 +252,9 @@ class BasicAuth(AuthBasicAuthenticator):
             log.exception('Failed to fetch response for code %s' % http_code)
             return HTTPForbidden
 
+    def get_rc_realm(self):
+        return safe_str(self.registry.rhodecode_settings.get('rhodecode_realm'))
+
     def build_authentication(self):
         head = WWW_AUTHENTICATE.tuples('Basic realm="%s"' % self.realm)
         if self._rc_auth_http_code and not self.initial_call:
@@ -251,10 +277,11 @@ class BasicAuth(AuthBasicAuthenticator):
         _parts = auth.split(':', 1)
         if len(_parts) == 2:
             username, password = _parts
-            if self.authfunc(
+            auth_data = self.authfunc(
                     username, password, environ, VCS_TYPE,
-                    registry=self.registry, acl_repo_name=self.acl_repo_name):
-                return username
+                    registry=self.registry, acl_repo_name=self.acl_repo_name)
+            if auth_data:
+                return {'username': username, 'auth_data': auth_data}
             if username and password:
                 # we mark that we actually executed authentication once, at
                 # that point we can use the alternative auth code
@@ -265,22 +292,42 @@ class BasicAuth(AuthBasicAuthenticator):
     __call__ = authenticate
 
 
-def attach_context_attributes(context, request, user_id, attach_to_request=False):
+def calculate_version_hash(config):
+    return md5(
+        config.get('beaker.session.secret', '') +
+        rhodecode.__version__)[:8]
+
+
+def get_current_lang(request):
+    # NOTE(marcink): remove after pyramid move
+    try:
+        return translation.get_lang()[0]
+    except:
+        pass
+
+    return getattr(request, '_LOCALE_', request.locale_name)
+
+
+def attach_context_attributes(context, request, user_id):
     """
     Attach variables into template context called `c`, please note that
     request could be pylons or pyramid request in here.
     """
+    # NOTE(marcink): remove check after pyramid migration
+    if hasattr(request, 'registry'):
+        config = request.registry.settings
+    else:
+        from pylons import config
+
     rc_config = SettingsModel().get_all_settings(cache=True)
 
     context.rhodecode_version = rhodecode.__version__
     context.rhodecode_edition = config.get('rhodecode.edition')
     # unique secret + version does not leak the version but keep consistency
-    context.rhodecode_version_hash = md5(
-        config.get('beaker.session.secret', '') +
-        rhodecode.__version__)[:8]
+    context.rhodecode_version_hash = calculate_version_hash(config)
 
     # Default language set for the incoming request
-    context.language = translation.get_lang()[0]
+    context.language = get_current_lang(request)
 
     # Visual options
     context.visual = AttributeDict({})
@@ -308,6 +355,8 @@ def attach_context_attributes(context, request, user_id, attach_to_request=False
     context.visual.comment_types = ChangesetComment.COMMENT_TYPES
     context.visual.rhodecode_support_url = \
         rc_config.get('rhodecode_support_url') or h.route_url('rhodecode_support')
+
+    context.visual.affected_files_cut_off = 60
 
     context.pre_code = rc_config.get('rhodecode_pre_code')
     context.post_code = rc_config.get('rhodecode_post_code')
@@ -362,10 +411,6 @@ def attach_context_attributes(context, request, user_id, attach_to_request=False
             'refresh_time': 120 * 1000,
             'cutoff_limit': 1000 * 60 * 60 * 24 * 7
         },
-        'pylons_dispatch': {
-            # 'controller': request.environ['pylons.routes_dict']['controller'],
-            # 'action': request.environ['pylons.routes_dict']['action'],
-        },
         'pyramid_dispatch': {
 
         },
@@ -389,18 +434,34 @@ def attach_context_attributes(context, request, user_id, attach_to_request=False
     if request.session.get('diffmode') != diffmode:
         request.session['diffmode'] = diffmode
 
-    context.csrf_token = auth.get_csrf_token()
+    context.csrf_token = auth.get_csrf_token(session=request.session)
     context.backends = rhodecode.BACKENDS.keys()
     context.backends.sort()
     context.unread_notifications = NotificationModel().get_unread_cnt_for_user(user_id)
-    if attach_to_request:
-        request.call_context = context
-    else:
-        context.pyramid_request = pyramid.threadlocal.get_current_request()
+
+    # NOTE(marcink): when migrated to pyramid we don't need to set this anymore,
+    # given request will ALWAYS be pyramid one
+    pyramid_request = pyramid.threadlocal.get_current_request()
+    context.pyramid_request = pyramid_request
+
+    # web case
+    if hasattr(pyramid_request, 'user'):
+        context.auth_user = pyramid_request.user
+        context.rhodecode_user = pyramid_request.user
+
+    # api case
+    if hasattr(pyramid_request, 'rpc_user'):
+        context.auth_user = pyramid_request.rpc_user
+        context.rhodecode_user = pyramid_request.rpc_user
+
+    # attach the whole call context to the request
+    request.call_context = context
 
 
+def get_auth_user(request):
+    environ = request.environ
+    session = request.session
 
-def get_auth_user(environ):
     ip_addr = get_ip_addr(environ)
     # make sure that we update permissions each time we call controller
     _auth_token = (request.GET.get('auth_token', '') or
@@ -446,8 +507,10 @@ class BaseController(WSGIController):
         __before__ is called before controller methods and after __call__
         """
         # on each call propagate settings calls into global settings.
+        from pylons import config
+        from pylons import tmpl_context as c, request, url
         set_rhodecode_config(config)
-        attach_context_attributes(c, request, c.rhodecode_user.user_id)
+        attach_context_attributes(c, request, self._rhodecode_user.user_id)
 
         # TODO: Remove this when fixed in attach_context_attributes()
         c.repo_name = get_repo_slug(request)  # can be empty
@@ -465,6 +528,7 @@ class BaseController(WSGIController):
                       user_lang, self._rhodecode_user)
 
     def _dispatch_redirect(self, with_url, environ, start_response):
+        from webob.exc import HTTPFound
         resp = HTTPFound(with_url)
         environ['SCRIPT_NAME'] = ''  # handle prefix middleware
         environ['PATH_INFO'] = with_url
@@ -476,6 +540,7 @@ class BaseController(WSGIController):
         # the request is routed to. This routing information is
         # available in environ['pylons.routes_dict']
         from rhodecode.lib import helpers as h
+        from pylons import tmpl_context as c, request, url
 
         # Provide the Pylons context to Pyramid's debugtoolbar if it asks
         if environ.get('debugtoolbar.wants_pylons_context', False):
@@ -494,7 +559,7 @@ class BaseController(WSGIController):
 
         # set globals for auth user
         request.user = auth_user
-        c.rhodecode_user = self._rhodecode_user = auth_user
+        self._rhodecode_user = auth_user
 
         log.info('IP: %s User: %s accessed %s [%s]' % (
             self.ip_addr, auth_user, safe_unicode(get_access_path(environ)),
@@ -509,6 +574,17 @@ class BaseController(WSGIController):
                 url('my_account_password'), environ, start_response)
 
         return WSGIController.__call__(self, environ, start_response)
+
+
+def h_filter(s):
+    """
+    Custom filter for Mako templates. Mako by standard uses `markupsafe.escape`
+    we wrap this with additional functionality that converts None to empty
+    strings
+    """
+    if s is None:
+        return markupsafe.Markup()
+    return markupsafe.escape(s)
 
 
 def add_events_routes(config):
@@ -536,100 +612,23 @@ def add_events_routes(config):
 
 def bootstrap_request(**kwargs):
     import pyramid.testing
-    request = pyramid.testing.DummyRequest(**kwargs)
-    request.application_url = kwargs.pop('application_url', 'http://example.com')
-    request.host = kwargs.pop('host', 'example.com:80')
-    request.domain = kwargs.pop('domain', 'example.com')
+
+    class TestRequest(pyramid.testing.DummyRequest):
+        application_url = kwargs.pop('application_url', 'http://example.com')
+        host = kwargs.pop('host', 'example.com:80')
+        domain = kwargs.pop('domain', 'example.com')
+
+        def translate(self, msg):
+            return msg
+
+    class TestDummySession(pyramid.testing.DummySession):
+        def save(*arg, **kw):
+            pass
+
+    request = TestRequest(**kwargs)
+    request.session = TestDummySession()
 
     config = pyramid.testing.setUp(request=request)
     add_events_routes(config)
+    return request
 
-
-class BaseRepoController(BaseController):
-    """
-    Base class for controllers responsible for loading all needed data for
-    repository loaded items are
-
-    c.rhodecode_repo: instance of scm repository
-    c.rhodecode_db_repo: instance of db
-    c.repository_requirements_missing: shows that repository specific data
-        could not be displayed due to the missing requirements
-    c.repository_pull_requests: show number of open pull requests
-    """
-
-    def __before__(self):
-        super(BaseRepoController, self).__before__()
-        if c.repo_name:  # extracted from routes
-            db_repo = Repository.get_by_repo_name(c.repo_name)
-            if not db_repo:
-                return
-
-            log.debug(
-                'Found repository in database %s with state `%s`',
-                safe_unicode(db_repo), safe_unicode(db_repo.repo_state))
-            route = getattr(request.environ.get('routes.route'), 'name', '')
-
-            # allow to delete repos that are somehow damages in filesystem
-            if route in ['delete_repo']:
-                return
-
-            if db_repo.repo_state in [Repository.STATE_PENDING]:
-                if route in ['repo_creating_home']:
-                    return
-                check_url = url('repo_creating_home', repo_name=c.repo_name)
-                return redirect(check_url)
-
-            self.rhodecode_db_repo = db_repo
-
-            missing_requirements = False
-            try:
-                self.rhodecode_repo = self.rhodecode_db_repo.scm_instance()
-            except RepositoryRequirementError as e:
-                missing_requirements = True
-                self._handle_missing_requirements(e)
-
-            if self.rhodecode_repo is None and not missing_requirements:
-                log.error('%s this repository is present in database but it '
-                          'cannot be created as an scm instance', c.repo_name)
-
-                h.flash(_(
-                    "The repository at %(repo_name)s cannot be located.") %
-                    {'repo_name': c.repo_name},
-                    category='error', ignore_duplicate=True)
-                redirect(h.route_path('home'))
-
-            # update last change according to VCS data
-            if not missing_requirements:
-                commit = db_repo.get_commit(
-                    pre_load=["author", "date", "message", "parents"])
-                db_repo.update_commit_cache(commit)
-
-            # Prepare context
-            c.rhodecode_db_repo = db_repo
-            c.rhodecode_repo = self.rhodecode_repo
-            c.repository_requirements_missing = missing_requirements
-
-            self._update_global_counters(self.scm_model, db_repo)
-
-    def _update_global_counters(self, scm_model, db_repo):
-        """
-        Base variables that are exposed to every page of repository
-        """
-        c.repository_pull_requests = scm_model.get_pull_requests(db_repo)
-
-    def _handle_missing_requirements(self, error):
-        self.rhodecode_repo = None
-        log.error(
-            'Requirements are missing for repository %s: %s',
-            c.repo_name, error.message)
-
-        summary_url = h.route_path('repo_summary', repo_name=c.repo_name)
-        statistics_url = url('edit_repo_statistics', repo_name=c.repo_name)
-        settings_update_url = url('repo', repo_name=c.repo_name)
-        path = request.path
-        should_redirect = (
-            path not in (summary_url, settings_update_url)
-            and '/settings' not in path or path == statistics_url
-        )
-        if should_redirect:
-            redirect(summary_url)

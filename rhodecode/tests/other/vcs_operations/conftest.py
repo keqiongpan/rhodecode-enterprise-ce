@@ -166,7 +166,7 @@ def rc_web_server(
     assert_no_running_instance(host_url)
     command = ['pserve', rc_web_server_config]
 
-    print('Starting rcserver: {}'.format(host_url))
+    print('Starting rhodecode server: {}'.format(host_url))
     print('Command: {}'.format(command))
     print('Logfile: {}'.format(rc_log))
 

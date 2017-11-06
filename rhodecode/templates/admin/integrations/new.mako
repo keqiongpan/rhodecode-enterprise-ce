@@ -10,9 +10,9 @@
   %elif c.repo_group:
     ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
-    ${h.link_to(_('Repository Groups'),h.url('repo_groups'))}
+    ${h.link_to(_('Repository Groups'),h.route_path('repo_groups'))}
     &raquo;
-    ${h.link_to(c.repo_group.group_name,h.url('edit_repo_group', group_name=c.repo_group.group_name))}
+    ${h.link_to(c.repo_group.group_name,h.route_path('edit_repo_group', repo_group_name=c.repo_group.group_name))}
     &raquo;
     ${h.link_to(_('Integrations'),request.route_url(route_name='repo_group_integrations_home', repo_group_name=c.repo_group.group_name))}
   %else:
@@ -36,7 +36,7 @@
         %endif
     </%def>
 
-    %for integration, IntegrationType in available_integrations.items():
+    %for integration, IntegrationObject in c.available_integrations.items():
       <%
       if c.repo:
         create_url = request.route_path('repo_integrations_create',
@@ -49,16 +49,18 @@
       else:
         create_url = request.route_path('global_integrations_create',
                                         integration=integration)
+      if IntegrationObject.is_dummy:
+        create_url = request.current_route_path()
       %>
-        <a href="${create_url}" class="integration-box">
+        <a href="${create_url}" class="integration-box ${'dummy-integration' if IntegrationObject.is_dummy else ''}">
           <%widgets:panel>
             <h2>
               <div class="integration-icon">
-                  ${IntegrationType.icon|n}
+                  ${IntegrationObject.icon|n}
               </div>
-              ${IntegrationType.display_name}
+              ${IntegrationObject.display_name}
             </h2>
-            ${IntegrationType.description or _('No description available')}
+            ${IntegrationObject.description or _('No description available')}
           </%widgets:panel>
         </a>
     %endfor

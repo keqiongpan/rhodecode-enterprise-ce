@@ -81,6 +81,8 @@ class MercurialCommit(base.BaseCommit):
                 value = utcdate_fromtimestamp(*value)
             elif attr in ["children", "parents"]:
                 value = self._make_commits(value)
+            elif attr in ["phase"]:
+                value = self._get_phase_text(value)
             self.__dict__[attr] = value
 
     @LazyProperty
@@ -147,8 +149,8 @@ class MercurialCommit(base.BaseCommit):
     def short_id(self):
         return self.raw_id[:12]
 
-    def _make_commits(self, indexes):
-        return [self.repository.get_commit(commit_idx=idx)
+    def _make_commits(self, indexes, pre_load=None):
+        return [self.repository.get_commit(commit_idx=idx, pre_load=pre_load)
                 for idx in indexes if idx >= 0]
 
     @LazyProperty
@@ -159,14 +161,17 @@ class MercurialCommit(base.BaseCommit):
         parents = self._remote.ctx_parents(self.idx)
         return self._make_commits(parents)
 
+    def _get_phase_text(self, phase_id):
+        return {
+                   0: 'public',
+                   1: 'draft',
+                   2: 'secret',
+               }.get(phase_id) or ''
+
     @LazyProperty
     def phase(self):
         phase_id = self._remote.ctx_phase(self.idx)
-        phase_text = {
-            0: 'public',
-            1: 'draft',
-            2: 'secret',
-        }.get(phase_id) or ''
+        phase_text = self._get_phase_text(phase_id)
 
         return safe_unicode(phase_text)
 

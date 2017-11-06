@@ -45,8 +45,9 @@ from beaker.cache import cache_region
 from webob.exc import HTTPNotFound
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
-from pylons import url
-from pylons.i18n.translation import lazy_ugettext as _
+# replace pylons with fake url for migration
+from rhodecode.lib.dbmigrate.schema import url
+from rhodecode.translation import _
 
 from rhodecode.lib.vcs import get_vcs_instance
 from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
@@ -1823,7 +1824,7 @@ class Repository(Base, BaseModel):
         return clone_uri
 
     def clone_url(self, **override):
-        qualified_home_url = url('home', qualified=True)
+        qualified_home_url = '/'
 
         uri_tmpl = None
         if 'with_id' in override:
@@ -1837,13 +1838,6 @@ class Repository(Base, BaseModel):
         # we didn't override our tmpl from **overrides
         if not uri_tmpl:
             uri_tmpl = self.DEFAULT_CLONE_URI
-            try:
-                from pylons import tmpl_context as c
-                uri_tmpl = c.clone_uri_tmpl
-            except Exception:
-                # in any case if we call this outside of request context,
-                # ie, not having tmpl_context set up
-                pass
 
         return get_clone_url(uri_tmpl=uri_tmpl,
                              qualifed_home_url=qualified_home_url,

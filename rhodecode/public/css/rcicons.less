@@ -1,11 +1,11 @@
 @font-face {
   font-family: 'rcicons';
-  src: url('../fonts/RCIcons/rcicons.eot?88634534');
-  src: url('../fonts/RCIcons/rcicons.eot?88634534#iefix') format('embedded-opentype'),
-       url('../fonts/RCIcons/rcicons.woff2?88634534') format('woff2'),
-       url('../fonts/RCIcons/rcicons.woff?88634534') format('woff'),
-       url('../fonts/RCIcons/rcicons.ttf?88634534') format('truetype'),
-       url('../fonts/RCIcons/rcicons.svg?88634534#rcicons') format('svg');
+  src: url('../fonts/RCIcons/rcicons.eot?74666722');
+  src: url('../fonts/RCIcons/rcicons.eot?74666722#iefix') format('embedded-opentype'),
+       url('../fonts/RCIcons/rcicons.woff2?74666722') format('woff2'),
+       url('../fonts/RCIcons/rcicons.woff?74666722') format('woff'),
+       url('../fonts/RCIcons/rcicons.ttf?74666722') format('truetype'),
+       url('../fonts/RCIcons/rcicons.svg?74666722#rcicons') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -15,7 +15,7 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'rcicons';
-    src: url('../fonts/RCIcons/rcicons.svg?88634534#rcicons') format('svg');
+    src: url('../fonts/RCIcons/rcicons.svg?74666722#rcicons') format('svg');
   }
 }
 */
@@ -54,49 +54,82 @@
   /* Uncomment for 3D effect */
   /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
 }
- 
- 
-.icon-git:before { content: '\e82a'; } /* '' */
-.icon-hg:before { content: '\e82d'; } /* '' */
-.icon-svn:before { content: '\e82e'; } /* '' */
-.icon-plus:before { content: '\e813'; } /* '' */
-.icon-minus:before { content: '\e814'; } /* '' */
-.icon-remove:before { content: '\e815'; } /* '' */
+
+// -- ICON CLASSES -- //
+
 .icon-bookmark:before { content: '\e803'; } /* '' */
 .icon-branch:before { content: '\e804'; } /* '' */
-.icon-merge:before { content: '\e833'; } /* '' */
-.icon-tag:before { content: '\e805'; } /* '' */
 .icon-lock:before { content: '\e806'; } /* '' */
 .icon-unlock:before { content: '\e807'; } /* '' */
-.icon-delete:before,
-.icon-false:before { content: '\e800'; } /* '' */
-.icon-ok:before,
-.icon-true:before { content: '\e801'; } /* '' */
-.icon-feed:before { content: '\e808'; } /* '' */
-.icon-left:before { content: '\e809'; } /* '' */
-.icon-right:before { content: '\e80a'; } /* '' */
-.icon-arrow_down:before { content: '\e80b'; } /* '' */
-.icon-arrow_up:before { content: '\e832'; } /* '' */
-.icon-group:before { content: '\e80f'; } /* '' */
-.icon-folder:before { content: '\e810'; } /* '' */
-.icon-fork:before { content: '\e811'; } /* '' */
-.icon-more:before { content: '\e812'; } /* '' */
-.icon-comment:before { content: '\e802'; } /* '' */
-.icon-comment-add:before { content: '\e82f'; } /* '' */
-.icon-comment-toggle:before { content: '\e830'; } /* '' */
-.icon-rhodecode:before { content: '\e831'; } /* '' */
-.icon-remove-sign:before { &:extend(.icon-remove:before); } 
-.icon-repo-private:before,
+.icon-delete:before { content: '\e808'; } /* '' */
+.icon-false:before { content: '\e808'; } /* '' */
+
+.icon-ok:before { content: '\e809'; } /* '' */
+.icon-true:before { content: '\e809'; } /* '' */
+
+.icon-comment:before { content: '\e80a'; } /* '' */
+.icon-comment-add:before { content: '\e816'; } /* '' */
+.icon-comment_toggle:before { content: '\e818'; } /* '' */
+
+.icon-feed:before { content: '\e80b'; } /* '' */
+
+.icon-right:before { content: '\e80c'; } /* '' */
+.icon-left:before { content: '\e80d'; } /* '' */
+
+.icon-arrow_down:before { content: '\e80e'; } /* '' */
+.icon-arrow_up:before { content: '\e80e'; } /* '' */
+
+.icon-group:before { content: '\e812'; } /* '' */
+
+.icon-fork:before { content: '\e814'; } /* '' */
+.icon-merge:before { content: '\e814'; } /* '' */
+
+.icon-more:before { content: '\e815'; } /* '' */
+
+.icon-git-inv:before { content: '\e80f'; } /* '' */
+.icon-hg-inv:before { content: '\e810'; } /* '' */
+.icon-svn-inv:before { content: '\e811'; } /* '' */
+
+.icon-git:before { content: '\e81a'; } /* '' */
+.icon-hg:before { content: '\e81b'; } /* '' */
+.icon-svn:before { content: '\e820'; } /* '' */
+
+.icon-minus:before { content: '\e81c'; } /* '' */
+.icon-plus:before { content: '\e81d'; } /* '' */
+.icon-remove:before { content: '\e81e'; } /* '' */
+.icon-remove-sign:before { content: '\e81e'; } /* '' */
+
+.icon-rhodecode:before { content: '\e81f'; } /* '' */
+
+.icon-tag:before { content: '\e821'; } /* '' */
+.icon-copy:before { content: '\f0c5'; } /* '' */
+.icon-clipboard:before { content: '\f0c5'; } /* '' */
+
+
+.icon-folder:before { content: '\e813'; } /* '' */
+.icon-folder-close:before { content: '\e813'; } /* '' */
+
+.icon-directory:before { content: '\e800'; } /* '' */
+.icon-directory-empty:before { content: '\f114'; } /* '' */
+.icon-file-text:before { content: '\f0f6'; } /* '' */
+.icon-file-text-inv:before { content: '\f15c'; } /* '' */
+.icon-file-code:before { content: '\f1c9'; } /* '' */
+
+// MERGED ICONS
+
+.icon-repo-private:before { &:extend(.icon-lock:before); }
 .icon-repo-lock:before { &:extend(.icon-lock:before); }
-.icon-unlock-alt:before,
-.icon-repo-unlock:before,
-.icon-repo-public:before { &:extend(.icon-unlock:before); } 
-.icon-rss-sign:before { &:extend(.icon-feed:before); } 
-.icon-chevron-right:before { &:extend(.icon-right:before); } 
-.icon-chevron-left:before { &:extend(.icon-left:before); } 
-.icon-caret-down:before {  &:extend(.icon-arrow_down:before); } 
-.icon-folder-close:before { &:extend(.icon-folder:before); } 
-.icon-code-fork:before {  &:extend(.icon-fork:before);  } 
+.icon-unlock-alt:before { &:extend(.icon-unlock:before); }
+.icon-repo-unlock:before { &:extend(.icon-unlock:before); }
+.icon-repo-public:before { &:extend(.icon-unlock:before); }
+.icon-rss-sign:before { &:extend(.icon-feed:before); }
+.icon-code-fork:before {  &:extend(.icon-fork:before);  }
+
+// TRANSFORM
+.icon-arrow_up:before {transform: rotate(180deg);}
+.icon-merge:before {transform: rotate(180deg);}
+
+// -- END ICON CLASSES -- //
 
 
 //--- ICONS STYLING ------------------//
@@ -104,6 +137,9 @@
 .icon-git { color: @color4 !important; }
 .icon-hg { color: @color8 !important; }
 .icon-svn { color: @color1 !important; }
+.icon-git-inv { color: @color4 !important; }
+.icon-hg-inv { color: @color8 !important; }
+.icon-svn-inv { color: @color1 !important; }
 .icon-repo-lock { color: #FF0000; }
 .icon-repo-unlock { color: #FF0000; }
 

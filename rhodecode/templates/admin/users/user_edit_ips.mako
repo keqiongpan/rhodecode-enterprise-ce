@@ -17,7 +17,7 @@
           <tr>
             <td class="td-ip"><div class="ip">${ip.ip_addr}</div></td>
             <td class="td-iprange"><div class="ip">${h.ip_range(ip.ip_addr)}</div></td>
-            <td class="td-description">${h.literal(_('Inherited from %s') % h.link_to('*default*',h.url('admin_permissions_ips')))}</td>
+            <td class="td-description">${h.literal(_('Inherited from %s') % h.link_to('*default*',h.route_path('admin_permissions_ips')))}</td>
             <td></td>
           </tr>
         %endfor
@@ -30,7 +30,7 @@
             <td class="td-iprange"><div class="ip">${h.ip_range(ip.ip_addr)}</div></td>
             <td class="td-description"><div class="ip">${ip.description}</div></td>
             <td class="td-action">
-                ${h.secure_form(h.route_path('edit_user_ips_delete', user_id=c.user.user_id), method='POST')}
+                ${h.secure_form(h.route_path('edit_user_ips_delete', user_id=c.user.user_id), request=request)}
                     ${h.hidden('del_ip_id', ip.ip_id)}
                     ${h.submit('remove_', _('Delete'),id="remove_ip_%s" % ip.ip_id,
                     class_="btn btn-link btn-danger", onclick="return confirm('"+_('Confirm to delete this ip: %s') % ip.ip_addr+"');")}
@@ -51,7 +51,7 @@
 </div>
 
         <div>
-    ${h.secure_form(h.route_path('edit_user_ips_add', user_id=c.user.user_id), method='POST')}
+    ${h.secure_form(h.route_path('edit_user_ips_add', user_id=c.user.user_id), request=request)}
     <div class="form">
         <!-- fields -->
         <div class="fields">

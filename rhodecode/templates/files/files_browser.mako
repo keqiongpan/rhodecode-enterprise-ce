@@ -2,15 +2,15 @@
 <div id="codeblock" class="browserblock">
     <div class="browser-header">
         <div class="browser-nav">
-            ${h.form(h.url.current(), method='GET', id='at_rev_form')}
+            ${h.form(h.current_route_path(request), method='GET', id='at_rev_form')}
             <div class="info_box">
               ${h.hidden('refs_filter')}
               <div class="info_box_elem previous">
-                    <a id="prev_commit_link" data-commit-id="${c.prev_commit.raw_id}" class="pjax-link ${'disabled' if c.url_prev == '#' else ''}" href="${c.url_prev}" title="${_('Previous commit')}"><i class="icon-chevron-left"></i></a>
+                    <a id="prev_commit_link" data-commit-id="${c.prev_commit.raw_id}" class="pjax-link ${'disabled' if c.url_prev == '#' else ''}" href="${c.url_prev}" title="${_('Previous commit')}"><i class="icon-left"></i></a>
               </div>
               <div class="info_box_elem">${h.text('at_rev',value=c.commit.revision)}</div>
               <div class="info_box_elem next">
-                    <a id="next_commit_link" data-commit-id="${c.next_commit.raw_id}" class="pjax-link ${'disabled' if c.url_next == '#' else ''}" href="${c.url_next}" title="${_('Next commit')}"><i class="icon-chevron-right"></i></a>
+                    <a id="next_commit_link" data-commit-id="${c.next_commit.raw_id}" class="pjax-link ${'disabled' if c.url_next == '#' else ''}" href="${c.url_next}" title="${_('Next commit')}"><i class="icon-right"></i></a>
               </div>
             </div>
             ${h.end_form()}
@@ -23,7 +23,7 @@
             </div>
             % if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name):
               <div title="${_('Add New File')}" class="btn btn-primary new-file">
-                <a href="${h.url('files_add_home',repo_name=c.repo_name,revision=c.commit.raw_id,f_path=c.f_path, anchor='edit')}">
+                <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path, _anchor='edit')}">
                     ${_('Add File')}</a>
               </div>
             % endif
@@ -43,7 +43,7 @@
     </div>
     ## file tree is computed from caches, and filled in
     <div id="file-tree">
-    ${c.file_tree}
+    ${c.file_tree |n}
     </div>
 
 </div>

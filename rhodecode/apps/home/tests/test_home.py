@@ -54,14 +54,16 @@ class TestHomeController(TestController):
             response.mustcontain('"name_raw": "%s"' % repo.repo_name)
 
     def test_index_contains_statics_with_ver(self):
-        from pylons import tmpl_context as c
+        from rhodecode.lib.base import calculate_version_hash
 
         self.log_user()
         response = self.app.get(route_path('home'))
 
-        rhodecode_version_hash = c.rhodecode_version_hash
+        rhodecode_version_hash = calculate_version_hash(
+            {'beaker.session.secret':'test-rc-uytcxaz'})
         response.mustcontain('style.css?ver={0}'.format(rhodecode_version_hash))
-        response.mustcontain('rhodecode-components.js?ver={0}'.format(rhodecode_version_hash))
+        response.mustcontain('rhodecode-components.js?ver={0}'.format(
+            rhodecode_version_hash))
 
     def test_index_contains_backend_specific_details(self, backend):
         self.log_user()
@@ -132,3 +134,9 @@ class TestHomeController(TestController):
             response.mustcontain(version_string)
         if state is False:
             response.mustcontain(no=[version_string])
+
+    def test_logout_form_contains_csrf(self, autologin_user, csrf_token):
+        response = self.app.get(route_path('home'))
+        assert_response = response.assert_response()
+        element = assert_response.get_element('.logout #csrf_token')
+        assert element.value == csrf_token

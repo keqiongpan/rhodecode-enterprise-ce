@@ -25,15 +25,16 @@ from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
-from rhodecode.lib.auth import LoginRequired, NotAnonymous, \
-    HasRepoGroupPermissionAnyDecorator
+from rhodecode.lib.auth import (
+    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator)
 from rhodecode.lib.index import searcher_from_config
 from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.lib.ext_json import json
-from rhodecode.model.db import func, Repository, RepoGroup
+from rhodecode.model.db import (
+    func, or_, in_filter_generator, Repository, RepoGroup)
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
-from rhodecode.model.scm import ScmModel, RepoGroupList, RepoList
+from rhodecode.model.scm import RepoGroupList, RepoList
 from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
 
@@ -101,9 +102,17 @@ class HomeView(BaseAppView):
         return {'suggestions': _user_groups}
 
     def _get_repo_list(self, name_contains=None, repo_type=None, limit=20):
+        allowed_ids = self._rhodecode_user.repo_acl_ids(
+            ['repository.read', 'repository.write', 'repository.admin'],
+            cache=False, name_filter=name_contains) or [-1]
+
         query = Repository.query()\
             .order_by(func.length(Repository.repo_name))\
-            .order_by(Repository.repo_name)
+            .order_by(Repository.repo_name)\
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(Repository.repo_id, allowed_ids)
+            ))
 
         if repo_type:
             query = query.filter(Repository.repo_type == repo_type)
@@ -114,23 +123,31 @@ class HomeView(BaseAppView):
                 Repository.repo_name.ilike(ilike_expression))
             query = query.limit(limit)
 
-        all_repos = query.all()
-        # permission checks are inside this function
-        repo_iter = ScmModel().get_repos(all_repos)
+        acl_repo_iter = query
+
         return [
             {
-                'id': obj['name'],
-                'text': obj['name'],
+                'id': obj.repo_name,
+                'text': obj.repo_name,
                 'type': 'repo',
-                'obj': obj['dbrepo'],
-                'url': h.route_path('repo_summary', repo_name=obj['name'])
+                'obj': {'repo_type': obj.repo_type, 'private': obj.private,
+                        'repo_id': obj.repo_id},
+                'url': h.route_path('repo_summary', repo_name=obj.repo_name)
             }
-            for obj in repo_iter]
+            for obj in acl_repo_iter]
 
     def _get_repo_group_list(self, name_contains=None, limit=20):
+        allowed_ids = self._rhodecode_user.repo_group_acl_ids(
+            ['group.read', 'group.write', 'group.admin'],
+            cache=False, name_filter=name_contains) or [-1]
+
         query = RepoGroup.query()\
             .order_by(func.length(RepoGroup.group_name))\
-            .order_by(RepoGroup.group_name)
+            .order_by(RepoGroup.group_name) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(RepoGroup.group_id, allowed_ids)
+            ))
 
         if name_contains:
             ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
@@ -138,23 +155,24 @@ class HomeView(BaseAppView):
                 RepoGroup.group_name.ilike(ilike_expression))
             query = query.limit(limit)
 
-        all_groups = query.all()
-        repo_groups_iter = ScmModel().get_repo_groups(all_groups)
+        acl_repo_iter = query
+
         return [
             {
                 'id': obj.group_name,
                 'text': obj.group_name,
                 'type': 'group',
                 'obj': {},
-                'url': h.route_path('repo_group_home', repo_group_name=obj.group_name)
+                'url': h.route_path(
+                    'repo_group_home', repo_group_name=obj.group_name)
             }
-            for obj in repo_groups_iter]
+            for obj in acl_repo_iter]
 
-    def _get_hash_commit_list(self, auth_user, hash_starts_with=None):
-        if not hash_starts_with or len(hash_starts_with) < 3:
+    def _get_hash_commit_list(self, auth_user, query=None):
+        if not query or len(query) < 3:
             return []
 
-        commit_hashes = re.compile('([0-9a-f]{2,40})').findall(hash_starts_with)
+        commit_hashes = re.compile('(?:commit:)([0-9a-f]{2,40})').findall(query)
 
         if len(commit_hashes) != 1:
             return []
@@ -172,9 +190,9 @@ class HomeView(BaseAppView):
                 'text': entry['commit_id'],
                 'type': 'commit',
                 'obj': {'repo': entry['repository']},
-                'url': h.url('changeset_home',
-                             repo_name=entry['repository'],
-                             revision=entry['commit_id'])
+                'url': h.route_path(
+                    'repo_commit',
+                    repo_name=entry['repository'], commit_id=entry['commit_id'])
             }
             for entry in result['results']]
 

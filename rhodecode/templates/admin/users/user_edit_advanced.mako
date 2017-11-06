@@ -12,6 +12,9 @@
     (_('Repository groups'), len(c.user.repository_groups), '', [x.group_name for x in c.user.repository_groups]),
     (_('User groups'), len(c.user.user_groups), '', [x.users_group_name for x in c.user.user_groups]),
 
+    (_('Reviewer of pull requests'), len(c.user.reviewer_pull_requests), '', ['Pull Request #{}'.format(x.pull_request.pull_request_id) for x in c.user.reviewer_pull_requests]),
+    (_('Assigned to review rules'), len(c.user_to_review_rules), '', [x for x in c.user_to_review_rules]),
+
     (_('Member of User groups'), len(c.user.group_member), '', [x.users_group.users_group_name for x in c.user.group_member]),
     (_('Force password change'), c.user.user_data.get('force_password_change', 'False'), '', ''),
  ]
@@ -31,7 +34,7 @@
         <h3 class="panel-title">${_('Force Password Reset')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('force_password_reset_user', user_id=c.user.user_id), method='post')}
+        ${h.secure_form(h.route_path('user_force_password_reset', user_id=c.user.user_id), request=request)}
             <div class="field">
                 <button class="btn btn-default" type="submit">
                     <i class="icon-lock"></i>
@@ -56,7 +59,7 @@
         <h3 class="panel-title">${_('Personal Repository Group')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('create_personal_repo_group', user_id=c.user.user_id), method='post')}
+        ${h.secure_form(h.route_path('user_create_personal_repo_group', user_id=c.user.user_id), request=request)}
 
         %if c.personal_repo_group:
             <div class="panel-body-title-text">${_('Users personal repository group')} : ${h.link_to(c.personal_repo_group.group_name, h.route_path('repo_group_home', repo_group_name=c.personal_repo_group.group_name))}</div>
@@ -81,12 +84,12 @@
         <h3 class="panel-title">${_('Delete User')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('delete_user', user_id=c.user.user_id), method='delete')}
+        ${h.secure_form(h.route_path('user_delete', user_id=c.user.user_id), request=request)}
 
             <table class="display">
                 <tr>
                     <td>
-                        ${ungettext('This user owns %s repository.', 'This user owns %s repositories.', len(c.user.repositories)) % len(c.user.repositories)}
+                        ${_ungettext('This user owns %s repository.', 'This user owns %s repositories.', len(c.user.repositories)) % len(c.user.repositories)}
                     </td>
                     <td>
                         %if len(c.user.repositories) > 0:
@@ -102,7 +105,7 @@
 
                 <tr>
                     <td>
-                        ${ungettext('This user owns %s repository group.', 'This user owns %s repository groups.', len(c.user.repository_groups)) % len(c.user.repository_groups)}
+                        ${_ungettext('This user owns %s repository group.', 'This user owns %s repository groups.', len(c.user.repository_groups)) % len(c.user.repository_groups)}
                     </td>
                     <td>
                         %if len(c.user.repository_groups) > 0:
@@ -118,7 +121,7 @@
 
                 <tr>
                     <td>
-                        ${ungettext('This user owns %s user group.', 'This user owns %s user groups.', len(c.user.user_groups)) % len(c.user.user_groups)}
+                        ${_ungettext('This user owns %s user group.', 'This user owns %s user groups.', len(c.user.user_groups)) % len(c.user.user_groups)}
                     </td>
                     <td>
                         %if len(c.user.user_groups) > 0:
@@ -142,7 +145,7 @@
                 </button>
             </div>
             % if c.can_delete_user_message:
-            <p class="help-block">${c.can_delete_user_message}</p>
+            <p class="help-block pre-formatting">${c.can_delete_user_message}</p>
             % endif
 
             <div class="field">

@@ -34,6 +34,7 @@ import traceback
 from functools import wraps
 
 import ipaddress
+from beaker.cache import cache_region
 from pyramid.httpexceptions import HTTPForbidden, HTTPFound, HTTPNotFound
 from pylons.i18n.translation import _
 # NOTE(marcink): this has to be removed only after pyramid migration,
@@ -48,7 +49,7 @@ from rhodecode.model.meta import Session
 from rhodecode.model.user import UserModel
 from rhodecode.model.db import (
     User, Repository, Permission, UserToPerm, UserGroupToPerm, UserGroupMember,
-    UserIpMap, UserApiKeys, RepoGroup)
+    UserIpMap, UserApiKeys, RepoGroup, UserGroup)
 from rhodecode.lib import caches
 from rhodecode.lib.utils2 import safe_unicode, aslist, safe_str, md5
 from rhodecode.lib.utils import (
@@ -279,6 +280,23 @@ def generate_auth_token(data, salt=None):
     return hashlib.sha1(safe_str(data) + salt).hexdigest()
 
 
+def get_came_from(request):
+    """
+    get query_string+path from request sanitized after removing auth_token
+    """
+    _req = request
+
+    path = _req.path
+    if 'auth_token' in _req.GET:
+        # sanitize the request and remove auth_token for redirection
+        _req.GET.pop('auth_token')
+    qs = _req.query_string
+    if qs:
+        path += '?' + qs
+
+    return path
+
+
 class CookieStoreWrapper(object):
 
     def __init__(self, cookie_store):
@@ -295,32 +313,36 @@ class CookieStoreWrapper(object):
 
 
 def _cached_perms_data(user_id, scope, user_is_admin,
-                       user_inherit_default_permissions, explicit, algo):
+                       user_inherit_default_permissions, explicit, algo,
+                       calculate_super_admin):
 
     permissions = PermissionCalculator(
         user_id, scope, user_is_admin, user_inherit_default_permissions,
-        explicit, algo)
+        explicit, algo, calculate_super_admin)
     return permissions.calculate()
 
 
 class PermOrigin(object):
-    ADMIN = 'superadmin'
+    SUPER_ADMIN = 'superadmin'
 
     REPO_USER = 'user:%s'
     REPO_USERGROUP = 'usergroup:%s'
     REPO_OWNER = 'repo.owner'
     REPO_DEFAULT = 'repo.default'
+    REPO_DEFAULT_NO_INHERIT = 'repo.default.no.inherit'
     REPO_PRIVATE = 'repo.private'
 
     REPOGROUP_USER = 'user:%s'
     REPOGROUP_USERGROUP = 'usergroup:%s'
     REPOGROUP_OWNER = 'group.owner'
     REPOGROUP_DEFAULT = 'group.default'
+    REPOGROUP_DEFAULT_NO_INHERIT = 'group.default.no.inherit'
 
     USERGROUP_USER = 'user:%s'
     USERGROUP_USERGROUP = 'usergroup:%s'
     USERGROUP_OWNER = 'usergroup.owner'
     USERGROUP_DEFAULT = 'usergroup.default'
+    USERGROUP_DEFAULT_NO_INHERIT = 'usergroup.default.no.inherit'
 
 
 class PermOriginDict(dict):
@@ -344,7 +366,7 @@ class PermOriginDict(dict):
 
     def __init__(self, *args, **kw):
         dict.__init__(self, *args, **kw)
-        self.perm_origin_stack = {}
+        self.perm_origin_stack = collections.OrderedDict()
 
     def __setitem__(self, key, (perm, origin)):
         self.perm_origin_stack.setdefault(key, []).append((perm, origin))
@@ -355,12 +377,15 @@ class PermissionCalculator(object):
 
     def __init__(
             self, user_id, scope, user_is_admin,
-            user_inherit_default_permissions, explicit, algo):
+            user_inherit_default_permissions, explicit, algo,
+            calculate_super_admin=False):
+
         self.user_id = user_id
         self.user_is_admin = user_is_admin
         self.inherit_default_permissions = user_inherit_default_permissions
         self.explicit = explicit
         self.algo = algo
+        self.calculate_super_admin = calculate_super_admin
 
         scope = scope or {}
         self.scope_repo_id = scope.get('repo_id')
@@ -383,7 +408,7 @@ class PermissionCalculator(object):
                 self.default_user_id, self.scope_user_group_id)
 
     def calculate(self):
-        if self.user_is_admin:
+        if self.user_is_admin and not self.calculate_super_admin:
             return self._admin_permissions()
 
         self._calculate_global_default_permissions()
@@ -406,19 +431,19 @@ class PermissionCalculator(object):
         for perm in self.default_repo_perms:
             r_k = perm.UserRepoToPerm.repository.repo_name
             p = 'repository.admin'
-            self.permissions_repositories[r_k] = p, PermOrigin.ADMIN
+            self.permissions_repositories[r_k] = p, PermOrigin.SUPER_ADMIN
 
         # repository groups
         for perm in self.default_repo_groups_perms:
             rg_k = perm.UserRepoGroupToPerm.group.group_name
             p = 'group.admin'
-            self.permissions_repository_groups[rg_k] = p, PermOrigin.ADMIN
+            self.permissions_repository_groups[rg_k] = p, PermOrigin.SUPER_ADMIN
 
         # user groups
         for perm in self.default_user_group_perms:
             u_k = perm.UserUserGroupToPerm.user_group.users_group_name
             p = 'usergroup.admin'
-            self.permissions_user_groups[u_k] = p, PermOrigin.ADMIN
+            self.permissions_user_groups[u_k] = p, PermOrigin.SUPER_ADMIN
 
         return self._permission_structure()
 
@@ -432,6 +457,10 @@ class PermissionCalculator(object):
 
         for perm in default_global_perms:
             self.permissions_global.add(perm.permission.permission_name)
+
+        if self.user_is_admin:
+            self.permissions_global.add('hg.admin')
+            self.permissions_global.add('hg.create.write_on_repogroup.true')
 
     def _calculate_global_permissions(self):
         """
@@ -528,60 +557,87 @@ class PermissionCalculator(object):
         # on given repo
         for perm in self.default_repo_perms:
             r_k = perm.UserRepoToPerm.repository.repo_name
+            p = perm.Permission.permission_name
             o = PermOrigin.REPO_DEFAULT
+            self.permissions_repositories[r_k] = p, o
+
+            # if we decide this user isn't inheriting permissions from
+            # default user we set him to .none so only explicit
+            # permissions work
+            if not user_inherit_object_permissions:
+                p = 'repository.none'
+                o = PermOrigin.REPO_DEFAULT_NO_INHERIT
+                self.permissions_repositories[r_k] = p, o
+
             if perm.Repository.private and not (
                     perm.Repository.user_id == self.user_id):
                 # disable defaults for private repos,
                 p = 'repository.none'
                 o = PermOrigin.REPO_PRIVATE
+                self.permissions_repositories[r_k] = p, o
+
             elif perm.Repository.user_id == self.user_id:
                 # set admin if owner
                 p = 'repository.admin'
                 o = PermOrigin.REPO_OWNER
-            else:
-                p = perm.Permission.permission_name
-                # if we decide this user isn't inheriting permissions from
-                # default user we set him to .none so only explicit
-                # permissions work
-                if not user_inherit_object_permissions:
-                    p = 'repository.none'
-            self.permissions_repositories[r_k] = p, o
+                self.permissions_repositories[r_k] = p, o
+
+            if self.user_is_admin:
+                p = 'repository.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_repositories[r_k] = p, o
 
         # defaults for repository groups taken from `default` user permission
         # on given group
         for perm in self.default_repo_groups_perms:
             rg_k = perm.UserRepoGroupToPerm.group.group_name
+            p = perm.Permission.permission_name
             o = PermOrigin.REPOGROUP_DEFAULT
-            if perm.RepoGroup.user_id == self.user_id:
-                # set admin if owner
-                p = 'group.admin'
-                o = PermOrigin.REPOGROUP_OWNER
-            else:
-                p = perm.Permission.permission_name
+            self.permissions_repository_groups[rg_k] = p, o
 
             # if we decide this user isn't inheriting permissions from default
             # user we set him to .none so only explicit permissions work
             if not user_inherit_object_permissions:
                 p = 'group.none'
-            self.permissions_repository_groups[rg_k] = p, o
+                o = PermOrigin.REPOGROUP_DEFAULT_NO_INHERIT
+                self.permissions_repository_groups[rg_k] = p, o
+
+            if perm.RepoGroup.user_id == self.user_id:
+                # set admin if owner
+                p = 'group.admin'
+                o = PermOrigin.REPOGROUP_OWNER
+                self.permissions_repository_groups[rg_k] = p, o
+
+            if self.user_is_admin:
+                p = 'group.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_repository_groups[rg_k] = p, o
 
         # defaults for user groups taken from `default` user permission
         # on given user group
         for perm in self.default_user_group_perms:
             u_k = perm.UserUserGroupToPerm.user_group.users_group_name
+            p = perm.Permission.permission_name
             o = PermOrigin.USERGROUP_DEFAULT
-            if perm.UserGroup.user_id == self.user_id:
-                # set admin if owner
-                p = 'usergroup.admin'
-                o = PermOrigin.USERGROUP_OWNER
-            else:
-                p = perm.Permission.permission_name
+            self.permissions_user_groups[u_k] = p, o
 
             # if we decide this user isn't inheriting permissions from default
             # user we set him to .none so only explicit permissions work
             if not user_inherit_object_permissions:
                 p = 'usergroup.none'
-            self.permissions_user_groups[u_k] = p, o
+                o = PermOrigin.USERGROUP_DEFAULT_NO_INHERIT
+                self.permissions_user_groups[u_k] = p, o
+
+            if perm.UserGroup.user_id == self.user_id:
+                # set admin if owner
+                p = 'usergroup.admin'
+                o = PermOrigin.USERGROUP_OWNER
+                self.permissions_user_groups[u_k] = p, o
+
+            if self.user_is_admin:
+                p = 'usergroup.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_user_groups[u_k] = p, o
 
     def _calculate_repository_permissions(self):
         """
@@ -600,20 +656,27 @@ class PermissionCalculator(object):
         multiple_counter = collections.defaultdict(int)
         for perm in user_repo_perms_from_user_group:
             r_k = perm.UserGroupRepoToPerm.repository.repo_name
-            ug_k = perm.UserGroupRepoToPerm.users_group.users_group_name
             multiple_counter[r_k] += 1
             p = perm.Permission.permission_name
-            o = PermOrigin.REPO_USERGROUP % ug_k
+            o = PermOrigin.REPO_USERGROUP % perm.UserGroupRepoToPerm\
+                .users_group.users_group_name
+
+            if multiple_counter[r_k] > 1:
+                cur_perm = self.permissions_repositories[r_k]
+                p = self._choose_permission(p, cur_perm)
+
+            self.permissions_repositories[r_k] = p, o
 
             if perm.Repository.user_id == self.user_id:
                 # set admin if owner
                 p = 'repository.admin'
                 o = PermOrigin.REPO_OWNER
-            else:
-                if multiple_counter[r_k] > 1:
-                    cur_perm = self.permissions_repositories[r_k]
-                    p = self._choose_permission(p, cur_perm)
-            self.permissions_repositories[r_k] = p, o
+                self.permissions_repositories[r_k] = p, o
+
+            if self.user_is_admin:
+                p = 'repository.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_repositories[r_k] = p, o
 
         # user explicit permissions for repositories, overrides any specified
         # by the group permission
@@ -621,25 +684,33 @@ class PermissionCalculator(object):
             self.user_id, self.scope_repo_id)
         for perm in user_repo_perms:
             r_k = perm.UserRepoToPerm.repository.repo_name
+            p = perm.Permission.permission_name
             o = PermOrigin.REPO_USER % perm.UserRepoToPerm.user.username
-            # set admin if owner
+
+            if not self.explicit:
+                cur_perm = self.permissions_repositories.get(
+                    r_k, 'repository.none')
+                p = self._choose_permission(p, cur_perm)
+
+            self.permissions_repositories[r_k] = p, o
+
             if perm.Repository.user_id == self.user_id:
+                # set admin if owner
                 p = 'repository.admin'
                 o = PermOrigin.REPO_OWNER
-            else:
-                p = perm.Permission.permission_name
-                if not self.explicit:
-                    cur_perm = self.permissions_repositories.get(
-                        r_k, 'repository.none')
-                    p = self._choose_permission(p, cur_perm)
-            self.permissions_repositories[r_k] = p, o
+                self.permissions_repositories[r_k] = p, o
+
+            if self.user_is_admin:
+                p = 'repository.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_repositories[r_k] = p, o
 
     def _calculate_repository_group_permissions(self):
         """
         Repository group permissions for the current user.
 
         Check if the user is part of user groups for repository groups and
-        fill in the permissions from it. `_choose_permmission` decides of which
+        fill in the permissions from it. `_choose_permission` decides of which
         permission should be selected based on selected method.
         """
         # user group for repo groups permissions
@@ -649,40 +720,54 @@ class PermissionCalculator(object):
 
         multiple_counter = collections.defaultdict(int)
         for perm in user_repo_group_perms_from_user_group:
-            g_k = perm.UserGroupRepoGroupToPerm.group.group_name
-            ug_k = perm.UserGroupRepoGroupToPerm.users_group.users_group_name
-            o = PermOrigin.REPOGROUP_USERGROUP % ug_k
-            multiple_counter[g_k] += 1
+            rg_k = perm.UserGroupRepoGroupToPerm.group.group_name
+            multiple_counter[rg_k] += 1
+            o = PermOrigin.REPOGROUP_USERGROUP % perm.UserGroupRepoGroupToPerm\
+                .users_group.users_group_name
             p = perm.Permission.permission_name
+
+            if multiple_counter[rg_k] > 1:
+                cur_perm = self.permissions_repository_groups[rg_k]
+                p = self._choose_permission(p, cur_perm)
+            self.permissions_repository_groups[rg_k] = p, o
+
             if perm.RepoGroup.user_id == self.user_id:
                 # set admin if owner, even for member of other user group
                 p = 'group.admin'
                 o = PermOrigin.REPOGROUP_OWNER
-            else:
-                if multiple_counter[g_k] > 1:
-                    cur_perm = self.permissions_repository_groups[g_k]
-                    p = self._choose_permission(p, cur_perm)
-            self.permissions_repository_groups[g_k] = p, o
+                self.permissions_repository_groups[rg_k] = p, o
+
+            if self.user_is_admin:
+                p = 'group.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_repository_groups[rg_k] = p, o
 
         # user explicit permissions for repository groups
         user_repo_groups_perms = Permission.get_default_group_perms(
             self.user_id, self.scope_repo_group_id)
         for perm in user_repo_groups_perms:
             rg_k = perm.UserRepoGroupToPerm.group.group_name
-            u_k = perm.UserRepoGroupToPerm.user.username
-            o = PermOrigin.REPOGROUP_USER % u_k
+            o = PermOrigin.REPOGROUP_USER % perm.UserRepoGroupToPerm\
+                .user.username
+            p = perm.Permission.permission_name
+
+            if not self.explicit:
+                cur_perm = self.permissions_repository_groups.get(
+                    rg_k, 'group.none')
+                p = self._choose_permission(p, cur_perm)
+
+            self.permissions_repository_groups[rg_k] = p, o
 
             if perm.RepoGroup.user_id == self.user_id:
                 # set admin if owner
                 p = 'group.admin'
                 o = PermOrigin.REPOGROUP_OWNER
-            else:
-                p = perm.Permission.permission_name
-                if not self.explicit:
-                    cur_perm = self.permissions_repository_groups.get(
-                        rg_k, 'group.none')
-                    p = self._choose_permission(p, cur_perm)
-            self.permissions_repository_groups[rg_k] = p, o
+                self.permissions_repository_groups[rg_k] = p, o
+
+            if self.user_is_admin:
+                p = 'group.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_repository_groups[rg_k] = p, o
 
     def _calculate_user_group_permissions(self):
         """
@@ -695,43 +780,56 @@ class PermissionCalculator(object):
 
         multiple_counter = collections.defaultdict(int)
         for perm in user_group_from_user_group:
-            g_k = perm.UserGroupUserGroupToPerm\
+            ug_k = perm.UserGroupUserGroupToPerm\
                 .target_user_group.users_group_name
-            u_k = perm.UserGroupUserGroupToPerm\
+            multiple_counter[ug_k] += 1
+            o = PermOrigin.USERGROUP_USERGROUP % perm.UserGroupUserGroupToPerm\
                 .user_group.users_group_name
-            o = PermOrigin.USERGROUP_USERGROUP % u_k
-            multiple_counter[g_k] += 1
             p = perm.Permission.permission_name
+
+            if multiple_counter[ug_k] > 1:
+                cur_perm = self.permissions_user_groups[ug_k]
+                p = self._choose_permission(p, cur_perm)
+
+            self.permissions_user_groups[ug_k] = p, o
 
             if perm.UserGroup.user_id == self.user_id:
                 # set admin if owner, even for member of other user group
                 p = 'usergroup.admin'
                 o = PermOrigin.USERGROUP_OWNER
-            else:
-                if multiple_counter[g_k] > 1:
-                    cur_perm = self.permissions_user_groups[g_k]
-                    p = self._choose_permission(p, cur_perm)
-            self.permissions_user_groups[g_k] = p, o
+                self.permissions_user_groups[ug_k] = p, o
+
+            if self.user_is_admin:
+                p = 'usergroup.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_user_groups[ug_k] = p, o
 
         # user explicit permission for user groups
         user_user_groups_perms = Permission.get_default_user_group_perms(
             self.user_id, self.scope_user_group_id)
         for perm in user_user_groups_perms:
             ug_k = perm.UserUserGroupToPerm.user_group.users_group_name
-            u_k = perm.UserUserGroupToPerm.user.username
-            o = PermOrigin.USERGROUP_USER % u_k
+            o = PermOrigin.USERGROUP_USER % perm.UserUserGroupToPerm\
+                .user.username
+            p = perm.Permission.permission_name
+
+            if not self.explicit:
+                cur_perm = self.permissions_user_groups.get(
+                    ug_k, 'usergroup.none')
+                p = self._choose_permission(p, cur_perm)
+
+            self.permissions_user_groups[ug_k] = p, o
 
             if perm.UserGroup.user_id == self.user_id:
                 # set admin if owner
                 p = 'usergroup.admin'
                 o = PermOrigin.USERGROUP_OWNER
-            else:
-                p = perm.Permission.permission_name
-                if not self.explicit:
-                    cur_perm = self.permissions_user_groups.get(
-                        ug_k, 'usergroup.none')
-                    p = self._choose_permission(p, cur_perm)
-            self.permissions_user_groups[ug_k] = p, o
+                self.permissions_user_groups[ug_k] = p, o
+
+            if self.user_is_admin:
+                p = 'usergroup.admin'
+                o = PermOrigin.SUPER_ADMIN
+                self.permissions_user_groups[ug_k] = p, o
 
     def _choose_permission(self, new_perm, cur_perm):
         new_perm_val = Permission.PERM_WEIGHTS[new_perm]
@@ -754,7 +852,7 @@ class PermissionCalculator(object):
         }
 
 
-def allowed_auth_token_access(controller_name, whitelist=None, auth_token=None):
+def allowed_auth_token_access(view_name, auth_token, whitelist=None):
     """
     Check if given controller_name is in whitelist of auth token access
     """
@@ -762,21 +860,42 @@ def allowed_auth_token_access(controller_name, whitelist=None, auth_token=None):
         from rhodecode import CONFIG
         whitelist = aslist(
             CONFIG.get('api_access_controllers_whitelist'), sep=',')
-        log.debug(
-            'Allowed controllers for AUTH TOKEN access: %s' % (whitelist,))
+    # backward compat translation
+    compat = {
+        # old controller, new VIEW
+        'ChangesetController:*': 'RepoCommitsView:*',
+        'ChangesetController:changeset_patch': 'RepoCommitsView:repo_commit_patch',
+        'ChangesetController:changeset_raw': 'RepoCommitsView:repo_commit_raw',
+        'FilesController:raw': 'RepoCommitsView:repo_commit_raw',
+        'FilesController:archivefile': 'RepoFilesView:repo_archivefile',
+        'GistsController:*': 'GistView:*',
+    }
 
+    log.debug(
+        'Allowed views for AUTH TOKEN access: %s' % (whitelist,))
     auth_token_access_valid = False
+
     for entry in whitelist:
-        if fnmatch.fnmatch(controller_name, entry):
+        token_match = True
+        if entry in compat:
+            # translate from old Controllers to Pyramid Views
+            entry = compat[entry]
+
+        if '@' in entry:
+            # specific AuthToken
+            entry, allowed_token = entry.split('@', 1)
+            token_match = auth_token == allowed_token
+
+        if fnmatch.fnmatch(view_name, entry) and token_match:
             auth_token_access_valid = True
             break
 
     if auth_token_access_valid:
-        log.debug('controller:%s matches entry in whitelist'
-                  % (controller_name,))
+        log.debug('view: `%s` matches entry in whitelist: %s'
+                  % (view_name, whitelist))
     else:
-        msg = ('controller: %s does *NOT* match any entry in whitelist'
-               % (controller_name,))
+        msg = ('view: `%s` does *NOT* match any entry in whitelist: %s'
+               % (view_name, whitelist))
         if auth_token:
             # if we use auth token key and don't have access it's a warning
             log.warning(msg)
@@ -842,6 +961,11 @@ class AuthUser(object):
             if v != 'usergroup.none'}
         return perms
 
+    @LazyProperty
+    def permissions_full_details(self):
+        return self.get_perms(
+            user=self, cache=False, calculate_super_admin=True)
+
     def permissions_with_scope(self, scope):
         """
         Call the get_perms function with scoped data. The scope in that function
@@ -883,36 +1007,39 @@ class AuthUser(object):
         Fills in user data and propagates values to this instance. Maps fetched
         user attributes to this class instance attributes
         """
-        log.debug('starting data propagation for new potential AuthUser')
+        log.debug('AuthUser: starting data propagation for new potential user')
         user_model = UserModel()
         anon_user = self.anonymous_user = User.get_default_user(cache=True)
         is_user_loaded = False
 
         # lookup by userid
         if self.user_id is not None and self.user_id != anon_user.user_id:
-            log.debug('Trying Auth User lookup by USER ID: `%s`' % self.user_id)
+            log.debug('Trying Auth User lookup by USER ID: `%s`', self.user_id)
             is_user_loaded = user_model.fill_data(self, user_id=self.user_id)
 
         # try go get user by api key
         elif self._api_key and self._api_key != anon_user.api_key:
-            log.debug('Trying Auth User lookup by API KEY: `%s`' % self._api_key)
+            log.debug('Trying Auth User lookup by API KEY: `%s`', self._api_key)
             is_user_loaded = user_model.fill_data(self, api_key=self._api_key)
 
         # lookup by username
         elif self.username:
-            log.debug('Trying Auth User lookup by USER NAME: `%s`' % self.username)
+            log.debug('Trying Auth User lookup by USER NAME: `%s`', self.username)
             is_user_loaded = user_model.fill_data(self, username=self.username)
         else:
-            log.debug('No data in %s that could been used to log in' % self)
+            log.debug('No data in %s that could been used to log in', self)
 
         if not is_user_loaded:
-            log.debug('Failed to load user. Fallback to default user')
+            log.debug(
+                'Failed to load user. Fallback to default user %s', anon_user)
             # if we cannot authenticate user try anonymous
             if anon_user.active:
+                log.debug('default user is active, using it as a session user')
                 user_model.fill_data(self, user_id=anon_user.user_id)
                 # then we set this user is logged in
                 self.is_authenticated = True
             else:
+                log.debug('default user is NOT active')
                 # in case of disabled anonymous user we reset some of the
                 # parameters so such user is "corrupted", skipping the fill_data
                 for attr in ['user_id', 'username', 'admin', 'active']:
@@ -922,10 +1049,10 @@ class AuthUser(object):
         if not self.username:
             self.username = 'None'
 
-        log.debug('Auth User is now %s' % self)
+        log.debug('AuthUser: propagated user is now %s', self)
 
     def get_perms(self, user, scope=None, explicit=True, algo='higherwin',
-                  cache=False):
+                  calculate_super_admin=False, cache=False):
         """
         Fills user permission attribute with permissions taken from database
         works for permissions given for repositories, and for permissions that
@@ -952,7 +1079,8 @@ class AuthUser(object):
             'short_term', 'cache_desc',
             condition=cache, func=_cached_perms_data)
         result = compute(user_id, scope, user_is_admin,
-                         user_inherit_default_permissions, explicit, algo)
+                         user_inherit_default_permissions, explicit, algo,
+                         calculate_super_admin)
 
         result_repr = []
         for k in result:
@@ -1000,6 +1128,84 @@ class AuthUser(object):
             x[0] for x in self.permissions['user_groups'].iteritems()
             if x[1] == 'usergroup.admin']
 
+    def repo_acl_ids(self, perms=None, name_filter=None, cache=False):
+        """
+        Returns list of repository ids that user have access to based on given
+        perms. The cache flag should be only used in cases that are used for
+        display purposes, NOT IN ANY CASE for permission checks.
+        """
+        from rhodecode.model.scm import RepoList
+        if not perms:
+            perms = [
+                'repository.read', 'repository.write', 'repository.admin']
+
+        def _cached_repo_acl(user_id, perm_def, name_filter):
+            qry = Repository.query()
+            if name_filter:
+                ilike_expression = u'%{}%'.format(safe_unicode(name_filter))
+                qry = qry.filter(
+                    Repository.repo_name.ilike(ilike_expression))
+
+            return [x.repo_id for x in
+                    RepoList(qry, perm_set=perm_def)]
+
+        compute = caches.conditional_cache(
+            'long_term', 'repo_acl_ids',
+            condition=cache, func=_cached_repo_acl)
+        return compute(self.user_id, perms, name_filter)
+
+    def repo_group_acl_ids(self, perms=None, name_filter=None, cache=False):
+        """
+        Returns list of repository group ids that user have access to based on given
+        perms. The cache flag should be only used in cases that are used for
+        display purposes, NOT IN ANY CASE for permission checks.
+        """
+        from rhodecode.model.scm import RepoGroupList
+        if not perms:
+            perms = [
+                'group.read', 'group.write', 'group.admin']
+
+        def _cached_repo_group_acl(user_id, perm_def, name_filter):
+            qry = RepoGroup.query()
+            if name_filter:
+                ilike_expression = u'%{}%'.format(safe_unicode(name_filter))
+                qry = qry.filter(
+                    RepoGroup.group_name.ilike(ilike_expression))
+
+            return [x.group_id for x in
+                    RepoGroupList(qry, perm_set=perm_def)]
+
+        compute = caches.conditional_cache(
+            'long_term', 'repo_group_acl_ids',
+            condition=cache, func=_cached_repo_group_acl)
+        return compute(self.user_id, perms, name_filter)
+
+    def user_group_acl_ids(self, perms=None, name_filter=None, cache=False):
+        """
+        Returns list of user group ids that user have access to based on given
+        perms. The cache flag should be only used in cases that are used for
+        display purposes, NOT IN ANY CASE for permission checks.
+        """
+        from rhodecode.model.scm import UserGroupList
+        if not perms:
+            perms = [
+                'usergroup.read', 'usergroup.write', 'usergroup.admin']
+
+        def _cached_user_group_acl(user_id, perm_def, name_filter):
+            qry = UserGroup.query()
+            if name_filter:
+                ilike_expression = u'%{}%'.format(safe_unicode(name_filter))
+                qry = qry.filter(
+                    UserGroup.users_group_name.ilike(ilike_expression))
+
+            return [x.users_group_id for x in
+                    UserGroupList(qry, perm_set=perm_def)]
+
+        compute = caches.conditional_cache(
+            'long_term', 'user_group_acl_ids',
+            condition=cache, func=_cached_user_group_acl)
+        return compute(self.user_id, perms, name_filter)
+
     @property
     def ip_allowed(self):
         """
@@ -1039,7 +1245,7 @@ class AuthUser(object):
     def get_cookie_store(self):
         return {
             'username': self.username,
-            'password': md5(self.password),
+            'password': md5(self.password or ''),
             'user_id': self.user_id,
             'is_authenticated': self.is_authenticated
         }
@@ -1092,28 +1298,29 @@ class AuthUser(object):
         return _set or set(['0.0.0.0/0', '::/0'])
 
 
-def set_available_permissions(config):
+def set_available_permissions(settings):
     """
-    This function will propagate pylons globals with all available defined
+    This function will propagate pyramid settings with all available defined
     permission given in db. We don't want to check each time from db for new
     permissions since adding a new permission also requires application restart
     ie. to decorate new views with the newly created permission
 
-    :param config: current pylons config instance
+    :param settings: current pyramid registry.settings
 
     """
-    log.info('getting information about all available permissions')
+    log.debug('auth: getting information about all available permissions')
     try:
         sa = meta.Session
         all_perms = sa.query(Permission).all()
-        config['available_permissions'] = [x.permission_name for x in all_perms]
+        settings.setdefault('available_permissions',
+                            [x.permission_name for x in all_perms])
+        log.debug('auth: set available permissions')
     except Exception:
-        log.error(traceback.format_exc())
-    finally:
-        meta.Session.remove()
+        log.exception('Failed to fetch permissions from the database.')
+        raise
 
 
-def get_csrf_token(session=None, force_new=False, save_if_missing=True):
+def get_csrf_token(session, force_new=False, save_if_missing=True):
     """
     Return the current authentication token, creating one if one doesn't
     already exist and the save_if_missing flag is present.
@@ -1123,8 +1330,8 @@ def get_csrf_token(session=None, force_new=False, save_if_missing=True):
     :param save_if_missing: save the newly generated token if it's missing in
         session
     """
-    if not session:
-        from pylons import session
+    # NOTE(marcink): probably should be replaced with below one from pyramid 1.9
+    # from pyramid.csrf import get_csrf_token
 
     if (csrf_token_key not in session and save_if_missing) or force_new:
         token = hashlib.sha1(str(random.getrandbits(128))).hexdigest()
@@ -1134,7 +1341,7 @@ def get_csrf_token(session=None, force_new=False, save_if_missing=True):
     return session.get(csrf_token_key)
 
 
-def get_request(perm_class):
+def get_request(perm_class_instance):
     from pyramid.threadlocal import get_current_request
     pyramid_request = get_current_request()
     if not pyramid_request:
@@ -1184,7 +1391,7 @@ class CSRFRequired(object):
         if request.method in self.except_methods:
             return func(*fargs, **fkwargs)
 
-        cur_token = get_csrf_token(save_if_missing=False)
+        cur_token = get_csrf_token(request.session, save_if_missing=False)
         if self.check_csrf(request, cur_token):
             if request.POST.get(self.token):
                 del request.POST[self.token]
@@ -1294,7 +1501,8 @@ class LoginRequired(object):
                 % (user, reason, loc, ip_access_valid,
                    auth_token_access_valid))
             # we preserve the get PARAM
-            came_from = request.path_qs
+            came_from = get_came_from(request)
+
             log.debug('redirecting to login page with %s' % (came_from,))
             raise HTTPFound(
                 h.route_path('login', _query={'came_from': came_from}))
@@ -1323,7 +1531,7 @@ class NotAnonymous(object):
         anonymous = self.user.username == User.DEFAULT_USER
 
         if anonymous:
-            came_from = request.path_qs
+            came_from = get_came_from(request)
             h.flash(_('You need to be a registered user to '
                       'perform this action'),
                     category='warning')
@@ -1331,61 +1539,6 @@ class NotAnonymous(object):
                 h.route_path('login', _query={'came_from': came_from}))
         else:
             return func(*fargs, **fkwargs)
-
-
-class XHRRequired(object):
-    # TODO(marcink): remove this in favor of the predicates in pyramid routes
-
-    def __call__(self, func):
-        return get_cython_compat_decorator(self.__wrapper, func)
-
-    def _get_request(self):
-        return get_request(self)
-
-    def __wrapper(self, func, *fargs, **fkwargs):
-        from pylons.controllers.util import abort
-        request = self._get_request()
-
-        log.debug('Checking if request is XMLHttpRequest (XHR)')
-        xhr_message = 'This is not a valid XMLHttpRequest (XHR) request'
-
-        if not request.is_xhr:
-            abort(400, detail=xhr_message)
-
-        return func(*fargs, **fkwargs)
-
-
-class HasAcceptedRepoType(object):
-    """
-    Check if requested repo is within given repo type aliases
-    """
-
-    # TODO(marcink): remove this in favor of the predicates in pyramid routes
-
-    def __init__(self, *repo_type_list):
-        self.repo_type_list = set(repo_type_list)
-
-    def __call__(self, func):
-        return get_cython_compat_decorator(self.__wrapper, func)
-
-    def __wrapper(self, func, *fargs, **fkwargs):
-        import rhodecode.lib.helpers as h
-        cls = fargs[0]
-        rhodecode_repo = cls.rhodecode_repo
-
-        log.debug('%s checking repo type for %s in %s',
-                  self.__class__.__name__,
-                  rhodecode_repo.alias, self.repo_type_list)
-
-        if rhodecode_repo.alias in self.repo_type_list:
-            return func(*fargs, **fkwargs)
-        else:
-            h.flash(h.literal(
-                _('Action not supported for %s.' % rhodecode_repo.alias)),
-                category='warning')
-            raise HTTPFound(
-                h.route_path('repo_summary',
-                             repo_name=cls.rhodecode_db_repo.repo_name))
 
 
 class PermsDecorator(object):
@@ -1402,12 +1555,6 @@ class PermsDecorator(object):
 
     def _get_request(self):
         return get_request(self)
-
-    def _get_came_from(self):
-        _request = self._get_request()
-
-        # both pylons/pyramid has this attribute
-        return _request.path_qs
 
     def __wrapper(self, func, *fargs, **fkwargs):
         import rhodecode.lib.helpers as h
@@ -1426,7 +1573,7 @@ class PermsDecorator(object):
             anonymous = _user.username == User.DEFAULT_USER
 
             if anonymous:
-                came_from = self._get_came_from()
+                came_from = get_came_from(self._get_request())
                 h.flash(_('You need to be signed in to view this page'),
                         category='warning')
                 raise HTTPFound(
@@ -1511,8 +1658,9 @@ class HasRepoPermissionAnyDecorator(PermsDecorator):
         try:
             user_perms = set([perms['repositories'][repo_name]])
         except KeyError:
-            log.debug('cannot locate repo with name: `%s` in permissions defs',
-                      repo_name)
+            log.debug(
+                'cannot locate repo with name: `%s` in permissions defs',
+                repo_name)
             return False
 
         log.debug('checking `%s` permissions for repo `%s`',
@@ -1538,8 +1686,9 @@ class HasRepoGroupPermissionAllDecorator(PermsDecorator):
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
-            log.debug('cannot locate repo group with name: `%s` in permissions defs',
-                      group_name)
+            log.debug(
+                'cannot locate repo group with name: `%s` in permissions defs',
+                group_name)
             return False
 
         log.debug('checking `%s` permissions for repo group `%s`',
@@ -1566,8 +1715,9 @@ class HasRepoGroupPermissionAnyDecorator(PermsDecorator):
         try:
             user_perms = set([perms['repositories_groups'][group_name]])
         except KeyError:
-            log.debug('cannot locate repo group with name: `%s` in permissions defs',
-                      group_name)
+            log.debug(
+                'cannot locate repo group with name: `%s` in permissions defs',
+                group_name)
             return False
 
         log.debug('checking `%s` permissions for repo group `%s`',
@@ -2006,9 +2156,10 @@ def check_ip_access(source_ip, allowed_ips=None):
     :param allowed_ips: list of allowed ips together with mask
     """
     log.debug('checking if ip:%s is subnet of %s' % (source_ip, allowed_ips))
-    source_ip_address = ipaddress.ip_address(source_ip)
+    source_ip_address = ipaddress.ip_address(safe_unicode(source_ip))
     if isinstance(allowed_ips, (tuple, list, set)):
         for ip in allowed_ips:
+            ip = safe_unicode(ip)
             try:
                 network_address = ipaddress.ip_network(ip, strict=False)
                 if source_ip_address in network_address:

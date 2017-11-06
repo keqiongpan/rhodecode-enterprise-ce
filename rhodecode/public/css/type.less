@@ -131,7 +131,7 @@ label {
 code,
 .code {
   font-size: .95em;
-  font-family: "Lucida Console", Monaco, monospace;
+  font-family: @text-code;
   color: @grey3;
 
   a {
@@ -146,7 +146,7 @@ pre {
     outline: 0;
     font-size: @basefontsize*.95;
     line-height: 1.4em;
-    font-family: "Lucida Console", Monaco, monospace;
+    font-family: @text-code;
     color: @grey3;
 }
 
@@ -533,6 +533,9 @@ address {
   margin: 0 0 @padding;
   color: @grey4;
   font-family: @text-light;
+  &.pre-formatting {
+      white-space: pre;
+  }
 }
 
 .error-message {

@@ -28,15 +28,16 @@ import logging
 import time
 import traceback
 import warnings
+import functools
 
 from pyramid.threadlocal import get_current_registry
-from sqlalchemy.ext.hybrid import hybrid_property
+from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode.authentication.interface import IAuthnPluginRegistry
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.lib import caches
 from rhodecode.lib.auth import PasswordGenerator, _RhodeCodeCryptoBCrypt
-from rhodecode.lib.utils2 import md5_safe, safe_int
+from rhodecode.lib.utils2 import safe_int
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.model.db import User
 from rhodecode.model.meta import Session
@@ -50,6 +51,31 @@ log = logging.getLogger(__name__)
 # auth types that authenticate() function can receive
 VCS_TYPE = 'vcs'
 HTTP_TYPE = 'http'
+
+
+class hybrid_property(object):
+    """
+    a property decorator that works both for instance and class
+    """
+    def __init__(self, fget, fset=None, fdel=None, expr=None):
+        self.fget = fget
+        self.fset = fset
+        self.fdel = fdel
+        self.expr = expr or fget
+        functools.update_wrapper(self, fget)
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self.expr(owner)
+        else:
+            return self.fget(instance)
+
+    def __set__(self, instance, value):
+        self.fset(instance, value)
+
+    def __delete__(self, instance):
+        self.fdel(instance)
+
 
 
 class LazyFormencode(object):
@@ -143,6 +169,11 @@ class RhodeCodeAuthPluginBase(object):
             db_type = '{}.encrypted'.format(db_type)
         return db_type
 
+    @LazyProperty
+    def plugin_settings(self):
+        settings = SettingsModel().get_all_settings()
+        return settings
+
     def is_enabled(self):
         """
         Returns true if this plugin is enabled. An enabled plugin can be
@@ -177,13 +208,17 @@ class RhodeCodeAuthPluginBase(object):
         """
         return AuthnPluginSettingsSchemaBase()
 
-    def get_setting_by_name(self, name, default=None):
+    def get_setting_by_name(self, name, default=None, cache=True):
         """
         Returns a plugin setting by name.
         """
-        full_name = self._get_setting_full_name(name)
-        db_setting = SettingsModel().get_setting_by_name(full_name)
-        return db_setting.app_settings_value if db_setting else default
+        full_name = 'rhodecode_{}'.format(self._get_setting_full_name(name))
+        if cache:
+            plugin_settings = self.plugin_settings
+        else:
+            plugin_settings = SettingsModel().get_all_settings()
+
+        return plugin_settings.get(full_name) or default
 
     def create_or_update_setting(self, name, value):
         """
@@ -391,11 +426,14 @@ class RhodeCodeAuthPluginBase(object):
         """
         auth = self.auth(userobj, username, passwd, settings, **kwargs)
         if auth:
+            auth['_plugin'] = self.name
+            auth['_ttl_cache'] = self.get_ttl_cache(settings)
             # check if hash should be migrated ?
             new_hash = auth.get('_hash_migrate')
             if new_hash:
                 self._migrate_hash_to_bcrypt(username, passwd, new_hash)
             return self._validate_auth_return(auth)
+
         return auth
 
     def _migrate_hash_to_bcrypt(self, username, password, new_hash):
@@ -417,6 +455,19 @@ class RhodeCodeAuthPluginBase(object):
             if k not in ret:
                 raise Exception('Missing %s attribute from returned data' % k)
         return ret
+
+    def get_ttl_cache(self, settings=None):
+        plugin_settings = settings or self.get_settings()
+        cache_ttl = 0
+
+        if isinstance(self.AUTH_CACHE_TTL, (int, long)):
+            # plugin cache set inside is more important than the settings value
+            cache_ttl = self.AUTH_CACHE_TTL
+        elif plugin_settings.get('cache_ttl'):
+            cache_ttl = safe_int(plugin_settings.get('cache_ttl'), 0)
+
+        plugin_cache_active = bool(cache_ttl and cache_ttl > 0)
+        return plugin_cache_active, cache_ttl
 
 
 class RhodeCodeExternalAuthPlugin(RhodeCodeAuthPluginBase):
@@ -440,6 +491,7 @@ class RhodeCodeExternalAuthPlugin(RhodeCodeAuthPluginBase):
         # at this point _authenticate calls plugin's `auth()` function
         auth = super(RhodeCodeExternalAuthPlugin, self)._authenticate(
             userobj, username, passwd, settings, **kwargs)
+
         if auth:
             # maybe plugin will clean the username ?
             # we should use the return value
@@ -508,6 +560,9 @@ class RhodeCodeExternalAuthPlugin(RhodeCodeAuthPluginBase):
             # field
             try:
                 groups = auth['groups'] or []
+                log.debug(
+                    'Performing user_group sync based on set `%s` '
+                    'returned by this plugin', groups)
                 UserGroupModel().enforce_groups(user, groups, self.name)
             except Exception:
                 # for any reason group syncing fails, we should
@@ -542,6 +597,11 @@ def get_auth_cache_manager(custom_ttl=None):
         'auth_plugins', 'rhodecode.authentication', custom_ttl)
 
 
+def get_perms_cache_manager(custom_ttl=None):
+    return caches.get_cache_manager(
+        'auth_plugins', 'rhodecode.permissions', custom_ttl)
+
+
 def authenticate(username, password, environ=None, auth_type=None,
                  skip_missing=False, registry=None, acl_repo_name=None):
     """
@@ -561,7 +621,10 @@ def authenticate(username, password, environ=None, auth_type=None,
     headers_only = environ and not (username and password)
 
     authn_registry = get_authn_registry(registry)
-    for plugin in authn_registry.get_plugins_for_authentication():
+    plugins_to_check = authn_registry.get_plugins_for_authentication()
+    log.debug('Starting ordered authentication chain using %s plugins',
+              plugins_to_check)
+    for plugin in plugins_to_check:
         plugin.set_auth_type(auth_type)
         plugin.set_calling_scope_repo(acl_repo_name)
 
@@ -594,25 +657,19 @@ def authenticate(username, password, environ=None, auth_type=None,
         log.info('Authenticating user `%s` using %s plugin',
                  display_user, plugin.get_id())
 
-        _cache_ttl = 0
-
-        if isinstance(plugin.AUTH_CACHE_TTL, (int, long)):
-            # plugin cache set inside is more important than the settings value
-            _cache_ttl = plugin.AUTH_CACHE_TTL
-        elif plugin_settings.get('cache_ttl'):
-            _cache_ttl = safe_int(plugin_settings.get('cache_ttl'), 0)
-
-        plugin_cache_active = bool(_cache_ttl and _cache_ttl > 0)
+        plugin_cache_active, cache_ttl = plugin.get_ttl_cache(plugin_settings)
 
         # get instance of cache manager configured for a namespace
-        cache_manager = get_auth_cache_manager(custom_ttl=_cache_ttl)
+        cache_manager = get_auth_cache_manager(custom_ttl=cache_ttl)
 
         log.debug('AUTH_CACHE_TTL for plugin `%s` active: %s (TTL: %s)',
-                  plugin.get_id(), plugin_cache_active, _cache_ttl)
+                  plugin.get_id(), plugin_cache_active, cache_ttl)
 
         # for environ based password can be empty, but then the validation is
         # on the server that fills in the env data needed for authentication
-        _password_hash = md5_safe(plugin.name + username + (password or ''))
+
+        _password_hash = caches.compute_key_from_params(
+            plugin.name, username, (password or ''))
 
         # _authenticate is a wrapper for .auth() method of plugin.
         # it checks if .auth() sends proper data.
@@ -628,11 +685,13 @@ def authenticate(username, password, environ=None, auth_type=None,
             This function is used internally in Cache of Beaker to calculate
             Results
             """
+            log.debug('auth: calculating password access now...')
             return plugin._authenticate(
                 user, username, password, plugin_settings,
                 environ=environ or {})
 
         if plugin_cache_active:
+            log.debug('Trying to fetch cached auth by %s', _password_hash[:6])
             plugin_user = cache_manager.get(
                 _password_hash, createfunc=auth_func)
         else:
@@ -641,7 +700,7 @@ def authenticate(username, password, environ=None, auth_type=None,
         auth_time = time.time() - start
         log.debug('Authentication for plugin `%s` completed in %.3fs, '
                   'expiration time of fetched cache %.1fs.',
-                  plugin.get_id(), auth_time, _cache_ttl)
+                  plugin.get_id(), auth_time, cache_ttl)
 
         log.debug('PLUGIN USER DATA: %s', plugin_user)
 
@@ -651,6 +710,8 @@ def authenticate(username, password, environ=None, auth_type=None,
         # we failed to Auth because .auth() method didn't return proper user
         log.debug("User `%s` failed to authenticate against %s",
                   display_user, plugin.get_id())
+
+    # case when we failed to authenticate against all defined plugins
     return None
 
 

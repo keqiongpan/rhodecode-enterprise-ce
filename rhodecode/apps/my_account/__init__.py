@@ -28,14 +28,24 @@ def includeme(config):
         name='my_account_profile',
         pattern=ADMIN_PREFIX + '/my_account/profile')
 
+    # my account edit details
+    config.add_route(
+        name='my_account_edit',
+        pattern=ADMIN_PREFIX + '/my_account/edit')
+    config.add_route(
+        name='my_account_update',
+        pattern=ADMIN_PREFIX + '/my_account/update')
+
+    # my account password
     config.add_route(
         name='my_account_password',
         pattern=ADMIN_PREFIX + '/my_account/password')
 
     config.add_route(
         name='my_account_password_update',
-        pattern=ADMIN_PREFIX + '/my_account/password')
+        pattern=ADMIN_PREFIX + '/my_account/password/update')
 
+    # my account tokens
     config.add_route(
         name='my_account_auth_tokens',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens')
@@ -46,6 +56,21 @@ def includeme(config):
         name='my_account_auth_tokens_delete',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens/delete')
 
+    # my account ssh keys
+    config.add_route(
+        name='my_account_ssh_keys',
+        pattern=ADMIN_PREFIX + '/my_account/ssh_keys')
+    config.add_route(
+        name='my_account_ssh_keys_generate',
+        pattern=ADMIN_PREFIX + '/my_account/ssh_keys/generate')
+    config.add_route(
+        name='my_account_ssh_keys_add',
+        pattern=ADMIN_PREFIX + '/my_account/ssh_keys/new')
+    config.add_route(
+        name='my_account_ssh_keys_delete',
+        pattern=ADMIN_PREFIX + '/my_account/ssh_keys/delete')
+
+    # my account emails
     config.add_route(
         name='my_account_emails',
         pattern=ADMIN_PREFIX + '/my_account/emails')
@@ -76,10 +101,40 @@ def includeme(config):
         name='my_account_notifications_toggle_visibility',
         pattern=ADMIN_PREFIX + '/my_account/toggle_visibility')
 
+    # my account pull requests
+    config.add_route(
+        name='my_account_pullrequests',
+        pattern=ADMIN_PREFIX + '/my_account/pull_requests')
+    config.add_route(
+        name='my_account_pullrequests_data',
+        pattern=ADMIN_PREFIX + '/my_account/pull_requests/data')
+
+    # notifications
+    config.add_route(
+        name='notifications_show_all',
+        pattern=ADMIN_PREFIX + '/notifications')
+
+    # notifications
+    config.add_route(
+        name='notifications_mark_all_read',
+        pattern=ADMIN_PREFIX + '/notifications/mark_all_read')
+
+    config.add_route(
+        name='notifications_show',
+        pattern=ADMIN_PREFIX + '/notifications/{notification_id}')
+
+    config.add_route(
+        name='notifications_update',
+        pattern=ADMIN_PREFIX + '/notifications/{notification_id}/update')
+
+    config.add_route(
+        name='notifications_delete',
+        pattern=ADMIN_PREFIX + '/notifications/{notification_id}/delete')
+
     # channelstream test
     config.add_route(
         name='my_account_notifications_test_channelstream',
         pattern=ADMIN_PREFIX + '/my_account/test_channelstream')
 
     # Scan module for configuration decorators.
-    config.scan()
+    config.scan('.views', ignore='.tests')

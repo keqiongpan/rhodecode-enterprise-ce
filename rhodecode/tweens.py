@@ -60,6 +60,8 @@ def includeme(config):
                           'pyramid.events.NewRequest')
     config.add_subscriber('rhodecode.subscribers.add_localizer',
                           'pyramid.events.NewRequest')
+    config.add_subscriber('rhodecode.subscribers.add_request_user_context',
+                          'pyramid.events.ContextFound')
     config.add_subscriber('rhodecode.subscribers.add_pylons_context',
                           'pyramid.events.ContextFound')
 

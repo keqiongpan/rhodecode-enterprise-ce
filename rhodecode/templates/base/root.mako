@@ -3,7 +3,7 @@
 
 <%
 c.template_context['repo_name'] = getattr(c, 'repo_name', '')
-
+go_import_header = ''
 if hasattr(c, 'rhodecode_db_repo'):
     c.template_context['repo_type'] = c.rhodecode_db_repo.repo_type
     c.template_context['repo_landing_commit'] = c.rhodecode_db_repo.landing_rev[1]
@@ -28,6 +28,15 @@ c.template_context['default_user'] = {
         <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
         <title>${self.title()}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+        ${h.go_import_header(request, getattr(c, 'rhodecode_db_repo', None))}
+
+        % if 'safari' in (request.user_agent or '').lower():
+            <meta name="referrer" content="origin">
+        % else:
+            <meta name="referrer" content="origin-when-cross-origin">
+        % endif
+
         <%def name="robots()">
             <meta name="robots" content="index, nofollow"/>
         </%def>
@@ -110,10 +119,10 @@ c.template_context['default_user'] = {
             </script>
             <%include file="/base/plugins_base.mako"/>
             <!--[if lt IE 9]>
-            <script language="javascript" type="text/javascript" src="${h.asset('js/excanvas.min.js')}"></script>
+            <script language="javascript" type="text/javascript" src="${h.asset('js/src/excanvas.min.js')}"></script>
             <![endif]-->
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode/routes.js', ver=c.rhodecode_version_hash)}"></script>
-            <script> var alertMessagePayloads = ${h.flash.json_alerts()|n}; </script>
+            <script> var alertMessagePayloads = ${h.flash.json_alerts(request=request)|n}; </script>
             ## avoide escaping the %N
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode-components.js', ver=c.rhodecode_version_hash)}"></script>
             <script>CodeMirror.modeURL = "${h.asset('') + 'js/mode/%N/%N.js?ver='+c.rhodecode_version_hash}";</script>
@@ -133,6 +142,7 @@ c.template_context['default_user'] = {
             $(document).ready(function(){
               show_more_event();
               timeagoActivate();
+              clipboardActivate();
             })
             </script>
 

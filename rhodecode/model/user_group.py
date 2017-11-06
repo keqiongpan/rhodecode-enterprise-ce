@@ -18,12 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
-"""
-user group model for RhodeCode
-"""
-
-
 import logging
 import traceback
 
@@ -67,8 +61,10 @@ class UserGroupModel(BaseModel):
         user_group_to_perm.user_id = def_user.user_id
         return user_group_to_perm
 
-    def update_permissions(self, user_group, perm_additions=None, perm_updates=None,
-                           perm_deletions=None, check_perms=True, cur_user=None):
+    def update_permissions(
+            self, user_group, perm_additions=None, perm_updates=None,
+            perm_deletions=None, check_perms=True, cur_user=None):
+
         from rhodecode.lib.auth import HasUserGroupPermissionAny
         if not perm_additions:
             perm_additions = []
@@ -79,10 +75,16 @@ class UserGroupModel(BaseModel):
 
         req_perms = ('usergroup.read', 'usergroup.write', 'usergroup.admin')
 
+        changes = {
+            'added': [],
+            'updated': [],
+            'deleted': []
+        }
         # update permissions
         for member_id, perm, member_type in perm_updates:
             member_id = int(member_id)
             if member_type == 'user':
+                member_name = User.get(member_id).username
                 # this updates existing one
                 self.grant_user_permission(
                     user_group=user_group, user=member_id, perm=perm
@@ -90,38 +92,49 @@ class UserGroupModel(BaseModel):
             else:
                 # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
-                if not check_perms or HasUserGroupPermissionAny(*req_perms)(member_name, user=cur_user):
+                if not check_perms or HasUserGroupPermissionAny(
+                        *req_perms)(member_name, user=cur_user):
                     self.grant_user_group_permission(
-                        target_user_group=user_group, user_group=member_id, perm=perm
-                    )
+                        target_user_group=user_group, user_group=member_id, perm=perm)
+
+            changes['updated'].append({'type': member_type, 'id': member_id,
+                                       'name': member_name, 'new_perm': perm})
 
         # set new permissions
         for member_id, perm, member_type in perm_additions:
             member_id = int(member_id)
             if member_type == 'user':
+                member_name = User.get(member_id).username
                 self.grant_user_permission(
-                    user_group=user_group, user=member_id, perm=perm
-                )
+                    user_group=user_group, user=member_id, perm=perm)
             else:
                 # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
-                if not check_perms or HasUserGroupPermissionAny(*req_perms)(member_name, user=cur_user):
+                if not check_perms or HasUserGroupPermissionAny(
+                        *req_perms)(member_name, user=cur_user):
                     self.grant_user_group_permission(
-                        target_user_group=user_group, user_group=member_id, perm=perm
-                    )
+                        target_user_group=user_group, user_group=member_id, perm=perm)
+
+            changes['added'].append({'type': member_type, 'id': member_id,
+                                     'name': member_name, 'new_perm': perm})
 
         # delete permissions
         for member_id, perm, member_type in perm_deletions:
             member_id = int(member_id)
             if member_type == 'user':
+                member_name = User.get(member_id).username
                 self.revoke_user_permission(user_group=user_group, user=member_id)
             else:
                 # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
-                if not check_perms or HasUserGroupPermissionAny(*req_perms)(member_name, user=cur_user):
+                if not check_perms or HasUserGroupPermissionAny(
+                        *req_perms)(member_name, user=cur_user):
                     self.revoke_user_group_permission(
-                        target_user_group=user_group, user_group=member_id
-                    )
+                        target_user_group=user_group, user_group=member_id)
+
+            changes['deleted'].append({'type': member_type, 'id': member_id,
+                                       'name': member_name, 'new_perm': perm})
+        return changes
 
     def get(self, user_group_id, cache=False):
         return UserGroup.get(user_group_id)
@@ -247,6 +260,9 @@ class UserGroupModel(BaseModel):
         :param force:
         """
         user_group = self._get_user_group(user_group)
+        if not user_group:
+            return
+
         try:
             # check if this group is not assigned to repo
             assigned_to_repo = [x.repository for x in UserGroupRepoToPerm.query()\
@@ -270,16 +286,14 @@ class UserGroupModel(BaseModel):
         users = user_or_users
         if not isinstance(users, (list, tuple)):
             users = [users]
-        rhodecode_user = get_current_rhodecode_user()
-        ipaddr = getattr(rhodecode_user, 'ip_addr', '')
+
         group_name = user_group.users_group_name
 
         for user_or_user_id in users:
             user = self._get_user(user_or_user_id)
             log_text = 'User {user} {action} {group}'.format(
                 action=action, user=user.username, group=group_name)
-            log.info('Logging action: {0} by {1} ip:{2}'.format(
-                     log_text, rhodecode_user, ipaddr))
+            action_logger_generic(log_text)
 
     def _find_user_in_group(self, user, user_group):
         user_group_member = None
@@ -533,7 +547,6 @@ class UserGroupModel(BaseModel):
         This method changes user group assignment
         :param user:  User
         :param groups: array of UserGroupModel
-        :return:
         """
         user = self._get_user(user)
         log.debug('Changing user(%s) assignment to groups(%s)', user, groups)
@@ -547,12 +560,21 @@ class UserGroupModel(BaseModel):
         groups_to_remove = current_groups - groups
         groups_to_add = groups - current_groups
 
+        removed_from_groups = []
+        added_to_groups = []
         for gr in groups_to_remove:
-            log.debug('Removing user %s from user group %s', user.username, gr.users_group_name)
+            log.debug('Removing user %s from user group %s',
+                      user.username, gr.users_group_name)
+            removed_from_groups.append(gr.users_group_id)
             self.remove_user_from_group(gr.users_group_name, user.username)
         for gr in groups_to_add:
-            log.debug('Adding user %s to user group %s', user.username, gr.users_group_name)
-            UserGroupModel().add_user_to_group(gr.users_group_name, user.username)
+            log.debug('Adding user %s to user group %s',
+                      user.username, gr.users_group_name)
+            added_to_groups.append(gr.users_group_id)
+            UserGroupModel().add_user_to_group(
+                gr.users_group_name, user.username)
+
+        return added_to_groups, removed_from_groups
 
     def _serialize_user_group(self, user_group):
         import rhodecode.lib.helpers as h
@@ -623,7 +645,3 @@ class UserGroupModel(BaseModel):
                 'owner_icon': h.gravatar_url(user_group.user.email, 30)}
             }
         return data
-
-
-
-

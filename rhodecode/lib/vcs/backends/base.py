@@ -298,7 +298,7 @@ class BaseRepository(object):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None):
         """
         Returns iterator of `BaseCommit` objects from start to end
         not inclusive. This should behave just like a list, ie. end is not
@@ -309,6 +309,7 @@ class BaseRepository(object):
         :param start_date:
         :param end_date:
         :param branch_name:
+        :param show_hidden:
         :param pre_load:
         """
         raise NotImplementedError
@@ -420,7 +421,7 @@ class BaseRepository(object):
 
     def merge(self, target_ref, source_repo, source_ref, workspace_id,
               user_name='', user_email='', message='', dry_run=False,
-              use_rebase=False):
+              use_rebase=False, close_branch=False):
         """
         Merge the revisions specified in `source_ref` from `source_repo`
         onto the `target_ref` of this repository.
@@ -445,6 +446,7 @@ class BaseRepository(object):
         :param dry_run: If `True` the merge will not take place.
         :param use_rebase: If `True` commits from the source will be rebased
             on top of the target instead of being merged.
+        :param close_branch: If `True` branch will be close before merging it
         """
         if dry_run:
             message = message or 'dry_run_merge_message'
@@ -465,7 +467,7 @@ class BaseRepository(object):
             return self._merge_repo(
                 shadow_repository_path, target_ref, source_repo,
                 source_ref, message, user_name, user_email, dry_run=dry_run,
-                use_rebase=use_rebase)
+                use_rebase=use_rebase, close_branch=close_branch)
         except RepositoryError:
             log.exception(
                 'Unexpected failure when running merge, dry-run=%s',
@@ -475,7 +477,8 @@ class BaseRepository(object):
 
     def _merge_repo(self, shadow_repository_path, target_ref,
                     source_repo, source_ref, merge_message,
-                    merger_name, merger_email, dry_run=False, use_rebase=False):
+                    merger_name, merger_email, dry_run=False,
+                    use_rebase=False, close_branch=False):
         """Internal implementation of merge."""
         raise NotImplementedError
 

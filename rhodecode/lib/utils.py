@@ -96,11 +96,18 @@ def repo_name_slug(value):
 # PERM DECORATOR HELPERS FOR EXTRACTING NAMES FOR PERM CHECKS
 #==============================================================================
 def get_repo_slug(request):
-    if isinstance(request, Request) and getattr(request, 'db_repo', None):
-        # pyramid
-        _repo = request.db_repo.repo_name
-    else:
-        # TODO(marcink): remove after pylons migration...
+    _repo = ''
+    if isinstance(request, Request):
+        if hasattr(request, 'db_repo'):
+            # if our requests has set db reference use it for name, this
+            # translates the example.com/_<id> into proper repo names
+            _repo = request.db_repo.repo_name
+        elif getattr(request, 'matchdict', None):
+            # pyramid
+            _repo = request.matchdict.get('repo_name')
+
+    # TODO(marcink): remove after pylons migration...
+    if not _repo:
         _repo = request.environ['pylons.routes_dict'].get('repo_name')
 
     if _repo:
@@ -109,10 +116,18 @@ def get_repo_slug(request):
 
 
 def get_repo_group_slug(request):
-    if isinstance(request, Request) and getattr(request, 'matchdict', None):
-        # pyramid
-        _group = request.matchdict.get('repo_group_name')
-    else:
+    _group = ''
+    if isinstance(request, Request):
+        if hasattr(request, 'db_repo_group'):
+            # if our requests has set db reference use it for name, this
+            # translates the example.com/_<id> into proper repo group names
+            _group = request.db_repo_group.group_name
+        elif getattr(request, 'matchdict', None):
+            # pyramid
+            _group = request.matchdict.get('repo_group_name')
+
+    # TODO(marcink): remove after pylons migration...
+    if not _group:
         _group = request.environ['pylons.routes_dict'].get('group_name')
 
     if _group:
@@ -121,22 +136,29 @@ def get_repo_group_slug(request):
 
 
 def get_user_group_slug(request):
-    if isinstance(request, Request) and getattr(request, 'matchdict', None):
-        # pyramid
-        _group = request.matchdict.get('user_group_id')
-    else:
-        _group = request.environ['pylons.routes_dict'].get('user_group_id')
+    _user_group = ''
+    if isinstance(request, Request):
 
-    try:
-        _group = UserGroup.get(_group)
-        if _group:
-            _group = _group.users_group_name
-    except Exception:
-        log.debug(traceback.format_exc())
-        # catch all failures here
-        pass
+        if hasattr(request, 'db_user_group'):
+            _user_group = request.db_user_group.users_group_name
+        elif getattr(request, 'matchdict', None):
+            # pyramid
+            _user_group = request.matchdict.get('user_group_id')
 
-    return _group
+            try:
+                _user_group = UserGroup.get(_user_group)
+                if _user_group:
+                    _user_group = _user_group.users_group_name
+            except Exception:
+                log.exception('Failed to get user group by id')
+                # catch all failures here
+                return None
+
+    # TODO(marcink): remove after pylons migration...
+    if not _user_group:
+        _user_group = request.environ['pylons.routes_dict'].get('user_group_id')
+
+    return _user_group
 
 
 def get_filesystem_repos(path, recursive=False, skip_removed_repos=True):
@@ -837,30 +859,6 @@ class BasePasterCommand(Command):
         initialize_database(config)
 
 
-@decorator.decorator
-def jsonify(func, *args, **kwargs):
-    """Action decorator that formats output for JSON
-
-    Given a function that will return content, this decorator will turn
-    the result into JSON, with a content-type of 'application/json' and
-    output it.
-
-    """
-    from pylons.decorators.util import get_pylons
-    from rhodecode.lib.ext_json import json
-    pylons = get_pylons(args)
-    pylons.response.headers['Content-Type'] = 'application/json; charset=utf-8'
-    data = func(*args, **kwargs)
-    if isinstance(data, (list, tuple)):
-        msg = "JSON responses with Array envelopes are susceptible to " \
-              "cross-site data leak attacks, see " \
-              "http://wiki.pylonshq.com/display/pylonsfaq/Warnings"
-        warnings.warn(msg, Warning, 2)
-        log.warning(msg)
-    log.debug("Returning JSON wrapped action output")
-    return json.dumps(data, encoding='utf-8')
-
-
 class PartialRenderer(object):
     """
     Partial renderer used to render chunks of html used in datagrids
@@ -904,7 +902,7 @@ class PartialRenderer(object):
             'h': self.h,
             'c': self.c,
             'request': self.request,
-            'ungettext': self.ungettext,
+            '_ungettext': self.ungettext,
         }
         _kwargs.update(kwargs)
         return _kwargs

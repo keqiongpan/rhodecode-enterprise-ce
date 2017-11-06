@@ -293,7 +293,8 @@ class AuthLdap(object):
             log.warning(msg, username)
             raise LdapPasswordError(msg)
         if "," in username:
-            raise LdapUsernameError("invalid character in username: ,")
+            raise LdapUsernameError(
+                "invalid character `,` in username: `{}`".format(username))
         try:
             server = self._get_ldap_server()
             filter_ = '(&%s(%s=%s))' % (
@@ -319,8 +320,9 @@ class AuthLdap(object):
                     break
 
             else:
-                raise LdapPasswordError('Failed to authenticate user '
-                                        'with given password')
+                raise LdapPasswordError(
+                    'Failed to authenticate user `{}`'
+                    'with given password'.format(username))
 
         except ldap.NO_SUCH_OBJECT:
             log.debug("LDAP says no such user '%s' (%s), org_exc:",
@@ -372,7 +374,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         return True
 
     def user_activation_state(self):
-        def_user_perms = User.get_default_user().AuthUser.permissions['global']
+        def_user_perms = User.get_default_user().AuthUser().permissions['global']
         return 'hg.extern_activate.auto' in def_user_perms
 
     def try_dynamic_binding(self, username, password, current_args):

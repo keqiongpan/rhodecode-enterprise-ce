@@ -3,13 +3,13 @@
         <h3 class="panel-title">${_('Strip commits from repository')}</h3>
     </div>
     <div class="panel-body">
-        %if c.repo_info.repo_type != 'svn':
+        %if c.rhodecode_db_repo.repo_type != 'svn':
             <h4>${_('Please provide up to %d commits commits to strip') % c.strip_limit}</h4>
             <p>
                 ${_('In the first step commits will be verified for existance in the repository')}. </br>
                 ${_('In the second step, correct commits will be available for stripping')}.
             </p>
-            ${h.secure_form(h.route_path('strip_check', repo_name=c.repo_info.repo_name), method='post')}
+            ${h.secure_form(h.route_path('strip_check', repo_name=c.rhodecode_db_repo.repo_name), request=request)}
                 <div id="change_body" class="field">
                     <div id="box-1" class="inputx locked_input">
                         <input class="text" id="changeset_id-1" name="changeset_id-1" size="59"
@@ -112,7 +112,7 @@ checkCommits = function() {
     var postData = $('form').serialize();
     $('#results').show();
     $('#results').html('<h4>${_('Checking commits')}...</h4>');
-    var url = "${h.route_path('strip_check', repo_name=c.repo_info.repo_name)}";
+    var url = "${h.route_path('strip_check', repo_name=c.rhodecode_db_repo.repo_name)}";
     var btn = $('#strip_action');
     btn.attr('disabled', 'disabled');
     btn.addClass('disabled');
@@ -171,7 +171,7 @@ checkCommits = function() {
 };
 
 strip = function() {
-    var url = "${h.route_path('strip_execute', repo_name=c.repo_info.repo_name)}";
+    var url = "${h.route_path('strip_execute', repo_name=c.rhodecode_db_repo.repo_name)}";
     var success = function(data) {
         var result = '<h4>Strip executed</h4><ol>';
         $.each(data, function(index, value){

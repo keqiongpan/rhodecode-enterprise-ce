@@ -181,7 +181,7 @@ class TestHttpHooksCallbackDaemon(object):
 
         assert_message_in_log(
             caplog.records,
-            'Preparing callback daemon and registering hook object',
+            'Preparing HTTP callback daemon and registering hook object',
             levelno=logging.DEBUG, module='hooks_daemon')
 
     def test_prepare_inits_hooks_uri_and_logs_it(

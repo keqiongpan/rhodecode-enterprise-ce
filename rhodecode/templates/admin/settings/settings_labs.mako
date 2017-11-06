@@ -3,7 +3,7 @@
         <h3 class="panel-title">${_('Labs Settings')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(url('admin_settings_labs'), method='post')}
+        ${h.secure_form(h.url('admin_settings_labs'), request=request)}
           <div class="form">
             <div class="fields">
               % if not c.lab_settings:

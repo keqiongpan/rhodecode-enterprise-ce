@@ -68,7 +68,7 @@ class AuthenticationPluginRegistry(object):
         plugins = []
 
         # Add all enabled and active plugins to the list. We iterate over the
-        # auth_plugins setting from DB beacuse it also represents the ordering.
+        # auth_plugins setting from DB because it also represents the ordering.
         enabled_plugins = SettingsModel().get_auth_plugins()
         for plugin_id in enabled_plugins:
             plugin = self.get_plugin(plugin_id)

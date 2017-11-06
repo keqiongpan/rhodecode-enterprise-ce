@@ -42,7 +42,7 @@ archive.
     ## Syntax is <ControllerClass>:<function_pattern>.
     ## The list should be "," separated and on a single line.
     ##
-    api_access_controllers_whitelist = ChangesetController:changeset_patch,ChangesetController:changeset_raw,ilesController:raw,FilesController:archivefile,
+    api_access_controllers_whitelist = RepoCommitsView:repo_commit_raw,RepoCommitsView:repo_commit_patch,RepoCommitsView:repo_commit_download
 
 After this change, a |RCE| view can be accessed without login by adding a
 GET parameter ``?auth_token=<auth_token>`` to a url. For example to

@@ -26,7 +26,7 @@ import pytest
 from rhodecode.apps.repository.views.repo_summary import RepoSummaryView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.compat import OrderedDict
-from rhodecode.lib.utils2 import AttributeDict
+from rhodecode.lib.utils2 import AttributeDict, safe_str
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model.db import Repository
 from rhodecode.model.meta import Session
@@ -47,8 +47,8 @@ def route_path(name, params=None, **kwargs):
         'repo_summary': '/{repo_name}',
         'repo_stats': '/{repo_name}/repo_stats/{commit_id}',
         'repo_refs_data': '/{repo_name}/refs-data',
-        'repo_refs_changelog_data': '/{repo_name}/refs-data-changelog'
-
+        'repo_refs_changelog_data': '/{repo_name}/refs-data-changelog',
+        'repo_creating_check': '/{repo_name}/repo_creating_check',
     }[name].format(**kwargs)
 
     if params:
@@ -259,7 +259,8 @@ class TestSummaryView(object):
 class TestRepoLocation(object):
 
     @pytest.mark.parametrize("suffix", [u'', u'ąęł'], ids=['', 'non-ascii'])
-    def test_manual_delete(self, autologin_user, backend, suffix, csrf_token):
+    def test_missing_filesystem_repo(
+            self, autologin_user, backend, suffix, csrf_token):
         repo = backend.create_repo(name_suffix=suffix)
         repo_name = repo.repo_name
 
@@ -272,13 +273,41 @@ class TestRepoLocation(object):
 
         # check if repo is not in the filesystem
         assert not repo_on_filesystem(repo_name)
-        self.assert_repo_not_found_redirect(repo_name)
 
-    def assert_repo_not_found_redirect(self, repo_name):
-        # run the check page that triggers the other flash message
-        response = self.app.get(h.url('repo_check_home', repo_name=repo_name))
-        assert_session_flash(
-            response, 'The repository at %s cannot be located.' % repo_name)
+        response = self.app.get(
+            route_path('repo_summary', repo_name=safe_str(repo_name)), status=302)
+
+        msg = 'The repository `%s` cannot be loaded in filesystem. ' \
+              'Please check if it exist, or is not damaged.' % repo_name
+        assert_session_flash(response, msg)
+
+    @pytest.mark.parametrize("suffix", [u'', u'ąęł'], ids=['', 'non-ascii'])
+    def test_missing_filesystem_repo_on_repo_check(
+            self, autologin_user, backend, suffix, csrf_token):
+        repo = backend.create_repo(name_suffix=suffix)
+        repo_name = repo.repo_name
+
+        # delete from file system
+        RepoModel()._delete_filesystem_repo(repo)
+
+        # test if the repo is still in the database
+        new_repo = RepoModel().get_by_repo_name(repo_name)
+        assert new_repo.repo_name == repo_name
+
+        # check if repo is not in the filesystem
+        assert not repo_on_filesystem(repo_name)
+
+        # flush the session
+        self.app.get(
+            route_path('repo_summary', repo_name=safe_str(repo_name)),
+            status=302)
+
+        response = self.app.get(
+            route_path('repo_creating_check', repo_name=safe_str(repo_name)),
+            status=200)
+        msg = 'The repository `%s` cannot be loaded in filesystem. ' \
+              'Please check if it exist, or is not damaged.' % repo_name
+        assert_session_flash(response, msg )
 
 
 @pytest.fixture()
@@ -288,7 +317,7 @@ def summary_view(context_stub, request_stub, user_util):
     """
     request_stub.matched_route = AttributeDict(name='test_view')
 
-    request_stub.user = user_util.create_user().AuthUser
+    request_stub.user = user_util.create_user().AuthUser()
     request_stub.db_repo = user_util.create_repo()
 
     view = RepoSummaryView(context=context_stub, request=request_stub)
@@ -384,7 +413,7 @@ class TestCreateReferenceData(object):
 
 class TestCreateFilesUrl(object):
 
-    def test_creates_non_svn_url(self, summary_view):
+    def test_creates_non_svn_url(self, app, summary_view):
         repo = mock.Mock()
         repo.name = 'abcde'
         full_repo_name = 'test-repo-group/' + repo.name
@@ -392,15 +421,15 @@ class TestCreateFilesUrl(object):
         raw_id = 'deadbeef0123456789'
         is_svn = False
 
-        with mock.patch('rhodecode.lib.helpers.url') as url_mock:
+        with mock.patch('rhodecode.lib.helpers.route_path') as url_mock:
             result = summary_view._create_files_url(
                 repo, full_repo_name, ref_name, raw_id, is_svn)
         url_mock.assert_called_once_with(
-            'files_home', repo_name=full_repo_name, f_path='',
-            revision=ref_name, at=ref_name)
+            'repo_files', repo_name=full_repo_name, commit_id=ref_name,
+            f_path='', _query=dict(at=ref_name))
         assert result == url_mock.return_value
 
-    def test_creates_svn_url(self, summary_view):
+    def test_creates_svn_url(self, app, summary_view):
         repo = mock.Mock()
         repo.name = 'abcde'
         full_repo_name = 'test-repo-group/' + repo.name
@@ -408,15 +437,15 @@ class TestCreateFilesUrl(object):
         raw_id = 'deadbeef0123456789'
         is_svn = True
 
-        with mock.patch('rhodecode.lib.helpers.url') as url_mock:
+        with mock.patch('rhodecode.lib.helpers.route_path') as url_mock:
             result = summary_view._create_files_url(
                 repo, full_repo_name, ref_name, raw_id, is_svn)
         url_mock.assert_called_once_with(
-            'files_home', repo_name=full_repo_name, f_path=ref_name,
-            revision=raw_id, at=ref_name)
+            'repo_files', repo_name=full_repo_name, f_path=ref_name,
+            commit_id=raw_id, _query=dict(at=ref_name))
         assert result == url_mock.return_value
 
-    def test_name_has_slashes(self, summary_view):
+    def test_name_has_slashes(self, app, summary_view):
         repo = mock.Mock()
         repo.name = 'abcde'
         full_repo_name = 'test-repo-group/' + repo.name
@@ -424,12 +453,12 @@ class TestCreateFilesUrl(object):
         raw_id = 'deadbeef0123456789'
         is_svn = False
 
-        with mock.patch('rhodecode.lib.helpers.url') as url_mock:
+        with mock.patch('rhodecode.lib.helpers.route_path') as url_mock:
             result = summary_view._create_files_url(
                 repo, full_repo_name, ref_name, raw_id, is_svn)
         url_mock.assert_called_once_with(
-            'files_home', repo_name=full_repo_name, f_path='', revision=raw_id,
-            at=ref_name)
+            'repo_files', repo_name=full_repo_name, commit_id=raw_id,
+            f_path='', _query=dict(at=ref_name))
         assert result == url_mock.return_value
 
 

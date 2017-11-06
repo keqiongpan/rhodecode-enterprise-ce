@@ -23,13 +23,10 @@
 Model for notifications
 """
 
-
 import logging
 import traceback
 
-from pylons.i18n.translation import _, ungettext
 from sqlalchemy.sql.expression import false, true
-from mako import exceptions
 
 import rhodecode
 from rhodecode.lib import helpers as h
@@ -37,7 +34,6 @@ from rhodecode.lib.utils import PartialRenderer
 from rhodecode.model import BaseModel
 from rhodecode.model.db import Notification, User, UserNotification
 from rhodecode.model.meta import Session
-from rhodecode.model.settings import SettingsModel
 from rhodecode.translation import TranslationString
 
 log = logging.getLogger(__name__)
@@ -166,9 +162,6 @@ class NotificationModel(BaseModel):
     def get_for_user(self, user, filter_=None):
         """
         Get mentions for given user, filter them if filter dict is given
-
-        :param user:
-        :param filter:
         """
         user = self._get_user(user)
 
@@ -177,11 +170,14 @@ class NotificationModel(BaseModel):
             .join((
                 Notification, UserNotification.notification_id ==
                 Notification.notification_id))
-
-        if filter_:
+        if filter_ == ['all']:
+            q = q  # no filter
+        elif filter_ == ['unread']:
+            q = q.filter(UserNotification.read == false())
+        elif filter_:
             q = q.filter(Notification.type_.in_(filter_))
 
-        return q.all()
+        return q
 
     def mark_read(self, user, notification):
         try:
@@ -207,7 +203,9 @@ class NotificationModel(BaseModel):
             .join((
                 Notification, UserNotification.notification_id ==
                 Notification.notification_id))
-        if filter_:
+        if filter_ == ['unread']:
+            q = q.filter(UserNotification.read == false())
+        elif filter_:
             q = q.filter(Notification.type_.in_(filter_))
 
         # this is a little inefficient but sqlalchemy doesn't support
@@ -236,12 +234,12 @@ class NotificationModel(BaseModel):
             .filter(UserNotification.notification == notification)\
             .filter(UserNotification.user == user).scalar()
 
-    def make_description(self, notification, show_age=True, translate=None):
+    def make_description(self, notification, translate, show_age=True):
         """
         Creates a human readable description based on properties
         of notification object
         """
-
+        _ = translate
         _map = {
             notification.TYPE_CHANGESET_COMMENT: [
                 _('%(user)s commented on commit %(date_or_age)s'),

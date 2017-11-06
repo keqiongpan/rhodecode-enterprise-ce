@@ -32,7 +32,7 @@
 
 <script type="text/javascript">
     // TODO: marcink switch this to pyroutes
-    AJAX_COMMENT_DELETE_URL = "${url('pullrequest_comment_delete',repo_name=c.repo_name,comment_id='__COMMENT_ID__')}";
+    AJAX_COMMENT_DELETE_URL = "${h.route_path('pullrequest_comment_delete',repo_name=c.repo_name,pull_request_id=c.pull_request.pull_request_id,comment_id='__COMMENT_ID__')}";
     templateContext.pull_request_data.pull_request_id = ${c.pull_request.pull_request_id};
 </script>
 <div class="box">
@@ -52,7 +52,7 @@
             %if c.allowed_to_update:
               <div id="delete_pullrequest" class="pull-right action_button ${'' if c.allowed_to_delete else 'disabled' }" style="clear:inherit;padding: 0">
                   % if c.allowed_to_delete:
-                      ${h.secure_form(url('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id),method='delete')}
+                      ${h.secure_form(h.route_path('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id), request=request)}
                           ${h.submit('remove_%s' % c.pull_request.pull_request_id, _('Delete'),
                         class_="btn btn-link btn-danger no-margin",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
                       ${h.end_form()}
@@ -75,7 +75,7 @@
                     ## branch link is only valid if it is a branch
                     <span class="tag">
                       %if c.pull_request.source_ref_parts.type == 'branch':
-                        <a href="${h.url('changelog_home', repo_name=c.pull_request.source_repo.repo_name, branch=c.pull_request.source_ref_parts.name)}">${c.pull_request.source_ref_parts.type}: ${c.pull_request.source_ref_parts.name}</a>
+                        <a href="${h.route_path('repo_changelog', repo_name=c.pull_request.source_repo.repo_name, _query=dict(branch=c.pull_request.source_ref_parts.name))}">${c.pull_request.source_ref_parts.type}: ${c.pull_request.source_ref_parts.name}</a>
                       %else:
                         ${c.pull_request.source_ref_parts.type}: ${c.pull_request.source_ref_parts.name}
                       %endif
@@ -86,16 +86,20 @@
                     <br/>
                     % if c.ancestor_commit:
                         ${_('Common ancestor')}:
-                        <code><a href="${h.url('changeset_home', repo_name=c.target_repo.repo_name, revision=c.ancestor_commit.raw_id)}">${h.show_id(c.ancestor_commit)}</a></code>
+                        <code><a href="${h.route_path('repo_commit', repo_name=c.target_repo.repo_name, commit_id=c.ancestor_commit.raw_id)}">${h.show_id(c.ancestor_commit)}</a></code>
                     % endif
                 </div>
-                <div class="pr-pullinfo">
-                     %if h.is_hg(c.pull_request.source_repo):
-                        <input type="text" class="input-monospace" value="hg pull -r ${h.short_id(c.source_ref)} ${c.pull_request.source_repo.clone_url()}" readonly="readonly">
-                     %elif h.is_git(c.pull_request.source_repo):
-                        <input type="text" class="input-monospace" value="git pull ${c.pull_request.source_repo.clone_url()} ${c.pull_request.source_ref_parts.name}" readonly="readonly">
-                     %endif
+                %if h.is_hg(c.pull_request.source_repo):
+                    <% clone_url = 'hg pull -r {} {}'.format(h.short_id(c.source_ref), c.pull_request.source_repo.clone_url()) %>
+                %elif h.is_git(c.pull_request.source_repo):
+                    <% clone_url = 'git pull {} {}'.format(c.pull_request.source_repo.clone_url(), c.pull_request.source_ref_parts.name) %>
+                %endif
+
+                <div class="">
+                    <input type="text" class="input-monospace pr-pullinfo" value="${clone_url}" readonly="readonly">
+                    <i class="tooltip icon-clipboard clipboard-action pull-right pr-pullinfo-copy" data-clipboard-text="${clone_url}" title="${_('Copy the pull url')}"></i>
                 </div>
+
             </div>
            </div>
            <div class="field">
@@ -107,7 +111,7 @@
                     ## branch link is only valid if it is a branch
                     <span class="tag">
                       %if c.pull_request.target_ref_parts.type == 'branch':
-                        <a href="${h.url('changelog_home', repo_name=c.pull_request.target_repo.repo_name, branch=c.pull_request.target_ref_parts.name)}">${c.pull_request.target_ref_parts.type}: ${c.pull_request.target_ref_parts.name}</a>
+                        <a href="${h.route_path('repo_changelog', repo_name=c.pull_request.target_repo.repo_name, _query=dict(branch=c.pull_request.target_ref_parts.name))}">${c.pull_request.target_ref_parts.type}: ${c.pull_request.target_ref_parts.name}</a>
                       %else:
                         ${c.pull_request.target_ref_parts.type}: ${c.pull_request.target_ref_parts.name}
                       %endif
@@ -126,17 +130,19 @@
                 </div>
                 <div class="input">
                     % if not c.pull_request.is_closed() and c.pull_request.shadow_merge_ref:
-                    <div class="pr-mergeinfo">
                         %if h.is_hg(c.pull_request.target_repo):
-                            <input type="text" class="input-monospace" value="hg clone -u ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                            <% clone_url = 'hg clone --update {} {} pull-request-{}'.format(c.pull_request.shadow_merge_ref.name, c.shadow_clone_url, c.pull_request.pull_request_id) %>
                         %elif h.is_git(c.pull_request.target_repo):
-                            <input type="text" class="input-monospace" value="git clone --branch ${c.pull_request.shadow_merge_ref.name} ${c.shadow_clone_url} pull-request-${c.pull_request.pull_request_id}" readonly="readonly">
+                            <% clone_url = 'git clone --branch {} {} pull-request-{}'.format(c.pull_request.shadow_merge_ref.name, c.shadow_clone_url, c.pull_request.pull_request_id) %>
                         %endif
-                    </div>
+                        <div class="">
+                            <input type="text" class="input-monospace pr-mergeinfo" value="${clone_url}" readonly="readonly">
+                            <i class="tooltip icon-clipboard clipboard-action pull-right pr-mergeinfo-copy" data-clipboard-text="${clone_url}" title="${_('Copy the clone url')}"></i>
+                        </div>
                     % else:
-                    <div class="">
-                        ${_('Shadow repository data not available')}.
-                    </div>
+                        <div class="">
+                            ${_('Shadow repository data not available')}.
+                        </div>
                     % endif
                 </div>
             </div>
@@ -154,7 +160,7 @@
                   %endif
                   ${h.commit_status_lbl(c.pull_request_review_status)}
                 </span>
-                - ${ungettext('calculated based on %s reviewer vote', 'calculated based on %s reviewers votes', len(c.pull_request_reviewers)) % len(c.pull_request_reviewers)}
+                - ${_ungettext('calculated based on %s reviewer vote', 'calculated based on %s reviewers votes', len(c.pull_request_reviewers)) % len(c.pull_request_reviewers)}
               %endif
             </div>
            </div>
@@ -183,9 +189,9 @@
                    <% outdated_comm_count_ver = len(c.inline_versions[c.at_version_num]['outdated']) %>
                    <% general_outdated_comm_count_ver = len(c.comment_versions[c.at_version_num]['outdated']) %>
                    <a id="show-pr-versions" class="input" onclick="return versionController.toggleVersionView(this)" href="#show-pr-versions"
-                        data-toggle-on="${ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}"
+                        data-toggle-on="${_ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}"
                         data-toggle-off="${_('Hide all versions of this pull request')}">
-                       ${ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}
+                       ${_ungettext('{} version available for this pull request, show it.', '{} versions available for this pull request, show them.', len(c.versions)).format(len(c.versions))}
                    </a>
                    <table>
                        ## SHOW ALL VERSIONS OF PR
@@ -200,7 +206,7 @@
                            <tr class="version-pr" style="display: ${display_row}">
                                <td>
                                     <code>
-                                        <a href="${h.url.current(version=ver_pr or 'latest')}">v${ver_pos}</a>
+                                        <a href="${request.current_route_path(_query=dict(version=ver_pr or 'latest'))}">v${ver_pos}</a>
                                     </code>
                                </td>
                                <td>
@@ -443,13 +449,13 @@
                               class="btn"
                               href="#"
                               onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">
-                              ${ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                              ${_ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
                           </a>
                           <a
                               class="btn"
                               href="#"
                               onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
-                              ${ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+                              ${_ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
                           </a>
                       </div>
                     </div>
@@ -513,7 +519,7 @@
                                 </td>
                                 <td class="td-hash">
                                     <code>
-                                        <a href="${h.url('changeset_home', repo_name=c.target_repo.repo_name, revision=commit.raw_id)}">
+                                        <a href="${h.route_path('repo_commit', repo_name=c.target_repo.repo_name, commit_id=commit.raw_id)}">
                                             r${commit.revision}:${h.short_id(commit.raw_id)}
                                         </a>
                                         ${h.hidden('revisions', commit.raw_id)}
@@ -616,8 +622,8 @@
         </div>
 
         ## main comment form and it status
-        ${comment.comments(h.url('pullrequest_comment', repo_name=c.repo_name,
-                                  pull_request_id=c.pull_request.pull_request_id),
+        ${comment.comments(h.route_path('pullrequest_comment_create', repo_name=c.repo_name,
+                                        pull_request_id=c.pull_request.pull_request_id),
                            c.pull_request_review_status,
                            is_pull_request=True, change_status=c.allowed_to_change_status)}
       %endif
@@ -730,7 +736,7 @@
             };
 
             refreshMergeChecks = function(){
-                var loadUrl = "${h.url.current(merge_checks=1)}";
+                var loadUrl = "${request.current_route_path(_query=dict(merge_checks=1))}";
                 $('.pull-request-merge').css('opacity', 0.3);
                 $('.action-buttons-extra').css('opacity', 0.3);
 

@@ -21,7 +21,6 @@
 import collections
 import logging
 
-
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
@@ -48,7 +47,7 @@ class OpenSourceLicensesAdminSettingsView(BaseAppView):
         c = self.load_default_context()
         c.active = 'open_source'
         c.navlist = navigation_list(self.request)
-        c.opensource_licenses = collections.OrderedDict(
-            sorted(read_opensource_licenses().items(), key=lambda t: t[0]))
+        items = sorted(read_opensource_licenses().items(), key=lambda t: t[0])
+        c.opensource_licenses = collections.OrderedDict(items)
 
         return self._get_template_context(c)

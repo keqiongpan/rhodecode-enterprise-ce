@@ -39,17 +39,15 @@
                         <a  id="compare_fork_button"
                             title="${h.tooltip(_('Compare fork with %s' % c.rhodecode_db_repo.fork.repo_name))}"
                             class="btn btn-small"
-                            href="${h.url('compare_url',
+                            href="${h.route_path('repo_compare',
                                 repo_name=c.rhodecode_db_repo.fork.repo_name,
                                 source_ref_type=c.rhodecode_db_repo.landing_rev[0],
                                 source_ref=c.rhodecode_db_repo.landing_rev[1],
-                                target_repo=c.repo_name,
                                 target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],
                                 target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1],
-                                merge=1)}"
+                                _query=dict(merge=1, target_repo=c.repo_name))}"
                         >
-                                <i class="icon-loop"></i>
-                                ${_('Compare fork with Parent (%s)' % c.rhodecode_db_repo.fork.repo_name)}
+                        ${_('Compare fork with Parent (%s)' % c.rhodecode_db_repo.fork.repo_name)}
                         </a>
                     </span>
                 %endif
@@ -57,7 +55,7 @@
                 ## pr open link
                 %if h.is_hg(c.rhodecode_repo) or h.is_git(c.rhodecode_repo):
                     <span>
-                        <a id="open_new_pull_request" class="btn btn-small btn-success" href="${h.url('pullrequest_home',repo_name=c.repo_name)}">
+                        <a id="open_new_pull_request" class="btn btn-small btn-success" href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">
                             ${_('Open new pull request')}
                         </a>
                     </span>
@@ -73,7 +71,7 @@
     </div>
 
     % if c.pagination:
-        <script type="text/javascript" src="${h.asset('js/jquery.commits-graph.js')}"></script>
+        <script type="text/javascript" src="${h.asset('js/src/plugins/jquery.commits-graph.js')}"></script>
 
         <div class="graph-header">
             <div id="filter_changelog">
@@ -85,8 +83,19 @@
                 %endif
             </div>
             ${self.breadcrumbs('breadcrumbs_light')}
+            <div class="pull-right">
+                % if h.is_hg(c.rhodecode_repo):
+                    % if c.show_hidden:
+                        <a class="action-link" href="${h.current_route_path(request, evolve=0)}">${_('Hide obsolete/hidden')}</a>
+                    % else:
+                        <a class="action-link" href="${h.current_route_path(request, evolve=1)}">${_('Show obsolete/hidden')}</a>
+                    % endif
+                % else:
+                        <span class="action-link disabled">${_('Show hidden')}</span>
+                % endif
+            </div>
             <div id="commit-counter" data-total=${c.total_cs} class="pull-right">
-                ${ungettext('showing %d out of %d commit', 'showing %d out of %d commits', c.showing_commits) % (c.showing_commits, c.total_cs)}
+                ${_ungettext('showing %d out of %d commit', 'showing %d out of %d commits', c.showing_commits) % (c.showing_commits, c.total_cs)}
             </div>
         </div>
 
@@ -105,6 +114,8 @@
                       <th colspan="2"></th>
 
                       <th>${_('Commit')}</th>
+                      ## Mercurial phase/evolve state
+                      <th></th>
                       ## commit message expand arrow
                       <th></th>
                       <th>${_('Commit Message')}</th>
@@ -161,9 +172,9 @@
                 if (selectedCheckboxes.length>0){
                     var revEnd = selectedCheckboxes[0].name;
                     var revStart = selectedCheckboxes[selectedCheckboxes.length-1].name;
-                    var url = pyroutes.url('changeset_home',
+                    var url = pyroutes.url('repo_commit',
                             {'repo_name': '${c.repo_name}',
-                             'revision': revStart+'...'+revEnd});
+                             'commit_id': revStart+'...'+revEnd});
 
                     var link = (revStart == revEnd)
                         ? _gettext('Show selected commit __S')
@@ -178,7 +189,7 @@
                         .show();
 
                     $commitRangeClear.show();
-                    var _url = pyroutes.url('pullrequest_home',
+                    var _url = pyroutes.url('pullrequest_new',
                                     {'repo_name': '${c.repo_name}',
                                      'commit': revEnd});
                     open_new_pull_request.attr('href', _url);
@@ -188,12 +199,12 @@
                     $commitRangeClear.hide();
 
                     %if c.branch_name:
-                        var _url = pyroutes.url('pullrequest_home',
+                        var _url = pyroutes.url('pullrequest_new',
                                         {'repo_name': '${c.repo_name}',
                                          'branch':'${c.branch_name}'});
                         open_new_pull_request.attr('href', _url);
                     %else:
-                        var _url = pyroutes.url('pullrequest_home',
+                        var _url = pyroutes.url('pullrequest_new',
                                         {'repo_name': '${c.repo_name}'});
                         open_new_pull_request.attr('href', _url);
                     %endif
@@ -230,7 +241,7 @@
 
             $("#clear_filter").on("click", function() {
                 var filter = {'repo_name': '${c.repo_name}'};
-                window.location = pyroutes.url('changelog_home', filter);
+                window.location = pyroutes.url('repo_changelog', filter);
             });
 
             $("#branch_filter").select2({
@@ -272,15 +283,19 @@
             });
             $('#branch_filter').on('change', function(e){
                 var data = $('#branch_filter').select2('data');
+                //type: branch_closed
                 var selected = data.text;
                 var filter = {'repo_name': '${c.repo_name}'};
                 if(data.type == 'branch' || data.type == 'branch_closed'){
                     filter["branch"] = selected;
+                    if (data.type == 'branch_closed') {
+                        filter["evolve"] = '1';
+                    }
                 }
                 else if (data.type == 'book'){
                     filter["bookmark"] = selected;
                 }
-                window.location = pyroutes.url('changelog_home', filter);
+                window.location = pyroutes.url('repo_changelog', filter);
             });
 
             commitsController = new CommitsController();
