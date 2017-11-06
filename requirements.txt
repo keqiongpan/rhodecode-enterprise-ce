@@ -14,7 +14,7 @@ click==5.1
 colander==1.4.0
 configobj==5.0.6
 cssselect==1.0.1
-decorator==4.0.11
+decorator==4.1.2
 deform==2.0.4
 docutils==0.13.1
 dogpile.cache==0.6.4
