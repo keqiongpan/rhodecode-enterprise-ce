@@ -68,13 +68,13 @@
     };
   };
   Jinja2 = super.buildPythonPackage {
-    name = "Jinja2-2.7.3";
+    name = "Jinja2-2.9.6";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [MarkupSafe];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/b0/73/eab0bca302d6d6a0b5c402f47ad1760dc9cb2dd14bbc1873ad48db258e4d/Jinja2-2.7.3.tar.gz";
-      md5 = "b9dffd2f3b43d673802fe857c8445b1a";
+      url = "https://pypi.python.org/packages/90/61/f820ff0076a2599dd39406dcb858ecb239438c02ce706c8e91131ab9c7f1/Jinja2-2.9.6.tar.gz";
+      md5 = "6411537324b4dba0956aaa8109f3c77b";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
