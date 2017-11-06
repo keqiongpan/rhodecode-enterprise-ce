@@ -11,7 +11,7 @@ celery==2.2.10
 Chameleon==2.24
 channelstream==0.5.2
 click==5.1
-colander==1.3.3
+colander==1.4.0
 configobj==5.0.6
 cssselect==1.0.1
 decorator==4.0.11
