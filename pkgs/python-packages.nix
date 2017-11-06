@@ -1807,13 +1807,13 @@
     };
   };
   six = super.buildPythonPackage {
-    name = "six-1.9.0";
+    name = "six-1.11.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/16/64/1dc5e5976b17466fd7d712e59cbe9fb1e18bec153109e5ba3ed6c9102f1a/six-1.9.0.tar.gz";
-      md5 = "476881ef4012262dfc8adc645ee786c4";
+      url = "https://pypi.python.org/packages/16/d8/bc6316cf98419719bd59c91742194c111b6f2e85abac88e496adefaf7afe/six-1.11.0.tar.gz";
+      md5 = "d12789f9baf7e9fb2524c0c64f1773f8";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
