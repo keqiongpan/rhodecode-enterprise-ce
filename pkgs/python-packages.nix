@@ -1680,13 +1680,13 @@
     };
   };
   repoze.lru = super.buildPythonPackage {
-    name = "repoze.lru-0.6";
+    name = "repoze.lru-0.7";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/6e/1e/aa15cc90217e086dc8769872c8778b409812ff036bf021b15795638939e4/repoze.lru-0.6.tar.gz";
-      md5 = "2c3b64b17a8e18b405f55d46173e14dd";
+      url = "https://pypi.python.org/packages/12/bc/595a77c4b5e204847fdf19268314ef59c85193a9dc9f83630fc459c0fee5/repoze.lru-0.7.tar.gz";
+      md5 = "c08cc030387e0b1fc53c5c7d964b35e2";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
