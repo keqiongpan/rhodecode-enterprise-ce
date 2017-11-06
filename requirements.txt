@@ -31,8 +31,8 @@ Jinja2==2.9.6
 kombu==1.5.1
 lxml==3.7.3
 Mako==1.0.7
-MarkupSafe==0.23
 Markdown==2.6.9
+MarkupSafe==1.0.0
 meld3==1.0.2
 msgpack-python==0.4.8
 MySQL-python==1.2.5

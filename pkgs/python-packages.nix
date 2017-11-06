@@ -107,13 +107,13 @@
     };
   };
   MarkupSafe = super.buildPythonPackage {
-    name = "MarkupSafe-0.23";
+    name = "MarkupSafe-1.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/c0/41/bae1254e0396c0cc8cf1751cb7d9afc90a602353695af5952530482c963f/MarkupSafe-0.23.tar.gz";
-      md5 = "f5ab3deee4c37cd6a922fb81e730da6e";
+      url = "https://pypi.python.org/packages/4d/de/32d741db316d8fdb7680822dd37001ef7a448255de9699ab4bfcbdf4172b/MarkupSafe-1.0.tar.gz";
+      md5 = "2fcedc9284d50e577b5192e8e3578355";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
