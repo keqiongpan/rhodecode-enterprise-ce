@@ -211,13 +211,13 @@
     };
   };
   SQLAlchemy = super.buildPythonPackage {
-    name = "SQLAlchemy-1.1.11";
+    name = "SQLAlchemy-1.1.15";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/59/f1/28f2205c3175e6bf32300c0f30f9d91dbc9eb910debbff3ffecb88d18528/SQLAlchemy-1.1.11.tar.gz";
-      md5 = "3de387eddb4012083a4562928c511e43";
+      url = "https://pypi.python.org/packages/c2/f6/11fcc1ce19a7cb81b1c9377f4e27ce3813265611922e355905e57c44d164/SQLAlchemy-1.1.15.tar.gz";
+      md5 = "077f9bd3339957f53068b5572a152674";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
