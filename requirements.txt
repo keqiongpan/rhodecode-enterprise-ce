@@ -23,7 +23,7 @@ ecdsa==0.13
 FormEncode==1.2.4
 future==0.14.3
 futures==3.0.2
-gnureadline==6.3.3
+gnureadline==6.3.8
 infrae.cache==1.0.1
 iso8601==0.1.11
 itsdangerous==0.24

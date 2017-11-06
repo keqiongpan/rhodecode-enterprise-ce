@@ -770,16 +770,16 @@
     };
   };
   gnureadline = super.buildPythonPackage {
-    name = "gnureadline-6.3.3";
+    name = "gnureadline-6.3.8";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/3a/ee/2c3f568b0a74974791ac590ec742ef6133e2fbd287a074ba72a53fa5e97c/gnureadline-6.3.3.tar.gz";
-      md5 = "c4af83c9a3fbeac8f2da9b5a7c60e51c";
+      url = "https://pypi.python.org/packages/50/64/86085c823cd78f9df9d8e33dce0baa71618016f8860460b82cf6610e1eb3/gnureadline-6.3.8.tar.gz";
+      md5 = "ba341f4b907250bd1f47dbc06290604f";
     };
     meta = {
-      license = [ pkgs.lib.licenses.gpl1 ];
+      license = [ { fullName = "GNU General Public License v3 (GPLv3)"; } pkgs.lib.licenses.gpl1 ];
     };
   };
   gprof2dot = super.buildPythonPackage {
