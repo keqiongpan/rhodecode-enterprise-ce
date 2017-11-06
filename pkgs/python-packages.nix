@@ -1433,13 +1433,13 @@
     };
   };
   pyramid-jinja2 = super.buildPythonPackage {
-    name = "pyramid-jinja2-2.5";
+    name = "pyramid-jinja2-2.7";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pyramid zope.deprecation Jinja2 MarkupSafe];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/a1/80/595e26ffab7deba7208676b6936b7e5a721875710f982e59899013cae1ed/pyramid_jinja2-2.5.tar.gz";
-      md5 = "07cb6547204ac5e6f0b22a954ccee928";
+      url = "https://pypi.python.org/packages/d8/80/d60a7233823de22ce77bd864a8a83736a1fe8b49884b08303a2e68b2c853/pyramid_jinja2-2.7.tar.gz";
+      md5 = "c2f8b2cd7b73a6f1d9a311fcfaf4fb92";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
