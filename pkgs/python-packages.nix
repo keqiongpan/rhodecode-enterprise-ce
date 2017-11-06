@@ -315,13 +315,13 @@
     };
   };
   WebTest = super.buildPythonPackage {
-    name = "WebTest-2.0.27";
+    name = "WebTest-2.0.29";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six WebOb waitress beautifulsoup4];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/80/fa/ca3a759985c72e3a124cbca3e1f8a2e931a07ffd31fd45d8f7bf21cb95cf/WebTest-2.0.27.tar.gz";
-      md5 = "54e6515ac71c51b6fc90179483c749ad";
+      url = "https://pypi.python.org/packages/94/de/8f94738be649997da99c47b104aa3c3984ecec51a1d8153ed09638253d56/WebTest-2.0.29.tar.gz";
+      md5 = "30b4cf0d340b9a5335fac4389e6f84fc";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -796,16 +796,16 @@
     };
   };
   gprof2dot = super.buildPythonPackage {
-    name = "gprof2dot-2016.10.13";
+    name = "gprof2dot-2017.9.19";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/a0/e0/73c71baed306f0402a00a94ffc7b2be94ad1296dfcb8b46912655b93154c/gprof2dot-2016.10.13.tar.gz";
-      md5 = "0125401f15fd2afe1df686a76c64a4fd";
+      url = "https://pypi.python.org/packages/9d/36/f977122502979f3dfb50704979c9ed70e6b620787942b089bf1af15f5aba/gprof2dot-2017.9.19.tar.gz";
+      md5 = "cda2d552bb0d0b9f16e6824a9aabd225";
     };
     meta = {
-      license = [ { fullName = "LGPL"; } ];
+      license = [ { fullName = "GNU Lesser General Public License v3 or later (LGPLv3+)"; } { fullName = "LGPL"; } ];
     };
   };
   graphviz = super.buildPythonPackage {
@@ -1485,13 +1485,13 @@
     };
   };
   pytest = super.buildPythonPackage {
-    name = "pytest-3.1.2";
+    name = "pytest-3.2.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [py setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/72/2b/2d3155e01f45a5a04427857352ee88220ee39550b2bc078f9db3190aea46/pytest-3.1.2.tar.gz";
-      md5 = "c4d179f89043cc925e1c169d03128e02";
+      url = "https://pypi.python.org/packages/53/d0/208853c09be8377e6d4de7c0df875ef7ef37189373d76a74b65b44e50528/pytest-3.2.3.tar.gz";
+      md5 = "698f8929e095a1c37876b5567943be79";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1524,13 +1524,13 @@
     };
   };
   pytest-profiling = super.buildPythonPackage {
-    name = "pytest-profiling-1.2.6";
+    name = "pytest-profiling-1.2.11";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six pytest gprof2dot];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f9/0d/df67fb9ce16c2cef201693da956321b1bccfbf9a4ead39748b9f9d1d74cb/pytest-profiling-1.2.6.tar.gz";
-      md5 = "50eb4c66c3762a2f1a49669bedc0b894";
+      url = "https://pypi.python.org/packages/c0/4a/b4aa786e93c07a86f1f87c581a36bf355a9e06a9da7e00dbd05047626bd2/pytest-profiling-1.2.11.tar.gz";
+      md5 = "9ef6b60248731be5d44477980408e8f7";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1550,13 +1550,13 @@
     };
   };
   pytest-sugar = super.buildPythonPackage {
-    name = "pytest-sugar-0.8.0";
+    name = "pytest-sugar-0.9.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pytest termcolor];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/a5/b0/b2773dee078f17773a5bf2dfad49b0be57b6354bbd84bbefe4313e509d87/pytest-sugar-0.8.0.tar.gz";
-      md5 = "8cafbdad648068e0e44b8fc5f9faae42";
+      url = "https://pypi.python.org/packages/49/d8/c5ff6cca3ce2ebd8b73eec89779bf6b4a7737456a70e8ea4d44c1ff90f71/pytest-sugar-0.9.0.tar.gz";
+      md5 = "89fbff17277fa6a95a560a04b68cb9f9";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
