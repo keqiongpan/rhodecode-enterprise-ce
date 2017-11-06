@@ -432,13 +432,13 @@
     };
   };
   bottle = super.buildPythonPackage {
-    name = "bottle-0.12.8";
+    name = "bottle-0.12.13";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/52/df/e4a408f3a7af396d186d4ecd3b389dd764f0f943b4fa8d257bfe7b49d343/bottle-0.12.8.tar.gz";
-      md5 = "13132c0a8f607bf860810a6ee9064c5b";
+      url = "https://pypi.python.org/packages/bd/99/04dc59ced52a8261ee0f965a8968717a255ea84a36013e527944dbf3468c/bottle-0.12.13.tar.gz";
+      md5 = "d2fe1b48c1d49217e78bf326b1cad437";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
