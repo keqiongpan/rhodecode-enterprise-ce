@@ -484,13 +484,13 @@
     };
   };
   click = super.buildPythonPackage {
-    name = "click-5.1";
+    name = "click-6.6";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/b7/34/a496632c4fb6c1ee76efedf77bb8d28b29363d839953d95095b12defe791/click-5.1.tar.gz";
-      md5 = "9c5323008cccfe232a8b161fc8196d41";
+      url = "https://pypi.python.org/packages/7a/00/c14926d8232b36b08218067bcd5853caefb4737cda3f0a47437151344792/click-6.6.tar.gz";
+      md5 = "d0b09582123605220ad6977175f3e51d";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
