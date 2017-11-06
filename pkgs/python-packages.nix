@@ -94,13 +94,13 @@
     };
   };
   Markdown = super.buildPythonPackage {
-    name = "Markdown-2.6.8";
+    name = "Markdown-2.6.9";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/1d/25/3f6d2cb31ec42ca5bd3bfbea99b63892b735d76e26f20dd2dcc34ffe4f0d/Markdown-2.6.8.tar.gz";
-      md5 = "d9ef057a5bd185f6f536400a31fc5d45";
+      url = "https://pypi.python.org/packages/29/82/dfe242bcfd9eec0e7bf93a80a8f8d8515a95b980c44f5c0b45606397a423/Markdown-2.6.9.tar.gz";
+      md5 = "56547d362a9abcf30955b8950b08b5e3";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
