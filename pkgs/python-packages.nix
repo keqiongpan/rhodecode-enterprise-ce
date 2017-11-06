@@ -1589,13 +1589,13 @@
     };
   };
   python-ldap = super.buildPythonPackage {
-    name = "python-ldap-2.4.40";
+    name = "python-ldap-2.4.45";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/4a/d8/7d70a7469058a3987d224061a81d778951ac2b48220bdcc511e4b1b37176/python-ldap-2.4.40.tar.gz";
-      md5 = "aea0233f7d39b0c7549fcd310deeb0e5";
+      url = "https://pypi.python.org/packages/ce/52/6b5372d0166820f4a4b0a88ed73dc7504219355049fc1d266d8ccdb7942e/python-ldap-2.4.45.tar.gz";
+      md5 = "6108e189a44eea8bc7d1cc281c222978";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
