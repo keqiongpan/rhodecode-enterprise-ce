@@ -50,6 +50,9 @@ def get_all_active_keys():
 def _generate_ssh_authorized_keys_file(
         authorized_keys_file_path, ssh_wrapper_cmd, allow_shell, ssh_opts, debug):
 
+    authorized_keys_file_path = os.path.abspath(
+        os.path.expanduser(authorized_keys_file_path))
+
     import rhodecode
     all_active_keys = get_all_active_keys()
 
@@ -59,6 +62,7 @@ def _generate_ssh_authorized_keys_file(
         ssh_wrapper_cmd = ssh_wrapper_cmd + ' --debug'
 
     if not os.path.isfile(authorized_keys_file_path):
+        log.debug('Creating file at %s', authorized_keys_file_path)
         with open(authorized_keys_file_path, 'w'):
             pass
 
