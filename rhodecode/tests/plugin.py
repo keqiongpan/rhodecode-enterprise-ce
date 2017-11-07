@@ -903,10 +903,7 @@ def pr_util(backend, request, config_stub):
     """
 
     util = PRTestUtility(backend)
-
-    @request.addfinalizer
-    def cleanup():
-        util.cleanup()
+    request.addfinalizer(util.cleanup)
 
     return util
 
