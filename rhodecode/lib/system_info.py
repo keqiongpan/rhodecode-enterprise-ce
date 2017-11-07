@@ -489,8 +489,7 @@ def svn_info():
 
 def vcs_backends():
     import rhodecode
-    value = map(
-        string.strip, rhodecode.CONFIG.get('vcs.backends', '').split(','))
+    value = rhodecode.CONFIG.get('vcs.backends')
     human_value = 'Enabled backends in order: {}'.format(','.join(value))
     return SysInfoRes(value=value, human_value=human_value)
 
