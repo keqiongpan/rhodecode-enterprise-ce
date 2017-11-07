@@ -316,27 +316,26 @@ def test_metatags_stylize(tag_data, expected_html):
 def test_gravatar_url_builder(tmpl_url, email, expected, request_stub):
     from rhodecode.lib.helpers import gravatar_url
 
-    # mock pyramid.threadlocals
-    def fake_get_current_request():
-        request_stub.scheme = 'https'
-        request_stub.host = 'server.com'
-        return request_stub
-
-    # mock pylons.tmpl_context
     def fake_tmpl_context(_url):
         _c = AttributeDict()
         _c.visual = AttributeDict()
         _c.visual.use_gravatar = True
         _c.visual.gravatar_url = _url
-
         return _c
+
+    # mock pyramid.threadlocals
+    def fake_get_current_request():
+        request_stub.scheme = 'https'
+        request_stub.host = 'server.com'
+
+        request_stub._call_context = fake_tmpl_context(tmpl_url)
+        return request_stub
 
     with mock.patch('rhodecode.lib.helpers.get_current_request',
                     fake_get_current_request):
-        fake = fake_tmpl_context(_url=tmpl_url)
-        with mock.patch('pylons.tmpl_context', fake):
-            grav = gravatar_url(email_address=email, size=24)
-            assert grav == expected
+
+        grav = gravatar_url(email_address=email, size=24)
+        assert grav == expected
 
 
 @pytest.mark.parametrize(
