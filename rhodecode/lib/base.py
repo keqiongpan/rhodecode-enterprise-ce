@@ -593,8 +593,13 @@ def add_events_routes(config):
     outside of pyramid context, we need to bootstrap request with some
     routing registered
     """
+
+    from rhodecode.apps._base import ADMIN_PREFIX
+
     config.add_route(name='home', pattern='/')
 
+    config.add_route(name='login', pattern=ADMIN_PREFIX + '/login')
+    config.add_route(name='logout', pattern=ADMIN_PREFIX + '/logout')
     config.add_route(name='repo_summary', pattern='/{repo_name}')
     config.add_route(name='repo_summary_explicit', pattern='/{repo_name}/summary')
     config.add_route(name='repo_group_home', pattern='/{repo_group_name}')
@@ -603,11 +608,23 @@ def add_events_routes(config):
                      pattern='/{repo_name}/pull-request/{pull_request_id}')
     config.add_route(name='pull_requests_global',
                      pattern='/pull-request/{pull_request_id}')
-
     config.add_route(name='repo_commit',
                      pattern='/{repo_name}/changeset/{commit_id}')
+
     config.add_route(name='repo_files',
                      pattern='/{repo_name}/files/{commit_id}/{f_path}')
+
+
+def bootstrap_config(request):
+    import pyramid.testing
+    registry = pyramid.testing.Registry('RcTestRegistry')
+    config = pyramid.testing.setUp(registry=registry, request=request)
+
+    # allow pyramid lookup in testing
+    config.include('pyramid_mako')
+
+    add_events_routes(config)
+    return config
 
 
 def bootstrap_request(**kwargs):
@@ -628,7 +645,5 @@ def bootstrap_request(**kwargs):
     request = TestRequest(**kwargs)
     request.session = TestDummySession()
 
-    config = pyramid.testing.setUp(request=request)
-    add_events_routes(config)
     return request
 

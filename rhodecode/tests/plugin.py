@@ -62,7 +62,7 @@ from rhodecode.tests import (
     login_user_session, get_new_dir, utils, TESTS_TMP_PATH,
     TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR2_LOGIN,
     TEST_USER_REGULAR_PASS)
-from rhodecode.tests.utils import CustomTestApp, set_anonymous_access, add_test_routes
+from rhodecode.tests.utils import CustomTestApp, set_anonymous_access
 from rhodecode.tests.fixture import Fixture
 
 
@@ -1665,6 +1665,15 @@ def rhodecode_fixtures():
 
 
 @pytest.fixture
+def context_stub():
+    """
+    Stub context object.
+    """
+    context = pyramid.testing.DummyResource()
+    return context
+
+
+@pytest.fixture
 def request_stub():
     """
     Stub request object.
@@ -1675,21 +1684,12 @@ def request_stub():
 
 
 @pytest.fixture
-def context_stub():
-    """
-    Stub context object.
-    """
-    context = pyramid.testing.DummyResource()
-    return context
-
-
-@pytest.fixture
 def config_stub(request, request_stub):
     """
     Set up pyramid.testing and return the Configurator.
     """
-    config = pyramid.testing.setUp(request=request_stub)
-    add_test_routes(config)
+    from rhodecode.lib.base import bootstrap_config
+    config = bootstrap_config(request=request_stub)
 
     @request.addfinalizer
     def cleanup():
