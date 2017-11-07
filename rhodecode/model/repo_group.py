@@ -680,7 +680,7 @@ class RepoGroupModel(BaseModel):
 
         from pyramid.threadlocal import get_current_request
         _render = get_current_request().get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
         c = _render.get_call_context()
         h = _render.get_helpers()
 

@@ -69,7 +69,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(self.request)
         _render = self.request.get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
 
         # pagination
 

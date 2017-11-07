@@ -204,7 +204,7 @@ class RepoModel(BaseModel):
     def get_repos_as_dict(self, repo_list=None, admin=False,
                           super_user_actions=False):
         _render = get_current_request().get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
         c = _render.get_call_context()
 
         def quick_menu(repo_name):

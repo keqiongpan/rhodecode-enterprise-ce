@@ -88,7 +88,7 @@ class RepoFeedView(RepoAppView):
 
     def _get_description(self, commit):
         _renderer = self.request.get_partial_renderer(
-            'feed/atom_feed_entry.mako')
+            'rhodecode:templates/feed/atom_feed_entry.mako')
         parsed_diff, limited_diff = self._changes(commit)
         return _renderer(
             'body',

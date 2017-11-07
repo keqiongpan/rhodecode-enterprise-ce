@@ -36,7 +36,8 @@ class PyramidPartialRenderer(object):
     Partial renderer used to render chunks of html used in datagrids
     use like::
 
-        _renderer = request.get_partial_renderer('_dt/template_base.mako')
+        _renderer = request.get_partial_renderer(
+            'rhodecode:templates/_dt/template_base.mako')
         _render('quick_menu', args, kwargs)
 
     :param tmpl_name: template path relate to /templates/ dir

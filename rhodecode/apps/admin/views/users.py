@@ -91,7 +91,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
             self.request, column_map=column_map)
 
         _render = self.request.get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
 
         def user_actions(user_id, username):
             return _render("user_actions", user_id, username)

@@ -114,7 +114,7 @@ class GistView(BaseAppView):
             c.active = 'public'
 
         _render = self.request.get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
 
         data = []
 

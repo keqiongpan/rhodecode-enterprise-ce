@@ -301,15 +301,24 @@ class EmailNotificationModel(BaseModel):
     TYPE_TEST = 'test'
 
     email_types = {
-        TYPE_MAIN: 'email_templates/main.mako',
-        TYPE_TEST: 'email_templates/test.mako',
-        TYPE_EMAIL_TEST: 'email_templates/email_test.mako',
-        TYPE_REGISTRATION: 'email_templates/user_registration.mako',
-        TYPE_PASSWORD_RESET: 'email_templates/password_reset.mako',
-        TYPE_PASSWORD_RESET_CONFIRMATION: 'email_templates/password_reset_confirmation.mako',
-        TYPE_COMMIT_COMMENT: 'email_templates/commit_comment.mako',
-        TYPE_PULL_REQUEST: 'email_templates/pull_request_review.mako',
-        TYPE_PULL_REQUEST_COMMENT: 'email_templates/pull_request_comment.mako',
+        TYPE_MAIN:
+            'rhodecode:templates/email_templates/main.mako',
+        TYPE_TEST:
+            'rhodecode:templates/email_templates/test.mako',
+        TYPE_EMAIL_TEST:
+            'rhodecode:templates/email_templates/email_test.mako',
+        TYPE_REGISTRATION:
+            'rhodecode:templates/email_templates/user_registration.mako',
+        TYPE_PASSWORD_RESET:
+            'rhodecode:templates/email_templates/password_reset.mako',
+        TYPE_PASSWORD_RESET_CONFIRMATION:
+            'rhodecode:templates/email_templates/password_reset_confirmation.mako',
+        TYPE_COMMIT_COMMENT:
+            'rhodecode:templates/email_templates/commit_comment.mako',
+        TYPE_PULL_REQUEST:
+            'rhodecode:templates/email_templates/pull_request_review.mako',
+        TYPE_PULL_REQUEST_COMMENT:
+            'rhodecode:templates/email_templates/pull_request_comment.mako',
     }
 
     def __init__(self):
