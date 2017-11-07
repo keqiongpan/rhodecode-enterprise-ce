@@ -618,12 +618,14 @@ def add_events_routes(config):
 def bootstrap_config(request):
     import pyramid.testing
     registry = pyramid.testing.Registry('RcTestRegistry')
+
     config = pyramid.testing.setUp(registry=registry, request=request)
 
     # allow pyramid lookup in testing
     config.include('pyramid_mako')
 
     add_events_routes(config)
+
     return config
 
 
@@ -637,6 +639,19 @@ def bootstrap_request(**kwargs):
 
         def translate(self, msg):
             return msg
+
+        def plularize(self, singular, plural, n):
+            return singular
+
+        def get_partial_renderer(self, tmpl_name):
+
+            from rhodecode.lib.partial_renderer import get_partial_renderer
+            return get_partial_renderer(request=self, tmpl_name=tmpl_name)
+
+        _call_context = {}
+        @property
+        def call_context(self):
+            return self._call_context
 
     class TestDummySession(pyramid.testing.DummySession):
         def save(*arg, **kw):
