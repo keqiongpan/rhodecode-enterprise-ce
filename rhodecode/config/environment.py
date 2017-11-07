@@ -25,13 +25,8 @@ Pylons environment configuration
 import os
 import logging
 import rhodecode
-import platform
-import re
-import io
 
 from mako.lookup import TemplateLookup
-from pylons.configuration import PylonsConfig
-from pylons.error import handle_mako_error
 from pyramid.settings import asbool
 
 # ------------------------------------------------------------------------------
@@ -46,18 +41,15 @@ import rhodecode.integrations           # any modules using celery task
 from rhodecode.lib import app_globals
 from rhodecode.config import utils
 from rhodecode.config.routing import make_map
-from rhodecode.config.jsroutes import generate_jsroutes_content
 
 from rhodecode.lib import helpers
-from rhodecode.lib.auth import set_available_permissions
 from rhodecode.lib.utils import (
-    repo2db_mapper, make_db_config, set_rhodecode_config,
-    load_rcextensions)
+    make_db_config, set_rhodecode_config, load_rcextensions)
 from rhodecode.lib.utils2 import str2bool, aslist
 from rhodecode.lib.vcs import connect_vcs, start_vcs_server
-from rhodecode.model.scm import ScmModel
 
 log = logging.getLogger(__name__)
+
 
 def load_environment(global_conf, app_conf, initial=False,
                      test_env=None, test_index=None):
@@ -65,6 +57,9 @@ def load_environment(global_conf, app_conf, initial=False,
     Configure the Pylons environment via the ``pylons.config``
     object
     """
+    from pylons.configuration import PylonsConfig
+    from pylons.error import handle_mako_error
+
     config = PylonsConfig()
 
 

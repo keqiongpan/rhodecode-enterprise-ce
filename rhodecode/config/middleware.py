@@ -23,11 +23,10 @@ Pylons middleware initialization
 """
 import logging
 import traceback
-from collections import OrderedDict
+import collections
 
 from paste.registry import RegistryManager
 from paste.gzipper import make_gzip_middleware
-from pylons.wsgiapp import PylonsApp
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.settings import asbool, aslist
@@ -101,6 +100,8 @@ def make_app(global_conf, static_files=True, **app_conf):
         defaults to main).
 
     """
+    from pylons.wsgiapp import PylonsApp
+
     # Apply compatibility patches
     patches.kombu_1_5_1_python_2_7_11()
     patches.inspect_getargspec()
@@ -267,7 +268,7 @@ def includeme(config):
     settings = config.registry.settings
 
     # plugin information
-    config.registry.rhodecode_plugins = OrderedDict()
+    config.registry.rhodecode_plugins = collections.OrderedDict()
 
     config.add_directive(
         'register_rhodecode_plugin', register_rhodecode_plugin)
