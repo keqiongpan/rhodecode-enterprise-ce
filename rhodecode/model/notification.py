@@ -26,11 +26,11 @@ Model for notifications
 import logging
 import traceback
 
+from pyramid.threadlocal import get_current_request
 from sqlalchemy.sql.expression import false, true
 
 import rhodecode
 from rhodecode.lib import helpers as h
-from rhodecode.lib.utils import PartialRenderer
 from rhodecode.model import BaseModel
 from rhodecode.model.db import Notification, User, UserNotification
 from rhodecode.model.meta import Session
@@ -343,9 +343,9 @@ class EmailNotificationModel(BaseModel):
     def whitespace_filter(self, text):
         return text.replace('\n', '').replace('\t', '')
 
-    def get_renderer(self, type_):
+    def get_renderer(self, type_, request):
         template_name = self.email_types[type_]
-        return PartialRenderer(template_name)
+        return request.get_partial_renderer(template_name)
 
     def render_email(self, type_, **kwargs):
         """
@@ -354,8 +354,8 @@ class EmailNotificationModel(BaseModel):
         """
         # translator and helpers inject
         _kwargs = self._update_kwargs_for_render(kwargs)
-
-        email_template = self.get_renderer(type_)
+        request = get_current_request()
+        email_template = self.get_renderer(type_, request=request)
 
         subject = email_template.render('subject', **_kwargs)
 

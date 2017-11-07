@@ -1,16 +1,35 @@
 import collections
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2010-2017 RhodeCode GmbH
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License, version 3
+# (only), as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This program is dual-licensed. If you wish to learn more about the
+# RhodeCode Enterprise Edition, including its added features, Support services,
+# and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import pytest
 
-from rhodecode.lib.utils import PartialRenderer
+from rhodecode.lib.partial_renderer import PyramidPartialRenderer
 from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.notification import EmailNotificationModel
 
 
-def test_get_template_obj(app):
+def test_get_template_obj(app, request_stub):
     template = EmailNotificationModel().get_renderer(
-        EmailNotificationModel.TYPE_TEST)
-    assert isinstance(template, PartialRenderer)
+        EmailNotificationModel.TYPE_TEST, request_stub)
+    assert isinstance(template, PyramidPartialRenderer)
 
 
 def test_render_email(app, http_host_only_stub):
