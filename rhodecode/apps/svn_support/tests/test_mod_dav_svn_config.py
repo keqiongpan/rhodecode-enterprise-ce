@@ -23,19 +23,14 @@ import os
 import mock
 import pytest
 
-from pyramid import testing
-
 from rhodecode.apps.svn_support import utils
 
 
+@pytest.mark.usefixtures('config_stub')
 class TestModDavSvnConfig(object):
 
     @classmethod
     def setup_class(cls):
-        # Make mako renderer available in tests.
-        config = testing.setUp()
-        config.include('pyramid_mako')
-
         cls.location_root = u'/location/root/çµäö'
         cls.parent_path_root = u'/parent/path/çµäö'
         cls.realm = u'Dummy Realm (äöüçµ)'
