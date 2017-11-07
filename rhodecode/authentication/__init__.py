@@ -27,7 +27,7 @@ from pyramid.authentication import SessionAuthenticationPolicy
 from rhodecode.authentication.registry import AuthenticationPluginRegistry
 from rhodecode.authentication.routes import root_factory
 from rhodecode.authentication.routes import AuthnRootResource
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.model.settings import SettingsModel
 
 

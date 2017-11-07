@@ -22,7 +22,7 @@ import mock
 import pytest
 
 import rhodecode
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.lib.utils2 import md5
 from rhodecode.model.db import RhodeCodeUi
 from rhodecode.model.meta import Session

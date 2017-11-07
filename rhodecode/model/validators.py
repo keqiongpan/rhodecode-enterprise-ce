@@ -41,7 +41,7 @@ from webhelpers.pylonslib.secure_form import authentication_token
 from rhodecode.authentication import (
     legacy_plugin_prefix, _import_legacy_plugin)
 from rhodecode.authentication.base import loadplugin
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.lib.auth import HasRepoGroupPermissionAny, HasPermissionAny
 from rhodecode.lib.utils import repo_name_slug, make_db_config
 from rhodecode.lib.utils2 import safe_int, str2bool, aslist, md5, safe_unicode

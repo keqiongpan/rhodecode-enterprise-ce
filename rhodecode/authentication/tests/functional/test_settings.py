@@ -23,7 +23,7 @@ import pytest
 
 from rhodecode.authentication.tests.conftest import (
     EnabledAuthPlugin, DisabledAuthPlugin)
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 
 
 @pytest.mark.usefixtures('autologin_user', 'app')

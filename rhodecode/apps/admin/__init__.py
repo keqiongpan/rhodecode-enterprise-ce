@@ -20,7 +20,7 @@
 
 
 from rhodecode.apps.admin.navigation import NavigationRegistry
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.lib.utils2 import str2bool
 
 

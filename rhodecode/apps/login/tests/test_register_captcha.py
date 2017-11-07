@@ -22,10 +22,10 @@
 import mock
 import pytest
 
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.apps.login.views import LoginView, CaptchaData
-from rhodecode.config.routing import ADMIN_PREFIX
-from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.settings import SettingsModel
+from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.tests.utils import AssertResponse
 
 

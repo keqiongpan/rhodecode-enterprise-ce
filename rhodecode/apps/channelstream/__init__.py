@@ -23,7 +23,7 @@ import os
 from pyramid.events import ApplicationCreated
 from pyramid.settings import asbool
 
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.lib.ext_json import json
 
 
