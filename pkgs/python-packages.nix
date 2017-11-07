@@ -1043,13 +1043,13 @@
     };
   };
   mistune = super.buildPythonPackage {
-    name = "mistune-0.8";
+    name = "mistune-0.8.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/d3/66/a45d1c7c50fd63a707cd1bd340b969523137c5284d9466c41012fe54c621/mistune-0.8.tar.gz";
-      md5 = "8bd955fe74ce37af54b16c0d9b89a2ef";
+      url = "https://pypi.python.org/packages/d6/c6/a79d71f6245a8c409a6db3ca2cb86ac657f34b3cfc92b9549b7a9489bfe0/mistune-0.8.1.tar.gz";
+      md5 = "0fba2b3858a529fc6df675dc7d534bf4";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
