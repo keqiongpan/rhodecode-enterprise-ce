@@ -74,6 +74,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         route_name='user_groups_data', request_method='GET',
         renderer='json_ext', xhr=True)
     def user_groups_list_data(self):
+        self.load_default_context()
         column_map = {
             'active': 'users_group_active',
             'description': 'user_group_description',

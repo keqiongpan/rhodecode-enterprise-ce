@@ -54,6 +54,7 @@ class HomeView(BaseAppView):
         route_name='user_autocomplete_data', request_method='GET',
         renderer='json_ext', xhr=True)
     def user_autocomplete_data(self):
+        self.load_default_context()
         query = self.request.GET.get('query')
         active = str2bool(self.request.GET.get('active') or True)
         include_groups = str2bool(self.request.GET.get('user_groups'))
@@ -87,6 +88,7 @@ class HomeView(BaseAppView):
         route_name='user_group_autocomplete_data', request_method='GET',
         renderer='json_ext', xhr=True)
     def user_group_autocomplete_data(self):
+        self.load_default_context()
         query = self.request.GET.get('query')
         active = str2bool(self.request.GET.get('active') or True)
         expand_groups = str2bool(self.request.GET.get('user_groups_expand'))
@@ -202,6 +204,7 @@ class HomeView(BaseAppView):
         renderer='json_ext', xhr=True)
     def repo_list_data(self):
         _ = self.request.translate
+        self.load_default_context()
 
         query = self.request.GET.get('query')
         repo_type = self.request.GET.get('repo_type')

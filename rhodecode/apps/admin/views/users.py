@@ -81,6 +81,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         route_name='users_data', request_method='GET',
         renderer='json_ext', xhr=True)
     def users_list_data(self):
+        self.load_default_context()
         column_map = {
             'first_name': 'name',
             'last_name': 'lastname',
