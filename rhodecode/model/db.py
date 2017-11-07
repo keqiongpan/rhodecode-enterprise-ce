@@ -1207,7 +1207,7 @@ class UserSshKeys(Base, BaseModel):
 
     ssh_key_id = Column('ssh_key_id', Integer(), nullable=False, unique=True, default=None, primary_key=True)
     ssh_key_data = Column('ssh_key_data', String(10240), nullable=False, unique=None, default=None)
-    ssh_key_fingerprint = Column('ssh_key_fingerprint', String(1024), nullable=False, unique=None, default=None)
+    ssh_key_fingerprint = Column('ssh_key_fingerprint', String(255), nullable=False, unique=None, default=None)
 
     description = Column('description', UnicodeText().with_variant(UnicodeText(1024), 'mysql'))
 
