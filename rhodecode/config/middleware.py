@@ -137,21 +137,12 @@ def make_pyramid_app(global_config, **settings):
       cases when these fragments are assembled from another place.
 
     """
-    # The edition string should be available in pylons too, so we add it here
-    # before copying the settings.
-    settings.setdefault('rhodecode.edition', 'Community Edition')
-
-    # As long as our Pylons application does expect "unprepared" settings, make
-    # sure that we keep an unmodified copy. This avoids unintentional change of
-    # behavior in the old application.
-    settings_pylons = settings.copy()
-
     sanitize_settings_and_apply_defaults(settings)
 
     config = Configurator(settings=settings)
     load_pyramid_environment(global_config, settings)
 
-    add_pylons_compat_data(config.registry, global_config, settings_pylons)
+    add_pylons_compat_data(config.registry, global_config, settings.copy())
 
     includeme_first(config)
     includeme(config)
@@ -283,11 +274,6 @@ def includeme(config):
 
     if asbool(settings.get('appenlight', 'false')):
         config.include('appenlight_client.ext.pyramid_tween')
-
-    if 'mako.default_filters' not in settings:
-        # set custom default filters if we don't have it defined
-        settings['mako.imports'] = 'from rhodecode.lib.base import h_filter'
-        settings['mako.default_filters'] = 'h_filter'
 
     # Includes which are required. The application would fail without them.
     config.include('pyramid_mako')
@@ -452,16 +438,21 @@ def sanitize_settings_and_apply_defaults(settings):
     function.
     """
 
-    # Pyramid's mako renderer has to search in the templates folder so that the
-    # old templates still work. Ported and new templates are expected to use
-    # real asset specifications for the includes.
-    mako_directories = settings.setdefault('mako.directories', [
-        # Base templates of the original Pylons application
-        'rhodecode:templates',
-    ])
-    log.debug(
-        "Using the following Mako template directories: %s",
-        mako_directories)
+    settings.setdefault('rhodecode.edition', 'Community Edition')
+
+    if 'mako.default_filters' not in settings:
+        # set custom default filters if we don't have it defined
+        settings['mako.imports'] = 'from rhodecode.lib.base import h_filter'
+        settings['mako.default_filters'] = 'h_filter'
+
+    if 'mako.directories' not in settings:
+        mako_directories = settings.setdefault('mako.directories', [
+            # Base templates of the original application
+            'rhodecode:templates',
+        ])
+        log.debug(
+            "Using the following Mako template directories: %s",
+            mako_directories)
 
     # Default includes, possible to change as a user
     pyramid_includes = settings.setdefault('pyramid.includes', [
