@@ -126,11 +126,11 @@ class NavigationRegistry(object):
         return navlist
 
 
-def navigation_registry(request):
+def navigation_registry(request, registry=None):
     """
     Helper that returns the admin navigation registry.
     """
-    pyramid_registry = get_registry(request)
+    pyramid_registry = registry or get_registry(request)
     nav_registry = pyramid_registry.queryUtility(IAdminNavigationRegistry)
     return nav_registry
 
