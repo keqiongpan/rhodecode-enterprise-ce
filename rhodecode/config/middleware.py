@@ -18,9 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-Pylons middleware initialization
-"""
 import logging
 import traceback
 import collections
@@ -266,6 +263,28 @@ def error_handler(exception, request):
     return response
 
 
+def includeme_first(config):
+    # redirect automatic browser favicon.ico requests to correct place
+    def favicon_redirect(context, request):
+        return HTTPFound(
+            request.static_path('rhodecode:public/images/favicon.ico'))
+
+    config.add_view(favicon_redirect, route_name='favicon')
+    config.add_route('favicon', '/favicon.ico')
+
+    def robots_redirect(context, request):
+        return HTTPFound(
+            request.static_path('rhodecode:public/robots.txt'))
+
+    config.add_view(robots_redirect, route_name='robots')
+    config.add_route('robots', '/robots.txt')
+
+    config.add_static_view(
+        '_static/deform', 'deform:static')
+    config.add_static_view(
+        '_static/rhodecode', path='rhodecode:public', cache_max_age=3600 * 24)
+
+
 def includeme(config):
     settings = config.registry.settings
 
@@ -320,15 +339,16 @@ def includeme(config):
     config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
     config.add_subscriber(write_js_routes_if_enabled, ApplicationCreated)
 
-    config.add_request_method(
-        'rhodecode.lib.partial_renderer.get_partial_renderer',
-        'get_partial_renderer')
-
     # events
     # TODO(marcink): this should be done when pyramid migration is finished
     # config.add_subscriber(
     #     'rhodecode.integrations.integrations_event_handler',
     #     'rhodecode.events.RhodecodeEvent')
+
+    # request custom methods
+    config.add_request_method(
+        'rhodecode.lib.partial_renderer.get_partial_renderer',
+        'get_partial_renderer')
 
     # Set the authorization policy.
     authz_policy = ACLAuthorizationPolicy()
@@ -357,28 +377,6 @@ def includeme(config):
         config.add_view(error_handler, context=Exception)
 
     config.add_view(error_handler, context=HTTPError)
-
-
-def includeme_first(config):
-    # redirect automatic browser favicon.ico requests to correct place
-    def favicon_redirect(context, request):
-        return HTTPFound(
-            request.static_path('rhodecode:public/images/favicon.ico'))
-
-    config.add_view(favicon_redirect, route_name='favicon')
-    config.add_route('favicon', '/favicon.ico')
-
-    def robots_redirect(context, request):
-        return HTTPFound(
-            request.static_path('rhodecode:public/robots.txt'))
-
-    config.add_view(robots_redirect, route_name='robots')
-    config.add_route('robots', '/robots.txt')
-
-    config.add_static_view(
-        '_static/deform', 'deform:static')
-    config.add_static_view(
-        '_static/rhodecode', path='rhodecode:public', cache_max_age=3600 * 24)
 
 
 def wrap_app_in_wsgi_middlewares(pyramid_app, config):
