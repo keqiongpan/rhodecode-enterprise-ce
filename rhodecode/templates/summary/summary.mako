@@ -102,11 +102,12 @@ $(document).ready(function(){
     // on change of download options
     $('#download_options').on('change', function(e) {
         // format of Object {text: "v0.0.3", type: "tag", id: "rev"}
+        var ext = '.zip';
         var selected_cs = e.added;
-        var fname= e.added.raw_id + ".zip";
+        var fname = e.added.raw_id + ext;
         var href = pyroutes.url('repo_archivefile', {'repo_name': templateContext.repo_name, 'fname':fname});
         // set new label
-        $('#archive_link').html('<i class="icon-archive"></i> '+ e.added.text+".zip");
+        $('#archive_link').html('<i class="icon-archive"></i> {0}{1}'.format(escapeHtml(e.added.text), ext));
 
         // set new url to button,
         $('#archive_link').attr('href', href)
