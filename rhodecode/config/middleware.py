@@ -145,7 +145,9 @@ def make_pyramid_app(global_config, **settings):
 
     add_pylons_compat_data(config.registry, global_config, settings.copy())
 
+    # Static file view comes first
     includeme_first(config)
+
     includeme(config)
 
     pyramid_app = config.make_wsgi_app()

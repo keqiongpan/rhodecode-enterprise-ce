@@ -241,11 +241,6 @@ def make_map(config):
         m.connect('admin_settings_search', '/settings/search',
                   action='settings_search', conditions={'method': ['GET']})
 
-        m.connect('admin_settings_supervisor', '/settings/supervisor',
-                  action='settings_supervisor', conditions={'method': ['GET']})
-        m.connect('admin_settings_supervisor_log', '/settings/supervisor/{procid}/log',
-                  action='settings_supervisor_log', conditions={'method': ['GET']})
-
         m.connect('admin_settings_labs', '/settings/labs',
                   action='settings_labs_update',
                   conditions={'method': ['POST']})

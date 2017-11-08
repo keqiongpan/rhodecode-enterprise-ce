@@ -47,7 +47,6 @@ from rhodecode.lib.celerylib import tasks, run_task
 from rhodecode.lib.utils import repo2db_mapper
 from rhodecode.lib.utils2 import (
     str2bool, safe_unicode, AttributeDict, safe_int)
-from rhodecode.lib.compat import OrderedDict
 
 from rhodecode.model.db import RhodeCodeUi, Repository
 from rhodecode.model.forms import ApplicationSettingsForm, \
@@ -61,8 +60,6 @@ from rhodecode.model.meta import Session
 from rhodecode.model.settings import (
     IssueTrackerSettingsModel, VcsSettingsModel, SettingNotFound,
     SettingsModel)
-
-from rhodecode.model.supervisor import SupervisorModel, SUPERVISOR_MASTER
 
 
 log = logging.getLogger(__name__)
@@ -541,69 +538,6 @@ class SettingsController(BaseController):
         from rhodecode.lib.index import searcher_from_config
         searcher = searcher_from_config(config)
         c.statistics = searcher.statistics()
-
-        return render('admin/settings/settings.mako')
-
-    @HasPermissionAllDecorator('hg.admin')
-    def settings_supervisor(self):
-        c.rhodecode_ini = rhodecode.CONFIG
-        c.active = 'supervisor'
-
-        c.supervisor_procs = OrderedDict([
-            (SUPERVISOR_MASTER, {}),
-        ])
-
-        c.log_size = 10240
-        supervisor = SupervisorModel()
-
-        _connection = supervisor.get_connection(
-            c.rhodecode_ini.get('supervisor.uri'))
-        c.connection_error = None
-        try:
-            _connection.supervisor.getAllProcessInfo()
-        except Exception as e:
-            c.connection_error = str(e)
-            log.exception("Exception reading supervisor data")
-            return render('admin/settings/settings.mako')
-
-        groupid = c.rhodecode_ini.get('supervisor.group_id')
-
-        # feed our group processes to the main
-        for proc in supervisor.get_group_processes(_connection, groupid):
-            c.supervisor_procs[proc['name']] = {}
-
-        for k in c.supervisor_procs.keys():
-            try:
-                # master process info
-                if k == SUPERVISOR_MASTER:
-                    _data = supervisor.get_master_state(_connection)
-                    _data['name'] = 'supervisor master'
-                    _data['description'] = 'pid %s, id: %s, ver: %s' % (
-                        _data['pid'], _data['id'], _data['ver'])
-                    c.supervisor_procs[k] = _data
-                else:
-                    procid = groupid + ":" + k
-                    c.supervisor_procs[k] = supervisor.get_process_info(_connection, procid)
-            except Exception as e:
-                log.exception("Exception reading supervisor data")
-                c.supervisor_procs[k] = {'_rhodecode_error': str(e)}
-
-        return render('admin/settings/settings.mako')
-
-    @HasPermissionAllDecorator('hg.admin')
-    def settings_supervisor_log(self, procid):
-        import rhodecode
-        c.rhodecode_ini = rhodecode.CONFIG
-        c.active = 'supervisor_tail'
-
-        supervisor = SupervisorModel()
-        _connection = supervisor.get_connection(c.rhodecode_ini.get('supervisor.uri'))
-        groupid = c.rhodecode_ini.get('supervisor.group_id')
-        procid = groupid + ":" + procid if procid != SUPERVISOR_MASTER else procid
-
-        c.log_size = 10240
-        offset = abs(safe_int(request.GET.get('offset', c.log_size))) * -1
-        c.log = supervisor.read_process_log(_connection, procid, offset, 0)
 
         return render('admin/settings/settings.mako')
 
