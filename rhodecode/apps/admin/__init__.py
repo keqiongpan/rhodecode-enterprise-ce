@@ -19,7 +19,6 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-from rhodecode.apps.admin.navigation import NavigationRegistry
 from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.lib.utils2 import str2bool
 
@@ -310,12 +309,10 @@ def admin_routes(config):
 
 
 def includeme(config):
-    settings = config.get_settings()
+    from rhodecode.apps.admin.navigation import includeme as nav_includeme
 
     # Create admin navigation registry and add it to the pyramid registry.
-    labs_active = str2bool(settings.get('labs_settings_active', False))
-    navigation_registry = NavigationRegistry(labs_active=labs_active)
-    config.registry.registerUtility(navigation_registry)
+    nav_includeme(config)
 
     # main admin routes
     config.add_route(name='admin_home', pattern=ADMIN_PREFIX)

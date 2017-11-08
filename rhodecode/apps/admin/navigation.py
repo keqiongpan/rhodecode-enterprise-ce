@@ -26,6 +26,7 @@ from zope.interface import implementer
 
 from rhodecode.apps.admin.interfaces import IAdminNavigationRegistry
 from rhodecode.lib.utils import get_registry
+from rhodecode.lib.utils2 import str2bool
 from rhodecode.translation import _
 
 
@@ -137,3 +138,11 @@ def navigation_list(request):
     Helper that returns the admin navigation as list of NavListEntry objects.
     """
     return navigation_registry(request).get_navlist(request)
+
+
+def includeme(config):
+    # Create admin navigation registry and add it to the pyramid registry.
+    settings = config.get_settings()
+    labs_active = str2bool(settings.get('labs_settings_active', False))
+    navigation_registry = NavigationRegistry(labs_active=labs_active)
+    config.registry.registerUtility(navigation_registry)
