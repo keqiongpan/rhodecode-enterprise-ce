@@ -187,6 +187,14 @@ def test_age_in_future(age_args, expected, kw, pylonsapp):
 
 
 @pytest.mark.parametrize("sample, expected_tags", [
+    # entry
+    ((
+             ""
+     ),
+     [
+
+     ]),
+    # entry
     ((
         "hello world [stale]"
      ),

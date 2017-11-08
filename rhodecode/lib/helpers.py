@@ -978,10 +978,10 @@ def extract_metatags(value):
     """
     Extract supported meta-tags from given text value
     """
-    if not value:
-        return ''
-
     tags = []
+    if not value:
+        return tags, ''
+
     for key, val in tags_paterns.items():
         pat, replace_html = val
         tags.extend([(key, x.group()) for x in pat.finditer(value)])
