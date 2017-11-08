@@ -109,9 +109,9 @@ class NavigationRegistry(object):
     _labs_entry = NavEntry('labs', _('Labs'), 'admin_settings_labs')
 
     def __init__(self, labs_active=False):
-        self._registered_entries = collections.OrderedDict([
-            (item.key, item) for item in self.__class__._base_entries
-        ])
+        self._registered_entries = collections.OrderedDict()
+        for item in self.__class__._base_entries:
+            self._registered_entries[item.key] = item
 
         if labs_active:
             self.add_entry(self._labs_entry)
