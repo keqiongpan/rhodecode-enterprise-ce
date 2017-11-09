@@ -24,8 +24,7 @@ Database migration modules
 
 import logging
 
-from rhodecode.lib.utils import BasePasterCommand, Command, add_cache
-from rhodecode.lib.db_manage import DbManage
+from rhodecode.lib.utils import BasePasterCommand, Command
 
 log = logging.getLogger(__name__)
 
@@ -44,15 +43,9 @@ class UpgradeDb(BasePasterCommand):
     parser = Command.standard_parser(verbose=True)
 
     def command(self):
-        from pylons import config
-        add_cache(config)
-        self.logging_file_config(self.path_to_ini_file)
-
-        db_uri = config['sqlalchemy.db1.url']
-        dbmanage = DbManage(log_sql=True, dbconf=db_uri,
-                            root=config['here'], tests=False,
-                            cli_args=self.options.__dict__)
-        dbmanage.upgrade()
+        from rhodecode.lib.rc_commands import upgrade_db
+        upgrade_db.command(
+            self.path_to_ini_file, self.options.__dict__.get('force_ask'))
 
     def update_parser(self):
         self.parser.add_option('--sql',
