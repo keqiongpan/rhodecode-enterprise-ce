@@ -27,12 +27,84 @@ from rhodecode.lib.utils2 import md5
 from rhodecode.model.db import RhodeCodeUi
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel, IssueTrackerSettingsModel
-from rhodecode.tests import url, assert_session_flash
+from rhodecode.tests import assert_session_flash
 from rhodecode.tests.utils import AssertResponse
 
 
 UPDATE_DATA_QUALNAME = (
     'rhodecode.apps.admin.views.system_info.AdminSystemInfoSettingsView.get_update_data')
+
+
+def route_path(name, params=None, **kwargs):
+    import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
+
+    base_url = {
+
+        'admin_settings':
+            ADMIN_PREFIX +'/settings',
+        'admin_settings_update':
+            ADMIN_PREFIX + '/settings/update',
+        'admin_settings_global':
+            ADMIN_PREFIX + '/settings/global',
+        'admin_settings_global_update':
+            ADMIN_PREFIX + '/settings/global/update',
+        'admin_settings_vcs':
+            ADMIN_PREFIX + '/settings/vcs',
+        'admin_settings_vcs_update':
+            ADMIN_PREFIX + '/settings/vcs/update',
+        'admin_settings_vcs_svn_pattern_delete':
+            ADMIN_PREFIX + '/settings/vcs/svn_pattern_delete',
+        'admin_settings_mapping':
+            ADMIN_PREFIX + '/settings/mapping',
+        'admin_settings_mapping_update':
+            ADMIN_PREFIX + '/settings/mapping/update',
+        'admin_settings_visual':
+            ADMIN_PREFIX + '/settings/visual',
+        'admin_settings_visual_update':
+            ADMIN_PREFIX + '/settings/visual/update',
+        'admin_settings_issuetracker':
+            ADMIN_PREFIX + '/settings/issue-tracker',
+        'admin_settings_issuetracker_update':
+            ADMIN_PREFIX + '/settings/issue-tracker/update',
+        'admin_settings_issuetracker_test':
+            ADMIN_PREFIX + '/settings/issue-tracker/test',
+        'admin_settings_issuetracker_delete':
+            ADMIN_PREFIX + '/settings/issue-tracker/delete',
+        'admin_settings_email':
+            ADMIN_PREFIX + '/settings/email',
+        'admin_settings_email_update':
+            ADMIN_PREFIX + '/settings/email/update',
+        'admin_settings_hooks':
+            ADMIN_PREFIX + '/settings/hooks',
+        'admin_settings_hooks_update':
+            ADMIN_PREFIX + '/settings/hooks/update',
+        'admin_settings_hooks_delete':
+            ADMIN_PREFIX + '/settings/hooks/delete',
+        'admin_settings_search':
+            ADMIN_PREFIX + '/settings/search',
+        'admin_settings_labs':
+            ADMIN_PREFIX + '/settings/labs',
+        'admin_settings_labs_update':
+            ADMIN_PREFIX + '/settings/labs/update',
+
+        'admin_settings_sessions':
+            ADMIN_PREFIX + '/settings/sessions',
+        'admin_settings_sessions_cleanup':
+            ADMIN_PREFIX + '/settings/sessions/cleanup',
+        'admin_settings_system':
+            ADMIN_PREFIX + '/settings/system',
+        'admin_settings_system_update':
+            ADMIN_PREFIX + '/settings/system/updates',
+        'admin_settings_open_source':
+            ADMIN_PREFIX + '/settings/open_source',
+
+
+    }[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url
 
 
 @pytest.mark.usefixtures('autologin_user', 'app')
@@ -47,12 +119,12 @@ class TestAdminSettingsController(object):
         'admin_settings_hooks',
         'admin_settings_search',
     ])
-    def test_simple_get(self, urlname, app):
-        app.get(url(urlname))
+    def test_simple_get(self, urlname):
+        self.app.get(route_path(urlname))
 
     def test_create_custom_hook(self, csrf_token):
         response = self.app.post(
-            url('admin_settings_hooks'),
+            route_path('admin_settings_hooks_update'),
             params={
                 'new_hook_ui_key': 'test_hooks_1',
                 'new_hook_ui_value': 'cd /tmp',
@@ -64,7 +136,7 @@ class TestAdminSettingsController(object):
 
     def test_create_custom_hook_delete(self, csrf_token):
         response = self.app.post(
-            url('admin_settings_hooks'),
+            route_path('admin_settings_hooks_update'),
             params={
                 'new_hook_ui_key': 'test_hooks_2',
                 'new_hook_ui_value': 'cd /tmp2',
@@ -78,9 +150,9 @@ class TestAdminSettingsController(object):
 
         # delete
         self.app.post(
-            url('admin_settings_hooks'),
+            route_path('admin_settings_hooks_delete'),
             params={'hook_id': hook_id, 'csrf_token': csrf_token})
-        response = self.app.get(url('admin_settings_hooks'))
+        response = self.app.get(route_path('admin_settings_hooks'))
         response.mustcontain(no=['test_hooks_2'])
         response.mustcontain(no=['cd /tmp2'])
 
@@ -135,7 +207,6 @@ class TestAdminSettingsGlobal(object):
 
     def test_title_change(self, csrf_token):
         old_title = 'RhodeCode'
-        new_title = old_title + '_changed'
 
         for new_title in ['Changed', 'Żółwik', old_title]:
             response = self.post_and_verify_settings({
@@ -161,7 +232,8 @@ class TestAdminSettingsGlobal(object):
             'rhodecode_personal_repo_group_pattern': '${username}',
         }
         params.update(settings)
-        response = self.app.post(url('admin_settings_global'), params=params)
+        response = self.app.post(
+            route_path('admin_settings_global_update'), params=params)
 
         assert_session_flash(response, 'Updated application settings')
         app_settings = SettingsModel().get_all_settings()
@@ -175,8 +247,8 @@ class TestAdminSettingsGlobal(object):
 @pytest.mark.usefixtures('autologin_user', 'app')
 class TestAdminSettingsVcs(object):
 
-    def test_contains_svn_default_patterns(self, app):
-        response = app.get(url('admin_settings_vcs'))
+    def test_contains_svn_default_patterns(self):
+        response = self.app.get(route_path('admin_settings_vcs'))
         expected_patterns = [
             '/trunk',
             '/branches/*',
@@ -186,7 +258,7 @@ class TestAdminSettingsVcs(object):
             response.mustcontain(pattern)
 
     def test_add_new_svn_branch_and_tag_pattern(
-            self, app, backend_svn, form_defaults, disable_sql_cache,
+            self, backend_svn, form_defaults, disable_sql_cache,
             csrf_token):
         form_defaults.update({
             'new_svn_branch': '/exp/branches/*',
@@ -194,8 +266,9 @@ class TestAdminSettingsVcs(object):
             'csrf_token': csrf_token,
         })
 
-        response = app.post(
-            url('admin_settings_vcs'), params=form_defaults, status=302)
+        response = self.app.post(
+            route_path('admin_settings_vcs_update'),
+            params=form_defaults, status=302)
         response = response.follow()
 
         # Expect to find the new values on the page
@@ -208,12 +281,12 @@ class TestAdminSettingsVcs(object):
         assert 'important_tags/v0.5' in repo.tags
 
     def test_add_same_svn_value_twice_shows_an_error_message(
-            self, app, form_defaults, csrf_token, settings_util):
+            self, form_defaults, csrf_token, settings_util):
         settings_util.create_rhodecode_ui('vcs_svn_branch', '/test')
         settings_util.create_rhodecode_ui('vcs_svn_tag', '/test')
 
-        response = app.post(
-            url('admin_settings_vcs'),
+        response = self.app.post(
+            route_path('admin_settings_vcs_update'),
             params={
                 'paths_root_path': form_defaults['paths_root_path'],
                 'new_svn_branch': '/test',
@@ -230,14 +303,13 @@ class TestAdminSettingsVcs(object):
         'vcs_svn_tag',
     ])
     def test_delete_svn_patterns(
-            self, section, app, csrf_token, settings_util):
+            self, section, csrf_token, settings_util):
         setting = settings_util.create_rhodecode_ui(
             section, '/test_delete', cleanup=False)
 
-        app.post(
-            url('admin_settings_vcs'),
+        self.app.post(
+            route_path('admin_settings_vcs_svn_pattern_delete'),
             params={
-                '_method': 'delete',
                 'delete_svn_pattern': setting.ui_id,
                 'csrf_token': csrf_token},
             headers={'X-REQUESTED-WITH': 'XMLHttpRequest'})
@@ -246,25 +318,24 @@ class TestAdminSettingsVcs(object):
         'vcs_svn_branch',
         'vcs_svn_tag',
     ])
-    def test_delete_svn_patterns_raises_400_when_no_xhr(
-            self, section, app, csrf_token, settings_util):
+    def test_delete_svn_patterns_raises_404_when_no_xhr(
+            self, section, csrf_token, settings_util):
         setting = settings_util.create_rhodecode_ui(section, '/test_delete')
 
-        app.post(
-            url('admin_settings_vcs'),
+        self.app.post(
+            route_path('admin_settings_vcs_svn_pattern_delete'),
             params={
-                '_method': 'delete',
                 'delete_svn_pattern': setting.ui_id,
                 'csrf_token': csrf_token},
-            status=400)
+            status=404)
 
-    def test_extensions_hgsubversion(self, app, form_defaults, csrf_token):
+    def test_extensions_hgsubversion(self, form_defaults, csrf_token):
         form_defaults.update({
             'csrf_token': csrf_token,
             'extensions_hgsubversion': 'True',
         })
-        response = app.post(
-            url('admin_settings_vcs'),
+        response = self.app.post(
+            route_path('admin_settings_vcs_update'),
             params=form_defaults,
             status=302)
 
@@ -275,13 +346,13 @@ class TestAdminSettingsVcs(object):
             'value="True" checked="checked" />')
         response.mustcontain(extensions_input)
 
-    def test_extensions_hgevolve(self, app, form_defaults, csrf_token):
+    def test_extensions_hgevolve(self, form_defaults, csrf_token):
         form_defaults.update({
             'csrf_token': csrf_token,
             'extensions_evolve': 'True',
         })
-        response = app.post(
-            url('admin_settings_vcs'),
+        response = self.app.post(
+            route_path('admin_settings_vcs_update'),
             params=form_defaults,
             status=302)
 
@@ -292,20 +363,19 @@ class TestAdminSettingsVcs(object):
             'value="True" checked="checked" />')
         response.mustcontain(extensions_input)
 
-    def test_has_a_section_for_pull_request_settings(self, app):
-        response = app.get(url('admin_settings_vcs'))
+    def test_has_a_section_for_pull_request_settings(self):
+        response = self.app.get(route_path('admin_settings_vcs'))
         response.mustcontain('Pull Request Settings')
 
-    def test_has_an_input_for_invalidation_of_inline_comments(
-            self, app):
-        response = app.get(url('admin_settings_vcs'))
+    def test_has_an_input_for_invalidation_of_inline_comments(self):
+        response = self.app.get(route_path('admin_settings_vcs'))
         assert_response = AssertResponse(response)
         assert_response.one_element_exists(
             '[name=rhodecode_use_outdated_comments]')
 
     @pytest.mark.parametrize('new_value', [True, False])
     def test_allows_to_change_invalidation_of_inline_comments(
-            self, app, form_defaults, csrf_token, new_value):
+            self, form_defaults, csrf_token, new_value):
         setting_key = 'use_outdated_comments'
         setting = SettingsModel().create_or_update_setting(
             setting_key, not new_value, 'bool')
@@ -316,8 +386,8 @@ class TestAdminSettingsVcs(object):
             'csrf_token': csrf_token,
             'rhodecode_use_outdated_comments': str(new_value),
         })
-        response = app.post(
-            url('admin_settings_vcs'),
+        response = self.app.post(
+            route_path('admin_settings_vcs_update'),
             params=form_defaults,
             status=302)
         response = response.follow()
@@ -326,7 +396,7 @@ class TestAdminSettingsVcs(object):
 
     @pytest.mark.parametrize('new_value', [True, False])
     def test_allows_to_change_hg_rebase_merge_strategy(
-            self, app, form_defaults, csrf_token, new_value):
+            self, form_defaults, csrf_token, new_value):
         setting_key = 'hg_use_rebase_for_merging'
 
         form_defaults.update({
@@ -336,8 +406,8 @@ class TestAdminSettingsVcs(object):
 
         with mock.patch.dict(
                 rhodecode.CONFIG, {'labs_settings_active': 'true'}):
-            app.post(
-                url('admin_settings_vcs'),
+            self.app.post(
+                route_path('admin_settings_vcs_update'),
                 params=form_defaults,
                 status=302)
 
@@ -353,9 +423,8 @@ class TestAdminSettingsVcs(object):
 
     @pytest.fixture
     def form_defaults(self):
-        from rhodecode.controllers.admin.settings import SettingsController
-        controller = SettingsController()
-        return controller._form_defaults()
+        from rhodecode.apps.admin.views.settings import AdminSettingsView
+        return AdminSettingsView._form_defaults()
 
     # TODO: johbo: What we really want is to checkpoint before a test run and
     # reset the session afterwards.
@@ -374,14 +443,16 @@ class TestAdminSettingsVcs(object):
 @pytest.mark.usefixtures('autologin_user', 'app')
 class TestLabsSettings(object):
     def test_get_settings_page_disabled(self):
-        with mock.patch.dict(rhodecode.CONFIG,
-                             {'labs_settings_active': 'false'}):
-            response = self.app.get(url('admin_settings_labs'), status=302)
+        with mock.patch.dict(
+                rhodecode.CONFIG, {'labs_settings_active': 'false'}):
 
-        assert response.location.endswith(url('admin_settings'))
+            response = self.app.get(
+                route_path('admin_settings_labs'), status=302)
+
+        assert response.location.endswith(route_path('admin_settings'))
 
     def test_get_settings_page_enabled(self):
-        from rhodecode.controllers.admin import settings
+        from rhodecode.apps.admin.views import settings
         lab_settings = [
             settings.LabSetting(
                 key='rhodecode_bool',
@@ -401,7 +472,7 @@ class TestLabsSettings(object):
         with mock.patch.dict(rhodecode.CONFIG,
                              {'labs_settings_active': 'true'}):
             with mock.patch.object(settings, '_LAB_SETTINGS', lab_settings):
-                response = self.app.get(url('admin_settings_labs'))
+                response = self.app.get(route_path('admin_settings_labs'))
 
         assert '<label>bool group:</label>' in response
         assert '<label for="rhodecode_bool">bool label</label>' in response
@@ -417,9 +488,6 @@ class TestLabsSettings(object):
 @pytest.mark.usefixtures('app')
 class TestOpenSourceLicenses(object):
 
-    def _get_url(self):
-        return ADMIN_PREFIX + '/settings/open_source'
-
     def test_records_are_displayed(self, autologin_user):
         sample_licenses = {
             "python2.7-pytest-2.7.1": {
@@ -433,7 +501,8 @@ class TestOpenSourceLicenses(object):
             'rhodecode.apps.admin.views.open_source_licenses.read_opensource_licenses',
             return_value=sample_licenses)
         with read_licenses_patch:
-            response = self.app.get(self._get_url(), status=200)
+            response = self.app.get(
+                route_path('admin_settings_open_source'), status=200)
 
         assert_response = AssertResponse(response)
         assert_response.element_contains(
@@ -444,29 +513,25 @@ class TestOpenSourceLicenses(object):
                 assert_response.element_contains('.panel-body', license)
 
     def test_records_can_be_read(self, autologin_user):
-        response = self.app.get(self._get_url(), status=200)
+        response = self.app.get(
+            route_path('admin_settings_open_source'), status=200)
         assert_response = AssertResponse(response)
         assert_response.element_contains(
             '.panel-heading', 'Licenses of Third Party Packages')
 
     def test_forbidden_when_normal_user(self, autologin_regular_user):
-        self.app.get(self._get_url(), status=404)
+        self.app.get(
+            route_path('admin_settings_open_source'), status=404)
 
 
 @pytest.mark.usefixtures('app')
 class TestUserSessions(object):
 
-    def _get_url(self, name='admin_settings_sessions'):
-        return {
-            'admin_settings_sessions': ADMIN_PREFIX + '/settings/sessions',
-            'admin_settings_sessions_cleanup': ADMIN_PREFIX + '/settings/sessions/cleanup'
-        }[name]
-
     def test_forbidden_when_normal_user(self, autologin_regular_user):
-        self.app.get(self._get_url(), status=404)
+        self.app.get(route_path('admin_settings_sessions'), status=404)
 
     def test_show_sessions_page(self, autologin_user):
-        response = self.app.get(self._get_url(), status=200)
+        response = self.app.get(route_path('admin_settings_sessions'), status=200)
         response.mustcontain('file')
 
     def test_cleanup_old_sessions(self, autologin_user, csrf_token):
@@ -476,24 +541,19 @@ class TestUserSessions(object):
             'expire_days': '60'
         }
         response = self.app.post(
-            self._get_url('admin_settings_sessions_cleanup'), params=post_data,
+            route_path('admin_settings_sessions_cleanup'), params=post_data,
             status=302)
         assert_session_flash(response, 'Cleaned up old sessions')
 
 
 @pytest.mark.usefixtures('app')
 class TestAdminSystemInfo(object):
-    def _get_url(self, name='admin_settings_system'):
-        return {
-            'admin_settings_system': ADMIN_PREFIX + '/settings/system',
-            'admin_settings_system_update': ADMIN_PREFIX + '/settings/system/updates',
-        }[name]
 
     def test_forbidden_when_normal_user(self, autologin_regular_user):
-        self.app.get(self._get_url(), status=404)
+        self.app.get(route_path('admin_settings_system'), status=404)
 
     def test_system_info_page(self, autologin_user):
-        response = self.app.get(self._get_url())
+        response = self.app.get(route_path('admin_settings_system'))
         response.mustcontain('RhodeCode Community Edition, version {}'.format(
             rhodecode.__version__))
 
@@ -511,7 +571,7 @@ class TestAdminSystemInfo(object):
             ]
         }
         with mock.patch(UPDATE_DATA_QUALNAME, return_value=update_data):
-            response = self.app.get(self._get_url('admin_settings_system_update'))
+            response = self.app.get(route_path('admin_settings_system_update'))
             response.mustcontain('A <b>new version</b> is available')
 
     def test_system_update_nothing_new(self, autologin_user):
@@ -524,13 +584,13 @@ class TestAdminSystemInfo(object):
             ]
         }
         with mock.patch(UPDATE_DATA_QUALNAME, return_value=update_data):
-            response = self.app.get(self._get_url('admin_settings_system_update'))
+            response = self.app.get(route_path('admin_settings_system_update'))
             response.mustcontain(
                 'You already have the <b>latest</b> stable version.')
 
     def test_system_update_bad_response(self, autologin_user):
         with mock.patch(UPDATE_DATA_QUALNAME, side_effect=ValueError('foo')):
-            response = self.app.get(self._get_url('admin_settings_system_update'))
+            response = self.app.get(route_path('admin_settings_system_update'))
             response.mustcontain(
                 'Bad data sent from update server')
 
@@ -542,12 +602,12 @@ class TestAdminSettingsIssueTracker(object):
     PATTERN_KEY = RC_PREFIX + SHORT_PATTERN_KEY
 
     def test_issuetracker_index(self, autologin_user):
-        response = self.app.get(url('admin_settings_issuetracker'))
+        response = self.app.get(route_path('admin_settings_issuetracker'))
         assert response.status_code == 200
 
     def test_add_empty_issuetracker_pattern(
             self, request, autologin_user, csrf_token):
-        post_url = url('admin_settings_issuetracker_save')
+        post_url = route_path('admin_settings_issuetracker_update')
         post_data = {
             'csrf_token': csrf_token
         }
@@ -557,7 +617,7 @@ class TestAdminSettingsIssueTracker(object):
             self, request, autologin_user, csrf_token):
         pattern = 'issuetracker_pat'
         another_pattern = pattern+'1'
-        post_url = url('admin_settings_issuetracker_save')
+        post_url = route_path('admin_settings_issuetracker_update')
         post_data = {
             'new_pattern_pattern_0': pattern,
             'new_pattern_url_0': 'url',
@@ -600,7 +660,7 @@ class TestAdminSettingsIssueTracker(object):
         SettingsModel().create_or_update_setting(
             self.SHORT_PATTERN_KEY+old_uid, old_pattern, 'unicode')
 
-        post_url = url('admin_settings_issuetracker_save')
+        post_url = route_path('admin_settings_issuetracker_update')
         post_data = {
             'new_pattern_pattern_0': pattern,
             'new_pattern_url_0': 'url',
@@ -634,7 +694,7 @@ class TestAdminSettingsIssueTracker(object):
         settings_util.create_rhodecode_setting(
             desc_key, 'old description', 'unicode', cleanup=False)
 
-        post_url = url('admin_settings_issuetracker_save')
+        post_url = route_path('admin_settings_issuetracker_update')
         post_data = {
             'new_pattern_pattern_0': pattern,
             'new_pattern_url_0': 'url',
@@ -659,7 +719,7 @@ class TestAdminSettingsIssueTracker(object):
         settings_util.create_rhodecode_setting(
             self.SHORT_PATTERN_KEY+uid, pattern, 'unicode', cleanup=False)
 
-        post_url = url('admin_issuetracker_delete')
+        post_url = route_path('admin_settings_issuetracker_delete')
         post_data = {
             '_method': 'delete',
             'uid': uid,

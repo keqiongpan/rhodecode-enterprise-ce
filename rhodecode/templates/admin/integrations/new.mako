@@ -18,7 +18,7 @@
   %else:
     ${h.link_to(_('Admin'),h.route_path('admin_home'))}
     &raquo;
-    ${h.link_to(_('Settings'),h.url('admin_settings'))}
+    ${h.link_to(_('Settings'),h.route_path('admin_settings'))}
     &raquo;
     ${h.link_to(_('Integrations'),request.route_url(route_name='global_integrations_home'))}
   %endif

@@ -81,7 +81,7 @@
       <li><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
       <li><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>
       <li><a href="${h.route_path('admin_defaults_repositories')}">${_('Defaults')}</a></li>
-      <li class="last"><a href="${h.url('admin_settings')}">${_('Settings')}</a></li>
+      <li class="last"><a href="${h.route_path('admin_settings')}">${_('Settings')}</a></li>
   </ul>
 </%def>
 

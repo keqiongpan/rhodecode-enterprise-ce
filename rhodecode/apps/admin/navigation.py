@@ -46,65 +46,53 @@ class NavEntry(object):
         be removed as soon as we are fully migrated to pyramid.
     """
 
-    def __init__(self, key, name, view_name, pyramid=False):
+    def __init__(self, key, name, view_name):
         self.key = key
         self.name = name
         self.view_name = view_name
-        self.pyramid = pyramid
 
     def generate_url(self, request):
-        if self.pyramid:
-            if hasattr(request, 'route_path'):
-                return request.route_path(self.view_name)
-            else:
-                # TODO: johbo: Remove this after migrating to pyramid.
-                # We need the pyramid request here to generate URLs to pyramid
-                # views from within pylons views.
-                from pyramid.threadlocal import get_current_request
-                pyramid_request = get_current_request()
-                return pyramid_request.route_path(self.view_name)
-        else:
-            from pylons import url
-            return url(self.view_name)
+        return request.route_path(self.view_name)
 
     def get_localized_name(self, request):
-        if hasattr(request, 'translate'):
-            return request.translate(self.name)
-        else:
-            # TODO(marcink): Remove this after migrating to pyramid
-            from pyramid.threadlocal import get_current_request
-            pyramid_request = get_current_request()
-            return pyramid_request.translate(self.name)
+        return request.translate(self.name)
 
 
 @implementer(IAdminNavigationRegistry)
 class NavigationRegistry(object):
 
     _base_entries = [
-        NavEntry('global', _('Global'), 'admin_settings_global'),
-        NavEntry('vcs', _('VCS'), 'admin_settings_vcs'),
-        NavEntry('visual', _('Visual'), 'admin_settings_visual'),
-        NavEntry('mapping', _('Remap and Rescan'), 'admin_settings_mapping'),
+        NavEntry('global', _('Global'),
+                 'admin_settings_global'),
+        NavEntry('vcs', _('VCS'),
+                 'admin_settings_vcs'),
+        NavEntry('visual', _('Visual'),
+                 'admin_settings_visual'),
+        NavEntry('mapping', _('Remap and Rescan'),
+                 'admin_settings_mapping'),
         NavEntry('issuetracker', _('Issue Tracker'),
                  'admin_settings_issuetracker'),
-        NavEntry('email', _('Email'), 'admin_settings_email'),
-        NavEntry('hooks', _('Hooks'), 'admin_settings_hooks'),
-        NavEntry('search', _('Full Text Search'), 'admin_settings_search'),
-
+        NavEntry('email', _('Email'),
+                 'admin_settings_email'),
+        NavEntry('hooks', _('Hooks'),
+                 'admin_settings_hooks'),
+        NavEntry('search', _('Full Text Search'),
+                 'admin_settings_search'),
         NavEntry('integrations', _('Integrations'),
-                 'global_integrations_home', pyramid=True),
+                 'global_integrations_home'),
         NavEntry('system', _('System Info'),
-                 'admin_settings_system', pyramid=True),
+                 'admin_settings_system'),
         NavEntry('process_management', _('Processes'),
-                 'admin_settings_process_management', pyramid=True),
+                 'admin_settings_process_management'),
         NavEntry('sessions', _('User Sessions'),
-                 'admin_settings_sessions', pyramid=True),
+                 'admin_settings_sessions'),
         NavEntry('open_source', _('Open Source Licenses'),
-                 'admin_settings_open_source', pyramid=True),
+                 'admin_settings_open_source'),
 
     ]
 
-    _labs_entry = NavEntry('labs', _('Labs'), 'admin_settings_labs')
+    _labs_entry = NavEntry('labs', _('Labs'),
+                           'admin_settings_labs')
 
     def __init__(self, labs_active=False):
         self._registered_entries = collections.OrderedDict()
