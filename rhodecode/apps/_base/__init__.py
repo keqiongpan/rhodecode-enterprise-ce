@@ -147,15 +147,13 @@ class BaseAppView(object):
                    % repo_name)
         return msg
 
-    def _get_local_tmpl_context(self, include_app_defaults=False):
+    def _get_local_tmpl_context(self, include_app_defaults=True):
         c = TemplateArgs()
         c.auth_user = self.request.user
         # TODO(marcink): migrate the usage of c.rhodecode_user to c.auth_user
         c.rhodecode_user = self.request.user
 
         if include_app_defaults:
-            # NOTE(marcink): after full pyramid migration include_app_defaults
-            # should be turned on by default
             from rhodecode.lib.base import attach_context_attributes
             attach_context_attributes(c, self.request, self.request.user.user_id)
 
