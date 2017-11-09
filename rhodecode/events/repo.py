@@ -67,6 +67,7 @@ def _commits_as_dict(event, commit_ids, repos):
                     continue  # maybe its in next repo
 
                 cs_data = cs.__json__()
+                cs_data['refs'] = cs._get_refs()
                 cs_data['mentions'] = extract_mentioned_users(cs_data['message'])
                 cs_data['reviewers'] = reviewers
                 cs_data['url'] = RepoModel().get_commit_url(
