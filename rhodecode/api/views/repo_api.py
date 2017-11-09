@@ -340,11 +340,7 @@ def get_repo_changeset(request, apiuser, repoid, revision,
     _cs_json = cs.__json__()
     _cs_json['diff'] = build_commit_data(cs, changes_details)
     if changes_details == 'full':
-        _cs_json['refs'] = {
-            'branches': [cs.branch],
-            'bookmarks': getattr(cs, 'bookmarks', []),
-            'tags': cs.tags
-        }
+        _cs_json['refs'] = cs._get_refs()
     return _cs_json
 
 

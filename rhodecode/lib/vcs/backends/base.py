@@ -708,6 +708,13 @@ class BaseCommit(object):
             'branch': self.branch
         }
 
+    def _get_refs(self):
+        return {
+            'branches': [self.branch],
+            'bookmarks': getattr(self, 'bookmarks', []),
+            'tags': self.tags
+        }
+
     @LazyProperty
     def last(self):
         """
