@@ -481,7 +481,15 @@ class AdminSettingsView(BaseAppView):
         self.load_default_context()
         settings_model = IssueTrackerSettingsModel()
 
-        form = IssueTrackerPatternsForm()().to_python(self.request.POST)
+        try:
+            form = IssueTrackerPatternsForm()().to_python(self.request.POST)
+        except formencode.Invalid as errors:
+            log.exception('Failed to add new pattern')
+            error = errors
+            h.flash(_('Invalid issue tracker pattern: {}'.format(error)),
+                    category='error')
+            raise HTTPFound(h.route_path('admin_settings_issuetracker'))
+
         if form:
             for uid in form.get('delete_patterns', []):
                 settings_model.delete_entries(uid)

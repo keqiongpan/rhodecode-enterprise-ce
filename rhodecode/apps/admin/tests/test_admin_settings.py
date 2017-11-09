@@ -620,11 +620,11 @@ class TestAdminSettingsIssueTracker(object):
         post_url = route_path('admin_settings_issuetracker_update')
         post_data = {
             'new_pattern_pattern_0': pattern,
-            'new_pattern_url_0': 'url',
+            'new_pattern_url_0': 'http://url',
             'new_pattern_prefix_0': 'prefix',
             'new_pattern_description_0': 'description',
             'new_pattern_pattern_1': another_pattern,
-            'new_pattern_url_1': 'url1',
+            'new_pattern_url_1': 'https://url1',
             'new_pattern_prefix_1': 'prefix1',
             'new_pattern_description_1': 'description1',
             'csrf_token': csrf_token
@@ -663,7 +663,7 @@ class TestAdminSettingsIssueTracker(object):
         post_url = route_path('admin_settings_issuetracker_update')
         post_data = {
             'new_pattern_pattern_0': pattern,
-            'new_pattern_url_0': 'url',
+            'new_pattern_url_0': 'https://url',
             'new_pattern_prefix_0': 'prefix',
             'new_pattern_description_0': 'description',
             'uid': old_uid,
@@ -697,7 +697,7 @@ class TestAdminSettingsIssueTracker(object):
         post_url = route_path('admin_settings_issuetracker_update')
         post_data = {
             'new_pattern_pattern_0': pattern,
-            'new_pattern_url_0': 'url',
+            'new_pattern_url_0': 'https://url',
             'new_pattern_prefix_0': 'prefix',
             'new_pattern_description_0': new_description,
             'uid': self.uid,

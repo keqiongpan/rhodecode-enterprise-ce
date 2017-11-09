@@ -22,6 +22,7 @@ import logging
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
+import formencode
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import audit_logger
@@ -116,7 +117,17 @@ class RepoSettingsIssueTrackersView(RepoAppView):
         repo_settings.inherit_global_settings = inherited
         Session().commit()
 
-        form = IssueTrackerPatternsForm()().to_python(self.request.POST)
+        try:
+            form = IssueTrackerPatternsForm()().to_python(self.request.POST)
+        except formencode.Invalid as errors:
+            log.exception('Failed to add new pattern')
+            error = errors
+            h.flash(_('Invalid issue tracker pattern: {}'.format(error)),
+                    category='error')
+            raise HTTPFound(
+                h.route_path('edit_repo_issuetracker',
+                             repo_name=self.db_repo_name))
+
         if form:
             self._update_patterns(form, repo_settings)
 
