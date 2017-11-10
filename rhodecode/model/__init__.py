@@ -62,8 +62,9 @@ def init_model(engine, encryption_key=None):
     db.ENCRYPTION_KEY = encryption_key
 
 
-def init_model_encryption(migration_models):
-    from pylons import config
+def init_model_encryption(migration_models, config=None):
+    from pyramid.threadlocal import get_current_registry
+    config = config or get_current_registry().settings
     migration_models.ENCRYPTION_KEY = get_encryption_key(config)
     db.ENCRYPTION_KEY = get_encryption_key(config)
 
