@@ -167,7 +167,7 @@ class DBBackend(object):
                 os.makedirs(self._repos_git_lfs_store)
 
             self.execute(
-                "paster setup-rhodecode {0} --user=marcink "
+                "rc-setup-app {0} --user=marcink "
                 "--email=marcin@rhodeocode.com --password={1} "
                 "--repos={2} --force-yes".format(
                     _ini_file, 'qweqwe', self._repos_location), env=env)

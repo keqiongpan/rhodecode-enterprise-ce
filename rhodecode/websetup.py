@@ -18,32 +18,27 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-Weboperations and setup for rhodecode
-"""
 
 import logging
 
-from rhodecode.config.environment import load_environment
-from rhodecode.lib.db_manage import DbManage
-from rhodecode.model.meta import Session
-
+from rhodecode.lib.rc_commands.setup_rc import command as setup_command
 
 log = logging.getLogger(__name__)
 
 
 def setup_app(command, conf, vars):
-    """Place any commands to setup rhodecode here"""
-    dbconf = conf['sqlalchemy.db1.url']
-    dbmanage = DbManage(log_sql=True, dbconf=dbconf, root=conf['here'],
-                        tests=False, cli_args=command.options.__dict__)
-    dbmanage.create_tables(override=True)
-    dbmanage.set_db_version()
-    opts = dbmanage.config_prompt(None)
-    dbmanage.create_settings(opts)
-    dbmanage.create_default_user()
-    dbmanage.create_admin_and_prompt()
-    dbmanage.create_permissions()
-    dbmanage.populate_default_permissions()
-    Session().commit()
-    load_environment(conf.global_conf, conf.local_conf, initial=True)
+    opts = command.options.__dict__
+
+    # mapping of old parameters to new CLI from click
+    options = dict(
+        ini_path=command.args[0],
+        force_yes=opts.get('force_ask'),
+        user=opts.get('username'),
+        email=opts.get('email'),
+        password=opts.get('password'),
+        api_key=opts.get('api_key'),
+        repos=opts.get('repos_location'),
+        public_access=opts.get('public_access')
+    )
+    setup_command(**options)
+
