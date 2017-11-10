@@ -18,15 +18,21 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import os
 import ConfigParser
 from pyramid.paster import bootstrap as pyramid_bootstrap
 from pyramid.request import Request
 
 
-def get_config(ini_path):
-    parser = ConfigParser.ConfigParser()
+def get_config(ini_path, **kwargs):
+    parser = ConfigParser.ConfigParser(**kwargs)
     parser.read(ini_path)
     return parser
+
+
+def get_app_config(ini_path):
+    from paste.deploy.loadwsgi import appconfig
+    return appconfig('config:{}'.format(ini_path), relative_to=os.getcwd())
 
 
 def bootstrap(config_uri, request=None, options=None):
