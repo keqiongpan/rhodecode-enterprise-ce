@@ -234,9 +234,9 @@ class AuthLdap(object):
                             '/etc/openldap/cacerts')
         ldap.set_option(ldap.OPT_REFERRALS, ldap.OPT_OFF)
         ldap.set_option(ldap.OPT_RESTART, ldap.OPT_ON)
-        ldap.set_option(ldap.OPT_TIMEOUT, 20)
-        ldap.set_option(ldap.OPT_NETWORK_TIMEOUT, 10)
-        ldap.set_option(ldap.OPT_TIMELIMIT, 15)
+        ldap.set_option(ldap.OPT_NETWORK_TIMEOUT, 60 * 10)
+        ldap.set_option(ldap.OPT_TIMEOUT, 60 * 10)
+
         if self.TLS_KIND != 'PLAIN':
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, self.TLS_REQCERT)
         server = ldap.initialize(self.LDAP_SERVER)
