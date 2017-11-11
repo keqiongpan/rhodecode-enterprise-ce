@@ -195,7 +195,7 @@ class AuthLdap(object):
     def __init__(self, server, base_dn, port=389, bind_dn='', bind_pass='',
                  tls_kind='PLAIN', tls_reqcert='DEMAND', ldap_version=3,
                  search_scope='SUBTREE', attr_login='uid',
-                 ldap_filter=None):
+                 ldap_filter=''):
         if ldap == Missing:
             raise LdapImportError("Missing or incompatible ldap library")
 
@@ -234,9 +234,9 @@ class AuthLdap(object):
                             '/etc/openldap/cacerts')
         ldap.set_option(ldap.OPT_REFERRALS, ldap.OPT_OFF)
         ldap.set_option(ldap.OPT_RESTART, ldap.OPT_ON)
-        ldap.set_option(ldap.OPT_TIMEOUT, 20)
-        ldap.set_option(ldap.OPT_NETWORK_TIMEOUT, 10)
-        ldap.set_option(ldap.OPT_TIMELIMIT, 15)
+        ldap.set_option(ldap.OPT_NETWORK_TIMEOUT, 60 * 10)
+        ldap.set_option(ldap.OPT_TIMEOUT, 60 * 10)
+
         if self.TLS_KIND != 'PLAIN':
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, self.TLS_REQCERT)
         server = ldap.initialize(self.LDAP_SERVER)

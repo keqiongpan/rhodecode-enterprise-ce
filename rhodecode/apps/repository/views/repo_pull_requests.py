@@ -790,9 +790,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 h.route_path('pullrequest_new', repo_name=self.db_repo_name,
                              _query=org_query))
 
-        # target repo we must have write permissions, and also later on
+        # target repo we must have read permissions, and also later on
         # we want to check branch permissions here
         target_perm = HasRepoPermissionAny(
+            'repository.read',
             'repository.write', 'repository.admin')(target_db_repo.repo_name)
         if not target_perm:
             msg = _('Not Enough permissions to target repo `{}`.'.format(

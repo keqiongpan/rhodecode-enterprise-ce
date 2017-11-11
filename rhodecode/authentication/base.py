@@ -218,7 +218,10 @@ class RhodeCodeAuthPluginBase(object):
         else:
             plugin_settings = SettingsModel().get_all_settings()
 
-        return plugin_settings.get(full_name) or default
+        if full_name in plugin_settings:
+            return plugin_settings[full_name]
+        else:
+            return default
 
     def create_or_update_setting(self, name, value):
         """
