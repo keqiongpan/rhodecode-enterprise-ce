@@ -195,7 +195,7 @@ class AuthLdap(object):
     def __init__(self, server, base_dn, port=389, bind_dn='', bind_pass='',
                  tls_kind='PLAIN', tls_reqcert='DEMAND', ldap_version=3,
                  search_scope='SUBTREE', attr_login='uid',
-                 ldap_filter=None):
+                 ldap_filter=''):
         if ldap == Missing:
             raise LdapImportError("Missing or incompatible ldap library")
 
