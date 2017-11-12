@@ -36,9 +36,6 @@ from functools import wraps
 import ipaddress
 from beaker.cache import cache_region
 from pyramid.httpexceptions import HTTPForbidden, HTTPFound, HTTPNotFound
-from pylons.i18n.translation import _
-# NOTE(marcink): this has to be removed only after pyramid migration,
-# replace with _ = request.translate
 from sqlalchemy.orm.exc import ObjectDeletedError
 from sqlalchemy.orm import joinedload
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -1325,7 +1322,7 @@ def get_csrf_token(session, force_new=False, save_if_missing=True):
     Return the current authentication token, creating one if one doesn't
     already exist and the save_if_missing flag is present.
 
-    :param session: pass in the pylons session, else we use the global ones
+    :param session: pass in the pyramid session, else we use the global ones
     :param force_new: force to re-generate the token and store it in session
     :param save_if_missing: save the newly generated token if it's missing in
         session
@@ -1344,11 +1341,6 @@ def get_csrf_token(session, force_new=False, save_if_missing=True):
 def get_request(perm_class_instance):
     from pyramid.threadlocal import get_current_request
     pyramid_request = get_current_request()
-    if not pyramid_request:
-        # return global request of pylons in case pyramid isn't available
-        # NOTE(marcink): this should be removed after migration to pyramid
-        from pylons import request
-        return request
     return pyramid_request
 
 
@@ -1436,6 +1428,7 @@ class LoginRequired(object):
         cls = fargs[0]
         user = cls._rhodecode_user
         request = self._get_request()
+        _ = request.translate
 
         loc = "%s:%s" % (cls.__class__.__name__, func.__name__)
         log.debug('Starting login restriction checks for user: %s' % (user,))
@@ -1525,7 +1518,7 @@ class NotAnonymous(object):
         cls = fargs[0]
         self.user = cls._rhodecode_user
         request = self._get_request()
-
+        _ = request.translate
         log.debug('Checking if user is not anonymous @%s' % cls)
 
         anonymous = self.user.username == User.DEFAULT_USER
@@ -1560,6 +1553,8 @@ class PermsDecorator(object):
         import rhodecode.lib.helpers as h
         cls = fargs[0]
         _user = cls._rhodecode_user
+        request = self._get_request()
+        _ = request.translate
 
         log.debug('checking %s permissions %s for %s %s',
                   self.__class__.__name__, self.required_perms, cls, _user)
