@@ -60,6 +60,7 @@ class TestRepoGroupSchema(object):
         assert schema_data['repo_group'] == {
             'repo_group_id': None,
             'repo_group_name': types.RootLocation,
+            'repo_group_name_with_group': u'my_schema_group',
             'repo_group_name_without_group': u'my_schema_group'}
 
     @pytest.mark.parametrize('given, err_key, expected_exc', [
@@ -96,6 +97,7 @@ class TestRepoGroupSchema(object):
         assert schema_data['repo_group'] == {
             'repo_group_id': test_repo_group.group_id,
             'repo_group_name': test_repo_group.group_name,
+            'repo_group_name_with_group': full_name,
             'repo_group_name_without_group': u'my_schema_group'}
 
     def test_deserialize_with_group_name_regular_user_no_perms(

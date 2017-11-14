@@ -169,7 +169,7 @@ class RepoGroupSettingsView(RepoGroupAppView):
 
             # use the new full name for redirect once we know we updated
             # the name on filesystem and in DB
-            new_repo_group_name = schema_data['repo_group_name']
+            new_repo_group_name = schema_data['repo_group']['repo_group_name_with_group']
 
             h.flash(_('Repository Group `{}` updated successfully').format(
                 old_repo_group_name), category='success')
