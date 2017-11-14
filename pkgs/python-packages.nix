@@ -1029,19 +1029,6 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  meld3 = super.buildPythonPackage {
-    name = "meld3-1.0.2";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/45/a0/317c6422b26c12fe0161e936fc35f36552069ba8e6f7ecbd99bbffe32a5f/meld3-1.0.2.tar.gz";
-      md5 = "3ccc78cd79cffd63a751ad7684c02c91";
-    };
-    meta = {
-      license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
-    };
-  };
   mistune = super.buildPythonPackage {
     name = "mistune-0.8.1";
     buildInputs = with self; [];
@@ -1843,19 +1830,6 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
-    };
-  };
-  supervisor = super.buildPythonPackage {
-    name = "supervisor-3.3.3";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [meld3];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/31/7e/788fc6566211e77c395ea272058eb71299c65cc5e55b6214d479c6c2ec9a/supervisor-3.3.3.tar.gz";
-      md5 = "0fe86dfec4e5c5d98324d24c4cf944bd";
-    };
-    meta = {
-      license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
     };
   };
   termcolor = super.buildPythonPackage {
