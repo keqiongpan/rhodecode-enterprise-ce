@@ -128,7 +128,7 @@ bottle==0.12.13
 https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.14.0.tar.gz?md5=15de9be3d185d832c4af2156fefc8eeb#egg=rhodecode-tools==0.14.0
 
 ## appenlight
-appenlight-client==0.6.21
+appenlight-client==0.6.22
 
 ## test related requirements
 -r requirements_test.txt
