@@ -1321,8 +1321,8 @@
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools Markdown];
     src = fetchurl {
-      url = "https://code.rhodecode.com/upstream/py-gfm/archive/0d66a19bc16e3d49de273c0f797d4e4781e8c0f2.tar.gz?md5=0d0d5385bfb629eea636a80b9c2bfd16";
-      md5 = "0d0d5385bfb629eea636a80b9c2bfd16";
+      url = "https://pypi.python.org/packages/12/e4/6b3d8678da04f97d7490d8264d8de51c2dc9fb91209ccee9c515c95e14c5/py-gfm-0.1.3.tar.gz";
+      md5 = "e588d9e69640a241b97e2c59c22527a6";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
