@@ -32,6 +32,11 @@ def get_group_and_repo(repo_name):
         repo_name, get_object=True)
 
 
+def get_repo_group(repo_group_id):
+    from rhodecode.model.repo_group import RepoGroup
+    return RepoGroup.get(repo_group_id), RepoGroup.CHOICES_SEPARATOR
+
+
 @colander.deferred
 def deferred_can_write_to_group_validator(node, kw):
     old_values = kw.get('old_values') or {}
@@ -178,6 +183,7 @@ class GroupType(colander.Mapping):
          parent_group_name,
          parent_group) = get_group_and_repo(validated_name)
 
+        appstruct['repo_group_name_with_group'] = validated_name
         appstruct['repo_group_name_without_group'] = repo_group_name_without_group
         appstruct['repo_group_name'] = parent_group_name or types.RootLocation
         if parent_group:
@@ -270,6 +276,14 @@ class RepoGroupSettingsSchema(RepoGroupSchema):
         # first pass, to validate given data
         appstruct = super(RepoGroupSchema, self).deserialize(cstruct)
         validated_name = appstruct['repo_group_name']
+
+        # because of repoSchema adds repo-group as an ID, we inject it as
+        # full name here because validators require it, it's unwrapped later
+        # so it's safe to use and final name is going to be without group anyway
+
+        group, separator = get_repo_group(appstruct['repo_group'])
+        if group:
+            validated_name = separator.join([group.group_name, validated_name])
 
         # second pass to validate permissions to repo_group
         second = RepoGroupAccessSchema().bind(**self.bindings)
