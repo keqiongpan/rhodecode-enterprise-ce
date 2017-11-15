@@ -35,7 +35,7 @@ class _LazyString(object):
         req = get_current_request()
         translator = _
         if req:
-            translator = req.translator
+            translator = req.translate
         return translator(*self.args, **self.kw)
 
     def __unicode__(self):
