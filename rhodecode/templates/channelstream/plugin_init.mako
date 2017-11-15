@@ -1,3 +1,5 @@
+<%page args="config"/>
+
 <script>
     var CHANNELSTREAM_URLS = ${config['url_gen'](request)|n};
     %if request.registry.rhodecode_plugins['channelstream']['enabled'] and c.rhodecode_user.username != h.DEFAULT_USER:

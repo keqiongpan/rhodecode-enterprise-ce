@@ -31,12 +31,12 @@ from rhodecode.lib.vcs.exceptions import VCSError
 
 pytestmark = [
     pytest.mark.backends("svn"),
-    pytest.mark.usefixtures("pylonsapp"),
+    pytest.mark.usefixtures("baseapp"),
 ]
 
 
 @pytest.fixture
-def repo(pylonsapp):
+def repo(baseapp):
     repo = SubversionRepository(os.path.join(TESTS_TMP_PATH, SVN_REPO))
     return repo
 

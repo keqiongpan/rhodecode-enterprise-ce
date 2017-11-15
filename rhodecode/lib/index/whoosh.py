@@ -27,7 +27,7 @@ import logging
 import os
 import re
 
-from pylons.i18n.translation import _
+from rhodecode.translation import temp_translation_factory as _
 
 from whoosh import query as query_lib, sorting
 from whoosh.highlight import HtmlFormatter, ContextFragmenter

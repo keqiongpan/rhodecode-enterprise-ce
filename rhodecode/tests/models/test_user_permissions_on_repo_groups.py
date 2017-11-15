@@ -64,7 +64,7 @@ def permissions_setup_func(group_name='g0', perm='group.read', recursive='all',
 
 
 @pytest.fixture(scope='module', autouse=True)
-def prepare(request, pylonsapp):
+def prepare(request, baseapp):
     global test_u1_id, _get_repo_perms, _get_group_perms
     test_u1 = _create_project_tree()
     Session().commit()

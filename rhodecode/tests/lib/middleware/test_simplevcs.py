@@ -74,13 +74,13 @@ class StubVCSController(simplevcs.SimpleVCS):
 
 
 @pytest.fixture
-def vcscontroller(pylonsapp, config_stub, request_stub):
+def vcscontroller(baseapp, config_stub, request_stub):
     config_stub.testing_securitypolicy()
     config_stub.include('rhodecode.authentication')
 
     controller = StubVCSController(
-        pylonsapp, pylonsapp.config, request_stub.registry)
-    app = HttpsFixup(controller, pylonsapp.config)
+        baseapp, baseapp.config, request_stub.registry)
+    app = HttpsFixup(controller, baseapp.config)
     app = CustomTestApp(app)
 
     _remove_default_user_from_query_cache()
@@ -134,10 +134,10 @@ class StubFailVCSController(simplevcs.SimpleVCS):
 
 
 @pytest.fixture(scope='module')
-def fail_controller(pylonsapp):
+def fail_controller(baseapp):
     controller = StubFailVCSController(
-        pylonsapp, pylonsapp.config, pylonsapp.config)
-    controller = HttpsFixup(controller, pylonsapp.config)
+        baseapp, baseapp.config, baseapp.config)
+    controller = HttpsFixup(controller, baseapp.config)
     controller = CustomTestApp(controller)
     return controller
 
@@ -152,18 +152,18 @@ def test_provides_traceback_for_appenlight(fail_controller):
     assert 'appenlight.__traceback' in response.request.environ
 
 
-def test_provides_utils_scm_app_as_scm_app_by_default(pylonsapp, request_stub):
+def test_provides_utils_scm_app_as_scm_app_by_default(baseapp, request_stub):
     controller = StubVCSController(
-        pylonsapp, pylonsapp.config, request_stub.registry)
+        baseapp, baseapp.config, request_stub.registry)
     assert controller.scm_app is scm_app_http
 
 
-def test_allows_to_override_scm_app_via_config(pylonsapp, request_stub):
-    config = pylonsapp.config.copy()
+def test_allows_to_override_scm_app_via_config(baseapp, request_stub):
+    config = baseapp.config.copy()
     config['vcs.scm_app_implementation'] = (
         'rhodecode.tests.lib.middleware.mock_scm_app')
     controller = StubVCSController(
-        pylonsapp, config, request_stub.registry)
+        baseapp, config, request_stub.registry)
     assert controller.scm_app is mock_scm_app
 
 
@@ -219,13 +219,13 @@ class TestShadowRepoRegularExpression(object):
 class TestShadowRepoExposure(object):
 
     def test_pull_on_shadow_repo_propagates_to_wsgi_app(
-            self, pylonsapp, request_stub):
+            self, baseapp, request_stub):
         """
         Check that a pull action to a shadow repo is propagated to the
         underlying wsgi app.
         """
         controller = StubVCSController(
-            pylonsapp, pylonsapp.config, request_stub.registry)
+            baseapp, baseapp.config, request_stub.registry)
         controller._check_ssl = mock.Mock()
         controller.is_shadow_repo = True
         controller._action = 'pull'
@@ -244,13 +244,13 @@ class TestShadowRepoExposure(object):
         # Assert that we got the response from the wsgi app.
         assert response_body == controller.stub_response_body
 
-    def test_pull_on_shadow_repo_that_is_missing(self, pylonsapp, request_stub):
+    def test_pull_on_shadow_repo_that_is_missing(self, baseapp, request_stub):
         """
         Check that a pull action to a shadow repo is propagated to the
         underlying wsgi app.
         """
         controller = StubVCSController(
-            pylonsapp, pylonsapp.config, request_stub.registry)
+            baseapp, baseapp.config, request_stub.registry)
         controller._check_ssl = mock.Mock()
         controller.is_shadow_repo = True
         controller._action = 'pull'
@@ -269,12 +269,12 @@ class TestShadowRepoExposure(object):
         # Assert that we got the response from the wsgi app.
         assert '404 Not Found' in response_body
 
-    def test_push_on_shadow_repo_raises(self, pylonsapp, request_stub):
+    def test_push_on_shadow_repo_raises(self, baseapp, request_stub):
         """
         Check that a push action to a shadow repo is aborted.
         """
         controller = StubVCSController(
-            pylonsapp, pylonsapp.config, request_stub.registry)
+            baseapp, baseapp.config, request_stub.registry)
         controller._check_ssl = mock.Mock()
         controller.is_shadow_repo = True
         controller._action = 'push'
@@ -293,14 +293,14 @@ class TestShadowRepoExposure(object):
         # Assert that a 406 error is returned.
         assert '406 Not Acceptable' in response_body
 
-    def test_set_repo_names_no_shadow(self, pylonsapp, request_stub):
+    def test_set_repo_names_no_shadow(self, baseapp, request_stub):
         """
         Check that the set_repo_names method sets all names to the one returned
         by the _get_repository_name method on a request to a non shadow repo.
         """
         environ_stub = {}
         controller = StubVCSController(
-            pylonsapp, pylonsapp.config, request_stub.registry)
+            baseapp, baseapp.config, request_stub.registry)
         controller._name = 'RepoGroup/MyRepo'
         controller.set_repo_names(environ_stub)
         assert not controller.is_shadow_repo
@@ -310,7 +310,7 @@ class TestShadowRepoExposure(object):
                 controller._get_repository_name(environ_stub))
 
     def test_set_repo_names_with_shadow(
-            self, pylonsapp, pr_util, config_stub, request_stub):
+            self, baseapp, pr_util, config_stub, request_stub):
         """
         Check that the set_repo_names method sets correct names on a request
         to a shadow repo.
@@ -324,7 +324,7 @@ class TestShadowRepoExposure(object):
             pr_segment=TestShadowRepoRegularExpression.pr_segment,
             shadow_segment=TestShadowRepoRegularExpression.shadow_segment)
         controller = StubVCSController(
-            pylonsapp, pylonsapp.config, request_stub.registry)
+            baseapp, baseapp.config, request_stub.registry)
         controller._name = shadow_url
         controller.set_repo_names({})
 
@@ -340,7 +340,7 @@ class TestShadowRepoExposure(object):
         assert controller.is_shadow_repo
 
     def test_set_repo_names_with_shadow_but_missing_pr(
-            self, pylonsapp, pr_util, config_stub, request_stub):
+            self, baseapp, pr_util, config_stub, request_stub):
         """
         Checks that the set_repo_names method enforces matching target repos
         and pull request IDs.
@@ -352,7 +352,7 @@ class TestShadowRepoExposure(object):
             pr_segment=TestShadowRepoRegularExpression.pr_segment,
             shadow_segment=TestShadowRepoRegularExpression.shadow_segment)
         controller = StubVCSController(
-            pylonsapp, pylonsapp.config, request_stub.registry)
+            baseapp, baseapp.config, request_stub.registry)
         controller._name = shadow_url
         controller.set_repo_names({})
 

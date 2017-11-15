@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 class RepoGroupPermissionsView(RepoGroupAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -65,7 +65,7 @@ class RepoGroupPermissionsView(RepoGroupAppView):
         c.repo_group = self.db_repo_group
 
         valid_recursive_choices = ['none', 'repos', 'groups', 'all']
-        form = RepoGroupPermsForm(valid_recursive_choices)()\
+        form = RepoGroupPermsForm(self.request.translate, valid_recursive_choices)()\
             .to_python(self.request.POST)
 
         if not c.rhodecode_user.is_admin:

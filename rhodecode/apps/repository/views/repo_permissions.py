@@ -40,7 +40,7 @@ class RepoSettingsPermissionsView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -68,7 +68,7 @@ class RepoSettingsPermissionsView(RepoAppView):
         # default user permissions, prevents submission of FAKE post data
         # into the form for private repos
         data['repo_private'] = self.db_repo.private
-        form = RepoPermsForm()().to_python(data)
+        form = RepoPermsForm(self.request.translate)().to_python(data)
         changes = RepoModel().update_permissions(
             self.db_repo_name, form['perm_additions'], form['perm_updates'],
             form['perm_deletions'])

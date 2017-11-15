@@ -34,7 +34,7 @@ from rhodecode.tests.vcs.base import BackendTestMixin
 
 @pytest.fixture()
 def vcs_repository_support(
-        request, backend_alias, pylonsapp, _vcs_repo_container):
+        request, backend_alias, baseapp, _vcs_repo_container):
     """
     Provide a test repository for the test run.
 

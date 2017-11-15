@@ -42,7 +42,7 @@ from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     Repository, UserEmailMap, UserApiKeys, UserFollowing, joinedload,
     PullRequest)
-from rhodecode.model.forms import UserForm
+from rhodecode.model.forms import UserForm, UserExtraEmailForm
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.scm import RepoList
@@ -64,7 +64,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         c = self._get_local_tmpl_context()
         c.user = c.auth_user.get_instance()
         c.allow_scoped_tokens = self.ALLOW_SCOPED_TOKENS
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -245,6 +245,10 @@ class MyAccountView(BaseAppView, DataGridAppView):
         email = self.request.POST.get('new_email')
 
         try:
+            form = UserExtraEmailForm(self.request.translate)()
+            data = form.to_python({'email': email})
+            email = data['email']
+
             UserModel().add_extra_email(c.user.user_id, email)
             audit_logger.store_web(
                 'user.edit.email.add', action_data={
@@ -442,7 +446,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         c.extern_type = c.user.extern_type
         c.extern_name = c.user.extern_name
 
-        _form = UserForm(edit=True,
+        _form = UserForm(self.request.translate, edit=True,
                          old_data={'user_id': self._rhodecode_user.user_id,
                                    'email': self._rhodecode_user.email})()
         form_result = {}

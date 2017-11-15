@@ -18,9 +18,8 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import json
-import logging.config
 import os
+import json
 import platform
 import socket
 import subprocess32
@@ -28,16 +27,9 @@ import time
 from urllib2 import urlopen, URLError
 
 import configobj
-import pylons
 import pytest
-import webob
-from beaker.session import SessionObject
-from paste.deploy import loadapp
-from pylons.i18n.translation import _get_translator
-from pylons.util import ContextObj
-from routes.util import URLGenerator
 
-from rhodecode.lib import vcs
+import pyramid.paster
 from rhodecode.tests.fixture import TestINI
 import rhodecode
 
@@ -246,7 +238,7 @@ class HttpVCSServer(VCSServer):
 
 
 @pytest.fixture(scope='session')
-def pylons_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
+def ini_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
     option_name = 'pylons_config'
     log_level = _use_log_level(request.config)
 
@@ -333,23 +325,28 @@ def available_port(available_port_factory):
 
 
 @pytest.fixture(scope='session')
-def pylonsapp(pylons_config, vcsserver, http_environ_session):
-    print("Using the RhodeCode configuration:{}".format(pylons_config))
-    logging.config.fileConfig(
-        pylons_config, disable_existing_loggers=False)
-    app = _setup_pylons_environment(pylons_config, http_environ_session)
+def baseapp(ini_config, vcsserver, http_environ_session):
+    from rhodecode.lib.pyramid_utils import get_app_config
+    from rhodecode.config.middleware import make_pyramid_app
+
+    print("Using the RhodeCode configuration:{}".format(ini_config))
+    pyramid.paster.setup_logging(ini_config)
+
+    settings = get_app_config(ini_config)
+    app = make_pyramid_app({}, **settings)
+
     return app
 
 
 @pytest.fixture(scope='session')
-def testini_factory(tmpdir_factory, pylons_config):
+def testini_factory(tmpdir_factory, ini_config):
     """
     Factory to create an INI file based on TestINI.
 
     It will make sure to place the INI file in the correct directory.
     """
     basetemp = tmpdir_factory.getbasetemp().strpath
-    return TestIniFactory(basetemp, pylons_config)
+    return TestIniFactory(basetemp, ini_config)
 
 
 class TestIniFactory(object):
@@ -387,36 +384,3 @@ def get_config(
         dir=basetemp)
 
     return temp_ini_file.create()
-
-
-def _setup_pylons_environment(pylons_config, http_environ):
-    current_path = os.getcwd()
-    pylonsapp = loadapp(
-        'config:' + pylons_config, relative_to=current_path)
-
-    # Using rhodecode.CONFIG which is assigned during "load_environment".
-    # The indirect approach is used, because "pylonsapp" may actually be
-    # the Pyramid application.
-    pylonsapp_config = rhodecode.CONFIG
-    _init_stack(pylonsapp_config, environ=http_environ)
-
-    # For compatibility add the attribute "config" which would be
-    # present on the Pylons application.
-    pylonsapp.config = pylonsapp_config
-    return pylonsapp
-
-
-def _init_stack(config=None, environ=None):
-    if not config:
-        config = pylons.test.pylonsapp.config
-    if not environ:
-        environ = {}
-    pylons.url._push_object(URLGenerator(config['routes.map'], environ or {}))
-    pylons.app_globals._push_object(config['pylons.app_globals'])
-    pylons.config._push_object(config)
-    pylons.tmpl_context._push_object(ContextObj())
-    # Initialize a translator for tests that utilize i18n
-    translator = _get_translator(pylons.config.get('lang'))
-    pylons.translator._push_object(translator)
-    pylons.session._push_object(SessionObject(environ or {}))
-    pylons.request._push_object(webob.Request.blank('', environ=environ))

@@ -21,7 +21,6 @@ import io
 import re
 import datetime
 import logging
-import pylons
 import Queue
 import subprocess32
 import os
@@ -36,25 +35,17 @@ from threading import Thread
 from rhodecode.translation import _ as tsf
 from rhodecode.config.jsroutes import generate_jsroutes_content
 from rhodecode.lib import auth
+from rhodecode.lib.base import get_auth_user
+
 
 import rhodecode
 
-from pylons.i18n.translation import _get_translator
-from pylons.util import ContextObj
-from routes.util import URLGenerator
-
-from rhodecode.lib.base import attach_context_attributes, get_auth_user
 
 log = logging.getLogger(__name__)
 
 
 def add_renderer_globals(event):
     from rhodecode.lib import helpers
-
-    # NOTE(marcink):
-    # Put pylons stuff into the context. This will be removed as soon as
-    # migration to pyramid is finished.
-    event['c'] = pylons.tmpl_context
 
     # TODO: When executed in pyramid view context the request is not available
     # in the event. Find a better solution to get the request.
@@ -68,12 +59,11 @@ def add_renderer_globals(event):
 
 def add_localizer(event):
     request = event.request
-    localizer = get_localizer(request)
+    localizer = request.localizer
 
     def auto_translate(*args, **kwargs):
         return localizer.translate(tsf(*args, **kwargs))
 
-    request.localizer = localizer
     request.translate = auto_translate
     request.plularize = localizer.pluralize
 
@@ -106,39 +96,6 @@ def add_request_user_context(event):
     auth_user = get_auth_user(request)
     request.user = auth_user
     request.environ['rc_auth_user'] = auth_user
-
-
-def add_pylons_context(event):
-    request = event.request
-
-    config = rhodecode.CONFIG
-    environ = request.environ
-    session = request.session
-
-    if hasattr(request, 'vcs_call'):
-        # skip vcs calls
-        return
-
-    # Setup pylons globals.
-    pylons.config._push_object(config)
-    pylons.request._push_object(request)
-    pylons.session._push_object(session)
-    pylons.translator._push_object(_get_translator(config.get('lang')))
-
-    pylons.url._push_object(URLGenerator(config['routes.map'], environ))
-    session_key = (
-        config['pylons.environ_config'].get('session', 'beaker.session'))
-    environ[session_key] = session
-
-    if hasattr(request, 'rpc_method'):
-        # skip api calls
-        return
-
-    # Setup the pylons context object ('c')
-    context = ContextObj()
-    context.rhodecode_user = request.user
-    attach_context_attributes(context, request, request.user.user_id)
-    pylons.tmpl_context._push_object(context)
 
 
 def inject_app_settings(event):

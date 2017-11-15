@@ -61,7 +61,7 @@ def pytest_collection_modifyitems(session, config, items):
 
 @pytest.fixture
 def db_backend(
-        request, db_backend_name, pylons_config, tmpdir_factory):
+        request, db_backend_name, ini_config, tmpdir_factory):
     basetemp = tmpdir_factory.getbasetemp().strpath
     klass = _get_backend(db_backend_name)
 
@@ -69,7 +69,7 @@ def db_backend(
     connection_string = request.config.getoption(option_name) or None
 
     return klass(
-        config_file=pylons_config, basetemp=basetemp,
+        config_file=ini_config, basetemp=basetemp,
         connection_string=connection_string)
 
 

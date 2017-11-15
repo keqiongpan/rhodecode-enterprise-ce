@@ -475,7 +475,7 @@ def merge_extras(user_regular):
 class TestUpdateCommentHandling(object):
 
     @pytest.fixture(autouse=True, scope='class')
-    def enable_outdated_comments(self, request, pylonsapp):
+    def enable_outdated_comments(self, request, baseapp):
         config_patch = mock.patch.dict(
             'rhodecode.CONFIG', {'rhodecode_use_outdated_comments': True})
         config_patch.start()

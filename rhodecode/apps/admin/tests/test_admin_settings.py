@@ -429,7 +429,7 @@ class TestAdminSettingsVcs(object):
     # TODO: johbo: What we really want is to checkpoint before a test run and
     # reset the session afterwards.
     @pytest.fixture(scope='class', autouse=True)
-    def cleanup_settings(self, request, pylonsapp):
+    def cleanup_settings(self, request, baseapp):
         ui_id = RhodeCodeUi.ui_id
         original_ids = list(
             r.ui_id for r in RhodeCodeUi.query().values(ui_id))

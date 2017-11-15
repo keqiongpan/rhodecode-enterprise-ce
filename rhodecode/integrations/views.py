@@ -110,7 +110,7 @@ class IntegrationSettingsViewBase(BaseAppView):
 
         return False
 
-    def _get_local_tmpl_context(self, include_app_defaults=False):
+    def _get_local_tmpl_context(self, include_app_defaults=True):
         _ = self.request.translate
         c = super(IntegrationSettingsViewBase, self)._get_local_tmpl_context(
             include_app_defaults=include_app_defaults)
@@ -366,7 +366,7 @@ class GlobalIntegrationsView(IntegrationSettingsViewBase):
         c.repo = self.repo
         c.repo_group = self.repo_group
         c.navlist = navigation_list(self.request)
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -403,7 +403,7 @@ class RepoIntegrationsView(IntegrationSettingsViewBase):
         c.repo_name = self.db_repo.repo_name
         c.repository_pull_requests = ScmModel().get_pull_requests(self.repo)
 
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -434,7 +434,7 @@ class RepoGroupIntegrationsView(IntegrationSettingsViewBase):
         c.repo = self.repo
         c.repo_group = self.repo_group
         c.navlist = navigation_list(self.request)
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()

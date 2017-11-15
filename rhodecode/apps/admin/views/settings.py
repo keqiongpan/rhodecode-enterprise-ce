@@ -67,7 +67,7 @@ class AdminSettingsView(BaseAppView):
         c.labs_active = str2bool(
             rhodecode.CONFIG.get('labs_settings_active', 'true'))
         c.navlist = navigation_list(self.request)
-        self._register_global_c(c)
+
         return c
 
     @classmethod
@@ -153,7 +153,7 @@ class AdminSettingsView(BaseAppView):
         settings = self.request.registry.settings
         c.svn_proxy_generate_config = settings[generate_config]
 
-        application_form = ApplicationUiSettingsForm()()
+        application_form = ApplicationUiSettingsForm(self.request.translate)()
 
         try:
             form_result = application_form.to_python(dict(self.request.POST))
@@ -310,7 +310,7 @@ class AdminSettingsView(BaseAppView):
         c.active = 'global'
         c.personal_repo_group_default_pattern = RepoGroupModel()\
             .get_personal_group_name_pattern()
-        application_form = ApplicationSettingsForm()()
+        application_form = ApplicationSettingsForm(self.request.translate)()
         try:
             form_result = application_form.to_python(dict(self.request.POST))
         except formencode.Invalid as errors:
@@ -382,7 +382,7 @@ class AdminSettingsView(BaseAppView):
         _ = self.request.translate
         c = self.load_default_context()
         c.active = 'visual'
-        application_form = ApplicationVisualisationForm()()
+        application_form = ApplicationVisualisationForm(self.request.translate)()
         try:
             form_result = application_form.to_python(dict(self.request.POST))
         except formencode.Invalid as errors:
@@ -482,7 +482,7 @@ class AdminSettingsView(BaseAppView):
         settings_model = IssueTrackerSettingsModel()
 
         try:
-            form = IssueTrackerPatternsForm()().to_python(self.request.POST)
+            form = IssueTrackerPatternsForm(self.request.translate)().to_python(self.request.POST)
         except formencode.Invalid as errors:
             log.exception('Failed to add new pattern')
             error = errors
@@ -698,7 +698,7 @@ class AdminSettingsView(BaseAppView):
         c = self.load_default_context()
         c.active = 'labs'
 
-        application_form = LabsSettingsForm()()
+        application_form = LabsSettingsForm(self.request.translate)()
         try:
             form_result = application_form.to_python(dict(self.request.POST))
         except formencode.Invalid as errors:

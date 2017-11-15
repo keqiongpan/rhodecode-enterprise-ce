@@ -30,7 +30,7 @@ import logging
 
 from itertools import tee, imap
 
-from pylons.i18n.translation import _
+from rhodecode.translation import temp_translation_factory as _
 
 from rhodecode.lib.vcs.exceptions import VCSError
 from rhodecode.lib.vcs.nodes import FileNode, SubModuleNode

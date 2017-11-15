@@ -26,7 +26,6 @@ import logging
 import traceback
 import collections
 
-from pylons.i18n.translation import _
 from pyramid.threadlocal import get_current_registry, get_current_request
 from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.functions import coalesce
@@ -68,8 +67,8 @@ class CommentsModel(BaseModel):
                 user_objects.append(user_obj)
         return user_objects
 
-    def _get_renderer(self, global_renderer='rst'):
-        request = get_current_request()
+    def _get_renderer(self, global_renderer='rst', request=None):
+        request = request or get_current_request()
 
         try:
             global_renderer = request.call_context.visual.default_renderer
@@ -194,9 +193,11 @@ class CommentsModel(BaseModel):
         if not text:
             log.warning('Missing text for comment, skipping...')
             return
+        request = get_current_request()
+        _ = request.translate
 
         if not renderer:
-            renderer = self._get_renderer()
+            renderer = self._get_renderer(request=request)
 
         repo = self._get_repo(repo)
         user = self._get_user(user)
@@ -268,7 +269,7 @@ class CommentsModel(BaseModel):
                 cs_author = repo.user
             recipients += [cs_author]
 
-            commit_comment_url = self.get_url(comment)
+            commit_comment_url = self.get_url(comment, request=request)
 
             target_repo_url = h.link_to(
                 repo.repo_name,

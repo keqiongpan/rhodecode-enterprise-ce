@@ -48,7 +48,7 @@ import formencode
 from pkg_resources import resource_filename
 from formencode import All, Pipe
 
-from pylons.i18n.translation import _
+from rhodecode.translation import temp_translation_factory as _
 from pyramid.threadlocal import get_current_request
 
 from rhodecode import BACKENDS
@@ -75,7 +75,9 @@ form_renderer = RhodecodeFormZPTRendererFactory(search_path)
 deform.Form.set_default_renderer(form_renderer)
 
 
-def LoginForm():
+def LoginForm(localizer):
+    _ = localizer
+
     class _LoginForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
@@ -101,33 +103,37 @@ def LoginForm():
 
         remember = v.StringBoolean(if_missing=False)
 
-        chained_validators = [v.ValidAuth()]
+        chained_validators = [v.ValidAuth(localizer)]
     return _LoginForm
 
 
-def UserForm(edit=False, available_languages=[], old_data={}):
+def UserForm(localizer, edit=False, available_languages=None, old_data=None):
+    old_data = old_data or {}
+    available_languages = available_languages or []
+    _ = localizer
+
     class _UserForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
         username = All(v.UnicodeString(strip=True, min=1, not_empty=True),
-                       v.ValidUsername(edit, old_data))
+                       v.ValidUsername(localizer, edit, old_data))
         if edit:
             new_password = All(
-                v.ValidPassword(),
+                v.ValidPassword(localizer),
                 v.UnicodeString(strip=False, min=6, max=72, not_empty=False)
             )
             password_confirmation = All(
-                v.ValidPassword(),
+                v.ValidPassword(localizer),
                 v.UnicodeString(strip=False, min=6, max=72, not_empty=False),
             )
             admin = v.StringBoolean(if_missing=False)
         else:
             password = All(
-                v.ValidPassword(),
+                v.ValidPassword(localizer),
                 v.UnicodeString(strip=False, min=6, max=72, not_empty=True)
             )
             password_confirmation = All(
-                v.ValidPassword(),
+                v.ValidPassword(localizer),
                 v.UnicodeString(strip=False, min=6, max=72, not_empty=False)
             )
 
@@ -137,17 +143,18 @@ def UserForm(edit=False, available_languages=[], old_data={}):
         active = v.StringBoolean(if_missing=False)
         firstname = v.UnicodeString(strip=True, min=1, not_empty=False)
         lastname = v.UnicodeString(strip=True, min=1, not_empty=False)
-        email = All(v.Email(not_empty=True), v.UniqSystemEmail(old_data))
+        email = All(v.Email(not_empty=True), v.UniqSystemEmail(localizer, old_data))
         extern_name = v.UnicodeString(strip=True)
         extern_type = v.UnicodeString(strip=True)
         language = v.OneOf(available_languages, hideList=False,
                            testValueList=True, if_missing=None)
-        chained_validators = [v.ValidPasswordsMatch()]
+        chained_validators = [v.ValidPasswordsMatch(localizer)]
     return _UserForm
 
 
-def UserGroupForm(edit=False, old_data=None, allow_disabled=False):
+def UserGroupForm(localizer, edit=False, old_data=None, allow_disabled=False):
     old_data = old_data or {}
+    _ = localizer
 
     class _UserGroupForm(formencode.Schema):
         allow_extra_fields = True
@@ -155,7 +162,7 @@ def UserGroupForm(edit=False, old_data=None, allow_disabled=False):
 
         users_group_name = All(
             v.UnicodeString(strip=True, min=1, not_empty=True),
-            v.ValidUserGroup(edit, old_data)
+            v.ValidUserGroup(localizer, edit, old_data)
         )
         user_group_description = v.UnicodeString(strip=True, min=1,
                                                  not_empty=False)
@@ -166,12 +173,13 @@ def UserGroupForm(edit=False, old_data=None, allow_disabled=False):
             # this is user group owner
             user = All(
                 v.UnicodeString(not_empty=True),
-                v.ValidRepoUser(allow_disabled))
+                v.ValidRepoUser(localizer, allow_disabled))
     return _UserGroupForm
 
 
-def RepoGroupForm(edit=False, old_data=None, available_groups=None,
-                   can_create_in_root=False, allow_disabled=False):
+def RepoGroupForm(localizer, edit=False, old_data=None, available_groups=None,
+                  can_create_in_root=False, allow_disabled=False):
+    _ = localizer
     old_data = old_data or {}
     available_groups = available_groups or []
 
@@ -180,7 +188,7 @@ def RepoGroupForm(edit=False, old_data=None, available_groups=None,
         filter_extra_fields = False
 
         group_name = All(v.UnicodeString(strip=True, min=1, not_empty=True),
-                         v.SlugifyName(),)
+                         v.SlugifyName(localizer),)
         group_description = v.UnicodeString(strip=True, min=1,
                                             not_empty=False)
         group_copy_permissions = v.StringBoolean(if_missing=False)
@@ -189,53 +197,57 @@ def RepoGroupForm(edit=False, old_data=None, available_groups=None,
                                   testValueList=True, not_empty=True)
         enable_locking = v.StringBoolean(if_missing=False)
         chained_validators = [
-            v.ValidRepoGroup(edit, old_data, can_create_in_root)]
+            v.ValidRepoGroup(localizer, edit, old_data, can_create_in_root)]
 
         if edit:
             # this is repo group owner
             user = All(
                 v.UnicodeString(not_empty=True),
-                v.ValidRepoUser(allow_disabled))
-
+                v.ValidRepoUser(localizer, allow_disabled))
     return _RepoGroupForm
 
 
-def RegisterForm(edit=False, old_data={}):
+def RegisterForm(localizer, edit=False, old_data=None):
+    _ = localizer
+    old_data = old_data or {}
+
     class _RegisterForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
         username = All(
-            v.ValidUsername(edit, old_data),
+            v.ValidUsername(localizer, edit, old_data),
             v.UnicodeString(strip=True, min=1, not_empty=True)
         )
         password = All(
-            v.ValidPassword(),
+            v.ValidPassword(localizer),
             v.UnicodeString(strip=False, min=6, max=72, not_empty=True)
         )
         password_confirmation = All(
-            v.ValidPassword(),
+            v.ValidPassword(localizer),
             v.UnicodeString(strip=False, min=6, max=72, not_empty=True)
         )
         active = v.StringBoolean(if_missing=False)
         firstname = v.UnicodeString(strip=True, min=1, not_empty=False)
         lastname = v.UnicodeString(strip=True, min=1, not_empty=False)
-        email = All(v.Email(not_empty=True), v.UniqSystemEmail(old_data))
+        email = All(v.Email(not_empty=True), v.UniqSystemEmail(localizer, old_data))
 
-        chained_validators = [v.ValidPasswordsMatch()]
-
+        chained_validators = [v.ValidPasswordsMatch(localizer)]
     return _RegisterForm
 
 
-def PasswordResetForm():
+def PasswordResetForm(localizer):
+    _ = localizer
+
     class _PasswordResetForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
-        email = All(v.ValidSystemEmail(), v.Email(not_empty=True))
+        email = All(v.ValidSystemEmail(localizer), v.Email(not_empty=True))
     return _PasswordResetForm
 
 
-def RepoForm(edit=False, old_data=None, repo_groups=None, landing_revs=None,
-             allow_disabled=False):
+def RepoForm(localizer, edit=False, old_data=None, repo_groups=None,
+             landing_revs=None, allow_disabled=False):
+    _ = localizer
     old_data = old_data or {}
     repo_groups = repo_groups or []
     landing_revs = landing_revs or []
@@ -245,8 +257,8 @@ def RepoForm(edit=False, old_data=None, repo_groups=None, landing_revs=None,
         allow_extra_fields = True
         filter_extra_fields = False
         repo_name = All(v.UnicodeString(strip=True, min=1, not_empty=True),
-                        v.SlugifyName(), v.CannotHaveGitSuffix())
-        repo_group = All(v.CanWriteGroup(old_data),
+                        v.SlugifyName(localizer), v.CannotHaveGitSuffix(localizer))
+        repo_group = All(v.CanWriteGroup(localizer, old_data),
                          v.OneOf(repo_groups, hideList=True))
         repo_type = v.OneOf(supported_backends, required=False,
                             if_missing=old_data.get('repo_type'))
@@ -264,77 +276,91 @@ def RepoForm(edit=False, old_data=None, repo_groups=None, landing_revs=None,
             # this is repo owner
             user = All(
                 v.UnicodeString(not_empty=True),
-                v.ValidRepoUser(allow_disabled))
+                v.ValidRepoUser(localizer, allow_disabled))
             clone_uri_change = v.UnicodeString(
                 not_empty=False, if_missing=v.Missing)
 
-        chained_validators = [v.ValidCloneUri(),
-                              v.ValidRepoName(edit, old_data)]
+        chained_validators = [v.ValidCloneUri(localizer),
+                              v.ValidRepoName(localizer, edit, old_data)]
     return _RepoForm
 
 
-def RepoPermsForm():
+def RepoPermsForm(localizer):
+    _ = localizer
+
     class _RepoPermsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = False
-        chained_validators = [v.ValidPerms(type_='repo')]
+        chained_validators = [v.ValidPerms(localizer, type_='repo')]
     return _RepoPermsForm
 
 
-def RepoGroupPermsForm(valid_recursive_choices):
+def RepoGroupPermsForm(localizer, valid_recursive_choices):
+    _ = localizer
+
     class _RepoGroupPermsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = False
         recursive = v.OneOf(valid_recursive_choices)
-        chained_validators = [v.ValidPerms(type_='repo_group')]
+        chained_validators = [v.ValidPerms(localizer, type_='repo_group')]
     return _RepoGroupPermsForm
 
 
-def UserGroupPermsForm():
+def UserGroupPermsForm(localizer):
+    _ = localizer
+
     class _UserPermsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = False
-        chained_validators = [v.ValidPerms(type_='user_group')]
+        chained_validators = [v.ValidPerms(localizer, type_='user_group')]
     return _UserPermsForm
 
 
-def RepoFieldForm():
+def RepoFieldForm(localizer):
+    _ = localizer
+
     class _RepoFieldForm(formencode.Schema):
         filter_extra_fields = True
         allow_extra_fields = True
 
-        new_field_key = All(v.FieldKey(),
+        new_field_key = All(v.FieldKey(localizer),
                             v.UnicodeString(strip=True, min=3, not_empty=True))
         new_field_value = v.UnicodeString(not_empty=False, if_missing=u'')
         new_field_type = v.OneOf(['str', 'unicode', 'list', 'tuple'],
                                  if_missing='str')
         new_field_label = v.UnicodeString(not_empty=False)
         new_field_desc = v.UnicodeString(not_empty=False)
-
     return _RepoFieldForm
 
 
-def RepoForkForm(edit=False, old_data={}, supported_backends=BACKENDS.keys(),
-                 repo_groups=[], landing_revs=[]):
+def RepoForkForm(localizer, edit=False, old_data=None,
+                 supported_backends=BACKENDS.keys(), repo_groups=None,
+                 landing_revs=None):
+    _ = localizer
+    old_data = old_data or {}
+    repo_groups = repo_groups or []
+    landing_revs = landing_revs or []
+
     class _RepoForkForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = False
         repo_name = All(v.UnicodeString(strip=True, min=1, not_empty=True),
-                        v.SlugifyName())
-        repo_group = All(v.CanWriteGroup(),
+                        v.SlugifyName(localizer))
+        repo_group = All(v.CanWriteGroup(localizer, ),
                          v.OneOf(repo_groups, hideList=True))
-        repo_type = All(v.ValidForkType(old_data), v.OneOf(supported_backends))
+        repo_type = All(v.ValidForkType(localizer, old_data), v.OneOf(supported_backends))
         description = v.UnicodeString(strip=True, min=1, not_empty=True)
         private = v.StringBoolean(if_missing=False)
         copy_permissions = v.StringBoolean(if_missing=False)
         fork_parent_id = v.UnicodeString()
-        chained_validators = [v.ValidForkName(edit, old_data)]
+        chained_validators = [v.ValidForkName(localizer, edit, old_data)]
         landing_rev = v.OneOf(landing_revs, hideList=True)
-
     return _RepoForkForm
 
 
-def ApplicationSettingsForm():
+def ApplicationSettingsForm(localizer):
+    _ = localizer
+
     class _ApplicationSettingsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = False
@@ -346,11 +372,12 @@ def ApplicationSettingsForm():
         rhodecode_captcha_private_key = v.UnicodeString(strip=True, min=1, not_empty=False)
         rhodecode_create_personal_repo_group = v.StringBoolean(if_missing=False)
         rhodecode_personal_repo_group_pattern = v.UnicodeString(strip=True, min=1, not_empty=False)
-
     return _ApplicationSettingsForm
 
 
-def ApplicationVisualisationForm():
+def ApplicationVisualisationForm(localizer):
+    _ = localizer
+
     class _ApplicationVisualisationForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = False
@@ -370,11 +397,11 @@ def ApplicationVisualisationForm():
         rhodecode_support_url = v.UnicodeString()
         rhodecode_show_revision_number = v.StringBoolean(if_missing=False)
         rhodecode_show_sha_length = v.Int(min=4, not_empty=True)
-
     return _ApplicationVisualisationForm
 
 
 class _BaseVcsSettingsForm(formencode.Schema):
+
     allow_extra_fields = True
     filter_extra_fields = False
     hooks_changegroup_repo_size = v.StringBoolean(if_missing=False)
@@ -403,48 +430,54 @@ class _BaseVcsSettingsForm(formencode.Schema):
     vcs_svn_proxy_http_server_url = v.UnicodeString(strip=True, if_missing=None)
 
 
-def ApplicationUiSettingsForm():
+def ApplicationUiSettingsForm(localizer):
+    _ = localizer
+
     class _ApplicationUiSettingsForm(_BaseVcsSettingsForm):
         web_push_ssl = v.StringBoolean(if_missing=False)
         paths_root_path = All(
-            v.ValidPath(),
+            v.ValidPath(localizer),
             v.UnicodeString(strip=True, min=1, not_empty=True)
         )
         largefiles_usercache = All(
-            v.ValidPath(),
+            v.ValidPath(localizer),
             v.UnicodeString(strip=True, min=2, not_empty=True))
         vcs_git_lfs_store_location = All(
-            v.ValidPath(),
+            v.ValidPath(localizer),
             v.UnicodeString(strip=True, min=2, not_empty=True))
         extensions_hgsubversion = v.StringBoolean(if_missing=False)
         extensions_hggit = v.StringBoolean(if_missing=False)
-        new_svn_branch = v.ValidSvnPattern(section='vcs_svn_branch')
-        new_svn_tag = v.ValidSvnPattern(section='vcs_svn_tag')
-
+        new_svn_branch = v.ValidSvnPattern(localizer, section='vcs_svn_branch')
+        new_svn_tag = v.ValidSvnPattern(localizer, section='vcs_svn_tag')
     return _ApplicationUiSettingsForm
 
 
-def RepoVcsSettingsForm(repo_name):
+def RepoVcsSettingsForm(localizer, repo_name):
+    _ = localizer
+
     class _RepoVcsSettingsForm(_BaseVcsSettingsForm):
         inherit_global_settings = v.StringBoolean(if_missing=False)
-        new_svn_branch = v.ValidSvnPattern(
+        new_svn_branch = v.ValidSvnPattern(localizer,
             section='vcs_svn_branch', repo_name=repo_name)
-        new_svn_tag = v.ValidSvnPattern(
+        new_svn_tag = v.ValidSvnPattern(localizer,
             section='vcs_svn_tag', repo_name=repo_name)
-
     return _RepoVcsSettingsForm
 
 
-def LabsSettingsForm():
+def LabsSettingsForm(localizer):
+    _ = localizer
+
     class _LabSettingsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = False
-
     return _LabSettingsForm
 
 
 def ApplicationPermissionsForm(
-        register_choices, password_reset_choices, extern_activate_choices):
+        localizer, register_choices, password_reset_choices,
+        extern_activate_choices):
+    _ = localizer
+
     class _DefaultPermissionsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
@@ -454,12 +487,13 @@ def ApplicationPermissionsForm(
         default_register_message = v.UnicodeString()
         default_password_reset = v.OneOf(password_reset_choices)
         default_extern_activate = v.OneOf(extern_activate_choices)
-
     return _DefaultPermissionsForm
 
 
-def ObjectPermissionsForm(repo_perms_choices, group_perms_choices,
+def ObjectPermissionsForm(localizer, repo_perms_choices, group_perms_choices,
                           user_group_perms_choices):
+    _ = localizer
+
     class _ObjectPermissionsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
@@ -469,13 +503,14 @@ def ObjectPermissionsForm(repo_perms_choices, group_perms_choices,
         default_repo_perm = v.OneOf(repo_perms_choices)
         default_group_perm = v.OneOf(group_perms_choices)
         default_user_group_perm = v.OneOf(user_group_perms_choices)
-
     return _ObjectPermissionsForm
 
 
-def UserPermissionsForm(create_choices, create_on_write_choices,
+def UserPermissionsForm(localizer, create_choices, create_on_write_choices,
                         repo_group_create_choices, user_group_create_choices,
                         fork_choices, inherit_default_permissions_choices):
+    _ = localizer
+
     class _DefaultPermissionsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
@@ -488,21 +523,24 @@ def UserPermissionsForm(create_choices, create_on_write_choices,
         default_repo_group_create = v.OneOf(repo_group_create_choices)
         default_fork_create = v.OneOf(fork_choices)
         default_inherit_default_permissions = v.OneOf(inherit_default_permissions_choices)
-
     return _DefaultPermissionsForm
 
 
-def UserIndividualPermissionsForm():
+def UserIndividualPermissionsForm(localizer):
+    _ = localizer
+
     class _DefaultPermissionsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
 
         inherit_default_permissions = v.StringBoolean(if_missing=False)
-
     return _DefaultPermissionsForm
 
 
-def DefaultsForm(edit=False, old_data={}, supported_backends=BACKENDS.keys()):
+def DefaultsForm(localizer, edit=False, old_data=None, supported_backends=BACKENDS.keys()):
+    _ = localizer
+    old_data = old_data or {}
+
     class _DefaultsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
@@ -511,34 +549,39 @@ def DefaultsForm(edit=False, old_data={}, supported_backends=BACKENDS.keys()):
         default_repo_enable_statistics = v.StringBoolean(if_missing=False)
         default_repo_enable_downloads = v.StringBoolean(if_missing=False)
         default_repo_enable_locking = v.StringBoolean(if_missing=False)
-
     return _DefaultsForm
 
 
-def AuthSettingsForm():
+def AuthSettingsForm(localizer):
+    _ = localizer
+
     class _AuthSettingsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = True
-        auth_plugins = All(v.ValidAuthPlugins(),
-                           v.UniqueListFromString()(not_empty=True))
-
+        auth_plugins = All(v.ValidAuthPlugins(localizer),
+                           v.UniqueListFromString(localizer)(not_empty=True))
     return _AuthSettingsForm
 
 
-def UserExtraEmailForm():
+def UserExtraEmailForm(localizer):
+    _ = localizer
+
     class _UserExtraEmailForm(formencode.Schema):
-        email = All(v.UniqSystemEmail(), v.Email(not_empty=True))
+        email = All(v.UniqSystemEmail(localizer), v.Email(not_empty=True))
     return _UserExtraEmailForm
 
 
-def UserExtraIpForm():
+def UserExtraIpForm(localizer):
+    _ = localizer
+
     class _UserExtraIpForm(formencode.Schema):
-        ip = v.ValidIp()(not_empty=True)
+        ip = v.ValidIp(localizer)(not_empty=True)
     return _UserExtraIpForm
 
 
+def PullRequestForm(localizer, repo_id):
+    _ = localizer
 
-def PullRequestForm(repo_id):
     class ReviewerForm(formencode.Schema):
         user_id = v.Int(not_empty=True)
         reasons = All()
@@ -553,8 +596,8 @@ def PullRequestForm(repo_id):
         source_ref = v.UnicodeString(strip=True, required=True)
         target_repo = v.UnicodeString(strip=True, required=True)
         target_ref = v.UnicodeString(strip=True, required=True)
-        revisions = All(#v.NotReviewedRevisions(repo_id)(),
-                        v.UniqueList()(not_empty=True))
+        revisions = All(#v.NotReviewedRevisions(localizer, repo_id)(),
+                        v.UniqueList(localizer)(not_empty=True))
         review_members = formencode.ForEach(ReviewerForm())
         pullrequest_title = v.UnicodeString(strip=True, required=True)
         pullrequest_desc = v.UnicodeString(strip=True, required=False)
@@ -562,9 +605,11 @@ def PullRequestForm(repo_id):
     return _PullRequestForm
 
 
-def IssueTrackerPatternsForm():
+def IssueTrackerPatternsForm(localizer):
+    _ = localizer
+
     class _IssueTrackerPatternsForm(formencode.Schema):
         allow_extra_fields = True
         filter_extra_fields = False
-        chained_validators = [v.ValidPattern()]
+        chained_validators = [v.ValidPattern(localizer)]
     return _IssueTrackerPatternsForm

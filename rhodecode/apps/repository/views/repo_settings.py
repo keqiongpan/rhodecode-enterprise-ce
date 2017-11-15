@@ -71,7 +71,7 @@ class RepoSettingsView(RepoAppView):
         c.repo_fields = RepositoryField.query()\
             .filter(RepositoryField.repository == self.db_repo).all()
 
-        self._register_global_c(c)
+
         return c
 
     def _get_schema(self, c, old_values=None):

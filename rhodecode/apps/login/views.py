@@ -113,7 +113,7 @@ class LoginView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
         c.came_from = get_came_from(self.request)
-        self._register_global_c(c)
+
         return c
 
     def _get_captcha_data(self):
@@ -157,7 +157,7 @@ class LoginView(BaseAppView):
     def login_post(self):
         c = self.load_default_context()
 
-        login_form = LoginForm()()
+        login_form = LoginForm(self.request.translate)()
 
         try:
             self.session.invalidate()
@@ -182,11 +182,10 @@ class LoginView(BaseAppView):
             defaults = errors.value
             # remove password from filling in form again
             defaults.pop('password', None)
-            render_ctx = self._get_template_context(c)
-            render_ctx.update({
+            render_ctx = {
                 'errors': errors.error_dict,
                 'defaults': defaults,
-            })
+            }
 
             audit_user = audit_logger.UserWrap(
                 username=self.request.POST.get('username'),
@@ -195,7 +194,7 @@ class LoginView(BaseAppView):
             audit_logger.store_web(
                 'user.login.failure', action_data=action_data,
                 user=audit_user, commit=True)
-            return render_ctx
+            return self._get_template_context(c, **render_ctx)
 
         except UserCreationError as e:
             # headers auth or other auth functions that create users on
@@ -255,7 +254,7 @@ class LoginView(BaseAppView):
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
             .AuthUser().permissions['global']
 
-        register_form = RegisterForm()()
+        register_form = RegisterForm(self.request.translate)()
         try:
 
             form_result = register_form.to_python(self.request.POST)
@@ -324,7 +323,7 @@ class LoginView(BaseAppView):
                                    queue='error')
                 return HTTPFound(self.request.route_path('reset_password'))
 
-            password_reset_form = PasswordResetForm()()
+            password_reset_form = PasswordResetForm(self.request.translate)()
             try:
                 form_result = password_reset_form.to_python(
                     self.request.POST)

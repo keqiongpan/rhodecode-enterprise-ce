@@ -97,18 +97,14 @@ def repo_name_slug(value):
 #==============================================================================
 def get_repo_slug(request):
     _repo = ''
-    if isinstance(request, Request):
-        if hasattr(request, 'db_repo'):
-            # if our requests has set db reference use it for name, this
-            # translates the example.com/_<id> into proper repo names
-            _repo = request.db_repo.repo_name
-        elif getattr(request, 'matchdict', None):
-            # pyramid
-            _repo = request.matchdict.get('repo_name')
 
-    # TODO(marcink): remove after pylons migration...
-    if not _repo:
-        _repo = request.environ['pylons.routes_dict'].get('repo_name')
+    if hasattr(request, 'db_repo'):
+        # if our requests has set db reference use it for name, this
+        # translates the example.com/_<id> into proper repo names
+        _repo = request.db_repo.repo_name
+    elif getattr(request, 'matchdict', None):
+        # pyramid
+        _repo = request.matchdict.get('repo_name')
 
     if _repo:
         _repo = _repo.rstrip('/')
@@ -117,18 +113,14 @@ def get_repo_slug(request):
 
 def get_repo_group_slug(request):
     _group = ''
-    if isinstance(request, Request):
-        if hasattr(request, 'db_repo_group'):
-            # if our requests has set db reference use it for name, this
-            # translates the example.com/_<id> into proper repo group names
-            _group = request.db_repo_group.group_name
-        elif getattr(request, 'matchdict', None):
-            # pyramid
-            _group = request.matchdict.get('repo_group_name')
+    if hasattr(request, 'db_repo_group'):
+        # if our requests has set db reference use it for name, this
+        # translates the example.com/_<id> into proper repo group names
+        _group = request.db_repo_group.group_name
+    elif getattr(request, 'matchdict', None):
+        # pyramid
+        _group = request.matchdict.get('repo_group_name')
 
-    # TODO(marcink): remove after pylons migration...
-    if not _group:
-        _group = request.environ['pylons.routes_dict'].get('group_name')
 
     if _group:
         _group = _group.rstrip('/')
@@ -137,26 +129,21 @@ def get_repo_group_slug(request):
 
 def get_user_group_slug(request):
     _user_group = ''
-    if isinstance(request, Request):
 
-        if hasattr(request, 'db_user_group'):
-            _user_group = request.db_user_group.users_group_name
-        elif getattr(request, 'matchdict', None):
-            # pyramid
-            _user_group = request.matchdict.get('user_group_id')
+    if hasattr(request, 'db_user_group'):
+        _user_group = request.db_user_group.users_group_name
+    elif getattr(request, 'matchdict', None):
+        # pyramid
+        _user_group = request.matchdict.get('user_group_id')
 
-            try:
-                _user_group = UserGroup.get(_user_group)
-                if _user_group:
-                    _user_group = _user_group.users_group_name
-            except Exception:
-                log.exception('Failed to get user group by id')
-                # catch all failures here
-                return None
-
-    # TODO(marcink): remove after pylons migration...
-    if not _user_group:
-        _user_group = request.environ['pylons.routes_dict'].get('user_group_id')
+        try:
+            _user_group = UserGroup.get(_user_group)
+            if _user_group:
+                _user_group = _user_group.users_group_name
+        except Exception:
+            log.exception('Failed to get user group by id')
+            # catch all failures here
+            return None
 
     return _user_group
 
@@ -438,7 +425,7 @@ def get_enabled_hook_classes(ui_settings):
 
 def set_rhodecode_config(config):
     """
-    Updates pylons config with new settings from database
+    Updates pyramid config with new settings from database
 
     :param config:
     """
@@ -879,19 +866,6 @@ def read_opensource_licenses():
         _license_cache = json.loads(licenses)
 
     return _license_cache
-
-
-def get_registry(request):
-    """
-    Utility to get the pyramid registry from a request. During migration to
-    pyramid we sometimes want to use the pyramid registry from pylons context.
-    Therefore this utility returns `request.registry` for pyramid requests and
-    uses `get_current_registry()` for pylons requests.
-    """
-    try:
-        return request.registry
-    except AttributeError:
-        return get_current_registry()
 
 
 def generate_platform_uuid():

@@ -29,7 +29,7 @@ from rhodecode.lib.middleware.simplesvn import SimpleSvn, SimpleSvnApp
 
 class TestSimpleSvn(object):
     @pytest.fixture(autouse=True)
-    def simple_svn(self, pylonsapp, request_stub):
+    def simple_svn(self, baseapp, request_stub):
         self.app = SimpleSvn(
             application='None',
             config={'auth_ret_code': '',

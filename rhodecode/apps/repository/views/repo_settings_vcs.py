@@ -43,7 +43,7 @@ class RepoSettingsVcsView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        self._register_global_c(c)
+
         return c
 
     def _vcs_form_defaults(self, repo_name):
@@ -117,7 +117,7 @@ class RepoSettingsVcsView(RepoAppView):
         defaults = self._vcs_form_defaults(self.db_repo_name)
         c.inherit_global_settings = defaults['inherit_global_settings']
 
-        application_form = RepoVcsSettingsForm(self.db_repo_name)()
+        application_form = RepoVcsSettingsForm(self.request.translate, self.db_repo_name)()
         try:
             form_result = application_form.to_python(dict(self.request.POST))
         except formencode.Invalid as errors:

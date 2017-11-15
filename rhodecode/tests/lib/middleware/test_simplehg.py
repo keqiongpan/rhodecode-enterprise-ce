@@ -78,7 +78,7 @@ def test_get_repository_name(url, expected_repo_name, request_stub):
     assert expected_repo_name == app._get_repository_name(get_environ(url))
 
 
-def test_get_config(user_util, pylonsapp, request_stub):
+def test_get_config(user_util, baseapp, request_stub):
     repo = user_util.create_repo(repo_type='git')
     app = simplehg.SimpleHg(application=None,
                             config={'auth_ret_code': '', 'base_path': ''},

@@ -53,7 +53,7 @@ class RepoSummaryView(RepoAppView):
         if not c.repository_requirements_missing:
             c.rhodecode_repo = self.rhodecode_vcs_repo
 
-        self._register_global_c(c)
+
         return c
 
     def _get_readme_data(self, db_repo, default_renderer):

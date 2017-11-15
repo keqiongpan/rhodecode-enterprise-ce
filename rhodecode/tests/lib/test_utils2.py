@@ -34,7 +34,7 @@ def test_obfuscate_url_pw():
     'www.test.com', 'test.com', 'test.co.uk', '192.168.1.3'])
 @pytest.mark.parametrize('port', [None, '80', '443', '999'])
 @pytest.mark.parametrize('script_path', [None, '/', '/prefix', '/prefix/more'])
-def test_routes_generator(pylonsapp, scheme, domain, port, script_path):
+def test_routes_generator(baseapp, scheme, domain, port, script_path):
     server_url = '%s://%s' % (scheme, domain)
     if port is not None:
         server_url += ':' + port

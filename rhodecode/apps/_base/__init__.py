@@ -159,32 +159,14 @@ class BaseAppView(object):
 
         return c
 
-    def _register_global_c(self, tmpl_args):
-        """
-        Registers attributes to pylons global `c`
-        """
-
-        # TODO(marcink): remove once pyramid migration is finished
-        from pylons import tmpl_context as c
-        try:
-            for k, v in tmpl_args.items():
-                setattr(c, k, v)
-        except TypeError:
-            log.exception('Failed to register pylons C')
-            pass
-
-    def _get_template_context(self, tmpl_args):
-        self._register_global_c(tmpl_args)
+    def _get_template_context(self, tmpl_args, **kwargs):
 
         local_tmpl_args = {
             'defaults': {},
             'errors': {},
-            # register a fake 'c' to be used in templates instead of global
-            # pylons c, after migration to pyramid we should rename it to 'c'
-            # make sure we replace usage of _c in templates too
-            '_c': tmpl_args
+            'c': tmpl_args
         }
-        local_tmpl_args.update(tmpl_args)
+        local_tmpl_args.update(kwargs)
         return local_tmpl_args
 
     def load_default_context(self):
@@ -194,7 +176,7 @@ class BaseAppView(object):
         def load_default_context(self):
             c = self._get_local_tmpl_context()
             c.custom_var = 'foobar'
-            self._register_global_c(c)
+
             return c
         """
         raise NotImplementedError('Needs implementation in view class')
@@ -213,7 +195,7 @@ class RepoAppView(BaseAppView):
             'Requirements are missing for repository %s: %s',
             self.db_repo_name, error.message)
 
-    def _get_local_tmpl_context(self, include_app_defaults=False):
+    def _get_local_tmpl_context(self, include_app_defaults=True):
         _ = self.request.translate
         c = super(RepoAppView, self)._get_local_tmpl_context(
             include_app_defaults=include_app_defaults)
@@ -336,7 +318,7 @@ class BaseReferencesView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        self._register_global_c(c)
+
         return c
 
     def load_refs_context(self, ref_items, partials_template):

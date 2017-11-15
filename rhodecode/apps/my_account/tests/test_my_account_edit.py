@@ -198,8 +198,6 @@ class TestMyAccountEdit(TestController):
                                  params=params)
 
         response.mustcontain('An email address must contain a single @')
-        from rhodecode.model import validators
-        msg = validators.ValidUsername(
-            edit=False, old_data={})._messages['username_exists']
+        msg = '???'
         msg = h.html_escape(msg % {'username': 'test_admin'})
         response.mustcontain(u"%s" % msg)

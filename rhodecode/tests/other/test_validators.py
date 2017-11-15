@@ -38,11 +38,18 @@ from rhodecode.tests.fixture import Fixture
 
 fixture = Fixture()
 
-pytestmark = pytest.mark.usefixtures('pylonsapp')
+pytestmark = pytest.mark.usefixtures('baseapp')
 
 
-def test_Message_extractor():
-    validator = v.ValidUsername()
+@pytest.fixture
+def localizer():
+    def func(msg):
+        return msg
+    return func
+
+
+def test_Message_extractor(localizer):
+    validator = v.ValidUsername(localizer)
     pytest.raises(formencode.Invalid, validator.to_python, 'default')
 
     class StateObj(object):
@@ -52,8 +59,8 @@ def test_Message_extractor():
         formencode.Invalid, validator.to_python, 'default', StateObj)
 
 
-def test_ValidUsername():
-    validator = v.ValidUsername()
+def test_ValidUsername(localizer):
+    validator = v.ValidUsername(localizer)
 
     pytest.raises(formencode.Invalid, validator.to_python, 'default')
     pytest.raises(formencode.Invalid, validator.to_python, 'new_user')
@@ -62,18 +69,18 @@ def test_ValidUsername():
         formencode.Invalid, validator.to_python, TEST_USER_ADMIN_LOGIN)
     assert 'test' == validator.to_python('test')
 
-    validator = v.ValidUsername(edit=True, old_data={'user_id': 1})
+    validator = v.ValidUsername(localizer, edit=True, old_data={'user_id': 1})
 
 
-def test_ValidRepoUser():
-    validator = v.ValidRepoUser()
+def test_ValidRepoUser(localizer):
+    validator = v.ValidRepoUser(localizer)
     pytest.raises(formencode.Invalid, validator.to_python, 'nouser')
     assert TEST_USER_ADMIN_LOGIN == \
         validator.to_python(TEST_USER_ADMIN_LOGIN)
 
 
-def test_ValidUserGroup():
-    validator = v.ValidUserGroup()
+def test_ValidUserGroup(localizer):
+    validator = v.ValidUserGroup(localizer)
     pytest.raises(formencode.Invalid, validator.to_python, 'default')
     pytest.raises(formencode.Invalid, validator.to_python, '.,')
 
@@ -82,7 +89,7 @@ def test_ValidUserGroup():
     Session().commit()
     pytest.raises(formencode.Invalid, validator.to_python, 'test')
     assert gr.users_group_id is not None
-    validator = v.ValidUserGroup(
+    validator = v.ValidUserGroup(localizer,
         edit=True,
         old_data={'users_group_id': gr2.users_group_id})
 
@@ -109,24 +116,24 @@ def repo_group(request):
     return gr
 
 
-def test_ValidRepoGroup_same_name_as_repo():
-    validator = v.ValidRepoGroup()
+def test_ValidRepoGroup_same_name_as_repo(localizer):
+    validator = v.ValidRepoGroup(localizer)
     with pytest.raises(formencode.Invalid) as excinfo:
         validator.to_python({'group_name': HG_REPO})
     expected_msg = 'Repository with name "vcs_test_hg" already exists'
     assert expected_msg in str(excinfo.value)
 
 
-def test_ValidRepoGroup_group_exists(repo_group):
-    validator = v.ValidRepoGroup()
+def test_ValidRepoGroup_group_exists(localizer, repo_group):
+    validator = v.ValidRepoGroup(localizer)
     with pytest.raises(formencode.Invalid) as excinfo:
         validator.to_python({'group_name': repo_group.group_name})
     expected_msg = 'Group "test_gr" already exists'
     assert expected_msg in str(excinfo.value)
 
 
-def test_ValidRepoGroup_invalid_parent(repo_group):
-    validator = v.ValidRepoGroup(edit=True,
+def test_ValidRepoGroup_invalid_parent(localizer, repo_group):
+    validator = v.ValidRepoGroup(localizer, edit=True,
                                  old_data={'group_id': repo_group.group_id})
     with pytest.raises(formencode.Invalid) as excinfo:
         validator.to_python({
@@ -137,8 +144,8 @@ def test_ValidRepoGroup_invalid_parent(repo_group):
     assert expected_msg in str(excinfo.value)
 
 
-def test_ValidRepoGroup_edit_group_no_root_permission(repo_group):
-    validator = v.ValidRepoGroup(
+def test_ValidRepoGroup_edit_group_no_root_permission(localizer, repo_group):
+    validator = v.ValidRepoGroup(localizer,
         edit=True, old_data={'group_id': repo_group.group_id},
         can_create_in_root=False)
 
@@ -156,15 +163,15 @@ def test_ValidRepoGroup_edit_group_no_root_permission(repo_group):
     validator.to_python({'enable_locking': 'true', 'group_parent_id': '-1'})
 
 
-def test_ValidPassword():
-    validator = v.ValidPassword()
+def test_ValidPassword(localizer):
+    validator = v.ValidPassword(localizer)
     assert 'lol' == validator.to_python('lol')
     assert None == validator.to_python(None)
     pytest.raises(formencode.Invalid, validator.to_python, 'ąćżź')
 
 
-def test_ValidPasswordsMatch():
-    validator = v.ValidPasswordsMatch()
+def test_ValidPasswordsMatch(localizer):
+    validator = v.ValidPasswordsMatch(localizer)
     pytest.raises(
         formencode.Invalid,
         validator.to_python, {'password': 'pass',
@@ -184,11 +191,11 @@ def test_ValidPasswordsMatch():
                              'password_confirmation': 'pass'})
 
 
-def test_ValidAuth(config_stub):
+def test_ValidAuth(localizer, config_stub):
     config_stub.testing_securitypolicy()
     config_stub.include('rhodecode.authentication')
 
-    validator = v.ValidAuth()
+    validator = v.ValidAuth(localizer)
     valid_creds = {
         'username': TEST_USER_REGULAR2_LOGIN,
         'password': TEST_USER_REGULAR2_PASS,
@@ -202,17 +209,14 @@ def test_ValidAuth(config_stub):
         formencode.Invalid, validator.to_python, invalid_creds)
 
 
-# TODO: johbo: Fix or wipe this test
-def test_ValidAuthToken():
-    validator = v.ValidAuthToken()
-    # this is untestable without a threadlocal
-#        pytest.raises(formencode.Invalid,
-#                          validator.to_python, 'BadToken')
+def test_ValidAuthToken(localizer):
+    validator = v.ValidAuthToken(localizer)
+    pytest.raises(formencode.Invalid, validator.to_python, 'BadToken')
     validator
 
 
-def test_ValidRepoName():
-    validator = v.ValidRepoName()
+def test_ValidRepoName(localizer):
+    validator = v.ValidRepoName(localizer)
 
     pytest.raises(
         formencode.Invalid, validator.to_python, {'repo_name': ''})
@@ -232,7 +236,7 @@ def test_ValidRepoName():
 #                                                'repo_group': gr.group_id})
 
 
-def test_ValidForkName():
+def test_ValidForkName(localizer):
     # this uses ValidRepoName validator
     assert True
 
@@ -241,37 +245,26 @@ def test_ValidForkName():
     ('ala ma kota', 'ala-ma-kota'), ('@nooo', 'nooo'),
     ('$!haha lolz !', 'haha-lolz'), ('$$$$$', ''), ('{}OK!', 'OK'),
     ('/]re po', 're-po')])
-def test_SlugifyName(name, expected):
-    validator = v.SlugifyName()
+def test_SlugifyName(name, expected, localizer):
+    validator = v.SlugifyName(localizer)
     assert expected == validator.to_python(name)
 
 
-def test_ValidForkType():
-        validator = v.ValidForkType(old_data={'repo_type': 'hg'})
+def test_ValidForkType(localizer):
+        validator = v.ValidForkType(localizer, old_data={'repo_type': 'hg'})
         assert 'hg' == validator.to_python('hg')
         pytest.raises(formencode.Invalid, validator.to_python, 'git')
 
 
-def test_ValidSettings():
-    validator = v.ValidSettings()
-    assert {'pass': 'pass'} == \
-         validator.to_python(value={'user': 'test',
-                                    'pass': 'pass'})
-
-    assert {'user2': 'test', 'pass': 'pass'} == \
-         validator.to_python(value={'user2': 'test',
-                                    'pass': 'pass'})
-
-
-def test_ValidPath():
-        validator = v.ValidPath()
+def test_ValidPath(localizer):
+        validator = v.ValidPath(localizer)
         assert TESTS_TMP_PATH == validator.to_python(TESTS_TMP_PATH)
         pytest.raises(
             formencode.Invalid, validator.to_python, '/no_such_dir')
 
 
-def test_UniqSystemEmail():
-    validator = v.UniqSystemEmail(old_data={})
+def test_UniqSystemEmail(localizer):
+    validator = v.UniqSystemEmail(localizer, old_data={})
 
     assert 'mail@python.org' == validator.to_python('MaiL@Python.org')
 
@@ -279,17 +272,17 @@ def test_UniqSystemEmail():
     pytest.raises(formencode.Invalid, validator.to_python, email)
 
 
-def test_ValidSystemEmail():
-    validator = v.ValidSystemEmail()
+def test_ValidSystemEmail(localizer):
+    validator = v.ValidSystemEmail(localizer)
     email = TEST_USER_REGULAR2_EMAIL
 
     assert email == validator.to_python(email)
     pytest.raises(formencode.Invalid, validator.to_python, 'err')
 
 
-def test_NotReviewedRevisions():
+def test_NotReviewedRevisions(localizer):
     repo_id = Repository.get_by_repo_name(HG_REPO).repo_id
-    validator = v.NotReviewedRevisions(repo_id)
+    validator = v.NotReviewedRevisions(localizer, repo_id)
     rev = '0' * 40
     # add status for a rev, that should throw an error because it is already
     # reviewed

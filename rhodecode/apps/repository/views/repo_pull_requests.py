@@ -60,7 +60,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         c = self._get_local_tmpl_context(include_app_defaults=True)
         c.REVIEW_STATUS_APPROVED = ChangesetStatus.STATUS_APPROVED
         c.REVIEW_STATUS_REJECTED = ChangesetStatus.STATUS_REJECTED
-        self._register_global_c(c)
+
         return c
 
     def _get_pull_requests_list(
@@ -749,7 +749,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         controls = peppercorn.parse(self.request.POST.items())
 
         try:
-            _form = PullRequestForm(self.db_repo.repo_id)().to_python(controls)
+            form = PullRequestForm(
+                self.request.translate, self.db_repo.repo_id)()
+            _form = form.to_python(controls)
         except formencode.Invalid as errors:
             if errors.error_dict.get('revisions'):
                 msg = 'Revisions: %s' % errors.error_dict['revisions']

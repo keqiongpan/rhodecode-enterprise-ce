@@ -31,19 +31,13 @@ def test_vcs_available_returns_summary_page(app, backend):
 
 
 @pytest.mark.usefixtures('autologin_user', 'app')
-def test_vcs_unavailable_returns_vcs_error_page(app, backend, app_settings):
+def test_vcs_unavailable_returns_vcs_error_page(app, backend):
     from rhodecode.lib.vcs.exceptions import VCSCommunicationError
-    from rhodecode.lib.middleware.error_handling import (
-        PylonsErrorHandlingMiddleware)
 
     # Depending on the used VCSServer protocol we have to patch a different
     # RemoteRepo class to raise an exception. For the test it doesn't matter
     # if http is used, it just requires the exception to be raised.
-    vcs_protocol = app_settings['vcs.server.protocol']
-    if vcs_protocol == 'http':
-        from rhodecode.lib.vcs.client_http import RemoteRepo
-    else:
-        pytest.fail('Unknown VCS server protocol: "{}"'.format(vcs_protocol))
+    from rhodecode.lib.vcs.client_http import RemoteRepo
 
     url = '/{repo_name}'.format(repo_name=backend.repo.repo_name)
 

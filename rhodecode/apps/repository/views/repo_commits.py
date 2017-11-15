@@ -150,7 +150,6 @@ class RepoCommitsView(RepoAppView):
         c = self._get_local_tmpl_context(include_app_defaults=True)
         c.rhodecode_repo = self.rhodecode_vcs_repo
 
-        self._register_global_c(c)
         return c
 
     def _commit(self, commit_id_range, method):

@@ -44,7 +44,7 @@ def repo_name(backend_hg):
 class TestPermissions(object):
 
     @pytest.fixture(scope='class', autouse=True)
-    def default_permissions(self, request, pylonsapp):
+    def default_permissions(self, request, baseapp):
         # recreate default user to get a clean start
         PermissionModel().create_default_user_permissions(
             user=User.DEFAULT_USER, force=True)

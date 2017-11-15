@@ -43,7 +43,7 @@ class MyAccountNotificationsView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
         c.user = c.auth_user.get_instance()
-        self._register_global_c(c)
+
         return c
 
     def _has_permissions(self, notification):

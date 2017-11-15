@@ -91,11 +91,6 @@ DEFAULT_USER = User.DEFAULT_USER
 DEFAULT_USER_EMAIL = User.DEFAULT_USER_EMAIL
 
 
-def url(*args, **kw):
-    from pylons import url as pylons_url
-    return pylons_url(*args, **kw)
-
-
 def asset(path, ver=None, **kwargs):
     """
     Helper to generate a static asset file path for rhodecode assets
@@ -1287,15 +1282,8 @@ def initials_gravatar(email_address, first_name, last_name, size=30):
 
 def gravatar_url(email_address, size=30, request=None):
     request = get_current_request()
-    if request and hasattr(request, 'call_context'):
-        _use_gravatar = request.call_context.visual.use_gravatar
-        _gravatar_url = request.call_context.visual.gravatar_url
-    else:
-        # doh, we need to re-import those to mock it later
-        from pylons import tmpl_context as c
-
-        _use_gravatar = c.visual.use_gravatar
-        _gravatar_url = c.visual.gravatar_url
+    _use_gravatar = request.call_context.visual.use_gravatar
+    _gravatar_url = request.call_context.visual.gravatar_url
 
     _gravatar_url = _gravatar_url or User.DEFAULT_GRAVATAR_URL
 
@@ -1745,8 +1733,6 @@ def urlify_commit_message(commit_text, repository=None):
     :param commit_text:
     :param repository:
     """
-    from pylons import url  # doh, we need to re-import url to mock it later
-
     def escaper(string):
         return string.replace('<', '&lt;').replace('>', '&gt;')
 
@@ -2006,8 +1992,6 @@ def get_last_path_part(file_node):
 def route_url(*args, **kwargs):
     """
     Wrapper around pyramids `route_url` (fully qualified url) function. 
-    It is used to generate URLs from within pylons views or templates. 
-    This will be removed when pyramid migration if finished.
     """
     req = get_current_request()
     return req.route_url(*args, **kwargs)
@@ -2015,9 +1999,7 @@ def route_url(*args, **kwargs):
 
 def route_path(*args, **kwargs):
     """
-    Wrapper around pyramids `route_path` function. It is used to generate
-    URLs from within pylons views or templates. This will be removed when
-    pyramid migration if finished.
+    Wrapper around pyramids `route_path` function.
     """
     req = get_current_request()
     return req.route_path(*args, **kwargs)
@@ -2034,26 +2016,6 @@ def current_route_path(request, **kw):
     new_args = request.GET.mixed()
     new_args.update(kw)
     return request.current_route_path(_query=new_args)
-
-
-def static_url(*args, **kwds):
-    """
-    Wrapper around pyramids `route_path` function. It is used to generate
-    URLs from within pylons views or templates. This will be removed when
-    pyramid migration if finished.
-    """
-    req = get_current_request()
-    return req.static_url(*args, **kwds)
-
-
-def resource_path(*args, **kwds):
-    """
-    Wrapper around pyramids `route_path` function. It is used to generate
-    URLs from within pylons views or templates. This will be removed when
-    pyramid migration if finished.
-    """
-    req = get_current_request()
-    return req.resource_path(*args, **kwds)
 
 
 def api_call_example(method, args):

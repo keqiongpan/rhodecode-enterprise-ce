@@ -14,7 +14,7 @@
         <input type='submit' value="${_('filter')}" class="btn" />
         ${_('Audit logs')} - ${_ungettext('%s entry', '%s entries', c.audit_logs.item_count) % (c.audit_logs.item_count)}
     ${h.end_form()}
-    <p class="tooltip filterexample" title="${h.tooltip(h.journal_filter_help(c.pyramid_request))}">${_('Example Queries')}</p>
+    <p class="tooltip filterexample" title="${h.tooltip(h.journal_filter_help(request))}">${_('Example Queries')}</p>
 </%def>
 
 <%def name="menu_bar_nav()">

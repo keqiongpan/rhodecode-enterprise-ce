@@ -34,7 +34,7 @@ from rhodecode.lib.vcs.backends.hg import MercurialRepository
 from rhodecode.tests import TEST_HG_REPO, TEST_GIT_REPO
 
 
-pytestmark = pytest.mark.usefixtures("pylonsapp")
+pytestmark = pytest.mark.usefixtures("baseapp")
 
 
 def test_get_backend():

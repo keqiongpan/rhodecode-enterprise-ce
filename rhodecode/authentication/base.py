@@ -252,29 +252,6 @@ class RhodeCodeAuthPluginBase(object):
                 del settings_copy[k]
         return settings_copy
 
-    @property
-    def validators(self):
-        """
-        Exposes RhodeCode validators modules
-        """
-        # this is a hack to overcome issues with pylons threadlocals and
-        # translator object _() not being registered properly.
-        class LazyCaller(object):
-            def __init__(self, name):
-                self.validator_name = name
-
-            def __call__(self, *args, **kwargs):
-                from rhodecode.model import validators as v
-                obj = getattr(v, self.validator_name)
-                # log.debug('Initializing lazy formencode object: %s', obj)
-                return LazyFormencode(obj, *args, **kwargs)
-
-        class ProxyGet(object):
-            def __getattribute__(self, name):
-                return LazyCaller(name)
-
-        return ProxyGet()
-
     @hybrid_property
     def name(self):
         """

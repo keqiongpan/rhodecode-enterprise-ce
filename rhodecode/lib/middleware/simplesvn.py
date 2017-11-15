@@ -134,11 +134,11 @@ class SimpleSvn(simplevcs.SimpleVCS):
         # SVN includes the whole path in it's requests, including
         # subdirectories inside the repo. Therefore we have to search for
         # the repo root directory.
-        if not is_valid_repo(repo_name, self.basepath, self.SCM):
+        if not is_valid_repo(repo_name, self.base_path, self.SCM):
             current_path = ''
             for component in repo_name.split('/'):
                 current_path += component
-                if is_valid_repo(current_path, self.basepath, self.SCM):
+                if is_valid_repo(current_path, self.base_path, self.SCM):
                     return current_path
                 current_path += '/'
 

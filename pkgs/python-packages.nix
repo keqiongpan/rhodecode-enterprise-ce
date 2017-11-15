@@ -184,30 +184,17 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  Pylons = super.buildPythonPackage {
-    name = "Pylons-1.0.2.dev20171106";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [Routes WebHelpers Beaker Paste PasteDeploy PasteScript FormEncode simplejson decorator nose Mako WebError WebTest Tempita MarkupSafe WebOb];
-    src = fetchurl {
-      url = "https://code.rhodecode.com/upstream/pylons/archive/707354ee4261b9c10450404fc9852ccea4fd667d.tar.gz?md5=f26633726fa2cd3a340316ee6a5d218f";
-      md5 = "f26633726fa2cd3a340316ee6a5d218f";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
-    };
-  };
   Routes = super.buildPythonPackage {
-    name = "Routes-1.13";
+    name = "Routes-2.4.1";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [repoze.lru];
+    propagatedBuildInputs = with self; [six repoze.lru];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/88/d3/259c3b3cde8837eb9441ab5f574a660e8a4acea8f54a078441d4d2acac1c/Routes-1.13.tar.gz";
-      md5 = "d527b0ab7dd9172b1275a41f97448783";
+      url = "https://pypi.python.org/packages/33/38/ea827837e68d9c7dde4cff7ec122a93c319f0effc08ce92a17095576603f/Routes-2.4.1.tar.gz";
+      md5 = "c058dff6832941dec47e0d0052548ad8";
     };
     meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
+      license = [ pkgs.lib.licenses.mit ];
     };
   };
   SQLAlchemy = super.buildPythonPackage {
@@ -340,6 +327,19 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  amqp = super.buildPythonPackage {
+    name = "amqp-2.2.2";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [vine];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/e0/70/9ab9ccd8247fb7d2adb717e9f6a0ed358c9e1ab2c349048b0352f9e80ee2/amqp-2.2.2.tar.gz";
+      md5 = "0971a3fd2d635ded45c349cfc17106bd";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
   amqplib = super.buildPythonPackage {
     name = "amqplib-1.0.2";
     buildInputs = with self; [];
@@ -351,19 +351,6 @@
     };
     meta = {
       license = [ { fullName = "LGPL"; } { fullName = "GNU Library or Lesser General Public License (LGPL)"; } ];
-    };
-  };
-  anyjson = super.buildPythonPackage {
-    name = "anyjson-0.3.3";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/c3/4d/d4089e1a3dd25b46bebdb55a992b0797cff657b4477bc32ce28038fdecbc/anyjson-0.3.3.tar.gz";
-      md5 = "2ea28d6ec311aeeebaf993cb3008b27c";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   appenlight-client = super.buildPythonPackage {
@@ -418,6 +405,19 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  billiard = super.buildPythonPackage {
+    name = "billiard-3.5.0.3";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/39/ac/f5571210cca2e4f4532e38aaff242f26c8654c5e2436bee966c230647ccc/billiard-3.5.0.3.tar.gz";
+      md5 = "113ba481e48400adbf6fbbf59a2f8554";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
   bleach = super.buildPythonPackage {
     name = "bleach-1.5.0";
     buildInputs = with self; [];
@@ -458,13 +458,13 @@
     };
   };
   celery = super.buildPythonPackage {
-    name = "celery-2.2.10";
+    name = "celery-4.1.0";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [python-dateutil anyjson kombu pyparsing];
+    propagatedBuildInputs = with self; [pytz billiard kombu];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/b1/64/860fd50e45844c83442e7953effcddeff66b2851d90b2d784f7201c111b8/celery-2.2.10.tar.gz";
-      md5 = "898bc87e54f278055b561316ba73e222";
+      url = "https://pypi.python.org/packages/07/65/88a2a45fc80f487872c93121a701a53bbbc3d3d832016876fac84fc8d46a/celery-4.1.0.tar.gz";
+      md5 = "db91e1d26936381127f01e150fe3054a";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1004,13 +1004,13 @@
     };
   };
   kombu = super.buildPythonPackage {
-    name = "kombu-1.5.1";
+    name = "kombu-4.1.0";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [anyjson amqplib];
+    propagatedBuildInputs = with self; [amqp];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/19/53/74bf2a624644b45f0850a638752514fc10a8e1cbd738f10804951a6df3f5/kombu-1.5.1.tar.gz";
-      md5 = "50662f3c7e9395b3d0721fb75d100b63";
+      url = "https://pypi.python.org/packages/03/5e/1a47d1e543d4943d65330af4e4406049f443878818fb65bfdc651bb93a96/kombu-4.1.0.tar.gz";
+      md5 = "2fb2be9fec0e6514231bba23a3779439";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1094,19 +1094,6 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  nose = super.buildPythonPackage {
-    name = "nose-1.3.6";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/70/c7/469e68148d17a0d3db5ed49150242fd70a74a8147b8f3f8b87776e028d99/nose-1.3.6.tar.gz";
-      md5 = "0ca546d81ca8309080fc80cb389e7a16";
-    };
-    meta = {
-      license = [ { fullName = "GNU Library or Lesser General Public License (LGPL)"; } { fullName = "GNU LGPL"; } ];
-    };
-  };
   objgraph = super.buildPythonPackage {
     name = "objgraph-3.1.1";
     buildInputs = with self; [];
@@ -1173,13 +1160,13 @@
     };
   };
   pexpect = super.buildPythonPackage {
-    name = "pexpect-4.2.1";
+    name = "pexpect-4.3.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [ptyprocess];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/e8/13/d0b0599099d6cd23663043a2a0bb7c61e58c6ba359b2656e6fb000ef5b98/pexpect-4.2.1.tar.gz";
-      md5 = "3694410001a99dff83f0b500a1ca1c95";
+      url = "https://pypi.python.org/packages/f8/44/5466c30e49762bb92e442bbdf4472d6904608d211258eb3198a11f0309a4/pexpect-4.3.0.tar.gz";
+      md5 = "047a486dcd26134b74f2e67046bb61a0";
     };
     meta = {
       license = [ pkgs.lib.licenses.isc { fullName = "ISC License (ISCL)"; } ];
@@ -1550,16 +1537,16 @@
     };
   };
   python-dateutil = super.buildPythonPackage {
-    name = "python-dateutil-2.1";
+    name = "python-dateutil-2.6.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/65/52/9c18dac21f174ad31b65e22d24297864a954e6fe65876eba3f5773d2da43/python-dateutil-2.1.tar.gz";
-      md5 = "1534bb15cf311f07afaa3aacba1c028b";
+      url = "https://pypi.python.org/packages/54/bb/f1db86504f7a49e1d9b9301531181b00a1c7325dc85a29160ee3eaa73a54/python-dateutil-2.6.1.tar.gz";
+      md5 = "db38f6b4511cefd76014745bb0cc45a4";
     };
     meta = {
-      license = [ { fullName = "Simplified BSD"; } ];
+      license = [ pkgs.lib.licenses.bsdOriginal { fullName = "Simplified BSD"; } ];
     };
   };
   python-editor = super.buildPythonPackage {
@@ -1615,13 +1602,13 @@
     };
   };
   pytz = super.buildPythonPackage {
-    name = "pytz-2015.4";
+    name = "pytz-2017.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/7e/1a/f43b5c92df7b156822030fed151327ea096bcf417e45acc23bd1df43472f/pytz-2015.4.zip";
-      md5 = "233f2a2b370d03f9b5911700cc9ebf3c";
+      url = "https://pypi.python.org/packages/60/88/d3152c234da4b2a1f7a989f89609ea488225eaea015bc16fbde2b3fdfefa/pytz-2017.3.zip";
+      md5 = "7006b56c0d68a162d9fe57d4249c3171";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1696,7 +1683,7 @@
     name = "rhodecode-enterprise-ce-4.11.0";
     buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage configobj];
     doCheck = true;
-    propagatedBuildInputs = with self; [Babel Beaker FormEncode Mako Markdown MarkupSafe MySQL-python Paste PasteDeploy PasteScript Pygments pygments-markdown-lexer Pylons Routes SQLAlchemy Tempita URLObject WebError WebHelpers WebHelpers2 WebOb WebTest Whoosh alembic amqplib anyjson appenlight-client authomatic cssselect celery channelstream colander decorator deform docutils gevent gunicorn infrae.cache ipython iso8601 kombu lxml msgpack-python nbconvert packaging psycopg2 py-gfm pycrypto pycurl pyparsing pyramid pyramid-debugtoolbar pyramid-mako pyramid-beaker pysqlite python-dateutil python-ldap python-memcached python-pam recaptcha-client redis repoze.lru requests simplejson sshpubkeys subprocess32 waitress zope.cachedescriptors dogpile.cache dogpile.core psutil py-bcrypt];
+    propagatedBuildInputs = with self; [setuptools-scm amqplib amqp authomatic Babel Beaker celery Chameleon channelstream click colander configobj cssselect decorator deform docutils dogpile.cache dogpile.core ecdsa FormEncode future futures gnureadline infrae.cache iso8601 itsdangerous Jinja2 billiard kombu lxml Mako Markdown MarkupSafe msgpack-python MySQL-python objgraph packaging Paste PasteDeploy PasteScript pathlib2 peppercorn psutil psycopg2 py-bcrypt pycrypto pycurl pyflakes pygments-markdown-lexer Pygments pyparsing pyramid-beaker pyramid-debugtoolbar pyramid-jinja2 pyramid-mako pyramid pysqlite python-dateutil python-ldap python-memcached python-pam pytz pyzmq py-gfm recaptcha-client redis repoze.lru requests Routes setproctitle simplejson six SQLAlchemy sshpubkeys subprocess32 Tempita translationstring trollius urllib3 URLObject venusian WebError WebHelpers2 WebHelpers WebOb Whoosh wsgiref zope.cachedescriptors zope.deprecation zope.event zope.interface nbconvert bleach nbformat jupyter-client alembic invoke bumpversion transifex-client gevent greenlet gunicorn waitress uWSGI ipdb ipython CProfileV bottle rhodecode-tools appenlight-client pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage];
     src = ./.;
     meta = {
       license = [ { fullName = "Affero GNU General Public License v3 or later (AGPLv3+)"; } { fullName = "AGPLv3, and Commercial License"; } ];
@@ -1755,13 +1742,13 @@
     };
   };
   setuptools-scm = super.buildPythonPackage {
-    name = "setuptools-scm-1.15.0";
+    name = "setuptools-scm-1.15.6";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/80/b7/31b6ae5fcb188e37f7e31abe75f9be90490a5456a72860fa6e643f8a3cbc/setuptools_scm-1.15.0.tar.gz";
-      md5 = "b6916c78ed6253d6602444fad4279c5b";
+      url = "https://pypi.python.org/packages/03/6d/aafdd01edd227ee879b691455bf19895091872af7e48192bea1758c82032/setuptools_scm-1.15.6.tar.gz";
+      md5 = "f17493d53f0d842bb0152f214775640b";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1947,6 +1934,19 @@
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
+    };
+  };
+  vine = super.buildPythonPackage {
+    name = "vine-1.1.4";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/32/23/36284986e011f3c130d802c3c66abd8f1aef371eae110ddf80c5ae22e1ff/vine-1.1.4.tar.gz";
+      md5 = "9fdb971e7fd15b181b84f3bfcf20d11c";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   waitress = super.buildPythonPackage {

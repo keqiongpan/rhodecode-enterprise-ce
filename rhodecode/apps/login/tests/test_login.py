@@ -30,7 +30,6 @@ from rhodecode.tests.fixture import Fixture
 from rhodecode.lib.auth import check_password
 from rhodecode.lib import helpers as h
 from rhodecode.model.auth_token import AuthTokenModel
-from rhodecode.model import validators
 from rhodecode.model.db import User, Notification, UserApiKeys
 from rhodecode.model.meta import Session
 
@@ -234,7 +233,7 @@ class TestLoginController(object):
         )
 
         assertr = response.assert_response()
-        msg = validators.ValidUsername()._messages['username_exists']
+        msg = '???'
         msg = msg % {'username': uname}
         assertr.element_contains('#username+.error-message', msg)
 
@@ -252,7 +251,7 @@ class TestLoginController(object):
         )
 
         assertr = response.assert_response()
-        msg = validators.UniqSystemEmail()()._messages['email_taken']
+        msg = '???'
         assertr.element_contains('#email+.error-message', msg)
 
     def test_register_err_same_email_case_sensitive(self):
@@ -268,7 +267,7 @@ class TestLoginController(object):
             }
         )
         assertr = response.assert_response()
-        msg = validators.UniqSystemEmail()()._messages['email_taken']
+        msg = '???'
         assertr.element_contains('#email+.error-message', msg)
 
     def test_register_err_wrong_data(self):
@@ -322,7 +321,7 @@ class TestLoginController(object):
         )
 
         assertr = response.assert_response()
-        msg = validators.ValidUsername()._messages['username_exists']
+        msg = '???'
         msg = msg % {'username': usr}
         assertr.element_contains('#username+.error-message', msg)
 
@@ -339,7 +338,7 @@ class TestLoginController(object):
             }
         )
 
-        msg = validators.ValidPassword()._messages['invalid_password']
+        msg = '???'
         response.mustcontain(msg)
 
     def test_register_password_mismatch(self):
@@ -354,7 +353,7 @@ class TestLoginController(object):
                 'lastname': 'test'
             }
         )
-        msg = validators.ValidPasswordsMatch()._messages['password_mismatch']
+        msg = '???'
         response.mustcontain(msg)
 
     def test_register_ok(self):

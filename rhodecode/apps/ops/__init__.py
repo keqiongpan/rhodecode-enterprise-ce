@@ -36,7 +36,7 @@ def admin_routes(config):
 def includeme(config):
 
     config.include(admin_routes, route_prefix=ADMIN_PREFIX + '/ops')
-    # make OLD entries from pylons work
+    # make OLD entries from <4.10.0 work
     config.add_route(
         name='ops_ping_legacy', pattern=ADMIN_PREFIX + '/ping')
     config.add_route(

@@ -34,7 +34,7 @@ import traceback
 from functools import wraps
 
 import ipaddress
-from beaker.cache import cache_region
+
 from pyramid.httpexceptions import HTTPForbidden, HTTPFound, HTTPNotFound
 from sqlalchemy.orm.exc import ObjectDeletedError
 from sqlalchemy.orm import joinedload

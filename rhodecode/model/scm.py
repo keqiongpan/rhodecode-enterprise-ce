@@ -30,7 +30,7 @@ import logging
 import cStringIO
 import pkg_resources
 
-from pylons.i18n.translation import _
+from rhodecode.translation import temp_translation_factory as _
 from sqlalchemy import func
 from zope.cachedescriptors.property import Lazy as LazyProperty
 

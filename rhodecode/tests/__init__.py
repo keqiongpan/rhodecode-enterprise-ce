@@ -28,8 +28,6 @@ from os.path import join as jn
 
 from tempfile import _RandomNameSequence
 
-from pylons import url
-
 import pytest
 
 from rhodecode.model.db import User
@@ -43,7 +41,7 @@ log = logging.getLogger(__name__)
 
 __all__ = [
     'get_new_dir', 'TestController',
-    'url', 'link_to', 'ldap_lib_installed', 'clear_all_caches',
+    'link_to', 'ldap_lib_installed', 'clear_all_caches',
     'assert_session_flash', 'login_user', 'no_newline_id_generator',
     'TESTS_TMP_PATH', 'HG_REPO', 'GIT_REPO', 'SVN_REPO',
     'NEW_HG_REPO', 'NEW_GIT_REPO',
@@ -55,8 +53,6 @@ __all__ = [
     'TEST_GIT_REPO_CLONE', 'TEST_GIT_REPO_PULL', 'SCM_TESTS',
 ]
 
-# Invoke websetup with the current config file
-# SetupCommand('setup-app').run([config_file])
 
 # SOME GLOBALS FOR TESTS
 TEST_DIR = tempfile.gettempdir()

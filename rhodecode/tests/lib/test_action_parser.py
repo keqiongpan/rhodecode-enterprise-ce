@@ -29,6 +29,6 @@ from rhodecode.model.db import UserLog
     'user_closed_pull_request',
     'user_merged_pull_request'
 ])
-def test_action_map_pr_values(pylonsapp, pr_key):
+def test_action_map_pr_values(baseapp, pr_key):
     parser = ActionParser(UserLog(action="test:test"))
     assert pr_key in parser.action_map

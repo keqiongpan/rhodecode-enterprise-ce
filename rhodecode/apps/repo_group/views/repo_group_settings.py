@@ -73,7 +73,7 @@ class RepoGroupSettingsView(RepoGroupAppView):
             c.repo_groups_choices.append(parent_group.group_id)
             c.repo_groups.append(RepoGroup._generate_choice(parent_group))
 
-        self._register_global_c(c)
+
         return c
 
     def _can_create_repo_group(self, parent_group_id=None):

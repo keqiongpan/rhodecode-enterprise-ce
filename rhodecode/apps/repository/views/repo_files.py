@@ -83,7 +83,7 @@ class RepoFilesView(RepoAppView):
 
         c.rhodecode_repo = self.rhodecode_vcs_repo
 
-        self._register_global_c(c)
+
         return c
 
     def _ensure_not_locked(self):

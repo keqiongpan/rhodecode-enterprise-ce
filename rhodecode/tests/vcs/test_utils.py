@@ -32,7 +32,7 @@ from rhodecode.lib.vcs.utils.helpers import parse_datetime
 from rhodecode.lib.vcs.utils.paths import get_dirs_for_path
 
 
-@pytest.mark.usefixtures("pylonsapp")
+@pytest.mark.usefixtures("baseapp")
 class TestPaths:
 
     def _test_get_dirs_for_path(self, path, expected):

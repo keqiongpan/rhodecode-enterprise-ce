@@ -38,7 +38,7 @@
                 %endif
             </div>
             <div class="inner form">
-                ${h.form(request.route_path('login', _query={'came_from': came_from}), needs_csrf_token=False)}
+                ${h.form(request.route_path('login', _query={'came_from': c.came_from}), needs_csrf_token=False)}
 
                     <label for="username">${_('Username')}:</label>
                     ${h.text('username', class_='focus', value=defaults.get('username'))}

@@ -31,7 +31,8 @@ from functools import wraps
 
 import time
 from paste.httpheaders import REMOTE_USER, AUTH_TYPE
-from webob.exc import (
+# TODO(marcink): check if we should use webob.exc here ?
+from pyramid.httpexceptions import (
     HTTPNotFound, HTTPForbidden, HTTPNotAcceptable, HTTPInternalServerError)
 
 import rhodecode
@@ -55,7 +56,7 @@ from rhodecode.model import meta
 from rhodecode.model.db import User, Repository, PullRequest
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.pull_request import PullRequestModel
-from rhodecode.model.settings import SettingsModel
+from rhodecode.model.settings import SettingsModel, VcsSettingsModel
 
 log = logging.getLogger(__name__)
 
@@ -103,14 +104,13 @@ class SimpleVCS(object):
         'repository$'                   # shadow repo
         .format(slug_pat=SLUG_RE.pattern))
 
-    def __init__(self, application, config, registry):
+    def __init__(self, config, registry):
         self.registry = registry
-        self.application = application
         self.config = config
         # re-populated by specialized middleware
         self.repo_vcs_config = base.Config()
         self.rhodecode_settings = SettingsModel().get_all_settings(cache=True)
-        self.basepath = rhodecode.CONFIG['base_path']
+
         registry.rhodecode_settings = self.rhodecode_settings
         # authenticate this VCS request using authfunc
         auth_ret_code_detection = \
@@ -119,6 +119,10 @@ class SimpleVCS(object):
             '', authenticate, registry, config.get('auth_ret_code'),
             auth_ret_code_detection)
         self.ip_addr = '0.0.0.0'
+
+    @property
+    def base_path(self):
+        return self.repo_vcs_config.get(*VcsSettingsModel.PATH_SETTING)
 
     def set_repo_names(self, environ):
         """
@@ -381,6 +385,8 @@ class SimpleVCS(object):
         # Check if the shadow repo actually exists, in case someone refers
         # to it, and it has been deleted because of successful merge.
         if self.is_shadow_repo and not self.is_shadow_repo_dir:
+            log.debug('Shadow repo detected, and shadow repo dir `%s` is missing',
+                      self.is_shadow_repo_dir)
             return HTTPNotFound()(environ, start_response)
 
         # ======================================================================
@@ -493,7 +499,7 @@ class SimpleVCS(object):
         # REQUEST HANDLING
         # ======================================================================
         repo_path = os.path.join(
-            safe_str(self.basepath), safe_str(self.vcs_repo_name))
+            safe_str(self.base_path), safe_str(self.vcs_repo_name))
         log.debug('Repository path is %s', repo_path)
 
         fix_PATH()

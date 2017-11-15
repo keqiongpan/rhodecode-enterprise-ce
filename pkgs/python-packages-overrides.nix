@@ -61,23 +61,6 @@ self: super: {
     ];
   });
 
-  celery = super.celery.override (attrs: {
-    # The current version of kombu needs some patching to work with the
-    # other libs. Should be removed once we update celery and kombu.
-    patches = [
-      ./patch-celery-dateutil.diff
-    ];
-  });
-
-  kombu = super.kombu.override (attrs: {
-    # The current version of kombu needs some patching to work with the
-    # other libs. Should be removed once we update celery and kombu.
-    patches = [
-      ./patch-kombu-py-2-7-11.diff
-      ./patch-kombu-msgpack.diff
-    ];
-  });
-
   lxml = super.lxml.override (attrs: {
     # johbo: On 16.09 we need this to compile on darwin, otherwise compilation
     # fails on Darwin.
@@ -131,10 +114,6 @@ self: super: {
       # TODO: It is LGPL and MIT
       license = pkgs.lib.licenses.mit;
     };
-  });
-
-  Pylons = super.Pylons.override (attrs: {
-    name = "Pylons-1.0.2.rhodecode-patch1";
   });
 
   pyramid = super.pyramid.override (attrs: {

@@ -40,7 +40,7 @@ class RepoSettingsIssueTrackersView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -118,7 +118,7 @@ class RepoSettingsIssueTrackersView(RepoAppView):
         Session().commit()
 
         try:
-            form = IssueTrackerPatternsForm()().to_python(self.request.POST)
+            form = IssueTrackerPatternsForm(self.request.translate)().to_python(self.request.POST)
         except formencode.Invalid as errors:
             log.exception('Failed to add new pattern')
             error = errors

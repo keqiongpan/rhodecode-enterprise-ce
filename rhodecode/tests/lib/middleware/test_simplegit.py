@@ -73,7 +73,7 @@ def get_environ(url, request_method):
         ('/info/lfs/info/lfs/objects/batch', 'pull', 'POST'),
 
     ])
-def test_get_action(url, expected_action, request_method, pylonsapp, request_stub):
+def test_get_action(url, expected_action, request_method, baseapp, request_stub):
     app = simplegit.SimpleGit(application=None,
                               config={'auth_ret_code': '', 'base_path': ''},
                               registry=request_stub.registry)
@@ -102,7 +102,7 @@ def test_get_action(url, expected_action, request_method, pylonsapp, request_stu
         ('/info/lfs/info/lfs/objects/batch', 'info/lfs', 'POST'),
 
     ])
-def test_get_repository_name(url, expected_repo_name, request_method, pylonsapp, request_stub):
+def test_get_repository_name(url, expected_repo_name, request_method, baseapp, request_stub):
     app = simplegit.SimpleGit(application=None,
                               config={'auth_ret_code': '', 'base_path': ''},
                               registry=request_stub.registry)
@@ -110,7 +110,7 @@ def test_get_repository_name(url, expected_repo_name, request_method, pylonsapp,
         get_environ(url, request_method))
 
 
-def test_get_config(user_util, pylonsapp, request_stub):
+def test_get_config(user_util, baseapp, request_stub):
     repo = user_util.create_repo(repo_type='git')
     app = simplegit.SimpleGit(application=None,
                               config={'auth_ret_code': '', 'base_path': ''},
@@ -130,7 +130,7 @@ def test_get_config(user_util, pylonsapp, request_stub):
     assert git_config == expected_config
 
 
-def test_create_wsgi_app_uses_scm_app_from_simplevcs(pylonsapp, request_stub):
+def test_create_wsgi_app_uses_scm_app_from_simplevcs(baseapp, request_stub):
     config = {
         'auth_ret_code': '',
         'base_path': '',

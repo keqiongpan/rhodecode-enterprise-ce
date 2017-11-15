@@ -66,7 +66,7 @@ class TestGotoSwitcherData(TestController):
     ]
 
     @pytest.fixture(autouse=True, scope='class')
-    def prepare(self, request, pylonsapp):
+    def prepare(self, request, baseapp):
         for repo_and_group in self.required_repos_with_groups:
             # create structure of groups and return the last group
 

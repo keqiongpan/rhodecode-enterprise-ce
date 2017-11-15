@@ -97,11 +97,13 @@ class CustomTestResponse(TestResponse):
 
     def get_session_from_response(self):
         """
-        This returns the session from a response object. Pylons has some magic
-        to make the session available as `response.session`. But pyramid
-        doesn't expose it.
+        This returns the session from a response object.
         """
-        return self.request.environ['beaker.session']
+
+        from pyramid_beaker import session_factory_from_settings
+        session = session_factory_from_settings(
+            self.test_app.app.config.get_settings())
+        return session(self.request)
 
 
 class TestRequest(webob.BaseRequest):
@@ -109,6 +111,9 @@ class TestRequest(webob.BaseRequest):
     # for py.test
     disabled = True
     ResponseClass = CustomTestResponse
+
+    def add_response_callback(self, callback):
+        pass
 
 
 class CustomTestApp(TestApp):

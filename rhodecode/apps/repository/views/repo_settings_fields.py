@@ -43,7 +43,7 @@ class RepoSettingsFieldsView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -70,7 +70,8 @@ class RepoSettingsFieldsView(RepoAppView):
         _ = self.request.translate
 
         try:
-            form_result = RepoFieldForm()().to_python(dict(self.request.POST))
+            form = RepoFieldForm(self.request.translate)()
+            form_result = form.to_python(dict(self.request.POST))
             RepoModel().add_repo_field(
                 self.db_repo_name,
                 form_result['new_field_key'],

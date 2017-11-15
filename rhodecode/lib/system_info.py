@@ -578,9 +578,6 @@ def rhodecode_config():
     blacklist = [
         'rhodecode_license_key',
         'routes.map',
-        'pylons.h',
-        'pylons.app_globals',
-        'pylons.environ_config',
         'sqlalchemy.db1.url',
         'channelstream.secret',
         'beaker.session.secret',

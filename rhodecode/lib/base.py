@@ -52,41 +52,8 @@ from rhodecode.model.notification import NotificationModel
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 
-# NOTE(marcink): remove after base controller is no longer required
-from pylons.controllers import WSGIController
-from pylons.i18n import translation
-
 log = logging.getLogger(__name__)
 
-
-# hack to make the migration to pyramid easier
-def render(template_name, extra_vars=None, cache_key=None,
-           cache_type=None, cache_expire=None):
-    """Render a template with Mako
-
-    Accepts the cache options ``cache_key``, ``cache_type``, and
-    ``cache_expire``.
-
-    """
-    from pylons.templating import literal
-    from pylons.templating import cached_template, pylons_globals
-
-    # Create a render callable for the cache function
-    def render_template():
-        # Pull in extra vars if needed
-        globs = extra_vars or {}
-
-        # Second, get the globals
-        globs.update(pylons_globals())
-
-        globs['_ungettext'] = globs['ungettext']
-        # Grab a template reference
-        template = globs['app_globals'].mako_lookup.get_template(template_name)
-
-        return literal(template.render_unicode(**globs))
-
-    return cached_template(template_name, render_template, cache_key=cache_key,
-                           cache_type=cache_type, cache_expire=cache_expire)
 
 def _filter_proxy(ip):
     """
@@ -310,14 +277,10 @@ def get_current_lang(request):
 
 def attach_context_attributes(context, request, user_id):
     """
-    Attach variables into template context called `c`, please note that
-    request could be pylons or pyramid request in here.
+    Attach variables into template context called `c`.
     """
-    # NOTE(marcink): remove check after pyramid migration
-    if hasattr(request, 'registry'):
-        config = request.registry.settings
-    else:
-        from pylons import config
+    config = request.registry.settings
+
 
     rc_config = SettingsModel().get_all_settings(cache=True)
 
@@ -418,10 +381,6 @@ def attach_context_attributes(context, request, user_id):
     }
     # END CONFIG VARS
 
-    # TODO: This dosn't work when called from pylons compatibility tween.
-    # Fix this and remove it from base controller.
-    # context.repo_name = get_repo_slug(request)  # can be empty
-
     diffmode = 'sideside'
     if request.GET.get('diffmode'):
         if request.GET['diffmode'] == 'unified':
@@ -439,20 +398,15 @@ def attach_context_attributes(context, request, user_id):
     context.backends.sort()
     context.unread_notifications = NotificationModel().get_unread_cnt_for_user(user_id)
 
-    # NOTE(marcink): when migrated to pyramid we don't need to set this anymore,
-    # given request will ALWAYS be pyramid one
-    pyramid_request = pyramid.threadlocal.get_current_request()
-    context.pyramid_request = pyramid_request
-
     # web case
-    if hasattr(pyramid_request, 'user'):
-        context.auth_user = pyramid_request.user
-        context.rhodecode_user = pyramid_request.user
+    if hasattr(request, 'user'):
+        context.auth_user = request.user
+        context.rhodecode_user = request.user
 
     # api case
-    if hasattr(pyramid_request, 'rpc_user'):
-        context.auth_user = pyramid_request.rpc_user
-        context.rhodecode_user = pyramid_request.rpc_user
+    if hasattr(request, 'rpc_user'):
+        context.auth_user = request.rpc_user
+        context.rhodecode_user = request.rpc_user
 
     # attach the whole call context to the request
     request.call_context = context
@@ -498,82 +452,6 @@ def get_auth_user(request):
         auth_user.set_authenticated(authenticated)
 
     return auth_user
-
-
-class BaseController(WSGIController):
-
-    def __before__(self):
-        """
-        __before__ is called before controller methods and after __call__
-        """
-        # on each call propagate settings calls into global settings.
-        from pylons import config
-        from pylons import tmpl_context as c, request, url
-        set_rhodecode_config(config)
-        attach_context_attributes(c, request, self._rhodecode_user.user_id)
-
-        # TODO: Remove this when fixed in attach_context_attributes()
-        c.repo_name = get_repo_slug(request)  # can be empty
-
-        self.cut_off_limit_diff = safe_int(config.get('cut_off_limit_diff'))
-        self.cut_off_limit_file = safe_int(config.get('cut_off_limit_file'))
-        self.sa = meta.Session
-        self.scm_model = ScmModel(self.sa)
-
-        # set user language
-        user_lang = getattr(c.pyramid_request, '_LOCALE_', None)
-        if user_lang:
-            translation.set_lang(user_lang)
-            log.debug('set language to %s for user %s',
-                      user_lang, self._rhodecode_user)
-
-    def _dispatch_redirect(self, with_url, environ, start_response):
-        from webob.exc import HTTPFound
-        resp = HTTPFound(with_url)
-        environ['SCRIPT_NAME'] = ''  # handle prefix middleware
-        environ['PATH_INFO'] = with_url
-        return resp(environ, start_response)
-
-    def __call__(self, environ, start_response):
-        """Invoke the Controller"""
-        # WSGIController.__call__ dispatches to the Controller method
-        # the request is routed to. This routing information is
-        # available in environ['pylons.routes_dict']
-        from rhodecode.lib import helpers as h
-        from pylons import tmpl_context as c, request, url
-
-        # Provide the Pylons context to Pyramid's debugtoolbar if it asks
-        if environ.get('debugtoolbar.wants_pylons_context', False):
-            environ['debugtoolbar.pylons_context'] = c._current_obj()
-
-        _route_name = '.'.join([environ['pylons.routes_dict']['controller'],
-                                environ['pylons.routes_dict']['action']])
-
-        self.rc_config = SettingsModel().get_all_settings(cache=True)
-        self.ip_addr = get_ip_addr(environ)
-
-        # The rhodecode auth user is looked up and passed through the
-        # environ by the pylons compatibility tween in pyramid.
-        # So we can just grab it from there.
-        auth_user = environ['rc_auth_user']
-
-        # set globals for auth user
-        request.user = auth_user
-        self._rhodecode_user = auth_user
-
-        log.info('IP: %s User: %s accessed %s [%s]' % (
-            self.ip_addr, auth_user, safe_unicode(get_access_path(environ)),
-            _route_name)
-        )
-
-        user_obj = auth_user.get_instance()
-        if user_obj and user_obj.user_data.get('force_password_change'):
-            h.flash('You are required to change your password', 'warning',
-                    ignore_duplicate=True)
-            return self._dispatch_redirect(
-                url('my_account_password'), environ, start_response)
-
-        return WSGIController.__call__(self, environ, start_response)
 
 
 def h_filter(s):
@@ -623,6 +501,7 @@ def bootstrap_config(request):
 
     # allow pyramid lookup in testing
     config.include('pyramid_mako')
+    config.include('pyramid_beaker')
 
     add_events_routes(config)
 

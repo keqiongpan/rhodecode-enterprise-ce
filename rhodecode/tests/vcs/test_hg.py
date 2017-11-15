@@ -51,7 +51,7 @@ REPO_PATH_GENERATOR = repo_path_generator()
 
 
 @pytest.fixture(scope='class', autouse=True)
-def repo(request, pylonsapp):
+def repo(request, baseapp):
     repo = MercurialRepository(TEST_HG_REPO)
     if request.cls:
         request.cls.repo = repo

@@ -25,7 +25,6 @@ import collections
 from zope.interface import implementer
 
 from rhodecode.apps.admin.interfaces import IAdminNavigationRegistry
-from rhodecode.lib.utils import get_registry
 from rhodecode.lib.utils2 import str2bool
 from rhodecode.translation import _
 
@@ -116,7 +115,7 @@ def navigation_registry(request, registry=None):
     """
     Helper that returns the admin navigation registry.
     """
-    pyramid_registry = registry or get_registry(request)
+    pyramid_registry = registry or request.registry
     nav_registry = pyramid_registry.queryUtility(IAdminNavigationRegistry)
     return nav_registry
 

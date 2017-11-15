@@ -20,7 +20,6 @@
 
 import logging
 
-from pylons.i18n.translation import _
 from webhelpers.html.builder import literal
 from webhelpers.html.tags import link_to
 
@@ -32,7 +31,7 @@ from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 log = logging.getLogger(__name__)
 
 
-def action_parser(user_log, feed=False, parse_cs=False):
+def action_parser(request, user_log, feed=False, parse_cs=False):
     """
     This helper will action_map the specified string action into translated
     fancy names with icons and links
@@ -42,11 +41,11 @@ def action_parser(user_log, feed=False, parse_cs=False):
     :param parse_cs: parse Changesets into VCS instances
     """
     if user_log.version == 'v2':
-        ap = AuditLogParser(user_log)
+        ap = AuditLogParser(request, user_log)
         return ap.callbacks()
     else:
         # old style
-        ap = ActionParser(user_log, feed=False, parse_commits=False)
+        ap = ActionParser(request, user_log, feed=False, parse_commits=False)
         return ap.callbacks()
 
 
@@ -55,10 +54,11 @@ class ActionParser(object):
     commits_limit = 3  # display this amount always
     commits_top_limit = 50  # show up to this amount of commits hidden
 
-    def __init__(self, user_log, feed=False, parse_commits=False):
+    def __init__(self, request, user_log, feed=False, parse_commits=False):
         self.user_log = user_log
         self.feed = feed
         self.parse_commits = parse_commits
+        self.request = request
 
         self.action = user_log.action
         self.action_params = ' '
@@ -86,7 +86,7 @@ class ActionParser(object):
 
     @property
     def action_map(self):
-
+        _ = self.request.translate
         # action : translated str, callback(extractor), icon
         action_map = {
             'user_deleted_repo': (
@@ -166,6 +166,7 @@ class ActionParser(object):
 
     def get_fork_name(self):
         from rhodecode.lib import helpers as h
+        _ = self.request.translate
         repo_name = self.action_params
         _url = h.route_path('repo_summary', repo_name=repo_name)
         return _('fork name %s') % link_to(self.action_params, _url)
@@ -180,6 +181,7 @@ class ActionParser(object):
 
     def get_pull_request(self):
         from rhodecode.lib import helpers as h
+        _ = self.request.translate
         pull_request_id = self.action_params
         if self.is_deleted():
             repo_name = self.user_log.repository_name
@@ -201,6 +203,7 @@ class ActionParser(object):
 
     def get_cs_links(self):
         from rhodecode.lib import helpers as h
+        _ = self.request.translate
         if self.is_deleted():
             return self.action_params
 
@@ -277,7 +280,9 @@ class ActionParser(object):
     def lnk(self, commit_or_id, repo_name):
         from rhodecode.lib.helpers import tooltip
         from rhodecode.lib import helpers as h
-
+        _ = self.request.translate
+        title = ''
+        lazy_cs = True
         if isinstance(commit_or_id, (BaseCommit, AttributeDict)):
             lazy_cs = True
             if (getattr(commit_or_id, 'op', None) and
@@ -312,8 +317,9 @@ class ActionParser(object):
 
 
 class AuditLogParser(object):
-    def __init__(self, audit_log_entry):
+    def __init__(self, request, audit_log_entry):
         self.audit_log_entry = audit_log_entry
+        self.request = request
 
     def get_icon(self, action):
         return 'icon-rhodecode'

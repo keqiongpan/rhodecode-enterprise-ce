@@ -44,7 +44,7 @@ class MyAccountSshKeysView(BaseAppView, DataGridAppView):
 
         c.ssh_enabled = self.request.registry.settings.get(
             'ssh.generate_authorized_keyfile')
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()

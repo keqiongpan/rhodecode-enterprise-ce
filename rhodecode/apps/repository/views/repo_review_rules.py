@@ -32,8 +32,6 @@ log = logging.getLogger(__name__)
 class RepoReviewRulesView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-        self._register_global_c(c)
         return c
 
     @LoginRequired()
@@ -54,6 +52,7 @@ class RepoReviewRulesView(RepoAppView):
         route_name='repo_default_reviewers_data', request_method='GET',
         renderer='json_ext')
     def repo_default_reviewers_data(self):
+        self.load_default_context()
         review_data = get_default_reviewers_data(
             self.db_repo.user, None, None, None, None)
         return review_data

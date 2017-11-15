@@ -53,7 +53,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=self.request.translate)
 
-        self._register_global_c(c)
+
         return c
 
     # permission check in data loading of
@@ -196,7 +196,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
     def user_groups_create(self):
         _ = self.request.translate
         c = self.load_default_context()
-        users_group_form = UserGroupForm()()
+        users_group_form = UserGroupForm(self.request.translate)()
 
         user_group_name = self.request.POST.get('users_group_name')
         try:

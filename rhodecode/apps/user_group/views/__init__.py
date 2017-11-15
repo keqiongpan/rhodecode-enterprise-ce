@@ -56,7 +56,7 @@ class UserGroupsView(UserGroupAppView):
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=self.request.translate)
 
-        self._register_global_c(c)
+
         return c
 
     def _get_perms_summary(self, user_group_id):
@@ -94,6 +94,7 @@ class UserGroupsView(UserGroupAppView):
         """
         Return members of given user group
         """
+        self.load_default_context()
         user_group = self.db_user_group
         group_members_obj = sorted((x.user for x in user_group.members),
                                    key=lambda u: u.username.lower())
@@ -173,7 +174,8 @@ class UserGroupsView(UserGroupAppView):
         c.active = 'settings'
 
         users_group_form = UserGroupForm(
-            edit=True, old_data=c.user_group.get_dict(), allow_disabled=True)()
+            self.request.translate, edit=True,
+            old_data=c.user_group.get_dict(), allow_disabled=True)()
 
         old_values = c.user_group.get_api_data()
         user_group_name = self.request.POST.get('users_group_name')
@@ -346,7 +348,7 @@ class UserGroupsView(UserGroupAppView):
         user_group_id = user_group.users_group_id
         c = self.load_default_context()
         c.user_group = user_group
-        form = UserGroupPermsForm()().to_python(self.request.POST)
+        form = UserGroupPermsForm(self.request.translate)().to_python(self.request.POST)
 
         if not self._rhodecode_user.is_admin:
             if self._revoke_perms_on_yourself(form):
@@ -435,6 +437,7 @@ class UserGroupsView(UserGroupAppView):
             if not inherit_perms:
                 # only update the individual ones if we un check the flag
                 _form = UserPermissionsForm(
+                    self.request.translate,
                     [x[0] for x in c.repo_create_choices],
                     [x[0] for x in c.repo_create_on_write_choices],
                     [x[0] for x in c.repo_group_create_choices],

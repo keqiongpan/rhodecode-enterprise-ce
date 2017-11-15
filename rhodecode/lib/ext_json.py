@@ -7,9 +7,9 @@ import simplejson as json
 from rhodecode.lib.datelib import is_aware
 
 try:
-    import pylons
+    import rhodecode.translation
 except ImportError:
-    pylons = None
+    rhodecode = None
 
 __all__ = ['json']
 
@@ -51,7 +51,7 @@ def _obj_dump(obj):
         return str(obj)
     elif isinstance(obj, complex):
         return [obj.real, obj.imag]
-    elif pylons and isinstance(obj, pylons.i18n.translation.LazyString):
+    elif rhodecode and isinstance(obj, rhodecode.translation.LazyString):
         return obj.eval()
     else:
         raise TypeError(repr(obj) + " is not JSON serializable")

@@ -28,7 +28,6 @@ import os
 import logging
 
 from celery.task import task
-from pylons import config
 
 import rhodecode
 from rhodecode.lib import audit_logger
@@ -40,9 +39,6 @@ from rhodecode.lib.rcmail.smtp_mailer import SmtpMailer
 from rhodecode.lib.utils import add_cache
 from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.model.db import Repository, User
-
-
-add_cache(config)  # pragma: no cover
 
 
 def get_logger(cls):

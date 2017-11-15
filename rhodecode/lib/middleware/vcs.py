@@ -168,11 +168,11 @@ def detect_vcs_request(environ, backends):
 
 class VCSMiddleware(object):
 
-    def __init__(self, app, config, appenlight_client, registry):
+    def __init__(self, app, registry, config, appenlight_client):
         self.application = app
+        self.registry = registry
         self.config = config
         self.appenlight_client = appenlight_client
-        self.registry = registry
         self.use_gzip = True
         # order in which we check the middlewares, based on vcs.backends config
         self.check_middlewares = config['vcs.backends']
@@ -193,7 +193,7 @@ class VCSMiddleware(object):
         log.debug('VCSMiddleware: detecting vcs type.')
         handler = detect_vcs_request(environ, self.check_middlewares)
         if handler:
-            app = handler(self.application, self.config, self.registry)
+            app = handler(self.config, self.registry)
 
         return app
 
@@ -212,7 +212,7 @@ class VCSMiddleware(object):
             # check for type, presence in database and on filesystem
             if not vcs_handler.is_valid_and_existing_repo(
                     vcs_handler.acl_repo_name,
-                    vcs_handler.basepath,
+                    vcs_handler.base_path,
                     vcs_handler.SCM):
                 return HTTPNotFound()(environ, start_response)
 

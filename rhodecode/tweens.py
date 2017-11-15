@@ -35,19 +35,22 @@ def vcs_detection_tween_factory(handler, registry):
         Do detection of vcs type, and save results for other layers to re-use
         this information
         """
-
-        vcs_handler = detect_vcs_request(
+        vcs_server_enabled = request.registry.settings.get('vcs.server.enable')
+        vcs_handler = vcs_server_enabled and detect_vcs_request(
             request.environ, request.registry.settings.get('vcs.backends'))
 
         if vcs_handler:
             # save detected VCS type for later re-use
             request.environ[VCS_TYPE_KEY] = vcs_handler.SCM
             request.vcs_call = vcs_handler.SCM
+
+            log.debug('Processing request with `%s` handler', handler)
             return handler(request)
 
         # mark that we didn't detect an VCS, and we can skip detection later on
         request.environ[VCS_TYPE_KEY] = VCS_TYPE_SKIP
 
+        log.debug('Processing request with `%s` handler', handler)
         return handler(request)
 
     return vcs_detection_tween
@@ -61,8 +64,6 @@ def includeme(config):
     config.add_subscriber('rhodecode.subscribers.add_localizer',
                           'pyramid.events.NewRequest')
     config.add_subscriber('rhodecode.subscribers.add_request_user_context',
-                          'pyramid.events.ContextFound')
-    config.add_subscriber('rhodecode.subscribers.add_pylons_context',
                           'pyramid.events.ContextFound')
 
     config.add_tween('rhodecode.tweens.vcs_detection_tween_factory')

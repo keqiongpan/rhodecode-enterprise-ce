@@ -49,7 +49,7 @@ class AdminReposView(BaseAppView, DataGridAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-        self._register_global_c(c)
+
         return c
 
     def _load_form_data(self, c):
@@ -148,9 +148,10 @@ class AdminReposView(BaseAppView, DataGridAppView):
 
         try:
             # CanWriteToGroup validators checks permissions of this POST
-            form_result = RepoForm(repo_groups=c.repo_groups_choices,
-                                   landing_revs=c.landing_revs_choices)()\
-                            .to_python(dict(self.request.POST))
+            form = RepoForm(
+                self.request.translate, repo_groups=c.repo_groups_choices,
+                landing_revs=c.landing_revs_choices)()
+            form_results = form.to_python(dict(self.request.POST))
 
             # create is done sometimes async on celery, db transaction
             # management is handled there.

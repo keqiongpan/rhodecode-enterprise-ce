@@ -47,7 +47,7 @@ def route_path(name, params=None, **kwargs):
 class TestRepoCommitCommentsView(TestController):
 
     @pytest.fixture(autouse=True)
-    def prepare(self, request, pylonsapp):
+    def prepare(self, request, baseapp):
         for x in ChangesetComment.query().all():
             Session().delete(x)
         Session().commit()

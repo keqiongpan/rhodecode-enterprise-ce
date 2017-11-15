@@ -34,7 +34,7 @@ class AuditLogsView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()

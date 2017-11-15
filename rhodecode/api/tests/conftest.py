@@ -27,7 +27,7 @@ from rhodecode.tests import TEST_USER_ADMIN_LOGIN
 
 
 @pytest.fixture(scope="class")
-def testuser_api(request, pylonsapp):
+def testuser_api(request, baseapp):
     cls = request.cls
 
     # ADMIN USER

@@ -18,116 +18,27 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-Pylons environment configuration
-"""
 
 import os
 import logging
 import rhodecode
 
-from mako.lookup import TemplateLookup
-from pyramid.settings import asbool
-
 # ------------------------------------------------------------------------------
 # CELERY magic until refactor - issue #4163 - import order matters here:
-from rhodecode.lib import celerypylons  # this must be first, celerypylons
+#from rhodecode.lib import celerypylons  # this must be first, celerypylons
                                         # sets config settings upon import
 
 import rhodecode.integrations           # any modules using celery task
                                         # decorators should be added afterwards:
 # ------------------------------------------------------------------------------
 
-from rhodecode.lib import app_globals
 from rhodecode.config import utils
-from rhodecode.config.routing import make_map
 
-from rhodecode.lib import helpers
-from rhodecode.lib.utils import (
-    make_db_config, set_rhodecode_config, load_rcextensions)
-from rhodecode.lib.utils2 import str2bool, aslist
+from rhodecode.lib.utils import load_rcextensions
+from rhodecode.lib.utils2 import str2bool
 from rhodecode.lib.vcs import connect_vcs, start_vcs_server
 
 log = logging.getLogger(__name__)
-
-
-def load_environment(global_conf, app_conf, initial=False,
-                     test_env=None, test_index=None):
-    """
-    Configure the Pylons environment via the ``pylons.config``
-    object
-    """
-    from pylons.configuration import PylonsConfig
-    from pylons.error import handle_mako_error
-
-    config = PylonsConfig()
-
-
-    # Pylons paths
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    paths = {
-        'root': root,
-        'controllers': os.path.join(root, 'controllers'),
-        'static_files': os.path.join(root, 'public'),
-        'templates': [os.path.join(root, 'templates')],
-    }
-
-    # Initialize config with the basic options
-    config.init_app(global_conf, app_conf, package='rhodecode', paths=paths)
-
-    # store some globals into rhodecode
-    rhodecode.CELERY_ENABLED = str2bool(config['app_conf'].get('use_celery'))
-    rhodecode.CELERY_EAGER = str2bool(
-        config['app_conf'].get('celery.always.eager'))
-
-    config['routes.map'] = make_map(config)
-
-    config['pylons.app_globals'] = app_globals.Globals(config)
-    config['pylons.h'] = helpers
-    rhodecode.CONFIG = config
-
-    load_rcextensions(root_path=config['here'])
-
-    # Setup cache object as early as possible
-    import pylons
-    pylons.cache._push_object(config['pylons.app_globals'].cache)
-
-    # Create the Mako TemplateLookup, with the default auto-escaping
-    config['pylons.app_globals'].mako_lookup = TemplateLookup(
-        directories=paths['templates'],
-        error_handler=handle_mako_error,
-        module_directory=os.path.join(app_conf['cache_dir'], 'templates'),
-        input_encoding='utf-8', default_filters=['escape'],
-        imports=['from webhelpers.html import escape'])
-
-    # sets the c attribute access when don't existing attribute are accessed
-    config['pylons.strict_tmpl_context'] = True
-
-    # configure channelstream
-    config['channelstream_config'] = {
-        'enabled': asbool(config.get('channelstream.enabled', False)),
-        'server': config.get('channelstream.server'),
-        'secret': config.get('channelstream.secret')
-    }
-
-    db_cfg = make_db_config(clear_session=True)
-
-    repos_path = list(db_cfg.items('paths'))[0][1]
-    config['base_path'] = repos_path
-
-    # store db config also in main global CONFIG
-    set_rhodecode_config(config)
-
-    # configure instance id
-    utils.set_instance_id(config)
-
-    # CONFIGURATION OPTIONS HERE (note: all config options will override
-    # any Pylons config options)
-
-    # store config reference into our module to skip import magic of pylons
-    rhodecode.CONFIG.update(config)
-
-    return config
 
 
 def load_pyramid_environment(global_config, settings):
@@ -135,10 +46,21 @@ def load_pyramid_environment(global_config, settings):
     settings_merged = global_config.copy()
     settings_merged.update(settings)
 
-    # Store the settings to make them available to other modules.
-    rhodecode.PYRAMID_SETTINGS = settings_merged
-    # NOTE(marcink): needs to be enabled after full port to pyramid
-    # rhodecode.CONFIG = config
+    # TODO(marcink): probably not required anymore
+    # configure channelstream,
+    settings_merged['channelstream_config'] = {
+        'enabled': str2bool(settings_merged.get('channelstream.enabled', False)),
+        'server': settings_merged.get('channelstream.server'),
+        'secret': settings_merged.get('channelstream.secret')
+    }
+
+
+    # TODO(marcink): celery
+    # # store some globals into rhodecode
+    # rhodecode.CELERY_ENABLED = str2bool(config['app_conf'].get('use_celery'))
+    # rhodecode.CELERY_EAGER = str2bool(
+    #     config['app_conf'].get('celery.always.eager'))
+
 
     # If this is a test run we prepare the test environment like
     # creating a test database, test search index and test repositories.
@@ -151,6 +73,11 @@ def load_pyramid_environment(global_config, settings):
 
     # Initialize the database connection.
     utils.initialize_database(settings_merged)
+
+    # TODO(marcink): base_path handling ?
+    # repos_path = list(db_cfg.items('paths'))[0][1]
+
+    load_rcextensions(root_path=settings_merged['here'])
 
     # Limit backends to `vcs.backends` from configuration
     for alias in rhodecode.BACKENDS.keys():
@@ -172,6 +99,11 @@ def load_pyramid_environment(global_config, settings):
                          log_level=settings['vcs.server.log_level'])
 
     utils.configure_vcs(settings)
+
+    # Store the settings to make them available to other modules.
+
+    rhodecode.PYRAMID_SETTINGS = settings_merged
+    rhodecode.CONFIG = settings_merged
 
     if vcs_server_enabled:
         connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(settings))

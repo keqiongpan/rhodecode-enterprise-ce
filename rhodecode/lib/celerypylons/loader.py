@@ -36,7 +36,7 @@ class PylonsSettingsProxy(object):
     """
     def __getattr__(self, key):
         pylons_key = to_pylons(key)
-        proxy_config = rhodecode.PYRAMID_SETTINGS or pylons.config
+        proxy_config = rhodecode.PYRAMID_SETTINGS
         try:
             value = proxy_config[pylons_key]
             if key in LIST_PARAMS:
@@ -59,7 +59,7 @@ class PylonsSettingsProxy(object):
 
     def __setattr__(self, key, value):
         pylons_key = to_pylons(key)
-        proxy_config = rhodecode.PYRAMID_SETTINGS or pylons.config
+        proxy_config = rhodecode.PYRAMID_SETTINGS
         proxy_config[pylons_key] = value
 
     def __setitem__(self, key, value):

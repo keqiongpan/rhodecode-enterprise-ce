@@ -57,7 +57,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
         c.landing_revs_choices = choices
         c.personal_repo_group = c.rhodecode_user.personal_repo_group
 
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -209,7 +209,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
         _ = self.request.translate
         c = self.load_default_context()
 
-        _form = RepoForkForm(old_data={'repo_type': self.db_repo.repo_type},
+        _form = RepoForkForm(self.request.translate, old_data={'repo_type': self.db_repo.repo_type},
                              repo_groups=c.repo_groups_choices,
                              landing_revs=c.landing_revs_choices)()
         post_data = dict(self.request.POST)

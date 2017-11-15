@@ -108,8 +108,7 @@ class TestVCSMiddleware(object):
         config = {'appenlight': False, 'vcs.backends': ['svn']}
         registry = Mock()
         middleware = vcs.VCSMiddleware(
-            application, config=config,
-            appenlight_client=None, registry=registry)
+            application, registry, config, appenlight_client=None)
         middleware.use_gzip = False
 
         with patch.object(SimpleSvn, '_is_svn_enabled') as mock_method:
@@ -128,8 +127,7 @@ class TestVCSMiddleware(object):
         config = {'appenlight': False, 'vcs.backends': ['svn']}
         registry = Mock()
         middleware = vcs.VCSMiddleware(
-            application, config=config,
-            appenlight_client=None, registry=registry)
+            application, registry, config, appenlight_client=None)
         middleware.use_gzip = False
 
         with patch.object(SimpleSvn, '_is_svn_enabled') as mock_method:

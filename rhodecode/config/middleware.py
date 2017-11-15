@@ -22,33 +22,26 @@ import logging
 import traceback
 import collections
 
-from paste.registry import RegistryManager
 from paste.gzipper import make_gzip_middleware
+from pyramid.wsgi import wsgiapp
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.settings import asbool, aslist
-from pyramid.wsgi import wsgiapp
 from pyramid.httpexceptions import (
-    HTTPException, HTTPError, HTTPInternalServerError, HTTPFound)
+    HTTPException, HTTPError, HTTPInternalServerError, HTTPFound, HTTPNotFound)
 from pyramid.events import ApplicationCreated
 from pyramid.renderers import render_to_response
-from routes.middleware import RoutesMiddleware
-import rhodecode
 
 from rhodecode.model import meta
 from rhodecode.config import patches
 from rhodecode.config import utils as config_utils
-from rhodecode.config.routing import STATIC_FILE_PREFIX
-from rhodecode.config.environment import (
-    load_environment, load_pyramid_environment)
+from rhodecode.config.environment import load_pyramid_environment
 
+from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.vcs import VCSCommunicationError
 from rhodecode.lib.exceptions import VCSServerUnavailable
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
-from rhodecode.lib.middleware.error_handling import (
-    PylonsErrorHandlingMiddleware)
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
-from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
 from rhodecode.lib.utils2 import aslist as rhodecode_aslist, AttributeDict
 from rhodecode.subscribers import (
@@ -59,75 +52,16 @@ from rhodecode.subscribers import (
 log = logging.getLogger(__name__)
 
 
-# this is used to avoid avoid the route lookup overhead in routesmiddleware
-# for certain routes which won't go to pylons to - eg. static files, debugger
-# it is only needed for the pylons migration and can be removed once complete
-class SkippableRoutesMiddleware(RoutesMiddleware):
-    """ Routes middleware that allows you to skip prefixes """
-
-    def __init__(self, *args, **kw):
-        self.skip_prefixes = kw.pop('skip_prefixes', [])
-        super(SkippableRoutesMiddleware, self).__init__(*args, **kw)
-
-    def __call__(self, environ, start_response):
-        for prefix in self.skip_prefixes:
-            if environ['PATH_INFO'].startswith(prefix):
-                # added to avoid the case when a missing /_static route falls
-                # through to pylons and causes an exception as pylons is
-                # expecting wsgiorg.routingargs to be set in the environ
-                # by RoutesMiddleware.
-                if 'wsgiorg.routing_args' not in environ:
-                    environ['wsgiorg.routing_args'] = (None, {})
-                return self.app(environ, start_response)
-
-        return super(SkippableRoutesMiddleware, self).__call__(
-            environ, start_response)
-
-
-def make_app(global_conf, static_files=True, **app_conf):
-    """Create a Pylons WSGI application and return it
-
-    ``global_conf``
-        The inherited configuration for this application. Normally from
-        the [DEFAULT] section of the Paste ini file.
-
-    ``app_conf``
-        The application's local configuration. Normally specified in
-        the [app:<name>] section of the Paste ini file (where <name>
-        defaults to main).
-
-    """
-    from pylons.wsgiapp import PylonsApp
-
-    # Apply compatibility patches
-    patches.kombu_1_5_1_python_2_7_11()
-    patches.inspect_getargspec()
-
-    # Configure the Pylons environment
-    config = load_environment(global_conf, app_conf)
-
-    # The Pylons WSGI app
-    app = PylonsApp(config=config)
-
-    # Establish the Registry for this application
-    app = RegistryManager(app)
-
-    app.config = config
-
-    return app
+def is_http_error(response):
+    # error which should have traceback
+    return response.status_code > 499
 
 
 def make_pyramid_app(global_config, **settings):
     """
-    Constructs the WSGI application based on Pyramid and wraps the Pylons based
-    application.
+    Constructs the WSGI application based on Pyramid.
 
     Specials:
-
-    * We migrate from Pylons to Pyramid. While doing this, we keep both
-      frameworks functional. This involves moving some WSGI middlewares around
-      and providing access to some data internals, so that the old code is
-      still functional.
 
     * The application can also be integrated like a plugin via the call to
       `includeme`. This is accompanied with the other utility functions which
@@ -138,9 +72,11 @@ def make_pyramid_app(global_config, **settings):
     sanitize_settings_and_apply_defaults(settings)
 
     config = Configurator(settings=settings)
-    load_pyramid_environment(global_config, settings)
 
-    add_pylons_compat_data(config.registry, global_config, settings.copy())
+    # Apply compatibility patches
+    patches.inspect_getargspec()
+
+    load_pyramid_environment(global_config, settings)
 
     # Static file view comes first
     includeme_first(config)
@@ -157,54 +93,24 @@ def make_pyramid_app(global_config, **settings):
     return pyramid_app
 
 
-def make_not_found_view(config):
+def not_found_view(request):
     """
     This creates the view which should be registered as not-found-view to
-    pyramid. Basically it contains of the old pylons app, converted to a view.
-    Additionally it is wrapped by some other middlewares.
+    pyramid.
     """
-    settings = config.registry.settings
-    vcs_server_enabled = settings['vcs.server.enable']
 
-    # Make pylons app from unprepared settings.
-    pylons_app = make_app(
-        config.registry._pylons_compat_global_config,
-        **config.registry._pylons_compat_settings)
-    config.registry._pylons_compat_config = pylons_app.config
+    if not getattr(request, 'vcs_call', None):
+        # handle like regular case with our error_handler
+        return error_handler(HTTPNotFound(), request)
 
-    # Appenlight monitoring.
-    pylons_app, appenlight_client = wrap_in_appenlight_if_enabled(
-        pylons_app, settings)
+    # handle not found view as a vcs call
+    settings = request.registry.settings
+    ae_client = getattr(request, 'ae_client', None)
+    vcs_app = VCSMiddleware(
+        HTTPNotFound(), request.registry, settings,
+        appenlight_client=ae_client)
 
-    # The pylons app is executed inside of the pyramid 404 exception handler.
-    # Exceptions which are raised inside of it are not handled by pyramid
-    # again. Therefore we add a middleware that invokes the error handler in
-    # case of an exception or error response. This way we return proper error
-    # HTML pages in case of an error.
-    reraise = (settings.get('debugtoolbar.enabled', False) or
-               rhodecode.disable_error_handler)
-    pylons_app = PylonsErrorHandlingMiddleware(
-        pylons_app, error_handler, reraise)
-
-    # The VCSMiddleware shall operate like a fallback if pyramid doesn't find a
-    # view to handle the request. Therefore it is wrapped around the pylons
-    # app. It has to be outside of the error handling otherwise error responses
-    # from the vcsserver are converted to HTML error pages. This confuses the
-    # command line tools and the user won't get a meaningful error message.
-    if vcs_server_enabled:
-        pylons_app = VCSMiddleware(
-            pylons_app, settings, appenlight_client, registry=config.registry)
-
-    # Convert WSGI app to pyramid view and return it.
-    return wsgiapp(pylons_app)
-
-
-def add_pylons_compat_data(registry, global_config, settings):
-    """
-    Attach data to the registry to support the Pylons integration.
-    """
-    registry._pylons_compat_global_config = global_config
-    registry._pylons_compat_settings = settings
+    return wsgiapp(vcs_app)(None, request)
 
 
 def error_handler(exception, request):
@@ -219,10 +125,6 @@ def error_handler(exception, request):
         base_response = exception
     elif isinstance(exception, VCSCommunicationError):
         base_response = VCSServerUnavailable()
-
-    def is_http_error(response):
-        # error which should have traceback
-        return response.status_code > 499
 
     if is_http_error(base_response):
         log.exception(
@@ -366,43 +268,29 @@ def includeme(config):
     for inc in includes:
         config.include(inc)
 
-    # This is the glue which allows us to migrate in chunks. By registering the
-    # pylons based application as the "Not Found" view in Pyramid, we will
-    # fallback to the old application each time the new one does not yet know
-    # how to handle a request.
-    config.add_notfound_view(make_not_found_view(config))
-
+    # custom not found view, if our pyramid app doesn't know how to handle
+    # the request pass it to potential VCS handling ap
+    config.add_notfound_view(not_found_view)
     if not settings.get('debugtoolbar.enabled', False):
         # disabled debugtoolbar handle all exceptions via the error_handlers
         config.add_view(error_handler, context=Exception)
 
+    # all errors including 403/404/50X
     config.add_view(error_handler, context=HTTPError)
 
 
 def wrap_app_in_wsgi_middlewares(pyramid_app, config):
     """
     Apply outer WSGI middlewares around the application.
-
-    Part of this has been moved up from the Pylons layer, so that the
-    data is also available if old Pylons code is hit through an already ported
-    view.
     """
     settings = config.registry.settings
 
     # enable https redirects based on HTTP_X_URL_SCHEME set by proxy
     pyramid_app = HttpsFixup(pyramid_app, settings)
 
-    # Add RoutesMiddleware to support the pylons compatibility tween during
-    # migration to pyramid.
-
-    # TODO(marcink): remove after migration to pyramid
-    if hasattr(config.registry, '_pylons_compat_config'):
-        routes_map = config.registry._pylons_compat_config['routes.map']
-        pyramid_app = SkippableRoutesMiddleware(
-            pyramid_app, routes_map,
-            skip_prefixes=(STATIC_FILE_PREFIX, '/_debug_toolbar'))
-
-    pyramid_app, _ = wrap_in_appenlight_if_enabled(pyramid_app, settings)
+    pyramid_app, _ae_client = wrap_in_appenlight_if_enabled(
+        pyramid_app, settings)
+    config.registry.ae_client = _ae_client
 
     if settings['gzip_responses']:
         pyramid_app = make_gzip_middleware(
@@ -518,10 +406,10 @@ def _int_setting(settings, name, default):
 
 
 def _bool_setting(settings, name, default):
-    input = settings.get(name, default)
-    if isinstance(input, unicode):
-        input = input.encode('utf8')
-    settings[name] = asbool(input)
+    input_val = settings.get(name, default)
+    if isinstance(input_val, unicode):
+        input_val = input_val.encode('utf8')
+    settings[name] = asbool(input_val)
 
 
 def _list_setting(settings, name, default):

@@ -74,7 +74,7 @@
             % endfor
             <div class="field">
                 <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Example Queries')}</p>
-                <pre id="search-help" style="display: none">${h.tooltip(h.search_filter_help(c.searcher, c.pyramid_request))}</pre>
+                <pre id="search-help" style="display: none">${h.tooltip(h.search_filter_help(c.searcher, request))}</pre>
             </div>
 
             <div class="field">${c.runtime}</div>

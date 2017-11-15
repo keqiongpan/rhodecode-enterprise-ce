@@ -26,7 +26,7 @@ import logging
 import traceback
 
 import datetime
-from pylons.i18n.translation import _
+from rhodecode.translation import temp_translation_factory as _
 
 import ipaddress
 from sqlalchemy.exc import DatabaseError
@@ -754,14 +754,12 @@ class UserModel(BaseModel):
         :param user:
         :param email:
         """
-        from rhodecode.model import forms
-        form = forms.UserExtraEmailForm()()
-        data = form.to_python({'email': email})
+
         user = self._get_user(user)
 
         obj = UserEmailMap()
         obj.user = user
-        obj.email = data['email']
+        obj.email = email
         self.sa.add(obj)
         return obj
 
@@ -811,14 +809,11 @@ class UserModel(BaseModel):
         :param user:
         :param ip:
         """
-        from rhodecode.model import forms
-        form = forms.UserExtraIpForm()()
-        data = form.to_python({'ip': ip})
-        user = self._get_user(user)
 
+        user = self._get_user(user)
         obj = UserIpMap()
         obj.user = user
-        obj.ip_addr = data['ip']
+        obj.ip_addr = ip
         obj.description = description
         self.sa.add(obj)
         return obj

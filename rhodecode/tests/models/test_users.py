@@ -115,7 +115,7 @@ class TestGetUsers(object):
 
 
 @pytest.fixture
-def test_user(request, pylonsapp):
+def test_user(request, baseapp):
     usr = UserModel().create_or_update(
         username=u'test_user',
         password=u'qweqwe',

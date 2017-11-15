@@ -65,7 +65,7 @@ class TestGitRepository:
                       % TEST_GIT_REPO_CLONE)
 
     @pytest.fixture(autouse=True)
-    def prepare(self, request, pylonsapp):
+    def prepare(self, request, baseapp):
         self.repo = GitRepository(TEST_GIT_REPO, bare=True)
 
     def get_clone_repo(self):
@@ -1153,7 +1153,7 @@ class TestGitRegression(BackendTestMixin):
 
 class TestDiscoverGitVersion:
 
-    def test_returns_git_version(self, pylonsapp):
+    def test_returns_git_version(self, baseapp):
         version = discover_git_version()
         assert version
 

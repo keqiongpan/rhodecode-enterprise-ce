@@ -18,27 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-The application's model objects
-
-:example:
-
-    .. code-block:: python
-
-       from paste.deploy import appconfig
-       from pylons import config
-       from sqlalchemy import engine_from_config
-       from rhodecode.config.environment import load_environment
-
-       conf = appconfig('config:development.ini', relative_to = './../../')
-       load_environment(conf.global_conf, conf.local_conf)
-
-       engine = engine_from_config(config, 'sqlalchemy.')
-       init_model(engine)
-       # RUN YOUR CODE HERE
-
-"""
-
 
 import logging
 

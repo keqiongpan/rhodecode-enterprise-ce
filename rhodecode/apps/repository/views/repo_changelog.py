@@ -159,7 +159,7 @@ class RepoChangelogView(RepoAppView):
         c = self._get_local_tmpl_context(include_app_defaults=True)
 
         c.rhodecode_repo = self.rhodecode_vcs_repo
-        self._register_global_c(c)
+
         return c
 
     def _get_preload_attrs(self):

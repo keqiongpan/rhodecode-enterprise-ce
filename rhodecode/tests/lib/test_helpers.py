@@ -22,8 +22,6 @@ import copy
 import mock
 import pytest
 
-from pylons.util import ContextObj
-
 from rhodecode.lib import helpers
 from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.settings import IssueTrackerSettingsModel
@@ -188,8 +186,9 @@ def test_process_patterns_non_existent_repo_name(backend):
     assert processed_text == expected_text
 
 
-def test_get_visual_attr(pylonsapp):
-    c = ContextObj()
+def test_get_visual_attr(baseapp):
+    from rhodecode.apps._base import TemplateArgs
+    c = TemplateArgs()
     assert None is helpers.get_visual_attr(c, 'fakse')
 
     # emulate the c.visual behaviour
