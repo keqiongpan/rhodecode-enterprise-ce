@@ -333,7 +333,7 @@ def baseapp(ini_config, vcsserver, http_environ_session):
     pyramid.paster.setup_logging(ini_config)
 
     settings = get_app_config(ini_config)
-    app = make_pyramid_app({}, **settings)
+    app = make_pyramid_app({'__file__': ini_config}, **settings)
 
     return app
 
