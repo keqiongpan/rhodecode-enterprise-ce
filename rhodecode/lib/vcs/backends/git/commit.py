@@ -24,11 +24,11 @@ GIT commit module
 
 import re
 import stat
-from ConfigParser import ConfigParser
 from itertools import chain
 from StringIO import StringIO
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from pyramid.compat import configparser
 
 from rhodecode.lib.datelib import utcdate_fromtimestamp
 from rhodecode.lib.utils import safe_unicode, safe_str
@@ -533,7 +533,7 @@ class GitCommit(base.BaseCommit):
             # ConfigParser fails if there are whitespaces
             content = '\n'.join(l.strip() for l in content.split('\n'))
 
-            parser = ConfigParser()
+            parser = configparser.ConfigParser()
             parser.readfp(StringIO(content))
 
             for section in parser.sections():

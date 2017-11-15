@@ -25,8 +25,8 @@ import time
 import platform
 import pkg_resources
 import logging
-import string
 
+from pyramid.compat import configparser
 
 log = logging.getLogger(__name__)
 
@@ -555,7 +555,6 @@ def rhodecode_app_info():
 
 def rhodecode_config():
     import rhodecode
-    import ConfigParser as configparser
     path = rhodecode.CONFIG.get('__file__')
     rhodecode_ini_safe = rhodecode.CONFIG.copy()
 

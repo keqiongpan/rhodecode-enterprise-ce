@@ -22,7 +22,7 @@ import os
 import re
 import logging
 import datetime
-import ConfigParser
+from pyramid.compat import configparser
 
 from rhodecode.model.db import Session, User, UserSshKeys
 from rhodecode.model.scm import ScmModel
@@ -51,7 +51,7 @@ class SshWrapper(object):
         self.server_impl = None
 
     def parse_config(self, config_path):
-        parser = ConfigParser.ConfigParser()
+        parser = configparser.ConfigParser()
         parser.read(config_path)
         return parser
 

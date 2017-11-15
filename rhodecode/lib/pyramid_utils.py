@@ -19,13 +19,13 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import os
-import ConfigParser
-from pyramid.paster import bootstrap as pyramid_bootstrap
+from pyramid.compat import configparser
+from pyramid.paster import bootstrap as pyramid_bootstrap, setup_logging  # noqa
 from pyramid.request import Request
 
 
 def get_config(ini_path, **kwargs):
-    parser = ConfigParser.ConfigParser(**kwargs)
+    parser = configparser.ConfigParser(**kwargs)
     parser.read(ini_path)
     return parser
 
@@ -41,7 +41,7 @@ def bootstrap(config_uri, request=None, options=None):
     base_url = 'http://rhodecode.local'
     try:
         base_url = config.get('app:main', 'app.base_url')
-    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    except (configparser.NoSectionError, configparser.NoOptionError):
         pass
 
     request = request or Request.blank('/', base_url=base_url)
