@@ -29,6 +29,7 @@ from pyramid.response import Response
 from rhodecode.apps._base import BaseAppView
 from rhodecode.authentication.base import (
     get_auth_cache_manager, get_perms_cache_manager, get_authn_registry)
+from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.model.forms import AuthSettingsForm
@@ -88,10 +89,10 @@ class AuthnPluginViewBase(BaseAppView):
             valid_data = schema.deserialize(data)
         except colander.Invalid as e:
             # Display error message and display form again.
-            self.request.session.flash(
+            h.flash(
                 _('Errors exist when saving plugin settings. '
                   'Please check the form inputs.'),
-                queue='error')
+                category='error')
             defaults = {key: data[key] for key in data if key in schema}
             return self.settings_get(errors=e.asdict(), defaults=defaults)
 
@@ -101,9 +102,7 @@ class AuthnPluginViewBase(BaseAppView):
         Session().commit()
 
         # Display success message and redirect.
-        self.request.session.flash(
-            _('Auth settings updated successfully.'),
-            queue='success')
+        h.flash(_('Auth settings updated successfully.'), category='success')
         redirect_to = self.request.resource_path(
             self.context, route_name='auth_home')
         return HTTPFound(redirect_to)
@@ -168,24 +167,19 @@ class AuthSettingsView(BaseAppView):
             cache_manager = get_perms_cache_manager()
             cache_manager.clear()
 
-            self.request.session.flash(
-                _('Auth settings updated successfully.'),
-                queue='success')
+            h.flash(_('Auth settings updated successfully.'), category='success')
         except formencode.Invalid as errors:
             e = errors.error_dict or {}
-            self.request.session.flash(
-                _('Errors exist when saving plugin setting. '
-                  'Please check the form inputs.'),
-                queue='error')
+            h.flash(_('Errors exist when saving plugin setting. '
+                      'Please check the form inputs.'), category='error')
             return self.index(
                 defaults=errors.value,
                 errors=e,
                 prefix_error=False)
         except Exception:
             log.exception('Exception in auth_settings')
-            self.request.session.flash(
-                _('Error occurred during update of auth settings.'),
-                queue='error')
+            h.flash(_('Error occurred during update of auth settings.'),
+                    category='error')
 
         redirect_to = self.request.resource_path(
             self.context, route_name='auth_home')

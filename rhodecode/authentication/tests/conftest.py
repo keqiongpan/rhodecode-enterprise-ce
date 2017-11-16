@@ -22,7 +22,7 @@
 import pytest
 
 
-class EnabledAuthPlugin():
+class EnabledAuthPlugin(object):
     """
     Context manager that updates the 'auth_plugins' setting in DB to enable
     a plugin. Previous setting is restored on exit. The rhodecode auth plugin

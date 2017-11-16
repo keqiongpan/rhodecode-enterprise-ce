@@ -32,7 +32,7 @@ from rhodecode.lib.auth import (
     LoginRequired, CSRFRequired, HasPermissionAnyDecorator,
     HasRepoPermissionAnyDecorator, HasRepoGroupPermissionAnyDecorator)
 from rhodecode.lib.utils2 import safe_int
-from rhodecode.lib.helpers import Page
+from rhodecode.lib import helpers as h
 from rhodecode.model.db import Repository, RepoGroup, Session, Integration
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.integration import IntegrationModel
@@ -169,10 +169,10 @@ class IntegrationSettingsViewBase(BaseAppView):
         _ = self.request.translate
         Session().delete(integration)
         Session().commit()
-        self.request.session.flash(
+        h.flash(
             _('Integration {integration_name} deleted successfully.').format(
                 integration_name=integration.name),
-            queue='success')
+            category='success')
 
         if self.repo:
             redirect_to = self.request.route_path(
@@ -208,6 +208,7 @@ class IntegrationSettingsViewBase(BaseAppView):
             integrations.append((IntType, integration))
 
         sort_arg = self.request.GET.get('sort', 'name:asc')
+        sort_dir = 'asc'
         if ':' in sort_arg:
             sort_field, sort_dir = sort_arg.split(':')
         else:
@@ -223,7 +224,7 @@ class IntegrationSettingsViewBase(BaseAppView):
             self.request.path, self.request.GET)
         page = safe_int(self.request.GET.get('page', 1), 1)
 
-        integrations = Page(
+        integrations = h.Page(
             integrations, page=page, items_per_page=10, url=page_url)
 
         c.rev_sort_dir = sort_dir != 'desc' and 'desc' or 'asc'
@@ -297,10 +298,10 @@ class IntegrationSettingsViewBase(BaseAppView):
         try:
             valid_data = form.validate_pstruct(pstruct)
         except deform.ValidationFailure as e:
-            self.request.session.flash(
+            h.flash(
                 _('Errors exist when saving integration settings. '
                   'Please check the form inputs.'),
-                queue='error')
+                category='error')
             return self._settings_get(form=e)
 
         if not self.integration:
@@ -322,10 +323,10 @@ class IntegrationSettingsViewBase(BaseAppView):
         self.integration.settings = valid_data['settings']
         Session().commit()
         # Display success message and redirect.
-        self.request.session.flash(
+        h.flash(
             _('Integration {integration_name} updated successfully.').format(
                 integration_name=self.IntegrationType.display_name),
-            queue='success')
+            category='success')
 
         # if integration scope changes, we must redirect to the right place
         # keeping in mind if the original view was for /repo/ or /_admin/

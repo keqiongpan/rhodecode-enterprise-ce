@@ -166,8 +166,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
                 c.data_items.pop(0)  # remove server info
                 self.request.override_renderer = 'admin/settings/settings_system_snapshot.mako'
             else:
-                self.request.session.flash(
-                    'You are not allowed to do this', queue='warning')
+                h.flash('You are not allowed to do this', category='warning')
         return self._get_template_context(c)
 
     @LoginRequired()
