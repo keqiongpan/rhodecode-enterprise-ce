@@ -85,7 +85,8 @@ def _get_backend(backend_type):
 class DBBackend(object):
     _store = os.path.dirname(os.path.abspath(__file__))
     _type = None
-    _base_ini_config = [{'app:main': {'vcs.start_server': 'false'}}]
+    _base_ini_config = [{'app:main': {'vcs.start_server': 'false',
+                                      'startup.import_repos': 'false'}}]
     _db_url = [{'app:main': {'sqlalchemy.db1.url': ''}}]
     _base_db_name = 'rhodecode_test_db_backend'
 
@@ -183,7 +184,7 @@ class DBBackend(object):
             if not os.path.isdir(self._repos_location):
                 os.makedirs(self._repos_location)
             self.execute(
-                "paster upgrade-db {} --force-yes".format(ini_file))
+                "rc-upgrade-db {0} --force-yes".format(ini_file))
 
     def setup_db(self):
         raise NotImplementedError

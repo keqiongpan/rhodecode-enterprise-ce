@@ -23,17 +23,16 @@ from StringIO import StringIO
 import pytest
 from mock import patch, Mock
 
-import rhodecode
 from rhodecode.lib.middleware.simplesvn import SimpleSvn, SimpleSvnApp
+from rhodecode.lib.utils import get_rhodecode_base_path
 
 
 class TestSimpleSvn(object):
     @pytest.fixture(autouse=True)
     def simple_svn(self, baseapp, request_stub):
+        base_path = get_rhodecode_base_path()
         self.app = SimpleSvn(
-            application='None',
-            config={'auth_ret_code': '',
-                    'base_path': rhodecode.CONFIG['base_path']},
+            config={'auth_ret_code': '', 'base_path': base_path},
             registry=request_stub.registry)
 
     def test_get_config(self):
@@ -102,7 +101,6 @@ class TestSimpleSvn(object):
             assert wsgi_app == wsgi_app_mock()
 
 
-
 class TestSimpleSvnApp(object):
     data = '<xml></xml>'
     path = '/group/my-repo'
@@ -121,8 +119,10 @@ class TestSimpleSvnApp(object):
 
     def setup_method(self, method):
         self.host = 'http://localhost/'
+        base_path = get_rhodecode_base_path()
         self.app = SimpleSvnApp(
-            config={'subversion_http_server_url': self.host})
+            config={'subversion_http_server_url': self.host,
+                    'base_path': base_path})
 
     def test_get_request_headers_with_content_type(self):
         expected_headers = {

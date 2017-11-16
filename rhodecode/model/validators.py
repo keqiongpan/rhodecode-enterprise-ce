@@ -37,7 +37,6 @@ from formencode.validators import (
 
 from sqlalchemy.sql.expression import true
 from sqlalchemy.util import OrderedSet
-from webhelpers.pylonslib.secure_form import authentication_token
 
 from rhodecode.authentication import (
     legacy_plugin_prefix, _import_legacy_plugin)
@@ -452,21 +451,6 @@ def ValidAuth(localizer):
                         msg, value, state,
                         error_dict={'username': msg, 'password': msg2}
                     )
-    return _validator
-
-
-def ValidAuthToken(localizer):
-    _ = localizer
-
-    class _validator(formencode.validators.FancyValidator):
-        messages = {
-            'invalid_token': _(u'Token mismatch')
-        }
-
-        def validate_python(self, value, state):
-            if value != authentication_token():
-                msg = M(self, 'invalid_token', state)
-                raise formencode.Invalid(msg, value, state)
     return _validator
 
 

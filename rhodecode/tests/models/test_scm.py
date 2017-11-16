@@ -183,7 +183,7 @@ def test_get_non_unicode_reference(backend):
             tags=non_unicode_list, alias=backend.alias)
 
     repo = Mock(__class__=db.Repository, scm_instance=scm_instance)
-    choices, __ = model.get_repo_landing_revs(repo=repo)
+    choices, __ = model.get_repo_landing_revs(translator=lambda s: s, repo=repo)
     if backend.alias == 'hg':
         valid_choices = [
             'rev:tip', u'branch:Ad\xc4\xb1n\xc4\xb1',

@@ -198,6 +198,6 @@ class TestMyAccountEdit(TestController):
                                  params=params)
 
         response.mustcontain('An email address must contain a single @')
-        msg = '???'
+        msg = u'Username "%(username)s" already exists'
         msg = h.html_escape(msg % {'username': 'test_admin'})
         response.mustcontain(u"%s" % msg)

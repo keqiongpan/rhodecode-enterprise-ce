@@ -74,8 +74,7 @@ def get_environ(url, request_method):
 
     ])
 def test_get_action(url, expected_action, request_method, baseapp, request_stub):
-    app = simplegit.SimpleGit(application=None,
-                              config={'auth_ret_code': '', 'base_path': ''},
+    app = simplegit.SimpleGit(config={'auth_ret_code': '', 'base_path': ''},
                               registry=request_stub.registry)
     assert expected_action == app._get_action(get_environ(url, request_method))
 
@@ -103,8 +102,7 @@ def test_get_action(url, expected_action, request_method, baseapp, request_stub)
 
     ])
 def test_get_repository_name(url, expected_repo_name, request_method, baseapp, request_stub):
-    app = simplegit.SimpleGit(application=None,
-                              config={'auth_ret_code': '', 'base_path': ''},
+    app = simplegit.SimpleGit(config={'auth_ret_code': '', 'base_path': ''},
                               registry=request_stub.registry)
     assert expected_repo_name == app._get_repository_name(
         get_environ(url, request_method))
@@ -112,8 +110,7 @@ def test_get_repository_name(url, expected_repo_name, request_method, baseapp, r
 
 def test_get_config(user_util, baseapp, request_stub):
     repo = user_util.create_repo(repo_type='git')
-    app = simplegit.SimpleGit(application=None,
-                              config={'auth_ret_code': '', 'base_path': ''},
+    app = simplegit.SimpleGit(config={'auth_ret_code': '', 'base_path': ''},
                               registry=request_stub.registry)
     extras = {'foo': 'FOO', 'bar': 'BAR'}
 
@@ -137,6 +134,6 @@ def test_create_wsgi_app_uses_scm_app_from_simplevcs(baseapp, request_stub):
         'vcs.scm_app_implementation':
             'rhodecode.tests.lib.middleware.mock_scm_app',
     }
-    app = simplegit.SimpleGit(application=None, config=config, registry=request_stub.registry)
+    app = simplegit.SimpleGit(config=config, registry=request_stub.registry)
     wsgi_app = app._create_wsgi_app('/tmp/test', 'test_repo', {})
     assert wsgi_app is mock_scm_app.mock_git_wsgi

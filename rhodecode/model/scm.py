@@ -30,7 +30,6 @@ import logging
 import cStringIO
 import pkg_resources
 
-from rhodecode.translation import temp_translation_factory as _
 from sqlalchemy import func
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
@@ -40,7 +39,6 @@ from rhodecode.lib.vcs.exceptions import RepositoryError, NodeNotChangedError
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib import helpers as h
-
 from rhodecode.lib.auth import (
     HasRepoPermissionAny, HasRepoGroupPermissionAny,
     HasUserGroupPermissionAny)
@@ -748,14 +746,14 @@ class ScmModel(BaseModel):
     def get_unread_journal(self):
         return self.sa.query(UserLog).count()
 
-    def get_repo_landing_revs(self, repo=None):
+    def get_repo_landing_revs(self, translator, repo=None):
         """
         Generates select option with tags branches and bookmarks (for hg only)
         grouped by type
 
         :param repo:
         """
-
+        _ = translator
         repo = self._get_repo(repo)
 
         hist_l = [

@@ -58,7 +58,7 @@ class AdminReposView(BaseAppView, DataGridAppView):
         c.repo_groups = RepoGroup.groups_choices(groups=acl_groups)
         c.repo_groups_choices = map(lambda k: safe_unicode(k[0]), c.repo_groups)
         c.landing_revs_choices, c.landing_revs = \
-            ScmModel().get_repo_landing_revs()
+            ScmModel().get_repo_landing_revs(self.request.translate)
         c.personal_repo_group = self._rhodecode_user.personal_repo_group
 
     @LoginRequired()

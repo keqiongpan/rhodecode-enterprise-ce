@@ -23,8 +23,6 @@ from pyramid.threadlocal import get_current_request
 
 _ = TranslationStringFactory('rhodecode')
 
-temp_translation_factory = _
-
 
 class _LazyString(object):
     def __init__(self, *args, **kw):

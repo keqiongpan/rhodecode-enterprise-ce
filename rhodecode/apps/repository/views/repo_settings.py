@@ -62,10 +62,11 @@ class RepoSettingsView(RepoAppView):
             # we might be in missing requirement state, so we load things
             # without touching scm_instance()
             c.landing_revs_choices, c.landing_revs = \
-                ScmModel().get_repo_landing_revs()
+                ScmModel().get_repo_landing_revs(self.request.translate)
         else:
             c.landing_revs_choices, c.landing_revs = \
-                ScmModel().get_repo_landing_revs(self.db_repo)
+                ScmModel().get_repo_landing_revs(
+                    self.request.translate, self.db_repo)
 
         c.personal_repo_group = c.auth_user.personal_repo_group
         c.repo_fields = RepositoryField.query()\

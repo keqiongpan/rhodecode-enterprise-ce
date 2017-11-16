@@ -572,6 +572,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         route_name='my_account_pullrequests_data',
         request_method='GET', renderer='json_ext')
     def my_account_pullrequests_data(self):
+        self.load_default_context()
         req_get = self.request.GET
         closed = str2bool(req_get.get('closed'))
 

@@ -74,9 +74,6 @@ def load_pyramid_environment(global_config, settings):
     # Initialize the database connection.
     utils.initialize_database(settings_merged)
 
-    # TODO(marcink): base_path handling ?
-    # repos_path = list(db_cfg.items('paths'))[0][1]
-
     load_rcextensions(root_path=settings_merged['here'])
 
     # Limit backends to `vcs.backends` from configuration

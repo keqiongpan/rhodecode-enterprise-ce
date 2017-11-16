@@ -428,7 +428,7 @@ class UserGroupsView(UserGroupAppView):
 
         try:
             # first stage that verifies the checkbox
-            _form = UserIndividualPermissionsForm()
+            _form = UserIndividualPermissionsForm(self.request.translate)
             form_result = _form.to_python(dict(self.request.POST))
             inherit_perms = form_result['inherit_default_permissions']
             user_group.inherit_default_permissions = inherit_perms

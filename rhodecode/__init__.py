@@ -40,7 +40,7 @@ BACKENDS = {
 CELERY_ENABLED = False
 CELERY_EAGER = False
 
-# link to config for pylons
+# link to config for pyramid
 CONFIG = {}
 
 # Populated with the settings dictionary from application init in

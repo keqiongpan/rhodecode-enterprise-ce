@@ -23,7 +23,7 @@ import textwrap
 import pytest
 
 from rhodecode.lib.diffs import (
-    DiffProcessor, wrapped_diff,
+    DiffProcessor,
     NEW_FILENODE, DEL_FILENODE, MOD_FILENODE, RENAMED_FILENODE,
     CHMOD_FILENODE, BIN_FILENODE, COPIED_FILENODE)
 from rhodecode.tests.fixture import Fixture
@@ -32,23 +32,6 @@ from rhodecode.lib.vcs.backends.hg.repository import MercurialDiff
 from rhodecode.lib.vcs.backends.svn.repository import SubversionDiff
 
 fixture = Fixture()
-
-
-def test_wrapped_diff_limited_file_diff(vcsbackend_random):
-    vcsbackend = vcsbackend_random
-    repo = vcsbackend.create_repo()
-    vcsbackend.add_file(repo, 'a_file', content="line 1\nline 2\nline3\n")
-    commit = repo.get_commit()
-    file_node = commit.get_node('a_file')
-
-    # Only limit the file diff to trigger the code path
-    result = wrapped_diff(
-        None, file_node, diff_limit=10000, file_limit=1)
-    data = result[5]
-
-    # Verify that the limits were applied
-    assert data['exceeds_limit'] is True
-    assert data['is_limited_diff'] is True
 
 
 def test_diffprocessor_as_html_with_comments():

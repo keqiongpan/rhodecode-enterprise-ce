@@ -195,12 +195,6 @@ def write_js_routes_if_enabled(event):
         )
 
     def get_routes():
-        # pylons routes
-        # TODO(marcink): remove when pyramid migration is finished
-        if 'routes.map' in rhodecode.CONFIG:
-            for route in rhodecode.CONFIG['routes.map'].jsroutes():
-                yield route
-
         # pyramid routes
         for route in mapper.get_routes():
             if not route.name.startswith('__'):

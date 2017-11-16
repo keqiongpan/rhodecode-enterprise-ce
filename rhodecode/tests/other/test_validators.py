@@ -209,12 +209,6 @@ def test_ValidAuth(localizer, config_stub):
         formencode.Invalid, validator.to_python, invalid_creds)
 
 
-def test_ValidAuthToken(localizer):
-    validator = v.ValidAuthToken(localizer)
-    pytest.raises(formencode.Invalid, validator.to_python, 'BadToken')
-    validator
-
-
 def test_ValidRepoName(localizer):
     validator = v.ValidRepoName(localizer)
 

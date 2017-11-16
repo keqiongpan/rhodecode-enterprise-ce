@@ -385,7 +385,7 @@ class TestAdminUsersView(TestController):
             'csrf_token': self.csrf_token,
         })
 
-        msg = '???'
+        msg = u'Username "%(username)s" is forbidden'
         msg = h.html_escape(msg % {'username': 'new_user'})
         response.mustcontain('<span class="error-message">%s</span>' % msg)
         response.mustcontain(

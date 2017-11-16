@@ -65,7 +65,7 @@ class TestPullRequestModel(object):
             'rhodecode.model.notification.NotificationModel.create')
         self.notification_patcher.start()
         self.helper_patcher = mock.patch(
-            'rhodecode.lib.helpers.url')
+            'rhodecode.lib.helpers.route_path')
         self.helper_patcher.start()
 
         self.hook_patcher = mock.patch.object(PullRequestModel,

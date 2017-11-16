@@ -32,7 +32,7 @@ def assert_auth_settings_updated(response):
 
 
 @pytest.mark.usefixtures("autologin_user", "app")
-class TestAuthSettingsController(object):
+class TestAuthSettingsView(object):
 
     def _enable_plugins(self, plugins_list, csrf_token, override=None,
                         verify_response=False):

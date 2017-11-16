@@ -1929,12 +1929,12 @@ def secure_form(form_url, method="POST", multipart=False, **attrs):
     """
     from webhelpers.pylonslib.secure_form import insecure_form
 
-    session = None
-
-    # TODO(marcink): after pyramid migration require request variable ALWAYS
     if 'request' in attrs:
         session = attrs['request'].session
         del attrs['request']
+    else:
+        raise ValueError(
+            'Calling this form requires request= to be passed as argument')
 
     form = insecure_form(form_url, method, multipart, **attrs)
     token = literal(

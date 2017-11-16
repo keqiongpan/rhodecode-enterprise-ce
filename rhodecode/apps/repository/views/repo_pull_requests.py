@@ -173,6 +173,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         route_name='pullrequest_show_all_data', request_method='GET',
         renderer='json_ext', xhr=True)
     def pull_request_list_data(self):
+        self.load_default_context()
 
         # additional filters
         req_get = self.request.GET
@@ -675,6 +676,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         route_name='pullrequest_repo_refs', request_method='GET',
         renderer='json_ext', xhr=True)
     def pull_request_repo_refs(self):
+        self.load_default_context()
         target_repo_name = self.request.matchdict['target_repo_name']
         repo = Repository.get_by_repo_name(target_repo_name)
         if not repo:
@@ -745,6 +747,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def pull_request_create(self):
         _ = self.request.translate
         self.assure_not_empty_repo()
+        self.load_default_context()
 
         controls = peppercorn.parse(self.request.POST.items())
 
@@ -878,6 +881,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
 
+        self.load_default_context()
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
             pull_request, self._rhodecode_user)
@@ -976,6 +980,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
 
+        self.load_default_context()
         check = MergeCheck.validate(pull_request, self._rhodecode_db_user,
                                     translator=self.request.translate)
         merge_possible = not check.failed
@@ -1048,6 +1053,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
+        self.load_default_context()
 
         pr_closed = pull_request.is_closed()
         allowed_to_delete = PullRequestModel().check_user_delete(

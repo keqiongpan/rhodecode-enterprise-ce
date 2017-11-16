@@ -911,7 +911,8 @@ def update_repo(
         repo_enable_downloads=enable_downloads
         if not isinstance(enable_downloads, Optional) else repo.enable_downloads)
 
-    ref_choices, _labels = ScmModel().get_repo_landing_revs(repo=repo)
+    ref_choices, _labels = ScmModel().get_repo_landing_revs(
+        request.translate, repo=repo)
 
     old_values = repo.get_api_data()
     schema = repo_schema.RepoSchema().bind(

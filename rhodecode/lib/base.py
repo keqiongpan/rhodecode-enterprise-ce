@@ -29,7 +29,6 @@ import socket
 
 import markupsafe
 import ipaddress
-import pyramid.threadlocal
 
 from paste.auth.basic import AuthBasicAuthenticator
 from paste.httpexceptions import HTTPUnauthorized, HTTPForbidden, get_exception
@@ -41,15 +40,11 @@ from rhodecode.lib import auth, utils2
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import AuthUser, CookieStoreWrapper
 from rhodecode.lib.exceptions import UserCreationError
-from rhodecode.lib.utils import (
-    get_repo_slug, set_rhodecode_config, password_changed,
-    get_enabled_hook_classes)
+from rhodecode.lib.utils import (password_changed, get_enabled_hook_classes)
 from rhodecode.lib.utils2 import (
     str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist, safe_str)
-from rhodecode.model import meta
 from rhodecode.model.db import Repository, User, ChangesetComment
 from rhodecode.model.notification import NotificationModel
-from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 
 log = logging.getLogger(__name__)
@@ -440,6 +435,8 @@ def get_auth_user(request):
             # AuthUser
             auth_user = AuthUser(ip_addr=ip_addr)
 
+        # in case someone changes a password for user it triggers session
+        # flush and forces a re-login
         if password_changed(auth_user, session):
             session.invalidate()
             cookie_store = CookieStoreWrapper(session.get('rhodecode_user'))

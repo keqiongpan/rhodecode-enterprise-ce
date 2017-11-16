@@ -44,10 +44,8 @@ def test_vcs_unavailable_returns_vcs_error_page(app, backend):
     # Patch remote repo to raise an exception instead of making a RPC.
     with mock.patch.object(RemoteRepo, '__getattr__') as remote_mock:
         remote_mock.side_effect = VCSCommunicationError()
-        # Patch pylons error handling middleware to not re-raise exceptions.
-        with mock.patch.object(PylonsErrorHandlingMiddleware, 'reraise') as r:
-            r.return_value = False
-            response = app.get(url, expect_errors=True)
+
+        response = app.get(url, expect_errors=True)
 
     assert response.status_code == 502
     assert 'Could not connect to VCS Server' in response.body

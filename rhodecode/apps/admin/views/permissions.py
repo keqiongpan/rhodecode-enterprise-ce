@@ -53,8 +53,6 @@ log = logging.getLogger(__name__)
 class AdminPermissionsView(BaseAppView, DataGridAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=self.request.translate)
         return c

@@ -53,10 +53,10 @@ class RepoForksView(RepoAppView, DataGridAppView):
             perm_set=['group.write', 'group.admin'])
         c.repo_groups = RepoGroup.groups_choices(groups=acl_groups)
         c.repo_groups_choices = map(lambda k: safe_unicode(k[0]), c.repo_groups)
-        choices, c.landing_revs = ScmModel().get_repo_landing_revs()
+        choices, c.landing_revs = ScmModel().get_repo_landing_revs(
+            self.request.translate)
         c.landing_revs_choices = choices
         c.personal_repo_group = c.rhodecode_user.personal_repo_group
-
 
         return c
 
@@ -78,6 +78,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
         renderer='json_ext', xhr=True)
     def repo_forks_data(self):
         _ = self.request.translate
+        self.load_default_context()
         column_map = {
             'fork_name': 'repo_name',
             'fork_date': 'created_on',

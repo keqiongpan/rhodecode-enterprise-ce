@@ -51,7 +51,7 @@ def _obj_dump(obj):
         return str(obj)
     elif isinstance(obj, complex):
         return [obj.real, obj.imag]
-    elif rhodecode and isinstance(obj, rhodecode.translation.LazyString):
+    elif rhodecode and isinstance(obj, rhodecode.translation._LazyString):
         return obj.eval()
     else:
         raise TypeError(repr(obj) + " is not JSON serializable")

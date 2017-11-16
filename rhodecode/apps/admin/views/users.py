@@ -259,7 +259,6 @@ class UsersView(UserAppView):
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=req.translate)
 
-
         return c
 
     @LoginRequired()

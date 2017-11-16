@@ -158,7 +158,7 @@ def test_formatted_json():
     assert formatted_json(data) == expected_data
 
 
-def test_pylons_lazy_translation_string(baseapp):
+def test_lazy_translation_string(baseapp):
     data = {'label': _('hello')}
     data2 = {'label2': _pluralize('singular', 'plural', 1)}
 

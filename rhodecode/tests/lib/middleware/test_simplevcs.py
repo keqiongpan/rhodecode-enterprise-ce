@@ -79,8 +79,8 @@ def vcscontroller(baseapp, config_stub, request_stub):
     config_stub.include('rhodecode.authentication')
 
     controller = StubVCSController(
-        baseapp, baseapp.config, request_stub.registry)
-    app = HttpsFixup(controller, baseapp.config)
+        baseapp.config.get_settings(), request_stub.registry)
+    app = HttpsFixup(controller, baseapp.config.get_settings())
     app = CustomTestApp(app)
 
     _remove_default_user_from_query_cache()
@@ -136,8 +136,8 @@ class StubFailVCSController(simplevcs.SimpleVCS):
 @pytest.fixture(scope='module')
 def fail_controller(baseapp):
     controller = StubFailVCSController(
-        baseapp, baseapp.config, baseapp.config)
-    controller = HttpsFixup(controller, baseapp.config)
+        baseapp.config.get_settings(), baseapp.config)
+    controller = HttpsFixup(controller, baseapp.config.get_settings())
     controller = CustomTestApp(controller)
     return controller
 
@@ -153,17 +153,15 @@ def test_provides_traceback_for_appenlight(fail_controller):
 
 
 def test_provides_utils_scm_app_as_scm_app_by_default(baseapp, request_stub):
-    controller = StubVCSController(
-        baseapp, baseapp.config, request_stub.registry)
+    controller = StubVCSController(baseapp.config.get_settings(), request_stub.registry)
     assert controller.scm_app is scm_app_http
 
 
 def test_allows_to_override_scm_app_via_config(baseapp, request_stub):
-    config = baseapp.config.copy()
+    config = baseapp.config.get_settings().copy()
     config['vcs.scm_app_implementation'] = (
         'rhodecode.tests.lib.middleware.mock_scm_app')
-    controller = StubVCSController(
-        baseapp, config, request_stub.registry)
+    controller = StubVCSController(config, request_stub.registry)
     assert controller.scm_app is mock_scm_app
 
 
@@ -225,7 +223,7 @@ class TestShadowRepoExposure(object):
         underlying wsgi app.
         """
         controller = StubVCSController(
-            baseapp, baseapp.config, request_stub.registry)
+            baseapp.config.get_settings(), request_stub.registry)
         controller._check_ssl = mock.Mock()
         controller.is_shadow_repo = True
         controller._action = 'pull'
@@ -250,7 +248,7 @@ class TestShadowRepoExposure(object):
         underlying wsgi app.
         """
         controller = StubVCSController(
-            baseapp, baseapp.config, request_stub.registry)
+            baseapp.config.get_settings(), request_stub.registry)
         controller._check_ssl = mock.Mock()
         controller.is_shadow_repo = True
         controller._action = 'pull'
@@ -274,7 +272,7 @@ class TestShadowRepoExposure(object):
         Check that a push action to a shadow repo is aborted.
         """
         controller = StubVCSController(
-            baseapp, baseapp.config, request_stub.registry)
+            baseapp.config.get_settings(), request_stub.registry)
         controller._check_ssl = mock.Mock()
         controller.is_shadow_repo = True
         controller._action = 'push'
@@ -300,7 +298,7 @@ class TestShadowRepoExposure(object):
         """
         environ_stub = {}
         controller = StubVCSController(
-            baseapp, baseapp.config, request_stub.registry)
+            baseapp.config.get_settings(), request_stub.registry)
         controller._name = 'RepoGroup/MyRepo'
         controller.set_repo_names(environ_stub)
         assert not controller.is_shadow_repo
@@ -324,7 +322,7 @@ class TestShadowRepoExposure(object):
             pr_segment=TestShadowRepoRegularExpression.pr_segment,
             shadow_segment=TestShadowRepoRegularExpression.shadow_segment)
         controller = StubVCSController(
-            baseapp, baseapp.config, request_stub.registry)
+            baseapp.config.get_settings(), request_stub.registry)
         controller._name = shadow_url
         controller.set_repo_names({})
 
@@ -352,7 +350,7 @@ class TestShadowRepoExposure(object):
             pr_segment=TestShadowRepoRegularExpression.pr_segment,
             shadow_segment=TestShadowRepoRegularExpression.shadow_segment)
         controller = StubVCSController(
-            baseapp, baseapp.config, request_stub.registry)
+            baseapp.config.get_settings(), request_stub.registry)
         controller._name = shadow_url
         controller.set_repo_names({})
 
@@ -362,7 +360,7 @@ class TestShadowRepoExposure(object):
                 controller.vcs_repo_name)
 
 
-@pytest.mark.usefixtures('db')
+@pytest.mark.usefixtures('baseapp')
 class TestGenerateVcsResponse(object):
 
     def test_ensures_that_start_response_is_called_early_enough(self):
@@ -429,7 +427,7 @@ class TestGenerateVcsResponse(object):
             'vcs.hooks.direct_calls': False,
         }
         registry = AttributeDict()
-        controller = StubVCSController(None, settings, registry)
+        controller = StubVCSController(settings, registry)
         controller._invalidate_cache = mock.Mock()
         controller.stub_response_body = response_body
         self.start_response = mock.Mock()
@@ -482,7 +480,7 @@ class TestPrepareHooksDaemon(object):
         expected_extras = {'extra1': 'value1'}
         daemon = DummyHooksCallbackDaemon()
 
-        controller = StubVCSController(None, app_settings, request_stub.registry)
+        controller = StubVCSController(app_settings, request_stub.registry)
         prepare_patcher = mock.patch.object(
             simplevcs, 'prepare_callback_daemon',
             return_value=(daemon, expected_extras))

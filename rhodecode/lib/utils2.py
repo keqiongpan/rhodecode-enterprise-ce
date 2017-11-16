@@ -796,11 +796,11 @@ def suuid(url=None, truncate_to=22, alphabet=None):
     return "".join(output)[:truncate_to]
 
 
-def get_current_rhodecode_user():
+def get_current_rhodecode_user(request=None):
     """
     Gets rhodecode user from request
     """
-    pyramid_request = pyramid.threadlocal.get_current_request()
+    pyramid_request = request or pyramid.threadlocal.get_current_request()
 
     # web case
     if pyramid_request and hasattr(pyramid_request, 'user'):

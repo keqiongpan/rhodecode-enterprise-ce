@@ -48,7 +48,6 @@ import formencode
 from pkg_resources import resource_filename
 from formencode import All, Pipe
 
-from rhodecode.translation import temp_translation_factory as _
 from pyramid.threadlocal import get_current_request
 
 from rhodecode import BACKENDS

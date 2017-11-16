@@ -23,19 +23,15 @@
 Set of diffing helpers, previously part of vcs
 """
 
-import collections
 import re
+import collections
 import difflib
 import logging
 
 from itertools import tee, imap
 
-from rhodecode.translation import temp_translation_factory as _
-
 from rhodecode.lib.vcs.exceptions import VCSError
 from rhodecode.lib.vcs.nodes import FileNode, SubModuleNode
-from rhodecode.lib.vcs.backends.base import EmptyCommit
-from rhodecode.lib.helpers import escape
 from rhodecode.lib.utils2 import safe_unicode
 
 log = logging.getLogger(__name__)
@@ -49,69 +45,6 @@ class OPS(object):
     ADD = 'A'
     MOD = 'M'
     DEL = 'D'
-
-
-def wrap_to_table(str_):
-    return '''<table class="code-difftable">
-                <tr class="line no-comment">
-                <td class="add-comment-line tooltip" title="%s"><span class="add-comment-content"></span></td>
-                <td></td>
-                <td class="lineno new"></td>
-                <td class="code no-comment"><pre>%s</pre></td>
-                </tr>
-              </table>''' % (_('Click to comment'), str_)
-
-
-def wrapped_diff(filenode_old, filenode_new, diff_limit=None, file_limit=None,
-                 show_full_diff=False, ignore_whitespace=True, line_context=3,
-                 enable_comments=False):
-    """
-    returns a wrapped diff into a table, checks for cut_off_limit for file and
-    whole diff and presents proper message
-    """
-
-    if filenode_old is None:
-        filenode_old = FileNode(filenode_new.path, '', EmptyCommit())
-
-    if filenode_old.is_binary or filenode_new.is_binary:
-        diff = wrap_to_table(_('Binary file'))
-        stats = None
-        size = 0
-        data = None
-
-    elif diff_limit != -1 and (diff_limit is None or
-        (filenode_old.size < diff_limit and filenode_new.size < diff_limit)):
-
-        f_gitdiff = get_gitdiff(filenode_old, filenode_new,
-                                ignore_whitespace=ignore_whitespace,
-                                context=line_context)
-        diff_processor = DiffProcessor(
-            f_gitdiff, format='gitdiff', diff_limit=diff_limit,
-            file_limit=file_limit, show_full_diff=show_full_diff)
-        _parsed = diff_processor.prepare()
-
-        diff = diff_processor.as_html(enable_comments=enable_comments)
-        stats = _parsed[0]['stats'] if _parsed else None
-        size = len(diff or '')
-        data = _parsed[0] if _parsed else None
-    else:
-        diff = wrap_to_table(_('Changeset was too big and was cut off, use '
-                               'diff menu to display this diff'))
-        stats = None
-        size = 0
-        data = None
-    if not diff:
-        submodules = filter(lambda o: isinstance(o, SubModuleNode),
-                            [filenode_new, filenode_old])
-        if submodules:
-            diff = wrap_to_table(escape('Submodule %r' % submodules[0]))
-        else:
-            diff = wrap_to_table(_('No changes detected'))
-
-    cs1 = filenode_old.commit.raw_id
-    cs2 = filenode_new.commit.raw_id
-
-    return size, cs1, cs2, diff, stats, data
 
 
 def get_gitdiff(filenode_old, filenode_new, ignore_whitespace=True, context=3):
@@ -916,6 +849,10 @@ class DiffProcessor(object):
         """
         Return given diff as html table with customized css classes
         """
+        # TODO(marcink): not sure how to pass in translator
+        # here in an efficient way, leave the _ for proper gettext extraction
+        _ = lambda s: s
+
         def _link_to_if(condition, label, url):
             """
             Generates a link if condition is meet or just the label if not.
