@@ -382,7 +382,7 @@ class IssueTrackerSettingsModel(object):
         else:
             all_patterns = self.get_global_settings()
             settings_model = self.global_settings
-        entries = all_patterns.get(uid)
+        entries = all_patterns.get(uid, [])
 
         for del_key in entries:
             setting_name = self._get_keyname(del_key, uid)
