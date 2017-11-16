@@ -159,13 +159,13 @@
     };
   };
   PasteScript = super.buildPythonPackage {
-    name = "PasteScript-1.7.5";
+    name = "PasteScript-2.0.2";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [Paste PasteDeploy];
+    propagatedBuildInputs = with self; [Paste PasteDeploy six];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/a5/05/fc60efa7c2f17a1dbaeccb2a903a1e90902d92b9d00eebabe3095829d806/PasteScript-1.7.5.tar.gz";
-      md5 = "4c72d78dcb6bb993f30536842c16af4d";
+      url = "https://pypi.python.org/packages/e5/f0/78e766c3dcc61a4f3a6f71dd8c95168ae9c7a31722b5663d19c1fdf62cb6/PasteScript-2.0.2.tar.gz";
+      md5 = "ccb3045445097192ca71a13b746c77b2";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

@@ -39,7 +39,7 @@ objgraph==3.1.1
 packaging==15.2
 Paste==2.0.3
 PasteDeploy==1.5.2
-PasteScript==1.7.5
+PasteScript==2.0.2
 pathlib2==2.3.0
 peppercorn==0.5
 psutil==5.4.0
