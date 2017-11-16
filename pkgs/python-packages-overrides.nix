@@ -31,6 +31,12 @@ self: super: {
     };
   });
 
+  testpath = super.testpath.override (attrs: {
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  });
+
   gnureadline = super.gnureadline.override (attrs: {
     buildInputs = attrs.buildInputs ++ [
       pkgs.ncurses
@@ -96,10 +102,6 @@ self: super: {
       license = pkgs.lib.licenses.lgpl3Plus;
     };
   });
-
-  py-gfm = super.py-gfm.override  {
-    name = "py-gfm-0.1.3.rhodecode-upstream1";
-  };
 
   pycurl = super.pycurl.override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
@@ -186,7 +188,6 @@ self: super: {
       };
     };
   });
-
 
   docutils = super.docutils.override (attrs: {
     meta = {
