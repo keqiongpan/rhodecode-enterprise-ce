@@ -22,6 +22,7 @@ import os
 from pyramid.compat import configparser
 from pyramid.paster import bootstrap as pyramid_bootstrap, setup_logging  # noqa
 from pyramid.request import Request
+from pyramid.scripting import prepare
 
 
 def get_config(ini_path, **kwargs):
@@ -47,3 +48,9 @@ def bootstrap(config_uri, request=None, options=None):
     request = request or Request.blank('/', base_url=base_url)
 
     return pyramid_bootstrap(config_uri, request=request, options=options)
+
+
+def prepare_request(environ):
+    request = Request.blank('/', environ=environ)
+    prepare(request)  # set pyramid threadlocal request
+    return request

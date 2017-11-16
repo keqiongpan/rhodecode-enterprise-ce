@@ -33,6 +33,7 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous,
     HasRepoPermissionAny, HasPermissionAnyDecorator, CSRFRequired)
 import rhodecode.lib.helpers as h
+from rhodecode.lib.celerylib.utils import get_task_id
 from rhodecode.model.db import coalesce, or_, Repository, RepoGroup
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.forms import RepoForkForm
@@ -226,9 +227,8 @@ class RepoForksView(RepoAppView, DataGridAppView):
             # management is handled there.
             task = RepoModel().create_fork(
                 form_result, c.rhodecode_user.user_id)
-            from celery.result import BaseAsyncResult
-            if isinstance(task, BaseAsyncResult):
-                task_id = task.task_id
+
+            task_id = get_task_id(task)
         except formencode.Invalid as errors:
             c.rhodecode_db_repo = self.db_repo
 

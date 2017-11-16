@@ -23,14 +23,6 @@ import os
 import logging
 import rhodecode
 
-# ------------------------------------------------------------------------------
-# CELERY magic until refactor - issue #4163 - import order matters here:
-#from rhodecode.lib import celerypylons  # this must be first, celerypylons
-                                        # sets config settings upon import
-
-import rhodecode.integrations           # any modules using celery task
-                                        # decorators should be added afterwards:
-# ------------------------------------------------------------------------------
 
 from rhodecode.config import utils
 
@@ -53,14 +45,6 @@ def load_pyramid_environment(global_config, settings):
         'server': settings_merged.get('channelstream.server'),
         'secret': settings_merged.get('channelstream.secret')
     }
-
-
-    # TODO(marcink): celery
-    # # store some globals into rhodecode
-    # rhodecode.CELERY_ENABLED = str2bool(config['app_conf'].get('use_celery'))
-    # rhodecode.CELERY_EAGER = str2bool(
-    #     config['app_conf'].get('celery.always.eager'))
-
 
     # If this is a test run we prepare the test environment like
     # creating a test database, test search index and test repositories.

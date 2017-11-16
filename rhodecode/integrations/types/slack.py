@@ -27,13 +27,12 @@ import logging
 import deform
 import requests
 import colander
-from celery.task import task
 from mako.template import Template
 
 from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.lib import helpers as h
-from rhodecode.lib.celerylib import run_task
+from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 from rhodecode.lib.colander_utils import strip_whitespace
 from rhodecode.integrations.types.base import IntegrationTypeBase
 
@@ -296,7 +295,7 @@ def html_to_slack_links(message):
         r'<\1|\2>', message)
 
 
-@task(ignore_result=True)
+@async_task(ignore_result=True, base=RequestContextTask)
 def post_text_to_slack(settings, title, text, fields=None, overrides=None):
     log.debug('sending %s (%s) to slack %s' % (
         title, text, settings['service']))

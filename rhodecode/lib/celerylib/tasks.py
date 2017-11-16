@@ -23,38 +23,18 @@ RhodeCode task modules, containing all task that suppose to be run
 by celery daemon
 """
 
-
 import os
-import logging
-
-from celery.task import task
 
 import rhodecode
 from rhodecode.lib import audit_logger
-from rhodecode.lib.celerylib import (
-    run_task, dbsession, __get_lockkey, LockHeld, DaemonLock,
-    get_session, vcsconnection, RhodecodeCeleryTask)
+from rhodecode.lib.celerylib import get_logger, async_task, RequestContextTask
 from rhodecode.lib.hooks_base import log_create_repository
 from rhodecode.lib.rcmail.smtp_mailer import SmtpMailer
-from rhodecode.lib.utils import add_cache
 from rhodecode.lib.utils2 import safe_int, str2bool
-from rhodecode.model.db import Repository, User
+from rhodecode.model.db import Session, Repository, User
 
 
-def get_logger(cls):
-    if rhodecode.CELERY_ENABLED:
-        try:
-            log = cls.get_logger()
-        except Exception:
-            log = logging.getLogger(__name__)
-    else:
-        log = logging.getLogger(__name__)
-
-    return log
-
-
-@task(ignore_result=True, base=RhodecodeCeleryTask)
-@dbsession
+@async_task(ignore_result=True, base=RequestContextTask)
 def send_email(recipients, subject, body='', html_body='', email_config=None):
     """
     Sends an email with defined parameters from the .ini files.
@@ -101,18 +81,15 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
     return True
 
 
-@task(ignore_result=True, base=RhodecodeCeleryTask)
-@dbsession
-@vcsconnection
+@async_task(ignore_result=True, base=RequestContextTask)
 def create_repo(form_data, cur_user):
     from rhodecode.model.repo import RepoModel
     from rhodecode.model.user import UserModel
     from rhodecode.model.settings import SettingsModel
 
     log = get_logger(create_repo)
-    DBS = get_session()
 
-    cur_user = UserModel(DBS)._get_user(cur_user)
+    cur_user = UserModel()._get_user(cur_user)
     owner = cur_user
 
     repo_name = form_data['repo_name']
@@ -138,7 +115,7 @@ def create_repo(form_data, cur_user):
         'enable_downloads', defs.get('repo_enable_downloads'))
 
     try:
-        repo = RepoModel(DBS)._create_repo(
+        repo = RepoModel()._create_repo(
             repo_name=repo_name_full,
             repo_type=repo_type,
             description=description,
@@ -155,13 +132,13 @@ def create_repo(form_data, cur_user):
             enable_downloads=enable_downloads,
             state=state
         )
-        DBS.commit()
+        Session().commit()
 
         # now create this repo on Filesystem
-        RepoModel(DBS)._create_filesystem_repo(
+        RepoModel()._create_filesystem_repo(
             repo_name=repo_name,
             repo_type=repo_type,
-            repo_group=RepoModel(DBS)._get_repo_group(repo_group),
+            repo_group=RepoModel()._get_repo_group(repo_group),
             clone_uri=clone_uri,
         )
         repo = Repository.get_by_repo_name(repo_name_full)
@@ -180,7 +157,7 @@ def create_repo(form_data, cur_user):
             user=cur_user,
             repo=audit_logger.RepoWrap(repo_name=repo_name, repo_id=repo_id))
 
-        DBS.commit()
+        Session().commit()
     except Exception:
         log.warning('Exception occurred when creating repository, '
                     'doing cleanup...', exc_info=True)
@@ -188,8 +165,8 @@ def create_repo(form_data, cur_user):
         repo = Repository.get_by_repo_name(repo_name_full)
         if repo:
             Repository.delete(repo.repo_id)
-            DBS.commit()
-            RepoModel(DBS)._delete_filesystem_repo(repo)
+            Session().commit()
+            RepoModel()._delete_filesystem_repo(repo)
         raise
 
     # it's an odd fix to make celery fail task when exception occurs
@@ -199,23 +176,17 @@ def create_repo(form_data, cur_user):
     return True
 
 
-@task(ignore_result=True, base=RhodecodeCeleryTask)
-@dbsession
-@vcsconnection
+@async_task(ignore_result=True, base=RequestContextTask)
 def create_repo_fork(form_data, cur_user):
     """
     Creates a fork of repository using internal VCS methods
-
-    :param form_data:
-    :param cur_user:
     """
     from rhodecode.model.repo import RepoModel
     from rhodecode.model.user import UserModel
 
     log = get_logger(create_repo_fork)
-    DBS = get_session()
 
-    cur_user = UserModel(DBS)._get_user(cur_user)
+    cur_user = UserModel()._get_user(cur_user)
     owner = cur_user
 
     repo_name = form_data['repo_name']  # fork in this case
@@ -230,8 +201,8 @@ def create_repo_fork(form_data, cur_user):
     fork_id = safe_int(form_data.get('fork_parent_id'))
 
     try:
-        fork_of = RepoModel(DBS)._get_repo(fork_id)
-        RepoModel(DBS)._create_repo(
+        fork_of = RepoModel()._get_repo(fork_id)
+        RepoModel()._create_repo(
             repo_name=repo_name_full,
             repo_type=repo_type,
             description=description,
@@ -244,16 +215,16 @@ def create_repo_fork(form_data, cur_user):
             copy_fork_permissions=copy_fork_permissions
         )
 
-        DBS.commit()
+        Session().commit()
 
         base_path = Repository.base_path()
         source_repo_path = os.path.join(base_path, fork_of.repo_name)
 
         # now create this repo on Filesystem
-        RepoModel(DBS)._create_filesystem_repo(
+        RepoModel()._create_filesystem_repo(
             repo_name=repo_name,
             repo_type=repo_type,
-            repo_group=RepoModel(DBS)._get_repo_group(repo_group),
+            repo_group=RepoModel()._get_repo_group(repo_group),
             clone_uri=source_repo_path,
         )
         repo = Repository.get_by_repo_name(repo_name_full)
@@ -274,7 +245,7 @@ def create_repo_fork(form_data, cur_user):
             user=cur_user,
             repo=audit_logger.RepoWrap(repo_name=repo_name, repo_id=repo_id))
 
-        DBS.commit()
+        Session().commit()
     except Exception as e:
         log.warning('Exception %s occurred when forking repository, '
                     'doing cleanup...', e)
@@ -282,8 +253,8 @@ def create_repo_fork(form_data, cur_user):
         repo = Repository.get_by_repo_name(repo_name_full)
         if repo:
             Repository.delete(repo.repo_id)
-            DBS.commit()
-            RepoModel(DBS)._delete_filesystem_repo(repo)
+            Session().commit()
+            RepoModel()._delete_filesystem_repo(repo)
         raise
 
     # it's an odd fix to make celery fail task when exception occurs
@@ -291,3 +262,14 @@ def create_repo_fork(form_data, cur_user):
         pass
 
     return True
+
+
+@async_task(ignore_result=True)
+def sync_repo(*args, **kwargs):
+    from rhodecode.model.scm import ScmModel
+    log = get_logger(sync_repo)
+
+    log.info('Pulling from %s', kwargs['repo_name'])
+    ScmModel().pull_changes(kwargs['repo_name'], kwargs['username'])
+
+

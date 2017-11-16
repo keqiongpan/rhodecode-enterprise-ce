@@ -108,7 +108,6 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    # Appy the kombu patch early on, needed for test discovery on Python 2.7.11
     from rhodecode.config import patches
 
 

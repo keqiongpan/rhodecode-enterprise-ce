@@ -20,18 +20,16 @@
 
 from __future__ import unicode_literals
 import deform
-import re
 import logging
 import requests
 import colander
 import textwrap
-from celery.task import task
 from mako.template import Template
 
 from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.lib import helpers as h
-from rhodecode.lib.celerylib import run_task
+from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 from rhodecode.lib.colander_utils import strip_whitespace
 from rhodecode.integrations.types.base import IntegrationTypeBase
 
@@ -243,7 +241,7 @@ class HipchatIntegrationType(IntegrationTypeBase):
         )
 
 
-@task(ignore_result=True)
+@async_task(ignore_result=True, base=RequestContextTask)
 def post_text_to_hipchat(settings, text):
     log.debug('sending %s to hipchat %s' % (text, settings['server_url']))
     resp = requests.post(settings['server_url'], json={

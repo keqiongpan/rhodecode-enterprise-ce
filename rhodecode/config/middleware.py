@@ -42,6 +42,7 @@ from rhodecode.lib.vcs import VCSCommunicationError
 from rhodecode.lib.exceptions import VCSServerUnavailable
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
+from rhodecode.lib.celerylib.loader import configure_celery
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
 from rhodecode.lib.utils2 import aslist as rhodecode_aslist, AttributeDict
 from rhodecode.subscribers import (
@@ -87,9 +88,11 @@ def make_pyramid_app(global_config, **settings):
     pyramid_app = wrap_app_in_wsgi_middlewares(pyramid_app, config)
     pyramid_app.config = config
 
+    config.configure_celery(global_config['__file__'])
     # creating the app uses a connection - return it after we are done
     meta.Session.remove()
 
+    log.info('Pyramid app %s created and configured.', pyramid_app)
     return pyramid_app
 
 
@@ -195,6 +198,8 @@ def includeme(config):
 
     config.add_directive(
         'register_rhodecode_plugin', register_rhodecode_plugin)
+
+    config.add_directive('configure_celery', configure_celery)
 
     if asbool(settings.get('appenlight', 'false')):
         config.include('appenlight_client.ext.pyramid_tween')

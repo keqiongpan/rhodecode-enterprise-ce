@@ -448,3 +448,9 @@ class TestGetEnabledHooks(object):
         ui_settings = []
         result = utils.get_enabled_hook_classes(ui_settings)
         assert result == []
+
+
+def test_obfuscate_url_pw():
+    from rhodecode.lib.utils2 import obfuscate_url_pw
+    engine = u'/home/repos/malmö'
+    assert obfuscate_url_pw(engine)

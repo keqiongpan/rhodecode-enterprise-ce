@@ -28,15 +28,16 @@ import logging
 import requests
 import requests.adapters
 import colander
-from celery.task import task
 from requests.packages.urllib3.util.retry import Retry
 
 import rhodecode
 from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.integrations.types.base import IntegrationTypeBase
+from rhodecode.lib.celerylib import async_task, RequestContextTask
 
 log = logging.getLogger(__name__)
+
 
 # updating this required to update the `common_vars` passed in url calling func
 WEBHOOK_URL_VARS = [
@@ -315,7 +316,7 @@ class WebhookIntegrationType(IntegrationTypeBase):
         post_to_webhook(url_calls, self.settings)
 
 
-@task(ignore_result=True)
+@async_task(ignore_result=True, base=RequestContextTask)
 def post_to_webhook(url_calls, settings):
     max_retries = 3
     retries = Retry(
