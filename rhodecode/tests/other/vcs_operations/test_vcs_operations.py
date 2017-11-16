@@ -39,6 +39,7 @@ from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import Repository, UserIpMap, CacheKey
 from rhodecode.model.meta import Session
+from rhodecode.model.repo import RepoModel
 from rhodecode.model.user import UserModel
 from rhodecode.tests import (GIT_REPO, HG_REPO, TEST_USER_ADMIN_LOGIN)
 
@@ -173,6 +174,28 @@ class TestVCSOperations(object):
             self, rc_web_server, tmpdir, fs_repo_only):
         db_name = fs_repo_only('not-in-db-hg', repo_type='hg')
         clone_url = rc_web_server.repo_clone_url(db_name)
+        stdout, stderr = Command('/tmp').execute(
+            'git clone', clone_url, tmpdir.strpath)
+        assert 'not found' in stderr
+
+    def test_clone_non_existing_store_path_hg(self, rc_web_server, tmpdir, user_util):
+        repo = user_util.create_repo()
+        clone_url = rc_web_server.repo_clone_url(repo.repo_name)
+
+        # Damage repo by removing it's folder
+        RepoModel()._delete_filesystem_repo(repo)
+
+        stdout, stderr = Command('/tmp').execute(
+            'hg clone', clone_url, tmpdir.strpath)
+        assert 'HTTP Error 404: Not Found' in stderr
+
+    def test_clone_non_existing_store_path_git(self, rc_web_server, tmpdir, user_util):
+        repo = user_util.create_repo(repo_type='git')
+        clone_url = rc_web_server.repo_clone_url(repo.repo_name)
+
+        # Damage repo by removing it's folder
+        RepoModel()._delete_filesystem_repo(repo)
+
         stdout, stderr = Command('/tmp').execute(
             'git clone', clone_url, tmpdir.strpath)
         assert 'not found' in stderr

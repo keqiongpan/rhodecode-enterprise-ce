@@ -230,7 +230,8 @@ class SimpleVCS(object):
                 repo_name, db_repo.repo_type, scm_type)
             return False
 
-        return is_valid_repo(repo_name, base_path, explicit_scm=scm_type)
+        return is_valid_repo(repo_name, base_path,
+                             explicit_scm=scm_type, expect_scm=scm_type)
 
     def valid_and_active_user(self, user):
         """

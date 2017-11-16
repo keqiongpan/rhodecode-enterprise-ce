@@ -260,7 +260,7 @@ def is_valid_repo(repo_name, base_path, expect_scm=None, explicit_scm=None):
 
     try:
         if explicit_scm:
-            detected_scms = [get_scm_backend(explicit_scm)]
+            detected_scms = [get_scm_backend(explicit_scm)(full_path).alias]
         else:
             detected_scms = get_scm(full_path)
 
