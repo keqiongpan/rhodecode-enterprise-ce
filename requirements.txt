@@ -2,7 +2,6 @@
 setuptools==30.1.0
 setuptools-scm==1.15.6
 
-amqplib==1.0.2
 amqp==2.2.2
 authomatic==0.1.0.post1
 Babel==1.3

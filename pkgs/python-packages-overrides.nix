@@ -187,11 +187,6 @@ self: super: {
     };
   });
 
-  amqplib = super.amqplib.override (attrs: {
-    meta = {
-      license = pkgs.lib.licenses.lgpl3;
-    };
-  });
 
   docutils = super.docutils.override (attrs: {
     meta = {
