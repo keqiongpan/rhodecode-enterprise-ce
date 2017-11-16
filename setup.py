@@ -157,7 +157,7 @@ setup(
         'paste.global_paster_command': [
             'setup-rhodecode=rhodecode.lib.paster_commands.setup_rhodecode:Command',
             'ishell=rhodecode.lib.paster_commands.ishell:Command',
-            'upgrade-db=rhodecode.lib.dbmigrate:UpgradeDb',
+            'upgrade-db=rhodecode.lib.paster_commands.upgrade_db:UpgradeDb',
 
             'make-config=rhodecode.lib.paster_commands.make_config:Command',
             'celeryd=rhodecode.lib.paster_commands.deprecated.celeryd:Command',
