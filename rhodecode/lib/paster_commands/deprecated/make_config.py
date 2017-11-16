@@ -25,13 +25,12 @@ deprecated make-config paster command for RhodeCode
 import os
 import sys
 from paste.script.appinstall import AbstractInstallCommand
-from paste.script.command import BadCommand
-from paste.deploy import appconfig
 
 # fix rhodecode import
 from os.path import dirname as dn
 rc_path = dn(dn(dn(os.path.realpath(__file__))))
 sys.path.append(rc_path)
+
 
 class Command(AbstractInstallCommand):
 

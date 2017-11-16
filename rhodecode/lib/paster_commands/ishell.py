@@ -26,7 +26,7 @@ import os
 import sys
 import logging
 
-from rhodecode.lib.utils import BasePasterCommand
+from rhodecode.lib.paster_commands import BasePasterCommand
 
 # fix rhodecode import
 from os.path import dirname as dn
