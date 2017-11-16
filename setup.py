@@ -140,7 +140,7 @@ setup(
             ('public/**', 'ignore', None),
         ]
     },
-    paster_plugins=['PasteScript', 'Pylons'],
+    paster_plugins=['PasteScript'],
     entry_points={
         'enterprise.plugins1': [
             'crowd=rhodecode.authentication.plugins.auth_crowd:plugin_factory',
@@ -153,11 +153,6 @@ setup(
         ],
         'paste.app_factory': [
             'main=rhodecode.config.middleware:make_pyramid_app',
-            'pylons=rhodecode.config.middleware:make_app',
-        ],
-        'paste.app_install': [
-            'main=pylons.util:PylonsInstaller',
-            'pylons=pylons.util:PylonsInstaller',
         ],
         'paste.global_paster_command': [
             'make-config=rhodecode.lib.paster_commands.make_config:Command',
