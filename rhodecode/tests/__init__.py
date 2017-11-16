@@ -208,7 +208,11 @@ def assert_session_flash(response, msg=None, category=None, no_=None):
     messages = flash.pop_messages(session=session)
     msg = _eval_if_lazy(msg)
 
-    assert messages, 'unable to find message `%s` in empty flash list' % msg
+    if no_:
+        error_msg = 'unable to detect no_ message `%s` in empty flash list' % no_
+    else:
+        error_msg = 'unable to find message `%s` in empty flash list' % msg
+    assert messages, error_msg
     message = messages[0]
 
     message_text = _eval_if_lazy(message.message) or ''
