@@ -122,7 +122,11 @@ class SimpleVCS(object):
 
     @property
     def base_path(self):
-        return self.repo_vcs_config.get(*VcsSettingsModel.PATH_SETTING)
+        settings_path = self.repo_vcs_config.get(*VcsSettingsModel.PATH_SETTING)
+        if not settings_path:
+            # try, maybe we passed in explicitly as config option
+            settings_path = self.config.get('base_path')
+        return settings_path
 
     def set_repo_names(self, environ):
         """

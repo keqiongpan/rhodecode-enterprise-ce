@@ -181,7 +181,11 @@ class VCSMiddleware(object):
         """
         returns serialized VcsSettings
         """
-        return VcsSettingsModel(repo=repo_name).get_ui_settings_as_config_obj()
+        try:
+            return VcsSettingsModel(
+                repo=repo_name).get_ui_settings_as_config_obj()
+        except Exception:
+            pass
 
     def wrap_in_gzip_if_enabled(self, app, config):
         if self.use_gzip:
@@ -209,6 +213,14 @@ class VCSMiddleware(object):
             # Set acl, url and vcs repo names.
             vcs_handler.set_repo_names(environ)
 
+            # register repo config back to the handler
+            vcs_conf = self.vcs_config(vcs_handler.acl_repo_name)
+            # maybe damaged/non existent settings. We still want to
+            # pass that point to validate on is_valid_and_existing_repo
+            # and return proper HTTP Code back to client
+            if vcs_conf:
+                vcs_handler.repo_vcs_config = vcs_conf
+
             # check for type, presence in database and on filesystem
             if not vcs_handler.is_valid_and_existing_repo(
                     vcs_handler.acl_repo_name,
@@ -217,10 +229,6 @@ class VCSMiddleware(object):
                 return HTTPNotFound()(environ, start_response)
 
             environ['REPO_NAME'] = vcs_handler.url_repo_name
-
-            # register repo config back to the handler
-            vcs_handler.repo_vcs_config = self.vcs_config(
-                vcs_handler.acl_repo_name)
 
             # Wrap handler in middlewares if they are enabled.
             vcs_handler = self.wrap_in_gzip_if_enabled(
