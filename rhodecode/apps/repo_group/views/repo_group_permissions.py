@@ -74,7 +74,7 @@ class RepoGroupPermissionsView(RepoGroupAppView):
                 h.flash(msg, category='warning')
                 raise HTTPFound(
                     h.route_path('edit_repo_group_perms',
-                                 group_name=self.db_repo_group_name))
+                                 repo_group_name=self.db_repo_group_name))
 
         # iterate over all members(if in recursive mode) of this groups and
         # set the permissions !
