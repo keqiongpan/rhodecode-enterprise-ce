@@ -619,35 +619,6 @@ def repo2db_mapper(initial_repo_list, remove_obsolete=False):
     return added, removed
 
 
-def get_default_cache_settings(settings):
-    cache_settings = {}
-    for key in settings.keys():
-        for prefix in ['beaker.cache.', 'cache.']:
-            if key.startswith(prefix):
-                name = key.split(prefix)[1].strip()
-                cache_settings[name] = settings[key].strip()
-    return cache_settings
-
-
-# set cache regions for beaker so celery can utilise it
-def add_cache(settings):
-    from rhodecode.lib import caches
-    cache_settings = {'regions': None}
-    # main cache settings used as default ...
-    cache_settings.update(get_default_cache_settings(settings))
-
-    if cache_settings['regions']:
-        for region in cache_settings['regions'].split(','):
-            region = region.strip()
-            region_settings = {}
-            for key, value in cache_settings.items():
-                if key.startswith(region):
-                    region_settings[key.split('.')[1]] = value
-
-            caches.configure_cache_region(
-                region, region_settings, cache_settings)
-
-
 def load_rcextensions(root_path):
     import rhodecode
     from rhodecode.config import conf

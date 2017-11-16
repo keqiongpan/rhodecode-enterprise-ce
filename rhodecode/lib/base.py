@@ -499,6 +499,7 @@ def bootstrap_config(request):
     # allow pyramid lookup in testing
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
+    config.include('rhodecode.lib.caches')
 
     add_events_routes(config)
 
