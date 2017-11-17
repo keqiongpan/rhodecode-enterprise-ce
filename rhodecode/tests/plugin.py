@@ -1810,7 +1810,7 @@ def disable_anonymous_user(request, baseapp):
         set_anonymous_access(True)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def rc_fixture(request):
     return Fixture()
 
