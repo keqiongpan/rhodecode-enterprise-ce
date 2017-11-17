@@ -475,7 +475,12 @@ var CommentsController = function() {
 
   this.getLineNumber = function(node) {
       var $node = $(node);
-      return $node.closest('td').attr('data-line-number');
+      var lineNo = $node.closest('td').attr('data-line-number');
+      if (lineNo === undefined && $node.data('commentInline')){
+          lineNo = $node.data('commentLineNo')
+      }
+
+      return lineNo
   };
 
   this.scrollToComment = function(node, offset, outdated) {
@@ -799,32 +804,6 @@ var CommentsController = function() {
     cm.setValue(_gettext('TODO from comment {0} was fixed.').format(commentUrl));
     form.submit();
     return false;
-  };
-
-  this.renderInlineComments = function(file_comments) {
-    show_add_button = typeof show_add_button !== 'undefined' ? show_add_button : true;
-
-    for (var i = 0; i < file_comments.length; i++) {
-      var box = file_comments[i];
-
-      var target_id = $(box).attr('target_id');
-
-      // actually comments with line numbers
-      var comments = box.children;
-
-      for (var j = 0; j < comments.length; j++) {
-        var data = {
-          'rendered_text': comments[j].outerHTML,
-          'line_no': $(comments[j]).attr('line'),
-          'target_id': target_id
-        };
-      }
-    }
-
-    // since order of injection is random, we're now re-iterating
-    // from correct order and filling in links
-    linkifyComments($('.inline-comment-injected'));
-    firefoxAnchorFix();
   };
 
 };
