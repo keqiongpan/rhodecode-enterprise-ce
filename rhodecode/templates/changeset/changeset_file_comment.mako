@@ -21,6 +21,7 @@
        line="${comment.line_no}"
        data-comment-id="${comment.comment_id}"
        data-comment-type="${comment.comment_type}"
+       data-comment-line-no="${comment.line_no}"
        data-comment-inline=${h.json.dumps(inline)}
        style="${'display: none;' if outdated_at_ver else ''}">
 
