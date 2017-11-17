@@ -1114,7 +1114,7 @@ def user_regular(baseapp):
 
 
 @pytest.fixture
-def user_util(request, baseapp):
+def user_util(request, db_connection):
     """
     Provides a wired instance of `UserUtility` with integrated cleanup.
     """
@@ -1518,7 +1518,7 @@ class AppenlightClient():
 
 
 @pytest.fixture
-def gist_util(request, baseapp):
+def gist_util(request, db_connection):
     """
     Provides a wired instance of `GistUtility` with integrated cleanup.
     """
@@ -1549,7 +1549,7 @@ def enabled_backends(request):
 
 
 @pytest.fixture
-def settings_util(request):
+def settings_util(request, db_connection):
     """
     Provides a wired instance of `SettingsUtility` with integrated cleanup.
     """
