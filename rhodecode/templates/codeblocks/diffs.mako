@@ -235,12 +235,18 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             <tr class="cb-line">
                 <td class="cb-data cb-context"></td>
                 <td class="cb-lineno cb-context"></td>
-                <td class="cb-content cb-context"></td>
+                <td class="cb-content cb-context">
+                    % if lineno.startswith('o'):
+                        ${inline_comments_container(comments)}
+                    % endif
+                </td>
 
                 <td class="cb-data cb-context"></td>
                 <td class="cb-lineno cb-context"></td>
                 <td class="cb-content cb-context">
-                    ${inline_comments_container(comments)}
+                    % if lineno.startswith('n'):
+                        ${inline_comments_container(comments)}
+                    % endif
                 </td>
             </tr>
         %endif
