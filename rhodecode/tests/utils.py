@@ -42,7 +42,7 @@ from rhodecode.model.meta import Session
 from rhodecode.model.scm import ScmModel
 from rhodecode.lib.vcs.backends.svn.repository import SubversionRepository
 from rhodecode.lib.vcs.backends.base import EmptyCommit
-
+from rhodecode.tests import login_user_session
 
 log = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class CustomTestResponse(TestResponse):
             no = []
         if kw:
             raise TypeError(
-                "The only keyword argument allowed is 'no'")
+                "The only keyword argument allowed is 'no' got %s" % kw)
 
         f = self._save_output(str(self))
 
@@ -118,9 +118,27 @@ class TestRequest(webob.BaseRequest):
 
 class CustomTestApp(TestApp):
     """
-    Custom app to make mustcontain more usefull
+    Custom app to make mustcontain more usefull, and extract special methods
     """
     RequestClass = TestRequest
+    rc_login_data = {}
+    rc_current_session = None
+
+    def login(self, username=None, password=None):
+        from rhodecode.lib import auth
+
+        if username and password:
+            session = login_user_session(self, username, password)
+        else:
+            session = login_user_session(self)
+
+        self.rc_login_data['csrf_token'] = auth.get_csrf_token(session)
+        self.rc_current_session = session
+        return session['rhodecode_user']
+
+    @property
+    def csrf_token(self):
+        return self.rc_login_data['csrf_token']
 
 
 def set_anonymous_access(enabled):
