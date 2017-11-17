@@ -30,6 +30,7 @@ import subprocess32
 import time
 import uuid
 import dateutil.tz
+import functools
 
 import mock
 import pyramid.testing
@@ -65,7 +66,7 @@ from rhodecode.tests import (
     TEST_USER_REGULAR_PASS)
 from rhodecode.tests.utils import CustomTestApp, set_anonymous_access
 from rhodecode.tests.fixture import Fixture
-
+from rhodecode.config import utils as config_utils
 
 def _split_comma(value):
     return value.split(',')
@@ -252,6 +253,12 @@ def app_settings(baseapp, ini_config):
     defaults mechanism in `rhodecode.config.middleware`.
     """
     return baseapp.config.get_settings()
+
+
+@pytest.fixture(scope='session')
+def db_connection(ini_settings):
+    # Initialize the database connection.
+    config_utils.initialize_database(ini_settings)
 
 
 LoginData = collections.namedtuple('LoginData', ('csrf_token', 'user'))

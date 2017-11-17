@@ -30,6 +30,8 @@ import configobj
 import pytest
 
 import pyramid.paster
+
+from rhodecode.lib.pyramid_utils import get_app_config
 from rhodecode.tests.fixture import TestINI
 import rhodecode
 
@@ -275,6 +277,12 @@ def ini_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
         basetemp=tmpdir_factory.getbasetemp().strpath,
         prefix='test_rce_')
     return filename
+
+
+@pytest.fixture(scope='session')
+def ini_settings(ini_config):
+    ini_path = ini_config
+    return get_app_config(ini_path)
 
 
 @pytest.fixture(scope='session')
