@@ -402,6 +402,7 @@ class DiffSet(object):
         return diffset
 
     _lexer_cache = {}
+
     def _get_lexer_for_filename(self, filename, filenode=None):
         # cached because we might need to call it twice for source/target
         if filename not in self._lexer_cache:
@@ -501,6 +502,9 @@ class DiffSet(object):
         if target_file_path in self.comments_store:
             for lineno, comments in self.comments_store[target_file_path].items():
                 left_comments[lineno] = comments
+        # left comments are one that we couldn't place in diff lines.
+        # could be outdated, or the diff changed and this line is no
+        # longer available
         filediff.left_comments = left_comments
 
         return filediff
@@ -608,11 +612,11 @@ class DiffSet(object):
 
         return lines
 
-    def get_comments_for(self, version, file, line_number):
-        if hasattr(file, 'unicode_path'):
-            file = file.unicode_path
+    def get_comments_for(self, version, filename, line_number):
+        if hasattr(filename, 'unicode_path'):
+            filename = filename.unicode_path
 
-        if not isinstance(file, basestring):
+        if not isinstance(filename, basestring):
             return None
 
         line_key = {
@@ -620,8 +624,8 @@ class DiffSet(object):
             'new': 'n',
         }[version] + str(line_number)
 
-        if file in self.comments_store:
-            file_comments = self.comments_store[file]
+        if filename in self.comments_store:
+            file_comments = self.comments_store[filename]
             if line_key in file_comments:
                 return file_comments.pop(line_key)
 
