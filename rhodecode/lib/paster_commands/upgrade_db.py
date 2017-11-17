@@ -60,3 +60,4 @@ class UpgradeDb(BasePasterCommand):
                            dest='force_ask',
                            default=None,
                            help='Force no to every question')
+

@@ -19,26 +19,25 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-import logging
-
-from rhodecode.lib.rc_commands.setup_rc import command as setup_command
-
-log = logging.getLogger(__name__)
+from rhodecode.lib.paster_commands import BasePasterCommand
 
 
-def setup_app(command, conf, vars):
-    opts = command.options.__dict__
+class Command(BasePasterCommand):
+    """
+    Start the celery worker
 
-    # mapping of old parameters to new CLI from click
-    options = dict(
-        ini_path=command.args[0],
-        force_yes=opts.get('force_ask'),
-        user=opts.get('username'),
-        email=opts.get('email'),
-        password=opts.get('password'),
-        api_key=opts.get('api_key'),
-        repos=opts.get('repos_location'),
-        public_access=opts.get('public_access')
-    )
-    setup_command(**options)
+    Starts the celery worker that uses a paste.deploy configuration
+    file.
+    """
+    usage = 'CONFIG_FILE [celeryd options...]'
+    summary = __doc__.splitlines()[0]
+    description = "".join(__doc__.splitlines()[2:])
 
+    parser = BasePasterCommand.standard_parser(quiet=True)
+
+    def update_parser(self):
+        pass
+
+    def command(self):
+        cmd = 'rc-setup-app %s' % self.path_to_ini_file
+        raise Exception('This Command is deprecated please run: %s' % cmd)

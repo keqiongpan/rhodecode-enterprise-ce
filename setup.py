@@ -155,11 +155,10 @@ setup(
             'main=rhodecode.config.middleware:make_pyramid_app',
         ],
         'paste.global_paster_command': [
-            'setup-rhodecode=rhodecode.lib.paster_commands.setup_rhodecode:Command',
             'ishell=rhodecode.lib.paster_commands.ishell:Command',
             'upgrade-db=rhodecode.lib.paster_commands.upgrade_db:UpgradeDb',
 
-            'make-config=rhodecode.lib.paster_commands.make_config:Command',
+            'setup-rhodecode=rhodecode.lib.paster_commands.deprecated.setup_rhodecode:Command',
             'celeryd=rhodecode.lib.paster_commands.deprecated.celeryd:Command',
         ],
         'pyramid.pshell_runner': [

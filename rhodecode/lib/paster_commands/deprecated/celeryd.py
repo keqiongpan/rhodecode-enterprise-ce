@@ -29,7 +29,7 @@ class Command(BasePasterCommand):
     Starts the celery worker that uses a paste.deploy configuration
     file.
     """
-    usage = 'CONFIG_FILE [celeryd options...]'
+    usage = 'CONFIG_FILE'
     summary = __doc__.splitlines()[0]
     description = "".join(__doc__.splitlines()[2:])
 
@@ -41,3 +41,4 @@ class Command(BasePasterCommand):
     def command(self):
         cmd = 'celery worker --beat --app rhodecode.lib.celerylib.loader --loglevel DEBUG --ini=%s' % self.path_to_ini_file
         raise Exception('This Command is deprecated please run: %s' % cmd)
+
