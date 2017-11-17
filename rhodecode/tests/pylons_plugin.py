@@ -44,18 +44,18 @@ def pytest_addoption(parser):
         help="Set default Logging level for tests, warn (default), info, debug")
     group = parser.getgroup('pylons')
     group.addoption(
-        '--with-pylons', dest='pylons_config',
+        '--with-pylons', dest='pyramid_config',
         help="Set up a Pylons environment with the specified config file.")
     group.addoption(
         '--ini-config-override', action='store', type=_parse_json,
-        default=None, dest='pylons_config_override', help=(
+        default=None, dest='pyramid_config_override', help=(
             "Overrides the .ini file settings. Should be specified in JSON"
             " format, e.g. '{\"section\": {\"parameter\": \"value\", ...}}'"
         )
     )
     parser.addini(
-        'pylons_config',
-        "Set up a Pylons environment with the specified config file.")
+        'pyramid_config',
+        "Set up a Pyramid environment with the specified config file.")
 
     vcsgroup = parser.getgroup('vcs')
     vcsgroup.addoption(
@@ -239,7 +239,7 @@ class HttpVCSServer(VCSServer):
 
 @pytest.fixture(scope='session')
 def ini_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
-    option_name = 'pylons_config'
+    option_name = 'pyramid_config'
     log_level = _use_log_level(request.config)
 
     overrides = [
