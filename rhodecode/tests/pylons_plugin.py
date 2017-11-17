@@ -325,20 +325,6 @@ def available_port(available_port_factory):
 
 
 @pytest.fixture(scope='session')
-def baseapp(ini_config, vcsserver, http_environ_session):
-    from rhodecode.lib.pyramid_utils import get_app_config
-    from rhodecode.config.middleware import make_pyramid_app
-
-    print("Using the RhodeCode configuration:{}".format(ini_config))
-    pyramid.paster.setup_logging(ini_config)
-
-    settings = get_app_config(ini_config)
-    app = make_pyramid_app({'__file__': ini_config}, **settings)
-
-    return app
-
-
-@pytest.fixture(scope='session')
 def testini_factory(tmpdir_factory, ini_config):
     """
     Factory to create an INI file based on TestINI.
