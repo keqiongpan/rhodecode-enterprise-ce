@@ -185,6 +185,7 @@ let
         ln -s ${self.supervisor}/bin/supervisor* $out/bin/
         ln -s ${self.PasteScript}/bin/paster $out/bin/
         ln -s ${self.channelstream}/bin/channelstream $out/bin/
+        ln -s ${self.celery}/bin/celery $out/bin/
 
         # rhodecode-tools
         ln -s ${self.rhodecode-tools}/bin/rhodecode-* $out/bin/
