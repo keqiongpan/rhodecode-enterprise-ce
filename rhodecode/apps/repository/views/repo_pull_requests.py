@@ -679,6 +679,13 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         repo = Repository.get_by_repo_name(target_repo_name)
         if not repo:
             raise HTTPNotFound()
+
+        target_perm = HasRepoPermissionAny(
+            'repository.read', 'repository.write', 'repository.admin')(
+            target_repo_name)
+        if not target_perm:
+            raise HTTPNotFound()
+
         return PullRequestModel().generate_repo_data(
             repo, translator=self.request.translate)
 
