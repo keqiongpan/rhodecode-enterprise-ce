@@ -1,0 +1,10 @@
+diff --git a/server.properties b/server.properties
+--- a/server.properties
++++ b/server.properties
+@@ -1,2 +1,3 @@
+property=value
+-anotherProperty=value
+\ No newline at end of file
++anotherProperty=value
++newProperty=super_important_value
+\ No newline at end of file

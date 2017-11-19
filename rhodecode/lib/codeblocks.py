@@ -553,6 +553,23 @@ class DiffSet(object):
         # line 6: """
 
         lines = []
+
+        before_newline = AttributeDict()
+        after_newline = AttributeDict()
+        if before_lines and before_lines[-1]['action'] == 'old-no-nl':
+            before_newline_line = before_lines.pop(-1)
+            before_newline.content = '\n {}'.format(
+                render_tokenstream(
+                    [(x[0], '', x[1])
+                     for x in [('nonl', before_newline_line['line'])]]))
+
+        if after_lines and after_lines[-1]['action'] == 'new-no-nl':
+            after_newline_line = after_lines.pop(-1)
+            after_newline.content = '\n {}'.format(
+                render_tokenstream(
+                    [(x[0], '', x[1])
+                     for x in [('nonl', after_newline_line['line'])]]))
+
         while before_lines or after_lines:
             before, after = None, None
             before_tokens, after_tokens = None, None
@@ -604,6 +621,13 @@ class DiffSet(object):
             elif after_tokens:
                 modified.content = render_tokenstream(
                     [(x[0], '', x[1]) for x in after_tokens])
+
+            if not before_lines and before_newline:
+                original.content += before_newline.content
+                before_newline = None
+            if not after_lines and after_newline:
+                modified.content += after_newline.content
+                after_newline = None
 
             lines.append(AttributeDict({
                 'original': original,
