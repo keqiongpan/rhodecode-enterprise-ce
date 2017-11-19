@@ -779,7 +779,7 @@ class DiffProcessor(object):
                             'action':       action,
                             'line':         self._clean_line(line, command)
                         })
-                        raw_diff.append(line)
+                    raw_diff.append(line)
 
                     line = diff_iter.next()
 
