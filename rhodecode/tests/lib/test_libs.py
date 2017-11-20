@@ -238,6 +238,19 @@ def test_age_in_future(age_args, expected, kw, pylonsapp):
      ]),
     # entry
     ((
+            "[url =&gt; [linkNameJS](javascript:alert(document.domain))]\n"
+            "[url =&gt; [linkNameHTTP](http://rhodecode.com)]\n"
+            "[url =&gt; [linkNameHTTPS](https://rhodecode.com)]\n"
+            "[url =&gt; [linkNamePath](/repo_group)]\n"
+     ),
+     [
+         ('generic', '[linkNameJS]'),
+         ('url', '[url =&gt; [linkNameHTTP](http://rhodecode.com)]'),
+         ('url', '[url =&gt; [linkNameHTTPS](https://rhodecode.com)]'),
+         ('url', '[url =&gt; [linkNamePath](/repo_group)]'),
+     ]),
+    # entry
+    ((
         "hello pta[tag] gog [[]] [[] sda ero[or]d [me =&gt;>< sa]"
         "[requires] [stale] [see<>=&gt;] [see =&gt; http://url.com]"
         "[requires =&gt; url] [lang =&gt; python] [just a tag] "
