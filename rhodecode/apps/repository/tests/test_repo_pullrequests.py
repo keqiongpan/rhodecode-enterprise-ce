@@ -199,18 +199,17 @@ class TestPullrequestsView(object):
     def test_edit_title_description_closed(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
+        repo_name = pull_request.target_repo.repo_name
         pr_util.close()
 
         response = self.app.post(
             route_path('pullrequest_update',
-                repo_name=pull_request.target_repo.repo_name,
-                pull_request_id=pull_request_id),
+                       repo_name=repo_name, pull_request_id=pull_request_id),
             params={
                 'edit_pull_request': 'true',
                 'title': 'New title',
                 'description': 'New description',
-                'csrf_token': csrf_token})
-
+                'csrf_token': csrf_token}, status=200)
         assert_session_flash(
             response, u'Cannot update closed pull requests.',
             category='error')

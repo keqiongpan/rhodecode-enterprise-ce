@@ -941,6 +941,9 @@ class PullRequestModel(BaseModel):
         :param reviewer_data: list of tuples
             [(user, ['reason1', 'reason2'], mandatory_flag)]
         """
+        pull_request = self.__get_pull_request(pull_request)
+        if pull_request.is_closed():
+            raise ValueError('This pull request is closed')
 
         reviewers = {}
         for user_id, reasons, mandatory in reviewer_data:
@@ -950,7 +953,6 @@ class PullRequestModel(BaseModel):
                 'reasons': reasons, 'mandatory': mandatory}
 
         reviewers_ids = set(reviewers.keys())
-        pull_request = self.__get_pull_request(pull_request)
         current_reviewers = PullRequestReviewers.query()\
             .filter(PullRequestReviewers.pull_request ==
                     pull_request).all()

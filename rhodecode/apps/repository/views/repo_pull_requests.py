@@ -887,8 +887,16 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def pull_request_update(self):
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
+        _ = self.request.translate
 
         self.load_default_context()
+
+        if pull_request.is_closed():
+            log.debug('update: forbidden because pull request is closed')
+            msg = _(u'Cannot update closed pull requests.')
+            h.flash(msg, category='error')
+            return True
+
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
             pull_request, self._rhodecode_user)
