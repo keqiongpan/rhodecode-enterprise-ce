@@ -33,6 +33,7 @@ ACTIONS_V1 = {
     'user.login.success': {'user_agent': ''},
     'user.login.failure': {'user_agent': ''},
     'user.logout': {'user_agent': ''},
+    'user.register': {},
     'user.password.reset_request': {},
     'user.push': {'user_agent': '', 'commit_ids': []},
     'user.pull': {'user_agent': ''},

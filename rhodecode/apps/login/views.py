@@ -275,6 +275,13 @@ class LoginView(BaseAppView):
                                              error_dict=error_dict)
 
             new_user = UserModel().create_registration(form_result)
+
+            action_data = {'data': new_user.get_api_data(),
+                           'user_agent': self.request.user_agent}
+            audit_logger.store_web(
+                'user.register', action_data=action_data,
+                user=new_user)
+
             event = UserRegistered(user=new_user, session=self.session)
             trigger(event)
             h.flash(
