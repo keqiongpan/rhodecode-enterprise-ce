@@ -947,8 +947,8 @@ tags_paterns = OrderedDict((
     ('see', (re.compile(r'\[see\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]'),
             '<div class="metatag" tag="see">see: \\1 </div>')),
 
-    ('url', (re.compile(r'\[url\ \=\&gt;\ \[([a-zA-Z0-9\ \.\-\_]+)\]\((.*?)\)\]'),
-            '<div class="metatag" tag="url"> <a href="\\2">\\1</a> </div>')),
+    ('url', (re.compile(r'\[url\ \=\&gt;\ \[([a-zA-Z0-9\ \.\-\_]+)\]\((http://|https://|/)(.*?)\)\]'),
+            '<div class="metatag" tag="url"> <a href="\\2\\3">\\1</a> </div>')),
 
     ('license', (re.compile(r'\[license\ \=\&gt;\ *([a-zA-Z0-9\/\=\?\&amp;\ \:\/\.\-]*)\]'),
                 '<div class="metatag" tag="license"><a href="http:\/\/www.opensource.org/licenses/\\1">\\1</a></div>')),
