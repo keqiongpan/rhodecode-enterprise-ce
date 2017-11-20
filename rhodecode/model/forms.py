@@ -228,7 +228,10 @@ def RegisterForm(localizer, edit=False, old_data=None):
         active = v.StringBoolean(if_missing=False)
         firstname = v.UnicodeString(strip=True, min=1, not_empty=False)
         lastname = v.UnicodeString(strip=True, min=1, not_empty=False)
-        email = All(v.Email(not_empty=True), v.UniqSystemEmail(localizer, old_data))
+        email = All(
+            v.Email(not_empty=True),
+            v.UniqSystemEmail(localizer, old_data),
+            v.UnicodeString(strip=True, min=3))
 
         chained_validators = [v.ValidPasswordsMatch(localizer)]
     return _RegisterForm
