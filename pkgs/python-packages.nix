@@ -1264,13 +1264,13 @@
     };
   };
   py = super.buildPythonPackage {
-    name = "py-1.4.34";
+    name = "py-1.5.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/68/35/58572278f1c097b403879c1e9369069633d1cbad5239b9057944bb764782/py-1.4.34.tar.gz";
-      md5 = "d9c3d8f734b0819ff48e355d77bf1730";
+      url = "https://pypi.python.org/packages/90/e3/e075127d39d35f09a500ebb4a90afd10f9ef0a1d28a6d09abeec0e444fdd/py-1.5.2.tar.gz";
+      md5 = "279ca69c632069e1b71e11b14641ca28";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1446,13 +1446,13 @@
     };
   };
   pytest = super.buildPythonPackage {
-    name = "pytest-3.2.3";
+    name = "pytest-3.2.5";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [py setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/53/d0/208853c09be8377e6d4de7c0df875ef7ef37189373d76a74b65b44e50528/pytest-3.2.3.tar.gz";
-      md5 = "698f8929e095a1c37876b5567943be79";
+      url = "https://pypi.python.org/packages/1f/f8/8cd74c16952163ce0db0bd95fdd8810cbf093c08be00e6e665ebf0dc3138/pytest-3.2.5.tar.gz";
+      md5 = "6dbe9bb093883f75394a689a1426ac6f";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1498,13 +1498,13 @@
     };
   };
   pytest-runner = super.buildPythonPackage {
-    name = "pytest-runner-2.11.1";
+    name = "pytest-runner-3.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/9e/4d/08889e5e27a9f5d6096b9ad257f4dea1faabb03c5ded8f665ead448f5d8a/pytest-runner-2.11.1.tar.gz";
-      md5 = "bdb73eb18eca2727944a2dcf963c5a81";
+      url = "https://pypi.python.org/packages/65/b4/ae89338cd2d81e2cc54bd6db2e962bfe948f612303610d68ab24539ac2d1/pytest-runner-3.0.tar.gz";
+      md5 = "8f8363a52bbabc4cedd5e239beb2ba11";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

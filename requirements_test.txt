@@ -1,9 +1,9 @@
 # test related requirements
-pytest==3.2.3
-py==1.4.34
+pytest==3.2.5
+py==1.5.2
 pytest-cov==2.5.1
 pytest-sugar==0.9.0
-pytest-runner==2.11.1
+pytest-runner==3.0.0
 pytest-catchlog==1.2.2
 pytest-profiling==1.2.11
 gprof2dot==2017.9.19
