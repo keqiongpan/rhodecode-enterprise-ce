@@ -78,11 +78,15 @@ class RepoChecksView(BaseAppView):
 
         if task_id and task_id not in ['None']:
             import rhodecode
-            from rhodecode.lib.celerylib.loader import celery_app
+            from rhodecode.lib.celerylib.loader import celery_app, exceptions
             if rhodecode.CELERY_ENABLED:
+                log.debug('celery: checking result for task:%s', task_id)
                 task = celery_app.AsyncResult(task_id)
-                task.get()
-                if task.failed():
+                try:
+                    task.get(timeout=10)
+                except exceptions.TimeoutError:
+                    task = None
+                if task and task.failed():
                     msg = self._log_creation_exception(task.result, repo_name)
                     h.flash(msg, category='error')
                     raise HTTPFound(h.route_path('home'), code=501)
