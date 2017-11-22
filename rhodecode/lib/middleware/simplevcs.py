@@ -92,6 +92,7 @@ class SimpleVCS(object):
     acl_repo_name = None
     url_repo_name = None
     vcs_repo_name = None
+    rc_extras = {}
 
     # We have to handle requests to shadow repositories different than requests
     # to normal repositories. Therefore we have to distinguish them. To do this
@@ -532,6 +533,7 @@ class SimpleVCS(object):
         config = self._create_config(extras, self.acl_repo_name)
         log.debug('HOOKS extras is %s', extras)
         app = self._create_wsgi_app(repo_path, self.url_repo_name, config)
+        app.rc_extras = extras
 
         try:
             with callback_daemon:
