@@ -122,7 +122,7 @@ CProfileV==1.0.7
 bottle==0.12.13
 
 ## rhodecode-tools, special case
-https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.14.0.tar.gz?md5=15de9be3d185d832c4af2156fefc8eeb#egg=rhodecode-tools==0.14.0
+https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.14.1.tar.gz?md5=0b9c2caad160b68889f8172ea54af7b2#egg=rhodecode-tools==0.14.1
 
 ## appenlight
 appenlight-client==0.6.22

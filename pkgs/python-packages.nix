@@ -1690,13 +1690,13 @@
     };
   };
   rhodecode-tools = super.buildPythonPackage {
-    name = "rhodecode-tools-0.14.0";
+    name = "rhodecode-tools-0.14.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [click future six Mako MarkupSafe requests elasticsearch elasticsearch-dsl urllib3 Whoosh];
     src = fetchurl {
-      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.14.0.tar.gz?md5=15de9be3d185d832c4af2156fefc8eeb";
-      md5 = "15de9be3d185d832c4af2156fefc8eeb";
+      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.14.1.tar.gz?md5=0b9c2caad160b68889f8172ea54af7b2";
+      md5 = "0b9c2caad160b68889f8172ea54af7b2";
     };
     meta = {
       license = [ { fullName = "AGPLv3 and Proprietary"; } ];
