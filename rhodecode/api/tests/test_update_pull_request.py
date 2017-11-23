@@ -168,10 +168,11 @@ class TestUpdatePullRequest(object):
 
     @pytest.mark.backends("git", "hg")
     def test_api_update_repo_error(self, pr_util):
+        pull_request = pr_util.create_pull_request()
         id_, params = build_data(
             self.apikey, 'update_pull_request',
             repoid='fake',
-            pullrequestid='fake',
+            pullrequestid=pull_request.pull_request_id,
             reviewers=[{'username': 'bad_name'}])
         response = api_call(self.app, params)
 

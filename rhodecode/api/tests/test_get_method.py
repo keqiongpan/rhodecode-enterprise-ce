@@ -38,11 +38,12 @@ class TestGetMethod(object):
         response = api_call(self.app, params)
 
         expected = ['changeset_comment', 'comment_pull_request',
-                    'comment_commit']
+                    'get_pull_request_comments', 'comment_commit']
         assert_ok(id_, expected, given=response.body)
 
     def test_get_methods_on_single_match(self):
-        id_, params = build_data(self.apikey, 'get_method', pattern='*comment_commit*')
+        id_, params = build_data(self.apikey, 'get_method',
+                                 pattern='*comment_commit*')
         response = api_call(self.app, params)
 
         expected = ['comment_commit',

@@ -170,10 +170,11 @@ class TestCommentPullRequest(object):
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.backends("git", "hg")
-    def test_api_comment_pull_request_repo_error(self):
+    def test_api_comment_pull_request_repo_error(self, pr_util):
+        pull_request = pr_util.create_pull_request()
         id_, params = build_data(
             self.apikey, 'comment_pull_request',
-            repoid=666, pullrequestid=1)
+            repoid=666, pullrequestid=pull_request.pull_request_id)
         response = api_call(self.app, params)
 
         expected = 'repository `666` does not exist'
