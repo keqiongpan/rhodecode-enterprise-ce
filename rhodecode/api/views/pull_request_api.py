@@ -311,6 +311,109 @@ def merge_pull_request(
 
 
 @jsonrpc_method()
+def get_pull_request_comments(
+        request, apiuser, pullrequestid, repoid=Optional(None)):
+    """
+    Get all comments of pull request specified with the `pullrequestid`
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: Optional repository name or repository ID.
+    :type repoid: str or int
+    :param pullrequestid: The pull request ID.
+    :type pullrequestid: int
+
+    Example output:
+
+    .. code-block:: bash
+
+        id : <id_given_in_input>
+        result : [
+            {
+              "comment_author": {
+                "active": true,
+                "full_name_or_username": "Tom Gore",
+                "username": "admin"
+              },
+              "comment_created_on": "2017-01-02T18:43:45.533",
+              "comment_f_path": null,
+              "comment_id": 25,
+              "comment_lineno": null,
+              "comment_status": {
+                "status": "under_review",
+                "status_lbl": "Under Review"
+              },
+              "comment_text": "Example text",
+              "comment_type": null,
+              "pull_request_version": null
+            }
+        ],
+        error :  null
+    """
+
+    pull_request = get_pull_request_or_error(pullrequestid)
+    if Optional.extract(repoid):
+        repo = get_repo_or_error(repoid)
+    else:
+        repo = pull_request.target_repo
+
+    if not PullRequestModel().check_user_read(
+            pull_request, apiuser, api=True):
+        raise JSONRPCError('repository `%s` or pull request `%s` '
+                           'does not exist' % (repoid, pullrequestid))
+
+    (pull_request_latest,
+     pull_request_at_ver,
+     pull_request_display_obj,
+     at_version) = PullRequestModel().get_pr_version(
+        pull_request.pull_request_id, version=None)
+
+    versions = pull_request_display_obj.versions()
+    ver_map = {
+        ver.pull_request_version_id: cnt
+        for cnt, ver in enumerate(versions, 1)
+    }
+
+    # GENERAL COMMENTS with versions #
+    q = CommentsModel()._all_general_comments_of_pull_request(pull_request)
+    q = q.order_by(ChangesetComment.comment_id.asc())
+    general_comments = q.all()
+
+    # INLINE COMMENTS with versions  #
+    q = CommentsModel()._all_inline_comments_of_pull_request(pull_request)
+    q = q.order_by(ChangesetComment.comment_id.asc())
+    inline_comments = q.all()
+
+    data = []
+    for comment in inline_comments + general_comments:
+        full_data = comment.get_api_data()
+        pr_version_id = None
+        if comment.pull_request_version_id:
+            pr_version_id = 'v{}'.format(
+                ver_map[comment.pull_request_version_id])
+
+        # sanitize some entries
+
+        full_data['pull_request_version'] = pr_version_id
+        full_data['comment_author'] = {
+            'username': full_data['comment_author'].username,
+            'full_name_or_username': full_data['comment_author'].full_name_or_username,
+            'active': full_data['comment_author'].active,
+        }
+
+        if full_data['comment_status']:
+            full_data['comment_status'] = {
+                'status': full_data['comment_status'][0].status,
+                'status_lbl': full_data['comment_status'][0].status_lbl,
+            }
+        else:
+            full_data['comment_status'] = {}
+
+        data.append(full_data)
+    return data
+
+
+@jsonrpc_method()
 def comment_pull_request(
         request, apiuser, repoid, pullrequestid, message=Optional(None),
         commit_id=Optional(None), status=Optional(None),
