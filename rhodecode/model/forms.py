@@ -142,7 +142,7 @@ def UserForm(localizer, edit=False, available_languages=None, old_data=None):
         active = v.StringBoolean(if_missing=False)
         firstname = v.UnicodeString(strip=True, min=1, not_empty=False)
         lastname = v.UnicodeString(strip=True, min=1, not_empty=False)
-        email = All(v.Email(not_empty=True), v.UniqSystemEmail(localizer, old_data))
+        email = All(v.UniqSystemEmail(localizer, old_data), v.Email(not_empty=True))
         extern_name = v.UnicodeString(strip=True)
         extern_type = v.UnicodeString(strip=True)
         language = v.OneOf(available_languages, hideList=False,
@@ -228,10 +228,7 @@ def RegisterForm(localizer, edit=False, old_data=None):
         active = v.StringBoolean(if_missing=False)
         firstname = v.UnicodeString(strip=True, min=1, not_empty=False)
         lastname = v.UnicodeString(strip=True, min=1, not_empty=False)
-        email = All(
-            v.Email(not_empty=True),
-            v.UniqSystemEmail(localizer, old_data),
-            v.UnicodeString(strip=True, min=3))
+        email = All(v.UniqSystemEmail(localizer, old_data), v.Email(not_empty=True))
 
         chained_validators = [v.ValidPasswordsMatch(localizer)]
     return _RegisterForm
