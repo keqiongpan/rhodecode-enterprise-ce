@@ -419,6 +419,29 @@ class PullRequestModel(BaseModel):
             .order_by(PullRequestVersion.pull_request_version_id.asc())\
             .all()
 
+    def get_pr_version(self, pull_request_id, version=None):
+        at_version = None
+
+        if version and version == 'latest':
+            pull_request_ver = PullRequest.get(pull_request_id)
+            pull_request_obj = pull_request_ver
+            _org_pull_request_obj = pull_request_obj
+            at_version = 'latest'
+        elif version:
+            pull_request_ver = PullRequestVersion.get_or_404(version)
+            pull_request_obj = pull_request_ver
+            _org_pull_request_obj = pull_request_ver.pull_request
+            at_version = pull_request_ver.pull_request_version_id
+        else:
+            _org_pull_request_obj = pull_request_obj = PullRequest.get_or_404(
+                pull_request_id)
+
+        pull_request_display_obj = PullRequest.get_pr_display_object(
+            pull_request_obj, _org_pull_request_obj)
+
+        return _org_pull_request_obj, pull_request_obj, \
+               pull_request_display_obj, at_version
+
     def create(self, created_by, source_repo, source_ref, target_repo,
                target_ref, revisions, reviewers, title, description=None,
                reviewer_data=None, translator=None):

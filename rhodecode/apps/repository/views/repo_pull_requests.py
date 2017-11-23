@@ -201,29 +201,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         return data
 
-    def _get_pr_version(self, pull_request_id, version=None):
-        at_version = None
-
-        if version and version == 'latest':
-            pull_request_ver = PullRequest.get(pull_request_id)
-            pull_request_obj = pull_request_ver
-            _org_pull_request_obj = pull_request_obj
-            at_version = 'latest'
-        elif version:
-            pull_request_ver = PullRequestVersion.get_or_404(version)
-            pull_request_obj = pull_request_ver
-            _org_pull_request_obj = pull_request_ver.pull_request
-            at_version = pull_request_ver.pull_request_version_id
-        else:
-            _org_pull_request_obj = pull_request_obj = PullRequest.get_or_404(
-                pull_request_id)
-
-        pull_request_display_obj = PullRequest.get_pr_display_object(
-            pull_request_obj, _org_pull_request_obj)
-
-        return _org_pull_request_obj, pull_request_obj, \
-               pull_request_display_obj, at_version
-
     def _get_diffset(self, source_repo_name, source_repo,
                      source_ref_id, target_ref_id,
                      target_commit, source_commit, diff_limit, fulldiff,
@@ -278,7 +255,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         (pull_request_latest,
          pull_request_at_ver,
          pull_request_display_obj,
-         at_version) = self._get_pr_version(
+         at_version) = PullRequestModel().get_pr_version(
             pull_request_id, version=version)
         pr_closed = pull_request_latest.is_closed()
 
@@ -300,7 +277,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         (prev_pull_request_latest,
          prev_pull_request_at_ver,
          prev_pull_request_display_obj,
-         prev_at_version) = self._get_pr_version(
+         prev_at_version) = PullRequestModel().get_pr_version(
             pull_request_id, version=from_version)
 
         c.from_version = prev_at_version
