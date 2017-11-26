@@ -28,6 +28,7 @@ import colander
 
 from rhodecode.translation import _
 from rhodecode.lib.utils2 import glob2re, safe_unicode
+from rhodecode.lib.ext_json import json
 
 log = logging.getLogger(__name__)
 
@@ -138,3 +139,11 @@ class CloneUriValidator(object):
             msg = _(u'invalid clone url for {repo_type} repository').format(
                 repo_type=self.repo_type)
             raise colander.Invalid(node, msg)
+
+
+def json_validator(node, value):
+    try:
+        json.loads(value)
+    except (Exception,):
+        msg = _(u'Please enter a valid json object')
+        raise colander.Invalid(node, msg)
