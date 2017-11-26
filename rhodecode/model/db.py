@@ -34,14 +34,17 @@ import functools
 import traceback
 import collections
 
-
-from sqlalchemy import *
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import (
+    or_, and_, not_, func, TypeDecorator, event,
+    Index, UniqueConstraint, ForeignKey, CheckConstraint, Column,
+    Boolean, String, Unicode, UnicodeText, DateTime, Integer, LargeBinary,
+    Text, Float, PickleType)
+from sqlalchemy.sql.expression import true, false
+from sqlalchemy.sql.functions import coalesce, count  # noqa
 from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
-from sqlalchemy.sql.expression import true
-from sqlalchemy.sql.functions import coalesce, count  # noqa
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.exc import IntegrityError  # noqa
 from sqlalchemy.dialects.mysql import LONGTEXT
 from beaker.cache import cache_region
@@ -56,7 +59,8 @@ from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
     glob2re, StrictAttributeDict, cleaned_uri)
-from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType
+from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType, \
+    JsonRaw
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.encrypt import AESCipher
