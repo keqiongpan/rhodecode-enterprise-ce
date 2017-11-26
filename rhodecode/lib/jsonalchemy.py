@@ -83,7 +83,7 @@ class JSONEncodedObj(sqlalchemy.types.TypeDecorator):
             try:
                 value = json.loads(value, object_pairs_hook=DictClass)
             except Exception as e:
-                if self.safe:
+                if self.safe and self.default is not None:
                     return self.default()
                 else:
                     raise
