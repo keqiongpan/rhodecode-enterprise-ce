@@ -54,7 +54,7 @@ def notify(msg):
     Notification for migrations messages
     """
     ml = len(msg) + (4 * 2)
-    print('\n%s\n*** %s ***\n%s' % ('*' * ml, msg, '*' * ml)).upper()
+    print(('\n%s\n*** %s ***\n%s' % ('*' * ml, msg, '*' * ml)).upper())
 
 
 class DbManage(object):
