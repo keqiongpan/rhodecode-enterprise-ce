@@ -31,7 +31,8 @@ from rhodecode.translation import _
 
 log = logging.getLogger(__name__)
 
-NavListEntry = collections.namedtuple('NavListEntry', ['key', 'name', 'url'])
+NavListEntry = collections.namedtuple(
+    'NavListEntry', ['key', 'name', 'url', 'active_list'])
 
 
 class NavEntry(object):
@@ -41,20 +42,27 @@ class NavEntry(object):
     :param key: Unique identifier used to store reference in an OrderedDict.
     :param name: Display name, usually a translation string.
     :param view_name: Name of the view, used generate the URL.
-    :param pyramid: Indicator to use pyramid for URL generation. This should
-        be removed as soon as we are fully migrated to pyramid.
+    :param active_list: list of urls that we select active for this element
     """
 
-    def __init__(self, key, name, view_name):
+    def __init__(self, key, name, view_name, active_list=None):
         self.key = key
         self.name = name
         self.view_name = view_name
+        self._active_list = active_list or []
 
     def generate_url(self, request):
         return request.route_path(self.view_name)
 
     def get_localized_name(self, request):
         return request.translate(self.name)
+
+    @property
+    def active_list(self):
+        active_list = [self.key]
+        if self._active_list:
+            active_list = self._active_list
+        return active_list
 
 
 @implementer(IAdminNavigationRegistry)
@@ -106,7 +114,7 @@ class NavigationRegistry(object):
 
     def get_navlist(self, request):
         navlist = [NavListEntry(i.key, i.get_localized_name(request),
-                                i.generate_url(request))
+                                i.generate_url(request), i.active_list)
                    for i in self._registered_entries.values()]
         return navlist
 
