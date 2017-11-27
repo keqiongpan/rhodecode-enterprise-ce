@@ -66,6 +66,8 @@ class SimpleSvnApp(object):
             else:
                 log.debug('Got SVN response:%s with text:`%s`',
                           response, response.text)
+        else:
+            log.debug('got response code: %s', response.status_code)
 
         response_headers = self._get_response_headers(response.headers)
         start_response(
