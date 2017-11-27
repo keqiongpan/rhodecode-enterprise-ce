@@ -76,12 +76,15 @@ def is_svn(environ):
     """
     Returns True if requests target is Subversion server
     """
+
     http_dav = environ.get('HTTP_DAV', '')
     magic_path_segment = rhodecode.CONFIG.get(
         'rhodecode_subversion_magic_path', '/!svn')
     is_svn_path = (
         'subversion' in http_dav or
-        magic_path_segment in environ['PATH_INFO'])
+        magic_path_segment in environ['PATH_INFO']
+        or environ['REQUEST_METHOD'] in ['PROPFIND', 'PROPPATCH']
+    )
     log.debug(
         'request path: `%s` detected as SVN PROTOCOL %s', environ['PATH_INFO'],
         is_svn_path)
