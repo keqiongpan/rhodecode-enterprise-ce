@@ -48,6 +48,7 @@ def test_is_hg_no_cmd():
 
 def test_is_hg_empty_cmd():
     environ = {
+        'REQUEST_METHOD': 'GET',
         'PATH_INFO': svn_repo_path,
         'QUERY_STRING': 'cmd=',
         'HTTP_ACCEPT': 'application/mercurial'
@@ -57,6 +58,7 @@ def test_is_hg_empty_cmd():
 
 def test_is_svn_returns_true_if_subversion_is_in_a_dav_header():
     environ = {
+        'REQUEST_METHOD': 'GET',
         'PATH_INFO': svn_repo_path,
         'HTTP_DAV': 'http://subversion.tigris.org/xmlns/dav/svn/log-revprops'
     }
@@ -65,6 +67,7 @@ def test_is_svn_returns_true_if_subversion_is_in_a_dav_header():
 
 def test_is_svn_returns_false_if_subversion_is_not_in_a_dav_header():
     environ = {
+        'REQUEST_METHOD': 'GET',
         'PATH_INFO': svn_repo_path,
         'HTTP_DAV': 'http://stuff.tigris.org/xmlns/dav/svn/log-revprops'
     }
@@ -73,6 +76,7 @@ def test_is_svn_returns_false_if_subversion_is_not_in_a_dav_header():
 
 def test_is_svn_returns_false_if_no_dav_header():
     environ = {
+        'REQUEST_METHOD': 'GET',
         'PATH_INFO': svn_repo_path,
     }
     assert vcs.is_svn(environ) is False
@@ -85,6 +89,14 @@ def test_is_svn_returns_true_if_magic_path_segment():
     assert vcs.is_svn(environ)
 
 
+def test_is_svn_returns_true_if_propfind():
+    environ = {
+        'REQUEST_METHOD': 'PROPFIND',
+        'PATH_INFO': svn_repo_path,
+    }
+    assert vcs.is_svn(environ) is True
+
+
 def test_is_svn_allows_to_configure_the_magic_path(monkeypatch):
     """
     This is intended as a fallback in case someone has configured his
@@ -93,6 +105,7 @@ def test_is_svn_allows_to_configure_the_magic_path(monkeypatch):
     monkeypatch.setitem(
         rhodecode.CONFIG, 'rhodecode_subversion_magic_path', '/!my-magic')
     environ = {
+        'REQUEST_METHOD': 'POST',
         'PATH_INFO': '/stub-repository/!my-magic/rev/4',
     }
     assert vcs.is_svn(environ)

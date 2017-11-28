@@ -34,6 +34,7 @@ from paste.httpheaders import REMOTE_USER, AUTH_TYPE
 # TODO(marcink): check if we should use webob.exc here ?
 from pyramid.httpexceptions import (
     HTTPNotFound, HTTPForbidden, HTTPNotAcceptable, HTTPInternalServerError)
+from zope.cachedescriptors.property import Lazy as LazyProperty
 
 import rhodecode
 from rhodecode.authentication.base import (
@@ -121,12 +122,28 @@ class SimpleVCS(object):
             auth_ret_code_detection)
         self.ip_addr = '0.0.0.0'
 
+    @LazyProperty
+    def global_vcs_config(self):
+        try:
+            return VcsSettingsModel().get_ui_settings_as_config_obj()
+        except Exception:
+            return base.Config()
+
     @property
     def base_path(self):
-        settings_path = self.repo_vcs_config.get(*VcsSettingsModel.PATH_SETTING)
+        settings_path = self.repo_vcs_config.get(
+            *VcsSettingsModel.PATH_SETTING)
+
+        if not settings_path:
+            settings_path = self.global_vcs_config.get(
+            *VcsSettingsModel.PATH_SETTING)
+
         if not settings_path:
             # try, maybe we passed in explicitly as config option
             settings_path = self.config.get('base_path')
+
+        if not settings_path:
+            raise ValueError('FATAL: base_path is empty')
         return settings_path
 
     def set_repo_names(self, environ):
