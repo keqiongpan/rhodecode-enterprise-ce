@@ -20,7 +20,11 @@
 """
 Celery loader, run with::
 
-    celery worker --beat --app rhodecode.lib.celerylib.loader --loglevel DEBUG --ini=._dev/dev.ini
+    celery worker \
+        --beat \
+        --app rhodecode.lib.celerylib.loader \
+        --scheduler rhodecode.lib.celerylib.scheduler.RcScheduler \
+        --loglevel DEBUG --ini=._dev/dev.ini
 """
 import os
 import logging
@@ -83,6 +87,10 @@ base_celery_config = {
     'task_serializer': 'json_ext',
     'result_serializer': 'json_ext',
     'worker_hijack_root_logger': False,
+    'database_table_names': {
+        'task': 'beat_taskmeta',
+        'group': 'beat_groupmeta',
+    }
 }
 # init main celery app
 celery_app = Celery()

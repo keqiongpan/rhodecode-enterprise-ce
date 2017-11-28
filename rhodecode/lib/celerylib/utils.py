@@ -64,40 +64,53 @@ def safe_json(get, section, key):
     return json_value
 
 
-def get_beat_config(parser, section):
-    SCHEDULE_TYPE_MAP = {
+def raw_2_schedule(schedule_value, schedule_type):
+    schedule_type_map = {
         'crontab': crontab,
         'timedelta': timedelta,
         'integer': int
     }
+    scheduler_cls = schedule_type_map.get(schedule_type)
+
+    if scheduler_cls is None:
+        raise ValueError(
+            'schedule type %s in section is invalid' % (
+                schedule_type,
+            )
+        )
+    try:
+        schedule = scheduler_cls(schedule_value)
+    except TypeError:
+        log.exception('Failed to compose a schedule from value: %r', schedule_value)
+        schedule = None
+    return schedule
+
+
+def get_beat_config(parser, section):
+
     get = partial(parser.get, section)
     has_option = partial(parser.has_option, section)
 
     schedule_type = get('type')
     schedule_value = safe_json(get, section, 'schedule')
 
-    scheduler_cls = SCHEDULE_TYPE_MAP.get(schedule_type)
-
-    if scheduler_cls is None:
-        raise ValueError(
-            'schedule type %s in section %s is invalid' % (
-                schedule_type,
-                section
-            )
-        )
-
-    schedule = scheduler_cls(schedule_value)
-
     config = {
+        'schedule_type': schedule_type,
+        'schedule_value': schedule_value,
         'task': get('task'),
-        'schedule': schedule,
     }
+    schedule = raw_2_schedule(schedule_value, schedule_type)
+    if schedule:
+        config['schedule'] = schedule
 
     if has_option('args'):
         config['args'] = safe_json(get, section, 'args')
 
     if has_option('kwargs'):
         config['kwargs'] = safe_json(get, section, 'kwargs')
+
+    if has_option('force_update'):
+        config['force_update'] = get('force_update')
 
     return config
 

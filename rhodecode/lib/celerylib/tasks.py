@@ -24,6 +24,7 @@ by celery daemon
 """
 
 import os
+import time
 
 import rhodecode
 from rhodecode.lib import audit_logger
@@ -268,8 +269,17 @@ def create_repo_fork(form_data, cur_user):
 def sync_repo(*args, **kwargs):
     from rhodecode.model.scm import ScmModel
     log = get_logger(sync_repo)
+    repo_name = kwargs['repo_name']
+    log.info('Pulling from %s', repo_name)
+    dbrepo = Repository.get_by_repo_name(repo_name)
+    if dbrepo and dbrepo.clone_uri:
+        ScmModel().pull_changes(kwargs['repo_name'], kwargs['username'])
+    else:
+        log.debug('Repo `%s` not found or without a clone_url', repo_name)
 
-    log.info('Pulling from %s', kwargs['repo_name'])
-    ScmModel().pull_changes(kwargs['repo_name'], kwargs['username'])
 
-
+@async_task(ignore_result=False)
+def beat_check(*args, **kwargs):
+    log = get_logger(beat_check)
+    log.info('Got args: %r and kwargs %r', args, kwargs)
+    return time.time()

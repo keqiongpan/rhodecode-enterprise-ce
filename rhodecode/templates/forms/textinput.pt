@@ -5,6 +5,7 @@
                   placeholder placeholder|field.widget.placeholder|field.placeholder|'';
                   mask_placeholder mask_placeholder|field.widget.mask_placeholder;
                   style style|field.widget.style;
+                  help_block help_block|field.widget.help_block|'';
 "
       tal:omit-tag="">
     <input type="text" name="${name}" value="${cstruct}"
@@ -12,6 +13,8 @@
                            style style"
             placeholder="${placeholder}"
            id="${oid}"/>
+
+    <p tal:condition="help_block" class="help-block">${help_block}</p>
     <script tal:condition="mask" type="text/javascript">
       deform.addCallback(
          '${oid}',
