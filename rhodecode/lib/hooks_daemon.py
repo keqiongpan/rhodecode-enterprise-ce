@@ -160,6 +160,7 @@ class HttpHooksCallbackDaemon(ThreadedHookCallbackDaemon):
         self._callback_thread.join()
         self._daemon = None
         self._callback_thread = None
+        log.debug("Background thread done.")
 
 
 def prepare_callback_daemon(extras, protocol, use_direct_calls):
