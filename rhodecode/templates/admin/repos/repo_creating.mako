@@ -62,7 +62,8 @@
             }
         }
         else {
-            var message = _gettext('Fetching repository state failed. Error code: {0} {1}. Try <a href="{2}">refreshing</a> this page.').format(resp.status, resp.statusText, url);
+            var currentUrl = "${h.current_route_path()}";
+            var message = _gettext('Fetching repository state failed. Error code: {0} {1}. Try <a href="{2}">refreshing</a> this page.').format(resp.status, resp.statusText, currentUrl);
             var payload = {
                 message: {
                     message: message,
