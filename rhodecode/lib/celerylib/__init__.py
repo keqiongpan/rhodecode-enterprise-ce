@@ -63,10 +63,6 @@ def run_task(task, *args, **kwargs):
                 "Exception while trying to run task asynchronous. "
                 "Fallback to sync execution.")
 
-        # keep in mind there maybe a subtle race condition where something
-        # depending on rhodecode.CELERY_ENABLED
-        # will see CELERY_ENABLED as True before this has a chance to set False
-        rhodecode.CELERY_ENABLED = celery_is_up
     else:
         log.debug('executing task %s:%s in sync mode', 'TASK', task)
 
