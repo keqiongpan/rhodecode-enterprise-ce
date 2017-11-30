@@ -212,7 +212,14 @@ class Hooks(object):
         extras = AttributeDict(extras)
         server_url = extras['server_url']
         request = bootstrap_request(application_url=server_url)
+
         bootstrap_config(request)  # inject routes and other interfaces
+
+        # inject the user for usage in hooks
+        request.user = AttributeDict({'username': extras.username,
+                                      'ip_addr': extras.ip,
+                                      'user_id': extras.user_id})
+
         extras.request = request
 
         try:
