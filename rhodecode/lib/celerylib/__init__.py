@@ -42,6 +42,7 @@ class ResultWrapper(object):
 
 
 def run_task(task, *args, **kwargs):
+    log.debug('Got task `%s` for execution', task)
     if rhodecode.CELERY_ENABLED:
         celery_is_up = False
         try:
@@ -52,11 +53,11 @@ def run_task(task, *args, **kwargs):
 
         except socket.error as e:
             if isinstance(e, IOError) and e.errno == 111:
-                log.error('Unable to connect to celeryd. Sync execution')
+                log.error('Unable to connect to celeryd `%s`. Sync execution', e)
             else:
                 log.exception("Exception while connecting to celeryd.")
         except KeyError as e:
-            log.error('Unable to connect to celeryd. Sync execution')
+            log.error('Unable to connect to celeryd `%s`. Sync execution', e)
         except Exception as e:
             log.exception(
                 "Exception while trying to run task asynchronous. "
