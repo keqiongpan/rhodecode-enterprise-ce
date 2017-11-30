@@ -32,7 +32,7 @@ from rhodecode.lib.celerylib import get_logger, async_task, RequestContextTask
 from rhodecode.lib.hooks_base import log_create_repository
 from rhodecode.lib.rcmail.smtp_mailer import SmtpMailer
 from rhodecode.lib.utils2 import safe_int, str2bool
-from rhodecode.model.db import Session, Repository, User
+from rhodecode.model.db import Session, IntegrityError, Repository, User
 
 
 @async_task(ignore_result=True, base=RequestContextTask)
@@ -159,20 +159,20 @@ def create_repo(form_data, cur_user):
             repo=audit_logger.RepoWrap(repo_name=repo_name, repo_id=repo_id))
 
         Session().commit()
-    except Exception:
+    except Exception as e:
         log.warning('Exception occurred when creating repository, '
                     'doing cleanup...', exc_info=True)
+        if isinstance(e, IntegrityError):
+            Session().rollback()
+
         # rollback things manually !
         repo = Repository.get_by_repo_name(repo_name_full)
         if repo:
             Repository.delete(repo.repo_id)
             Session().commit()
             RepoModel()._delete_filesystem_repo(repo)
+        log.info('Cleanup of repo %s finished', repo_name_full)
         raise
-
-    # it's an odd fix to make celery fail task when exception occurs
-    def on_failure(self, *args, **kwargs):
-        pass
 
     return True
 
@@ -249,18 +249,18 @@ def create_repo_fork(form_data, cur_user):
         Session().commit()
     except Exception as e:
         log.warning('Exception %s occurred when forking repository, '
-                    'doing cleanup...', e)
+                    'doing cleanup...', exc_info=True)
+        if isinstance(e, IntegrityError):
+            Session().rollback()
+
         # rollback things manually !
         repo = Repository.get_by_repo_name(repo_name_full)
         if repo:
             Repository.delete(repo.repo_id)
             Session().commit()
             RepoModel()._delete_filesystem_repo(repo)
+        log.info('Cleanup of repo %s finished', repo_name_full)
         raise
-
-    # it's an odd fix to make celery fail task when exception occurs
-    def on_failure(self, *args, **kwargs):
-        pass
 
     return True
 
