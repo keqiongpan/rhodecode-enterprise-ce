@@ -34,7 +34,7 @@ import rhodecode
 from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.integrations.types.base import IntegrationTypeBase
-from rhodecode.lib.celerylib import async_task, RequestContextTask
+from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 
 log = logging.getLogger(__name__)
 
@@ -313,11 +313,47 @@ class WebhookIntegrationType(IntegrationTypeBase):
         url_calls = handler(event, data)
         log.debug('webhook: calling following urls: %s',
                   [x[0] for x in url_calls])
-        post_to_webhook(url_calls, self.settings)
+
+        run_task(post_to_webhook, url_calls, self.settings)
 
 
 @async_task(ignore_result=True, base=RequestContextTask)
 def post_to_webhook(url_calls, settings):
+    """
+    Example data::
+
+        {'actor': {'user_id': 2, 'username': u'admin'},
+         'actor_ip': u'192.168.157.1',
+         'name': 'repo-push',
+         'push': {'branches': [{'name': u'default',
+            'url': 'http://rc.local:8080/hg-repo/changelog?branch=default'}],
+          'commits': [{'author': u'Marcin Kuzminski <marcin@rhodecode.com>',
+            'branch': u'default',
+            'date': datetime.datetime(2017, 11, 30, 12, 59, 48),
+            'issues': [],
+            'mentions': [],
+            'message': u'commit Thu 30 Nov 2017 13:59:48 CET',
+            'message_html': u'commit Thu 30 Nov 2017 13:59:48 CET',
+            'message_html_title': u'commit Thu 30 Nov 2017 13:59:48 CET',
+            'parents': [{'raw_id': '431b772a5353dad9974b810dd3707d79e3a7f6e0'}],
+            'permalink_url': u'http://rc.local:8080/_7/changeset/a815cc738b9651eb5ffbcfb1ce6ccd7c701a5ddf',
+            'raw_id': 'a815cc738b9651eb5ffbcfb1ce6ccd7c701a5ddf',
+            'refs': {'bookmarks': [], 'branches': [u'default'], 'tags': [u'tip']},
+            'reviewers': [],
+            'revision': 9L,
+            'short_id': 'a815cc738b96',
+            'url': u'http://rc.local:8080/hg-repo/changeset/a815cc738b9651eb5ffbcfb1ce6ccd7c701a5ddf'}],
+          'issues': {}},
+         'repo': {'extra_fields': '',
+          'permalink_url': u'http://rc.local:8080/_7',
+          'repo_id': 7,
+          'repo_name': u'hg-repo',
+          'repo_type': u'hg',
+          'url': u'http://rc.local:8080/hg-repo'},
+         'server_url': u'http://rc.local:8080',
+         'utc_timestamp': datetime.datetime(2017, 11, 30, 13, 0, 1, 569276)
+
+    """
     max_retries = 3
     retries = Retry(
         total=max_retries,
@@ -342,6 +378,7 @@ def post_to_webhook(url_calls, settings):
 
         log.debug('calling Webhook with method: %s, and auth:%s',
                   call_method, auth)
+
         resp = call_method(url, json={
             'token': token,
             'event': data
