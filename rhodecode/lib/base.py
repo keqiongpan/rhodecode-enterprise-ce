@@ -169,19 +169,20 @@ def vcs_operation_context(
     make_lock = None
     locked_by = [None, None, None]
     is_anonymous = username == User.DEFAULT_USER
+    user = User.get_by_username(username)
     if not is_anonymous and check_locking:
         log.debug('Checking locking on repository "%s"', repo_name)
-        user = User.get_by_username(username)
         repo = Repository.get_by_repo_name(repo_name)
         make_lock, __, locked_by = repo.get_locking_state(
             action, user.user_id)
-
+    user_id = user.user_id
     settings_model = VcsSettingsModel(repo=repo_name)
     ui_settings = settings_model.get_ui_settings()
 
     extras = {
         'ip': get_ip_addr(environ),
         'username': username,
+        'user_id': user_id,
         'action': action,
         'repository': repo_name,
         'scm': scm,

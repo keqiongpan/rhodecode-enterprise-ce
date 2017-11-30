@@ -93,6 +93,7 @@ class VcsServer(object):
         scm_data = {
             'ip': os.environ['SSH_CLIENT'].split()[0],
             'username': self.user.username,
+            'user_id': self.user.user_id,
             'action': action,
             'repository': self.repo_name,
             'scm': self.backend,

@@ -37,6 +37,7 @@ def scm_extras(user_regular, repo_stub):
     extras = utils2.AttributeDict({
         'ip': '127.0.0.1',
         'username': user_regular.username,
+        'user_id': user_regular.user_id,
         'action': '',
         'repository': repo_stub.repo_name,
         'scm': repo_stub.scm_instance().alias,

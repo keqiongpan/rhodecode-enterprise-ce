@@ -458,6 +458,7 @@ def merge_extras(user_regular):
     extras = {
         'ip': '127.0.0.1',
         'username': user_regular.username,
+        'user_id': user_regular.user_id,
         'action': 'push',
         'repository': 'fake_target_repo_name',
         'scm': 'git',

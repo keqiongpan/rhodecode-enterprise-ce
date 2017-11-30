@@ -37,6 +37,7 @@ def repo_push_event(backend, user_regular):
     scm_extras = {
         'ip': '127.0.0.1',
         'username': user_regular.username,
+        'user_id': user_regular.user_id,
         'action': '',
         'repository': repo.repo_name,
         'scm': repo.scm_instance().alias,

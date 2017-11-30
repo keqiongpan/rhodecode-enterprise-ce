@@ -127,6 +127,7 @@ class TestGitServer(object):
 
         expected_data = {
             'username': git_server.user.username,
+            'user_id': git_server.user.user_id,
             'scm': 'git',
             'repository': git_server.repo_name,
             'make_lock': None,
