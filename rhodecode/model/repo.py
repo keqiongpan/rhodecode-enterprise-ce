@@ -161,7 +161,7 @@ class RepoModel(BaseModel):
 
         if permalink:
             return request.route_url(
-                'repo_summary', repo_name=safe_str(repo.repo_id))
+                'repo_summary', repo_name='_{}'.format(safe_str(repo.repo_id)))
         else:
             return request.route_url(
                 'repo_summary', repo_name=safe_str(repo.repo_name))
