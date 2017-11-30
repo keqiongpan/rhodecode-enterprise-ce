@@ -195,6 +195,24 @@ def configure_celery(config, ini_location):
             closer=None, ini_location=ini_location)
 
 
+def maybe_prepare_env(req):
+    environ = {}
+    try:
+        environ.update({
+            'PATH_INFO': req.environ['PATH_INFO'],
+            'SCRIPT_NAME': req.environ['SCRIPT_NAME'],
+            'HTTP_HOST':
+                req.environ.get('HTTP_HOST', req.environ['SERVER_NAME']),
+            'SERVER_NAME': req.environ['SERVER_NAME'],
+            'SERVER_PORT': req.environ['SERVER_PORT'],
+            'wsgi.url_scheme': req.environ['wsgi.url_scheme'],
+        })
+    except Exception:
+        pass
+
+    return environ
+
+
 class RequestContextTask(Task):
     """
     This is a celery task which will create a rhodecode app instance context
@@ -226,18 +244,11 @@ class RequestContextTask(Task):
         if req:
             # we hook into kwargs since it is the only way to pass our data to
             # the celery worker
+            environ = maybe_prepare_env(req)
             options['headers'] = options.get('headers', {})
             options['headers'].update({
                 'rhodecode_proxy_data': {
-                    'environ': {
-                        'PATH_INFO': req.environ['PATH_INFO'],
-                        'SCRIPT_NAME': req.environ['SCRIPT_NAME'],
-                        'HTTP_HOST': req.environ.get('HTTP_HOST',
-                            req.environ['SERVER_NAME']),
-                        'SERVER_NAME': req.environ['SERVER_NAME'],
-                        'SERVER_PORT': req.environ['SERVER_PORT'],
-                        'wsgi.url_scheme': req.environ['wsgi.url_scheme'],
-                    },
+                    'environ': environ,
                     'auth_user': {
                         'ip_addr': ip_addr,
                         'user_id': user_id
