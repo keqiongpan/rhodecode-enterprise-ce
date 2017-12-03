@@ -57,20 +57,24 @@ def assert_no_running_instance(url):
             "Port is not free at %s, cannot start web interface" % url)
 
 
-def get_host_url(pyramid_config):
-    """Construct the host url using the port in the test configuration."""
+def get_port(pyramid_config):
     config = ConfigParser.ConfigParser()
     config.read(pyramid_config)
+    return config.get('server:main', 'port')
 
-    return '127.0.0.1:%s' % config.get('server:main', 'port')
+
+def get_host_url(pyramid_config):
+    """Construct the host url using the port in the test configuration."""
+    return '127.0.0.1:%s' % get_port(pyramid_config)
 
 
 class RcWebServer(object):
     """
     Represents a running RCE web server used as a test fixture.
     """
-    def __init__(self, pyramid_config):
+    def __init__(self, pyramid_config, log_file):
         self.pyramid_config = pyramid_config
+        self.log_file = log_file
 
     def repo_clone_url(self, repo_name, **kwargs):
         params = {
@@ -85,6 +89,10 @@ class RcWebServer(object):
 
     def host_url(self):
         return 'http://' + get_host_url(self.pyramid_config)
+
+    def get_rc_log(self):
+        with open(self.log_file) as f:
+            return f.read()
 
 
 @pytest.fixture(scope="module")
@@ -155,12 +163,11 @@ def rc_web_server(
     env = os.environ.copy()
     env['RC_NO_TMP_PATH'] = '1'
 
-    rc_log = RC_LOG
-    server_out = open(rc_log, 'w')
+    rc_log = list(RC_LOG.partition('.log'))
+    rc_log.insert(1, get_port(rc_web_server_config))
+    rc_log = ''.join(rc_log)
 
-    # TODO: Would be great to capture the output and err of the subprocess
-    # and make it available in a section of the py.test report in case of an
-    # error.
+    server_out = open(rc_log, 'w')
 
     host_url = 'http://' + get_host_url(rc_web_server_config)
     assert_no_running_instance(host_url)
@@ -184,7 +191,7 @@ def rc_web_server(
         server_out.flush()
         server_out.close()
 
-    return RcWebServer(rc_web_server_config)
+    return RcWebServer(rc_web_server_config, log_file=rc_log)
 
 
 @pytest.fixture

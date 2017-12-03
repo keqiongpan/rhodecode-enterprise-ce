@@ -110,6 +110,11 @@ class WebhookHandler(object):
 
         branches_commits = OrderedDict()
         for commit in data['push']['commits']:
+            if commit.get('git_ref_change'):
+                # special case for GIT that allows creating tags,
+                # deleting branches without associated commit
+                continue
+
             if commit['branch'] not in branches_commits:
                 branch_commits = {'branch': branch_data[commit['branch']],
                                   'commits': []}
@@ -378,7 +383,8 @@ def post_to_webhook(url_calls, settings):
 
         log.debug('calling Webhook with method: %s, and auth:%s',
                   call_method, auth)
-
+        if settings.get('log_data'):
+            log.debug('calling webhook with data: %s', data)
         resp = call_method(url, json={
             'token': token,
             'event': data

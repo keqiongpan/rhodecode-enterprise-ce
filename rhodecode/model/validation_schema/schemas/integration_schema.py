@@ -198,7 +198,6 @@ class IntegrationOptionsSchemaBase(colander.MappingSchema):
     )
 
 
-
 def make_integration_schema(IntegrationType, settings=None):
     """
     Return a colander schema for an integration type

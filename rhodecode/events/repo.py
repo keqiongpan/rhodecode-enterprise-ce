@@ -18,6 +18,7 @@
 
 import collections
 import logging
+import datetime
 
 from rhodecode.translation import lazy_ugettext
 from rhodecode.model.db import User, Repository, Session
@@ -58,22 +59,60 @@ def _commits_as_dict(event, commit_ids, repos):
             return commits  # return early if we have the commits we need
 
         vcs_repo = repo.scm_instance(cache=False)
+
         try:
             # use copy of needed_commits since we modify it while iterating
             for commit_id in list(needed_commits):
-                try:
-                    cs = vcs_repo.get_changeset(commit_id)
-                except CommitDoesNotExistError:
-                    continue  # maybe its in next repo
+                if commit_id.startswith('tag=>'):
+                    raw_id = commit_id[5:]
+                    cs_data = {
+                        'raw_id': commit_id, 'short_id': commit_id,
+                        'branch': None,
+                        'git_ref_change': 'tag_add',
+                        'message': 'Added new tag {}'.format(raw_id),
+                        'author': event.actor.full_contact,
+                        'date': datetime.datetime.now(),
+                        'refs': {
+                            'branches': [],
+                            'bookmarks': [],
+                            'tags': []
+                        }
+                    }
+                    commits.append(cs_data)
 
-                cs_data = cs.__json__()
-                cs_data['refs'] = cs._get_refs()
+                elif commit_id.startswith('delete_branch=>'):
+                    raw_id = commit_id[15:]
+                    cs_data = {
+                        'raw_id': commit_id, 'short_id': commit_id,
+                        'branch': None,
+                        'git_ref_change': 'branch_delete',
+                        'message': 'Deleted branch {}'.format(raw_id),
+                        'author': event.actor.full_contact,
+                        'date': datetime.datetime.now(),
+                        'refs': {
+                            'branches': [],
+                            'bookmarks': [],
+                            'tags': []
+                        }
+                    }
+                    commits.append(cs_data)
+
+                else:
+                    try:
+                        cs = vcs_repo.get_changeset(commit_id)
+                    except CommitDoesNotExistError:
+                        continue  # maybe its in next repo
+
+                    cs_data = cs.__json__()
+                    cs_data['refs'] = cs._get_refs()
+
                 cs_data['mentions'] = extract_mentioned_users(cs_data['message'])
                 cs_data['reviewers'] = reviewers
                 cs_data['url'] = RepoModel().get_commit_url(
                     repo, cs_data['raw_id'], request=event.request)
                 cs_data['permalink_url'] = RepoModel().get_commit_url(
-                    repo, cs_data['raw_id'], request=event.request, permalink=True)
+                    repo, cs_data['raw_id'], request=event.request,
+                    permalink=True)
                 urlified_message, issues_data = process_patterns(
                     cs_data['message'], repo.repo_name)
                 cs_data['issues'] = issues_data
@@ -85,8 +124,8 @@ def _commits_as_dict(event, commit_ids, repos):
 
                 needed_commits.remove(commit_id)
 
-        except Exception as e:
-            log.exception(e)
+        except Exception:
+            log.exception('Failed to extract commits data')
             # we don't send any commits when crash happens, only full list
             # matters we short circuit then.
             return []
@@ -248,6 +287,7 @@ class RepoPushEvent(RepoVCSEvent):
     def __init__(self, repo_name, pushed_commit_ids, extras):
         super(RepoPushEvent, self).__init__(repo_name, extras)
         self.pushed_commit_ids = pushed_commit_ids
+        self.new_refs = extras.new_refs
 
     def as_dict(self):
         data = super(RepoPushEvent, self).as_dict()
@@ -255,6 +295,10 @@ class RepoPushEvent(RepoVCSEvent):
         def branch_url(branch_name):
             return '{}/changelog?branch={}'.format(
                 data['repo']['url'], branch_name)
+
+        def tag_url(tag_name):
+            return '{}/files/{}/'.format(
+                data['repo']['url'], tag_name)
 
         commits = _commits_as_dict(
             self, commit_ids=self.pushed_commit_ids, repos=[self.repo])
@@ -265,8 +309,21 @@ class RepoPushEvent(RepoVCSEvent):
             last_branch = commit['branch']
         issues = _issues_as_dict(commits)
 
-        branches = set(
-            commit['branch'] for commit in commits if commit['branch'])
+        branches = set()
+        tags = set()
+        for commit in commits:
+            if commit['refs']['tags']:
+                for tag in commit['refs']['tags']:
+                    tags.add(tag)
+            if commit['branch']:
+                branches.add(commit['branch'])
+
+        # maybe we have branches in new_refs ?
+        try:
+            branches = branches.union(set(self.new_refs['branches']))
+        except Exception:
+            pass
+
         branches = [
             {
                 'name': branch,
@@ -275,9 +332,24 @@ class RepoPushEvent(RepoVCSEvent):
             for branch in branches
         ]
 
+        # maybe we have branches in new_refs ?
+        try:
+            tags = tags.union(set(self.new_refs['tags']))
+        except Exception:
+            pass
+
+        tags = [
+            {
+                'name': tag,
+                'url': tag_url(tag)
+            }
+            for tag in tags
+        ]
+
         data['push'] = {
             'commits': commits,
             'issues': issues,
             'branches': branches,
+            'tags': tags,
         }
         return data

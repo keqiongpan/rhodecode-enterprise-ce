@@ -404,7 +404,6 @@ class RepoIntegrationsView(IntegrationSettingsViewBase):
         c.repo_name = self.db_repo.repo_name
         c.repository_pull_requests = ScmModel().get_pull_requests(self.repo)
 
-
         return c
 
     @LoginRequired()
