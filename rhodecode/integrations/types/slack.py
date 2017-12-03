@@ -28,6 +28,7 @@ import deform
 import requests
 import colander
 from mako.template import Template
+from collections import OrderedDict
 
 from rhodecode import events
 from rhodecode.translation import _
@@ -246,7 +247,7 @@ class SlackIntegrationType(IntegrationTypeBase):
         branch_data = {branch['name']: branch
                        for branch in data['push']['branches']}
 
-        branches_commits = {}
+        branches_commits = OrderedDict()
         for commit in data['push']['commits']:
             if commit['branch'] not in branches_commits:
                 branch_commits = {'branch': branch_data[commit['branch']],
