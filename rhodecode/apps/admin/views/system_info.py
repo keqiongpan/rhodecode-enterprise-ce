@@ -20,7 +20,6 @@
 
 import logging
 import urllib2
-import packaging.version
 
 from pyramid.view import view_config
 
@@ -31,8 +30,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (LoginRequired, HasPermissionAllDecorator)
 from rhodecode.lib.utils2 import str2bool
 from rhodecode.lib import system_info
-from rhodecode.lib.ext_json import json
-from rhodecode.model.settings import SettingsModel
+from rhodecode.model.update import UpdateModel
 
 log = logging.getLogger(__name__)
 
@@ -40,25 +38,7 @@ log = logging.getLogger(__name__)
 class AdminSystemInfoSettingsView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
         return c
-
-    @staticmethod
-    def get_update_data(update_url):
-        """Return the JSON update data."""
-        ver = rhodecode.__version__
-        log.debug('Checking for upgrade on `%s` server', update_url)
-        opener = urllib2.build_opener()
-        opener.addheaders = [('User-agent', 'RhodeCode-SCM/%s' % ver)]
-        response = opener.open(update_url)
-        response_data = response.read()
-        data = json.loads(response_data)
-
-        return data
-
-    def get_update_url(self):
-        settings = SettingsModel().get_all_settings()
-        return settings.get('rhodecode_update_url')
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
@@ -77,7 +57,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
 
         snapshot = str2bool(self.request.params.get('snapshot'))
 
-        c.rhodecode_update_url = self.get_update_url()
+        c.rhodecode_update_url = UpdateModel().get_update_url()
         server_info = system_info.get_system_info(self.request.environ)
 
         for key, val in server_info.items():
@@ -97,6 +77,14 @@ class AdminSystemInfoSettingsView(BaseAppView):
         update_info_msg = _('Note: please make sure this server can '
                             'access `${url}` for the update link to work',
                             mapping=dict(url=c.rhodecode_update_url))
+        version = UpdateModel().get_stored_version()
+        is_outdated = UpdateModel().is_outdated(
+            rhodecode.__version__, version)
+        update_state = {
+            'type': 'warning',
+            'message': 'New version available: {}'.format(version)
+            } \
+            if is_outdated else {}
         c.data_items = [
             # update info
             (_('Update info'), h.literal(
@@ -107,6 +95,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
 
             # RhodeCode specific
             (_('RhodeCode Version'), val('rhodecode_app')['text'], state('rhodecode_app')),
+            (_('Latest version'), version, update_state),
             (_('RhodeCode Server IP'), val('server')['server_ip'], state('server')),
             (_('RhodeCode Server ID'), val('server')['server_id'], state('server')),
             (_('RhodeCode Configuration'), val('rhodecode_config')['path'], state('rhodecode_config')),
@@ -178,11 +167,11 @@ class AdminSystemInfoSettingsView(BaseAppView):
         _ = self.request.translate
         c = self.load_default_context()
 
-        update_url = self.get_update_url()
+        update_url = UpdateModel().get_update_url()
 
         _err = lambda s: '<div style="color:#ff8888; padding:4px 0px">{}</div>'.format(s)
         try:
-            data = self.get_update_data(update_url)
+            data = UpdateModel().get_update_data(update_url)
         except urllib2.URLError as e:
             log.exception("Exception contacting upgrade server")
             self.request.override_renderer = 'string'
@@ -200,9 +189,9 @@ class AdminSystemInfoSettingsView(BaseAppView):
         c.cur_ver = rhodecode.__version__
         c.should_upgrade = False
 
-        if (packaging.version.Version(c.latest_ver) >
-                packaging.version.Version(c.cur_ver)):
+        is_oudated = UpdateModel().is_outdated(c.cur_ver, c.latest_ver)
+        if is_oudated:
             c.should_upgrade = True
         c.important_notices = latest['general']
-
+        UpdateModel().store_version(latest['version'])
         return self._get_template_context(c)

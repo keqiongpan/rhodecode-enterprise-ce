@@ -278,6 +278,20 @@ def sync_repo(*args, **kwargs):
         log.debug('Repo `%s` not found or without a clone_url', repo_name)
 
 
+@async_task(ignore_result=True)
+def check_for_update():
+    from rhodecode.model.update import UpdateModel
+    update_url = UpdateModel().get_update_url()
+    cur_ver = rhodecode.__version__
+
+    try:
+        data = UpdateModel().get_update_data(update_url)
+        latest = data['versions'][0]
+        UpdateModel().store_version(latest['version'])
+    except Exception:
+        pass
+
+
 @async_task(ignore_result=False)
 def beat_check(*args, **kwargs):
     log = get_logger(beat_check)

@@ -31,8 +31,7 @@ from rhodecode.tests import assert_session_flash
 from rhodecode.tests.utils import AssertResponse
 
 
-UPDATE_DATA_QUALNAME = (
-    'rhodecode.apps.admin.views.system_info.AdminSystemInfoSettingsView.get_update_data')
+UPDATE_DATA_QUALNAME = 'rhodecode.model.update.UpdateModel.get_update_data'
 
 
 def route_path(name, params=None, **kwargs):
@@ -586,7 +585,7 @@ class TestAdminSystemInfo(object):
         with mock.patch(UPDATE_DATA_QUALNAME, return_value=update_data):
             response = self.app.get(route_path('admin_settings_system_update'))
             response.mustcontain(
-                'You already have the <b>latest</b> stable version.')
+                'This instance is already running the <b>latest</b> stable version')
 
     def test_system_update_bad_response(self, autologin_user):
         with mock.patch(UPDATE_DATA_QUALNAME, side_effect=ValueError('foo')):
