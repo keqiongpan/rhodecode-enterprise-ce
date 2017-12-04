@@ -20,7 +20,7 @@
 
 import logging
 import urllib2
-from packaging import version
+from packaging.version import Version
 
 import rhodecode
 from rhodecode.lib.ext_json import json
@@ -66,6 +66,18 @@ class UpdateModel(BaseModel):
             return obj.app_settings_value
         return '0.0.0'
 
+    def _sanitize_version(self, version):
+        """
+        Cleanup our custom ver.
+        e.g 4.11.0_20171204_204825_CE_default_EE_default to 4.11.0
+        """
+        return version.split('_')[0]
+
     def is_outdated(self, cur_version, latest_version=None):
         latest_version = latest_version or self.get_stored_version()
-        return version.Version(latest_version) > version.Version(cur_version)
+        try:
+            cur_version = self._sanitize_version(cur_version)
+            return Version(latest_version) > Version(cur_version)
+        except Exception:
+            # could be invalid version, etc
+            return False
