@@ -38,7 +38,7 @@ from zope.cachedescriptors.property import Lazy as LazyProperty
 
 import rhodecode
 from rhodecode.authentication.base import (
-    authenticate, get_perms_cache_manager, VCS_TYPE)
+    authenticate, get_perms_cache_manager, VCS_TYPE, loadplugin)
 from rhodecode.lib import caches
 from rhodecode.lib.auth import AuthUser, HasPermissionAnyMiddleware
 from rhodecode.lib.base import (
@@ -360,6 +360,14 @@ class SimpleVCS(object):
             return False
         return True
 
+    def _get_default_cache_ttl(self):
+        # take AUTH_CACHE_TTL from the `rhodecode` auth plugin
+        plugin = loadplugin('egg:rhodecode-enterprise-ce#rhodecode')
+        plugin_settings = plugin.get_settings()
+        plugin_cache_active, cache_ttl = plugin.get_ttl_cache(
+            plugin_settings) or (False, 0)
+        return plugin_cache_active, cache_ttl
+
     def __call__(self, environ, start_response):
         try:
             return self._handle_request(environ, start_response)
@@ -419,9 +427,13 @@ class SimpleVCS(object):
             anonymous_user = User.get_default_user()
             username = anonymous_user.username
             if anonymous_user.active:
+                plugin_cache_active, cache_ttl = self._get_default_cache_ttl()
                 # ONLY check permissions if the user is activated
                 anonymous_perm = self._check_permission(
-                    action, anonymous_user, self.acl_repo_name, ip_addr)
+                    action, anonymous_user, self.acl_repo_name, ip_addr,
+                    plugin_id='anonymous_access',
+                    plugin_cache_active=plugin_cache_active, cache_ttl=cache_ttl,
+                )
             else:
                 anonymous_perm = False
 

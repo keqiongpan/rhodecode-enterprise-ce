@@ -229,6 +229,9 @@ class TestShadowRepoExposure(object):
         controller._action = 'pull'
         controller._is_shadow_repo_dir = True
         controller.stub_response_body = 'dummy body value'
+        controller._get_default_cache_ttl = mock.Mock(
+            return_value=(False, 0))
+
         environ_stub = {
             'HTTP_HOST': 'test.example.com',
             'HTTP_ACCEPT': 'application/mercurial',
