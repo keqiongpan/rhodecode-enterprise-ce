@@ -4127,7 +4127,9 @@ class RepoReviewRule(Base, BaseModel):
         "repo_id", Integer(), ForeignKey('repositories.repo_id'))
     repo = relationship('Repository', backref='review_rules')
 
+    review_rule_name = Column('review_rule_name', String(255))
     _branch_pattern = Column("branch_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
+    _target_branch_pattern = Column("target_branch_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
     _file_pattern = Column("file_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
 
     use_authors_for_review = Column("use_authors_for_review", Boolean(), nullable=False, default=False)
@@ -4138,17 +4140,26 @@ class RepoReviewRule(Base, BaseModel):
     rule_users = relationship('RepoReviewRuleUser')
     rule_user_groups = relationship('RepoReviewRuleUserGroup')
 
-    @hybrid_property
-    def branch_pattern(self):
-        return self._branch_pattern or '*'
-
     def _validate_glob(self, value):
         re.compile('^' + glob2re(value) + '$')
 
-    @branch_pattern.setter
-    def branch_pattern(self, value):
+    @hybrid_property
+    def source_branch_pattern(self):
+        return self._branch_pattern or '*'
+
+    @source_branch_pattern.setter
+    def source_branch_pattern(self, value):
         self._validate_glob(value)
         self._branch_pattern = value or '*'
+
+    @hybrid_property
+    def target_branch_pattern(self):
+        return self._target_branch_pattern or '*'
+
+    @target_branch_pattern.setter
+    def target_branch_pattern(self, value):
+        self._validate_glob(value)
+        self._target_branch_pattern = value or '*'
 
     @hybrid_property
     def file_pattern(self):
@@ -4159,7 +4170,7 @@ class RepoReviewRule(Base, BaseModel):
         self._validate_glob(value)
         self._file_pattern = value or '*'
 
-    def matches(self, branch, files_changed):
+    def matches(self, source_branch, target_branch, files_changed):
         """
         Check if this review rule matches a branch/files in a pull request
 
@@ -4167,13 +4178,21 @@ class RepoReviewRule(Base, BaseModel):
         :param files_changed: list of file paths changed in the pull request
         """
 
-        branch = branch or ''
+        source_branch = source_branch or ''
+        target_branch = target_branch or ''
         files_changed = files_changed or []
 
         branch_matches = True
-        if branch:
-            branch_regex = re.compile('^' + glob2re(self.branch_pattern) + '$')
-            branch_matches = bool(branch_regex.search(branch))
+        if source_branch or target_branch:
+            source_branch_regex = re.compile(
+                '^' + glob2re(self.source_branch_pattern) + '$')
+            target_branch_regex = re.compile(
+                '^' + glob2re(self.target_branch_pattern) + '$')
+
+            branch_matches = (
+                    bool(source_branch_regex.search(source_branch)) and
+                    bool(target_branch_regex.search(target_branch))
+            )
 
         files_matches = True
         if self.file_pattern != '*':

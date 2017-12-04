@@ -340,7 +340,7 @@
         ## REVIEWERS
         <div class="reviewers-title block-right">
           <div class="pr-details-title">
-              ${_('Pull request reviewers')}
+              ${_('Pull request reviewers')} / <a href="#toggleReasons" onclick="$('.reviewer_reason').toggle(); return false">${_('show reasons')}</a>
               %if c.allowed_to_update:
                 <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Edit')}</span>
               %endif
@@ -351,7 +351,7 @@
             <input type="hidden" name="__start__" value="review_members:sequence">
             <ul id="review_members" class="group_members">
             %for member,reasons,mandatory,status in c.pull_request_reviewers:
-              <li id="reviewer_${member.user_id}" class="reviewer_entry">
+              <li id="reviewer_${member.user_id}">
                 <div class="reviewers_member">
                     <div class="reviewer_status tooltip" title="${h.tooltip(h.commit_status_lbl(status[0][1].status if status else 'not_reviewed'))}">
                       <div class="${'flag_status %s' % (status[0][1].status if status else 'not_reviewed')} pull-left reviewer_member_status"></div>
@@ -361,11 +361,14 @@
                   </div>
                   <input type="hidden" name="__start__" value="reviewer:mapping">
                   <input type="hidden" name="__start__" value="reasons:sequence">
+                  % if reasons:
+                  <div class="reviewer_reason_container">
                   %for reason in reasons:
-                  <div class="reviewer_reason">- ${reason}</div>
+                  <div class="reviewer_reason" style="display: none">- ${reason}</div>
                   <input type="hidden" name="reason" value="${reason}">
-
                   %endfor
+                  </div>
+                  % endif
                   <input type="hidden" name="__end__" value="reasons:sequence">
                   <input id="reviewer_${member.user_id}_input" type="hidden" value="${member.user_id}" name="user_id" />
                   <input type="hidden" name="mandatory" value="${mandatory}"/>
