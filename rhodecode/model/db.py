@@ -676,15 +676,19 @@ class User(Base, BaseModel):
             .order_by(UserApiKeys.user_api_key_id.asc())\
             .all()
 
-    @property
+    @LazyProperty
     def feed_token(self):
         return self.get_feed_token()
 
-    def get_feed_token(self):
+    def get_feed_token(self, cache=True):
         feed_tokens = UserApiKeys.query()\
             .filter(UserApiKeys.user == self)\
-            .filter(UserApiKeys.role == UserApiKeys.ROLE_FEED)\
-            .all()
+            .filter(UserApiKeys.role == UserApiKeys.ROLE_FEED)
+        if cache:
+            feed_tokens = feed_tokens.options(
+                FromCache("long_term", "get_user_feed_token_%s" % self.user_id))
+
+        feed_tokens = feed_tokens.all()
         if feed_tokens:
             return feed_tokens[0].api_key
         return 'NO_FEED_TOKEN_AVAILABLE'

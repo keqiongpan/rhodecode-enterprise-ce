@@ -918,7 +918,6 @@ class AuthUser(object):
         self._api_key = api_key
 
         self.api_key = None
-        self.feed_token = ''
         self.username = username
         self.ip_addr = ip_addr
         self.name = ''
@@ -1218,6 +1217,10 @@ class AuthUser(object):
     @property
     def personal_repo_group(self):
         return RepoGroup.get_user_personal_repo_group(self.user_id)
+
+    @LazyProperty
+    def feed_token(self):
+        return self.get_instance().feed_token
 
     @classmethod
     def check_ip_allowed(cls, user_id, ip_addr, inherit_from_default):

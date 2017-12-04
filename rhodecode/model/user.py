@@ -697,8 +697,6 @@ class UserModel(BaseModel):
                 if k not in ['auth_tokens', 'permissions']:
                     setattr(auth_user, k, v)
 
-            # few extras
-            setattr(auth_user, 'feed_token', dbuser.feed_token)
         except Exception:
             log.error(traceback.format_exc())
             auth_user.is_authenticated = False
