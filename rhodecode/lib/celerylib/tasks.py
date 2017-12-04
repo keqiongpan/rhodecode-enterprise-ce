@@ -279,6 +279,21 @@ def sync_repo(*args, **kwargs):
 
 
 @async_task(ignore_result=True)
+def repo_maintenance(repoid):
+    from rhodecode.lib import repo_maintenance as repo_maintenance_lib
+    log = get_logger(repo_maintenance)
+    repo = Repository.get_by_id_or_repo_name(repoid)
+    if repo:
+        maintenance = repo_maintenance_lib.RepoMaintenance()
+        tasks = maintenance.get_tasks_for_repo(repo)
+        log.debug('Executing %s tasks on repo `%s`', tasks, repoid)
+        executed_types = maintenance.execute(repo)
+        log.debug('Got execution results %s', executed_types)
+    else:
+        log.debug('Repo `%s` not found or without a clone_url', repoid)
+
+
+@async_task(ignore_result=True)
 def check_for_update():
     from rhodecode.model.update import UpdateModel
     update_url = UpdateModel().get_update_url()

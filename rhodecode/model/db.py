@@ -1725,6 +1725,17 @@ class Repository(Base, BaseModel):
         return q.scalar()
 
     @classmethod
+    def get_by_id_or_repo_name(cls, repoid):
+        if isinstance(repoid, (int, long)):
+            try:
+                repo = cls.get(repoid)
+            except ValueError:
+                repo = None
+        else:
+            repo = cls.get_by_repo_name(repoid)
+        return repo
+
+    @classmethod
     def get_by_full_path(cls, repo_full_path):
         repo_name = repo_full_path.split(cls.base_path(), 1)[-1]
         repo_name = cls.normalize_repo_name(repo_name)
