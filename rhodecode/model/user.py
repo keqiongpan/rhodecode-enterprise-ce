@@ -123,9 +123,13 @@ class UserModel(BaseModel):
         return User.get_by_auth_token(auth_token, cache)
 
     def get_active_user_count(self, cache=False):
-        return User.query().filter(
-            User.active == True).filter(
-                User.username != User.DEFAULT_USER).count()
+        qry = User.query().filter(
+            User.active == true()).filter(
+                User.username != User.DEFAULT_USER)
+        if cache:
+            qry = qry.options(
+                FromCache("sql_cache_short", "get_active_users"))
+        return qry.count()
 
     def create(self, form_data, cur_user=None):
         if not cur_user:
