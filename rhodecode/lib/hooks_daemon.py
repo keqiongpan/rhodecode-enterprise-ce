@@ -133,7 +133,7 @@ class HttpHooksCallbackDaemon(ThreadedHookCallbackDaemon):
 
     # From Python docs: Polling reduces our responsiveness to a shutdown
     # request and wastes cpu at all other times.
-    POLL_INTERVAL = 0.1
+    POLL_INTERVAL = 0.01
 
     def _prepare(self):
         log.debug("Preparing HTTP callback daemon and registering hook object")
