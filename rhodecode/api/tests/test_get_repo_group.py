@@ -41,7 +41,7 @@ class TestApiGetRepoGroup(object):
 
         permissions = expected_permissions(repo_group)
 
-        ret['members'] = permissions
+        ret['permissions'] = permissions
         expected = ret
         assert_ok(id_, expected, given=response.body)
 

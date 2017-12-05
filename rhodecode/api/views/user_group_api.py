@@ -61,7 +61,7 @@ def get_user_group(request, apiuser, usergroupid):
             "active": true,
             "group_description": "group description",
             "group_name": "group name",
-            "members": [
+            "permissions": [
               {
                 "name": "owner-name",
                 "origin": "owner",
@@ -82,6 +82,12 @@ def get_user_group(request, apiuser, usergroupid):
                 "type": "user_group"
               }
             ],
+            "permissions_summary": {
+              "repositories": {
+                "aa-root-level-repo-1": "repository.admin"
+              },
+              "repositories_groups": {}
+            },
             "owner": "owner name",
             "users": [],
             "users_group_id": 2
@@ -120,7 +126,7 @@ def get_user_group(request, apiuser, usergroupid):
 
     data = user_group.get_api_data()
     data["permissions"] = permissions
-    data["Permissions_summary"] = UserGroupModel().get_perms_summary(
+    data["permissions_summary"] = UserGroupModel().get_perms_summary(
         user_group.users_group_id)
     return data
 

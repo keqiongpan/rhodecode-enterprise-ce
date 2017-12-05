@@ -38,7 +38,8 @@ class TestGetUserGroups(object):
 
         permissions = expected_permissions(group)
 
-        ret['members'] = permissions
+        ret['permissions'] = permissions
+        ret['permissions_summary'] = response.json['result']['permissions_summary']
         expected = ret
         assert_ok(id_, expected, given=response.body)
 
@@ -54,7 +55,8 @@ class TestGetUserGroups(object):
 
         permissions = expected_permissions(group)
 
-        ret['members'] = permissions
+        ret['permissions'] = permissions
+        ret['permissions_summary'] = response.json['result']['permissions_summary']
         expected = ret
         assert_ok(id_, expected, given=response.body)
 

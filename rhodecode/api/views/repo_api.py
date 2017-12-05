@@ -127,26 +127,6 @@ def get_repo(request, apiuser, repoid, cache=Optional(True)):
             "lock_reason": null,
             "locked_by": null,
             "locked_date": null,
-            "members": [
-              {
-                "name": "super-admin-name",
-                "origin": "super-admin",
-                "permission": "repository.admin",
-                "type": "user"
-              },
-              {
-                "name": "owner-name",
-                "origin": "owner",
-                "permission": "repository.admin",
-                "type": "user"
-              },
-              {
-                "name": "user-group-name",
-                "origin": "permission",
-                "permission": "repository.write",
-                "type": "user_group"
-              }
-            ],
             "owner": "owner-name",
             "permissions": [
               {
