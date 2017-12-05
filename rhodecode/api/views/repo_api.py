@@ -214,7 +214,6 @@ def get_repo(request, apiuser, repoid, cache=Optional(True)):
     if not cache:
         repo.update_commit_cache()
     data = repo.get_api_data(include_secrets=include_secrets)
-    data['members'] = permissions  # TODO: this should be deprecated soon
     data['permissions'] = permissions
     data['followers'] = following_users
     return data

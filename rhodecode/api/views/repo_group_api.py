@@ -119,7 +119,7 @@ def get_repo_group(request, apiuser, repogroupid):
         permissions.append(user_group_data)
 
     data = repo_group.get_api_data()
-    data["members"] = permissions  # TODO: this should be named permissions
+    data["permissions"] = permissions
     return data
 
 

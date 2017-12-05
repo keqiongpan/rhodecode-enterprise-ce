@@ -119,7 +119,7 @@ def get_user_group(request, apiuser, usergroupid):
         permissions.append(user_group_data)
 
     data = user_group.get_api_data()
-    data['members'] = permissions
+    data["permissions"] = permissions
 
     return data
 
