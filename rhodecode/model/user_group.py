@@ -29,7 +29,7 @@ from rhodecode.lib.utils2 import (
 from rhodecode.model import BaseModel
 from rhodecode.model.scm import UserGroupList
 from rhodecode.model.db import (
-    true, func, User, UserGroupMember, UserGroup,
+    joinedload, true, func, User, UserGroupMember, UserGroup,
     UserGroupRepoToPerm, Permission, UserGroupToPerm, UserUserGroupToPerm,
     UserGroupUserGroupToPerm, UserGroupRepoGroupToPerm)
 
@@ -501,6 +501,32 @@ class UserGroupModel(BaseModel):
                 'revoked permission from usergroup: {} on usergroup: {}'.format(
                     user_group, target_user_group),
                 namespace='security.repogroup')
+
+    def get_perms_summary(self, user_group_id):
+        permissions = {
+            'repositories': {},
+            'repositories_groups': {},
+        }
+        ugroup_repo_perms = UserGroupRepoToPerm.query()\
+            .options(joinedload(UserGroupRepoToPerm.permission))\
+            .options(joinedload(UserGroupRepoToPerm.repository))\
+            .filter(UserGroupRepoToPerm.users_group_id == user_group_id)\
+            .all()
+
+        for gr in ugroup_repo_perms:
+            permissions['repositories'][gr.repository.repo_name]  \
+                = gr.permission.permission_name
+
+        ugroup_group_perms = UserGroupRepoGroupToPerm.query()\
+            .options(joinedload(UserGroupRepoGroupToPerm.permission))\
+            .options(joinedload(UserGroupRepoGroupToPerm.group))\
+            .filter(UserGroupRepoGroupToPerm.users_group_id == user_group_id)\
+            .all()
+
+        for gr in ugroup_group_perms:
+            permissions['repositories_groups'][gr.group.group_name] \
+                = gr.permission.permission_name
+        return permissions
 
     def enforce_groups(self, user, groups, extern_type=None):
         user = self._get_user(user)

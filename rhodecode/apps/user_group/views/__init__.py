@@ -40,8 +40,7 @@ from rhodecode.lib.auth import (
     LoginRequired, HasUserGroupPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h, audit_logger
 from rhodecode.lib.utils2 import str2bool
-from rhodecode.model.db import (
-    joinedload, User, UserGroupRepoToPerm, UserGroupRepoGroupToPerm)
+from rhodecode.model.db import User
 from rhodecode.model.meta import Session
 from rhodecode.model.user_group import UserGroupModel
 
@@ -56,34 +55,7 @@ class UserGroupsView(UserGroupAppView):
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=self.request.translate)
 
-
         return c
-
-    def _get_perms_summary(self, user_group_id):
-        permissions = {
-            'repositories': {},
-            'repositories_groups': {},
-        }
-        ugroup_repo_perms = UserGroupRepoToPerm.query()\
-            .options(joinedload(UserGroupRepoToPerm.permission))\
-            .options(joinedload(UserGroupRepoToPerm.repository))\
-            .filter(UserGroupRepoToPerm.users_group_id == user_group_id)\
-            .all()
-
-        for gr in ugroup_repo_perms:
-            permissions['repositories'][gr.repository.repo_name]  \
-                = gr.permission.permission_name
-
-        ugroup_group_perms = UserGroupRepoGroupToPerm.query()\
-            .options(joinedload(UserGroupRepoGroupToPerm.permission))\
-            .options(joinedload(UserGroupRepoGroupToPerm.group))\
-            .filter(UserGroupRepoGroupToPerm.users_group_id == user_group_id)\
-            .all()
-
-        for gr in ugroup_group_perms:
-            permissions['repositories_groups'][gr.group.group_name] \
-                = gr.permission.permission_name
-        return permissions
 
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
@@ -127,7 +99,8 @@ class UserGroupsView(UserGroupAppView):
         c = self.load_default_context()
         c.user_group = self.db_user_group
         c.active = 'perms_summary'
-        c.permissions = self._get_perms_summary(c.user_group.users_group_id)
+        c.permissions = UserGroupModel().get_perms_summary(
+            c.user_group.users_group_id)
         return self._get_template_context(c)
 
     @LoginRequired()
@@ -138,7 +111,7 @@ class UserGroupsView(UserGroupAppView):
     def user_group_perms_summary_json(self):
         self.load_default_context()
         user_group = self.db_user_group
-        return self._get_perms_summary(user_group.users_group_id)
+        return UserGroupModel().get_perms_summary(user_group.users_group_id)
 
     def _revoke_perms_on_yourself(self, form_result):
         _updates = filter(lambda u: self._rhodecode_user.user_id == int(u[0]),

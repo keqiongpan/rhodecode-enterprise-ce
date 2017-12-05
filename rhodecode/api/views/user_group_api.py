@@ -120,7 +120,8 @@ def get_user_group(request, apiuser, usergroupid):
 
     data = user_group.get_api_data()
     data["permissions"] = permissions
-
+    data["Permissions_summary"] = UserGroupModel().get_perms_summary(
+        user_group.users_group_id)
     return data
 
 

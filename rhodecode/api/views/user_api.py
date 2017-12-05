@@ -115,7 +115,9 @@ def get_user(request, apiuser, userid=Optional(OAttr('apiuser'))):
 
     user = get_user_or_error(userid)
     data = user.get_api_data(include_secrets=True)
-    data['permissions'] = AuthUser(user_id=user.user_id).permissions
+    permissions = AuthUser(user_id=user.user_id).permissions
+    data['permissions'] = permissions  # TODO(marcink): should be deprecated
+    data['permissions_summary'] = permissions
     return data
 
 
