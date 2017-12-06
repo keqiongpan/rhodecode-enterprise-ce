@@ -224,8 +224,14 @@ class CommentsModel(BaseModel):
 
         comment.repo = repo
         comment.author = user
-        comment.resolved_comment = self.__get_commit_comment(
+        resolved_comment = self.__get_commit_comment(
             validated_kwargs['resolves_comment_id'])
+        # check if the comment actually belongs to this PR
+        if resolved_comment and resolved_comment.pull_request and \
+                resolved_comment.pull_request != pull_request:
+            # comment not bound to this pull request, forbid
+            resolved_comment = None
+        comment.resolved_comment = resolved_comment
 
         pull_request_id = pull_request
 
