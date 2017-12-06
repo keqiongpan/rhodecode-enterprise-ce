@@ -1069,26 +1069,26 @@
     };
   };
   nbconvert = super.buildPythonPackage {
-    name = "nbconvert-5.1.1";
+    name = "nbconvert-5.3.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [mistune Jinja2 Pygments traitlets jupyter-core nbformat entrypoints bleach pandocfilters testpath];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/95/58/df1c91f1658ee5df19097f915a1e71c91fc824a708d82d2b2e35f8b80e9a/nbconvert-5.1.1.tar.gz";
-      md5 = "d0263fb03a44db2f94eea09a608ed813";
+      url = "https://pypi.python.org/packages/b9/a4/d0a0938ad6f5eeb4dea4e73d255c617ef94b0b2849d51194c9bbdb838412/nbconvert-5.3.1.tar.gz";
+      md5 = "c128d0d93d02f70a85429a383dae96d2";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   nbformat = super.buildPythonPackage {
-    name = "nbformat-4.3.0";
+    name = "nbformat-4.4.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [ipython-genutils traitlets jsonschema jupyter-core];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f9/c5/89df4abf906f766727f976e170caa85b4f1c1d1feb1f45d716016e68e19f/nbformat-4.3.0.tar.gz";
-      md5 = "9a00d20425914cd5ba5f97769d9963ca";
+      url = "https://pypi.python.org/packages/6e/0e/160754f7ae3e984863f585a3743b0ed1702043a81245907c8fae2d537155/nbformat-4.4.0.tar.gz";
+      md5 = "2d5f873138d9fbc2a3f9eaaebca3b8a1";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
