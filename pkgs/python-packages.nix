@@ -406,13 +406,13 @@
     };
   };
   bleach = super.buildPythonPackage {
-    name = "bleach-1.5.0";
+    name = "bleach-2.1.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six html5lib];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/99/00/25a8fce4de102bf6e3cc76bc4ea60685b2fee33bde1b34830c70cacc26a7/bleach-1.5.0.tar.gz";
-      md5 = "b663300efdf421b3b727b19d7be9c7e7";
+      url = "https://pypi.python.org/packages/d4/3f/d517089af35b01bb9bc4eac5ea04bae342b37a5e9abbb27b7c3ce0eae070/bleach-2.1.1.tar.gz";
+      md5 = "7c5dfb1d66ea979b5a465afb12c82ec4";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
@@ -822,13 +822,13 @@
     };
   };
   html5lib = super.buildPythonPackage {
-    name = "html5lib-0.9999999";
+    name = "html5lib-1.0b10";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [six];
+    propagatedBuildInputs = with self; [six webencodings setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/ae/ae/bcb60402c60932b32dfaf19bb53870b29eda2cd17551ba5639219fb5ebf9/html5lib-0.9999999.tar.gz";
-      md5 = "ef43cb05e9e799f25d65d1135838a96f";
+      url = "https://pypi.python.org/packages/97/16/982214624095c1420c75f3bd295d9e658794aafb95fc075823de107e0ae4/html5lib-1.0b10.tar.gz";
+      md5 = "5ada1243b7a863624b2f35245b2186e9";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1986,6 +1986,19 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  webencodings = super.buildPythonPackage {
+    name = "webencodings-0.5.1";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://pypi.python.org/packages/0b/02/ae6ceac1baeda530866a85075641cec12989bd8d31af6d5ab4a3e8c92f47/webencodings-0.5.1.tar.gz";
+      md5 = "32f6e261d52e57bf7e1c4d41546d15b8";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   ws4py = super.buildPythonPackage {
