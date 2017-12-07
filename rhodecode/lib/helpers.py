@@ -1672,12 +1672,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
     return tmpl % data
 
 
-def process_patterns(text_string, repo_name, link_format='html'):
-    allowed_formats = ['html', 'rst', 'markdown']
-    if link_format not in allowed_formats:
-        raise ValueError('Link format can be only one of:{} got {}'.format(
-                         allowed_formats, link_format))
-
+def get_active_pattern_entries(repo_name):
     repo = None
     if repo_name:
         # Retrieving repo_name to avoid invalid repo_name to explode on
@@ -1686,7 +1681,18 @@ def process_patterns(text_string, repo_name, link_format='html'):
 
     settings_model = IssueTrackerSettingsModel(repo=repo)
     active_entries = settings_model.get_settings(cache=True)
+    return active_entries
 
+
+def process_patterns(text_string, repo_name, link_format='html',
+                     active_entries=None):
+
+    allowed_formats = ['html', 'rst', 'markdown']
+    if link_format not in allowed_formats:
+        raise ValueError('Link format can be only one of:{} got {}'.format(
+                         allowed_formats, link_format))
+
+    active_entries = active_entries or get_active_pattern_entries(repo_name)
     issues_data = []
     newtext = text_string
 
@@ -1725,7 +1731,8 @@ def process_patterns(text_string, repo_name, link_format='html'):
     return newtext, issues_data
 
 
-def urlify_commit_message(commit_text, repository=None):
+def urlify_commit_message(commit_text, repository=None,
+                          active_pattern_entries=None):
     """
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
@@ -1747,7 +1754,8 @@ def urlify_commit_message(commit_text, repository=None):
         newtext = urlify_commits(newtext, repository)
 
     # process issue tracker patterns
-    newtext, issues = process_patterns(newtext, repository or '')
+    newtext, issues = process_patterns(newtext, repository or '',
+                                       active_entries=active_pattern_entries)
 
     return literal(newtext)
 
