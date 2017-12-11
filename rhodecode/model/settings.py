@@ -349,8 +349,8 @@ class IssueTrackerSettingsModel(object):
                     self._get_keyname('pat', uid, 'rhodecode_')),
                 'url': bleach.clean(
                     qs.get(self._get_keyname('url', uid, 'rhodecode_')) or ''),
-                'pref': qs.get(
-                    self._get_keyname('pref', uid, 'rhodecode_')),
+                'pref': bleach.clean(
+                    qs.get(self._get_keyname('pref', uid, 'rhodecode_')) or ''),
                 'desc': qs.get(
                     self._get_keyname('desc', uid, 'rhodecode_')),
             })
