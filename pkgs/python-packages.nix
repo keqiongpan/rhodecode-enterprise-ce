@@ -276,13 +276,13 @@
     };
   };
   WebOb = super.buildPythonPackage {
-    name = "WebOb-1.7.3";
+    name = "WebOb-1.7.4";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/46/87/2f96d8d43b2078fae6e1d33fa86b95c228cebed060f4e3c7576cc44ea83b/WebOb-1.7.3.tar.gz";
-      md5 = "350028baffc508e3d23c078118e35316";
+      url = "https://pypi.python.org/packages/75/34/731e23f52371852dfe7490a61644826ba7fe70fd52a377aaca0f4956ba7f/WebOb-1.7.4.tar.gz";
+      md5 = "397e46892d7f199b1a07eb20a2d3d9bd";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
