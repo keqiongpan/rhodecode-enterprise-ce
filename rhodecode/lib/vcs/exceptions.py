@@ -21,9 +21,11 @@
 """
 Custom vcs exceptions module.
 """
-
+import logging
 import functools
 import urllib2
+
+log = logging.getLogger(__name__)
 
 
 class VCSCommunicationError(Exception):
@@ -203,7 +205,10 @@ def map_vcs_exceptions(func):
                     args = e.args
                 else:
                     args = [__traceback_info__ or 'unhandledException']
-
+                if __traceback_info__ and kind != 'unhandled':
+                    # for other than unhandled errors also log the traceback
+                    # can be usefull for debugging
+                    log.error(__traceback_info__)
                 raise _EXCEPTION_MAP[kind](*args)
             else:
                 raise
