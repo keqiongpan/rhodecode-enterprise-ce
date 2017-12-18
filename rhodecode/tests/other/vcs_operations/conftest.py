@@ -171,7 +171,7 @@ def rc_web_server(
 
     host_url = 'http://' + get_host_url(rc_web_server_config)
     assert_no_running_instance(host_url)
-    command = ['pserve', rc_web_server_config]
+    command = ['gunicorn', '--worker-class', 'gevent', '--paste', rc_web_server_config]
 
     print('Starting rhodecode server: {}'.format(host_url))
     print('Command: {}'.format(command))

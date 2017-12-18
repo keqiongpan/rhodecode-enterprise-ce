@@ -20,7 +20,7 @@
 
 import pytest
 
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 from rhodecode.lib.vcs.exceptions import (
     TagAlreadyExistError, TagDoesNotExistError)
 
@@ -28,6 +28,7 @@ from rhodecode.lib.vcs.exceptions import (
 pytestmark = pytest.mark.backends("git", "hg")
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestTags(BackendTestMixin):
 
     def test_new_tag(self):

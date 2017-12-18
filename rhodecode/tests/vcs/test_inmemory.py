@@ -31,7 +31,7 @@ from rhodecode.lib.vcs.exceptions import (
     NodeAlreadyRemovedError, NodeAlreadyChangedError, NodeDoesNotExistError,
     NodeNotChangedError)
 from rhodecode.lib.vcs.nodes import DirNode, FileNode
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
 @pytest.fixture
@@ -57,6 +57,7 @@ def nodes():
     return nodes
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestInMemoryCommit(BackendTestMixin):
     """
     This is a backend independent test case class which should be created

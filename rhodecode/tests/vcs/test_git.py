@@ -35,7 +35,7 @@ from rhodecode.lib.vcs.exceptions import (
 from rhodecode.lib.vcs.nodes import (
     NodeKind, FileNode, DirNode, NodeState, SubModuleNode)
 from rhodecode.tests import TEST_GIT_REPO, TEST_GIT_REPO_CLONE, get_new_dir
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
 pytestmark = pytest.mark.backends("git")
@@ -1030,6 +1030,7 @@ class TestLargeFileRepo(object):
         assert lf_node.name == '1MB.zip'
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestGitSpecificWithRepo(BackendTestMixin):
 
     @classmethod
@@ -1092,6 +1093,7 @@ class TestGitSpecificWithRepo(BackendTestMixin):
              self.repo._get_commit_id(1), '--', 'foo'])
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestGitRegression(BackendTestMixin):
 
     @classmethod

@@ -24,9 +24,10 @@ import pytest
 
 from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 from rhodecode.lib.vcs.nodes import FileNode
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestGetitem(BackendTestMixin):
 
     @classmethod

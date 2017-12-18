@@ -22,7 +22,7 @@ import datetime
 import pytest
 
 from rhodecode.lib.vcs.nodes import FileNode
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
 class TestGetDiffValidation:
@@ -68,6 +68,7 @@ class TestGetDiffValidation:
                 path='trunk/example.py', path1='branches/argparse/example.py')
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestRepositoryGetDiff(BackendTestMixin):
 
     recreate_repo_per_test = False
@@ -405,6 +406,7 @@ new file mode 10644
         assert diff.raw == expected_diff
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestGetDiffBinary(BackendTestMixin):
 
     recreate_repo_per_test = False

@@ -19,10 +19,13 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import datetime
+
+import pytest
 from rhodecode.lib.vcs.nodes import FileNode
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestFileNodeUnicodePath(BackendTestMixin):
 
     fname = 'ąśðąęłąć.txt'

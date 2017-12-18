@@ -22,6 +22,8 @@ import os
 import json
 import platform
 import socket
+import tempfile
+
 import subprocess32
 import time
 from urllib2 import urlopen, URLError
@@ -34,6 +36,9 @@ import pyramid.paster
 from rhodecode.lib.pyramid_utils import get_app_config
 from rhodecode.tests.fixture import TestINI
 import rhodecode
+from rhodecode.tests.other.vcs_operations.conftest import get_host_url, get_port
+
+VCSSERVER_LOG = os.path.join(tempfile.gettempdir(), 'rc-vcsserver.log')
 
 
 def _parse_json(value):
@@ -204,10 +209,11 @@ class HttpVCSServer(VCSServer):
     Represents a running VCSServer instance.
     """
     def __init__(self, config_file):
+        self.config_file = config_file
         config_data = configobj.ConfigObj(config_file)
         self._config = config_data['server:main']
 
-        args = ['pserve', config_file]
+        args = ['gunicorn', '--workers', '1', '--paste', config_file]
         self._args = args
 
     @property
@@ -216,7 +222,21 @@ class HttpVCSServer(VCSServer):
         return template.format(**self._config)
 
     def start(self):
-        self.process = subprocess32.Popen(self._args)
+        env = os.environ.copy()
+        host_url = 'http://' + get_host_url(self.config_file)
+
+        rc_log = list(VCSSERVER_LOG.partition('.log'))
+        rc_log.insert(1, get_port(self.config_file))
+        rc_log = ''.join(rc_log)
+
+        server_out = open(rc_log, 'w')
+
+        command = ' '.join(self._args)
+        print('Starting rhodecode-vcsserver: {}'.format(host_url))
+        print('Command: {}'.format(command))
+        print('Logfile: {}'.format(rc_log))
+        self.process = subprocess32.Popen(
+            self._args, bufsize=0, env=env, stdout=server_out, stderr=server_out)
 
     def wait_until_ready(self, timeout=30):
         host = self._config['host']
