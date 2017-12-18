@@ -248,7 +248,7 @@ def create_repo_fork(form_data, cur_user):
 
         Session().commit()
     except Exception as e:
-        log.warning('Exception %s occurred when forking repository, '
+        log.warning('Exception occurred when forking repository, '
                     'doing cleanup...', exc_info=True)
         if isinstance(e, IntegrityError):
             Session().rollback()
