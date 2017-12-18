@@ -41,13 +41,11 @@ from rhodecode.tests.vcs_operations import (
     Command, _check_proper_clone, _check_proper_git_push, _add_files_and_push)
 
 
-# override rc_web_server_config fixture with custom INI
-@pytest.fixture(scope='module')
-def rc_web_server_config(testini_factory):
-    CUSTOM_PARAMS = [
+@pytest.fixture(scope="module")
+def rc_web_server_config_modification():
+    return [
         {'app:main': {'lock_ret_code': '423'}},
     ]
-    return testini_factory(CUSTOM_PARAMS)
 
 
 @pytest.mark.usefixtures("disable_locking", "disable_anonymous_user")

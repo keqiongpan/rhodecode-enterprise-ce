@@ -30,14 +30,8 @@ Test suite for making push/pull operations, on specially modified INI files
 import pytest
 import requests
 
-from rhodecode import events
-from rhodecode.model.db import Integration
-from rhodecode.model.integration import IntegrationModel
-from rhodecode.model.meta import Session
-
 from rhodecode.tests import GIT_REPO, HG_REPO
 from rhodecode.tests.vcs_operations import Command, _add_files_and_push
-from rhodecode.integrations.types.webhook import WebhookIntegrationType
 
 
 def check_connection():
@@ -52,43 +46,6 @@ def check_connection():
 
 connection_available = pytest.mark.skipif(
     not check_connection(), reason="No outside internet connection available")
-
-
-@pytest.fixture
-def enable_webhook_push_integration(request):
-    integration = Integration()
-    integration.integration_type = WebhookIntegrationType.key
-    Session().add(integration)
-
-    settings = dict(
-        url='http://httpbin.org',
-        secret_token='secret',
-        username=None,
-        password=None,
-        custom_header_key=None,
-        custom_header_val=None,
-        method_type='get',
-        events=[events.RepoPushEvent.name],
-        log_data=True
-    )
-
-    IntegrationModel().update_integration(
-        integration,
-        name='IntegrationWebhookTest',
-        enabled=True,
-        settings=settings,
-        repo=None,
-        repo_group=None,
-        child_repos_only=False,
-    )
-    Session().commit()
-    integration_id = integration.integration_id
-
-    @request.addfinalizer
-    def cleanup():
-        integration = Integration.get(integration_id)
-        Session().delete(integration)
-        Session().commit()
 
 
 @pytest.mark.usefixtures(

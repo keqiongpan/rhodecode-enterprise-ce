@@ -27,76 +27,30 @@ py.test config for test suite for making push/pull operations.
    to redirect things to stderr instead of stdout.
 """
 
-import ConfigParser
 import os
-import subprocess32
 import tempfile
 import textwrap
 import pytest
 
-import rhodecode
+from rhodecode import events
+from rhodecode.model.db import Integration
+from rhodecode.model.integration import IntegrationModel
 from rhodecode.model.db import Repository
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel
-from rhodecode.tests import (
-    GIT_REPO, HG_REPO, TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS,)
-from rhodecode.tests.fixture import Fixture
-from rhodecode.tests.utils import is_url_reachable, wait_for_url
+from rhodecode.integrations.types.webhook import WebhookIntegrationType
 
-RC_LOG = os.path.join(tempfile.gettempdir(), 'rc.log')
+from rhodecode.tests import GIT_REPO, HG_REPO
+from rhodecode.tests.fixture import Fixture
+from rhodecode.tests.server_utils import RcWebServer
+
 REPO_GROUP = 'a_repo_group'
 HG_REPO_WITH_GROUP = '%s/%s' % (REPO_GROUP, HG_REPO)
 GIT_REPO_WITH_GROUP = '%s/%s' % (REPO_GROUP, GIT_REPO)
 
 
-def assert_no_running_instance(url):
-    if is_url_reachable(url):
-        print("Hint: Usually this means another instance of Enterprise "
-              "is running in the background.")
-        pytest.fail(
-            "Port is not free at %s, cannot start web interface" % url)
-
-
-def get_port(pyramid_config):
-    config = ConfigParser.ConfigParser()
-    config.read(pyramid_config)
-    return config.get('server:main', 'port')
-
-
-def get_host_url(pyramid_config):
-    """Construct the host url using the port in the test configuration."""
-    return '127.0.0.1:%s' % get_port(pyramid_config)
-
-
-class RcWebServer(object):
-    """
-    Represents a running RCE web server used as a test fixture.
-    """
-    def __init__(self, pyramid_config, log_file):
-        self.pyramid_config = pyramid_config
-        self.log_file = log_file
-
-    def repo_clone_url(self, repo_name, **kwargs):
-        params = {
-            'user': TEST_USER_ADMIN_LOGIN,
-            'passwd': TEST_USER_ADMIN_PASS,
-            'host': get_host_url(self.pyramid_config),
-            'cloned_repo': repo_name,
-        }
-        params.update(**kwargs)
-        _url = 'http://%(user)s:%(passwd)s@%(host)s/%(cloned_repo)s' % params
-        return _url
-
-    def host_url(self):
-        return 'http://' + get_host_url(self.pyramid_config)
-
-    def get_rc_log(self):
-        with open(self.log_file) as f:
-            return f.read()
-
-
 @pytest.fixture(scope="module")
-def rcextensions(request, baseapp, tmpdir_factory):
+def rcextensions(request, db_connection, tmpdir_factory):
     """
     Installs a testing rcextensions pack to ensure they work as expected.
     """
@@ -122,7 +76,7 @@ def rcextensions(request, baseapp, tmpdir_factory):
 
 
 @pytest.fixture(scope="module")
-def repos(request, baseapp):
+def repos(request, db_connection):
     """Create a copy of each test repo in a repo group."""
     fixture = Fixture()
     repo_group = fixture.create_repo_group(REPO_GROUP)
@@ -141,62 +95,56 @@ def repos(request, baseapp):
         fixture.destroy_repo_group(repo_group_id)
 
 
-@pytest.fixture(scope="session")
-def vcs_server_config_override():
-    return ({'server:main': {'workers': 2}},)
+@pytest.fixture(scope="module")
+def rc_web_server_config_modification():
+    return []
 
 
 @pytest.fixture(scope="module")
-def rc_web_server_config(testini_factory):
+def rc_web_server_config_factory(testini_factory, rc_web_server_config_modification):
     """
     Configuration file used for the fixture `rc_web_server`.
     """
-    CUSTOM_PARAMS = [
-        {'handler_console': {'level': 'DEBUG'}},
-    ]
-    return testini_factory(CUSTOM_PARAMS)
+
+    def factory(vcsserver_port):
+        custom_params = [
+            {'handler_console': {'level': 'DEBUG'}},
+            {'app:main': {'vcs.server': 'localhost:%s' % vcsserver_port}}
+        ]
+        custom_params.extend(rc_web_server_config_modification)
+        return testini_factory(custom_params)
+    return factory
 
 
 @pytest.fixture(scope="module")
 def rc_web_server(
-        request, baseapp, rc_web_server_config, repos, rcextensions):
+        request, vcsserver_factory, available_port_factory,
+        rc_web_server_config_factory, repos, rcextensions):
     """
-    Run the web server as a subprocess.
-
-    Since we have already a running vcsserver, this is not spawned again.
+    Run the web server as a subprocess. with it's own instance of vcsserver
     """
-    env = os.environ.copy()
-    env['RC_NO_TMP_PATH'] = '1'
 
-    rc_log = list(RC_LOG.partition('.log'))
-    rc_log.insert(1, get_port(rc_web_server_config))
-    rc_log = ''.join(rc_log)
+    vcsserver_port = available_port_factory()
+    print('Using vcsserver ops test port {}'.format(vcsserver_port))
 
-    server_out = open(rc_log, 'w')
+    vcs_log = os.path.join(tempfile.gettempdir(), 'rc_op_vcs.log')
+    vcsserver_factory(
+            request, vcsserver_port=vcsserver_port,
+            log_file=vcs_log,
+            overrides=({'server:main': {'workers': 2}},))
 
-    host_url = 'http://' + get_host_url(rc_web_server_config)
-    assert_no_running_instance(host_url)
-    command = ['gunicorn', '--worker-class', 'gevent', '--paste', rc_web_server_config]
-
-    print('rhodecode-web starting at: {}'.format(host_url))
-    print('rhodecode-web command: {}'.format(command))
-    print('rhodecode-web logfile: {}'.format(rc_log))
-
-    proc = subprocess32.Popen(
-        command, bufsize=0, env=env, stdout=server_out, stderr=server_out)
-
-    wait_for_url(host_url, timeout=30)
+    rc_log = os.path.join(tempfile.gettempdir(), 'rc_op_web.log')
+    rc_web_server_config = rc_web_server_config_factory(
+        vcsserver_port=vcsserver_port)
+    server = RcWebServer(rc_web_server_config, log_file=rc_log)
+    server.start()
 
     @request.addfinalizer
-    def stop_web_server():
-        # TODO: Find out how to integrate with the reporting of py.test to
-        # make this information available.
-        print("\nServer log file written to %s" % (rc_log, ))
-        proc.kill()
-        server_out.flush()
-        server_out.close()
+    def cleanup():
+        server.shutdown()
 
-    return RcWebServer(rc_web_server_config, log_file=rc_log)
+    server.wait_until_ready()
+    return server
 
 
 @pytest.fixture
@@ -274,3 +222,41 @@ def fs_repo_only(request, rhodecode_fixtures):
         request.addfinalizer(cleanup)
 
     return fs_repo_fabric
+
+
+@pytest.fixture
+def enable_webhook_push_integration(request):
+    integration = Integration()
+    integration.integration_type = WebhookIntegrationType.key
+    Session().add(integration)
+
+    settings = dict(
+        url='http://httpbin.org',
+        secret_token='secret',
+        username=None,
+        password=None,
+        custom_header_key=None,
+        custom_header_val=None,
+        method_type='get',
+        events=[events.RepoPushEvent.name],
+        log_data=True
+    )
+
+    IntegrationModel().update_integration(
+        integration,
+        name='IntegrationWebhookTest',
+        enabled=True,
+        settings=settings,
+        repo=None,
+        repo_group=None,
+        child_repos_only=False,
+    )
+    Session().commit()
+    integration_id = integration.integration_id
+
+    @request.addfinalizer
+    def cleanup():
+        integration = Integration.get(integration_id)
+        Session().delete(integration)
+        Session().commit()
+

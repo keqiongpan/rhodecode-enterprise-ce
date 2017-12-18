@@ -31,11 +31,6 @@ from rhodecode.tests import get_new_dir
 from rhodecode.tests.utils import check_skip_backends, check_xfail_backends
 
 
-@pytest.fixture(scope="session")
-def vcs_server_config_override():
-    return ({'server:main': {'workers': 1}},)
-
-
 @pytest.fixture()
 def vcs_repository_support(
         request, backend_alias, baseapp, _vcs_repo_container):

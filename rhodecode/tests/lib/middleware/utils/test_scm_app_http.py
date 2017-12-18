@@ -43,7 +43,6 @@ def vcsserver_http_echo_app(request, vcsserver_factory):
     """
     vcsserver = vcsserver_factory(
         request=request,
-        use_http=True,
         overrides=[{'app:main': {'dev.use_echo_app': 'true'}}])
     return vcsserver
 

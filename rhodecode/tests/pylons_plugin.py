@@ -18,25 +18,15 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import os
 import json
-import time
 import platform
 import socket
-import tempfile
-import subprocess32
 
-from urllib2 import urlopen, URLError
-
-import configobj
 import pytest
-
 
 from rhodecode.lib.pyramid_utils import get_app_config
 from rhodecode.tests.fixture import TestINI
-from rhodecode.tests.vcs_operations.conftest import get_host_url, get_port
-
-VCSSERVER_LOG = os.path.join(tempfile.gettempdir(), 'rc-vcsserver.log')
+from rhodecode.tests.server_utils import RcVCSServer
 
 
 def _parse_json(value):
@@ -94,17 +84,8 @@ def pytest_addoption(parser):
         "Start the VCSServer with HTTP protocol support.")
 
 
-@pytest.fixture(scope="session")
-def vcs_server_config_override(request):
-    """
-    Allows injecting the overrides by specifying this inside test class
-    """
-
-    return ()
-
-
 @pytest.fixture(scope='session')
-def vcsserver(request, vcsserver_port, vcsserver_factory, vcs_server_config_override):
+def vcsserver(request, vcsserver_port, vcsserver_factory):
     """
     Session scope VCSServer.
 
@@ -125,10 +106,8 @@ def vcsserver(request, vcsserver_port, vcsserver_factory, vcs_server_config_over
     if not request.config.getoption('with_vcsserver'):
         return None
 
-    use_http = _use_vcs_http_server(request.config)
     return vcsserver_factory(
-        request, use_http=use_http, vcsserver_port=vcsserver_port,
-        overrides=vcs_server_config_override)
+        request, vcsserver_port=vcsserver_port)
 
 
 @pytest.fixture(scope='session')
@@ -137,23 +116,21 @@ def vcsserver_factory(tmpdir_factory):
     Use this if you need a running vcsserver with a special configuration.
     """
 
-    def factory(request, use_http=True, overrides=(), vcsserver_port=None):
+    def factory(request, overrides=(), vcsserver_port=None,
+                log_file=None):
 
         if vcsserver_port is None:
             vcsserver_port = get_available_port()
 
         overrides = list(overrides)
-        if use_http:
-            overrides.append({'server:main': {'port': vcsserver_port}})
-        else:
-            overrides.append({'DEFAULT': {'port': vcsserver_port}})
+        overrides.append({'server:main': {'port': vcsserver_port}})
 
         if is_cygwin():
             platform_override = {'DEFAULT': {
                 'beaker.cache.repo_object.type': 'nocache'}}
             overrides.append(platform_override)
 
-        option_name = 'vcsserver_config_http' if use_http else ''
+        option_name = 'vcsserver_config_http'
         override_option_name = 'vcsserver_config_override'
         config_file = get_config(
             request.config, option_name=option_name,
@@ -161,9 +138,7 @@ def vcsserver_factory(tmpdir_factory):
             basetemp=tmpdir_factory.getbasetemp().strpath,
             prefix='test_vcs_')
 
-        print("Using the VCSServer configuration:{}".format(config_file))
-        ServerClass = HttpVCSServer if use_http else None
-        server = ServerClass(config_file)
+        server = RcVCSServer(config_file, log_file)
         server.start()
 
         @request.addfinalizer
@@ -180,91 +155,9 @@ def is_cygwin():
     return 'cygwin' in platform.system().lower()
 
 
-def _use_vcs_http_server(config):
-    protocol_option = 'vcsserver_protocol'
-    protocol = (
-        config.getoption(protocol_option) or
-        config.getini(protocol_option) or
-        'http')
-    return protocol == 'http'
-
-
 def _use_log_level(config):
     level = config.getoption('test_loglevel') or 'warn'
     return level.upper()
-
-
-class VCSServer(object):
-    """
-    Represents a running VCSServer instance.
-    """
-
-    _args = []
-
-    def start(self):
-        print("Starting the VCSServer: {}".format(self._args))
-        self.process = subprocess32.Popen(self._args)
-
-    def wait_until_ready(self, timeout=30):
-        raise NotImplementedError()
-
-    def shutdown(self):
-        self.process.kill()
-
-
-class HttpVCSServer(VCSServer):
-    """
-    Represents a running VCSServer instance.
-    """
-    def __init__(self, config_file):
-        self.config_file = config_file
-        config_data = configobj.ConfigObj(config_file)
-        self._config = config_data['server:main']
-
-        args = ['gunicorn', '--paste', config_file]
-        self._args = args
-
-    @property
-    def http_url(self):
-        template = 'http://{host}:{port}/'
-        return template.format(**self._config)
-
-    def start(self):
-        env = os.environ.copy()
-        host_url = 'http://' + get_host_url(self.config_file)
-
-        rc_log = list(VCSSERVER_LOG.partition('.log'))
-        rc_log.insert(1, get_port(self.config_file))
-        rc_log = ''.join(rc_log)
-
-        server_out = open(rc_log, 'w')
-
-        command = ' '.join(self._args)
-        print('rhodecode-vcsserver starting at: {}'.format(host_url))
-        print('rhodecode-vcsserver command: {}'.format(command))
-        print('rhodecode-vcsserver logfile: {}'.format(rc_log))
-        self.process = subprocess32.Popen(
-            self._args, bufsize=0, env=env, stdout=server_out, stderr=server_out)
-
-    def wait_until_ready(self, timeout=30):
-        host = self._config['host']
-        port = self._config['port']
-        status_url = 'http://{host}:{port}/status'.format(host=host, port=port)
-        start = time.time()
-
-        while time.time() - start < timeout:
-            try:
-                urlopen(status_url)
-                break
-            except URLError:
-                time.sleep(0.2)
-        else:
-            pytest.exit(
-                "Starting the VCSServer failed or took more than {} "
-                "seconds. cmd: `{}`".format(timeout, ' '.join(self._args)))
-
-    def shutdown(self):
-        self.process.kill()
 
 
 @pytest.fixture(scope='session')
@@ -280,6 +173,10 @@ def ini_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
             # fixtures of the test cases. For the test run it must always be
             # off in the INI file.
             'vcs.start_server': 'false',
+
+            'vcs.server.protocol': 'http',
+            'vcs.scm_app_implementation': 'http',
+            'vcs.hooks.protocol': 'http',
         }},
 
         {'handler_console': {
@@ -289,14 +186,6 @@ def ini_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
         }},
 
     ]
-    if _use_vcs_http_server(request.config):
-        overrides.append({
-            'app:main': {
-                'vcs.server.protocol': 'http',
-                'vcs.scm_app_implementation': 'http',
-                'vcs.hooks.protocol': 'http',
-            }
-        })
 
     filename = get_config(
         request.config, option_name=option_name,
@@ -313,6 +202,19 @@ def ini_settings(ini_config):
     return get_app_config(ini_path)
 
 
+def get_available_port():
+    family = socket.AF_INET
+    socktype = socket.SOCK_STREAM
+    host = '127.0.0.1'
+
+    mysocket = socket.socket(family, socktype)
+    mysocket.bind((host, 0))
+    port = mysocket.getsockname()[1]
+    mysocket.close()
+    del mysocket
+    return port
+
+
 @pytest.fixture(scope='session')
 def rcserver_port(request):
     port = get_available_port()
@@ -326,19 +228,6 @@ def vcsserver_port(request):
     if port is None:
         port = get_available_port()
         print('Using vcsserver port {}'.format(port))
-    return port
-
-
-def get_available_port():
-    family = socket.AF_INET
-    socktype = socket.SOCK_STREAM
-    host = '127.0.0.1'
-
-    mysocket = socket.socket(family, socktype)
-    mysocket.bind((host, 0))
-    port = mysocket.getsockname()[1]
-    mysocket.close()
-    del mysocket
     return port
 
 

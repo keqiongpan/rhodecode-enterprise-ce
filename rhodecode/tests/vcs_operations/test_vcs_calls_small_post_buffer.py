@@ -37,18 +37,6 @@ from rhodecode.tests.vcs_operations import Command
 from .test_vcs_operations import _check_proper_clone, _check_proper_git_push
 
 
-# override rc_web_server_config fixture with custom INI
-@pytest.fixture(scope="module")
-def rc_web_server_config(testini_factory):
-    """
-    Configuration file used for the fixture `rc_web_server`.
-    """
-    CUSTOM_PARAMS = [
-        {'handler_console': {'level': 'DEBUG'}},
-    ]
-    return testini_factory(CUSTOM_PARAMS)
-
-
 def test_git_clone_with_small_push_buffer(backend_git, rc_web_server, tmpdir):
     clone_url = rc_web_server.repo_clone_url(GIT_REPO)
     cmd = Command('/tmp')

@@ -61,17 +61,17 @@ class TestVCSOperationsSpecial(object):
         # Doing an explicit commit in order to get latest user logs on MySQL
         Session().commit()
 
-    # def test_git_fetches_from_remote_repository_with_annotated_tags(
-    #         self, backend_git, rc_web_server):
-    #     # Note: This is a test specific to the git backend. It checks the
-    #     # integration of fetching from a remote repository which contains
-    #     # annotated tags.
-    #
-    #     # Dulwich shows this specific behavior only when
-    #     # operating against a remote repository.
-    #     source_repo = backend_git['annotated-tag']
-    #     target_vcs_repo = backend_git.create_repo().scm_instance()
-    #     target_vcs_repo.fetch(rc_web_server.repo_clone_url(source_repo.repo_name))
+    def test_git_fetches_from_remote_repository_with_annotated_tags(
+            self, backend_git, rc_web_server):
+        # Note: This is a test specific to the git backend. It checks the
+        # integration of fetching from a remote repository which contains
+        # annotated tags.
+
+        # Dulwich shows this specific behavior only when
+        # operating against a remote repository.
+        source_repo = backend_git['annotated-tag']
+        target_vcs_repo = backend_git.create_repo().scm_instance()
+        target_vcs_repo.fetch(rc_web_server.repo_clone_url(source_repo.repo_name))
 
     def test_git_push_shows_pull_request_refs(self, backend_git, rc_web_server, tmpdir):
         """
