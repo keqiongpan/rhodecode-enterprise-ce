@@ -85,7 +85,7 @@ class TestGitRepository:
         return GitRepository(next(REPO_PATH_GENERATOR), create=True, bare=bare)
 
     def test_wrong_repo_path(self):
-        wrong_repo_path = '/tmp/errorrepo'
+        wrong_repo_path = '/tmp/errorrepo_git'
         with pytest.raises(RepositoryError):
             GitRepository(wrong_repo_path)
 

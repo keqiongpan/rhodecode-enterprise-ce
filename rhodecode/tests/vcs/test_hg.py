@@ -79,7 +79,7 @@ class TestMercurialRepository:
         return MercurialRepository(next(REPO_PATH_GENERATOR), create=True)
 
     def test_wrong_repo_path(self):
-        wrong_repo_path = '/tmp/errorrepo'
+        wrong_repo_path = '/tmp/errorrepo_hg'
         with pytest.raises(RepositoryError):
             MercurialRepository(wrong_repo_path)
 

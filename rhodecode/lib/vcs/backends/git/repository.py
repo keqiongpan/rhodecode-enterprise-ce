@@ -163,7 +163,11 @@ class GitRepository(BaseRepository):
                 else:
                     self._remote.init()
             else:
-                self._remote.assert_correct_path()
+                if not self._remote.assert_correct_path():
+                    raise RepositoryError(
+                        'Path "%s" does not contain a Git repository' %
+                        (self.path,))
+
         # TODO: johbo: check if we have to translate the OSError here
         except OSError as err:
             raise RepositoryError(err)
