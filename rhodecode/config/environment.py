@@ -28,7 +28,7 @@ from rhodecode.config import utils
 
 from rhodecode.lib.utils import load_rcextensions
 from rhodecode.lib.utils2 import str2bool
-from rhodecode.lib.vcs import connect_vcs, start_vcs_server
+from rhodecode.lib.vcs import connect_vcs
 
 log = logging.getLogger(__name__)
 
@@ -69,15 +69,6 @@ def load_pyramid_environment(global_config, settings):
     # initialize vcs client and optionally run the server if enabled
     vcs_server_uri = settings['vcs.server']
     vcs_server_enabled = settings['vcs.server.enable']
-    start_server = (
-        settings['vcs.start_server'] and
-        not int(os.environ.get('RC_VCSSERVER_TEST_DISABLE', '0')))
-
-    if vcs_server_enabled and start_server:
-        log.info("Starting vcsserver")
-        start_vcs_server(server_and_port=vcs_server_uri,
-                         protocol=utils.get_vcs_server_protocol(settings),
-                         log_level=settings['vcs.server.log_level'])
 
     utils.configure_vcs(settings)
 
