@@ -37,7 +37,7 @@ from rhodecode.model.repo import RepoModel
 from rhodecode.tests import (
     GIT_REPO, HG_REPO, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN,
     TEST_USER_REGULAR_PASS)
-from rhodecode.tests.other.vcs_operations import Command, _add_files_and_push
+from rhodecode.tests.vcs_operations import Command, _add_files_and_push
 
 
 # override rc_web_server_config fixture with custom INI

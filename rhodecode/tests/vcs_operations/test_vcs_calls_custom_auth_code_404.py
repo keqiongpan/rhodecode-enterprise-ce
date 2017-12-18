@@ -30,7 +30,7 @@ Test suite for making push/pull operations, on specially modified INI files
 import pytest
 
 from rhodecode.tests import (GIT_REPO, HG_REPO)
-from rhodecode.tests.other.vcs_operations import Command
+from rhodecode.tests.vcs_operations import Command
 
 
 # override rc_web_server_config fixture with custom INI

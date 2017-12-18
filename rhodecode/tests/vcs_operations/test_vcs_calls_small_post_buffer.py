@@ -33,7 +33,7 @@ import pytest
 from rhodecode.lib.vcs.backends.git.repository import GitRepository
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.tests import GIT_REPO
-from rhodecode.tests.other.vcs_operations import Command
+from rhodecode.tests.vcs_operations import Command
 from .test_vcs_operations import _check_proper_clone, _check_proper_git_push
 
 

@@ -30,15 +30,15 @@ Test suite for making push/pull operations, on specially modified INI files
 import pytest
 
 from rhodecode.tests import (GIT_REPO, HG_REPO)
-from rhodecode.tests.other.vcs_operations import Command
+from rhodecode.tests.vcs_operations import Command
 
 
 # override rc_web_server_config fixture with custom INI
 @pytest.fixture(scope='module')
 def rc_web_server_config(testini_factory):
     CUSTOM_PARAMS = [
-        {'app:main': {'auth_ret_code': '600'}},
-        {'app:main': {'auth_ret_code_detection': 'false'}},
+        {'app:main': {'auth_ret_code': '403'}},
+        {'app:main': {'auth_ret_code_detection': 'true'}},
     ]
     return testini_factory(CUSTOM_PARAMS)
 

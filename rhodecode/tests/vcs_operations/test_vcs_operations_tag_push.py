@@ -36,7 +36,7 @@ from rhodecode.model.integration import IntegrationModel
 from rhodecode.model.meta import Session
 
 from rhodecode.tests import GIT_REPO, HG_REPO
-from rhodecode.tests.other.vcs_operations import Command, _add_files_and_push
+from rhodecode.tests.vcs_operations import Command, _add_files_and_push
 from rhodecode.integrations.types.webhook import WebhookIntegrationType
 
 
@@ -89,11 +89,6 @@ def enable_webhook_push_integration(request):
         integration = Integration.get(integration_id)
         Session().delete(integration)
         Session().commit()
-
-
-@pytest.fixture(scope="session")
-def vcs_server_config_override():
-    return ({'server:main': {'workers': 2}},)
 
 
 @pytest.mark.usefixtures(

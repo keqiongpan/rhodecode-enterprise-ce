@@ -20,23 +20,21 @@
 
 import os
 import json
+import time
 import platform
 import socket
 import tempfile
-
 import subprocess32
-import time
+
 from urllib2 import urlopen, URLError
 
 import configobj
 import pytest
 
-import pyramid.paster
 
 from rhodecode.lib.pyramid_utils import get_app_config
 from rhodecode.tests.fixture import TestINI
-import rhodecode
-from rhodecode.tests.other.vcs_operations.conftest import get_host_url, get_port
+from rhodecode.tests.vcs_operations.conftest import get_host_url, get_port
 
 VCSSERVER_LOG = os.path.join(tempfile.gettempdir(), 'rc-vcsserver.log')
 

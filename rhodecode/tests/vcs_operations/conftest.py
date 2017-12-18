@@ -141,6 +141,11 @@ def repos(request, baseapp):
         fixture.destroy_repo_group(repo_group_id)
 
 
+@pytest.fixture(scope="session")
+def vcs_server_config_override():
+    return ({'server:main': {'workers': 2}},)
+
+
 @pytest.fixture(scope="module")
 def rc_web_server_config(testini_factory):
     """
