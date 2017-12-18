@@ -91,6 +91,11 @@ def enable_webhook_push_integration(request):
         Session().commit()
 
 
+@pytest.fixture(scope="session")
+def vcs_server_config_override():
+    return ({'server:main': {'workers': 2}},)
+
+
 @pytest.mark.usefixtures(
     "disable_locking", "disable_anonymous_user",
     "enable_webhook_push_integration")

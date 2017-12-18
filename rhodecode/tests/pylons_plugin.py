@@ -96,8 +96,17 @@ def pytest_addoption(parser):
         "Start the VCSServer with HTTP protocol support.")
 
 
+@pytest.fixture(scope="session")
+def vcs_server_config_override(request):
+    """
+    Allows injecting the overrides by specifying this inside test class
+    """
+
+    return ()
+
+
 @pytest.fixture(scope='session')
-def vcsserver(request, vcsserver_port, vcsserver_factory):
+def vcsserver(request, vcsserver_port, vcsserver_factory, vcs_server_config_override):
     """
     Session scope VCSServer.
 
@@ -120,7 +129,8 @@ def vcsserver(request, vcsserver_port, vcsserver_factory):
 
     use_http = _use_vcs_http_server(request.config)
     return vcsserver_factory(
-        request, use_http=use_http, vcsserver_port=vcsserver_port)
+        request, use_http=use_http, vcsserver_port=vcsserver_port,
+        overrides=vcs_server_config_override)
 
 
 @pytest.fixture(scope='session')
@@ -213,7 +223,7 @@ class HttpVCSServer(VCSServer):
         config_data = configobj.ConfigObj(config_file)
         self._config = config_data['server:main']
 
-        args = ['gunicorn', '--workers', '1', '--paste', config_file]
+        args = ['gunicorn', '--paste', config_file]
         self._args = args
 
     @property
@@ -232,9 +242,9 @@ class HttpVCSServer(VCSServer):
         server_out = open(rc_log, 'w')
 
         command = ' '.join(self._args)
-        print('Starting rhodecode-vcsserver: {}'.format(host_url))
-        print('Command: {}'.format(command))
-        print('Logfile: {}'.format(rc_log))
+        print('rhodecode-vcsserver starting at: {}'.format(host_url))
+        print('rhodecode-vcsserver command: {}'.format(command))
+        print('rhodecode-vcsserver logfile: {}'.format(rc_log))
         self.process = subprocess32.Popen(
             self._args, bufsize=0, env=env, stdout=server_out, stderr=server_out)
 

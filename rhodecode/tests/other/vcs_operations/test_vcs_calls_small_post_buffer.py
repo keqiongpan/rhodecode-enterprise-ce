@@ -52,7 +52,8 @@ def rc_web_server_config(testini_factory):
 def test_git_clone_with_small_push_buffer(backend_git, rc_web_server, tmpdir):
     clone_url = rc_web_server.repo_clone_url(GIT_REPO)
     cmd = Command('/tmp')
-    stdout, stderr = cmd.execute('git -c http.postBuffer=1024 clone', clone_url, tmpdir.strpath)
+    stdout, stderr = cmd.execute(
+        'git -c http.postBuffer=1024 clone', clone_url, tmpdir.strpath)
     _check_proper_clone(stdout, stderr, 'git')
     cmd.assert_returncode_success()
 
@@ -73,5 +74,6 @@ def test_git_push_with_small_push_buffer(backend_git, rc_web_server, tmpdir):
         branch='master')
 
     repo_cmd = Command(repo.path)
-    stdout, stderr = repo_cmd.execute('git -c http.postBuffer=1024 push --verbose origin master')
+    stdout, stderr = repo_cmd.execute(
+        'git -c http.postBuffer=1024 push --verbose origin master')
     _check_proper_git_push(stdout, stderr, branch='master')

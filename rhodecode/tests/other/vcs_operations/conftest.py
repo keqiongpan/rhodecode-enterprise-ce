@@ -173,9 +173,9 @@ def rc_web_server(
     assert_no_running_instance(host_url)
     command = ['gunicorn', '--worker-class', 'gevent', '--paste', rc_web_server_config]
 
-    print('Starting rhodecode server: {}'.format(host_url))
-    print('Command: {}'.format(command))
-    print('Logfile: {}'.format(rc_log))
+    print('rhodecode-web starting at: {}'.format(host_url))
+    print('rhodecode-web command: {}'.format(command))
+    print('rhodecode-web logfile: {}'.format(rc_log))
 
     proc = subprocess32.Popen(
         command, bufsize=0, env=env, stdout=server_out, stderr=server_out)
