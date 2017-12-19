@@ -136,27 +136,35 @@ def on_preload_parsed(options, **kwargs):
 @signals.task_success.connect
 def task_success_signal(result, **kwargs):
     meta.Session.commit()
-    celery_app.conf['PYRAMID_CLOSER']()
+    closer = celery_app.conf['PYRAMID_CLOSER']
+    if closer:
+        closer()
 
 
 @signals.task_retry.connect
 def task_retry_signal(
         request, reason, einfo, **kwargs):
     meta.Session.remove()
-    celery_app.conf['PYRAMID_CLOSER']()
+    closer = celery_app.conf['PYRAMID_CLOSER']
+    if closer:
+        closer()
 
 
 @signals.task_failure.connect
 def task_failure_signal(
         task_id, exception, args, kwargs, traceback, einfo, **kargs):
     meta.Session.remove()
-    celery_app.conf['PYRAMID_CLOSER']()
+    closer = celery_app.conf['PYRAMID_CLOSER']
+    if closer:
+        closer()
 
 
 @signals.task_revoked.connect
 def task_revoked_signal(
         request, terminated, signum, expired, **kwargs):
-    celery_app.conf['PYRAMID_CLOSER']()
+    closer = celery_app.conf['PYRAMID_CLOSER']
+    if closer:
+        closer()
 
 
 def setup_celery_app(app, root, request, registry, closer, ini_location):
