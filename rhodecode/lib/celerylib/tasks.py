@@ -266,21 +266,6 @@ def create_repo_fork(form_data, cur_user):
 
 
 @async_task(ignore_result=True)
-def sync_repo(username, repoid):
-    from rhodecode.model.scm import ScmModel
-    log = get_logger(sync_repo)
-
-    repo = Repository.get_by_id_or_repo_name(repoid)
-
-    if repo and repo.clone_uri:
-        repo_name = repo.repo_name
-        log.info('Pulling from repository `%s`', repo_name)
-        ScmModel().pull_changes(repo, username)
-    else:
-        log.debug('Repo `%s` not found or without a clone_url', repoid)
-
-
-@async_task(ignore_result=True)
 def repo_maintenance(repoid):
     from rhodecode.lib import repo_maintenance as repo_maintenance_lib
     log = get_logger(repo_maintenance)
