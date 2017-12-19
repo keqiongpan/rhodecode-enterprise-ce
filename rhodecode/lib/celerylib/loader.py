@@ -28,6 +28,7 @@ Celery loader, run with::
 """
 import os
 import logging
+import importlib
 
 from celery import Celery
 from celery import signals
@@ -77,11 +78,21 @@ def get_logger(obj):
     return custom_log
 
 
+imports = ['rhodecode.lib.celerylib.tasks']
+
+try:
+    # try if we have EE tasks available
+    importlib.import_module('rc_ee')
+    imports.append('rc_ee.lib.celerylib.tasks')
+except ImportError:
+    pass
+
+
 base_celery_config = {
     'result_backend': 'rpc://',
     'result_expires': 60 * 60 * 24,
     'result_persistent': True,
-    'imports': [],
+    'imports': imports,
     'worker_max_tasks_per_child': 100,
     'accept_content': ['json_ext'],
     'task_serializer': 'json_ext',
