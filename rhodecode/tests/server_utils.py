@@ -103,7 +103,7 @@ class ServerBase(object):
             except URLError:
                 time.sleep(0.2)
         else:
-            pytest.exit(
+            pytest.fail(
                 "Starting the {} failed or took more than {} "
                 "seconds. cmd: `{}`".format(
                     self.__class__.__name__, timeout, self.command))
