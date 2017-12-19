@@ -131,7 +131,10 @@ def rc_web_server(
     vcsserver_factory(
             request, vcsserver_port=vcsserver_port,
             log_file=vcs_log,
-            overrides=({'server:main': {'workers': 2}},))
+            overrides=(
+                {'server:main': {'workers': 2}},
+                {'server:main': {'graceful_timeout': 10}},
+            ))
 
     rc_log = os.path.join(tempfile.gettempdir(), 'rc_op_web.log')
     rc_web_server_config = rc_web_server_config_factory(

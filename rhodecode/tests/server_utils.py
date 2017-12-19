@@ -90,7 +90,7 @@ class ServerBase(object):
         with open(self.log_file) as f:
             return f.read()
 
-    def wait_until_ready(self, timeout=15):
+    def wait_until_ready(self, timeout=30):
         host = self._config['host']
         port = self._config['port']
         status_url = self.status_url_tmpl.format(host=host, port=port)
