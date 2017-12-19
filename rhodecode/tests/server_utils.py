@@ -108,6 +108,9 @@ class ServerBase(object):
                 "seconds. cmd: `{}`".format(
                     self.__class__.__name__, timeout, self.command))
 
+        print('Server of {} ready at url {}'.format(
+            self.__class__.__name__, status_url))
+
     def shutdown(self):
         self.process.kill()
         self.server_out.flush()
