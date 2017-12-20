@@ -46,11 +46,9 @@ class RepoChecksView(BaseAppView):
 
         repo_name = self.request.matchdict['repo_name']
         db_repo = Repository.get_by_repo_name(repo_name)
-        if not db_repo:
-            raise HTTPNotFound()
 
         # check if maybe repo is already created
-        if db_repo.repo_state in [Repository.STATE_CREATED]:
+        if db_repo and db_repo.repo_state in [Repository.STATE_CREATED]:
             # re-check permissions before redirecting to prevent resource
             # discovery by checking the 302 code
             perm_set = ['repository.read', 'repository.write', 'repository.admin']
