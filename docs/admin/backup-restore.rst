@@ -70,7 +70,7 @@ backup location:
    $ mysql -u <uname> -p <pass> rhodecode_db_name < mysql-db-backup
 
    # For PostgreSQL DBs
-   $ PGPASSWORD=<pass> pg_dump rhodecode_db_name > postgresql-db-backup
+   $ PGPASSWORD=<pass> pg_dump --inserts -U <uname> -h localhost rhodecode_db_name > postgresql-db-backup
    # PosgreSQL restore
    $ PGPASSWORD=<pass> psql -U <uname> -h localhost -d rhodecode_db_name -1 -f postgresql-db-backup
 
