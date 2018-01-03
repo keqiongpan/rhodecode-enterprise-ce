@@ -1320,6 +1320,7 @@ class PullRequestModel(BaseModel):
 
     def generate_repo_data(self, repo, commit_id=None, branch=None,
                            bookmark=None, translator=None):
+        from rhodecode.model.repo import RepoModel
 
         all_refs, selected_ref = \
             self._get_repo_pullrequest_sources(
@@ -1339,6 +1340,8 @@ class PullRequestModel(BaseModel):
                 'lastname': repo.user.last_name,
                 'gravatar_link': h.gravatar_url(repo.user.email, 14),
             },
+            'name': repo.repo_name,
+            'link': RepoModel().get_url(repo),
             'description': h.chop_at_smart(repo.description_safe, '\n'),
             'refs': {
                 'all_refs': all_refs,

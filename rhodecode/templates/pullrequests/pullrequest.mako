@@ -427,8 +427,9 @@ $(function(){
 
   var targetRepoChanged = function(repoData) {
       // generate new DESC of target repo displayed next to select
+      var prLink = pyroutes.url('pullrequest_new', {'repo_name': repoData['name']});
       $('#target_repo_desc').html(
-          "<strong>${_('Target repository')}</strong>: {0}".format(repoData['description'])
+          "<strong>${_('Target repository')}</strong>: {0}. <a href=\"{1}\">Use as source</a>".format(repoData['description'], prLink)
       );
 
       // generate dynamic select2 for refs.
