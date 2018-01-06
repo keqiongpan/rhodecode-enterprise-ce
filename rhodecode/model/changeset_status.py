@@ -18,16 +18,14 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-Changeset status conttroller
-"""
 
 import itertools
 import logging
 from collections import defaultdict
 
 from rhodecode.model import BaseModel
-from rhodecode.model.db import ChangesetStatus, ChangesetComment, PullRequest
+from rhodecode.model.db import (
+    ChangesetStatus, ChangesetComment, PullRequest, Session)
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 from rhodecode.lib.markup_renderer import (
     DEFAULT_COMMENTS_RENDERER, RstTemplateRenderer)
@@ -188,7 +186,7 @@ class ChangesetStatusModel(BaseModel):
         if cur_statuses:
             for st in cur_statuses:
                 st.version += 1
-                self.sa.add(st)
+                Session().add(st)
 
         def _create_status(user, repo, status, comment, revision, pull_request):
             new_status = ChangesetStatus()
@@ -215,7 +213,7 @@ class ChangesetStatusModel(BaseModel):
             new_status = _create_status(
                 user=user, repo=repo, status=status, comment=comment,
                 revision=revision, pull_request=pull_request)
-            self.sa.add(new_status)
+            Session().add(new_status)
             return new_status
         elif pull_request:
             # pull request can have more than one revision associated to it
@@ -227,7 +225,7 @@ class ChangesetStatusModel(BaseModel):
                     user=user, repo=repo, status=status, comment=comment,
                     revision=rev, pull_request=pull_request)
                 new_statuses.append(new_status)
-                self.sa.add(new_status)
+                Session().add(new_status)
             return new_statuses
 
     def reviewers_statuses(self, pull_request):

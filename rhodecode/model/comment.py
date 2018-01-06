@@ -432,7 +432,8 @@ class CommentsModel(BaseModel):
                     pull_request_id=pull_request.pull_request_id,
                     _anchor='comment-%s' % comment.comment_id)
             else:
-                return request.route_url('pullrequest_show',
+                return request.route_url(
+                    'pullrequest_show',
                     repo_name=safe_str(pull_request.target_repo.repo_name),
                     pull_request_id=pull_request.pull_request_id,
                     _anchor='comment-%s' % comment.comment_id)

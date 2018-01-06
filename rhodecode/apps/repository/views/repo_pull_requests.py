@@ -1159,6 +1159,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     )
 
                 Session().flush()
+                # this is somehow required to get access to some relationship
+                # loaded on comment
+                Session().refresh(comment)
+
                 events.trigger(
                     events.PullRequestCommentEvent(pull_request, comment))
 
