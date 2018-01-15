@@ -81,7 +81,7 @@ class RepoFeedView(RepoAppView):
         _parsed = diff_processor.prepare(inline_diff=False)
         limited_diff = isinstance(_parsed, LimitedDiffContainer)
 
-        return _parsed, limited_diff
+        return diff_processor, _parsed, limited_diff
 
     def _get_title(self, commit):
         return h.shorter(commit.message, 160)
@@ -89,13 +89,14 @@ class RepoFeedView(RepoAppView):
     def _get_description(self, commit):
         _renderer = self.request.get_partial_renderer(
             'rhodecode:templates/feed/atom_feed_entry.mako')
-        parsed_diff, limited_diff = self._changes(commit)
+        diff_processor, parsed_diff, limited_diff = self._changes(commit)
         return _renderer(
             'body',
             commit=commit,
             parsed_diff=parsed_diff,
             limited_diff=limited_diff,
             feed_include_diff=self.feed_include_diff,
+            diff_processor=diff_processor,
         )
 
     def _set_timezone(self, date, tzinfo=pytz.utc):
