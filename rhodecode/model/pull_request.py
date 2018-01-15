@@ -1426,8 +1426,8 @@ class PullRequestModel(BaseModel):
                     repo.branches[repo.DEFAULT_BRANCH_NAME]
                 )
             elif repo.commit_ids:
-                rev = repo.commit_ids[0]
-                selected = 'rev:%s:%s' % (rev, rev)
+                # make the user select in this case
+                selected = None
             else:
                 raise EmptyRepositoryError()
         return groups, selected
