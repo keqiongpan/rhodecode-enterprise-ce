@@ -461,7 +461,7 @@ class BaseRepository(object):
                 raise ValueError('message cannot be empty')
 
         shadow_repository_path = self._maybe_prepare_merge_workspace(
-            workspace_id, target_ref)
+            workspace_id, target_ref, source_ref)
 
         try:
             return self._merge_repo(
@@ -482,7 +482,7 @@ class BaseRepository(object):
         """Internal implementation of merge."""
         raise NotImplementedError
 
-    def _maybe_prepare_merge_workspace(self, workspace_id, target_ref):
+    def _maybe_prepare_merge_workspace(self, workspace_id, target_ref, source_ref):
         """
         Create the merge workspace.
 

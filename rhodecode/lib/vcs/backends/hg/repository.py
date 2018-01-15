@@ -693,7 +693,7 @@ class MercurialRepository(BaseRepository):
             os.path.dirname(self.path),
             '.__shadow_%s_%s' % (os.path.basename(self.path), workspace_id))
 
-    def _maybe_prepare_merge_workspace(self, workspace_id, unused_target_ref):
+    def _maybe_prepare_merge_workspace(self, workspace_id, unused_target_ref, unused_source_ref):
         shadow_repository_path = self._get_shadow_repository_path(workspace_id)
         if not os.path.exists(shadow_repository_path):
             self._local_clone(shadow_repository_path)
