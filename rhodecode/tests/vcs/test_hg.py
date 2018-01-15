@@ -552,18 +552,21 @@ TODO: To be written...
         assert commit.message == merge_message
 
     def test_maybe_prepare_merge_workspace(self):
-        workspace = self.repo._maybe_prepare_merge_workspace('pr2', 'unused')
+        workspace = self.repo._maybe_prepare_merge_workspace(
+            'pr2', 'unused', 'unused2')
 
         assert os.path.isdir(workspace)
         workspace_repo = MercurialRepository(workspace)
         assert workspace_repo.branches == self.repo.branches
 
         # Calling it a second time should also succeed
-        workspace = self.repo._maybe_prepare_merge_workspace('pr2', 'unused')
+        workspace = self.repo._maybe_prepare_merge_workspace(
+            'pr2', 'unused', 'unused2')
         assert os.path.isdir(workspace)
 
     def test_cleanup_merge_workspace(self):
-        workspace = self.repo._maybe_prepare_merge_workspace('pr3', 'unused')
+        workspace = self.repo._maybe_prepare_merge_workspace(
+            'pr3', 'unused', 'unused2')
         self.repo.cleanup_merge_workspace('pr3')
 
         assert not os.path.exists(workspace)
