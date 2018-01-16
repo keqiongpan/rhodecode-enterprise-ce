@@ -30,7 +30,7 @@ class IntegrationTypeRegistry(collections.OrderedDict):
     def register_integration_type(self, IntegrationType):
         key = IntegrationType.key
         if key in self:
-            log.warning(
+            log.debug(
                 'Overriding existing integration type %s (%s) with %s' % (
                     self[key], key, IntegrationType))
 
