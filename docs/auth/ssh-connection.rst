@@ -64,7 +64,7 @@ following instructions.
         ssh.wrapper_cmd_allow_shell = false
 
         ## Enables logging, and detailed output send back to the client during SSH
-        ## operations. Usefull for debugging, shouldn't be used in production.
+        ## operations. Useful for debugging, shouldn't be used in production.
         ssh.enable_debug_logging = false
 
         ## Paths to binary executable, by default they are the names, but we can
@@ -111,20 +111,22 @@ following instructions.
        Then add, remove your SSH key and try connecting again.
        Debug logging will be printed to help find the problems on the server side.
 
-   Test connection using the ssh command from the local machine
+   Test connection using the ssh command from the local machine. Make sure
+   to use the use who is running the |RCE| server, and not your username from
+   the web interface.
 
 
    For SVN:
 
    .. code-block:: bash
 
-       SVN_SSH="ssh -i ~/.ssh/id_rsa_test_ssh" svn checkout svn+ssh://rhodecode@rc-server/repo_name
+       SVN_SSH="ssh -i ~/.ssh/id_rsa_test_ssh_private.key" svn checkout svn+ssh://rhodecode@rc-server/repo_name
 
    For GIT:
 
    .. code-block:: bash
 
-       GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_test_ssh' git clone ssh://rhodecode@rc-server/repo_name
+       GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_test_ssh_private.key' git clone ssh://rhodecode@rc-server/repo_name
 
    For Mercurial:
 
@@ -133,6 +135,6 @@ following instructions.
        Add to hgrc:
 
        [ui]
-       ssh = ssh -C -i ~/.ssh/id_rsa_test_ssh
+       ssh = ssh -C -i ~/.ssh/id_rsa_test_ssh_private.key
 
        hg clone ssh://rhodecode@rc-server/repo_name
