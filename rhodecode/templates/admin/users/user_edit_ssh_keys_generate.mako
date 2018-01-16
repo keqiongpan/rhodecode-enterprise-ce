@@ -31,10 +31,11 @@ chmod 0600 ~/.ssh/id_rsa_rhodecode_access_pub.key
         <input type="text" value="${c.public}" class="large text" size="100"/>
         <p>
             % if hasattr(c, 'target_form_url'):
-                <a href="${c.target_form_url}">${_('Add this generated key')}</a>
+                <a href="${c.target_form_url}">${_('Use this generated key')}.</a>
             % else:
-                <a href="${h.route_path('edit_user_ssh_keys', user_id=c.user.user_id, _query=dict(default_key=c.public))}">${_('Add this generated key')}</a>
+                <a href="${h.route_path('edit_user_ssh_keys', user_id=c.user.user_id, _query=dict(default_key=c.public))}">${_('Use this generated key')}.</a>
             % endif
+            ${_('Confirmation required on the next screen')}.
         </p>
     </div>
 </div>
