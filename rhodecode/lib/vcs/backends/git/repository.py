@@ -403,8 +403,9 @@ class GitRepository(BaseRepository):
         return tree
 
     def get_remote_ref(self, ref_name):
+        ref_key = 'refs/remotes/origin/{}'.format(safe_str(ref_name))
         try:
-            return self._ref_tree['refs']['remotes']['origin'][ref_name]
+            return self._refs[ref_key]
         except Exception:
             return
 
