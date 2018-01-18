@@ -22,7 +22,8 @@
 *usage::
 *  var CG = new ColorGenerator();
 *  var col = CG.getColor(key); //returns array of RGB
-*  'rgb({0})'.format(col.join(',')
+*  CG.asRGB(col) === 'rgb({0})'.format(col.join(',')
+*
 *
 * @returns {ColorGenerator}
 */
@@ -46,6 +47,9 @@ ColorGenerator.prototype = {
       this.cacheColorMap[key] = this.generateColor();
       return this.cacheColorMap[key];
     }
+  },
+  asRGB:function(color_tuple) {
+    return 'rgb({0})'.format(color_tuple.join(','));
   },
   _hsvToRgb:function(h,s,v){
     if (s === 0.0)

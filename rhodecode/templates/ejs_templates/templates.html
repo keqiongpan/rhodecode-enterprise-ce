@@ -26,11 +26,24 @@ if (show_disabled) {
 
 </script>
 
+<script>
+var CG = new ColorGenerator();
+</script>
 
 <script id="ejs_reviewMemberEntry" type="text/template" class="ejsTemplate">
 
 <li id="reviewer_<%= member.user_id %>" class="reviewer_entry">
-    <div class="reviewers_member">
+        <%
+
+            if (member.user_group && member.user_group.vote_rule) {
+                var groupStyle = 'border-left: 1px solid '+CG.asRGB(CG.getColor(member.user_group.vote_rule));
+            } else {
+                var groupStyle = 'border-left: 1px solid white';
+            }
+
+        %>
+
+    <div class="reviewers_member" style="<%= groupStyle%>" >
         <div class="reviewer_status tooltip" title="<%= review_status_label %>">
           <div class="flag_status <%= review_status %> pull-left reviewer_member_status"></div>
         </div>
@@ -41,15 +54,6 @@ if (show_disabled) {
             </div>
         <% } %>
 
-        <%if (member.user_group && member.user_group.vote_rule) {%>
-            <div style="float:right">
-              <%if (member.user_group.vote_rule == -1) {%>
-                Min votes: ALL
-              <%} else {%>
-                Min votes: <%= member.user_group.vote_rule %>
-              <%}%>
-            </div>
-        <%}%>
         <%-
           renderTemplate('gravatarWithUser', {
             'size': 16,
@@ -61,6 +65,18 @@ if (show_disabled) {
       </div>
 
       <input type="hidden" name="__start__" value="reviewer:mapping">
+
+
+        <%if (member.user_group && member.user_group.vote_rule) {%>
+            <div class="reviewer_reason">
+
+              <%if (member.user_group.vote_rule == -1) {%>
+               - group votes required: ALL
+              <%} else {%>
+               - group votes required: <%= member.user_group.vote_rule %>
+              <%}%>
+            </div>
+        <%}%>
 
         <input type="hidden" name="__start__" value="reasons:sequence">
           <% for (var i = 0; i < reasons.length; i++) { %>
