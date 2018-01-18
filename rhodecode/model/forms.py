@@ -598,7 +598,7 @@ def PullRequestForm(localizer, repo_id):
         revisions = All(#v.NotReviewedRevisions(localizer, repo_id)(),
                         v.UniqueList(localizer)(not_empty=True))
         review_members = formencode.ForEach(ReviewerForm())
-        pullrequest_title = v.UnicodeString(strip=True, required=True)
+        pullrequest_title = v.UnicodeString(strip=True, required=True, min=3, max=255)
         pullrequest_desc = v.UnicodeString(strip=True, required=False)
 
     return _PullRequestForm

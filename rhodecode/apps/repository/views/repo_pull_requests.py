@@ -743,7 +743,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             if errors.error_dict.get('revisions'):
                 msg = 'Revisions: %s' % errors.error_dict['revisions']
             elif errors.error_dict.get('pullrequest_title'):
-                msg = _('Pull request requires a title with min. 3 chars')
+                msg = errors.error_dict.get('pullrequest_title')
             else:
                 msg = _('Error creating pull request: {}').format(errors)
             log.exception(msg)
