@@ -313,9 +313,12 @@ $(function(){
 
       loadRepoRefDiffPreview._currentRequest = $.get(url)
           .error(function(data, textStatus, errorThrown) {
-                alert(
-                "Error while processing request.\nError code {0} ({1}).".format(
-                        data.status, data.statusText));
+                if (textStatus !== 'abort') {
+                    alert(
+                        "Error while processing request.\nError code {0} ({1}).".format(
+                                data.status, data.statusText));
+                }
+
           })
           .done(function(data) {
               loadRepoRefDiffPreview._currentRequest = null;
