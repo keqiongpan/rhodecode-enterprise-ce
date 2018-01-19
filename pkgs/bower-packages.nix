@@ -7,7 +7,7 @@ buildEnv { name = "bower-env"; ignoreCollisions = true; paths = [
   (fetchbower "paper-tooltip" "PolymerElements/paper-tooltip#1.1.3" "PolymerElements/paper-tooltip#^1.1.2" "0vmrm1n8k9sk9nvqy03q177axy22pia6i3j1gxbk72j3pqiqvg6k")
   (fetchbower "paper-toast" "PolymerElements/paper-toast#1.3.0" "PolymerElements/paper-toast#^1.3.0" "0x9rqxsks5455s8pk4aikpp99ijdn6kxr9gvhwh99nbcqdzcxq1m")
   (fetchbower "paper-toggle-button" "PolymerElements/paper-toggle-button#1.2.0" "PolymerElements/paper-toggle-button#^1.2.0" "0mphcng3ngspbpg4jjn0mb91nvr4xc1phq3qswib15h6sfww1b2w")
-  (fetchbower "iron-ajax" "PolymerElements/iron-ajax#1.4.3" "PolymerElements/iron-ajax#^1.4.3" "1b1z3112ggjdflgrwbpmnbsh3kgcm4hn255wshvrlzds4w069gja")
+  (fetchbower "iron-ajax" "PolymerElements/iron-ajax#1.4.4" "PolymerElements/iron-ajax#^1.4.4" "0jpi7ik3zljw8yh2ccc85r26lcpzmkc2nl1kn6fqdx57zkzk9v5b")
   (fetchbower "iron-autogrow-textarea" "PolymerElements/iron-autogrow-textarea#1.0.13" "PolymerElements/iron-autogrow-textarea#^1.0.13" "0zwhpl97vii1s8k0lgain8i9dnw29b0mxc5ixdscx9las13n2lqq")
   (fetchbower "iron-a11y-keys" "PolymerElements/iron-a11y-keys#1.0.6" "PolymerElements/iron-a11y-keys#^1.0.6" "1xz3mgghfcxixq28sdb654iaxj4nyi1bzcwf77ydkms6fviqs9mv")
   (fetchbower "iron-flex-layout" "PolymerElements/iron-flex-layout#1.3.1" "PolymerElements/iron-flex-layout#^1.0.0" "0nswv3ih3bhflgcd2wjfmddqswzgqxb2xbq65jk9w3rkj26hplbl")
