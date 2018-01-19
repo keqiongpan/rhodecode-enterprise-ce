@@ -53,7 +53,6 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=self.request.translate)
 
-
         return c
 
     # permission check in data loading of

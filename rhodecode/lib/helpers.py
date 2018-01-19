@@ -2070,3 +2070,8 @@ def go_import_header(request, db_repo=None):
     # we have a repo and go-get flag,
     return literal('<meta name="go-import" content="{} {} {}">'.format(
         prefix, db_repo.repo_type, clone_url))
+
+
+def reviewer_as_json(*args, **kwargs):
+    from rhodecode.apps.repository.utils import reviewer_as_json as _reviewer_as_json
+    return _reviewer_as_json(*args, **kwargs)

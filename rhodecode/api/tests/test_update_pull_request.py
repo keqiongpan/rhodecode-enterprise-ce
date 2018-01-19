@@ -133,7 +133,7 @@ class TestUpdatePullRequest(object):
         removed = [a.username]
 
         pull_request = pr_util.create_pull_request(
-            reviewers=[(a.username, ['added via API'], False)])
+            reviewers=[(a.username, ['added via API'], False, [])])
 
         id_, params = build_data(
             self.apikey, 'update_pull_request',

@@ -1,6 +1,8 @@
 ## -*- coding: utf-8 -*-
 <%inherit file="root.mako"/>
 
+<%include file="/ejs_templates/templates.html"/>
+
 <div class="outerwrapper">
   <!-- HEADER -->
   <div class="header">

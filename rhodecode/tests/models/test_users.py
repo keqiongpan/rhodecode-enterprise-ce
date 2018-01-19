@@ -41,7 +41,8 @@ class TestGetUsers(object):
             user_util.create_user(active=is_active, lastname='Fake user')
 
         with mock.patch('rhodecode.lib.helpers.gravatar_url'):
-            users = UserModel().get_users()
+            with mock.patch('rhodecode.lib.helpers.link_to_user'):
+                users = UserModel().get_users()
         fake_users = [u for u in users if u['last_name'] == 'Fake user']
         assert len(fake_users) == 2
 
@@ -61,8 +62,9 @@ class TestGetUsers(object):
                     active=True, lastname=u'Fake {} user'.format(keyword))
 
         with mock.patch('rhodecode.lib.helpers.gravatar_url'):
-            keyword = keywords[1].lower()
-            users = UserModel().get_users(name_contains=keyword)
+            with mock.patch('rhodecode.lib.helpers.link_to_user'):
+                keyword = keywords[1].lower()
+                users = UserModel().get_users(name_contains=keyword)
 
         fake_users = [u for u in users if u['last_name'].startswith('Fake')]
         assert len(fake_users) == 2
@@ -80,7 +82,8 @@ class TestGetUsers(object):
 
         keyword = keywords[1].lower()
         with mock.patch('rhodecode.lib.helpers.gravatar_url'):
-            users = UserModel().get_users(name_contains=keyword)
+            with mock.patch('rhodecode.lib.helpers.link_to_user'):
+                users = UserModel().get_users(name_contains=keyword)
 
         fake_users = [u for u in users if u['last_name'].startswith('Fake')]
         assert len(fake_users) == 2
@@ -95,7 +98,8 @@ class TestGetUsers(object):
 
         user_filter = created_users[-1].username[-2:]
         with mock.patch('rhodecode.lib.helpers.gravatar_url'):
-            users = UserModel().get_users(name_contains=user_filter)
+            with mock.patch('rhodecode.lib.helpers.link_to_user'):
+                users = UserModel().get_users(name_contains=user_filter)
 
         fake_users = [u for u in users if u['last_name'].startswith('Fake')]
         assert len(fake_users) == 1
@@ -108,7 +112,8 @@ class TestGetUsers(object):
                 active=True, lastname='Fake user'))
 
         with mock.patch('rhodecode.lib.helpers.gravatar_url'):
-            users = UserModel().get_users(name_contains='Fake', limit=3)
+            with mock.patch('rhodecode.lib.helpers.link_to_user'):
+                users = UserModel().get_users(name_contains='Fake', limit=3)
 
         fake_users = [u for u in users if u['last_name'].startswith('Fake')]
         assert len(fake_users) == 3

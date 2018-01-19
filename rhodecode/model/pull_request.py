@@ -51,7 +51,7 @@ from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     or_, PullRequest, PullRequestReviewers, ChangesetStatus,
-    PullRequestVersion, ChangesetComment, Repository)
+    PullRequestVersion, ChangesetComment, Repository, RepoReviewRule)
 from rhodecode.model.meta import Session
 from rhodecode.model.notification import NotificationModel, \
     EmailNotificationModel
@@ -468,7 +468,7 @@ class PullRequestModel(BaseModel):
         reviewer_ids = set()
         # members / reviewers
         for reviewer_object in reviewers:
-            user_id, reasons, mandatory = reviewer_object
+            user_id, reasons, mandatory, rules = reviewer_object
             user = self._get_user(user_id)
 
             # skip duplicates
@@ -482,6 +482,33 @@ class PullRequestModel(BaseModel):
             reviewer.pull_request = pull_request
             reviewer.reasons = reasons
             reviewer.mandatory = mandatory
+
+            # NOTE(marcink): pick only first rule for now
+            rule_id = rules[0] if rules else None
+            rule = RepoReviewRule.get(rule_id) if rule_id else None
+            if rule:
+                review_group = rule.user_group_vote_rule()
+                if review_group:
+                    # NOTE(marcink):
+                    # again, can be that user is member of more,
+                    # but we pick the first same, as default reviewers algo
+                    review_group = review_group[0]
+
+                    rule_data = {
+                        'rule_name':
+                            rule.review_rule_name,
+                        'rule_user_group_entry_id':
+                            review_group.repo_review_rule_users_group_id,
+                        'rule_user_group_name':
+                            review_group.users_group.users_group_name,
+                        'rule_user_group_members':
+                            [x.user.username for x in review_group.users_group.members],
+                    }
+                    # e.g {'vote_rule': -1, 'mandatory': True}
+                    rule_data.update(review_group.rule_data())
+
+                    reviewer.rule_data = rule_data
+
             Session().add(reviewer)
 
         # Set approval status to "Under Review" for all commits which are
@@ -962,14 +989,14 @@ class PullRequestModel(BaseModel):
 
         :param pull_request: the pr to update
         :param reviewer_data: list of tuples
-            [(user, ['reason1', 'reason2'], mandatory_flag)]
+            [(user, ['reason1', 'reason2'], mandatory_flag, [rules])]
         """
         pull_request = self.__get_pull_request(pull_request)
         if pull_request.is_closed():
             raise ValueError('This pull request is closed')
 
         reviewers = {}
-        for user_id, reasons, mandatory in reviewer_data:
+        for user_id, reasons, mandatory, rules in reviewer_data:
             if isinstance(user_id, (int, basestring)):
                 user_id = self._get_user(user_id).user_id
             reviewers[user_id] = {

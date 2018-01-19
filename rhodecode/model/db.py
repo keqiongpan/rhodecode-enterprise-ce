@@ -59,8 +59,7 @@ from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
     glob2re, StrictAttributeDict, cleaned_uri)
-from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType, \
-    JsonRaw
+from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.encrypt import AESCipher
@@ -1327,7 +1326,7 @@ class UserGroup(Base, BaseModel):
     @hybrid_property
     def description_safe(self):
         from rhodecode.lib import helpers as h
-        return h.escape(self.description)
+        return h.escape(self.user_group_description)
 
     @hybrid_property
     def group_data(self):
@@ -3594,7 +3593,7 @@ class _PullRequestBase(BaseModel):
                     'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, reasons, mandatory, st in
+                for obj, reviewer, reasons, mandatory, st in
                 pull_request.reviewers_statuses()
             ]
         }
@@ -3790,9 +3789,33 @@ class PullRequestReviewers(Base, BaseModel):
     _reasons = Column(
         'reason', MutationList.as_mutable(
             JsonType('list', dialect_map=dict(mysql=UnicodeText(16384)))))
+
     mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
     user = relationship('User')
     pull_request = relationship('PullRequest')
+
+    rule_data = Column(
+        'rule_data_json',
+        JsonType(dialect_map=dict(mysql=UnicodeText(16384))))
+
+    def rule_user_group_data(self):
+        """
+        Returns the voting user group rule data for this reviewer
+        """
+
+        if self.rule_data and 'vote_rule' in self.rule_data:
+            user_group_data = {}
+            if 'rule_user_group_entry_id' in self.rule_data:
+                # means a group with voting rules !
+                user_group_data['id'] = self.rule_data['rule_user_group_entry_id']
+                user_group_data['name'] = self.rule_data['rule_name']
+                user_group_data['vote_rule'] = self.rule_data['vote_rule']
+
+            return user_group_data
+
+    def __unicode__(self):
+        return u"<%s('id:%s')>" % (self.__class__.__name__,
+                                   self.pull_requests_reviewers_id)
 
 
 class Notification(Base, BaseModel):
@@ -4086,6 +4109,7 @@ class RepoReviewRuleUser(Base, BaseModel):
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
+
     repo_review_rule_user_id = Column('repo_review_rule_user_id', Integer(), primary_key=True)
     repo_review_rule_id = Column("repo_review_rule_id", Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False)
@@ -4104,16 +4128,27 @@ class RepoReviewRuleUserGroup(Base, BaseModel):
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
+    VOTE_RULE_ALL = -1
+
     repo_review_rule_users_group_id = Column('repo_review_rule_users_group_id', Integer(), primary_key=True)
     repo_review_rule_id = Column("repo_review_rule_id", Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
     users_group_id = Column("users_group_id", Integer(),ForeignKey('users_groups.users_group_id'), nullable=False)
     mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
+    vote_rule = Column("vote_rule", Integer(), nullable=True, default=VOTE_RULE_ALL)
     users_group = relationship('UserGroup')
 
     def rule_data(self):
         return {
-            'mandatory': self.mandatory
+            'mandatory': self.mandatory,
+            'vote_rule': self.vote_rule
         }
+
+    @property
+    def vote_rule_label(self):
+        if not self.vote_rule or self.vote_rule == self.VOTE_RULE_ALL:
+            return 'all must vote'
+        else:
+            return 'min. vote {}'.format(self.vote_rule)
 
 
 class RepoReviewRule(Base, BaseModel):
@@ -4225,12 +4260,20 @@ class RepoReviewRule(Base, BaseModel):
 
         for rule_user_group in self.rule_user_groups:
             source_data = {
+                'user_group_id': rule_user_group.users_group.users_group_id,
                 'name': rule_user_group.users_group.users_group_name,
                 'members': len(rule_user_group.users_group.members)
             }
             for member in rule_user_group.users_group.members:
                 if member.user.active:
-                    users[member.user.username] = {
+                    key = member.user.username
+                    if key in users:
+                        # skip this member as we have him already
+                        # this prevents from override the "first" matched
+                        # users with duplicates in multiple groups
+                        continue
+
+                    users[key] = {
                         'user': member.user,
                         'source': 'user_group',
                         'source_data': source_data,
@@ -4238,6 +4281,13 @@ class RepoReviewRule(Base, BaseModel):
                     }
 
         return users
+
+    def user_group_vote_rule(self):
+        rules = []
+        if self.rule_user_groups:
+            for user_group in self.rule_user_groups:
+                rules.append(user_group)
+        return rules
 
     def __repr__(self):
         return '<RepoReviewerRule(id=%r, repo=%r)>' % (

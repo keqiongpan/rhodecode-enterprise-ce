@@ -584,6 +584,7 @@ def PullRequestForm(localizer, repo_id):
     class ReviewerForm(formencode.Schema):
         user_id = v.Int(not_empty=True)
         reasons = All()
+        rules = All(v.UniqueList(localizer, convert=int)())
         mandatory = v.StringBoolean()
 
     class _PullRequestForm(formencode.Schema):

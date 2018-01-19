@@ -119,7 +119,7 @@ class TestPullRequestModel(object):
 
     def test_get_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [(pull_request.author, ['author'], False)],
+            pull_request, [(pull_request.author, ['author'], False, [])],
             pull_request.author)
         prs = PullRequestModel().get_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
@@ -128,7 +128,7 @@ class TestPullRequestModel(object):
 
     def test_count_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [(pull_request.author, ['author'], False)],
+            pull_request, [(pull_request.author, ['author'], False, [])],
             pull_request.author)
         pr_count = PullRequestModel().count_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)

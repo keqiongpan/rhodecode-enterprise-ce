@@ -74,6 +74,7 @@ class UserModel(BaseModel):
             'username': user.username,
             'email': user.email,
             'icon_link': h.gravatar_url(user.email, 30),
+            'profile_link':  h.link_to_user(user),
             'value_display': h.escape(h.person(user)),
             'value': user.username,
             'value_type': 'user',

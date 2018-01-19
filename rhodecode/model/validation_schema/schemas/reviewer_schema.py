@@ -26,6 +26,7 @@ class ReviewerSchema(colander.MappingSchema):
     username = colander.SchemaNode(types.StrOrIntType())
     reasons = colander.SchemaNode(colander.List(), missing=['no reason specified'])
     mandatory = colander.SchemaNode(colander.Boolean(), missing=False)
+    rules = colander.SchemaNode(colander.List(), missing=[])
 
 
 class ReviewerListSchema(colander.SequenceSchema):

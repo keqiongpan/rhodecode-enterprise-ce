@@ -995,8 +995,8 @@ class PRTestUtility(object):
 
     def _get_reviewers(self):
         return [
-            (TEST_USER_REGULAR_LOGIN, ['default1'], False),
-            (TEST_USER_REGULAR2_LOGIN, ['default2'], False),
+            (TEST_USER_REGULAR_LOGIN, ['default1'], False, []),
+            (TEST_USER_REGULAR2_LOGIN, ['default2'], False, []),
         ]
 
     def update_source_repository(self, head=None):

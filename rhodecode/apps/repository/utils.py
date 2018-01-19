@@ -22,7 +22,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.utils2 import safe_int
 
 
-def reviewer_as_json(user, reasons=None, mandatory=False):
+def reviewer_as_json(user, reasons=None, mandatory=False, rules=None, user_group=None):
     """
     Returns json struct of a reviewer for frontend
 
@@ -34,10 +34,13 @@ def reviewer_as_json(user, reasons=None, mandatory=False):
     return {
         'user_id': user.user_id,
         'reasons': reasons or [],
+        'rules': rules or [],
         'mandatory': mandatory,
+        'user_group': user_group,
         'username': user.username,
         'first_name': user.first_name,
         'last_name': user.last_name,
+        'user_link': h.link_to_user(user),
         'gravatar_link': h.gravatar_url(user.email, 14),
     }
 
@@ -68,7 +71,7 @@ def validate_default_reviewers(review_members, reviewer_rules):
     reviewer_by_id = {}
     for r in review_members:
         reviewer_user_id = safe_int(r['user_id'])
-        entry = (reviewer_user_id, r['reasons'], r['mandatory'])
+        entry = (reviewer_user_id, r['reasons'], r['mandatory'], r['rules'])
 
         reviewer_by_id[reviewer_user_id] = entry
         reviewers.append(entry)

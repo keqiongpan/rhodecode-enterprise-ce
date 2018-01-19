@@ -42,6 +42,8 @@
         "<%= dirs.js.src %>/bootstrap.js",
         "<%= dirs.js.src %>/i18n_utils.js",
         "<%= dirs.js.src %>/deform.js",
+        "<%= dirs.js.src %>/ejs.js",
+        "<%= dirs.js.src %>/ejs_templates/utils.js",
         "<%= dirs.js.src %>/plugins/jquery.pjax.js",
         "<%= dirs.js.src %>/plugins/jquery.dataTables.js",
         "<%= dirs.js.src %>/plugins/flavoured_checkbox.js",
