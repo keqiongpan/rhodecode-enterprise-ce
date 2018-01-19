@@ -6,6 +6,7 @@
     (_('Created on'), h.format_date(c.rhodecode_db_repo.created_on), '', ''),
     (_('Updated on'), h.format_date(c.rhodecode_db_repo.updated_on), '', ''),
     (_('Cached Commit id'), lambda: h.link_to(c.rhodecode_db_repo.changeset_cache.get('short_id'), h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.changeset_cache.get('raw_id'))), '', ''),
+    (_('Attached scoped tokens'), len(c.rhodecode_db_repo.scoped_tokens), '', [x.user for x in c.rhodecode_db_repo.scoped_tokens]),
  ]
 %>
 

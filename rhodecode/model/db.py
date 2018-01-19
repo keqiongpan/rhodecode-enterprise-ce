@@ -1624,6 +1624,8 @@ class Repository(Base, BaseModel):
     integrations = relationship('Integration',
                                 cascade="all, delete, delete-orphan")
 
+    scoped_tokens = relationship('UserApiKeys', cascade="all")
+
     def __unicode__(self):
         return u"<%s('%s:%s')>" % (self.__class__.__name__, self.repo_id,
                                    safe_unicode(self.repo_name))
