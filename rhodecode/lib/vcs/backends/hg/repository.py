@@ -554,6 +554,10 @@ class MercurialRepository(BaseRepository):
         self._remote.pull(url, commit_ids=commit_ids)
         self._remote.invalidate_vcs_cache()
 
+    def push(self, url):
+        url = self._get_url(url)
+        self._remote.sync_push(url)
+
     def _local_clone(self, clone_path):
         """
         Create a local clone of the current repo.

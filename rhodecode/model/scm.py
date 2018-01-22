@@ -373,10 +373,10 @@ class ScmModel(BaseModel):
         self.sa.add(repo)
         return repo
 
-    def pull_changes(self, repo, username):
+    def pull_changes(self, repo, username, remote_uri=None):
         dbrepo = self._get_repo(repo)
-        clone_uri = dbrepo.clone_uri
-        if not clone_uri:
+        remote_uri = remote_uri or dbrepo.clone_uri
+        if not remote_uri:
             raise Exception("This repository doesn't have a clone uri")
 
         repo = dbrepo.scm_instance(cache=False)
@@ -388,9 +388,24 @@ class ScmModel(BaseModel):
         repo_name = dbrepo.repo_name
         try:
             # TODO: we need to make sure those operations call proper hooks !
-            repo.pull(clone_uri)
+            repo.pull(remote_uri)
 
             self.mark_for_invalidation(repo_name)
+        except Exception:
+            log.error(traceback.format_exc())
+            raise
+
+    def push_changes(self, repo, username, remote_uri=None):
+        dbrepo = self._get_repo(repo)
+        remote_uri = remote_uri or dbrepo.clone_uri
+        if not remote_uri:
+            raise Exception("This repository doesn't have a clone uri")
+
+        repo = dbrepo.scm_instance(cache=False)
+        repo.config.clear_section('hooks')
+
+        try:
+            repo.push(remote_uri)
         except Exception:
             log.error(traceback.format_exc())
             raise

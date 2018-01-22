@@ -669,6 +669,10 @@ class GitRepository(BaseRepository):
                 ref for ref in remote_refs if remote_refs[ref] in commit_ids]
         self._remote.fetch(url, refs=refs)
 
+    def push(self, url):
+        refs = None
+        self._remote.sync_push(url, refs=refs)
+
     def set_refs(self, ref_name, commit_id):
         self._remote.set_refs(ref_name, commit_id)
 
