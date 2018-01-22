@@ -125,7 +125,7 @@
 </%def>
 
 <%def name="last_change(last_change)">
-    ${h.age_component(last_change)}
+    ${h.age_component(last_change, time_is_local=True)}
 </%def>
 
 <%def name="revision(name,rev,tip,author,last_msg, commit_date)">
