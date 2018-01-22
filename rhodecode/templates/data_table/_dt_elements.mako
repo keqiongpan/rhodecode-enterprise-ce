@@ -128,10 +128,10 @@
     ${h.age_component(last_change)}
 </%def>
 
-<%def name="revision(name,rev,tip,author,last_msg)">
+<%def name="revision(name,rev,tip,author,last_msg, commit_date)">
   <div>
   %if rev >= 0:
-      <code><a title="${h.tooltip('%s:\n\n%s' % (author,last_msg))}" class="tooltip" href="${h.route_path('repo_commit',repo_name=name,commit_id=tip)}">${'r%s:%s' % (rev,h.short_id(tip))}</a></code>
+      <code><a title="${h.tooltip('%s\n%s\n\n%s' % (author, commit_date, last_msg))}" class="tooltip" href="${h.route_path('repo_commit',repo_name=name,commit_id=tip)}">${'r%s:%s' % (rev,h.short_id(tip))}</a></code>
   %else:
       ${_('No commits yet')}
   %endif

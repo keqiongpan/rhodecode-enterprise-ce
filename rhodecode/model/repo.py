@@ -229,7 +229,7 @@ class RepoModel(BaseModel):
         def last_rev(repo_name, cs_cache):
             return _render('revision', repo_name, cs_cache.get('revision'),
                            cs_cache.get('raw_id'), cs_cache.get('author'),
-                           cs_cache.get('message'))
+                           cs_cache.get('message'), cs_cache.get('date'))
 
         def desc(desc):
             return _render('repo_desc', desc, c.visual.stylify_metatags)
