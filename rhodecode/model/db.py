@@ -59,7 +59,8 @@ from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
     glob2re, StrictAttributeDict, cleaned_uri)
-from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType
+from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType, \
+    JsonRaw
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.encrypt import AESCipher
