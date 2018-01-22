@@ -221,7 +221,7 @@ def create_repo_group(
         repo_group = RepoGroupModel().create(
             owner=owner,
             group_name=validated_group_name,
-            group_description=schema_data['repo_group_name'],
+            group_description=schema_data['repo_group_description'],
             copy_permissions=schema_data['repo_group_copy_permissions'])
         Session().flush()
 
