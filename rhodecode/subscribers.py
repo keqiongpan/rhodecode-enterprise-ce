@@ -25,6 +25,8 @@ import Queue
 import subprocess32
 import os
 
+
+from dateutil.parser import parse
 from pyramid.i18n import get_localizer
 from pyramid.threadlocal import get_current_request
 from pyramid.interfaces import IRoutesMapper
@@ -127,16 +129,36 @@ def write_metadata_if_needed(event):
     from rhodecode.lib import system_info
     from rhodecode.lib import ext_json
 
-    def write():
-        fname = '.rcmetadata.json'
-        ini_loc = os.path.dirname(rhodecode.CONFIG.get('__file__'))
-        metadata_destination = os.path.join(ini_loc, fname)
+    fname = '.rcmetadata.json'
+    ini_loc = os.path.dirname(rhodecode.CONFIG.get('__file__'))
+    metadata_destination = os.path.join(ini_loc, fname)
 
+    def get_update_age():
+        now = datetime.datetime.utcnow()
+
+        with open(metadata_destination, 'rb') as f:
+            data = ext_json.json.loads(f.read())
+            if 'created_on' in data:
+                update_date = parse(data['created_on'])
+                diff = now - update_date
+                return diff.total_seconds() / 60.0
+
+        return 0
+
+    def write():
         configuration = system_info.SysInfo(
             system_info.rhodecode_config)()['value']
         license_token = configuration['config']['license_token']
+
+        setup = dict(
+            workers=configuration['config']['server:main'].get(
+                'workers', '?'),
+            worker_type=configuration['config']['server:main'].get(
+                'worker_class', 'sync'),
+        )
         dbinfo = system_info.SysInfo(system_info.database_info)()['value']
         del dbinfo['url']
+
         metadata = dict(
             desc='upgrade metadata info',
             license_token=license_token,
@@ -146,6 +168,7 @@ def write_metadata_if_needed(event):
             database=dbinfo,
             cpu=system_info.SysInfo(system_info.cpu)()['value'],
             memory=system_info.SysInfo(system_info.memory)()['value'],
+            setup=setup
         )
 
         with open(metadata_destination, 'wb') as f:
@@ -153,6 +176,15 @@ def write_metadata_if_needed(event):
 
     settings = event.app.registry.settings
     if settings.get('metadata.skip'):
+        return
+
+    # only write this every 24h, workers restart caused unwanted delays
+    try:
+        age_in_min = get_update_age()
+    except Exception:
+        age_in_min = 0
+
+    if age_in_min < 60 * 60 * 24:
         return
 
     try:
