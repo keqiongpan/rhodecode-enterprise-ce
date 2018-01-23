@@ -701,7 +701,7 @@ class GitRepository(BaseRepository):
         stdout, _ = self.run_git_command(['rev-parse', '--abbrev-ref', 'HEAD'])
         return stdout.strip()
 
-    def _checkout(self, branch_name, create=False):
+    def _checkout(self, branch_name, create=False, force=False):
         """
         Checkout a branch in the working directory.
 
@@ -715,6 +715,8 @@ class GitRepository(BaseRepository):
             raise RepositoryError('Cannot checkout branches in a bare git repo')
 
         cmd = ['checkout']
+        if force:
+            cmd.append('-f')
         if create:
             cmd.append('-b')
         cmd.append(branch_name)
