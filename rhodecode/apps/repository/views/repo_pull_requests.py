@@ -608,7 +608,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         try:
             source_repo_data = PullRequestModel().generate_repo_data(
                 source_repo, commit_id=commit_id,
-                branch=branch_ref, bookmark=bookmark_ref, translator=self.request.translate)
+                branch=branch_ref, bookmark=bookmark_ref,
+                translator=self.request.translate)
         except CommitDoesNotExistError as e:
             log.exception(e)
             h.flash(_('Commit does not exist'), 'error')
@@ -627,8 +628,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             default_target_repo, translator=self.request.translate)
 
         selected_source_ref = source_repo_data['refs']['selected_ref']
-
-        title_source_ref = selected_source_ref.split(':', 2)[1]
+        title_source_ref = ''
+        if selected_source_ref:
+            title_source_ref = selected_source_ref.split(':', 2)[1]
         c.default_title = PullRequestModel().generate_pullrequest_title(
             source=source_repo.repo_name,
             source_ref=title_source_ref,
