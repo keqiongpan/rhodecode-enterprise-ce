@@ -77,7 +77,6 @@ class hybrid_property(object):
         self.fdel(instance)
 
 
-
 class LazyFormencode(object):
     def __init__(self, formencode_obj, *args, **kwargs):
         self.formencode_obj = formencode_obj
@@ -106,6 +105,8 @@ class RhodeCodeAuthPluginBase(object):
         "lastname": "last name",
         "email": "email address",
         "groups": '["list", "of", "groups"]',
+        "user_group_sync":
+            'True|False defines if returned user groups should be synced',
         "extern_name": "name in external source of record",
         "extern_type": "type of external source of record",
         "admin": 'True|False defines if user should be RhodeCode super admin',
@@ -114,6 +115,7 @@ class RhodeCodeAuthPluginBase(object):
         "active_from_extern":
             "True|False\None, active state from the external auth, "
             "None means use definition from RhodeCode extern_type active value"
+
     }
     # set on authenticate() method and via set_auth_type func.
     auth_type = None
@@ -412,8 +414,9 @@ class RhodeCodeAuthPluginBase(object):
             new_hash = auth.get('_hash_migrate')
             if new_hash:
                 self._migrate_hash_to_bcrypt(username, passwd, new_hash)
+            if 'user_group_sync' not in auth:
+                auth['user_group_sync'] = False
             return self._validate_auth_return(auth)
-
         return auth
 
     def _migrate_hash_to_bcrypt(self, username, password, new_hash):
@@ -538,16 +541,19 @@ class RhodeCodeExternalAuthPlugin(RhodeCodeAuthPluginBase):
             # enforce user is just in given groups, all of them has to be ones
             # created from plugins. We store this info in _group_data JSON
             # field
-            try:
-                groups = auth['groups'] or []
-                log.debug(
-                    'Performing user_group sync based on set `%s` '
-                    'returned by this plugin', groups)
-                UserGroupModel().enforce_groups(user, groups, self.name)
-            except Exception:
-                # for any reason group syncing fails, we should
-                # proceed with login
-                log.error(traceback.format_exc())
+
+            if auth['user_group_sync']:
+                try:
+                    groups = auth['groups'] or []
+                    log.debug(
+                        'Performing user_group sync based on set `%s` '
+                        'returned by `%s` plugin', groups, self.name)
+                    UserGroupModel().enforce_groups(user, groups, self.name)
+                except Exception:
+                    # for any reason group syncing fails, we should
+                    # proceed with login
+                    log.error(traceback.format_exc())
+
             Session().commit()
         return auth
 
@@ -671,7 +677,7 @@ def authenticate(username, password, environ=None, auth_type=None,
                 environ=environ or {})
 
         if plugin_cache_active:
-            log.debug('Trying to fetch cached auth by %s', _password_hash[:6])
+            log.debug('Trying to fetch cached auth by `...%s`', _password_hash[:6])
             plugin_user = cache_manager.get(
                 _password_hash, createfunc=auth_func)
         else:

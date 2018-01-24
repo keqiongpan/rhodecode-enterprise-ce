@@ -267,6 +267,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             'firstname': crowd_user["first-name"] or firstname,
             'lastname': crowd_user["last-name"] or lastname,
             'groups': crowd_user["groups"],
+            'user_group_sync': True,
             'email': crowd_user["email"] or email,
             'admin': admin,
             'active': active,

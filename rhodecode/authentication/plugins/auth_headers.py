@@ -212,6 +212,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             'firstname': safe_unicode(firstname or username),
             'lastname': safe_unicode(lastname or ''),
             'groups': [],
+            'user_group_sync': False,
             'email': email or '',
             'admin': admin or False,
             'active': active,

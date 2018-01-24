@@ -460,6 +460,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
                 'lastname': safe_unicode(
                     get_ldap_attr('attr_lastname') or lastname),
                 'groups': groups,
+                'user_group_sync': False,
                 'email': get_ldap_attr('attr_email') or email,
                 'admin': admin,
                 'active': active,

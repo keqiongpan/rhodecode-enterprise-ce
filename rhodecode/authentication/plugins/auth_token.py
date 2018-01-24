@@ -111,6 +111,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             "firstname": userobj.firstname,
             "lastname": userobj.lastname,
             "groups": [],
+            'user_group_sync': False,
             "email": userobj.email,
             "admin": userobj.admin,
             "active": userobj.active,

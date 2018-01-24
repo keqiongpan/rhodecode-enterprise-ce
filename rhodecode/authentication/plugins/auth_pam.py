@@ -136,6 +136,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             'lastname': lastname,
             'groups': [g.gr_name for g in grp.getgrall()
                        if username in g.gr_mem],
+            'user_group_sync': True,
             'email': email,
             'admin': admin,
             'active': active,
