@@ -70,6 +70,11 @@ def includeme(config):
         name='my_account_ssh_keys_delete',
         pattern=ADMIN_PREFIX + '/my_account/ssh_keys/delete')
 
+    # my account user group membership
+    config.add_route(
+        name='my_account_user_group_membership',
+        pattern=ADMIN_PREFIX + '/my_account/user_group_membership')
+
     # my account emails
     config.add_route(
         name='my_account_emails',

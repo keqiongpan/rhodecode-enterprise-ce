@@ -48,6 +48,7 @@ from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
 from rhodecode.model.repo import RepoModel
+from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model.validation_schema.schemas import user_schema
 
 log = logging.getLogger(__name__)
@@ -583,3 +584,16 @@ class MyAccountView(BaseAppView, DataGridAppView):
         data = self._get_pull_requests_list(statuses=statuses)
         return data
 
+    @LoginRequired()
+    @NotAnonymous()
+    @view_config(
+        route_name='my_account_user_group_membership',
+        request_method='GET',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_user_group_membership(self):
+        c = self.load_default_context()
+        c.active = 'user_group_membership'
+        groups = [UserGroupModel.get_user_groups_as_dict(group.users_group)
+                  for group in self._rhodecode_db_user.group_member]
+        c.user_groups = json.dumps(groups)
+        return self._get_template_context(c)
