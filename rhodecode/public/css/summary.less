@@ -57,14 +57,22 @@
           white-space: pre-wrap;
         }
 
-        #clone_url {
-            width: ~"calc(100% - 103px)";
-            padding:  @padding/4;
+        .left-clone {
+            float: left;
+            height: 30px;
+            margin: 0;
+            padding: 0;
+            font-family: @text-semibold;
         }
 
-        #clone_url_id {
-            width: ~"calc(100% - 125px)";
-            padding:  @padding/4;
+        .right-clone {
+            float: right;
+            width: 83%;
+        }
+
+        .clone_url_input {
+            width: ~"calc(100% - 35px)";
+            padding:  5px;
         }
 
         &.directory {

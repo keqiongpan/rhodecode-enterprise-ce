@@ -60,33 +60,15 @@
 
 <script type="text/javascript">
 $(document).ready(function(){
-    $('#clone_by_name').on('click',function(e){
-        // show url by name and hide name button
-        $('#clone_url').show();
-        $('#clone_by_name').hide();
-
-        // hide url by id and show name button
-        $('#clone_by_id').show();
-        $('#clone_url_id').hide();
-
-        // hide copy by id
-        $('#clone_by_name_copy').show();
-        $('#clone_by_id_copy').hide();
-
-    });
-    $('#clone_by_id').on('click',function(e){
-
-        // show url by id and hide id button
-        $('#clone_by_id').hide();
-        $('#clone_url_id').show();
-
-        // hide url by name and show id button
-        $('#clone_by_name').show();
-        $('#clone_url').hide();
-
-        // hide copy by id
-        $('#clone_by_id_copy').show();
-        $('#clone_by_name_copy').hide();
+    $('#clone_option').on('change', function(e) {
+        var selected = $(this).val();
+        $.each(['http', 'http_id', 'ssh'], function (idx, val) {
+            if(val === selected){
+                $('#clone_option_' + val).show();
+            } else {
+                $('#clone_option_' + val).hide();
+            }
+        });
     });
 
     var initialCommitData = {

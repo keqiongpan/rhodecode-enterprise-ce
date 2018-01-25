@@ -174,18 +174,22 @@ class RepoSummaryView(RepoAppView):
         if self._rhodecode_user.username != User.DEFAULT_USER:
             username = safe_str(self._rhodecode_user.username)
 
-        _def_clone_uri = _def_clone_uri_by_id = c.clone_uri_tmpl
+        _def_clone_uri = _def_clone_uri_id = c.clone_uri_tmpl
+        _def_clone_uri_ssh = c.clone_uri_ssh_tmpl
+
         if '{repo}' in _def_clone_uri:
-            _def_clone_uri_by_id = _def_clone_uri.replace(
+            _def_clone_uri_id = _def_clone_uri.replace(
                 '{repo}', '_{repoid}')
         elif '{repoid}' in _def_clone_uri:
-            _def_clone_uri_by_id = _def_clone_uri.replace(
+            _def_clone_uri_id = _def_clone_uri.replace(
                 '_{repoid}', '{repo}')
 
         c.clone_repo_url = self.db_repo.clone_url(
             user=username, uri_tmpl=_def_clone_uri)
         c.clone_repo_url_id = self.db_repo.clone_url(
-            user=username, uri_tmpl=_def_clone_uri_by_id)
+            user=username, uri_tmpl=_def_clone_uri_id)
+        c.clone_repo_url_ssh = self.db_repo.clone_url(
+            uri_tmpl=_def_clone_uri_ssh, ssh=True)
 
         # If enabled, get statistics data
 

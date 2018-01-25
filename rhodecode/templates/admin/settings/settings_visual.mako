@@ -167,18 +167,22 @@ ${h.secure_form(h.route_path('admin_settings_visual_update'), request=request)}
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Clone URL')}</h3>
+        <h3 class="panel-title">${_('Clone URL templates')}</h3>
     </div>
     <div class="panel-body">
         <div class="field">
-            ${h.text('rhodecode_clone_uri_tmpl', size=60)}
+           ${h.text('rhodecode_clone_uri_tmpl', size=60)} HTTP[S]
         </div>
-
+        <div class="field">
+           ${h.text('rhodecode_clone_uri_ssh_tmpl', size=60)} SSH
+        </div>
         <div class="field">
             <span class="help-block">
                 ${_('''Schema of clone url construction eg. '{scheme}://{user}@{netloc}/{repo}', available vars:
                        {scheme} 'http' or 'https' sent from running RhodeCode server,
                        {user}   current user username,
+                       {sys_user} current system user running this process, usefull for ssh,
+                       {hostname} hostname of this server running RhodeCode,
                        {netloc} network location/server host of running RhodeCode server,
                        {repo}   full repository name,
                        {repoid} ID of repository, can be used to contruct clone-by-id''')}

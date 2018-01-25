@@ -34,6 +34,7 @@ import time
 import urllib
 import urlobject
 import uuid
+import getpass
 
 import pygments.lexers
 import sqlalchemy
@@ -613,11 +614,14 @@ def get_clone_url(request, uri_tmpl, repo_name, repo_id, **override):
     qualifed_home_url = request.route_url('home')
     parsed_url = urlobject.URLObject(qualifed_home_url)
     decoded_path = safe_unicode(urllib.unquote(parsed_url.path.rstrip('/')))
+
     args = {
         'scheme': parsed_url.scheme,
         'user': '',
+        'sys_user': getpass.getuser(),
         # path if we use proxy-prefix
         'netloc': parsed_url.netloc+decoded_path,
+        'hostname': parsed_url.hostname,
         'prefix': decoded_path,
         'repo': repo_name,
         'repoid': str(repo_id)

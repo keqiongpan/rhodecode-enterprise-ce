@@ -1532,6 +1532,7 @@ class Repository(Base, BaseModel):
     )
     DEFAULT_CLONE_URI = '{scheme}://{user}@{netloc}/{repo}'
     DEFAULT_CLONE_URI_ID = '{scheme}://{user}@{netloc}/_{repoid}'
+    DEFAULT_CLONE_URI_SSH = 'ssh://{sys_user}@{hostname}/{repo}'
 
     STATE_CREATED = 'repo_state_created'
     STATE_PENDING = 'repo_state_pending'
@@ -2100,11 +2101,20 @@ class Repository(Base, BaseModel):
             uri_tmpl = override['uri_tmpl']
             del override['uri_tmpl']
 
+        ssh = False
+        if 'ssh' in override:
+            ssh = True
+            del override['ssh']
+
         # we didn't override our tmpl from **overrides
         if not uri_tmpl:
             rc_config = SettingsModel().get_all_settings(cache=True)
-            uri_tmpl = rc_config.get(
-                'rhodecode_clone_uri_tmpl') or self.DEFAULT_CLONE_URI
+            if ssh:
+                uri_tmpl = rc_config.get(
+                    'rhodecode_clone_uri_ssh_tmpl') or self.DEFAULT_CLONE_URI_SSH
+            else:
+                uri_tmpl = rc_config.get(
+                    'rhodecode_clone_uri_tmpl') or self.DEFAULT_CLONE_URI
 
         request = get_current_request()
         return get_clone_url(request=request,
