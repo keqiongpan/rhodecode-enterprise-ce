@@ -49,7 +49,9 @@
                 <select id="clone_option" name="clone_option">
                     <option value="http" selected="selected">HTTP</option>
                     <option value="http_id">HTTP UID</option>
-                    <option value="ssh">SSH</option>
+                    % if c.ssh_enabled:
+                        <option value="ssh">SSH</option>
+                    % endif
                 </select>
             </div>
             <div class="right-clone">

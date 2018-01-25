@@ -331,6 +331,9 @@ def attach_context_attributes(context, request, user_id):
     # INI stored
     context.labs_active = str2bool(
         config.get('labs_settings_active', 'false'))
+    context.ssh_enabled = str2bool(
+        config.get('ssh.generate_authorized_keyfile', 'false'))
+
     context.visual.allow_repo_location_change = str2bool(
         config.get('allow_repo_location_change', True))
     context.visual.allow_custom_hooks_settings = str2bool(

@@ -48,12 +48,9 @@ class RepoSummaryView(RepoAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
-
         c.rhodecode_repo = None
         if not c.repository_requirements_missing:
             c.rhodecode_repo = self.rhodecode_vcs_repo
-
-
         return c
 
     def _get_readme_data(self, db_repo, default_renderer):
