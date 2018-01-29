@@ -55,6 +55,18 @@ class AdminProcessManagementView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='admin_settings_process_management_data', request_method='GET',
+        renderer='rhodecode:templates/admin/settings/settings_process_management_data.mako')
+    def process_management_data(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.gunicorn_processes = (
+            p for p in psutil.process_iter() if 'gunicorn' in p.name())
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
     @view_config(
         route_name='admin_settings_process_management_signal',

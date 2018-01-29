@@ -48,6 +48,7 @@ function registerRCRoutes() {
     pyroutes.register('admin_settings_sessions', '/_admin/settings/sessions', []);
     pyroutes.register('admin_settings_sessions_cleanup', '/_admin/settings/sessions/cleanup', []);
     pyroutes.register('admin_settings_process_management', '/_admin/settings/process_management', []);
+    pyroutes.register('admin_settings_process_management_data', '/_admin/settings/process_management/data', []);
     pyroutes.register('admin_settings_process_management_signal', '/_admin/settings/process_management/signal', []);
     pyroutes.register('admin_defaults_repositories', '/_admin/defaults/repositories', []);
     pyroutes.register('admin_defaults_repositories_update', '/_admin/defaults/repositories/update', []);
@@ -283,6 +284,7 @@ function registerRCRoutes() {
     pyroutes.register('my_account_ssh_keys_generate', '/_admin/my_account/ssh_keys/generate', []);
     pyroutes.register('my_account_ssh_keys_add', '/_admin/my_account/ssh_keys/new', []);
     pyroutes.register('my_account_ssh_keys_delete', '/_admin/my_account/ssh_keys/delete', []);
+    pyroutes.register('my_account_user_group_membership', '/_admin/my_account/user_group_membership', []);
     pyroutes.register('my_account_emails', '/_admin/my_account/emails', []);
     pyroutes.register('my_account_emails_add', '/_admin/my_account/emails/new', []);
     pyroutes.register('my_account_emails_delete', '/_admin/my_account/emails/delete', []);

@@ -7,7 +7,10 @@
 <div class="panel panel-default">
     <div class="panel-heading">
         <h3 class="panel-title">${_('Gunicorn process management')}</h3>
-
+        <div class="pull-right">
+            <a id="autoRefreshEnable" href="#autoRefreshEnable" onclick="enableAutoRefresh(); return false">${_('start auto refresh')}</a>
+            <a id="autoRefreshDisable" href="#autoRefreshDisable" onclick="disableAutoRefresh(); return false" style="display: none">${_('stop auto refresh')}</a>
+        </div>
     </div>
     <div class="panel-body" id="app">
         <h3>List of Gunicorn processes on this machine</h3>
@@ -20,87 +23,9 @@
                     return 'RhodeCode'
                 return proc.name()
         %>
-        <table>
-        % for proc in c.gunicorn_processes:
-            <% mem = proc.memory_info()%>
-            <% children = proc.children(recursive=True) %>
-            % if children:
-
-            <tr>
-                <td>
-                    <code>
-                    ${proc.pid} - ${get_name(proc)}
-                    </code>
-                </td>
-                <td>
-                    <a href="#showCommand" onclick="$('#pid'+${proc.pid}).toggle();return false"> command </a>
-                    <code id="pid${proc.pid}" style="display: none">
-                    ${' '.join(proc.cmdline())}
-                    </code>
-                </td>
-                <td></td>
-                <td>
-                    RSS:${h.format_byte_size_binary(mem.rss)}
-                </td>
-                <td>
-                    VMS:${h.format_byte_size_binary(mem.vms)}
-                </td>
-                <td>
-                    AGE: ${h.age_component(h.time_to_utcdatetime(proc.create_time()))}
-                </td>
-                <td>
-                    MASTER
-                </td>
-            </tr>
-            <% mem_sum = 0 %>
-            % for proc_child in children:
-                <% mem = proc_child.memory_info()%>
-                <tr>
-                    <td>
-                        <code>
-                          | ${proc_child.pid} - ${get_name(proc_child)}
-                        </code>
-                    </td>
-                    <td>
-                        <a href="#showCommand" onclick="$('#pid'+${proc_child.pid}).toggle();return false"> command </a>
-                        <code id="pid${proc_child.pid}" style="display: none">
-                        ${' '.join(proc_child.cmdline())}
-                        </code>
-                    </td>
-                    <td>
-                        CPU: ${proc_child.cpu_percent()} %
-                    </td>
-                    <td>
-                        RSS:${h.format_byte_size_binary(mem.rss)}
-                        <% mem_sum += mem.rss %>
-                    </td>
-                    <td>
-                        VMS:${h.format_byte_size_binary(mem.vms)}
-                    </td>
-                    <td>
-                        AGE: ${h.age_component(h.time_to_utcdatetime(proc_child.create_time()))}
-                    </td>
-                    <td>
-                        <a href="#restartProcess" onclick="restart(this, ${proc_child.pid});return false">
-                            restart
-                        </a>
-                    </td>
-                </tr>
-            % endfor
-            <tr>
-                <td colspan="2"><code>| total processes: ${len(children)}</code></td>
-                <td></td>
-                <td><strong>RSS:${h.format_byte_size_binary(mem_sum)}</strong></td>
-                <td></td>
-            </tr>
-            <tr><td> <code> -- </code> </td></tr>
-
-            % endif
-        % endfor
-        </table>
+        <%include file='settings_process_management_data.mako'/>
     </div>
 </div>
-
 
 <script>
 
@@ -135,7 +60,50 @@ restart = function(elem, pid) {
             $(elem).removeClass('disabled');
         }
     })
-}
+};
+
+var intervalID = null;
+var currentRequest = null;
+
+autoRefresh = function(value) {
+    var url = pyroutes.url('admin_settings_process_management_data');
+    var loadData = function() {
+        currentRequest = $.get(url)
+            .done(function(data) {
+                currentRequest = null;
+                $('#procList').html(data);
+                timeagoActivate();
+                var beat = function(doCallback) {
+                    var callback = function () {};
+                    if (doCallback){
+                        var callback = function () {beat(false)};
+                    }
+                    $('#processTimeStamp').animate({
+                        opacity: $('#processTimeStamp').css('opacity') == '1' ? '0.3' : '1'
+                    }, 500, callback);
+                };
+                beat(true)
+            });
+    };
+
+    if (value) {
+        intervalID = setInterval(loadData, 5000);
+    } else {
+        clearInterval(intervalID);
+    }
+};
+
+enableAutoRefresh = function() {
+  $('#autoRefreshEnable').hide();
+  $('#autoRefreshDisable').show();
+  autoRefresh(true)
+};
+
+disableAutoRefresh = function() {
+  $('#autoRefreshEnable').show();
+  $('#autoRefreshDisable').hide();
+  autoRefresh(false)
+};
 
 
 </script>

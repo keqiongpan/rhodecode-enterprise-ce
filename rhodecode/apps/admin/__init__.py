@@ -70,6 +70,9 @@ def admin_routes(config):
         name='admin_settings_process_management',
         pattern='/settings/process_management')
     config.add_route(
+        name='admin_settings_process_management_data',
+        pattern='/settings/process_management/data')
+    config.add_route(
         name='admin_settings_process_management_signal',
         pattern='/settings/process_management/signal')
 
