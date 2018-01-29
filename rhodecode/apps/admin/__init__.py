@@ -75,6 +75,9 @@ def admin_routes(config):
     config.add_route(
         name='admin_settings_process_management_signal',
         pattern='/settings/process_management/signal')
+    config.add_route(
+        name='admin_settings_process_management_master_signal',
+        pattern='/settings/process_management/master_signal')
 
     # default settings
     config.add_route(

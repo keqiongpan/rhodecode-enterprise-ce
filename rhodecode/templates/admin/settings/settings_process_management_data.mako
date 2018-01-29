@@ -43,6 +43,9 @@
             </td>
             <td>
                 MASTER
+                % if request.GET.get('dev'):
+                    | <a href="#addWorker" onclick="addWorker(${proc.pid}); return false">ADD</a> | <a href="#removeWorker" onclick="removeWorker(${proc.pid}); return false">REMOVE</a>
+                % endif
             </td>
         </tr>
         <% mem_sum = 0 %>
@@ -87,7 +90,6 @@
             <td></td>
         </tr>
         <tr><td> <code> -- </code> </td></tr>
-
         % endif
     % endfor
 </table>

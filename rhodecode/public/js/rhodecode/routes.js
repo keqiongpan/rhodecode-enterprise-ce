@@ -50,6 +50,7 @@ function registerRCRoutes() {
     pyroutes.register('admin_settings_process_management', '/_admin/settings/process_management', []);
     pyroutes.register('admin_settings_process_management_data', '/_admin/settings/process_management/data', []);
     pyroutes.register('admin_settings_process_management_signal', '/_admin/settings/process_management/signal', []);
+    pyroutes.register('admin_settings_process_management_master_signal', '/_admin/settings/process_management/master_signal', []);
     pyroutes.register('admin_defaults_repositories', '/_admin/defaults/repositories', []);
     pyroutes.register('admin_defaults_repositories_update', '/_admin/defaults/repositories/update', []);
     pyroutes.register('admin_settings', '/_admin/settings', []);

@@ -105,5 +105,34 @@ disableAutoRefresh = function() {
   autoRefresh(false)
 };
 
+masterAction = function(pid, action) {
+    $.ajax({
+        url: pyroutes.url('admin_settings_process_management_master_signal'),
+        headers: {
+            "X-CSRF-Token": CSRF_TOKEN,
+        },
+        data: JSON.stringify({'pid_data': {'pid': pid, 'action': action}}),
+        dataType: 'json',
+        type: 'POST',
+        contentType: "application/json; charset=utf-8",
+        success: function (data) {
+
+        },
+        failure: function (data) {
+
+        },
+        error: function (data) {
+
+        }
+    })
+};
+
+addWorker = function(pid) {
+    masterAction(pid, '+');
+};
+
+removeWorker = function(pid) {
+    masterAction(pid, '-');
+};
 
 </script>
