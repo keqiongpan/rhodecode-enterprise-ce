@@ -900,10 +900,10 @@ class GitRepository(BaseRepository):
         # fetch proper commits for merge testing
         if source_ref.name != target_ref.name:
             if shadow_repo.get_remote_ref(source_ref.name):
-                shadow_repo._checkout(source_ref.name)
+                shadow_repo._checkout(source_ref.name, force=True)
 
         # checkout target
-        shadow_repo._checkout(target_ref.name)
+        shadow_repo._checkout(target_ref.name, force=True)
         shadow_repo._local_pull(self.path, target_ref.name)
 
         # Need to reload repo to invalidate the cache, or otherwise we cannot
