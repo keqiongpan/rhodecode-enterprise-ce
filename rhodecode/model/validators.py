@@ -791,20 +791,22 @@ def ValidPerms(localizer, type_='repo'):
             # get updates of permissions
             # (read the existing radio button states)
             default_user_id = User.get_default_user().user_id
+
             for k, update_value in value.iteritems():
                 if k.startswith('u_perm_') or k.startswith('g_perm_'):
-                    member = k[7:]
+                    obj_type = k[0]
+                    obj_id = k[7:]
                     update_type = {'u': 'user',
-                                   'g': 'users_group'}[k[0]]
+                                   'g': 'users_group'}[obj_type]
 
-                    if safe_int(member) == default_user_id:
+                    if obj_type == 'u' and safe_int(obj_id) == default_user_id:
                         if str2bool(value.get('repo_private')):
                             # prevent from updating default user permissions
                             # when this repository is marked as private
                             update_value = EMPTY_PERM
 
                     perm_updates.add(
-                        (member, update_value, update_type))
+                        (obj_id, update_value, update_type))
 
             value['perm_additions'] = []  # propagated later
             value['perm_updates'] = list(perm_updates)
