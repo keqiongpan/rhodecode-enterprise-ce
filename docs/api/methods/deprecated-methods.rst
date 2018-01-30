@@ -38,13 +38,13 @@ changeset_comment
 
    Example error output:
 
-   .. code-block:: javascript
+   .. code-block:: json
 
        {
-           "id" : "<id_given_in_input>",
+           "id" : <id_given_in_input>,
            "result" : {
                "msg": "Commented on commit `<revision>` for repository `<repoid>`",
-               "status_change": null or "<status>",
+               "status_change": null or <status>,
                "success": true
            },
            "error" : null

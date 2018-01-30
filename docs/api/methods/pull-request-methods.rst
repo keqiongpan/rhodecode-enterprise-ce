@@ -6,7 +6,7 @@ pull_request methods
 close_pull_request 
 ------------------
 
-.. py:function:: close_pull_request(apiuser, repoid, pullrequestid, userid=<Optional:<OptionalAttr:apiuser>>, message=<Optional:''>)
+.. py:function:: close_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, userid=<Optional:<OptionalAttr:apiuser>>, message=<Optional:''>)
 
    Close the pull request specified by `pullrequestid`.
 
@@ -39,7 +39,7 @@ close_pull_request
 comment_pull_request 
 --------------------
 
-.. py:function:: comment_pull_request(apiuser, repoid, pullrequestid, message=<Optional:None>, commit_id=<Optional:None>, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, userid=<Optional:<OptionalAttr:apiuser>>)
+.. py:function:: comment_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, message=<Optional:None>, commit_id=<Optional:None>, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, userid=<Optional:<OptionalAttr:apiuser>>)
 
    Comment on the pull request specified with the `pullrequestid`,
    in the |repo| specified by the `repoid`, and optionally change the
@@ -47,7 +47,7 @@ comment_pull_request
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
-   :param repoid: The repository name or repository ID.
+   :param repoid: Optional repository name or repository ID.
    :type repoid: str or int
    :param pullrequestid: The pull request ID.
    :type pullrequestid: int
@@ -120,14 +120,14 @@ create_pull_request
 get_pull_request 
 ----------------
 
-.. py:function:: get_pull_request(apiuser, repoid, pullrequestid)
+.. py:function:: get_pull_request(apiuser, pullrequestid, repoid=<Optional:None>)
 
    Get a pull request based on the given ID.
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
-   :param repoid: Repository name or repository ID from where the pull
-       request was opened.
+   :param repoid: Optional, repository name or repository ID from where
+       the pull request was opened.
    :type repoid: str or int
    :param pullrequestid: ID of the requested pull request.
    :type pullrequestid: int
@@ -199,6 +199,48 @@ get_pull_request
       "error": null
 
 
+get_pull_request_comments 
+-------------------------
+
+.. py:function:: get_pull_request_comments(apiuser, pullrequestid, repoid=<Optional:None>)
+
+   Get all comments of pull request specified with the `pullrequestid`
+
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+   :param repoid: Optional repository name or repository ID.
+   :type repoid: str or int
+   :param pullrequestid: The pull request ID.
+   :type pullrequestid: int
+
+   Example output:
+
+   .. code-block:: bash
+
+       id : <id_given_in_input>
+       result : [
+           {
+             "comment_author": {
+               "active": true,
+               "full_name_or_username": "Tom Gore",
+               "username": "admin"
+             },
+             "comment_created_on": "2017-01-02T18:43:45.533",
+             "comment_f_path": null,
+             "comment_id": 25,
+             "comment_lineno": null,
+             "comment_status": {
+               "status": "under_review",
+               "status_lbl": "Under Review"
+             },
+             "comment_text": "Example text",
+             "comment_type": null,
+             "pull_request_version": null
+           }
+       ],
+       error :  null
+
+
 get_pull_requests 
 -----------------
 
@@ -208,7 +250,7 @@ get_pull_requests
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
-   :param repoid: Repository name or repository ID.
+   :param repoid: Optional repository name or repository ID.
    :type repoid: str or int
    :param status: Only return pull requests with the specified status.
        Valid options are.
@@ -289,14 +331,14 @@ get_pull_requests
 merge_pull_request 
 ------------------
 
-.. py:function:: merge_pull_request(apiuser, repoid, pullrequestid, userid=<Optional:<OptionalAttr:apiuser>>)
+.. py:function:: merge_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, userid=<Optional:<OptionalAttr:apiuser>>)
 
    Merge the pull request specified by `pullrequestid` into its target
    repository.
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
-   :param repoid: The Repository name or repository ID of the
+   :param repoid: Optional, repository name or repository ID of the
        target repository to which the |pr| is to be merged.
    :type repoid: str or int
    :param pullrequestid: ID of the pull request which shall be merged.
@@ -326,13 +368,13 @@ merge_pull_request
 update_pull_request 
 -------------------
 
-.. py:function:: update_pull_request(apiuser, repoid, pullrequestid, title=<Optional:''>, description=<Optional:''>, reviewers=<Optional:None>, update_commits=<Optional:None>)
+.. py:function:: update_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, title=<Optional:''>, description=<Optional:''>, reviewers=<Optional:None>, update_commits=<Optional:None>)
 
    Updates a pull request.
 
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
-   :param repoid: The repository name or repository ID.
+   :param repoid: Optional repository name or repository ID.
    :type repoid: str or int
    :param pullrequestid: The pull request ID.
    :type pullrequestid: int

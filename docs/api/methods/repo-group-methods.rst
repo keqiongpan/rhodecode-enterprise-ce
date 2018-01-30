@@ -115,7 +115,7 @@ get_repo_group
            "group_description": "repo group description",
            "group_id": 14,
            "group_name": "group name",
-           "members": [
+           "permissions": [
              {
                "name": "super-admin-username",
                "origin": "super-admin",

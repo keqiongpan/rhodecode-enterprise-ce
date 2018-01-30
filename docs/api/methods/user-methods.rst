@@ -160,7 +160,8 @@ get_user
            "last_login": "Timestamp",
            "last_activity": "Timestamp",
            "lastname": "surnae",
-           "permissions": {
+           "permissions": <deprecated>,
+           "permissions_summary": {
              "global": [
                "hg.inherit_default_perms.true",
                "usergroup.read",
@@ -178,7 +179,7 @@ get_user
              "repositories": { "username/example": "repository.write"},
              "repositories_groups": { "user-group/repo": "group.none" },
              "user_groups": { "user_group_name": "usergroup.read" }
-           },
+           }
            "user_id": 32,
            "username": "username"
          }
