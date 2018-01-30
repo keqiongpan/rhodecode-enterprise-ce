@@ -366,7 +366,8 @@
                         'allowed_to_update': allowed_to_update,
                         'review_status': status,
                         'review_status_label': status_lbl,
-                        'user_group': member.user_group
+                        'user_group': member.user_group,
+                        'create': false
                     });
                     $('#review_members').append(entry)
                 </script>

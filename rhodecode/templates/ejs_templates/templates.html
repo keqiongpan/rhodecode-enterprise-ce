@@ -34,13 +34,17 @@ var CG = new ColorGenerator();
 
 <li id="reviewer_<%= member.user_id %>" class="reviewer_entry">
         <%
+            if (create) {
+                var edit_visibility = 'visible';
+            } else {
+                var edit_visibility = 'hidden';
+            }
 
             if (member.user_group && member.user_group.vote_rule) {
                 var groupStyle = 'border-left: 1px solid '+CG.asRGB(CG.getColor(member.user_group.vote_rule));
             } else {
                 var groupStyle = 'border-left: 1px solid white';
             }
-
         %>
 
     <div class="reviewers_member" style="<%= groupStyle%>" >
@@ -99,12 +103,12 @@ var CG = new ColorGenerator();
       <input type="hidden" name="__end__" value="reviewer:mapping">
 
       <% if (mandatory) { %>
-            <div class="reviewer_member_mandatory_remove" style="visibility: hidden;">
+            <div class="reviewer_member_mandatory_remove" style="visibility: <%= edit_visibility %>;">
                 <i class="icon-remove-sign"></i>
             </div>
       <% } else { %>
         <% if (allowed_to_update) { %>
-          <div class="reviewer_member_remove action_button" onclick="reviewersController.removeReviewMember(<%= member.user_id %>, true)" style="visibility: hidden;">
+          <div class="reviewer_member_remove action_button" onclick="reviewersController.removeReviewMember(<%= member.user_id %>, true)" style="visibility: <%= edit_visibility %>;">
               <i class="icon-remove-sign" ></i>
           </div>
         <% } %>

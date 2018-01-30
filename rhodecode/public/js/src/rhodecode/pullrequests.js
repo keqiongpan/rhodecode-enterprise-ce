@@ -311,7 +311,8 @@ ReviewersController = function () {
                         'allowed_to_update': true,
                         'review_status': 'not_reviewed',
                         'review_status_label': _gettext('Not Reviewed'),
-                        'reasons': reasons
+                        'reasons': reasons,
+                        'create': true
                         });
             }
         }
