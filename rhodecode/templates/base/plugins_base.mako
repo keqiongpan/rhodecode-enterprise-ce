@@ -1,11 +1,8 @@
-<%
-from pyramid.renderers import render as pyramid_render
-from pyramid.threadlocal import get_current_registry, get_current_request
-pyramid_registry = get_current_registry()
-%>
-% for plugin, config in getattr(pyramid_registry, 'rhodecode_plugins', {}).items():
-% if config['template_hooks'].get('plugin_init_template'):
-${pyramid_render(config['template_hooks'].get('plugin_init_template'),
-{'config':config}, request=get_current_request(), package='rc_ae')|n}
-% endif
+
+% for plugin, config in getattr(request.registry, 'rhodecode_plugins', {}).items():
+    <% tmpl = config['template_hooks'].get('plugin_init_template') %>
+
+    % if tmpl:
+        <%include file="${tmpl}" args="config=config"/>
+    % endif
 % endfor

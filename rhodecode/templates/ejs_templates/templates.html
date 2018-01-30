@@ -1,0 +1,129 @@
+<%text>
+<div style="display: none">
+
+<script id="ejs_gravatarWithUser" type="text/template" class="ejsTemplate">
+
+<%
+if (size > 16) {
+    var gravatar_class = 'gravatar gravatar-large';
+} else {
+    var gravatar_class = 'gravatar';
+}
+%>
+
+<%
+if (show_disabled) {
+    var user_cls = 'user user-disabled';
+} else {
+    var user_cls = 'user';
+}
+%>
+
+<div class="rc-user">
+    <img class="<%= gravatar_class %>" src="<%- gravatar_url -%>" height="<%= size %>" width="<%= size %>">
+    <span class="<%= user_cls %>"> <%- user_link -%> </span>
+</div>
+
+</script>
+
+<script>
+var CG = new ColorGenerator();
+</script>
+
+<script id="ejs_reviewMemberEntry" type="text/template" class="ejsTemplate">
+
+<li id="reviewer_<%= member.user_id %>" class="reviewer_entry">
+        <%
+            if (create) {
+                var edit_visibility = 'visible';
+            } else {
+                var edit_visibility = 'hidden';
+            }
+
+            if (member.user_group && member.user_group.vote_rule) {
+                var groupStyle = 'border-left: 1px solid '+CG.asRGB(CG.getColor(member.user_group.vote_rule));
+            } else {
+                var groupStyle = 'border-left: 1px solid white';
+            }
+        %>
+
+    <div class="reviewers_member" style="<%= groupStyle%>" >
+        <div class="reviewer_status tooltip" title="<%= review_status_label %>">
+          <div class="flag_status <%= review_status %> pull-left reviewer_member_status"></div>
+        </div>
+      <div id="reviewer_<%= member.user_id %>_name" class="reviewer_name">
+        <% if (mandatory) { %>
+            <div class="reviewer_member_mandatory tooltip" title="Mandatory reviewer">
+                <i class="icon-lock"></i>
+            </div>
+        <% } %>
+
+        <%-
+          renderTemplate('gravatarWithUser', {
+            'size': 16,
+            'show_disabled': false,
+            'user_link': member.user_link,
+            'gravatar_url':  member.gravatar_link
+            })
+        %>
+      </div>
+
+      <input type="hidden" name="__start__" value="reviewer:mapping">
+
+
+        <%if (member.user_group && member.user_group.vote_rule) {%>
+            <div class="reviewer_reason">
+
+              <%if (member.user_group.vote_rule == -1) {%>
+               - group votes required: ALL
+              <%} else {%>
+               - group votes required: <%= member.user_group.vote_rule %>
+              <%}%>
+            </div>
+        <%}%>
+
+        <input type="hidden" name="__start__" value="reasons:sequence">
+          <% for (var i = 0; i < reasons.length; i++) { %>
+              <% var reason = reasons[i] %>
+              <div class="reviewer_reason">- <%= reason %></div>
+              <input type="hidden" name="reason" value="<%= reason %>">
+          <% } %>
+        <input type="hidden" name="__end__" value="reasons:sequence">
+
+        <input type="hidden" name="__start__" value="rules:sequence">
+          <% for (var i = 0; i < member.rules.length; i++) { %>
+              <% var rule = member.rules[i] %>
+              <input type="hidden" name="rule_id" value="<%= rule %>">
+          <% } %>
+        <input type="hidden" name="__end__" value="rules:sequence">
+
+        <input id="reviewer_<%= member.user_id %>_input" type="hidden" value="<%= member.user_id %>" name="user_id" />
+        <input type="hidden" name="mandatory" value="<%= mandatory %>"/>
+
+      <input type="hidden" name="__end__" value="reviewer:mapping">
+
+      <% if (mandatory) { %>
+            <div class="reviewer_member_mandatory_remove" style="visibility: <%= edit_visibility %>;">
+                <i class="icon-remove-sign"></i>
+            </div>
+      <% } else { %>
+        <% if (allowed_to_update) { %>
+          <div class="reviewer_member_remove action_button" onclick="reviewersController.removeReviewMember(<%= member.user_id %>, true)" style="visibility: <%= edit_visibility %>;">
+              <i class="icon-remove-sign" ></i>
+          </div>
+        <% } %>
+      <% } %>
+    </div>
+</li>
+
+</script>
+
+
+</div>
+
+<script>
+    // registers the templates into global cache
+    registerTemplates();
+</script>
+
+</%text>

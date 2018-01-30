@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -127,6 +127,7 @@ class TestGitServer(object):
 
         expected_data = {
             'username': git_server.user.username,
+            'user_id': git_server.user.user_id,
             'scm': 'git',
             'repository': git_server.repo_name,
             'make_lock': None,

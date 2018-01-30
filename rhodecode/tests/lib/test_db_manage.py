@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -26,7 +26,7 @@ from rhodecode.model import db
 
 
 @pytest.fixture
-def db_manage(pylonsapp):
+def db_manage(baseapp):
     db_manage = DbManage(
         log_sql=True, dbconf='fake', root='fake', tests=False,
         cli_args={}, SESSION=db.Session())
@@ -34,7 +34,7 @@ def db_manage(pylonsapp):
 
 
 @pytest.fixture(autouse=True)
-def session_rollback(pylonsapp, request):
+def session_rollback(baseapp, request):
     """
     Rollback the database session after the test run.
 

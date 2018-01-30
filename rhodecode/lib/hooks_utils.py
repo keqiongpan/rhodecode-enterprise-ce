@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,8 +18,8 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import pylons
 import webob
+from pyramid.threadlocal import get_current_request
 
 from rhodecode import events
 from rhodecode.lib import hooks_base
@@ -31,12 +31,15 @@ def _get_rc_scm_extras(username, repo_name, repo_alias, action):
     from rhodecode.lib.base import vcs_operation_context
     check_locking = action in ('pull', 'push')
 
+    request = get_current_request()
+
+    # default
+    dummy_environ = webob.Request.blank('').environ
     try:
-        environ = pylons.request.environ
+        environ = request.environ or dummy_environ
     except TypeError:
-        # we might use this outside of request context, let's fake the
-        # environ data
-        environ = webob.Request.blank('').environ
+        # we might use this outside of request context
+        environ = dummy_environ
 
     extras = vcs_operation_context(
         environ, repo_name, username, action, repo_alias, check_locking)

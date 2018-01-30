@@ -13,3 +13,4 @@ instances are configured in as secure a manner as possible.
    sec-x-frame
    sec-instance-basics
    sec-ip-white
+   sec-sophos-umc

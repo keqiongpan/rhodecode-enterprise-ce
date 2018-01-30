@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -199,18 +199,17 @@ class TestPullrequestsView(object):
     def test_edit_title_description_closed(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
+        repo_name = pull_request.target_repo.repo_name
         pr_util.close()
 
         response = self.app.post(
             route_path('pullrequest_update',
-                repo_name=pull_request.target_repo.repo_name,
-                pull_request_id=pull_request_id),
+                       repo_name=repo_name, pull_request_id=pull_request_id),
             params={
                 'edit_pull_request': 'true',
                 'title': 'New title',
                 'description': 'New description',
-                'csrf_token': csrf_token})
-
+                'csrf_token': csrf_token}, status=200)
         assert_session_flash(
             response, u'Cannot update closed pull requests.',
             category='error')
@@ -300,7 +299,7 @@ class TestPullrequestsView(object):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
         PullRequestModel().update_reviewers(
-            pull_request_id, [(1, ['reason'], False), (2, ['reason2'], False)],
+            pull_request_id, [(1, ['reason'], False, []), (2, ['reason2'], False, [])],
             pull_request.author)
         author = pull_request.user_id
         repo = pull_request.target_repo.repo_id
@@ -377,6 +376,8 @@ class TestPullrequestsView(object):
                         ('__start__', 'reasons:sequence'),
                             ('reason', 'Some reason'),
                         ('__end__', 'reasons:sequence'),
+                        ('__start__', 'rules:sequence'),
+                        ('__end__', 'rules:sequence'),
                         ('mandatory', 'False'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
@@ -434,6 +435,8 @@ class TestPullrequestsView(object):
                         ('__start__', 'reasons:sequence'),
                             ('reason', 'Some reason'),
                         ('__end__', 'reasons:sequence'),
+                        ('__start__', 'rules:sequence'),
+                        ('__end__', 'rules:sequence'),
                         ('mandatory', 'False'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),
@@ -461,7 +464,7 @@ class TestPullrequestsView(object):
 
         # Change reviewers and check that a notification was made
         PullRequestModel().update_reviewers(
-            pull_request.pull_request_id, [(1, [], False)],
+            pull_request.pull_request_id, [(1, [], False, [])],
             pull_request.author)
         assert len(notifications.all()) == 2
 
@@ -498,6 +501,8 @@ class TestPullrequestsView(object):
                         ('__start__', 'reasons:sequence'),
                             ('reason', 'Some reason'),
                         ('__end__', 'reasons:sequence'),
+                        ('__start__', 'rules:sequence'),
+                        ('__end__', 'rules:sequence'),
                         ('mandatory', 'False'),
                     ('__end__', 'reviewer:mapping'),
                 ('__end__', 'review_members:sequence'),

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -29,7 +29,6 @@ import socket
 
 import markupsafe
 import ipaddress
-import pyramid.threadlocal
 
 from paste.auth.basic import AuthBasicAuthenticator
 from paste.httpexceptions import HTTPUnauthorized, HTTPForbidden, get_exception
@@ -41,52 +40,15 @@ from rhodecode.lib import auth, utils2
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import AuthUser, CookieStoreWrapper
 from rhodecode.lib.exceptions import UserCreationError
-from rhodecode.lib.utils import (
-    get_repo_slug, set_rhodecode_config, password_changed,
-    get_enabled_hook_classes)
+from rhodecode.lib.utils import (password_changed, get_enabled_hook_classes)
 from rhodecode.lib.utils2 import (
     str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist, safe_str)
-from rhodecode.model import meta
 from rhodecode.model.db import Repository, User, ChangesetComment
 from rhodecode.model.notification import NotificationModel
-from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
-
-# NOTE(marcink): remove after base controller is no longer required
-from pylons.controllers import WSGIController
-from pylons.i18n import translation
 
 log = logging.getLogger(__name__)
 
-
-# hack to make the migration to pyramid easier
-def render(template_name, extra_vars=None, cache_key=None,
-           cache_type=None, cache_expire=None):
-    """Render a template with Mako
-
-    Accepts the cache options ``cache_key``, ``cache_type``, and
-    ``cache_expire``.
-
-    """
-    from pylons.templating import literal
-    from pylons.templating import cached_template, pylons_globals
-
-    # Create a render callable for the cache function
-    def render_template():
-        # Pull in extra vars if needed
-        globs = extra_vars or {}
-
-        # Second, get the globals
-        globs.update(pylons_globals())
-
-        globs['_ungettext'] = globs['ungettext']
-        # Grab a template reference
-        template = globs['app_globals'].mako_lookup.get_template(template_name)
-
-        return literal(template.render_unicode(**globs))
-
-    return cached_template(template_name, render_template, cache_key=cache_key,
-                           cache_type=cache_type, cache_expire=cache_expire)
 
 def _filter_proxy(ip):
     """
@@ -207,19 +169,20 @@ def vcs_operation_context(
     make_lock = None
     locked_by = [None, None, None]
     is_anonymous = username == User.DEFAULT_USER
+    user = User.get_by_username(username)
     if not is_anonymous and check_locking:
         log.debug('Checking locking on repository "%s"', repo_name)
-        user = User.get_by_username(username)
         repo = Repository.get_by_repo_name(repo_name)
         make_lock, __, locked_by = repo.get_locking_state(
             action, user.user_id)
-
+    user_id = user.user_id
     settings_model = VcsSettingsModel(repo=repo_name)
     ui_settings = settings_model.get_ui_settings()
 
     extras = {
         'ip': get_ip_addr(environ),
         'username': username,
+        'user_id': user_id,
         'action': action,
         'repository': repo_name,
         'scm': scm,
@@ -310,14 +273,10 @@ def get_current_lang(request):
 
 def attach_context_attributes(context, request, user_id):
     """
-    Attach variables into template context called `c`, please note that
-    request could be pylons or pyramid request in here.
+    Attach variables into template context called `c`.
     """
-    # NOTE(marcink): remove check after pyramid migration
-    if hasattr(request, 'registry'):
-        config = request.registry.settings
-    else:
-        from pylons import config
+    config = request.registry.settings
+
 
     rc_config = SettingsModel().get_all_settings(cache=True)
 
@@ -367,10 +326,14 @@ def attach_context_attributes(context, request, user_id):
     if request.GET.get('default_encoding'):
         context.default_encodings.insert(0, request.GET.get('default_encoding'))
     context.clone_uri_tmpl = rc_config.get('rhodecode_clone_uri_tmpl')
+    context.clone_uri_ssh_tmpl = rc_config.get('rhodecode_clone_uri_ssh_tmpl')
 
     # INI stored
     context.labs_active = str2bool(
         config.get('labs_settings_active', 'false'))
+    context.ssh_enabled = str2bool(
+        config.get('ssh.generate_authorized_keyfile', 'false'))
+
     context.visual.allow_repo_location_change = str2bool(
         config.get('allow_repo_location_change', True))
     context.visual.allow_custom_hooks_settings = str2bool(
@@ -418,10 +381,6 @@ def attach_context_attributes(context, request, user_id):
     }
     # END CONFIG VARS
 
-    # TODO: This dosn't work when called from pylons compatibility tween.
-    # Fix this and remove it from base controller.
-    # context.repo_name = get_repo_slug(request)  # can be empty
-
     diffmode = 'sideside'
     if request.GET.get('diffmode'):
         if request.GET['diffmode'] == 'unified':
@@ -439,20 +398,15 @@ def attach_context_attributes(context, request, user_id):
     context.backends.sort()
     context.unread_notifications = NotificationModel().get_unread_cnt_for_user(user_id)
 
-    # NOTE(marcink): when migrated to pyramid we don't need to set this anymore,
-    # given request will ALWAYS be pyramid one
-    pyramid_request = pyramid.threadlocal.get_current_request()
-    context.pyramid_request = pyramid_request
-
     # web case
-    if hasattr(pyramid_request, 'user'):
-        context.auth_user = pyramid_request.user
-        context.rhodecode_user = pyramid_request.user
+    if hasattr(request, 'user'):
+        context.auth_user = request.user
+        context.rhodecode_user = request.user
 
     # api case
-    if hasattr(pyramid_request, 'rpc_user'):
-        context.auth_user = pyramid_request.rpc_user
-        context.rhodecode_user = pyramid_request.rpc_user
+    if hasattr(request, 'rpc_user'):
+        context.auth_user = request.rpc_user
+        context.rhodecode_user = request.rpc_user
 
     # attach the whole call context to the request
     request.call_context = context
@@ -486,6 +440,8 @@ def get_auth_user(request):
             # AuthUser
             auth_user = AuthUser(ip_addr=ip_addr)
 
+        # in case someone changes a password for user it triggers session
+        # flush and forces a re-login
         if password_changed(auth_user, session):
             session.invalidate()
             cookie_store = CookieStoreWrapper(session.get('rhodecode_user'))
@@ -498,82 +454,6 @@ def get_auth_user(request):
         auth_user.set_authenticated(authenticated)
 
     return auth_user
-
-
-class BaseController(WSGIController):
-
-    def __before__(self):
-        """
-        __before__ is called before controller methods and after __call__
-        """
-        # on each call propagate settings calls into global settings.
-        from pylons import config
-        from pylons import tmpl_context as c, request, url
-        set_rhodecode_config(config)
-        attach_context_attributes(c, request, self._rhodecode_user.user_id)
-
-        # TODO: Remove this when fixed in attach_context_attributes()
-        c.repo_name = get_repo_slug(request)  # can be empty
-
-        self.cut_off_limit_diff = safe_int(config.get('cut_off_limit_diff'))
-        self.cut_off_limit_file = safe_int(config.get('cut_off_limit_file'))
-        self.sa = meta.Session
-        self.scm_model = ScmModel(self.sa)
-
-        # set user language
-        user_lang = getattr(c.pyramid_request, '_LOCALE_', None)
-        if user_lang:
-            translation.set_lang(user_lang)
-            log.debug('set language to %s for user %s',
-                      user_lang, self._rhodecode_user)
-
-    def _dispatch_redirect(self, with_url, environ, start_response):
-        from webob.exc import HTTPFound
-        resp = HTTPFound(with_url)
-        environ['SCRIPT_NAME'] = ''  # handle prefix middleware
-        environ['PATH_INFO'] = with_url
-        return resp(environ, start_response)
-
-    def __call__(self, environ, start_response):
-        """Invoke the Controller"""
-        # WSGIController.__call__ dispatches to the Controller method
-        # the request is routed to. This routing information is
-        # available in environ['pylons.routes_dict']
-        from rhodecode.lib import helpers as h
-        from pylons import tmpl_context as c, request, url
-
-        # Provide the Pylons context to Pyramid's debugtoolbar if it asks
-        if environ.get('debugtoolbar.wants_pylons_context', False):
-            environ['debugtoolbar.pylons_context'] = c._current_obj()
-
-        _route_name = '.'.join([environ['pylons.routes_dict']['controller'],
-                                environ['pylons.routes_dict']['action']])
-
-        self.rc_config = SettingsModel().get_all_settings(cache=True)
-        self.ip_addr = get_ip_addr(environ)
-
-        # The rhodecode auth user is looked up and passed through the
-        # environ by the pylons compatibility tween in pyramid.
-        # So we can just grab it from there.
-        auth_user = environ['rc_auth_user']
-
-        # set globals for auth user
-        request.user = auth_user
-        self._rhodecode_user = auth_user
-
-        log.info('IP: %s User: %s accessed %s [%s]' % (
-            self.ip_addr, auth_user, safe_unicode(get_access_path(environ)),
-            _route_name)
-        )
-
-        user_obj = auth_user.get_instance()
-        if user_obj and user_obj.user_data.get('force_password_change'):
-            h.flash('You are required to change your password', 'warning',
-                    ignore_duplicate=True)
-            return self._dispatch_redirect(
-                url('my_account_password'), environ, start_response)
-
-        return WSGIController.__call__(self, environ, start_response)
 
 
 def h_filter(s):
@@ -593,8 +473,13 @@ def add_events_routes(config):
     outside of pyramid context, we need to bootstrap request with some
     routing registered
     """
+
+    from rhodecode.apps._base import ADMIN_PREFIX
+
     config.add_route(name='home', pattern='/')
 
+    config.add_route(name='login', pattern=ADMIN_PREFIX + '/login')
+    config.add_route(name='logout', pattern=ADMIN_PREFIX + '/logout')
     config.add_route(name='repo_summary', pattern='/{repo_name}')
     config.add_route(name='repo_summary_explicit', pattern='/{repo_name}/summary')
     config.add_route(name='repo_group_home', pattern='/{repo_group_name}')
@@ -603,11 +488,27 @@ def add_events_routes(config):
                      pattern='/{repo_name}/pull-request/{pull_request_id}')
     config.add_route(name='pull_requests_global',
                      pattern='/pull-request/{pull_request_id}')
-
     config.add_route(name='repo_commit',
                      pattern='/{repo_name}/changeset/{commit_id}')
+
     config.add_route(name='repo_files',
                      pattern='/{repo_name}/files/{commit_id}/{f_path}')
+
+
+def bootstrap_config(request):
+    import pyramid.testing
+    registry = pyramid.testing.Registry('RcTestRegistry')
+
+    config = pyramid.testing.setUp(registry=registry, request=request)
+
+    # allow pyramid lookup in testing
+    config.include('pyramid_mako')
+    config.include('pyramid_beaker')
+    config.include('rhodecode.lib.caches')
+
+    add_events_routes(config)
+
+    return config
 
 
 def bootstrap_request(**kwargs):
@@ -621,6 +522,19 @@ def bootstrap_request(**kwargs):
         def translate(self, msg):
             return msg
 
+        def plularize(self, singular, plural, n):
+            return singular
+
+        def get_partial_renderer(self, tmpl_name):
+
+            from rhodecode.lib.partial_renderer import get_partial_renderer
+            return get_partial_renderer(request=self, tmpl_name=tmpl_name)
+
+        _call_context = {}
+        @property
+        def call_context(self):
+            return self._call_context
+
     class TestDummySession(pyramid.testing.DummySession):
         def save(*arg, **kw):
             pass
@@ -628,7 +542,5 @@ def bootstrap_request(**kwargs):
     request = TestRequest(**kwargs)
     request.session = TestDummySession()
 
-    config = pyramid.testing.setUp(request=request)
-    add_events_routes(config)
     return request
 

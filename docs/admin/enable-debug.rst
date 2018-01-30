@@ -47,7 +47,7 @@ the ``debug`` level.
     ### LOGGING CONFIGURATION   ####
     ################################
     [loggers]
-    keys = root, routes, rhodecode, sqlalchemy, beaker, templates
+    keys = root, sqlalchemy, beaker, rhodecode, ssh_wrapper
 
     [handlers]
     keys = console, console_sql, file, file_rotating
@@ -73,12 +73,6 @@ the ``debug`` level.
     level = DEBUG
     handlers =
     qualname = beaker.container
-    propagate = 1
-
-    [logger_templates]
-    level = INFO
-    handlers =
-    qualname = pylons.templating
     propagate = 1
 
     [logger_rhodecode]

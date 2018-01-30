@@ -20,6 +20,11 @@
             <th></th>
             <th>${_('Description')}</th>
         </tr>
+    ## to speed up lookups cache some functions before the loop
+    <%
+        active_patterns = h.get_active_pattern_entries(c.repo_name)
+        urlify_commit_message = h.partial(h.urlify_commit_message, active_pattern_entries=active_patterns)
+    %>
     %for commit in c.commit_ranges:
         <tr id="row-${commit.raw_id}"
             commit_id="${commit.raw_id}"
@@ -55,7 +60,7 @@
                         class="message truncate"
                         data-message-raw="${commit.message}"
                     >
-                        ${h.urlify_commit_message(commit.message, c.repo_name)}
+                        ${urlify_commit_message(commit.message, c.repo_name)}
                     </div>
                 </div>
             </td>

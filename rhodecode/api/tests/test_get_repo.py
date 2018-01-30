@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -68,7 +68,6 @@ class TestGetRepo(object):
             followers.append(user.user.get_api_data(
                 include_secrets=expect_secrets))
 
-        ret['members'] = permissions
         ret['permissions'] = permissions
         ret['followers'] = followers
 
@@ -106,7 +105,6 @@ class TestGetRepo(object):
         for user in repo.followers:
             followers.append(user.user.get_api_data())
 
-        ret['members'] = permissions
         ret['permissions'] = permissions
         ret['followers'] = followers
 

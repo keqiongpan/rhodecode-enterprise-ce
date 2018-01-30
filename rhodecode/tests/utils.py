@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -42,7 +42,7 @@ from rhodecode.model.meta import Session
 from rhodecode.model.scm import ScmModel
 from rhodecode.lib.vcs.backends.svn.repository import SubversionRepository
 from rhodecode.lib.vcs.backends.base import EmptyCommit
-
+from rhodecode.tests import login_user_session
 
 log = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class CustomTestResponse(TestResponse):
             no = []
         if kw:
             raise TypeError(
-                "The only keyword argument allowed is 'no'")
+                "The only keyword argument allowed is 'no' got %s" % kw)
 
         f = self._save_output(str(self))
 
@@ -97,11 +97,13 @@ class CustomTestResponse(TestResponse):
 
     def get_session_from_response(self):
         """
-        This returns the session from a response object. Pylons has some magic
-        to make the session available as `response.session`. But pyramid
-        doesn't expose it.
+        This returns the session from a response object.
         """
-        return self.request.environ['beaker.session']
+
+        from pyramid_beaker import session_factory_from_settings
+        session = session_factory_from_settings(
+            self.test_app.app.config.get_settings())
+        return session(self.request)
 
 
 class TestRequest(webob.BaseRequest):
@@ -110,12 +112,33 @@ class TestRequest(webob.BaseRequest):
     disabled = True
     ResponseClass = CustomTestResponse
 
+    def add_response_callback(self, callback):
+        pass
+
 
 class CustomTestApp(TestApp):
     """
-    Custom app to make mustcontain more usefull
+    Custom app to make mustcontain more usefull, and extract special methods
     """
     RequestClass = TestRequest
+    rc_login_data = {}
+    rc_current_session = None
+
+    def login(self, username=None, password=None):
+        from rhodecode.lib import auth
+
+        if username and password:
+            session = login_user_session(self, username, password)
+        else:
+            session = login_user_session(self)
+
+        self.rc_login_data['csrf_token'] = auth.get_csrf_token(session)
+        self.rc_current_session = session
+        return session['rhodecode_user']
+
+    @property
+    def csrf_token(self):
+        return self.rc_login_data['csrf_token']
 
 
 def set_anonymous_access(enabled):
@@ -404,28 +427,3 @@ def commit_change(
             f_path=filename
         )
     return commit
-
-
-def add_test_routes(config):
-    """
-    Adds test routing that can be used in different functional tests
-    """
-    from rhodecode.apps._base import ADMIN_PREFIX
-
-    config.add_route(name='home', pattern='/')
-
-    config.add_route(name='login', pattern=ADMIN_PREFIX + '/login')
-    config.add_route(name='logout', pattern=ADMIN_PREFIX + '/logout')
-    config.add_route(name='repo_summary', pattern='/{repo_name}')
-    config.add_route(name='repo_summary_explicit', pattern='/{repo_name}/summary')
-    config.add_route(name='repo_group_home', pattern='/{repo_group_name}')
-
-    config.add_route(name='pullrequest_show',
-                     pattern='/{repo_name}/pull-request/{pull_request_id}')
-    config.add_route(name='pull_requests_global',
-                     pattern='/pull-request/{pull_request_id}')
-    config.add_route(name='repo_commit',
-                     pattern='/{repo_name}/changeset/{commit_id}')
-
-    config.add_route(name='repo_files',
-                     pattern='/{repo_name}/files/{commit_id}/{f_path}')

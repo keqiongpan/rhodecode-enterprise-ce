@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -30,6 +30,7 @@ from sqlalchemy import or_, and_
 
 import rhodecode
 from rhodecode import events
+from rhodecode.integrations.types.base import EEIntegration
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
 from rhodecode.model.db import Integration, Repository, RepoGroup
@@ -87,6 +88,11 @@ class IntegrationModel(BaseModel):
         TypeClass = integration_type_registry.get(integration.integration_type)
         if not TypeClass:
             log.error('No class could be found for integration type: {}'.format(
+                integration.integration_type))
+            return None
+        elif isinstance(TypeClass, EEIntegration) or issubclass(TypeClass, EEIntegration):
+            log.error('EE integration cannot be '
+                      'executed for integration type: {}'.format(
                 integration.integration_type))
             return None
 

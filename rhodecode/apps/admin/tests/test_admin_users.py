@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,7 +23,6 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from rhodecode.lib import auth
 from rhodecode.lib import helpers as h
-from rhodecode.model import validators
 from rhodecode.model.db import User, UserApiKeys, UserEmailMap, Repository
 from rhodecode.model.meta import Session
 from rhodecode.model.user import UserModel
@@ -386,8 +385,7 @@ class TestAdminUsersView(TestController):
             'csrf_token': self.csrf_token,
         })
 
-        msg = validators.ValidUsername(
-            False, {})._messages['system_invalid_username']
+        msg = u'Username "%(username)s" is forbidden'
         msg = h.html_escape(msg % {'username': 'new_user'})
         response.mustcontain('<span class="error-message">%s</span>' % msg)
         response.mustcontain(

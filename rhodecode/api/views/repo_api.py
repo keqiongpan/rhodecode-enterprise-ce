@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -32,6 +32,7 @@ from rhodecode.api.utils import (
 from rhodecode.lib import audit_logger
 from rhodecode.lib import repo_maintenance
 from rhodecode.lib.auth import HasPermissionAnyApi, HasUserGroupPermissionAnyApi
+from rhodecode.lib.celerylib.utils import get_task_id
 from rhodecode.lib.utils2 import str2bool, time_to_datetime
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
@@ -126,26 +127,6 @@ def get_repo(request, apiuser, repoid, cache=Optional(True)):
             "lock_reason": null,
             "locked_by": null,
             "locked_date": null,
-            "members": [
-              {
-                "name": "super-admin-name",
-                "origin": "super-admin",
-                "permission": "repository.admin",
-                "type": "user"
-              },
-              {
-                "name": "owner-name",
-                "origin": "owner",
-                "permission": "repository.admin",
-                "type": "user"
-              },
-              {
-                "name": "user-group-name",
-                "origin": "permission",
-                "permission": "repository.write",
-                "type": "user_group"
-              }
-            ],
             "owner": "owner-name",
             "permissions": [
               {
@@ -213,7 +194,6 @@ def get_repo(request, apiuser, repoid, cache=Optional(True)):
     if not cache:
         repo.update_commit_cache()
     data = repo.get_api_data(include_secrets=include_secrets)
-    data['members'] = permissions  # TODO: this should be deprecated soon
     data['permissions'] = permissions
     data['followers'] = following_users
     return data
@@ -340,11 +320,7 @@ def get_repo_changeset(request, apiuser, repoid, revision,
     _cs_json = cs.__json__()
     _cs_json['diff'] = build_commit_data(cs, changes_details)
     if changes_details == 'full':
-        _cs_json['refs'] = {
-            'branches': [cs.branch],
-            'bookmarks': getattr(cs, 'bookmarks', []),
-            'tags': cs.tags
-        }
+        _cs_json['refs'] = cs._get_refs()
     return _cs_json
 
 
@@ -716,10 +692,7 @@ def create_repo(
         }
 
         task = RepoModel().create(form_data=data, cur_user=owner)
-        from celery.result import BaseAsyncResult
-        task_id = None
-        if isinstance(task, BaseAsyncResult):
-            task_id = task.task_id
+        task_id = get_task_id(task)
         # no commit, it's done in RepoModel, or async via celery
         return {
             'msg': "Created new repository `%s`" % (schema_data['repo_name'],),
@@ -915,7 +888,8 @@ def update_repo(
         repo_enable_downloads=enable_downloads
         if not isinstance(enable_downloads, Optional) else repo.enable_downloads)
 
-    ref_choices, _labels = ScmModel().get_repo_landing_revs(repo=repo)
+    ref_choices, _labels = ScmModel().get_repo_landing_revs(
+        request.translate, repo=repo)
 
     old_values = repo.get_api_data()
     schema = repo_schema.RepoSchema().bind(
@@ -1108,10 +1082,8 @@ def fork_repo(request, apiuser, repoid, fork_name,
 
         task = RepoModel().create_fork(data, cur_user=owner)
         # no commit, it's done in RepoModel, or async via celery
-        from celery.result import BaseAsyncResult
-        task_id = None
-        if isinstance(task, BaseAsyncResult):
-            task_id = task.task_id
+        task_id = get_task_id(task)
+
         return {
             'msg': 'Created fork of `%s` as `%s`' % (
                 repo.repo_name, schema_data['repo_name']),

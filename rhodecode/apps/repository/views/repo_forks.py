@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -33,6 +33,7 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous,
     HasRepoPermissionAny, HasPermissionAnyDecorator, CSRFRequired)
 import rhodecode.lib.helpers as h
+from rhodecode.lib.celerylib.utils import get_task_id
 from rhodecode.model.db import coalesce, or_, Repository, RepoGroup
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.forms import RepoForkForm
@@ -53,11 +54,11 @@ class RepoForksView(RepoAppView, DataGridAppView):
             perm_set=['group.write', 'group.admin'])
         c.repo_groups = RepoGroup.groups_choices(groups=acl_groups)
         c.repo_groups_choices = map(lambda k: safe_unicode(k[0]), c.repo_groups)
-        choices, c.landing_revs = ScmModel().get_repo_landing_revs()
+        choices, c.landing_revs = ScmModel().get_repo_landing_revs(
+            self.request.translate)
         c.landing_revs_choices = choices
         c.personal_repo_group = c.rhodecode_user.personal_repo_group
 
-        self._register_global_c(c)
         return c
 
     @LoginRequired()
@@ -78,6 +79,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
         renderer='json_ext', xhr=True)
     def repo_forks_data(self):
         _ = self.request.translate
+        self.load_default_context()
         column_map = {
             'fork_name': 'repo_name',
             'fork_date': 'created_on',
@@ -209,7 +211,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
         _ = self.request.translate
         c = self.load_default_context()
 
-        _form = RepoForkForm(old_data={'repo_type': self.db_repo.repo_type},
+        _form = RepoForkForm(self.request.translate, old_data={'repo_type': self.db_repo.repo_type},
                              repo_groups=c.repo_groups_choices,
                              landing_revs=c.landing_revs_choices)()
         post_data = dict(self.request.POST)
@@ -225,9 +227,8 @@ class RepoForksView(RepoAppView, DataGridAppView):
             # management is handled there.
             task = RepoModel().create_fork(
                 form_result, c.rhodecode_user.user_id)
-            from celery.result import BaseAsyncResult
-            if isinstance(task, BaseAsyncResult):
-                task_id = task.task_id
+
+            task_id = get_task_id(task)
         except formencode.Invalid as errors:
             c.rhodecode_db_repo = self.db_repo
 

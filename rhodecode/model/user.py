@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -24,11 +24,10 @@ users model for RhodeCode
 
 import logging
 import traceback
-
 import datetime
-from pylons.i18n.translation import _
-
 import ipaddress
+
+from pyramid.threadlocal import get_current_request
 from sqlalchemy.exc import DatabaseError
 
 from rhodecode import events
@@ -75,6 +74,7 @@ class UserModel(BaseModel):
             'username': user.username,
             'email': user.email,
             'icon_link': h.gravatar_url(user.email, 30),
+            'profile_link':  h.link_to_user(user),
             'value_display': h.escape(h.person(user)),
             'value': user.username,
             'value_type': 'user',
@@ -124,9 +124,13 @@ class UserModel(BaseModel):
         return User.get_by_auth_token(auth_token, cache)
 
     def get_active_user_count(self, cache=False):
-        return User.query().filter(
-            User.active == True).filter(
-                User.username != User.DEFAULT_USER).count()
+        qry = User.query().filter(
+            User.active == true()).filter(
+                User.username != User.DEFAULT_USER)
+        if cache:
+            qry = qry.options(
+                FromCache("sql_cache_short", "get_active_users"))
+        return qry.count()
 
     def create(self, form_data, cur_user=None):
         if not cur_user:
@@ -163,8 +167,9 @@ class UserModel(BaseModel):
         user = self._get_user(user)
         if user.username == User.DEFAULT_USER:
             raise DefaultUserException(
-                _("You can't Edit this user since it's"
-                  " crucial for entire application"))
+                "You can't edit this user (`%(username)s`) since it's "
+                "crucial for entire application" % {
+                'username': user.username})
 
         # first store only defaults
         user_attrs = {
@@ -247,6 +252,7 @@ class UserModel(BaseModel):
 
         :returns: new User object with injected `is_new_user` attribute.
         """
+
         if not cur_user:
             cur_user = getattr(get_current_rhodecode_user(), 'username', None)
 
@@ -330,8 +336,9 @@ class UserModel(BaseModel):
             # we're not allowed to edit default user
             if user.username == User.DEFAULT_USER:
                 raise DefaultUserException(
-                    _("You can't edit this user (`%(username)s`) since it's "
-                      "crucial for entire application") % {'username': user.username})
+                    "You can't edit this user (`%(username)s`) since it's "
+                    "crucial for entire application"
+                    % {'username': user.username})
 
         # inject special attribute that will tell us if User is new or old
         new_user.is_new_user = not edit
@@ -497,40 +504,43 @@ class UserModel(BaseModel):
     def delete(self, user, cur_user=None, handle_repos=None,
                handle_repo_groups=None, handle_user_groups=None):
         if not cur_user:
-            cur_user = getattr(get_current_rhodecode_user(), 'username', None)
+            cur_user = getattr(
+                get_current_rhodecode_user(), 'username', None)
         user = self._get_user(user)
 
         try:
             if user.username == User.DEFAULT_USER:
                 raise DefaultUserException(
-                    _(u"You can't remove this user since it's"
-                      u" crucial for entire application"))
+                    u"You can't remove this user since it's"
+                    u" crucial for entire application")
 
             left_overs = self._handle_user_repos(
                 user.username, user.repositories, handle_repos)
             if left_overs and user.repositories:
                 repos = [x.repo_name for x in user.repositories]
                 raise UserOwnsReposException(
-                    _(u'user "%s" still owns %s repositories and cannot be '
-                      u'removed. Switch owners or remove those repositories:%s')
-                    % (user.username, len(repos), ', '.join(repos)))
+                    u'user "%(username)s" still owns %(len_repos)s repositories and cannot be '
+                    u'removed. Switch owners or remove those repositories:%(list_repos)s'
+                    % {'username': user.username, 'len_repos': len(repos),
+                       'list_repos': ', '.join(repos)})
 
             left_overs = self._handle_user_repo_groups(
                 user.username, user.repository_groups, handle_repo_groups)
             if left_overs and user.repository_groups:
                 repo_groups = [x.group_name for x in user.repository_groups]
                 raise UserOwnsRepoGroupsException(
-                    _(u'user "%s" still owns %s repository groups and cannot be '
-                      u'removed. Switch owners or remove those repository groups:%s')
-                    % (user.username, len(repo_groups), ', '.join(repo_groups)))
+                    u'user "%(username)s" still owns %(len_repo_groups)s repository groups and cannot be '
+                    u'removed. Switch owners or remove those repository groups:%(list_repo_groups)s'
+                    % {'username': user.username, 'len_repo_groups': len(repo_groups),
+                       'list_repo_groups': ', '.join(repo_groups)})
 
             left_overs = self._handle_user_user_groups(
                 user.username, user.user_groups, handle_user_groups)
             if left_overs and user.user_groups:
                 user_groups = [x.users_group_name for x in user.user_groups]
                 raise UserOwnsUserGroupsException(
-                    _(u'user "%s" still owns %s user groups and cannot be '
-                      u'removed. Switch owners or remove those user groups:%s')
+                    u'user "%s" still owns %s user groups and cannot be '
+                    u'removed. Switch owners or remove those user groups:%s'
                     % (user.username, len(user_groups), ', '.join(user_groups)))
 
             # we might change the user data with detach/delete, make sure
@@ -692,8 +702,6 @@ class UserModel(BaseModel):
                 if k not in ['auth_tokens', 'permissions']:
                     setattr(auth_user, k, v)
 
-            # few extras
-            setattr(auth_user, 'feed_token', dbuser.feed_token)
         except Exception:
             log.error(traceback.format_exc())
             auth_user.is_authenticated = False
@@ -754,14 +762,12 @@ class UserModel(BaseModel):
         :param user:
         :param email:
         """
-        from rhodecode.model import forms
-        form = forms.UserExtraEmailForm()()
-        data = form.to_python({'email': email})
+
         user = self._get_user(user)
 
         obj = UserEmailMap()
         obj.user = user
-        obj.email = data['email']
+        obj.email = email
         self.sa.add(obj)
         return obj
 
@@ -811,14 +817,11 @@ class UserModel(BaseModel):
         :param user:
         :param ip:
         """
-        from rhodecode.model import forms
-        form = forms.UserExtraIpForm()()
-        data = form.to_python({'ip': ip})
-        user = self._get_user(user)
 
+        user = self._get_user(user)
         obj = UserIpMap()
         obj.user = user
-        obj.ip_addr = data['ip']
+        obj.ip_addr = ip
         obj.description = description
         self.sa.add(obj)
         return obj

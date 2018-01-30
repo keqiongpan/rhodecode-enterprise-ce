@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -27,7 +27,7 @@ import pytest
 
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.ext_json import formatted_json
-from pylons.i18n.translation import _, ungettext
+from rhodecode.translation import _, _pluralize
 
 
 class Timezone(datetime.tzinfo):
@@ -158,9 +158,9 @@ def test_formatted_json():
     assert formatted_json(data) == expected_data
 
 
-def test_pylons_lazy_translation_string(pylonsapp):
+def test_lazy_translation_string(baseapp):
     data = {'label': _('hello')}
-    data2 = {'label2': ungettext('singular', 'plural', 1)}
+    data2 = {'label2': _pluralize('singular', 'plural', 1)}
 
     assert json.dumps(data) == '{"label": "hello"}'
     assert json.dumps(data2) == '{"label2": "singular"}'

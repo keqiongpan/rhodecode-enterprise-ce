@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -159,7 +159,7 @@ class RepoChangelogView(RepoAppView):
         c = self._get_local_tmpl_context(include_app_defaults=True)
 
         c.rhodecode_repo = self.rhodecode_vcs_repo
-        self._register_global_c(c)
+
         return c
 
     def _get_preload_attrs(self):

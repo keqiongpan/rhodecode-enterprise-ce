@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -32,26 +32,10 @@ Please keep the following principles in mind:
 """
 
 
-def kombu_1_5_1_python_2_7_11():
-    """
-    Kombu 1.5.1 relies on a private method which got removed in Python 2.7.11.
-
-    This patch adds the symbol to the module :mod:`uuid` and assigns the value
-    ``None`` to it. This causes kombu to fall back to the public API of
-    :mod:`uuid`.
-
-    This patch can most probably be removed once celery and kombu are updated
-    to more recent versions.
-    """
-    import uuid
-
-    if not hasattr(uuid, '_uuid_generate_random'):
-        uuid._uuid_generate_random = None
-
 
 def inspect_getargspec():
     """
-    Pyramid and Pylons rely on inspect.getargspec to lookup the signature of
+    Pyramid rely on inspect.getargspec to lookup the signature of
     view functions. This is not compatible with cython, therefore we replace
     getargspec with a custom version.
     Code is inspired by the inspect module from Python-3.4

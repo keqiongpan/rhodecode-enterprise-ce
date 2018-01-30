@@ -1,6 +1,6 @@
 <%namespace name="vcss" file="/base/vcs_settings.mako"/>
 
-${h.secure_form(h.url('admin_settings_vcs'), request=request)}
+${h.secure_form(h.route_path('admin_settings_vcs_update'), request=request)}
     <div>
         ${vcss.vcs_settings_fields(
             suffix='',
@@ -19,13 +19,12 @@ ${h.end_form()}
 <script type="text/javascript">
 
     function ajaxDeletePattern(pattern_id, field_id) {
-        var sUrl = "${h.url('admin_settings_vcs')}";
+        var sUrl = "${h.route_path('admin_settings_vcs_svn_pattern_delete')}";
         var callback =  function (o) {
             var elem = $("#"+field_id);
             elem.remove();
         };
         var postData = {
-            '_method': 'delete',
             'delete_svn_pattern': pattern_id,
             'csrf_token': CSRF_TOKEN
         };

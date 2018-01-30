@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -20,7 +20,7 @@
 
 import os
 import pytest
-import ConfigParser
+from pyramid.compat import configparser
 
 from rhodecode.apps.ssh_support.lib.ssh_wrapper import SshWrapper
 from rhodecode.lib.utils2 import AttributeDict
@@ -28,7 +28,7 @@ from rhodecode.lib.utils2 import AttributeDict
 
 @pytest.fixture
 def dummy_conf_file(tmpdir):
-    conf = ConfigParser.ConfigParser()
+    conf = configparser.ConfigParser()
     conf.add_section('app:main')
     conf.set('app:main', 'ssh.executable.hg', '/usr/bin/hg')
     conf.set('app:main', 'ssh.executable.git', '/usr/bin/git')

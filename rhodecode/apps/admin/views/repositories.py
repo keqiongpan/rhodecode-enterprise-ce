@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -28,6 +28,7 @@ from pyramid.renderers import render
 from pyramid.response import Response
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
+from rhodecode.lib.celerylib.utils import get_task_id
 
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
@@ -49,7 +50,7 @@ class AdminReposView(BaseAppView, DataGridAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-        self._register_global_c(c)
+
         return c
 
     def _load_form_data(self, c):
@@ -58,7 +59,7 @@ class AdminReposView(BaseAppView, DataGridAppView):
         c.repo_groups = RepoGroup.groups_choices(groups=acl_groups)
         c.repo_groups_choices = map(lambda k: safe_unicode(k[0]), c.repo_groups)
         c.landing_revs_choices, c.landing_revs = \
-            ScmModel().get_repo_landing_revs()
+            ScmModel().get_repo_landing_revs(self.request.translate)
         c.personal_repo_group = self._rhodecode_user.personal_repo_group
 
     @LoginRequired()
@@ -143,21 +144,19 @@ class AdminReposView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         form_result = {}
-        task_id = None
         self._load_form_data(c)
-
+        task_id = None
         try:
             # CanWriteToGroup validators checks permissions of this POST
-            form_result = RepoForm(repo_groups=c.repo_groups_choices,
-                                   landing_revs=c.landing_revs_choices)()\
-                            .to_python(dict(self.request.POST))
+            form = RepoForm(
+                self.request.translate, repo_groups=c.repo_groups_choices,
+                landing_revs=c.landing_revs_choices)()
+            form_result = form.to_python(dict(self.request.POST))
 
             # create is done sometimes async on celery, db transaction
             # management is handled there.
             task = RepoModel().create(form_result, self._rhodecode_user.user_id)
-            from celery.result import BaseAsyncResult
-            if isinstance(task, BaseAsyncResult):
-                task_id = task.task_id
+            task_id = get_task_id(task)
         except formencode.Invalid as errors:
             data = render('rhodecode:templates/admin/repos/repo_add.mako',
                           self._get_template_context(c), self.request)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -35,7 +35,7 @@ from rhodecode.lib.vcs.exceptions import (
 from rhodecode.lib.vcs.nodes import (
     NodeKind, FileNode, DirNode, NodeState, SubModuleNode)
 from rhodecode.tests import TEST_GIT_REPO, TEST_GIT_REPO_CLONE, get_new_dir
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
 pytestmark = pytest.mark.backends("git")
@@ -65,7 +65,7 @@ class TestGitRepository:
                       % TEST_GIT_REPO_CLONE)
 
     @pytest.fixture(autouse=True)
-    def prepare(self, request, pylonsapp):
+    def prepare(self, request, baseapp):
         self.repo = GitRepository(TEST_GIT_REPO, bare=True)
 
     def get_clone_repo(self):
@@ -85,7 +85,7 @@ class TestGitRepository:
         return GitRepository(next(REPO_PATH_GENERATOR), create=True, bare=bare)
 
     def test_wrong_repo_path(self):
-        wrong_repo_path = '/tmp/errorrepo'
+        wrong_repo_path = '/tmp/errorrepo_git'
         with pytest.raises(RepositoryError):
             GitRepository(wrong_repo_path)
 
@@ -566,7 +566,8 @@ TODO: To be written...
 
     def test_maybe_prepare_merge_workspace(self):
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr2', Reference('branch', 'master', 'unused'))
+            'pr2', Reference('branch', 'master', 'unused'),
+            Reference('branch', 'master', 'unused'))
 
         assert os.path.isdir(workspace)
         workspace_repo = GitRepository(workspace)
@@ -574,12 +575,29 @@ TODO: To be written...
 
         # Calling it a second time should also succeed
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr2', Reference('branch', 'master', 'unused'))
+            'pr2', Reference('branch', 'master', 'unused'),
+            Reference('branch', 'master', 'unused'))
+        assert os.path.isdir(workspace)
+
+    def test_maybe_prepare_merge_workspace_different_refs(self):
+        workspace = self.repo._maybe_prepare_merge_workspace(
+            'pr2', Reference('branch', 'master', 'unused'),
+            Reference('branch', 'develop', 'unused'))
+
+        assert os.path.isdir(workspace)
+        workspace_repo = GitRepository(workspace)
+        assert workspace_repo.branches == self.repo.branches
+
+        # Calling it a second time should also succeed
+        workspace = self.repo._maybe_prepare_merge_workspace(
+            'pr2', Reference('branch', 'master', 'unused'),
+            Reference('branch', 'develop', 'unused'))
         assert os.path.isdir(workspace)
 
     def test_cleanup_merge_workspace(self):
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr3', Reference('branch', 'master', 'unused'))
+            'pr3', Reference('branch', 'master', 'unused'),
+            Reference('branch', 'master', 'unused'))
         self.repo.cleanup_merge_workspace('pr3')
 
         assert not os.path.exists(workspace)
@@ -1030,6 +1048,7 @@ class TestLargeFileRepo(object):
         assert lf_node.name == '1MB.zip'
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestGitSpecificWithRepo(BackendTestMixin):
 
     @classmethod
@@ -1092,6 +1111,7 @@ class TestGitSpecificWithRepo(BackendTestMixin):
              self.repo._get_commit_id(1), '--', 'foo'])
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestGitRegression(BackendTestMixin):
 
     @classmethod
@@ -1153,7 +1173,7 @@ class TestGitRegression(BackendTestMixin):
 
 class TestDiscoverGitVersion:
 
-    def test_returns_git_version(self, pylonsapp):
+    def test_returns_git_version(self, baseapp):
         version = discover_git_version()
         assert version
 

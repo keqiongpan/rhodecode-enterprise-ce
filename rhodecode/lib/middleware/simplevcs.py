@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2017 RhodeCode GmbH
+# Copyright (C) 2014-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -31,12 +31,14 @@ from functools import wraps
 
 import time
 from paste.httpheaders import REMOTE_USER, AUTH_TYPE
-from webob.exc import (
+# TODO(marcink): check if we should use webob.exc here ?
+from pyramid.httpexceptions import (
     HTTPNotFound, HTTPForbidden, HTTPNotAcceptable, HTTPInternalServerError)
+from zope.cachedescriptors.property import Lazy as LazyProperty
 
 import rhodecode
 from rhodecode.authentication.base import (
-    authenticate, get_perms_cache_manager, VCS_TYPE)
+    authenticate, get_perms_cache_manager, VCS_TYPE, loadplugin)
 from rhodecode.lib import caches
 from rhodecode.lib.auth import AuthUser, HasPermissionAnyMiddleware
 from rhodecode.lib.base import (
@@ -55,7 +57,7 @@ from rhodecode.model import meta
 from rhodecode.model.db import User, Repository, PullRequest
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.pull_request import PullRequestModel
-from rhodecode.model.settings import SettingsModel
+from rhodecode.model.settings import SettingsModel, VcsSettingsModel
 
 log = logging.getLogger(__name__)
 
@@ -91,6 +93,7 @@ class SimpleVCS(object):
     acl_repo_name = None
     url_repo_name = None
     vcs_repo_name = None
+    rc_extras = {}
 
     # We have to handle requests to shadow repositories different than requests
     # to normal repositories. Therefore we have to distinguish them. To do this
@@ -103,14 +106,13 @@ class SimpleVCS(object):
         'repository$'                   # shadow repo
         .format(slug_pat=SLUG_RE.pattern))
 
-    def __init__(self, application, config, registry):
+    def __init__(self, config, registry):
         self.registry = registry
-        self.application = application
         self.config = config
         # re-populated by specialized middleware
         self.repo_vcs_config = base.Config()
         self.rhodecode_settings = SettingsModel().get_all_settings(cache=True)
-        self.basepath = rhodecode.CONFIG['base_path']
+
         registry.rhodecode_settings = self.rhodecode_settings
         # authenticate this VCS request using authfunc
         auth_ret_code_detection = \
@@ -119,6 +121,30 @@ class SimpleVCS(object):
             '', authenticate, registry, config.get('auth_ret_code'),
             auth_ret_code_detection)
         self.ip_addr = '0.0.0.0'
+
+    @LazyProperty
+    def global_vcs_config(self):
+        try:
+            return VcsSettingsModel().get_ui_settings_as_config_obj()
+        except Exception:
+            return base.Config()
+
+    @property
+    def base_path(self):
+        settings_path = self.repo_vcs_config.get(
+            *VcsSettingsModel.PATH_SETTING)
+
+        if not settings_path:
+            settings_path = self.global_vcs_config.get(
+            *VcsSettingsModel.PATH_SETTING)
+
+        if not settings_path:
+            # try, maybe we passed in explicitly as config option
+            settings_path = self.config.get('base_path')
+
+        if not settings_path:
+            raise ValueError('FATAL: base_path is empty')
+        return settings_path
 
     def set_repo_names(self, environ):
         """
@@ -222,7 +248,8 @@ class SimpleVCS(object):
                 repo_name, db_repo.repo_type, scm_type)
             return False
 
-        return is_valid_repo(repo_name, base_path, explicit_scm=scm_type)
+        return is_valid_repo(repo_name, base_path,
+                             explicit_scm=scm_type, expect_scm=scm_type)
 
     def valid_and_active_user(self, user):
         """
@@ -333,6 +360,14 @@ class SimpleVCS(object):
             return False
         return True
 
+    def _get_default_cache_ttl(self):
+        # take AUTH_CACHE_TTL from the `rhodecode` auth plugin
+        plugin = loadplugin('egg:rhodecode-enterprise-ce#rhodecode')
+        plugin_settings = plugin.get_settings()
+        plugin_cache_active, cache_ttl = plugin.get_ttl_cache(
+            plugin_settings) or (False, 0)
+        return plugin_cache_active, cache_ttl
+
     def __call__(self, environ, start_response):
         try:
             return self._handle_request(environ, start_response)
@@ -381,6 +416,8 @@ class SimpleVCS(object):
         # Check if the shadow repo actually exists, in case someone refers
         # to it, and it has been deleted because of successful merge.
         if self.is_shadow_repo and not self.is_shadow_repo_dir:
+            log.debug('Shadow repo detected, and shadow repo dir `%s` is missing',
+                      self.is_shadow_repo_dir)
             return HTTPNotFound()(environ, start_response)
 
         # ======================================================================
@@ -390,9 +427,13 @@ class SimpleVCS(object):
             anonymous_user = User.get_default_user()
             username = anonymous_user.username
             if anonymous_user.active:
+                plugin_cache_active, cache_ttl = self._get_default_cache_ttl()
                 # ONLY check permissions if the user is activated
                 anonymous_perm = self._check_permission(
-                    action, anonymous_user, self.acl_repo_name, ip_addr)
+                    action, anonymous_user, self.acl_repo_name, ip_addr,
+                    plugin_id='anonymous_access',
+                    plugin_cache_active=plugin_cache_active, cache_ttl=cache_ttl,
+                )
             else:
                 anonymous_perm = False
 
@@ -493,7 +534,7 @@ class SimpleVCS(object):
         # REQUEST HANDLING
         # ======================================================================
         repo_path = os.path.join(
-            safe_str(self.basepath), safe_str(self.vcs_repo_name))
+            safe_str(self.base_path), safe_str(self.vcs_repo_name))
         log.debug('Repository path is %s', repo_path)
 
         fix_PATH()
@@ -521,6 +562,7 @@ class SimpleVCS(object):
         config = self._create_config(extras, self.acl_repo_name)
         log.debug('HOOKS extras is %s', extras)
         app = self._create_wsgi_app(repo_path, self.url_repo_name, config)
+        app.rc_extras = extras
 
         try:
             with callback_daemon:

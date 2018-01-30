@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017  RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -40,7 +40,7 @@ BACKENDS = {
 CELERY_ENABLED = False
 CELERY_EAGER = False
 
-# link to config for pylons
+# link to config for pyramid
 CONFIG = {}
 
 # Populated with the settings dictionary from application init in
@@ -51,7 +51,7 @@ PYRAMID_SETTINGS = {}
 EXTENSIONS = {}
 
 __version__ = ('.'.join((str(each) for each in VERSION[:3])))
-__dbversion__ = 81  # defines current db version for migrations
+__dbversion__ = 85  # defines current db version for migrations
 __platform__ = platform.system()
 __license__ = 'AGPLv3, and Commercial License'
 __author__ = 'RhodeCode GmbH'

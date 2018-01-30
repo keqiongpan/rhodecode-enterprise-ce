@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2017 RhodeCode GmbH
+# Copyright (C) 2014-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -163,7 +163,11 @@ class GitRepository(BaseRepository):
                 else:
                     self._remote.init()
             else:
-                self._remote.assert_correct_path()
+                if not self._remote.assert_correct_path():
+                    raise RepositoryError(
+                        'Path "%s" does not contain a Git repository' %
+                        (self.path,))
+
         # TODO: johbo: check if we have to translate the OSError here
         except OSError as err:
             raise RepositoryError(err)
@@ -397,6 +401,13 @@ class GitRepository(BaseRepository):
             node[path[-1]] = sha
             node = tree
         return tree
+
+    def get_remote_ref(self, ref_name):
+        ref_key = 'refs/remotes/origin/{}'.format(safe_str(ref_name))
+        try:
+            return self._refs[ref_key]
+        except Exception:
+            return
 
     def get_commit(self, commit_id=None, commit_idx=None, pre_load=None):
         """
@@ -658,6 +669,10 @@ class GitRepository(BaseRepository):
                 ref for ref in remote_refs if remote_refs[ref] in commit_ids]
         self._remote.fetch(url, refs=refs)
 
+    def push(self, url):
+        refs = None
+        self._remote.sync_push(url, refs=refs)
+
     def set_refs(self, ref_name, commit_id):
         self._remote.set_refs(ref_name, commit_id)
 
@@ -686,7 +701,7 @@ class GitRepository(BaseRepository):
         stdout, _ = self.run_git_command(['rev-parse', '--abbrev-ref', 'HEAD'])
         return stdout.strip()
 
-    def _checkout(self, branch_name, create=False):
+    def _checkout(self, branch_name, create=False, force=False):
         """
         Checkout a branch in the working directory.
 
@@ -700,6 +715,8 @@ class GitRepository(BaseRepository):
             raise RepositoryError('Cannot checkout branches in a bare git repo')
 
         cmd = ['checkout']
+        if force:
+            cmd.append('-f')
         if create:
             cmd.append('-b')
         cmd.append(branch_name)
@@ -718,15 +735,25 @@ class GitRepository(BaseRepository):
         stdout, _ = self.run_git_command(['rev-parse', 'HEAD'])
         return stdout.strip()
 
-    def _local_clone(self, clone_path, branch_name):
+    def _local_clone(self, clone_path, branch_name, source_branch=None):
         """
         Create a local clone of the current repo.
         """
         # N.B.(skreft): the --branch option is required as otherwise the shallow
         # clone will only fetch the active branch.
-        cmd = ['clone', '--branch', branch_name, '--single-branch',
+        cmd = ['clone', '--branch', branch_name,
                self.path, os.path.abspath(clone_path)]
+
         self.run_git_command(cmd, fail_on_stderr=False)
+
+        # if we get the different source branch, make sure we also fetch it for
+        # merge conditions
+        if source_branch and source_branch != branch_name:
+            # check if the ref exists.
+            shadow_repo = GitRepository(os.path.abspath(clone_path))
+            if shadow_repo.get_remote_ref(source_branch):
+                cmd = ['fetch', self.path, source_branch]
+                self.run_git_command(cmd, fail_on_stderr=False)
 
     def _local_fetch(self, repository_path, branch_name):
         """
@@ -869,8 +896,16 @@ class GitRepository(BaseRepository):
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
 
         shadow_repo = GitRepository(shadow_repository_path)
-        shadow_repo._checkout(target_ref.name)
+        # checkout source, if it's different. Otherwise we could not
+        # fetch proper commits for merge testing
+        if source_ref.name != target_ref.name:
+            if shadow_repo.get_remote_ref(source_ref.name):
+                shadow_repo._checkout(source_ref.name, force=True)
+
+        # checkout target
+        shadow_repo._checkout(target_ref.name, force=True)
         shadow_repo._local_pull(self.path, target_ref.name)
+
         # Need to reload repo to invalidate the cache, or otherwise we cannot
         # retrieve the last target commit.
         shadow_repo = GitRepository(shadow_repository_path)
@@ -935,10 +970,11 @@ class GitRepository(BaseRepository):
             os.path.dirname(self.path),
             '.__shadow_%s_%s' % (os.path.basename(self.path), workspace_id))
 
-    def _maybe_prepare_merge_workspace(self, workspace_id, target_ref):
+    def _maybe_prepare_merge_workspace(self, workspace_id, target_ref, source_ref):
         shadow_repository_path = self._get_shadow_repository_path(workspace_id)
         if not os.path.exists(shadow_repository_path):
-            self._local_clone(shadow_repository_path, target_ref.name)
+            self._local_clone(
+                shadow_repository_path, target_ref.name, source_ref.name)
 
         return shadow_repository_path
 

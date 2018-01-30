@@ -60,34 +60,23 @@
                 <table id="repo_list_table" class="display"></table>
             </div>
         </div>
+
+       ## no repository groups and repos present, show something to the users
+       % if c.repo_groups_data == '[]' and c.repos_data == '[]':
+        <div class="table">
+            <h2 class="no-object-border">
+                 ${_('No repositories or repositories groups exists here.')}
+            </h2>
+        </div>
+       % endif
+
     </div>
     <script>
       $(document).ready(function() {
 
-        var get_datatable_count = function() {
-          var api = $('#repo_list_table').dataTable().api();
-          var pageInfo = api.page.info();
-          var repos = pageInfo.recordsDisplay;
-          var reposTotal = pageInfo.recordsTotal;
-
-          api = $('#group_list_table').dataTable().api();
-          pageInfo = api.page.info();
-          var repoGroups = pageInfo.recordsDisplay;
-          var repoGroupsTotal = pageInfo.recordsTotal;
-
-          if (repoGroups !== repoGroupsTotal) {
-            $('#match_count').text(repos+repoGroups);
-          }
-          if (repos !== reposTotal) {
-            $('#match_container').show();
-          }
-          if ($('#q_filter').val() === '') {
-            $('#match_container').hide();
-          }
-        };
-
-       // repo group list
-       $('#group_list_table').DataTable({
+        // repo group list
+        % if c.repo_groups_data != '[]':
+        $('#group_list_table').DataTable({
           data: ${c.repo_groups_data|n},
           dom: 'rtp',
           pageLength: ${c.visual.dashboard_items},
@@ -113,8 +102,10 @@
               quick_repo_menu();
           }
         });
+        % endif
 
         // repo list
+        % if c.repos_data != '[]':
         $('#repo_list_table').DataTable({
           data: ${c.repos_data|n},
           dom: 'rtp',
@@ -133,7 +124,7 @@
                       "sort": "last_changeset_raw",
                       "type": Number}, title: "${_('Commit')}", className: "td-hash" },
              { data: {"_": "owner",
-                      "sort": "owner"}, title: "${_('Owner')}", className: "td-user" },
+                      "sort": "owner"}, title: "${_('Owner')}", className: "td-user" }
           ],
           language: {
               paginate: DEFAULT_GRID_PAGINATION,
@@ -144,25 +135,62 @@
               quick_repo_menu();
           }
         });
+        % endif
+
+        var getDatatableCount = function() {
+          var reposCount = 0;
+          var reposCountTotal = 0;
+
+          % if c.repos_data != '[]':
+          var pageInfo = $('#repo_list_table').dataTable().api().page.info();
+          var reposCount = pageInfo.recordsDisplay;
+          var reposCountTotal = pageInfo.recordsTotal;
+          % endif
+
+          var repoGroupsCount = 0;
+          var repoGroupsCountTotal = 0;
+
+          % if c.repo_groups_data != '[]':
+          var pageInfo = $('#group_list_table').dataTable().api().page.info();
+          var repoGroupsCount = pageInfo.recordsDisplay;
+          var repoGroupsCountTotal = pageInfo.recordsTotal;
+          % endif
+
+          if (repoGroupsCount !== repoGroupsCountTotal) {
+            $('#match_count').text(reposCount + repoGroupsCount);
+          }
+          if (reposCount !== reposCountTotal) {
+            $('#match_container').show();
+          }
+          if ($('#q_filter').val() === '') {
+            $('#match_container').hide();
+          }
+        };
 
         // update the counter when doing search
-       $('#repo_list_table, #group_list_table').on( 'search.dt', function (e,settings) {
-          get_datatable_count();
+        $('#repo_list_table, #group_list_table').on( 'search.dt', function (e,settings) {
+          getDatatableCount();
         });
 
         // filter, filter both grids
         $('#q_filter').on( 'keyup', function () {
-          var repo_api = $('#repo_list_table').dataTable().api();
-          repo_api
-            .columns( 0 )
-            .search( this.value )
-            .draw();
 
+          % if c.repo_groups_data != '[]':
           var repo_group_api = $('#group_list_table').dataTable().api();
           repo_group_api
             .columns( 0 )
             .search( this.value )
             .draw();
+          % endif
+
+          % if c.repos_data != '[]':
+          var repo_api = $('#repo_list_table').dataTable().api();
+          repo_api
+            .columns( 0 )
+            .search( this.value )
+            .draw();
+          % endif
+
         });
 
         // refilter table if page load via back button

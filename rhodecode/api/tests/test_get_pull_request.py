@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -38,7 +38,6 @@ class TestGetPullRequest(object):
         pull_request = pr_util.create_pull_request(mergeable=True)
         id_, params = build_data(
             self.apikey, 'get_pull_request',
-            repoid=pull_request.target_repo.repo_name,
             pullrequestid=pull_request.pull_request_id)
 
         response = api_call(self.app, params)
@@ -109,16 +108,17 @@ class TestGetPullRequest(object):
                     'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, reasons, mandatory, st in
+                for obj, reviewer, reasons, mandatory, st in
                 pull_request.reviewers_statuses()
             ]
         }
         assert_ok(id_, expected, response.body)
 
-    def test_api_get_pull_request_repo_error(self):
+    def test_api_get_pull_request_repo_error(self, pr_util):
+        pull_request = pr_util.create_pull_request()
         id_, params = build_data(
             self.apikey, 'get_pull_request',
-            repoid=666, pullrequestid=1)
+            repoid=666, pullrequestid=pull_request.pull_request_id)
         response = api_call(self.app, params)
 
         expected = 'repository `666` does not exist'
@@ -126,8 +126,16 @@ class TestGetPullRequest(object):
 
     def test_api_get_pull_request_pull_request_error(self):
         id_, params = build_data(
+            self.apikey, 'get_pull_request', pullrequestid=666)
+        response = api_call(self.app, params)
+
+        expected = 'pull request `666` does not exist'
+        assert_error(id_, expected, given=response.body)
+
+    def test_api_get_pull_request_pull_request_error_just_pr_id(self):
+        id_, params = build_data(
             self.apikey, 'get_pull_request',
-            repoid=1, pullrequestid=666)
+            pullrequestid=666)
         response = api_call(self.app, params)
 
         expected = 'pull request `666` does not exist'

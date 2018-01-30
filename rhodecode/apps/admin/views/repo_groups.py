@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -47,7 +47,7 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-        self._register_global_c(c)
+
         return c
 
     def _load_form_data(self, c):
@@ -150,8 +150,9 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
         # permissions for can create group based on parent_id are checked
         # here in the Form
         available_groups = map(lambda k: safe_unicode(k[0]), c.repo_groups)
-        repo_group_form = RepoGroupForm(available_groups=available_groups,
-                                        can_create_in_root=can_create)()
+        repo_group_form = RepoGroupForm(
+            self.request.translate, available_groups=available_groups,
+            can_create_in_root=can_create)()
 
         repo_group_name = self.request.POST.get('group_name')
         try:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -66,7 +66,7 @@ class TestGotoSwitcherData(TestController):
     ]
 
     @pytest.fixture(autouse=True, scope='class')
-    def prepare(self, request, pylonsapp):
+    def prepare(self, request, baseapp):
         for repo_and_group in self.required_repos_with_groups:
             # create structure of groups and return the last group
 

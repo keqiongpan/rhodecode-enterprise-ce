@@ -33,7 +33,7 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
   add authentication information to the URL: https://username:password@server.company.com/repo-name.
 - The Git LFS/Mercurial Largefiles objects will not be imported.
 - For very large repositories, it's recommended to manually copy them into the
-  RhodeCode <a href="${h.url('admin_settings_vcs', anchor='vcs-storage-options')}">storage location</a> and run <a href="${h.url('admin_settings_mapping')}">Remap and Rescan</a>.
+  RhodeCode <a href="${h.route_path('admin_settings_vcs', _anchor='vcs-storage-options')}">storage location</a> and run <a href="${h.route_path('admin_settings_mapping')}">Remap and Rescan</a>.
                     </pre>
                 </span>
             </div>

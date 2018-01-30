@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2017-2017 RhodeCode GmbH
+# Copyright (C) 2017-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -33,6 +33,7 @@ ACTIONS_V1 = {
     'user.login.success': {'user_agent': ''},
     'user.login.failure': {'user_agent': ''},
     'user.logout': {'user_agent': ''},
+    'user.register': {},
     'user.password.reset_request': {},
     'user.push': {'user_agent': '', 'commit_ids': []},
     'user.pull': {'user_agent': ''},

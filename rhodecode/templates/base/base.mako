@@ -1,6 +1,8 @@
 ## -*- coding: utf-8 -*-
 <%inherit file="root.mako"/>
 
+<%include file="/ejs_templates/templates.html"/>
+
 <div class="outerwrapper">
   <!-- HEADER -->
   <div class="header">
@@ -81,7 +83,7 @@
       <li><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
       <li><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>
       <li><a href="${h.route_path('admin_defaults_repositories')}">${_('Defaults')}</a></li>
-      <li class="last"><a href="${h.url('admin_settings')}">${_('Settings')}</a></li>
+      <li class="last"><a href="${h.route_path('admin_settings')}">${_('Settings')}</a></li>
   </ul>
 </%def>
 
@@ -194,7 +196,7 @@
     %if repo_instance.clone_uri:
     <p>
        <i class="icon-code-fork"></i> ${_('Clone from')}
-       <a href="${h.url(h.safe_str(h.hide_credentials(repo_instance.clone_uri)))}">${h.hide_credentials(repo_instance.clone_uri)}</a>
+       <a href="${h.safe_str(h.hide_credentials(repo_instance.clone_uri))}">${h.hide_credentials(repo_instance.clone_uri)}</a>
     </p>
     %endif
 

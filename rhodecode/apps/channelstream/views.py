@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -24,6 +24,7 @@ import uuid
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPBadRequest, HTTPForbidden, HTTPBadGateway
 
+from rhodecode.apps._base import BaseAppView
 from rhodecode.lib.channelstream import (
     channelstream_request,
     ChannelstreamConnectionException,
@@ -34,28 +35,28 @@ from rhodecode.lib.channelstream import (
     parse_channels_info,
     update_history_from_logs,
     STATE_PUBLIC_KEYS)
+
 from rhodecode.lib.auth import NotAnonymous
 
 log = logging.getLogger(__name__)
 
 
-class ChannelstreamView(object):
-    def __init__(self, context, request):
-        self.context = context
-        self.request = request
+class ChannelstreamView(BaseAppView):
 
-        # Some of the decorators rely on this attribute to be present
-        # on the class of the decorated method.
-        self._rhodecode_user = request.user
-        registry = request.registry
-        self.channelstream_config = registry.rhodecode_plugins['channelstream']
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+        self.channelstream_config = \
+            self.request.registry.rhodecode_plugins['channelstream']
         if not self.channelstream_config.get('enabled'):
             log.error('Channelstream plugin is disabled')
             raise HTTPBadRequest()
 
+        return c
+
     @NotAnonymous()
-    @view_config(route_name='channelstream_connect', renderer='json')
+    @view_config(route_name='channelstream_connect', renderer='json_ext')
     def connect(self):
+        self.load_default_context()
         """ handle authorization of users trying to connect """
         try:
             json_body = self.request.json_body
@@ -122,9 +123,10 @@ class ChannelstreamView(object):
         return connect_result
 
     @NotAnonymous()
-    @view_config(route_name='channelstream_subscribe', renderer='json')
+    @view_config(route_name='channelstream_subscribe', renderer='json_ext')
     def subscribe(self):
         """ can be used to subscribe specific connection to other channels """
+        self.load_default_context()
         try:
             json_body = self.request.json_body
         except Exception:

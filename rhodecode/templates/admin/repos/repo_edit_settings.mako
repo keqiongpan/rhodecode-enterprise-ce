@@ -19,7 +19,7 @@
                     ${c.form['repo_name'].render(css_class='medium', oid='repo_name')|n}
                     ${c.form.render_error(request, c.form['repo_name'])|n}
 
-                    <p class="help-block">${_('Non-changeable id')}: `_${c.rhodecode_db_repo.repo_id}` <span><a href="#" onclick="$('#clone_id').toggle();return false">${_('what is that ?')}</a></span></p>
+                    <p class="help-block">${_('permalink id')}: `_${c.rhodecode_db_repo.repo_id}` <span><a href="#" onclick="$('#clone_id').toggle();return false">${_('what is that ?')}</a></span></p>
                     <p id="clone_id" style="display:none;">
                         ${_('URL by id')}: `${c.rhodecode_db_repo.clone_url(with_id=True)}` <br/>
                         ${_('''In case this repository is renamed or moved into another group the repository url changes.

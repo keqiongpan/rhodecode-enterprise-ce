@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017  RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -53,8 +53,6 @@ log = logging.getLogger(__name__)
 class AdminPermissionsView(BaseAppView, DataGridAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-        self._register_global_c(c)
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=self.request.translate)
         return c
@@ -100,6 +98,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
         c.active = 'application'
 
         _form = ApplicationPermissionsForm(
+            self.request.translate,
             [x[0] for x in c.register_choices],
             [x[0] for x in c.password_reset_choices],
             [x[0] for x in c.extern_activate_choices])()
@@ -180,6 +179,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
         c.active = 'objects'
 
         _form = ObjectPermissionsForm(
+            self.request.translate,
             [x[0] for x in c.repo_perms_choices],
             [x[0] for x in c.group_perms_choices],
             [x[0] for x in c.user_group_perms_choices])()
@@ -251,6 +251,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
         c.active = 'global'
 
         _form = UserPermissionsForm(
+            self.request.translate,
             [x[0] for x in c.repo_create_choices],
             [x[0] for x in c.repo_create_on_write_choices],
             [x[0] for x in c.repo_group_create_choices],
@@ -395,6 +396,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
         renderer='json_ext', xhr=True)
     def ssh_keys_data(self):
         _ = self.request.translate
+        self.load_default_context()
         column_map = {
             'fingerprint': 'ssh_key_fingerprint',
             'username': User.username

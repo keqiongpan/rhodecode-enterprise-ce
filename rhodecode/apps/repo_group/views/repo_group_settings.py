@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -73,7 +73,7 @@ class RepoGroupSettingsView(RepoGroupAppView):
             c.repo_groups_choices.append(parent_group.group_id)
             c.repo_groups.append(RepoGroup._generate_choice(parent_group))
 
-        self._register_global_c(c)
+
         return c
 
     def _can_create_repo_group(self, parent_group_id=None):

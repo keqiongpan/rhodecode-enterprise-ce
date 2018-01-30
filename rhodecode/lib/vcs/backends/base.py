@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2017 RhodeCode GmbH
+# Copyright (C) 2014-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -461,7 +461,7 @@ class BaseRepository(object):
                 raise ValueError('message cannot be empty')
 
         shadow_repository_path = self._maybe_prepare_merge_workspace(
-            workspace_id, target_ref)
+            workspace_id, target_ref, source_ref)
 
         try:
             return self._merge_repo(
@@ -482,7 +482,7 @@ class BaseRepository(object):
         """Internal implementation of merge."""
         raise NotImplementedError
 
-    def _maybe_prepare_merge_workspace(self, workspace_id, target_ref):
+    def _maybe_prepare_merge_workspace(self, workspace_id, target_ref, source_ref):
         """
         Create the merge workspace.
 
@@ -706,6 +706,13 @@ class BaseCommit(object):
             'author': self.author,
             'parents': parents,
             'branch': self.branch
+        }
+
+    def _get_refs(self):
+        return {
+            'branches': [self.branch],
+            'bookmarks': getattr(self, 'bookmarks', []),
+            'tags': self.tags
         }
 
     @LazyProperty

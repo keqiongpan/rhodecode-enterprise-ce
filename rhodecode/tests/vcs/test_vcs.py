@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -34,7 +34,7 @@ from rhodecode.lib.vcs.backends.hg import MercurialRepository
 from rhodecode.tests import TEST_HG_REPO, TEST_GIT_REPO
 
 
-pytestmark = pytest.mark.usefixtures("pylonsapp")
+pytestmark = pytest.mark.usefixtures("baseapp")
 
 
 def test_get_backend():

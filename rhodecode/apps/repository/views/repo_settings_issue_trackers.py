@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2017-2017 RhodeCode GmbH
+# Copyright (C) 2017-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -22,6 +22,7 @@ import logging
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
+import formencode
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import audit_logger
@@ -39,7 +40,7 @@ class RepoSettingsIssueTrackersView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -116,7 +117,17 @@ class RepoSettingsIssueTrackersView(RepoAppView):
         repo_settings.inherit_global_settings = inherited
         Session().commit()
 
-        form = IssueTrackerPatternsForm()().to_python(self.request.POST)
+        try:
+            form = IssueTrackerPatternsForm(self.request.translate)().to_python(self.request.POST)
+        except formencode.Invalid as errors:
+            log.exception('Failed to add new pattern')
+            error = errors
+            h.flash(_('Invalid issue tracker pattern: {}'.format(error)),
+                    category='error')
+            raise HTTPFound(
+                h.route_path('edit_repo_issuetracker',
+                             repo_name=self.db_repo_name))
+
         if form:
             self._update_patterns(form, repo_settings)
 

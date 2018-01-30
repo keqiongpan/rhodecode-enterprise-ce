@@ -26,14 +26,14 @@
         </td>
         <td class="td-journalaction">
             % if l.version == l.VERSION_1:
-                ${h.action_parser(l)[0]()}
+                ${h.action_parser(request, l)[0]()}
             % else:
                 ${h.literal(l.action)}
             % endif
 
             <div class="journal_action_params">
                 % if l.version == l.VERSION_1:
-                    ${h.literal(h.action_parser(l)[1]())}
+                    ${h.literal(h.action_parser(request, l)[1]())}
                 % endif
             </div>
         </td>

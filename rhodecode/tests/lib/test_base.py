@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -72,6 +72,8 @@ def test_vcs_operation_context_can_skip_locking_check(mock_get_locking_state):
     base, 'get_enabled_hook_classes', Mock(return_value=['stub_hook']))
 @patch('rhodecode.lib.utils2.get_server_url',
        Mock(return_value='https://example.com'))
+@patch.object(db.User, 'get_by_username',
+       Mock(return_value=Mock(return_value=1)))
 def call_vcs_operation_context(**kwargs_override):
     kwargs = {
         'repo_name': 'stub_repo_name',

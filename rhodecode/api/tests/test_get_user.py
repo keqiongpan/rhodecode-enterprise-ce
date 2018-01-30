@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -36,7 +36,9 @@ class TestGetUser(object):
 
         usr = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
         ret = usr.get_api_data(include_secrets=True)
-        ret['permissions'] = AuthUser(usr.user_id).permissions
+        permissions = AuthUser(usr.user_id).permissions
+        ret['permissions'] = permissions
+        ret['permissions_summary'] = permissions
 
         expected = ret
         assert_ok(id_, expected, given=response.body)
@@ -54,7 +56,9 @@ class TestGetUser(object):
 
         usr = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
         ret = usr.get_api_data(include_secrets=True)
-        ret['permissions'] = AuthUser(usr.user_id).permissions
+        permissions = AuthUser(usr.user_id).permissions
+        ret['permissions'] = permissions
+        ret['permissions_summary'] = permissions
 
         expected = ret
         assert_ok(id_, expected, given=response.body)
@@ -65,7 +69,9 @@ class TestGetUser(object):
 
         usr = UserModel().get_by_username(self.TEST_USER_LOGIN)
         ret = usr.get_api_data(include_secrets=True)
-        ret['permissions'] = AuthUser(usr.user_id).permissions
+        permissions = AuthUser(usr.user_id).permissions
+        ret['permissions'] = permissions
+        ret['permissions_summary'] = permissions
 
         expected = ret
         assert_ok(id_, expected, given=response.body)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017  RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -44,7 +44,7 @@ class AdminDefaultSettingsView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -79,7 +79,7 @@ class AdminDefaultSettingsView(BaseAppView):
         _ = self.request.translate
         c = self.load_default_context()
         c.active = 'repositories'
-        form = DefaultsForm()()
+        form = DefaultsForm(self.request.translate)()
 
         try:
             form_result = form.to_python(dict(self.request.POST))

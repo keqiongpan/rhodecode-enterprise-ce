@@ -9,7 +9,7 @@ timeout during large pushes.
 .. code-block:: nginx
 
     proxy_redirect              off;
-    proxy_set_header            Host $host;
+    proxy_set_header            Host $http_host;
 
     ## needed for container auth
     # proxy_set_header            REMOTE_USER $remote_user;

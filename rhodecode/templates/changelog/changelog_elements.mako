@@ -12,6 +12,12 @@
     </tr>
 % endif
 
+## to speed up lookups cache some functions before the loop
+<%
+    active_patterns = h.get_active_pattern_entries(c.repo_name)
+    urlify_commit_message = h.partial(h.urlify_commit_message, active_pattern_entries=active_patterns)
+%>
+
 % for cnt,commit in enumerate(c.pagination):
     <tr id="sha_${commit.raw_id}" class="changelogRow container ${'tablerow%s' % (cnt%2)}">
 
@@ -81,7 +87,7 @@
     </td>
     <td class="td-description mid">
       <div class="log-container truncate-wrap">
-          <div class="message truncate" id="c-${commit.raw_id}">${h.urlify_commit_message(commit.message, c.repo_name)}</div>
+          <div class="message truncate" id="c-${commit.raw_id}">${urlify_commit_message(commit.message, c.repo_name)}</div>
       </div>
     </td>
 

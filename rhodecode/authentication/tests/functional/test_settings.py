@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,7 +23,7 @@ import pytest
 
 from rhodecode.authentication.tests.conftest import (
     EnabledAuthPlugin, DisabledAuthPlugin)
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 
 
 @pytest.mark.usefixtures('autologin_user', 'app')

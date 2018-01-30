@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -31,29 +31,21 @@ def test_vcs_available_returns_summary_page(app, backend):
 
 
 @pytest.mark.usefixtures('autologin_user', 'app')
-def test_vcs_unavailable_returns_vcs_error_page(app, backend, app_settings):
+def test_vcs_unavailable_returns_vcs_error_page(app, backend):
     from rhodecode.lib.vcs.exceptions import VCSCommunicationError
-    from rhodecode.lib.middleware.error_handling import (
-        PylonsErrorHandlingMiddleware)
 
     # Depending on the used VCSServer protocol we have to patch a different
     # RemoteRepo class to raise an exception. For the test it doesn't matter
     # if http is used, it just requires the exception to be raised.
-    vcs_protocol = app_settings['vcs.server.protocol']
-    if vcs_protocol == 'http':
-        from rhodecode.lib.vcs.client_http import RemoteRepo
-    else:
-        pytest.fail('Unknown VCS server protocol: "{}"'.format(vcs_protocol))
+    from rhodecode.lib.vcs.client_http import RemoteRepo
 
     url = '/{repo_name}'.format(repo_name=backend.repo.repo_name)
 
     # Patch remote repo to raise an exception instead of making a RPC.
     with mock.patch.object(RemoteRepo, '__getattr__') as remote_mock:
         remote_mock.side_effect = VCSCommunicationError()
-        # Patch pylons error handling middleware to not re-raise exceptions.
-        with mock.patch.object(PylonsErrorHandlingMiddleware, 'reraise') as r:
-            r.return_value = False
-            response = app.get(url, expect_errors=True)
+
+        response = app.get(url, expect_errors=True)
 
     assert response.status_code == 502
     assert 'Could not connect to VCS Server' in response.body

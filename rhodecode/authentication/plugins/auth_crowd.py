@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2017 RhodeCode GmbH
+# Copyright (C) 2012-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -267,6 +267,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             'firstname': crowd_user["first-name"] or firstname,
             'lastname': crowd_user["last-name"] or lastname,
             'groups': crowd_user["groups"],
+            'user_group_sync': True,
             'email': crowd_user["email"] or email,
             'admin': admin,
             'active': active,

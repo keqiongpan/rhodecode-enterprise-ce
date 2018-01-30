@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -37,6 +37,7 @@ def scm_extras(user_regular, repo_stub):
     extras = utils2.AttributeDict({
         'ip': '127.0.0.1',
         'username': user_regular.username,
+        'user_id': user_regular.user_id,
         'action': '',
         'repository': repo_stub.repo_name,
         'scm': repo_stub.scm_instance().alias,

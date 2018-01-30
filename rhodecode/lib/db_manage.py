@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -54,20 +54,20 @@ def notify(msg):
     Notification for migrations messages
     """
     ml = len(msg) + (4 * 2)
-    print('\n%s\n*** %s ***\n%s' % ('*' * ml, msg, '*' * ml)).upper()
+    print(('\n%s\n*** %s ***\n%s' % ('*' * ml, msg, '*' * ml)).upper())
 
 
 class DbManage(object):
 
     def __init__(self, log_sql, dbconf, root, tests=False,
-                 SESSION=None, cli_args={}):
+                 SESSION=None, cli_args=None):
         self.dbname = dbconf.split('/')[-1]
         self.tests = tests
         self.root = root
         self.dburi = dbconf
         self.log_sql = log_sql
         self.db_exists = False
-        self.cli_args = cli_args
+        self.cli_args = cli_args or {}
         self.init_db(SESSION=SESSION)
         self.ask_ok = self.get_ask_ok_func(self.cli_args.get('force_ask'))
 

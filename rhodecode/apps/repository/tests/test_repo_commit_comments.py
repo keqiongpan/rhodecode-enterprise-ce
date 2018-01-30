@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -47,7 +47,7 @@ def route_path(name, params=None, **kwargs):
 class TestRepoCommitCommentsView(TestController):
 
     @pytest.fixture(autouse=True)
-    def prepare(self, request, pylonsapp):
+    def prepare(self, request, baseapp):
         for x in ChangesetComment.query().all():
             Session().delete(x)
         Session().commit()

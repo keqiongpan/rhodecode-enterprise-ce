@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -83,7 +83,7 @@ class JSONEncodedObj(sqlalchemy.types.TypeDecorator):
             try:
                 value = json.loads(value, object_pairs_hook=DictClass)
             except Exception as e:
-                if self.safe:
+                if self.safe and self.default is not None:
                     return self.default()
                 else:
                     raise
@@ -98,6 +98,9 @@ class MutationObj(Mutable):
         if isinstance(value, list) and not isinstance(value, MutationList):
             return MutationList.coerce(key, value)
         return value
+
+    def de_coerce(self):
+        return self
 
     @classmethod
     def _listen_on_attribute(cls, attribute, coerce, parent_cls):
@@ -158,6 +161,9 @@ class MutationDict(MutationObj, DictClass):
         self._key = key
         return self
 
+    def de_coerce(self):
+        return dict(self)
+
     def __setitem__(self, key, value):
         # Due to the way OrderedDict works, this is called during __init__.
         # At this time we don't have a key set, but what is more, the value
@@ -177,7 +183,7 @@ class MutationDict(MutationObj, DictClass):
     def __reduce_ex__(self, proto):
         # support pickling of MutationDicts
         d = dict(self)
-        return (self.__class__, (d, ))
+        return (self.__class__, (d,))
 
 
 class MutationList(MutationObj, list):
@@ -187,6 +193,9 @@ class MutationList(MutationObj, list):
         self = MutationList((MutationObj.coerce(key, v) for v in value))
         self._key = key
         return self
+
+    def de_coerce(self):
+        return list(self)
 
     def __setitem__(self, idx, value):
         list.__setitem__(self, idx, MutationObj.coerce(self._key, value))

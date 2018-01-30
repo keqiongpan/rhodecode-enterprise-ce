@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,8 +18,8 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import datetime
 import os
+import datetime
 import subprocess32
 
 import pytest
@@ -32,8 +32,8 @@ from rhodecode.lib.vcs.utils.helpers import parse_datetime
 from rhodecode.lib.vcs.utils.paths import get_dirs_for_path
 
 
-@pytest.mark.usefixtures("pylonsapp")
-class TestPaths:
+@pytest.mark.usefixtures("baseapp")
+class TestPaths(object):
 
     def _test_get_dirs_for_path(self, path, expected):
         """
@@ -69,7 +69,7 @@ class TestPaths:
         assert set(get_scms_for_path(new)) == set(['git', 'hg'])
 
 
-class TestGetScm:
+class TestGetScm(object):
 
     def test_existing_repository(self, vcs_repository_support):
         alias, repo = vcs_repository_support
@@ -98,7 +98,7 @@ class TestGetScm:
             get_scm(tmpdir.strpath)
 
 
-class TestParseDatetime:
+class TestParseDatetime(object):
 
     def test_datetime_text(self):
         assert parse_datetime('2010-04-07 21:29:41') == \
@@ -186,7 +186,7 @@ class TestParseDatetime:
     ('Mr Double Name withemail@email.com ',
      'Mr Double Name', 'withemail@email.com'),
 ])
-class TestAuthorExtractors:
+class TestAuthorExtractors(object):
 
     def test_author_email(self, test_str, name, email):
         assert email == author_email(test_str)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -42,12 +42,13 @@ from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     Repository, UserEmailMap, UserApiKeys, UserFollowing, joinedload,
     PullRequest)
-from rhodecode.model.forms import UserForm
+from rhodecode.model.forms import UserForm, UserExtraEmailForm
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
 from rhodecode.model.repo import RepoModel
+from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model.validation_schema.schemas import user_schema
 
 log = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         c = self._get_local_tmpl_context()
         c.user = c.auth_user.get_instance()
         c.allow_scoped_tokens = self.ALLOW_SCOPED_TOKENS
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -245,6 +246,10 @@ class MyAccountView(BaseAppView, DataGridAppView):
         email = self.request.POST.get('new_email')
 
         try:
+            form = UserExtraEmailForm(self.request.translate)()
+            data = form.to_python({'email': email})
+            email = data['email']
+
             UserModel().add_extra_email(c.user.user_id, email)
             audit_logger.store_web(
                 'user.edit.email.add', action_data={
@@ -442,7 +447,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         c.extern_type = c.user.extern_type
         c.extern_name = c.user.extern_name
 
-        _form = UserForm(edit=True,
+        _form = UserForm(self.request.translate, edit=True,
                          old_data={'user_id': self._rhodecode_user.user_id,
                                    'email': self._rhodecode_user.email})()
         form_result = {}
@@ -492,7 +497,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(self.request)
         _render = self.request.get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
 
         pull_requests = PullRequestModel().get_im_participating_in(
             user_id=self._rhodecode_user.user_id,
@@ -568,6 +573,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         route_name='my_account_pullrequests_data',
         request_method='GET', renderer='json_ext')
     def my_account_pullrequests_data(self):
+        self.load_default_context()
         req_get = self.request.GET
         closed = str2bool(req_get.get('closed'))
 
@@ -578,3 +584,16 @@ class MyAccountView(BaseAppView, DataGridAppView):
         data = self._get_pull_requests_list(statuses=statuses)
         return data
 
+    @LoginRequired()
+    @NotAnonymous()
+    @view_config(
+        route_name='my_account_user_group_membership',
+        request_method='GET',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_user_group_membership(self):
+        c = self.load_default_context()
+        c.active = 'user_group_membership'
+        groups = [UserGroupModel.get_user_groups_as_dict(group.users_group)
+                  for group in self._rhodecode_db_user.group_member]
+        c.user_groups = json.dumps(groups)
+        return self._get_template_context(c)

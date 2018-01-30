@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -161,7 +161,7 @@ class RepoModel(BaseModel):
 
         if permalink:
             return request.route_url(
-                'repo_summary', repo_name=safe_str(repo.repo_id))
+                'repo_summary', repo_name='_{}'.format(safe_str(repo.repo_id)))
         else:
             return request.route_url(
                 'repo_summary', repo_name=safe_str(repo.repo_name))
@@ -204,7 +204,7 @@ class RepoModel(BaseModel):
     def get_repos_as_dict(self, repo_list=None, admin=False,
                           super_user_actions=False):
         _render = get_current_request().get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
         c = _render.get_call_context()
 
         def quick_menu(repo_name):
@@ -229,7 +229,7 @@ class RepoModel(BaseModel):
         def last_rev(repo_name, cs_cache):
             return _render('revision', repo_name, cs_cache.get('revision'),
                            cs_cache.get('raw_id'), cs_cache.get('author'),
-                           cs_cache.get('message'))
+                           cs_cache.get('message'), cs_cache.get('date'))
 
         def desc(desc):
             return _render('repo_desc', desc, c.visual.stylify_metatags)

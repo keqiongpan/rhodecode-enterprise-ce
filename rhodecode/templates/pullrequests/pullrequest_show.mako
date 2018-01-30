@@ -347,48 +347,36 @@
           </div>
         </div>
         <div id="reviewers" class="block-right pr-details-content reviewers">
-          ## members goes here !
+
+            ## members redering block
             <input type="hidden" name="__start__" value="review_members:sequence">
             <ul id="review_members" class="group_members">
-            %for member,reasons,mandatory,status in c.pull_request_reviewers:
-              <li id="reviewer_${member.user_id}" class="reviewer_entry">
-                <div class="reviewers_member">
-                    <div class="reviewer_status tooltip" title="${h.tooltip(h.commit_status_lbl(status[0][1].status if status else 'not_reviewed'))}">
-                      <div class="${'flag_status %s' % (status[0][1].status if status else 'not_reviewed')} pull-left reviewer_member_status"></div>
-                    </div>
-                  <div id="reviewer_${member.user_id}_name" class="reviewer_name">
-                    ${self.gravatar_with_user(member.email, 16)}
-                  </div>
-                  <input type="hidden" name="__start__" value="reviewer:mapping">
-                  <input type="hidden" name="__start__" value="reasons:sequence">
-                  %for reason in reasons:
-                  <div class="reviewer_reason">- ${reason}</div>
-                  <input type="hidden" name="reason" value="${reason}">
 
-                  %endfor
-                  <input type="hidden" name="__end__" value="reasons:sequence">
-                  <input id="reviewer_${member.user_id}_input" type="hidden" value="${member.user_id}" name="user_id" />
-                  <input type="hidden" name="mandatory" value="${mandatory}"/>
-                  <input type="hidden" name="__end__" value="reviewer:mapping">
-                  % if mandatory:
-                        <div class="reviewer_member_mandatory_remove">
-                            <i class="icon-remove-sign"></i>
-                        </div>
-                        <div class="reviewer_member_mandatory">
-                            <i class="icon-lock" title="${h.tooltip(_('Mandatory reviewer'))}"></i>
-                        </div>
-                  % else:
-                    %if c.allowed_to_update:
-                      <div class="reviewer_member_remove action_button" onclick="reviewersController.removeReviewMember(${member.user_id}, true)" style="visibility: hidden;">
-                          <i class="icon-remove-sign" ></i>
-                      </div>
-                    %endif
-                  % endif
-                </div>
-              </li>
-            %endfor
+            % for review_obj, member, reasons, mandatory, status in c.pull_request_reviewers:
+                <script>
+                    var member = ${h.json.dumps(h.reviewer_as_json(member, reasons=reasons, mandatory=mandatory, user_group=review_obj.rule_user_group_data()))|n};
+                    var status = "${(status[0][1].status if status else 'not_reviewed')}";
+                    var status_lbl = "${h.commit_status_lbl(status[0][1].status if status else 'not_reviewed')}";
+                    var allowed_to_update = ${h.json.dumps(c.allowed_to_update)};
+
+                    var entry = renderTemplate('reviewMemberEntry', {
+                        'member': member,
+                        'mandatory': member.mandatory,
+                        'reasons': member.reasons,
+                        'allowed_to_update': allowed_to_update,
+                        'review_status': status,
+                        'review_status_label': status_lbl,
+                        'user_group': member.user_group,
+                        'create': false
+                    });
+                    $('#review_members').append(entry)
+                </script>
+
+            % endfor
+
             </ul>
             <input type="hidden" name="__end__" value="review_members:sequence">
+            ## end members redering block
 
             %if not c.pull_request.is_closed():
                 <div id="add_reviewer" class="ac" style="display: none;">
@@ -690,7 +678,7 @@
               editButton: $('#open_edit_reviewers'),
               closeButton: $('#close_edit_reviewers'),
               addButton: $('#add_reviewer'),
-              removeButtons: $('.reviewer_member_remove,.reviewer_member_mandatory_remove,.reviewer_member_mandatory'),
+              removeButtons: $('.reviewer_member_remove,.reviewer_member_mandatory_remove'),
 
               init: function() {
                 var self = this;

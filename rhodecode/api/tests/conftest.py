@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017  RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -27,7 +27,7 @@ from rhodecode.tests import TEST_USER_ADMIN_LOGIN
 
 
 @pytest.fixture(scope="class")
-def testuser_api(request, pylonsapp):
+def testuser_api(request, baseapp):
     cls = request.cls
 
     # ADMIN USER

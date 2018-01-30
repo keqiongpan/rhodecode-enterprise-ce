@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -56,11 +56,22 @@ class TestSessionBehaviorOnPasswordChange(object):
 
     def test_sessions_invalidated_when_password_is_changed(
             self, app, autologin_user):
+        response = app.get(route_path('home'), status=200)
+        session = response.get_session_from_response()
+
+        # now mark as password change
         self.password_changed_mock.return_value = True
+
+        # flushes session first
+        app.get(route_path('home'))
+
+        # second call is now "different" with flushed empty session
         response = app.get(route_path('home'))
+        session = response.get_session_from_response()
+
+        assert 'rhodecode_user' not in session
+
         assert_response = response.assert_response()
         assert_response.element_contains('#quick_login_link .user', 'Sign in')
 
-        session = response.get_session_from_response()
-        assert 'rhodecode_user' not in session
-        assert session.was_invalidated is True
+

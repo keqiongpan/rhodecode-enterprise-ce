@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -37,6 +37,8 @@ class SimpleSvnApp(object):
     IGNORED_HEADERS = [
         'connection', 'keep-alive', 'content-encoding',
         'transfer-encoding', 'content-length']
+    rc_extras = {}
+
 
     def __init__(self, config):
         self.config = config
@@ -64,6 +66,8 @@ class SimpleSvnApp(object):
             else:
                 log.debug('Got SVN response:%s with text:`%s`',
                           response, response.text)
+        else:
+            log.debug('got response code: %s', response.status_code)
 
         response_headers = self._get_response_headers(response.headers)
         start_response(
@@ -134,11 +138,13 @@ class SimpleSvn(simplevcs.SimpleVCS):
         # SVN includes the whole path in it's requests, including
         # subdirectories inside the repo. Therefore we have to search for
         # the repo root directory.
-        if not is_valid_repo(repo_name, self.basepath, self.SCM):
+        if not is_valid_repo(
+                repo_name, self.base_path, explicit_scm=self.SCM):
             current_path = ''
             for component in repo_name.split('/'):
                 current_path += component
-                if is_valid_repo(current_path, self.basepath, self.SCM):
+                if is_valid_repo(
+                        current_path, self.base_path, explicit_scm=self.SCM):
                     return current_path
                 current_path += '/'
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -51,7 +51,7 @@ REPO_PATH_GENERATOR = repo_path_generator()
 
 
 @pytest.fixture(scope='class', autouse=True)
-def repo(request, pylonsapp):
+def repo(request, baseapp):
     repo = MercurialRepository(TEST_HG_REPO)
     if request.cls:
         request.cls.repo = repo
@@ -79,7 +79,7 @@ class TestMercurialRepository:
         return MercurialRepository(next(REPO_PATH_GENERATOR), create=True)
 
     def test_wrong_repo_path(self):
-        wrong_repo_path = '/tmp/errorrepo'
+        wrong_repo_path = '/tmp/errorrepo_hg'
         with pytest.raises(RepositoryError):
             MercurialRepository(wrong_repo_path)
 
@@ -552,18 +552,21 @@ TODO: To be written...
         assert commit.message == merge_message
 
     def test_maybe_prepare_merge_workspace(self):
-        workspace = self.repo._maybe_prepare_merge_workspace('pr2', 'unused')
+        workspace = self.repo._maybe_prepare_merge_workspace(
+            'pr2', 'unused', 'unused2')
 
         assert os.path.isdir(workspace)
         workspace_repo = MercurialRepository(workspace)
         assert workspace_repo.branches == self.repo.branches
 
         # Calling it a second time should also succeed
-        workspace = self.repo._maybe_prepare_merge_workspace('pr2', 'unused')
+        workspace = self.repo._maybe_prepare_merge_workspace(
+            'pr2', 'unused', 'unused2')
         assert os.path.isdir(workspace)
 
     def test_cleanup_merge_workspace(self):
-        workspace = self.repo._maybe_prepare_merge_workspace('pr3', 'unused')
+        workspace = self.repo._maybe_prepare_merge_workspace(
+            'pr3', 'unused', 'unused2')
         self.repo.cleanup_merge_workspace('pr3')
 
         assert not os.path.exists(workspace)

@@ -1,4 +1,4 @@
-// # Copyright (C) 2010-2017 RhodeCode GmbH
+// # Copyright (C) 2010-2018 RhodeCode GmbH
 // #
 // # This program is free software: you can redistribute it and/or modify
 // # it under the terms of the GNU Affero General Public License, version 3
@@ -315,23 +315,54 @@ $(document).ready(function() {
                     when new diffs are integrated */
         'click', '.cb-lineno a', function(event) {
 
-            if ($(this).attr('data-line-no') !== ""){
+            function sortNumber(a,b) {
+                return a - b;
+            }
+
+            if ($(this).attr('data-line-no') !== "") {
+
+                // on shift, we do a range selection, if we got previous line
+                var prevLine = $('.cb-line-selected a').attr('data-line-no');
+                if (event.shiftKey && prevLine !== undefined) {
+                    var prevLine = parseInt(prevLine);
+                    var nextLine = parseInt($(this).attr('data-line-no'));
+                    var pos = [prevLine, nextLine].sort(sortNumber);
+                    var anchor = '#L{0}-{1}'.format(pos[0], pos[1]);
+
+                } else {
+                    var nextLine = parseInt($(this).attr('data-line-no'));
+                    var pos = [nextLine, nextLine];
+                    var anchor = '#L{0}'.format(pos[0]);
+
+                }
+                // highlight
+                var range = [];
+                for (var i = pos[0]; i <= pos[1]; i++) {
+                    range.push(i);
+                }
+                // clear selection
                 $('.cb-line-selected').removeClass('cb-line-selected');
-                var td = $(this).parent();
-                td.addClass('cb-line-selected'); // line number td
-                td.prev().addClass('cb-line-selected'); // line data td
-                td.next().addClass('cb-line-selected'); // line content td
+
+                $.each(range, function (i, lineNo) {
+                    var line_td = $('td.cb-lineno#L' + lineNo);
+                    if (line_td.length) {
+                        line_td.addClass('cb-line-selected'); // line number td
+                        line_td.prev().addClass('cb-line-selected'); // line data
+                        line_td.next().addClass('cb-line-selected'); // line content
+                    }
+                });
 
                 // Replace URL without jumping to it if browser supports.
                 // Default otherwise
                 if (history.pushState) {
                     var new_location = location.href.rstrip('#');
                     if (location.hash) {
+                        // location without hash
                         new_location = new_location.replace(location.hash, "");
                     }
 
                     // Make new anchor url
-                    new_location = new_location + $(this).attr('href');
+                    new_location = new_location + anchor;
                     history.pushState(true, document.title, new_location);
 
                     return false;

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2012-2017 RhodeCode GmbH
+# Copyright (C) 2012-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -30,7 +30,7 @@ class IntegrationTypeRegistry(collections.OrderedDict):
     def register_integration_type(self, IntegrationType):
         key = IntegrationType.key
         if key in self:
-            log.warning(
+            log.debug(
                 'Overriding existing integration type %s (%s) with %s' % (
                     self[key], key, IntegrationType))
 

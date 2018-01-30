@@ -2,8 +2,7 @@
 ## upgrade block rendered afte on-click check
 
 <div class="alert ${'alert-warning' if c.should_upgrade else 'alert-success'}">
-<p >
-
+<p>
 %if c.should_upgrade:
     A <b>new version</b> is available:
     %if c.latest_data.get('title'):
@@ -12,7 +11,7 @@
         <b>${c.latest_ver}</b>
     %endif
 %else:
-    You already have the <b>latest</b> stable version.
+    This instance is already running the <b>latest</b> stable version ${c.latest_ver}.
 %endif
 </p>
 

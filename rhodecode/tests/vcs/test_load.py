@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -49,7 +49,7 @@ TEST_GIT_REPO = os.environ.get('TEST_GIT_REPO', TEST_GIT_REPO)
 
 
 @pytest.fixture(params=('hg', 'git'))
-def repo(request, pylonsapp):
+def repo(request, baseapp):
     repos = {
         'hg': TEST_HG_REPO,
         'git': TEST_GIT_REPO,
@@ -59,12 +59,12 @@ def repo(request, pylonsapp):
 
 
 @pytest.fixture
-def server(pylonsapp):
+def server(baseapp):
     """
     Returns a proxy of the server object.
     """
-    server_and_port = pylonsapp.config['vcs.server']
-    protocol = pylonsapp.config['vcs.server.protocol']
+    server_and_port = baseapp.config.get_settings()['vcs.server']
+    protocol = baseapp.config.get_settings()['vcs.server.protocol']
     server = create_vcsserver_proxy(server_and_port, protocol)
     return server
 

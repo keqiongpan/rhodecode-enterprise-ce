@@ -21,7 +21,7 @@ syntax: regexp
 ^\.rhodecode$
 
 ^rcextensions
-^_dev
+^.dev
 ^._dev
 ^build/
 ^bower_components/

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -47,7 +47,7 @@ class JournalView(BaseAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
-        self._register_global_c(c)
+
         self._load_defaults(c.rhodecode_name)
 
         # TODO(marcink): what is this, why we need a global register ?
@@ -146,7 +146,8 @@ class JournalView(BaseAppView):
                 user = AttributeDict({'short_contact': entry.username,
                                       'email': '',
                                       'full_contact': ''})
-            action, action_extra, ico = h.action_parser(entry, feed=True)
+            action, action_extra, ico = h.action_parser(
+                self.request, entry, feed=True)
             title = "%s - %s %s" % (user.short_contact, action(),
                                     entry.repository.repo_name)
             desc = action_extra()
@@ -191,7 +192,8 @@ class JournalView(BaseAppView):
                 user = AttributeDict({'short_contact': entry.username,
                                       'email': '',
                                       'full_contact': ''})
-            action, action_extra, ico = h.action_parser(entry, feed=True)
+            action, action_extra, ico = h.action_parser(
+                self.request, entry, feed=True)
             title = "%s - %s %s" % (user.short_contact, action(),
                                     entry.repository.repo_name)
             desc = action_extra()

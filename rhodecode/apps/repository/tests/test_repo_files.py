@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -48,6 +48,7 @@ def route_path(name, params=None, **kwargs):
     import urllib
 
     base_url = {
+        'repo_summary': '/{repo_name}',
         'repo_archivefile': '/{repo_name}/archive/{fname}',
         'repo_files_diff': '/{repo_name}/diff/{f_path}',
         'repo_files_diff_2way_redirect':  '/{repo_name}/diff-2way/{f_path}',
@@ -999,8 +1000,11 @@ class TestFilesViewOtherCases(object):
             .format(repo_file_add_url))
 
     def test_access_empty_repo_redirect_to_summary_with_alert_no_write_perms(
-            self, backend_stub, user_util):
+            self, backend_stub, autologin_regular_user):
         repo = backend_stub.create_repo()
+        # init session for anon user
+        route_path('repo_summary', repo_name=repo.repo_name)
+
         repo_file_add_url = route_path(
             'repo_files_add_file',
             repo_name=repo.repo_name,

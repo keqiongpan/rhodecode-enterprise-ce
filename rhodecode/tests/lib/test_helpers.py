@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -21,8 +21,6 @@
 import copy
 import mock
 import pytest
-
-from pylons.util import ContextObj
 
 from rhodecode.lib import helpers
 from rhodecode.lib.utils2 import AttributeDict
@@ -188,8 +186,9 @@ def test_process_patterns_non_existent_repo_name(backend):
     assert processed_text == expected_text
 
 
-def test_get_visual_attr(pylonsapp):
-    c = ContextObj()
+def test_get_visual_attr(baseapp):
+    from rhodecode.apps._base import TemplateArgs
+    c = TemplateArgs()
     assert None is helpers.get_visual_attr(c, 'fakse')
 
     # emulate the c.visual behaviour

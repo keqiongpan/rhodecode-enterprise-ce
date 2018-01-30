@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -43,14 +43,14 @@ log = logging.getLogger(__name__)
 
 
 @jsonrpc_method()
-def get_pull_request(request, apiuser, repoid, pullrequestid):
+def get_pull_request(request, apiuser, pullrequestid, repoid=Optional(None)):
     """
     Get a pull request based on the given ID.
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
-    :param repoid: Repository name or repository ID from where the pull
-        request was opened.
+    :param repoid: Optional, repository name or repository ID from where
+        the pull request was opened.
     :type repoid: str or int
     :param pullrequestid: ID of the requested pull request.
     :type pullrequestid: int
@@ -121,11 +121,17 @@ def get_pull_request(request, apiuser, repoid, pullrequestid):
         },
        "error": null
     """
-    get_repo_or_error(repoid)
+
     pull_request = get_pull_request_or_error(pullrequestid)
+    if Optional.extract(repoid):
+        repo = get_repo_or_error(repoid)
+    else:
+        repo = pull_request.target_repo
+
     if not PullRequestModel().check_user_read(
             pull_request, apiuser, api=True):
-        raise JSONRPCError('repository `%s` does not exist' % (repoid,))
+        raise JSONRPCError('repository `%s` or pull request `%s` '
+                           'does not exist' % (repoid, pullrequestid))
     data = pull_request.get_api_data()
     return data
 
@@ -137,7 +143,7 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
-    :param repoid: Repository name or repository ID.
+    :param repoid: Optional repository name or repository ID.
     :type repoid: str or int
     :param status: Only return pull requests with the specified status.
         Valid options are.
@@ -229,7 +235,7 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
 
 @jsonrpc_method()
 def merge_pull_request(
-        request, apiuser, repoid, pullrequestid,
+        request, apiuser, pullrequestid, repoid=Optional(None),
         userid=Optional(OAttr('apiuser'))):
     """
     Merge the pull request specified by `pullrequestid` into its target
@@ -237,7 +243,7 @@ def merge_pull_request(
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
-    :param repoid: The Repository name or repository ID of the
+    :param repoid: Optional, repository name or repository ID of the
         target repository to which the |pr| is to be merged.
     :type repoid: str or int
     :param pullrequestid: ID of the pull request which shall be merged.
@@ -263,7 +269,12 @@ def merge_pull_request(
         },
         "error": null
     """
-    repo = get_repo_or_error(repoid)
+    pull_request = get_pull_request_or_error(pullrequestid)
+    if Optional.extract(repoid):
+        repo = get_repo_or_error(repoid)
+    else:
+        repo = pull_request.target_repo
+
     if not isinstance(userid, Optional):
         if (has_superadmin_permission(apiuser) or
                 HasRepoPermissionAnyApi('repository.admin')(
@@ -271,8 +282,6 @@ def merge_pull_request(
             apiuser = get_user_or_error(userid)
         else:
             raise JSONRPCError('userid is not the same as your user')
-
-    pull_request = get_pull_request_or_error(pullrequestid)
 
     check = MergeCheck.validate(
         pull_request, user=apiuser, translator=request.translate)
@@ -311,9 +320,112 @@ def merge_pull_request(
 
 
 @jsonrpc_method()
+def get_pull_request_comments(
+        request, apiuser, pullrequestid, repoid=Optional(None)):
+    """
+    Get all comments of pull request specified with the `pullrequestid`
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: Optional repository name or repository ID.
+    :type repoid: str or int
+    :param pullrequestid: The pull request ID.
+    :type pullrequestid: int
+
+    Example output:
+
+    .. code-block:: bash
+
+        id : <id_given_in_input>
+        result : [
+            {
+              "comment_author": {
+                "active": true,
+                "full_name_or_username": "Tom Gore",
+                "username": "admin"
+              },
+              "comment_created_on": "2017-01-02T18:43:45.533",
+              "comment_f_path": null,
+              "comment_id": 25,
+              "comment_lineno": null,
+              "comment_status": {
+                "status": "under_review",
+                "status_lbl": "Under Review"
+              },
+              "comment_text": "Example text",
+              "comment_type": null,
+              "pull_request_version": null
+            }
+        ],
+        error :  null
+    """
+
+    pull_request = get_pull_request_or_error(pullrequestid)
+    if Optional.extract(repoid):
+        repo = get_repo_or_error(repoid)
+    else:
+        repo = pull_request.target_repo
+
+    if not PullRequestModel().check_user_read(
+            pull_request, apiuser, api=True):
+        raise JSONRPCError('repository `%s` or pull request `%s` '
+                           'does not exist' % (repoid, pullrequestid))
+
+    (pull_request_latest,
+     pull_request_at_ver,
+     pull_request_display_obj,
+     at_version) = PullRequestModel().get_pr_version(
+        pull_request.pull_request_id, version=None)
+
+    versions = pull_request_display_obj.versions()
+    ver_map = {
+        ver.pull_request_version_id: cnt
+        for cnt, ver in enumerate(versions, 1)
+    }
+
+    # GENERAL COMMENTS with versions #
+    q = CommentsModel()._all_general_comments_of_pull_request(pull_request)
+    q = q.order_by(ChangesetComment.comment_id.asc())
+    general_comments = q.all()
+
+    # INLINE COMMENTS with versions  #
+    q = CommentsModel()._all_inline_comments_of_pull_request(pull_request)
+    q = q.order_by(ChangesetComment.comment_id.asc())
+    inline_comments = q.all()
+
+    data = []
+    for comment in inline_comments + general_comments:
+        full_data = comment.get_api_data()
+        pr_version_id = None
+        if comment.pull_request_version_id:
+            pr_version_id = 'v{}'.format(
+                ver_map[comment.pull_request_version_id])
+
+        # sanitize some entries
+
+        full_data['pull_request_version'] = pr_version_id
+        full_data['comment_author'] = {
+            'username': full_data['comment_author'].username,
+            'full_name_or_username': full_data['comment_author'].full_name_or_username,
+            'active': full_data['comment_author'].active,
+        }
+
+        if full_data['comment_status']:
+            full_data['comment_status'] = {
+                'status': full_data['comment_status'][0].status,
+                'status_lbl': full_data['comment_status'][0].status_lbl,
+            }
+        else:
+            full_data['comment_status'] = {}
+
+        data.append(full_data)
+    return data
+
+
+@jsonrpc_method()
 def comment_pull_request(
-        request, apiuser, repoid, pullrequestid, message=Optional(None),
-        commit_id=Optional(None), status=Optional(None),
+        request, apiuser, pullrequestid, repoid=Optional(None),
+        message=Optional(None), commit_id=Optional(None), status=Optional(None),
         comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
         resolves_comment_id=Optional(None),
         userid=Optional(OAttr('apiuser'))):
@@ -324,7 +436,7 @@ def comment_pull_request(
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
-    :param repoid: The repository name or repository ID.
+    :param repoid: Optional repository name or repository ID.
     :type repoid: str or int
     :param pullrequestid: The pull request ID.
     :type pullrequestid: int
@@ -356,7 +468,12 @@ def comment_pull_request(
         },
         error :  null
     """
-    repo = get_repo_or_error(repoid)
+    pull_request = get_pull_request_or_error(pullrequestid)
+    if Optional.extract(repoid):
+        repo = get_repo_or_error(repoid)
+    else:
+        repo = pull_request.target_repo
+
     if not isinstance(userid, Optional):
         if (has_superadmin_permission(apiuser) or
                 HasRepoPermissionAnyApi('repository.admin')(
@@ -365,7 +482,6 @@ def comment_pull_request(
         else:
             raise JSONRPCError('userid is not the same as your user')
 
-    pull_request = get_pull_request_or_error(pullrequestid)
     if not PullRequestModel().check_user_read(
             pull_request, apiuser, api=True):
         raise JSONRPCError('repository `%s` does not exist' % (repoid,))
@@ -573,15 +689,15 @@ def create_pull_request(
 
 @jsonrpc_method()
 def update_pull_request(
-        request, apiuser, repoid, pullrequestid, title=Optional(''),
-        description=Optional(''), reviewers=Optional(None),
+        request, apiuser, pullrequestid, repoid=Optional(None),
+        title=Optional(''), description=Optional(''), reviewers=Optional(None),
         update_commits=Optional(None)):
     """
     Updates a pull request.
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
-    :param repoid: The repository name or repository ID.
+    :param repoid: Optional repository name or repository ID.
     :type repoid: str or int
     :param pullrequestid: The pull request ID.
     :type pullrequestid: int
@@ -626,8 +742,12 @@ def update_pull_request(
         error :  null
     """
 
-    repo = get_repo_or_error(repoid)
     pull_request = get_pull_request_or_error(pullrequestid)
+    if Optional.extract(repoid):
+        repo = get_repo_or_error(repoid)
+    else:
+        repo = pull_request.target_repo
+
     if not PullRequestModel().check_user_update(
             pull_request, apiuser, api=True):
         raise JSONRPCError(
@@ -705,7 +825,7 @@ def update_pull_request(
 
 @jsonrpc_method()
 def close_pull_request(
-        request, apiuser, repoid, pullrequestid,
+        request, apiuser, pullrequestid, repoid=Optional(None),
         userid=Optional(OAttr('apiuser')), message=Optional('')):
     """
     Close the pull request specified by `pullrequestid`.
@@ -738,7 +858,12 @@ def close_pull_request(
     """
     _ = request.translate
 
-    repo = get_repo_or_error(repoid)
+    pull_request = get_pull_request_or_error(pullrequestid)
+    if Optional.extract(repoid):
+        repo = get_repo_or_error(repoid)
+    else:
+        repo = pull_request.target_repo
+
     if not isinstance(userid, Optional):
         if (has_superadmin_permission(apiuser) or
                 HasRepoPermissionAnyApi('repository.admin')(
@@ -746,8 +871,6 @@ def close_pull_request(
             apiuser = get_user_or_error(userid)
         else:
             raise JSONRPCError('userid is not the same as your user')
-
-    pull_request = get_pull_request_or_error(pullrequestid)
 
     if pull_request.is_closed():
         raise JSONRPCError(

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -38,7 +38,6 @@ from os.path import join as jn
 
 import paste
 import pkg_resources
-from paste.script.command import Command, BadCommand
 from webhelpers.text import collapse, remove_formatting, strip_tags
 from mako import exceptions
 from pyramid.threadlocal import get_current_registry
@@ -97,18 +96,14 @@ def repo_name_slug(value):
 #==============================================================================
 def get_repo_slug(request):
     _repo = ''
-    if isinstance(request, Request):
-        if hasattr(request, 'db_repo'):
-            # if our requests has set db reference use it for name, this
-            # translates the example.com/_<id> into proper repo names
-            _repo = request.db_repo.repo_name
-        elif getattr(request, 'matchdict', None):
-            # pyramid
-            _repo = request.matchdict.get('repo_name')
 
-    # TODO(marcink): remove after pylons migration...
-    if not _repo:
-        _repo = request.environ['pylons.routes_dict'].get('repo_name')
+    if hasattr(request, 'db_repo'):
+        # if our requests has set db reference use it for name, this
+        # translates the example.com/_<id> into proper repo names
+        _repo = request.db_repo.repo_name
+    elif getattr(request, 'matchdict', None):
+        # pyramid
+        _repo = request.matchdict.get('repo_name')
 
     if _repo:
         _repo = _repo.rstrip('/')
@@ -117,18 +112,14 @@ def get_repo_slug(request):
 
 def get_repo_group_slug(request):
     _group = ''
-    if isinstance(request, Request):
-        if hasattr(request, 'db_repo_group'):
-            # if our requests has set db reference use it for name, this
-            # translates the example.com/_<id> into proper repo group names
-            _group = request.db_repo_group.group_name
-        elif getattr(request, 'matchdict', None):
-            # pyramid
-            _group = request.matchdict.get('repo_group_name')
+    if hasattr(request, 'db_repo_group'):
+        # if our requests has set db reference use it for name, this
+        # translates the example.com/_<id> into proper repo group names
+        _group = request.db_repo_group.group_name
+    elif getattr(request, 'matchdict', None):
+        # pyramid
+        _group = request.matchdict.get('repo_group_name')
 
-    # TODO(marcink): remove after pylons migration...
-    if not _group:
-        _group = request.environ['pylons.routes_dict'].get('group_name')
 
     if _group:
         _group = _group.rstrip('/')
@@ -137,26 +128,21 @@ def get_repo_group_slug(request):
 
 def get_user_group_slug(request):
     _user_group = ''
-    if isinstance(request, Request):
 
-        if hasattr(request, 'db_user_group'):
-            _user_group = request.db_user_group.users_group_name
-        elif getattr(request, 'matchdict', None):
-            # pyramid
-            _user_group = request.matchdict.get('user_group_id')
+    if hasattr(request, 'db_user_group'):
+        _user_group = request.db_user_group.users_group_name
+    elif getattr(request, 'matchdict', None):
+        # pyramid
+        _user_group = request.matchdict.get('user_group_id')
 
-            try:
-                _user_group = UserGroup.get(_user_group)
-                if _user_group:
-                    _user_group = _user_group.users_group_name
-            except Exception:
-                log.exception('Failed to get user group by id')
-                # catch all failures here
-                return None
-
-    # TODO(marcink): remove after pylons migration...
-    if not _user_group:
-        _user_group = request.environ['pylons.routes_dict'].get('user_group_id')
+        try:
+            _user_group = UserGroup.get(_user_group)
+            if _user_group:
+                _user_group = _user_group.users_group_name
+        except Exception:
+            log.exception('Failed to get user group by id')
+            # catch all failures here
+            return None
 
     return _user_group
 
@@ -274,7 +260,7 @@ def is_valid_repo(repo_name, base_path, expect_scm=None, explicit_scm=None):
 
     try:
         if explicit_scm:
-            detected_scms = [get_scm_backend(explicit_scm)]
+            detected_scms = [get_scm_backend(explicit_scm)(full_path).alias]
         else:
             detected_scms = get_scm(full_path)
 
@@ -438,7 +424,7 @@ def get_enabled_hook_classes(ui_settings):
 
 def set_rhodecode_config(config):
     """
-    Updates pylons config with new settings from database
+    Updates pyramid config with new settings from database
 
     :param config:
     """
@@ -633,35 +619,6 @@ def repo2db_mapper(initial_repo_list, remove_obsolete=False):
     return added, removed
 
 
-def get_default_cache_settings(settings):
-    cache_settings = {}
-    for key in settings.keys():
-        for prefix in ['beaker.cache.', 'cache.']:
-            if key.startswith(prefix):
-                name = key.split(prefix)[1].strip()
-                cache_settings[name] = settings[key].strip()
-    return cache_settings
-
-
-# set cache regions for beaker so celery can utilise it
-def add_cache(settings):
-    from rhodecode.lib import caches
-    cache_settings = {'regions': None}
-    # main cache settings used as default ...
-    cache_settings.update(get_default_cache_settings(settings))
-
-    if cache_settings['regions']:
-        for region in cache_settings['regions'].split(','):
-            region = region.strip()
-            region_settings = {}
-            for key, value in cache_settings.items():
-                if key.startswith(region):
-                    region_settings[key.split('.')[1]] = value
-
-            caches.configure_cache_region(
-                region, region_settings, cache_settings)
-
-
 def load_rcextensions(root_path):
     import rhodecode
     from rhodecode.config import conf
@@ -780,157 +737,6 @@ def create_test_repositories(test_path, config):
         tar.extractall(jn(test_path, SVN_REPO))
 
 
-#==============================================================================
-# PASTER COMMANDS
-#==============================================================================
-class BasePasterCommand(Command):
-    """
-    Abstract Base Class for paster commands.
-
-    The celery commands are somewhat aggressive about loading
-    celery.conf, and since our module sets the `CELERY_LOADER`
-    environment variable to our loader, we have to bootstrap a bit and
-    make sure we've had a chance to load the pylons config off of the
-    command line, otherwise everything fails.
-    """
-    min_args = 1
-    min_args_error = "Please provide a paster config file as an argument."
-    takes_config_file = 1
-    requires_config_file = True
-
-    def notify_msg(self, msg, log=False):
-        """Make a notification to user, additionally if logger is passed
-        it logs this action using given logger
-
-        :param msg: message that will be printed to user
-        :param log: logging instance, to use to additionally log this message
-
-        """
-        if log and isinstance(log, logging):
-            log(msg)
-
-    def run(self, args):
-        """
-        Overrides Command.run
-
-        Checks for a config file argument and loads it.
-        """
-        if len(args) < self.min_args:
-            raise BadCommand(
-                self.min_args_error % {'min_args': self.min_args,
-                                       'actual_args': len(args)})
-
-        # Decrement because we're going to lob off the first argument.
-        # @@ This is hacky
-        self.min_args -= 1
-        self.bootstrap_config(args[0])
-        self.update_parser()
-        return super(BasePasterCommand, self).run(args[1:])
-
-    def update_parser(self):
-        """
-        Abstract method.  Allows for the class' parser to be updated
-        before the superclass' `run` method is called.  Necessary to
-        allow options/arguments to be passed through to the underlying
-        celery command.
-        """
-        raise NotImplementedError("Abstract Method.")
-
-    def bootstrap_config(self, conf):
-        """
-        Loads the pylons configuration.
-        """
-        from pylons import config as pylonsconfig
-
-        self.path_to_ini_file = os.path.realpath(conf)
-        conf = paste.deploy.appconfig('config:' + self.path_to_ini_file)
-        pylonsconfig.init_app(conf.global_conf, conf.local_conf)
-
-    def _init_session(self):
-        """
-        Inits SqlAlchemy Session
-        """
-        logging.config.fileConfig(self.path_to_ini_file)
-        from pylons import config
-        from rhodecode.config.utils import initialize_database
-
-        # get to remove repos !!
-        add_cache(config)
-        initialize_database(config)
-
-
-class PartialRenderer(object):
-    """
-    Partial renderer used to render chunks of html used in datagrids
-    use like::
-
-        _render = PartialRenderer('data_table/_dt_elements.mako')
-        _render('quick_menu', args, kwargs)
-        PartialRenderer.h,
-                        c,
-                        _,
-                        ungettext
-        are the template stuff initialized inside and can be re-used later
-
-    :param tmpl_name: template path relate to /templates/ dir
-    """
-
-    def __init__(self, tmpl_name):
-        import rhodecode
-        from pylons import request, tmpl_context as c
-        from pylons.i18n.translation import _, ungettext
-        from rhodecode.lib import helpers as h
-
-        self.tmpl_name = tmpl_name
-        self.rhodecode = rhodecode
-        self.c = c
-        self._ = _
-        self.ungettext = ungettext
-        self.h = h
-        self.request = request
-
-    def _mako_lookup(self):
-        _tmpl_lookup = self.rhodecode.CONFIG['pylons.app_globals'].mako_lookup
-        return _tmpl_lookup.get_template(self.tmpl_name)
-
-    def _update_kwargs_for_render(self, kwargs):
-        """
-        Inject params required for Mako rendering
-        """
-        _kwargs = {
-            '_': self._,
-            'h': self.h,
-            'c': self.c,
-            'request': self.request,
-            '_ungettext': self.ungettext,
-        }
-        _kwargs.update(kwargs)
-        return _kwargs
-
-    def _render_with_exc(self, render_func, args, kwargs):
-        try:
-            return render_func.render(*args, **kwargs)
-        except:
-            log.error(exceptions.text_error_template().render())
-            raise
-
-    def _get_template(self, template_obj, def_name):
-        if def_name:
-            tmpl = template_obj.get_def(def_name)
-        else:
-            tmpl = template_obj
-        return tmpl
-
-    def render(self, def_name, *args, **kwargs):
-        lookup_obj = self._mako_lookup()
-        tmpl = self._get_template(lookup_obj, def_name=def_name)
-        kwargs = self._update_kwargs_for_render(kwargs)
-        return self._render_with_exc(tmpl, args, kwargs)
-
-    def __call__(self, tmpl, *args, **kwargs):
-        return self.render(tmpl, *args, **kwargs)
-
-
 def password_changed(auth_user, session):
     # Never report password change in case of default user or anonymous user.
     if auth_user.username == User.DEFAULT_USER or auth_user.user_id is None:
@@ -951,19 +757,6 @@ def read_opensource_licenses():
         _license_cache = json.loads(licenses)
 
     return _license_cache
-
-
-def get_registry(request):
-    """
-    Utility to get the pyramid registry from a request. During migration to
-    pyramid we sometimes want to use the pyramid registry from pylons context.
-    Therefore this utility returns `request.registry` for pyramid requests and
-    uses `get_current_registry()` for pylons requests.
-    """
-    try:
-        return request.registry
-    except AttributeError:
-        return get_current_registry()
 
 
 def generate_platform_uuid():

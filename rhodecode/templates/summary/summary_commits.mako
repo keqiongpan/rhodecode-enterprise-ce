@@ -11,6 +11,12 @@
         <th>${_('Author')}</th>
         <th>${_('Refs')}</th>
     </tr>
+
+## to speed up lookups cache some functions before the loop
+<%
+    active_patterns = h.get_active_pattern_entries(c.repo_name)
+    urlify_commit_message = h.partial(h.urlify_commit_message, active_pattern_entries=active_patterns)
+%>
 %for cnt,cs in enumerate(c.repo_commits):
     <tr class="parity${cnt%2}">
 
@@ -44,7 +50,7 @@
 
         <td class="td-description mid">
           <div class="log-container truncate-wrap">
-              <div class="message truncate" id="c-${cs.raw_id}">${h.urlify_commit_message(cs.message, c.repo_name)}</div>
+              <div class="message truncate" id="c-${cs.raw_id}">${urlify_commit_message(cs.message, c.repo_name)}</div>
           </div>
         </td>
 

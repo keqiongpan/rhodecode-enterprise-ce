@@ -61,14 +61,14 @@
                     </td>
                     <td>
                         % if c.audit_log_entry.version == c.audit_log_entry.VERSION_1:
-                            ${h.action_parser(l)[0]()}
+                            ${h.action_parser(request, l)[0]()}
                         % else:
                             ${h.literal(c.audit_log_entry.action)}
                         % endif
 
                         <div class="journal_action_params">
                             % if c.audit_log_entry.version == c.audit_log_entry.VERSION_1:
-                                ${h.literal(h.action_parser(l)[1]())}
+                                ${h.literal(h.action_parser(request, l)[1]())}
                             % endif
                         </div>
                     </td>

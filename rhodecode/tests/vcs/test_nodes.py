@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -27,7 +27,7 @@ from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib.vcs.nodes import Node
 from rhodecode.lib.vcs.nodes import NodeError
 from rhodecode.lib.vcs.nodes import NodeKind
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
 @pytest.fixture()
@@ -248,7 +248,7 @@ class TestNodeBasics:
         assert (1, 1) == py_node.lines(count_empty=True)
 
 
-class TestNodeContent:
+class TestNodeContent(object):
 
     def test_if_binary(self, binary_filenode):
         filenode = binary_filenode('calendar.jpg')
@@ -263,6 +263,7 @@ class TestNodeContent:
         assert tar_node.mimetype == 'application/x-tar'
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestNodesCommits(BackendTestMixin):
 
     def test_node_last_commit(self, generate_repo_with_commits):

@@ -62,6 +62,9 @@
                       ${h.submit('save',_('Add'),class_="btn")}
                       ${h.reset('reset',_('Reset'),class_="btn")}
                     </div>
+                    % if c.default_key:
+                        ${_('Click add to use this generate SSH key')}
+                    % endif
                 </div>
             </div>
             ${h.end_form()}

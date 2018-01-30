@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017  RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -19,9 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-from rhodecode.apps.admin.navigation import NavigationRegistry
-from rhodecode.config.routing import ADMIN_PREFIX
-from rhodecode.lib.utils2 import str2bool
+from rhodecode.apps._base import ADMIN_PREFIX
 
 
 def admin_routes(config):
@@ -72,8 +70,14 @@ def admin_routes(config):
         name='admin_settings_process_management',
         pattern='/settings/process_management')
     config.add_route(
+        name='admin_settings_process_management_data',
+        pattern='/settings/process_management/data')
+    config.add_route(
         name='admin_settings_process_management_signal',
         pattern='/settings/process_management/signal')
+    config.add_route(
+        name='admin_settings_process_management_master_signal',
+        pattern='/settings/process_management/master_signal')
 
     # default settings
     config.add_route(
@@ -82,6 +86,88 @@ def admin_routes(config):
     config.add_route(
         name='admin_defaults_repositories_update',
         pattern='/defaults/repositories/update')
+
+    # admin settings
+
+    config.add_route(
+        name='admin_settings',
+        pattern='/settings')
+    config.add_route(
+        name='admin_settings_update',
+        pattern='/settings/update')
+
+    config.add_route(
+        name='admin_settings_global',
+        pattern='/settings/global')
+    config.add_route(
+        name='admin_settings_global_update',
+        pattern='/settings/global/update')
+
+    config.add_route(
+        name='admin_settings_vcs',
+        pattern='/settings/vcs')
+    config.add_route(
+        name='admin_settings_vcs_update',
+        pattern='/settings/vcs/update')
+    config.add_route(
+        name='admin_settings_vcs_svn_pattern_delete',
+        pattern='/settings/vcs/svn_pattern_delete')
+
+    config.add_route(
+        name='admin_settings_mapping',
+        pattern='/settings/mapping')
+    config.add_route(
+        name='admin_settings_mapping_update',
+        pattern='/settings/mapping/update')
+
+    config.add_route(
+        name='admin_settings_visual',
+        pattern='/settings/visual')
+    config.add_route(
+        name='admin_settings_visual_update',
+        pattern='/settings/visual/update')
+
+
+    config.add_route(
+        name='admin_settings_issuetracker',
+        pattern='/settings/issue-tracker')
+    config.add_route(
+        name='admin_settings_issuetracker_update',
+        pattern='/settings/issue-tracker/update')
+    config.add_route(
+        name='admin_settings_issuetracker_test',
+        pattern='/settings/issue-tracker/test')
+    config.add_route(
+        name='admin_settings_issuetracker_delete',
+        pattern='/settings/issue-tracker/delete')
+
+    config.add_route(
+        name='admin_settings_email',
+        pattern='/settings/email')
+    config.add_route(
+        name='admin_settings_email_update',
+        pattern='/settings/email/update')
+
+    config.add_route(
+        name='admin_settings_hooks',
+        pattern='/settings/hooks')
+    config.add_route(
+        name='admin_settings_hooks_update',
+        pattern='/settings/hooks/update')
+    config.add_route(
+        name='admin_settings_hooks_delete',
+        pattern='/settings/hooks/delete')
+
+    config.add_route(
+        name='admin_settings_search',
+        pattern='/settings/search')
+
+    config.add_route(
+        name='admin_settings_labs',
+        pattern='/settings/labs')
+    config.add_route(
+        name='admin_settings_labs_update',
+        pattern='/settings/labs/update')
 
     # global permissions
 
@@ -237,7 +323,7 @@ def admin_routes(config):
     config.add_route(
         name='edit_user_ips_delete',
         pattern='/users/{user_id:\d+}/edit/ips/delete',
-        user_route_with_default=True) # enabled for default user too
+        user_route_with_default=True)  # enabled for default user too
 
     # user perms
     config.add_route(
@@ -310,12 +396,10 @@ def admin_routes(config):
 
 
 def includeme(config):
-    settings = config.get_settings()
+    from rhodecode.apps.admin.navigation import includeme as nav_includeme
 
     # Create admin navigation registry and add it to the pyramid registry.
-    labs_active = str2bool(settings.get('labs_settings_active', False))
-    navigation_registry = NavigationRegistry(labs_active=labs_active)
-    config.registry.registerUtility(navigation_registry)
+    nav_includeme(config)
 
     # main admin routes
     config.add_route(name='admin_home', pattern=ADMIN_PREFIX)

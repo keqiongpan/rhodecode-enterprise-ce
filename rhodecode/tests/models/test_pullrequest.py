@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -65,7 +65,7 @@ class TestPullRequestModel(object):
             'rhodecode.model.notification.NotificationModel.create')
         self.notification_patcher.start()
         self.helper_patcher = mock.patch(
-            'rhodecode.lib.helpers.url')
+            'rhodecode.lib.helpers.route_path')
         self.helper_patcher.start()
 
         self.hook_patcher = mock.patch.object(PullRequestModel,
@@ -119,7 +119,7 @@ class TestPullRequestModel(object):
 
     def test_get_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [(pull_request.author, ['author'], False)],
+            pull_request, [(pull_request.author, ['author'], False, [])],
             pull_request.author)
         prs = PullRequestModel().get_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
@@ -128,7 +128,7 @@ class TestPullRequestModel(object):
 
     def test_count_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [(pull_request.author, ['author'], False)],
+            pull_request, [(pull_request.author, ['author'], False, [])],
             pull_request.author)
         pr_count = PullRequestModel().count_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
@@ -458,6 +458,7 @@ def merge_extras(user_regular):
     extras = {
         'ip': '127.0.0.1',
         'username': user_regular.username,
+        'user_id': user_regular.user_id,
         'action': 'push',
         'repository': 'fake_target_repo_name',
         'scm': 'git',
@@ -475,7 +476,7 @@ def merge_extras(user_regular):
 class TestUpdateCommentHandling(object):
 
     @pytest.fixture(autouse=True, scope='class')
-    def enable_outdated_comments(self, request, pylonsapp):
+    def enable_outdated_comments(self, request, baseapp):
         config_patch = mock.patch.dict(
             'rhodecode.CONFIG', {'rhodecode_use_outdated_comments': True})
         config_patch.start()

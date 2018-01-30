@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -21,11 +21,12 @@ import io
 import re
 import datetime
 import logging
-import pylons
 import Queue
 import subprocess32
 import os
 
+
+from dateutil.parser import parse
 from pyramid.i18n import get_localizer
 from pyramid.threadlocal import get_current_request
 from pyramid.interfaces import IRoutesMapper
@@ -36,25 +37,17 @@ from threading import Thread
 from rhodecode.translation import _ as tsf
 from rhodecode.config.jsroutes import generate_jsroutes_content
 from rhodecode.lib import auth
+from rhodecode.lib.base import get_auth_user
+
 
 import rhodecode
 
-from pylons.i18n.translation import _get_translator
-from pylons.util import ContextObj
-from routes.util import URLGenerator
-
-from rhodecode.lib.base import attach_context_attributes, get_auth_user
 
 log = logging.getLogger(__name__)
 
 
 def add_renderer_globals(event):
     from rhodecode.lib import helpers
-
-    # NOTE(marcink):
-    # Put pylons stuff into the context. This will be removed as soon as
-    # migration to pyramid is finished.
-    event['c'] = pylons.tmpl_context
 
     # TODO: When executed in pyramid view context the request is not available
     # in the event. Find a better solution to get the request.
@@ -68,12 +61,11 @@ def add_renderer_globals(event):
 
 def add_localizer(event):
     request = event.request
-    localizer = get_localizer(request)
+    localizer = request.localizer
 
     def auto_translate(*args, **kwargs):
         return localizer.translate(tsf(*args, **kwargs))
 
-    request.localizer = localizer
     request.translate = auto_translate
     request.plularize = localizer.pluralize
 
@@ -108,39 +100,6 @@ def add_request_user_context(event):
     request.environ['rc_auth_user'] = auth_user
 
 
-def add_pylons_context(event):
-    request = event.request
-
-    config = rhodecode.CONFIG
-    environ = request.environ
-    session = request.session
-
-    if hasattr(request, 'vcs_call'):
-        # skip vcs calls
-        return
-
-    # Setup pylons globals.
-    pylons.config._push_object(config)
-    pylons.request._push_object(request)
-    pylons.session._push_object(session)
-    pylons.translator._push_object(_get_translator(config.get('lang')))
-
-    pylons.url._push_object(URLGenerator(config['routes.map'], environ))
-    session_key = (
-        config['pylons.environ_config'].get('session', 'beaker.session'))
-    environ[session_key] = session
-
-    if hasattr(request, 'rpc_method'):
-        # skip api calls
-        return
-
-    # Setup the pylons context object ('c')
-    context = ContextObj()
-    context.rhodecode_user = request.user
-    attach_context_attributes(context, request, request.user.user_id)
-    pylons.tmpl_context._push_object(context)
-
-
 def inject_app_settings(event):
     settings = event.app.registry.settings
     # inject info about available permissions
@@ -170,16 +129,36 @@ def write_metadata_if_needed(event):
     from rhodecode.lib import system_info
     from rhodecode.lib import ext_json
 
-    def write():
-        fname = '.rcmetadata.json'
-        ini_loc = os.path.dirname(rhodecode.CONFIG.get('__file__'))
-        metadata_destination = os.path.join(ini_loc, fname)
+    fname = '.rcmetadata.json'
+    ini_loc = os.path.dirname(rhodecode.CONFIG.get('__file__'))
+    metadata_destination = os.path.join(ini_loc, fname)
 
+    def get_update_age():
+        now = datetime.datetime.utcnow()
+
+        with open(metadata_destination, 'rb') as f:
+            data = ext_json.json.loads(f.read())
+            if 'created_on' in data:
+                update_date = parse(data['created_on'])
+                diff = now - update_date
+                return diff.total_seconds() / 60.0
+
+        return 0
+
+    def write():
         configuration = system_info.SysInfo(
             system_info.rhodecode_config)()['value']
         license_token = configuration['config']['license_token']
+
+        setup = dict(
+            workers=configuration['config']['server:main'].get(
+                'workers', '?'),
+            worker_type=configuration['config']['server:main'].get(
+                'worker_class', 'sync'),
+        )
         dbinfo = system_info.SysInfo(system_info.database_info)()['value']
         del dbinfo['url']
+
         metadata = dict(
             desc='upgrade metadata info',
             license_token=license_token,
@@ -189,6 +168,7 @@ def write_metadata_if_needed(event):
             database=dbinfo,
             cpu=system_info.SysInfo(system_info.cpu)()['value'],
             memory=system_info.SysInfo(system_info.memory)()['value'],
+            setup=setup
         )
 
         with open(metadata_destination, 'wb') as f:
@@ -196,6 +176,15 @@ def write_metadata_if_needed(event):
 
     settings = event.app.registry.settings
     if settings.get('metadata.skip'):
+        return
+
+    # only write this every 24h, workers restart caused unwanted delays
+    try:
+        age_in_min = get_update_age()
+    except Exception:
+        age_in_min = 0
+
+    if age_in_min < 60 * 60 * 24:
         return
 
     try:
@@ -238,12 +227,6 @@ def write_js_routes_if_enabled(event):
         )
 
     def get_routes():
-        # pylons routes
-        # TODO(marcink): remove when pyramid migration is finished
-        if 'routes.map' in rhodecode.CONFIG:
-            for route in rhodecode.CONFIG['routes.map'].jsroutes():
-                yield route
-
         # pyramid routes
         for route in mapper.get_routes():
             if not route.name.startswith('__'):

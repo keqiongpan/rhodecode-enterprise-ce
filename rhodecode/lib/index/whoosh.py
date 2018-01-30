@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2017 RhodeCode GmbH
+# Copyright (C) 2012-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,19 +23,18 @@ Index schema for RhodeCode
 """
 
 from __future__ import absolute_import
-import logging
 import os
 import re
+import logging
 
-from pylons.i18n.translation import _
-
-from whoosh import query as query_lib, sorting
+from whoosh import query as query_lib
 from whoosh.highlight import HtmlFormatter, ContextFragmenter
 from whoosh.index import create_in, open_dir, exists_in, EmptyIndexError
 from whoosh.qparser import QueryParser, QueryParserError
 
 import rhodecode.lib.helpers as h
 from rhodecode.lib.index import BaseSearch
+from rhodecode.lib.utils2 import safe_unicode
 
 log = logging.getLogger(__name__)
 
@@ -122,7 +121,7 @@ class Search(BaseSearch):
             allowed_repos_filter = self._get_repo_filter(
                 search_user, repo_name)
             try:
-                query = qp.parse(unicode(query))
+                query = qp.parse(safe_unicode(query))
                 log.debug('query: %s (%s)' % (query, repr(query)))
 
                 reverse, sortedby = False, None
@@ -147,20 +146,20 @@ class Search(BaseSearch):
                     search_type, res_ln, whoosh_results)
 
             except QueryParserError:
-                result['error'] = _('Invalid search query. Try quoting it.')
+                result['error'] = 'Invalid search query. Try quoting it.'
         except (EmptyIndexError, IOError, OSError):
-            msg = _('There is no index to search in. '
-                    'Please run whoosh indexer')
+            msg = 'There is no index to search in. Please run whoosh indexer'
             log.exception(msg)
             result['error'] = msg
         except Exception:
-            msg = _('An error occurred during this search operation')
+            msg = 'An error occurred during this search operation'
             log.exception(msg)
             result['error'] = msg
 
         return result
 
-    def statistics(self):
+    def statistics(self, translator):
+        _ = translator
         stats = [
             {'key': _('Index Type'), 'value': 'Whoosh'},
             {'key': _('File Index'), 'value': str(self.file_index)},

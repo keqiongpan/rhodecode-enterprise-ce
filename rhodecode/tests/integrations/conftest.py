@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -21,6 +21,7 @@
 
 import pytest
 from rhodecode import events
+from rhodecode.lib.utils2 import AttributeDict
 
 
 @pytest.fixture
@@ -34,9 +35,10 @@ def repo_push_event(backend, user_regular):
     ]
     commit_ids = backend.create_master_repo(commits).values()
     repo = backend.create_repo()
-    scm_extras = {
+    scm_extras = AttributeDict({
         'ip': '127.0.0.1',
         'username': user_regular.username,
+        'user_id': user_regular.user_id,
         'action': '',
         'repository': repo.repo_name,
         'scm': repo.scm_instance().alias,
@@ -45,7 +47,7 @@ def repo_push_event(backend, user_regular):
         'make_lock': None,
         'locked_by': [None],
         'commit_ids': commit_ids,
-    }
+    })
 
     return events.RepoPushEvent(repo_name=repo.repo_name,
                                 pushed_commit_ids=commit_ids,

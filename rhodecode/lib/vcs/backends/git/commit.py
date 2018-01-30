@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2017 RhodeCode GmbH
+# Copyright (C) 2014-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -24,11 +24,11 @@ GIT commit module
 
 import re
 import stat
-from ConfigParser import ConfigParser
 from itertools import chain
 from StringIO import StringIO
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from pyramid.compat import configparser
 
 from rhodecode.lib.datelib import utcdate_fromtimestamp
 from rhodecode.lib.utils import safe_unicode, safe_str
@@ -533,7 +533,7 @@ class GitCommit(base.BaseCommit):
             # ConfigParser fails if there are whitespaces
             content = '\n'.join(l.strip() for l in content.split('\n'))
 
-            parser = ConfigParser()
+            parser = configparser.ConfigParser()
             parser.readfp(StringIO(content))
 
             for section in parser.sections():

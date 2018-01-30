@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -25,7 +25,7 @@ import pytest
 from whoosh import query
 
 from rhodecode.tests import (
-    TestController, SkipTest, HG_REPO,
+    TestController, HG_REPO,
     TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
 from rhodecode.tests.utils import AssertResponse
 
@@ -51,7 +51,7 @@ class TestSearchController(TestController):
 
     def test_search_files_empty_search(self):
         if os.path.isdir(self.index_location):
-            raise SkipTest('skipped due to existing index')
+            pytest.skip('skipped due to existing index')
         else:
             self.log_user()
             response = self.app.get(route_path('search'),

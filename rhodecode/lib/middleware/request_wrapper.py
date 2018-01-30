@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,7 +23,7 @@ import time
 import logging
 
 
-from rhodecode.lib.base import get_ip_addr, get_access_path
+from rhodecode.lib.base import get_ip_addr, get_access_path, get_user_agent
 from rhodecode.lib.utils2 import safe_str
 
 
@@ -43,10 +43,11 @@ class RequestWrapperTween(object):
             response = self.handler(request)
         finally:
             end = time.time()
-
-            log.info('IP: %s Request to %s time: %.3fs' % (
+            total = end - start
+            log.info('IP: %s Request to %s time: %.3fs [%s]' % (
                 get_ip_addr(request.environ),
-                safe_str(get_access_path(request.environ)), end - start)
+                safe_str(get_access_path(request.environ)), total,
+                get_user_agent(request. environ),)
             )
 
         return response

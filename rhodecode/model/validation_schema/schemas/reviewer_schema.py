@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -26,6 +26,7 @@ class ReviewerSchema(colander.MappingSchema):
     username = colander.SchemaNode(types.StrOrIntType())
     reasons = colander.SchemaNode(colander.List(), missing=['no reason specified'])
     mandatory = colander.SchemaNode(colander.Boolean(), missing=False)
+    rules = colander.SchemaNode(colander.List(), missing=[])
 
 
 class ReviewerListSchema(colander.SequenceSchema):

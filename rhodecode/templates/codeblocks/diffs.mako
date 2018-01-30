@@ -647,12 +647,12 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
                 <a
                   class="btn ${c.diffmode == 'sideside' and 'btn-primary'} tooltip"
                   title="${h.tooltip(_('View side by side'))}"
-                  href="${h.url_replace(diffmode='sideside')}">
+                  href="${h.current_route_path(request, diffmode='sideside')}">
                     <span>${_('Side by Side')}</span>
                 </a>
                 <a
                   class="btn ${c.diffmode == 'unified' and 'btn-primary'} tooltip"
-                  title="${h.tooltip(_('View unified'))}" href="${h.url_replace(diffmode='unified')}">
+                  title="${h.tooltip(_('View unified'))}" href="${h.current_route_path(request, diffmode='unified')}">
                     <span>${_('Unified')}</span>
                 </a>
             </div>

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2017 RhodeCode GmbH
+# Copyright (C) 2014-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -21,9 +21,11 @@
 """
 Custom vcs exceptions module.
 """
-
+import logging
 import functools
 import urllib2
+
+log = logging.getLogger(__name__)
 
 
 class VCSCommunicationError(Exception):
@@ -203,7 +205,10 @@ def map_vcs_exceptions(func):
                     args = e.args
                 else:
                     args = [__traceback_info__ or 'unhandledException']
-
+                if __traceback_info__ and kind != 'unhandled':
+                    # for other than unhandled errors also log the traceback
+                    # can be usefull for debugging
+                    log.error(__traceback_info__)
                 raise _EXCEPTION_MAP[kind](*args)
             else:
                 raise

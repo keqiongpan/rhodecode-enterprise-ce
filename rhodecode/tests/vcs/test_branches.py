@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,9 +23,10 @@ import datetime
 import pytest
 
 from rhodecode.lib.vcs.nodes import FileNode
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestBranches(BackendTestMixin):
 
     def test_empty_repository_has_no_branches(self, vcsbackend):

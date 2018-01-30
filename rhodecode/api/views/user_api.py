@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -79,7 +79,8 @@ def get_user(request, apiuser, userid=Optional(OAttr('apiuser'))):
             "last_login": "Timestamp",
             "last_activity": "Timestamp",
             "lastname": "surnae",
-            "permissions": {
+            "permissions": <deprecated>,
+            "permissions_summary": {
               "global": [
                 "hg.inherit_default_perms.true",
                 "usergroup.read",
@@ -97,7 +98,7 @@ def get_user(request, apiuser, userid=Optional(OAttr('apiuser'))):
               "repositories": { "username/example": "repository.write"},
               "repositories_groups": { "user-group/repo": "group.none" },
               "user_groups": { "user_group_name": "usergroup.read" }
-            },
+            }
             "user_id": 32,
             "username": "username"
           }
@@ -115,7 +116,9 @@ def get_user(request, apiuser, userid=Optional(OAttr('apiuser'))):
 
     user = get_user_or_error(userid)
     data = user.get_api_data(include_secrets=True)
-    data['permissions'] = AuthUser(user_id=user.user_id).permissions
+    permissions = AuthUser(user_id=user.user_id).permissions
+    data['permissions'] = permissions  # TODO(marcink): should be deprecated
+    data['permissions_summary'] = permissions
     return data
 
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -58,11 +58,11 @@ class TestRepoIssueTracker(object):
             'edit_repo_issuetracker_update', repo_name=backend.repo.repo_name)
         post_data = {
             'new_pattern_pattern_0': pattern,
-            'new_pattern_url_0': 'url',
+            'new_pattern_url_0': 'http://url',
             'new_pattern_prefix_0': 'prefix',
             'new_pattern_description_0': 'description',
             'new_pattern_pattern_1': another_pattern,
-            'new_pattern_url_1': 'url1',
+            'new_pattern_url_1': '/url1',
             'new_pattern_prefix_1': 'prefix1',
             'new_pattern_description_1': 'description1',
             'csrf_token': csrf_token
@@ -84,7 +84,7 @@ class TestRepoIssueTracker(object):
             extra_environ=xhr_header, params=data)
 
         assert response.body == \
-               'example of <a class="issue-tracker-link" href="url">prefix</a> replacement'
+               'example of <a class="issue-tracker-link" href="http://url">prefix</a> replacement'
 
         @request.addfinalizer
         def cleanup():
@@ -106,7 +106,7 @@ class TestRepoIssueTracker(object):
             'edit_repo_issuetracker_update', repo_name=backend.repo.repo_name)
         post_data = {
             'new_pattern_pattern_0': pattern,
-            'new_pattern_url_0': 'url',
+            'new_pattern_url_0': '/url',
             'new_pattern_prefix_0': 'prefix',
             'new_pattern_description_0': 'description',
             'uid': old_uid,

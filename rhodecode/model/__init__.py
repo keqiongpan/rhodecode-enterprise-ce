@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -17,27 +17,6 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
-"""
-The application's model objects
-
-:example:
-
-    .. code-block:: python
-
-       from paste.deploy import appconfig
-       from pylons import config
-       from sqlalchemy import engine_from_config
-       from rhodecode.config.environment import load_environment
-
-       conf = appconfig('config:development.ini', relative_to = './../../')
-       load_environment(conf.global_conf, conf.local_conf)
-
-       engine = engine_from_config(config, 'sqlalchemy.')
-       init_model(engine)
-       # RUN YOUR CODE HERE
-
-"""
 
 
 import logging
@@ -62,8 +41,9 @@ def init_model(engine, encryption_key=None):
     db.ENCRYPTION_KEY = encryption_key
 
 
-def init_model_encryption(migration_models):
-    from pylons import config
+def init_model_encryption(migration_models, config=None):
+    from pyramid.threadlocal import get_current_registry
+    config = config or get_current_registry().settings
     migration_models.ENCRYPTION_KEY = get_encryption_key(config)
     db.ENCRYPTION_KEY = get_encryption_key(config)
 

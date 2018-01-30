@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,16 +18,14 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-Changeset status conttroller
-"""
 
 import itertools
 import logging
-from collections import defaultdict
+import collections
 
 from rhodecode.model import BaseModel
-from rhodecode.model.db import ChangesetStatus, ChangesetComment, PullRequest
+from rhodecode.model.db import (
+    ChangesetStatus, ChangesetComment, PullRequest, Session)
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 from rhodecode.lib.markup_renderer import (
     DEFAULT_COMMENTS_RENDERER, RstTemplateRenderer)
@@ -70,6 +68,107 @@ class ChangesetStatusModel(BaseModel):
         q = q.order_by(ChangesetStatus.version.asc())
         return q
 
+    def calculate_group_vote(self, group_id, group_statuses_by_reviewers,
+                             trim_votes=True):
+        """
+        Calculate status based on given group members, and voting rule
+
+
+        group1 - 4 members, 3 required for approval
+            user1 - approved
+            user2 - reject
+            user3 - approved
+            user4 - rejected
+
+        final_state: rejected, reasons not at least 3 votes
+
+
+        group1 - 4 members, 2 required for approval
+            user1 - approved
+            user2 - reject
+            user3 - approved
+            user4 - rejected
+
+        final_state: approved, reasons got at least 2 approvals
+
+        group1 - 4 members, ALL required for approval
+            user1 - approved
+            user2 - reject
+            user3 - approved
+            user4 - rejected
+
+        final_state: rejected, reasons not all approvals
+
+
+        group1 - 4 members, ALL required for approval
+            user1 - approved
+            user2 - approved
+            user3 - approved
+            user4 - approved
+
+        final_state: approved, reason all approvals received
+
+        group1 - 4 members, 5 required for approval
+            (approval should be shorted to number of actual members)
+
+            user1 - approved
+            user2 - approved
+            user3 - approved
+            user4 - approved
+
+        final_state: approved, reason all approvals received
+
+        """
+        group_vote_data = {}
+        got_rule = False
+        members = collections.OrderedDict()
+        for review_obj, user, reasons, mandatory, statuses \
+                in group_statuses_by_reviewers:
+
+            if not got_rule:
+                group_vote_data = review_obj.rule_user_group_data()
+                got_rule = bool(group_vote_data)
+
+            members[user.user_id] = statuses
+
+        if not group_vote_data:
+            return []
+
+        required_votes = group_vote_data['vote_rule']
+        if required_votes == -1:
+            # -1 means all required, so we replace it with how many people
+            # are in the members
+            required_votes = len(members)
+
+        if trim_votes and required_votes > len(members):
+            # we require more votes than we have members in the group
+            # in this case we trim the required votes to the number of members
+            required_votes = len(members)
+
+        approvals = sum([
+            1 for statuses in members.values()
+            if statuses and
+               statuses[0][1].status == ChangesetStatus.STATUS_APPROVED])
+
+        calculated_votes = []
+        # we have all votes from users, now check if we have enough votes
+        # to fill other
+        fill_in = ChangesetStatus.STATUS_UNDER_REVIEW
+        if approvals >= required_votes:
+            fill_in = ChangesetStatus.STATUS_APPROVED
+
+        for member, statuses in members.items():
+            if statuses:
+                ver, latest = statuses[0]
+                if fill_in == ChangesetStatus.STATUS_APPROVED:
+                    calculated_votes.append(fill_in)
+                else:
+                    calculated_votes.append(latest.status)
+            else:
+                calculated_votes.append(fill_in)
+
+        return calculated_votes
+
     def calculate_status(self, statuses_by_reviewers):
         """
         Given the approval statuses from reviewers, calculates final approval
@@ -78,21 +177,45 @@ class ChangesetStatusModel(BaseModel):
 
         :param statuses_by_reviewers:
         """
-        votes = defaultdict(int)
-        reviewers_number = len(statuses_by_reviewers)
-        for user, reasons, mandatory, statuses in statuses_by_reviewers:
-            if statuses:
-                ver, latest = statuses[0]
-                votes[latest.status] += 1
-            else:
-                votes[ChangesetStatus.DEFAULT] += 1
 
-        # all approved
-        if votes.get(ChangesetStatus.STATUS_APPROVED) == reviewers_number:
+        def group_rule(element):
+            review_obj = element[0]
+            rule_data = review_obj.rule_user_group_data()
+            if rule_data and rule_data['id']:
+                return rule_data['id']
+
+        voting_groups = itertools.groupby(
+            sorted(statuses_by_reviewers, key=group_rule), group_rule)
+
+        voting_by_groups = [(x, list(y)) for x, y in voting_groups]
+
+        reviewers_number = len(statuses_by_reviewers)
+        votes = collections.defaultdict(int)
+        for group, group_statuses_by_reviewers in voting_by_groups:
+            if group:
+                # calculate how the "group" voted
+                for vote_status in self.calculate_group_vote(
+                        group, group_statuses_by_reviewers):
+                    votes[vote_status] += 1
+            else:
+
+                for review_obj, user, reasons, mandatory, statuses \
+                        in group_statuses_by_reviewers:
+                    # individual vote
+                    if statuses:
+                        ver, latest = statuses[0]
+                        votes[latest.status] += 1
+
+        approved_votes_count = votes[ChangesetStatus.STATUS_APPROVED]
+        rejected_votes_count = votes[ChangesetStatus.STATUS_REJECTED]
+
+        # TODO(marcink): with group voting, how does rejected work,
+        # do we ever get rejected state ?
+
+        if approved_votes_count == reviewers_number:
             return ChangesetStatus.STATUS_APPROVED
 
-        # all rejected
-        if votes.get(ChangesetStatus.STATUS_REJECTED) == reviewers_number:
+        if rejected_votes_count == reviewers_number:
             return ChangesetStatus.STATUS_REJECTED
 
         return ChangesetStatus.STATUS_UNDER_REVIEW
@@ -188,7 +311,7 @@ class ChangesetStatusModel(BaseModel):
         if cur_statuses:
             for st in cur_statuses:
                 st.version += 1
-                self.sa.add(st)
+                Session().add(st)
 
         def _create_status(user, repo, status, comment, revision, pull_request):
             new_status = ChangesetStatus()
@@ -215,7 +338,7 @@ class ChangesetStatusModel(BaseModel):
             new_status = _create_status(
                 user=user, repo=repo, status=status, comment=comment,
                 revision=revision, pull_request=pull_request)
-            self.sa.add(new_status)
+            Session().add(new_status)
             return new_status
         elif pull_request:
             # pull request can have more than one revision associated to it
@@ -227,7 +350,7 @@ class ChangesetStatusModel(BaseModel):
                     user=user, repo=repo, status=status, comment=comment,
                     revision=rev, pull_request=pull_request)
                 new_statuses.append(new_status)
-                self.sa.add(new_status)
+                Session().add(new_status)
             return new_statuses
 
     def reviewers_statuses(self, pull_request):
@@ -236,7 +359,7 @@ class ChangesetStatusModel(BaseModel):
             pull_request=pull_request,
             with_revisions=True)
 
-        commit_statuses = defaultdict(list)
+        commit_statuses = collections.defaultdict(list)
         for st in _commit_statuses:
             commit_statuses[st.author.username] += [st]
 
@@ -245,17 +368,18 @@ class ChangesetStatusModel(BaseModel):
         def version(commit_status):
             return commit_status.version
 
-        for o in pull_request.reviewers:
-            if not o.user:
+        for obj in pull_request.reviewers:
+            if not obj.user:
                 continue
-            statuses = commit_statuses.get(o.user.username, None)
+            statuses = commit_statuses.get(obj.user.username, None)
             if statuses:
-                statuses = [(x, list(y)[0])
-                      for x, y in (itertools.groupby(
-                        sorted(statuses, key=version),version))]
+                status_groups = itertools.groupby(
+                    sorted(statuses, key=version), version)
+                statuses = [(x, list(y)[0]) for x, y in status_groups]
 
             pull_request_reviewers.append(
-                (o.user, o.reasons, o.mandatory, statuses))
+                (obj, obj.user, obj.reasons, obj.mandatory, statuses))
+
         return pull_request_reviewers
 
     def calculated_review_status(self, pull_request, reviewers_statuses=None):

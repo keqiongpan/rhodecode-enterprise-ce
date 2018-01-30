@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017  RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -30,6 +30,7 @@ from rhodecode.lib.auth import (
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.lib import system_info
 from rhodecode.lib import user_sessions
+from rhodecode.lib import helpers as h
 
 
 log = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ class AdminSessionSettingsView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -88,14 +89,12 @@ class AdminSessionSettingsView(BaseAppView):
         try:
             session_model.clean_sessions(
                 older_than_seconds=older_than_seconds)
-            self.request.session.flash(
-                _('Cleaned up old sessions'), queue='success')
+            h.flash(_('Cleaned up old sessions'), category='success')
         except user_sessions.CleanupCommand as msg:
-            self.request.session.flash(msg.message, queue='warning')
+            h.flash(msg.message, category='warning')
         except Exception as e:
             log.exception('Failed session cleanup')
-            self.request.session.flash(
-                _('Failed to cleanup up old sessions'), queue='error')
+            h.flash(_('Failed to cleanup up old sessions'), category='error')
 
         redirect_to = self.request.resource_path(
             self.context, route_name='admin_settings_sessions')

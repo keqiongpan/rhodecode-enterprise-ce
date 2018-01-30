@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -63,7 +63,7 @@ def get_repo_group(request, apiuser, repogroupid):
             "group_description": "repo group description",
             "group_id": 14,
             "group_name": "group name",
-            "members": [
+            "permissions": [
               {
                 "name": "super-admin-username",
                 "origin": "super-admin",
@@ -119,7 +119,7 @@ def get_repo_group(request, apiuser, repogroupid):
         permissions.append(user_group_data)
 
     data = repo_group.get_api_data()
-    data["members"] = permissions  # TODO: this should be named permissions
+    data["permissions"] = permissions
     return data
 
 
@@ -221,7 +221,7 @@ def create_repo_group(
         repo_group = RepoGroupModel().create(
             owner=owner,
             group_name=validated_group_name,
-            group_description=schema_data['repo_group_name'],
+            group_description=schema_data['repo_group_description'],
             copy_permissions=schema_data['repo_group_copy_permissions'])
         Session().flush()
 

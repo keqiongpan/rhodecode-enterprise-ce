@@ -41,8 +41,9 @@
   var url = "${h.route_path('repo_creating_check', repo_name=c.repo_name, _query=dict(task_id=c.task_id))}";
   $.ajax({
     url: url,
+    timeout: 60*1000, // sets timeout to 60 seconds
     complete: function(resp) {
-        if (resp.status == 200) {
+        if (resp.status === 200) {
             var jsonResponse = resp.responseJSON;
 
             if (jsonResponse === undefined) {
@@ -61,9 +62,11 @@
             }
         }
         else {
+            var currentUrl = "${h.current_route_path(request)}";
+            var message = _gettext('Fetching repository state failed. Error code: {0} {1}. Try <a href="{2}">refreshing</a> this page.').format(resp.status, resp.statusText, currentUrl);
             var payload = {
                 message: {
-                    message: _gettext('Fetching repository state failed. Error code: {0} {1}. Try refreshing this page.').format(resp.status, resp.statusText),
+                    message: message,
                     level: 'error',
                     force: true
                 }

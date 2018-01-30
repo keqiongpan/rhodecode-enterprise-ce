@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -171,11 +171,11 @@ def detect_vcs_request(environ, backends):
 
 class VCSMiddleware(object):
 
-    def __init__(self, app, config, appenlight_client, registry):
+    def __init__(self, app, registry, config, appenlight_client):
         self.application = app
+        self.registry = registry
         self.config = config
         self.appenlight_client = appenlight_client
-        self.registry = registry
         self.use_gzip = True
         # order in which we check the middlewares, based on vcs.backends config
         self.check_middlewares = config['vcs.backends']
@@ -184,7 +184,11 @@ class VCSMiddleware(object):
         """
         returns serialized VcsSettings
         """
-        return VcsSettingsModel(repo=repo_name).get_ui_settings_as_config_obj()
+        try:
+            return VcsSettingsModel(
+                repo=repo_name).get_ui_settings_as_config_obj()
+        except Exception:
+            pass
 
     def wrap_in_gzip_if_enabled(self, app, config):
         if self.use_gzip:
@@ -196,7 +200,7 @@ class VCSMiddleware(object):
         log.debug('VCSMiddleware: detecting vcs type.')
         handler = detect_vcs_request(environ, self.check_middlewares)
         if handler:
-            app = handler(self.application, self.config, self.registry)
+            app = handler(self.config, self.registry)
 
         return app
 
@@ -212,18 +216,22 @@ class VCSMiddleware(object):
             # Set acl, url and vcs repo names.
             vcs_handler.set_repo_names(environ)
 
+            # register repo config back to the handler
+            vcs_conf = self.vcs_config(vcs_handler.acl_repo_name)
+            # maybe damaged/non existent settings. We still want to
+            # pass that point to validate on is_valid_and_existing_repo
+            # and return proper HTTP Code back to client
+            if vcs_conf:
+                vcs_handler.repo_vcs_config = vcs_conf
+
             # check for type, presence in database and on filesystem
             if not vcs_handler.is_valid_and_existing_repo(
                     vcs_handler.acl_repo_name,
-                    vcs_handler.basepath,
+                    vcs_handler.base_path,
                     vcs_handler.SCM):
                 return HTTPNotFound()(environ, start_response)
 
             environ['REPO_NAME'] = vcs_handler.url_repo_name
-
-            # register repo config back to the handler
-            vcs_handler.repo_vcs_config = self.vcs_config(
-                vcs_handler.acl_repo_name)
 
             # Wrap handler in middlewares if they are enabled.
             vcs_handler = self.wrap_in_gzip_if_enabled(

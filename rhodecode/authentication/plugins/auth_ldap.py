@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -460,6 +460,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
                 'lastname': safe_unicode(
                     get_ldap_attr('attr_lastname') or lastname),
                 'groups': groups,
+                'user_group_sync': False,
                 'email': get_ldap_attr('attr_email') or email,
                 'admin': admin,
                 'active': active,

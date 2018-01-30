@@ -157,7 +157,7 @@
                 var open_new_pull_request = $('#open_new_pull_request');
                 if(open_new_pull_request){
                       var selected_changes = selectedCheckboxes.length;
-                      if (selected_changes > 1 || selected_changes == 1 && templateContext.repo_type != 'hg') {
+                      if (selected_changes > 1 || selected_changes == 1 && templateContext.repo_type == 'svn') {
                           open_new_pull_request.hide();
                       } else {
                           if (selected_changes == 1) {

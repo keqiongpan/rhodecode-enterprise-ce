@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017  RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -70,10 +70,11 @@ class TestClosePullRequest(object):
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.backends("git", "hg")
-    def test_api_close_pull_request_repo_error(self):
+    def test_api_close_pull_request_repo_error(self, pr_util):
+        pull_request = pr_util.create_pull_request()
         id_, params = build_data(
             self.apikey, 'close_pull_request',
-            repoid=666, pullrequestid=1)
+            repoid=666, pullrequestid=pull_request.pull_request_id)
         response = api_call(self.app, params)
 
         expected = 'repository `666` does not exist'

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -22,7 +22,7 @@
 import pytest
 
 
-class EnabledAuthPlugin():
+class EnabledAuthPlugin(object):
     """
     Context manager that updates the 'auth_plugins' setting in DB to enable
     a plugin. Previous setting is restored on exit. The rhodecode auth plugin

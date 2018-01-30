@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -53,7 +53,6 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=self.request.translate)
 
-        self._register_global_c(c)
         return c
 
     # permission check in data loading of
@@ -74,6 +73,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         route_name='user_groups_data', request_method='GET',
         renderer='json_ext', xhr=True)
     def user_groups_list_data(self):
+        self.load_default_context()
         column_map = {
             'active': 'users_group_active',
             'description': 'user_group_description',
@@ -86,7 +86,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
             self.request, column_map=column_map)
 
         _render = self.request.get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
 
         def user_group_name(user_group_id, user_group_name):
             return _render("user_group_name", user_group_id, user_group_name)
@@ -195,7 +195,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
     def user_groups_create(self):
         _ = self.request.translate
         c = self.load_default_context()
-        users_group_form = UserGroupForm()()
+        users_group_form = UserGroupForm(self.request.translate)()
 
         user_group_name = self.request.POST.get('users_group_name')
         try:

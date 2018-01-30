@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -30,12 +30,14 @@ import subprocess32
 import time
 import uuid
 import dateutil.tz
+import functools
 
 import mock
 import pyramid.testing
 import pytest
 import colander
 import requests
+import pyramid.paster
 
 import rhodecode
 from rhodecode.lib.utils2 import AttributeDict
@@ -62,9 +64,9 @@ from rhodecode.tests import (
     login_user_session, get_new_dir, utils, TESTS_TMP_PATH,
     TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR2_LOGIN,
     TEST_USER_REGULAR_PASS)
-from rhodecode.tests.utils import CustomTestApp, set_anonymous_access, add_test_routes
+from rhodecode.tests.utils import CustomTestApp, set_anonymous_access
 from rhodecode.tests.fixture import Fixture
-
+from rhodecode.config import utils as config_utils
 
 def _split_comma(value):
     return value.split(',')
@@ -108,9 +110,7 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    # Appy the kombu patch early on, needed for test discovery on Python 2.7.11
     from rhodecode.config import patches
-    patches.kombu_1_5_1_python_2_7_11()
 
 
 def pytest_collection_modifyitems(session, config, items):
@@ -220,10 +220,24 @@ def http_environ(http_host_stub):
     }
 
 
+@pytest.fixture(scope='session')
+def baseapp(ini_config, vcsserver, http_environ_session):
+    from rhodecode.lib.pyramid_utils import get_app_config
+    from rhodecode.config.middleware import make_pyramid_app
+
+    print("Using the RhodeCode configuration:{}".format(ini_config))
+    pyramid.paster.setup_logging(ini_config)
+
+    settings = get_app_config(ini_config)
+    app = make_pyramid_app({'__file__': ini_config}, **settings)
+
+    return app
+
+
 @pytest.fixture(scope='function')
-def app(request, config_stub, pylonsapp, http_environ):
+def app(request, config_stub, baseapp, http_environ):
     app = CustomTestApp(
-        pylonsapp,
+        baseapp,
         extra_environ=http_environ)
     if request.cls:
         request.cls.app = app
@@ -231,31 +245,20 @@ def app(request, config_stub, pylonsapp, http_environ):
 
 
 @pytest.fixture(scope='session')
-def app_settings(pylonsapp, pylons_config):
+def app_settings(baseapp, ini_config):
     """
     Settings dictionary used to create the app.
 
     Parses the ini file and passes the result through the sanitize and apply
     defaults mechanism in `rhodecode.config.middleware`.
     """
-    from paste.deploy.loadwsgi import loadcontext, APP
-    from rhodecode.config.middleware import (
-        sanitize_settings_and_apply_defaults)
-    context = loadcontext(APP, 'config:' + pylons_config)
-    settings = sanitize_settings_and_apply_defaults(context.config())
-    return settings
+    return baseapp.config.get_settings()
 
 
 @pytest.fixture(scope='session')
-def db(app_settings):
-    """
-    Initializes the database connection.
-
-    It uses the same settings which are used to create the ``pylonsapp`` or
-    ``app`` fixtures.
-    """
-    from rhodecode.config.utils import initialize_database
-    initialize_database(app_settings)
+def db_connection(ini_settings):
+    # Initialize the database connection.
+    config_utils.initialize_database(ini_settings)
 
 
 LoginData = collections.namedtuple('LoginData', ('csrf_token', 'user'))
@@ -306,8 +309,8 @@ def real_crypto_backend(monkeypatch):
 
 
 @pytest.fixture(scope='class')
-def index_location(request, pylonsapp):
-    index_location = pylonsapp.config['app_conf']['search.location']
+def index_location(request, baseapp):
+    index_location = baseapp.config.get_settings()['search.location']
     if request.cls:
         request.cls.index_location = index_location
     return index_location
@@ -421,7 +424,7 @@ class TestRepoContainer(object):
 
 
 @pytest.fixture
-def backend(request, backend_alias, pylonsapp, test_repo):
+def backend(request, backend_alias, baseapp, test_repo):
     """
     Parametrized fixture which represents a single backend implementation.
 
@@ -449,18 +452,18 @@ def backend(request, backend_alias, pylonsapp, test_repo):
 
 
 @pytest.fixture
-def backend_git(request, pylonsapp, test_repo):
-    return backend(request, 'git', pylonsapp, test_repo)
+def backend_git(request, baseapp, test_repo):
+    return backend(request, 'git', baseapp, test_repo)
 
 
 @pytest.fixture
-def backend_hg(request, pylonsapp, test_repo):
-    return backend(request, 'hg', pylonsapp, test_repo)
+def backend_hg(request, baseapp, test_repo):
+    return backend(request, 'hg', baseapp, test_repo)
 
 
 @pytest.fixture
-def backend_svn(request, pylonsapp, test_repo):
-    return backend(request, 'svn', pylonsapp, test_repo)
+def backend_svn(request, baseapp, test_repo):
+    return backend(request, 'svn', baseapp, test_repo)
 
 
 @pytest.fixture
@@ -672,7 +675,7 @@ class Backend(object):
 
 
 @pytest.fixture
-def vcsbackend(request, backend_alias, tests_tmp_path, pylonsapp, test_repo):
+def vcsbackend(request, backend_alias, tests_tmp_path, baseapp, test_repo):
     """
     Parametrized fixture which represents a single vcs backend implementation.
 
@@ -700,18 +703,18 @@ def vcsbackend(request, backend_alias, tests_tmp_path, pylonsapp, test_repo):
 
 
 @pytest.fixture
-def vcsbackend_git(request, tests_tmp_path, pylonsapp, test_repo):
-    return vcsbackend(request, 'git', tests_tmp_path, pylonsapp, test_repo)
+def vcsbackend_git(request, tests_tmp_path, baseapp, test_repo):
+    return vcsbackend(request, 'git', tests_tmp_path, baseapp, test_repo)
 
 
 @pytest.fixture
-def vcsbackend_hg(request, tests_tmp_path, pylonsapp, test_repo):
-    return vcsbackend(request, 'hg', tests_tmp_path, pylonsapp, test_repo)
+def vcsbackend_hg(request, tests_tmp_path, baseapp, test_repo):
+    return vcsbackend(request, 'hg', tests_tmp_path, baseapp, test_repo)
 
 
 @pytest.fixture
-def vcsbackend_svn(request, tests_tmp_path, pylonsapp, test_repo):
-    return vcsbackend(request, 'svn', tests_tmp_path, pylonsapp, test_repo)
+def vcsbackend_svn(request, tests_tmp_path, baseapp, test_repo):
+    return vcsbackend(request, 'svn', tests_tmp_path, baseapp, test_repo)
 
 
 @pytest.fixture
@@ -903,10 +906,7 @@ def pr_util(backend, request, config_stub):
     """
 
     util = PRTestUtility(backend)
-
-    @request.addfinalizer
-    def cleanup():
-        util.cleanup()
+    request.addfinalizer(util.cleanup)
 
     return util
 
@@ -995,8 +995,8 @@ class PRTestUtility(object):
 
     def _get_reviewers(self):
         return [
-            (TEST_USER_REGULAR_LOGIN, ['default1'], False),
-            (TEST_USER_REGULAR2_LOGIN, ['default2'], False),
+            (TEST_USER_REGULAR_LOGIN, ['default1'], False, []),
+            (TEST_USER_REGULAR2_LOGIN, ['default2'], False, []),
         ]
 
     def update_source_repository(self, head=None):
@@ -1096,7 +1096,7 @@ class PRTestUtility(object):
 
 
 @pytest.fixture
-def user_admin(pylonsapp):
+def user_admin(baseapp):
     """
     Provides the default admin test user as an instance of `db.User`.
     """
@@ -1105,7 +1105,7 @@ def user_admin(pylonsapp):
 
 
 @pytest.fixture
-def user_regular(pylonsapp):
+def user_regular(baseapp):
     """
     Provides the default regular test user as an instance of `db.User`.
     """
@@ -1114,7 +1114,7 @@ def user_regular(pylonsapp):
 
 
 @pytest.fixture
-def user_util(request, pylonsapp):
+def user_util(request, db_connection):
     """
     Provides a wired instance of `UserUtility` with integrated cleanup.
     """
@@ -1389,10 +1389,10 @@ def collect_appenlight_stats(request, testrun):
     if not request.config.getoption('--appenlight'):
         return
     else:
-        # Only request the pylonsapp fixture if appenlight tracking is
+        # Only request the baseapp fixture if appenlight tracking is
         # enabled. This will speed up a test run of unit tests by 2 to 3
         # seconds if appenlight is not enabled.
-        pylonsapp = request.getfuncargvalue("pylonsapp")
+        baseapp = request.getfuncargvalue("baseapp")
     url = '{}/api/logs'.format(request.config.getoption('--appenlight-url'))
     client = AppenlightClient(
         url=url,
@@ -1405,8 +1405,8 @@ def collect_appenlight_stats(request, testrun):
         'message': "Starting",
     })
 
-    server_and_port = pylonsapp.config['vcs.server']
-    protocol = pylonsapp.config['vcs.server.protocol']
+    server_and_port = baseapp.config.get_settings()['vcs.server']
+    protocol = baseapp.config.get_settings()['vcs.server.protocol']
     server = create_vcsserver_proxy(server_and_port, protocol)
     with server:
         vcs_pid = server.get_pid()
@@ -1512,13 +1512,13 @@ class AppenlightClient():
 
         if not response.status_code == 200:
             pprint.pprint(self.stats)
-            print response.headers
-            print response.text
+            print(response.headers)
+            print(response.text)
             raise Exception('Sending to appenlight failed')
 
 
 @pytest.fixture
-def gist_util(request, pylonsapp):
+def gist_util(request, db_connection):
     """
     Provides a wired instance of `GistUtility` with integrated cleanup.
     """
@@ -1549,7 +1549,7 @@ def enabled_backends(request):
 
 
 @pytest.fixture
-def settings_util(request):
+def settings_util(request, db_connection):
     """
     Provides a wired instance of `SettingsUtility` with integrated cleanup.
     """
@@ -1665,6 +1665,15 @@ def rhodecode_fixtures():
 
 
 @pytest.fixture
+def context_stub():
+    """
+    Stub context object.
+    """
+    context = pyramid.testing.DummyResource()
+    return context
+
+
+@pytest.fixture
 def request_stub():
     """
     Stub request object.
@@ -1675,21 +1684,12 @@ def request_stub():
 
 
 @pytest.fixture
-def context_stub():
-    """
-    Stub context object.
-    """
-    context = pyramid.testing.DummyResource()
-    return context
-
-
-@pytest.fixture
 def config_stub(request, request_stub):
     """
     Set up pyramid.testing and return the Configurator.
     """
-    config = pyramid.testing.setUp(request=request_stub)
-    add_test_routes(config)
+    from rhodecode.lib.base import bootstrap_config
+    config = bootstrap_config(request=request_stub)
 
     @request.addfinalizer
     def cleanup():
@@ -1824,7 +1824,7 @@ def local_dt_to_utc():
 
 
 @pytest.fixture
-def disable_anonymous_user(request, pylonsapp):
+def disable_anonymous_user(request, baseapp):
     set_anonymous_access(False)
 
     @request.addfinalizer
@@ -1832,7 +1832,7 @@ def disable_anonymous_user(request, pylonsapp):
         set_anonymous_access(True)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def rc_fixture(request):
     return Fixture()
 

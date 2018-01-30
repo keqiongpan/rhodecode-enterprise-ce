@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2017-2017 RhodeCode GmbH
+# Copyright (C) 2017-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -42,7 +42,7 @@ class RepoFeedView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
-        self._register_global_c(c)
+
         self._load_defaults()
         return c
 
@@ -81,21 +81,22 @@ class RepoFeedView(RepoAppView):
         _parsed = diff_processor.prepare(inline_diff=False)
         limited_diff = isinstance(_parsed, LimitedDiffContainer)
 
-        return _parsed, limited_diff
+        return diff_processor, _parsed, limited_diff
 
     def _get_title(self, commit):
         return h.shorter(commit.message, 160)
 
     def _get_description(self, commit):
         _renderer = self.request.get_partial_renderer(
-            'feed/atom_feed_entry.mako')
-        parsed_diff, limited_diff = self._changes(commit)
+            'rhodecode:templates/feed/atom_feed_entry.mako')
+        diff_processor, parsed_diff, limited_diff = self._changes(commit)
         return _renderer(
             'body',
             commit=commit,
             parsed_diff=parsed_diff,
             limited_diff=limited_diff,
             feed_include_diff=self.feed_include_diff,
+            diff_processor=diff_processor,
         )
 
     def _set_timezone(self, date, tzinfo=pytz.utc):

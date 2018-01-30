@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -44,7 +44,8 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.utils2 import safe_int, safe_unicode, AttributeDict
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.forms import (
-    UserForm, UserIndividualPermissionsForm, UserPermissionsForm)
+    UserForm, UserIndividualPermissionsForm, UserPermissionsForm,
+    UserExtraEmailForm, UserExtraIpForm)
 from rhodecode.model.permission import PermissionModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.ssh_key import SshKeyModel
@@ -62,7 +63,6 @@ class AdminUsersView(BaseAppView, DataGridAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-        self._register_global_c(c)
         return c
 
     @LoginRequired()
@@ -81,6 +81,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         route_name='users_data', request_method='GET',
         renderer='json_ext', xhr=True)
     def users_list_data(self):
+        self.load_default_context()
         column_map = {
             'first_name': 'name',
             'last_name': 'lastname',
@@ -90,7 +91,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
             self.request, column_map=column_map)
 
         _render = self.request.get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
 
         def user_actions(user_id, username):
             return _render("user_actions", user_id, username)
@@ -190,7 +191,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
         c.default_extern_type = auth_rhodecode.RhodeCodeAuthPlugin.name
         user_model = UserModel()
-        user_form = UserForm()()
+        user_form = UserForm(self.request.translate)()
         try:
             form_result = user_form.to_python(dict(self.request.POST))
             user = user_model.create(form_result)
@@ -258,7 +259,6 @@ class UsersView(UserAppView):
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=req.translate)
 
-        self._register_global_c(c)
         return c
 
     @LoginRequired()
@@ -279,7 +279,8 @@ class UsersView(UserAppView):
         c.extern_name = c.user.extern_name
         c.perm_user = c.user.AuthUser(ip_addr=self.request.remote_addr)
         available_languages = [x[0] for x in c.allowed_languages]
-        _form = UserForm(edit=True, available_languages=available_languages,
+        _form = UserForm(self.request.translate, edit=True,
+                         available_languages=available_languages,
                          old_data={'user_id': user_id,
                                    'email': c.user.email})()
         form_result = {}
@@ -537,7 +538,7 @@ class UsersView(UserAppView):
         c.active = 'global_perms'
         try:
             # first stage that verifies the checkbox
-            _form = UserIndividualPermissionsForm()
+            _form = UserIndividualPermissionsForm(self.request.translate)
             form_result = _form.to_python(dict(self.request.POST))
             inherit_perms = form_result['inherit_default_permissions']
             c.user.inherit_default_permissions = inherit_perms
@@ -546,6 +547,7 @@ class UsersView(UserAppView):
             if not inherit_perms:
                 # only update the individual ones if we un check the flag
                 _form = UserPermissionsForm(
+                    self.request.translate,
                     [x[0] for x in c.repo_create_choices],
                     [x[0] for x in c.repo_create_on_write_choices],
                     [x[0] for x in c.repo_group_create_choices],
@@ -913,6 +915,11 @@ class UsersView(UserAppView):
         email = self.request.POST.get('new_email')
         user_data = c.user.get_api_data()
         try:
+
+            form = UserExtraEmailForm(self.request.translate)()
+            data = form.to_python({'email': email})
+            email = data['email']
+
             UserModel().add_extra_email(c.user.user_id, email)
             audit_logger.store_web(
                 'user.edit.email.add',
@@ -1008,6 +1015,10 @@ class UsersView(UserAppView):
         user_data = c.user.get_api_data()
         for ip in ip_list:
             try:
+                form = UserExtraIpForm(self.request.translate)()
+                data = form.to_python({'ip': ip})
+                ip = data['ip']
+
                 user_model.add_extra_ip(c.user.user_id, ip, desc)
                 audit_logger.store_web(
                     'user.edit.ip.add',

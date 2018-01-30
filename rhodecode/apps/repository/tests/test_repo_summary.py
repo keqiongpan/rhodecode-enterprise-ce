@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -56,6 +56,16 @@ def route_path(name, params=None, **kwargs):
     return base_url
 
 
+def assert_clone_url(response, server, repo, disabled=False):
+
+    response.mustcontain(
+        '<input type="text" class="input-monospace clone_url_input" '
+        '{disabled}readonly="readonly" '
+        'value="http://test_admin@{server}/{repo}"/>'.format(
+            server=server, repo=repo, disabled='disabled ' if disabled else ' ')
+    )
+
+
 @pytest.mark.usefixtures('app')
 class TestSummaryView(object):
     def test_index(self, autologin_user, backend, http_host_only_stub):
@@ -76,12 +86,8 @@ class TestSummaryView(object):
         )
 
         # clone url...
-        response.mustcontain(
-            'id="clone_url" readonly="readonly"'
-            ' value="http://test_admin@%s/%s"' % (http_host_only_stub, repo_name, ))
-        response.mustcontain(
-            'id="clone_url_id" readonly="readonly"'
-            ' value="http://test_admin@%s/_%s"' % (http_host_only_stub, repo_id, ))
+        assert_clone_url(response, http_host_only_stub, repo_name)
+        assert_clone_url(response, http_host_only_stub, '_{}'.format(repo_id))
 
     def test_index_svn_without_proxy(
             self, autologin_user, backend_svn, http_host_only_stub):
@@ -89,12 +95,9 @@ class TestSummaryView(object):
         repo_name = backend_svn.repo_name
         response = self.app.get(route_path('repo_summary', repo_name=repo_name))
         # clone url...
-        response.mustcontain(
-            'id="clone_url" disabled'
-            ' value="http://test_admin@%s/%s"' % (http_host_only_stub, repo_name, ))
-        response.mustcontain(
-            'id="clone_url_id" disabled'
-            ' value="http://test_admin@%s/_%s"' % (http_host_only_stub, repo_id, ))
+
+        assert_clone_url(response, http_host_only_stub, repo_name, disabled=True)
+        assert_clone_url(response, http_host_only_stub, '_{}'.format(repo_id), disabled=True)
 
     def test_index_with_trailing_slash(
             self, autologin_user, backend, http_host_only_stub):
@@ -108,12 +111,8 @@ class TestSummaryView(object):
                 status=200)
 
         # clone url...
-        response.mustcontain(
-            'id="clone_url" readonly="readonly"'
-            ' value="http://test_admin@%s/%s"' % (http_host_only_stub, repo_name, ))
-        response.mustcontain(
-            'id="clone_url_id" readonly="readonly"'
-            ' value="http://test_admin@%s/_%s"' % (http_host_only_stub, repo_id, ))
+        assert_clone_url(response, http_host_only_stub, repo_name)
+        assert_clone_url(response, http_host_only_stub, '_{}'.format(repo_id))
 
     def test_index_by_id(self, autologin_user, backend):
         repo_id = backend.repo.repo_id

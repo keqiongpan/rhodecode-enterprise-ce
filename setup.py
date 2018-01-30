@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -66,84 +66,9 @@ def _get_requirements(req_filename, exclude=None, extras=None):
 # requirements extract
 setup_requirements = ['PasteScript', 'pytest-runner']
 install_requirements = _get_requirements(
-    'requirements.txt', exclude=['setuptools'])
+    'requirements.txt', exclude=['setuptools', 'entrypoints'])
 test_requirements = _get_requirements(
     'requirements_test.txt', extras=['configobj'])
-
-install_requirements = [
-    'Babel',
-    'Beaker',
-    'FormEncode',
-    'Mako',
-    'Markdown',
-    'MarkupSafe',
-    'MySQL-python',
-    'Paste',
-    'PasteDeploy',
-    'PasteScript',
-    'Pygments',
-    'pygments-markdown-lexer',
-    'Pylons',
-    'Routes',
-    'SQLAlchemy',
-    'Tempita',
-    'URLObject',
-    'WebError',
-    'WebHelpers',
-    'WebHelpers2',
-    'WebOb',
-    'WebTest',
-    'Whoosh',
-    'alembic',
-    'amqplib',
-    'anyjson',
-    'appenlight-client',
-    'authomatic',
-    'cssselect',
-    'celery',
-    'channelstream',
-    'colander',
-    'decorator',
-    'deform',
-    'docutils',
-    'gevent',
-    'gunicorn',
-    'infrae.cache',
-    'ipython',
-    'iso8601',
-    'kombu',
-    'lxml',
-    'msgpack-python',
-    'nbconvert',
-    'packaging',
-    'psycopg2',
-    'py-gfm',
-    'pycrypto',
-    'pycurl',
-    'pyparsing',
-    'pyramid',
-    'pyramid-debugtoolbar',
-    'pyramid-mako',
-    'pyramid-beaker',
-    'pysqlite',
-    'python-dateutil',
-    'python-ldap',
-    'python-memcached',
-    'python-pam',
-    'recaptcha-client',
-    'redis',
-    'repoze.lru',
-    'requests',
-    'simplejson',
-    'sshpubkeys',
-    'subprocess32',
-    'waitress',
-    'zope.cachedescriptors',
-    'dogpile.cache',
-    'dogpile.core',
-    'psutil',
-    'py-bcrypt',
-]
 
 
 def get_version():
@@ -215,7 +140,7 @@ setup(
             ('public/**', 'ignore', None),
         ]
     },
-    paster_plugins=['PasteScript', 'Pylons'],
+    paster_plugins=['PasteScript'],
     entry_points={
         'enterprise.plugins1': [
             'crowd=rhodecode.authentication.plugins.auth_crowd:plugin_factory',
@@ -228,18 +153,13 @@ setup(
         ],
         'paste.app_factory': [
             'main=rhodecode.config.middleware:make_pyramid_app',
-            'pylons=rhodecode.config.middleware:make_app',
-        ],
-        'paste.app_install': [
-            'main=pylons.util:PylonsInstaller',
-            'pylons=pylons.util:PylonsInstaller',
         ],
         'paste.global_paster_command': [
-            'make-config=rhodecode.lib.paster_commands.make_config:Command',
-            'setup-rhodecode=rhodecode.lib.paster_commands.setup_rhodecode:Command',
             'ishell=rhodecode.lib.paster_commands.ishell:Command',
-            'upgrade-db=rhodecode.lib.dbmigrate:UpgradeDb',
-            'celeryd=rhodecode.lib.celerypylons.commands:CeleryDaemonCommand',
+            'upgrade-db=rhodecode.lib.paster_commands.upgrade_db:UpgradeDb',
+
+            'setup-rhodecode=rhodecode.lib.paster_commands.deprecated.setup_rhodecode:Command',
+            'celeryd=rhodecode.lib.paster_commands.deprecated.celeryd:Command',
         ],
         'pyramid.pshell_runner': [
             'ipython = rhodecode.lib.pyramid_shell:ipython_shell_runner',

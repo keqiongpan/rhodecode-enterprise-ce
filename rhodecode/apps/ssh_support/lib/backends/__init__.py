@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -22,7 +22,7 @@ import os
 import re
 import logging
 import datetime
-import ConfigParser
+from pyramid.compat import configparser
 
 from rhodecode.model.db import Session, User, UserSshKeys
 from rhodecode.model.scm import ScmModel
@@ -51,7 +51,7 @@ class SshWrapper(object):
         self.server_impl = None
 
     def parse_config(self, config_path):
-        parser = ConfigParser.ConfigParser()
+        parser = configparser.ConfigParser()
         parser.read(config_path)
         return parser
 

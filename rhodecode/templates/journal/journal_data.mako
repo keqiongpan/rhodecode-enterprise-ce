@@ -14,8 +14,8 @@
                 %endif
                 <div class="journal_action_container">
                 % for entry in entries:
-                    <div class="journal_icon"> ${h.action_parser(entry)[2]()}</div>
-                    <div class="journal_action">${h.action_parser(entry)[0]()}</div>
+                    <div class="journal_icon"> ${h.action_parser(request, entry)[2]()}</div>
+                    <div class="journal_action">${h.action_parser(request, entry)[0]()}</div>
                     <div class="journal_repo">
                         <span class="journal_repo_name">
                         %if entry.repository is not None:
@@ -26,7 +26,7 @@
                         %endif
                         </span>
                     </div>
-                    <div class="journal_action_params">${h.literal(h.action_parser(entry)[1]())}</div>
+                    <div class="journal_action_params">${h.literal(h.action_parser(request, entry)[1]())}</div>
                     <div class="date">
                         ${h.age_component(entry.action_date, time_is_local=True)}
                     </div>

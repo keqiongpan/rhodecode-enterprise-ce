@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -104,7 +104,7 @@ class TestMercurialRemoteRepoInvalidation(object):
         pr = PullRequestModel()
         workspace_id = pr._workspace_id(pull_request)
         shadow_repository_path = target_vcs._maybe_prepare_merge_workspace(
-            workspace_id, target_ref)
+            workspace_id, target_ref, source_ref)
         shadow_repo = target_vcs._get_shadow_instance(shadow_repository_path)
 
         # This will populate the cache of the mercurial repository object

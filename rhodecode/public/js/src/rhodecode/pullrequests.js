@@ -1,4 +1,4 @@
-// # Copyright (C) 2010-2017 RhodeCode GmbH
+// # Copyright (C) 2010-2018 RhodeCode GmbH
 // #
 // # This program is free software: you can redistribute it and/or modify
 // # it under the terms of the GNU Affero General Public License, version 3
@@ -137,10 +137,10 @@ ReviewersController = function () {
         }
 
         if (data.rules.voting !== undefined) {
-            if (data.rules.voting < 0){
+            if (data.rules.voting < 0) {
                 self.$rulesList.append(
                     self.addRule(
-                        _gettext('All reviewers must vote.'))
+                         _gettext('All individual reviewers must vote.'))
                 )
             } else if (data.rules.voting === 1) {
                 self.$rulesList.append(
@@ -155,6 +155,15 @@ ReviewersController = function () {
                 )
             }
         }
+
+        if (data.rules.voting_groups !== undefined) {
+            $.each(data.rules.voting_groups, function(index, rule_data) {
+                self.$rulesList.append(
+                    self.addRule(rule_data.text)
+                )
+            });
+        }
+
         if (data.rules.use_code_authors_for_review) {
             self.$rulesList.append(
                 self.addRule(
@@ -227,10 +236,7 @@ ReviewersController = function () {
                 for (var i = 0; i < data.reviewers.length; i++) {
                   var reviewer = data.reviewers[i];
                   self.addReviewMember(
-                      reviewer.user_id, reviewer.first_name,
-                      reviewer.last_name, reviewer.username,
-                      reviewer.gravatar_link, reviewer.reasons,
-                      reviewer.mandatory);
+                      reviewer, reviewer.reasons, reviewer.mandatory);
                 }
                 $('.calculate-reviewers').hide();
                 prButtonLock(false, null, 'reviewers');
@@ -260,64 +266,22 @@ ReviewersController = function () {
             $('#reviewer_{0}'.format(reviewer_id)).remove();
         }
     };
+    this.reviewMemberEntry = function() {
 
-    this.addReviewMember = function(id, fname, lname, nname, gravatar_link, reasons, mandatory) {
+    };
+    this.addReviewMember = function(reviewer_obj, reasons, mandatory) {
         var members = self.$reviewMembers.get(0);
-        var reasons_html = '';
-        var reasons_inputs = '';
+        var id = reviewer_obj.user_id;
+        var username = reviewer_obj.username;
+
         var reasons = reasons || [];
         var mandatory = mandatory || false;
 
-        if (reasons) {
-            for (var i = 0; i < reasons.length; i++) {
-                reasons_html += '<div class="reviewer_reason">- {0}</div>'.format(reasons[i]);
-                reasons_inputs += '<input type="hidden" name="reason" value="' + escapeHtml(reasons[i]) + '">';
-            }
-        }
-        var tmpl = '' +
-        '<li id="reviewer_{2}" class="reviewer_entry">'+
-           '<input type="hidden" name="__start__" value="reviewer:mapping">'+
-           '<div class="reviewer_status">'+
-              '<div class="flag_status not_reviewed pull-left reviewer_member_status"></div>'+
-           '</div>'+
-          '<img alt="gravatar" class="gravatar" src="{0}"/>'+
-          '<span class="reviewer_name user">{1}</span>'+
-          reasons_html +
-          '<input type="hidden" name="user_id" value="{2}">'+
-          '<input type="hidden" name="__start__" value="reasons:sequence">'+
-           '{3}'+
-          '<input type="hidden" name="__end__" value="reasons:sequence">';
-
-        if (mandatory) {
-            tmpl += ''+
-            '<div class="reviewer_member_mandatory_remove">' +
-            '<i class="icon-remove-sign"></i>'+
-            '</div>' +
-            '<input type="hidden" name="mandatory" value="true">'+
-            '<div class="reviewer_member_mandatory">' +
-                '<i class="icon-lock" title="Mandatory reviewer"></i>'+
-            '</div>';
-
-        } else {
-            tmpl += ''+
-            '<input type="hidden" name="mandatory" value="false">'+
-            '<div class="reviewer_member_remove action_button" onclick="reviewersController.removeReviewMember({2})">' +
-                '<i class="icon-remove-sign"></i>'+
-            '</div>';
-        }
-        // continue template
-        tmpl += ''+
-        '<input type="hidden" name="__end__" value="reviewer:mapping">'+
-        '</li>' ;
-
-        var displayname = "{0} ({1} {2})".format(
-                nname, escapeHtml(fname), escapeHtml(lname));
-        var element = tmpl.format(gravatar_link,displayname,id,reasons_inputs);
-        // check if we don't have this ID already in
-        var ids = [];
+        // register IDS to check if we don't have this ID already in
+        var currentIds = [];
         var _els = self.$reviewMembers.find('li').toArray();
         for (el in _els){
-            ids.push(_els[el].id)
+            currentIds.push(_els[el].id)
         }
 
         var userAllowedReview = function(userId) {
@@ -333,19 +297,30 @@ ReviewersController = function () {
 
         var userAllowed = userAllowedReview(id);
         if (!userAllowed){
-           alert(_gettext('User `{0}` not allowed to be a reviewer').format(nname));
-        }
-        var shouldAdd = userAllowed && ids.indexOf('reviewer_'+id) == -1;
-
-        if(shouldAdd) {
+           alert(_gettext('User `{0}` not allowed to be a reviewer').format(username));
+        } else {
             // only add if it's not there
-            members.innerHTML += element;
+            var alreadyReviewer = currentIds.indexOf('reviewer_'+id) != -1;
+
+            if (alreadyReviewer) {
+                alert(_gettext('User `{0}` already in reviewers').format(username));
+            } else {
+                members.innerHTML += renderTemplate('reviewMemberEntry', {
+                        'member': reviewer_obj,
+                        'mandatory': mandatory,
+                        'allowed_to_update': true,
+                        'review_status': 'not_reviewed',
+                        'review_status_label': _gettext('Not Reviewed'),
+                        'reasons': reasons,
+                        'create': true
+                        });
+            }
         }
 
     };
 
     this.updateReviewers = function(repo_name, pull_request_id){
-        var postData = '_method=put&' + $('#reviewers input').serialize();
+        var postData = $('#reviewers input').serialize();
         _updatePullRequest(repo_name, pull_request_id, postData);
     };
 
@@ -457,21 +432,30 @@ var ReviewerAutoComplete = function(inputId) {
     formatResult: autocompleteFormatResult,
     lookupFilter: autocompleteFilterResult,
     onSelect: function(element, data) {
-
+        var mandatory = false;
         var reasons = [_gettext('added manually by "{0}"').format(templateContext.rhodecode_user.username)];
+
+        // add whole user groups
         if (data.value_type == 'user_group') {
             reasons.push(_gettext('member of "{0}"').format(data.value_display));
 
             $.each(data.members, function(index, member_data) {
-                reviewersController.addReviewMember(
-                    member_data.id, member_data.first_name, member_data.last_name,
-                    member_data.username, member_data.icon_link, reasons);
+                var reviewer = member_data;
+                reviewer['user_id'] = member_data['id'];
+                reviewer['gravatar_link'] = member_data['icon_link'];
+                reviewer['user_link'] = member_data['profile_link'];
+                reviewer['rules'] = [];
+                reviewersController.addReviewMember(reviewer, reasons, mandatory);
             })
-
-        } else {
-          reviewersController.addReviewMember(
-              data.id, data.first_name, data.last_name,
-              data.username, data.icon_link, reasons);
+        }
+        // add single user
+        else {
+            var reviewer = data;
+            reviewer['user_id'] = data['id'];
+            reviewer['gravatar_link'] = data['icon_link'];
+            reviewer['user_link'] = data['profile_link'];
+            reviewer['rules'] = [];
+            reviewersController.addReviewMember(reviewer, reasons, mandatory);
         }
 
       $(inputId).val('');

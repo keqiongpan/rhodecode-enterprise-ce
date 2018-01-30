@@ -31,6 +31,12 @@ self: super: {
     };
   });
 
+  testpath = super.testpath.override (attrs: {
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  });
+
   gnureadline = super.gnureadline.override (attrs: {
     buildInputs = attrs.buildInputs ++ [
       pkgs.ncurses
@@ -58,23 +64,6 @@ self: super: {
   ipython = super.ipython.override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
       self.gnureadline
-    ];
-  });
-
-  celery = super.celery.override (attrs: {
-    # The current version of kombu needs some patching to work with the
-    # other libs. Should be removed once we update celery and kombu.
-    patches = [
-      ./patch-celery-dateutil.diff
-    ];
-  });
-
-  kombu = super.kombu.override (attrs: {
-    # The current version of kombu needs some patching to work with the
-    # other libs. Should be removed once we update celery and kombu.
-    patches = [
-      ./patch-kombu-py-2-7-11.diff
-      ./patch-kombu-msgpack.diff
     ];
   });
 
@@ -114,10 +103,6 @@ self: super: {
     };
   });
 
-  py-gfm = super.py-gfm.override  {
-    name = "py-gfm-0.1.3.rhodecode-upstream1";
-  };
-
   pycurl = super.pycurl.override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
       pkgs.curl
@@ -131,10 +116,6 @@ self: super: {
       # TODO: It is LGPL and MIT
       license = pkgs.lib.licenses.mit;
     };
-  });
-
-  Pylons = super.Pylons.override (attrs: {
-    name = "Pylons-1.0.2.rhodecode-patch1";
   });
 
   pyramid = super.pyramid.override (attrs: {
@@ -205,12 +186,6 @@ self: super: {
         fullName = "The Unlicense";
         url = http://unlicense.org/;
       };
-    };
-  });
-
-  amqplib = super.amqplib.override (attrs: {
-    meta = {
-      license = pkgs.lib.licenses.lgpl3;
     };
   });
 

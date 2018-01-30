@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -61,7 +61,7 @@ def pytest_collection_modifyitems(session, config, items):
 
 @pytest.fixture
 def db_backend(
-        request, db_backend_name, pylons_config, tmpdir_factory):
+        request, db_backend_name, ini_config, tmpdir_factory):
     basetemp = tmpdir_factory.getbasetemp().strpath
     klass = _get_backend(db_backend_name)
 
@@ -69,7 +69,7 @@ def db_backend(
     connection_string = request.config.getoption(option_name) or None
 
     return klass(
-        config_file=pylons_config, basetemp=basetemp,
+        config_file=ini_config, basetemp=basetemp,
         connection_string=connection_string)
 
 
@@ -85,7 +85,8 @@ def _get_backend(backend_type):
 class DBBackend(object):
     _store = os.path.dirname(os.path.abspath(__file__))
     _type = None
-    _base_ini_config = [{'app:main': {'vcs.start_server': 'false'}}]
+    _base_ini_config = [{'app:main': {'vcs.start_server': 'false',
+                                      'startup.import_repos': 'false'}}]
     _db_url = [{'app:main': {'sqlalchemy.db1.url': ''}}]
     _base_db_name = 'rhodecode_test_db_backend'
 
@@ -167,7 +168,7 @@ class DBBackend(object):
                 os.makedirs(self._repos_git_lfs_store)
 
             self.execute(
-                "paster setup-rhodecode {0} --user=marcink "
+                "rc-setup-app {0} --user=marcink "
                 "--email=marcin@rhodeocode.com --password={1} "
                 "--repos={2} --force-yes".format(
                     _ini_file, 'qweqwe', self._repos_location), env=env)
@@ -183,7 +184,7 @@ class DBBackend(object):
             if not os.path.isdir(self._repos_location):
                 os.makedirs(self._repos_location)
             self.execute(
-                "paster upgrade-db {} --force-yes".format(ini_file))
+                "rc-upgrade-db {0} --force-yes".format(ini_file))
 
     def setup_db(self):
         raise NotImplementedError

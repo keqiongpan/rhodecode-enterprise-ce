@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -30,7 +30,6 @@ import logging
 import cStringIO
 import pkg_resources
 
-from pylons.i18n.translation import _
 from sqlalchemy import func
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
@@ -40,7 +39,6 @@ from rhodecode.lib.vcs.exceptions import RepositoryError, NodeNotChangedError
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib import helpers as h
-
 from rhodecode.lib.auth import (
     HasRepoPermissionAny, HasRepoGroupPermissionAny,
     HasUserGroupPermissionAny)
@@ -375,10 +373,10 @@ class ScmModel(BaseModel):
         self.sa.add(repo)
         return repo
 
-    def pull_changes(self, repo, username):
+    def pull_changes(self, repo, username, remote_uri=None):
         dbrepo = self._get_repo(repo)
-        clone_uri = dbrepo.clone_uri
-        if not clone_uri:
+        remote_uri = remote_uri or dbrepo.clone_uri
+        if not remote_uri:
             raise Exception("This repository doesn't have a clone uri")
 
         repo = dbrepo.scm_instance(cache=False)
@@ -390,9 +388,24 @@ class ScmModel(BaseModel):
         repo_name = dbrepo.repo_name
         try:
             # TODO: we need to make sure those operations call proper hooks !
-            repo.pull(clone_uri)
+            repo.pull(remote_uri)
 
             self.mark_for_invalidation(repo_name)
+        except Exception:
+            log.error(traceback.format_exc())
+            raise
+
+    def push_changes(self, repo, username, remote_uri=None):
+        dbrepo = self._get_repo(repo)
+        remote_uri = remote_uri or dbrepo.clone_uri
+        if not remote_uri:
+            raise Exception("This repository doesn't have a clone uri")
+
+        repo = dbrepo.scm_instance(cache=False)
+        repo.config.clear_section('hooks')
+
+        try:
+            repo.push(remote_uri)
         except Exception:
             log.error(traceback.format_exc())
             raise
@@ -748,14 +761,14 @@ class ScmModel(BaseModel):
     def get_unread_journal(self):
         return self.sa.query(UserLog).count()
 
-    def get_repo_landing_revs(self, repo=None):
+    def get_repo_landing_revs(self, translator, repo=None):
         """
         Generates select option with tags branches and bookmarks (for hg only)
         grouped by type
 
         :param repo:
         """
-
+        _ = translator
         repo = self._get_repo(repo)
 
         hist_l = [

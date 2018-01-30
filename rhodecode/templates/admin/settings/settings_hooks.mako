@@ -28,7 +28,7 @@
     </div>
     <div class="panel-body">
         % if c.visual.allow_custom_hooks_settings:
-        ${h.secure_form(h.url('admin_settings_hooks'), request=request)}
+        ${h.secure_form(h.route_path('admin_settings_hooks_update'), request=request)}
         <div class="form">
             <div class="fields">
 
@@ -74,13 +74,12 @@
 
 <script type="text/javascript">
 function ajaxActionHook(hook_id,field_id) {
-    var sUrl = "${h.url('admin_settings_hooks')}";
+    var sUrl = "${h.route_path('admin_settings_hooks_delete')}";
     var callback =  function (o) {
             var elem = $("#"+field_id);
             elem.remove();
         };
     var postData = {
-      '_method': 'delete',
       'hook_id': hook_id,
       'csrf_token': CSRF_TOKEN
     };
@@ -89,5 +88,5 @@ function ajaxActionHook(hook_id,field_id) {
             .fail(function (data, textStatus, errorThrown) {
                 alert("Error while deleting hooks.\nError code {0} ({1}). URL: {2}".format(data.status,data.statusText,$(this)[0].url));
         });
-};
+}
 </script>

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2017 RhodeCode GmbH
+# Copyright (C) 2012-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -27,13 +27,13 @@ import logging
 import deform
 import requests
 import colander
-from celery.task import task
 from mako.template import Template
+from collections import OrderedDict
 
 from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.lib import helpers as h
-from rhodecode.lib.celerylib import run_task
+from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 from rhodecode.lib.colander_utils import strip_whitespace
 from rhodecode.integrations.types.base import IntegrationTypeBase
 
@@ -247,7 +247,7 @@ class SlackIntegrationType(IntegrationTypeBase):
         branch_data = {branch['name']: branch
                        for branch in data['push']['branches']}
 
-        branches_commits = {}
+        branches_commits = OrderedDict()
         for commit in data['push']['commits']:
             if commit['branch'] not in branches_commits:
                 branch_commits = {'branch': branch_data[commit['branch']],
@@ -265,7 +265,7 @@ class SlackIntegrationType(IntegrationTypeBase):
         %for branch, branch_commits in branches_commits.items():
         ${len(branch_commits['commits'])} ${'commit' if len(branch_commits['commits']) == 1 else 'commits'} on branch: <${branch_commits['branch']['url']}|${branch_commits['branch']['name']}>
         %for commit in branch_commits['commits']:
-        `<${commit['url']}|${commit['short_id']}>` - ${commit['message_html_title']|html_to_slack_links}
+        `<${commit['url']}|${commit['short_id']}>` - ${commit['message_html']|html_to_slack_links}
         %endfor
         %endfor
         '''))
@@ -296,7 +296,7 @@ def html_to_slack_links(message):
         r'<\1|\2>', message)
 
 
-@task(ignore_result=True)
+@async_task(ignore_result=True, base=RequestContextTask)
 def post_text_to_slack(settings, title, text, fields=None, overrides=None):
     log.debug('sending %s (%s) to slack %s' % (
         title, text, settings['service']))

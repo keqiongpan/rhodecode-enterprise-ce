@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -27,7 +27,7 @@ from SocketServer import TCPServer
 
 import rhodecode
 from rhodecode.model import meta
-from rhodecode.lib.base import bootstrap_request
+from rhodecode.lib.base import bootstrap_request, bootstrap_config
 from rhodecode.lib import hooks_base
 from rhodecode.lib.utils2 import AttributeDict
 
@@ -211,8 +211,16 @@ class Hooks(object):
     def _call_hook(self, hook, extras):
         extras = AttributeDict(extras)
         server_url = extras['server_url']
+        request = bootstrap_request(application_url=server_url)
 
-        extras.request = bootstrap_request(application_url=server_url)
+        bootstrap_config(request)  # inject routes and other interfaces
+
+        # inject the user for usage in hooks
+        request.user = AttributeDict({'username': extras.username,
+                                      'ip_addr': extras.ip,
+                                      'user_id': extras.user_id})
+
+        extras.request = request
 
         try:
             result = hook(extras)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -20,9 +20,10 @@
 
 import os
 
+from pyramid.events import ApplicationCreated
 from pyramid.settings import asbool
 
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.lib.ext_json import json
 
 
@@ -57,6 +58,14 @@ PLUGIN_DEFINITION = {
 }
 
 
+def maybe_create_history_store(event):
+    # create plugin history location
+    settings = event.app.registry.settings
+    history_dir = settings.get('channelstream.history.location', '')
+    if history_dir and not os.path.exists(history_dir):
+        os.makedirs(history_dir, 0750)
+
+
 def includeme(config):
     settings = config.registry.settings
     PLUGIN_DEFINITION['config']['enabled'] = asbool(
@@ -71,10 +80,7 @@ def includeme(config):
         PLUGIN_DEFINITION['name'],
         PLUGIN_DEFINITION['config']
     )
-    # create plugin history location
-    history_dir = PLUGIN_DEFINITION['config']['history.location']
-    if history_dir and not os.path.exists(history_dir):
-        os.makedirs(history_dir, 0750)
+    config.add_subscriber(maybe_create_history_store, ApplicationCreated)
 
     config.add_route(
         name='channelstream_connect',

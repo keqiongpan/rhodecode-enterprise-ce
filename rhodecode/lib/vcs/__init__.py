@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2017 RhodeCode GmbH
+# Copyright (C) 2014-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -109,63 +109,6 @@ def connect_vcs(server_and_port, protocol):
         connect_http(server_and_port)
     else:
         raise Exception('Invalid vcs server protocol "{}"'.format(protocol))
-
-
-# TODO: johbo: This function should be moved into our test suite, there is
-# no reason to support starting the vcsserver in Enterprise itself.
-def start_vcs_server(server_and_port, protocol, log_level=None):
-    """
-    Starts the vcs server in a subprocess.
-    """
-    log.info('Starting VCSServer as a sub process with %s protocol', protocol)
-    if protocol == 'http':
-        return _start_http_vcs_server(server_and_port, log_level)
-    else:
-        raise Exception('Invalid vcs server protocol "{}"'.format(protocol))
-
-
-def _start_http_vcs_server(server_and_port, log_level=None):
-    # TODO: mikhail: shutdown if an http server already runs
-
-    host, port = server_and_port.rsplit(":", 1)
-    args = [
-        'pserve', 'rhodecode/tests/vcsserver_http.ini',
-        'http_port=%s' % (port, ), 'http_host=%s' % (host, )]
-    proc = subprocess32.Popen(args)
-
-    def cleanup_server_process():
-        proc.kill()
-    atexit.register(cleanup_server_process)
-
-    server = create_vcsserver_proxy(server_and_port, protocol='http')
-    _wait_until_vcs_server_is_reachable(server)
-
-
-def _wait_until_vcs_server_is_reachable(server, timeout=40):
-    begin = time.time()
-    while (time.time() - begin) < timeout:
-        try:
-            server.ping()
-            return
-        except (VCSCommunicationError, pycurl.error):
-            log.debug('VCSServer not started yet, retry to connect.')
-        time.sleep(0.5)
-    raise Exception(
-        'Starting the VCSServer failed or took more than {} '
-        'seconds.'.format(timeout))
-
-
-def _try_to_shutdown_running_server(server_and_port, protocol):
-    server = create_vcsserver_proxy(server_and_port, protocol)
-    try:
-        server.shutdown()
-    except pycurl.error:
-        return
-
-    # TODO: Not sure why this is important, but without it the following start
-    # of the server fails.
-    server = create_vcsserver_proxy(server_and_port, protocol)
-    server.ping()
 
 
 def create_vcsserver_proxy(server_and_port, protocol):

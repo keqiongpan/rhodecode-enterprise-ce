@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -19,27 +19,14 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import json
-import logging.config
-import os
 import platform
 import socket
-import subprocess32
-import time
-from urllib2 import urlopen, URLError
 
-import configobj
-import pylons
 import pytest
-import webob
-from beaker.session import SessionObject
-from paste.deploy import loadapp
-from pylons.i18n.translation import _get_translator
-from pylons.util import ContextObj
-from routes.util import URLGenerator
 
-from rhodecode.lib import vcs
+from rhodecode.lib.pyramid_utils import get_app_config
 from rhodecode.tests.fixture import TestINI
-import rhodecode
+from rhodecode.tests.server_utils import RcVCSServer
 
 
 def _parse_json(value):
@@ -52,18 +39,18 @@ def pytest_addoption(parser):
         help="Set default Logging level for tests, warn (default), info, debug")
     group = parser.getgroup('pylons')
     group.addoption(
-        '--with-pylons', dest='pylons_config',
+        '--with-pylons', dest='pyramid_config',
         help="Set up a Pylons environment with the specified config file.")
     group.addoption(
         '--ini-config-override', action='store', type=_parse_json,
-        default=None, dest='pylons_config_override', help=(
+        default=None, dest='pyramid_config_override', help=(
             "Overrides the .ini file settings. Should be specified in JSON"
             " format, e.g. '{\"section\": {\"parameter\": \"value\", ...}}'"
         )
     )
     parser.addini(
-        'pylons_config',
-        "Set up a Pylons environment with the specified config file.")
+        'pyramid_config',
+        "Set up a Pyramid environment with the specified config file.")
 
     vcsgroup = parser.getgroup('vcs')
     vcsgroup.addoption(
@@ -119,9 +106,8 @@ def vcsserver(request, vcsserver_port, vcsserver_factory):
     if not request.config.getoption('with_vcsserver'):
         return None
 
-    use_http = _use_vcs_http_server(request.config)
     return vcsserver_factory(
-        request, use_http=use_http, vcsserver_port=vcsserver_port)
+        request, vcsserver_port=vcsserver_port)
 
 
 @pytest.fixture(scope='session')
@@ -130,23 +116,21 @@ def vcsserver_factory(tmpdir_factory):
     Use this if you need a running vcsserver with a special configuration.
     """
 
-    def factory(request, use_http=True, overrides=(), vcsserver_port=None):
+    def factory(request, overrides=(), vcsserver_port=None,
+                log_file=None):
 
         if vcsserver_port is None:
             vcsserver_port = get_available_port()
 
         overrides = list(overrides)
-        if use_http:
-            overrides.append({'server:main': {'port': vcsserver_port}})
-        else:
-            overrides.append({'DEFAULT': {'port': vcsserver_port}})
+        overrides.append({'server:main': {'port': vcsserver_port}})
 
         if is_cygwin():
             platform_override = {'DEFAULT': {
                 'beaker.cache.repo_object.type': 'nocache'}}
             overrides.append(platform_override)
 
-        option_name = 'vcsserver_config_http' if use_http else ''
+        option_name = 'vcsserver_config_http'
         override_option_name = 'vcsserver_config_override'
         config_file = get_config(
             request.config, option_name=option_name,
@@ -154,9 +138,7 @@ def vcsserver_factory(tmpdir_factory):
             basetemp=tmpdir_factory.getbasetemp().strpath,
             prefix='test_vcs_')
 
-        print("Using the VCSServer configuration:{}".format(config_file))
-        ServerClass = HttpVCSServer if use_http else None
-        server = ServerClass(config_file)
+        server = RcVCSServer(config_file, log_file)
         server.start()
 
         @request.addfinalizer
@@ -173,81 +155,14 @@ def is_cygwin():
     return 'cygwin' in platform.system().lower()
 
 
-def _use_vcs_http_server(config):
-    protocol_option = 'vcsserver_protocol'
-    protocol = (
-        config.getoption(protocol_option) or
-        config.getini(protocol_option) or
-        'http')
-    return protocol == 'http'
-
-
 def _use_log_level(config):
     level = config.getoption('test_loglevel') or 'warn'
     return level.upper()
 
 
-class VCSServer(object):
-    """
-    Represents a running VCSServer instance.
-    """
-
-    _args = []
-
-    def start(self):
-        print("Starting the VCSServer: {}".format(self._args))
-        self.process = subprocess32.Popen(self._args)
-
-    def wait_until_ready(self, timeout=30):
-        raise NotImplementedError()
-
-    def shutdown(self):
-        self.process.kill()
-
-
-class HttpVCSServer(VCSServer):
-    """
-    Represents a running VCSServer instance.
-    """
-    def __init__(self, config_file):
-        config_data = configobj.ConfigObj(config_file)
-        self._config = config_data['server:main']
-
-        args = ['pserve', config_file]
-        self._args = args
-
-    @property
-    def http_url(self):
-        template = 'http://{host}:{port}/'
-        return template.format(**self._config)
-
-    def start(self):
-        self.process = subprocess32.Popen(self._args)
-
-    def wait_until_ready(self, timeout=30):
-        host = self._config['host']
-        port = self._config['port']
-        status_url = 'http://{host}:{port}/status'.format(host=host, port=port)
-        start = time.time()
-
-        while time.time() - start < timeout:
-            try:
-                urlopen(status_url)
-                break
-            except URLError:
-                time.sleep(0.2)
-        else:
-            pytest.exit(
-                "Starting the VCSServer failed or took more than {} "
-                "seconds. cmd: `{}`".format(timeout, ' '.join(self._args)))
-
-    def shutdown(self):
-        self.process.kill()
-
-
 @pytest.fixture(scope='session')
-def pylons_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
-    option_name = 'pylons_config'
+def ini_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
+    option_name = 'pyramid_config'
     log_level = _use_log_level(request.config)
 
     overrides = [
@@ -258,6 +173,10 @@ def pylons_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
             # fixtures of the test cases. For the test run it must always be
             # off in the INI file.
             'vcs.start_server': 'false',
+
+            'vcs.server.protocol': 'http',
+            'vcs.scm_app_implementation': 'http',
+            'vcs.hooks.protocol': 'http',
         }},
 
         {'handler_console': {
@@ -267,14 +186,6 @@ def pylons_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
         }},
 
     ]
-    if _use_vcs_http_server(request.config):
-        overrides.append({
-            'app:main': {
-                'vcs.server.protocol': 'http',
-                'vcs.scm_app_implementation': 'http',
-                'vcs.hooks.protocol': 'http',
-            }
-        })
 
     filename = get_config(
         request.config, option_name=option_name,
@@ -283,6 +194,25 @@ def pylons_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
         basetemp=tmpdir_factory.getbasetemp().strpath,
         prefix='test_rce_')
     return filename
+
+
+@pytest.fixture(scope='session')
+def ini_settings(ini_config):
+    ini_path = ini_config
+    return get_app_config(ini_path)
+
+
+def get_available_port():
+    family = socket.AF_INET
+    socktype = socket.SOCK_STREAM
+    host = '127.0.0.1'
+
+    mysocket = socket.socket(family, socktype)
+    mysocket.bind((host, 0))
+    port = mysocket.getsockname()[1]
+    mysocket.close()
+    del mysocket
+    return port
 
 
 @pytest.fixture(scope='session')
@@ -298,19 +228,6 @@ def vcsserver_port(request):
     if port is None:
         port = get_available_port()
         print('Using vcsserver port {}'.format(port))
-    return port
-
-
-def get_available_port():
-    family = socket.AF_INET
-    socktype = socket.SOCK_STREAM
-    host = '127.0.0.1'
-
-    mysocket = socket.socket(family, socktype)
-    mysocket.bind((host, 0))
-    port = mysocket.getsockname()[1]
-    mysocket.close()
-    del mysocket
     return port
 
 
@@ -333,23 +250,14 @@ def available_port(available_port_factory):
 
 
 @pytest.fixture(scope='session')
-def pylonsapp(pylons_config, vcsserver, http_environ_session):
-    print("Using the RhodeCode configuration:{}".format(pylons_config))
-    logging.config.fileConfig(
-        pylons_config, disable_existing_loggers=False)
-    app = _setup_pylons_environment(pylons_config, http_environ_session)
-    return app
-
-
-@pytest.fixture(scope='session')
-def testini_factory(tmpdir_factory, pylons_config):
+def testini_factory(tmpdir_factory, ini_config):
     """
     Factory to create an INI file based on TestINI.
 
     It will make sure to place the INI file in the correct directory.
     """
     basetemp = tmpdir_factory.getbasetemp().strpath
-    return TestIniFactory(basetemp, pylons_config)
+    return TestIniFactory(basetemp, ini_config)
 
 
 class TestIniFactory(object):
@@ -387,36 +295,3 @@ def get_config(
         dir=basetemp)
 
     return temp_ini_file.create()
-
-
-def _setup_pylons_environment(pylons_config, http_environ):
-    current_path = os.getcwd()
-    pylonsapp = loadapp(
-        'config:' + pylons_config, relative_to=current_path)
-
-    # Using rhodecode.CONFIG which is assigned during "load_environment".
-    # The indirect approach is used, because "pylonsapp" may actually be
-    # the Pyramid application.
-    pylonsapp_config = rhodecode.CONFIG
-    _init_stack(pylonsapp_config, environ=http_environ)
-
-    # For compatibility add the attribute "config" which would be
-    # present on the Pylons application.
-    pylonsapp.config = pylonsapp_config
-    return pylonsapp
-
-
-def _init_stack(config=None, environ=None):
-    if not config:
-        config = pylons.test.pylonsapp.config
-    if not environ:
-        environ = {}
-    pylons.url._push_object(URLGenerator(config['routes.map'], environ or {}))
-    pylons.app_globals._push_object(config['pylons.app_globals'])
-    pylons.config._push_object(config)
-    pylons.tmpl_context._push_object(ContextObj())
-    # Initialize a translator for tests that utilize i18n
-    translator = _get_translator(pylons.config.get('lang'))
-    pylons.translator._push_object(translator)
-    pylons.session._push_object(SessionObject(environ or {}))
-    pylons.request._push_object(webob.Request.blank('', environ=environ))

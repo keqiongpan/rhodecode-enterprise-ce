@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 class RepoChecksView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-        self._register_global_c(c)
+
         return c
 
     @NotAnonymous()
@@ -78,10 +78,15 @@ class RepoChecksView(BaseAppView):
 
         if task_id and task_id not in ['None']:
             import rhodecode
-            from celery.result import AsyncResult
+            from rhodecode.lib.celerylib.loader import celery_app, exceptions
             if rhodecode.CELERY_ENABLED:
-                task = AsyncResult(task_id)
-                if task.failed():
+                log.debug('celery: checking result for task:%s', task_id)
+                task = celery_app.AsyncResult(task_id)
+                try:
+                    task.get(timeout=10)
+                except exceptions.TimeoutError:
+                    task = None
+                if task and task.failed():
                     msg = self._log_creation_exception(task.result, repo_name)
                     h.flash(msg, category='error')
                     raise HTTPFound(h.route_path('home'), code=501)

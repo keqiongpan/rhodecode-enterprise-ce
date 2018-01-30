@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -54,8 +54,7 @@ def get_environ(url):
         ('/foo/bar?key=tip', 'pull'),
     ])
 def test_get_action(url, expected_action, request_stub):
-    app = simplehg.SimpleHg(application=None,
-                            config={'auth_ret_code': '', 'base_path': ''},
+    app = simplehg.SimpleHg(config={'auth_ret_code': '', 'base_path': ''},
                             registry=request_stub.registry)
     assert expected_action == app._get_action(get_environ(url))
 
@@ -72,16 +71,14 @@ def test_get_action(url, expected_action, request_stub):
         ('/foo/bar/baz/?cmd=listkeys&key=tip', 'foo/bar/baz'),
     ])
 def test_get_repository_name(url, expected_repo_name, request_stub):
-    app = simplehg.SimpleHg(application=None,
-                            config={'auth_ret_code': '', 'base_path': ''},
+    app = simplehg.SimpleHg(config={'auth_ret_code': '', 'base_path': ''},
                             registry=request_stub.registry)
     assert expected_repo_name == app._get_repository_name(get_environ(url))
 
 
-def test_get_config(user_util, pylonsapp, request_stub):
+def test_get_config(user_util, baseapp, request_stub):
     repo = user_util.create_repo(repo_type='git')
-    app = simplehg.SimpleHg(application=None,
-                            config={'auth_ret_code': '', 'base_path': ''},
+    app = simplehg.SimpleHg(config={'auth_ret_code': '', 'base_path': ''},
                             registry=request_stub.registry)
     extras = [('foo', 'FOO', 'bar', 'BAR')]
 
@@ -123,7 +120,6 @@ def test_create_wsgi_app_uses_scm_app_from_simplevcs(request_stub):
         'vcs.scm_app_implementation':
             'rhodecode.tests.lib.middleware.mock_scm_app',
     }
-    app = simplehg.SimpleHg(
-        application=None, config=config, registry=request_stub.registry)
+    app = simplehg.SimpleHg(config=config, registry=request_stub.registry)
     wsgi_app = app._create_wsgi_app('/tmp/test', 'test_repo', {})
     assert wsgi_app is mock_scm_app.mock_hg_wsgi

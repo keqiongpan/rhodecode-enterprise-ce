@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,6 +23,7 @@ import hashlib
 import logging
 from collections import namedtuple
 from functools import wraps
+import bleach
 
 from rhodecode.lib import caches
 from rhodecode.lib.utils2 import (
@@ -344,10 +345,14 @@ class IssueTrackerSettingsModel(object):
         # populate
         for uid in issuetracker_entries:
             issuetracker_entries[uid] = AttributeDict({
-                'pat': qs.get(self._get_keyname('pat', uid, 'rhodecode_')),
-                'url': qs.get(self._get_keyname('url', uid, 'rhodecode_')),
-                'pref': qs.get(self._get_keyname('pref', uid, 'rhodecode_')),
-                'desc': qs.get(self._get_keyname('desc', uid, 'rhodecode_')),
+                'pat': qs.get(
+                    self._get_keyname('pat', uid, 'rhodecode_')),
+                'url': bleach.clean(
+                    qs.get(self._get_keyname('url', uid, 'rhodecode_')) or ''),
+                'pref': bleach.clean(
+                    qs.get(self._get_keyname('pref', uid, 'rhodecode_')) or ''),
+                'desc': qs.get(
+                    self._get_keyname('desc', uid, 'rhodecode_')),
             })
         return issuetracker_entries
 

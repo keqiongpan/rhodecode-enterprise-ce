@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -32,7 +32,7 @@ from rhodecode.lib.vcs.nodes import (
     FileNode, AddedFileNodesGenerator,
     ChangedFileNodesGenerator, RemovedFileNodesGenerator)
 from rhodecode.tests import get_new_dir
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
 class TestBaseChangeset:
@@ -42,13 +42,14 @@ class TestBaseChangeset:
         pytest.deprecated_call(BaseChangeset)
 
 
-class TestEmptyCommit:
+class TestEmptyCommit(object):
 
     def test_branch_without_alias_returns_none(self):
         commit = EmptyCommit()
         assert commit.branch is None
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestCommitsInNonEmptyRepo(BackendTestMixin):
     recreate_repo_per_test = True
 
@@ -197,6 +198,7 @@ class TestCommitsInNonEmptyRepo(BackendTestMixin):
             assert [commit] == repo.get_commit(commit_idx=test_idx).children
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestCommits(BackendTestMixin):
     recreate_repo_per_test = False
 
@@ -501,6 +503,7 @@ def test_commit_is_link(vcsbackend, filename, expected):
     assert link_status is expected
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestCommitsChanges(BackendTestMixin):
     recreate_repo_per_test = False
 

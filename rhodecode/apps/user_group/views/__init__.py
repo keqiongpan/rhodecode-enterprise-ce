@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -40,8 +40,7 @@ from rhodecode.lib.auth import (
     LoginRequired, HasUserGroupPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h, audit_logger
 from rhodecode.lib.utils2 import str2bool
-from rhodecode.model.db import (
-    joinedload, User, UserGroupRepoToPerm, UserGroupRepoGroupToPerm)
+from rhodecode.model.db import User
 from rhodecode.model.meta import Session
 from rhodecode.model.user_group import UserGroupModel
 
@@ -56,34 +55,7 @@ class UserGroupsView(UserGroupAppView):
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=self.request.translate)
 
-        self._register_global_c(c)
         return c
-
-    def _get_perms_summary(self, user_group_id):
-        permissions = {
-            'repositories': {},
-            'repositories_groups': {},
-        }
-        ugroup_repo_perms = UserGroupRepoToPerm.query()\
-            .options(joinedload(UserGroupRepoToPerm.permission))\
-            .options(joinedload(UserGroupRepoToPerm.repository))\
-            .filter(UserGroupRepoToPerm.users_group_id == user_group_id)\
-            .all()
-
-        for gr in ugroup_repo_perms:
-            permissions['repositories'][gr.repository.repo_name]  \
-                = gr.permission.permission_name
-
-        ugroup_group_perms = UserGroupRepoGroupToPerm.query()\
-            .options(joinedload(UserGroupRepoGroupToPerm.permission))\
-            .options(joinedload(UserGroupRepoGroupToPerm.group))\
-            .filter(UserGroupRepoGroupToPerm.users_group_id == user_group_id)\
-            .all()
-
-        for gr in ugroup_group_perms:
-            permissions['repositories_groups'][gr.group.group_name] \
-                = gr.permission.permission_name
-        return permissions
 
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
@@ -94,6 +66,7 @@ class UserGroupsView(UserGroupAppView):
         """
         Return members of given user group
         """
+        self.load_default_context()
         user_group = self.db_user_group
         group_members_obj = sorted((x.user for x in user_group.members),
                                    key=lambda u: u.username.lower())
@@ -126,7 +99,8 @@ class UserGroupsView(UserGroupAppView):
         c = self.load_default_context()
         c.user_group = self.db_user_group
         c.active = 'perms_summary'
-        c.permissions = self._get_perms_summary(c.user_group.users_group_id)
+        c.permissions = UserGroupModel().get_perms_summary(
+            c.user_group.users_group_id)
         return self._get_template_context(c)
 
     @LoginRequired()
@@ -137,7 +111,7 @@ class UserGroupsView(UserGroupAppView):
     def user_group_perms_summary_json(self):
         self.load_default_context()
         user_group = self.db_user_group
-        return self._get_perms_summary(user_group.users_group_id)
+        return UserGroupModel().get_perms_summary(user_group.users_group_id)
 
     def _revoke_perms_on_yourself(self, form_result):
         _updates = filter(lambda u: self._rhodecode_user.user_id == int(u[0]),
@@ -173,7 +147,8 @@ class UserGroupsView(UserGroupAppView):
         c.active = 'settings'
 
         users_group_form = UserGroupForm(
-            edit=True, old_data=c.user_group.get_dict(), allow_disabled=True)()
+            self.request.translate, edit=True,
+            old_data=c.user_group.get_dict(), allow_disabled=True)()
 
         old_values = c.user_group.get_api_data()
         user_group_name = self.request.POST.get('users_group_name')
@@ -346,7 +321,7 @@ class UserGroupsView(UserGroupAppView):
         user_group_id = user_group.users_group_id
         c = self.load_default_context()
         c.user_group = user_group
-        form = UserGroupPermsForm()().to_python(self.request.POST)
+        form = UserGroupPermsForm(self.request.translate)().to_python(self.request.POST)
 
         if not self._rhodecode_user.is_admin:
             if self._revoke_perms_on_yourself(form):
@@ -426,7 +401,7 @@ class UserGroupsView(UserGroupAppView):
 
         try:
             # first stage that verifies the checkbox
-            _form = UserIndividualPermissionsForm()
+            _form = UserIndividualPermissionsForm(self.request.translate)
             form_result = _form.to_python(dict(self.request.POST))
             inherit_perms = form_result['inherit_default_permissions']
             user_group.inherit_default_permissions = inherit_perms
@@ -435,6 +410,7 @@ class UserGroupsView(UserGroupAppView):
             if not inherit_perms:
                 # only update the individual ones if we un check the flag
                 _form = UserPermissionsForm(
+                    self.request.translate,
                     [x[0] for x in c.repo_create_choices],
                     [x[0] for x in c.repo_create_on_write_choices],
                     [x[0] for x in c.repo_group_create_choices],

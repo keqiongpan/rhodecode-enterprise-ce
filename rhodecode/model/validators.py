@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -22,10 +22,11 @@
 Set of generic validators
 """
 
-import logging
+
 import os
 import re
-from collections import defaultdict
+import logging
+import collections
 
 import formencode
 import ipaddress
@@ -33,15 +34,14 @@ from formencode.validators import (
     UnicodeString, OneOf, Int, Number, Regex, Email, Bool, StringBoolean, Set,
     NotEmpty, IPAddress, CIDR, String, FancyValidator
 )
-from pylons.i18n.translation import _
+
 from sqlalchemy.sql.expression import true
 from sqlalchemy.util import OrderedSet
-from webhelpers.pylonslib.secure_form import authentication_token
 
 from rhodecode.authentication import (
     legacy_plugin_prefix, _import_legacy_plugin)
 from rhodecode.authentication.base import loadplugin
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.lib.auth import HasRepoGroupPermissionAny, HasPermissionAny
 from rhodecode.lib.utils import repo_name_slug, make_db_config
 from rhodecode.lib.utils2 import safe_int, str2bool, aslist, md5, safe_unicode
@@ -62,17 +62,11 @@ log = logging.getLogger(__name__)
 class _Missing(object):
     pass
 
+
 Missing = _Missing()
 
 
-class StateObj(object):
-    """
-    this is needed to translate the messages using _() in validators
-    """
-    _ = staticmethod(_)
-
-
-def M(self, key, state=None, **kwargs):
+def M(self, key, state, **kwargs):
     """
     returns string from self.message based on given key,
     passed kw params are used to substitute %(named)s params inside
@@ -81,16 +75,16 @@ def M(self, key, state=None, **kwargs):
     :param msg:
     :param state:
     """
-    if state is None:
-        state = StateObj()
-    else:
-        state._ = staticmethod(_)
+
+    #state._ = staticmethod(_)
     # inject validator into state object
     return self.message(key, state, **kwargs)
 
 
-def UniqueList(convert=None):
-    class _UniqueList(formencode.FancyValidator):
+def UniqueList(localizer, convert=None):
+    _ = localizer
+
+    class _validator(formencode.FancyValidator):
         """
         Unique List !
         """
@@ -123,20 +117,23 @@ def UniqueList(convert=None):
 
         def empty_value(self, value):
             return []
+    return _validator
 
-    return _UniqueList
 
+def UniqueListFromString(localizer):
+    _ = localizer
 
-def UniqueListFromString():
-    class _UniqueListFromString(UniqueList()):
+    class _validator(UniqueList(localizer)):
         def _to_python(self, value, state):
             if isinstance(value, basestring):
                 value = aslist(value, ',')
-            return super(_UniqueListFromString, self)._to_python(value, state)
-    return _UniqueListFromString
+            return super(_validator, self)._to_python(value, state)
+    return _validator
 
 
-def ValidSvnPattern(section, repo_name=None):
+def ValidSvnPattern(localizer, section, repo_name=None):
+    _ = localizer
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'pattern_exists': _(u'Pattern already exists'),
@@ -154,7 +151,10 @@ def ValidSvnPattern(section, repo_name=None):
     return _validator
 
 
-def ValidUsername(edit=False, old_data={}):
+def ValidUsername(localizer, edit=False, old_data=None):
+    _ = localizer
+    old_data = old_data or {}
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'username_exists': _(u'Username "%(username)s" already exists'),
@@ -187,13 +187,9 @@ def ValidUsername(edit=False, old_data={}):
     return _validator
 
 
-def ValidRegex(msg=None):
-    class _validator(formencode.validators.Regex):
-        messages = {'invalid': msg or _(u'The input is not valid')}
-    return _validator
+def ValidRepoUser(localizer, allow_disabled=False):
+    _ = localizer
 
-
-def ValidRepoUser(allow_disabled=False):
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'invalid_username': _(u'Username %(username)s is not valid'),
@@ -213,11 +209,13 @@ def ValidRepoUser(allow_disabled=False):
                 raise formencode.Invalid(
                     msg, value, state, error_dict={'username': msg}
                 )
-
     return _validator
 
 
-def ValidUserGroup(edit=False, old_data={}):
+def ValidUserGroup(localizer, edit=False, old_data=None):
+    _ = localizer
+    old_data = old_data or {}
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'invalid_group': _(u'Invalid user group name'),
@@ -254,11 +252,13 @@ def ValidUserGroup(edit=False, old_data={}):
                 raise formencode.Invalid(
                     msg, value, state, error_dict={'users_group_name': msg}
                 )
-
     return _validator
 
 
-def ValidRepoGroup(edit=False, old_data={}, can_create_in_root=False):
+def ValidRepoGroup(localizer, edit=False, old_data=None, can_create_in_root=False):
+    _ = localizer
+    old_data = old_data or {}
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'group_parent_id': _(u'Cannot assign this group as parent'),
@@ -375,11 +375,12 @@ def ValidRepoGroup(edit=False, old_data={}, can_create_in_root=False):
                     msg = M(self, 'repo_exists', state, group_name=group_name)
                     raise formencode.Invalid(
                         msg, value, state, error_dict={'group_name': msg})
-
     return _validator
 
 
-def ValidPassword():
+def ValidPassword(localizer):
+    _ = localizer
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'invalid_password':
@@ -395,24 +396,11 @@ def ValidPassword():
     return _validator
 
 
-def ValidOldPassword(username):
-    class _validator(formencode.validators.FancyValidator):
-        messages = {
-            'invalid_password': _(u'Invalid old password')
-        }
-
-        def validate_python(self, value, state):
-            from rhodecode.authentication.base import authenticate, HTTP_TYPE
-            if not authenticate(username, value, '', HTTP_TYPE):
-                msg = M(self, 'invalid_password', state)
-                raise formencode.Invalid(
-                    msg, value, state, error_dict={'current_password': msg}
-                )
-    return _validator
-
-
 def ValidPasswordsMatch(
-        passwd='new_password', passwd_confirmation='password_confirmation'):
+        localizer, passwd='new_password',
+        passwd_confirmation='password_confirmation'):
+    _ = localizer
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'password_mismatch': _(u'Passwords do not match'),
@@ -430,7 +418,9 @@ def ValidPasswordsMatch(
     return _validator
 
 
-def ValidAuth():
+def ValidAuth(localizer):
+    _ = localizer
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'invalid_password': _(u'invalid password'),
@@ -464,20 +454,10 @@ def ValidAuth():
     return _validator
 
 
-def ValidAuthToken():
-    class _validator(formencode.validators.FancyValidator):
-        messages = {
-            'invalid_token': _(u'Token mismatch')
-        }
+def ValidRepoName(localizer, edit=False, old_data=None):
+    old_data = old_data or {}
+    _ = localizer
 
-        def validate_python(self, value, state):
-            if value != authentication_token():
-                msg = M(self, 'invalid_token', state)
-                raise formencode.Invalid(msg, value, state)
-    return _validator
-
-
-def ValidRepoName(edit=False, old_data={}):
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'invalid_repo_name':
@@ -558,11 +538,15 @@ def ValidRepoName(edit=False, old_data={}):
     return _validator
 
 
-def ValidForkName(*args, **kwargs):
-    return ValidRepoName(*args, **kwargs)
+def ValidForkName(localizer, *args, **kwargs):
+    _ = localizer
+
+    return ValidRepoName(localizer, *args, **kwargs)
 
 
-def SlugifyName():
+def SlugifyName(localizer):
+    _ = localizer
+    
     class _validator(formencode.validators.FancyValidator):
 
         def _to_python(self, value, state):
@@ -570,11 +554,12 @@ def SlugifyName():
 
         def validate_python(self, value, state):
             pass
-
     return _validator
 
 
-def CannotHaveGitSuffix():
+def CannotHaveGitSuffix(localizer):
+    _ = localizer
+    
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'has_git_suffix':
@@ -590,11 +575,12 @@ def CannotHaveGitSuffix():
                     self, 'has_git_suffix', state)
                 raise formencode.Invalid(
                     msg, value, state, error_dict={'repo_name': msg})
-
     return _validator
 
 
-def ValidCloneUri():
+def ValidCloneUri(localizer):
+    _ = localizer
+    
     class InvalidCloneUrl(Exception):
         allowed_prefixes = ()
 
@@ -652,19 +638,22 @@ def ValidCloneUri():
                     url_handler(repo_type, url)
                 except InvalidCloneUrl as e:
                     log.warning(e)
-                    msg = M(self, 'invalid_clone_uri', rtype=repo_type,
+                    msg = M(self, 'invalid_clone_uri', state, rtype=repo_type,
                             allowed_prefixes=','.join(e.allowed_prefixes))
                     raise formencode.Invalid(msg, value, state,
                                              error_dict={'clone_uri': msg})
                 except Exception:
                     log.exception('Url validation failed')
-                    msg = M(self, 'clone_uri', rtype=repo_type)
+                    msg = M(self, 'clone_uri', state, rtype=repo_type)
                     raise formencode.Invalid(msg, value, state,
                                              error_dict={'clone_uri': msg})
     return _validator
 
 
-def ValidForkType(old_data={}):
+def ValidForkType(localizer, old_data=None):
+    _ = localizer
+    old_data = old_data or {}
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'invalid_fork_type': _(u'Fork have to be the same type as parent')
@@ -679,7 +668,9 @@ def ValidForkType(old_data={}):
     return _validator
 
 
-def CanWriteGroup(old_data=None):
+def CanWriteGroup(localizer, old_data=None):
+    _ = localizer
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'permission_denied': _(
@@ -730,11 +721,11 @@ def CanWriteGroup(old_data=None):
                     raise formencode.Invalid(
                         msg, value, state, error_dict={'repo_type': msg}
                     )
-
     return _validator
 
 
-def ValidPerms(type_='repo'):
+def ValidPerms(localizer, type_='repo'):
+    _ = localizer
     if type_ == 'repo_group':
         EMPTY_PERM = 'group.none'
     elif type_ == 'repo':
@@ -756,8 +747,8 @@ def ValidPerms(type_='repo'):
 
             # Read the perm_new_member/perm_del_member attributes and group
             # them by they IDs
-            new_perms_group = defaultdict(dict)
-            del_perms_group = defaultdict(dict)
+            new_perms_group = collections.defaultdict(dict)
+            del_perms_group = collections.defaultdict(dict)
             for k, v in value.copy().iteritems():
                 if k.startswith('perm_del_member'):
                     # delete from org storage so we don't process that later
@@ -800,20 +791,22 @@ def ValidPerms(type_='repo'):
             # get updates of permissions
             # (read the existing radio button states)
             default_user_id = User.get_default_user().user_id
+
             for k, update_value in value.iteritems():
                 if k.startswith('u_perm_') or k.startswith('g_perm_'):
-                    member = k[7:]
+                    obj_type = k[0]
+                    obj_id = k[7:]
                     update_type = {'u': 'user',
-                                   'g': 'users_group'}[k[0]]
+                                   'g': 'users_group'}[obj_type]
 
-                    if safe_int(member) == default_user_id:
+                    if obj_type == 'u' and safe_int(obj_id) == default_user_id:
                         if str2bool(value.get('repo_private')):
                             # prevent from updating default user permissions
                             # when this repository is marked as private
                             update_value = EMPTY_PERM
 
                     perm_updates.add(
-                        (member, update_value, update_type))
+                        (obj_id, update_value, update_type))
 
             value['perm_additions'] = []  # propagated later
             value['perm_updates'] = list(perm_updates)
@@ -851,29 +844,9 @@ def ValidPerms(type_='repo'):
     return _validator
 
 
-def ValidSettings():
-    class _validator(formencode.validators.FancyValidator):
-        def _to_python(self, value, state):
-            # settings  form for users that are not admin
-            # can't edit certain parameters, it's extra backup if they mangle
-            # with forms
+def ValidPath(localizer):
+    _ = localizer
 
-            forbidden_params = [
-                'user', 'repo_type', 'repo_enable_locking',
-                'repo_enable_downloads', 'repo_enable_statistics'
-            ]
-
-            for param in forbidden_params:
-                if param in value:
-                    del value[param]
-            return value
-
-        def validate_python(self, value, state):
-            pass
-    return _validator
-
-
-def ValidPath():
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'invalid_path': _(u'This is not a valid path')
@@ -888,7 +861,10 @@ def ValidPath():
     return _validator
 
 
-def UniqSystemEmail(old_data={}):
+def UniqSystemEmail(localizer, old_data=None):
+    _ = localizer
+    old_data = old_data or {}
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'email_taken': _(u'This e-mail address is already taken')
@@ -908,7 +884,9 @@ def UniqSystemEmail(old_data={}):
     return _validator
 
 
-def ValidSystemEmail():
+def ValidSystemEmail(localizer):
+    _ = localizer
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'non_existing_email': _(u'e-mail "%(email)s" does not exist.')
@@ -924,11 +902,11 @@ def ValidSystemEmail():
                 raise formencode.Invalid(
                     msg, value, state, error_dict={'email': msg}
                 )
-
     return _validator
 
 
-def NotReviewedRevisions(repo_id):
+def NotReviewedRevisions(localizer, repo_id):
+    _ = localizer
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'rev_already_reviewed':
@@ -960,7 +938,9 @@ def NotReviewedRevisions(repo_id):
     return _validator
 
 
-def ValidIp():
+def ValidIp(localizer):
+    _ = localizer
+
     class _validator(CIDR):
         messages = {
             'badFormat': _(u'Please enter a valid IPv4 or IpV6 address'),
@@ -984,11 +964,12 @@ def ValidIp():
             except ValueError:
                 raise formencode.Invalid(self.message('badFormat', state),
                                          value, state)
-
     return _validator
 
 
-def FieldKey():
+def FieldKey(localizer):
+    _ = localizer
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'badFormat': _(
@@ -1003,7 +984,9 @@ def FieldKey():
     return _validator
 
 
-def ValidAuthPlugins():
+def ValidAuthPlugins(localizer):
+    _ = localizer
+
     class _validator(formencode.validators.FancyValidator):
         messages = {
             'import_duplicate': _(
@@ -1033,11 +1016,11 @@ def ValidAuthPlugins():
                 log.exception(
                     'Exception during import of auth legacy plugin "{}"'
                     .format(plugin_id))
-                msg = M(self, 'import_error', plugin_id=plugin_id)
+                msg = M(self, 'import_error', state, plugin_id=plugin_id)
                 raise formencode.Invalid(msg, value, state)
 
             if not hasattr(plugin, 'includeme'):
-                msg = M(self, 'missing_includeme', plugin_id=plugin_id)
+                msg = M(self, 'missing_includeme', state, plugin_id=plugin_id)
                 raise formencode.Invalid(msg, value, state)
 
             return plugin
@@ -1051,7 +1034,7 @@ def ValidAuthPlugins():
             plugin = loadplugin(plugin_id)
 
             if plugin is None:
-                msg = M(self, 'no_plugin', plugin_id=plugin_id)
+                msg = M(self, 'no_plugin', state, plugin_id=plugin_id)
                 raise formencode.Invalid(msg, value, state)
 
             return plugin
@@ -1074,13 +1057,16 @@ def ValidAuthPlugins():
                             next_to_load=plugin)
                     raise formencode.Invalid(msg, value, state)
                 unique_names[plugin.name] = plugin
-
     return _validator
 
 
-def ValidPattern():
+def ValidPattern(localizer):
+    _ = localizer
 
-    class _Validator(formencode.validators.FancyValidator):
+    class _validator(formencode.validators.FancyValidator):
+        messages = {
+            'bad_format': _(u'Url must start with http or /'),
+        }
 
         def _to_python(self, value, state):
             patterns = []
@@ -1096,7 +1082,6 @@ def ValidPattern():
 
                     values = {
                         'issuetracker_pat': value.get(_field('pattern')),
-                        'issuetracker_pat': value.get(_field('pattern')),
                         'issuetracker_url': value.get(_field('url')),
                         'issuetracker_pref': value.get(_field('prefix')),
                         'issuetracker_desc': value.get(_field('description'))
@@ -1108,6 +1093,14 @@ def ValidPattern():
                         and values['issuetracker_url'])
 
                     if has_required_fields:
+                        # validate url that it starts with http or /
+                        # otherwise it can lead to JS injections
+                        # e.g specifig javascript:<malicios code>
+                        if not values['issuetracker_url'].startswith(('http', '/')):
+                            raise formencode.Invalid(
+                                self.message('bad_format', state),
+                                value, state)
+
                         settings = [
                             ('_'.join((key, new_uid)), values[key], 'unicode')
                             for key in values]
@@ -1119,4 +1112,4 @@ def ValidPattern():
                 delete_patterns = [delete_patterns]
             value['delete_patterns'] = delete_patterns
             return value
-    return _Validator
+    return _validator

@@ -306,26 +306,6 @@ get_repo
            "lock_reason": null,
            "locked_by": null,
            "locked_date": null,
-           "members": [
-             {
-               "name": "super-admin-name",
-               "origin": "super-admin",
-               "permission": "repository.admin",
-               "type": "user"
-             },
-             {
-               "name": "owner-name",
-               "origin": "owner",
-               "permission": "repository.admin",
-               "type": "user"
-             },
-             {
-               "name": "user-group-name",
-               "origin": "permission",
-               "permission": "repository.write",
-               "type": "user_group"
-             }
-           ],
            "owner": "owner-name",
            "permissions": [
              {
@@ -533,9 +513,6 @@ get_repo_settings
                "hooks_outgoing_pull_logger": true,
                "phases_publish": "True",
                "rhodecode_hg_use_rebase_for_merging": true,
-               "rhodecode_hg_close_branch_before_merging": false,
-               "rhodecode_git_use_rebase_for_merging": true,
-               "rhodecode_git_close_branch_before_merging": false,
                "rhodecode_pr_merge_enabled": true,
                "rhodecode_use_outdated_comments": true
            }

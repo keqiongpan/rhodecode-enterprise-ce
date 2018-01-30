@@ -162,7 +162,7 @@ get_user_group
            "active": true,
            "group_description": "group description",
            "group_name": "group name",
-           "members": [
+           "permissions": [
              {
                "name": "owner-name",
                "origin": "owner",
@@ -183,6 +183,12 @@ get_user_group
                "type": "user_group"
              }
            ],
+           "permissions_summary": {
+             "repositories": {
+               "aa-root-level-repo-1": "repository.admin"
+             },
+             "repositories_groups": {}
+           },
            "owner": "owner name",
            "users": [],
            "users_group_id": 2

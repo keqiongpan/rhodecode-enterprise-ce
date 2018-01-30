@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -83,7 +83,7 @@ class RepoFilesView(RepoAppView):
 
         c.rhodecode_repo = self.rhodecode_vcs_repo
 
-        self._register_global_c(c)
+
         return c
 
     def _ensure_not_locked(self):

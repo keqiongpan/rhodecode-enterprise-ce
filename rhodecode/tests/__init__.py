@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -28,9 +28,6 @@ from os.path import join as jn
 
 from tempfile import _RandomNameSequence
 
-from pylons import url
-
-from nose.plugins.skip import SkipTest
 import pytest
 
 from rhodecode.model.db import User
@@ -43,8 +40,8 @@ from rhodecode.lib.utils2 import safe_str
 log = logging.getLogger(__name__)
 
 __all__ = [
-    'get_new_dir', 'TestController', 'SkipTest',
-    'url', 'link_to', 'ldap_lib_installed', 'clear_all_caches',
+    'get_new_dir', 'TestController',
+    'link_to', 'ldap_lib_installed', 'clear_all_caches',
     'assert_session_flash', 'login_user', 'no_newline_id_generator',
     'TESTS_TMP_PATH', 'HG_REPO', 'GIT_REPO', 'SVN_REPO',
     'NEW_HG_REPO', 'NEW_GIT_REPO',
@@ -56,8 +53,6 @@ __all__ = [
     'TEST_GIT_REPO_CLONE', 'TEST_GIT_REPO_PULL', 'SCM_TESTS',
 ]
 
-# Invoke websetup with the current config file
-# SetupCommand('setup-app').run([config_file])
 
 # SOME GLOBALS FOR TESTS
 TEST_DIR = tempfile.gettempdir()
@@ -209,7 +204,11 @@ def assert_session_flash(response, msg=None, category=None, no_=None):
     messages = flash.pop_messages(session=session)
     msg = _eval_if_lazy(msg)
 
-    assert messages, 'unable to find message `%s` in empty flash list' % msg
+    if no_:
+        error_msg = 'unable to detect no_ message `%s` in empty flash list' % no_
+    else:
+        error_msg = 'unable to find message `%s` in empty flash list' % msg
+    assert messages, error_msg
     message = messages[0]
 
     message_text = _eval_if_lazy(message.message) or ''

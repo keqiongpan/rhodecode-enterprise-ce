@@ -20,7 +20,7 @@
 
 <%def name="side_bar_nav()">
   % for navitem in c.navlist:
-    <li class="${'active' if c.active==navitem.key else ''}">
+    <li class="${'active' if c.active in navitem.active_list else ''}">
       <a href="${navitem.url}">${navitem.name}</a>
     </li>
   % endfor

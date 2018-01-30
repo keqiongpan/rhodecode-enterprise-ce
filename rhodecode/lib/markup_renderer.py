@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -28,6 +28,7 @@ import os
 import lxml
 import logging
 import urlparse
+import bleach
 
 from mako.lookup import TemplateLookup
 from mako.template import Template as MakoTemplate
@@ -181,12 +182,13 @@ class MarkupRenderer(object):
                          r'|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)')
 
     extensions = ['codehilite', 'extra', 'def_list', 'sane_lists']
+    output_format = 'html4'
     markdown_renderer = markdown.Markdown(
-        extensions, safe_mode=True, enable_attributes=False)
+        extensions, enable_attributes=False, output_format=output_format)
 
     markdown_renderer_flavored = markdown.Markdown(
-        extensions + [GithubFlavoredMarkdownExtension()], safe_mode=True,
-        enable_attributes=False)
+        extensions + [GithubFlavoredMarkdownExtension()],
+        enable_attributes=False, output_format=output_format)
 
     # extension together with weights. Lower is first means we control how
     # extensions are attached to readme names with those.
@@ -232,6 +234,13 @@ class MarkupRenderer(object):
             detected_renderer = 'plain'
 
         return getattr(MarkupRenderer, detected_renderer)
+
+    @classmethod
+    def bleach_clean(cls, text):
+        from .bleach_whitelist import markdown_attrs, markdown_tags
+        allowed_tags = markdown_tags
+        allowed_attrs = markdown_attrs
+        return bleach.clean(text, tags=allowed_tags, attributes=allowed_attrs)
 
     @classmethod
     def renderer_from_filename(cls, filename, exclude):
@@ -320,10 +329,11 @@ class MarkupRenderer(object):
         return '<br />' + source.replace("\n", '<br />')
 
     @classmethod
-    def markdown(cls, source, safe=True, flavored=True, mentions=False):
-        # It does not allow to insert inline HTML. In presence of HTML tags, it
-        # will replace them instead with [HTML_REMOVED]. This is controlled by
-        # the safe_mode=True parameter of the markdown method.
+    def markdown(cls, source, safe=True, flavored=True, mentions=False,
+                 clean_html=True):
+        """
+        returns markdown rendered code cleaned by the bleach library
+        """
 
         if flavored:
             markdown_renderer = cls.markdown_renderer_flavored
@@ -342,10 +352,14 @@ class MarkupRenderer(object):
                                 mentions=False)
 
         source = safe_unicode(source)
+
         try:
             if flavored:
                 source = cls._flavored_markdown(source)
-            return markdown_renderer.convert(source)
+            rendered = markdown_renderer.convert(source)
+            if clean_html:
+                rendered = cls.bleach_clean(rendered)
+            return rendered
         except Exception:
             log.exception('Error when rendering Markdown')
             if safe:
@@ -355,7 +369,7 @@ class MarkupRenderer(object):
                 raise
 
     @classmethod
-    def rst(cls, source, safe=True, mentions=False):
+    def rst(cls, source, safe=True, mentions=False, clean_html=False):
         if mentions:
             mention_pat = re.compile(MENTIONS_REGEX)
 
@@ -372,8 +386,8 @@ class MarkupRenderer(object):
                 [(alias, None) for alias in
                  cls.RESTRUCTUREDTEXT_DISALLOWED_DIRECTIVES])
 
-            docutils_settings.update({'input_encoding': 'unicode',
-                                      'report_level': 4})
+            docutils_settings.update({
+                'input_encoding': 'unicode', 'report_level': 4})
 
             for k, v in docutils_settings.iteritems():
                 directives.register_directive(k, v)
@@ -381,8 +395,10 @@ class MarkupRenderer(object):
             parts = publish_parts(source=source,
                                   writer=RhodeCodeWriter(),
                                   settings_overrides=docutils_settings)
-
-            return parts['html_title'] + parts["fragment"]
+            rendered = parts["fragment"]
+            if clean_html:
+                rendered = cls.bleach_clean(rendered)
+            return parts['html_title'] + rendered
         except Exception:
             log.exception('Error when rendering RST')
             if safe:

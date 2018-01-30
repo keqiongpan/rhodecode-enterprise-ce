@@ -34,7 +34,7 @@
         <h3 class="panel-title">${_('Test Email')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.url('admin_settings_email'), request=request)}
+        ${h.secure_form(h.route_path('admin_settings_email_update'), request=request)}
 
             <div class="field input">
                 ${h.text('test_email', size=60, placeholder=_('enter valid email'))}

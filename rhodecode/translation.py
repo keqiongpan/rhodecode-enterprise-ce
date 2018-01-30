@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -19,22 +19,31 @@
 from pyramid.i18n import TranslationStringFactory, TranslationString
 
 # Create a translation string factory for the 'rhodecode' domain.
+from pyramid.threadlocal import get_current_request
+
 _ = TranslationStringFactory('rhodecode')
 
 
-class LazyString(object):
+class _LazyString(object):
     def __init__(self, *args, **kw):
         self.args = args
         self.kw = kw
 
     def eval(self):
-        return _(*self.args, **self.kw)
+        req = get_current_request()
+        translator = _
+        if req:
+            translator = req.translate
+        return translator(*self.args, **self.kw)
 
     def __unicode__(self):
         return unicode(self.eval())
 
     def __str__(self):
         return self.eval()
+
+    def __repr__(self):
+        return self.__str__()
 
     def __mod__(self, other):
         return self.eval() % other
@@ -45,7 +54,7 @@ class LazyString(object):
 
 def lazy_ugettext(*args, **kw):
     """ Lazily evaluated version of _() """
-    return LazyString(*args, **kw)
+    return _LazyString(*args, **kw)
 
 
 def _pluralize(msgid1, msgid2, n, mapping=None):

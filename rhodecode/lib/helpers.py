@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -89,20 +89,6 @@ log = logging.getLogger(__name__)
 
 DEFAULT_USER = User.DEFAULT_USER
 DEFAULT_USER_EMAIL = User.DEFAULT_USER_EMAIL
-
-
-def url(*args, **kw):
-    from pylons import url as pylons_url
-    return pylons_url(*args, **kw)
-
-
-def url_replace(**qargs):
-    """ Returns the current request url while replacing query string args """
-
-    request = get_current_request()
-    new_args = request.GET.mixed()
-    new_args.update(qargs)
-    return url('', **new_args)
 
 
 def asset(path, ver=None, **kwargs):
@@ -949,7 +935,8 @@ def person_by_id(id_, show_attr="username_and_name"):
 
 
 def gravatar_with_user(request, author, show_disabled=False):
-    _render = request.get_partial_renderer('base/base.mako')
+    _render = request.get_partial_renderer(
+        'rhodecode:templates/base/base.mako')
     return _render('gravatar_with_user', author, show_disabled=show_disabled)
 
 
@@ -1295,15 +1282,8 @@ def initials_gravatar(email_address, first_name, last_name, size=30):
 
 def gravatar_url(email_address, size=30, request=None):
     request = get_current_request()
-    if request and hasattr(request, 'call_context'):
-        _use_gravatar = request.call_context.visual.use_gravatar
-        _gravatar_url = request.call_context.visual.gravatar_url
-    else:
-        # doh, we need to re-import those to mock it later
-        from pylons import tmpl_context as c
-
-        _use_gravatar = c.visual.use_gravatar
-        _gravatar_url = c.visual.gravatar_url
+    _use_gravatar = request.call_context.visual.use_gravatar
+    _gravatar_url = request.call_context.visual.gravatar_url
 
     _gravatar_url = _gravatar_url or User.DEFAULT_GRAVATAR_URL
 
@@ -1692,12 +1672,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
     return tmpl % data
 
 
-def process_patterns(text_string, repo_name, link_format='html'):
-    allowed_formats = ['html', 'rst', 'markdown']
-    if link_format not in allowed_formats:
-        raise ValueError('Link format can be only one of:{} got {}'.format(
-                         allowed_formats, link_format))
-
+def get_active_pattern_entries(repo_name):
     repo = None
     if repo_name:
         # Retrieving repo_name to avoid invalid repo_name to explode on
@@ -1706,7 +1681,18 @@ def process_patterns(text_string, repo_name, link_format='html'):
 
     settings_model = IssueTrackerSettingsModel(repo=repo)
     active_entries = settings_model.get_settings(cache=True)
+    return active_entries
 
+
+def process_patterns(text_string, repo_name, link_format='html',
+                     active_entries=None):
+
+    allowed_formats = ['html', 'rst', 'markdown']
+    if link_format not in allowed_formats:
+        raise ValueError('Link format can be only one of:{} got {}'.format(
+                         allowed_formats, link_format))
+
+    active_entries = active_entries or get_active_pattern_entries(repo_name)
     issues_data = []
     newtext = text_string
 
@@ -1745,7 +1731,8 @@ def process_patterns(text_string, repo_name, link_format='html'):
     return newtext, issues_data
 
 
-def urlify_commit_message(commit_text, repository=None):
+def urlify_commit_message(commit_text, repository=None,
+                          active_pattern_entries=None):
     """
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
@@ -1753,8 +1740,6 @@ def urlify_commit_message(commit_text, repository=None):
     :param commit_text:
     :param repository:
     """
-    from pylons import url  # doh, we need to re-import url to mock it later
-
     def escaper(string):
         return string.replace('<', '&lt;').replace('>', '&gt;')
 
@@ -1769,7 +1754,8 @@ def urlify_commit_message(commit_text, repository=None):
         newtext = urlify_commits(newtext, repository)
 
     # process issue tracker patterns
-    newtext, issues = process_patterns(newtext, repository or '')
+    newtext, issues = process_patterns(newtext, repository or '',
+                                       active_entries=active_pattern_entries)
 
     return literal(newtext)
 
@@ -1951,12 +1937,12 @@ def secure_form(form_url, method="POST", multipart=False, **attrs):
     """
     from webhelpers.pylonslib.secure_form import insecure_form
 
-    session = None
-
-    # TODO(marcink): after pyramid migration require request variable ALWAYS
     if 'request' in attrs:
         session = attrs['request'].session
         del attrs['request']
+    else:
+        raise ValueError(
+            'Calling this form requires request= to be passed as argument')
 
     form = insecure_form(form_url, method, multipart, **attrs)
     token = literal(
@@ -2014,8 +2000,6 @@ def get_last_path_part(file_node):
 def route_url(*args, **kwargs):
     """
     Wrapper around pyramids `route_url` (fully qualified url) function. 
-    It is used to generate URLs from within pylons views or templates. 
-    This will be removed when pyramid migration if finished.
     """
     req = get_current_request()
     return req.route_url(*args, **kwargs)
@@ -2023,9 +2007,7 @@ def route_url(*args, **kwargs):
 
 def route_path(*args, **kwargs):
     """
-    Wrapper around pyramids `route_path` function. It is used to generate
-    URLs from within pylons views or templates. This will be removed when
-    pyramid migration if finished.
+    Wrapper around pyramids `route_path` function.
     """
     req = get_current_request()
     return req.route_path(*args, **kwargs)
@@ -2042,26 +2024,6 @@ def current_route_path(request, **kw):
     new_args = request.GET.mixed()
     new_args.update(kw)
     return request.current_route_path(_query=new_args)
-
-
-def static_url(*args, **kwds):
-    """
-    Wrapper around pyramids `route_path` function. It is used to generate
-    URLs from within pylons views or templates. This will be removed when
-    pyramid migration if finished.
-    """
-    req = get_current_request()
-    return req.static_url(*args, **kwds)
-
-
-def resource_path(*args, **kwds):
-    """
-    Wrapper around pyramids `route_path` function. It is used to generate
-    URLs from within pylons views or templates. This will be removed when
-    pyramid migration if finished.
-    """
-    req = get_current_request()
-    return req.resource_path(*args, **kwds)
 
 
 def api_call_example(method, args):
@@ -2108,3 +2070,8 @@ def go_import_header(request, db_repo=None):
     # we have a repo and go-get flag,
     return literal('<meta name="go-import" content="{} {} {}">'.format(
         prefix, db_repo.repo_type, clone_url))
+
+
+def reviewer_as_json(*args, **kwargs):
+    from rhodecode.apps.repository.utils import reviewer_as_json as _reviewer_as_json
+    return _reviewer_as_json(*args, **kwargs)

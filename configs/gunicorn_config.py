@@ -28,9 +28,30 @@ accesslog = '-'
 loglevel = 'debug'
 
 # SECURITY
+
+# The maximum size of HTTP request line in bytes.
 limit_request_line = 4094
-limit_request_fields = 100
-limit_request_field_size = 8190
+
+# Limit the number of HTTP headers fields in a request.
+limit_request_fields = 1024
+
+# Limit the allowed size of an HTTP request header field.
+# Value is a positive number or 0.
+# Setting it to 0 will allow unlimited header field sizes.
+limit_request_field_size = 0
+
+
+# Timeout for graceful workers restart.
+# After receiving a restart signal, workers have this much time to finish
+# serving requests. Workers still alive after the timeout (starting from the
+# receipt of the restart signal) are force killed.
+graceful_timeout = 30
+
+
+# The number of seconds to wait for requests on a Keep-Alive connection.
+# Generally set in the 1-5 seconds range.
+keepalive = 2
+
 
 # SERVER MECHANICS
 # None == system temp dir
@@ -57,8 +78,16 @@ def pre_exec(server):
     server.log.info("Forked child, re-executing.")
 
 
+def on_starting(server):
+    server.log.info("Server is starting.")
+
+
 def when_ready(server):
     server.log.info("Server is ready. Spawning workers")
+
+
+def on_reload(server):
+    pass
 
 
 def worker_int(worker):
@@ -81,6 +110,14 @@ def worker_abort(worker):
     worker.log.info("[<%-10s>] worker received SIGABRT signal", worker.pid)
 
 
+def worker_exit(server, worker):
+    worker.log.info("[<%-10s>] worker exit", worker.pid)
+
+
+def child_exit(server, worker):
+    worker.log.info("[<%-10s>] worker child exit", worker.pid)
+
+
 def pre_request(worker, req):
     return
     worker.log.debug("[<%-10s>] PRE WORKER: %s %s",
@@ -91,6 +128,7 @@ def post_request(worker, req, environ, resp):
     return
     worker.log.debug("[<%-10s>] POST WORKER: %s %s resp: %s", worker.pid,
                      req.method, req.path, resp.status_code)
+
 
 
 class RhodeCodeLogger(Logger):

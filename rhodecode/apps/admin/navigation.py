@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017  RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -25,13 +25,14 @@ import collections
 from zope.interface import implementer
 
 from rhodecode.apps.admin.interfaces import IAdminNavigationRegistry
-from rhodecode.lib.utils import get_registry
+from rhodecode.lib.utils2 import str2bool
 from rhodecode.translation import _
 
 
 log = logging.getLogger(__name__)
 
-NavListEntry = collections.namedtuple('NavListEntry', ['key', 'name', 'url'])
+NavListEntry = collections.namedtuple(
+    'NavListEntry', ['key', 'name', 'url', 'active_list'])
 
 
 class NavEntry(object):
@@ -41,77 +42,69 @@ class NavEntry(object):
     :param key: Unique identifier used to store reference in an OrderedDict.
     :param name: Display name, usually a translation string.
     :param view_name: Name of the view, used generate the URL.
-    :param pyramid: Indicator to use pyramid for URL generation. This should
-        be removed as soon as we are fully migrated to pyramid.
+    :param active_list: list of urls that we select active for this element
     """
 
-    def __init__(self, key, name, view_name, pyramid=False):
+    def __init__(self, key, name, view_name, active_list=None):
         self.key = key
         self.name = name
         self.view_name = view_name
-        self.pyramid = pyramid
+        self._active_list = active_list or []
 
     def generate_url(self, request):
-        if self.pyramid:
-            if hasattr(request, 'route_path'):
-                return request.route_path(self.view_name)
-            else:
-                # TODO: johbo: Remove this after migrating to pyramid.
-                # We need the pyramid request here to generate URLs to pyramid
-                # views from within pylons views.
-                from pyramid.threadlocal import get_current_request
-                pyramid_request = get_current_request()
-                return pyramid_request.route_path(self.view_name)
-        else:
-            from pylons import url
-            return url(self.view_name)
+        return request.route_path(self.view_name)
 
     def get_localized_name(self, request):
-        if hasattr(request, 'translate'):
-            return request.translate(self.name)
-        else:
-            # TODO(marcink): Remove this after migrating to pyramid
-            from pyramid.threadlocal import get_current_request
-            pyramid_request = get_current_request()
-            return pyramid_request.translate(self.name)
+        return request.translate(self.name)
+
+    @property
+    def active_list(self):
+        active_list = [self.key]
+        if self._active_list:
+            active_list = self._active_list
+        return active_list
 
 
 @implementer(IAdminNavigationRegistry)
 class NavigationRegistry(object):
 
     _base_entries = [
-        NavEntry('global', _('Global'), 'admin_settings_global'),
-        NavEntry('vcs', _('VCS'), 'admin_settings_vcs'),
-        NavEntry('visual', _('Visual'), 'admin_settings_visual'),
-        NavEntry('mapping', _('Remap and Rescan'), 'admin_settings_mapping'),
+        NavEntry('global', _('Global'),
+                 'admin_settings_global'),
+        NavEntry('vcs', _('VCS'),
+                 'admin_settings_vcs'),
+        NavEntry('visual', _('Visual'),
+                 'admin_settings_visual'),
+        NavEntry('mapping', _('Remap and Rescan'),
+                 'admin_settings_mapping'),
         NavEntry('issuetracker', _('Issue Tracker'),
                  'admin_settings_issuetracker'),
-        NavEntry('email', _('Email'), 'admin_settings_email'),
-        NavEntry('hooks', _('Hooks'), 'admin_settings_hooks'),
-        NavEntry('search', _('Full Text Search'), 'admin_settings_search'),
-
+        NavEntry('email', _('Email'),
+                 'admin_settings_email'),
+        NavEntry('hooks', _('Hooks'),
+                 'admin_settings_hooks'),
+        NavEntry('search', _('Full Text Search'),
+                 'admin_settings_search'),
         NavEntry('integrations', _('Integrations'),
-                 'global_integrations_home', pyramid=True),
+                 'global_integrations_home'),
         NavEntry('system', _('System Info'),
-                 'admin_settings_system', pyramid=True),
+                 'admin_settings_system'),
         NavEntry('process_management', _('Processes'),
-                 'admin_settings_process_management', pyramid=True),
+                 'admin_settings_process_management'),
         NavEntry('sessions', _('User Sessions'),
-                 'admin_settings_sessions', pyramid=True),
+                 'admin_settings_sessions'),
         NavEntry('open_source', _('Open Source Licenses'),
-                 'admin_settings_open_source', pyramid=True),
+                 'admin_settings_open_source'),
 
-        # TODO: marcink: we disable supervisor now until the supervisor stats
-        # page is fixed in the nix configuration
-        # NavEntry('supervisor', _('Supervisor'), 'admin_settings_supervisor'),
     ]
 
-    _labs_entry = NavEntry('labs', _('Labs'), 'admin_settings_labs')
+    _labs_entry = NavEntry('labs', _('Labs'),
+                           'admin_settings_labs')
 
     def __init__(self, labs_active=False):
-        self._registered_entries = collections.OrderedDict([
-            (item.key, item) for item in self.__class__._base_entries
-        ])
+        self._registered_entries = collections.OrderedDict()
+        for item in self.__class__._base_entries:
+            self._registered_entries[item.key] = item
 
         if labs_active:
             self.add_entry(self._labs_entry)
@@ -121,16 +114,16 @@ class NavigationRegistry(object):
 
     def get_navlist(self, request):
         navlist = [NavListEntry(i.key, i.get_localized_name(request),
-                                i.generate_url(request))
+                                i.generate_url(request), i.active_list)
                    for i in self._registered_entries.values()]
         return navlist
 
 
-def navigation_registry(request):
+def navigation_registry(request, registry=None):
     """
     Helper that returns the admin navigation registry.
     """
-    pyramid_registry = get_registry(request)
+    pyramid_registry = registry or request.registry
     nav_registry = pyramid_registry.queryUtility(IAdminNavigationRegistry)
     return nav_registry
 
@@ -140,3 +133,11 @@ def navigation_list(request):
     Helper that returns the admin navigation as list of NavListEntry objects.
     """
     return navigation_registry(request).get_navlist(request)
+
+
+def includeme(config):
+    # Create admin navigation registry and add it to the pyramid registry.
+    settings = config.get_settings()
+    labs_active = str2bool(settings.get('labs_settings_active', False))
+    navigation_registry = NavigationRegistry(labs_active=labs_active)
+    config.registry.registerUtility(navigation_registry)

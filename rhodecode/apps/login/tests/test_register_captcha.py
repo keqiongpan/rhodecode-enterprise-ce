@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -22,10 +22,10 @@
 import mock
 import pytest
 
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.apps.login.views import LoginView, CaptchaData
-from rhodecode.config.routing import ADMIN_PREFIX
-from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.settings import SettingsModel
+from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.tests.utils import AssertResponse
 
 
@@ -58,7 +58,7 @@ class TestRegisterCaptcha(object):
         ('privkey', '',       CaptchaData(True,  'privkey', '')),
         ('privkey', 'pubkey', CaptchaData(True,  'privkey', 'pubkey')),
     ])
-    def test_get_captcha_data(self, private_key, public_key, expected, db,
+    def test_get_captcha_data(self, private_key, public_key, expected,
                               request_stub, user_util):
         request_stub.user = user_util.create_user().AuthUser()
         request_stub.matched_route = AttributeDict({'name': 'login'})

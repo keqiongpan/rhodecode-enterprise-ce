@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -680,7 +680,7 @@ class RepoGroupModel(BaseModel):
 
         from pyramid.threadlocal import get_current_request
         _render = get_current_request().get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
         c = _render.get_call_context()
         h = _render.get_helpers()
 

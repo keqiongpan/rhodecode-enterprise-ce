@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,19 +23,14 @@ import os
 import mock
 import pytest
 
-from pyramid import testing
-
 from rhodecode.apps.svn_support import utils
 
 
+@pytest.mark.usefixtures('config_stub')
 class TestModDavSvnConfig(object):
 
     @classmethod
     def setup_class(cls):
-        # Make mako renderer available in tests.
-        config = testing.setUp()
-        config.include('pyramid_mako')
-
         cls.location_root = u'/location/root/çµäö'
         cls.parent_path_root = u'/parent/path/çµäö'
         cls.realm = u'Dummy Realm (äöüçµ)'

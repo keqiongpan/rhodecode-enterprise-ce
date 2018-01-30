@@ -1,4 +1,4 @@
-${h.secure_form(h.url('admin_settings_mapping'), request=request)}
+${h.secure_form(h.route_path('admin_settings_mapping_update'), request=request)}
 
 <div class="panel panel-default">
     <div class="panel-heading">

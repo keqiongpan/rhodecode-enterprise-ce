@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -32,9 +32,10 @@ import pytest
 from rhodecode.lib.vcs.backends import base
 from rhodecode.lib.vcs.exceptions import ImproperArchiveTypeError, VCSError
 from rhodecode.lib.vcs.nodes import FileNode
-from rhodecode.tests.vcs.base import BackendTestMixin
+from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
+@pytest.mark.usefixtures("vcs_repository_support")
 class TestArchives(BackendTestMixin):
 
     @pytest.fixture(autouse=True)
@@ -48,7 +49,7 @@ class TestArchives(BackendTestMixin):
     @classmethod
     def _get_commits(cls):
         start_date = datetime.datetime(2010, 1, 1, 20)
-        for x in xrange(5):
+        for x in range(5):
             yield {
                 'message': 'Commit %d' % x,
                 'author': 'Joe Doe <joe.doe@example.com>',
@@ -68,7 +69,7 @@ class TestArchives(BackendTestMixin):
         out_file.extractall(out_dir)
         out_file.close()
 
-        for x in xrange(5):
+        for x in range(5):
             node_path = '%d/file_%d.txt' % (x, x)
             with open(os.path.join(out_dir, 'repo/' + node_path)) as f:
                 file_content = f.read()
@@ -80,7 +81,7 @@ class TestArchives(BackendTestMixin):
         self.tip.archive_repo(self.temp_file, kind='zip', prefix='repo')
         out = zipfile.ZipFile(self.temp_file)
 
-        for x in xrange(5):
+        for x in range(5):
             node_path = '%d/file_%d.txt' % (x, x)
             decompressed = StringIO.StringIO()
             decompressed.write(out.read('repo/' + node_path))
@@ -98,7 +99,7 @@ class TestArchives(BackendTestMixin):
         raw_id = self.tip.raw_id
         assert 'rev:%s' % raw_id in metafile
 
-        for x in xrange(5):
+        for x in range(5):
             node_path = '%d/file_%d.txt' % (x, x)
             decompressed = StringIO.StringIO()
             decompressed.write(out.read('repo/' + node_path))

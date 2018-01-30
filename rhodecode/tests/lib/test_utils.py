@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -104,7 +104,7 @@ HG_HOOKS = frozenset(
     ([HOOK_PULL], [HOOK_PRE_PUSH, HOOK_PRETX_PUSH, HOOK_PUSH, HOOK_REPO_SIZE,
                    HOOK_PUSH_KEY]),
 ])
-def test_make_db_config_hg_hooks(pylonsapp, request, disabled_hooks,
+def test_make_db_config_hg_hooks(baseapp, request, disabled_hooks,
                                  expected_hooks):
     disable_hooks(request, disabled_hooks)
 
@@ -130,25 +130,25 @@ def test_get_enabled_hook_classes(disabled_hooks, expected_hooks):
     assert sorted(result) == expected_hooks
 
 
-def test_get_filesystem_repos_finds_repos(tmpdir, pylonsapp):
+def test_get_filesystem_repos_finds_repos(tmpdir, baseapp):
     _stub_git_repo(tmpdir.ensure('repo', dir=True))
     repos = list(utils.get_filesystem_repos(str(tmpdir)))
     assert repos == [('repo', ('git', tmpdir.join('repo')))]
 
 
-def test_get_filesystem_repos_skips_directories(tmpdir, pylonsapp):
+def test_get_filesystem_repos_skips_directories(tmpdir, baseapp):
     tmpdir.ensure('not-a-repo', dir=True)
     repos = list(utils.get_filesystem_repos(str(tmpdir)))
     assert repos == []
 
 
-def test_get_filesystem_repos_skips_directories_with_repos(tmpdir, pylonsapp):
+def test_get_filesystem_repos_skips_directories_with_repos(tmpdir, baseapp):
     _stub_git_repo(tmpdir.ensure('subdir/repo', dir=True))
     repos = list(utils.get_filesystem_repos(str(tmpdir)))
     assert repos == []
 
 
-def test_get_filesystem_repos_finds_repos_in_subdirectories(tmpdir, pylonsapp):
+def test_get_filesystem_repos_finds_repos_in_subdirectories(tmpdir, baseapp):
     _stub_git_repo(tmpdir.ensure('subdir/repo', dir=True))
     repos = list(utils.get_filesystem_repos(str(tmpdir), recursive=True))
     assert repos == [('subdir/repo', ('git', tmpdir.join('subdir', 'repo')))]
@@ -448,3 +448,9 @@ class TestGetEnabledHooks(object):
         ui_settings = []
         result = utils.get_enabled_hook_classes(ui_settings)
         assert result == []
+
+
+def test_obfuscate_url_pw():
+    from rhodecode.lib.utils2 import obfuscate_url_pw
+    engine = u'/home/repos/malmö'
+    assert obfuscate_url_pw(engine)

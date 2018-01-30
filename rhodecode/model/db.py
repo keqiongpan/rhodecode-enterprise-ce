@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -34,14 +34,17 @@ import functools
 import traceback
 import collections
 
-
-from sqlalchemy import *
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import (
+    or_, and_, not_, func, TypeDecorator, event,
+    Index, Sequence, UniqueConstraint, ForeignKey, CheckConstraint, Column,
+    Boolean, String, Unicode, UnicodeText, DateTime, Integer, LargeBinary,
+    Text, Float, PickleType)
+from sqlalchemy.sql.expression import true, false
+from sqlalchemy.sql.functions import coalesce, count  # noqa
 from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
-from sqlalchemy.sql.expression import true
-from sqlalchemy.sql.functions import coalesce, count  # noqa
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.exc import IntegrityError  # noqa
 from sqlalchemy.dialects.mysql import LONGTEXT
 from beaker.cache import cache_region
@@ -56,7 +59,8 @@ from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
     glob2re, StrictAttributeDict, cleaned_uri)
-from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType
+from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType, \
+    JsonRaw
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.encrypt import AESCipher
@@ -221,10 +225,10 @@ class BaseModel(object):
         """return list with keys and values tuples corresponding
         to this model data """
 
-        l = []
+        lst = []
         for k in self._get_keys():
-            l.append((k, getattr(self, k),))
-        return l
+            lst.append((k, getattr(self, k),))
+        return lst
 
     def populate_obj(self, populate_dict):
         """populate model with data from given populate_dict"""
@@ -672,15 +676,19 @@ class User(Base, BaseModel):
             .order_by(UserApiKeys.user_api_key_id.asc())\
             .all()
 
-    @property
+    @LazyProperty
     def feed_token(self):
         return self.get_feed_token()
 
-    def get_feed_token(self):
+    def get_feed_token(self, cache=True):
         feed_tokens = UserApiKeys.query()\
             .filter(UserApiKeys.user == self)\
-            .filter(UserApiKeys.role == UserApiKeys.ROLE_FEED)\
-            .all()
+            .filter(UserApiKeys.role == UserApiKeys.ROLE_FEED)
+        if cache:
+            feed_tokens = feed_tokens.options(
+                FromCache("long_term", "get_user_feed_token_%s" % self.user_id))
+
+        feed_tokens = feed_tokens.all()
         if feed_tokens:
             return feed_tokens[0].api_key
         return 'NO_FEED_TOKEN_AVAILABLE'
@@ -1319,7 +1327,7 @@ class UserGroup(Base, BaseModel):
     @hybrid_property
     def description_safe(self):
         from rhodecode.lib import helpers as h
-        return h.escape(self.description)
+        return h.escape(self.user_group_description)
 
     @hybrid_property
     def group_data(self):
@@ -1524,6 +1532,7 @@ class Repository(Base, BaseModel):
     )
     DEFAULT_CLONE_URI = '{scheme}://{user}@{netloc}/{repo}'
     DEFAULT_CLONE_URI_ID = '{scheme}://{user}@{netloc}/_{repoid}'
+    DEFAULT_CLONE_URI_SSH = 'ssh://{sys_user}@{hostname}/{repo}'
 
     STATE_CREATED = 'repo_state_created'
     STATE_PENDING = 'repo_state_pending'
@@ -1615,6 +1624,8 @@ class Repository(Base, BaseModel):
     settings = relationship('RepoRhodeCodeSetting', cascade="all")
     integrations = relationship('Integration',
                                 cascade="all, delete, delete-orphan")
+
+    scoped_tokens = relationship('UserApiKeys', cascade="all")
 
     def __unicode__(self):
         return u"<%s('%s:%s')>" % (self.__class__.__name__, self.repo_id,
@@ -1715,6 +1726,17 @@ class Repository(Base, BaseModel):
                     FromCache("sql_cache_short", cache_key))
 
         return q.scalar()
+
+    @classmethod
+    def get_by_id_or_repo_name(cls, repoid):
+        if isinstance(repoid, (int, long)):
+            try:
+                repo = cls.get(repoid)
+            except ValueError:
+                repo = None
+        else:
+            repo = cls.get_by_repo_name(repoid)
+        return repo
 
     @classmethod
     def get_by_full_path(cls, repo_full_path):
@@ -2079,11 +2101,20 @@ class Repository(Base, BaseModel):
             uri_tmpl = override['uri_tmpl']
             del override['uri_tmpl']
 
+        ssh = False
+        if 'ssh' in override:
+            ssh = True
+            del override['ssh']
+
         # we didn't override our tmpl from **overrides
         if not uri_tmpl:
             rc_config = SettingsModel().get_all_settings(cache=True)
-            uri_tmpl = rc_config.get(
-                'rhodecode_clone_uri_tmpl') or self.DEFAULT_CLONE_URI
+            if ssh:
+                uri_tmpl = rc_config.get(
+                    'rhodecode_clone_uri_ssh_tmpl') or self.DEFAULT_CLONE_URI_SSH
+            else:
+                uri_tmpl = rc_config.get(
+                    'rhodecode_clone_uri_tmpl') or self.DEFAULT_CLONE_URI
 
         request = get_current_request()
         return get_clone_url(request=request,
@@ -3573,7 +3604,7 @@ class _PullRequestBase(BaseModel):
                     'reasons': reasons,
                     'review_status': st[0][1].status if st else 'not_reviewed',
                 }
-                for reviewer, reasons, mandatory, st in
+                for obj, reviewer, reasons, mandatory, st in
                 pull_request.reviewers_statuses()
             ]
         }
@@ -3769,9 +3800,33 @@ class PullRequestReviewers(Base, BaseModel):
     _reasons = Column(
         'reason', MutationList.as_mutable(
             JsonType('list', dialect_map=dict(mysql=UnicodeText(16384)))))
+
     mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
     user = relationship('User')
     pull_request = relationship('PullRequest')
+
+    rule_data = Column(
+        'rule_data_json',
+        JsonType(dialect_map=dict(mysql=UnicodeText(16384))))
+
+    def rule_user_group_data(self):
+        """
+        Returns the voting user group rule data for this reviewer
+        """
+
+        if self.rule_data and 'vote_rule' in self.rule_data:
+            user_group_data = {}
+            if 'rule_user_group_entry_id' in self.rule_data:
+                # means a group with voting rules !
+                user_group_data['id'] = self.rule_data['rule_user_group_entry_id']
+                user_group_data['name'] = self.rule_data['rule_name']
+                user_group_data['vote_rule'] = self.rule_data['vote_rule']
+
+            return user_group_data
+
+    def __unicode__(self):
+        return u"<%s('id:%s')>" % (self.__class__.__name__,
+                                   self.pull_requests_reviewers_id)
 
 
 class Notification(Base, BaseModel):
@@ -4065,6 +4120,7 @@ class RepoReviewRuleUser(Base, BaseModel):
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
+
     repo_review_rule_user_id = Column('repo_review_rule_user_id', Integer(), primary_key=True)
     repo_review_rule_id = Column("repo_review_rule_id", Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False)
@@ -4083,16 +4139,27 @@ class RepoReviewRuleUserGroup(Base, BaseModel):
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
+    VOTE_RULE_ALL = -1
+
     repo_review_rule_users_group_id = Column('repo_review_rule_users_group_id', Integer(), primary_key=True)
     repo_review_rule_id = Column("repo_review_rule_id", Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
     users_group_id = Column("users_group_id", Integer(),ForeignKey('users_groups.users_group_id'), nullable=False)
     mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
+    vote_rule = Column("vote_rule", Integer(), nullable=True, default=VOTE_RULE_ALL)
     users_group = relationship('UserGroup')
 
     def rule_data(self):
         return {
-            'mandatory': self.mandatory
+            'mandatory': self.mandatory,
+            'vote_rule': self.vote_rule
         }
+
+    @property
+    def vote_rule_label(self):
+        if not self.vote_rule or self.vote_rule == self.VOTE_RULE_ALL:
+            return 'all must vote'
+        else:
+            return 'min. vote {}'.format(self.vote_rule)
 
 
 class RepoReviewRule(Base, BaseModel):
@@ -4108,7 +4175,9 @@ class RepoReviewRule(Base, BaseModel):
         "repo_id", Integer(), ForeignKey('repositories.repo_id'))
     repo = relationship('Repository', backref='review_rules')
 
+    review_rule_name = Column('review_rule_name', String(255))
     _branch_pattern = Column("branch_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
+    _target_branch_pattern = Column("target_branch_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
     _file_pattern = Column("file_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
 
     use_authors_for_review = Column("use_authors_for_review", Boolean(), nullable=False, default=False)
@@ -4119,17 +4188,26 @@ class RepoReviewRule(Base, BaseModel):
     rule_users = relationship('RepoReviewRuleUser')
     rule_user_groups = relationship('RepoReviewRuleUserGroup')
 
-    @hybrid_property
-    def branch_pattern(self):
-        return self._branch_pattern or '*'
-
     def _validate_glob(self, value):
         re.compile('^' + glob2re(value) + '$')
 
-    @branch_pattern.setter
-    def branch_pattern(self, value):
+    @hybrid_property
+    def source_branch_pattern(self):
+        return self._branch_pattern or '*'
+
+    @source_branch_pattern.setter
+    def source_branch_pattern(self, value):
         self._validate_glob(value)
         self._branch_pattern = value or '*'
+
+    @hybrid_property
+    def target_branch_pattern(self):
+        return self._target_branch_pattern or '*'
+
+    @target_branch_pattern.setter
+    def target_branch_pattern(self, value):
+        self._validate_glob(value)
+        self._target_branch_pattern = value or '*'
 
     @hybrid_property
     def file_pattern(self):
@@ -4140,7 +4218,7 @@ class RepoReviewRule(Base, BaseModel):
         self._validate_glob(value)
         self._file_pattern = value or '*'
 
-    def matches(self, branch, files_changed):
+    def matches(self, source_branch, target_branch, files_changed):
         """
         Check if this review rule matches a branch/files in a pull request
 
@@ -4148,13 +4226,21 @@ class RepoReviewRule(Base, BaseModel):
         :param files_changed: list of file paths changed in the pull request
         """
 
-        branch = branch or ''
+        source_branch = source_branch or ''
+        target_branch = target_branch or ''
         files_changed = files_changed or []
 
         branch_matches = True
-        if branch:
-            branch_regex = re.compile('^' + glob2re(self.branch_pattern) + '$')
-            branch_matches = bool(branch_regex.search(branch))
+        if source_branch or target_branch:
+            source_branch_regex = re.compile(
+                '^' + glob2re(self.source_branch_pattern) + '$')
+            target_branch_regex = re.compile(
+                '^' + glob2re(self.target_branch_pattern) + '$')
+
+            branch_matches = (
+                    bool(source_branch_regex.search(source_branch)) and
+                    bool(target_branch_regex.search(target_branch))
+            )
 
         files_matches = True
         if self.file_pattern != '*':
@@ -4185,12 +4271,20 @@ class RepoReviewRule(Base, BaseModel):
 
         for rule_user_group in self.rule_user_groups:
             source_data = {
+                'user_group_id': rule_user_group.users_group.users_group_id,
                 'name': rule_user_group.users_group.users_group_name,
                 'members': len(rule_user_group.users_group.members)
             }
             for member in rule_user_group.users_group.members:
                 if member.user.active:
-                    users[member.user.username] = {
+                    key = member.user.username
+                    if key in users:
+                        # skip this member as we have him already
+                        # this prevents from override the "first" matched
+                        # users with duplicates in multiple groups
+                        continue
+
+                    users[key] = {
                         'user': member.user,
                         'source': 'user_group',
                         'source_data': source_data,
@@ -4199,9 +4293,146 @@ class RepoReviewRule(Base, BaseModel):
 
         return users
 
+    def user_group_vote_rule(self):
+        rules = []
+        if self.rule_user_groups:
+            for user_group in self.rule_user_groups:
+                rules.append(user_group)
+        return rules
+
     def __repr__(self):
         return '<RepoReviewerRule(id=%r, repo=%r)>' % (
             self.repo_review_rule_id, self.repo)
+
+
+class ScheduleEntry(Base, BaseModel):
+    __tablename__ = 'schedule_entries'
+    __table_args__ = (
+        UniqueConstraint('schedule_name', name='s_schedule_name_idx'),
+        UniqueConstraint('task_uid', name='s_task_uid_idx'),
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
+    )
+    schedule_types = ['crontab', 'timedelta', 'integer']
+    schedule_entry_id = Column('schedule_entry_id', Integer(), primary_key=True)
+
+    schedule_name = Column("schedule_name", String(255), nullable=False, unique=None, default=None)
+    schedule_description = Column("schedule_description", String(10000), nullable=True, unique=None, default=None)
+    schedule_enabled = Column("schedule_enabled", Boolean(), nullable=False, unique=None, default=True)
+
+    _schedule_type = Column("schedule_type", String(255), nullable=False, unique=None, default=None)
+    schedule_definition = Column('schedule_definition_json', MutationObj.as_mutable(JsonType(default=lambda: "", dialect_map=dict(mysql=LONGTEXT()))))
+
+    schedule_last_run = Column('schedule_last_run', DateTime(timezone=False), nullable=True, unique=None, default=None)
+    schedule_total_run_count = Column('schedule_total_run_count', Integer(), nullable=True, unique=None, default=0)
+
+    # task
+    task_uid = Column("task_uid", String(255), nullable=False, unique=None, default=None)
+    task_dot_notation = Column("task_dot_notation", String(4096), nullable=False, unique=None, default=None)
+    task_args = Column('task_args_json', MutationObj.as_mutable(JsonType(default=list, dialect_map=dict(mysql=LONGTEXT()))))
+    task_kwargs = Column('task_kwargs_json', MutationObj.as_mutable(JsonType(default=dict, dialect_map=dict(mysql=LONGTEXT()))))
+
+    created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
+    updated_on = Column('updated_on', DateTime(timezone=False), nullable=True, unique=None, default=None)
+
+    @hybrid_property
+    def schedule_type(self):
+        return self._schedule_type
+
+    @schedule_type.setter
+    def schedule_type(self, val):
+        if val not in self.schedule_types:
+            raise ValueError('Value must be on of `{}` and got `{}`'.format(
+                val, self.schedule_type))
+
+        self._schedule_type = val
+
+    @classmethod
+    def get_uid(cls, obj):
+        args = obj.task_args
+        kwargs = obj.task_kwargs
+        if isinstance(args, JsonRaw):
+            try:
+                args = json.loads(args)
+            except ValueError:
+                args = tuple()
+
+        if isinstance(kwargs, JsonRaw):
+            try:
+                kwargs = json.loads(kwargs)
+            except ValueError:
+                kwargs = dict()
+
+        dot_notation = obj.task_dot_notation
+        val = '.'.join(map(safe_str, [
+            sorted(dot_notation), args, sorted(kwargs.items())]))
+        return hashlib.sha1(val).hexdigest()
+
+    @classmethod
+    def get_by_schedule_name(cls, schedule_name):
+        return cls.query().filter(cls.schedule_name == schedule_name).scalar()
+
+    @classmethod
+    def get_by_schedule_id(cls, schedule_id):
+        return cls.query().filter(cls.schedule_entry_id == schedule_id).scalar()
+
+    @property
+    def task(self):
+        return self.task_dot_notation
+
+    @property
+    def schedule(self):
+        from rhodecode.lib.celerylib.utils import raw_2_schedule
+        schedule = raw_2_schedule(self.schedule_definition, self.schedule_type)
+        return schedule
+
+    @property
+    def args(self):
+        try:
+            return list(self.task_args or [])
+        except ValueError:
+            return list()
+
+    @property
+    def kwargs(self):
+        try:
+            return dict(self.task_kwargs or {})
+        except ValueError:
+            return dict()
+
+    def _as_raw(self, val):
+        if hasattr(val, 'de_coerce'):
+            val = val.de_coerce()
+            if val:
+                val = json.dumps(val)
+
+        return val
+
+    @property
+    def schedule_definition_raw(self):
+        return self._as_raw(self.schedule_definition)
+
+    @property
+    def args_raw(self):
+        return self._as_raw(self.task_args)
+
+    @property
+    def kwargs_raw(self):
+        return self._as_raw(self.task_kwargs)
+
+    def __repr__(self):
+        return '<DB:ScheduleEntry({}:{})>'.format(
+            self.schedule_entry_id, self.schedule_name)
+
+
+@event.listens_for(ScheduleEntry, 'before_update')
+def update_task_uid(mapper, connection, target):
+    target.task_uid = ScheduleEntry.get_uid(target)
+
+
+@event.listens_for(ScheduleEntry, 'before_insert')
+def set_task_uid(mapper, connection, target):
+    target.task_uid = ScheduleEntry.get_uid(target)
 
 
 class DbMigrateVersion(Base, BaseModel):

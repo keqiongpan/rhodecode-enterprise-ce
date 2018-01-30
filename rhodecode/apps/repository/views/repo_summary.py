@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -48,12 +48,9 @@ class RepoSummaryView(RepoAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
-
         c.rhodecode_repo = None
         if not c.repository_requirements_missing:
             c.rhodecode_repo = self.rhodecode_vcs_repo
-
-        self._register_global_c(c)
         return c
 
     def _get_readme_data(self, db_repo, default_renderer):
@@ -174,18 +171,22 @@ class RepoSummaryView(RepoAppView):
         if self._rhodecode_user.username != User.DEFAULT_USER:
             username = safe_str(self._rhodecode_user.username)
 
-        _def_clone_uri = _def_clone_uri_by_id = c.clone_uri_tmpl
+        _def_clone_uri = _def_clone_uri_id = c.clone_uri_tmpl
+        _def_clone_uri_ssh = c.clone_uri_ssh_tmpl
+
         if '{repo}' in _def_clone_uri:
-            _def_clone_uri_by_id = _def_clone_uri.replace(
+            _def_clone_uri_id = _def_clone_uri.replace(
                 '{repo}', '_{repoid}')
         elif '{repoid}' in _def_clone_uri:
-            _def_clone_uri_by_id = _def_clone_uri.replace(
+            _def_clone_uri_id = _def_clone_uri.replace(
                 '_{repoid}', '{repo}')
 
         c.clone_repo_url = self.db_repo.clone_url(
             user=username, uri_tmpl=_def_clone_uri)
         c.clone_repo_url_id = self.db_repo.clone_url(
-            user=username, uri_tmpl=_def_clone_uri_by_id)
+            user=username, uri_tmpl=_def_clone_uri_id)
+        c.clone_repo_url_ssh = self.db_repo.clone_url(
+            uri_tmpl=_def_clone_uri_ssh, ssh=True)
 
         # If enabled, get statistics data
 

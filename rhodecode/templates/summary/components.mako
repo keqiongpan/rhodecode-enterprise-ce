@@ -44,37 +44,43 @@
         </div>
 
         <div class="fieldset">
-          %if h.is_svn_without_proxy(c.rhodecode_db_repo):
-            <div class="left-label disabled">
-              ${_('Read-only url')}:
+
+            <div class="left-clone">
+                <select id="clone_option" name="clone_option">
+                    <option value="http" selected="selected">HTTP</option>
+                    <option value="http_id">HTTP UID</option>
+                    % if c.ssh_enabled:
+                        <option value="ssh">SSH</option>
+                    % endif
+                </select>
             </div>
-            <div class="right-content disabled">
-                <input type="text" class="input-monospace" id="clone_url" disabled value="${c.clone_repo_url}"/>
-                <i id="clone_by_name_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url}" title="${_('Copy the clone url')}"></i>
+            <div class="right-clone">
+                <%
+                    maybe_disabled = ''
+                    if h.is_svn_without_proxy(c.rhodecode_db_repo):
+                        maybe_disabled = 'disabled'
+                %>
 
-                <input type="text" class="input-monospace" id="clone_url_id" disabled value="${c.clone_repo_url_id}" style="display: none;"/>
-                <i id="clone_by_id_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url_id}" title="${_('Copy the clone by id url')}" style="display: none"></i>
+                <span id="clone_option_http">
+                <input type="text" class="input-monospace clone_url_input" ${maybe_disabled} readonly="readonly" value="${c.clone_repo_url}"/>
+                <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url}" title="${_('Copy the clone url')}"></i>
+                </span>
 
-                <a id="clone_by_name" class="clone" style="display: none;">${_('Show by Name')}</a>
-                <a id="clone_by_id" class="clone">${_('Show by ID')}</a>
+                <span style="display: none;" id="clone_option_http_id">
+                <input type="text" class="input-monospace clone_url_input" ${maybe_disabled} readonly="readonly" value="${c.clone_repo_url_id}"/>
+                <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url_id}" title="${_('Copy the clone by id url')}"></i>
+                </span>
 
-                <p class="help-block">${_('SVN Protocol is disabled. To enable it, see the')} <a href="${h.route_url('enterprise_svn_setup')}" target="_blank">${_('documentation here')}</a>.</p>
+                <span style="display: none;" id="clone_option_ssh">
+                <input type="text" class="input-monospace clone_url_input" ${maybe_disabled} readonly="readonly" value="${c.clone_repo_url_ssh}"/>
+                <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url_ssh}" title="${_('Copy the clone by ssh url')}"></i>
+                </span>
+
+                % if maybe_disabled:
+                    <p class="help-block">${_('SVN Protocol is disabled. To enable it, see the')} <a href="${h.route_url('enterprise_svn_setup')}" target="_blank">${_('documentation here')}</a>.</p>
+                % endif
+
             </div>
-          %else:
-            <div class="left-label">
-              ${_('Clone url')}:
-            </div>
-            <div class="right-content">
-                <input type="text" class="input-monospace" id="clone_url" readonly="readonly" value="${c.clone_repo_url}"/>
-                <i id="clone_by_name_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url}" title="${_('Copy the clone url')}"></i>
-
-                <input type="text" class="input-monospace" id="clone_url_id" readonly="readonly" value="${c.clone_repo_url_id}" style="display: none;"/>
-                <i id="clone_by_id_copy" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.clone_repo_url_id}" title="${_('Copy the clone by id url')}" style="display: none"></i>
-
-                <a id="clone_by_name" class="clone" style="display: none;">${_('Show by Name')}</a>
-                <a id="clone_by_id" class="clone">${_('Show by ID')}</a>
-            </div>
-          %endif
         </div>
 
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">

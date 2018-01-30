@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,15 +18,22 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import ConfigParser
-from pyramid.paster import bootstrap as pyramid_bootstrap
+import os
+from pyramid.compat import configparser
+from pyramid.paster import bootstrap as pyramid_bootstrap, setup_logging  # noqa
 from pyramid.request import Request
+from pyramid.scripting import prepare
 
 
-def get_config(ini_path):
-    parser = ConfigParser.ConfigParser()
+def get_config(ini_path, **kwargs):
+    parser = configparser.ConfigParser(**kwargs)
     parser.read(ini_path)
     return parser
+
+
+def get_app_config(ini_path):
+    from paste.deploy.loadwsgi import appconfig
+    return appconfig('config:{}'.format(ini_path), relative_to=os.getcwd())
 
 
 def bootstrap(config_uri, request=None, options=None):
@@ -35,9 +42,15 @@ def bootstrap(config_uri, request=None, options=None):
     base_url = 'http://rhodecode.local'
     try:
         base_url = config.get('app:main', 'app.base_url')
-    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    except (configparser.NoSectionError, configparser.NoOptionError):
         pass
 
     request = request or Request.blank('/', base_url=base_url)
 
     return pyramid_bootstrap(config_uri, request=request, options=options)
+
+
+def prepare_request(environ):
+    request = Request.blank('/', environ=environ)
+    prepare(request)  # set pyramid threadlocal request
+    return request

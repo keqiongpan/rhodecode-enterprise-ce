@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2017 RhodeCode GmbH
+# Copyright (C) 2012-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -27,7 +27,7 @@ from pyramid.authentication import SessionAuthenticationPolicy
 from rhodecode.authentication.registry import AuthenticationPluginRegistry
 from rhodecode.authentication.routes import root_factory
 from rhodecode.authentication.routes import AuthnRootResource
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.model.settings import SettingsModel
 
 

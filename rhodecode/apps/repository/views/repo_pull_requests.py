@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -60,7 +60,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         c = self._get_local_tmpl_context(include_app_defaults=True)
         c.REVIEW_STATUS_APPROVED = ChangesetStatus.STATUS_APPROVED
         c.REVIEW_STATUS_REJECTED = ChangesetStatus.STATUS_REJECTED
-        self._register_global_c(c)
+
         return c
 
     def _get_pull_requests_list(
@@ -69,7 +69,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(self.request)
         _render = self.request.get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
 
         # pagination
 
@@ -173,6 +173,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         route_name='pullrequest_show_all_data', request_method='GET',
         renderer='json_ext', xhr=True)
     def pull_request_list_data(self):
+        self.load_default_context()
 
         # additional filters
         req_get = self.request.GET
@@ -199,29 +200,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             filter_type=filter_type, opened_by=opened_by, statuses=statuses)
 
         return data
-
-    def _get_pr_version(self, pull_request_id, version=None):
-        at_version = None
-
-        if version and version == 'latest':
-            pull_request_ver = PullRequest.get(pull_request_id)
-            pull_request_obj = pull_request_ver
-            _org_pull_request_obj = pull_request_obj
-            at_version = 'latest'
-        elif version:
-            pull_request_ver = PullRequestVersion.get_or_404(version)
-            pull_request_obj = pull_request_ver
-            _org_pull_request_obj = pull_request_ver.pull_request
-            at_version = pull_request_ver.pull_request_version_id
-        else:
-            _org_pull_request_obj = pull_request_obj = PullRequest.get_or_404(
-                pull_request_id)
-
-        pull_request_display_obj = PullRequest.get_pr_display_object(
-            pull_request_obj, _org_pull_request_obj)
-
-        return _org_pull_request_obj, pull_request_obj, \
-               pull_request_display_obj, at_version
 
     def _get_diffset(self, source_repo_name, source_repo,
                      source_ref_id, target_ref_id,
@@ -277,7 +255,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         (pull_request_latest,
          pull_request_at_ver,
          pull_request_display_obj,
-         at_version) = self._get_pr_version(
+         at_version) = PullRequestModel().get_pr_version(
             pull_request_id, version=version)
         pr_closed = pull_request_latest.is_closed()
 
@@ -299,7 +277,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         (prev_pull_request_latest,
          prev_pull_request_at_ver,
          prev_pull_request_display_obj,
-         prev_at_version) = self._get_pr_version(
+         prev_at_version) = PullRequestModel().get_pr_version(
             pull_request_id, version=from_version)
 
         c.from_version = prev_at_version
@@ -630,7 +608,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         try:
             source_repo_data = PullRequestModel().generate_repo_data(
                 source_repo, commit_id=commit_id,
-                branch=branch_ref, bookmark=bookmark_ref, translator=self.request.translate)
+                branch=branch_ref, bookmark=bookmark_ref,
+                translator=self.request.translate)
         except CommitDoesNotExistError as e:
             log.exception(e)
             h.flash(_('Commit does not exist'), 'error')
@@ -649,8 +628,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             default_target_repo, translator=self.request.translate)
 
         selected_source_ref = source_repo_data['refs']['selected_ref']
-
-        title_source_ref = selected_source_ref.split(':', 2)[1]
+        title_source_ref = ''
+        if selected_source_ref:
+            title_source_ref = selected_source_ref.split(':', 2)[1]
         c.default_title = PullRequestModel().generate_pullrequest_title(
             source=source_repo.repo_name,
             source_ref=title_source_ref,
@@ -675,6 +655,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         route_name='pullrequest_repo_refs', request_method='GET',
         renderer='json_ext', xhr=True)
     def pull_request_repo_refs(self):
+        self.load_default_context()
         target_repo_name = self.request.matchdict['target_repo_name']
         repo = Repository.get_by_repo_name(target_repo_name)
         if not repo:
@@ -752,16 +733,19 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def pull_request_create(self):
         _ = self.request.translate
         self.assure_not_empty_repo()
+        self.load_default_context()
 
         controls = peppercorn.parse(self.request.POST.items())
 
         try:
-            _form = PullRequestForm(self.db_repo.repo_id)().to_python(controls)
+            form = PullRequestForm(
+                self.request.translate, self.db_repo.repo_id)()
+            _form = form.to_python(controls)
         except formencode.Invalid as errors:
             if errors.error_dict.get('revisions'):
                 msg = 'Revisions: %s' % errors.error_dict['revisions']
             elif errors.error_dict.get('pullrequest_title'):
-                msg = _('Pull request requires a title with min. 3 chars')
+                msg = errors.error_dict.get('pullrequest_title')
             else:
                 msg = _('Error creating pull request: {}').format(errors)
             log.exception(msg)
@@ -882,6 +866,15 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def pull_request_update(self):
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
+        _ = self.request.translate
+
+        self.load_default_context()
+
+        if pull_request.is_closed():
+            log.debug('update: forbidden because pull request is closed')
+            msg = _(u'Cannot update closed pull requests.')
+            h.flash(msg, category='error')
+            return True
 
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
@@ -981,6 +974,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
 
+        self.load_default_context()
         check = MergeCheck.validate(pull_request, self._rhodecode_db_user,
                                     translator=self.request.translate)
         merge_possible = not check.failed
@@ -1053,6 +1047,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
+        self.load_default_context()
 
         pr_closed = pull_request.is_closed()
         allowed_to_delete = PullRequestModel().check_user_delete(
@@ -1166,6 +1161,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     )
 
                 Session().flush()
+                # this is somehow required to get access to some relationship
+                # loaded on comment
+                Session().refresh(comment)
+
                 events.trigger(
                     events.PullRequestCommentEvent(pull_request, comment))
 

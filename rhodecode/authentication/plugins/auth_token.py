@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -111,6 +111,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             "firstname": userobj.firstname,
             "lastname": userobj.lastname,
             "groups": [],
+            'user_group_sync': False,
             "email": userobj.email,
             "admin": userobj.admin,
             "active": userobj.active,

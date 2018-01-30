@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -44,7 +44,7 @@ def repo_name(backend_hg):
 class TestPermissions(object):
 
     @pytest.fixture(scope='class', autouse=True)
-    def default_permissions(self, request, pylonsapp):
+    def default_permissions(self, request, baseapp):
         # recreate default user to get a clean start
         PermissionModel().create_default_user_permissions(
             user=User.DEFAULT_USER, force=True)

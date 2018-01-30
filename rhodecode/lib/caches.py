@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2015-2017 RhodeCode GmbH
+# Copyright (C) 2015-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -47,18 +47,48 @@ DEFAULT_CACHE_MANAGER_CONFIG = {
 }
 
 
+def get_default_cache_settings(settings):
+    cache_settings = {}
+    for key in settings.keys():
+        for prefix in ['beaker.cache.', 'cache.']:
+            if key.startswith(prefix):
+                name = key.split(prefix)[1].strip()
+                cache_settings[name] = settings[key].strip()
+    return cache_settings
+
+
+# set cache regions for beaker so celery can utilise it
+def configure_caches(settings, default_region_settings=None):
+    cache_settings = {'regions': None}
+    # main cache settings used as default ...
+    cache_settings.update(get_default_cache_settings(settings))
+    default_region_settings = default_region_settings or \
+                              {'type': DEFAULT_CACHE_MANAGER_CONFIG['type']}
+    if cache_settings['regions']:
+        for region in cache_settings['regions'].split(','):
+            region = region.strip()
+            region_settings = default_region_settings.copy()
+            for key, value in cache_settings.items():
+                if key.startswith(region):
+                    region_settings[key.split('.')[1]] = value
+            log.debug('Configuring cache region `%s` with settings %s',
+                      region, region_settings)
+            configure_cache_region(
+                region, region_settings, cache_settings)
+
+
 def configure_cache_region(
-        region_name, region_kw, default_cache_kw, default_expire=60):
+        region_name, region_settings, default_cache_kw, default_expire=60):
     default_type = default_cache_kw.get('type', 'memory')
     default_lock_dir = default_cache_kw.get('lock_dir')
     default_data_dir = default_cache_kw.get('data_dir')
 
-    region_kw['lock_dir'] = region_kw.get('lock_dir', default_lock_dir)
-    region_kw['data_dir'] = region_kw.get('data_dir', default_data_dir)
-    region_kw['type'] = region_kw.get('type', default_type)
-    region_kw['expire'] = int(region_kw.get('expire', default_expire))
+    region_settings['lock_dir'] = region_settings.get('lock_dir', default_lock_dir)
+    region_settings['data_dir'] = region_settings.get('data_dir', default_data_dir)
+    region_settings['type'] = region_settings.get('type', default_type)
+    region_settings['expire'] = int(region_settings.get('expire', default_expire))
 
-    beaker.cache.cache_regions[region_name] = region_kw
+    beaker.cache.cache_regions[region_name] = region_settings
 
 
 def get_cache_manager(region_name, cache_name, custom_ttl=None):
@@ -233,3 +263,7 @@ class InvalidationContext(object):
             Session().rollback()
             if self.raise_exception:
                 raise
+
+
+def includeme(config):
+    configure_caches(config.registry.settings)

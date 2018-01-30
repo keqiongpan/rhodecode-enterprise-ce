@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017  RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -86,7 +86,7 @@ class TestApi(object):
     def test_api_non_existing_method_have_similar(self, request):
         id_, params = build_data(self.apikey, 'comment', args='xx')
         response = api_call(self.app, params)
-        expected = 'No such method: comment. Similar methods: changeset_comment, comment_pull_request, comment_commit'
+        expected = 'No such method: comment. Similar methods: changeset_comment, comment_pull_request, get_pull_request_comments, comment_commit'
         assert_error(id_, expected, given=response.body)
 
     def test_api_disabled_user(self, request):

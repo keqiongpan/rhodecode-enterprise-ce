@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2017-2017 RhodeCode GmbH
+# Copyright (C) 2017-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -25,8 +25,8 @@ import time
 import platform
 import pkg_resources
 import logging
-import string
 
+from pyramid.compat import configparser
 
 log = logging.getLogger(__name__)
 
@@ -489,8 +489,7 @@ def svn_info():
 
 def vcs_backends():
     import rhodecode
-    value = map(
-        string.strip, rhodecode.CONFIG.get('vcs.backends', '').split(','))
+    value = rhodecode.CONFIG.get('vcs.backends')
     human_value = 'Enabled backends in order: {}'.format(','.join(value))
     return SysInfoRes(value=value, human_value=human_value)
 
@@ -556,7 +555,6 @@ def rhodecode_app_info():
 
 def rhodecode_config():
     import rhodecode
-    import ConfigParser as configparser
     path = rhodecode.CONFIG.get('__file__')
     rhodecode_ini_safe = rhodecode.CONFIG.copy()
 
@@ -579,9 +577,6 @@ def rhodecode_config():
     blacklist = [
         'rhodecode_license_key',
         'routes.map',
-        'pylons.h',
-        'pylons.app_globals',
-        'pylons.environ_config',
         'sqlalchemy.db1.url',
         'channelstream.secret',
         'beaker.session.secret',

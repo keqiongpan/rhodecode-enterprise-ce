@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,7 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-from rhodecode.config.routing import ADMIN_PREFIX
+from rhodecode.apps._base import ADMIN_PREFIX
 
 
 def admin_routes(config):
@@ -36,7 +36,7 @@ def admin_routes(config):
 def includeme(config):
 
     config.include(admin_routes, route_prefix=ADMIN_PREFIX + '/ops')
-    # make OLD entries from pylons work
+    # make OLD entries from <4.10.0 work
     config.add_route(
         name='ops_ping_legacy', pattern=ADMIN_PREFIX + '/ping')
     config.add_route(

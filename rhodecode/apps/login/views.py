@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2017 RhodeCode GmbH
+# Copyright (C) 2016-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -32,7 +32,7 @@ from recaptcha.client.captcha import submit
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.authentication.base import authenticate, HTTP_TYPE
-from rhodecode.events import UserRegistered
+from rhodecode.events import UserRegistered, trigger
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
@@ -113,7 +113,7 @@ class LoginView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
         c.came_from = get_came_from(self.request)
-        self._register_global_c(c)
+
         return c
 
     def _get_captcha_data(self):
@@ -147,7 +147,7 @@ class LoginView(BaseAppView):
                 raise HTTPFound(c.came_from, headers=headers)
         except UserCreationError as e:
             log.error(e)
-            self.session.flash(e, queue='error')
+            h.flash(e, category='error')
 
         return self._get_template_context(c)
 
@@ -157,7 +157,7 @@ class LoginView(BaseAppView):
     def login_post(self):
         c = self.load_default_context()
 
-        login_form = LoginForm()()
+        login_form = LoginForm(self.request.translate)()
 
         try:
             self.session.invalidate()
@@ -182,11 +182,10 @@ class LoginView(BaseAppView):
             defaults = errors.value
             # remove password from filling in form again
             defaults.pop('password', None)
-            render_ctx = self._get_template_context(c)
-            render_ctx.update({
+            render_ctx = {
                 'errors': errors.error_dict,
                 'defaults': defaults,
-            })
+            }
 
             audit_user = audit_logger.UserWrap(
                 username=self.request.POST.get('username'),
@@ -195,14 +194,14 @@ class LoginView(BaseAppView):
             audit_logger.store_web(
                 'user.login.failure', action_data=action_data,
                 user=audit_user, commit=True)
-            return render_ctx
+            return self._get_template_context(c, **render_ctx)
 
         except UserCreationError as e:
             # headers auth or other auth functions that create users on
             # the fly can throw this exception signaling that there's issue
             # with user creation, explanation should be provided in
             # Exception itself
-            self.session.flash(e, queue='error')
+            h.flash(e, category='error')
             return self._get_template_context(c)
 
     @CSRFRequired()
@@ -251,11 +250,12 @@ class LoginView(BaseAppView):
         route_name='register', request_method='POST',
         renderer='rhodecode:templates/register.mako')
     def register_post(self):
+        self.load_default_context()
         captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
             .AuthUser().permissions['global']
 
-        register_form = RegisterForm()()
+        register_form = RegisterForm(self.request.translate)()
         try:
 
             form_result = register_form.to_python(self.request.POST)
@@ -275,11 +275,18 @@ class LoginView(BaseAppView):
                                              error_dict=error_dict)
 
             new_user = UserModel().create_registration(form_result)
+
+            action_data = {'data': new_user.get_api_data(),
+                           'user_agent': self.request.user_agent}
+            audit_logger.store_web(
+                'user.register', action_data=action_data,
+                user=new_user)
+
             event = UserRegistered(user=new_user, session=self.session)
-            self.request.registry.notify(event)
-            self.session.flash(
+            trigger(event)
+            h.flash(
                 _('You have successfully registered with RhodeCode'),
-                queue='success')
+                category='success')
             Session().commit()
 
             redirect_ro = self.request.route_path('login')
@@ -296,16 +303,17 @@ class LoginView(BaseAppView):
             # the fly can throw this exception signaling that there's issue
             # with user creation, explanation should be provided in
             # Exception itself
-            self.session.flash(e, queue='error')
+            h.flash(e, category='error')
             return self.register()
 
     @view_config(
         route_name='reset_password', request_method=('GET', 'POST'),
         renderer='rhodecode:templates/password_reset.mako')
     def password_reset(self):
+        c = self.load_default_context()
         captcha = self._get_captcha_data()
 
-        render_ctx = {
+        template_context = {
             'captcha_active': captcha.active,
             'captcha_public_key': captcha.public_key,
             'defaults': {},
@@ -320,11 +328,11 @@ class LoginView(BaseAppView):
             if h.HasPermissionAny('hg.password_reset.disabled')():
                 _email = self.request.POST.get('email', '')
                 log.error('Failed attempt to reset password for `%s`.', _email)
-                self.session.flash(_('Password reset has been disabled.'),
-                                   queue='error')
+                h.flash(_('Password reset has been disabled.'),
+                                   category='error')
                 return HTTPFound(self.request.route_path('reset_password'))
 
-            password_reset_form = PasswordResetForm()()
+            password_reset_form = PasswordResetForm(self.request.translate)()
             try:
                 form_result = password_reset_form.to_python(
                     self.request.POST)
@@ -362,7 +370,7 @@ class LoginView(BaseAppView):
                 UserModel().reset_password_link(
                     form_result, password_reset_url)
                 # Display success message and redirect.
-                self.session.flash(msg, queue='success')
+                h.flash(msg, category='success')
 
                 action_data = {'email': user_email,
                                'user_agent': self.request.user_agent}
@@ -372,30 +380,30 @@ class LoginView(BaseAppView):
                 return HTTPFound(self.request.route_path('reset_password'))
 
             except formencode.Invalid as errors:
-                render_ctx.update({
+                template_context.update({
                     'defaults': errors.value,
                     'errors': errors.error_dict,
                 })
                 if not self.request.POST.get('email'):
                     # case of empty email, we want to report that
-                    return render_ctx
+                    return self._get_template_context(c, **template_context)
 
                 if 'recaptcha_field' in errors.error_dict:
                     # case of failed captcha
-                    return render_ctx
+                    return self._get_template_context(c, **template_context)
 
             log.debug('faking response on invalid password reset')
             # make this take 2s, to prevent brute forcing.
             time.sleep(2)
-            self.session.flash(msg, queue='success')
+            h.flash(msg, category='success')
             return HTTPFound(self.request.route_path('reset_password'))
 
-        return render_ctx
+        return self._get_template_context(c, **template_context)
 
     @view_config(route_name='reset_password_confirmation',
                  request_method='GET')
     def password_reset_confirmation(self):
-
+        self.load_default_context()
         if self.request.GET and self.request.GET.get('key'):
             # make this take 2s, to prevent brute forcing.
             time.sleep(2)
@@ -408,18 +416,18 @@ class LoginView(BaseAppView):
                 log.debug('Got token with role:%s expected is %s',
                           getattr(token, 'role', 'EMPTY_TOKEN'),
                           UserApiKeys.ROLE_PASSWORD_RESET)
-                self.session.flash(
-                    _('Given reset token is invalid'), queue='error')
+                h.flash(
+                    _('Given reset token is invalid'), category='error')
                 return HTTPFound(self.request.route_path('reset_password'))
 
             try:
                 owner = token.user
                 data = {'email': owner.email, 'token': token.api_key}
                 UserModel().reset_password(data)
-                self.session.flash(
+                h.flash(
                     _('Your password reset was successful, '
                       'a new password has been sent to your email'),
-                    queue='success')
+                    category='success')
             except Exception as e:
                 log.error(e)
                 return HTTPFound(self.request.route_path('reset_password'))

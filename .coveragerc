@@ -3,15 +3,11 @@
 branch = True
 
 include =
-    rhodecode/lib/*
-    rhodecode/model/*
-    rhodecode/controllers/*
+    rhodecode/*
 
 omit =
-    rhodecode/lib/vcs/remote/*
     rhodecode/lib/dbmigrate/*
     rhodecode/lib/paster_commands/*
-    rhodecode/tests/*
 
 [report]
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -142,7 +142,7 @@ def test_mention_extractor(text, expected):
     ({'months': -1, 'days': -2}, u'1m, 2d ago', {'short_format': True}),
     ({'years': -1, 'months': -1}, u'1y, 1m ago', {'short_format': True}),
 ])
-def test_age(age_args, expected, kw, pylonsapp):
+def test_age(age_args, expected, kw, baseapp):
     from rhodecode.lib.utils2 import age
     from dateutil import relativedelta
     n = datetime.datetime(year=2012, month=5, day=17)
@@ -174,7 +174,7 @@ def test_age(age_args, expected, kw, pylonsapp):
     ({'months': 1, 'days': 1}, u'in 1m, 1d', {'short_format': True}),
     ({'years': 1, 'months': 1}, u'in 1y, 1m', {'short_format': True}),
 ])
-def test_age_in_future(age_args, expected, kw, pylonsapp):
+def test_age_in_future(age_args, expected, kw, baseapp):
     from rhodecode.lib.utils2 import age
     from dateutil import relativedelta
     n = datetime.datetime(year=2012, month=5, day=17)
@@ -337,27 +337,26 @@ def test_metatags_stylize(tag_data, expected_html):
 def test_gravatar_url_builder(tmpl_url, email, expected, request_stub):
     from rhodecode.lib.helpers import gravatar_url
 
-    # mock pyramid.threadlocals
-    def fake_get_current_request():
-        request_stub.scheme = 'https'
-        request_stub.host = 'server.com'
-        return request_stub
-
-    # mock pylons.tmpl_context
     def fake_tmpl_context(_url):
         _c = AttributeDict()
         _c.visual = AttributeDict()
         _c.visual.use_gravatar = True
         _c.visual.gravatar_url = _url
-
         return _c
+
+    # mock pyramid.threadlocals
+    def fake_get_current_request():
+        request_stub.scheme = 'https'
+        request_stub.host = 'server.com'
+
+        request_stub._call_context = fake_tmpl_context(tmpl_url)
+        return request_stub
 
     with mock.patch('rhodecode.lib.helpers.get_current_request',
                     fake_get_current_request):
-        fake = fake_tmpl_context(_url=tmpl_url)
-        with mock.patch('pylons.tmpl_context', fake):
-            grav = gravatar_url(email_address=email, size=24)
-            assert grav == expected
+
+        grav = gravatar_url(email_address=email, size=24)
+        assert grav == expected
 
 
 @pytest.mark.parametrize(
@@ -565,7 +564,7 @@ def test_get_repo_by_id(test, expected):
   ("test_non_asci_ąćę", None),
   (u"test_non_asci_unicode_ąćę", None),
 ])
-def test_invalidation_context(pylonsapp, test_repo_name, repo_type):
+def test_invalidation_context(baseapp, test_repo_name, repo_type):
     from beaker.cache import cache_region
     from rhodecode.lib import caches
     from rhodecode.model.db import CacheKey
@@ -595,7 +594,7 @@ def test_invalidation_context(pylonsapp, test_repo_name, repo_type):
     assert isinstance(context, caches.ActiveRegionCache)
 
 
-def test_invalidation_context_exception_in_compute(pylonsapp):
+def test_invalidation_context_exception_in_compute(baseapp):
     from rhodecode.model.db import CacheKey
     from beaker.cache import cache_region
 
@@ -614,7 +613,7 @@ def test_invalidation_context_exception_in_compute(pylonsapp):
 
 
 @pytest.mark.parametrize('execution_number', range(5))
-def test_cache_invalidation_race_condition(execution_number, pylonsapp):
+def test_cache_invalidation_race_condition(execution_number, baseapp):
     import time
     from beaker.cache import cache_region
     from rhodecode.model.db import CacheKey

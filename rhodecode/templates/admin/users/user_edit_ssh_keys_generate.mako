@@ -9,9 +9,12 @@
         <h4>${_('Private key')}</h4>
         <pre>
 # Save the content as
-~/.ssh/id_rsa_rhodecode_access_priv.key
-# Change permissions
-chmod 0600 ~/.ssh/id_rsa_rhodecode_access_priv.key
+# Windows: /Users/<username>/.ssh/id_rsa_rhodecode_access_priv.key
+# macOS: /Users/<yourname>/.ssh/id_rsa_rhodecode_access_priv.key
+# Linux: /home/<username>/.ssh/id_rsa_rhodecode_access_priv.key
+
+# Change permissions to 0600 to make it secure, and usable.
+e.g chmod 0600 /home/<username>/.ssh/id_rsa_rhodecode_access_priv.key
         </pre>
 
         <div>
@@ -19,22 +22,22 @@ chmod 0600 ~/.ssh/id_rsa_rhodecode_access_priv.key
         </div>
         <br/>
 
-
         <h4>${_('Public key')}</h4>
         <pre>
 # Save the content as
-~/.ssh/id_rsa_rhodecode_access_pub.key
-# Change permissions
-chmod 0600 ~/.ssh/id_rsa_rhodecode_access_pub.key
+# Windows: /Users/<username>/.ssh/id_rsa_rhodecode_access_pub.key
+# macOS: /Users/<yourname>/.ssh/id_rsa_rhodecode_access_pub.key
+# Linux: /home/<username>/.ssh/id_rsa_rhodecode_access_pub.key
         </pre>
 
         <input type="text" value="${c.public}" class="large text" size="100"/>
         <p>
             % if hasattr(c, 'target_form_url'):
-                <a href="${c.target_form_url}">${_('Add this generated key')}</a>
+                <a href="${c.target_form_url}">${_('Use this generated key')}.</a>
             % else:
-                <a href="${h.route_path('edit_user_ssh_keys', user_id=c.user.user_id, _query=dict(default_key=c.public))}">${_('Add this generated key')}</a>
+                <a href="${h.route_path('edit_user_ssh_keys', user_id=c.user.user_id, _query=dict(default_key=c.public))}">${_('Use this generated key')}.</a>
             % endif
+            ${_('Confirmation required on the next screen')}.
         </p>
     </div>
 </div>

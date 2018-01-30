@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2017 RhodeCode GmbH
+# Copyright (C) 2012-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -208,6 +208,7 @@ email_icon = '''
 </svg>
 '''
 
+
 class EmailSettingsSchema(colander.Schema):
     @colander.instantiate(validator=colander.Length(min=1))
     class recipients(colander.SequenceSchema):
@@ -251,8 +252,12 @@ def repo_push_handler(data, settings):
     commit_num = len(data['push']['commits'])
     server_url = data['server_url']
 
-    if commit_num == 0:
-        subject = '[{repo_name}] {author} pushed {commit_num} commit on branches: {branches}'.format(
+    if commit_num == 1:
+        if data['push']['branches']:
+            _subject = '[{repo_name}] {author} pushed {commit_num} commit on branches: {branches}'
+        else:
+            _subject = '[{repo_name}] {author} pushed {commit_num} commit'
+        subject = _subject.format(
             author=data['actor']['username'],
             repo_name=data['repo']['repo_name'],
             commit_num=commit_num,
@@ -260,7 +265,11 @@ def repo_push_handler(data, settings):
                 branch['name'] for branch in data['push']['branches'])
         )
     else:
-        subject = '[{repo_name}] {author} pushed {commit_num} commits on branches: {branches}'.format(
+        if data['push']['branches']:
+            _subject = '[{repo_name}] {author} pushed {commit_num} commits on branches: {branches}'
+        else:
+            _subject = '[{repo_name}] {author} pushed {commit_num} commits'
+        subject = _subject.format(
             author=data['actor']['username'],
             repo_name=data['repo']['repo_name'],
             commit_num=commit_num,

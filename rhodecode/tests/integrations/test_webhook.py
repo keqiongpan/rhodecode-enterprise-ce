@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -95,7 +95,7 @@ def test_webook_parse_url_for_pull_request_event(
                                                   'http://server.com/dev/dev-yyy']),
 ])
 def test_webook_parse_url_for_push_event(
-        pylonsapp, repo_push_event, base_data, template, expected_urls):
+        baseapp, repo_push_event, base_data, template, expected_urls):
     base_data['push'] = {
         'branches': [{'name': 'stable'}, {'name': 'dev'}],
         'commits': [{'branch': 'stable', 'raw_id': 'stable-xxx'},

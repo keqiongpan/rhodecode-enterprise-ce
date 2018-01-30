@@ -313,9 +313,12 @@ $(function(){
 
       loadRepoRefDiffPreview._currentRequest = $.get(url)
           .error(function(data, textStatus, errorThrown) {
-                alert(
-                "Error while processing request.\nError code {0} ({1}).".format(
-                        data.status, data.statusText));
+                if (textStatus !== 'abort') {
+                    alert(
+                        "Error while processing request.\nError code {0} ({1}).".format(
+                                data.status, data.statusText));
+                }
+
           })
           .done(function(data) {
               loadRepoRefDiffPreview._currentRequest = null;
@@ -427,8 +430,9 @@ $(function(){
 
   var targetRepoChanged = function(repoData) {
       // generate new DESC of target repo displayed next to select
+      var prLink = pyroutes.url('pullrequest_new', {'repo_name': repoData['name']});
       $('#target_repo_desc').html(
-          "<strong>${_('Target repository')}</strong>: {0}".format(repoData['description'])
+          "<strong>${_('Target repository')}</strong>: {0}. <a href=\"{1}\">Switch base, and use as source.</a>".format(repoData['description'], prLink)
       );
 
       // generate dynamic select2 for refs.

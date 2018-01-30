@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2017 RhodeCode GmbH
+# Copyright (C) 2011-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -62,16 +62,17 @@ class RepoSettingsView(RepoAppView):
             # we might be in missing requirement state, so we load things
             # without touching scm_instance()
             c.landing_revs_choices, c.landing_revs = \
-                ScmModel().get_repo_landing_revs()
+                ScmModel().get_repo_landing_revs(self.request.translate)
         else:
             c.landing_revs_choices, c.landing_revs = \
-                ScmModel().get_repo_landing_revs(self.db_repo)
+                ScmModel().get_repo_landing_revs(
+                    self.request.translate, self.db_repo)
 
         c.personal_repo_group = c.auth_user.personal_repo_group
         c.repo_fields = RepositoryField.query()\
             .filter(RepositoryField.repository == self.db_repo).all()
 
-        self._register_global_c(c)
+
         return c
 
     def _get_schema(self, c, old_values=None):

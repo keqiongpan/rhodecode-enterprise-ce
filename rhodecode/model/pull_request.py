@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2017 RhodeCode GmbH
+# Copyright (C) 2012-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -51,7 +51,7 @@ from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     or_, PullRequest, PullRequestReviewers, ChangesetStatus,
-    PullRequestVersion, ChangesetComment, Repository)
+    PullRequestVersion, ChangesetComment, Repository, RepoReviewRule)
 from rhodecode.model.meta import Session
 from rhodecode.model.notification import NotificationModel, \
     EmailNotificationModel
@@ -419,6 +419,29 @@ class PullRequestModel(BaseModel):
             .order_by(PullRequestVersion.pull_request_version_id.asc())\
             .all()
 
+    def get_pr_version(self, pull_request_id, version=None):
+        at_version = None
+
+        if version and version == 'latest':
+            pull_request_ver = PullRequest.get(pull_request_id)
+            pull_request_obj = pull_request_ver
+            _org_pull_request_obj = pull_request_obj
+            at_version = 'latest'
+        elif version:
+            pull_request_ver = PullRequestVersion.get_or_404(version)
+            pull_request_obj = pull_request_ver
+            _org_pull_request_obj = pull_request_ver.pull_request
+            at_version = pull_request_ver.pull_request_version_id
+        else:
+            _org_pull_request_obj = pull_request_obj = PullRequest.get_or_404(
+                pull_request_id)
+
+        pull_request_display_obj = PullRequest.get_pr_display_object(
+            pull_request_obj, _org_pull_request_obj)
+
+        return _org_pull_request_obj, pull_request_obj, \
+               pull_request_display_obj, at_version
+
     def create(self, created_by, source_repo, source_ref, target_repo,
                target_ref, revisions, reviewers, title, description=None,
                reviewer_data=None, translator=None):
@@ -445,7 +468,7 @@ class PullRequestModel(BaseModel):
         reviewer_ids = set()
         # members / reviewers
         for reviewer_object in reviewers:
-            user_id, reasons, mandatory = reviewer_object
+            user_id, reasons, mandatory, rules = reviewer_object
             user = self._get_user(user_id)
 
             # skip duplicates
@@ -459,6 +482,33 @@ class PullRequestModel(BaseModel):
             reviewer.pull_request = pull_request
             reviewer.reasons = reasons
             reviewer.mandatory = mandatory
+
+            # NOTE(marcink): pick only first rule for now
+            rule_id = rules[0] if rules else None
+            rule = RepoReviewRule.get(rule_id) if rule_id else None
+            if rule:
+                review_group = rule.user_group_vote_rule()
+                if review_group:
+                    # NOTE(marcink):
+                    # again, can be that user is member of more,
+                    # but we pick the first same, as default reviewers algo
+                    review_group = review_group[0]
+
+                    rule_data = {
+                        'rule_name':
+                            rule.review_rule_name,
+                        'rule_user_group_entry_id':
+                            review_group.repo_review_rule_users_group_id,
+                        'rule_user_group_name':
+                            review_group.users_group.users_group_name,
+                        'rule_user_group_members':
+                            [x.user.username for x in review_group.users_group.members],
+                    }
+                    # e.g {'vote_rule': -1, 'mandatory': True}
+                    rule_data.update(review_group.rule_data())
+
+                    reviewer.rule_data = rule_data
+
             Session().add(reviewer)
 
         # Set approval status to "Under Review" for all commits which are
@@ -939,18 +989,20 @@ class PullRequestModel(BaseModel):
 
         :param pull_request: the pr to update
         :param reviewer_data: list of tuples
-            [(user, ['reason1', 'reason2'], mandatory_flag)]
+            [(user, ['reason1', 'reason2'], mandatory_flag, [rules])]
         """
+        pull_request = self.__get_pull_request(pull_request)
+        if pull_request.is_closed():
+            raise ValueError('This pull request is closed')
 
         reviewers = {}
-        for user_id, reasons, mandatory in reviewer_data:
+        for user_id, reasons, mandatory, rules in reviewer_data:
             if isinstance(user_id, (int, basestring)):
                 user_id = self._get_user(user_id).user_id
             reviewers[user_id] = {
                 'reasons': reasons, 'mandatory': mandatory}
 
         reviewers_ids = set(reviewers.keys())
-        pull_request = self.__get_pull_request(pull_request)
         current_reviewers = PullRequestReviewers.query()\
             .filter(PullRequestReviewers.pull_request ==
                     pull_request).all()
@@ -1295,6 +1347,7 @@ class PullRequestModel(BaseModel):
 
     def generate_repo_data(self, repo, commit_id=None, branch=None,
                            bookmark=None, translator=None):
+        from rhodecode.model.repo import RepoModel
 
         all_refs, selected_ref = \
             self._get_repo_pullrequest_sources(
@@ -1314,6 +1367,8 @@ class PullRequestModel(BaseModel):
                 'lastname': repo.user.last_name,
                 'gravatar_link': h.gravatar_url(repo.user.email, 14),
             },
+            'name': repo.repo_name,
+            'link': RepoModel().get_url(repo),
             'description': h.chop_at_smart(repo.description_safe, '\n'),
             'refs': {
                 'all_refs': all_refs,
@@ -1398,8 +1453,8 @@ class PullRequestModel(BaseModel):
                     repo.branches[repo.DEFAULT_BRANCH_NAME]
                 )
             elif repo.commit_ids:
-                rev = repo.commit_ids[0]
-                selected = 'rev:%s:%s' % (rev, rev)
+                # make the user select in this case
+                selected = None
             else:
                 raise EmptyRepositoryError()
         return groups, selected

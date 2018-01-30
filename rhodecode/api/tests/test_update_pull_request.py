@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -133,7 +133,7 @@ class TestUpdatePullRequest(object):
         removed = [a.username]
 
         pull_request = pr_util.create_pull_request(
-            reviewers=[(a.username, ['added via API'], False)])
+            reviewers=[(a.username, ['added via API'], False, [])])
 
         id_, params = build_data(
             self.apikey, 'update_pull_request',
@@ -168,10 +168,11 @@ class TestUpdatePullRequest(object):
 
     @pytest.mark.backends("git", "hg")
     def test_api_update_repo_error(self, pr_util):
+        pull_request = pr_util.create_pull_request()
         id_, params = build_data(
             self.apikey, 'update_pull_request',
             repoid='fake',
-            pullrequestid='fake',
+            pullrequestid=pull_request.pull_request_id,
             reviewers=[{'username': 'bad_name'}])
         response = api_call(self.app, params)
 

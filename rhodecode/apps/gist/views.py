@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2013-2017 RhodeCode GmbH
+# Copyright (C) 2013-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -67,7 +67,7 @@ class GistView(BaseAppView):
             (Gist.ACL_LEVEL_PUBLIC, _("Can be accessed by anonymous users"))
         ]
 
-        self._register_global_c(c)
+
         return c
 
     @LoginRequired()
@@ -114,7 +114,7 @@ class GistView(BaseAppView):
             c.active = 'public'
 
         _render = self.request.get_partial_renderer(
-            'data_table/_dt_elements.mako')
+            'rhodecode:templates/data_table/_dt_elements.mako')
 
         data = []
 

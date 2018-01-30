@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2017 RhodeCode GmbH
+# Copyright (C) 2010-2018 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,8 +18,8 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import shutil
 import time
+import shutil
 import datetime
 
 import pytest
@@ -29,12 +29,11 @@ from rhodecode.lib.vcs.backends.base import Config
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.tests import get_new_dir
 from rhodecode.tests.utils import check_skip_backends, check_xfail_backends
-from rhodecode.tests.vcs.base import BackendTestMixin
 
 
 @pytest.fixture()
 def vcs_repository_support(
-        request, backend_alias, pylonsapp, _vcs_repo_container):
+        request, backend_alias, baseapp, _vcs_repo_container):
     """
     Provide a test repository for the test run.
 
@@ -61,7 +60,7 @@ def vcs_repository_support(
     cls.Backend = cls.backend_class = repo.__class__
     cls.imc = repo.in_memory_commit
 
-    return (backend_alias, repo)
+    return backend_alias, repo
 
 
 @pytest.fixture(scope='class')
@@ -88,6 +87,7 @@ class VcsRepoContainer(object):
     def get_repo(self, test_class, backend_alias):
         if backend_alias not in self._repos:
             repo = _create_empty_repository(test_class, backend_alias)
+
             self._cleanup_paths.append(repo.path)
             self._repos[backend_alias] = repo
         return self._repos[backend_alias]
@@ -106,7 +106,8 @@ def _create_empty_repository(cls, backend_alias=None):
     repo_path = get_new_dir(str(time.time()))
     repo = Backend(repo_path, create=True)
     if hasattr(cls, '_get_commits'):
-        cls.tip = _add_commits_to_repo(repo, cls._get_commits())
+        commits = cls._get_commits()
+        cls.tip = _add_commits_to_repo(repo, commits)
 
     return repo
 
@@ -132,7 +133,7 @@ def config():
 
 def _add_commits_to_repo(repo, commits):
     imc = repo.in_memory_commit
-    commit = None
+    tip = None
 
     for commit in commits:
         for node in commit.get('added', []):
@@ -142,13 +143,13 @@ def _add_commits_to_repo(repo, commits):
         for node in commit.get('removed', []):
             imc.remove(FileNode(node.path))
 
-        commit = imc.commit(
+        tip = imc.commit(
             message=unicode(commit['message']),
             author=unicode(commit['author']),
             date=commit['date'],
             branch=commit.get('branch'))
 
-    return commit
+    return tip
 
 
 @pytest.fixture
@@ -198,7 +199,7 @@ def generate_repo_with_commits(vcs_repo):
 def hg_repo(request, vcs_repo):
     repo = vcs_repo
 
-    commits = BackendTestMixin._get_commits()
+    commits = repo._get_commits()
     _add_commits_to_repo(repo, commits)
 
     return repo
@@ -207,3 +208,50 @@ def hg_repo(request, vcs_repo):
 @pytest.fixture
 def hg_commit(hg_repo):
     return hg_repo.get_commit()
+
+
+class BackendTestMixin(object):
+    """
+    This is a backend independent test case class which should be created
+    with ``type`` method.
+
+    It is required to set following attributes at subclass:
+
+    - ``backend_alias``: alias of used backend (see ``vcs.BACKENDS``)
+    - ``repo_path``: path to the repository which would be created for set of
+      tests
+    - ``recreate_repo_per_test``: If set to ``False``, repo would NOT be
+      created
+      before every single test. Defaults to ``True``.
+    """
+    recreate_repo_per_test = True
+
+    @classmethod
+    def _get_commits(cls):
+        commits = [
+            {
+                'message': u'Initial commit',
+                'author': u'Joe Doe <joe.doe@example.com>',
+                'date': datetime.datetime(2010, 1, 1, 20),
+                'added': [
+                    FileNode('foobar', content='Foobar'),
+                    FileNode('foobar2', content='Foobar II'),
+                    FileNode('foo/bar/baz', content='baz here!'),
+                ],
+            },
+            {
+                'message': u'Changes...',
+                'author': u'Jane Doe <jane.doe@example.com>',
+                'date': datetime.datetime(2010, 1, 1, 21),
+                'added': [
+                    FileNode('some/new.txt', content='news...'),
+                ],
+                'changed': [
+                    FileNode('foobar', 'Foobar I'),
+                ],
+                'removed': [],
+            },
+        ]
+        return commits
+
+
