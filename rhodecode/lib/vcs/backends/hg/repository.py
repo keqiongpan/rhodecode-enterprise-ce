@@ -72,8 +72,14 @@ class MercurialRepository(BaseRepository):
         :param update_after_clone=False: sets update of working copy after
            making a clone
         """
+
         self.path = safe_str(os.path.abspath(repo_path))
-        self.config = config if config else Config()
+        # mercurial since 4.4.X requires certain configuration to be present
+        # because sometimes we init the repos with config we need to meet
+        # special requirements
+        self.config = config if config else self.get_default_config(
+            default=[('extensions', 'largefiles', '1')])
+
         self._remote = connection.Hg(
             self.path, self.config, with_wire=with_wire)
 
