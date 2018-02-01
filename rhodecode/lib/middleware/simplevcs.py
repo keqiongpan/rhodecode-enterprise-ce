@@ -248,8 +248,11 @@ class SimpleVCS(object):
                 repo_name, db_repo.repo_type, scm_type)
             return False
 
-        return is_valid_repo(repo_name, base_path,
-                             explicit_scm=scm_type, expect_scm=scm_type)
+        config = db_repo._config
+        config.set('extensions', 'largefiles', '')
+        return is_valid_repo(
+            repo_name, base_path,
+            explicit_scm=scm_type, expect_scm=scm_type, config=config)
 
     def valid_and_active_user(self, user):
         """
