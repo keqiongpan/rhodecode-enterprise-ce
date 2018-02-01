@@ -106,11 +106,14 @@ def user_log_filter(user_log, search_term):
             elif isinstance(term, query.DateRange):
                 field = term.fieldname
                 val = [term.startdate, term.enddate]
+            elif isinstance(term, query.NullQuery.__class__):
+                field = ''
+                val = ''
             else:
                 field = term.fieldname
                 val = term.text
-
-            user_log = user_log.filter(get_filterion(field, val, term))
+            if field:
+                user_log = user_log.filter(get_filterion(field, val, term))
     elif isinstance(qry, query.Or):
         filters = []
         for term in qry:
