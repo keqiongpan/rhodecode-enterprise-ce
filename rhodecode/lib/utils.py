@@ -240,7 +240,7 @@ def _is_dir_writable(path):
     return True
 
 
-def is_valid_repo(repo_name, base_path, expect_scm=None, explicit_scm=None):
+def is_valid_repo(repo_name, base_path, expect_scm=None, explicit_scm=None, config=None):
     """
     Returns True if given path is a valid repository False otherwise.
     If expect_scm param is given also, compare if given scm is the same
@@ -251,6 +251,7 @@ def is_valid_repo(repo_name, base_path, expect_scm=None, explicit_scm=None):
     :param base_path:
     :param expect_scm:
     :param explicit_scm:
+    :param config:
 
     :return True: if given path is a valid repository
     """
@@ -260,7 +261,8 @@ def is_valid_repo(repo_name, base_path, expect_scm=None, explicit_scm=None):
 
     try:
         if explicit_scm:
-            detected_scms = [get_scm_backend(explicit_scm)(full_path).alias]
+            detected_scms = [get_scm_backend(explicit_scm)(
+                full_path, config=config).alias]
         else:
             detected_scms = get_scm(full_path)
 

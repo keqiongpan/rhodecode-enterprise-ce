@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rhodecode-enterprise-ce 4.11.0\n"
 "Report-Msgid-Bugs-To: marcin@rhodecode.com\n"
-"POT-Creation-Date: 2018-01-30 17:32+0100\n"
+"POT-Creation-Date: 2018-01-30 18:06+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,25 +16,6 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 1.3\n"
-
-#: rhodecode/apps/_base/__init__.py:142
-#, python-format
-msgid "Error creating repository %s: invalid certificate"
-msgstr ""
-
-#: rhodecode/apps/_base/__init__.py:146
-#, python-format
-msgid "Error creating repository %s"
-msgstr ""
-
-#: rhodecode/apps/_base/__init__.py:219
-#, python-format
-msgid "The repository `%(repo_name)s` cannot be loaded in filesystem. Please check if it exist, or is not damaged."
-msgstr ""
-
-#: rhodecode/apps/_base/__init__.py:274
-msgid "Editing user `{}` is disabled."
-msgstr ""
 
 #: rhodecode/apps/admin/navigation.py:72 rhodecode/authentication/routes.py:60
 #: rhodecode/integrations/views.py:154

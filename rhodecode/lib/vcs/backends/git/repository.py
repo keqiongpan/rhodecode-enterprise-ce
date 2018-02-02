@@ -62,7 +62,7 @@ class GitRepository(BaseRepository):
                  update_after_clone=False, with_wire=None, bare=False):
 
         self.path = safe_str(os.path.abspath(repo_path))
-        self.config = config if config else Config()
+        self.config = config if config else self.get_default_config()
         self._remote = connection.Git(
             self.path, self.config, with_wire=with_wire)
 

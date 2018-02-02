@@ -1761,18 +1761,6 @@ class Repository(Base, BaseModel):
         return q.one().ui_value
 
     @classmethod
-    def is_valid(cls, repo_name):
-        """
-        returns True if given repo name is a valid filesystem repository
-
-        :param cls:
-        :param repo_name:
-        """
-        from rhodecode.lib.utils import is_valid_repo
-
-        return is_valid_repo(repo_name, cls.base_path())
-
-    @classmethod
     def get_all_repos(cls, user_id=Optional(None), group_id=Optional(None),
                       case_insensitive=True):
         q = Repository.query()

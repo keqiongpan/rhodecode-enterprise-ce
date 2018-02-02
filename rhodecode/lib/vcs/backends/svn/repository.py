@@ -71,7 +71,7 @@ class SubversionRepository(base.BaseRepository):
     def __init__(self, repo_path, config=None, create=False, src_url=None,
                  **kwargs):
         self.path = safe_str(os.path.abspath(repo_path))
-        self.config = config if config else base.Config()
+        self.config = config if config else self.get_default_config()
         self._remote = connection.Svn(
             self.path, self.config)
 

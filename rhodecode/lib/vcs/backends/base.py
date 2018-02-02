@@ -203,6 +203,14 @@ class BaseRepository(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    @classmethod
+    def get_default_config(cls, default=None):
+        config = Config()
+        if default and isinstance(default, list):
+            for section, key, val in default:
+                config.set(section, key, val)
+        return config
+
     @LazyProperty
     def EMPTY_COMMIT(self):
         return EmptyCommit(self.EMPTY_COMMIT_ID)

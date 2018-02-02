@@ -4,27 +4,48 @@
 Configure Celery
 ----------------
 
-To improve |RCM| performance you should configure and enabled Celery_ as it makes
-asynchronous tasks work efficiently. Most important it allows sending notification
-emails, create repository forks, and import repositories in async way.
+Celery_ is an asynchronous task queue. It's a part of RhodeCode scheduler
+functionality. Celery_ makes certain heavy tasks perform more efficiently.
+Most important it allows sending notification emails, create repository forks,
+and import repositories in async way. It is also used for bi-directional
+repository sync in scheduler.
 
 If you decide to use Celery you also need a working message queue.
-The recommended message broker is rabbitmq_.
+The recommended and fully supported message broker is rabbitmq_.
 
 
-In order to have install and configure Celery, follow these steps:
+In order to install and configure Celery, follow these steps:
 
 1. Install RabbitMQ, see the documentation on the Celery website for
-   `rabbitmq installation`_.
+   `rabbitmq installation`_, or `rabbitmq website installation`_
 
-2. Configure Celery in the
+
+1a. As en example configuration after installation, you can run::
+
+   sudo rabbitmqctl add_user rcuser secret_password
+   sudo rabbitmqctl add_vhost rhodevhost
+   sudo rabbitmqctl set_user_tags rcuser rhodecode
+   sudo rabbitmqctl set_permissions -p rhodevhost rcuser ".*" ".*" ".*"
+
+
+2. Enable celery, and install `celery worker` process script using the `enable-module`::
+
+    rccontrol enable-module celery {instance-id}
+
+.. note::
+
+   In case when using multiple instances in one or multiple servers it's highly
+   recommended that celery is running only once, for all servers connected to
+   the same database. Having multiple celery instances running without special
+   reconfiguration could cause scheduler issues.
+
+
+3. Configure Celery in the
    :file:`home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file.
-   Set the following minimal settings, that are set during rabbitmq_ installation::
+   Set the broker_url as minimal settings required to enable operation.
+   If used our example data from pt 1a, here is how the broker url should look like::
 
-        broker.host =
-        broker.vhost =
-        broker.user =
-        broker.password =
+        celery.broker_url = amqp://rcuser:secret_password@localhost:5672/rhodevhost
 
    Full configuration example is below:
 
@@ -34,35 +55,15 @@ In order to have install and configure Celery, follow these steps:
         ####################################
         ###        CELERY CONFIG        ####
         ####################################
-        ## Set to true
+
         use_celery = true
-        broker.host = localhost
-        broker.vhost = rabbitmqvhost
-        broker.port = 5672
-        broker.user = rabbitmq
-        broker.password = secret
+        celery.broker_url = amqp://rcuser:secret@localhost:5672/rhodevhost
 
-        celery.imports = rhodecode.lib.celerylib.tasks
-
-        celery.result.backend = amqp
-        celery.result.dburi = amqp://
-        celery.result.serialier = json
-
-        #celery.send.task.error.emails = true
-        #celery.amqp.task.result.expires = 18000
-
-        celeryd.concurrency = 2
-        #celeryd.log.file = celeryd.log
-        celeryd.log.level = debug
-        celeryd.max.tasks.per.child = 1
+        # maximum tasks to execute before worker restart
+        celery.max_tasks_per_child = 100
 
         ## tasks will never be sent to the queue, but executed locally instead.
-        celery.always.eager = false
-
-
-3. Enable celery, and install `celeryd` process script using the `enable-module`::
-
-    rccontrol enable-module celery {instance-id}
+        celery.task_always_eager = false
 
 
 .. _python: http://www.python.org/
@@ -70,4 +71,5 @@ In order to have install and configure Celery, follow these steps:
 .. _celery: http://celeryproject.org/
 .. _rabbitmq: http://www.rabbitmq.com/
 .. _rabbitmq installation: http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html
+.. _rabbitmq website installation: http://www.rabbitmq.com/download.html
 .. _Celery installation: http://docs.celeryproject.org/en/latest/getting-started/introduction.html#bundles
