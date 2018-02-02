@@ -406,13 +406,13 @@
     };
   };
   bleach = super.buildPythonPackage {
-    name = "bleach-2.1.1";
+    name = "bleach-2.1.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six html5lib];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/d4/3f/d517089af35b01bb9bc4eac5ea04bae342b37a5e9abbb27b7c3ce0eae070/bleach-2.1.1.tar.gz";
-      md5 = "7c5dfb1d66ea979b5a465afb12c82ec4";
+      url = "https://pypi.python.org/packages/b3/5f/0da670d30d3ffbc57cc97fa82947f81bbe3eab8d441e2d42e661f215baf2/bleach-2.1.2.tar.gz";
+      md5 = "d0b14ae43a437ee0c650e04c6063eedd";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
