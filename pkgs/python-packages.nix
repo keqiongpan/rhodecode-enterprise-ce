@@ -822,13 +822,13 @@
     };
   };
   html5lib = super.buildPythonPackage {
-    name = "html5lib-1.0b10";
+    name = "html5lib-1.0.1";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [six webencodings setuptools];
+    propagatedBuildInputs = with self; [six webencodings];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/97/16/982214624095c1420c75f3bd295d9e658794aafb95fc075823de107e0ae4/html5lib-1.0b10.tar.gz";
-      md5 = "5ada1243b7a863624b2f35245b2186e9";
+      url = "https://pypi.python.org/packages/85/3e/cf449cf1b5004e87510b9368e7a5f1acd8831c2d6691edd3c62a0823f98f/html5lib-1.0.1.tar.gz";
+      md5 = "942a0688d6bdf20d087c9805c40182ad";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
