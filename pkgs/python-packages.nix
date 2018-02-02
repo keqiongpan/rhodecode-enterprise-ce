@@ -2002,13 +2002,13 @@
     };
   };
   ws4py = super.buildPythonPackage {
-    name = "ws4py-0.4.2";
+    name = "ws4py-0.4.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/b8/98/a90f1d96ffcb15dfc220af524ce23e0a5881258dafa197673357ce1683dd/ws4py-0.4.2.tar.gz";
-      md5 = "f0603ae376707a58d205bd87a67758a2";
+      url = "https://pypi.python.org/packages/fa/a1/33c43a4304ac3b4dc81deb93cbd329de9297dd034d75c47cce64fda806bc/ws4py-0.4.3.tar.gz";
+      md5 = "d5834cf7d3965bb0da31bbb02bd8513a";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
