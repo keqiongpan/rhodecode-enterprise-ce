@@ -783,13 +783,13 @@
     };
   };
   graphviz = super.buildPythonPackage {
-    name = "graphviz-0.8.1";
+    name = "graphviz-0.8.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/a9/a6/ee6721349489a2da6eedd3dba124f2b5ac15ee1e0a7bd4d3cfdc4fff0327/graphviz-0.8.1.zip";
-      md5 = "88d8efa88c02a735b3659fe0feaf0b96";
+      url = "https://pypi.python.org/packages/fa/d1/63b62dee9e55368f60b5ea445e6afb361bb47e692fc27553f3672e16efb8/graphviz-0.8.2.zip";
+      md5 = "50866e780f43e1cb0d073c70424fcaff";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
