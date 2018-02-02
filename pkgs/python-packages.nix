@@ -1225,13 +1225,13 @@
     };
   };
   psutil = super.buildPythonPackage {
-    name = "psutil-5.4.0";
+    name = "psutil-5.4.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/8d/96/1fc6468be91521192861966c40bd73fdf8b065eae6d82dd0f870b9825a65/psutil-5.4.0.tar.gz";
-      md5 = "01af6219b1e8fcfd53603023967713bf";
+      url = "https://pypi.python.org/packages/e2/e1/600326635f97fee89bf8426fef14c5c29f4849c79f68fd79f433d8c1bd96/psutil-5.4.3.tar.gz";
+      md5 = "3b291833dbea631db9d271aa602a169a";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
