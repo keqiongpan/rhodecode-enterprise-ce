@@ -796,13 +796,13 @@
     };
   };
   greenlet = super.buildPythonPackage {
-    name = "greenlet-0.4.12";
+    name = "greenlet-0.4.13";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/be/76/82af375d98724054b7e273b5d9369346937324f9bcc20980b45b068ef0b0/greenlet-0.4.12.tar.gz";
-      md5 = "e8637647d58a26c4a1f51ca393e53c00";
+      url = "https://pypi.python.org/packages/13/de/ba92335e9e76040ca7274224942282a80d54f85e342a5e33c5277c7f87eb/greenlet-0.4.13.tar.gz";
+      md5 = "6e0b9dd5385f81d478451ec8ed1d62b3";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

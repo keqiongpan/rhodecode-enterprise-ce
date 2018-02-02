@@ -110,7 +110,7 @@ transifex-client==0.12.5
 
 ## http servers
 gevent==1.2.2
-greenlet==0.4.12
+greenlet==0.4.13
 gunicorn==19.7.1
 waitress==1.1.0
 uWSGI==2.0.15
