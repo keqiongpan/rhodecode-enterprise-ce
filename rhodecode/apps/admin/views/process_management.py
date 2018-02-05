@@ -28,7 +28,7 @@ from rhodecode.apps._base import BaseAppView
 from rhodecode.apps.admin.navigation import navigation_list
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
-from rhodecode.lib.utils2 import safe_int
+from rhodecode.lib.utils2 import safe_int, StrictAttributeDict
 
 log = logging.getLogger(__name__)
 
@@ -36,8 +36,40 @@ log = logging.getLogger(__name__)
 class AdminProcessManagementView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
         return c
+
+    def _format_proc(self, proc, with_children=False):
+        try:
+            mem = proc.memory_info()
+            proc_formatted = StrictAttributeDict({
+                'pid': proc.pid,
+                'name': proc.name(),
+                'mem_rss': mem.rss,
+                'mem_vms': mem.vms,
+                'cpu_percent': proc.cpu_percent(),
+                'create_time': proc.create_time(),
+                'cmd': ' '.join(proc.cmdline()),
+            })
+
+            if with_children:
+                proc_formatted.update({
+                    'children': [self._format_proc(x)
+                                 for x in proc.children(recursive=True)]
+                })
+        except Exception:
+            log.exception('Failed to load proc')
+            proc_formatted = None
+        return proc_formatted
+
+    def get_processes(self):
+        proc_list = []
+        for p in psutil.process_iter():
+            if 'gunicorn' in p.name():
+                proc = self._format_proc(p, with_children=True)
+                if proc:
+                    proc_list.append(proc)
+
+        return proc_list
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
@@ -50,8 +82,7 @@ class AdminProcessManagementView(BaseAppView):
 
         c.active = 'process_management'
         c.navlist = navigation_list(self.request)
-        c.gunicorn_processes = (
-            p for p in psutil.process_iter() if 'gunicorn' in p.name())
+        c.gunicorn_processes = self.get_processes()
         return self._get_template_context(c)
 
     @LoginRequired()
@@ -62,8 +93,7 @@ class AdminProcessManagementView(BaseAppView):
     def process_management_data(self):
         _ = self.request.translate
         c = self.load_default_context()
-        c.gunicorn_processes = (
-            p for p in psutil.process_iter() if 'gunicorn' in p.name())
+        c.gunicorn_processes = self.get_processes()
         return self._get_template_context(c)
 
     @LoginRequired()
