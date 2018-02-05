@@ -184,7 +184,7 @@ def write_metadata_if_needed(event):
     except Exception:
         age_in_min = 0
 
-    if age_in_min < 60 * 60 * 24:
+    if age_in_min > 60 * 60 * 24:
         return
 
     try:
