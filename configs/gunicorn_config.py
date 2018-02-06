@@ -55,6 +55,7 @@ keepalive = 2
 
 # SERVER MECHANICS
 # None == system temp dir
+# worker_tmp_dir is recommended to be set to some tmpfs
 worker_tmp_dir = None
 tmp_upload_dir = None
 
@@ -121,7 +122,7 @@ def child_exit(server, worker):
 def pre_request(worker, req):
     worker.start_time = time.time()
     worker.log.debug(
-        "GNCRN PRE WORKER: %s %s", req.method, req.path)
+        "GNCRN PRE  WORKER [cnt:%s]: %s %s", worker.nr, req.method, req.path)
 
 
 def post_request(worker, req, environ, resp):
