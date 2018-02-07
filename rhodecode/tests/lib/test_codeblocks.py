@@ -89,29 +89,9 @@ class TestSplitTokenStream(object):
             [('type2', u'')],
         ]
 
-    def test_split_token_stream_other_char(self):
-        lines = list(split_token_stream(
-            [('type1', 'some\ntext'), ('type2', 'more\n')],
-            split_string='m'))
-
-        assert lines == [
-            [('type1', 'so')],
-            [('type1', 'e\ntext'), ('type2', '')],
-            [('type2', 'ore\n')],
-        ]
-
-    def test_split_token_stream_without_char(self):
-        lines = list(split_token_stream(
-            [('type1', 'some\ntext'), ('type2', 'more\n')],
-            split_string='z'))
-
-        assert lines == [
-            [('type1', 'some\ntext'), ('type2', 'more\n')]
-        ]
-
     def test_split_token_stream_single(self):
         lines = list(split_token_stream(
-            [('type1', '\n')], split_string='\n'))
+            [('type1', '\n')]))
 
         assert lines == [
             [('type1', '')],
@@ -120,7 +100,7 @@ class TestSplitTokenStream(object):
 
     def test_split_token_stream_single_repeat(self):
         lines = list(split_token_stream(
-            [('type1', '\n\n\n')], split_string='\n'))
+            [('type1', '\n\n\n')]))
 
         assert lines == [
             [('type1', '')],
@@ -131,7 +111,7 @@ class TestSplitTokenStream(object):
 
     def test_split_token_stream_multiple_repeat(self):
         lines = list(split_token_stream(
-            [('type1', '\n\n'), ('type2', '\n\n')], split_string='\n'))
+            [('type1', '\n\n'), ('type2', '\n\n')]))
 
         assert lines == [
             [('type1', '')],

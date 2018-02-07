@@ -24,6 +24,8 @@ from itertools import groupby
 
 from pygments import lex
 from pygments.formatters.html import _get_ttype_class as pygment_token_class
+from pygments.lexers.special import TextLexer, Token
+
 from rhodecode.lib.helpers import (
     get_lexer_for_filenode, html_escape, get_custom_lexer)
 from rhodecode.lib.utils2 import AttributeDict
@@ -45,7 +47,7 @@ def filenode_as_lines_tokens(filenode, lexer=None):
     log.debug('Generating file node pygment tokens for %s, %s, org_lexer:%s',
               lexer, filenode, org_lexer)
     tokens = tokenize_string(filenode.content, lexer)
-    lines = split_token_stream(tokens, split_string='\n')
+    lines = split_token_stream(tokens)
     rv = list(lines)
     return rv
 
@@ -59,22 +61,28 @@ def tokenize_string(content, lexer):
     lexer.stripall = False
     lexer.stripnl = False
     lexer.ensurenl = False
-    for token_type, token_text in lex(content, lexer):
+
+    if isinstance(lexer, TextLexer):
+        lexed = [(Token.Text, content)]
+    else:
+        lexed = lex(content, lexer)
+
+    for token_type, token_text in lexed:
         yield pygment_token_class(token_type), token_text
 
 
-def split_token_stream(tokens, split_string=u'\n'):
+def split_token_stream(tokens):
     """
     Take a list of (TokenType, text) tuples and split them by a string
 
-    >>> split_token_stream([(TEXT, 'some\ntext'), (TEXT, 'more\n')])
+    split_token_stream([(TEXT, 'some\ntext'), (TEXT, 'more\n')])
     [(TEXT, 'some'), (TEXT, 'text'),
      (TEXT, 'more'), (TEXT, 'text')]
     """
 
     buffer = []
     for token_class, token_text in tokens:
-        parts = token_text.split(split_string)
+        parts = token_text.split('\n')
         for part in parts[:-1]:
             buffer.append((token_class, part))
             yield buffer
