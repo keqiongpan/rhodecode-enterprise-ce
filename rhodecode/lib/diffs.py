@@ -183,13 +183,12 @@ class DiffProcessor(object):
 
         :param string:
         """
-
         self.cur_diff_size += len(string)
 
         if not self.show_full_diff and (self.cur_diff_size > self.diff_limit):
             raise DiffLimitExceeded('Diff Limit Exceeded')
 
-        return safe_unicode(string)\
+        return string \
             .replace('&', '&amp;')\
             .replace('<', '&lt;')\
             .replace('>', '&gt;')
@@ -278,7 +277,7 @@ class DiffProcessor(object):
         for chunk in self._diff.chunks():
             head = chunk.header
 
-            diff = imap(self._escaper, chunk.diff.splitlines(1))
+            diff = imap(self._escaper, self.diff_splitter(chunk.diff))
             raw_diff = chunk.raw
             limited_diff = False
             exceeds_limit = False
@@ -529,7 +528,8 @@ class DiffProcessor(object):
 
             # a real non-binary diff
             if head['a_file'] or head['b_file']:
-                diff = iter(chunk.diff.splitlines(1))
+                # simulate splitlines, so we keep the line end part
+                diff = self.diff_splitter(chunk.diff)
 
                 # append each file to the diff size
                 raw_chunk_size = len(raw_diff)
@@ -608,18 +608,17 @@ class DiffProcessor(object):
         return diff_container(sorted(_files, key=sorter))
 
     # FIXME: NEWDIFFS: dan: this gets replaced by _new_parse_lines
-    def _parse_lines(self, diff):
+    def _parse_lines(self, diff_iter):
         """
         Parse the diff an return data for the template.
         """
 
-        lineiter = iter(diff)
         stats = [0, 0]
         chunks = []
         raw_diff = []
 
         try:
-            line = lineiter.next()
+            line = diff_iter.next()
 
             while line:
                 raw_diff.append(line)
@@ -651,7 +650,7 @@ class DiffProcessor(object):
                             'line':       line,
                         })
 
-                line = lineiter.next()
+                line = diff_iter.next()
 
                 while old_line < old_end or new_line < new_end:
                     command = ' '
@@ -686,7 +685,7 @@ class DiffProcessor(object):
                         })
                         raw_diff.append(line)
 
-                    line = lineiter.next()
+                    line = diff_iter.next()
 
                     if self._newline_marker.match(line):
                         # we need to append to lines, since this is not
@@ -712,13 +711,12 @@ class DiffProcessor(object):
         chunks = []
         raw_diff = []
 
-        diff_iter = imap(lambda s: safe_unicode(s), diff_iter)
-
         try:
             line = diff_iter.next()
 
             while line:
                 raw_diff.append(line)
+                # match header e.g @@ -0,0 +1 @@\n'
                 match = self._chunk_re.match(line)
 
                 if not match:
@@ -825,6 +823,32 @@ class DiffProcessor(object):
         # Remove everything that is not a hyphen or a member of \w
         idstring = re.sub(r'(?!-)\W', "", idstring).lower()
         return idstring
+
+    @classmethod
+    def diff_splitter(cls, string):
+        """
+        Diff split that emulates .splitlines() but works only on \n
+        """
+        if not string:
+            return
+        elif string == '\n':
+            yield u'\n'
+        else:
+
+            has_newline = string.endswith('\n')
+            elements = string.split('\n')
+            if has_newline:
+                # skip last element as it's empty string from newlines
+                elements = elements[:-1]
+
+            len_elements = len(elements)
+
+            for cnt, line in enumerate(elements, start=1):
+                last_line = cnt == len_elements
+                if last_line and not has_newline:
+                    yield safe_unicode(line)
+                else:
+                    yield safe_unicode(line) + '\n'
 
     def prepare(self, inline_diff=True):
         """

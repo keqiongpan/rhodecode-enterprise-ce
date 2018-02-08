@@ -93,13 +93,14 @@ class WebhookHandler(object):
             'username': data['actor']['username'],
             'user_id': data['actor']['user_id']
         }
+
         extra_vars = {}
         for extra_key, extra_val in data['repo']['extra_fields'].items():
-            extra_vars['extra:{}'.format(extra_key)] = extra_val
+            extra_vars['extra__{}'.format(extra_key)] = extra_val
         common_vars.update(extra_vars)
 
-        return string.Template(
-            self.template_url).safe_substitute(**common_vars)
+        template_url = self.template_url.replace('${extra:', '${extra__')
+        return string.Template(template_url).safe_substitute(**common_vars)
 
     def repo_push_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)

@@ -27,6 +27,7 @@ from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (NotAnonymous, HasRepoPermissionAny)
 from rhodecode.model.db import Repository
+from rhodecode.model.validation_schema.types import RepoNameType
 
 log = logging.getLogger(__name__)
 
@@ -43,8 +44,8 @@ class RepoChecksView(BaseAppView):
         renderer='rhodecode:templates/admin/repos/repo_creating.mako')
     def repo_creating(self):
         c = self.load_default_context()
-
         repo_name = self.request.matchdict['repo_name']
+        repo_name = RepoNameType().deserialize(None, repo_name)
         db_repo = Repository.get_by_repo_name(repo_name)
 
         # check if maybe repo is already created

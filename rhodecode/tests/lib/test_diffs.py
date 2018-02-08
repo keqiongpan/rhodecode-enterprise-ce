@@ -26,7 +26,7 @@ from rhodecode.lib.diffs import (
     DiffProcessor,
     NEW_FILENODE, DEL_FILENODE, MOD_FILENODE, RENAMED_FILENODE,
     CHMOD_FILENODE, BIN_FILENODE, COPIED_FILENODE)
-from rhodecode.tests.fixture import Fixture
+from rhodecode.tests.fixture import Fixture, no_newline_id_generator
 from rhodecode.lib.vcs.backends.git.repository import GitDiff
 from rhodecode.lib.vcs.backends.hg.repository import MercurialDiff
 from rhodecode.lib.vcs.backends.svn.repository import SubversionDiff
@@ -162,7 +162,7 @@ def test_diffprocessor_as_html_with_comments():
     assert html == expected_html
 
 
-class TestMixedFilenameEncodings:
+class TestMixedFilenameEncodings(object):
 
     @pytest.fixture(scope="class")
     def raw_diff(self):
@@ -811,3 +811,21 @@ def test_diff_lib_newlines(diff_fixture_w_content):
     data = [(x['filename'], x['operation'], x['stats'], x['raw_diff'])
             for x in diff_proc_d]
     assert expected_data == data
+
+
+@pytest.mark.parametrize('input_str', [
+    '',
+    '\n',
+    '\n\n',
+    'First\n+second',
+    'First\n+second\n',
+
+    '\n\n\n Multi \n\n\n',
+    '\n\n\n Multi beginning',
+    'Multi end \n\n\n',
+    'Multi end',
+    '@@ -0,0 +1 @@\n+test_content \n\n b\n'
+], ids=no_newline_id_generator)
+def test_splitlines(input_str):
+    result = DiffProcessor.diff_splitter(input_str)
+    assert list(result) == input_str.splitlines(True)
