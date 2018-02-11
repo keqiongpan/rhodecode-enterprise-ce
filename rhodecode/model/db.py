@@ -1557,6 +1557,9 @@ class Repository(Base, BaseModel):
     clone_uri = Column(
         "clone_uri", EncryptedTextValue(), nullable=True, unique=False,
         default=None)
+    push_uri = Column(
+        "push_uri", EncryptedTextValue(), nullable=True, unique=False,
+        default=None)
     repo_type = Column(
         "repo_type", String(255), nullable=False, unique=False, default=None)
     user_id = Column(
@@ -1943,6 +1946,7 @@ class Repository(Base, BaseModel):
             'repo_name': repo.repo_name,
             'repo_type': repo.repo_type,
             'clone_uri': repo.clone_uri or '',
+            'push_uri': repo.push_uri or '',
             'url': RepoModel().get_url(self),
             'private': repo.private,
             'created_on': repo.created_on,
@@ -2076,6 +2080,16 @@ class Repository(Base, BaseModel):
             if url_obj.password:
                 clone_uri = url_obj.with_password('*****')
         return clone_uri
+
+    @property
+    def push_uri_hidden(self):
+        push_uri = self.push_uri
+        if push_uri:
+            import urlobject
+            url_obj = urlobject.URLObject(cleaned_uri(push_uri))
+            if url_obj.password:
+                push_uri = url_obj.with_password('*****')
+        return push_uri
 
     def clone_url(self, **override):
         from rhodecode.model.settings import SettingsModel
