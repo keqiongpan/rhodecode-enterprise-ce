@@ -217,6 +217,12 @@ ReviewersController = function () {
         prButtonLock(true, null, 'reviewers');
         $('#user').hide(); // hide user autocomplete before load
 
+        if (sourceRef.length !== 3 || targetRef.length !== 3) {
+            // don't load defaults in case we're missing some refs...
+            $('.calculate-reviewers').hide();
+            return
+        }
+
         var url = pyroutes.url('repo_default_reviewers_data',
                 {
                     'repo_name': templateContext.repo_name,
