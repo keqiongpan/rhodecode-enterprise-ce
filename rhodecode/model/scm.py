@@ -397,7 +397,7 @@ class ScmModel(BaseModel):
 
     def push_changes(self, repo, username, remote_uri=None):
         dbrepo = self._get_repo(repo)
-        remote_uri = remote_uri or dbrepo.clone_uri
+        remote_uri = remote_uri or dbrepo.push_uri
         if not remote_uri:
             raise Exception("This repository doesn't have a clone uri")
 
