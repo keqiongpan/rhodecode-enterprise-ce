@@ -563,6 +563,7 @@ def create_repo(
         description=Optional(''),
         private=Optional(False),
         clone_uri=Optional(None),
+        push_uri=Optional(None),
         landing_rev=Optional('rev:tip'),
         enable_statistics=Optional(False),
         enable_locking=Optional(False),
@@ -596,6 +597,8 @@ def create_repo(
     :type private: bool
     :param clone_uri: set clone_uri
     :type clone_uri: str
+    :param push_uri: set push_uri
+    :type push_uri: str
     :param landing_rev: <rev_type>:<rev>
     :type landing_rev: str
     :param enable_locking:
@@ -639,6 +642,7 @@ def create_repo(
     description = Optional.extract(description)
     copy_permissions = Optional.extract(copy_permissions)
     clone_uri = Optional.extract(clone_uri)
+    push_uri = Optional.extract(push_uri)
     landing_commit_ref = Optional.extract(landing_rev)
 
     defs = SettingsModel().get_default_repo_settings(strip_prefix=True)
@@ -666,6 +670,7 @@ def create_repo(
             repo_description=description,
             repo_landing_commit_ref=landing_commit_ref,
             repo_clone_uri=clone_uri,
+            repo_push_uri=push_uri,
             repo_private=private,
             repo_copy_permissions=copy_permissions,
             repo_enable_statistics=enable_statistics,
@@ -684,6 +689,7 @@ def create_repo(
             'repo_description': schema_data['repo_description'],
             'repo_private': schema_data['repo_private'],
             'clone_uri': schema_data['repo_clone_uri'],
+            'push_uri': schema_data['repo_push_uri'],
             'repo_landing_rev': schema_data['repo_landing_commit_ref'],
             'enable_statistics': schema_data['repo_enable_statistics'],
             'enable_locking': schema_data['repo_enable_locking'],
@@ -907,6 +913,7 @@ def update_repo(
             repo_owner=updates['user'],
             repo_description=updates['repo_description'],
             repo_clone_uri=updates['clone_uri'],
+            repo_push_uri=updates['push_uri'],
             repo_fork_of=updates['fork_id'],
             repo_private=updates['repo_private'],
             repo_landing_commit_ref=updates['repo_landing_rev'],
@@ -925,6 +932,7 @@ def update_repo(
         repo_description=schema_data['repo_description'],
         repo_private=schema_data['repo_private'],
         clone_uri=schema_data['repo_clone_uri'],
+        push_uri=schema_data['repo_push_uri'],
         repo_landing_rev=schema_data['repo_landing_commit_ref'],
         repo_enable_statistics=schema_data['repo_enable_statistics'],
         repo_enable_locking=schema_data['repo_enable_locking'],

@@ -232,6 +232,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_edit_toggle_locking', '/%(repo_name)s/settings/toggle_locking', ['repo_name']);
     pyroutes.register('edit_repo_remote', '/%(repo_name)s/settings/remote', ['repo_name']);
     pyroutes.register('edit_repo_remote_pull', '/%(repo_name)s/settings/remote/pull', ['repo_name']);
+    pyroutes.register('edit_repo_remote_push', '/%(repo_name)s/settings/remote/push', ['repo_name']);
     pyroutes.register('edit_repo_statistics', '/%(repo_name)s/settings/statistics', ['repo_name']);
     pyroutes.register('edit_repo_statistics_reset', '/%(repo_name)s/settings/statistics/update', ['repo_name']);
     pyroutes.register('edit_repo_issuetracker', '/%(repo_name)s/settings/issue_trackers', ['repo_name']);

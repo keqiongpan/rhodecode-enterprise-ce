@@ -304,6 +304,7 @@ class RepoModel(BaseModel):
             {'k': 'repo_enable_locking', 'strip': True},
             {'k': 'repo_landing_rev', 'strip': True},
             {'k': 'clone_uri', 'strip': False},
+            {'k': 'push_uri', 'strip': False},
             {'k': 'repo_private', 'strip': True},
             {'k': 'repo_enable_statistics', 'strip': True}
         )
@@ -319,6 +320,8 @@ class RepoModel(BaseModel):
             defaults[item['k']] = val
             if item['k'] == 'clone_uri':
                 defaults['clone_uri_hidden'] = repo_info.clone_uri_hidden
+            if item['k'] == 'push_uri':
+                defaults['push_uri_hidden'] = repo_info.push_uri_hidden
 
         # fill owner
         if repo_info.user:
@@ -348,6 +351,7 @@ class RepoModel(BaseModel):
                 (1, 'repo_enable_locking'),
                 (1, 'repo_enable_statistics'),
                 (0, 'clone_uri'),
+                (0, 'push_uri'),
                 (0, 'fork_id')
             ]
             for strip, k in update_keys:

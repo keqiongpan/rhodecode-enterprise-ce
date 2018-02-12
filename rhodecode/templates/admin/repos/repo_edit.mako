@@ -65,7 +65,7 @@
           </li>
           %if c.rhodecode_db_repo.repo_type != 'svn':
           <li class="${'active' if c.active=='remote' else ''}">
-              <a href="${h.route_path('edit_repo_remote', repo_name=c.repo_name)}">${_('Remote')}</a>
+              <a href="${h.route_path('edit_repo_remote', repo_name=c.repo_name)}">${_('Remote sync')}</a>
           </li>
           %endif
           <li class="${'active' if c.active=='statistics' else ''}">

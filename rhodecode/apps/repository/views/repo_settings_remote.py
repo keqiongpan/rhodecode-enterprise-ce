@@ -35,8 +35,6 @@ log = logging.getLogger(__name__)
 class RepoSettingsRemoteView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-
         return c
 
     @LoginRequired()

@@ -46,9 +46,10 @@
            </div>
 
            % if c.rhodecode_db_repo.repo_type != 'svn':
+           <% sync_link = h.literal(h.link_to('remote sync', h.route_path('edit_repo_remote', repo_name=c.repo_name))) %>
            <div class="field">
                <div class="label">
-                   <label for="clone_uri">${_('Remote uri')}:</label>
+                   <label for="clone_uri">${_('Remote pull uri')}:</label>
                </div>
                <div class="input">
                    %if c.rhodecode_db_repo.clone_uri:
@@ -83,14 +84,56 @@
                     ${h.hidden('repo_clone_uri_change', 'NEW')}
                    %endif
                  <p id="alter_clone_uri_help_block" class="help-block">
-                     <% pull_link = h.literal(h.link_to('remote sync', h.route_path('edit_repo_remote', repo_name=c.repo_name))) %>
-                     ${_('http[s] url where from repository was imported, this field can used for doing {pull_link}.').format(pull_link=pull_link)|n} <br/>
+                     ${_('http[s] url where from repository was imported. This field can used for doing {sync_link}.').format(sync_link=sync_link)|n} <br/>
+                     ${_('This field is stored encrypted inside Database, a format of http://user:password@server.com/repo_name can be used and will be hidden from display.')}
+                 </p>
+               </div>
+            </div>
+           <div class="field">
+               <div class="label">
+                   <label for="push_uri">${_('Remote push uri')}:</label>
+               </div>
+               <div class="input">
+                   %if c.rhodecode_db_repo.push_uri:
+                    ## display, if we don't have any errors
+                    % if not c.form['repo_push_uri'].error:
+                    <div id="push_uri_hidden" class='text-as-placeholder'>
+                        <span id="push_uri_hidden_value">${c.rhodecode_db_repo.push_uri_hidden}</span>
+                        <span class="link" id="edit_push_uri"><i class="icon-edit"></i>${_('edit')}</span>
+                    </div>
+                    % endif
+
+                    ## alter field
+                    <div id="alter_push_uri" style="${'' if c.form['repo_push_uri'].error else 'display: none'}">
+                        ${c.form['repo_push_uri'].render(css_class='medium', oid='push_uri', placeholder=_('enter new value, or leave empty to remove'))|n}
+                        ${c.form.render_error(request, c.form['repo_push_uri'])|n}
+                        % if c.form['repo_push_uri'].error:
+                            ## we got error from form subit, means we modify the url
+                            ${h.hidden('repo_push_uri_change', 'MOD')}
+                        % else:
+                            ${h.hidden('repo_push_uri_change', 'OLD')}
+                        % endif
+
+                        % if not c.form['repo_push_uri'].error:
+                        <span class="link" id="cancel_edit_push_uri">${_('cancel')}</span>
+                        % endif
+
+                    </div>
+                   %else:
+                    ## not set yet, display form to set it
+                    ${c.form['repo_push_uri'].render(css_class='medium', oid='push_uri')|n}
+                    ${c.form.render_error(request, c.form['repo_push_uri'])|n}
+                    ${h.hidden('repo_push_uri_change', 'NEW')}
+                   %endif
+                 <p id="alter_push_uri_help_block" class="help-block">
+                     ${_('http[s] url to sync data back. This field can used for doing {sync_link}.').format(sync_link=sync_link)|n} <br/>
                      ${_('This field is stored encrypted inside Database, a format of http://user:password@server.com/repo_name can be used and will be hidden from display.')}
                  </p>
                </div>
             </div>
            % else:
            ${h.hidden('repo_clone_uri', '')}
+           ${h.hidden('repo_push_uri', '')}
            % endif
 
             <div class="field">
@@ -207,16 +250,11 @@
 </div>
 
 <script>
-    $(document).ready(function(){
-        var cloneUrl = function() {
-          var alterButton = $('#alter_clone_uri');
-          var editButton = $('#edit_clone_uri');
-          var cancelEditButton = $('#cancel_edit_clone_uri');
-          var hiddenUrl = $('#clone_uri_hidden');
-          var hiddenUrlValue = $('#clone_uri_hidden_value');
-          var input = $('#clone_uri');
-          var helpBlock = $('#alter_clone_uri_help_block');
-          var changedFlag = $('#repo_clone_uri_change');
+    $(document).ready(function () {
+        var cloneUrl = function (
+            alterButton, editButton, cancelEditButton,
+            hiddenUrl, hiddenUrlValue, input, helpBlock, changedFlag) {
+
           var originalText = helpBlock.html();
           var obfuscatedUrl = hiddenUrlValue.html();
 
@@ -255,7 +293,32 @@
 
           setInitialState();
           initEvents();
-        }();
+        };
+
+
+        var alterButton = $('#alter_clone_uri');
+        var editButton = $('#edit_clone_uri');
+        var cancelEditButton = $('#cancel_edit_clone_uri');
+        var hiddenUrl = $('#clone_uri_hidden');
+        var hiddenUrlValue = $('#clone_uri_hidden_value');
+        var input = $('#clone_uri');
+        var helpBlock = $('#alter_clone_uri_help_block');
+        var changedFlag = $('#repo_clone_uri_change');
+        cloneUrl(
+            alterButton, editButton, cancelEditButton, hiddenUrl,
+            hiddenUrlValue, input, helpBlock, changedFlag);
+
+        var alterButton = $('#alter_push_uri');
+        var editButton = $('#edit_push_uri');
+        var cancelEditButton = $('#cancel_edit_push_uri');
+        var hiddenUrl = $('#push_uri_hidden');
+        var hiddenUrlValue = $('#push_uri_hidden_value');
+        var input = $('#push_uri');
+        var helpBlock = $('#alter_push_uri_help_block');
+        var changedFlag = $('#repo_push_uri_change');
+        cloneUrl(
+            alterButton, editButton, cancelEditButton, hiddenUrl,
+            hiddenUrlValue, input, helpBlock, changedFlag);
 
         selectMyGroup = function(element) {
             $("#repo_group").val($(element).data('personalGroupId')).trigger("change");

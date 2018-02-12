@@ -138,14 +138,18 @@ class RepoSettingsView(RepoAppView):
             repo_description=schema_data['repo_description'],
             repo_private=schema_data['repo_private'],
             clone_uri=schema_data['repo_clone_uri'],
+            push_uri=schema_data['repo_push_uri'],
             repo_landing_rev=schema_data['repo_landing_commit_ref'],
             repo_enable_statistics=schema_data['repo_enable_statistics'],
             repo_enable_locking=schema_data['repo_enable_locking'],
             repo_enable_downloads=schema_data['repo_enable_downloads'],
         )
-        # detect if CLONE URI changed, if we get OLD means we keep old values
+        # detect if SYNC URI changed, if we get OLD means we keep old values
         if schema_data['repo_clone_uri_change'] == 'OLD':
             validated_updates['clone_uri'] = self.db_repo.clone_uri
+
+        if schema_data['repo_push_uri_change'] == 'OLD':
+            validated_updates['push_uri'] = self.db_repo.push_uri
 
         # use the new full name for redirect
         new_repo_name = schema_data['repo_group']['repo_name_with_group']

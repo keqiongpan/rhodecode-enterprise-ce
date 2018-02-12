@@ -66,7 +66,7 @@ def deferred_landing_ref_validator(node, kw):
 
 
 @colander.deferred
-def deferred_clone_uri_validator(node, kw):
+def deferred_sync_uri_validator(node, kw):
     repo_type = kw.get('repo_type')
     validator = validators.CloneUriValidator(repo_type)
     return validator
@@ -323,6 +323,12 @@ class RepoSchema(colander.MappingSchema):
         preparers=[preparers.strip_preparer],
         missing='')
 
+    repo_push_uri = colander.SchemaNode(
+        colander.String(),
+        validator=colander.All(colander.Length(min=1)),
+        preparers=[preparers.strip_preparer],
+        missing='')
+
     repo_fork_of = colander.SchemaNode(
         colander.String(),
         validator=deferred_fork_of_validator,
@@ -381,7 +387,17 @@ class RepoSettingsSchema(RepoSchema):
     repo_clone_uri = colander.SchemaNode(
         colander.String(),
         preparers=[preparers.strip_preparer],
-        validator=deferred_clone_uri_validator,
+        validator=deferred_sync_uri_validator,
+        missing='')
+
+    repo_push_uri_change = colander.SchemaNode(
+        colander.String(),
+        missing='NEW')
+
+    repo_push_uri = colander.SchemaNode(
+        colander.String(),
+        preparers=[preparers.strip_preparer],
+        validator=deferred_sync_uri_validator,
         missing='')
 
     def deserialize(self, cstruct):
