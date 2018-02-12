@@ -6,21 +6,25 @@
                   mask_placeholder mask_placeholder|field.widget.mask_placeholder;
                   style style|field.widget.style;
                   help_block help_block|field.widget.help_block|'';
-"
+                 "
       tal:omit-tag="">
-    <input type="text" name="${name}" value="${cstruct}"
-           tal:attributes="class string: form-control ${css_class or ''};
-                           style style"
-            placeholder="${placeholder}"
-           id="${oid}"/>
 
-    <p tal:condition="help_block" class="help-block">${help_block}</p>
-    <script tal:condition="mask" type="text/javascript">
-      deform.addCallback(
-         '${oid}',
-         function (oid) {
-            $("#" + oid).mask("${mask}",
-                 {placeholder:"${mask_placeholder}"});
-         });
-    </script>
+<input type="text" name="${name}" value="${cstruct}"
+       id="${oid}"
+       placeholder="${placeholder}"
+
+       tal:attributes="class string: form-control ${css_class or ''};
+                       style style"
+/>
+
+<p tal:condition="help_block" class="help-block">${help_block}</p>
+<script tal:condition="mask" type="text/javascript">
+  deform.addCallback(
+     '${oid}',
+     function (oid) {
+        $("#" + oid).mask("${mask}",
+             {placeholder:"${mask_placeholder}"});
+     });
+</script>
+
 </span>
