@@ -805,7 +805,8 @@ def remove_field_from_repo(request, apiuser, repoid, key):
 def update_repo(
         request, apiuser, repoid, repo_name=Optional(None),
         owner=Optional(OAttr('apiuser')), description=Optional(''),
-        private=Optional(False), clone_uri=Optional(None),
+        private=Optional(False),
+        clone_uri=Optional(None), push_uri=Optional(None),
         landing_rev=Optional('rev:tip'), fork_of=Optional(None),
         enable_statistics=Optional(False),
         enable_locking=Optional(False),
@@ -881,6 +882,9 @@ def update_repo(
 
         clone_uri=clone_uri
         if not isinstance(clone_uri, Optional) else repo.clone_uri,
+
+        push_uri=push_uri
+        if not isinstance(push_uri, Optional) else repo.push_uri,
 
         repo_landing_rev=landing_rev
         if not isinstance(landing_rev, Optional) else repo._landing_revision,
@@ -1753,7 +1757,7 @@ def revoke_user_group_permission(request, apiuser, repoid, usergroupid):
 
 
 @jsonrpc_method()
-def pull(request, apiuser, repoid):
+def pull(request, apiuser, repoid, remote_uri=Optional(None)):
     """
     Triggers a pull on the given repository from a remote location. You
     can use this to keep remote repositories up-to-date.
@@ -1768,6 +1772,8 @@ def pull(request, apiuser, repoid):
     :type apiuser: AuthUser
     :param repoid: The repository name or repository ID.
     :type repoid: str or int
+    :param remote_uri: Optional remote URI to pass in for pull
+    :type remote_uri: str
 
     Example output:
 
@@ -1775,7 +1781,7 @@ def pull(request, apiuser, repoid):
 
       id : <id_given_in_input>
       result : {
-        "msg": "Pulled from `<repository name>`"
+        "msg": "Pulled from url `<remote_url>` on repo `<repository name>`"
         "repository": "<repository name>"
       }
       error :  null
@@ -1787,27 +1793,31 @@ def pull(request, apiuser, repoid):
       id : <id_given_in_input>
       result : null
       error :  {
-        "Unable to pull changes from `<reponame>`"
+        "Unable to push changes from `<remote_url>`"
       }
 
     """
 
     repo = get_repo_or_error(repoid)
+    remote_uri = Optional.extract(remote_uri)
+    remote_uri_display = remote_uri or repo.clone_uri_hidden
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     try:
-        ScmModel().pull_changes(repo.repo_name, apiuser.username)
+        ScmModel().pull_changes(
+            repo.repo_name, apiuser.username, remote_uri=remote_uri)
         return {
-            'msg': 'Pulled from `%s`' % repo.repo_name,
+            'msg': 'Pulled from url `%s` on repo `%s`' % (
+                remote_uri_display, repo.repo_name),
             'repository': repo.repo_name
         }
     except Exception:
         log.exception("Exception occurred while trying to "
                       "pull changes from remote location")
         raise JSONRPCError(
-            'Unable to pull changes from `%s`' % repo.repo_name
+            'Unable to pull changes from `%s`' % remote_uri_display
         )
 
 
