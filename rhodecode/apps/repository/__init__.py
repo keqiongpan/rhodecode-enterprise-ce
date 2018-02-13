@@ -421,6 +421,11 @@ def includeme(config):
         name='repo_default_reviewers_data',
         pattern='/{repo_name:.*?[^/]}/settings/review/default-reviewers', repo_route=True)
 
+    # Repo Automation (EE feature)
+    config.add_route(
+        name='repo_automation',
+        pattern='/{repo_name:.*?[^/]}/settings/automation', repo_route=True)
+
     # Strip
     config.add_route(
         name='edit_repo_strip',

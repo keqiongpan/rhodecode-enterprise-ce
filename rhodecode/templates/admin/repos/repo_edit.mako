@@ -79,6 +79,9 @@
               <a href="${h.route_path('repo_reviewers', repo_name=c.repo_name)}">${_('Reviewer Rules')}</a>
           </li>
           %endif
+          <li class="${'active' if c.active=='automation' else ''}">
+              <a href="${h.route_path('repo_automation', repo_name=c.repo_name)}">${_('Automation')}</a>
+          </li>
           <li class="${'active' if c.active=='maintenance' else ''}">
               <a href="${h.route_path('edit_repo_maintenance', repo_name=c.repo_name)}">${_('Maintenance')}</a>
           </li>
