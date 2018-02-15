@@ -387,4 +387,8 @@ def post_to_webhook(url_calls, settings):
         }, headers=call_headers, auth=auth)
         log.debug('Got Webhook response: %s', resp)
 
-        resp.raise_for_status()  # raise exception on a failed request
+        try:
+            resp.raise_for_status()  # raise exception on a failed request
+        except Exception:
+            log.error(resp.text)
+            raise
