@@ -56,6 +56,7 @@ WEBHOOK_URL_VARS = [
     # pr events vars
     'pull_request_id',
     'pull_request_url',
+    'pull_request_shadow_url',
 
     # user who triggers the call
     'username',
@@ -156,7 +157,8 @@ class WebhookHandler(object):
             'register webhook call(%s) to url %s', event, url)
         url = string.Template(url).safe_substitute(
             pull_request_id=data['pullrequest']['pull_request_id'],
-            pull_request_url=data['pullrequest']['url'])
+            pull_request_url=data['pullrequest']['url'],
+            pull_request_shadow_url=data['pullrequest']['shadow_url'],)
         return [(url, self.secret_token, self.headers, data)]
 
     def __call__(self, event, data):
@@ -365,6 +367,7 @@ def post_to_webhook(url_calls, settings):
             rhodecode.__version__)
     }  # updated below with custom ones, allows override
 
+    auth = get_auth(settings)
     for url, token, headers, data in url_calls:
         req_session = requests.Session()
         req_session.mount(  # retry max N times
@@ -375,7 +378,6 @@ def post_to_webhook(url_calls, settings):
 
         headers = headers or {}
         call_headers.update(headers)
-        auth = get_auth(settings)
 
         log.debug('calling Webhook with method: %s, and auth:%s',
                   call_method, auth)

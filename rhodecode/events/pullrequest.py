@@ -56,6 +56,8 @@ class PullRequestEvent(RepoEvent):
                     self.pullrequest, request=self.request),
                 'permalink_url': PullRequestModel().get_url(
                     self.pullrequest, request=self.request, permalink=True),
+                'shadow_url': PullRequestModel().get_shadow_clone_url(
+                    self.pullrequest, request=self.request),
                 'status': self.pullrequest.calculated_review_status(),
                 'commits': commits,
             }

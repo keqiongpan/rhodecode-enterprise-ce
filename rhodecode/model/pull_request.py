@@ -1063,7 +1063,7 @@ class PullRequestModel(BaseModel):
                 repo_name=safe_str(pull_request.target_repo.repo_name),
                 pull_request_id=pull_request.pull_request_id,)
 
-    def get_shadow_clone_url(self, pull_request):
+    def get_shadow_clone_url(self, pull_request, request=None):
         """
         Returns qualified url pointing to the shadow repository. If this pull
         request is closed there is no shadow repository and ``None`` will be
@@ -1072,7 +1072,7 @@ class PullRequestModel(BaseModel):
         if pull_request.is_closed():
             return None
         else:
-            pr_url = urllib.unquote(self.get_url(pull_request))
+            pr_url = urllib.unquote(self.get_url(pull_request, request=request))
             return safe_unicode('{pr_url}/repository'.format(pr_url=pr_url))
 
     def notify_reviewers(self, pull_request, reviewers_ids):

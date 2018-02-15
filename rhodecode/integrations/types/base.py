@@ -132,6 +132,7 @@ CI_URL_VARS = [
     # pr events vars
     'pull_request_id',
     'pull_request_url',
+    'pull_request_shadow_url',
 
     # user who triggers the call
     'username',
