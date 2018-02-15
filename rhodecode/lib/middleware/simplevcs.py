@@ -288,7 +288,8 @@ class SimpleVCS(object):
         """
 
         # get instance of cache manager configured for a namespace
-        cache_manager = get_perms_cache_manager(custom_ttl=cache_ttl)
+        cache_manager = get_perms_cache_manager(
+            custom_ttl=cache_ttl, suffix=user.user_id)
         log.debug('AUTH_CACHE_TTL for permissions `%s` active: %s (TTL: %s)',
                   plugin_id, plugin_cache_active, cache_ttl)
 
