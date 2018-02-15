@@ -45,6 +45,8 @@ integration_type_registry.register_integration_type(
     base.EEIntegration('Jira Issues integration', 'jira'))
 integration_type_registry.register_integration_type(
     base.EEIntegration('Redmine Tracker integration', 'redmine'))
+integration_type_registry.register_integration_type(
+    base.EEIntegration('Jenkins CI integration', 'jenkins'))
 
 
 def integrations_event_handler(event):
