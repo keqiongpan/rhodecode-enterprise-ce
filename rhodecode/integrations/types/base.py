@@ -114,7 +114,31 @@ class EEIntegration(IntegrationTypeBase):
         super(EEIntegration, self).__init__(settings)
 
 
-# Helpers
+# Helpers #
+
+# common vars for url template
+CI_URL_VARS = [
+    'repo_name',
+    'repo_type',
+    'repo_id',
+    'repo_url',
+    # extra repo fields
+    'extra:<extra_key_name>',
+
+    # special attrs below that we handle, using multi-call
+    'branch',
+    'commit_id',
+
+    # pr events vars
+    'pull_request_id',
+    'pull_request_url',
+
+    # user who triggers the call
+    'username',
+    'user_id',
+
+]
+
 
 def get_auth(settings):
     from requests.auth import HTTPBasicAuth
@@ -123,3 +147,7 @@ def get_auth(settings):
     if username and password:
         return HTTPBasicAuth(username, password)
     return None
+
+
+def get_url_vars(url_vars):
+    return ', '.join('${' + x + '}' for x in url_vars)

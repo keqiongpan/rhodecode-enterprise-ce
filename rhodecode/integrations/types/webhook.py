@@ -33,7 +33,8 @@ from requests.packages.urllib3.util.retry import Retry
 import rhodecode
 from rhodecode import events
 from rhodecode.translation import _
-from rhodecode.integrations.types.base import IntegrationTypeBase, get_auth
+from rhodecode.integrations.types.base import (
+    IntegrationTypeBase, get_auth, get_url_vars)
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 
 log = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ WEBHOOK_URL_VARS = [
     'user_id',
 
 ]
-URL_VARS = ', '.join('${' + x + '}' for x in WEBHOOK_URL_VARS)
+URL_VARS = get_url_vars(WEBHOOK_URL_VARS)
 
 
 class WebhookHandler(object):
