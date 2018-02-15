@@ -111,3 +111,15 @@ class EEIntegration(IntegrationTypeBase):
     def __init__(self, name, key, settings=None):
         self.display_name = name
         self.key = key
+        super(EEIntegration, self).__init__(settings)
+
+
+# Helpers
+
+def get_auth(settings):
+    from requests.auth import HTTPBasicAuth
+    username = settings.get('username')
+    password = settings.get('password')
+    if username and password:
+        return HTTPBasicAuth(username, password)
+    return None

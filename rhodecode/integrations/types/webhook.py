@@ -33,7 +33,7 @@ from requests.packages.urllib3.util.retry import Retry
 import rhodecode
 from rhodecode import events
 from rhodecode.translation import _
-from rhodecode.integrations.types.base import IntegrationTypeBase
+from rhodecode.integrations.types.base import IntegrationTypeBase, get_auth
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 
 log = logging.getLogger(__name__)
@@ -62,15 +62,6 @@ WEBHOOK_URL_VARS = [
 
 ]
 URL_VARS = ', '.join('${' + x + '}' for x in WEBHOOK_URL_VARS)
-
-
-def get_auth(settings):
-    from requests.auth import HTTPBasicAuth
-    username = settings.get('username')
-    password = settings.get('password')
-    if username and password:
-        return HTTPBasicAuth(username, password)
-    return None
 
 
 class WebhookHandler(object):
