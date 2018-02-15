@@ -109,7 +109,7 @@ class TestMyAccountEdit(TestController):
             # ('extern_name', {'extern_name': None}),
             ('active', {'active': False}),
             ('active', {'active': True}),
-            ('email', {'email': 'some@email.com'}),
+            ('email', {'email': u'some@email.com'}),
         ])
     def test_my_account_update(self, name, attrs, user_util):
         usr = user_util.create_user(password='qweqwe')
@@ -120,13 +120,17 @@ class TestMyAccountEdit(TestController):
 
         params.update({'password_confirmation': ''})
         params.update({'new_password': ''})
-        params.update({'extern_type': 'rhodecode'})
-        params.update({'extern_name': 'rhodecode'})
+        params.update({'extern_type': u'rhodecode'})
+        params.update({'extern_name': u'rhodecode'})
         params.update({'csrf_token': self.csrf_token})
 
         params.update(attrs)
         # my account page cannot set language param yet, only for admins
         del params['language']
+        if name == 'email':
+            uem = user_util.create_additional_user_email(usr, attrs['email'])
+            email_before = User.get(user_id).email
+
         response = self.app.post(route_path('my_account_update'), params)
 
         assert_session_flash(
@@ -146,7 +150,7 @@ class TestMyAccountEdit(TestController):
         params['language'] = updated_params['language']
 
         if name == 'email':
-            params['emails'] = [attrs['email']]
+            params['emails'] = [attrs['email'], email_before]
         if name == 'extern_type':
             # cannot update this via form, expected value is original one
             params['extern_type'] = "rhodecode"
@@ -162,10 +166,10 @@ class TestMyAccountEdit(TestController):
 
         assert params == updated_params
 
-    def test_my_account_update_err_email_exists(self):
+    def test_my_account_update_err_email_not_exists_in_emails(self):
         self.log_user()
 
-        new_email = 'test_regular@mail.com'  # already existing email
+        new_email = 'test_regular@mail.com'  # not in emails
         params = {
             'username': 'test_admin',
             'new_password': 'test12',
@@ -179,7 +183,7 @@ class TestMyAccountEdit(TestController):
         response = self.app.post(route_path('my_account_update'),
                                  params=params)
 
-        response.mustcontain('This e-mail address is already taken')
+        response.mustcontain('"test_regular@mail.com" is not one of test_admin@mail.com')
 
     def test_my_account_update_bad_email_address(self):
         self.log_user('test_regular2', 'test12')
@@ -197,7 +201,4 @@ class TestMyAccountEdit(TestController):
         response = self.app.post(route_path('my_account_update'),
                                  params=params)
 
-        response.mustcontain('An email address must contain a single @')
-        msg = u'Username "%(username)s" already exists'
-        msg = h.html_escape(msg % {'username': 'test_admin'})
-        response.mustcontain(u"%s" % msg)
+        response.mustcontain('"newmail.pl" is not one of test_regular2@mail.com')

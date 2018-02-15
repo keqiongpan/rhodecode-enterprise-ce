@@ -24,7 +24,7 @@ from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.model.db import User, UserEmailMap
 from rhodecode.tests import (
     TestController, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_EMAIL,
-    assert_session_flash)
+    assert_session_flash, TEST_USER_REGULAR_PASS)
 from rhodecode.tests.fixture import Fixture
 
 fixture = Fixture()
@@ -47,30 +47,14 @@ class TestMyAccountEmails(TestController):
         response = self.app.get(route_path('my_account_emails'))
         response.mustcontain('No additional emails specified')
 
-    def test_my_account_my_emails_add_existing_email(self):
-        self.log_user()
-        response = self.app.get(route_path('my_account_emails'))
-        response.mustcontain('No additional emails specified')
-        response = self.app.post(route_path('my_account_emails_add'),
-                                 {'new_email': TEST_USER_REGULAR_EMAIL,
-                                  'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'This e-mail address is already taken')
-
-    def test_my_account_my_emails_add_mising_email_in_form(self):
-        self.log_user()
-        response = self.app.get(route_path('my_account_emails'))
-        response.mustcontain('No additional emails specified')
-        response = self.app.post(route_path('my_account_emails_add'),
-                                 {'csrf_token': self.csrf_token})
-        assert_session_flash(response, 'Please enter an email address')
-
     def test_my_account_my_emails_add_remove(self):
         self.log_user()
         response = self.app.get(route_path('my_account_emails'))
         response.mustcontain('No additional emails specified')
 
         response = self.app.post(route_path('my_account_emails_add'),
-                                 {'new_email': 'foo@barz.com',
+                                 {'email': 'foo@barz.com',
+                                  'current_password': TEST_USER_REGULAR_PASS,
                                   'csrf_token': self.csrf_token})
 
         response = self.app.get(route_path('my_account_emails'))

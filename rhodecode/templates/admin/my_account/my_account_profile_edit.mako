@@ -6,11 +6,10 @@
     </div>
 
     <div class="panel-body">
-    ${h.secure_form(h.route_path('my_account_update'), class_='form', request=request)}
     <% readonly = None %>
     <% disabled = "" %>
 
-    % if c.extern_type != 'rhodecode':
+    %if c.extern_type != 'rhodecode':
         <% readonly = "readonly" %>
         <% disabled = "disabled" %>
         <div class="infoform">
@@ -24,7 +23,7 @@
                    <label for="username">${_('Username')}:</label>
                </div>
                <div class="input">
-                 ${h.text('username', class_='input-valuedisplay', readonly=readonly)}
+                 ${c.user.username}
                </div>
             </div>
     
@@ -33,7 +32,7 @@
                    <label for="name">${_('First Name')}:</label>
                </div>
                <div class="input">
-                   ${h.text('firstname', class_='input-valuedisplay', readonly=readonly)}
+                    ${c.user.firstname}
                </div>
             </div>
     
@@ -42,7 +41,7 @@
                    <label for="lastname">${_('Last Name')}:</label>
                </div>
                <div class="input-valuedisplay">
-                   ${h.text('lastname', class_='input-valuedisplay', readonly=readonly)}
+                    ${c.user.lastname}
                </div>
             </div>
           </div>
@@ -64,48 +63,7 @@
                     %endif
                 </div>
             </div>
-            <div class="field">
-               <div class="label">
-                   <label for="username">${_('Username')}:</label>
-               </div>
-               <div class="input">
-                 ${h.text('username', class_='medium%s' % disabled, readonly=readonly)}
-                 ${h.hidden('extern_name', c.extern_name)}
-                 ${h.hidden('extern_type', c.extern_type)}
-               </div>
-            </div>
-            <div class="field">
-               <div class="label">
-                   <label for="name">${_('First Name')}:</label>
-               </div>
-               <div class="input">
-                   ${h.text('firstname', class_="medium")}
-               </div>
-            </div>
-    
-            <div class="field">
-               <div class="label">
-                   <label for="lastname">${_('Last Name')}:</label>
-               </div>
-               <div class="input">
-                   ${h.text('lastname', class_="medium")}
-               </div>
-            </div>
-    
-            <div class="field">
-               <div class="label">
-                   <label for="email">${_('Email')}:</label>
-               </div>
-               <div class="input">
-                   ## we should be able to edit email !
-                   ${h.text('email', class_="medium")}
-               </div>
-            </div>
-    
-            <div class="buttons">
-              ${h.submit('save', _('Save'), class_="btn")}
-              ${h.reset('reset', _('Reset'), class_="btn")}
-            </div>
+                ${c.form.render()| n}
           </div>
         </div>
     % endif

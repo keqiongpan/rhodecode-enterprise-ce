@@ -1178,6 +1178,10 @@ class UserUtility(object):
             self.user_ids.append(user.user_id)
         return user
 
+    def create_additional_user_email(self, user, email):
+        uem = self.fixture.create_additional_user_email(user=user, email=email)
+        return uem
+
     def create_user_with_group(self):
         user = self.create_user()
         user_group = self.create_user_group(members=[user])
