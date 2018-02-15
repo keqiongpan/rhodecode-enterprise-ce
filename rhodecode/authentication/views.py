@@ -32,6 +32,7 @@ from rhodecode.authentication.base import (
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
+from rhodecode.lib.caches import clear_cache_manager
 from rhodecode.model.forms import AuthSettingsForm
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel
@@ -101,6 +102,16 @@ class AuthnPluginViewBase(BaseAppView):
             self.plugin.create_or_update_setting(name, value)
         Session().commit()
 
+        # cleanup cache managers in case of change for plugin
+        # TODO(marcink): because we can register multiple namespaces
+        # we should at some point figure out how to retrieve ALL namespace
+        # cache managers and clear them...
+        cache_manager = get_auth_cache_manager()
+        clear_cache_manager(cache_manager)
+
+        cache_manager = get_perms_cache_manager()
+        clear_cache_manager(cache_manager)
+
         # Display success message and redirect.
         h.flash(_('Auth settings updated successfully.'), category='success')
         redirect_to = self.request.resource_path(
@@ -160,12 +171,6 @@ class AuthSettingsView(BaseAppView):
                 'auth_plugins', plugins)
             Session().add(setting)
             Session().commit()
-
-            cache_manager = get_auth_cache_manager()
-            cache_manager.clear()
-
-            cache_manager = get_perms_cache_manager()
-            cache_manager.clear()
 
             h.flash(_('Auth settings updated successfully.'), category='success')
         except formencode.Invalid as errors:

@@ -578,14 +578,20 @@ def get_authn_registry(registry=None):
     return authn_registry
 
 
-def get_auth_cache_manager(custom_ttl=None):
+def get_auth_cache_manager(custom_ttl=None, suffix=None):
+    cache_name = 'rhodecode.authentication'
+    if suffix:
+        cache_name = 'rhodecode.authentication.{}'.format(suffix)
     return caches.get_cache_manager(
-        'auth_plugins', 'rhodecode.authentication', custom_ttl)
+        'auth_plugins', cache_name, custom_ttl)
 
 
-def get_perms_cache_manager(custom_ttl=None):
+def get_perms_cache_manager(custom_ttl=None, suffix=None):
+    cache_name = 'rhodecode.permissions'
+    if suffix:
+        cache_name = 'rhodecode.permissions.{}'.format(suffix)
     return caches.get_cache_manager(
-        'auth_plugins', 'rhodecode.permissions', custom_ttl)
+        'auth_plugins', cache_name, custom_ttl)
 
 
 def authenticate(username, password, environ=None, auth_type=None,
@@ -646,7 +652,8 @@ def authenticate(username, password, environ=None, auth_type=None,
         plugin_cache_active, cache_ttl = plugin.get_ttl_cache(plugin_settings)
 
         # get instance of cache manager configured for a namespace
-        cache_manager = get_auth_cache_manager(custom_ttl=cache_ttl)
+        cache_manager = get_auth_cache_manager(
+            custom_ttl=cache_ttl, suffix=user.user_id)
 
         log.debug('AUTH_CACHE_TTL for plugin `%s` active: %s (TTL: %s)',
                   plugin.get_id(), plugin_cache_active, cache_ttl)
