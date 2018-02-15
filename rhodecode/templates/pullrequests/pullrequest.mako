@@ -202,9 +202,13 @@ $(function(){
           // translate our select2 id into a text, it's a mapping to show
           // simple label when selecting by internal ID.
           var id, refData;
-          if (selectedRef === undefined) {
+          if (selectedRef === undefined || selectedRef === null) {
             id = element.val();
             refData = element.val().split(':');
+
+            if (refData.length !== 3){
+                refData = ["", "", ""]
+            }
           } else {
             id = selectedRef;
             refData = selectedRef.split(':');
@@ -216,7 +220,6 @@ $(function(){
           }
 
           var data = {id: id, text: text};
-
           callback(data);
       };
   };
@@ -415,8 +418,10 @@ $(function(){
     };
   };
 
-  var initTargetRefs = function(refsData, selectedRef){
+  var initTargetRefs = function(refsData, selectedRef) {
+
     Select2Box($targetRef, {
+        placeholder: "${_('Select commit reference')}",
       query: function(query) {
         queryTargetRefs(refsData, query);
       },
@@ -518,7 +523,9 @@ $(function(){
   % if c.default_source_ref:
   // in case we have a pre-selected value, use it now
   $sourceRef.select2('val', '${c.default_source_ref}');
+  // diff preview load
   loadRepoRefDiffPreview();
+  // default reviewers
   reviewersController.loadDefaultReviewers(
       sourceRepo(), sourceRef(), targetRepo(), targetRef());
   % endif
