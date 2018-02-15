@@ -4210,7 +4210,8 @@ class RepoReviewRule(Base, BaseModel):
         """
         Check if this review rule matches a branch/files in a pull request
 
-        :param branch: branch name for the commit
+        :param source_branch: source branch name for the commit
+        :param target_branch: target branch name for the commit
         :param files_changed: list of file paths changed in the pull request
         """
 
@@ -4220,15 +4221,20 @@ class RepoReviewRule(Base, BaseModel):
 
         branch_matches = True
         if source_branch or target_branch:
-            source_branch_regex = re.compile(
-                '^' + glob2re(self.source_branch_pattern) + '$')
-            target_branch_regex = re.compile(
-                '^' + glob2re(self.target_branch_pattern) + '$')
+            if self.source_branch_pattern == '*':
+                source_branch_match = True
+            else:
+                source_branch_regex = re.compile(
+                    '^' + glob2re(self.source_branch_pattern) + '$')
+                source_branch_match = bool(source_branch_regex.search(source_branch))
+            if self.target_branch_pattern == '*':
+                target_branch_match = True
+            else:
+                target_branch_regex = re.compile(
+                    '^' + glob2re(self.target_branch_pattern) + '$')
+                target_branch_match = bool(target_branch_regex.search(target_branch))
 
-            branch_matches = (
-                    bool(source_branch_regex.search(source_branch)) and
-                    bool(target_branch_regex.search(target_branch))
-            )
+            branch_matches = source_branch_match and target_branch_match
 
         files_matches = True
         if self.file_pattern != '*':
