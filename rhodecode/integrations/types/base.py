@@ -19,7 +19,12 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import colander
+import string
+import collections
+import logging
 from rhodecode.translation import _
+
+log = logging.getLogger(__name__)
 
 
 class IntegrationTypeBase(object):
@@ -142,6 +147,122 @@ WEBHOOK_URL_VARS = [
 CI_URL_VARS = WEBHOOK_URL_VARS
 
 
+class WebhookDataHandler(object):
+    name = 'webhook'
+
+    def __init__(self, template_url, headers):
+        self.template_url = template_url
+        self.headers = headers
+
+    def get_base_parsed_template(self, data):
+        """
+        initially parses the passed in template with some common variables
+        available on ALL calls
+        """
+        # note: make sure to update the `WEBHOOK_URL_VARS` if this changes
+        common_vars = {
+            'repo_name': data['repo']['repo_name'],
+            'repo_type': data['repo']['repo_type'],
+            'repo_id': data['repo']['repo_id'],
+            'repo_url': data['repo']['url'],
+            'username': data['actor']['username'],
+            'user_id': data['actor']['user_id'],
+            'event_name': data['name']
+        }
+
+        extra_vars = {}
+        for extra_key, extra_val in data['repo']['extra_fields'].items():
+            extra_vars['extra__{}'.format(extra_key)] = extra_val
+        common_vars.update(extra_vars)
+
+        template_url = self.template_url.replace('${extra:', '${extra__')
+        return string.Template(template_url).safe_substitute(**common_vars)
+
+    def repo_push_event_handler(self, event, data):
+        url = self.get_base_parsed_template(data)
+        url_cals = []
+        branch_data = collections.OrderedDict()
+        for obj in data['push']['branches']:
+            branch_data[obj['name']] = obj
+
+        branches_commits = collections.OrderedDict()
+        for commit in data['push']['commits']:
+            if commit.get('git_ref_change'):
+                # special case for GIT that allows creating tags,
+                # deleting branches without associated commit
+                continue
+
+            if commit['branch'] not in branches_commits:
+                branch_commits = {'branch': branch_data[commit['branch']],
+                                  'commits': []}
+                branches_commits[commit['branch']] = branch_commits
+
+            branch_commits = branches_commits[commit['branch']]
+            branch_commits['commits'].append(commit)
+
+        if '${branch}' in url:
+            # call it multiple times, for each branch if used in variables
+            for branch, commit_ids in branches_commits.items():
+                branch_url = string.Template(url).safe_substitute(branch=branch)
+                # call further down for each commit if used
+                if '${commit_id}' in branch_url:
+                    for commit_data in commit_ids['commits']:
+                        commit_id = commit_data['raw_id']
+                        commit_url = string.Template(branch_url).safe_substitute(
+                            commit_id=commit_id)
+                        # register per-commit call
+                        log.debug(
+                            'register %s call(%s) to url %s',
+                            self.name, event, commit_url)
+                        url_cals.append(
+                            (commit_url, self.headers, data))
+
+                else:
+                    # register per-branch call
+                    log.debug(
+                        'register %s call(%s) to url %s',
+                        self.name, event, branch_url)
+                    url_cals.append(
+                        (branch_url, self.headers, data))
+
+        else:
+            log.debug(
+                'register %s call(%s) to url %s', self.name, event, url)
+            url_cals.append((url, self.headers, data))
+
+        return url_cals
+
+    def repo_create_event_handler(self, event, data):
+        url = self.get_base_parsed_template(data)
+        log.debug(
+            'register %s call(%s) to url %s', self.name, event, url)
+        return [(url, self.headers, data)]
+
+    def pull_request_event_handler(self, event, data):
+        url = self.get_base_parsed_template(data)
+        log.debug(
+            'register %s call(%s) to url %s', self.name, event, url)
+        url = string.Template(url).safe_substitute(
+            pull_request_id=data['pullrequest']['pull_request_id'],
+            pull_request_url=data['pullrequest']['url'],
+            pull_request_shadow_url=data['pullrequest']['shadow_url'],)
+        return [(url, self.headers, data)]
+
+    def __call__(self, event, data):
+        from rhodecode import events
+
+        if isinstance(event, events.RepoPushEvent):
+            return self.repo_push_event_handler(event, data)
+        elif isinstance(event, events.RepoCreateEvent):
+            return self.repo_create_event_handler(event, data)
+        elif isinstance(event, events.PullRequestEvent):
+            return self.pull_request_event_handler(event, data)
+        else:
+            raise ValueError(
+                'event type `%s` not in supported list: %s' % (
+                    event.__class__, events))
+
+
 def get_auth(settings):
     from requests.auth import HTTPBasicAuth
     username = settings.get('username')
@@ -149,6 +270,10 @@ def get_auth(settings):
     if username and password:
         return HTTPBasicAuth(username, password)
     return None
+
+
+def get_web_token(settings):
+    return settings['secret_token']
 
 
 def get_url_vars(url_vars):
