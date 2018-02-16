@@ -20,7 +20,7 @@
 
 from __future__ import unicode_literals
 import string
-from collections import OrderedDict
+import collections
 
 import deform
 import deform.widget
@@ -42,26 +42,26 @@ log = logging.getLogger(__name__)
 
 # updating this required to update the `common_vars` passed in url calling func
 WEBHOOK_URL_VARS = [
-    'repo_name',
-    'repo_type',
-    'repo_id',
-    'repo_url',
+    ('event_name', 'Unique name of the event type, e.g pullrequest-update'),
+    ('repo_name', 'Full name of the repository'),
+    ('repo_type', 'VCS type of repository'),
+    ('repo_id', 'Unique id of repository'),
+    ('repo_url', 'Repository url'),
     # extra repo fields
-    'extra:<extra_key_name>',
+    ('extra:<extra_key_name>', 'Extra repo variables, read from its settings.'),
 
     # special attrs below that we handle, using multi-call
-    'branch',
-    'commit_id',
+    ('branch', 'Name of each brach submitted, if any.'),
+    ('commit_id', 'Id of each commit submitted, if any.'),
 
     # pr events vars
-    'pull_request_id',
-    'pull_request_url',
-    'pull_request_shadow_url',
+    ('pull_request_id', 'Unique ID of the pull request.'),
+    ('pull_request_url', 'Pull request url.'),
+    ('pull_request_shadow_url', 'Pull request shadow repo clone url.'),
 
     # user who triggers the call
-    'username',
-    'user_id',
-
+    ('username', 'User who triggered the call.'),
+    ('user_id', 'User id who triggered the call.'),
 ]
 URL_VARS = get_url_vars(WEBHOOK_URL_VARS)
 
@@ -84,7 +84,8 @@ class WebhookHandler(object):
             'repo_id': data['repo']['repo_id'],
             'repo_url': data['repo']['url'],
             'username': data['actor']['username'],
-            'user_id': data['actor']['user_id']
+            'user_id': data['actor']['user_id'],
+            'event_name': data['name']
         }
 
         extra_vars = {}
@@ -98,11 +99,11 @@ class WebhookHandler(object):
     def repo_push_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)
         url_cals = []
-        branch_data = OrderedDict()
+        branch_data = collections.OrderedDict()
         for obj in data['push']['branches']:
             branch_data[obj['name']] = obj
 
-        branches_commits = OrderedDict()
+        branches_commits = collections.OrderedDict()
         for commit in data['push']['commits']:
             if commit.get('git_ref_change'):
                 # special case for GIT that allows creating tags,

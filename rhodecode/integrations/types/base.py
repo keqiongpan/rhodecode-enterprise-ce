@@ -118,26 +118,26 @@ class EEIntegration(IntegrationTypeBase):
 
 # common vars for url template
 CI_URL_VARS = [
-    'repo_name',
-    'repo_type',
-    'repo_id',
-    'repo_url',
+    ('event_name', 'Unique name of the event type, e.g pullrequest-update'),
+    ('repo_name', 'Full name of the repository'),
+    ('repo_type', 'VCS type of repository'),
+    ('repo_id', 'Unique id of repository'),
+    ('repo_url', 'Repository url'),
     # extra repo fields
-    'extra:<extra_key_name>',
+    ('extra:<extra_key_name>', 'Extra repo variables, read from its settings.'),
 
     # special attrs below that we handle, using multi-call
-    'branch',
-    'commit_id',
+    ('branch', 'Name of each brach submitted, if any.'),
+    ('commit_id', 'Id of each commit submitted, if any.'),
 
     # pr events vars
-    'pull_request_id',
-    'pull_request_url',
-    'pull_request_shadow_url',
+    ('pull_request_id', 'Unique ID of the pull request.'),
+    ('pull_request_url', 'Pull request url.'),
+    ('pull_request_shadow_url', 'Pull request shadow repo clone url.'),
 
     # user who triggers the call
-    'username',
-    'user_id',
-
+    ('username', 'User who triggered the call.'),
+    ('user_id', 'User id who triggered the call.'),
 ]
 
 
@@ -151,4 +151,4 @@ def get_auth(settings):
 
 
 def get_url_vars(url_vars):
-    return ', '.join('${' + x + '}' for x in url_vars)
+    return ', '.join('${' + key + '}' for key, explanation in url_vars)
