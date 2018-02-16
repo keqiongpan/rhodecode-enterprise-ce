@@ -22,10 +22,11 @@
 RhodeCode authentication plugin for LDAP
 """
 
-
+import re
 import colander
 import logging
 import traceback
+import string
 
 from rhodecode.translation import _
 from rhodecode.authentication.base import (
@@ -49,6 +50,9 @@ except ImportError:
     # ldap lib is Missing
     ldap = Missing
 
+
+class LdapError(Exception):
+    pass
 
 def plugin_factory(plugin_id, *args, **kwds):
     """
@@ -226,9 +230,10 @@ class AuthLdap(object):
         self.BASE_DN = safe_str(base_dn)
         self.LDAP_FILTER = safe_str(ldap_filter)
 
-    def _get_ldap_server(self):
+    def _get_ldap_conn(self):
         if self.debug:
             ldap.set_option(ldap.OPT_DEBUG_LEVEL, 255)
+
         if hasattr(ldap, 'OPT_X_TLS_CACERTDIR'):
             ldap.set_option(ldap.OPT_X_TLS_CACERTDIR,
                             '/etc/openldap/cacerts')
@@ -239,21 +244,23 @@ class AuthLdap(object):
 
         if self.TLS_KIND != 'PLAIN':
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, self.TLS_REQCERT)
-        server = ldap.initialize(self.LDAP_SERVER)
+
+        log.debug('initializing LDAP connection to:%s', self.LDAP_SERVER)
+        ldap_conn = ldap.initialize(self.LDAP_SERVER)
         if self.ldap_version == 2:
-            server.protocol = ldap.VERSION2
+            ldap_conn.protocol = ldap.VERSION2
         else:
-            server.protocol = ldap.VERSION3
+            ldap_conn.protocol = ldap.VERSION3
 
         if self.TLS_KIND == 'START_TLS':
-            server.start_tls_s()
+            ldap_conn.start_tls_s()
 
         if self.LDAP_BIND_DN and self.LDAP_BIND_PASS:
             log.debug('Trying simple_bind with password and given login DN: %s',
                       self.LDAP_BIND_DN)
-            server.simple_bind_s(self.LDAP_BIND_DN, self.LDAP_BIND_PASS)
+            ldap_conn.simple_bind_s(self.LDAP_BIND_DN, self.LDAP_BIND_PASS)
 
-        return server
+        return ldap_conn
 
     def get_uid(self, username):
         uid = username
@@ -295,13 +302,14 @@ class AuthLdap(object):
         if "," in username:
             raise LdapUsernameError(
                 "invalid character `,` in username: `{}`".format(username))
+        ldap_conn = None
         try:
-            server = self._get_ldap_server()
+            ldap_conn = self._get_ldap_conn()
             filter_ = '(&%s(%s=%s))' % (
                 self.LDAP_FILTER, self.attr_login, username)
             log.debug("Authenticating %r filter %s at %s", self.BASE_DN,
                       filter_, self.LDAP_SERVER)
-            lobjects = server.search_ext_s(
+            lobjects = ldap_conn.search_ext_s(
                 self.BASE_DN, self.SEARCH_SCOPE, filter_)
 
             if not lobjects:
@@ -315,7 +323,7 @@ class AuthLdap(object):
                     continue
 
                 user_attrs = self.fetch_attrs_from_simple_bind(
-                    server, dn, username, password)
+                    ldap_conn, dn, username, password)
                 if user_attrs:
                     break
 
@@ -333,6 +341,15 @@ class AuthLdap(object):
             raise LdapConnectionError(
                 "LDAP can't access authentication "
                 "server, org_exc:%s" % org_exc)
+        finally:
+            if ldap_conn:
+                log.debug('ldap: connection release')
+                try:
+                    ldap_conn.unbind_s()
+                except Exception:
+                    # for any reason this can raise exception we must catch it
+                    # to not crush the server
+                    pass
 
         return dn, user_attrs
 
