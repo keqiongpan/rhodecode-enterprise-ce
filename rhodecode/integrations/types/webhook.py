@@ -34,35 +34,15 @@ import rhodecode
 from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.integrations.types.base import (
-    IntegrationTypeBase, get_auth, get_url_vars)
+    IntegrationTypeBase, get_auth, get_url_vars, WEBHOOK_URL_VARS)
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
+from rhodecode.model.validation_schema import widgets
 
 log = logging.getLogger(__name__)
 
 
 # updating this required to update the `common_vars` passed in url calling func
-WEBHOOK_URL_VARS = [
-    ('event_name', 'Unique name of the event type, e.g pullrequest-update'),
-    ('repo_name', 'Full name of the repository'),
-    ('repo_type', 'VCS type of repository'),
-    ('repo_id', 'Unique id of repository'),
-    ('repo_url', 'Repository url'),
-    # extra repo fields
-    ('extra:<extra_key_name>', 'Extra repo variables, read from its settings.'),
 
-    # special attrs below that we handle, using multi-call
-    ('branch', 'Name of each brach submitted, if any.'),
-    ('commit_id', 'Id of each commit submitted, if any.'),
-
-    # pr events vars
-    ('pull_request_id', 'Unique ID of the pull request.'),
-    ('pull_request_url', 'Pull request url.'),
-    ('pull_request_shadow_url', 'Pull request shadow repo clone url.'),
-
-    # user who triggers the call
-    ('username', 'User who triggered the call.'),
-    ('user_id', 'User id who triggered the call.'),
-]
 URL_VARS = get_url_vars(WEBHOOK_URL_VARS)
 
 
@@ -178,17 +158,21 @@ class WebhookSettingsSchema(colander.Schema):
         colander.String(),
         title=_('Webhook URL'),
         description=
-            _('URL to which Webhook should submit data. Following variables '
-              'are allowed to be used: {vars}. Some of the variables would '
-              'trigger multiple calls, like ${{branch}} or ${{commit_id}}. '
-              'Webhook will be called as many times as unique objects in '
-              'data in such cases.').format(vars=URL_VARS),
+            _('URL to which Webhook should submit data. If used some of the '
+              'variables would trigger multiple calls, like ${branch} or '
+              '${commit_id}. Webhook will be called as many times as unique '
+              'objects in data in such cases.'),
         missing=colander.required,
         required=True,
         validator=colander.url,
-        widget=deform.widget.TextInputWidget(
-            placeholder='https://www.example.com/webhook'
-        ),
+        widget=widgets.CodeMirrorWidget(
+            help_block_collapsable_name='Show url variables',
+            help_block_collapsable=(
+                'E.g http://my-serv/trigger_job/${{event_name}}'
+                '?PR_ID=${{pull_request_id}}'
+                '\nFull list of vars:\n{}'.format(URL_VARS)),
+            codemirror_mode='text',
+            codemirror_options='{"lineNumbers": false, "lineWrapping": true}'),
     )
     secret_token = colander.SchemaNode(
         colander.String(),
@@ -229,7 +213,7 @@ class WebhookSettingsSchema(colander.Schema):
         default='',
         missing='',
         widget=deform.widget.TextInputWidget(
-            placeholder='e.g.Authorization'
+            placeholder='e.g: Authorization'
         ),
     )
     custom_header_val = colander.SchemaNode(
@@ -239,7 +223,7 @@ class WebhookSettingsSchema(colander.Schema):
         default='',
         missing='',
         widget=deform.widget.TextInputWidget(
-            placeholder='e.g. RcLogin auth=xxxx'
+            placeholder='e.g. Basic XxXxXx'
         ),
     )
     method_type = colander.SchemaNode(

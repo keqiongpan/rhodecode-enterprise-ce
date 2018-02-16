@@ -115,9 +115,7 @@ class EEIntegration(IntegrationTypeBase):
 
 
 # Helpers #
-
-# common vars for url template
-CI_URL_VARS = [
+WEBHOOK_URL_VARS = [
     ('event_name', 'Unique name of the event type, e.g pullrequest-update'),
     ('repo_name', 'Full name of the repository'),
     ('repo_type', 'VCS type of repository'),
@@ -140,6 +138,9 @@ CI_URL_VARS = [
     ('user_id', 'User id who triggered the call.'),
 ]
 
+# common vars for url template used for CI plugins. Shared with webhook
+CI_URL_VARS = WEBHOOK_URL_VARS
+
 
 def get_auth(settings):
     from requests.auth import HTTPBasicAuth
@@ -151,4 +152,6 @@ def get_auth(settings):
 
 
 def get_url_vars(url_vars):
-    return ', '.join('${' + key + '}' for key, explanation in url_vars)
+    return '\n'.join(
+        '{} - {}'.format('${' + key + '}', explanation)
+        for key, explanation in url_vars)
