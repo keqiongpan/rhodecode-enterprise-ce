@@ -1160,13 +1160,13 @@
     };
   };
   pexpect = super.buildPythonPackage {
-    name = "pexpect-4.3.1";
+    name = "pexpect-4.4.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [ptyprocess];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/14/05/47c8bca66390c9b18c91f6152db4b74eb850382e8e13aa2f06dfb3036466/pexpect-4.3.1.tar.gz";
-      md5 = "16aa4549136b2d1b2bf1e0e9788d75a6";
+      url = "https://pypi.python.org/packages/fa/c3/60c0cbf96f242d0b47a82e9ca634dcd6dcb043832cf05e17540812e1c707/pexpect-4.4.0.tar.gz";
+      md5 = "e9b07f0765df8245ac72201d757baaef";
     };
     meta = {
       license = [ pkgs.lib.licenses.isc { fullName = "ISC License (ISCL)"; } ];
@@ -1703,13 +1703,13 @@
     };
   };
   scandir = super.buildPythonPackage {
-    name = "scandir-1.6";
+    name = "scandir-1.7";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/77/3f/916f524f50ee65e3f465a280d2851bd63685250fddb3020c212b3977664d/scandir-1.6.tar.gz";
-      md5 = "0180ddb97c96cbb2d4f25d2ae11c64ac";
+      url = "https://pypi.python.org/packages/13/bb/e541b74230bbf7a20a3949a2ee6631be299378a784f5445aa5d0047c192b/scandir-1.7.tar.gz";
+      md5 = "037e5f24d1a0e78b17faca72dea9555f";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "New BSD License"; } ];
