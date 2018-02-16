@@ -38,7 +38,7 @@ plain_text_lexer = get_lexer_by_name(
     'text', stripall=False, stripnl=False, ensurenl=False)
 
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 def filenode_as_lines_tokens(filenode, lexer=None):
