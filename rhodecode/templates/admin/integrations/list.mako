@@ -153,7 +153,7 @@
           <td class="td-icon">
             %if integration.integration_type in c.available_integrations:
             <div class="integration-icon">
-              ${c.available_integrations[integration.integration_type].icon|n}
+              ${c.available_integrations[integration.integration_type].icon()|n}
             </div>
             %else:
               ?

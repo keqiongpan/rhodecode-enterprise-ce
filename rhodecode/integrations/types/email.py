@@ -146,7 +146,36 @@ repo_push_template_html = Template('''
 </html>
 ''')
 
-email_icon = '''
+
+
+
+class EmailSettingsSchema(colander.Schema):
+    @colander.instantiate(validator=colander.Length(min=1))
+    class recipients(colander.SequenceSchema):
+        title = _('Recipients')
+        description = _('Email addresses to send push events to')
+        widget = deform.widget.SequenceWidget(min_len=1)
+
+        recipient = colander.SchemaNode(
+            colander.String(),
+            title=_('Email address'),
+            description=_('Email address'),
+            default='',
+            validator=colander.Email(),
+            widget=deform.widget.TextInputWidget(
+                placeholder='user@domain.com',
+            ),
+        )
+
+
+class EmailIntegrationType(IntegrationTypeBase):
+    key = 'email'
+    display_name = _('Email')
+    description = _('Send repo push summaries to a list of recipients via email')
+
+    @classmethod
+    def icon(cls):
+        return '''
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -207,32 +236,6 @@ email_icon = '''
   </g>
 </svg>
 '''
-
-
-class EmailSettingsSchema(colander.Schema):
-    @colander.instantiate(validator=colander.Length(min=1))
-    class recipients(colander.SequenceSchema):
-        title = _('Recipients')
-        description = _('Email addresses to send push events to')
-        widget = deform.widget.SequenceWidget(min_len=1)
-
-        recipient = colander.SchemaNode(
-            colander.String(),
-            title=_('Email address'),
-            description=_('Email address'),
-            default='',
-            validator=colander.Email(),
-            widget=deform.widget.TextInputWidget(
-                placeholder='user@domain.com',
-            ),
-        )
-
-
-class EmailIntegrationType(IntegrationTypeBase):
-    key = 'email'
-    display_name = _('Email')
-    description = _('Send repo push summaries to a list of recipients via email')
-    icon = email_icon
 
     def settings_schema(self):
         schema = EmailSettingsSchema()

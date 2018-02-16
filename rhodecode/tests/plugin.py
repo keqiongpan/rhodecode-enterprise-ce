@@ -1706,7 +1706,10 @@ def StubIntegrationType():
         key = 'test'
         display_name = 'Test integration type'
         description = 'A test integration type for testing'
-        icon = 'test_icon_html_image'
+
+        @classmethod
+        def icon(cls):
+            return 'test_icon_html_image'
 
         def __init__(self, settings):
             super(_StubIntegrationType, self).__init__(settings)
