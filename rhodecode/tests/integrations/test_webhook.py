@@ -86,6 +86,8 @@ def test_webook_parse_url_for_pull_request_event(
     base_data['pullrequest'] = {
         'pull_request_id': 999,
         'url': 'http://pr-url.com',
+        'title': 'example-pr-title',
+        'commits_uid': 'abcdefg1234',
         'shadow_url': 'http://pr-url.com/repository'
     }
     headers = {'exmaple-header': 'header-values'}

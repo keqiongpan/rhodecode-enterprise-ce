@@ -37,6 +37,7 @@ class PullRequestEvent(RepoEvent):
         self.pullrequest = pullrequest
 
     def as_dict(self):
+        from rhodecode.lib.utils2 import md5_safe
         from rhodecode.model.pull_request import PullRequestModel
         data = super(PullRequestEvent, self).as_dict()
 
@@ -46,6 +47,9 @@ class PullRequestEvent(RepoEvent):
             repos=[self.pullrequest.source_repo]
         )
         issues = _issues_as_dict(commits)
+        # calculate hashes of all commits for unique identifier of commits
+        # inside that pull request
+        commits_hash = md5_safe(':'.join(x.get('raw_id', '') for x in commits))
 
         data.update({
             'pullrequest': {
@@ -59,6 +63,7 @@ class PullRequestEvent(RepoEvent):
                 'shadow_url': PullRequestModel().get_shadow_clone_url(
                     self.pullrequest, request=self.request),
                 'status': self.pullrequest.calculated_review_status(),
+                'commits_uid': commits_hash,
                 'commits': commits,
             }
         })

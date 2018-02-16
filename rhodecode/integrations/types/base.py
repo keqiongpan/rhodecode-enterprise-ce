@@ -135,8 +135,11 @@ WEBHOOK_URL_VARS = [
 
     # pr events vars
     ('pull_request_id', 'Unique ID of the pull request.'),
+    ('pull_request_title', 'Title of the pull request.'),
     ('pull_request_url', 'Pull request url.'),
     ('pull_request_shadow_url', 'Pull request shadow repo clone url.'),
+    ('pull_request_commits_uid', 'Calculated UID of all commits inside the PR. '
+                                 'Changes after PR update'),
 
     # user who triggers the call
     ('username', 'User who triggered the call.'),
@@ -244,8 +247,11 @@ class WebhookDataHandler(object):
             'register %s call(%s) to url %s', self.name, event, url)
         url = string.Template(url).safe_substitute(
             pull_request_id=data['pullrequest']['pull_request_id'],
+            pull_request_title=data['pullrequest']['title'],
             pull_request_url=data['pullrequest']['url'],
-            pull_request_shadow_url=data['pullrequest']['shadow_url'],)
+            pull_request_shadow_url=data['pullrequest']['shadow_url'],
+            pull_request_commits_uid=data['pullrequest']['commits_uid'],
+        )
         return [(url, self.headers, data)]
 
     def __call__(self, event, data):
