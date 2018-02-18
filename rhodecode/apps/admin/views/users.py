@@ -817,6 +817,7 @@ class UsersView(UserAppView):
         key_data = self.request.POST.get('key_data')
         description = self.request.POST.get('description')
 
+        fingerprint = 'unknown'
         try:
             if not key_data:
                 raise ValueError('Please add a valid public key')
@@ -841,8 +842,9 @@ class UsersView(UserAppView):
 
         except IntegrityError:
             log.exception("Exception during ssh key saving")
-            h.flash(_('An error occurred during ssh key saving: {}').format(
-                'Such key already exists, please use a different one'),
+            err = 'Such key with fingerprint `{}` already exists, ' \
+                  'please use a different one'.format(fingerprint)
+            h.flash(_('An error occurred during ssh key saving: {}').format(err),
                     category='error')
         except Exception as e:
             log.exception("Exception during ssh key saving")

@@ -66,6 +66,7 @@ class TestMyAccountSshKeysView(TestController):
                    'I4fG8+hBHzpeFxUGvSGNtXPUbwaAY8j/oHYrTpMgkj6pUEFsiKfC5zPq' \
                    'PFR5HyKTCHW0nFUJnZsbyFT5hMiF/hZkJc9A0ZbdSvJwCRQ/g3bmdL ' \
                    'your_email@example.com'
+    FINGERPRINT = 'MD5:01:4f:ad:29:22:6e:01:37:c9:d2:52:26:52:b0:2d:93'
 
     def test_add_ssh_key_error(self, user_util):
         user = user_util.create_user(password='qweqwe')
@@ -100,9 +101,11 @@ class TestMyAccountSshKeysView(TestController):
             route_path('my_account_ssh_keys_add'),
             {'description': desc, 'key_data': key_data,
              'csrf_token': self.csrf_token})
+
+        err = 'Such key with fingerprint `{}` already exists, ' \
+              'please use a different one'.format(self.FINGERPRINT)
         assert_session_flash(response, 'An error occurred during ssh key '
-                                       'saving: Such key already exists, '
-                                       'please use a different one')
+                                       'saving: {}'.format(err))
 
     def test_add_ssh_key(self, user_util):
         user = user_util.create_user(password='qweqwe')
