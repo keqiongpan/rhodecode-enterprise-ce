@@ -896,6 +896,13 @@ def link_to_user(author, length=0, **kwargs):
         return escape(display_person)
 
 
+def link_to_group(users_group_name, **kwargs):
+    return link_to(
+        escape(users_group_name),
+        route_path('user_group_profile', user_group_name=users_group_name),
+        **kwargs)
+
+
 def person(author, show_attr="username_and_name"):
     user = discover_user(author)
     if user:

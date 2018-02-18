@@ -134,13 +134,17 @@ def get_user_group_slug(request):
     elif getattr(request, 'matchdict', None):
         # pyramid
         _user_group = request.matchdict.get('user_group_id')
-
+        _user_group_name = request.matchdict.get('user_group_name')
         try:
-            _user_group = UserGroup.get(_user_group)
+            if _user_group:
+                _user_group = UserGroup.get(_user_group)
+            elif _user_group_name:
+                _user_group = UserGroup.get_by_group_name(_user_group_name)
+
             if _user_group:
                 _user_group = _user_group.users_group_name
         except Exception:
-            log.exception('Failed to get user group by id')
+            log.exception('Failed to get user group by id and name')
             # catch all failures here
             return None
 
