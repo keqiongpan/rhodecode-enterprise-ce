@@ -24,9 +24,11 @@ Base module for all VCS systems
 
 import collections
 import datetime
+import fnmatch
 import itertools
 import logging
 import os
+import re
 import time
 import warnings
 
@@ -1633,9 +1635,60 @@ class DiffChunk(object):
 
 class BasePathPermissionChecker(object):
 
-    def __init__(self, username, has_full_access = False):
-        self.username = username
-        self.has_full_access = has_full_access
+    @staticmethod
+    def create_from_patterns(includes, excludes):
+        if includes and '*' in includes and not excludes:
+            return AllPathPermissionChecker()
+        elif excludes and '*' in excludes:
+            return NonePathPermissionChecker()
+        else:
+            return PatternPathPermissionChecker(includes, excludes)
+
+    @property
+    def has_full_access(self):
+        raise NotImplemented()
 
     def has_access(self, path):
         raise NotImplemented()
+
+
+class AllPathPermissionChecker(BasePathPermissionChecker):
+
+    @property
+    def has_full_access(self):
+        return True
+
+    def has_access(self, path):
+        return True
+
+
+class NonePathPermissionChecker(BasePathPermissionChecker):
+
+    @property
+    def has_full_access(self):
+        return False
+
+    def has_access(self, path):
+        return False
+
+
+class PatternPathPermissionChecker(BasePathPermissionChecker):
+
+    def __init__(self, includes, excludes):
+        self.includes = includes
+        self.excludes = excludes
+        self.includes_re = [] if not includes else [re.compile(fnmatch.translate(pattern)) for pattern in includes]
+        self.excludes_re = [] if not excludes else [re.compile(fnmatch.translate(pattern)) for pattern in excludes]
+
+    @property
+    def has_full_access(self):
+        return '*' in self.includes and not self.excludes
+
+    def has_access(self, path):
+        for re in self.excludes_re:
+            if re.match(path):
+                return False
+        for re in self.includes_re:
+            if re.match(path):
+                return True
+        return False

@@ -21,7 +21,7 @@
 """
 HG repository module
 """
-
+import ConfigParser
 import logging
 import binascii
 import os
@@ -38,7 +38,7 @@ from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.vcs import connection
 from rhodecode.lib.vcs.backends.base import (
     BaseRepository, CollectionGenerator, Config, MergeResponse,
-    MergeFailureReason, Reference)
+    MergeFailureReason, Reference, BasePathPermissionChecker)
 from rhodecode.lib.vcs.backends.hg.commit import MercurialCommit
 from rhodecode.lib.vcs.backends.hg.diff import MercurialDiff
 from rhodecode.lib.vcs.backends.hg.inmemory import MercurialInMemoryCommit
@@ -891,6 +891,33 @@ class MercurialRepository(BaseRepository):
         self._remote.bookmark(bookmark, revision=revision)
         self._remote.invalidate_vcs_cache()
 
+    def get_path_permissions(self, username):
+        hgacl_file = self.path + '/.hg/hgacl'
+        if os.path.exists(hgacl_file):
+            hgacl = ConfigParser.RawConfigParser()
+            hgacl.read(hgacl_file)
+            def read_patterns(suffix):
+                svalue = None
+                try:
+                    svalue = hgacl.get('narrowhgacl', username + suffix)
+                except ConfigParser.NoOptionError:
+                    try:
+                        svalue = hgacl.get('narrowhgacl', 'default' + suffix)
+                    except ConfigParser.NoOptionError:
+                        pass
+                if not svalue:
+                    return None
+                result = ['/']
+                for pattern in svalue.split():
+                    result.append(pattern)
+                    if '*' not in pattern and '?' not in pattern:
+                        result.append(pattern + '/*')
+                return result
+            includes = read_patterns('.includes')
+            excludes = read_patterns('.excludes')
+            return BasePathPermissionChecker.create_from_patterns(includes, excludes)
+        else:
+            return None
 
 class MercurialIndexBasedCollectionGenerator(CollectionGenerator):
 
