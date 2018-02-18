@@ -359,8 +359,9 @@ class SimpleVCS(object):
         # check if we have SSL required  ! if not it's a bad request !
         require_ssl = str2bool(self.repo_vcs_config.get('web', 'push_ssl'))
         if require_ssl and org_proto == 'http':
-            log.debug('proto is %s and SSL is required BAD REQUEST !',
-                      org_proto)
+            log.debug(
+                'Bad request: detected protocol is `%s` and '
+                'SSL/HTTPS is required.', org_proto)
             return False
         return True
 
@@ -420,8 +421,9 @@ class SimpleVCS(object):
         # Check if the shadow repo actually exists, in case someone refers
         # to it, and it has been deleted because of successful merge.
         if self.is_shadow_repo and not self.is_shadow_repo_dir:
-            log.debug('Shadow repo detected, and shadow repo dir `%s` is missing',
-                      self.is_shadow_repo_dir)
+            log.debug(
+                'Shadow repo detected, and shadow repo dir `%s` is missing',
+                self.is_shadow_repo_dir)
             return HTTPNotFound()(environ, start_response)
 
         # ======================================================================
@@ -436,7 +438,8 @@ class SimpleVCS(object):
                 anonymous_perm = self._check_permission(
                     action, anonymous_user, self.acl_repo_name, ip_addr,
                     plugin_id='anonymous_access',
-                    plugin_cache_active=plugin_cache_active, cache_ttl=cache_ttl,
+                    plugin_cache_active=plugin_cache_active,
+                    cache_ttl=cache_ttl,
                 )
             else:
                 anonymous_perm = False
