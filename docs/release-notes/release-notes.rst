@@ -9,6 +9,7 @@ Release Notes
 .. toctree::
    :maxdepth: 1
 
+   release-notes-4.11.4.rst
    release-notes-4.11.3.rst
    release-notes-4.11.2.rst
    release-notes-4.11.1.rst
