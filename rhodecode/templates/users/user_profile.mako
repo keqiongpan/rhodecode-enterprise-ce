@@ -2,7 +2,7 @@
 
 <div class="panel panel-default user-profile">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Profile')}</h3>
+        <h3 class="panel-title">${_('User Profile')}</h3>
         %if h.HasPermissionAny('hg.admin')():
             ${h.link_to(_('Edit'), h.route_path('user_edit', user_id=c.user.user_id), class_='panel-edit')}
         %endif
