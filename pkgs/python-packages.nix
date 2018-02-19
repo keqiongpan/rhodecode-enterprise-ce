@@ -1820,13 +1820,13 @@
     };
   };
   supervisor = super.buildPythonPackage {
-    name = "supervisor-3.3.3";
+    name = "supervisor-3.3.4";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [meld3];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/31/7e/788fc6566211e77c395ea272058eb71299c65cc5e55b6214d479c6c2ec9a/supervisor-3.3.3.tar.gz";
-      md5 = "0fe86dfec4e5c5d98324d24c4cf944bd";
+      url = "https://pypi.python.org/packages/44/60/698e54b4a4a9b956b2d709b4b7b676119c833d811d53ee2500f1b5e96dc3/supervisor-3.3.4.tar.gz";
+      md5 = "f1814d71d820ddfa8c86d46a72314cec";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
