@@ -462,7 +462,7 @@ class RepoFilesView(RepoAppView):
         """
         Kept only to make OLD links work
         """
-        f_path = self._get_f_path(self.request.matchdict)
+        f_path = self._get_f_path_unchecked(self.request.matchdict)
         diff1 = self.request.GET.get('diff1', '')
         diff2 = self.request.GET.get('diff2', '')
 

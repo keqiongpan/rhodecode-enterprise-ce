@@ -229,13 +229,19 @@ class RepoAppView(BaseAppView):
 
         return c
 
-    def _get_f_path(self, matchdict, default=None):
+    def _get_f_path_unchecked(self, matchdict, default=None):
+        """
+        Should only be used by redirects, everything else should call _get_f_path
+        """
         f_path = matchdict.get('f_path')
         if f_path:
             # fix for multiple initial slashes that causes errors for GIT
-            return self.path_filter.assert_path_permissions(f_path.lstrip('/'))
+            return f_path.lstrip('/')
 
-        return self.path_filter.assert_path_permissions(default)
+        return default
+
+    def _get_f_path(self, matchdict, default=None):
+        return self.path_filter.assert_path_permissions(self._get_f_path_unchecked(matchdict, default))
 
 
 class PathFilter(object):
