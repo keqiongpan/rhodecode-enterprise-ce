@@ -71,12 +71,12 @@ class SubversionTunnelWrapper(object):
             self.server.svn_path, '-t',
             '--config-file', self.svn_conf_path,
             '-r', root]
-        log.debug("Final CMD: %s", command)
+        log.debug("Final CMD: %s", ' '.join(command))
         return command
 
     def start(self):
         command = self.command()
-        self.process = Popen(command, stdin=PIPE)
+        self.process = Popen(' '.join(command), stdin=PIPE, shell=True)
 
     def sync(self):
         while self.process.poll() is None:
@@ -172,7 +172,6 @@ class SubversionTunnelWrapper(object):
         first_response = self.get_first_client_response()
         if not first_response:
             self.fail("Repository name cannot be extracted")
-            return 1
 
         url_parts = urlparse.urlparse(first_response['url'])
         self.server.repo_name = url_parts.path.strip('/')

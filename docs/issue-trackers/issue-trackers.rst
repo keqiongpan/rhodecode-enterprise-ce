@@ -42,7 +42,7 @@ Jira Integration
 ----------------
 
 * Regex = ``(?:^#|\s#)(\w+-\d+)``
-* URL = ``https://myissueserver.com/issue/${id}``
+* URL = ``https://myissueserver.com/browse/${id}``
 * Issue Prefix = ``#``
 
 Confluence (Wiki)
