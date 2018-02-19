@@ -169,17 +169,6 @@ let
     };
   };
 
-  setuptools = buildPythonPackage {
-    name = "setuptools-36.6.0";
-    buildInputs = [];
-    doCheck = false;
-    propagatedBuildInputs = [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/45/29/8814bf414e7cd1031e1a3c8a4169218376e284ea2553cc0822a6ea1c2d78/setuptools-36.6.0.zip";
-      md5 = "74663b15117d9a2cc5295d76011e6fd1";
-    };
-  };
-
   six = buildPythonPackage {
     name = "six-1.11.0";
     buildInputs = [];
@@ -259,6 +248,9 @@ let
 
 
   };
+  # Avoid that setuptools is replaced, this leads to trouble
+  # with buildPythonPackage.
+  setuptools = pkgs.python27Packages.setuptools;
 
 in python.buildEnv.override {
   inherit python;
