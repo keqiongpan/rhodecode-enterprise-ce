@@ -309,8 +309,8 @@ class RepoCompareView(RepoAppView):
             source_node_getter=_node_getter(source_commit),
             target_node_getter=_node_getter(target_commit),
         )
-        c.diffset = diffset.render_patchset(
-            _parsed, source_ref, target_ref)
+        c.diffset = self.path_filter.render_patchset_filtered(
+            diffset, _parsed, source_ref, target_ref)
 
         c.preview_mode = merge
         c.source_commit = source_commit

@@ -272,13 +272,13 @@ class RepoCommitsView(RepoAppView):
                     source_node_getter=_node_getter(commit1),
                     target_node_getter=_node_getter(commit2),
                     comments=inline_comments)
-                diffset = diffset.render_patchset(
-                    _parsed, commit1.raw_id, commit2.raw_id)
+                diffset = self.path_filter.render_patchset_filtered(
+                    diffset, _parsed, commit1.raw_id, commit2.raw_id)
 
                 c.changes[commit.raw_id] = diffset
             else:
                 # downloads/raw we only need RAW diff nothing else
-                diff = diff_processor.as_raw()
+                diff = self.path_filter.get_raw_patch(diff_processor)
                 c.changes[commit.raw_id] = [None, None, None, None, diff, None, None]
 
         # sort comments by how they were generated

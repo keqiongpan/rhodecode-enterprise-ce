@@ -17,6 +17,10 @@ ${_('%(user)s commited on %(date)s UTC') % {
     tag: ${tag} <br/>
 % endfor
 
+% if has_hidden_changes:
+    Has hidden changes<br/>
+% endif
+
 commit: <a href="${h.route_url('repo_commit', repo_name=c.rhodecode_db_repo.repo_name, commit_id=commit.raw_id)}">${h.show_id(commit)}</a>
 <pre>
 ${h.urlify_commit_message(commit.message)}
@@ -29,6 +33,6 @@ ${h.urlify_commit_message(commit.message)}
 % endfor
 
 % if feed_include_diff:
-${diff_processor.as_raw()}
+${c.path_filter.get_raw_patch(diff_processor)}
 % endif
 </pre>

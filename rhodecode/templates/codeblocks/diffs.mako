@@ -132,7 +132,9 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         </h2>
     </div>
 
-    %if not diffset.files:
+    %if diffset.has_hidden_changes:
+        <p class="empty_data">${_('Some changes may be hidden')}</p>
+    %elif not diffset.files:
         <p class="empty_data">${_('No files')}</p>
     %endif
 

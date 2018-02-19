@@ -22,9 +22,9 @@ import time
 import logging
 import operator
 
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden
 
-from rhodecode.lib import helpers as h
+from rhodecode.lib import helpers as h, diffs
 from rhodecode.lib.utils2 import StrictAttributeDict, safe_int, datetime_to_time
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import repo
@@ -208,10 +208,14 @@ class RepoAppView(BaseAppView):
         c.repository_requirements_missing = False
         try:
             self.rhodecode_vcs_repo = self.db_repo.scm_instance()
+            self.path_filter = PathFilter(self.rhodecode_vcs_repo.get_path_permissions(c.auth_user.username))
         except RepositoryRequirementError as e:
             c.repository_requirements_missing = True
             self._handle_missing_requirements(e)
             self.rhodecode_vcs_repo = None
+            self.path_filter = None
+
+        c.path_filter = self.path_filter # used by atom_feed_entry.mako
 
         if (not c.repository_requirements_missing
             and self.rhodecode_vcs_repo is None):
@@ -229,9 +233,57 @@ class RepoAppView(BaseAppView):
         f_path = matchdict.get('f_path')
         if f_path:
             # fix for multiple initial slashes that causes errors for GIT
-            return f_path.lstrip('/')
+            return self.path_filter.assert_path_permissions(f_path.lstrip('/'))
 
-        return default
+        return self.path_filter.assert_path_permissions(default)
+
+
+class PathFilter(object):
+
+    # Expects and instance of BasePathPermissionChecker or None
+    def __init__(self, permission_checker):
+        self.permission_checker = permission_checker
+
+    def assert_path_permissions(self, path):
+        if path and self.permission_checker and not self.permission_checker.has_access(path):
+            raise HTTPForbidden()
+        return path
+
+    def filter_patchset(self, patchset):
+        if not self.permission_checker or not patchset:
+            return patchset, False
+        had_filtered = False
+        filtered_patchset = []
+        for patch in patchset:
+            filename = patch.get('filename', None)
+            if not filename or self.permission_checker.has_access(filename):
+                filtered_patchset.append(patch)
+            else:
+                had_filtered = True
+        if had_filtered:
+            if isinstance(patchset, diffs.LimitedDiffContainer):
+                filtered_patchset = diffs.LimitedDiffContainer(patchset.diff_limit, patchset.cur_diff_size, filtered_patchset)
+            return filtered_patchset, True
+        else:
+            return patchset, False
+
+    def render_patchset_filtered(self, diffset, patchset, source_ref=None, target_ref=None):
+        filtered_patchset, has_hidden_changes = self.filter_patchset(patchset)
+        result = diffset.render_patchset(filtered_patchset, source_ref=source_ref, target_ref=target_ref)
+        result.has_hidden_changes = has_hidden_changes
+        return result
+
+    def get_raw_patch(self, diff_processor):
+        if self.permission_checker is None:
+            return diff_processor.as_raw()
+        elif self.permission_checker.has_full_access:
+            return diff_processor.as_raw()
+        else:
+            return '# Repository has user-specific filters, raw patch generation is disabled.'
+
+    @property
+    def is_enabled(self):
+        return self.permission_checker is not None
 
 
 class RepoGroupAppView(BaseAppView):

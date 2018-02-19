@@ -637,6 +637,17 @@ class BaseRepository(object):
         warnings.warn("Use in_memory_commit instead", DeprecationWarning)
         return self.in_memory_commit
 
+    #
+    def get_path_permissions(self, username):
+        """
+
+        Returns a path permission checker or None if not supported
+
+        :param username: session user name
+        :return: an instance of BasePathPermissionChecker or None
+        """
+        return None
+
 
 class BaseCommit(object):
     """
@@ -1618,3 +1629,13 @@ class DiffChunk(object):
         self.header = match.groupdict()
         self.diff = chunk[match.end():]
         self.raw = chunk
+
+
+class BasePathPermissionChecker(object):
+
+    def __init__(self, username, has_full_access = False):
+        self.username = username
+        self.has_full_access = has_full_access
+
+    def has_access(self, path):
+        raise NotImplemented()

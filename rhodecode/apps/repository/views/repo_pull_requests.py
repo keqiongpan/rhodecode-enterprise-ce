@@ -231,8 +231,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             target_node_getter=_node_getter(source_commit),
             comments=display_inline_comments
         )
-        diffset = diffset.render_patchset(
-            _parsed, target_commit.raw_id, source_commit.raw_id)
+        diffset = self.path_filter.render_patchset_filtered(
+            diffset, _parsed, target_commit.raw_id, source_commit.raw_id)
 
         return diffset
 
