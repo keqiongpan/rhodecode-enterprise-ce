@@ -35,7 +35,7 @@ from rhodecode.lib.datelib import (
     date_to_timestamp_plus_offset, utcdate_fromtimestamp, makedate,
     date_astimestamp)
 from rhodecode.lib.utils import safe_unicode, safe_str
-from rhodecode.lib.vcs import connection
+from rhodecode.lib.vcs import connection, exceptions
 from rhodecode.lib.vcs.backends.base import (
     BaseRepository, CollectionGenerator, Config, MergeResponse,
     MergeFailureReason, Reference, BasePathPermissionChecker)
@@ -894,28 +894,31 @@ class MercurialRepository(BaseRepository):
     def get_path_permissions(self, username):
         hgacl_file = self.path + '/.hg/hgacl'
         if os.path.exists(hgacl_file):
-            hgacl = ConfigParser.RawConfigParser()
-            hgacl.read(hgacl_file)
-            def read_patterns(suffix):
-                svalue = None
-                try:
-                    svalue = hgacl.get('narrowhgacl', username + suffix)
-                except ConfigParser.NoOptionError:
+            try:
+                hgacl = ConfigParser.RawConfigParser()
+                hgacl.read(hgacl_file)
+                def read_patterns(suffix):
+                    svalue = None
                     try:
-                        svalue = hgacl.get('narrowhgacl', 'default' + suffix)
+                        svalue = hgacl.get('narrowhgacl', username + suffix)
                     except ConfigParser.NoOptionError:
-                        pass
-                if not svalue:
-                    return None
-                result = ['/']
-                for pattern in svalue.split():
-                    result.append(pattern)
-                    if '*' not in pattern and '?' not in pattern:
-                        result.append(pattern + '/*')
-                return result
-            includes = read_patterns('.includes')
-            excludes = read_patterns('.excludes')
-            return BasePathPermissionChecker.create_from_patterns(includes, excludes)
+                        try:
+                            svalue = hgacl.get('narrowhgacl', 'default' + suffix)
+                        except ConfigParser.NoOptionError:
+                            pass
+                    if not svalue:
+                        return None
+                    result = ['/']
+                    for pattern in svalue.split():
+                        result.append(pattern)
+                        if '*' not in pattern and '?' not in pattern:
+                            result.append(pattern + '/*')
+                    return result
+                includes = read_patterns('.includes')
+                excludes = read_patterns('.excludes')
+                return BasePathPermissionChecker.create_from_patterns(includes, excludes)
+            except BaseException as e:
+                raise exceptions.RepositoryRequirementError('Cannot read ACL settings for {}: {}'.format(self.name, e))
         else:
             return None
 
