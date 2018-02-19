@@ -82,7 +82,7 @@ self: super: {
       pkgs.openssl
     ];
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
-      pkgs.mysql.lib
+      pkgs.libmysql
       pkgs.zlib
     ];
   });
