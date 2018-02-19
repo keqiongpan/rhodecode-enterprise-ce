@@ -157,5 +157,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             pass
 
         log.debug("pamuser: %s", user_attrs)
-        log.info('user %s authenticated correctly' % user_attrs['username'])
+        log.info('user `%s` authenticated correctly' % user_attrs['username'])
         return user_attrs

@@ -163,5 +163,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             'extern_type': extern_type,
         }
 
-        log.info('user %s authenticated correctly' % user_attrs['username'])
+        log.info('user `%s` authenticated correctly' % user_attrs['username'])
         return user_attrs
