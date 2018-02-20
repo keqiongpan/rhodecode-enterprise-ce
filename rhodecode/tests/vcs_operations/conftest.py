@@ -106,9 +106,10 @@ def rc_web_server_config_factory(testini_factory, rc_web_server_config_modificat
     Configuration file used for the fixture `rc_web_server`.
     """
 
-    def factory(vcsserver_port):
+    def factory(rcweb_port, vcsserver_port):
         custom_params = [
             {'handler_console': {'level': 'DEBUG'}},
+            {'server:main': {'port': rcweb_port}},
             {'app:main': {'vcs.server': 'localhost:%s' % vcsserver_port}}
         ]
         custom_params.extend(rc_web_server_config_modification)
@@ -123,6 +124,8 @@ def rc_web_server(
     """
     Run the web server as a subprocess. with it's own instance of vcsserver
     """
+    rcweb_port = available_port_factory()
+    print('Using rcweb ops test port {}'.format(rcweb_port))
 
     vcsserver_port = available_port_factory()
     print('Using vcsserver ops test port {}'.format(vcsserver_port))
@@ -138,6 +141,7 @@ def rc_web_server(
 
     rc_log = os.path.join(tempfile.gettempdir(), 'rc_op_web.log')
     rc_web_server_config = rc_web_server_config_factory(
+        rcweb_port=rcweb_port,
         vcsserver_port=vcsserver_port)
     server = RcWebServer(rc_web_server_config, log_file=rc_log)
     server.start()
