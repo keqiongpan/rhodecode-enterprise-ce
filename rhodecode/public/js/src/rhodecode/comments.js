@@ -598,6 +598,8 @@ var CommentsController = function() {
   this.toggleLineComments = function(node) {
     self.toggleComments(node, true);
     var $node = $(node);
+    // mark outdated comments as visible before the toggle;
+    $(node.closest('tr')).find('.comment-outdated').show();
     $node.closest('tr').toggleClass('hide-line-comments');
   };
 
