@@ -234,7 +234,8 @@ class TestSummaryView(object):
             Repository, 'scm_instance', side_effect=RepositoryRequirementError)
 
         with scm_patcher:
-            response = self.app.get(route_path('repo_summary', repo_name=repo_name))
+            response = self.app.get(
+                route_path('repo_summary', repo_name=repo_name))
         assert_response = AssertResponse(response)
         assert_response.element_contains(
             '.main .alert-warning strong', 'Missing requirements')

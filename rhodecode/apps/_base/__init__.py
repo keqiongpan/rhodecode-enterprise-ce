@@ -206,7 +206,7 @@ class RepoAppView(BaseAppView):
         c.repository_pull_requests = self.db_repo_pull_requests
         self.path_filter = PathFilter(None)
 
-        c.repository_requirements_missing = False
+        c.repository_requirements_missing = {}
         try:
             self.rhodecode_vcs_repo = self.db_repo.scm_instance()
             if self.rhodecode_vcs_repo:
@@ -214,21 +214,30 @@ class RepoAppView(BaseAppView):
                     c.auth_user.username)
                 self.path_filter = PathFilter(path_perms)
         except RepositoryRequirementError as e:
-            c.repository_requirements_missing = True
+            c.repository_requirements_missing = {'error': str(e)}
             self._handle_missing_requirements(e)
             self.rhodecode_vcs_repo = None
 
         c.path_filter = self.path_filter  # used by atom_feed_entry.mako
 
-        if (not c.repository_requirements_missing
-            and self.rhodecode_vcs_repo is None):
+        if self.rhodecode_vcs_repo is None:
             # unable to fetch this repo as vcs instance, report back to user
             h.flash(_(
                 "The repository `%(repo_name)s` cannot be loaded in filesystem. "
                 "Please check if it exist, or is not damaged.") %
                     {'repo_name': c.repo_name},
                     category='error', ignore_duplicate=True)
-            raise HTTPFound(h.route_path('home'))
+            if c.repository_requirements_missing:
+                route = self.request.matched_route.name
+                if route.startswith(('edit_repo', 'repo_summary')):
+                    # allow summary and edit repo on missing requirements
+                    return c
+
+                raise HTTPFound(
+                    h.route_path('repo_summary', repo_name=self.db_repo_name))
+
+            else:  # redirect if we don't show missing requirements
+                raise HTTPFound(h.route_path('home'))
 
         return c
 

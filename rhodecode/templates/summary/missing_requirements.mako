@@ -22,6 +22,8 @@
 - Mercurial largefiles
 - Git LFS
 </pre>
+  <br/>
+  Requirement error: ${c.repository_requirements_missing.get('error')}
   </div>
 
 </%def>
