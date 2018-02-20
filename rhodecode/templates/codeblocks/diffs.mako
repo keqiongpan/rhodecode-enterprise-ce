@@ -520,7 +520,12 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             >
             <div>
             %if line.original.comments:
-            <i class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                <% has_outdated = any([x.outdated for x in line.original.comments]) %>
+                % if has_outdated:
+                    <i title="${_('comments including outdated')}:${len(line.original.comments)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % else:
+                    <i title="${_('comments')}: ${len(line.original.comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % endif
             %endif
             </div>
         </td>
@@ -550,7 +555,12 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             >
             <div>
             %if line.modified.comments:
-            <i class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                <% has_outdated = any([x.outdated for x in line.modified.comments]) %>
+                % if has_outdated:
+                    <i title="${_('comments including outdated')}:${len(line.modified.comments)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % else:
+                    <i title="${_('comments')}: ${len(line.modified.comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % endif
             %endif
             </div>
         </td>
@@ -592,9 +602,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     <tr class="cb-line">
         <td class="cb-data ${action_class(action)}">
             <div>
-            %if comments:
-            <i class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
-            %endif
+            % if comments:
+                <% has_outdated = any([x.outdated for x in comments]) %>
+                % if has_outdated:
+                    <i title="${_('comments including outdated')}:${len(comments)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % else:
+                    <i title="${_('comments')}: ${len(comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % endif
+            % endif
             </div>
         </td>
         <td class="cb-lineno ${action_class(action)}"
