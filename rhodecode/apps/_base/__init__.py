@@ -209,7 +209,9 @@ class RepoAppView(BaseAppView):
         try:
             self.rhodecode_vcs_repo = self.db_repo.scm_instance()
             if self.rhodecode_vcs_repo:
-                self.path_filter = PathFilter(self.rhodecode_vcs_repo.get_path_permissions(c.auth_user.username))
+                path_perms = self.rhodecode_vcs_repo.get_path_permissions(
+                    c.auth_user.username)
+                self.path_filter = PathFilter(path_perms)
             else:
                 self.path_filter = PathFilter(None)
         except RepositoryRequirementError as e:
@@ -218,7 +220,7 @@ class RepoAppView(BaseAppView):
             self.rhodecode_vcs_repo = None
             self.path_filter = None
 
-        c.path_filter = self.path_filter # used by atom_feed_entry.mako
+        c.path_filter = self.path_filter  # used by atom_feed_entry.mako
 
         if (not c.repository_requirements_missing
             and self.rhodecode_vcs_repo is None):
@@ -244,7 +246,8 @@ class RepoAppView(BaseAppView):
         return default
 
     def _get_f_path(self, matchdict, default=None):
-        return self.path_filter.assert_path_permissions(self._get_f_path_unchecked(matchdict, default))
+        f_path_match = self._get_f_path_unchecked(matchdict, default)
+        return self.path_filter.assert_path_permissions(f_path_match)
 
 
 class PathFilter(object):

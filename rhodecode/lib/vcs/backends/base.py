@@ -639,10 +639,8 @@ class BaseRepository(object):
         warnings.warn("Use in_memory_commit instead", DeprecationWarning)
         return self.in_memory_commit
 
-    #
     def get_path_permissions(self, username):
         """
-
         Returns a path permission checker or None if not supported
 
         :param username: session user name
@@ -1677,18 +1675,20 @@ class PatternPathPermissionChecker(BasePathPermissionChecker):
     def __init__(self, includes, excludes):
         self.includes = includes
         self.excludes = excludes
-        self.includes_re = [] if not includes else [re.compile(fnmatch.translate(pattern)) for pattern in includes]
-        self.excludes_re = [] if not excludes else [re.compile(fnmatch.translate(pattern)) for pattern in excludes]
+        self.includes_re = [] if not includes else [
+            re.compile(fnmatch.translate(pattern)) for pattern in includes]
+        self.excludes_re = [] if not excludes else [
+            re.compile(fnmatch.translate(pattern)) for pattern in excludes]
 
     @property
     def has_full_access(self):
         return '*' in self.includes and not self.excludes
 
     def has_access(self, path):
-        for re in self.excludes_re:
-            if re.match(path):
+        for regex in self.excludes_re:
+            if regex.match(path):
                 return False
-        for re in self.includes_re:
-            if re.match(path):
+        for regex in self.includes_re:
+            if regex.match(path):
                 return True
         return False

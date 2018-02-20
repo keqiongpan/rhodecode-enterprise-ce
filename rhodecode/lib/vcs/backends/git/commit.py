@@ -28,7 +28,6 @@ from itertools import chain
 from StringIO import StringIO
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
-from pyramid.compat import configparser
 
 from rhodecode.lib.datelib import utcdate_fromtimestamp
 from rhodecode.lib.utils import safe_unicode, safe_str
@@ -40,6 +39,7 @@ from rhodecode.lib.vcs.nodes import (
     FileNode, DirNode, NodeKind, RootNode, SubModuleNode,
     ChangedFileNodesGenerator, AddedFileNodesGenerator,
     RemovedFileNodesGenerator, LargeFileNode)
+from rhodecode.lib.vcs.compat import configparser
 
 
 class GitCommit(base.BaseCommit):

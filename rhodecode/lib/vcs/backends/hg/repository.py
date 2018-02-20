@@ -21,10 +21,9 @@
 """
 HG repository module
 """
-import ConfigParser
+import os
 import logging
 import binascii
-import os
 import shutil
 import urllib
 
@@ -32,8 +31,7 @@ from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.datelib import (
-    date_to_timestamp_plus_offset, utcdate_fromtimestamp, makedate,
-    date_astimestamp)
+    date_to_timestamp_plus_offset, utcdate_fromtimestamp, makedate)
 from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.vcs import connection, exceptions
 from rhodecode.lib.vcs.backends.base import (
@@ -45,6 +43,7 @@ from rhodecode.lib.vcs.backends.hg.inmemory import MercurialInMemoryCommit
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, RepositoryError, TagAlreadyExistError,
     TagDoesNotExistError, CommitDoesNotExistError, SubrepoMergeError)
+from rhodecode.lib.vcs.compat import configparser
 
 hexlify = binascii.hexlify
 nullid = "\0" * 20
@@ -778,6 +777,7 @@ class MercurialRepository(BaseRepository):
         else:
             merge_possible = True
 
+        needs_push = False
         if merge_possible:
             try:
                 merge_commit_id, needs_push = shadow_repo._local_merge(
@@ -892,35 +892,42 @@ class MercurialRepository(BaseRepository):
         self._remote.invalidate_vcs_cache()
 
     def get_path_permissions(self, username):
-        hgacl_file = self.path + '/.hg/hgacl'
+        hgacl_file = os.path.join(self.path, '.hg/hgacl')
+
+        def read_patterns(suffix):
+            svalue = None
+            try:
+                svalue = hgacl.get('narrowhgacl', username + suffix)
+            except configparser.NoOptionError:
+                try:
+                    svalue = hgacl.get('narrowhgacl', 'default' + suffix)
+                except configparser.NoOptionError:
+                    pass
+            if not svalue:
+                return None
+            result = ['/']
+            for pattern in svalue.split():
+                result.append(pattern)
+                if '*' not in pattern and '?' not in pattern:
+                    result.append(pattern + '/*')
+            return result
+
         if os.path.exists(hgacl_file):
             try:
-                hgacl = ConfigParser.RawConfigParser()
+                hgacl = configparser.RawConfigParser()
                 hgacl.read(hgacl_file)
-                def read_patterns(suffix):
-                    svalue = None
-                    try:
-                        svalue = hgacl.get('narrowhgacl', username + suffix)
-                    except ConfigParser.NoOptionError:
-                        try:
-                            svalue = hgacl.get('narrowhgacl', 'default' + suffix)
-                        except ConfigParser.NoOptionError:
-                            pass
-                    if not svalue:
-                        return None
-                    result = ['/']
-                    for pattern in svalue.split():
-                        result.append(pattern)
-                        if '*' not in pattern and '?' not in pattern:
-                            result.append(pattern + '/*')
-                    return result
+
                 includes = read_patterns('.includes')
                 excludes = read_patterns('.excludes')
-                return BasePathPermissionChecker.create_from_patterns(includes, excludes)
+                return BasePathPermissionChecker.create_from_patterns(
+                    includes, excludes)
             except BaseException as e:
-                raise exceptions.RepositoryRequirementError('Cannot read ACL settings for {}: {}'.format(self.name, e))
+                msg = 'Cannot read ACL settings from {} on {}: {}'.format(
+                    hgacl_file, self.name, e)
+                raise exceptions.RepositoryRequirementError(msg)
         else:
             return None
+
 
 class MercurialIndexBasedCollectionGenerator(CollectionGenerator):
 
