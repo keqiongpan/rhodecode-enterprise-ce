@@ -314,6 +314,9 @@ class AdminSettingsView(BaseAppView):
         try:
             form_result = application_form.to_python(dict(self.request.POST))
         except formencode.Invalid as errors:
+            h.flash(
+                _("Some form inputs contain invalid data."),
+                category='error')
             data = render('rhodecode:templates/admin/settings/settings.mako',
                           self._get_template_context(c), self.request)
             html = formencode.htmlfill.render(
@@ -386,6 +389,9 @@ class AdminSettingsView(BaseAppView):
         try:
             form_result = application_form.to_python(dict(self.request.POST))
         except formencode.Invalid as errors:
+            h.flash(
+                _("Some form inputs contain invalid data."),
+                category='error')
             data = render('rhodecode:templates/admin/settings/settings.mako',
                           self._get_template_context(c), self.request)
             html = formencode.htmlfill.render(
@@ -705,7 +711,7 @@ class AdminSettingsView(BaseAppView):
             form_result = application_form.to_python(dict(self.request.POST))
         except formencode.Invalid as errors:
             h.flash(
-                _('Some form inputs contain invalid data.'),
+                _("Some form inputs contain invalid data."),
                 category='error')
             data = render('rhodecode:templates/admin/settings/settings.mako',
                           self._get_template_context(c), self.request)
