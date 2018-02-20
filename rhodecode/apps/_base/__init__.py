@@ -204,6 +204,7 @@ class RepoAppView(BaseAppView):
         c.rhodecode_db_repo = self.db_repo
         c.repo_name = self.db_repo_name
         c.repository_pull_requests = self.db_repo_pull_requests
+        self.path_filter = PathFilter(None)
 
         c.repository_requirements_missing = False
         try:
@@ -212,13 +213,10 @@ class RepoAppView(BaseAppView):
                 path_perms = self.rhodecode_vcs_repo.get_path_permissions(
                     c.auth_user.username)
                 self.path_filter = PathFilter(path_perms)
-            else:
-                self.path_filter = PathFilter(None)
         except RepositoryRequirementError as e:
             c.repository_requirements_missing = True
             self._handle_missing_requirements(e)
             self.rhodecode_vcs_repo = None
-            self.path_filter = None
 
         c.path_filter = self.path_filter  # used by atom_feed_entry.mako
 
