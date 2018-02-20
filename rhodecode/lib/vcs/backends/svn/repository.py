@@ -77,8 +77,6 @@ class SubversionRepository(base.BaseRepository):
 
         self._init_repo(create, src_url)
 
-        self.bookmarks = {}
-
     def _init_repo(self, create, src_url):
         if create and os.path.exists(self.path):
             raise RepositoryError(
@@ -104,6 +102,10 @@ class SubversionRepository(base.BaseRepository):
 
     @LazyProperty
     def branches_closed(self):
+        return {}
+
+    @LazyProperty
+    def bookmarks(self):
         return {}
 
     @LazyProperty

@@ -249,6 +249,20 @@ class BaseRepository(object):
         raise NotImplementedError
 
     @LazyProperty
+    def branches_closed(self):
+        """
+        A `dict` which maps tags names to commit ids.
+        """
+        raise NotImplementedError
+
+    @LazyProperty
+    def bookmarks(self):
+        """
+        A `dict` which maps tags names to commit ids.
+        """
+        raise NotImplementedError
+
+    @LazyProperty
     def tags(self):
         """
         A `dict` which maps tags names to commit ids.

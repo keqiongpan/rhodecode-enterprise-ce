@@ -71,8 +71,6 @@ class GitRepository(BaseRepository):
         # caches
         self._commit_ids = {}
 
-        self.bookmarks = {}
-
     @LazyProperty
     def bare(self):
         return self._remote.bare()
@@ -320,6 +318,10 @@ class GitRepository(BaseRepository):
 
     @LazyProperty
     def branches_closed(self):
+        return {}
+
+    @LazyProperty
+    def bookmarks(self):
         return {}
 
     @LazyProperty
