@@ -375,6 +375,7 @@ def ApplicationSettingsForm(localizer):
 
 
 def ApplicationVisualisationForm(localizer):
+    from rhodecode.model.db import Repository
     _ = localizer
 
     class _ApplicationVisualisationForm(formencode.Schema):
@@ -392,8 +393,8 @@ def ApplicationVisualisationForm(localizer):
         rhodecode_use_gravatar = v.StringBoolean(if_missing=False)
         rhodecode_markup_renderer = v.OneOf(['markdown', 'rst'])
         rhodecode_gravatar_url = v.UnicodeString(min=3)
-        rhodecode_clone_uri_tmpl = v.UnicodeString(min=3)
-        rhodecode_clone_uri_ssh_tmpl = v.UnicodeString(min=3)
+        rhodecode_clone_uri_tmpl = v.UnicodeString(not_empty=False, if_empty=Repository.DEFAULT_CLONE_URI)
+        rhodecode_clone_uri_ssh_tmpl = v.UnicodeString(not_empty=False, if_empty=Repository.DEFAULT_CLONE_URI_SSH)
         rhodecode_support_url = v.UnicodeString()
         rhodecode_show_revision_number = v.StringBoolean(if_missing=False)
         rhodecode_show_sha_length = v.Int(min=4, not_empty=True)
