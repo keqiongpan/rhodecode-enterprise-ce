@@ -653,7 +653,7 @@ def authenticate(username, password, environ=None, auth_type=None,
 
         # get instance of cache manager configured for a namespace
         cache_manager = get_auth_cache_manager(
-            custom_ttl=cache_ttl, suffix=user.user_id)
+            custom_ttl=cache_ttl, suffix=user.user_id if user else '')
 
         log.debug('AUTH_CACHE_TTL for plugin `%s` active: %s (TTL: %s)',
                   plugin.get_id(), plugin_cache_active, cache_ttl)
