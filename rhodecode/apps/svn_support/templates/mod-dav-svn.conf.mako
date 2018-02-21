@@ -64,6 +64,9 @@ RequestHeader edit Destination ^https: http: early
     SVNParentPath "${parent_path_root|n}"
     SVNListParentPath ${"On" if svn_list_parent_path else "Off"|n}
 
+    # use specific SVN conf/authz file for each repository
+    #AuthzSVNReposRelativeAccessFile authz
+
     Allow from all
     Order allow,deny
 </Location>
@@ -81,6 +84,9 @@ RequestHeader edit Destination ^https: http: early
     DAV svn
     SVNParentPath "${parent_path|n}"
     SVNListParentPath ${"On" if svn_list_parent_path else "Off"|n}
+
+    # use specific SVN conf/authz file for each repository
+    #AuthzSVNReposRelativeAccessFile authz
 
     Allow from all
     Order allow,deny

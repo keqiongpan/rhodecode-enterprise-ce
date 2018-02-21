@@ -19,6 +19,7 @@ The following are the most common system administration tasks.
     config-files-overview
     vcs-server
     svn-http
+    svn-path-permissions
     gunicorn-ssl-support
     apache-config
     nginx-config
