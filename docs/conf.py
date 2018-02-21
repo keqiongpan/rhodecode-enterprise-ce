@@ -34,7 +34,7 @@ import common
 extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
-    'sphinx.ext.pngmath'
+    'sphinx.ext.imgmath'
 ]
 
 intersphinx_mapping = {

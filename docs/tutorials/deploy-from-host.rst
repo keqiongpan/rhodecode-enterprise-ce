@@ -88,7 +88,7 @@ Install |RCC|
 
 The |RCC| installer is now on your server, and you can read the full
 instructions here
-:ref:`Install RhodeCode Control <control:rcc-install-ref>`,
+:ref:`Install RhodeCode Control <control:rcc-linux-ref>` ,
 but below is the example shortcut.
 
 .. code-block:: bash
