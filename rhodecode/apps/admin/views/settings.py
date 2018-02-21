@@ -675,6 +675,17 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
+        route_name='admin_settings_automation', request_method='GET',
+        renderer='rhodecode:templates/admin/settings/settings.mako')
+    def settings_automation(self):
+        c = self.load_default_context()
+        c.active = 'automation'
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
         route_name='admin_settings_labs', request_method='GET',
         renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_labs(self):

@@ -169,6 +169,11 @@ def admin_routes(config):
         name='admin_settings_labs_update',
         pattern='/settings/labs/update')
 
+    # Automation EE feature
+    config.add_route(
+        'admin_settings_automation',
+        pattern=ADMIN_PREFIX + '/settings/automation')
+
     # global permissions
 
     config.add_route(
