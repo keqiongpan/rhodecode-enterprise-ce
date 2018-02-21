@@ -162,7 +162,7 @@ Setup the Development Database
 To create a development database, use the following example. This is a one
 time operation executed from the nix-shell of rhodecode-enterprise-ce sources ::
 
-    paster setup-rhodecode dev.ini \
+    rc-setup-app dev.ini \
         --user=admin --password=secret \
         --email=admin@example.com \
         --repos=~/my_dev_repos

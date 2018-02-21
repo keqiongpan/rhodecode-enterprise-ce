@@ -136,7 +136,7 @@ let
       mkdir repos
 
       echo "Preparing the database"
-      paster setup-rhodecode \
+      rc-setup-app \
         --user=admin \
         --email=admin@example.com \
         --password=secret \

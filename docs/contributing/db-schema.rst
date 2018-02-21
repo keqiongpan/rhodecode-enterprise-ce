@@ -47,6 +47,6 @@ Migration Command
 
 After you've changed the database ORM and migration files, you can run::
 
-   paster upgrade-db <ini-file> 
+   rc-upgrade-db <ini-file>
 
 The database will be upgraded up to the version defined in the ``__init__`` file.
