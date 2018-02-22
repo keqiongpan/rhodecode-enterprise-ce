@@ -282,10 +282,10 @@
     ${base.gravatar_with_user(username, 16)}
 </%def>
 
-<%def name="user_group_name(user_group_id, user_group_name)">
+<%def name="user_group_name(user_group_name)">
   <div>
-  <a href="${h.route_path('edit_user_group', user_group_id=user_group_id)}">
-    <i class="icon-group" title="${_('User group')}"></i> ${user_group_name}</a>
+      <i class="icon-group" title="${_('User group')}"></i>
+      ${h.link_to_group(user_group_name)}
   </div>
 </%def>
 
