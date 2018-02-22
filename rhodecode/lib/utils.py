@@ -356,11 +356,10 @@ def config_data_from_db(clear_session=True, repo=None):
 
     ui_settings = settings_model.get_ui_settings()
 
+    ui_data = []
     for setting in ui_settings:
         if setting.active:
-            log.debug(
-                'settings ui from db: [%s] %s=%s',
-                setting.section, setting.key, setting.value)
+            ui_data.append((setting.section, setting.key, setting.value))
             config.append((
                 safe_str(setting.section), safe_str(setting.key),
                 safe_str(setting.value)))
@@ -369,6 +368,9 @@ def config_data_from_db(clear_session=True, repo=None):
             # handles that
             config.append((
                 safe_str(setting.section), safe_str(setting.key), False))
+    log.debug(
+        'settings ui from db: %s',
+        ','.join(map(lambda s: '[{}] {}={}'.format(*s), ui_data)))
     if clear_session:
         meta.Session.remove()
 
