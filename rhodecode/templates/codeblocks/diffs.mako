@@ -518,7 +518,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 
     <tr class="cb-line">
         <td class="cb-data ${action_class(line.original.action)}"
-            data-line-number="${line.original.lineno}"
+            data-line-no="${line.original.lineno}"
             >
             <div>
             %if line.original.comments:
@@ -532,7 +532,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             </div>
         </td>
         <td class="cb-lineno ${action_class(line.original.action)}"
-            data-line-number="${line.original.lineno}"
+            data-line-no="${line.original.lineno}"
             %if old_line_anchor:
             id="${old_line_anchor}"
             %endif
@@ -542,7 +542,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         </td>
         <td class="cb-content ${action_class(line.original.action)}"
-            data-line-number="o${line.original.lineno}"
+            data-line-no="o${line.original.lineno}"
             >
             %if use_comments and line.original.lineno:
             ${render_add_comment_button()}
@@ -553,7 +553,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         </td>
         <td class="cb-data ${action_class(line.modified.action)}"
-            data-line-number="${line.modified.lineno}"
+            data-line-no="${line.modified.lineno}"
             >
             <div>
             %if line.modified.comments:
@@ -567,7 +567,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             </div>
         </td>
         <td class="cb-lineno ${action_class(line.modified.action)}"
-            data-line-number="${line.modified.lineno}"
+            data-line-no="${line.modified.lineno}"
             %if new_line_anchor:
             id="${new_line_anchor}"
             %endif
@@ -577,7 +577,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         </td>
         <td class="cb-content ${action_class(line.modified.action)}"
-            data-line-number="n${line.modified.lineno}"
+            data-line-no="n${line.modified.lineno}"
             >
             %if use_comments and line.modified.lineno:
             ${render_add_comment_button()}
@@ -615,7 +615,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             </div>
         </td>
         <td class="cb-lineno ${action_class(action)}"
-            data-line-number="${old_line_no}"
+            data-line-no="${old_line_no}"
             %if old_line_anchor:
             id="${old_line_anchor}"
             %endif
@@ -625,7 +625,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         </td>
         <td class="cb-lineno ${action_class(action)}"
-            data-line-number="${new_line_no}"
+            data-line-no="${new_line_no}"
             %if new_line_anchor:
             id="${new_line_anchor}"
             %endif
@@ -635,7 +635,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         </td>
         <td class="cb-content ${action_class(action)}"
-            data-line-number="${new_line_no and 'n' or 'o'}${new_line_no or old_line_no}"
+            data-line-no="${new_line_no and 'n' or 'o'}${new_line_no or old_line_no}"
             >
             %if use_comments:
             ${render_add_comment_button()}

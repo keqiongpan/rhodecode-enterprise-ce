@@ -475,7 +475,7 @@ var CommentsController = function() {
 
   this.getLineNumber = function(node) {
       var $node = $(node);
-      var lineNo = $node.closest('td').attr('data-line-number');
+      var lineNo = $node.closest('td').attr('data-line-no');
       if (lineNo === undefined && $node.data('commentInline')){
           lineNo = $node.data('commentLineNo')
       }

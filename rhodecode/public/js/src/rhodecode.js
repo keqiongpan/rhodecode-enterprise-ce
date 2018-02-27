@@ -293,44 +293,27 @@ $(document).ready(function() {
             });
         }
     });
-    $('.compare_view_files').on(
-        'mouseenter mouseleave', 'tr.line .lineno a',function(event) {
-            if (event.type === "mouseenter") {
-                $(this).parents('tr.line').addClass('hover');
-            } else {
-                $(this).parents('tr.line').removeClass('hover');
-            }
-        });
 
-    $('.compare_view_files').on(
-        'mouseenter mouseleave', 'tr.line .add-comment-line a',function(event){
-            if (event.type === "mouseenter") {
-                $(this).parents('tr.line').addClass('commenting');
-            } else {
-                $(this).parents('tr.line').removeClass('commenting');
-            }
-        });
-
-    $('body').on( /* TODO: replace the $('.compare_view_files').on('click') below
-                    when new diffs are integrated */
-        'click', '.cb-lineno a', function(event) {
+    $('body').on('click', '.cb-lineno a', function(event) {
 
             function sortNumber(a,b) {
                 return a - b;
             }
 
-            if ($(this).attr('data-line-no') !== "") {
+            var lineNo = $(this).data('lineNo');
+            if (lineNo) {
 
                 // on shift, we do a range selection, if we got previous line
-                var prevLine = $('.cb-line-selected a').attr('data-line-no');
+                var prevLine = $('.cb-line-selected a').data('lineNo');
                 if (event.shiftKey && prevLine !== undefined) {
                     var prevLine = parseInt(prevLine);
-                    var nextLine = parseInt($(this).attr('data-line-no'));
+                    var nextLine = parseInt(lineNo);
                     var pos = [prevLine, nextLine].sort(sortNumber);
                     var anchor = '#L{0}-{1}'.format(pos[0], pos[1]);
 
                 } else {
-                    var nextLine = parseInt($(this).attr('data-line-no'));
+
+                    var nextLine = parseInt(lineNo);
                     var pos = [nextLine, nextLine];
                     var anchor = '#L{0}'.format(pos[0]);
 
@@ -352,54 +335,35 @@ $(document).ready(function() {
                     }
                 });
 
-                // Replace URL without jumping to it if browser supports.
-                // Default otherwise
-                if (history.pushState) {
-                    var new_location = location.href.rstrip('#');
-                    if (location.hash) {
-                        // location without hash
-                        new_location = new_location.replace(location.hash, "");
-                    }
 
-                    // Make new anchor url
-                    new_location = new_location + anchor;
-                    history.pushState(true, document.title, new_location);
-
-                    return false;
+            } else {
+                if ($(this).attr('name') !== undefined) {
+                    // clear selection
+                    $('td.cb-line-selected').removeClass('cb-line-selected');
+                    var aEl = $(this).closest('td');
+                    aEl.addClass('cb-line-selected');
+                    aEl.next('td').addClass('cb-line-selected');
                 }
             }
-        });
 
-    $('.compare_view_files').on( /* TODO: replace this with .cb function above
-                                    when new diffs are integrated */
-        'click', 'tr.line .lineno a',function(event) {
-            if ($(this).text() != ""){
-                $('tr.line').removeClass('selected');
-                $(this).parents("tr.line").addClass('selected');
-
-                // Replace URL without jumping to it if browser supports.
-                // Default otherwise
-                if (history.pushState) {
-                    var new_location = location.href;
-                    if (location.hash){
-                        new_location = new_location.replace(location.hash, "");
-                    }
-
-                    // Make new anchor url
-                    var new_location = new_location+$(this).attr('href');
-                    history.pushState(true, document.title, new_location);
-
-                    return false;
+            // Replace URL without jumping to it if browser supports.
+            // Default otherwise
+            if (history.pushState && anchor !== undefined) {
+                var new_location = location.href.rstrip('#');
+                if (location.hash) {
+                    // location without hash
+                    new_location = new_location.replace(location.hash, "");
                 }
+
+                // Make new anchor url
+                new_location = new_location + anchor;
+                history.pushState(true, document.title, new_location);
+
+                return false;
             }
+
         });
 
-    $('.compare_view_files').on(
-        'click', 'tr.line .add-comment-line a',function(event) {
-            var tr = $(event.currentTarget).parents('tr.line')[0];
-            injectInlineForm(tr);
-            return false;
-        });
 
     $('.collapse_file').on('click', function(e) {
         e.stopPropagation();
