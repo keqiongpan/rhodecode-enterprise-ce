@@ -127,11 +127,15 @@ repo_push_template_html = Template('''
                 </td></tr>
                 <tr>
                     <td style="padding:15px;" valign="top">
-                        % for commit in data['push']['commits']:
-                        <a href="${commit['url']}">${commit['short_id']}</a> by ${commit['author']} at ${commit['date']} <br/>
-                        ${commit['message_html']} <br/>
-                        <br/>
-                        % endfor
+                        % if data['push']['commits']:
+                            % for commit in data['push']['commits']:
+                            <a href="${commit['url']}">${commit['short_id']}</a> by ${commit['author']} at ${commit['date']} <br/>
+                            ${commit['message_html']} <br/>
+                            <br/>
+                            % endfor
+                        % else:
+                            No commit data
+                        % endif
                     </td>
                 </tr>
             </table>
@@ -145,8 +149,6 @@ repo_push_template_html = Template('''
 </body>
 </html>
 ''')
-
-
 
 
 class EmailSettingsSchema(colander.Schema):
