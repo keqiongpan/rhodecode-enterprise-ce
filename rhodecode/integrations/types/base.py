@@ -150,7 +150,34 @@ WEBHOOK_URL_VARS = [
 CI_URL_VARS = WEBHOOK_URL_VARS
 
 
-class WebhookDataHandler(object):
+class CommitParsingDataHandler(object):
+
+    def aggregate_branch_data(self, branches, commits):
+        branch_data = collections.OrderedDict()
+        for obj in branches:
+            branch_data[obj['name']] = obj
+
+        branches_commits = collections.OrderedDict()
+        for commit in commits:
+            if commit.get('git_ref_change'):
+                # special case for GIT that allows creating tags,
+                # deleting branches without associated commit
+                continue
+            commit_branch = commit['branch']
+
+            if commit_branch not in branches_commits:
+                _branch = branch_data[commit_branch] \
+                    if commit_branch else commit_branch
+                branch_commits = {'branch': _branch,
+                                  'commits': []}
+                branches_commits[commit_branch] = branch_commits
+
+            branch_commits = branches_commits[commit_branch]
+            branch_commits['commits'].append(commit)
+        return branches_commits
+
+
+class WebhookDataHandler(CommitParsingDataHandler):
     name = 'webhook'
 
     def __init__(self, template_url, headers):
@@ -184,25 +211,9 @@ class WebhookDataHandler(object):
     def repo_push_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)
         url_cals = []
-        branch_data = collections.OrderedDict()
-        for obj in data['push']['branches']:
-            branch_data[obj['name']] = obj
 
-        branches_commits = collections.OrderedDict()
-        for commit in data['push']['commits']:
-            if commit.get('git_ref_change'):
-                # special case for GIT that allows creating tags,
-                # deleting branches without associated commit
-                continue
-
-            if commit['branch'] not in branches_commits:
-                branch_commits = {'branch': branch_data[commit['branch']],
-                                  'commits': []}
-                branches_commits[commit['branch']] = branch_commits
-
-            branch_commits = branches_commits[commit['branch']]
-            branch_commits['commits'].append(commit)
-
+        branches_commits = self.aggregate_branch_data(
+            data['push']['branches'], data['push']['commits'])
         if '${branch}' in url:
             # call it multiple times, for each branch if used in variables
             for branch, commit_ids in branches_commits.items():

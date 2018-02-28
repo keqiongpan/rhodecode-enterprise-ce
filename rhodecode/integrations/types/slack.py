@@ -28,14 +28,14 @@ import deform
 import requests
 import colander
 from mako.template import Template
-from collections import OrderedDict
 
 from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.lib import helpers as h
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 from rhodecode.lib.colander_utils import strip_whitespace
-from rhodecode.integrations.types.base import IntegrationTypeBase
+from rhodecode.integrations.types.base import (
+    IntegrationTypeBase, CommitParsingDataHandler)
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ class SlackSettingsSchema(colander.Schema):
     )
 
 
-class SlackIntegrationType(IntegrationTypeBase):
+class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
     key = 'slack'
     display_name = _('Slack')
     description = _('Send events such as repo pushes and pull requests to '
@@ -248,18 +248,9 @@ class SlackIntegrationType(IntegrationTypeBase):
         return title, text
 
     def format_repo_push_event(self, data):
-        branch_data = {branch['name']: branch
-                       for branch in data['push']['branches']}
 
-        branches_commits = OrderedDict()
-        for commit in data['push']['commits']:
-            if commit['branch'] not in branches_commits:
-                branch_commits = {'branch': branch_data[commit['branch']],
-                                  'commits': []}
-                branches_commits[commit['branch']] = branch_commits
-
-            branch_commits = branches_commits[commit['branch']]
-            branch_commits['commits'].append(commit)
+        branches_commits = self.aggregate_branch_data(
+            data['push']['branches'], data['push']['commits'])
 
         title = Template(r'''
         *${data['actor']['username']}* pushed to repo <${data['repo']['url']}|${data['repo']['repo_name']}>:

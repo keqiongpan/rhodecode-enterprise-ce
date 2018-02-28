@@ -24,14 +24,14 @@ import logging
 import requests
 import colander
 import textwrap
-from collections import OrderedDict
 from mako.template import Template
 from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.lib import helpers as h
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 from rhodecode.lib.colander_utils import strip_whitespace
-from rhodecode.integrations.types.base import IntegrationTypeBase
+from rhodecode.integrations.types.base import (
+    IntegrationTypeBase, CommitParsingDataHandler)
 
 log = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ repo_push_template = Template('''
 ''')
 
 
-class HipchatIntegrationType(IntegrationTypeBase):
+class HipchatIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
     key = 'hipchat'
     display_name = _('Hipchat')
     description = _('Send events such as repo pushes and pull requests to '
@@ -217,18 +217,8 @@ class HipchatIntegrationType(IntegrationTypeBase):
         )
 
     def format_repo_push_event(self, data):
-        branch_data = {branch['name']: branch
-                       for branch in data['push']['branches']}
-
-        branches_commits = OrderedDict()
-        for commit in data['push']['commits']:
-            if commit['branch'] not in branches_commits:
-                branch_commits = {'branch': branch_data[commit['branch']],
-                                  'commits': []}
-                branches_commits[commit['branch']] = branch_commits
-
-            branch_commits = branches_commits[commit['branch']]
-            branch_commits['commits'].append(commit)
+        branches_commits = self.aggregate_branch_data(
+            data['push']['branches'], data['push']['commits'])
 
         result = repo_push_template.render(
             data=data,
