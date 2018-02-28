@@ -625,12 +625,13 @@ def authenticate(username, password, environ=None, auth_type=None,
                       'headers plugin, skipping...', plugin.get_id())
             continue
 
+        log.debug('Trying authentication using ** %s **', plugin.get_id())
+
         # load plugin settings from RhodeCode database
         plugin_settings = plugin.get_settings()
         plugin_sanitized_settings = plugin.log_safe_settings(plugin_settings)
-        log.debug('Plugin settings:%s', plugin_sanitized_settings)
+        log.debug('Plugin `%s` settings:%s', plugin.get_id(), plugin_sanitized_settings)
 
-        log.debug('Trying authentication using ** %s **', plugin.get_id())
         # use plugin's method of user extraction.
         user = plugin.get_user(username, environ=environ,
                                settings=plugin_settings)
