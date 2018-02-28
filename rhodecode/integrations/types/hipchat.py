@@ -81,11 +81,15 @@ repo_push_template = Template('''
 <ul>
 %for branch, branch_commits in branches_commits.items():
     <li>
+        % if branch:
         <a href="${branch_commits['branch']['url']}">branch: ${branch_commits['branch']['name']}</a>
+        % else:
+        to trunk
+        % endif
         <ul>
-    %for commit in branch_commits['commits']:
+        % for commit in branch_commits['commits']:
             <li><a href="${commit['url']}">${commit['short_id']}</a> - ${commit['message_html']}</li>
-    %endfor
+        % endfor
         </ul>
     </li>
 %endfor
