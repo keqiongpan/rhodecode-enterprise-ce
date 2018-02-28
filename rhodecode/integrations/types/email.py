@@ -29,7 +29,8 @@ from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.lib.celerylib import run_task
 from rhodecode.lib.celerylib import tasks
-from rhodecode.integrations.types.base import IntegrationTypeBase
+from rhodecode.integrations.types.base import (
+    IntegrationTypeBase, render_with_traceback)
 
 
 log = logging.getLogger(__name__)
@@ -281,12 +282,14 @@ def repo_push_handler(data, settings):
             branches=', '.join(
                 branch['name'] for branch in data['push']['branches']))
 
-    email_body_plaintext = repo_push_template_plaintext.render(
+    email_body_plaintext = render_with_traceback(
+        repo_push_template_plaintext,
         data=data,
         subject=subject,
         instance_url=server_url)
 
-    email_body_html = repo_push_template_html.render(
+    email_body_html = render_with_traceback(
+        repo_push_template_html,
         data=data,
         subject=subject,
         instance_url=server_url)

@@ -35,7 +35,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 from rhodecode.lib.colander_utils import strip_whitespace
 from rhodecode.integrations.types.base import (
-    IntegrationTypeBase, CommitParsingDataHandler)
+    IntegrationTypeBase, CommitParsingDataHandler, render_with_traceback)
 
 log = logging.getLogger(__name__)
 
@@ -194,32 +194,39 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
                 }
             ]
 
-        title = Template(textwrap.dedent(r'''
+        template = Template(textwrap.dedent(r'''
         *${data['actor']['username']}* left ${data['comment']['type']} on pull request <${data['pullrequest']['url']}|#${data['pullrequest']['pull_request_id']}>:
-        ''')).render(data=data, comment=event.comment)
+        '''))
+        title = render_with_traceback(
+            template, data=data, comment=event.comment)
 
-        text = Template(textwrap.dedent(r'''
+        template = Template(textwrap.dedent(r'''
         *pull request title*: ${pr_title}
         % if status_text:
         *submitted status*: `${status_text}`
         % endif
         >>> ${comment_text}
-        ''')).render(comment_text=comment_text,
-                     pr_title=data['pullrequest']['title'],
-                     status_text=status_text)
+        '''))
+        text = render_with_traceback(
+            template,
+            comment_text=comment_text,
+            pr_title=data['pullrequest']['title'],
+            status_text=status_text)
 
         return title, text, fields, overrides
 
     def format_pull_request_review_event(self, event, data):
-        title = Template(textwrap.dedent(r'''
+        template = Template(textwrap.dedent(r'''
         *${data['actor']['username']}* changed status of pull request <${data['pullrequest']['url']}|#${data['pullrequest']['pull_request_id']} to `${data['pullrequest']['status']}`>:
-        ''')).render(data=data)
+        '''))
+        title = render_with_traceback(template, data=data)
 
-        text = Template(textwrap.dedent(r'''
+        template = Template(textwrap.dedent(r'''
         *pull request title*: ${pr_title}
-        ''')).render(
-            pr_title=data['pullrequest']['title'],
-        )
+        '''))
+        text = render_with_traceback(
+            template,
+            pr_title=data['pullrequest']['title'])
 
         return title, text
 
@@ -231,19 +238,21 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
             events.PullRequestCreateEvent: 'created',
         }.get(event.__class__, str(event.__class__))
 
-        title = Template(textwrap.dedent(r'''
+        template = Template(textwrap.dedent(r'''
         *${data['actor']['username']}* `${action}` pull request <${data['pullrequest']['url']}|#${data['pullrequest']['pull_request_id']}>:
-        ''')).render(data=data, action=action)
+        '''))
+        title = render_with_traceback(template, data=data, action=action)
 
-        text = Template(textwrap.dedent(r'''
+        template = Template(textwrap.dedent(r'''
         *pull request title*: ${pr_title}
         %if data['pullrequest']['commits']:
         *commits*: ${len(data['pullrequest']['commits'])}
         %endif
-        ''')).render(
+        '''))
+        text = render_with_traceback(
+            template,
             pr_title=data['pullrequest']['title'],
-            data=data
-        )
+            data=data)
 
         return title, text
 
@@ -252,9 +261,10 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         branches_commits = self.aggregate_branch_data(
             data['push']['branches'], data['push']['commits'])
 
-        title = Template(r'''
+        template = Template(r'''
         *${data['actor']['username']}* pushed to repo <${data['repo']['url']}|${data['repo']['repo_name']}>:
-        ''').render(data=data)
+        ''')
+        title = render_with_traceback(template, data=data)
 
         repo_push_template = Template(textwrap.dedent(r'''
         %for branch, branch_commits in branches_commits.items():
@@ -265,7 +275,8 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         %endfor
         '''))
 
-        text = repo_push_template.render(
+        text = render_with_traceback(
+            repo_push_template,
             data=data,
             branches_commits=branches_commits,
             html_to_slack_links=html_to_slack_links,
@@ -274,14 +285,16 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         return title, text
 
     def format_repo_create_event(self, data):
-        title = Template(r'''
+        template = Template(r'''
         *${data['actor']['username']}* created new repository ${data['repo']['repo_name']}:
-        ''').render(data=data)
+        ''')
+        title = render_with_traceback(template, data=data)
 
-        text = Template(textwrap.dedent(r'''
+        template = Template(textwrap.dedent(r'''
         repo_url: ${data['repo']['url']}
         repo_type: ${data['repo']['repo_type']}
-        ''')).render(data=data)
+        '''))
+        text = render_with_traceback(template, data=data)
 
         return title, text
 

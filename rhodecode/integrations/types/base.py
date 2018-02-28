@@ -22,7 +22,11 @@ import colander
 import string
 import collections
 import logging
+
+from mako import exceptions
+
 from rhodecode.translation import _
+
 
 log = logging.getLogger(__name__)
 
@@ -297,3 +301,11 @@ def get_url_vars(url_vars):
     return '\n'.join(
         '{} - {}'.format('${' + key + '}', explanation)
         for key, explanation in url_vars)
+
+
+def render_with_traceback(template, *args, **kwargs):
+    try:
+        return template.render(*args, **kwargs)
+    except Exception:
+        log.error(exceptions.text_error_template().render())
+        raise

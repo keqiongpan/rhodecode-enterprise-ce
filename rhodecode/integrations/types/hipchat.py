@@ -31,7 +31,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 from rhodecode.lib.colander_utils import strip_whitespace
 from rhodecode.integrations.types.base import (
-    IntegrationTypeBase, CommitParsingDataHandler)
+    IntegrationTypeBase, CommitParsingDataHandler, render_with_traceback)
 
 log = logging.getLogger(__name__)
 
@@ -220,7 +220,8 @@ class HipchatIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         branches_commits = self.aggregate_branch_data(
             data['push']['branches'], data['push']['commits'])
 
-        result = repo_push_template.render(
+        result = render_with_traceback(
+            repo_push_template,
             data=data,
             branches_commits=branches_commits,
         )
