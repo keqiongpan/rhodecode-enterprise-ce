@@ -267,12 +267,20 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         title = render_with_traceback(template, data=data)
 
         repo_push_template = Template(textwrap.dedent(r'''
-        %for branch, branch_commits in branches_commits.items():
-        ${len(branch_commits['commits'])} ${'commit' if len(branch_commits['commits']) == 1 else 'commits'} on branch: <${branch_commits['branch']['url']}|${branch_commits['branch']['name']}>
-        %for commit in branch_commits['commits']:
+        <%
+            def branch_text(branch):
+                if branch:
+                    return 'on branch: <{}|{}>'.format(branch_commits['branch']['url'], branch_commits['branch']['name'])
+                else:
+                    ## case for SVN no branch push...
+                    return 'to trunk'
+        %> \
+        % for branch, branch_commits in branches_commits.items():
+        ${len(branch_commits['commits'])} ${'commit' if len(branch_commits['commits']) == 1 else 'commits'} ${branch_text(branch)}
+        % for commit in branch_commits['commits']:
         `<${commit['url']}|${commit['short_id']}>` - ${commit['message_html']|html_to_slack_links}
-        %endfor
-        %endfor
+        % endfor
+        % endfor
         '''))
 
         text = render_with_traceback(
