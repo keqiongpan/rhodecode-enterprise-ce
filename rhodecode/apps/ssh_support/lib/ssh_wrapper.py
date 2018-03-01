@@ -68,7 +68,7 @@ def main(ini_path, mode, user, user_id, key_id, shell, debug):
             'of this script.')
     connection_info = os.environ.get('SSH_CONNECTION', '')
 
-    with bootstrap(ini_path) as env:
+    with bootstrap(ini_path, env={'RC_CMD_SSH_WRAPPER': '1'}) as env:
         try:
             ssh_wrapper = SshWrapper(
                 command, connection_info, mode,
