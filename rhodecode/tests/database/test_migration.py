@@ -59,5 +59,7 @@ def _run_migration_test(db_backend, dumpname):
     db_backend.assert_returncode_success()
 
     db_backend.import_dump(dumpname)
-    db_backend.upgrade_database()
+    stdout, stderr = db_backend.upgrade_database()
+
+    db_backend.assert_correct_output(stdout+stderr, version='16')
     db_backend.assert_returncode_success()

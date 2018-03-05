@@ -86,7 +86,8 @@ class DBBackend(object):
     _store = os.path.dirname(os.path.abspath(__file__))
     _type = None
     _base_ini_config = [{'app:main': {'vcs.start_server': 'false',
-                                      'startup.import_repos': 'false'}}]
+                                      'startup.import_repos': 'false',
+                                      'is_test': 'False'}}]
     _db_url = [{'app:main': {'sqlalchemy.db1.url': ''}}]
     _base_db_name = 'rhodecode_test_db_backend'
 
@@ -152,6 +153,9 @@ class DBBackend(object):
             print(self.stderr)
             raise AssertionError('non 0 retcode:{}'.format(self.p.returncode))
 
+    def assert_correct_output(self, stdout, version):
+        assert 'UPGRADE FOR STEP {} COMPLETED'.format(version) in stdout
+
     def setup_rhodecode_db(self, ini_params=None, env=None):
         if not ini_params:
             ini_params = self._base_ini_config
@@ -167,7 +171,7 @@ class DBBackend(object):
             if not os.path.isdir(self._repos_git_lfs_store):
                 os.makedirs(self._repos_git_lfs_store)
 
-            self.execute(
+            return self.execute(
                 "rc-setup-app {0} --user=marcink "
                 "--email=marcin@rhodeocode.com --password={1} "
                 "--repos={2} --force-yes".format(
@@ -183,7 +187,8 @@ class DBBackend(object):
         with test_ini as ini_file:
             if not os.path.isdir(self._repos_location):
                 os.makedirs(self._repos_location)
-            self.execute(
+
+            return self.execute(
                 "rc-upgrade-db {0} --force-yes".format(ini_file))
 
     def setup_db(self):
@@ -226,12 +231,11 @@ class SQLiteDBBackend(DBBackend):
 
     def import_dump(self, dumpname):
         dump = os.path.join(self.fixture_store, dumpname)
-        shutil.copy(
-            dump,
-            os.path.join(self._basetemp, '{0.db_name}.sqlite'.format(self)))
+        target = os.path.join(self._basetemp, '{0.db_name}.sqlite'.format(self))
+        return self.execute('cp -v {} {}'.format(dump, target))
 
     def teardown_db(self):
-        self.execute("rm -rf {}.sqlite".format(
+        return self.execute("rm -rf {}.sqlite".format(
             os.path.join(self._basetemp, self.db_name)))
 
 
@@ -246,16 +250,16 @@ class MySQLDBBackend(DBBackend):
         # mysqldump -uroot -pqweqwe $TEST_DB_NAME
         self._db_url = [{'app:main': {
             'sqlalchemy.db1.url': self.connection_string}}]
-        self.execute("mysql -v -u{} -p{} -e 'create database '{}';'".format(
+        return self.execute("mysql -v -u{} -p{} -e 'create database '{}';'".format(
             self.user, self.password, self.db_name))
 
     def import_dump(self, dumpname):
         dump = os.path.join(self.fixture_store, dumpname)
-        self.execute("mysql -u{} -p{} {} < {}".format(
+        return self.execute("mysql -u{} -p{} {} < {}".format(
             self.user, self.password, self.db_name, dump))
 
     def teardown_db(self):
-        self.execute("mysql -v -u{} -p{} -e 'drop database '{}';'".format(
+        return self.execute("mysql -v -u{} -p{} -e 'drop database '{}';'".format(
             self.user, self.password, self.db_name))
 
 
@@ -271,18 +275,18 @@ class PostgresDBBackend(DBBackend):
         self._db_url = [{'app:main': {
             'sqlalchemy.db1.url':
                 self.connection_string}}]
-        self.execute("PGPASSWORD={} psql -U {} -h localhost "
+        return self.execute("PGPASSWORD={} psql -U {} -h localhost "
                      "-c 'create database '{}';'".format(
                          self.password, self.user, self.db_name))
 
     def teardown_db(self):
-        self.execute("PGPASSWORD={} psql -U {} -h localhost "
+        return self.execute("PGPASSWORD={} psql -U {} -h localhost "
                      "-c 'drop database if exists '{}';'".format(
                          self.password, self.user, self.db_name))
 
     def import_dump(self, dumpname):
         dump = os.path.join(self.fixture_store, dumpname)
-        self.execute(
+        return self.execute(
             "PGPASSWORD={} psql -U {} -h localhost -d {} -1 "
             "-f {}".format(
                 self.password, self.user, self.db_name, dump))
