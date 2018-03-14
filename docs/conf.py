@@ -104,7 +104,6 @@ exclude_patterns = [
 
     # Other RST files
     'admin/rhodecode-backup.rst',
-    'auth/ldap-configuration-example.rst',
     'issue-trackers/redmine.rst',
     'known-issues/error-msg-guide.rst',
     'tutorials/docs-build.rst',
