@@ -663,6 +663,10 @@ class UserModel(BaseModel):
         :param api_key: api key to fetch by
         :param username: username to fetch by
         """
+        def token_obfuscate(token):
+            if token:
+                return token[:4] + "****"
+
         if user_id is None and api_key is None and username is None:
             raise Exception('You need to pass user_id, api_key or username')
 
@@ -681,7 +685,7 @@ class UserModel(BaseModel):
             if not dbuser:
                 log.warning(
                     'Unable to lookup user by id:%s api_key:%s username:%s',
-                    user_id, api_key, username)
+                    user_id, token_obfuscate(api_key), username)
                 return False
             if not dbuser.active:
                 log.debug('User `%s:%s` is inactive, skipping fill data',
