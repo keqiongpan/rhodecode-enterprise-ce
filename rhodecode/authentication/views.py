@@ -145,7 +145,7 @@ class AuthSettingsView(BaseAppView):
 
         # Create form default values and fill the form.
         form_defaults = {
-            'auth_plugins': ','.join(enabled_plugins)
+            'auth_plugins': ',\n'.join(enabled_plugins)
         }
         form_defaults.update(defaults)
         html = formencode.htmlfill.render(
