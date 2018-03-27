@@ -86,6 +86,7 @@ class TestAuthSettingsView(object):
 
             'host': 'dc.example.com',
             'port': '999',
+            'timeout': 3600,
             'tls_kind': 'PLAIN',
             'tls_reqcert': 'NEVER',
 
