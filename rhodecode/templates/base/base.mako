@@ -356,8 +356,10 @@
             <ol class="links">
               <li>${h.link_to(_(u'My account'),h.route_path('my_account_profile'))}</li>
               % if c.rhodecode_user.personal_repo_group:
-                <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
+              <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
               % endif
+              <li>${h.link_to(_(u'Pull Requests'), h.route_path('my_account_pullrequests'))}</li>
+
               <li class="logout">
               ${h.secure_form(h.route_path('logout'), request=request)}
                   ${h.submit('log_out', _(u'Sign Out'),class_="btn btn-primary")}
