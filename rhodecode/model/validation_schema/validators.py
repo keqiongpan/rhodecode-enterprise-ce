@@ -117,6 +117,11 @@ def url_validator(url, repo_type, config):
                                   % (url, ','.join(allowed_prefixes)))
             exc.allowed_prefixes = allowed_prefixes
             raise exc
+    elif repo_type == 'svn':
+        # no validation for SVN yet
+        return
+
+    raise InvalidCloneUrl('No repo type specified')
 
 
 class CloneUriValidator(object):
@@ -124,16 +129,14 @@ class CloneUriValidator(object):
         self.repo_type = repo_type
 
     def __call__(self, node, value):
+
         from rhodecode.lib.utils import make_db_config
         try:
             config = make_db_config(clear_session=False)
             url_validator(value, self.repo_type, config)
         except InvalidCloneUrl as e:
             log.warning(e)
-            msg = _(u'Invalid clone url, provide a valid clone '
-                    u'url starting with one of {allowed_prefixes}').format(
-                allowed_prefixes=e.allowed_prefixes)
-            raise colander.Invalid(node, msg)
+            raise colander.Invalid(node, e.message)
         except Exception:
             log.exception('Url validation failed')
             msg = _(u'invalid clone url for {repo_type} repository').format(

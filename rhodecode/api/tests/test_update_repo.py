@@ -96,7 +96,9 @@ class TestApiUpdateRepo(object):
 
         id_, params = build_data(
             self.apikey, 'update_repo', repoid=repo_name, **updates)
-        response = api_call(self.app, params)
+
+        with mock.patch('rhodecode.model.validation_schema.validators.url_validator'):
+            response = api_call(self.app, params)
 
         if updates.get('repo_name'):
             repo_name = updates['repo_name']
