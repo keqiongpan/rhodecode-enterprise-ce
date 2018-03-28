@@ -105,9 +105,10 @@ class AdminProcessManagementView(BaseAppView):
     def process_management_signal(self):
         pids = self.request.json.get('pids', [])
         result = []
+
         def on_terminate(proc):
             msg = "process `PID:{}` terminated with exit code {}".format(
-                proc.pid, proc.returncode)
+                proc.pid, proc.returncode or 0)
             result.append(msg)
 
         procs = []
@@ -121,15 +122,22 @@ class AdminProcessManagementView(BaseAppView):
 
                 children = proc.children(recursive=True)
                 if children:
-                    print('Wont kill Master Process')
+                    log.warning('Wont kill Master Process')
                 else:
                     procs.append(proc)
 
         for p in procs:
-            p.terminate()
+            try:
+                p.terminate()
+            except psutil.AccessDenied as e:
+                log.warning('Access denied: {}'.format(e))
+
         gone, alive = psutil.wait_procs(procs, timeout=10, callback=on_terminate)
         for p in alive:
-            p.kill()
+            try:
+                p.kill()
+            except psutil.AccessDenied as e:
+                log.warning('Access denied: {}'.format(e))
 
         return {'result': result}
 
