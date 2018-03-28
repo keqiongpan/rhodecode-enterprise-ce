@@ -1344,6 +1344,15 @@ class UserGroup(Base, BaseModel):
         except Exception:
             log.error(traceback.format_exc())
 
+    @classmethod
+    def _load_sync(cls, group_data):
+        if group_data:
+            return group_data.get('extern_type')
+
+    @property
+    def sync(self):
+        return self._load_sync(self.group_data)
+
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (self.__class__.__name__,
                                       self.users_group_id,
@@ -1453,6 +1462,7 @@ class UserGroup(Base, BaseModel):
             'group_description': user_group.user_group_description,
             'active': user_group.users_group_active,
             'owner': user_group.user.username,
+            'sync': user_group.sync,
             'owner_email': user_group.user.email,
         }
 

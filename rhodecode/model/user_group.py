@@ -217,7 +217,7 @@ class UserGroupModel(BaseModel):
                 members.append(uid)
         return members
 
-    def update(self, user_group, form_data):
+    def update(self, user_group, form_data, group_data=None):
         user_group = self._get_user_group(user_group)
         if 'users_group_name' in form_data:
             user_group.users_group_name = form_data['users_group_name']
@@ -246,6 +246,11 @@ class UserGroupModel(BaseModel):
                 form_data['users_group_members'])
             added_user_ids, removed_user_ids = \
                 self._update_members_from_user_ids(user_group, members_id_list)
+
+        if group_data:
+            new_group_data = {}
+            new_group_data.update(group_data)
+            user_group.group_data = new_group_data
 
         self.sa.add(user_group)
         return user_group, added_user_ids, removed_user_ids

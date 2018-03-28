@@ -36,7 +36,9 @@ class TestUpdateUserGroup(object):
         # ('owner', {'owner': TEST_USER_REGULAR_LOGIN}),
         ('owner_email', {'owner_email': TEST_USER_ADMIN_EMAIL}),
         ('active', {'active': False}),
-        ('active', {'active': True})
+        ('active', {'active': True}),
+        ('sync', {'sync': False}),
+        ('sync', {'sync': True})
     ])
     def test_api_update_user_group(self, changing_attr, updates, user_util):
         user_group = user_util.create_user_group()
@@ -48,6 +50,12 @@ class TestUpdateUserGroup(object):
             self.apikey, 'update_user_group', usergroupid=group_name,
             **updates)
         response = api_call(self.app, params)
+
+        # special case for sync
+        if changing_attr == 'sync' and updates['sync'] is False:
+            expected_api_data['sync'] = None
+        elif changing_attr == 'sync' and updates['sync'] is True:
+            expected_api_data['sync'] = 'manual_api'
 
         expected = {
             'msg': 'updated user group ID:%s %s' % (
@@ -63,7 +71,9 @@ class TestUpdateUserGroup(object):
         # ('owner', {'owner': TEST_USER_REGULAR_LOGIN}),
         ('owner_email', {'owner_email': TEST_USER_ADMIN_EMAIL}),
         ('active', {'active': False}),
-        ('active', {'active': True})
+        ('active', {'active': True}),
+        ('sync', {'sync': False}),
+        ('sync', {'sync': True})
     ])
     def test_api_update_user_group_regular_user(
             self, changing_attr, updates, user_util):
@@ -71,7 +81,6 @@ class TestUpdateUserGroup(object):
         group_name = user_group.users_group_name
         expected_api_data = user_group.get_api_data()
         expected_api_data.update(updates)
-
 
         # grant permission to this user
         user = UserModel().get_by_username(self.TEST_USER_LOGIN)
@@ -82,6 +91,12 @@ class TestUpdateUserGroup(object):
             self.apikey_regular, 'update_user_group',
             usergroupid=group_name, **updates)
         response = api_call(self.app, params)
+        # special case for sync
+        if changing_attr == 'sync' and updates['sync'] is False:
+            expected_api_data['sync'] = None
+        elif changing_attr == 'sync' and updates['sync'] is True:
+            expected_api_data['sync'] = 'manual_api'
+
         expected = {
             'msg': 'updated user group ID:%s %s' % (
                 user_group.users_group_id, user_group.users_group_name),
