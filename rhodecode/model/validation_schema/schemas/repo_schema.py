@@ -319,13 +319,13 @@ class RepoSchema(colander.MappingSchema):
 
     repo_clone_uri = colander.SchemaNode(
         colander.String(),
-        validator=colander.All(colander.Length(min=1)),
+        validator=deferred_sync_uri_validator,
         preparers=[preparers.strip_preparer],
         missing='')
 
     repo_push_uri = colander.SchemaNode(
         colander.String(),
-        validator=colander.All(colander.Length(min=1)),
+        validator=deferred_sync_uri_validator,
         preparers=[preparers.strip_preparer],
         missing='')
 

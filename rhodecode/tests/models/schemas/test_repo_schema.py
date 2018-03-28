@@ -53,6 +53,7 @@ class TestRepoSchema(object):
     def test_deserialize(self, app, user_admin):
         schema = repo_schema.RepoSchema().bind(
             repo_type_options=['hg'],
+            repo_type='hg',
             user=user_admin
         )
 
@@ -78,6 +79,7 @@ class TestRepoSchema(object):
 
         schema = repo_schema.RepoSchema().bind(
             repo_type_options=['hg'],
+            repo_type='hg',
             user=user_admin
         )
 
@@ -93,6 +95,7 @@ class TestRepoSchema(object):
     def test_deserialize_with_group_name(self, app, user_admin, test_repo_group):
         schema = repo_schema.RepoSchema().bind(
             repo_type_options=['hg'],
+            repo_type='hg',
             user=user_admin
         )
 
@@ -114,6 +117,7 @@ class TestRepoSchema(object):
             self, app, user_regular, test_repo_group):
         schema = repo_schema.RepoSchema().bind(
             repo_type_options=['hg'],
+            repo_type='hg',
             user=user_regular
         )
 

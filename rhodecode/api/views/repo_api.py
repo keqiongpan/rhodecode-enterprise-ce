@@ -659,6 +659,7 @@ def create_repo(
 
     schema = repo_schema.RepoSchema().bind(
         repo_type_options=rhodecode.BACKENDS.keys(),
+        repo_type=repo_type,
         # user caller
         user=apiuser)
 
@@ -902,16 +903,18 @@ def update_repo(
         request.translate, repo=repo)
 
     old_values = repo.get_api_data()
+    repo_type = repo.repo_type
     schema = repo_schema.RepoSchema().bind(
         repo_type_options=rhodecode.BACKENDS.keys(),
         repo_ref_options=ref_choices,
+        repo_type=repo_type,
         # user caller
         user=apiuser,
         old_values=old_values)
     try:
         schema_data = schema.deserialize(dict(
             # we save old value, users cannot change type
-            repo_type=repo.repo_type,
+            repo_type=repo_type,
 
             repo_name=updates['repo_name'],
             repo_owner=updates['user'],
@@ -1062,6 +1065,7 @@ def fork_repo(request, apiuser, repoid, fork_name,
 
     schema = repo_schema.RepoSchema().bind(
         repo_type_options=rhodecode.BACKENDS.keys(),
+        repo_type=repo.repo_type,
         # user caller
         user=apiuser)
 
