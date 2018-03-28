@@ -2028,52 +2028,52 @@
     };
   };
   zope.cachedescriptors = super.buildPythonPackage {
-    name = "zope.cachedescriptors-4.0.0";
+    name = "zope.cachedescriptors-4.3.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/40/33/694b6644c37f28553f4b9f20b3c3a20fb709a22574dff20b5bdffb09ecd5/zope.cachedescriptors-4.0.0.tar.gz";
-      md5 = "8d308de8c936792c8e758058fcb7d0f0";
+      url = "https://pypi.python.org/packages/2f/89/ebe1890cc6d3291ebc935558fa764d5fffe571018dbbee200e9db78762cb/zope.cachedescriptors-4.3.1.tar.gz";
+      md5 = "42f3693f43bc93f3b1eb86940f58acf3";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpt21 ];
     };
   };
   zope.deprecation = super.buildPythonPackage {
-    name = "zope.deprecation-4.1.2";
+    name = "zope.deprecation-4.3.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/c1/d3/3919492d5e57d8dd01b36f30b34fc8404a30577392b1eb817c303499ad20/zope.deprecation-4.1.2.tar.gz";
-      md5 = "e9a663ded58f4f9f7881beb56cae2782";
+      url = "https://pypi.python.org/packages/a1/18/2dc5e6bfe64fdc3b79411b67464c55bb0b43b127051a20f7f492ab767758/zope.deprecation-4.3.0.tar.gz";
+      md5 = "2166b2cb7e0e96a21104e6f8f9b696bb";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpt21 ];
     };
   };
   zope.event = super.buildPythonPackage {
-    name = "zope.event-4.0.3";
+    name = "zope.event-4.3.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/c1/29/91ba884d7d6d96691df592e9e9c2bfa57a47040ec1ff47eff18c85137152/zope.event-4.0.3.tar.gz";
-      md5 = "9a3780916332b18b8b85f522bcc3e249";
+      url = "https://pypi.python.org/packages/9e/d0/54ba59f19a0635f6591b74be259cf6fbf67e73f4edda27b5cd0cf4d26efa/zope.event-4.3.0.tar.gz";
+      md5 = "8ca737960741c6fd112972f3313303bd";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpt21 ];
     };
   };
   zope.interface = super.buildPythonPackage {
-    name = "zope.interface-4.1.3";
+    name = "zope.interface-4.4.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/9d/81/2509ca3c6f59080123c1a8a97125eb48414022618cec0e64eb1313727bfe/zope.interface-4.1.3.tar.gz";
-      md5 = "9ae3d24c0c7415deb249dd1a132f0f79";
+      url = "https://pypi.python.org/packages/bd/d2/25349ed41f9dcff7b3baf87bd88a4c82396cf6e02f1f42bb68657a3132af/zope.interface-4.4.3.tar.gz";
+      md5 = "8700a4f527c1203b34b10c2b4e7a6912";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpt21 ];
