@@ -710,8 +710,8 @@
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/5e/1a/0aa2c8195a204a9f51284018562dea77e25511f02fe924fac202fc012172/functools32-3.2.3-2.zip";
-      md5 = "d55232eb132ec779e6893c902a0bc5ad";
+      url = "https://pypi.python.org/packages/c5/60/6ac26ad05857c601308d8fb9e87fa36d0ebf889423f47c3502ef034365db/functools32-3.2.3-2.tar.gz";
+      md5 = "09f24ffd9af9f6cd0f63cb9f4e23d4b2";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
@@ -1048,8 +1048,8 @@
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/15/45/30273ee91feb60dabb8fbb2da7868520525f02cf910279b3047182feed80/mock-1.0.1.zip";
-      md5 = "869f08d003c289a97c1a6610faf5e913";
+      url = "https://pypi.python.org/packages/a2/52/7edcd94f0afb721a2d559a5b9aae8af4f8f2c79bc63fdbe8a8a6c9b23bbe/mock-1.0.1.tar.gz";
+      md5 = "c3971991738caa55ec7c356bbc154ee2";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1360,8 +1360,8 @@
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/2e/26/e8fb5b4256a5f5036be7ce115ef8db8d06bc537becfbdc46c6af008314ee/pyparsing-1.5.7.zip";
-      md5 = "b86854857a368d6ccb4d5b6e76d0637f";
+      url = "https://pypi.python.org/packages/6f/2c/47457771c02a8ff0f302b695e094ec309e30452232bd79198ee94fda689f/pyparsing-1.5.7.tar.gz";
+      md5 = "9be0fcdcc595199c646ab317c1d9a709";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
