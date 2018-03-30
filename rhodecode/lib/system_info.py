@@ -23,6 +23,7 @@ import os
 import sys
 import time
 import platform
+import subprocess32
 import pkg_resources
 import logging
 
@@ -137,6 +138,29 @@ def platform_type():
         name=safe_unicode(platform.platform()),
         uuid=generate_platform_uuid()
     )
+    return SysInfoRes(value=value)
+
+
+def ulimit_info():
+    data = {}
+
+    text = 'ulimit -a unavailable'
+    try:
+        result = subprocess32.check_output(
+            ['ulimit -a'], timeout=10, stderr=subprocess32.STDOUT,
+            shell=True)
+
+        for line in result.splitlines():
+            key, val = line.split(' ', 1)
+            data[key.strip()] = val.strip()
+        text = ', '.join('{}:{}'.format(k,v) for k,v in data.items())
+    except Exception:
+        log.exception('ulimit check problem')
+
+    value = {
+        'ulimit': data,
+        'text': text,
+    }
     return SysInfoRes(value=value)
 
 
@@ -687,6 +711,7 @@ def usage_info():
     return SysInfoRes(value=value)
 
 
+
 def get_system_info(environ):
     environ = environ or {}
     return {
@@ -699,7 +724,7 @@ def get_system_info(environ):
         'platform': SysInfo(platform_type)(),
         'server': SysInfo(server_info, environ=environ)(),
         'database': SysInfo(database_info)(),
-
+        'ulimit': SysInfo(ulimit_info)(),
         'storage': SysInfo(storage)(),
         'storage_inodes': SysInfo(storage_inodes)(),
         'storage_archive': SysInfo(storage_archives)(),
