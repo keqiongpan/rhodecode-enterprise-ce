@@ -159,7 +159,8 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
                 "members": user_gr.member_count,
                 # NOTE(marcink): because of advanced query we
                 # need to load it like that
-                "sync": UserGroup._load_sync(user_gr.group_data),
+                "sync": UserGroup._load_sync(
+                    UserGroup._load_group_data(user_gr.group_data)),
                 "active": h.bool2icon(user_gr.users_group_active),
                 "owner": user_profile(user_gr.User.username),
                 "action": user_group_actions(
