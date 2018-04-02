@@ -23,9 +23,10 @@ import os
 import sys
 import time
 import platform
-import subprocess32
+import collections
 import pkg_resources
 import logging
+import resource
 
 from pyramid.compat import configparser
 
@@ -142,23 +143,23 @@ def platform_type():
 
 
 def ulimit_info():
-    data = {}
+    data = collections.OrderedDict([
+        ('cpu time (seconds)', resource.getrlimit(resource.RLIMIT_CPU)),
+        ('file size', resource.getrlimit(resource.RLIMIT_FSIZE)),
+        ('stack size', resource.getrlimit(resource.RLIMIT_STACK)),
+        ('core file size', resource.getrlimit(resource.RLIMIT_CORE)),
+        ('address space size', resource.getrlimit(resource.RLIMIT_AS)),
+        ('locked in mem size', resource.getrlimit(resource.RLIMIT_MEMLOCK)),
+        ('heap size', resource.getrlimit(resource.RLIMIT_DATA)),
+        ('rss size', resource.getrlimit(resource.RLIMIT_RSS)),
+        ('number of processes', resource.getrlimit(resource.RLIMIT_NPROC)),
+        ('open files', resource.getrlimit(resource.RLIMIT_NOFILE)),
+    ])
 
-    text = 'ulimit -a unavailable'
-    try:
-        result = subprocess32.check_output(
-            ['ulimit -a'], timeout=10, stderr=subprocess32.STDOUT,
-            shell=True)
-
-        for line in result.splitlines():
-            key, val = line.split(' ', 1)
-            data[key.strip()] = val.strip()
-        text = ', '.join('{}:{}'.format(k,v) for k,v in data.items())
-    except Exception:
-        log.exception('ulimit check problem')
+    text = ', '.join('{}:{}'.format(k,v) for k,v in data.items())
 
     value = {
-        'ulimit': data,
+        'limits': data,
         'text': text,
     }
     return SysInfoRes(value=value)
