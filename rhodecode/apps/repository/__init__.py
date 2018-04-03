@@ -331,6 +331,10 @@ def includeme(config):
         name='edit_repo_advanced_fork',
         pattern='/{repo_name:.*?[^/]}/settings/advanced/fork', repo_route=True)
 
+    config.add_route(
+        name='edit_repo_advanced_hooks',
+        pattern='/{repo_name:.*?[^/]}/settings/advanced/hooks', repo_route=True)
+
     # Caches
     config.add_route(
         name='edit_repo_caches',
