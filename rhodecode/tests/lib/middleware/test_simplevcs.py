@@ -377,34 +377,6 @@ class TestGenerateVcsResponse(object):
         list(result)
         assert self.was_cache_invalidated()
 
-    @mock.patch('rhodecode.lib.middleware.simplevcs.HTTPLockedRC')
-    def test_handles_locking_exception(self, http_locked_rc):
-        result = self.call_controller_with_response_body(
-            self.raise_result_iter(vcs_kind='repo_locked'))
-        assert not http_locked_rc.called
-        # Consume the result
-        list(result)
-        assert http_locked_rc.called
-
-    @mock.patch('rhodecode.lib.middleware.simplevcs.HTTPRequirementError')
-    def test_handles_requirement_exception(self, http_requirement):
-        result = self.call_controller_with_response_body(
-            self.raise_result_iter(vcs_kind='requirement'))
-        assert not http_requirement.called
-        # Consume the result
-        list(result)
-        assert http_requirement.called
-
-    @mock.patch('rhodecode.lib.middleware.simplevcs.HTTPLockedRC')
-    def test_handles_locking_exception_in_app_call(self, http_locked_rc):
-        app_factory_patcher = mock.patch.object(
-            StubVCSController, '_create_wsgi_app')
-        with app_factory_patcher as app_factory:
-            app_factory().side_effect = self.vcs_exception()
-            result = self.call_controller_with_response_body(['a'])
-            list(result)
-        assert http_locked_rc.called
-
     def test_raises_unknown_exceptions(self):
         result = self.call_controller_with_response_body(
             self.raise_result_iter(vcs_kind='unknown'))
@@ -412,7 +384,7 @@ class TestGenerateVcsResponse(object):
             list(result)
 
     def test_prepare_callback_daemon_is_called(self):
-        def side_effect(extras):
+        def side_effect(extras, environ, action, txn_id=None):
             return DummyHooksCallbackDaemon(), extras
 
         prepare_patcher = mock.patch.object(
@@ -489,10 +461,11 @@ class TestPrepareHooksDaemon(object):
             return_value=(daemon, expected_extras))
         with prepare_patcher as prepare_mock:
             callback_daemon, extras = controller._prepare_callback_daemon(
-                expected_extras.copy())
+                expected_extras.copy(), {}, 'push')
         prepare_mock.assert_called_once_with(
             expected_extras,
             protocol=app_settings['vcs.hooks.protocol'],
+            txn_id=None,
             use_direct_calls=app_settings['vcs.hooks.direct_calls'])
 
         assert callback_daemon == daemon

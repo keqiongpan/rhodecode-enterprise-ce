@@ -514,7 +514,6 @@ def repo2db_mapper(initial_repo_list, remove_obsolete=False):
     :param remove_obsolete: check for obsolete entries in database
     """
     from rhodecode.model.repo import RepoModel
-    from rhodecode.model.scm import ScmModel
     from rhodecode.model.repo_group import RepoGroupModel
     from rhodecode.model.settings import SettingsModel
 
@@ -566,9 +565,8 @@ def repo2db_mapper(initial_repo_list, remove_obsolete=False):
 
         config = db_repo._config
         config.set('extensions', 'largefiles', '')
-        ScmModel().install_hooks(
-            db_repo.scm_instance(config=config),
-            repo_type=db_repo.repo_type)
+        repo = db_repo.scm_instance(config=config)
+        repo.install_hooks()
 
     removed = []
     if remove_obsolete:

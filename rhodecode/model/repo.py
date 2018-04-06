@@ -858,7 +858,7 @@ class RepoModel(BaseModel):
             repo = backend(
                 repo_path, config=config, create=True, src_url=clone_uri)
 
-        ScmModel().install_hooks(repo, repo_type=repo_type)
+        repo.install_hooks()
 
         log.debug('Created repo %s with %s backend',
                   safe_unicode(repo_name), safe_unicode(repo_type))

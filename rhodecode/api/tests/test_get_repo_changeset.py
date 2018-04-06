@@ -42,7 +42,8 @@ class TestGetRepoChangeset(object):
         if details == 'full':
             assert result['refs']['bookmarks'] == getattr(
                 commit, 'bookmarks', [])
-            assert result['refs']['branches'] == [commit.branch]
+            branches = [commit.branch] if commit.branch else []
+            assert result['refs']['branches'] == branches
             assert result['refs']['tags'] == commit.tags
 
     @pytest.mark.parametrize("details", ['basic', 'extended', 'full'])

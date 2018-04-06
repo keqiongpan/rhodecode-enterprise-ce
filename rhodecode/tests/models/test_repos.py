@@ -18,10 +18,11 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import tempfile
-
+import os
 import mock
 import pytest
+import tempfile
+
 
 from rhodecode.lib.exceptions import AttachedForksError
 from rhodecode.lib.utils import make_db_config
@@ -119,22 +120,22 @@ class TestRepoModel(object):
 
     @pytest.mark.backends("git", "svn")
     def test_create_filesystem_repo_installs_hooks(self, tmpdir, backend):
-        hook_methods = {
-            'git': 'install_git_hook',
-            'svn': 'install_svn_hooks'
-        }
         repo = backend.create_repo()
         repo_name = repo.repo_name
         model = RepoModel()
         repo_location = tempfile.mkdtemp()
         model.repos_path = repo_location
-        method = hook_methods[backend.alias]
-        with mock.patch.object(ScmModel, method) as hooks_mock:
-            model._create_filesystem_repo(
-                repo_name, backend.alias, repo_group='', clone_uri=None)
-        assert hooks_mock.call_count == 1
-        hook_args, hook_kwargs = hooks_mock.call_args
-        assert hook_args[0].name == repo_name
+        repo = model._create_filesystem_repo(
+            repo_name, backend.alias, repo_group='', clone_uri=None)
+
+        hooks = {
+            'svn': ('pre-commit', 'post-commit'),
+            'git': ('pre-receive', 'post-receive'),
+        }
+        for hook in hooks[backend.alias]:
+            with open(os.path.join(repo.path, 'hooks', hook)) as f:
+                data = f.read()
+                assert 'RC_HOOK_VER' in data
 
     @pytest.mark.parametrize("use_global_config, repo_name_passed", [
         (True, False),

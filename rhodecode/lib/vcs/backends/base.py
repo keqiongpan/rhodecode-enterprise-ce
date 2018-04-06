@@ -175,6 +175,7 @@ class BaseRepository(object):
     EMPTY_COMMIT_ID = '0' * 40
 
     path = None
+    _remote = None
 
     def __init__(self, repo_path, config=None, create=False, **kwargs):
         """
@@ -648,6 +649,9 @@ class BaseRepository(object):
         """
         return None
 
+    def install_hooks(self, force=False):
+        return self._remote.install_hooks(force)
+
 
 class BaseCommit(object):
     """
@@ -743,7 +747,7 @@ class BaseCommit(object):
 
     def _get_refs(self):
         return {
-            'branches': [self.branch],
+            'branches': [self.branch] if self.branch else [],
             'bookmarks': getattr(self, 'bookmarks', []),
             'tags': self.tags
         }
