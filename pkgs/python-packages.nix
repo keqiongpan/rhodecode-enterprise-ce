@@ -16,13 +16,13 @@
     };
   };
   Beaker = super.buildPythonPackage {
-    name = "Beaker-1.9.0";
+    name = "Beaker-1.9.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [funcsigs];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/93/b2/12de6937b06e9615dbb3cb3a1c9af17f133f435bdef59f4ad42032b6eb49/Beaker-1.9.0.tar.gz";
-      md5 = "38b3fcdfa24faf97c6cf66991eb54e9c";
+      url = "https://pypi.python.org/packages/ca/14/a626188d0d0c7b55dd7cf1902046c2743bd392a7078bb53073e13280eb1e/Beaker-1.9.1.tar.gz";
+      md5 = "46fda0a164e2b0d24ccbda51a2310301";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
