@@ -25,6 +25,7 @@ Consists of functions to typically be used within templates, but also
 available to Controllers. This module is available to both as 'h'.
 """
 
+import os
 import random
 import hashlib
 import StringIO
@@ -742,18 +743,23 @@ short_id = lambda x: x[:12]
 hide_credentials = lambda x: ''.join(credentials_filter(x))
 
 
+import pytz
+import tzlocal
+local_timezone = tzlocal.get_localzone()
+
+
 def age_component(datetime_iso, value=None, time_is_local=False):
     title = value or format_date(datetime_iso)
     tzinfo = '+00:00'
 
     # detect if we have a timezone info, otherwise, add it
-    if isinstance(datetime_iso, datetime) and not datetime_iso.tzinfo:
-        if time_is_local:
-            tzinfo = time.strftime("+%H:%M",
-                time.gmtime(
-                    (datetime.now() - datetime.utcnow()).seconds + 1
-                )
-            )
+    if time_is_local and isinstance(datetime_iso, datetime) and not datetime_iso.tzinfo:
+        force_timezone = os.environ.get('RC_TIMEZONE', '')
+        if force_timezone:
+            force_timezone = pytz.timezone(force_timezone)
+        timezone = force_timezone or local_timezone
+        offset = timezone.localize(datetime_iso).strftime('%z')
+        tzinfo = '{}:{}'.format(offset[:-2], offset[-2:])
 
     return literal(
         '<time class="timeago tooltip" '
