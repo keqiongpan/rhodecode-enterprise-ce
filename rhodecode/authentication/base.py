@@ -171,11 +171,6 @@ class RhodeCodeAuthPluginBase(object):
             db_type = '{}.encrypted'.format(db_type)
         return db_type
 
-    @LazyProperty
-    def plugin_settings(self):
-        settings = SettingsModel().get_all_settings()
-        return settings
-
     def is_enabled(self):
         """
         Returns true if this plugin is enabled. An enabled plugin can be
@@ -185,12 +180,13 @@ class RhodeCodeAuthPluginBase(object):
         auth_plugins = SettingsModel().get_auth_plugins()
         return self.get_id() in auth_plugins
 
-    def is_active(self):
+    def is_active(self, plugin_cached_settings=None):
         """
         Returns true if the plugin is activated. An activated plugin is
         consulted during authentication, assumed it is also enabled.
         """
-        return self.get_setting_by_name('enabled')
+        return self.get_setting_by_name(
+            'enabled', plugin_cached_settings=plugin_cached_settings)
 
     def get_id(self):
         """
@@ -210,13 +206,24 @@ class RhodeCodeAuthPluginBase(object):
         """
         return AuthnPluginSettingsSchemaBase()
 
-    def get_setting_by_name(self, name, default=None, cache=True):
+    def get_settings(self):
+        """
+        Returns the plugin settings as dictionary.
+        """
+        settings = {}
+        raw_settings = SettingsModel().get_all_settings()
+        for node in self.get_settings_schema():
+            settings[node.name] = self.get_setting_by_name(
+                node.name, plugin_cached_settings=raw_settings)
+        return settings
+
+    def get_setting_by_name(self, name, default=None, plugin_cached_settings=None):
         """
         Returns a plugin setting by name.
         """
         full_name = 'rhodecode_{}'.format(self._get_setting_full_name(name))
-        if cache:
-            plugin_settings = self.plugin_settings
+        if plugin_cached_settings:
+            plugin_settings = plugin_cached_settings
         else:
             plugin_settings = SettingsModel().get_all_settings()
 
@@ -234,15 +241,6 @@ class RhodeCodeAuthPluginBase(object):
         db_setting = SettingsModel().create_or_update_setting(
             full_name, value, type_)
         return db_setting.app_settings_value
-
-    def get_settings(self):
-        """
-        Returns the plugin settings as dictionary.
-        """
-        settings = {}
-        for node in self.get_settings_schema():
-            settings[node.name] = self.get_setting_by_name(node.name)
-        return settings
 
     def log_safe_settings(self, settings):
         """
@@ -685,7 +683,8 @@ def authenticate(username, password, environ=None, auth_type=None,
                 environ=environ or {})
 
         if plugin_cache_active:
-            log.debug('Trying to fetch cached auth by `...%s`', _password_hash[:6])
+            log.debug('Trying to fetch cached auth by pwd hash `...%s`',
+                      _password_hash[:6])
             plugin_user = cache_manager.get(
                 _password_hash, createfunc=auth_func)
         else:

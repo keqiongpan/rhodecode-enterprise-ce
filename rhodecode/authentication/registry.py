@@ -70,9 +70,11 @@ class AuthenticationPluginRegistry(object):
         # Add all enabled and active plugins to the list. We iterate over the
         # auth_plugins setting from DB because it also represents the ordering.
         enabled_plugins = SettingsModel().get_auth_plugins()
+        raw_settings = SettingsModel().get_all_settings()
         for plugin_id in enabled_plugins:
             plugin = self.get_plugin(plugin_id)
-            if plugin is not None and plugin.is_active():
+            if plugin is not None and plugin.is_active(
+                    plugin_cached_settings=raw_settings):
                 plugins.append(plugin)
 
         # Add the fallback plugin from ini file.
