@@ -28,7 +28,7 @@ from pygments.lexers.special import TextLexer, Token
 
 from rhodecode.lib.helpers import (
     get_lexer_for_filenode, html_escape, get_custom_lexer)
-from rhodecode.lib.utils2 import AttributeDict
+from rhodecode.lib.utils2 import AttributeDict, StrictAttributeDict
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib.diff_match_patch import diff_match_patch
 from rhodecode.lib.diffs import LimitedDiffContainer
@@ -400,7 +400,12 @@ class DiffSet(object):
         for patch in patchset:
             diffset.file_stats[patch['filename']] = patch['stats']
             filediff = self.render_patch(patch)
-            filediff.diffset = diffset
+            filediff.diffset = StrictAttributeDict(dict(
+                source_ref=diffset.source_ref,
+                target_ref=diffset.target_ref,
+                repo_name=diffset.repo_name,
+                source_repo_name=diffset.source_repo_name,
+            ))
             diffset.files.append(filediff)
             diffset.changed_files += 1
             if not patch['stats']['binary']:
