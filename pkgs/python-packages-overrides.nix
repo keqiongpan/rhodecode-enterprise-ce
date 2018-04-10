@@ -25,6 +25,12 @@ self: super: {
     };
   });
 
+  Beaker = super.Beaker.override (attrs: {
+    patches = [
+      ./patch-beaker-lock-func-debug.diff
+    ];
+  });
+
   future = super.future.override (attrs: {
     meta = {
       license = [ pkgs.lib.licenses.mit ];
