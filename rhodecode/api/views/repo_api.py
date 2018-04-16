@@ -698,7 +698,7 @@ def create_repo(
             'repo_copy_permissions': schema_data['repo_copy_permissions'],
         }
 
-        task = RepoModel().create(form_data=data, cur_user=owner)
+        task = RepoModel().create(form_data=data, cur_user=owner.user_id)
         task_id = get_task_id(task)
         # no commit, it's done in RepoModel, or async via celery
         return {
@@ -1096,7 +1096,7 @@ def fork_repo(request, apiuser, repoid, fork_name,
             'landing_rev': schema_data['repo_landing_commit_ref'],
         }
 
-        task = RepoModel().create_fork(data, cur_user=owner)
+        task = RepoModel().create_fork(data, cur_user=owner.user_id)
         # no commit, it's done in RepoModel, or async via celery
         task_id = get_task_id(task)
 
