@@ -430,6 +430,9 @@ class _BaseVcsSettingsForm(formencode.Schema):
     vcs_svn_proxy_http_requests_enabled = v.StringBoolean(if_missing=False)
     vcs_svn_proxy_http_server_url = v.UnicodeString(strip=True, if_missing=None)
 
+    # cache
+    rhodecode_diff_cache = v.StringBoolean(if_missing=False)
+
 
 def ApplicationUiSettingsForm(localizer):
     _ = localizer

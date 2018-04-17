@@ -570,7 +570,8 @@
                       c.diffset, use_comments=True,
                       collapse_when_files_over=30,
                       disable_new_comments=not c.allowed_to_comment,
-                      deleted_files_comments=c.deleted_files_comments)}
+                      deleted_files_comments=c.deleted_files_comments,
+                      inline_comments=c.inline_comments)}
                 </div>
               % else:
                   ## skipping commits we need to clear the view for missing commits

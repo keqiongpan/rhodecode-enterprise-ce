@@ -213,7 +213,7 @@
     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
     ${cbdiffs.render_diffset_menu()}
     ${cbdiffs.render_diffset(
-      c.changes[c.commit.raw_id], commit=c.commit, use_comments=True)}
+      c.changes[c.commit.raw_id], commit=c.commit, use_comments=True,inline_comments=c.inline_comments )}
   </div>
 
     ## template for inline comment form

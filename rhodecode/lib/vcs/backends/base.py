@@ -206,6 +206,14 @@ class BaseRepository(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def get_create_shadow_cache_pr_path(self, repo):
+        path = os.path.join(
+            os.path.dirname(self.path),
+            '.__shadow_diff_cache_repo_{}/'.format(repo.repo_id))
+        if not os.path.exists(path):
+            os.makedirs(path, 0755)
+        return path
+
     @classmethod
     def get_default_config(cls, default=None):
         config = Config()
@@ -744,6 +752,12 @@ class BaseCommit(object):
             'parents': parents,
             'branch': self.branch
         }
+
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        d.pop('_remote', None)
+        d.pop('repository', None)
+        return d
 
     def _get_refs(self):
         return {

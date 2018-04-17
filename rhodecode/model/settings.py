@@ -417,7 +417,9 @@ class VcsSettingsModel(object):
         'hg_use_rebase_for_merging',
         'hg_close_branch_before_merging',
         'git_use_rebase_for_merging',
-        'git_close_branch_before_merging')
+        'git_close_branch_before_merging',
+        'diff_cache',
+    )
 
     HOOKS_SETTINGS = (
         ('hooks', 'changegroup.repo_size'),
@@ -438,6 +440,7 @@ class VcsSettingsModel(object):
     GLOBAL_GIT_SETTINGS = (
         ('vcs_git_lfs', 'enabled'),
         ('vcs_git_lfs', 'store_location'))
+
     GLOBAL_SVN_SETTINGS = (
         ('vcs_svn_proxy', 'http_requests_enabled'),
         ('vcs_svn_proxy', 'http_server_url'))
@@ -570,6 +573,7 @@ class VcsSettingsModel(object):
             active=data[evolve_key])
         self._create_or_update_ui(
             self.repo_settings, *phases, value=safe_str(data[phases_key]))
+
 
     def create_or_update_global_hg_settings(self, data):
         largefiles, largefiles_store, phases, hgsubversion, evolve \

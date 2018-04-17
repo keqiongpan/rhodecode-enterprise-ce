@@ -33,6 +33,7 @@ from rhodecode.model import user_group
 from rhodecode.model import user
 from rhodecode.model.db import User
 from rhodecode.model.scm import ScmModel
+from rhodecode.model.settings import VcsSettingsModel
 
 log = logging.getLogger(__name__)
 
@@ -255,6 +256,11 @@ class RepoAppView(BaseAppView):
     def _get_f_path(self, matchdict, default=None):
         f_path_match = self._get_f_path_unchecked(matchdict, default)
         return self.path_filter.assert_path_permissions(f_path_match)
+
+    def _get_general_setting(self, target_repo, settings_key, default=False):
+        settings_model = VcsSettingsModel(repo=target_repo)
+        settings = settings_model.get_general_settings()
+        return settings.get(settings_key, default)
 
 
 class PathFilter(object):

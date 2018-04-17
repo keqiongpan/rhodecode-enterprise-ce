@@ -34,6 +34,7 @@ from rhodecode.apps._base import RepoAppView, DataGridAppView
 
 from rhodecode.lib import helpers as h, diffs, codeblocks, channelstream
 from rhodecode.lib.base import vcs_operation_context
+from rhodecode.lib.diffs import load_cached_diff, cache_diff, diff_cache_exist
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
@@ -41,7 +42,7 @@ from rhodecode.lib.auth import (
 from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode
 from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
 from rhodecode.lib.vcs.exceptions import (CommitDoesNotExistError,
-    RepositoryRequirementError, NodeDoesNotExistError, EmptyRepositoryError)
+    RepositoryRequirementError, EmptyRepositoryError)
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (func, or_, PullRequest, PullRequestVersion,
@@ -201,10 +202,16 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         return data
 
+    def _is_diff_cache_enabled(self, target_repo):
+        caching_enabled = self._get_general_setting(
+            target_repo, 'rhodecode_diff_cache')
+        log.debug('Diff caching enabled: %s', caching_enabled)
+        return caching_enabled
+
     def _get_diffset(self, source_repo_name, source_repo,
                      source_ref_id, target_ref_id,
-                     target_commit, source_commit, diff_limit, fulldiff,
-                     file_limit, display_inline_comments):
+                     target_commit, source_commit, diff_limit, file_limit,
+                     fulldiff):
 
         vcs_diff = PullRequestModel().get_diff(
             source_repo, source_ref_id, target_ref_id)
@@ -215,21 +222,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         _parsed = diff_processor.prepare()
 
-        def _node_getter(commit):
-            def get_node(fname):
-                try:
-                    return commit.get_node(fname)
-                except NodeDoesNotExistError:
-                    return None
-
-            return get_node
-
         diffset = codeblocks.DiffSet(
             repo_name=self.db_repo_name,
             source_repo_name=source_repo_name,
-            source_node_getter=_node_getter(target_commit),
-            target_node_getter=_node_getter(source_commit),
-            comments=display_inline_comments
+            source_node_getter=codeblocks.diffset_node_getter(target_commit),
+            target_node_getter=codeblocks.diffset_node_getter(source_commit),
         )
         diffset = self.path_filter.render_patchset_filtered(
             diffset, _parsed, target_commit.raw_id, source_commit.raw_id)
@@ -443,42 +440,54 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             commits_source_repo = source_scm
 
         c.commits_source_repo = commits_source_repo
-        commit_cache = {}
-        try:
-            pre_load = ["author", "branch", "date", "message"]
-            show_revs = pull_request_at_ver.revisions
-            for rev in show_revs:
-                comm = commits_source_repo.get_commit(
-                    commit_id=rev, pre_load=pre_load)
-                c.commit_ranges.append(comm)
-                commit_cache[comm.raw_id] = comm
-
-            # Order here matters, we first need to get target, and then
-            # the source
-            target_commit = commits_source_repo.get_commit(
-                commit_id=safe_str(target_ref_id))
-
-            source_commit = commits_source_repo.get_commit(
-                commit_id=safe_str(source_ref_id))
-
-        except CommitDoesNotExistError:
-            log.warning(
-                'Failed to get commit from `{}` repo'.format(
-                    commits_source_repo), exc_info=True)
-        except RepositoryRequirementError:
-            log.warning(
-                'Failed to get all required data from repo', exc_info=True)
-            c.missing_requirements = True
-
         c.ancestor = None  # set it to None, to hide it from PR view
 
-        try:
-            ancestor_id = source_scm.get_common_ancestor(
-                source_commit.raw_id, target_commit.raw_id, target_scm)
-            c.ancestor_commit = source_scm.get_commit(ancestor_id)
-        except Exception:
-            c.ancestor_commit = None
+        # empty version means latest, so we keep this to prevent
+        # double caching
+        version_normalized = version or 'latest'
+        from_version_normalized = from_version or 'latest'
 
+        cache_path = self.rhodecode_vcs_repo.get_create_shadow_cache_pr_path(
+            target_repo)
+        cache_file_path = diff_cache_exist(
+            cache_path, 'pull_request', pull_request_id, version_normalized,
+            from_version_normalized, source_ref_id, target_ref_id, c.fulldiff)
+
+        caching_enabled = self._is_diff_cache_enabled(c.target_repo)
+        force_recache = str2bool(self.request.GET.get('force_recache'))
+
+        cached_diff = None
+        if caching_enabled:
+            cached_diff = load_cached_diff(cache_file_path)
+
+        has_proper_commit_cache = (
+                cached_diff and cached_diff.get('commits')
+                and len(cached_diff.get('commits', [])) == 5
+                and cached_diff.get('commits')[0]
+                and cached_diff.get('commits')[3])
+        if not force_recache and has_proper_commit_cache:
+            diff_commit_cache = \
+                (ancestor_commit, commit_cache, missing_requirements,
+                 source_commit, target_commit) = cached_diff['commits']
+        else:
+            diff_commit_cache = \
+                (ancestor_commit, commit_cache, missing_requirements,
+                 source_commit, target_commit) = self.get_commits(
+                    commits_source_repo,
+                    pull_request_at_ver,
+                    source_commit,
+                    source_ref_id,
+                    source_scm,
+                    target_commit,
+                    target_ref_id,
+                    target_scm)
+
+        # register our commit range
+        for comm in commit_cache.values():
+            c.commit_ranges.append(comm)
+
+        c.missing_requirements = missing_requirements
+        c.ancestor_commit = ancestor_commit
         c.statuses = source_repo.statuses(
             [x.raw_id for x in c.commit_ranges])
 
@@ -500,12 +509,23 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             c.missing_commits = True
         else:
+            c.inline_comments = display_inline_comments
 
-            c.diffset = self._get_diffset(
-                c.source_repo.repo_name, commits_source_repo,
-                source_ref_id, target_ref_id,
-                target_commit, source_commit,
-                diff_limit, c.fulldiff, file_limit, display_inline_comments)
+            has_proper_diff_cache = cached_diff and cached_diff.get('commits')
+            if not force_recache and has_proper_diff_cache:
+                c.diffset = cached_diff['diff']
+                (ancestor_commit, commit_cache, missing_requirements,
+                 source_commit, target_commit) = cached_diff['commits']
+            else:
+                c.diffset = self._get_diffset(
+                    c.source_repo.repo_name, commits_source_repo,
+                    source_ref_id, target_ref_id,
+                    target_commit, source_commit,
+                    diff_limit, file_limit, c.fulldiff)
+
+                # save cached diff
+                if caching_enabled:
+                    cache_diff(cache_file_path, c.diffset, diff_commit_cache)
 
             c.limited_diff = c.diffset.limited_diff
 
@@ -568,13 +588,49 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             if self._rhodecode_user.user_id in allowed_reviewers:
                 for co in general_comments:
                     if co.author.user_id == self._rhodecode_user.user_id:
-                        # each comment has a status change
                         status = co.status_change
                         if status:
                             _ver_pr = status[0].comment.pull_request_version_id
                             c.review_versions[_ver_pr] = status[0]
 
         return self._get_template_context(c)
+
+    def get_commits(
+            self, commits_source_repo, pull_request_at_ver, source_commit,
+            source_ref_id, source_scm, target_commit, target_ref_id, target_scm):
+        commit_cache = collections.OrderedDict()
+        missing_requirements = False
+        try:
+            pre_load = ["author", "branch", "date", "message"]
+            show_revs = pull_request_at_ver.revisions
+            for rev in show_revs:
+                comm = commits_source_repo.get_commit(
+                    commit_id=rev, pre_load=pre_load)
+                commit_cache[comm.raw_id] = comm
+
+            # Order here matters, we first need to get target, and then
+            # the source
+            target_commit = commits_source_repo.get_commit(
+                commit_id=safe_str(target_ref_id))
+
+            source_commit = commits_source_repo.get_commit(
+                commit_id=safe_str(source_ref_id))
+        except CommitDoesNotExistError:
+            log.warning(
+                'Failed to get commit from `{}` repo'.format(
+                    commits_source_repo), exc_info=True)
+        except RepositoryRequirementError:
+            log.warning(
+                'Failed to get all required data from repo', exc_info=True)
+            missing_requirements = True
+        ancestor_commit = None
+        try:
+            ancestor_id = source_scm.get_common_ancestor(
+                source_commit.raw_id, target_commit.raw_id, target_scm)
+            ancestor_commit = source_scm.get_commit(ancestor_id)
+        except Exception:
+            ancestor_commit = None
+        return ancestor_commit, commit_cache, missing_requirements, source_commit, target_commit
 
     def assure_not_empty_repo(self):
         _ = self.request.translate

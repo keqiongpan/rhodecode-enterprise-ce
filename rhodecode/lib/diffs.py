@@ -23,16 +23,18 @@
 Set of diffing helpers, previously part of vcs
 """
 
+import os
 import re
 import collections
 import difflib
 import logging
+import cPickle as pickle
 
 from itertools import tee, imap
 
 from rhodecode.lib.vcs.exceptions import VCSError
 from rhodecode.lib.vcs.nodes import FileNode, SubModuleNode
-from rhodecode.lib.utils2 import safe_unicode
+from rhodecode.lib.utils2 import safe_unicode, safe_str
 
 log = logging.getLogger(__name__)
 
@@ -1129,3 +1131,82 @@ class LineNotInDiffException(Exception):
 
 class DiffLimitExceeded(Exception):
     pass
+
+
+def cache_diff(cached_diff_file, diff, commits):
+
+    struct = {
+        'version': 'v1',
+        'diff': diff,
+        'commits': commits
+    }
+
+    try:
+        with open(cached_diff_file, 'wb') as f:
+            pickle.dump(struct, f)
+        log.debug('Saved diff cache under %s', cached_diff_file)
+    except Exception:
+        log.warn('Failed to save cache', exc_info=True)
+        # cleanup file to not store it "damaged"
+        try:
+            os.remove(cached_diff_file)
+        except Exception:
+            log.exception('Failed to cleanup path %s', cached_diff_file)
+
+
+def load_cached_diff(cached_diff_file):
+
+    default_struct = {
+        'version': 'v1',
+        'diff': None,
+        'commits': None
+    }
+
+    has_cache = os.path.isfile(cached_diff_file)
+    if not has_cache:
+        return default_struct
+
+    data = None
+    try:
+        with open(cached_diff_file, 'rb') as f:
+            data = pickle.load(f)
+        log.debug('Loaded diff cache from %s', cached_diff_file)
+    except Exception:
+        log.warn('Failed to read diff cache file', exc_info=True)
+
+    if not data:
+        data = default_struct
+
+    if not isinstance(data, dict):
+        # old version of data ?
+        data = default_struct
+
+    return data
+
+
+def generate_diff_cache_key(*args):
+    """
+    Helper to generate a cache key using arguments
+    """
+    def arg_mapper(input_param):
+        input_param = safe_str(input_param)
+        # we cannot allow '/' in arguments since it would allow
+        # subdirectory usage
+        input_param.replace('/', '_')
+        return input_param or None  # prevent empty string arguments
+
+    return '_'.join([
+        '{}' for i in range(len(args))]).format(*map(arg_mapper, args))
+
+
+def diff_cache_exist(cache_storage, *args):
+    """
+    Based on all generated arguments check and return a cache path
+    """
+    cache_key = generate_diff_cache_key(*args)
+    cache_file_path = os.path.join(cache_storage, cache_key)
+    # prevent path traversal attacks using some param that have e.g '../../'
+    if not os.path.abspath(cache_file_path).startswith(cache_storage):
+        raise ValueError('Final path must be within {}'.format(cache_storage))
+
+    return cache_file_path

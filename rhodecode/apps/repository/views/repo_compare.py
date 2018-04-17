@@ -295,19 +295,10 @@ class RepoCompareView(RepoAppView):
             file_limit=file_limit, show_full_diff=c.fulldiff)
         _parsed = diff_processor.prepare()
 
-        def _node_getter(commit):
-            """ Returns a function that returns a node for a commit or None """
-            def get_node(fname):
-                try:
-                    return commit.get_node(fname)
-                except NodeDoesNotExistError:
-                    return None
-            return get_node
-
         diffset = codeblocks.DiffSet(
             repo_name=source_repo.repo_name,
-            source_node_getter=_node_getter(source_commit),
-            target_node_getter=_node_getter(target_commit),
+            source_node_getter=codeblocks.diffset_node_getter(source_commit),
+            target_node_getter=codeblocks.diffset_node_getter(target_commit),
         )
         c.diffset = self.path_filter.render_patchset_filtered(
             diffset, _parsed, source_ref, target_ref)
