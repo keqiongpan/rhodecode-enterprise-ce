@@ -638,8 +638,18 @@ def grant_user_permission_to_user_group(
     perm = get_perm_or_error(perm, prefix='usergroup.')
 
     try:
-        UserGroupModel().grant_user_permission(
+        changes = UserGroupModel().grant_user_permission(
             user_group=user_group, user=user, perm=perm)
+
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'user_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
         Session().commit()
         return {
             'msg':
@@ -698,8 +708,17 @@ def revoke_user_permission_from_user_group(
     user = get_user_or_error(userid)
 
     try:
-        UserGroupModel().revoke_user_permission(
+        changes = UserGroupModel().revoke_user_permission(
             user_group=user_group, user=user)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'user_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
         Session().commit()
         return {
             'msg': 'Revoked perm for user: `%s` in user group: `%s`' % (
@@ -764,11 +783,20 @@ def grant_user_group_permission_to_user_group(
                 'user group `%s` does not exist' % (sourceusergroupid,))
 
     try:
-        UserGroupModel().grant_user_group_permission(
+        changes = UserGroupModel().grant_user_group_permission(
             target_user_group=target_user_group,
             user_group=user_group, perm=perm)
-        Session().commit()
 
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'user_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
+        Session().commit()
         return {
             'msg': 'Granted perm: `%s` for user group: `%s` '
                    'in user group: `%s`' % (
@@ -835,8 +863,17 @@ def revoke_user_group_permission_from_user_group(
                 'user group `%s` does not exist' % (sourceusergroupid,))
 
     try:
-        UserGroupModel().revoke_user_group_permission(
+        changes = UserGroupModel().revoke_user_group_permission(
             target_user_group=target_user_group, user_group=user_group)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'user_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
         Session().commit()
 
         return {
