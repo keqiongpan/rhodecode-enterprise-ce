@@ -51,3 +51,22 @@
       </div>
     </div>
 </div>
+
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">${_('Diff Caches')}</h3>
+    </div>
+    <div class="panel-body">
+        <table class="rctable edit_cache">
+            <tr>
+                <td>${_('Cached diff files')}:</td>
+                <td>${c.cached_diff_count}</td>
+            </tr>
+            <tr>
+                <td>${_('Cached diff size')}:</td>
+                <td>${h.format_byte_size(c.cached_diff_size)}</td>
+            </tr>
+        </table>
+    </div>
+</div>

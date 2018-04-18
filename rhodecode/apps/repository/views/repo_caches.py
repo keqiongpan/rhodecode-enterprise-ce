@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import os
 import logging
 
 from pyramid.httpexceptions import HTTPFound
@@ -27,6 +28,7 @@ from rhodecode.apps._base import RepoAppView
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h
+from rhodecode.lib import system_info
 from rhodecode.model.meta import Session
 from rhodecode.model.scm import ScmModel
 
@@ -36,8 +38,6 @@ log = logging.getLogger(__name__)
 class RepoCachesView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-
         return c
 
     @LoginRequired()
@@ -48,6 +48,11 @@ class RepoCachesView(RepoAppView):
     def repo_caches(self):
         c = self.load_default_context()
         c.active = 'caches'
+        cached_diffs_dir = c.rhodecode_db_repo.cached_diffs_dir
+        c.cached_diff_count = len(c.rhodecode_db_repo.cached_diffs())
+        c.cached_diff_size = 0
+        if os.path.isdir(cached_diffs_dir):
+            c.cached_diff_size = system_info.get_storage_size(cached_diffs_dir)
 
         return self._get_template_context(c)
 

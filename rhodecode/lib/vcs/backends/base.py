@@ -206,10 +206,8 @@ class BaseRepository(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get_create_shadow_cache_pr_path(self, repo):
-        path = os.path.join(
-            os.path.dirname(self.path),
-            '.__shadow_diff_cache_repo_{}/'.format(repo.repo_id))
+    def get_create_shadow_cache_pr_path(self, db_repo):
+        path = db_repo.cached_diffs_dir
         if not os.path.exists(path):
             os.makedirs(path, 0755)
         return path

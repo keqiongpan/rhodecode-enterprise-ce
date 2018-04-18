@@ -1859,6 +1859,19 @@ class Repository(Base, BaseModel):
             .order_by(CacheKey.cache_key)\
             .all()
 
+    @property
+    def cached_diffs_dir(self):
+        path = self.repo_full_path
+        return os.path.join(
+            os.path.dirname(path),
+            '.__shadow_diff_cache_repo_{}'.format(self.repo_id))
+
+    def cached_diffs(self):
+        diff_cache_dir = self.cached_diffs_dir
+        if os.path.isdir(diff_cache_dir):
+            return os.listdir(diff_cache_dir)
+        return []
+
     def get_new_name(self, repo_name):
         """
         returns new full repository name based on assigned group and new new
