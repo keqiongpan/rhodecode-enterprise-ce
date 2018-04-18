@@ -32,6 +32,7 @@ from rhodecode.apps._base import BaseAppView, DataGridAppView, UserAppView
 from rhodecode.apps.ssh_support import SshKeyFileChangeEvent
 from rhodecode.authentication.plugins import auth_rhodecode
 from rhodecode.events import trigger
+from rhodecode.model.db import true
 
 from rhodecode.lib import audit_logger
 from rhodecode.lib.exceptions import (
@@ -89,7 +90,6 @@ class AdminUsersView(BaseAppView, DataGridAppView):
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(
             self.request, column_map=column_map)
-
         _render = self.request.get_partial_renderer(
             'rhodecode:templates/data_table/_dt_elements.mako')
 
@@ -100,8 +100,14 @@ class AdminUsersView(BaseAppView, DataGridAppView):
             .filter(User.username != User.DEFAULT_USER) \
             .count()
 
+        users_data_total_inactive_count = User.query()\
+            .filter(User.username != User.DEFAULT_USER) \
+            .filter(User.active != true())\
+            .count()
+
         # json generate
         base_q = User.query().filter(User.username != User.DEFAULT_USER)
+        base_inactive_q = base_q.filter(User.active != true())
 
         if search_q:
             like_expression = u'%{}%'.format(safe_unicode(search_q))
@@ -111,8 +117,10 @@ class AdminUsersView(BaseAppView, DataGridAppView):
                 User.name.ilike(like_expression),
                 User.lastname.ilike(like_expression),
             ))
+            base_inactive_q = base_q.filter(User.active != true())
 
         users_data_total_filtered_count = base_q.count()
+        users_data_total_filtered_inactive_count = base_inactive_q.count()
 
         sort_col = getattr(User, order_by, None)
         if sort_col:
@@ -148,12 +156,13 @@ class AdminUsersView(BaseAppView, DataGridAppView):
                 "extern_name": user.extern_name,
                 "action": user_actions(user.user_id, user.username),
             })
-
         data = ({
             'draw': draw,
             'data': users_data,
             'recordsTotal': users_data_total_count,
             'recordsFiltered': users_data_total_filtered_count,
+            'recordsTotalInactive': users_data_total_inactive_count,
+            'recordsFilteredInactive': users_data_total_filtered_inactive_count
         })
 
         return data

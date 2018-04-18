@@ -39,22 +39,30 @@
 
 $(document).ready(function() {
     var $userListTable = $('#user_list_table');
-
-    var getDatatableCount = function(){
-      var table = $userListTable.dataTable();
-      var page = table.api().page.info();
-      var  active = page.recordsDisplay;
-      var  total = page.recordsTotal;
-
-      var _text = _gettext("{0} out of {1} users").format(active, total);
-      $('#user_count').text(_text);
-    };
-
     // user list
     $userListTable.DataTable({
       processing: true,
       serverSide: true,
-      ajax: "${h.route_path('users_data')}",
+      ajax: {
+          "url": "${h.route_path('users_data')}",
+          "dataSrc": function ( json ) {
+              var filteredCount = json.recordsFiltered;
+              var filteredInactiveCount = json.recordsFilteredInactive;
+              var totalInactive = json.recordsTotalInactive;
+              var total = json.recordsTotal;
+
+              var _text = _gettext(
+                  "{0} ({1} inactive) of {2} users ({3} inactive)").format(
+                      filteredCount, filteredInactiveCount, total, totalInactive);
+
+              if(total === filteredCount){
+                  _text = _gettext(
+                      "{0} users ({1} inactive)").format(total, totalInactive);
+              }
+              $('#user_count').text(_text);
+              return json.data;
+          }
+      },
       dom: 'rtp',
       pageLength: ${c.visual.admin_grid_items},
       order: [[ 0, "asc" ]],
@@ -98,11 +106,6 @@ $(document).ready(function() {
 
     $userListTable.on('preXhr.dt', function(e, settings, data){
         $userListTable.css('opacity', 0.3);
-    });
-
-    // refresh counters on draw
-    $userListTable.on('draw.dt', function(){
-        getDatatableCount();
     });
 
     // filter
