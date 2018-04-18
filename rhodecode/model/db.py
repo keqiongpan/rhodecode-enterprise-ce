@@ -1860,6 +1860,17 @@ class Repository(Base, BaseModel):
             .all()
 
     @property
+    def cached_diffs_relative_dir(self):
+        """
+        Return a relative to the repository store path of cached diffs
+        used for safe display for users, who shouldn't know the absolute store
+        path
+        """
+        return os.path.join(
+            os.path.dirname(self.repo_name),
+            self.cached_diffs_dir.split(os.path.sep)[-1])
+
+    @property
     def cached_diffs_dir(self):
         path = self.repo_full_path
         return os.path.join(

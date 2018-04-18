@@ -60,6 +60,10 @@
     <div class="panel-body">
         <table class="rctable edit_cache">
             <tr>
+                <td>${_('Cached diff name')}:</td>
+                <td>${c.rhodecode_db_repo.cached_diffs_relative_dir}</td>
+            </tr>
+            <tr>
                 <td>${_('Cached diff files')}:</td>
                 <td>${c.cached_diff_count}</td>
             </tr>
