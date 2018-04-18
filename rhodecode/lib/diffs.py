@@ -25,11 +25,12 @@ Set of diffing helpers, previously part of vcs
 
 import os
 import re
+import bz2
+
 import collections
 import difflib
 import logging
 import cPickle as pickle
-
 from itertools import tee, imap
 
 from rhodecode.lib.vcs.exceptions import VCSError
@@ -1142,7 +1143,7 @@ def cache_diff(cached_diff_file, diff, commits):
     }
 
     try:
-        with open(cached_diff_file, 'wb') as f:
+        with bz2.BZ2File(cached_diff_file, 'wb') as f:
             pickle.dump(struct, f)
         log.debug('Saved diff cache under %s', cached_diff_file)
     except Exception:
@@ -1168,7 +1169,7 @@ def load_cached_diff(cached_diff_file):
 
     data = None
     try:
-        with open(cached_diff_file, 'rb') as f:
+        with bz2.BZ2File(cached_diff_file, 'rb') as f:
             data = pickle.load(f)
         log.debug('Loaded diff cache from %s', cached_diff_file)
     except Exception:
