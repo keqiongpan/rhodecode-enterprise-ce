@@ -919,6 +919,11 @@ class RepoModel(BaseModel):
         if os.path.isdir(rm_path):
             shutil.move(rm_path, os.path.join(self.repos_path, _d))
 
+        # finally cleanup diff-cache if it exists
+        cached_diffs_dir = repo.cached_diffs_dir
+        if os.path.isdir(cached_diffs_dir):
+            shutil.rmtree(cached_diffs_dir)
+
 
 class ReadmeFinder:
     """
