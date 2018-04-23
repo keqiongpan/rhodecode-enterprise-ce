@@ -99,8 +99,11 @@ class CachingQuery(Query):
 
         """
         if hasattr(self, '_cache_parameters'):
-            return self.get_value(createfunc=lambda:
-                                  list(Query.__iter__(self)))
+
+            def caching_query():
+                return list(Query.__iter__(self))
+
+            return self.get_value(createfunc=caching_query)
         else:
             return Query.__iter__(self)
 

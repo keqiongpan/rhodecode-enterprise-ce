@@ -28,10 +28,12 @@ import re
 import logging
 import importlib
 from functools import wraps
+from StringIO import StringIO
+from lxml import etree
 
 import time
 from paste.httpheaders import REMOTE_USER, AUTH_TYPE
-# TODO(marcink): check if we should use webob.exc here ?
+
 from pyramid.httpexceptions import (
     HTTPNotFound, HTTPForbidden, HTTPNotAcceptable, HTTPInternalServerError)
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -43,9 +45,7 @@ from rhodecode.lib import caches
 from rhodecode.lib.auth import AuthUser, HasPermissionAnyMiddleware
 from rhodecode.lib.base import (
     BasicAuth, get_ip_addr, get_user_agent, vcs_operation_context)
-from rhodecode.lib.exceptions import (
-    HTTPLockedRC, HTTPRequirementError, UserCreationError,
-    NotAllowedToCreateUserError)
+from rhodecode.lib.exceptions import (UserCreationError, NotAllowedToCreateUserError)
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.middleware import appenlight
 from rhodecode.lib.middleware.utils import scm_app_http
@@ -53,6 +53,7 @@ from rhodecode.lib.utils import is_valid_repo, SLUG_RE
 from rhodecode.lib.utils2 import safe_str, fix_PATH, str2bool, safe_unicode
 from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.backends import base
+
 from rhodecode.model import meta
 from rhodecode.model.db import User, Repository, PullRequest
 from rhodecode.model.scm import ScmModel
@@ -60,6 +61,28 @@ from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.settings import SettingsModel, VcsSettingsModel
 
 log = logging.getLogger(__name__)
+
+
+def extract_svn_txn_id(acl_repo_name, data):
+    """
+    Helper method for extraction of svn txn_id from submited XML data during
+    POST operations
+    """
+    try:
+        root = etree.fromstring(data)
+        pat = re.compile(r'/txn/(?P<txn_id>.*)')
+        for el in root:
+            if el.tag == '{DAV:}source':
+                for sub_el in el:
+                    if sub_el.tag == '{DAV:}href':
+                        match = pat.search(sub_el.text)
+                        if match:
+                            svn_tx_id = match.groupdict()['txn_id']
+                            txn_id = caches.compute_key_from_params(
+                                acl_repo_name, svn_tx_id)
+                            return txn_id
+    except Exception:
+        log.exception('Failed to extract txn_id')
 
 
 def initialize_generator(factory):
@@ -359,8 +382,9 @@ class SimpleVCS(object):
         # check if we have SSL required  ! if not it's a bad request !
         require_ssl = str2bool(self.repo_vcs_config.get('web', 'push_ssl'))
         if require_ssl and org_proto == 'http':
-            log.debug('proto is %s and SSL is required BAD REQUEST !',
-                      org_proto)
+            log.debug(
+                'Bad request: detected protocol is `%s` and '
+                'SSL/HTTPS is required.', org_proto)
             return False
         return True
 
@@ -420,8 +444,9 @@ class SimpleVCS(object):
         # Check if the shadow repo actually exists, in case someone refers
         # to it, and it has been deleted because of successful merge.
         if self.is_shadow_repo and not self.is_shadow_repo_dir:
-            log.debug('Shadow repo detected, and shadow repo dir `%s` is missing',
-                      self.is_shadow_repo_dir)
+            log.debug(
+                'Shadow repo detected, and shadow repo dir `%s` is missing',
+                self.is_shadow_repo_dir)
             return HTTPNotFound()(environ, start_response)
 
         # ======================================================================
@@ -436,7 +461,8 @@ class SimpleVCS(object):
                 anonymous_perm = self._check_permission(
                     action, anonymous_user, self.acl_repo_name, ip_addr,
                     plugin_id='anonymous_access',
-                    plugin_cache_active=plugin_cache_active, cache_ttl=cache_ttl,
+                    plugin_cache_active=plugin_cache_active,
+                    cache_ttl=cache_ttl,
                 )
             else:
                 anonymous_perm = False
@@ -562,48 +588,42 @@ class SimpleVCS(object):
         also handles the locking exceptions which will be triggered when
         the first chunk is produced by the underlying WSGI application.
         """
-        callback_daemon, extras = self._prepare_callback_daemon(extras)
-        config = self._create_config(extras, self.acl_repo_name)
+        txn_id = ''
+        if 'CONTENT_LENGTH' in environ and environ['REQUEST_METHOD'] == 'MERGE':
+            # case for SVN, we want to re-use the callback daemon port
+            # so we use the txn_id, for this we peek the body, and still save
+            # it as wsgi.input
+            data = environ['wsgi.input'].read()
+            environ['wsgi.input'] = StringIO(data)
+            txn_id = extract_svn_txn_id(self.acl_repo_name, data)
+
+        callback_daemon, extras = self._prepare_callback_daemon(
+            extras, environ, action, txn_id=txn_id)
         log.debug('HOOKS extras is %s', extras)
+
+        config = self._create_config(extras, self.acl_repo_name)
         app = self._create_wsgi_app(repo_path, self.url_repo_name, config)
-        app.rc_extras = extras
+        with callback_daemon:
+            app.rc_extras = extras
 
-        try:
-            with callback_daemon:
-                try:
-                    response = app(environ, start_response)
-                finally:
-                    # This statement works together with the decorator
-                    # "initialize_generator" above. The decorator ensures that
-                    # we hit the first yield statement before the generator is
-                    # returned back to the WSGI server. This is needed to
-                    # ensure that the call to "app" above triggers the
-                    # needed callback to "start_response" before the
-                    # generator is actually used.
-                    yield "__init__"
-
-                for chunk in response:
-                    yield chunk
-        except Exception as exc:
-            # TODO: martinb: Exceptions are only raised in case of the Pyro4
-            # backend. Refactor this except block after dropping Pyro4 support.
-            # TODO: johbo: Improve "translating" back the exception.
-            if getattr(exc, '_vcs_kind', None) == 'repo_locked':
-                exc = HTTPLockedRC(*exc.args)
-                _code = rhodecode.CONFIG.get('lock_ret_code')
-                log.debug('Repository LOCKED ret code %s!', (_code,))
-            elif getattr(exc, '_vcs_kind', None) == 'requirement':
-                log.debug(
-                    'Repository requires features unknown to this Mercurial')
-                exc = HTTPRequirementError(*exc.args)
-            else:
-                raise
-
-            for chunk in exc(environ, start_response):
-                yield chunk
-        finally:
-            # invalidate cache on push
             try:
+                response = app(environ, start_response)
+            finally:
+                # This statement works together with the decorator
+                # "initialize_generator" above. The decorator ensures that
+                # we hit the first yield statement before the generator is
+                # returned back to the WSGI server. This is needed to
+                # ensure that the call to "app" above triggers the
+                # needed callback to "start_response" before the
+                # generator is actually used.
+                yield "__init__"
+
+            # iter content
+            for chunk in response:
+                yield chunk
+
+            try:
+                # invalidate cache on push
                 if action == 'push':
                     self._invalidate_cache(self.url_repo_name)
             finally:
@@ -631,10 +651,18 @@ class SimpleVCS(object):
         """Create a safe config representation."""
         raise NotImplementedError()
 
-    def _prepare_callback_daemon(self, extras):
+    def _should_use_callback_daemon(self, extras, environ, action):
+        return True
+
+    def _prepare_callback_daemon(self, extras, environ, action, txn_id=None):
+        direct_calls = vcs_settings.HOOKS_DIRECT_CALLS
+        if not self._should_use_callback_daemon(extras, environ, action):
+            # disable callback daemon for actions that don't require it
+            direct_calls = True
+
         return prepare_callback_daemon(
             extras, protocol=vcs_settings.HOOKS_PROTOCOL,
-            use_direct_calls=vcs_settings.HOOKS_DIRECT_CALLS)
+            use_direct_calls=direct_calls, txn_id=txn_id)
 
 
 def _should_check_locking(query_string):

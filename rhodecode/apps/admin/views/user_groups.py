@@ -88,8 +88,8 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         _render = self.request.get_partial_renderer(
             'rhodecode:templates/data_table/_dt_elements.mako')
 
-        def user_group_name(user_group_id, user_group_name):
-            return _render("user_group_name", user_group_id, user_group_name)
+        def user_group_name(user_group_name):
+            return _render("user_group_name", user_group_name)
 
         def user_group_actions(user_group_id, user_group_name):
             return _render("user_group_actions", user_group_id, user_group_name)
@@ -153,15 +153,14 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         user_groups_data = []
         for user_gr in auth_user_group_list:
             user_groups_data.append({
-                "users_group_name": user_group_name(
-                    user_gr.users_group_id, h.escape(user_gr.users_group_name)),
+                "users_group_name": user_group_name(user_gr.users_group_name),
                 "name_raw": h.escape(user_gr.users_group_name),
                 "description": h.escape(user_gr.user_group_description),
                 "members": user_gr.member_count,
                 # NOTE(marcink): because of advanced query we
                 # need to load it like that
-                "sync": UserGroup._load_group_data(
-                    user_gr.group_data).get('extern_type'),
+                "sync": UserGroup._load_sync(
+                    UserGroup._load_group_data(user_gr.group_data)),
                 "active": h.bool2icon(user_gr.users_group_active),
                 "owner": user_profile(user_gr.User.username),
                 "action": user_group_actions(

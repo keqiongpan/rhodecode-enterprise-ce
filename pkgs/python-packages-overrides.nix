@@ -25,6 +25,12 @@ self: super: {
     };
   });
 
+  Beaker = super.Beaker.override (attrs: {
+    patches = [
+      ./patch-beaker-lock-func-debug.diff
+    ];
+  });
+
   future = super.future.override (attrs: {
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -82,7 +88,7 @@ self: super: {
       pkgs.openssl
     ];
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
-      pkgs.mysql.lib
+      pkgs.libmysql
       pkgs.zlib
     ];
   });

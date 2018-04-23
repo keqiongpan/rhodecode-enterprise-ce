@@ -134,13 +134,17 @@ def get_user_group_slug(request):
     elif getattr(request, 'matchdict', None):
         # pyramid
         _user_group = request.matchdict.get('user_group_id')
-
+        _user_group_name = request.matchdict.get('user_group_name')
         try:
-            _user_group = UserGroup.get(_user_group)
+            if _user_group:
+                _user_group = UserGroup.get(_user_group)
+            elif _user_group_name:
+                _user_group = UserGroup.get_by_group_name(_user_group_name)
+
             if _user_group:
                 _user_group = _user_group.users_group_name
         except Exception:
-            log.exception('Failed to get user group by id')
+            log.exception('Failed to get user group by id and name')
             # catch all failures here
             return None
 
@@ -352,11 +356,10 @@ def config_data_from_db(clear_session=True, repo=None):
 
     ui_settings = settings_model.get_ui_settings()
 
+    ui_data = []
     for setting in ui_settings:
         if setting.active:
-            log.debug(
-                'settings ui from db: [%s] %s=%s',
-                setting.section, setting.key, setting.value)
+            ui_data.append((setting.section, setting.key, setting.value))
             config.append((
                 safe_str(setting.section), safe_str(setting.key),
                 safe_str(setting.value)))
@@ -365,6 +368,9 @@ def config_data_from_db(clear_session=True, repo=None):
             # handles that
             config.append((
                 safe_str(setting.section), safe_str(setting.key), False))
+    log.debug(
+        'settings ui from db: %s',
+        ','.join(map(lambda s: '[{}] {}={}'.format(*s), ui_data)))
     if clear_session:
         meta.Session.remove()
 
@@ -508,7 +514,6 @@ def repo2db_mapper(initial_repo_list, remove_obsolete=False):
     :param remove_obsolete: check for obsolete entries in database
     """
     from rhodecode.model.repo import RepoModel
-    from rhodecode.model.scm import ScmModel
     from rhodecode.model.repo_group import RepoGroupModel
     from rhodecode.model.settings import SettingsModel
 
@@ -560,9 +565,8 @@ def repo2db_mapper(initial_repo_list, remove_obsolete=False):
 
         config = db_repo._config
         config.set('extensions', 'largefiles', '')
-        ScmModel().install_hooks(
-            db_repo.scm_instance(config=config),
-            repo_type=db_repo.repo_type)
+        repo = db_repo.scm_instance(config=config)
+        repo.install_hooks()
 
     removed = []
     if remove_obsolete:

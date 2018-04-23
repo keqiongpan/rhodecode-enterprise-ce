@@ -22,10 +22,11 @@ import re
 import colander
 
 from rhodecode import forms
-from rhodecode.model.db import User
+from rhodecode.model.db import User, UserEmailMap
 from rhodecode.model.validation_schema import types, validators
 from rhodecode.translation import _
 from rhodecode.lib.auth import check_password
+from rhodecode.lib import helpers as h
 
 
 @colander.deferred
@@ -38,6 +39,7 @@ def deferred_user_password_validator(node, kw):
             msg = _('Password is incorrect')
             raise colander.Invalid(node, msg)
     return _user_password_validator
+
 
 
 class ChangePasswordSchema(colander.Schema):
@@ -123,3 +125,64 @@ class UserSchema(colander.Schema):
 
         appstruct = super(UserSchema, self).deserialize(cstruct)
         return appstruct
+
+
+@colander.deferred
+def deferred_user_email_in_emails_validator(node, kw):
+    return colander.OneOf(kw.get('user_emails'))
+
+
+@colander.deferred
+def deferred_additional_email_validator(node, kw):
+    emails = kw.get('user_emails')
+
+    def name_validator(node, value):
+        if value in emails:
+            msg = _('This e-mail address is already taken')
+            raise colander.Invalid(node, msg)
+        user = User.get_by_email(value, case_insensitive=True)
+        if user:
+            msg = _(u'This e-mail address is already taken')
+            raise colander.Invalid(node, msg)
+        c = colander.Email()
+        return c(node, value)
+    return name_validator
+
+
+@colander.deferred
+def deferred_user_email_in_emails_widget(node, kw):
+    import deform.widget
+    emails = [(email, email) for email in kw.get('user_emails')]
+    return deform.widget.Select2Widget(values=emails)
+
+
+class UserProfileSchema(colander.Schema):
+    username = colander.SchemaNode(
+        colander.String(),
+        validator=deferred_username_validator)
+
+    firstname = colander.SchemaNode(
+        colander.String(), missing='', title='First name')
+
+    lastname = colander.SchemaNode(
+        colander.String(), missing='', title='Last name')
+
+    email = colander.SchemaNode(
+        colander.String(), widget=deferred_user_email_in_emails_widget,
+        validator=deferred_user_email_in_emails_validator,
+        description=h.literal(
+            _('Additional emails can be specified at <a href="{}">extra emails</a> page.').format(
+                '/_admin/my_account/emails')),
+    )
+
+
+class AddEmailSchema(colander.Schema):
+    current_password = colander.SchemaNode(
+        colander.String(),
+        missing=colander.required,
+        widget=forms.widget.PasswordWidget(redisplay=True),
+        validator=deferred_user_password_validator)
+
+    email = colander.SchemaNode(
+        colander.String(), title='New Email',
+        validator=deferred_additional_email_validator)

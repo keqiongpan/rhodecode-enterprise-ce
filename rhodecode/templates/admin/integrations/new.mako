@@ -56,7 +56,7 @@
           <%widgets:panel>
             <h2>
               <div class="integration-icon">
-                  ${IntegrationObject.icon|n}
+                  ${IntegrationObject.icon()|n}
               </div>
               ${IntegrationObject.display_name}
             </h2>

@@ -331,6 +331,10 @@ def includeme(config):
         name='edit_repo_advanced_fork',
         pattern='/{repo_name:.*?[^/]}/settings/advanced/fork', repo_route=True)
 
+    config.add_route(
+        name='edit_repo_advanced_hooks',
+        pattern='/{repo_name:.*?[^/]}/settings/advanced/hooks', repo_route=True)
+
     # Caches
     config.add_route(
         name='edit_repo_caches',
@@ -373,6 +377,9 @@ def includeme(config):
     config.add_route(
         name='edit_repo_remote_pull',
         pattern='/{repo_name:.*?[^/]}/settings/remote/pull', repo_route=True)
+    config.add_route(
+        name='edit_repo_remote_push',
+        pattern='/{repo_name:.*?[^/]}/settings/remote/push', repo_route=True)
 
     # Statistics
     config.add_route(
@@ -417,6 +424,11 @@ def includeme(config):
     config.add_route(
         name='repo_default_reviewers_data',
         pattern='/{repo_name:.*?[^/]}/settings/review/default-reviewers', repo_route=True)
+
+    # Repo Automation (EE feature)
+    config.add_route(
+        name='repo_automation',
+        pattern='/{repo_name:.*?[^/]}/settings/automation', repo_route=True)
 
     # Strip
     config.add_route(

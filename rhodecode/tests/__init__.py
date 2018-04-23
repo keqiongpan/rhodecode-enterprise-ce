@@ -41,7 +41,7 @@ log = logging.getLogger(__name__)
 
 __all__ = [
     'get_new_dir', 'TestController',
-    'link_to', 'ldap_lib_installed', 'clear_all_caches',
+    'link_to', 'clear_all_caches',
     'assert_session_flash', 'login_user', 'no_newline_id_generator',
     'TESTS_TMP_PATH', 'HG_REPO', 'GIT_REPO', 'SVN_REPO',
     'NEW_HG_REPO', 'NEW_GIT_REPO',
@@ -93,17 +93,6 @@ TEST_HG_REPO_CLONE = jn(TESTS_TMP_PATH, 'vcshgclone%s' % uniq_suffix)
 TEST_HG_REPO_PULL = jn(TESTS_TMP_PATH, 'vcshgpull%s' % uniq_suffix)
 
 TEST_REPO_PREFIX = 'vcs-test'
-
-
-# skip ldap tests if LDAP lib is not installed
-ldap_lib_installed = False
-try:
-    import ldap
-    ldap_lib_installed = True
-except ImportError:
-    ldap = None
-    # means that python-ldap is not installed
-    pass
 
 
 def clear_all_caches():

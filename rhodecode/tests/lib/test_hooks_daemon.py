@@ -179,10 +179,12 @@ class TestHttpHooksCallbackDaemon(object):
             daemon = hooks_daemon.HttpHooksCallbackDaemon()
         assert daemon._daemon == tcp_server
 
+        _, port = tcp_server.server_address
+        expected_uri = '{}:{}'.format(daemon.IP_ADDRESS, port)
+        msg = 'Preparing HTTP callback daemon at `{}` and ' \
+              'registering hook object'.format(expected_uri)
         assert_message_in_log(
-            caplog.records,
-            'Preparing HTTP callback daemon and registering hook object',
-            levelno=logging.DEBUG, module='hooks_daemon')
+            caplog.records, msg, levelno=logging.DEBUG, module='hooks_daemon')
 
     def test_prepare_inits_hooks_uri_and_logs_it(
             self, tcp_server, caplog):
@@ -193,8 +195,10 @@ class TestHttpHooksCallbackDaemon(object):
         expected_uri = '{}:{}'.format(daemon.IP_ADDRESS, port)
         assert daemon.hooks_uri == expected_uri
 
+        msg = 'Preparing HTTP callback daemon at `{}` and ' \
+              'registering hook object'.format(expected_uri)
         assert_message_in_log(
-            caplog.records, 'Hooks uri is: {}'.format(expected_uri),
+            caplog.records, msg,
             levelno=logging.DEBUG, module='hooks_daemon')
 
     def test_run_creates_a_thread(self, tcp_server):
@@ -263,7 +267,8 @@ class TestPrepareHooksDaemon(object):
             expected_extras.copy(), protocol=protocol, use_direct_calls=True)
         assert isinstance(callback, hooks_daemon.DummyHooksCallbackDaemon)
         expected_extras['hooks_module'] = 'rhodecode.lib.hooks_daemon'
-        assert extras == expected_extras
+        expected_extras['time'] = extras['time']
+        assert 'extra1' in extras
 
     @pytest.mark.parametrize('protocol, expected_class', (
         ('http', hooks_daemon.HttpHooksCallbackDaemon),
@@ -272,12 +277,15 @@ class TestPrepareHooksDaemon(object):
             self, protocol, expected_class):
         expected_extras = {
             'extra1': 'value1',
+            'txn_id': 'txnid2',
             'hooks_protocol': protocol.lower()
         }
         callback, extras = hooks_daemon.prepare_callback_daemon(
-            expected_extras.copy(), protocol=protocol, use_direct_calls=False)
+            expected_extras.copy(), protocol=protocol, use_direct_calls=False,
+            txn_id='txnid2')
         assert isinstance(callback, expected_class)
-        hooks_uri = extras.pop('hooks_uri')
+        extras.pop('hooks_uri')
+        expected_extras['time'] = extras['time']
         assert extras == expected_extras
 
     @pytest.mark.parametrize('protocol', (

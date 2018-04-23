@@ -563,6 +563,7 @@ def create_repo(
         description=Optional(''),
         private=Optional(False),
         clone_uri=Optional(None),
+        push_uri=Optional(None),
         landing_rev=Optional('rev:tip'),
         enable_statistics=Optional(False),
         enable_locking=Optional(False),
@@ -596,6 +597,8 @@ def create_repo(
     :type private: bool
     :param clone_uri: set clone_uri
     :type clone_uri: str
+    :param push_uri: set push_uri
+    :type push_uri: str
     :param landing_rev: <rev_type>:<rev>
     :type landing_rev: str
     :param enable_locking:
@@ -639,6 +642,7 @@ def create_repo(
     description = Optional.extract(description)
     copy_permissions = Optional.extract(copy_permissions)
     clone_uri = Optional.extract(clone_uri)
+    push_uri = Optional.extract(push_uri)
     landing_commit_ref = Optional.extract(landing_rev)
 
     defs = SettingsModel().get_default_repo_settings(strip_prefix=True)
@@ -667,6 +671,7 @@ def create_repo(
             repo_description=description,
             repo_landing_commit_ref=landing_commit_ref,
             repo_clone_uri=clone_uri,
+            repo_push_uri=push_uri,
             repo_private=private,
             repo_copy_permissions=copy_permissions,
             repo_enable_statistics=enable_statistics,
@@ -685,6 +690,7 @@ def create_repo(
             'repo_description': schema_data['repo_description'],
             'repo_private': schema_data['repo_private'],
             'clone_uri': schema_data['repo_clone_uri'],
+            'push_uri': schema_data['repo_push_uri'],
             'repo_landing_rev': schema_data['repo_landing_commit_ref'],
             'enable_statistics': schema_data['repo_enable_statistics'],
             'enable_locking': schema_data['repo_enable_locking'],
@@ -692,7 +698,7 @@ def create_repo(
             'repo_copy_permissions': schema_data['repo_copy_permissions'],
         }
 
-        task = RepoModel().create(form_data=data, cur_user=owner)
+        task = RepoModel().create(form_data=data, cur_user=owner.user_id)
         task_id = get_task_id(task)
         # no commit, it's done in RepoModel, or async via celery
         return {
@@ -800,7 +806,8 @@ def remove_field_from_repo(request, apiuser, repoid, key):
 def update_repo(
         request, apiuser, repoid, repo_name=Optional(None),
         owner=Optional(OAttr('apiuser')), description=Optional(''),
-        private=Optional(False), clone_uri=Optional(None),
+        private=Optional(False),
+        clone_uri=Optional(None), push_uri=Optional(None),
         landing_rev=Optional('rev:tip'), fork_of=Optional(None),
         enable_statistics=Optional(False),
         enable_locking=Optional(False),
@@ -877,6 +884,9 @@ def update_repo(
         clone_uri=clone_uri
         if not isinstance(clone_uri, Optional) else repo.clone_uri,
 
+        push_uri=push_uri
+        if not isinstance(push_uri, Optional) else repo.push_uri,
+
         repo_landing_rev=landing_rev
         if not isinstance(landing_rev, Optional) else repo._landing_revision,
 
@@ -910,6 +920,7 @@ def update_repo(
             repo_owner=updates['user'],
             repo_description=updates['repo_description'],
             repo_clone_uri=updates['clone_uri'],
+            repo_push_uri=updates['push_uri'],
             repo_fork_of=updates['fork_id'],
             repo_private=updates['repo_private'],
             repo_landing_commit_ref=updates['repo_landing_rev'],
@@ -928,6 +939,7 @@ def update_repo(
         repo_description=schema_data['repo_description'],
         repo_private=schema_data['repo_private'],
         clone_uri=schema_data['repo_clone_uri'],
+        push_uri=schema_data['repo_push_uri'],
         repo_landing_rev=schema_data['repo_landing_commit_ref'],
         repo_enable_statistics=schema_data['repo_enable_statistics'],
         repo_enable_locking=schema_data['repo_enable_locking'],
@@ -1084,7 +1096,7 @@ def fork_repo(request, apiuser, repoid, fork_name,
             'landing_rev': schema_data['repo_landing_commit_ref'],
         }
 
-        task = RepoModel().create_fork(data, cur_user=owner)
+        task = RepoModel().create_fork(data, cur_user=owner.user_id)
         # no commit, it's done in RepoModel, or async via celery
         task_id = get_task_id(task)
 
@@ -1749,7 +1761,7 @@ def revoke_user_group_permission(request, apiuser, repoid, usergroupid):
 
 
 @jsonrpc_method()
-def pull(request, apiuser, repoid):
+def pull(request, apiuser, repoid, remote_uri=Optional(None)):
     """
     Triggers a pull on the given repository from a remote location. You
     can use this to keep remote repositories up-to-date.
@@ -1764,6 +1776,8 @@ def pull(request, apiuser, repoid):
     :type apiuser: AuthUser
     :param repoid: The repository name or repository ID.
     :type repoid: str or int
+    :param remote_uri: Optional remote URI to pass in for pull
+    :type remote_uri: str
 
     Example output:
 
@@ -1771,7 +1785,7 @@ def pull(request, apiuser, repoid):
 
       id : <id_given_in_input>
       result : {
-        "msg": "Pulled from `<repository name>`"
+        "msg": "Pulled from url `<remote_url>` on repo `<repository name>`"
         "repository": "<repository name>"
       }
       error :  null
@@ -1783,27 +1797,31 @@ def pull(request, apiuser, repoid):
       id : <id_given_in_input>
       result : null
       error :  {
-        "Unable to pull changes from `<reponame>`"
+        "Unable to push changes from `<remote_url>`"
       }
 
     """
 
     repo = get_repo_or_error(repoid)
+    remote_uri = Optional.extract(remote_uri)
+    remote_uri_display = remote_uri or repo.clone_uri_hidden
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     try:
-        ScmModel().pull_changes(repo.repo_name, apiuser.username)
+        ScmModel().pull_changes(
+            repo.repo_name, apiuser.username, remote_uri=remote_uri)
         return {
-            'msg': 'Pulled from `%s`' % repo.repo_name,
+            'msg': 'Pulled from url `%s` on repo `%s`' % (
+                remote_uri_display, repo.repo_name),
             'repository': repo.repo_name
         }
     except Exception:
         log.exception("Exception occurred while trying to "
                       "pull changes from remote location")
         raise JSONRPCError(
-            'Unable to pull changes from `%s`' % repo.repo_name
+            'Unable to pull changes from `%s`' % remote_uri_display
         )
 
 

@@ -51,7 +51,7 @@ add_user_to_user_group
 create_user_group 
 -----------------
 
-.. py:function:: create_user_group(apiuser, group_name, description=<Optional:''>, owner=<Optional:<OptionalAttr:apiuser>>, active=<Optional:True>)
+.. py:function:: create_user_group(apiuser, group_name, description=<Optional:''>, owner=<Optional:<OptionalAttr:apiuser>>, active=<Optional:True>, sync=<Optional:None>)
 
    Creates a new user group.
 
@@ -71,6 +71,9 @@ create_user_group
    :type owner: Optional(str or int)
    :param active: Set this group as active.
    :type active: Optional(``True`` | ``False``)
+   :param sync: Set enabled or disabled the automatically sync from
+       external authentication types like ldap.
+   :type sync: Optional(``True`` | ``False``)
 
    Example output:
 
@@ -368,7 +371,7 @@ revoke_user_permission_from_user_group
 update_user_group 
 -----------------
 
-.. py:function:: update_user_group(apiuser, usergroupid, group_name=<Optional:''>, description=<Optional:''>, owner=<Optional:None>, active=<Optional:True>)
+.. py:function:: update_user_group(apiuser, usergroupid, group_name=<Optional:''>, description=<Optional:''>, owner=<Optional:None>, active=<Optional:True>, sync=<Optional:None>)
 
    Updates the specified `user group` with the details provided.
 
@@ -387,6 +390,9 @@ update_user_group
    :type owner: Optional(str or int)
    :param active: Set the group as active.
    :type active: Optional(``True`` | ``False``)
+   :param sync: Set enabled or disabled the automatically sync from
+       external authentication types like ldap.
+   :type sync: Optional(``True`` | ``False``)
 
    Example output:
 

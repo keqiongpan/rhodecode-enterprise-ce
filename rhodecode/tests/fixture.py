@@ -30,7 +30,7 @@ import shutil
 import configobj
 
 from rhodecode.tests import *
-from rhodecode.model.db import Repository, User, RepoGroup, UserGroup, Gist
+from rhodecode.model.db import Repository, User, RepoGroup, UserGroup, Gist, UserEmailMap
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.user import UserModel
@@ -125,6 +125,7 @@ class Fixture(object):
             'repo_name': None,
             'repo_type': 'hg',
             'clone_uri': '',
+            'push_uri': '',
             'repo_group': '-1',
             'repo_description': 'DESC',
             'repo_private': False,
@@ -273,6 +274,13 @@ class Fixture(object):
     def destroy_user(self, userid):
         UserModel().delete(userid)
         Session().commit()
+
+    def create_additional_user_email(self, user, email):
+        uem = UserEmailMap()
+        uem.user = user
+        uem.email = email
+        Session().add(uem)
+        return uem
 
     def destroy_users(self, userid_iter):
         for user_id in userid_iter:

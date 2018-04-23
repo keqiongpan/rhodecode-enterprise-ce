@@ -103,7 +103,7 @@ class TestSubversionServer(object):
                         return_value=0):
                     with mock.patch.object(
                             SubversionTunnelWrapper, 'command',
-                            return_value='date'):
+                            return_value=['date']):
 
                         exit_code = server.run()
         # SVN has this differently configured, and we get in our mock env
@@ -115,7 +115,7 @@ class TestSubversionServer(object):
         from rhodecode.apps.ssh_support.lib.backends.svn import SubversionTunnelWrapper
         with mock.patch.object(
                 SubversionTunnelWrapper, 'command',
-                return_value='date'):
+                return_value=['date']):
             with mock.patch.object(
                     SubversionTunnelWrapper, 'get_first_client_response',
                     return_value=None):

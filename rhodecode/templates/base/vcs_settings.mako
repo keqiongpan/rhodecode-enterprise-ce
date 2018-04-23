@@ -312,6 +312,20 @@
         </div>
     % endif
 
+    % if display_globals or repo_type in ['hg', 'git', 'svn']:
+        <div class="panel panel-default">
+            <div class="panel-heading" id="vcs-pull-requests-options">
+                <h3 class="panel-title">${_('Diff cache')}<a class="permalink" href="#vcs-pull-requests-options"> ¶</a></h3>
+            </div>
+            <div class="panel-body">
+                <div class="checkbox">
+                    ${h.checkbox('rhodecode_diff_cache' + suffix, 'True', **kwargs)}
+                    <label for="rhodecode_diff_cache${suffix}">${_('Enable caching diffs for pull requests cache and commits')}</label>
+                </div>
+            </div>
+        </div>
+    % endif
+
     % if display_globals or repo_type in ['hg',]:
         <div class="panel panel-default">
             <div class="panel-heading" id="vcs-pull-requests-options">

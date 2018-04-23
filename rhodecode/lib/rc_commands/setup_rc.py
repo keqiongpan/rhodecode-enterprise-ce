@@ -95,7 +95,7 @@ def command(ini_path, force_yes, user, email, password, api_key, repos,
     dbmanage.populate_default_permissions()
     Session().commit()
 
-    with bootstrap(ini_path) as env:
+    with bootstrap(ini_path, env={'RC_CMD_SETUP_RC': '1'}) as env:
         msg = 'Successfully initialized database, schema and default data.'
         print()
         print('*' * len(msg))

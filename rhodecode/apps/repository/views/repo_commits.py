@@ -34,17 +34,18 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous, CSRFRequired)
 
 from rhodecode.lib.compat import OrderedDict
+from rhodecode.lib.diffs import cache_diff, load_cached_diff, diff_cache_exist
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 import rhodecode.lib.helpers as h
-from rhodecode.lib.utils2 import safe_unicode
+from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
-    RepositoryError, CommitDoesNotExistError, NodeDoesNotExistError)
+    RepositoryError, CommitDoesNotExistError)
 from rhodecode.model.db import ChangesetComment, ChangesetStatus
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.meta import Session
-
+from rhodecode.model.settings import VcsSettingsModel
 
 log = logging.getLogger(__name__)
 
@@ -152,6 +153,12 @@ class RepoCommitsView(RepoAppView):
 
         return c
 
+    def _is_diff_cache_enabled(self, target_repo):
+        caching_enabled = self._get_general_setting(
+            target_repo, 'rhodecode_diff_cache')
+        log.debug('Diff caching enabled: %s', caching_enabled)
+        return caching_enabled
+
     def _commit(self, commit_id_range, method):
         _ = self.request.translate
         c = self.load_default_context()
@@ -240,45 +247,65 @@ class RepoCommitsView(RepoAppView):
             commit2 = commit
             commit1 = commit.parents[0] if commit.parents else EmptyCommit()
 
-            _diff = self.rhodecode_vcs_repo.get_diff(
-                commit1, commit2,
-                ignore_whitespace=ign_whitespace_lcl, context=context_lcl)
-            diff_processor = diffs.DiffProcessor(
-                _diff, format='newdiff', diff_limit=diff_limit,
-                file_limit=file_limit, show_full_diff=c.fulldiff)
-
-            commit_changes = OrderedDict()
             if method == 'show':
-                _parsed = diff_processor.prepare()
-                c.limited_diff = isinstance(_parsed, diffs.LimitedDiffContainer)
-
-                _parsed = diff_processor.prepare()
-
-                def _node_getter(commit):
-                    def get_node(fname):
-                        try:
-                            return commit.get_node(fname)
-                        except NodeDoesNotExistError:
-                            return None
-                    return get_node
-
                 inline_comments = CommentsModel().get_inline_comments(
                     self.db_repo.repo_id, revision=commit.raw_id)
                 c.inline_cnt = CommentsModel().get_inline_comments_count(
                     inline_comments)
+                c.inline_comments = inline_comments
 
-                diffset = codeblocks.DiffSet(
-                    repo_name=self.db_repo_name,
-                    source_node_getter=_node_getter(commit1),
-                    target_node_getter=_node_getter(commit2),
-                    comments=inline_comments)
-                diffset = diffset.render_patchset(
-                    _parsed, commit1.raw_id, commit2.raw_id)
+                cache_path = self.rhodecode_vcs_repo.get_create_shadow_cache_pr_path(
+                    self.db_repo)
+                cache_file_path = diff_cache_exist(
+                    cache_path, 'diff', commit.raw_id,
+                    ign_whitespace_lcl, context_lcl, c.fulldiff)
 
+                caching_enabled = self._is_diff_cache_enabled(self.db_repo)
+                force_recache = str2bool(self.request.GET.get('force_recache'))
+
+                cached_diff = None
+                if caching_enabled:
+                    cached_diff = load_cached_diff(cache_file_path)
+
+                has_proper_diff_cache = cached_diff and cached_diff.get('diff')
+                if not force_recache and has_proper_diff_cache:
+                    diffset = cached_diff['diff']
+                else:
+                    vcs_diff = self.rhodecode_vcs_repo.get_diff(
+                        commit1, commit2,
+                        ignore_whitespace=ign_whitespace_lcl,
+                        context=context_lcl)
+
+                    diff_processor = diffs.DiffProcessor(
+                        vcs_diff, format='newdiff', diff_limit=diff_limit,
+                        file_limit=file_limit, show_full_diff=c.fulldiff)
+
+                    _parsed = diff_processor.prepare()
+
+                    diffset = codeblocks.DiffSet(
+                        repo_name=self.db_repo_name,
+                        source_node_getter=codeblocks.diffset_node_getter(commit1),
+                        target_node_getter=codeblocks.diffset_node_getter(commit2))
+
+                    diffset = self.path_filter.render_patchset_filtered(
+                        diffset, _parsed, commit1.raw_id, commit2.raw_id)
+
+                    # save cached diff
+                    if caching_enabled:
+                        cache_diff(cache_file_path, diffset, None)
+
+                c.limited_diff = diffset.limited_diff
                 c.changes[commit.raw_id] = diffset
             else:
+                # TODO(marcink): no cache usage here...
+                _diff = self.rhodecode_vcs_repo.get_diff(
+                    commit1, commit2,
+                    ignore_whitespace=ign_whitespace_lcl, context=context_lcl)
+                diff_processor = diffs.DiffProcessor(
+                    _diff, format='newdiff', diff_limit=diff_limit,
+                    file_limit=file_limit, show_full_diff=c.fulldiff)
                 # downloads/raw we only need RAW diff nothing else
-                diff = diff_processor.as_raw()
+                diff = self.path_filter.get_raw_patch(diff_processor)
                 c.changes[commit.raw_id] = [None, None, None, None, diff, None, None]
 
         # sort comments by how they were generated

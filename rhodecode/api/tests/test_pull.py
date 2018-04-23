@@ -33,12 +33,14 @@ class TestPull(object):
     def test_api_pull(self, backend):
         r = backend.create_repo()
         repo_name = r.repo_name
-        r.clone_uri = os.path.join(TESTS_TMP_PATH, backend.repo_name)
+        clone_uri = os.path.join(TESTS_TMP_PATH, backend.repo_name)
+        r.clone_uri = clone_uri
 
         id_, params = build_data(self.apikey, 'pull', repoid=repo_name,)
         response = api_call(self.app, params)
-
-        expected = {'msg': 'Pulled from `%s`' % (repo_name,),
+        msg = 'Pulled from url `%s` on repo `%s`' % (
+            clone_uri, repo_name)
+        expected = {'msg': msg,
                     'repository': repo_name}
         assert_ok(id_, expected, given=response.body)
 
@@ -47,5 +49,5 @@ class TestPull(object):
             self.apikey, 'pull', repoid=backend.repo_name)
         response = api_call(self.app, params)
 
-        expected = 'Unable to pull changes from `%s`' % (backend.repo_name,)
+        expected = 'Unable to pull changes from `None`'
         assert_error(id_, expected, given=response.body)

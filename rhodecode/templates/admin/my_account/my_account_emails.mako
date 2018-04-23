@@ -48,25 +48,7 @@
         </div>
 
         <div>
-            ${h.secure_form(h.route_path('my_account_emails_add'), request=request)}
-            <div class="form">
-                <!-- fields -->
-                <div class="fields">
-                     <div class="field">
-                        <div class="label">
-                            <label for="new_email">${_('New email address')}:</label>
-                        </div>
-                        <div class="input">
-                            ${h.text('new_email', class_='medium')}
-                        </div>
-                     </div>
-                    <div class="buttons">
-                      ${h.submit('save',_('Add'),class_="btn")}
-                      ${h.reset('reset',_('Reset'),class_="btn")}
-                    </div>
-                </div>
-            </div>
-            ${h.end_form()}
+           ${c.form.render() | n}
         </div>
     </div>
 </div>

@@ -314,6 +314,9 @@ class AdminSettingsView(BaseAppView):
         try:
             form_result = application_form.to_python(dict(self.request.POST))
         except formencode.Invalid as errors:
+            h.flash(
+                _("Some form inputs contain invalid data."),
+                category='error')
             data = render('rhodecode:templates/admin/settings/settings.mako',
                           self._get_template_context(c), self.request)
             html = formencode.htmlfill.render(
@@ -386,6 +389,9 @@ class AdminSettingsView(BaseAppView):
         try:
             form_result = application_form.to_python(dict(self.request.POST))
         except formencode.Invalid as errors:
+            h.flash(
+                _("Some form inputs contain invalid data."),
+                category='error')
             data = render('rhodecode:templates/admin/settings/settings.mako',
                           self._get_template_context(c), self.request)
             html = formencode.htmlfill.render(
@@ -669,6 +675,17 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
+        route_name='admin_settings_automation', request_method='GET',
+        renderer='rhodecode:templates/admin/settings/settings.mako')
+    def settings_automation(self):
+        c = self.load_default_context()
+        c.active = 'automation'
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
         route_name='admin_settings_labs', request_method='GET',
         renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_labs(self):
@@ -705,7 +722,7 @@ class AdminSettingsView(BaseAppView):
             form_result = application_form.to_python(dict(self.request.POST))
         except formencode.Invalid as errors:
             h.flash(
-                _('Some form inputs contain invalid data.'),
+                _("Some form inputs contain invalid data."),
                 category='error')
             data = render('rhodecode:templates/admin/settings/settings.mako',
                           self._get_template_context(c), self.request)

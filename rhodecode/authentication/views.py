@@ -63,7 +63,7 @@ class AuthnPluginViewBase(BaseAppView):
         for node in schema:
             if node.name not in defaults:
                 defaults[node.name] = self.plugin.get_setting_by_name(
-                    node.name, node.default, cache=False)
+                    node.name, node.default)
 
         template_context = {
             'defaults': defaults,
@@ -145,7 +145,7 @@ class AuthSettingsView(BaseAppView):
 
         # Create form default values and fill the form.
         form_defaults = {
-            'auth_plugins': ','.join(enabled_plugins)
+            'auth_plugins': ',\n'.join(enabled_plugins)
         }
         form_defaults.update(defaults)
         html = formencode.htmlfill.render(

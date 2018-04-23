@@ -29,7 +29,8 @@ from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.lib.celerylib import run_task
 from rhodecode.lib.celerylib import tasks
-from rhodecode.integrations.types.base import IntegrationTypeBase
+from rhodecode.integrations.types.base import (
+    IntegrationTypeBase, render_with_traceback)
 
 
 log = logging.getLogger(__name__)
@@ -127,11 +128,15 @@ repo_push_template_html = Template('''
                 </td></tr>
                 <tr>
                     <td style="padding:15px;" valign="top">
-                        % for commit in data['push']['commits']:
-                        <a href="${commit['url']}">${commit['short_id']}</a> by ${commit['author']} at ${commit['date']} <br/>
-                        ${commit['message_html']} <br/>
-                        <br/>
-                        % endfor
+                        % if data['push']['commits']:
+                            % for commit in data['push']['commits']:
+                            <a href="${commit['url']}">${commit['short_id']}</a> by ${commit['author']} at ${commit['date']} <br/>
+                            ${commit['message_html']} <br/>
+                            <br/>
+                            % endfor
+                        % else:
+                            No commit data
+                        % endif
                     </td>
                 </tr>
             </table>
@@ -146,7 +151,34 @@ repo_push_template_html = Template('''
 </html>
 ''')
 
-email_icon = '''
+
+class EmailSettingsSchema(colander.Schema):
+    @colander.instantiate(validator=colander.Length(min=1))
+    class recipients(colander.SequenceSchema):
+        title = _('Recipients')
+        description = _('Email addresses to send push events to')
+        widget = deform.widget.SequenceWidget(min_len=1)
+
+        recipient = colander.SchemaNode(
+            colander.String(),
+            title=_('Email address'),
+            description=_('Email address'),
+            default='',
+            validator=colander.Email(),
+            widget=deform.widget.TextInputWidget(
+                placeholder='user@domain.com',
+            ),
+        )
+
+
+class EmailIntegrationType(IntegrationTypeBase):
+    key = 'email'
+    display_name = _('Email')
+    description = _('Send repo push summaries to a list of recipients via email')
+
+    @classmethod
+    def icon(cls):
+        return '''
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -208,32 +240,6 @@ email_icon = '''
 </svg>
 '''
 
-
-class EmailSettingsSchema(colander.Schema):
-    @colander.instantiate(validator=colander.Length(min=1))
-    class recipients(colander.SequenceSchema):
-        title = _('Recipients')
-        description = _('Email addresses to send push events to')
-        widget = deform.widget.SequenceWidget(min_len=1)
-
-        recipient = colander.SchemaNode(
-            colander.String(),
-            title=_('Email address'),
-            description=_('Email address'),
-            default='',
-            validator=colander.Email(),
-            widget=deform.widget.TextInputWidget(
-                placeholder='user@domain.com',
-            ),
-        )
-
-
-class EmailIntegrationType(IntegrationTypeBase):
-    key = 'email'
-    display_name = _('Email')
-    description = _('Send repo push summaries to a list of recipients via email')
-    icon = email_icon
-
     def settings_schema(self):
         schema = EmailSettingsSchema()
         return schema
@@ -276,12 +282,14 @@ def repo_push_handler(data, settings):
             branches=', '.join(
                 branch['name'] for branch in data['push']['branches']))
 
-    email_body_plaintext = repo_push_template_plaintext.render(
+    email_body_plaintext = render_with_traceback(
+        repo_push_template_plaintext,
         data=data,
         subject=subject,
         instance_url=server_url)
 
-    email_body_html = repo_push_template_html.render(
+    email_body_html = render_with_traceback(
+        repo_push_template_html,
         data=data,
         subject=subject,
         instance_url=server_url)

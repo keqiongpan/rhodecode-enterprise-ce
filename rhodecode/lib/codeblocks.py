@@ -28,8 +28,9 @@ from pygments.lexers.special import TextLexer, Token
 
 from rhodecode.lib.helpers import (
     get_lexer_for_filenode, html_escape, get_custom_lexer)
-from rhodecode.lib.utils2 import AttributeDict
+from rhodecode.lib.utils2 import AttributeDict, StrictAttributeDict
 from rhodecode.lib.vcs.nodes import FileNode
+from rhodecode.lib.vcs.exceptions import VCSError, NodeDoesNotExistError
 from rhodecode.lib.diff_match_patch import diff_match_patch
 from rhodecode.lib.diffs import LimitedDiffContainer
 from pygments.lexers import get_lexer_by_name
@@ -38,7 +39,7 @@ plain_text_lexer = get_lexer_by_name(
     'text', stripall=False, stripnl=False, ensurenl=False)
 
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 def filenode_as_lines_tokens(filenode, lexer=None):
@@ -351,6 +352,16 @@ def tokens_diff(old_tokens, new_tokens, use_diff_match_patch=True):
     return old_tokens_result, new_tokens_result, similarity
 
 
+def diffset_node_getter(commit):
+    def get_node(fname):
+        try:
+            return commit.get_node(fname)
+        except NodeDoesNotExistError:
+            return None
+
+    return get_node
+
+
 class DiffSet(object):
     """
     An object for parsing the diff result from diffs.DiffProcessor and
@@ -400,7 +411,12 @@ class DiffSet(object):
         for patch in patchset:
             diffset.file_stats[patch['filename']] = patch['stats']
             filediff = self.render_patch(patch)
-            filediff.diffset = diffset
+            filediff.diffset = StrictAttributeDict(dict(
+                source_ref=diffset.source_ref,
+                target_ref=diffset.target_ref,
+                repo_name=diffset.repo_name,
+                source_repo_name=diffset.source_repo_name,
+            ))
             diffset.files.append(filediff)
             diffset.changed_files += 1
             if not patch['stats']['binary']:
@@ -510,6 +526,7 @@ class DiffSet(object):
         if target_file_path in self.comments_store:
             for lineno, comments in self.comments_store[target_file_path].items():
                 left_comments[lineno] = comments
+
         # left comments are one that we couldn't place in diff lines.
         # could be outdated, or the diff changed and this line is no
         # longer available
@@ -546,7 +563,7 @@ class DiffSet(object):
 
         result.lines.extend(
             self.parse_lines(before, after, source_file, target_file))
-        result.unified = self.as_unified(result.lines)
+        result.unified = list(self.as_unified(result.lines))
         result.sideside = result.lines
 
         return result
@@ -601,8 +618,9 @@ class DiffSet(object):
                 original.lineno = before['old_lineno']
                 original.content = before['line']
                 original.action = self.action_to_op(before['action'])
-                original.comments = self.get_comments_for('old',
-                    source_file, before['old_lineno'])
+
+                original.get_comment_args = (
+                    source_file, 'o', before['old_lineno'])
 
             if after:
                 if after['action'] == 'new-no-nl':
@@ -614,8 +632,9 @@ class DiffSet(object):
                 modified.lineno = after['new_lineno']
                 modified.content = after['line']
                 modified.action = self.action_to_op(after['action'])
-                modified.comments = self.get_comments_for('new',
-                    target_file, after['new_lineno'])
+
+                modified.get_comment_args = (
+                    target_file, 'n', after['new_lineno'])
 
             # diff the lines
             if before_tokens and after_tokens:
@@ -643,23 +662,6 @@ class DiffSet(object):
             }))
 
         return lines
-
-    def get_comments_for(self, version, filename, line_number):
-        if hasattr(filename, 'unicode_path'):
-            filename = filename.unicode_path
-
-        if not isinstance(filename, basestring):
-            return None
-
-        line_key = {
-            'old': 'o',
-            'new': 'n',
-        }[version] + str(line_number)
-
-        if filename in self.comments_store:
-            file_comments = self.comments_store[filename]
-            if line_key in file_comments:
-                return file_comments.pop(line_key)
 
     def get_line_tokens(self, line_text, line_number, file=None):
         filenode = None
@@ -717,25 +719,25 @@ class DiffSet(object):
                     if line.original.action == ' ':
                         yield (line.original.lineno, line.modified.lineno,
                                line.original.action, line.original.content,
-                               line.original.comments)
+                               line.original.get_comment_args)
                         continue
 
                     if line.original.action == '-':
                         yield (line.original.lineno, None,
                                line.original.action, line.original.content,
-                               line.original.comments)
+                               line.original.get_comment_args)
 
                     if line.modified.action == '+':
                         buf.append((
                             None, line.modified.lineno,
                             line.modified.action, line.modified.content,
-                            line.modified.comments))
+                            line.modified.get_comment_args))
                         continue
 
                 if line.modified:
                     yield (None, line.modified.lineno,
                            line.modified.action, line.modified.content,
-                           line.modified.comments)
+                           line.modified.get_comment_args)
 
             for b in buf:
                 yield b

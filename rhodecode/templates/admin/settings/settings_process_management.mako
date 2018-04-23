@@ -70,6 +70,13 @@ autoRefresh = function(value) {
     var loadData = function() {
         currentRequest = $.get(url)
             .done(function(data) {
+
+                if(data.indexOf('id="processTimeStamp"') === -1){
+                    clearInterval(intervalID);
+                    $('#procList').html('ERROR LOADING DATA. PLEASE REFRESH THE PAGE');
+                    return
+                }
+
                 currentRequest = null;
                 $('#procList').html(data);
                 timeagoActivate();

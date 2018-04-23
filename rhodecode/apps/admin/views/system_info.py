@@ -123,6 +123,9 @@ class AdminSystemInfoSettingsView(BaseAppView):
             (_('Uptime'), val('uptime')['text'], state('uptime')),
             ('', '', ''),  # spacer
 
+            # ulimit
+            (_('Ulimit'), val('ulimit')['text'], state('ulimit')),
+
             # Repo storage
             (_('Storage location'), val('storage')['path'], state('storage')),
             (_('Storage info'), val('storage')['text'], state('storage')),

@@ -137,7 +137,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
                     'user `%s` successfully authenticated via %s',
                     user_attrs['username'], self.name)
                 return user_attrs
-            log.error(
+            log.warn(
                 'user `%s` failed to authenticate via %s, reason: bad or '
                 'inactive token.', username, self.name)
         else:

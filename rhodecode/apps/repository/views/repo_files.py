@@ -426,7 +426,7 @@ class RepoFilesView(RepoAppView):
                                       context=line_context)
             diff = diffs.DiffProcessor(_diff, format='gitdiff')
 
-            response = Response(diff.as_raw())
+            response = Response(self.path_filter.get_raw_patch(diff))
             response.content_type = 'text/plain'
             response.content_disposition = (
                 'attachment; filename=%s_%s_vs_%s.diff' % (f_path, diff1, diff2)
@@ -442,7 +442,7 @@ class RepoFilesView(RepoAppView):
                                       context=line_context)
             diff = diffs.DiffProcessor(_diff, format='gitdiff')
 
-            response = Response(diff.as_raw())
+            response = Response(self.path_filter.get_raw_patch(diff))
             response.content_type = 'text/plain'
             charset = self._get_default_encoding(c)
             if charset:
@@ -462,7 +462,7 @@ class RepoFilesView(RepoAppView):
         """
         Kept only to make OLD links work
         """
-        f_path = self._get_f_path(self.request.matchdict)
+        f_path = self._get_f_path_unchecked(self.request.matchdict)
         diff1 = self.request.GET.get('diff1', '')
         diff2 = self.request.GET.get('diff2', '')
 

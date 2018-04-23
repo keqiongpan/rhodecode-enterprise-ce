@@ -43,8 +43,6 @@ class RepoSettingsView(RepoAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-
         return c
 
     @LoginRequired()
@@ -229,5 +227,21 @@ class RepoSettingsView(RepoAppView):
             log.exception("Exception during unlocking")
             h.flash(_('An error occurred during unlocking'), category='error')
 
+        raise HTTPFound(
+            h.route_path('edit_repo_advanced', repo_name=self.db_repo_name))
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.admin')
+    @view_config(
+        route_name='edit_repo_advanced_hooks', request_method='GET',
+        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
+    def edit_advanced_install_hooks(self):
+        """
+        Install Hooks for repository
+        """
+        _ = self.request.translate
+        self.load_default_context()
+        self.rhodecode_vcs_repo.install_hooks(force=True)
+        h.flash(_('installed hooks repository'), category='success')
         raise HTTPFound(
             h.route_path('edit_repo_advanced', repo_name=self.db_repo_name))

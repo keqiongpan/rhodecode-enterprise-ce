@@ -22,10 +22,12 @@
 RhodeCode authentication plugin for LDAP
 """
 
-
+import socket
+import re
 import colander
 import logging
 import traceback
+import string
 
 from rhodecode.translation import _
 from rhodecode.authentication.base import (
@@ -49,6 +51,9 @@ except ImportError:
     # ldap lib is Missing
     ldap = Missing
 
+
+class LdapError(Exception):
+    pass
 
 def plugin_factory(plugin_id, *args, **kwds):
     """
@@ -86,6 +91,16 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         title=_('Port'),
         validator=colander.Range(min=0, max=65536),
         widget='int')
+
+    timeout = colander.SchemaNode(
+        colander.Int(),
+        default=60 * 5,
+        description=_('Timeout for LDAP connection'),
+        preparer=strip_whitespace,
+        title=_('Connection timeout'),
+        validator=colander.Range(min=1),
+        widget='int')
+
     dn_user = colander.SchemaNode(
         colander.String(),
         default='',
@@ -187,19 +202,47 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
 class AuthLdap(object):
 
     def _build_servers(self):
+        def host_resolver(host, port):
+            """
+            Main work for this function is to prevent ldap connection issues,
+            and detect them early using a "greenified" sockets
+            """
+            host = host.strip()
+
+            log.info('Resolving LDAP host %s', host)
+            try:
+                ip = socket.gethostbyname(host)
+                log.info('Got LDAP server %s ip %s', host, ip)
+            except Exception:
+                raise LdapConnectionError(
+                    'Failed to resolve host: `{}`'.format(host))
+
+            log.info('Checking LDAP IP access %s', ip)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.connect((ip, int(port)))
+                s.shutdown(socket.SHUT_RD)
+            except Exception:
+                raise LdapConnectionError(
+                    'Failed to connect to host: `{}:{}`'.format(host, port))
+
+            return '{}:{}'.format(host, port)
+
+        port = self.LDAP_SERVER_PORT
         return ', '.join(
-            ["{}://{}:{}".format(
-                self.ldap_server_type, host.strip(), self.LDAP_SERVER_PORT)
+            ["{}://{}".format(
+                self.ldap_server_type, host_resolver(host, port))
              for host in self.SERVER_ADDRESSES])
 
     def __init__(self, server, base_dn, port=389, bind_dn='', bind_pass='',
                  tls_kind='PLAIN', tls_reqcert='DEMAND', ldap_version=3,
                  search_scope='SUBTREE', attr_login='uid',
-                 ldap_filter=''):
+                 ldap_filter='', timeout=None):
         if ldap == Missing:
             raise LdapImportError("Missing or incompatible ldap library")
 
         self.debug = False
+        self.timeout = timeout or 60 * 5
         self.ldap_version = ldap_version
         self.ldap_server_type = 'ldap'
 
@@ -226,34 +269,40 @@ class AuthLdap(object):
         self.BASE_DN = safe_str(base_dn)
         self.LDAP_FILTER = safe_str(ldap_filter)
 
-    def _get_ldap_server(self):
+    def _get_ldap_conn(self):
+        log.debug('initializing LDAP connection to:%s', self.LDAP_SERVER)
+
         if self.debug:
             ldap.set_option(ldap.OPT_DEBUG_LEVEL, 255)
-        if hasattr(ldap, 'OPT_X_TLS_CACERTDIR'):
-            ldap.set_option(ldap.OPT_X_TLS_CACERTDIR,
-                            '/etc/openldap/cacerts')
-        ldap.set_option(ldap.OPT_REFERRALS, ldap.OPT_OFF)
-        ldap.set_option(ldap.OPT_RESTART, ldap.OPT_ON)
-        ldap.set_option(ldap.OPT_NETWORK_TIMEOUT, 60 * 10)
-        ldap.set_option(ldap.OPT_TIMEOUT, 60 * 10)
 
+        if hasattr(ldap, 'OPT_X_TLS_CACERTDIR'):
+            ldap.set_option(ldap.OPT_X_TLS_CACERTDIR, '/etc/openldap/cacerts')
         if self.TLS_KIND != 'PLAIN':
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, self.TLS_REQCERT)
-        server = ldap.initialize(self.LDAP_SERVER)
+
+        ldap.set_option(ldap.OPT_REFERRALS, ldap.OPT_OFF)
+        ldap.set_option(ldap.OPT_RESTART, ldap.OPT_ON)
+
+        # init connection now
+        ldap_conn = ldap.initialize(self.LDAP_SERVER)
+        ldap_conn.set_option(ldap.OPT_NETWORK_TIMEOUT, self.timeout)
+        ldap_conn.set_option(ldap.OPT_TIMEOUT, self.timeout)
+        ldap_conn.timeout = self.timeout
+
         if self.ldap_version == 2:
-            server.protocol = ldap.VERSION2
+            ldap_conn.protocol = ldap.VERSION2
         else:
-            server.protocol = ldap.VERSION3
+            ldap_conn.protocol = ldap.VERSION3
 
         if self.TLS_KIND == 'START_TLS':
-            server.start_tls_s()
+            ldap_conn.start_tls_s()
 
         if self.LDAP_BIND_DN and self.LDAP_BIND_PASS:
             log.debug('Trying simple_bind with password and given login DN: %s',
                       self.LDAP_BIND_DN)
-            server.simple_bind_s(self.LDAP_BIND_DN, self.LDAP_BIND_PASS)
+            ldap_conn.simple_bind_s(self.LDAP_BIND_DN, self.LDAP_BIND_PASS)
 
-        return server
+        return ldap_conn
 
     def get_uid(self, username):
         uid = username
@@ -295,13 +344,14 @@ class AuthLdap(object):
         if "," in username:
             raise LdapUsernameError(
                 "invalid character `,` in username: `{}`".format(username))
+        ldap_conn = None
         try:
-            server = self._get_ldap_server()
+            ldap_conn = self._get_ldap_conn()
             filter_ = '(&%s(%s=%s))' % (
                 self.LDAP_FILTER, self.attr_login, username)
             log.debug("Authenticating %r filter %s at %s", self.BASE_DN,
                       filter_, self.LDAP_SERVER)
-            lobjects = server.search_ext_s(
+            lobjects = ldap_conn.search_ext_s(
                 self.BASE_DN, self.SEARCH_SCOPE, filter_)
 
             if not lobjects:
@@ -315,7 +365,7 @@ class AuthLdap(object):
                     continue
 
                 user_attrs = self.fetch_attrs_from_simple_bind(
-                    server, dn, username, password)
+                    ldap_conn, dn, username, password)
                 if user_attrs:
                     break
 
@@ -333,6 +383,15 @@ class AuthLdap(object):
             raise LdapConnectionError(
                 "LDAP can't access authentication "
                 "server, org_exc:%s" % org_exc)
+        finally:
+            if ldap_conn:
+                log.debug('ldap: connection release')
+                try:
+                    ldap_conn.unbind_s()
+                except Exception:
+                    # for any reason this can raise exception we must catch it
+                    # to not crush the server
+                    pass
 
         return dn, user_attrs
 
@@ -429,6 +488,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             'attr_login': settings.get('attr_login'),
             'ldap_version': 3,
             'ldap_filter': settings.get('filter'),
+            'timeout': settings.get('timeout')
         }
 
         ldap_attrs = self.try_dynamic_binding(username, password, ldap_args)
@@ -469,7 +529,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
                 'extern_type': extern_type,
             }
             log.debug('ldap user: %s', user_attrs)
-            log.info('user %s authenticated correctly', user_attrs['username'])
+            log.info('user `%s` authenticated correctly', user_attrs['username'])
 
             return user_attrs
 
@@ -479,3 +539,4 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         except (Exception,):
             log.exception("Other exception")
             return None
+

@@ -44,13 +44,15 @@ return '%s_%s_%i' % (h.safeid(filename), type, line)
 
     # special file-comments that were deleted in previous versions
     # it's used for showing outdated comments for deleted files in a PR
-    deleted_files_comments=None
+    deleted_files_comments=None,
+
+    # for cache purpose
+    inline_comments=None
 
 )">
-
 %if use_comments:
 <div id="cb-comments-inline-container-template" class="js-template">
-  ${inline_comments_container([])}
+  ${inline_comments_container([], inline_comments)}
 </div>
 <div class="js-template" id="cb-comment-inline-form-template">
     <div class="comment-inline-form ac">
@@ -132,7 +134,9 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         </h2>
     </div>
 
-    %if not diffset.files:
+    %if diffset.has_hidden_changes:
+        <p class="empty_data">${_('Some changes may be hidden')}</p>
+    %elif not diffset.files:
         <p class="empty_data">${_('No files')}</p>
     %endif
 
@@ -209,9 +213,9 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                     </td>
                 </tr>
             %if c.diffmode == 'unified':
-                    ${render_hunk_lines_unified(hunk, use_comments=use_comments)}
+                    ${render_hunk_lines_unified(hunk, use_comments=use_comments, inline_comments=inline_comments)}
             %elif c.diffmode == 'sideside':
-                    ${render_hunk_lines_sideside(hunk, use_comments=use_comments)}
+                    ${render_hunk_lines_sideside(hunk, use_comments=use_comments, inline_comments=inline_comments)}
             %else:
                 <tr class="cb-line">
                     <td>unknown diff mode</td>
@@ -228,7 +232,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 <td class="cb-lineno cb-context"></td>
                 <td class="cb-lineno cb-context"></td>
                 <td class="cb-content cb-context">
-                    ${inline_comments_container(comments)}
+                    ${inline_comments_container(comments, inline_comments)}
                 </td>
             </tr>
         %elif c.diffmode == 'sideside':
@@ -237,7 +241,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 <td class="cb-lineno cb-context"></td>
                 <td class="cb-content cb-context">
                     % if lineno.startswith('o'):
-                        ${inline_comments_container(comments)}
+                        ${inline_comments_container(comments, inline_comments)}
                     % endif
                 </td>
 
@@ -245,7 +249,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 <td class="cb-lineno cb-context"></td>
                 <td class="cb-content cb-context">
                     % if lineno.startswith('n'):
-                        ${inline_comments_container(comments)}
+                        ${inline_comments_container(comments, inline_comments)}
                     % endif
                 </td>
             </tr>
@@ -296,7 +300,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                         <td class="cb-lineno cb-context"></td>
                         <td class="cb-lineno cb-context"></td>
                         <td class="cb-content cb-context">
-                            ${inline_comments_container(comments_dict['comments'])}
+                            ${inline_comments_container(comments_dict['comments'], inline_comments)}
                         </td>
                     </tr>
                     %elif c.diffmode == 'sideside':
@@ -308,7 +312,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                         <td class="cb-data cb-context"></td>
                         <td class="cb-lineno cb-context"></td>
                         <td class="cb-content cb-context">
-                            ${inline_comments_container(comments_dict['comments'])}
+                            ${inline_comments_container(comments_dict['comments'], inline_comments)}
                         </td>
                     </tr>
                     %endif
@@ -482,12 +486,11 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 </%def>
 
 
-<%def name="inline_comments_container(comments)">
+<%def name="inline_comments_container(comments, inline_comments)">
 <div class="inline-comments">
     %for comment in comments:
-    ${commentblock.comment_block(comment, inline=True)}
+        ${commentblock.comment_block(comment, inline=True)}
     %endfor
-
     % if comments and comments[-1].outdated:
     <span class="btn btn-secondary cb-comment-add-button comment-outdated}"
           style="display: none;}">
@@ -503,8 +506,23 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 </div>
 </%def>
 
+<%!
+def get_comments_for(comments, filename, line_version, line_number):
+    if hasattr(filename, 'unicode_path'):
+        filename = filename.unicode_path
 
-<%def name="render_hunk_lines_sideside(hunk, use_comments=False)">
+    if not isinstance(filename, basestring):
+        return None
+
+    line_key = '{}{}'.format(line_version, line_number)
+    if comments and filename in comments:
+        file_comments = comments[filename]
+        if line_key in file_comments:
+            return file_comments[line_key]
+%>
+
+<%def name="render_hunk_lines_sideside(hunk, use_comments=False, inline_comments=None)">
+
     %for i, line in enumerate(hunk.sideside):
     <%
     old_line_anchor, new_line_anchor = None, None
@@ -516,16 +534,25 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 
     <tr class="cb-line">
         <td class="cb-data ${action_class(line.original.action)}"
-            data-line-number="${line.original.lineno}"
+            data-line-no="${line.original.lineno}"
             >
             <div>
-            %if line.original.comments:
-            <i class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+            <% loc = None %>
+            %if line.original.get_comment_args:
+                <% loc = get_comments_for(inline_comments, *line.original.get_comment_args) %>
+            %endif
+            %if loc:
+                <% has_outdated = any([x.outdated for x in loc]) %>
+                % if has_outdated:
+                    <i title="${_('comments including outdated')}:${len(loc)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % else:
+                    <i title="${_('comments')}: ${len(loc)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % endif
             %endif
             </div>
         </td>
         <td class="cb-lineno ${action_class(line.original.action)}"
-            data-line-number="${line.original.lineno}"
+            data-line-no="${line.original.lineno}"
             %if old_line_anchor:
             id="${old_line_anchor}"
             %endif
@@ -535,27 +562,40 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         </td>
         <td class="cb-content ${action_class(line.original.action)}"
-            data-line-number="o${line.original.lineno}"
+            data-line-no="o${line.original.lineno}"
             >
             %if use_comments and line.original.lineno:
             ${render_add_comment_button()}
             %endif
             <span class="cb-code">${line.original.action} ${line.original.content or '' | n}</span>
-            %if use_comments and line.original.lineno and line.original.comments:
-            ${inline_comments_container(line.original.comments)}
+
+            %if use_comments and line.original.lineno and loc:
+                ${inline_comments_container(loc, inline_comments)}
             %endif
+
         </td>
         <td class="cb-data ${action_class(line.modified.action)}"
-            data-line-number="${line.modified.lineno}"
+            data-line-no="${line.modified.lineno}"
             >
             <div>
-            %if line.modified.comments:
-            <i class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+
+            %if line.modified.get_comment_args:
+                <% lmc = get_comments_for(inline_comments, *line.modified.get_comment_args) %>
+            %else:
+                <% lmc = None%>
+            %endif
+            %if lmc:
+                <% has_outdated = any([x.outdated for x in lmc]) %>
+                % if has_outdated:
+                    <i title="${_('comments including outdated')}:${len(lmc)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % else:
+                    <i title="${_('comments')}: ${len(lmc)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % endif
             %endif
             </div>
         </td>
         <td class="cb-lineno ${action_class(line.modified.action)}"
-            data-line-number="${line.modified.lineno}"
+            data-line-no="${line.modified.lineno}"
             %if new_line_anchor:
             id="${new_line_anchor}"
             %endif
@@ -565,14 +605,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         </td>
         <td class="cb-content ${action_class(line.modified.action)}"
-            data-line-number="n${line.modified.lineno}"
+            data-line-no="n${line.modified.lineno}"
             >
             %if use_comments and line.modified.lineno:
             ${render_add_comment_button()}
             %endif
             <span class="cb-code">${line.modified.action} ${line.modified.content or '' | n}</span>
-            %if use_comments and line.modified.lineno and line.modified.comments:
-            ${inline_comments_container(line.modified.comments)}
+            %if use_comments and line.modified.lineno and lmc:
+            ${inline_comments_container(lmc, inline_comments)}
             %endif
         </td>
     </tr>
@@ -580,8 +620,8 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 </%def>
 
 
-<%def name="render_hunk_lines_unified(hunk, use_comments=False)">
-    %for old_line_no, new_line_no, action, content, comments in hunk.unified:
+<%def name="render_hunk_lines_unified(hunk, use_comments=False,  inline_comments=None)">
+    %for old_line_no, new_line_no, action, content, comments_args in hunk.unified:
     <%
     old_line_anchor, new_line_anchor = None, None
     if old_line_no:
@@ -592,13 +632,25 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     <tr class="cb-line">
         <td class="cb-data ${action_class(action)}">
             <div>
-            %if comments:
-            <i class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+
+            %if comments_args:
+                <% comments = get_comments_for(inline_comments, *comments_args) %>
+            %else:
+                <% comments = None%>
             %endif
+
+            % if comments:
+                <% has_outdated = any([x.outdated for x in comments]) %>
+                % if has_outdated:
+                    <i title="${_('comments including outdated')}:${len(comments)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % else:
+                    <i title="${_('comments')}: ${len(comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % endif
+            % endif
             </div>
         </td>
         <td class="cb-lineno ${action_class(action)}"
-            data-line-number="${old_line_no}"
+            data-line-no="${old_line_no}"
             %if old_line_anchor:
             id="${old_line_anchor}"
             %endif
@@ -608,7 +660,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         </td>
         <td class="cb-lineno ${action_class(action)}"
-            data-line-number="${new_line_no}"
+            data-line-no="${new_line_no}"
             %if new_line_anchor:
             id="${new_line_anchor}"
             %endif
@@ -618,14 +670,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         </td>
         <td class="cb-content ${action_class(action)}"
-            data-line-number="${new_line_no and 'n' or 'o'}${new_line_no or old_line_no}"
+            data-line-no="${new_line_no and 'n' or 'o'}${new_line_no or old_line_no}"
             >
             %if use_comments:
             ${render_add_comment_button()}
             %endif
             <span class="cb-code">${action} ${content or '' | n}</span>
             %if use_comments and comments:
-            ${inline_comments_container(comments)}
+            ${inline_comments_container(comments, inline_comments)}
             %endif
         </td>
     </tr>

@@ -397,7 +397,7 @@ class ScmModel(BaseModel):
 
     def push_changes(self, repo, username, remote_uri=None):
         dbrepo = self._get_repo(repo)
-        remote_uri = remote_uri or dbrepo.clone_uri
+        remote_uri = remote_uri or dbrepo.push_uri
         if not remote_uri:
             raise Exception("This repository doesn't have a clone uri")
 
@@ -807,116 +807,6 @@ class ScmModel(BaseModel):
 
         return choices, hist_l
 
-    def install_git_hook(self, repo, force_create=False):
-        """
-        Creates a rhodecode hook inside a git repository
-
-        :param repo: Instance of VCS repo
-        :param force_create: Create even if same name hook exists
-        """
-
-        loc = os.path.join(repo.path, 'hooks')
-        if not repo.bare:
-            loc = os.path.join(repo.path, '.git', 'hooks')
-        if not os.path.isdir(loc):
-            os.makedirs(loc, mode=0777)
-
-        tmpl_post = pkg_resources.resource_string(
-            'rhodecode', '/'.join(
-                ('config', 'hook_templates', 'git_post_receive.py.tmpl')))
-        tmpl_pre = pkg_resources.resource_string(
-            'rhodecode', '/'.join(
-                ('config', 'hook_templates', 'git_pre_receive.py.tmpl')))
-
-        for h_type, tmpl in [('pre', tmpl_pre), ('post', tmpl_post)]:
-            _hook_file = os.path.join(loc, '%s-receive' % h_type)
-            log.debug('Installing git hook in repo %s', repo)
-            _rhodecode_hook = _check_rhodecode_hook(_hook_file)
-
-            if _rhodecode_hook or force_create:
-                log.debug('writing %s hook file !', h_type)
-                try:
-                    with open(_hook_file, 'wb') as f:
-                        tmpl = tmpl.replace('_TMPL_', rhodecode.__version__)
-                        tmpl = tmpl.replace('_ENV_', sys.executable)
-                        f.write(tmpl)
-                    os.chmod(_hook_file, 0755)
-                except IOError:
-                    log.exception('error writing hook file %s', _hook_file)
-            else:
-                log.debug('skipping writing hook file')
-
-    def install_svn_hooks(self, repo, force_create=False):
-        """
-        Creates rhodecode hooks inside a svn repository
-
-        :param repo: Instance of VCS repo
-        :param force_create: Create even if same name hook exists
-        """
-        hooks_path = os.path.join(repo.path, 'hooks')
-        if not os.path.isdir(hooks_path):
-            os.makedirs(hooks_path)
-        post_commit_tmpl = pkg_resources.resource_string(
-            'rhodecode', '/'.join(
-                ('config', 'hook_templates', 'svn_post_commit_hook.py.tmpl')))
-        pre_commit_template = pkg_resources.resource_string(
-            'rhodecode', '/'.join(
-                ('config', 'hook_templates', 'svn_pre_commit_hook.py.tmpl')))
-        templates = {
-            'post-commit': post_commit_tmpl,
-            'pre-commit': pre_commit_template
-        }
-        for filename in templates:
-            _hook_file = os.path.join(hooks_path, filename)
-            _rhodecode_hook = _check_rhodecode_hook(_hook_file)
-            if _rhodecode_hook or force_create:
-                log.debug('writing %s hook file !', filename)
-                template = templates[filename]
-                try:
-                    with open(_hook_file, 'wb') as f:
-                        template = template.replace(
-                            '_TMPL_', rhodecode.__version__)
-                        template = template.replace('_ENV_', sys.executable)
-                        f.write(template)
-                    os.chmod(_hook_file, 0755)
-                except IOError:
-                    log.exception('error writing hook file %s', filename)
-            else:
-                log.debug('skipping writing hook file')
-
-    def install_hooks(self, repo, repo_type):
-        if repo_type == 'git':
-            self.install_git_hook(repo)
-        elif repo_type == 'svn':
-            self.install_svn_hooks(repo)
-
     def get_server_info(self, environ=None):
         server_info = get_system_info(environ)
         return server_info
-
-
-def _check_rhodecode_hook(hook_path):
-    """
-    Check if the hook was created by RhodeCode
-    """
-    if not os.path.exists(hook_path):
-        return True
-
-    log.debug('hook exists, checking if it is from rhodecode')
-    hook_content = _read_hook(hook_path)
-    matches = re.search(r'(?:RC_HOOK_VER)\s*=\s*(.*)', hook_content)
-    if matches:
-        try:
-            version = matches.groups()[0]
-            log.debug('got %s, it is rhodecode', version)
-            return True
-        except Exception:
-            log.exception("Exception while reading the hook version.")
-
-    return False
-
-
-def _read_hook(hook_path):
-    with open(hook_path, 'rb') as f:
-        content = f.read()
-    return content

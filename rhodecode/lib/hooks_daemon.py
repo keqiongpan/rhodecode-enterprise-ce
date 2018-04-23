@@ -18,10 +18,13 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import json
+import os
+import time
 import logging
+import tempfile
 import traceback
 import threading
+
 from BaseHTTPServer import BaseHTTPRequestHandler
 from SocketServer import TCPServer
 
@@ -30,14 +33,28 @@ from rhodecode.model import meta
 from rhodecode.lib.base import bootstrap_request, bootstrap_config
 from rhodecode.lib import hooks_base
 from rhodecode.lib.utils2 import AttributeDict
+from rhodecode.lib.ext_json import json
 
 
 log = logging.getLogger(__name__)
 
 
 class HooksHttpHandler(BaseHTTPRequestHandler):
+
     def do_POST(self):
         method, extras = self._read_request()
+        txn_id = getattr(self.server, 'txn_id', None)
+        if txn_id:
+            from rhodecode.lib.caches import compute_key_from_params
+            log.debug('Computing TXN_ID based on `%s`:`%s`',
+                      extras['repository'], extras['txn_id'])
+            computed_txn_id = compute_key_from_params(
+                extras['repository'], extras['txn_id'])
+            if txn_id != computed_txn_id:
+                raise Exception(
+                    'TXN ID fail: expected {} got {} instead'.format(
+                        txn_id, computed_txn_id))
+
         try:
             result = self._call_hook(method, extras)
         except Exception as e:
@@ -77,13 +94,14 @@ class HooksHttpHandler(BaseHTTPRequestHandler):
 
         message = format % args
 
-        # TODO: mikhail: add different log levels support
         log.debug(
             "%s - - [%s] %s", self.client_address[0],
             self.log_date_time_string(), message)
 
 
 class DummyHooksCallbackDaemon(object):
+    hooks_uri = ''
+
     def __init__(self):
         self.hooks_module = Hooks.__module__
 
@@ -101,8 +119,8 @@ class ThreadedHookCallbackDaemon(object):
     _daemon = None
     _done = False
 
-    def __init__(self):
-        self._prepare()
+    def __init__(self, txn_id=None, port=None):
+        self._prepare(txn_id=txn_id, port=port)
 
     def __enter__(self):
         self._run()
@@ -112,7 +130,7 @@ class ThreadedHookCallbackDaemon(object):
         log.debug('Callback daemon exiting now...')
         self._stop()
 
-    def _prepare(self):
+    def _prepare(self, txn_id=None, port=None):
         raise NotImplementedError()
 
     def _run(self):
@@ -135,15 +153,18 @@ class HttpHooksCallbackDaemon(ThreadedHookCallbackDaemon):
     # request and wastes cpu at all other times.
     POLL_INTERVAL = 0.01
 
-    def _prepare(self):
-        log.debug("Preparing HTTP callback daemon and registering hook object")
-
+    def _prepare(self, txn_id=None, port=None):
         self._done = False
-        self._daemon = TCPServer((self.IP_ADDRESS, 0), HooksHttpHandler)
+        self._daemon = TCPServer((self.IP_ADDRESS, port or 0), HooksHttpHandler)
         _, port = self._daemon.server_address
         self.hooks_uri = '{}:{}'.format(self.IP_ADDRESS, port)
+        self.txn_id = txn_id
+        # inject transaction_id for later verification
+        self._daemon.txn_id = self.txn_id
 
-        log.debug("Hooks uri is: %s", self.hooks_uri)
+        log.debug(
+            "Preparing HTTP callback daemon at `%s` and registering hook object",
+            self.hooks_uri)
 
     def _run(self):
         log.debug("Running event loop of callback daemon in background thread")
@@ -160,26 +181,67 @@ class HttpHooksCallbackDaemon(ThreadedHookCallbackDaemon):
         self._callback_thread.join()
         self._daemon = None
         self._callback_thread = None
+        if self.txn_id:
+            txn_id_file = get_txn_id_data_path(self.txn_id)
+            log.debug('Cleaning up TXN ID %s', txn_id_file)
+            if os.path.isfile(txn_id_file):
+                os.remove(txn_id_file)
+
         log.debug("Background thread done.")
 
 
-def prepare_callback_daemon(extras, protocol, use_direct_calls):
-    callback_daemon = None
+def get_txn_id_data_path(txn_id):
+    root = tempfile.gettempdir()
+    return os.path.join(root, 'rc_txn_id_{}'.format(txn_id))
 
+
+def store_txn_id_data(txn_id, data_dict):
+    if not txn_id:
+        log.warning('Cannot store txn_id because it is empty')
+        return
+
+    path = get_txn_id_data_path(txn_id)
+    try:
+        with open(path, 'wb') as f:
+            f.write(json.dumps(data_dict))
+    except Exception:
+        log.exception('Failed to write txn_id metadata')
+
+
+def get_txn_id_from_store(txn_id):
+    """
+    Reads txn_id from store and if present returns the data for callback manager
+    """
+    path = get_txn_id_data_path(txn_id)
+    try:
+        with open(path, 'rb') as f:
+            return json.loads(f.read())
+    except Exception:
+        return {}
+
+
+def prepare_callback_daemon(extras, protocol, use_direct_calls, txn_id=None):
+    txn_details = get_txn_id_from_store(txn_id)
+    port = txn_details.get('port', 0)
     if use_direct_calls:
         callback_daemon = DummyHooksCallbackDaemon()
         extras['hooks_module'] = callback_daemon.hooks_module
     else:
         if protocol == 'http':
-            callback_daemon = HttpHooksCallbackDaemon()
+            callback_daemon = HttpHooksCallbackDaemon(txn_id=txn_id, port=port)
         else:
             log.error('Unsupported callback daemon protocol "%s"', protocol)
             raise Exception('Unsupported callback daemon protocol.')
 
-        extras['hooks_uri'] = callback_daemon.hooks_uri
-        extras['hooks_protocol'] = protocol
+    extras['hooks_uri'] = callback_daemon.hooks_uri
+    extras['hooks_protocol'] = protocol
+    extras['time'] = time.time()
 
-    log.debug('Prepared a callback daemon: %s', callback_daemon)
+    # register txn_id
+    extras['txn_id'] = txn_id
+
+    log.debug('Prepared a callback daemon: %s at url `%s`',
+              callback_daemon.__class__.__name__, callback_daemon.hooks_uri)
     return callback_daemon, extras
 
 

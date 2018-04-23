@@ -5,7 +5,7 @@ setuptools-scm==1.15.6
 amqp==2.2.2
 authomatic==0.1.0.post1
 Babel==1.3
-Beaker==1.9.0
+Beaker==1.9.1
 celery==4.1.0
 Chameleon==2.24
 channelstream==0.5.2
@@ -31,7 +31,7 @@ billiard==3.5.0.3
 kombu==4.1.0
 lxml==3.7.3
 Mako==1.0.7
-Markdown==2.6.9
+Markdown==2.6.11
 MarkupSafe==1.0.0
 msgpack-python==0.4.8
 MySQL-python==1.2.5
@@ -42,7 +42,7 @@ PasteDeploy==1.5.2
 PasteScript==2.0.2
 pathlib2==2.3.0
 peppercorn==0.5
-psutil==5.4.0
+psutil==5.4.3
 psycopg2==2.7.3.2
 py-bcrypt==0.4
 pycrypto==2.6.1
@@ -61,7 +61,8 @@ python-dateutil
 python-ldap==2.4.45
 python-memcached==1.58
 python-pam==1.8.2
-pytz==2017.3
+pytz==2018.3
+tzlocal==1.5.1
 pyzmq==14.6.0
 py-gfm==0.1.3
 recaptcha-client==1.0.6
@@ -75,7 +76,7 @@ six==1.11.0
 SQLAlchemy==1.1.15
 sshpubkeys==2.2.0
 subprocess32==3.2.7
-supervisor==3.3.3
+supervisor==3.3.4
 Tempita==0.5.2
 translationstring==1.3
 trollius==1.0.4
@@ -88,29 +89,29 @@ WebHelpers==1.3
 WebOb==1.7.4
 Whoosh==2.7.4
 wsgiref==0.1.2
-zope.cachedescriptors==4.0.0
-zope.deprecation==4.1.2
-zope.event==4.0.3
-zope.interface==4.1.3
+zope.cachedescriptors==4.3.1
+zope.deprecation==4.3.0
+zope.event==4.3.0
+zope.interface==4.4.3
 
 
 # IPYTHON RENDERING
 # entrypoints backport, pypi version doesn't support egg installs
 https://code.rhodecode.com/upstream/entrypoints/archive/96e6d645684e1af3d7df5b5272f3fe85a546b233.tar.gz?md5=7db37771aea9ac9fefe093e5d6987313#egg=entrypoints==0.2.2.rhodecode-upstream1
 nbconvert==5.3.1
-bleach==2.1.1
+bleach==2.1.2
 nbformat==4.4.0
 jupyter_client==5.0.0
 
 ## cli tools
-alembic==0.9.6
+alembic==0.9.8
 invoke==0.13.0
 bumpversion==0.5.3
 transifex-client==0.12.5
 
 ## http servers
 gevent==1.2.2
-greenlet==0.4.12
+greenlet==0.4.13
 gunicorn==19.7.1
 waitress==1.1.0
 uWSGI==2.0.15
@@ -125,7 +126,7 @@ bottle==0.12.13
 https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.14.1.tar.gz?md5=0b9c2caad160b68889f8172ea54af7b2#egg=rhodecode-tools==0.14.1
 
 ## appenlight
-appenlight-client==0.6.22
+appenlight-client==0.6.25
 
 ## test related requirements
 -r requirements_test.txt

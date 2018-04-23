@@ -132,6 +132,7 @@ class VCSServerUnavailable(HTTPBadGateway):
         'Incorrect vcs.server=host:port',
         'Incorrect vcs.server.protocol',
     ]
+
     def __init__(self, message=''):
         self.explanation = 'Could not connect to VCS Server'
         if message:

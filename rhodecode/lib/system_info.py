@@ -23,8 +23,10 @@ import os
 import sys
 import time
 import platform
+import collections
 import pkg_resources
 import logging
+import resource
 
 from pyramid.compat import configparser
 
@@ -137,6 +139,29 @@ def platform_type():
         name=safe_unicode(platform.platform()),
         uuid=generate_platform_uuid()
     )
+    return SysInfoRes(value=value)
+
+
+def ulimit_info():
+    data = collections.OrderedDict([
+        ('cpu time (seconds)', resource.getrlimit(resource.RLIMIT_CPU)),
+        ('file size', resource.getrlimit(resource.RLIMIT_FSIZE)),
+        ('stack size', resource.getrlimit(resource.RLIMIT_STACK)),
+        ('core file size', resource.getrlimit(resource.RLIMIT_CORE)),
+        ('address space size', resource.getrlimit(resource.RLIMIT_AS)),
+        ('locked in mem size', resource.getrlimit(resource.RLIMIT_MEMLOCK)),
+        ('heap size', resource.getrlimit(resource.RLIMIT_DATA)),
+        ('rss size', resource.getrlimit(resource.RLIMIT_RSS)),
+        ('number of processes', resource.getrlimit(resource.RLIMIT_NPROC)),
+        ('open files', resource.getrlimit(resource.RLIMIT_NOFILE)),
+    ])
+
+    text = ', '.join('{}:{}'.format(k,v) for k,v in data.items())
+
+    value = {
+        'limits': data,
+        'text': text,
+    }
     return SysInfoRes(value=value)
 
 
@@ -687,6 +712,7 @@ def usage_info():
     return SysInfoRes(value=value)
 
 
+
 def get_system_info(environ):
     environ = environ or {}
     return {
@@ -699,7 +725,7 @@ def get_system_info(environ):
         'platform': SysInfo(platform_type)(),
         'server': SysInfo(server_info, environ=environ)(),
         'database': SysInfo(database_info)(),
-
+        'ulimit': SysInfo(ulimit_info)(),
         'storage': SysInfo(storage)(),
         'storage_inodes': SysInfo(storage_inodes)(),
         'storage_archive': SysInfo(storage_archives)(),

@@ -475,7 +475,7 @@ var CommentsController = function() {
 
   this.getLineNumber = function(node) {
       var $node = $(node);
-      var lineNo = $node.closest('td').attr('data-line-number');
+      var lineNo = $node.closest('td').attr('data-line-no');
       if (lineNo === undefined && $node.data('commentInline')){
           lineNo = $node.data('commentLineNo')
       }
@@ -598,6 +598,8 @@ var CommentsController = function() {
   this.toggleLineComments = function(node) {
     self.toggleComments(node, true);
     var $node = $(node);
+    // mark outdated comments as visible before the toggle;
+    $(node.closest('tr')).find('.comment-outdated').show();
     $node.closest('tr').toggleClass('hide-line-comments');
   };
 

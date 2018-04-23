@@ -54,11 +54,9 @@
               <div class="textarea text-area editor">
                   ${h.textarea('auth_plugins',cols=23,rows=5,class_="medium")}
               </div>
-              <p class="help-block">
-              ${_('Add a list of plugins, separated by commas. '
-                  'The order of the plugins is also the order in which '
-                  'RhodeCode Enterprise will try to authenticate a user.')}
-              </p>
+              <p class="help-block pre-formatting">${_('List of plugins, separated by commas.'
+                  '\nThe order of the plugins is also the order in which '
+                  'RhodeCode Enterprise will try to authenticate a user.')}</p>
             </div>
 
             <div class="field">
@@ -91,15 +89,19 @@
 <script>
   $('.toggle-plugin').click(function(e){
     var auth_plugins_input = $('#auth_plugins');
-    var notEmpty = function(element, index, array) {
-      return (element != "");
-    };
-    var elems = auth_plugins_input.val().split(',').filter(notEmpty);
+    var elems = [];
+
+    $.each(auth_plugins_input.val().split(',') , function (index, element) {
+        if (element !== "") {
+            elems.push(element.strip())
+        }
+    });
+
     var cur_button = e.currentTarget;
     var plugin_id = $(cur_button).attr('plugin_id');
     if($(cur_button).hasClass('btn-success')){
       elems.splice(elems.indexOf(plugin_id), 1);
-      auth_plugins_input.val(elems.join(','));
+      auth_plugins_input.val(elems.join(',\n'));
       $(cur_button).removeClass('btn-success');
       cur_button.innerHTML = _gettext('disabled');
     }
@@ -107,7 +109,7 @@
       if(elems.indexOf(plugin_id) == -1){
         elems.push(plugin_id);
       }
-      auth_plugins_input.val(elems.join(','));
+      auth_plugins_input.val(elems.join(',\n'));
       $(cur_button).addClass('btn-success');
       cur_button.innerHTML = _gettext('enabled');
     }

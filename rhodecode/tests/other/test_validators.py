@@ -24,8 +24,7 @@ import pytest
 
 from rhodecode.tests import (
     HG_REPO, TEST_USER_REGULAR2_EMAIL, TEST_USER_REGULAR2_LOGIN,
-    TEST_USER_REGULAR2_PASS, TEST_USER_ADMIN_LOGIN, TESTS_TMP_PATH,
-    ldap_lib_installed)
+    TEST_USER_REGULAR2_PASS, TEST_USER_ADMIN_LOGIN, TESTS_TMP_PATH)
 
 from rhodecode.model import validators as v
 from rhodecode.model.user_group import UserGroupModel

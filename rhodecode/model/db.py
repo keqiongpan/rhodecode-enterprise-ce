@@ -1344,6 +1344,15 @@ class UserGroup(Base, BaseModel):
         except Exception:
             log.error(traceback.format_exc())
 
+    @classmethod
+    def _load_sync(cls, group_data):
+        if group_data:
+            return group_data.get('extern_type')
+
+    @property
+    def sync(self):
+        return self._load_sync(self.group_data)
+
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (self.__class__.__name__,
                                       self.users_group_id,
@@ -1453,6 +1462,7 @@ class UserGroup(Base, BaseModel):
             'group_description': user_group.user_group_description,
             'active': user_group.users_group_active,
             'owner': user_group.user.username,
+            'sync': user_group.sync,
             'owner_email': user_group.user.email,
         }
 
@@ -1556,6 +1566,9 @@ class Repository(Base, BaseModel):
 
     clone_uri = Column(
         "clone_uri", EncryptedTextValue(), nullable=True, unique=False,
+        default=None)
+    push_uri = Column(
+        "push_uri", EncryptedTextValue(), nullable=True, unique=False,
         default=None)
     repo_type = Column(
         "repo_type", String(255), nullable=False, unique=False, default=None)
@@ -1846,6 +1859,30 @@ class Repository(Base, BaseModel):
             .order_by(CacheKey.cache_key)\
             .all()
 
+    @property
+    def cached_diffs_relative_dir(self):
+        """
+        Return a relative to the repository store path of cached diffs
+        used for safe display for users, who shouldn't know the absolute store
+        path
+        """
+        return os.path.join(
+            os.path.dirname(self.repo_name),
+            self.cached_diffs_dir.split(os.path.sep)[-1])
+
+    @property
+    def cached_diffs_dir(self):
+        path = self.repo_full_path
+        return os.path.join(
+            os.path.dirname(path),
+            '.__shadow_diff_cache_repo_{}'.format(self.repo_id))
+
+    def cached_diffs(self):
+        diff_cache_dir = self.cached_diffs_dir
+        if os.path.isdir(diff_cache_dir):
+            return os.listdir(diff_cache_dir)
+        return []
+
     def get_new_name(self, repo_name):
         """
         returns new full repository name based on assigned group and new new
@@ -1943,6 +1980,7 @@ class Repository(Base, BaseModel):
             'repo_name': repo.repo_name,
             'repo_type': repo.repo_type,
             'clone_uri': repo.clone_uri or '',
+            'push_uri': repo.push_uri or '',
             'url': RepoModel().get_url(self),
             'private': repo.private,
             'created_on': repo.created_on,
@@ -2076,6 +2114,16 @@ class Repository(Base, BaseModel):
             if url_obj.password:
                 clone_uri = url_obj.with_password('*****')
         return clone_uri
+
+    @property
+    def push_uri_hidden(self):
+        push_uri = self.push_uri
+        if push_uri:
+            import urlobject
+            url_obj = urlobject.URLObject(cleaned_uri(push_uri))
+            if url_obj.password:
+                push_uri = url_obj.with_password('*****')
+        return push_uri
 
     def clone_url(self, **override):
         from rhodecode.model.settings import SettingsModel

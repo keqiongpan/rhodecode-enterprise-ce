@@ -100,7 +100,7 @@
                              ${_user_group.users_group_name}
                          </a>
                         %else:
-                         ${_user_group.users_group_name}
+                         ${h.link_to_group(_user_group.users_group_name)}
                         %endif
                     </td>
                     <td class="td-action">

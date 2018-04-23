@@ -232,6 +232,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_edit_toggle_locking', '/%(repo_name)s/settings/toggle_locking', ['repo_name']);
     pyroutes.register('edit_repo_remote', '/%(repo_name)s/settings/remote', ['repo_name']);
     pyroutes.register('edit_repo_remote_pull', '/%(repo_name)s/settings/remote/pull', ['repo_name']);
+    pyroutes.register('edit_repo_remote_push', '/%(repo_name)s/settings/remote/push', ['repo_name']);
     pyroutes.register('edit_repo_statistics', '/%(repo_name)s/settings/statistics', ['repo_name']);
     pyroutes.register('edit_repo_statistics_reset', '/%(repo_name)s/settings/statistics/update', ['repo_name']);
     pyroutes.register('edit_repo_issuetracker', '/%(repo_name)s/settings/issue_trackers', ['repo_name']);
@@ -243,6 +244,7 @@ function registerRCRoutes() {
     pyroutes.register('edit_repo_vcs_svn_pattern_delete', '/%(repo_name)s/settings/vcs/svn_pattern/delete', ['repo_name']);
     pyroutes.register('repo_reviewers', '/%(repo_name)s/settings/review/rules', ['repo_name']);
     pyroutes.register('repo_default_reviewers_data', '/%(repo_name)s/settings/review/default-reviewers', ['repo_name']);
+    pyroutes.register('repo_automation', '/%(repo_name)s/settings/automation', ['repo_name']);
     pyroutes.register('edit_repo_strip', '/%(repo_name)s/settings/strip', ['repo_name']);
     pyroutes.register('strip_check', '/%(repo_name)s/settings/strip_check', ['repo_name']);
     pyroutes.register('strip_execute', '/%(repo_name)s/settings/strip_execute', ['repo_name']);

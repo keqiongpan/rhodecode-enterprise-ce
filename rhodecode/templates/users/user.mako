@@ -1,14 +1,14 @@
 <%inherit file="/base/base.mako"/>
 
 <%def name="title()">
-    ${c.user.username}
+    ${_('User')}: ${c.user.username}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
 </%def>
 
 <%def name="breadcrumbs_links()">
-    ${c.user.username}
+    ${_('User')}: ${c.user.username}
 </%def>
 
 <%def name="menu_bar_nav()">

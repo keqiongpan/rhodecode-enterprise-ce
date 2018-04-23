@@ -168,7 +168,8 @@ def get_user_groups(request, apiuser):
 @jsonrpc_method()
 def create_user_group(
         request, apiuser, group_name, description=Optional(''),
-        owner=Optional(OAttr('apiuser')), active=Optional(True)):
+        owner=Optional(OAttr('apiuser')), active=Optional(True),
+        sync=Optional(None)):
     """
     Creates a new user group.
 
@@ -188,6 +189,9 @@ def create_user_group(
     :type owner: Optional(str or int)
     :param active: Set this group as active.
     :type active: Optional(``True`` | ``False``)
+    :param sync: Set enabled or disabled the automatically sync from
+        external authentication types like ldap.
+    :type sync: Optional(``True`` | ``False``)
 
     Example output:
 
@@ -227,6 +231,15 @@ def create_user_group(
     owner = get_user_or_error(owner)
     active = Optional.extract(active)
     description = Optional.extract(description)
+    sync = Optional.extract(sync)
+
+    # set the sync option based on group_data
+    group_data = None
+    if sync:
+        group_data = {
+            'extern_type': 'manual_api',
+            'extern_type_set_by': apiuser.username
+        }
 
     schema = user_group_schema.UserGroupSchema().bind(
         # user caller
@@ -246,7 +259,7 @@ def create_user_group(
             name=schema_data['user_group_name'],
             description=schema_data['user_group_description'],
             owner=owner,
-            active=schema_data['user_group_active'])
+            active=schema_data['user_group_active'], group_data=group_data)
         Session().flush()
         creation_data = user_group.get_api_data()
         audit_logger.store_api(
@@ -265,7 +278,7 @@ def create_user_group(
 @jsonrpc_method()
 def update_user_group(request, apiuser, usergroupid, group_name=Optional(''),
                       description=Optional(''), owner=Optional(None),
-                      active=Optional(True)):
+                      active=Optional(True), sync=Optional(None)):
     """
     Updates the specified `user group` with the details provided.
 
@@ -284,6 +297,9 @@ def update_user_group(request, apiuser, usergroupid, group_name=Optional(''),
     :type owner: Optional(str or int)
     :param active: Set the group as active.
     :type active: Optional(``True`` | ``False``)
+    :param sync: Set enabled or disabled the automatically sync from
+        external authentication types like ldap.
+    :type sync: Optional(``True`` | ``False``)
 
     Example output:
 
@@ -329,8 +345,21 @@ def update_user_group(request, apiuser, usergroupid, group_name=Optional(''),
     store_update(updates, description, 'user_group_description')
     store_update(updates, owner, 'user')
     store_update(updates, active, 'users_group_active')
+
+    sync = Optional.extract(sync)
+    group_data = None
+    if sync is True:
+        group_data = {
+            'extern_type': 'manual_api',
+            'extern_type_set_by': apiuser.username
+        }
+    if sync is False:
+        group_data = user_group.group_data
+        if group_data and "extern_type" in group_data:
+            del group_data["extern_type"]
+
     try:
-        UserGroupModel().update(user_group, updates)
+        UserGroupModel().update(user_group, updates, group_data=group_data)
         audit_logger.store_api(
             'user_group.edit', action_data={'old_data': old_data},
             user=apiuser)
@@ -609,8 +638,18 @@ def grant_user_permission_to_user_group(
     perm = get_perm_or_error(perm, prefix='usergroup.')
 
     try:
-        UserGroupModel().grant_user_permission(
+        changes = UserGroupModel().grant_user_permission(
             user_group=user_group, user=user, perm=perm)
+
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'user_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
         Session().commit()
         return {
             'msg':
@@ -669,8 +708,17 @@ def revoke_user_permission_from_user_group(
     user = get_user_or_error(userid)
 
     try:
-        UserGroupModel().revoke_user_permission(
+        changes = UserGroupModel().revoke_user_permission(
             user_group=user_group, user=user)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'user_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
         Session().commit()
         return {
             'msg': 'Revoked perm for user: `%s` in user group: `%s`' % (
@@ -735,11 +783,20 @@ def grant_user_group_permission_to_user_group(
                 'user group `%s` does not exist' % (sourceusergroupid,))
 
     try:
-        UserGroupModel().grant_user_group_permission(
+        changes = UserGroupModel().grant_user_group_permission(
             target_user_group=target_user_group,
             user_group=user_group, perm=perm)
-        Session().commit()
 
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'user_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
+        Session().commit()
         return {
             'msg': 'Granted perm: `%s` for user group: `%s` '
                    'in user group: `%s`' % (
@@ -806,8 +863,17 @@ def revoke_user_group_permission_from_user_group(
                 'user group `%s` does not exist' % (sourceusergroupid,))
 
     try:
-        UserGroupModel().revoke_user_group_permission(
+        changes = UserGroupModel().revoke_user_group_permission(
             target_user_group=target_user_group, user_group=user_group)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'user_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
         Session().commit()
 
         return {

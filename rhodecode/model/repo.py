@@ -304,6 +304,7 @@ class RepoModel(BaseModel):
             {'k': 'repo_enable_locking', 'strip': True},
             {'k': 'repo_landing_rev', 'strip': True},
             {'k': 'clone_uri', 'strip': False},
+            {'k': 'push_uri', 'strip': False},
             {'k': 'repo_private', 'strip': True},
             {'k': 'repo_enable_statistics', 'strip': True}
         )
@@ -319,6 +320,8 @@ class RepoModel(BaseModel):
             defaults[item['k']] = val
             if item['k'] == 'clone_uri':
                 defaults['clone_uri_hidden'] = repo_info.clone_uri_hidden
+            if item['k'] == 'push_uri':
+                defaults['push_uri_hidden'] = repo_info.push_uri_hidden
 
         # fill owner
         if repo_info.user:
@@ -348,6 +351,7 @@ class RepoModel(BaseModel):
                 (1, 'repo_enable_locking'),
                 (1, 'repo_enable_statistics'),
                 (0, 'clone_uri'),
+                (0, 'push_uri'),
                 (0, 'fork_id')
             ]
             for strip, k in update_keys:
@@ -854,7 +858,7 @@ class RepoModel(BaseModel):
             repo = backend(
                 repo_path, config=config, create=True, src_url=clone_uri)
 
-        ScmModel().install_hooks(repo, repo_type=repo_type)
+        repo.install_hooks()
 
         log.debug('Created repo %s with %s backend',
                   safe_unicode(repo_name), safe_unicode(repo_type))
@@ -914,6 +918,11 @@ class RepoModel(BaseModel):
 
         if os.path.isdir(rm_path):
             shutil.move(rm_path, os.path.join(self.repos_path, _d))
+
+        # finally cleanup diff-cache if it exists
+        cached_diffs_dir = repo.cached_diffs_dir
+        if os.path.isdir(cached_diffs_dir):
+            shutil.rmtree(cached_diffs_dir)
 
 
 class ReadmeFinder:

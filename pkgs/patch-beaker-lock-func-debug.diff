@@ -1,0 +1,20 @@
+diff -rup Beaker-1.9.1-orig/beaker/container.py Beaker-1.9.1/beaker/container.py
+--- Beaker-1.9.1-orig/beaker/container.py	2018-04-10 10:23:04.000000000 +0200
++++ Beaker-1.9.1/beaker/container.py	2018-04-10 10:23:34.000000000 +0200
+@@ -353,13 +353,13 @@ class Value(object):
+                 debug("get_value returning old value while new one is created")
+                 return value
+             else:
+-                debug("lock_creatfunc (didnt wait)")
++                debug("lock_creatfunc `%s` (didnt wait)", self.createfunc.__name__)
+                 has_createlock = True
+
+         if not has_createlock:
+-            debug("lock_createfunc (waiting)")
++            debug("lock_createfunc `%s` (waiting)", self.createfunc.__name__)
+             creation_lock.acquire()
+-            debug("lock_createfunc (waited)")
++            debug("lock_createfunc `%s` (waited)", self.createfunc.__name__)
+
+         try:
+             # see if someone created the value already

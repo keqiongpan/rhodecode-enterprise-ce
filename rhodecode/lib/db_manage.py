@@ -126,7 +126,7 @@ class DbManage(object):
         log.info("Deleting (%s) cache keys now...", total)
         CacheKey.delete_all_cache()
 
-    def upgrade(self):
+    def upgrade(self, version=None):
         """
         Upgrades given database schema to given revision following
         all needed steps, to perform the upgrade
@@ -157,9 +157,9 @@ class DbManage(object):
         db_uri = self.dburi
 
         try:
-            curr_version = api.db_version(db_uri, repository_path)
-            msg = ('Found current database under version '
-                   'control with version %s' % curr_version)
+            curr_version = version or api.db_version(db_uri, repository_path)
+            msg = ('Found current database db_uri under version '
+                   'control with version {}'.format(curr_version))
 
         except (RuntimeError, DatabaseNotControlledError):
             curr_version = 1

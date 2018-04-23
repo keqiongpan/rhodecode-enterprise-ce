@@ -24,9 +24,11 @@ Base module for all VCS systems
 
 import collections
 import datetime
+import fnmatch
 import itertools
 import logging
 import os
+import re
 import time
 import warnings
 
@@ -173,6 +175,7 @@ class BaseRepository(object):
     EMPTY_COMMIT_ID = '0' * 40
 
     path = None
+    _remote = None
 
     def __init__(self, repo_path, config=None, create=False, **kwargs):
         """
@@ -202,6 +205,12 @@ class BaseRepository(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def get_create_shadow_cache_pr_path(self, db_repo):
+        path = db_repo.cached_diffs_dir
+        if not os.path.exists(path):
+            os.makedirs(path, 0755)
+        return path
 
     @classmethod
     def get_default_config(cls, default=None):
@@ -245,6 +254,20 @@ class BaseRepository(object):
     def branches(self):
         """
         A `dict` which maps branch names to commit ids.
+        """
+        raise NotImplementedError
+
+    @LazyProperty
+    def branches_closed(self):
+        """
+        A `dict` which maps tags names to commit ids.
+        """
+        raise NotImplementedError
+
+    @LazyProperty
+    def bookmarks(self):
+        """
+        A `dict` which maps tags names to commit ids.
         """
         raise NotImplementedError
 
@@ -623,6 +646,18 @@ class BaseRepository(object):
         warnings.warn("Use in_memory_commit instead", DeprecationWarning)
         return self.in_memory_commit
 
+    def get_path_permissions(self, username):
+        """
+        Returns a path permission checker or None if not supported
+
+        :param username: session user name
+        :return: an instance of BasePathPermissionChecker or None
+        """
+        return None
+
+    def install_hooks(self, force=False):
+        return self._remote.install_hooks(force)
+
 
 class BaseCommit(object):
     """
@@ -716,9 +751,15 @@ class BaseCommit(object):
             'branch': self.branch
         }
 
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        d.pop('_remote', None)
+        d.pop('repository', None)
+        return d
+
     def _get_refs(self):
         return {
-            'branches': [self.branch],
+            'branches': [self.branch] if self.branch else [],
             'bookmarks': getattr(self, 'bookmarks', []),
             'tags': self.tags
         }
@@ -1604,3 +1645,66 @@ class DiffChunk(object):
         self.header = match.groupdict()
         self.diff = chunk[match.end():]
         self.raw = chunk
+
+
+class BasePathPermissionChecker(object):
+
+    @staticmethod
+    def create_from_patterns(includes, excludes):
+        if includes and '*' in includes and not excludes:
+            return AllPathPermissionChecker()
+        elif excludes and '*' in excludes:
+            return NonePathPermissionChecker()
+        else:
+            return PatternPathPermissionChecker(includes, excludes)
+
+    @property
+    def has_full_access(self):
+        raise NotImplemented()
+
+    def has_access(self, path):
+        raise NotImplemented()
+
+
+class AllPathPermissionChecker(BasePathPermissionChecker):
+
+    @property
+    def has_full_access(self):
+        return True
+
+    def has_access(self, path):
+        return True
+
+
+class NonePathPermissionChecker(BasePathPermissionChecker):
+
+    @property
+    def has_full_access(self):
+        return False
+
+    def has_access(self, path):
+        return False
+
+
+class PatternPathPermissionChecker(BasePathPermissionChecker):
+
+    def __init__(self, includes, excludes):
+        self.includes = includes
+        self.excludes = excludes
+        self.includes_re = [] if not includes else [
+            re.compile(fnmatch.translate(pattern)) for pattern in includes]
+        self.excludes_re = [] if not excludes else [
+            re.compile(fnmatch.translate(pattern)) for pattern in excludes]
+
+    @property
+    def has_full_access(self):
+        return '*' in self.includes and not self.excludes
+
+    def has_access(self, path):
+        for regex in self.excludes_re:
+            if regex.match(path):
+                return False
+        for regex in self.includes_re:
+            if regex.match(path):
+                return True
+        return False

@@ -1178,6 +1178,10 @@ class UserUtility(object):
             self.user_ids.append(user.user_id)
         return user
 
+    def create_additional_user_email(self, user, email):
+        uem = self.fixture.create_additional_user_email(user=user, email=email)
+        return uem
+
     def create_user_with_group(self):
         user = self.create_user()
         user_group = self.create_user_group(members=[user])
@@ -1706,7 +1710,10 @@ def StubIntegrationType():
         key = 'test'
         display_name = 'Test integration type'
         description = 'A test integration type for testing'
-        icon = 'test_icon_html_image'
+
+        @classmethod
+        def icon(cls):
+            return 'test_icon_html_image'
 
         def __init__(self, settings):
             super(_StubIntegrationType, self).__init__(settings)

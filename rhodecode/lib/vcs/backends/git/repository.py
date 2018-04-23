@@ -71,8 +71,6 @@ class GitRepository(BaseRepository):
         # caches
         self._commit_ids = {}
 
-        self.bookmarks = {}
-
     @LazyProperty
     def bare(self):
         return self._remote.bare()
@@ -320,6 +318,10 @@ class GitRepository(BaseRepository):
 
     @LazyProperty
     def branches_closed(self):
+        return {}
+
+    @LazyProperty
+    def bookmarks(self):
         return {}
 
     @LazyProperty
@@ -791,7 +793,7 @@ class GitRepository(BaseRepository):
     def _get_shadow_instance(self, shadow_repository_path, enable_hooks=False):
         return GitRepository(shadow_repository_path)
 
-    def _local_pull(self, repository_path, branch_name):
+    def _local_pull(self, repository_path, branch_name, ff_only=True):
         """
         Pull a branch from a local repository.
         """
@@ -802,7 +804,10 @@ class GitRepository(BaseRepository):
         # conflicts with our current branch)
         # Additionally, that option needs to go before --no-tags, otherwise git
         # pull complains about it being an unknown flag.
-        cmd = ['pull', '--ff-only', '--no-tags', repository_path, branch_name]
+        cmd = ['pull']
+        if ff_only:
+            cmd.append('--ff-only')
+        cmd.extend(['--no-tags', repository_path, branch_name])
         self.run_git_command(cmd, fail_on_stderr=False)
 
     def _local_merge(self, merge_message, user_name, user_email, heads):
@@ -915,6 +920,7 @@ class GitRepository(BaseRepository):
 
         pr_branch = shadow_repo._get_new_pr_branch(
             source_ref.name, target_ref.name)
+        log.debug('using pull-request merge branch: `%s`', pr_branch)
         shadow_repo._checkout(pr_branch, create=True)
         try:
             shadow_repo._local_fetch(source_repo.path, source_ref.name)

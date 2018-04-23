@@ -245,22 +245,16 @@ def test_repo2db_mapper_enables_largefiles(backend):
     repo = backend.create_repo()
     repo_list = {repo.repo_name: 'test'}
     with mock.patch('rhodecode.model.db.Repository.scm_instance') as scm_mock:
-        with mock.patch.multiple('rhodecode.model.scm.ScmModel',
-                                 install_git_hook=mock.DEFAULT,
-                                 install_svn_hooks=mock.DEFAULT):
-            utils.repo2db_mapper(repo_list, remove_obsolete=False)
-            _, kwargs = scm_mock.call_args
-            assert kwargs['config'].get('extensions', 'largefiles') == ''
+        utils.repo2db_mapper(repo_list, remove_obsolete=False)
+        _, kwargs = scm_mock.call_args
+        assert kwargs['config'].get('extensions', 'largefiles') == ''
 
 
 @pytest.mark.backends("git", "svn")
 def test_repo2db_mapper_installs_hooks_for_repos_in_db(backend):
     repo = backend.create_repo()
     repo_list = {repo.repo_name: 'test'}
-    with mock.patch.object(ScmModel, 'install_hooks') as install_hooks_mock:
-        utils.repo2db_mapper(repo_list, remove_obsolete=False)
-    install_hooks_mock.assert_called_once_with(
-        repo.scm_instance(), repo_type=backend.alias)
+    utils.repo2db_mapper(repo_list, remove_obsolete=False)
 
 
 @pytest.mark.backends("git", "svn")
@@ -269,11 +263,7 @@ def test_repo2db_mapper_installs_hooks_for_newly_added_repos(backend):
     RepoModel().delete(repo, fs_remove=False)
     meta.Session().commit()
     repo_list = {repo.repo_name: repo.scm_instance()}
-    with mock.patch.object(ScmModel, 'install_hooks') as install_hooks_mock:
-        utils.repo2db_mapper(repo_list, remove_obsolete=False)
-    assert install_hooks_mock.call_count == 1
-    install_hooks_args, _ = install_hooks_mock.call_args
-    assert install_hooks_args[0].name == repo.repo_name
+    utils.repo2db_mapper(repo_list, remove_obsolete=False)
 
 
 class TestPasswordChanged(object):

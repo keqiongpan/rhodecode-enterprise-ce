@@ -36,7 +36,9 @@ def get_app_config(ini_path):
     return appconfig('config:{}'.format(ini_path), relative_to=os.getcwd())
 
 
-def bootstrap(config_uri, request=None, options=None):
+def bootstrap(config_uri, request=None, options=None, env=None):
+    if env:
+        os.environ.update(env)
 
     config = get_config(config_uri)
     base_url = 'http://rhodecode.local'

@@ -16,9 +16,6 @@ recursive-include configs *
 # translations
 recursive-include rhodecode/i18n *
 
-# hook templates
-recursive-include rhodecode/config/hook_templates *
-
 # non-python core stuff
 recursive-include rhodecode *.cfg
 recursive-include rhodecode *.json

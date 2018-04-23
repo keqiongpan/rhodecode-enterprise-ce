@@ -127,14 +127,14 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
 
             if userobj.username == User.DEFAULT_USER and userobj.active:
                 log.info(
-                    'user %s authenticated correctly as anonymous user', userobj)
+                    'user `%s` authenticated correctly as anonymous user', userobj.username)
                 return user_attrs
 
             elif userobj.username == username and password_match:
-                log.info('user %s authenticated correctly', userobj)
+                log.info('user `%s` authenticated correctly', userobj.username)
                 return user_attrs
-            log.info("user %s had a bad password when "
-                     "authenticating on this plugin", userobj)
+            log.warn("user `%s` used a wrong password when "
+                     "authenticating on this plugin", userobj.username)
             return None
         else:
             log.warning(

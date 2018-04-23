@@ -21,41 +21,31 @@
 """
 Tests for main module's methods.
 """
-
-import mock
 import os
-import shutil
 import tempfile
-
+import shutil
+import mock
 import pytest
 
 from rhodecode.lib.vcs import VCSError, get_backend, get_vcs_instance
-from rhodecode.lib.vcs.backends.hg import MercurialRepository
-from rhodecode.tests import TEST_HG_REPO, TEST_GIT_REPO
 
 
 pytestmark = pytest.mark.usefixtures("baseapp")
 
 
-def test_get_backend():
-    hg = get_backend('hg')
-    assert hg == MercurialRepository
+def test_get_backend(backend):
+    repo_class = get_backend(backend.alias)
+    assert repo_class == backend.repo.scm_instance().__class__
 
 
-def test_alias_detect_hg():
-    alias = 'hg'
-    path = TEST_HG_REPO
-    backend = get_backend(alias)
-    repo = backend(path)
-    assert 'hg' == repo.alias
+def test_alias_detect(backend):
+    alias = backend.alias
+    path = backend.repo.scm_instance().path
 
+    new_backend = get_backend(alias)
+    repo = new_backend(path)
 
-def test_alias_detect_git():
-    alias = 'git'
-    path = TEST_GIT_REPO
-    backend = get_backend(alias)
-    repo = backend(path)
-    assert 'git' == repo.alias
+    assert alias == repo.alias
 
 
 def test_wrong_alias():
@@ -73,56 +63,13 @@ def test_get_vcs_instance_by_path(vcs_repo):
     assert repo.name == vcs_repo.name
 
 
-@mock.patch('rhodecode.lib.vcs.backends.get_scm')
-@mock.patch('rhodecode.lib.vcs.backends.get_backend')
-def test_get_vcs_instance_by_path_args_passed(
-        get_backend_mock, get_scm_mock):
-    """
-    Test that the arguments passed to ``get_vcs_instance_by_path`` are
-    forewarded to the vcs backend class.
-    """
-    backend = mock.MagicMock()
-    get_backend_mock.return_value = backend
-    args = ['these-are-test-args', 0, True, None]
-    get_vcs_instance(TEST_HG_REPO, *args)
-
-    backend.assert_called_with(*args, repo_path=TEST_HG_REPO)
-
-
-@mock.patch('rhodecode.lib.vcs.backends.get_scm')
-@mock.patch('rhodecode.lib.vcs.backends.get_backend')
-def test_get_vcs_instance_by_path_kwargs_passed(
-        get_backend_mock, get_scm_mock):
-    """
-    Test that the keyword arguments passed to ``get_vcs_instance_by_path`` are
-    forewarded to the vcs backend class.
-    """
-    backend = mock.MagicMock()
-    get_backend_mock.return_value = backend
-    kwargs = {
-        'foo': 'these-are-test-args',
-        'bar': 0,
-        'baz': True,
-        'foobar': None
-    }
-    get_vcs_instance(TEST_HG_REPO, **kwargs)
-
-    backend.assert_called_with(repo_path=TEST_HG_REPO, **kwargs)
-
-
-def test_get_vcs_instance_by_path_err(request):
+def test_get_vcs_instance_by_path_empty_dir(request, tmpdir):
     """
     Test that ``get_vcs_instance_by_path`` returns None if a path is passed
     to an empty directory.
     """
-    empty_dir = tempfile.mkdtemp(prefix='pytest-empty-dir-')
-
-    def fin():
-        shutil.rmtree(empty_dir)
-    request.addfinalizer(fin)
-
+    empty_dir = str(tmpdir)
     repo = get_vcs_instance(empty_dir)
-
     assert repo is None
 
 
@@ -142,3 +89,42 @@ def test_get_vcs_instance_by_path_multiple_repos(request):
     repo = get_vcs_instance(empty_dir)
 
     assert repo is None
+
+
+@mock.patch('rhodecode.lib.vcs.backends.get_scm')
+@mock.patch('rhodecode.lib.vcs.backends.get_backend')
+def test_get_vcs_instance_by_path_args_passed(
+        get_backend_mock, get_scm_mock, tmpdir, vcs_repo):
+    """
+    Test that the arguments passed to ``get_vcs_instance_by_path`` are
+    forwarded to the vcs backend class.
+    """
+    backend = mock.MagicMock()
+    get_backend_mock.return_value = backend
+    args = ['these-are-test-args', 0, True, None]
+    repo = vcs_repo.path
+    get_vcs_instance(repo, *args)
+
+    backend.assert_called_with(*args, repo_path=repo)
+
+
+@mock.patch('rhodecode.lib.vcs.backends.get_scm')
+@mock.patch('rhodecode.lib.vcs.backends.get_backend')
+def test_get_vcs_instance_by_path_kwargs_passed(
+        get_backend_mock, get_scm_mock, vcs_repo):
+    """
+    Test that the keyword arguments passed to ``get_vcs_instance_by_path`` are
+    forwarded to the vcs backend class.
+    """
+    backend = mock.MagicMock()
+    get_backend_mock.return_value = backend
+    kwargs = {
+        'foo': 'these-are-test-args',
+        'bar': 0,
+        'baz': True,
+        'foobar': None
+    }
+    repo = vcs_repo.path
+    get_vcs_instance(repo, **kwargs)
+
+    backend.assert_called_with(repo_path=repo, **kwargs)

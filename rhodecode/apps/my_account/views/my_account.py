@@ -232,40 +232,59 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
         c.user_email_map = UserEmailMap.query()\
             .filter(UserEmailMap.user == c.user).all()
+
+        schema = user_schema.AddEmailSchema().bind(
+            username=c.user.username, user_emails=c.user.emails)
+
+        form = forms.RcForm(schema,
+                            action=h.route_path('my_account_emails_add'),
+                            buttons=(forms.buttons.save, forms.buttons.reset))
+
+        c.form = form
         return self._get_template_context(c)
 
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
     @view_config(
-        route_name='my_account_emails_add', request_method='POST')
+        route_name='my_account_emails_add', request_method='POST',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_emails_add(self):
         _ = self.request.translate
         c = self.load_default_context()
+        c.active = 'emails'
 
-        email = self.request.POST.get('new_email')
+        schema = user_schema.AddEmailSchema().bind(
+            username=c.user.username, user_emails=c.user.emails)
 
+        form = forms.RcForm(
+            schema, action=h.route_path('my_account_emails_add'),
+            buttons=(forms.buttons.save, forms.buttons.reset))
+
+        controls = self.request.POST.items()
         try:
-            form = UserExtraEmailForm(self.request.translate)()
-            data = form.to_python({'email': email})
-            email = data['email']
-
-            UserModel().add_extra_email(c.user.user_id, email)
+            valid_data = form.validate(controls)
+            UserModel().add_extra_email(c.user.user_id, valid_data['email'])
             audit_logger.store_web(
                 'user.edit.email.add', action_data={
-                    'data': {'email': email, 'user': 'self'}},
+                    'data': {'email': valid_data['email'], 'user': 'self'}},
                 user=self._rhodecode_user,)
-
             Session().commit()
-            h.flash(_("Added new email address `%s` for user account") % email,
-                    category='success')
         except formencode.Invalid as error:
             h.flash(h.escape(error.error_dict['email']), category='error')
+        except forms.ValidationFailure as e:
+            c.user_email_map = UserEmailMap.query() \
+                .filter(UserEmailMap.user == c.user).all()
+            c.form = e
+            return self._get_template_context(c)
         except Exception:
-            log.exception("Exception in my_account_emails")
-            h.flash(_('An error occurred during email saving'),
+            log.exception("Exception adding email")
+            h.flash(_('Error occurred during adding email'),
                     category='error')
-        return HTTPFound(h.route_path('my_account_emails'))
+        else:
+            h.flash(_("Successfully added email"), category='success')
+
+        raise HTTPFound(self.request.route_path('my_account_emails'))
 
     @LoginRequired()
     @NotAnonymous()
@@ -414,22 +433,23 @@ class MyAccountView(BaseAppView, DataGridAppView):
     def my_account_edit(self):
         c = self.load_default_context()
         c.active = 'profile_edit'
-
-        c.perm_user = c.auth_user
         c.extern_type = c.user.extern_type
         c.extern_name = c.user.extern_name
 
-        defaults = c.user.get_dict()
+        schema = user_schema.UserProfileSchema().bind(
+            username=c.user.username, user_emails=c.user.emails)
+        appstruct = {
+            'username': c.user.username,
+            'email': c.user.email,
+            'firstname': c.user.firstname,
+            'lastname': c.user.lastname,
+        }
+        c.form = forms.RcForm(
+            schema, appstruct=appstruct,
+            action=h.route_path('my_account_update'),
+            buttons=(forms.buttons.save, forms.buttons.reset))
 
-        data = render('rhodecode:templates/admin/my_account/my_account.mako',
-                      self._get_template_context(c), self.request)
-        html = formencode.htmlfill.render(
-            data,
-            defaults=defaults,
-            encoding="UTF-8",
-            force_defaults=False
-        )
-        return Response(html)
+        return self._get_template_context(c)
 
     @LoginRequired()
     @NotAnonymous()
@@ -442,55 +462,40 @@ class MyAccountView(BaseAppView, DataGridAppView):
         _ = self.request.translate
         c = self.load_default_context()
         c.active = 'profile_edit'
-
         c.perm_user = c.auth_user
         c.extern_type = c.user.extern_type
         c.extern_name = c.user.extern_name
 
-        _form = UserForm(self.request.translate, edit=True,
-                         old_data={'user_id': self._rhodecode_user.user_id,
-                                   'email': self._rhodecode_user.email})()
-        form_result = {}
+        schema = user_schema.UserProfileSchema().bind(
+            username=c.user.username, user_emails=c.user.emails)
+        form = forms.RcForm(
+            schema, buttons=(forms.buttons.save, forms.buttons.reset))
+
+        controls = self.request.POST.items()
         try:
-            post_data = dict(self.request.POST)
-            post_data['new_password'] = ''
-            post_data['password_confirmation'] = ''
-            form_result = _form.to_python(post_data)
-            # skip updating those attrs for my account
+            valid_data = form.validate(controls)
             skip_attrs = ['admin', 'active', 'extern_type', 'extern_name',
                           'new_password', 'password_confirmation']
-            # TODO: plugin should define if username can be updated
             if c.extern_type != "rhodecode":
                 # forbid updating username for external accounts
                 skip_attrs.append('username')
-
+            old_email = c.user.email
             UserModel().update_user(
-                self._rhodecode_user.user_id, skip_attrs=skip_attrs,
-                **form_result)
-            h.flash(_('Your account was updated successfully'),
-                    category='success')
+                     self._rhodecode_user.user_id, skip_attrs=skip_attrs,
+                     **valid_data)
+            if old_email != valid_data['email']:
+                old = UserEmailMap.query() \
+                    .filter(UserEmailMap.user == c.user).filter(UserEmailMap.email == valid_data['email']).first()
+                old.email = old_email
+            h.flash(_('Your account was updated successfully'), category='success')
             Session().commit()
-
-        except formencode.Invalid as errors:
-            data = render(
-                'rhodecode:templates/admin/my_account/my_account.mako',
-                self._get_template_context(c), self.request)
-
-            html = formencode.htmlfill.render(
-                data,
-                defaults=errors.value,
-                errors=errors.error_dict or {},
-                prefix_error=False,
-                encoding="UTF-8",
-                force_defaults=False)
-            return Response(html)
-
+        except forms.ValidationFailure as e:
+            c.form = e
+            return self._get_template_context(c)
         except Exception:
             log.exception("Exception updating user")
-            h.flash(_('Error occurred during update of user %s')
-                    % form_result.get('username'), category='error')
-            raise HTTPFound(h.route_path('my_account_profile'))
-
+            h.flash(_('Error occurred during update of user'),
+                    category='error')
         raise HTTPFound(h.route_path('my_account_profile'))
 
     def _get_pull_requests_list(self, statuses):

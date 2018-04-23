@@ -40,7 +40,7 @@ def main(ini_path, force_yes):
 def command(ini_path, force_yes):
     pyramid.paster.setup_logging(ini_path)
 
-    with bootstrap(ini_path) as env:
+    with bootstrap(ini_path, env={'RC_CMD_UPGRADE_DB': '1'}) as env:
         config = env['registry'].settings
         db_uri = config['sqlalchemy.db1.url']
         options = {}

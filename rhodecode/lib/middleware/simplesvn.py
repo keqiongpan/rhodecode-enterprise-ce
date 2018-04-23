@@ -18,17 +18,21 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import base64
 import logging
 import urllib
 from urlparse import urljoin
 
-
 import requests
 from webob.exc import HTTPNotAcceptable
 
+from rhodecode.lib import caches
 from rhodecode.lib.middleware import simplevcs
 from rhodecode.lib.utils import is_valid_repo
-from rhodecode.lib.utils2 import str2bool
+from rhodecode.lib.utils2 import str2bool, safe_int
+from rhodecode.lib.ext_json import json
+from rhodecode.lib.hooks_daemon import store_txn_id_data
+
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +42,6 @@ class SimpleSvnApp(object):
         'connection', 'keep-alive', 'content-encoding',
         'transfer-encoding', 'content-length']
     rc_extras = {}
-
 
     def __init__(self, config):
         self.config = config
@@ -52,9 +55,19 @@ class SimpleSvnApp(object):
         # length, then we should transfer the payload in one request.
         if environ['REQUEST_METHOD'] == 'MKCOL' or 'CONTENT_LENGTH' in environ:
             data = data.read()
+            if data.startswith('(create-txn-with-props'):
+                # store on-the-fly our rc_extra using svn revision properties
+                # those can be read later on in hooks executed so we have a way
+                # to pass in the data into svn hooks
+                rc_data = base64.urlsafe_b64encode(json.dumps(self.rc_extras))
+                rc_data_len = len(rc_data)
+                # header defines data lenght, and serialized data
+                skel = ' rc-scm-extras {} {}'.format(rc_data_len, rc_data)
+                data = data[:-2] + skel + '))'
 
         log.debug('Calling: %s method via `%s`', environ['REQUEST_METHOD'],
                   self._get_url(environ['PATH_INFO']))
+
         response = requests.request(
             environ['REQUEST_METHOD'], self._get_url(environ['PATH_INFO']),
             data=data, headers=request_headers)
@@ -70,6 +83,14 @@ class SimpleSvnApp(object):
             log.debug('got response code: %s', response.status_code)
 
         response_headers = self._get_response_headers(response.headers)
+
+        if response.headers.get('SVN-Txn-name'):
+            svn_tx_id = response.headers.get('SVN-Txn-name')
+            txn_id = caches.compute_key_from_params(
+                self.config['repository'], svn_tx_id)
+            port = safe_int(self.rc_extras['hooks_uri'].split(':')[-1])
+            store_txn_id_data(txn_id, {'port': port})
+
         start_response(
             '{} {}'.format(response.status_code, response.reason),
             response_headers)
@@ -155,6 +176,14 @@ class SimpleSvn(simplevcs.SimpleVCS):
             'pull'
             if environ['REQUEST_METHOD'] in self.READ_ONLY_COMMANDS
             else 'push')
+
+    def _should_use_callback_daemon(self, extras, environ, action):
+        # only MERGE command triggers hooks, so we don't want to start
+        # hooks server too many times. POST however starts the svn transaction
+        # so we also need to run the init of callback daemon of POST
+        if environ['REQUEST_METHOD'] in ['MERGE', 'POST']:
+            return True
+        return False
 
     def _create_wsgi_app(self, repo_path, repo_name, config):
         if self._is_svn_enabled():

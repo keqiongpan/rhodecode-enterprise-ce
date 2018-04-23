@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import os
 import logging
 import importlib
 
@@ -71,9 +72,12 @@ def _discover_legacy_plugins(config, prefix=legacy_plugin_prefix):
     setting in database which are using the specified prefix. Normally 'py:' is
     used for the legacy plugins.
     """
-    auth_plugins = SettingsModel().get_setting_by_name('auth_plugins')
-    enabled_plugins = auth_plugins.app_settings_value
-    legacy_plugins = [id_ for id_ in enabled_plugins if id_.startswith(prefix)]
+    try:
+        auth_plugins = SettingsModel().get_setting_by_name('auth_plugins')
+        enabled_plugins = auth_plugins.app_settings_value
+        legacy_plugins = [id_ for id_ in enabled_plugins if id_.startswith(prefix)]
+    except Exception:
+        legacy_plugins = []
 
     for plugin_id in legacy_plugins:
         log.debug('Legacy plugin discovered: "%s"', plugin_id)
@@ -116,6 +120,11 @@ def includeme(config):
                     request_method='POST',
                     route_name='auth_home',
                     context=AuthnRootResource)
+
+    for key in ['RC_CMD_SETUP_RC', 'RC_CMD_UPGRADE_DB', 'RC_CMD_SSH_WRAPPER']:
+        if os.environ.get(key):
+            # skip this heavy step below on certain CLI commands
+            return
 
     # Auto discover authentication plugins and include their configuration.
     _discover_plugins(config)

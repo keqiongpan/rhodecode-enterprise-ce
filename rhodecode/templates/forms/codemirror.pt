@@ -5,6 +5,8 @@
                  name name|field.name;
                  style style|field.widget.style;
                  help_block help_block|field.widget.help_block|'';
+                 help_block_collapsable_name help_block_collapsable_name|field.widget.help_block_collapsable_name|'';
+                 help_block_collapsable help_block_collapsable|field.widget.help_block_collapsable|'';
                  codemirror_options codemirror_options|field.widget.codemirror_options|{};
                  codemirror_mode codemirror_mode|field.widget.codemirror_mode|''
                 ">
@@ -17,6 +19,9 @@
           name="${name}">${cstruct}</textarea>
 
 <p tal:condition="help_block" class="help-block">${help_block}</p>
+<span tal:condition="help_block_collapsable" class="help-block pre-formatting"><a href="#showVars" onclick="$('#help_block_${oid}').toggle(); return false">${help_block_collapsable_name}</a>
+<p id="help_block_${oid}" style="display: none">${help_block_collapsable}</p>
+</span>
 <script type="text/javascript">
 deform.addCallback(
  '${oid}',

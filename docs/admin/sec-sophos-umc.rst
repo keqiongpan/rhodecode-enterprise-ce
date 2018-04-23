@@ -1,4 +1,4 @@
-.. _sec-your-server:
+.. _sec-sophos-umc:
 
 Securing Your Server via Sophos UTM 9
 -------------------------------------

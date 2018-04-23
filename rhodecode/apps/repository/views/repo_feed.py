@@ -90,13 +90,15 @@ class RepoFeedView(RepoAppView):
         _renderer = self.request.get_partial_renderer(
             'rhodecode:templates/feed/atom_feed_entry.mako')
         diff_processor, parsed_diff, limited_diff = self._changes(commit)
+        filtered_parsed_diff, has_hidden_changes = self.path_filter.filter_patchset(parsed_diff)
         return _renderer(
             'body',
             commit=commit,
-            parsed_diff=parsed_diff,
+            parsed_diff=filtered_parsed_diff,
             limited_diff=limited_diff,
             feed_include_diff=self.feed_include_diff,
             diff_processor=diff_processor,
+            has_hidden_changes=has_hidden_changes
         )
 
     def _set_timezone(self, date, tzinfo=pytz.utc):
@@ -122,8 +124,7 @@ class RepoFeedView(RepoAppView):
         """
         self.load_default_context()
 
-        @cache_region('long_term')
-        def _generate_feed(cache_key):
+        def _generate_feed():
             feed = Atom1Feed(
                 title=self.title % self.db_repo_name,
                 link=h.route_url('repo_summary', repo_name=self.db_repo_name),
@@ -146,12 +147,18 @@ class RepoFeedView(RepoAppView):
 
             return feed.mime_type, feed.writeString('utf-8')
 
-        invalidator_context = CacheKey.repo_context_cache(
-            _generate_feed, self.db_repo_name, CacheKey.CACHE_TYPE_ATOM)
+        @cache_region('long_term')
+        def _generate_feed_and_cache(cache_key):
+            return _generate_feed()
 
-        with invalidator_context as context:
-            context.invalidate()
-            mime_type, feed = context.compute()
+        if self.path_filter.is_enabled:
+            invalidator_context = CacheKey.repo_context_cache(
+                _generate_feed_and_cache, self.db_repo_name, CacheKey.CACHE_TYPE_ATOM)
+            with invalidator_context as context:
+                context.invalidate()
+                mime_type, feed = context.compute()
+        else:
+            mime_type, feed = _generate_feed()
 
         response = Response(feed)
         response.content_type = mime_type
@@ -169,8 +176,7 @@ class RepoFeedView(RepoAppView):
         """
         self.load_default_context()
 
-        @cache_region('long_term')
-        def _generate_feed(cache_key):
+        def _generate_feed():
             feed = Rss201rev2Feed(
                 title=self.title % self.db_repo_name,
                 link=h.route_url('repo_summary', repo_name=self.db_repo_name),
@@ -193,12 +199,19 @@ class RepoFeedView(RepoAppView):
 
             return feed.mime_type, feed.writeString('utf-8')
 
-        invalidator_context = CacheKey.repo_context_cache(
-            _generate_feed, self.db_repo_name, CacheKey.CACHE_TYPE_RSS)
+        @cache_region('long_term')
+        def _generate_feed_and_cache(cache_key):
+            return _generate_feed()
 
-        with invalidator_context as context:
-            context.invalidate()
-            mime_type, feed = context.compute()
+        if self.path_filter.is_enabled:
+            invalidator_context = CacheKey.repo_context_cache(
+                _generate_feed_and_cache, self.db_repo_name, CacheKey.CACHE_TYPE_RSS)
+
+            with invalidator_context as context:
+                context.invalidate()
+                mime_type, feed = context.compute()
+        else:
+            mime_type, feed = _generate_feed()
 
         response = Response(feed)
         response.content_type = mime_type

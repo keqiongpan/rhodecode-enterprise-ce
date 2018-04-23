@@ -197,6 +197,13 @@ def _remote_call(url, payload, exceptions_map, session):
         response = session.post(url, data=msgpack.packb(payload))
     except pycurl.error as e:
         raise exceptions.HttpVCSCommunicationError(e)
+    except Exception as e:
+        message = getattr(e, 'message', '')
+        if 'Failed to connect' in message:
+            # gevent doesn't return proper pycurl errors
+            raise exceptions.HttpVCSCommunicationError(e)
+        else:
+            raise
 
     if response.status_code >= 400:
         log.error('Call to %s returned non 200 HTTP code: %s',

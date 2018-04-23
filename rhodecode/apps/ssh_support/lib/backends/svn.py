@@ -117,6 +117,7 @@ class SubversionTunnelWrapper(object):
                 message=self._svn_string(message)))
         self.remove_configs()
         self.process.kill()
+        return 1
 
     def interrupt(self, signum, frame):
         self.fail("Exited by timeout")
@@ -171,7 +172,7 @@ class SubversionTunnelWrapper(object):
 
         first_response = self.get_first_client_response()
         if not first_response:
-            self.fail("Repository name cannot be extracted")
+            return self.fail("Repository name cannot be extracted")
 
         url_parts = urlparse.urlparse(first_response['url'])
         self.server.repo_name = url_parts.path.strip('/')

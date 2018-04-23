@@ -709,7 +709,19 @@ def extract_mentioned_users(s):
     return sorted(list(usrs), key=lambda k: k.lower())
 
 
-class StrictAttributeDict(dict):
+class AttributeDictBase(dict):
+    def __getstate__(self):
+        odict = self.__dict__  # get attribute dictionary
+        return odict
+
+    def __setstate__(self, dict):
+        self.__dict__ = dict
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
+class StrictAttributeDict(AttributeDictBase):
     """
     Strict Version of Attribute dict which raises an Attribute error when
     requested attribute is not set
@@ -720,15 +732,12 @@ class StrictAttributeDict(dict):
         except KeyError:
             raise AttributeError('%s object has no attribute %s' % (
                 self.__class__, attr))
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
 
 
-class AttributeDict(dict):
+class AttributeDict(AttributeDictBase):
     def __getattr__(self, attr):
         return self.get(attr, None)
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
+
 
 
 def fix_PATH(os_=None):

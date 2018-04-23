@@ -44,6 +44,7 @@ GENERAL_FORM_DATA = {
     'rhodecode_hg_close_branch_before_merging': True,
     'rhodecode_git_use_rebase_for_merging': True,
     'rhodecode_git_close_branch_before_merging': True,
+    'rhodecode_diff_cache': True,
 }
 
 

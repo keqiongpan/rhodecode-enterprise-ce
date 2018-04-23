@@ -80,6 +80,7 @@ class UserGroupModel(BaseModel):
             'updated': [],
             'deleted': []
         }
+        change_obj = user_group.get_api_data()
         # update permissions
         for member_id, perm, member_type in perm_updates:
             member_id = int(member_id)
@@ -97,8 +98,10 @@ class UserGroupModel(BaseModel):
                     self.grant_user_group_permission(
                         target_user_group=user_group, user_group=member_id, perm=perm)
 
-            changes['updated'].append({'type': member_type, 'id': member_id,
-                                       'name': member_name, 'new_perm': perm})
+            changes['updated'].append({
+                'change_obj': change_obj,
+                'type': member_type, 'id': member_id,
+                'name': member_name, 'new_perm': perm})
 
         # set new permissions
         for member_id, perm, member_type in perm_additions:
@@ -115,8 +118,10 @@ class UserGroupModel(BaseModel):
                     self.grant_user_group_permission(
                         target_user_group=user_group, user_group=member_id, perm=perm)
 
-            changes['added'].append({'type': member_type, 'id': member_id,
-                                     'name': member_name, 'new_perm': perm})
+            changes['added'].append({
+                'change_obj': change_obj,
+                'type': member_type, 'id': member_id,
+                'name': member_name, 'new_perm': perm})
 
         # delete permissions
         for member_id, perm, member_type in perm_deletions:
@@ -132,8 +137,11 @@ class UserGroupModel(BaseModel):
                     self.revoke_user_group_permission(
                         target_user_group=user_group, user_group=member_id)
 
-            changes['deleted'].append({'type': member_type, 'id': member_id,
-                                       'name': member_name, 'new_perm': perm})
+            changes['deleted'].append({
+                'change_obj': change_obj,
+                'type': member_type, 'id': member_id,
+                'name': member_name, 'new_perm': perm})
+
         return changes
 
     def get(self, user_group_id, cache=False):
@@ -217,7 +225,7 @@ class UserGroupModel(BaseModel):
                 members.append(uid)
         return members
 
-    def update(self, user_group, form_data):
+    def update(self, user_group, form_data, group_data=None):
         user_group = self._get_user_group(user_group)
         if 'users_group_name' in form_data:
             user_group.users_group_name = form_data['users_group_name']
@@ -246,6 +254,11 @@ class UserGroupModel(BaseModel):
                 form_data['users_group_members'])
             added_user_ids, removed_user_ids = \
                 self._update_members_from_user_ids(user_group, members_id_list)
+
+        if group_data:
+            new_group_data = {}
+            new_group_data.update(group_data)
+            user_group.group_data = new_group_data
 
         self.sa.add(user_group)
         return user_group, added_user_ids, removed_user_ids
@@ -395,10 +408,18 @@ class UserGroupModel(BaseModel):
         :param user: Instance of User, user_id or username
         :param perm: Instance of Permission, or permission_name
         """
+        changes = {
+            'added': [],
+            'updated': [],
+            'deleted': []
+        }
 
         user_group = self._get_user_group(user_group)
         user = self._get_user(user)
         permission = self._get_perm(perm)
+        perm_name = permission.permission_name
+        member_id = user.user_id
+        member_name = user.username
 
         # check if we have that permission already
         obj = self.sa.query(UserUserGroupToPerm)\
@@ -417,7 +438,12 @@ class UserGroupModel(BaseModel):
             'granted permission: {} to user: {} on usergroup: {}'.format(
                 perm, user, user_group), namespace='security.usergroup')
 
-        return obj
+        changes['added'].append({
+            'change_obj': user_group.get_api_data(),
+            'type': 'user', 'id': member_id,
+            'name': member_name, 'new_perm': perm_name})
+
+        return changes
 
     def revoke_user_permission(self, user_group, user):
         """
@@ -427,9 +453,17 @@ class UserGroupModel(BaseModel):
             or users_group name
         :param user: Instance of User, user_id or username
         """
+        changes = {
+            'added': [],
+            'updated': [],
+            'deleted': []
+        }
 
         user_group = self._get_user_group(user_group)
         user = self._get_user(user)
+        perm_name = 'usergroup.none'
+        member_id = user.user_id
+        member_name = user.username
 
         obj = self.sa.query(UserUserGroupToPerm)\
             .filter(UserUserGroupToPerm.user == user)\
@@ -442,6 +476,13 @@ class UserGroupModel(BaseModel):
                 'revoked permission from user: {} on usergroup: {}'.format(
                     user, user_group), namespace='security.usergroup')
 
+            changes['deleted'].append({
+                'change_obj': user_group.get_api_data(),
+                'type': 'user', 'id': member_id,
+                'name': member_name, 'new_perm': perm_name})
+
+        return changes
+
     def grant_user_group_permission(self, target_user_group, user_group, perm):
         """
         Grant user group permission for given target_user_group
@@ -450,9 +491,19 @@ class UserGroupModel(BaseModel):
         :param user_group:
         :param perm:
         """
+        changes = {
+            'added': [],
+            'updated': [],
+            'deleted': []
+        }
+
         target_user_group = self._get_user_group(target_user_group)
         user_group = self._get_user_group(user_group)
         permission = self._get_perm(perm)
+        perm_name = permission.permission_name
+        member_id = user_group.users_group_id
+        member_name = user_group.users_group_name
+
         # forbid assigning same user group to itself
         if target_user_group == user_group:
             raise RepoGroupAssignmentError('target repo:%s cannot be '
@@ -477,7 +528,12 @@ class UserGroupModel(BaseModel):
                 perm, user_group, target_user_group),
             namespace='security.usergroup')
 
-        return obj
+        changes['added'].append({
+            'change_obj': target_user_group.get_api_data(),
+            'type': 'user_group', 'id': member_id,
+            'name': member_name, 'new_perm': perm_name})
+
+        return changes
 
     def revoke_user_group_permission(self, target_user_group, user_group):
         """
@@ -486,8 +542,17 @@ class UserGroupModel(BaseModel):
         :param target_user_group:
         :param user_group:
         """
+        changes = {
+            'added': [],
+            'updated': [],
+            'deleted': []
+        }
+
         target_user_group = self._get_user_group(target_user_group)
         user_group = self._get_user_group(user_group)
+        perm_name = 'usergroup.none'
+        member_id = user_group.users_group_id
+        member_name = user_group.users_group_name
 
         obj = self.sa.query(UserGroupUserGroupToPerm)\
             .filter(UserGroupUserGroupToPerm.target_user_group == target_user_group)\
@@ -501,6 +566,13 @@ class UserGroupModel(BaseModel):
                 'revoked permission from usergroup: {} on usergroup: {}'.format(
                     user_group, target_user_group),
                 namespace='security.repogroup')
+
+            changes['deleted'].append({
+                'change_obj': target_user_group.get_api_data(),
+                'type': 'user_group', 'id': member_id,
+                'name': member_name, 'new_perm': perm_name})
+
+        return changes
 
     def get_perms_summary(self, user_group_id):
         permissions = {

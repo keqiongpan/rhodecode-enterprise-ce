@@ -281,5 +281,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             if group in user_attrs["groups"]:
                 user_attrs["admin"] = True
         log.debug("Final crowd user object: \n%s" % (formatted_json(user_attrs)))
-        log.info('user %s authenticated correctly' % user_attrs['username'])
+        log.info('user `%s` authenticated correctly' % user_attrs['username'])
         return user_attrs

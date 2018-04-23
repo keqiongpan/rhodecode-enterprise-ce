@@ -95,7 +95,8 @@ class NavigationRegistry(object):
                  'admin_settings_sessions'),
         NavEntry('open_source', _('Open Source Licenses'),
                  'admin_settings_open_source'),
-
+        NavEntry('automation', _('Automation'),
+                 'admin_settings_automation')
     ]
 
     _labs_entry = NavEntry('labs', _('Labs'),
