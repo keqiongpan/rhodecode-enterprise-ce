@@ -66,7 +66,7 @@ comment_commit
 create_repo 
 -----------
 
-.. py:function:: create_repo(apiuser, repo_name, repo_type, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, landing_rev=<Optional:'rev:tip'>, enable_statistics=<Optional:False>, enable_locking=<Optional:False>, enable_downloads=<Optional:False>, copy_permissions=<Optional:False>)
+.. py:function:: create_repo(apiuser, repo_name, repo_type, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, push_uri=<Optional:None>, landing_rev=<Optional:'rev:tip'>, enable_statistics=<Optional:False>, enable_locking=<Optional:False>, enable_downloads=<Optional:False>, copy_permissions=<Optional:False>)
 
    Creates a repository.
 
@@ -95,6 +95,8 @@ create_repo
    :type private: bool
    :param clone_uri: set clone_uri
    :type clone_uri: str
+   :param push_uri: set push_uri
+   :type push_uri: str
    :param landing_rev: <rev_type>:<rev>
    :type landing_rev: str
    :param enable_locking:
@@ -789,7 +791,7 @@ maintenance
 pull 
 ----
 
-.. py:function:: pull(apiuser, repoid)
+.. py:function:: pull(apiuser, repoid, remote_uri=<Optional:None>)
 
    Triggers a pull on the given repository from a remote location. You
    can use this to keep remote repositories up-to-date.
@@ -804,6 +806,8 @@ pull
    :type apiuser: AuthUser
    :param repoid: The repository name or repository ID.
    :type repoid: str or int
+   :param remote_uri: Optional remote URI to pass in for pull
+   :type remote_uri: str
 
    Example output:
 
@@ -811,7 +815,7 @@ pull
 
      id : <id_given_in_input>
      result : {
-       "msg": "Pulled from `<repository name>`"
+       "msg": "Pulled from url `<remote_url>` on repo `<repository name>`"
        "repository": "<repository name>"
      }
      error :  null
@@ -823,7 +827,7 @@ pull
      id : <id_given_in_input>
      result : null
      error :  {
-       "Unable to pull changes from `<reponame>`"
+       "Unable to push changes from `<remote_url>`"
      }
 
 
@@ -976,7 +980,7 @@ strip
 update_repo 
 -----------
 
-.. py:function:: update_repo(apiuser, repoid, repo_name=<Optional:None>, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, landing_rev=<Optional:'rev:tip'>, fork_of=<Optional:None>, enable_statistics=<Optional:False>, enable_locking=<Optional:False>, enable_downloads=<Optional:False>, fields=<Optional:''>)
+.. py:function:: update_repo(apiuser, repoid, repo_name=<Optional:None>, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, push_uri=<Optional:None>, landing_rev=<Optional:'rev:tip'>, fork_of=<Optional:None>, enable_statistics=<Optional:False>, enable_locking=<Optional:False>, enable_downloads=<Optional:False>, fields=<Optional:''>)
 
    Updates a repository with the given information.
 

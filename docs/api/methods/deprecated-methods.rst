@@ -38,7 +38,7 @@ changeset_comment
 
    Example error output:
 
-   .. code-block:: javascript
+   .. code-block:: json
 
        {
            "id" : <id_given_in_input>,
