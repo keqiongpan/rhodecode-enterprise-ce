@@ -133,7 +133,11 @@ Upgrade notes
 handle SVN protocol. We did thoughtful tests for SVN compatibility.
 Please be advised to check the behaviour of SVN repositories during this update.
 
+A check and migrate of SVN hooks is required. In order to do so, please execute
+`Rescan filesystem` from admin > settings > Remap and Rescan. This will migrate
+all SVN hook to latest available version. To migrate single repository only,
+please go to the following url: `your-rhodecode-server.com/REPO_NAME/settings/advanced/hooks`
+
 - Diff caches are turned off by default for backward compatibility. We however recommend
 turning them on either individually for bigger repositories or globally for every repository.
 This setting can be found in admin > settings > vcs, or repository > settings > vcs
-
