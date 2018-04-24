@@ -575,13 +575,13 @@
     };
   };
   deform = super.buildPythonPackage {
-    name = "deform-2.0.4";
+    name = "deform-2.0.5";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [Chameleon colander iso8601 peppercorn translationstring zope.deprecation];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/66/3b/eefcb07abcab7a97f6665aa2d0cf1af741d9d6e78a2e4657fd2b89f89880/deform-2.0.4.tar.gz";
-      sha256 = "a9527ce0c55a3c744844b378ba0fd0eab964043ffae0a046e747923c61f50436";
+      url = "https://files.pythonhosted.org/packages/0c/b1/ba711d5808c12538c8504f534d79c124ed834f19ac36f0ac5391c3bbd1c1/deform-2.0.5.tar.gz";
+      sha256 = "874d3346a02c500432efdcc73b1a7174aa0ea69cd52a99bb9a812967f54f6f79";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];

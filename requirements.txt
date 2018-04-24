@@ -14,7 +14,7 @@ colander==1.4.0
 configobj==5.0.6
 cssselect==1.0.1
 decorator==4.1.2
-deform==2.0.4
+deform==2.0.5
 docutils==0.14.0
 dogpile.cache==0.6.4
 dogpile.core==0.4.1
