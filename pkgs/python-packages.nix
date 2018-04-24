@@ -627,13 +627,13 @@
     };
   };
   ipaddress = super.buildPythonPackage {
-    name = "ipaddress-1.0.19";
+    name = "ipaddress-1.0.22";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/f0/ba/860a4a3e283456d6b7e2ab39ce5cf11a3490ee1a363652ac50abf9f0f5df/ipaddress-1.0.19.tar.gz";
-      md5 = "d0687efaf93a32476d81e90ba0609c57";
+      url = "https://files.pythonhosted.org/packages/97/8d/77b8cedcfbf93676148518036c6b1ce7f8e14bf07e95d7fd4ddcb8cc052f/ipaddress-1.0.22.tar.gz";
+      sha256 = "b146c751ea45cad6188dd6cf2d9b757f6f4f8d6ffb96a023e6f2e26eea02a72c";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
