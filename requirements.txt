@@ -92,7 +92,7 @@ wsgiref==0.1.2
 zope.cachedescriptors==4.3.1
 zope.deprecation==4.3.0
 zope.event==4.3.0
-zope.interface==4.4.3
+zope.interface==4.5.0
 
 
 # IPYTHON RENDERING
