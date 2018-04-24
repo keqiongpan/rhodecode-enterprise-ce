@@ -1563,13 +1563,13 @@
     };
   };
   python-memcached = super.buildPythonPackage {
-    name = "python-memcached-1.58";
+    name = "python-memcached-1.59";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f7/62/14b2448cfb04427366f24104c9da97cf8ea380d7258a3233f066a951a8d8/python-memcached-1.58.tar.gz";
-      sha256 = "2775829cb54b9e4c5b3bbd8028680f0c0ab695db154b9c46f0f074ff97540eb6";
+      url = "https://files.pythonhosted.org/packages/90/59/5faf6e3cd8a568dd4f737ddae4f2e54204fd8c51f90bf8df99aca6c22318/python-memcached-1.59.tar.gz";
+      sha256 = "a2e28637be13ee0bf1a8b6843e7490f9456fd3f2a4cb60471733c7b5d5557e4f";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
