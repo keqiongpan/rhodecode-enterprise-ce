@@ -43,7 +43,7 @@ PasteScript==2.0.2
 pathlib2==2.3.0
 peppercorn==0.5
 psutil==5.4.3
-psycopg2==2.7.3.2
+psycopg2==2.7.4
 py-bcrypt==0.4
 pycrypto==2.6.1
 pycurl==7.19.5
