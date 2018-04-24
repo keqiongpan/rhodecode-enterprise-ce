@@ -874,13 +874,13 @@
     };
   };
   ipdb = super.buildPythonPackage {
-    name = "ipdb-0.10.3";
+    name = "ipdb-0.11";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools ipython];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ad/cc/0e7298e1fbf2efd52667c9354a12aa69fb6f796ce230cca03525051718ef/ipdb-0.10.3.tar.gz";
-      sha256 = "9ea256b4280fbe12840fb9dfc3ce498c6c6de03352eca293e4400b0dfbed2b28";
+      url = "https://files.pythonhosted.org/packages/80/fe/4564de08f174f3846364b3add8426d14cebee228f741c27e702b2877e85b/ipdb-0.11.tar.gz";
+      sha256 = "7081c65ed7bfe7737f83fa4213ca8afd9617b42ff6b3f1daf9a3419839a2a00a";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
