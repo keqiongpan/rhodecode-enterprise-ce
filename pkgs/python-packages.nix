@@ -1683,7 +1683,7 @@
     name = "rhodecode-enterprise-ce-4.13.0";
     buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage configobj];
     doCheck = true;
-    propagatedBuildInputs = with self; [setuptools-scm amqp authomatic Babel Beaker celery Chameleon channelstream click colander configobj cssselect decorator deform docutils dogpile.cache dogpile.core ecdsa FormEncode future futures gnureadline infrae.cache iso8601 itsdangerous Jinja2 billiard kombu lxml Mako Markdown MarkupSafe msgpack-python MySQL-python objgraph packaging Paste PasteDeploy PasteScript pathlib2 peppercorn psutil psycopg2 py-bcrypt pycrypto pycurl pyflakes pygments-markdown-lexer Pygments pyparsing pyramid-beaker pyramid-debugtoolbar pyramid-jinja2 pyramid-mako pyramid pysqlite python-dateutil python-ldap python-memcached python-pam pytz tzlocal pyzmq py-gfm recaptcha-client redis repoze.lru requests Routes setproctitle simplejson six SQLAlchemy sshpubkeys subprocess32 supervisor Tempita translationstring trollius urllib3 URLObject venusian WebError WebHelpers2 WebHelpers WebOb Whoosh wsgiref zope.cachedescriptors zope.deprecation zope.event zope.interface nbconvert bleach nbformat jupyter-client alembic invoke bumpversion transifex-client gevent greenlet gunicorn waitress uWSGI ipdb ipython CProfileV bottle rhodecode-tools appenlight-client pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage];
+    propagatedBuildInputs = with self; [setuptools-scm amqp authomatic Babel Beaker celery Chameleon channelstream click colander configobj cssselect decorator deform docutils dogpile.cache dogpile.core ecdsa FormEncode future futures gnureadline infrae.cache iso8601 itsdangerous Jinja2 billiard kombu lxml Mako Markdown MarkupSafe msgpack-python MySQL-python objgraph packaging Paste PasteDeploy PasteScript pathlib2 peppercorn psutil psycopg2 py-bcrypt pycrypto pycurl pyflakes pygments-markdown-lexer Pygments pyparsing pyramid-beaker pyramid-debugtoolbar pyramid-jinja2 pyramid-mako pyramid pysqlite python-dateutil python-ldap python-memcached python-pam pytz tzlocal pyzmq py-gfm recaptcha-client redis repoze.lru requests Routes setproctitle simplejson six SQLAlchemy sshpubkeys subprocess32 supervisor Tempita translationstring trollius urllib3 URLObject venusian WebError WebHelpers2 WebHelpers WebOb Whoosh wsgiref zope.cachedescriptors zope.deprecation zope.event zope.interface nbconvert bleach nbformat jupyter-client alembic invoke bumpversion transifex-client gevent greenlet gunicorn waitress ipdb ipython CProfileV bottle rhodecode-tools appenlight-client pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage];
     src = ./.;
     meta = {
       license = [ { fullName = "Affero GNU General Public License v3 or later (AGPLv3+)"; } { fullName = "AGPLv3, and Commercial License"; } ];
@@ -1921,19 +1921,6 @@
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
-    };
-  };
-  uWSGI = super.buildPythonPackage {
-    name = "uWSGI-2.0.15";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/bb/0a/45e5aa80dc135889594bb371c082d20fb7ee7303b174874c996888cc8511/uwsgi-2.0.15.tar.gz";
-      sha256 = "572ef9696b97595b4f44f6198fe8c06e6f4e6351d930d22e5330b071391272ff";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.gpl2 ];
     };
   };
   urllib3 = super.buildPythonPackage {
