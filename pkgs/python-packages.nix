@@ -197,19 +197,6 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
-  SQLAlchemy = super.buildPythonPackage {
-    name = "SQLAlchemy-1.1.15";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c2/f6/11fcc1ce19a7cb81b1c9377f4e27ce3813265611922e355905e57c44d164/SQLAlchemy-1.1.15.tar.gz";
-      sha256 = "8b79a5ed91cdcb5abe97b0045664c55c140aec09e5dd5c01303e23de5fe7a95a";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
   Tempita = super.buildPythonPackage {
     name = "Tempita-0.5.2";
     buildInputs = with self; [];
@@ -1788,6 +1775,19 @@
     src = fetchurl {
       url = "https://files.pythonhosted.org/packages/16/d8/bc6316cf98419719bd59c91742194c111b6f2e85abac88e496adefaf7afe/six-1.11.0.tar.gz";
       sha256 = "70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  sqlalchemy = super.buildPythonPackage {
+    name = "sqlalchemy-1.1.18";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/cc/4d/96d93ff77cd67aca7618e402191eee3490d8f5f245d6ab7622d35fe504f4/SQLAlchemy-1.1.18.tar.gz";
+      sha256 = "8b0ec71af9291191ba83a91c03d157b19ab3e7119e27da97932a4773a3f664a9";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
