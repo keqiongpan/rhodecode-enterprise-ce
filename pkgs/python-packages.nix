@@ -1923,6 +1923,19 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  urlobject = super.buildPythonPackage {
+    name = "urlobject-2.4.3";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/e2/b8/1d0a916f4b34c4618846e6da0e4eeaa8fcb4a2f39e006434fe38acb74b34/URLObject-2.4.3.tar.gz";
+      sha256 = "47b2e20e6ab9c8366b2f4a3566b6ff4053025dad311c4bb71279bbcfa2430caa";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.publicDomain ];
+    };
+  };
   venusian = super.buildPythonPackage {
     name = "venusian-1.1.0";
     buildInputs = with self; [];
