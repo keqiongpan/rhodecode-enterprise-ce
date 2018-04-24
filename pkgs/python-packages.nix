@@ -1871,19 +1871,6 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  transifex-client = super.buildPythonPackage {
-    name = "transifex-client-0.12.5";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [urllib3 six];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/7b/86/60f31a0c9b8d0b1266ce15b6c80b55f88522140c8acfc395d5aec5e23475/transifex-client-0.12.5.tar.gz";
-      md5 = "e6e278117b23f60702c06e203b7e51ae";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.gpl2 ];
-    };
-  };
   translationstring = super.buildPythonPackage {
     name = "translationstring-1.3";
     buildInputs = with self; [];
