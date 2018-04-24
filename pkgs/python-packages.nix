@@ -1407,13 +1407,13 @@
     };
   };
   python-dateutil = super.buildPythonPackage {
-    name = "python-dateutil-2.6.1";
+    name = "python-dateutil-2.7.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/54/bb/f1db86504f7a49e1d9b9301531181b00a1c7325dc85a29160ee3eaa73a54/python-dateutil-2.6.1.tar.gz";
-      md5 = "db38f6b4511cefd76014745bb0cc45a4";
+      url = "https://files.pythonhosted.org/packages/c5/39/4da7c2dbc4f023fba5fb2325febcadf0d0ce0efdc8bd12083a0f65d20653/python-dateutil-2.7.2.tar.gz";
+      sha256 = "9d8074be4c993fbe4947878ce593052f71dac82932a677d49194d8ce9778002e";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "Simplified BSD"; } ];
