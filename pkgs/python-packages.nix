@@ -1368,13 +1368,13 @@
     };
   };
   pyramid = super.buildPythonPackage {
-    name = "pyramid-1.9.1";
+    name = "pyramid-1.9.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [setuptools WebOb repoze.lru zope.interface zope.deprecation venusian translationstring PasteDeploy plaster plaster-pastedeploy hupper];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/9a/57/73447be9e7d0512d601e3f0a1fb9d7d1efb941911f49efdfe036d2826507/pyramid-1.9.1.tar.gz";
-      sha256 = "840f4bbd5994609340de35079da0d1dd94f79942e27818d5d8566f8009fb0b36";
+      url = "https://files.pythonhosted.org/packages/a0/c1/b321d07cfc4870541989ad131c86a1d593bfe802af0eca9718a0dadfb97a/pyramid-1.9.2.tar.gz";
+      sha256 = "cf89a48cb899291639686bf3d4a883b39e496151fa4871fb83cc1a3200d5b925";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
