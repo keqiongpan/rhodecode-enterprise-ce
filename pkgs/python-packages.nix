@@ -1394,13 +1394,13 @@
     };
   };
   pyramid-debugtoolbar = super.buildPythonPackage {
-    name = "pyramid-debugtoolbar-4.3";
+    name = "pyramid-debugtoolbar-4.4";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pyramid pyramid-mako repoze.lru Pygments ipaddress];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/a4/40/f09d8800bfc3c09bdb6c95f37bb61c890dc62c19c4e7caa304da7aa77403/pyramid_debugtoolbar-4.3.tar.gz";
-      sha256 = "7f77c1a7e9705b07dcb66ad4aeb92e8a0c5ac073ff766bf9c2f36259fa677f57";
+      url = "https://files.pythonhosted.org/packages/00/6f/c04eb4e715a7a5a4b24079ab7ffd1dceb1f70b2e24fc17686a2922dbac0a/pyramid_debugtoolbar-4.4.tar.gz";
+      sha256 = "5f779aa242009c4aace848f67807da44af2970b303aa1c9682c2efab76b7e79e";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } pkgs.lib.licenses.bsdOriginal ];
