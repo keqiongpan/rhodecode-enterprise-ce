@@ -99,7 +99,7 @@ zope.interface==4.5.0
 # entrypoints backport, pypi version doesn't support egg installs
 https://code.rhodecode.com/upstream/entrypoints/archive/96e6d645684e1af3d7df5b5272f3fe85a546b233.tar.gz?md5=7db37771aea9ac9fefe093e5d6987313#egg=entrypoints==0.2.2.rhodecode-upstream1
 nbconvert==5.3.1
-bleach==2.1.2
+bleach==2.1.3
 nbformat==4.4.0
 jupyter_client==5.0.0
 
