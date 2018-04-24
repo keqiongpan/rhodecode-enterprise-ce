@@ -183,7 +183,7 @@ let
         ln -s ${self.pyramid}/bin/* $out/bin/
         ln -s ${self.gunicorn}/bin/gunicorn $out/bin/
         ln -s ${self.supervisor}/bin/supervisor* $out/bin/
-        ln -s ${self.PasteScript}/bin/paster $out/bin/
+        ln -s ${self.pastescript}/bin/paster $out/bin/
         ln -s ${self.channelstream}/bin/channelstream $out/bin/
         ln -s ${self.celery}/bin/celery $out/bin/
 
