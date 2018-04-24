@@ -1017,13 +1017,13 @@
     };
   };
   pexpect = super.buildPythonPackage {
-    name = "pexpect-4.4.0";
+    name = "pexpect-4.5.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [ptyprocess];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/fa/c3/60c0cbf96f242d0b47a82e9ca634dcd6dcb043832cf05e17540812e1c707/pexpect-4.4.0.tar.gz";
-      md5 = "e9b07f0765df8245ac72201d757baaef";
+      url = "https://files.pythonhosted.org/packages/09/0e/75f0c093654988b8f17416afb80f7621bcf7d36bbd6afb4f823acdb4bcdc/pexpect-4.5.0.tar.gz";
+      sha256 = "9f8eb3277716a01faafaba553d629d3d60a1a624c7cf45daa600d2148c30020c";
     };
     meta = {
       license = [ pkgs.lib.licenses.isc { fullName = "ISC License (ISCL)"; } ];
