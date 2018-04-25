@@ -159,18 +159,18 @@ class CommentsModel(BaseModel):
 
         return todos
 
-    def _log_audit_action(self, action, action_data, user, comment):
+    def _log_audit_action(self, action, action_data, auth_user, comment):
         audit_logger.store(
             action=action,
             action_data=action_data,
-            user=user,
+            user=auth_user,
             repo=comment.repo)
 
     def create(self, text, repo, user, commit_id=None, pull_request=None,
                f_path=None, line_no=None, status_change=None,
                status_change_type=None, comment_type=None,
                resolves_comment_id=None, closing_pr=False, send_email=True,
-               renderer=None):
+               renderer=None, auth_user=None):
         """
         Creates new comment for commit or pull request.
         IF status_change is not none this comment is associated with a
@@ -190,6 +190,8 @@ class CommentsModel(BaseModel):
         :param send_email:
         :param renderer: pick renderer for this comment
         """
+
+        auth_user = auth_user or user
         if not text:
             log.warning('Missing text for comment, skipping...')
             return
@@ -355,7 +357,7 @@ class CommentsModel(BaseModel):
 
         comment_data = comment.get_api_data()
         self._log_audit_action(
-            action, {'data': comment_data}, user, comment)
+            action, {'data': comment_data}, auth_user, comment)
 
         msg_url = ''
         channel = None
@@ -388,7 +390,7 @@ class CommentsModel(BaseModel):
 
         return comment
 
-    def delete(self, comment, user):
+    def delete(self, comment, auth_user):
         """
         Deletes given comment
         """
@@ -402,7 +404,7 @@ class CommentsModel(BaseModel):
             action = 'repo.commit.comment.delete'
 
         self._log_audit_action(
-            action, {'old_data': old_data}, user, comment)
+            action, {'old_data': old_data}, auth_user, comment)
 
         return comment
 

@@ -1469,7 +1469,8 @@ def comment_commit(
             status_change_type=status,
             renderer=renderer,
             comment_type=comment_type,
-            resolves_comment_id=resolves_comment_id
+            resolves_comment_id=resolves_comment_id,
+            auth_user=apiuser
         )
         if status:
             # also do a status change

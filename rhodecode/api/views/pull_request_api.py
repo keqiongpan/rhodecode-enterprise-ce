@@ -548,7 +548,8 @@ def comment_pull_request(
         closing_pr=False,
         renderer=renderer,
         comment_type=comment_type,
-        resolves_comment_id=resolves_comment_id
+        resolves_comment_id=resolves_comment_id,
+        auth_user=apiuser
     )
 
     if allowed_to_change_status and status:

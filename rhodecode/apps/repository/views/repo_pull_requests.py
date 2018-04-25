@@ -1285,7 +1285,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         if super_admin or comment_owner or comment_repo_admin:
             old_calculated_status = comment.pull_request.calculated_review_status()
-            CommentsModel().delete(comment=comment, user=self._rhodecode_user)
+            CommentsModel().delete(comment=comment, auth_user=self._rhodecode_user)
             Session().commit()
             calculated_status = comment.pull_request.calculated_review_status()
             if old_calculated_status != calculated_status:
