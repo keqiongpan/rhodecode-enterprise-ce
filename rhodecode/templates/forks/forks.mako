@@ -43,23 +43,15 @@
 <script type="text/javascript">
 
 $(document).ready(function() {
-    var $userListTable = $('#fork_list_table');
+    var $forksListTable = $('#fork_list_table');
 
-    var getDatatableCount = function(){
-      var table = $userListTable.dataTable();
-      var page = table.api().page.info();
-      var  active = page.recordsDisplay;
-      var  total = page.recordsTotal;
-
-      var _text = _gettext("{0} out of {1} users").format(active, total);
-      $('#user_count').text(_text);
-    };
-
-    // user list
-    $userListTable.DataTable({
+    // fork list
+    $forksListTable.DataTable({
       processing: true,
       serverSide: true,
-      ajax: "${h.route_path('repo_forks_data', repo_name=c.repo_name)}",
+      ajax: {
+          "url": "${h.route_path('repo_forks_data', repo_name=c.repo_name)}",
+      },
       dom: 'rtp',
       pageLength: ${c.visual.dashboard_items},
       order: [[ 0, "asc" ]],
@@ -92,23 +84,18 @@ $(document).ready(function() {
       }
     });
 
-    $userListTable.on('xhr.dt', function(e, settings, json, xhr){
-        $userListTable.css('opacity', 1);
+    $forksListTable.on('xhr.dt', function(e, settings, json, xhr){
+        $forksListTable.css('opacity', 1);
     });
 
-    $userListTable.on('preXhr.dt', function(e, settings, data){
-        $userListTable.css('opacity', 0.3);
-    });
-
-    // refresh counters on draw
-    $userListTable.on('draw.dt', function(){
-        getDatatableCount();
+    $forksListTable.on('preXhr.dt', function(e, settings, data){
+        $forksListTable.css('opacity', 0.3);
     });
 
     // filter
     $('#q_filter').on('keyup',
         $.debounce(250, function() {
-            $userListTable.DataTable().search(
+            $forksListTable.DataTable().search(
                 $('#q_filter').val()
             ).draw();
         })
