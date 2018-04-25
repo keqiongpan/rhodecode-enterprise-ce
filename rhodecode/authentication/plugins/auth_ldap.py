@@ -55,6 +55,7 @@ except ImportError:
 class LdapError(Exception):
     pass
 
+
 def plugin_factory(plugin_id, *args, **kwds):
     """
     Factory function that is called during plugin discovery.
