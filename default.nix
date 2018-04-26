@@ -180,6 +180,7 @@ let
         echo "DONE: Meta information for rccontrol written"
 
         # python based programs need to be wrapped
+        #ln -s ${self.python}/bin/* $out/bin/
         ln -s ${self.pyramid}/bin/* $out/bin/
         ln -s ${self.gunicorn}/bin/gunicorn $out/bin/
         ln -s ${self.supervisor}/bin/supervisor* $out/bin/
