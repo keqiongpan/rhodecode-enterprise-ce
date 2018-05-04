@@ -22,16 +22,13 @@
 RhodeCode authentication plugin for LDAP
 """
 
-import socket
-import re
-import colander
 import logging
 import traceback
-import string
 
+import colander
 from rhodecode.translation import _
 from rhodecode.authentication.base import (
-    RhodeCodeExternalAuthPlugin, chop_at, hybrid_property)
+    RhodeCodeExternalAuthPlugin, AuthLdapBase, hybrid_property)
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.authentication.routes import AuthnPluginResourceBase
 from rhodecode.lib.colander_utils import strip_whitespace
@@ -199,40 +196,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         widget='string')
 
 
-class AuthLdap(object):
-
-    def _build_servers(self):
-        def host_resolver(host, port):
-            """
-            Main work for this function is to prevent ldap connection issues,
-            and detect them early using a "greenified" sockets
-            """
-            host = host.strip()
-
-            log.info('Resolving LDAP host %s', host)
-            try:
-                ip = socket.gethostbyname(host)
-                log.info('Got LDAP server %s ip %s', host, ip)
-            except Exception:
-                raise LdapConnectionError(
-                    'Failed to resolve host: `{}`'.format(host))
-
-            log.info('Checking LDAP IP access %s', ip)
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                s.connect((ip, int(port)))
-                s.shutdown(socket.SHUT_RD)
-            except Exception:
-                raise LdapConnectionError(
-                    'Failed to connect to host: `{}:{}`'.format(host, port))
-
-            return '{}:{}'.format(host, port)
-
-        port = self.LDAP_SERVER_PORT
-        return ', '.join(
-            ["{}://{}".format(
-                self.ldap_server_type, host_resolver(host, port))
-             for host in self.SERVER_ADDRESSES])
+class AuthLdap(AuthLdapBase):
 
     def __init__(self, server, base_dn, port=389, bind_dn='', bind_pass='',
                  tls_kind='PLAIN', tls_reqcert='DEMAND', ldap_version=3,
@@ -255,8 +219,9 @@ class AuthLdap(object):
         OPT_X_TLS_DEMAND = 2
         self.TLS_REQCERT = getattr(ldap, 'OPT_X_TLS_%s' % tls_reqcert,
                                    OPT_X_TLS_DEMAND)
+        self.LDAP_SERVER = server
         # split server into list
-        self.SERVER_ADDRESSES = server.split(',')
+        self.SERVER_ADDRESSES = self._get_server_list(server)
         self.LDAP_SERVER_PORT = port
 
         # USE FOR READ ONLY BIND TO LDAP SERVER
@@ -264,13 +229,12 @@ class AuthLdap(object):
 
         self.LDAP_BIND_DN = safe_str(bind_dn)
         self.LDAP_BIND_PASS = safe_str(bind_pass)
-        self.LDAP_SERVER = self._build_servers()
+
         self.SEARCH_SCOPE = getattr(ldap, 'SCOPE_%s' % search_scope)
         self.BASE_DN = safe_str(base_dn)
         self.LDAP_FILTER = safe_str(ldap_filter)
 
     def _get_ldap_conn(self):
-        log.debug('initializing LDAP connection to:%s', self.LDAP_SERVER)
 
         if self.debug:
             ldap.set_option(ldap.OPT_DEBUG_LEVEL, 255)
@@ -284,7 +248,10 @@ class AuthLdap(object):
         ldap.set_option(ldap.OPT_RESTART, ldap.OPT_ON)
 
         # init connection now
-        ldap_conn = ldap.initialize(self.LDAP_SERVER)
+        ldap_servers = self._build_servers(
+            self.ldap_server_type,  self.SERVER_ADDRESSES, self.LDAP_SERVER_PORT)
+        log.debug('initializing LDAP connection to:%s', ldap_servers)
+        ldap_conn = ldap.initialize(ldap_servers)
         ldap_conn.set_option(ldap.OPT_NETWORK_TIMEOUT, self.timeout)
         ldap_conn.set_option(ldap.OPT_TIMEOUT, self.timeout)
         ldap_conn.timeout = self.timeout
@@ -303,12 +270,6 @@ class AuthLdap(object):
             ldap_conn.simple_bind_s(self.LDAP_BIND_DN, self.LDAP_BIND_PASS)
 
         return ldap_conn
-
-    def get_uid(self, username):
-        uid = username
-        for server_addr in self.SERVER_ADDRESSES:
-            uid = chop_at(username, "@%s" % server_addr)
-        return uid
 
     def fetch_attrs_from_simple_bind(self, server, dn, username, password):
         try:
@@ -335,7 +296,9 @@ class AuthLdap(object):
         :param password: password
         """
 
-        uid = self.get_uid(username)
+        uid = self.get_uid(username, self.SERVER_ADDRESSES)
+        user_attrs = {}
+        dn = ''
 
         if not password:
             msg = "Authenticating user %s with blank password not allowed"
@@ -349,8 +312,8 @@ class AuthLdap(object):
             ldap_conn = self._get_ldap_conn()
             filter_ = '(&%s(%s=%s))' % (
                 self.LDAP_FILTER, self.attr_login, username)
-            log.debug("Authenticating %r filter %s at %s", self.BASE_DN,
-                      filter_, self.LDAP_SERVER)
+            log.debug(
+                "Authenticating %r filter %s", self.BASE_DN, filter_)
             lobjects = ldap_conn.search_ext_s(
                 self.BASE_DN, self.SEARCH_SCOPE, filter_)
 

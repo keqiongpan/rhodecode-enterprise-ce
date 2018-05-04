@@ -21,7 +21,8 @@
 """
 Authentication modules
 """
-
+import socket
+import string
 import colander
 import copy
 import logging
@@ -31,14 +32,13 @@ import warnings
 import functools
 
 from pyramid.threadlocal import get_current_registry
-from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode.authentication.interface import IAuthnPluginRegistry
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.lib import caches
 from rhodecode.lib.auth import PasswordGenerator, _RhodeCodeCryptoBCrypt
-from rhodecode.lib.utils2 import safe_int
-from rhodecode.lib.utils2 import safe_str
+from rhodecode.lib.utils2 import safe_int, safe_str
+from rhodecode.lib.exceptions import LdapConnectionError
 from rhodecode.model.db import User
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel
@@ -556,6 +556,63 @@ class RhodeCodeExternalAuthPlugin(RhodeCodeAuthPluginBase):
         return auth
 
 
+class AuthLdapBase(object):
+
+    @classmethod
+    def _build_servers(cls, ldap_server_type, ldap_server, port):
+        def host_resolver(host, port, full_resolve=True):
+            """
+            Main work for this function is to prevent ldap connection issues,
+            and detect them early using a "greenified" sockets
+            """
+            host = host.strip()
+            if not full_resolve:
+                return '{}:{}'.format(host, port)
+
+            log.debug('LDAP: Resolving IP for LDAP host %s', host)
+            try:
+                ip = socket.gethostbyname(host)
+                log.debug('Got LDAP server %s ip %s', host, ip)
+            except Exception:
+                raise LdapConnectionError(
+                    'Failed to resolve host: `{}`'.format(host))
+
+            log.debug('LDAP: Checking if IP %s is accessible', ip)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.connect((ip, int(port)))
+                s.shutdown(socket.SHUT_RD)
+            except Exception:
+                raise LdapConnectionError(
+                    'Failed to connect to host: `{}:{}`'.format(host, port))
+
+            return '{}:{}'.format(host, port)
+
+        if len(ldap_server) == 1:
+            # in case of single server use resolver to detect potential
+            # connection issues
+            full_resolve = True
+        else:
+            full_resolve = False
+
+        return ', '.join(
+            ["{}://{}".format(
+                ldap_server_type,
+                host_resolver(host, port, full_resolve=full_resolve))
+             for host in ldap_server])
+
+    @classmethod
+    def _get_server_list(cls, servers):
+        return map(string.strip, servers.split(','))
+
+    @classmethod
+    def get_uid(cls, username, server_addresses):
+        uid = username
+        for server_addr in server_addresses:
+            uid = chop_at(username, "@%s" % server_addr)
+        return uid
+
+
 def loadplugin(plugin_id):
     """
     Loads and returns an instantiated authentication plugin.
@@ -613,7 +670,7 @@ def authenticate(username, password, environ=None, auth_type=None,
     authn_registry = get_authn_registry(registry)
     plugins_to_check = authn_registry.get_plugins_for_authentication()
     log.debug('Starting ordered authentication chain using %s plugins',
-              plugins_to_check)
+              [x.name for x in plugins_to_check])
     for plugin in plugins_to_check:
         plugin.set_auth_type(auth_type)
         plugin.set_calling_scope_repo(acl_repo_name)
