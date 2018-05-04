@@ -1560,13 +1560,13 @@
     };
   };
   rhodecode-tools = super.buildPythonPackage {
-    name = "rhodecode-tools-0.14.1";
+    name = "rhodecode-tools-0.15.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [click future six mako markupsafe requests elasticsearch elasticsearch-dsl urllib3 whoosh];
     src = fetchurl {
-      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.14.1.tar.gz?md5=0b9c2caad160b68889f8172ea54af7b2";
-      md5 = "0b9c2caad160b68889f8172ea54af7b2";
+      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.15.0.tar.gz?md5=1046043b8c8d52480f7bca63185729b5";
+      md5 = "1046043b8c8d52480f7bca63185729b5";
     };
     meta = {
       license = [ { fullName = "AGPLv3 and Proprietary"; } ];
@@ -1820,13 +1820,13 @@
     };
   };
   urllib3 = super.buildPythonPackage {
-    name = "urllib3-1.16";
+    name = "urllib3-1.21";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/3b/f0/e763169124e3f5db0926bc3dbfcd580a105f9ca44cf5d8e6c7a803c9f6b5/urllib3-1.16.tar.gz";
-      sha256 = "63d479478ddfc83bbc11577dc16d47835c5179ac13e550118ca143b62c4bf9ab";
+      url = "https://files.pythonhosted.org/packages/34/95/7b28259d0006ed681c424cd71a668363265eac92b67dddd018eb9a22bff8/urllib3-1.21.tar.gz";
+      sha256 = "d0f08f1472754890c8b228106eb831a7a68c93565bd0818936c30bb839913647";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
