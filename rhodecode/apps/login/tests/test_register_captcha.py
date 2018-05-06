@@ -97,16 +97,16 @@ class TestRegisterCaptcha(object):
             assertr.no_element_exists('#recaptcha_field')
 
     @pytest.mark.parametrize('valid', [False, True])
-    @mock.patch('rhodecode.apps.login.views.submit')
+    @mock.patch.object(LoginView, 'validate_captcha')
     @mock.patch.object(LoginView, '_get_captcha_data')
     def test_register_with_active_captcha(
-            self, m_get_captcha_data, m_submit, valid, app, csrf_token):
+            self, m_get_captcha_data, m_validate_captcha, valid, app, csrf_token):
         captcha = CaptchaData(
             active=True, private_key='PRIVATE_KEY', public_key='PUBLIC_KEY')
         m_get_captcha_data.return_value = captcha
         m_response = mock.Mock()
         m_response.is_valid = valid
-        m_submit.return_value = m_response
+        m_validate_captcha.return_value = valid, 'ok'
 
         params = {
             'csrf_token': csrf_token,

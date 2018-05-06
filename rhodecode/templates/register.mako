@@ -110,14 +110,21 @@
     </div>
 </div>
 
-%if captcha_active:
-<script type="text/javascript" src="https://www.google.com/recaptcha/api/js/recaptcha_ajax.js"></script>
-%endif
+
 <script type="text/javascript">
-$(document).ready(function(){
+ $(document).ready(function(){
     $('#username').focus();
-    %if captcha_active:
-      Recaptcha.create("${captcha_public_key}", "recaptcha", {theme: "white"});
-    %endif
-});
+ });
 </script>
+
+% if captcha_active:
+<script type="text/javascript">
+var onloadCallback = function() {
+    grecaptcha.render('recaptcha', {
+      'sitekey' : "${captcha_public_key}"
+    });
+};
+</script>
+<script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+% endif
+

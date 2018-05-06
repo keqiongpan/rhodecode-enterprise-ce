@@ -61,6 +61,7 @@
                             <label for="email">${_('Captcha')}:</label>
                             ${h.hidden('recaptcha_field')}
                             <div id="recaptcha"></div>
+
                             %if 'recaptcha_field' in errors:
                               <span class="error-message">${errors.get('recaptcha_field')}</span>
                               <br />
@@ -78,14 +79,20 @@
     </div>
 </div>
 
-%if captcha_active:
-<script type="text/javascript" src="https://www.google.com/recaptcha/api/js/recaptcha_ajax.js"></script>
-%endif
 <script type="text/javascript">
  $(document).ready(function(){
     $('#email').focus();
-    %if captcha_active:
-      Recaptcha.create("${captcha_public_key}", "recaptcha", {theme: "white"});
-    %endif
  });
 </script>
+
+% if captcha_active:
+<script type="text/javascript">
+var onloadCallback = function() {
+    grecaptcha.render('recaptcha', {
+      'sitekey' : "${captcha_public_key}"
+    });
+};
+</script>
+<script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+% endif
+

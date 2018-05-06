@@ -225,13 +225,6 @@ self: super: {
     };
   });
 
-  recaptcha-client = super.recaptcha-client.override (attrs: {
-    meta = {
-      # TODO: It is MIT/X11
-      license = pkgs.lib.licenses.mit;
-    };
-  });
-
   python-editor = super.python-editor.override (attrs: {
     meta = {
       license = pkgs.lib.licenses.asl20;

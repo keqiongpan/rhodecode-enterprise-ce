@@ -305,9 +305,6 @@
   "python2.7-pyzmq-14.6.0": {
     "BSD 4-clause \"Original\" or \"Old\" License": "http://spdx.org/licenses/BSD-4-Clause"
   },
-  "python2.7-recaptcha-client-1.0.6": {
-    "MIT License": "http://spdx.org/licenses/MIT"
-  }, 
   "python2.7-repoze.lru-0.6": {
     "Repoze License": "http://www.repoze.org/LICENSE.txt"
   }, 

@@ -65,26 +65,26 @@ ${h.secure_form(h.route_path('admin_settings_global_update'), request=request)}
     </div>
     <div class="panel-body">
         <div class="label">
-            <label for="rhodecode_captcha_public_key">${_('Google ReCaptcha public key')}</label>
+            <label for="rhodecode_captcha_public_key">${_('Google reCaptcha v2 site key.')}</label>
         </div>
         <div class="field input">
             ${h.text('rhodecode_captcha_public_key',size=60)}
         </div>
         <div class="field">
             <span class="help-block">
-                ${_('Public key for reCaptcha system.')}
+                ${_('Site key for reCaptcha v2 system.')}
             </span>
         </div>
 
         <div class="label">
-            <label for="rhodecode_captcha_private_key">${_('Google ReCaptcha private key')}</label>
+            <label for="rhodecode_captcha_private_key">${_('Google reCaptcha v2 secret key.')}</label>
         </div>
         <div class="field input">
             ${h.text('rhodecode_captcha_private_key',size=60)}
         </div>
         <div class="field">
             <span class="help-block">
-                ${_('Private key for reCaptcha system. Setting this value will enable captcha on registration')}
+                ${_('Secret key for reCaptcha v2 system. Setting this value will enable captcha on registration and password reset forms.')}
             </span>
         </div>
     </div>
