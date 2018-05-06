@@ -1627,19 +1627,6 @@
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "LGPL+BSD"; } { fullName = "GNU Library or Lesser General Public License (LGPL)"; } ];
     };
   };
-  recaptcha-client = super.buildPythonPackage {
-    name = "recaptcha-client-1.0.6";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [];
-    src = fetchurl {
-      url = "https://pypi.python.org/packages/0a/ea/5f2fbbfd894bdac1c68ef8d92019066cfcf9fbff5fe3d728d2b5c25c8db4/recaptcha-client-1.0.6.tar.gz";
-      md5 = "74228180f7e1fb76c4d7089160b0d919";
-    };
-    meta = {
-      license = [ { fullName = "MIT/X11"; } ];
-    };
-  };
   redis = super.buildPythonPackage {
     name = "redis-2.10.6";
     buildInputs = with self; [];
@@ -1683,7 +1670,7 @@
     name = "rhodecode-enterprise-ce-4.12.0";
     buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage configobj];
     doCheck = true;
-    propagatedBuildInputs = with self; [setuptools-scm amqp authomatic Babel Beaker celery Chameleon channelstream click colander configobj cssselect decorator deform docutils dogpile.cache dogpile.core ecdsa FormEncode future futures gnureadline infrae.cache iso8601 itsdangerous Jinja2 billiard kombu lxml Mako Markdown MarkupSafe msgpack-python MySQL-python objgraph packaging Paste PasteDeploy PasteScript pathlib2 peppercorn psutil psycopg2 py-bcrypt pycrypto pycurl pyflakes pygments-markdown-lexer Pygments pyparsing pyramid-beaker pyramid-debugtoolbar pyramid-jinja2 pyramid-mako pyramid pysqlite python-dateutil python-ldap python-memcached python-pam pytz tzlocal pyzmq py-gfm recaptcha-client redis repoze.lru requests Routes setproctitle simplejson six SQLAlchemy sshpubkeys subprocess32 supervisor Tempita translationstring trollius urllib3 URLObject venusian WebError WebHelpers2 WebHelpers WebOb Whoosh wsgiref zope.cachedescriptors zope.deprecation zope.event zope.interface nbconvert bleach nbformat jupyter-client alembic invoke bumpversion transifex-client gevent greenlet gunicorn waitress uWSGI ipdb ipython CProfileV bottle rhodecode-tools appenlight-client pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage];
+    propagatedBuildInputs = with self; [setuptools-scm amqp authomatic Babel Beaker celery Chameleon channelstream click colander configobj cssselect decorator deform docutils dogpile.cache dogpile.core ecdsa FormEncode future futures gnureadline infrae.cache iso8601 itsdangerous Jinja2 billiard kombu lxml Mako Markdown MarkupSafe msgpack-python MySQL-python objgraph packaging Paste PasteDeploy PasteScript pathlib2 peppercorn psutil psycopg2 py-bcrypt pycrypto pycurl pyflakes pygments-markdown-lexer Pygments pyparsing pyramid-beaker pyramid-debugtoolbar pyramid-jinja2 pyramid-mako pyramid pysqlite python-dateutil python-ldap python-memcached python-pam pytz tzlocal pyzmq py-gfm redis repoze.lru requests Routes setproctitle simplejson six SQLAlchemy sshpubkeys subprocess32 supervisor Tempita translationstring trollius urllib3 URLObject venusian WebError WebHelpers2 WebHelpers WebOb Whoosh wsgiref zope.cachedescriptors zope.deprecation zope.event zope.interface nbconvert bleach nbformat jupyter-client alembic invoke bumpversion transifex-client gevent greenlet gunicorn waitress uWSGI ipdb ipython CProfileV bottle rhodecode-tools appenlight-client pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock WebTest cov-core coverage];
     src = ./.;
     meta = {
       license = [ { fullName = "Affero GNU General Public License v3 or later (AGPLv3+)"; } { fullName = "AGPLv3, and Commercial License"; } ];

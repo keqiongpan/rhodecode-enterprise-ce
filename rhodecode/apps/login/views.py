@@ -25,10 +25,10 @@ import formencode
 import formencode.htmlfill
 import logging
 import urlparse
+import requests
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
-from recaptcha.client.captcha import submit
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.authentication.base import authenticate, HTTP_TYPE
@@ -123,6 +123,29 @@ class LoginView(BaseAppView):
         active = bool(private_key)
         return CaptchaData(
             active=active, private_key=private_key, public_key=public_key)
+
+    def validate_captcha(self, private_key):
+
+        captcha_rs = self.request.POST.get('g-recaptcha-response')
+        url = "https://www.google.com/recaptcha/api/siteverify"
+        params = {
+            'secret': private_key,
+            'response': captcha_rs,
+            'remoteip': get_ip_addr(self.request.environ)
+        }
+        verify_rs = requests.get(url, params=params, verify=True)
+        verify_rs = verify_rs.json()
+        captcha_status = verify_rs.get('success', False)
+        captcha_errors = verify_rs.get('error-codes', [])
+        if not isinstance(captcha_errors, list):
+            captcha_errors = [captcha_errors]
+        captcha_errors = ', '.join(captcha_errors)
+        captcha_message = ''
+        if captcha_status is False:
+            captcha_message = "Bad captcha. Errors: {}".format(
+                captcha_errors)
+
+        return captcha_status, captcha_message
 
     @view_config(
         route_name='login', request_method='GET',
@@ -262,17 +285,15 @@ class LoginView(BaseAppView):
             form_result['active'] = auto_active
 
             if captcha.active:
-                response = submit(
-                    self.request.POST.get('recaptcha_challenge_field'),
-                    self.request.POST.get('recaptcha_response_field'),
-                    private_key=captcha.private_key,
-                    remoteip=get_ip_addr(self.request.environ))
-                if not response.is_valid:
+                captcha_status, captcha_message = self.validate_captcha(
+                    captcha.private_key)
+
+                if not captcha_status:
                     _value = form_result
                     _msg = _('Bad captcha')
-                    error_dict = {'recaptcha_field': _msg}
-                    raise formencode.Invalid(_msg, _value, None,
-                                             error_dict=error_dict)
+                    error_dict = {'recaptcha_field': captcha_message}
+                    raise formencode.Invalid(
+                        _msg, _value, None, error_dict=error_dict)
 
             new_user = UserModel().create_registration(form_result)
 
@@ -339,15 +360,13 @@ class LoginView(BaseAppView):
                 user_email = form_result['email']
 
                 if captcha.active:
-                    response = submit(
-                        self.request.POST.get('recaptcha_challenge_field'),
-                        self.request.POST.get('recaptcha_response_field'),
-                        private_key=captcha.private_key,
-                        remoteip=get_ip_addr(self.request.environ))
-                    if not response.is_valid:
+                    captcha_status, captcha_message = self.validate_captcha(
+                        captcha.private_key)
+
+                    if not captcha_status:
                         _value = form_result
                         _msg = _('Bad captcha')
-                        error_dict = {'recaptcha_field': _msg}
+                        error_dict = {'recaptcha_field': captcha_message}
                         raise formencode.Invalid(
                             _msg, _value, None, error_dict=error_dict)
 
