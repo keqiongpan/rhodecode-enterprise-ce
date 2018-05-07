@@ -299,9 +299,15 @@ class LoginView(BaseAppView):
 
             action_data = {'data': new_user.get_api_data(),
                            'user_agent': self.request.user_agent}
+
+            audit_user = audit_logger.UserWrap(
+                username=new_user.username,
+                user_id=new_user.user_id,
+                ip_addr=self.request.remote_addr)
+
             audit_logger.store_web(
                 'user.register', action_data=action_data,
-                user=new_user)
+                user=audit_user)
 
             event = UserRegistered(user=new_user, session=self.session)
             trigger(event)
