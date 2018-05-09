@@ -395,14 +395,6 @@ class MercurialRepository(BaseRepository):
         else:
             return os.stat(st_path).st_mtime
 
-    def _sanitize_commit_idx(self, idx):
-        # Note: Mercurial has ``int(-1)`` reserved as not existing id_or_idx
-        # number. A `long` is treated in the correct way though. So we convert
-        # `int` to `long` here to make sure it is handled correctly.
-        if isinstance(idx, int):
-            return long(idx)
-        return idx
-
     def _get_url(self, url):
         """
         Returns normalized url. If schema is not given, would fall
@@ -437,7 +429,6 @@ class MercurialRepository(BaseRepository):
                 pass
         elif commit_idx is not None:
             self._validate_commit_idx(commit_idx)
-            commit_idx = self._sanitize_commit_idx(commit_idx)
             try:
                 id_ = self.commit_ids[commit_idx]
                 if commit_idx < 0:
@@ -448,10 +439,6 @@ class MercurialRepository(BaseRepository):
                 commit_id = commit_idx
         else:
             commit_id = "tip"
-
-        # TODO Paris: Ugly hack to "serialize" long for msgpack
-        if isinstance(commit_id, long):
-            commit_id = float(commit_id)
 
         if isinstance(commit_id, unicode):
             commit_id = safe_str(commit_id)
