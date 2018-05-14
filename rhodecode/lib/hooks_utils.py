@@ -57,9 +57,6 @@ def trigger_post_push_hook(
     :param repo_alias: the type of SCM repo
     :param commit_ids: list of commit ids that we pushed
     """
-    if repo_alias not in ('hg', 'git'):
-        return
-
     extras = _get_rc_scm_extras(username, repo_name, repo_alias, action)
     extras.commit_ids = commit_ids
     hooks_base.post_push(extras)
