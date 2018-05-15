@@ -152,13 +152,14 @@ class RepoFeedView(RepoAppView):
             return _generate_feed()
 
         if self.path_filter.is_enabled:
+            mime_type, feed = _generate_feed()
+        else:
             invalidator_context = CacheKey.repo_context_cache(
-                _generate_feed_and_cache, self.db_repo_name, CacheKey.CACHE_TYPE_ATOM)
+                _generate_feed_and_cache, self.db_repo_name,
+                CacheKey.CACHE_TYPE_ATOM)
             with invalidator_context as context:
                 context.invalidate()
                 mime_type, feed = context.compute()
-        else:
-            mime_type, feed = _generate_feed()
 
         response = Response(feed)
         response.content_type = mime_type
@@ -204,14 +205,15 @@ class RepoFeedView(RepoAppView):
             return _generate_feed()
 
         if self.path_filter.is_enabled:
+            mime_type, feed = _generate_feed()
+        else:
             invalidator_context = CacheKey.repo_context_cache(
-                _generate_feed_and_cache, self.db_repo_name, CacheKey.CACHE_TYPE_RSS)
+                _generate_feed_and_cache, self.db_repo_name,
+                CacheKey.CACHE_TYPE_RSS)
 
             with invalidator_context as context:
                 context.invalidate()
                 mime_type, feed = context.compute()
-        else:
-            mime_type, feed = _generate_feed()
 
         response = Response(feed)
         response.content_type = mime_type
