@@ -32,7 +32,7 @@ New Features
   prevent problems when connection to LDAP is not stable causing RhodeCode
   instances to freeze waiting on LDAP connections.
 - User groups: expose public user group profiles. Allows to see members of a user
-  groups by other team members, if they have proper permissions.
+  group by other team members, if they have proper permissions.
 - UI: show pull request page in quick nav menu on my account for quicker access.
 - UI: hidden/outdated comments now have visible markers next to line numbers.
   This allows access to them without showing all hidden comments.
@@ -99,7 +99,7 @@ Performance
 ^^^^^^^^^^^
 
 - Diffs: don't use recurred diffset attachment in diffs. This makes
-this structure much harder to garbage collect. Reduces memory usage.
+  this structure much harder to garbage collect. Reduces memory usage.
 - Diff cache: added caching for better performance of large pull requests.
 
 
@@ -114,7 +114,7 @@ Fixes
 - Pull requests: fixed cases with default expected refs are closed or unavailable.
   For Mercurial with closed default branch a compare across forks could fail.
 - Core: properly report 502 errors for gevent and gunicorn.
-  Gevent wtih Gunicorn doesn't raise normal pycurl errors.
+  Gevent with Gunicorn doesn't raise normal pycurl errors.
 - Auth plugins: fixed problem with cache of settings in multi-worker mode.
   The previous implementation had a bug that cached the settings in each class,
   caused not refreshing the update of settings in multi-worker mode.
@@ -130,14 +130,15 @@ Upgrade notes
 ^^^^^^^^^^^^^
 
 - This release adds support for SVN hook. This required lots of changes on how we
-handle SVN protocol. We did thoughtful tests for SVN compatibility.
-Please be advised to check the behaviour of SVN repositories during this update.
+  handle SVN protocol. We did thoughtful tests for SVN compatibility.
+  Please be advised to check the behaviour of SVN repositories during this update.
 
 A check and migrate of SVN hooks is required. In order to do so, please execute
 `Rescan filesystem` from admin > settings > Remap and Rescan. This will migrate
 all SVN hook to latest available version. To migrate single repository only,
 please go to the following url: `your-rhodecode-server.com/REPO_NAME/settings/advanced/hooks`
 
-- Diff caches are turned off by default for backward compatibility. We however recommend
-turning them on either individually for bigger repositories or globally for every repository.
-This setting can be found in admin > settings > vcs, or repository > settings > vcs
+- Diff caches are turned off by default for backward compatibility.
+  We however recommend turning them on either individually for bigger
+  repositories or globally for every repository.
+  This setting can be found in admin > settings > vcs, or repository > settings > vcs
