@@ -84,16 +84,22 @@ def _generate_ssh_authorized_keys_file(
     for user_key in all_active_keys:
         username = user_key.user.username
         user_id = user_key.user.user_id
+        # replace all newline from ends and inside
+        safe_key_data = user_key.ssh_key_data\
+            .strip()\
+            .replace('\n', ' ')\
+            .replace('\r', ' ')
 
-        keys_file.write(
-            line_tmpl.format(
-                ssh_opts=ssh_opts or SSH_OPTS,
-                wrapper_command=ssh_wrapper_cmd,
-                ini_path=ini_path,
-                user_id=user_id,
-                user=username,
-                user_key_id=user_key.ssh_key_id,
-                key=user_key.ssh_key_data))
+        line = line_tmpl.format(
+            ssh_opts=ssh_opts or SSH_OPTS,
+            wrapper_command=ssh_wrapper_cmd,
+            ini_path=ini_path,
+            user_id=user_id,
+            user=username,
+            user_key_id=user_key.ssh_key_id,
+            key=safe_key_data)
+
+        keys_file.write(line)
         log.debug('addkey: Key added for user: `%s`', username)
     keys_file.close()
 

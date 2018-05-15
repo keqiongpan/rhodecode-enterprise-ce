@@ -8,13 +8,13 @@
         </p>
         <h4>${_('Private key')}</h4>
         <pre>
-# Save the content as
-# Windows: /Users/<username>/.ssh/id_rsa_rhodecode_access_priv.key
-# macOS: /Users/<yourname>/.ssh/id_rsa_rhodecode_access_priv.key
-# Linux: /home/<username>/.ssh/id_rsa_rhodecode_access_priv.key
+# Save the below content as
+# Windows: /Users/{username}/.ssh/id_rsa_rhodecode_access_priv.key
+# macOS: /Users/{yourname}/.ssh/id_rsa_rhodecode_access_priv.key
+# Linux: /home/{username}/.ssh/id_rsa_rhodecode_access_priv.key
 
 # Change permissions to 0600 to make it secure, and usable.
-e.g chmod 0600 /home/<username>/.ssh/id_rsa_rhodecode_access_priv.key
+e.g chmod 0600 /home/{username}/.ssh/id_rsa_rhodecode_access_priv.key
         </pre>
 
         <div>
@@ -24,10 +24,10 @@ e.g chmod 0600 /home/<username>/.ssh/id_rsa_rhodecode_access_priv.key
 
         <h4>${_('Public key')}</h4>
         <pre>
-# Save the content as
-# Windows: /Users/<username>/.ssh/id_rsa_rhodecode_access_pub.key
-# macOS: /Users/<yourname>/.ssh/id_rsa_rhodecode_access_pub.key
-# Linux: /home/<username>/.ssh/id_rsa_rhodecode_access_pub.key
+# Save the below content as
+# Windows: /Users/{username}/.ssh/id_rsa_rhodecode_access_pub.key
+# macOS: /Users/{yourname}/.ssh/id_rsa_rhodecode_access_pub.key
+# Linux: /home/{username}/.ssh/id_rsa_rhodecode_access_pub.key
         </pre>
 
         <input type="text" value="${c.public}" class="large text" size="100"/>
