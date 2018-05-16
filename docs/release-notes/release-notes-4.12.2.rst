@@ -15,6 +15,7 @@ New Features
 General
 ^^^^^^^
 
+- Jenkins: further improve handling of proxied Jenkins server.
 
 
 Security
@@ -37,4 +38,4 @@ Fixes
 Upgrade notes
 ^^^^^^^^^^^^^
 
-- Scheduled release addressing found problems reported by users.
+- Unscheduled release addressing found security problem.
