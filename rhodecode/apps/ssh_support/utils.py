@@ -87,7 +87,8 @@ def _generate_ssh_authorized_keys_file(
         # replace all newline from ends and inside
         safe_key_data = user_key.ssh_key_data\
             .strip()\
-            .replace('\n', ' ')\
+            .replace('\n', ' ') \
+            .replace('\t', ' ') \
             .replace('\r', ' ')
 
         line = line_tmpl.format(

@@ -826,7 +826,7 @@ class UsersView(UserAppView):
             fingerprint = key.hash_md5()
 
             ssh_key = SshKeyModel().create(
-                c.user.user_id, fingerprint, key_data, description)
+                c.user.user_id, fingerprint, key.keydata, description)
             ssh_key_data = ssh_key.get_api_data()
 
             audit_logger.store_web(
