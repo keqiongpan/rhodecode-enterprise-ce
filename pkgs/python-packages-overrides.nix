@@ -28,6 +28,7 @@ self: super: {
   beaker = super.beaker.override (attrs: {
     patches = [
       ./patch-beaker-lock-func-debug.diff
+      ./patch-beaker-metadata-reuse.diff
     ];
   });
 
