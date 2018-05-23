@@ -70,7 +70,7 @@ def configure_caches(settings, default_region_settings=None):
             region_settings = default_region_settings.copy()
             for key, value in cache_settings.items():
                 if key.startswith(region):
-                    region_settings[key.split('.')[1]] = value
+                    region_settings[key.split(region + '.')[-1]] = value
             log.debug('Configuring cache region `%s` with settings %s',
                       region, region_settings)
             configure_cache_region(
