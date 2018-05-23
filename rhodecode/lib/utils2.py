@@ -360,6 +360,10 @@ def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
         normal = '\x1b[0m'
         return ''.join([color_seq, sql, normal])
 
+    _ping_connection = configuration.get('sqlalchemy.db1.ping_connection')
+    if configuration['debug'] or _ping_connection:
+        sqlalchemy.event.listen(engine, "engine_connect", ping_connection)
+
     if configuration['debug']:
         # attach events only for debug configuration
 
@@ -381,8 +385,6 @@ def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
                                  parameters, context, executemany):
             delattr(conn, 'query_start_time')
 
-        sqlalchemy.event.listen(engine, "engine_connect",
-                                ping_connection)
         sqlalchemy.event.listen(engine, "before_cursor_execute",
                                 before_cursor_execute)
         sqlalchemy.event.listen(engine, "after_cursor_execute",
