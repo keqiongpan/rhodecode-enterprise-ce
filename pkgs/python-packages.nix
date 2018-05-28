@@ -16,13 +16,13 @@
     };
   };
   amqp = super.buildPythonPackage {
-    name = "amqp-2.2.2";
+    name = "amqp-2.3.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [vine];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e0/70/9ab9ccd8247fb7d2adb717e9f6a0ed358c9e1ab2c349048b0352f9e80ee2/amqp-2.2.2.tar.gz";
-      sha256 = "cba1ace9d4ff6049b190d8b7991f9c1006b443a5238021aca96dd6ad2ac9da22";
+      url = "https://files.pythonhosted.org/packages/2e/88/a97a736f09cf555ef8769fa3631a2872de5270ef6a8102429535339e33f6/amqp-2.3.0.tar.gz";
+      sha256 = "b17591ceb27192195f00c04e848dd4fcda2dc72a8eb27ea3ffa899299679c185";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];

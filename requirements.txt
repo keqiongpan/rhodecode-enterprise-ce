@@ -2,7 +2,7 @@
 setuptools==39.2.0
 setuptools-scm==1.15.6
 
-amqp==2.2.2
+amqp==2.3.0
 authomatic==0.1.0.post1
 babel==1.3
 beaker==1.9.1
