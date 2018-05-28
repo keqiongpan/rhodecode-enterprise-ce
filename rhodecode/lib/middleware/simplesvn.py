@@ -24,7 +24,7 @@ import urllib
 from urlparse import urljoin
 
 import requests
-from webob.exc import HTTPNotAcceptable
+from pyramid.httpexceptions import HTTPNotAcceptable
 
 from rhodecode.lib import caches
 from rhodecode.lib.middleware import simplevcs
