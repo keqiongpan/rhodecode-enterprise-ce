@@ -562,13 +562,13 @@
     };
   };
   graphviz = super.buildPythonPackage {
-    name = "graphviz-0.8.2";
+    name = "graphviz-0.8.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/fa/d1/63b62dee9e55368f60b5ea445e6afb361bb47e692fc27553f3672e16efb8/graphviz-0.8.2.zip";
-      sha256 = "606741c028acc54b1a065b33045f8c89ee0927ea77273ec409ac988f2c3d1091";
+      url = "https://files.pythonhosted.org/packages/95/29/306d5e768c14edddaf5c4462e13d65dddaed15c0d71f848919e1209c6488/graphviz-0.8.3.zip";
+      sha256 = "c61de040e5354c088d2785ea447dd8c26fc572dcc389e4e23e2b46947808d43e";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -614,13 +614,13 @@
     };
   };
   hupper = super.buildPythonPackage {
-    name = "hupper-1.1";
+    name = "hupper-1.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/21/0d/b7832396df00564836b204ac23aadd6ff177d1c0e68ce40e5ccaccc1dd86/hupper-1.1.tar.gz";
-      sha256 = "e18037fa43fb4af7c00bd262ca6f5d7bcd22debd5d71e43b0fb1437f56e78035";
+      url = "https://files.pythonhosted.org/packages/51/0c/96335b1f2f32245fb871eea5bb9773196505ddb71fad15190056a282df9e/hupper-1.3.tar.gz";
+      sha256 = "20387760e4d32bd4813c2cabc8e51d92b2c22c546102a0af182c33c152cd7ede";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1446,13 +1446,13 @@
     };
   };
   python-dateutil = super.buildPythonPackage {
-    name = "python-dateutil-2.7.2";
+    name = "python-dateutil-2.7.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c5/39/4da7c2dbc4f023fba5fb2325febcadf0d0ce0efdc8bd12083a0f65d20653/python-dateutil-2.7.2.tar.gz";
-      sha256 = "9d8074be4c993fbe4947878ce593052f71dac82932a677d49194d8ce9778002e";
+      url = "https://files.pythonhosted.org/packages/a0/b0/a4e3241d2dee665fea11baec21389aec6886655cd4db7647ddf96c3fad15/python-dateutil-2.7.3.tar.gz";
+      sha256 = "e27001de32f627c22380a688bcc43ce83504a7bc5da472209b4c70f02829f0b8";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "Simplified BSD"; } ];
