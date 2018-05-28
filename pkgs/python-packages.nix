@@ -1638,13 +1638,13 @@
     };
   };
   setuptools = super.buildPythonPackage {
-    name = "setuptools-30.1.0";
+    name = "setuptools-39.2.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/1e/43/002c8616db9a3e7be23c2556e39b90a32bb40ba0dc652de1999d5334d372/setuptools-30.1.0.tar.gz";
-      sha256 = "73c7f183260cec2ef870128c77106ba7a978649b8c4cddc320ec3547615e885f";
+      url = "https://files.pythonhosted.org/packages/1a/04/d6f1159feaccdfc508517dba1929eb93a2854de729fa68da9d5c6b48fa00/setuptools-39.2.0.zip";
+      sha256 = "f7cddbb5f5c640311eb00eab6e849f7701fa70bf6a183fc8a2c33dd1d1672fb2";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
