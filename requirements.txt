@@ -28,7 +28,7 @@ iso8601==0.1.11
 itsdangerous==0.24
 jinja2==2.9.6
 billiard==3.5.0.3
-kombu==4.1.0
+kombu==4.2.0
 lxml==3.7.3
 mako==1.0.7
 markdown==2.6.11

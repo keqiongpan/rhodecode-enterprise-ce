@@ -783,13 +783,13 @@
     };
   };
   kombu = super.buildPythonPackage {
-    name = "kombu-4.1.0";
+    name = "kombu-4.2.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [amqp];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/03/5e/1a47d1e543d4943d65330af4e4406049f443878818fb65bfdc651bb93a96/kombu-4.1.0.tar.gz";
-      sha256 = "4249d9dd9dbf1fcec471d1c2def20653c9310dd1a217272d77e4844f9d5273cb";
+      url = "https://files.pythonhosted.org/packages/ab/b1/46a7a8babf5e60f3b2ca081a100af8edfcf132078a726375f52a054e70cf/kombu-4.2.0.tar.gz";
+      sha256 = "d601c47312833c0f6f4aaf037f293b2627398d4cf8526e6ba0360287294ee1fb";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
