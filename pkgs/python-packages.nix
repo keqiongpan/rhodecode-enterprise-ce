@@ -41,6 +41,32 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  atomicwrites = super.buildPythonPackage {
+    name = "atomicwrites-1.1.5";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/a1/e1/2d9bc76838e6e6667fde5814aa25d7feb93d6fa471bf6816daac2596e8b2/atomicwrites-1.1.5.tar.gz";
+      sha256 = "240831ea22da9ab882b551b31d4225591e5e447a68c5e188db5b89ca1d487585";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  attrs = super.buildPythonPackage {
+    name = "attrs-18.1.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/e4/ac/a04671e118b57bee87dabca1e0f2d3bda816b7a551036012d0ca24190e71/attrs-18.1.0.tar.gz";
+      sha256 = "e0d0eb91441a3b53dab4d9b743eafc1ac44476296a2053b6ca3af0b139faf87b";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   authomatic = super.buildPythonPackage {
     name = "authomatic-0.1.0.post1";
     buildInputs = with self; [];
@@ -860,6 +886,19 @@
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  more-itertools = super.buildPythonPackage {
+    name = "more-itertools-4.2.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [six];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/c0/2f/6773347277d76c5ade4414a6c3f785ef27e7f5c4b0870ec7e888e66a8d83/more-itertools-4.2.0.tar.gz";
+      sha256 = "2b6b9893337bfd9166bee6a62c2b0c9fe7735dcf85948b387ec8cba30e85d8e8";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   msgpack-python = super.buildPythonPackage {
     name = "msgpack-python-0.4.8";
     buildInputs = with self; [];
@@ -1068,6 +1107,19 @@
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  pluggy = super.buildPythonPackage {
+    name = "pluggy-0.6.0";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/11/bf/cbeb8cdfaffa9f2ea154a30ae31a9d04a1209312e2919138b4171a1f8199/pluggy-0.6.0.tar.gz";
+      sha256 = "7f8ae7f5bdf75671a718d2daf0a64b7885f74510bcd98b1a0bb420eb9a9d0cff";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   prompt-toolkit = super.buildPythonPackage {
     name = "prompt-toolkit-1.0.15";
     buildInputs = with self; [];
@@ -1121,13 +1173,13 @@
     };
   };
   py = super.buildPythonPackage {
-    name = "py-1.5.2";
+    name = "py-1.5.3";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/90/e3/e075127d39d35f09a500ebb4a90afd10f9ef0a1d28a6d09abeec0e444fdd/py-1.5.2.tar.gz";
-      sha256 = "ca18943e28235417756316bfada6cd96b23ce60dd532642690dcfdaba988a76d";
+      url = "https://files.pythonhosted.org/packages/f7/84/b4c6e84672c4ceb94f727f3da8344037b62cee960d80e999b1cd9b832d83/py-1.5.3.tar.gz";
+      sha256 = "29c9fab495d7528e80ba1e343b958684f4ace687327e6f789a94bf3d1915f881";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1316,26 +1368,13 @@
     };
   };
   pytest = super.buildPythonPackage {
-    name = "pytest-3.2.5";
+    name = "pytest-3.6.0";
     buildInputs = with self; [];
     doCheck = false;
-    propagatedBuildInputs = with self; [py setuptools];
+    propagatedBuildInputs = with self; [py six setuptools attrs more-itertools atomicwrites pluggy funcsigs];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/1f/f8/8cd74c16952163ce0db0bd95fdd8810cbf093c08be00e6e665ebf0dc3138/pytest-3.2.5.tar.gz";
-      sha256 = "6d5bd4f7113b444c55a3bbb5c738a3dd80d43563d063fc42dcb0aaefbdd78b81";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
-  pytest-catchlog = super.buildPythonPackage {
-    name = "pytest-catchlog-1.2.2";
-    buildInputs = with self; [];
-    doCheck = false;
-    propagatedBuildInputs = with self; [py pytest];
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f2/2b/2faccdb1a978fab9dd0bf31cca9f6847fbe9184a0bdcc3011ac41dd44191/pytest-catchlog-1.2.2.zip";
-      sha256 = "4be15dc5ac1750f83960897f591453040dff044b5966fe24a91c2f7d04ecfcf0";
+      url = "https://files.pythonhosted.org/packages/67/6a/5bcdc22f8dbada1d2910d6e1a3a03f6b14306c78f81122890735b28be4bf/pytest-3.6.0.tar.gz";
+      sha256 = "39555d023af3200d004d09e51b4dd9fdd828baa863cded3fd6ba2f29f757ae2d";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1355,52 +1394,52 @@
     };
   };
   pytest-profiling = super.buildPythonPackage {
-    name = "pytest-profiling-1.2.11";
+    name = "pytest-profiling-1.3.0";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [six pytest gprof2dot];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c0/4a/b4aa786e93c07a86f1f87c581a36bf355a9e06a9da7e00dbd05047626bd2/pytest-profiling-1.2.11.tar.gz";
-      sha256 = "8904f9a1ed31d6be2c0b586c4e2fbc14cc17fb0afae2c01a6c0f701978a1c9a4";
+      url = "https://files.pythonhosted.org/packages/f5/34/4626126e041a51ef50a80d0619519b18d20aef249aac25b0d0fdd47e57ee/pytest-profiling-1.3.0.tar.gz";
+      sha256 = "6b86a2e547bf1a70610da6568d91ed3e785d15a12151abebdd5e885fba532523";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   pytest-runner = super.buildPythonPackage {
-    name = "pytest-runner-3.0";
+    name = "pytest-runner-4.2";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/65/b4/ae89338cd2d81e2cc54bd6db2e962bfe948f612303610d68ab24539ac2d1/pytest-runner-3.0.tar.gz";
-      sha256 = "0f7c3a3cf5aead13f54baaa01ceb49e5ae92aba5d3ff1928e81e189c40bc6703";
+      url = "https://files.pythonhosted.org/packages/9e/b7/fe6e8f87f9a756fd06722216f1b6698ccba4d269eac6329d9f0c441d0f93/pytest-runner-4.2.tar.gz";
+      sha256 = "d23f117be39919f00dd91bffeb4f15e031ec797501b717a245e377aee0f577be";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   pytest-sugar = super.buildPythonPackage {
-    name = "pytest-sugar-0.9.0";
+    name = "pytest-sugar-0.9.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pytest termcolor];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/49/d8/c5ff6cca3ce2ebd8b73eec89779bf6b4a7737456a70e8ea4d44c1ff90f71/pytest-sugar-0.9.0.tar.gz";
-      sha256 = "8f1aca70235559f95abe2d7508a029d933e9c9961888d74d423e6460678a9686";
+      url = "https://files.pythonhosted.org/packages/3e/6a/a3f909083079d03bde11d06ab23088886bbe25f2c97fbe4bb865e2bf05bc/pytest-sugar-0.9.1.tar.gz";
+      sha256 = "ab8cc42faf121344a4e9b13f39a51257f26f410e416c52ea11078cdd00d98a2c";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   pytest-timeout = super.buildPythonPackage {
-    name = "pytest-timeout-1.2.0";
+    name = "pytest-timeout-1.2.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pytest];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/cc/b7/b2a61365ea6b6d2e8881360ae7ed8dad0327ad2df89f2f0be4a02304deb2/pytest-timeout-1.2.0.tar.gz";
-      sha256 = "c29e3168f10897728059bd6b8ca20b28733d7fe6b8f6c09bb9d89f6146f27cb8";
+      url = "https://files.pythonhosted.org/packages/be/e9/a9106b8bc87521c6813060f50f7d1fdc15665bc1bbbe71c0ffc1c571aaa2/pytest-timeout-1.2.1.tar.gz";
+      sha256 = "68b7d264633d5d33ee6b14ce3a7f7d05f8fd9d2f6ae594283221ec021736b7cd";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit { fullName = "DFSG approved"; } ];
@@ -1538,9 +1577,9 @@
   };
   rhodecode-enterprise-ce = super.buildPythonPackage {
     name = "rhodecode-enterprise-ce-4.13.0";
-    buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock webtest cov-core coverage configobj];
+    buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-profiling gprof2dot pytest-timeout mock webtest cov-core coverage configobj];
     doCheck = true;
-    propagatedBuildInputs = with self; [setuptools-scm amqp authomatic babel beaker celery chameleon channelstream click colander configobj cssselect decorator deform docutils dogpile.cache dogpile.core ecdsa formencode future futures gnureadline infrae.cache iso8601 itsdangerous jinja2 billiard kombu lxml mako markdown markupsafe msgpack-python mysql-python objgraph packaging paste pastedeploy pastescript pathlib2 peppercorn psutil psycopg2 py-bcrypt pycrypto pycurl pyflakes pygments-markdown-lexer pygments pyparsing pyramid-beaker pyramid-debugtoolbar pyramid-jinja2 pyramid-mako pyramid pysqlite python-dateutil python-ldap python-memcached python-pam pytz tzlocal pyzmq py-gfm redis repoze.lru requests routes setproctitle simplejson six sqlalchemy sshpubkeys subprocess32 supervisor tempita translationstring trollius urllib3 urlobject venusian weberror webhelpers2 webhelpers webob whoosh wsgiref zope.cachedescriptors zope.deprecation zope.event zope.interface nbconvert bleach nbformat jupyter-client alembic invoke bumpversion gevent greenlet gunicorn waitress ipdb ipython cprofilev bottle rhodecode-tools appenlight-client pytest py pytest-cov pytest-sugar pytest-runner pytest-catchlog pytest-profiling gprof2dot pytest-timeout mock webtest cov-core coverage];
+    propagatedBuildInputs = with self; [setuptools-scm amqp authomatic babel beaker celery chameleon channelstream click colander configobj cssselect decorator deform docutils dogpile.cache dogpile.core ecdsa formencode future futures gnureadline infrae.cache iso8601 itsdangerous jinja2 billiard kombu lxml mako markdown markupsafe msgpack-python mysql-python objgraph packaging paste pastedeploy pastescript pathlib2 peppercorn psutil psycopg2 py-bcrypt pycrypto pycurl pyflakes pygments-markdown-lexer pygments pyparsing pyramid-beaker pyramid-debugtoolbar pyramid-jinja2 pyramid-mako pyramid pysqlite python-dateutil python-ldap python-memcached python-pam pytz tzlocal pyzmq py-gfm redis repoze.lru requests routes setproctitle simplejson six sqlalchemy sshpubkeys subprocess32 supervisor tempita translationstring trollius urllib3 urlobject venusian weberror webhelpers2 webhelpers webob whoosh wsgiref zope.cachedescriptors zope.deprecation zope.event zope.interface nbconvert bleach nbformat jupyter-client alembic invoke bumpversion gevent greenlet gunicorn waitress ipdb ipython cprofilev bottle rhodecode-tools appenlight-client pytest py pytest-cov pytest-sugar pytest-runner pytest-profiling gprof2dot pytest-timeout mock webtest cov-core coverage];
     src = ./.;
     meta = {
       license = [ { fullName = "Affero GNU General Public License v3 or later (AGPLv3+)"; } { fullName = "AGPLv3, and Commercial License"; } ];

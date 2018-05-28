@@ -132,7 +132,6 @@ let
           pkgs.nodePackages.bower
           pkgs.nodePackages.grunt-cli
           pkgs.subversion
-          pytest-catchlog
           rhodecode-testdata
         ]);
 
