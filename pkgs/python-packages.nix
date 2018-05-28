@@ -1455,7 +1455,7 @@
       sha256 = "e27001de32f627c22380a688bcc43ce83504a7bc5da472209b4c70f02829f0b8";
     };
     meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal { fullName = "Simplified BSD"; } ];
+      license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.asl20 { fullName = "Dual License"; } ];
     };
   };
   python-editor = super.buildPythonPackage {
@@ -1790,7 +1790,7 @@
       sha256 = "0d5337839c788da5900df70f8e01015aec141aa3fe7936cb0d0a2953f7ac7609";
     };
     meta = {
-      license = [ pkgs.lib.licenses.mit ];
+      license = [  ];
     };
   };
   traitlets = super.buildPythonPackage {
