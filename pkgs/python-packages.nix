@@ -185,13 +185,13 @@
     };
   };
   celery = super.buildPythonPackage {
-    name = "celery-4.1.0";
+    name = "celery-4.1.1";
     buildInputs = with self; [];
     doCheck = false;
     propagatedBuildInputs = with self; [pytz billiard kombu];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/07/65/88a2a45fc80f487872c93121a701a53bbbc3d3d832016876fac84fc8d46a/celery-4.1.0.tar.gz";
-      sha256 = "77ff3730198d6a17b3c1f05579ebe570b579efb35f6d7e13dba3b1368d068b35";
+      url = "https://files.pythonhosted.org/packages/e9/cf/a4c0597effca20c57eb586324e41d1180bc8f13a933da41e0646cff69f02/celery-4.1.1.tar.gz";
+      sha256 = "d1f2a3359bdbdfb344edce98b8e891f5fe64f8a11c5a45538ec20ac237c971f5";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
