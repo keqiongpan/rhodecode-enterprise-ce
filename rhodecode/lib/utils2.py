@@ -353,6 +353,8 @@ def ping_connection(connection, branch):
 def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
     """Custom engine_from_config functions."""
     log = logging.getLogger('sqlalchemy.engine')
+    _ping_connection = configuration.pop('sqlalchemy.db1.ping_connection', None)
+
     engine = sqlalchemy.engine_from_config(configuration, prefix, **kwargs)
 
     def color_sql(sql):
@@ -360,7 +362,6 @@ def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
         normal = '\x1b[0m'
         return ''.join([color_seq, sql, normal])
 
-    _ping_connection = configuration.get('sqlalchemy.db1.ping_connection')
     if configuration['debug'] or _ping_connection:
         sqlalchemy.event.listen(engine, "engine_connect", ping_connection)
 
