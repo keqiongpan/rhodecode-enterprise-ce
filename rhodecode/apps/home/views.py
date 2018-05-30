@@ -303,9 +303,11 @@ class HomeView(BaseAppView):
             res.append(serialized_repo)
 
         # TODO(marcink): permissions for that ?
-        users = self._get_user_list(query)
-        for serialized_user in users:
-            res.append(serialized_user)
+        allowed_user_search = self._rhodecode_user.username != User.DEFAULT_USER
+        if allowed_user_search:
+            users = self._get_user_list(query)
+            for serialized_user in users:
+                res.append(serialized_user)
 
         commits = self._get_hash_commit_list(c.auth_user, query)
         if commits:
