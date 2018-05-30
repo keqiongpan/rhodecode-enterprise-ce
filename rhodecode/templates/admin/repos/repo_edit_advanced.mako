@@ -165,8 +165,8 @@ var repoTypeFilter = function(data) {
 
     $.each(data.results[0].children, function() {
         // filter out the SAME repo, it cannot be used as fork of itself
-        if (this.obj.repo_id != currentRepoId) {
-            this.id = this.obj.repo_id;
+        if (this.repo_id != currentRepoId) {
+            this.id = this.repo_id;
             results.push(this)
         }
     });
@@ -181,7 +181,7 @@ $("#id_fork_of").select2({
     dropdownAutoWidth: true,
     containerCssClass: "drop-menu",
     dropdownCssClass: "drop-menu-dropdown",
-    formatResult: formatResult,
+    formatResult: formatRepoResult,
     query: $.debounce(250, function(query){
         self = this;
         var cacheKey = query.term;

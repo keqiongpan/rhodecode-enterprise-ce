@@ -465,7 +465,7 @@ $(function(){
     query: $.debounce(250, function(query) {
       queryTargetRepo(this, query);
     }),
-    formatResult: formatResult
+    formatResult: formatRepoResult
   });
 
   sourceRefSelect2.initRef();

@@ -20,7 +20,7 @@ function setRCMouseBindings(repoName, repoLandingRev) {
 
     // / open the quick filter
     Mousetrap.bind(['/'], function(e) {
-        $('#repo_switcher').select2('open');
+        $('#main_filter').get(0).focus();
 
         // return false to prevent default browser behavior
         // and stop event from bubbling

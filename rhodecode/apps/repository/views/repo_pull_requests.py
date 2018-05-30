@@ -766,7 +766,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 'id': obj['name'],
                 'text': obj['name'],
                 'type': 'repo',
-                'obj': obj['dbrepo']
+                'repo_id': obj['dbrepo']['repo_id'],
+                'repo_type': obj['dbrepo']['repo_type'],
+                'private': obj['dbrepo']['private'],
+
             })
 
         data = {

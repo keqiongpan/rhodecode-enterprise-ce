@@ -20,7 +20,7 @@
 
 import json
 
-from . import assert_and_get_content
+from . import assert_and_get_repo_list_content
 from rhodecode.tests import TestController
 from rhodecode.tests.fixture import Fixture
 from rhodecode.model.db import Repository
@@ -50,11 +50,9 @@ class TestRepoListData(TestController):
             extra_environ=xhr_header, status=200)
         result = json.loads(response.body)['results']
 
-        repos, groups, commits = assert_and_get_content(result)
+        repos = assert_and_get_repo_list_content(result)
 
         assert len(repos) == len(Repository.get_all())
-        assert len(groups) == 0
-        assert len(commits) == 0
 
     def test_returns_list_of_repos_and_groups_filtered(self, xhr_header):
         self.log_user()
@@ -65,12 +63,10 @@ class TestRepoListData(TestController):
             extra_environ=xhr_header, status=200)
         result = json.loads(response.body)['results']
 
-        repos, groups, commits = assert_and_get_content(result)
+        repos = assert_and_get_repo_list_content(result)
 
         assert len(repos) == len(Repository.query().filter(
             Repository.repo_name.ilike('%vcs_test_git%')).all())
-        assert len(groups) == 0
-        assert len(commits) == 0
 
     def test_returns_list_of_repos_and_groups_filtered_with_type(self, xhr_header):
         self.log_user()
@@ -81,12 +77,10 @@ class TestRepoListData(TestController):
             extra_environ=xhr_header, status=200)
         result = json.loads(response.body)['results']
 
-        repos, groups, commits = assert_and_get_content(result)
+        repos = assert_and_get_repo_list_content(result)
 
         assert len(repos) == len(Repository.query().filter(
             Repository.repo_name.ilike('%vcs_test_git%')).all())
-        assert len(groups) == 0
-        assert len(commits) == 0
 
     def test_returns_list_of_repos_non_ascii_query(self, xhr_header):
         self.log_user()
@@ -96,8 +90,6 @@ class TestRepoListData(TestController):
             extra_environ=xhr_header, status=200)
         result = json.loads(response.body)['results']
 
-        repos, groups, commits = assert_and_get_content(result)
+        repos = assert_and_get_repo_list_content(result)
 
         assert len(repos) == 0
-        assert len(groups) == 0
-        assert len(commits) == 0

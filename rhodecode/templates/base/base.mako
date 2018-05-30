@@ -226,7 +226,7 @@
   <!--- CONTEXT BAR -->
   <div id="context-bar">
     <div class="wrapper">
-      <ul id="context-pages" class="horizontal-list navigation">
+      <ul id="context-pages" class="navigation horizontal-list">
         <li class="${is_active('summary')}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
         <li class="${is_active('changelog')}"><a class="menulink" href="${h.route_path('repo_changelog', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
         <li class="${is_active('files')}"><a class="menulink" href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.rhodecode_db_repo.landing_rev[1], f_path='')}"><div class="menulabel">${_('Files')}</div></a></li>
@@ -386,10 +386,30 @@
         return ""
     %>
     <ul id="quick" class="main_nav navigation horizontal-list">
-      <!-- repo switcher -->
-      <li class="${is_active('repositories')} repo_switcher_li has_select2">
-        <input id="repo_switcher" name="repo_switcher" type="hidden">
-      </li>
+
+      ## Main filter
+       <li>
+        <div class="menulabel main_filter_box">
+            <div class="main_filter_input_box">
+                <input class="main_filter_input" id="main_filter" size="15" type="text" name="main_filter" placeholder="${_('search / go to...')}" value=""/>
+            </div>
+            <div class="main_filter_help_box">
+                <a href="#showFilterHelp" onclick="showMainFilterBox(); return false">?</a>
+            </div>
+        </div>
+
+        <div id="main_filter_help" style="display: none">
+Use '/' key to quickly access this field.
+Enter name of repository, or repository group for quick search.
+
+Prefix query to allow special search:
+
+For usernames, e.g user:admin
+
+For commit hash/id, e.g commit:efced4
+
+        </div>
+       </li>
 
       ## ROOT MENU
       %if c.rhodecode_user.username != h.DEFAULT_USER:
@@ -432,6 +452,9 @@
                               c.rhodecode_user.user_groups_admin or h.HasPermissionAny('hg.usergroup.create.true')())}
       </li>
       % endif
+      ## render extra user menu
+      ${usermenu(active=(active=='my_account'))}
+
       % if c.debug_style:
       <li class="${is_active('debug_style')}">
           <a class="menulink" title="${_('Style')}" href="${h.route_path('debug_style_home')}">
@@ -439,102 +462,127 @@
           </a>
       </li>
       % endif
-      ## render extra user menu
-      ${usermenu(active=(active=='my_account'))}
     </ul>
 
     <script type="text/javascript">
-        var visual_show_public_icon = "${c.visual.show_public_icon}" == "True";
+        var visualShowPublicIcon = "${c.visual.show_public_icon}" == "True";
 
-        /*format the look of items in the list*/
-        var format = function(state, escapeMarkup){
-            if (!state.id){
-              return state.text; // optgroup
-            }
-            var obj_dict = state.obj;
-            var tmpl = '';
+        var formatRepoResult = function(result, container, query, escapeMarkup) {
+            return function(data, escapeMarkup) {
+                if (!data.repo_id){
+                  return data.text; // optgroup text Repositories
+                }
 
-            if(obj_dict && state.type == 'repo'){
-                if(obj_dict['repo_type'] === 'hg'){
-                    tmpl += '<i class="icon-hg"></i> ';
+                var tmpl = '';
+                var repoType = data['repo_type'];
+                var repoName = data['text'];
+
+                if(data && data.type == 'repo'){
+                    if(repoType === 'hg'){
+                        tmpl += '<i class="icon-hg"></i> ';
+                    }
+                    else if(repoType === 'git'){
+                        tmpl += '<i class="icon-git"></i> ';
+                    }
+                    else if(repoType === 'svn'){
+                        tmpl += '<i class="icon-svn"></i> ';
+                    }
+                    if(data['private']){
+                        tmpl += '<i class="icon-lock" ></i> ';
+                    }
+                    else if(visualShowPublicIcon){
+                        tmpl += '<i class="icon-unlock-alt"></i> ';
+                    }
                 }
-                else if(obj_dict['repo_type'] === 'git'){
-                    tmpl += '<i class="icon-git"></i> ';
-                }
-                else if(obj_dict['repo_type'] === 'svn'){
-                    tmpl += '<i class="icon-svn"></i> ';
-                }
-                if(obj_dict['private']){
-                    tmpl += '<i class="icon-lock" ></i> ';
-                }
-                else if(visual_show_public_icon){
-                    tmpl += '<i class="icon-unlock-alt"></i> ';
-                }
-            }
-            if(obj_dict && state.type == 'commit') {
-                tmpl += '<i class="icon-tag"></i>';
-            }
-            if(obj_dict && state.type == 'group'){
-                tmpl += '<i class="icon-folder-close"></i> ';
-            }
-            tmpl += escapeMarkup(state.text);
-            return tmpl;
+                tmpl += escapeMarkup(repoName);
+                return tmpl;
+
+            }(result, escapeMarkup);
         };
 
-        var formatResult = function(result, container, query, escapeMarkup) {
-            return format(result, escapeMarkup);
+
+        var autocompleteMainFilterFormatResult = function (data, value, org_formatter) {
+
+            if (value.split(':').length === 2) {
+                value = value.split(':')[1]
+            }
+
+            var searchType = data['type'];
+            var valueDisplay = data['value_display'];
+
+            var escapeRegExChars = function (value) {
+            return value.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+            };
+            var pattern = '(' + escapeRegExChars(value) + ')';
+
+            // highlight match
+            valueDisplay = Select2.util.escapeMarkup(valueDisplay);
+            valueDisplay = valueDisplay.replace(new RegExp(pattern, 'gi'), '<strong>$1<\/strong>');
+
+            var icon = '';
+
+            if (searchType === 'search') {
+                icon += '<i class="icon-more"></i> ';
+            }
+            else if (searchType === 'repo') {
+                if (data['repo_type'] === 'hg') {
+                    icon += '<i class="icon-hg"></i> ';
+                }
+                else if (data['repo_type'] === 'git') {
+                    icon += '<i class="icon-git"></i> ';
+                }
+                else if (data['repo_type'] === 'svn') {
+                    icon += '<i class="icon-svn"></i> ';
+                }
+                if (data['private']) {
+                    icon += '<i class="icon-lock" ></i> ';
+                }
+                else if (visualShowPublicIcon) {
+                    icon += '<i class="icon-unlock-alt"></i> ';
+                }
+            }
+            else if (searchType === 'repo_group') {
+                icon += '<i class="icon-folder-close"></i> ';
+            }
+            else if (searchType === 'user') {
+                icon += '<img class="gravatar" src="{0}"/>'.format(data['icon_link']);
+            }
+            else if (searchType === 'commit') {
+                icon += '<i class="icon-tag"></i>';
+            }
+
+            var tmpl = '<div class="ac-container-wrap">{0}{1}</div>';
+            return tmpl.format(icon, valueDisplay);
         };
 
-        var formatSelection = function(data, container, escapeMarkup) {
-            return format(data, escapeMarkup);
+        var handleSelect = function(element, suggestion) {
+            window.location = suggestion['url'];
+        };
+        var autocompleteMainFilterResult = function (suggestion, originalQuery, queryLowerCase) {
+            if (queryLowerCase.split(':').length === 2) {
+                queryLowerCase = queryLowerCase.split(':')[1]
+            }
+            return suggestion.value_display.toLowerCase().indexOf(queryLowerCase) !== -1;
         };
 
-        $("#repo_switcher").select2({
-            cachedDataSource: {},
-            minimumInputLength: 2,
-            placeholder: '<div class="menulabel">${_('Go to')} <div class="show_more"></div></div>',
-            dropdownAutoWidth: true,
-            formatResult: formatResult,
-            formatSelection: formatSelection,
-            containerCssClass: "repo-switcher",
-            dropdownCssClass: "repo-switcher-dropdown",
-            escapeMarkup: function(m){
-                // don't escape our custom placeholder
-                if(m.substr(0,23) == '<div class="menulabel">'){
-                    return m;
-                }
-
-                return Select2.util.escapeMarkup(m);
-            },
-            query: $.debounce(250, function(query){
-                self = this;
-                var cacheKey = query.term;
-                var cachedData = self.cachedDataSource[cacheKey];
-
-                if (cachedData) {
-                    query.callback({results: cachedData.results});
-                } else {
-                    $.ajax({
-                        url: pyroutes.url('goto_switcher_data'),
-                        data: {'query': query.term},
-                        dataType: 'json',
-                        type: 'GET',
-                        success: function(data) {
-                            self.cachedDataSource[cacheKey] = data;
-                            query.callback({results: data.results});
-                        },
-                        error: function(data, textStatus, errorThrown) {
-                            alert("Error while fetching entries.\nError code {0} ({1}).".format(data.status, data.statusText));
-                        }
-                    })
-                }
-            })
+        $('#main_filter').autocomplete({
+            serviceUrl: pyroutes.url('goto_switcher_data'),
+            minChars:2,
+            maxHeight:400,
+            deferRequestBy: 300, //miliseconds
+            tabDisabled: true,
+            autoSelectFirst: true,
+            formatResult: autocompleteMainFilterFormatResult,
+            lookupFilter: autocompleteMainFilterResult,
+            onSelect: function(element, suggestion){
+                handleSelect(element, suggestion);
+                return false;
+            }
         });
 
-        $("#repo_switcher").on('select2-selecting', function(e){
-            e.preventDefault();
-            window.location = e.choice.url;
-        });
+        showMainFilterBox = function () {
+            $('#main_filter_help').toggle();
+        }
 
     </script>
     <script src="${h.asset('js/rhodecode/base/keyboard-bindings.js', ver=c.rhodecode_version_hash)}"></script>
@@ -557,7 +605,7 @@
                   </tr>
                   <%
                      elems = [
-                         ('/', 'Open quick search box'),
+                         ('/', 'Use quick search box'),
                          ('g h', 'Goto home page'),
                          ('g g', 'Goto my private gists page'),
                          ('g G', 'Goto my public gists page'),
@@ -611,3 +659,4 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
+

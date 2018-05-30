@@ -22,7 +22,7 @@ import json
 
 import pytest
 
-from . import assert_and_get_content
+from . import assert_and_get_main_filter_content
 from rhodecode.tests import TestController, TEST_USER_ADMIN_LOGIN
 from rhodecode.tests.fixture import Fixture
 
@@ -103,19 +103,15 @@ class TestGotoSwitcherData(TestController):
                     RepoGroupModel().delete(el, force_delete=True)
                     Session().commit()
 
-    def test_returns_list_of_repos_and_groups(self, xhr_header):
+    def test_empty_query(self, xhr_header):
         self.log_user()
 
         response = self.app.get(
             route_path('goto_switcher_data'),
             extra_environ=xhr_header, status=200)
-        result = json.loads(response.body)['results']
+        result = json.loads(response.body)['suggestions']
 
-        repos, groups, commits = assert_and_get_content(result)
-
-        assert len(repos) == len(Repository.get_all())
-        assert len(groups) == len(RepoGroup.get_all())
-        assert len(commits) == 0
+        assert result == []
 
     def test_returns_list_of_repos_and_groups_filtered(self, xhr_header):
         self.log_user()
@@ -124,13 +120,46 @@ class TestGotoSwitcherData(TestController):
             route_path('goto_switcher_data'),
             params={'query': 'abc'},
             extra_environ=xhr_header, status=200)
-        result = json.loads(response.body)['results']
+        result = json.loads(response.body)['suggestions']
 
-        repos, groups, commits = assert_and_get_content(result)
+        repos, groups, users, commits = assert_and_get_main_filter_content(result)
 
         assert len(repos) == 13
         assert len(groups) == 5
+        assert len(users) == 0
         assert len(commits) == 0
+
+    def test_returns_list_of_users_filtered(self, xhr_header):
+        self.log_user()
+
+        response = self.app.get(
+            route_path('goto_switcher_data'),
+            params={'query': 'user:admin'},
+            extra_environ=xhr_header, status=200)
+        result = json.loads(response.body)['suggestions']
+
+        repos, groups, users, commits = assert_and_get_main_filter_content(result)
+
+        assert len(repos) == 0
+        assert len(groups) == 0
+        assert len(users) == 1
+        assert len(commits) == 0
+
+    def test_returns_list_of_commits_filtered(self, xhr_header):
+        self.log_user()
+
+        response = self.app.get(
+            route_path('goto_switcher_data'),
+            params={'query': 'commit:e8'},
+            extra_environ=xhr_header, status=200)
+        result = json.loads(response.body)['suggestions']
+
+        repos, groups, users, commits = assert_and_get_main_filter_content(result)
+
+        assert len(repos) == 0
+        assert len(groups) == 0
+        assert len(users) == 0
+        assert len(commits) == 5
 
     def test_returns_list_of_properly_sorted_and_filtered(self, xhr_header):
         self.log_user()
@@ -139,13 +168,13 @@ class TestGotoSwitcherData(TestController):
             route_path('goto_switcher_data'),
             params={'query': 'abc'},
             extra_environ=xhr_header, status=200)
-        result = json.loads(response.body)['results']
+        result = json.loads(response.body)['suggestions']
 
-        repos, groups, commits = assert_and_get_content(result)
+        repos, groups, users, commits = assert_and_get_main_filter_content(result)
 
-        test_repos = [x['text'] for x in repos[:4]]
+        test_repos = [x['value_display'] for x in repos[:4]]
         assert ['abc', 'abcd', 'a/abc', 'abcde'] == test_repos
 
-        test_groups = [x['text'] for x in groups[:4]]
+        test_groups = [x['value_display'] for x in groups[:4]]
         assert ['abc_repos', 'repos_abc',
                 'forked-abc', 'forked-abc/a'] == test_groups
