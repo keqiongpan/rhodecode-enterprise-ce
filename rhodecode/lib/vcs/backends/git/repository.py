@@ -834,7 +834,7 @@ class GitRepository(BaseRepository):
 
         # N.B.(skreft): the --no-ff option is used to enforce the creation of a
         # commit message. We also specify the user who is doing the merge.
-        cmd = ['-c', 'user.name=%s' % safe_str(user_name),
+        cmd = ['-c', 'user.name="%s"' % safe_str(user_name),
                '-c', 'user.email=%s' % safe_str(user_email),
                'merge', '--no-ff', '-m', safe_str(merge_message)]
         cmd.extend(heads)
