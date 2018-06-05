@@ -24,7 +24,6 @@ HG repository module
 import os
 import logging
 import binascii
-import shutil
 import urllib
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -710,10 +709,6 @@ class MercurialRepository(BaseRepository):
                 'Prepared shadow repository in %s', shadow_repository_path)
 
         return shadow_repository_path
-
-    def cleanup_merge_workspace(self, workspace_id):
-        shadow_repository_path = self._get_shadow_repository_path(workspace_id)
-        shutil.rmtree(shadow_repository_path, ignore_errors=True)
 
     def _merge_repo(self, shadow_repository_path, target_ref,
                     source_repo, source_ref, merge_message,
