@@ -248,6 +248,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         from_version = self.request.GET.get('from_version') or version
         merge_checks = self.request.GET.get('merge_checks')
         c.fulldiff = str2bool(self.request.GET.get('fulldiff'))
+        force_refresh = str2bool(self.request.GET.get('force_refresh'))
 
         (pull_request_latest,
          pull_request_at_ver,
@@ -339,7 +340,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         # check merge capabilities
         _merge_check = MergeCheck.validate(
             pull_request_latest, user=self._rhodecode_user,
-            translator=self.request.translate)
+            translator=self.request.translate, force_shadow_repo_refresh=force_refresh)
         c.pr_merge_errors = _merge_check.error_details
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
