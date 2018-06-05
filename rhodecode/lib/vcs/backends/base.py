@@ -31,6 +31,7 @@ import os
 import re
 import time
 import warnings
+import shutil
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
@@ -521,6 +522,9 @@ class BaseRepository(object):
         """
         raise NotImplementedError
 
+    def _get_shadow_repository_path(self, workspace_id):
+        raise NotImplementedError
+
     def cleanup_merge_workspace(self, workspace_id):
         """
         Remove merge workspace.
@@ -530,7 +534,23 @@ class BaseRepository(object):
 
         :param workspace_id: `workspace_id` unique identifier.
         """
-        raise NotImplementedError
+        shadow_repository_path = self._get_shadow_repository_path(workspace_id)
+        shadow_repository_path_del = '{}.{}.delete'.format(
+            shadow_repository_path, time.time())
+
+        # move the shadow repo, so it never conflicts with the one used.
+        # we use this method because shutil.rmtree had some edge case problems
+        # removing symlinked repositories
+        if not os.path.isdir(shadow_repository_path):
+            return
+
+        shutil.move(shadow_repository_path, shadow_repository_path_del)
+        try:
+            shutil.rmtree(shadow_repository_path_del, ignore_errors=False)
+        except Exception:
+            log.exception('Failed to gracefully remove shadow repo under %s',
+                          shadow_repository_path_del)
+            shutil.rmtree(shadow_repository_path_del, ignore_errors=True)
 
     # ========== #
     # COMMIT API #

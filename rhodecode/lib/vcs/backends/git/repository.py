@@ -25,7 +25,6 @@ GIT repository module
 import logging
 import os
 import re
-import shutil
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
@@ -983,7 +982,3 @@ class GitRepository(BaseRepository):
                 shadow_repository_path, target_ref.name, source_ref.name)
 
         return shadow_repository_path
-
-    def cleanup_merge_workspace(self, workspace_id):
-        shadow_repository_path = self._get_shadow_repository_path(workspace_id)
-        shutil.rmtree(shadow_repository_path, ignore_errors=True)
