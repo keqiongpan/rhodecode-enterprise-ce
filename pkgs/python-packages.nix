@@ -1276,6 +1276,19 @@
       license = [ pkgs.lib.licenses.asl20 ];
     };
   };
+  pymysql = super.buildPythonPackage {
+    name = "pymysql-0.8.1";
+    buildInputs = with self; [];
+    doCheck = false;
+    propagatedBuildInputs = with self; [];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/44/39/6bcb83cae0095a31b6be4511707fdf2009d3e29903a55a0494d3a9a2fac0/PyMySQL-0.8.1.tar.gz";
+      sha256 = "34e19bfff13e8b2ffc38a68f9ad064609d48f3d46320e8ab8184af527e662629";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   pyparsing = super.buildPythonPackage {
     name = "pyparsing-1.5.7";
     buildInputs = with self; [];
@@ -1579,7 +1592,7 @@
     name = "rhodecode-enterprise-ce-4.13.0";
     buildInputs = with self; [pytest py pytest-cov pytest-sugar pytest-runner pytest-profiling gprof2dot pytest-timeout mock webtest cov-core coverage configobj];
     doCheck = true;
-    propagatedBuildInputs = with self; [setuptools-scm amqp authomatic babel beaker celery chameleon channelstream click colander configobj cssselect decorator deform docutils dogpile.cache dogpile.core ecdsa formencode future futures gnureadline infrae.cache iso8601 itsdangerous jinja2 billiard kombu lxml mako markdown markupsafe msgpack-python mysql-python objgraph packaging paste pastedeploy pastescript pathlib2 peppercorn psutil psycopg2 py-bcrypt pycrypto pycurl pyflakes pygments-markdown-lexer pygments pyparsing pyramid-beaker pyramid-debugtoolbar pyramid-jinja2 pyramid-mako pyramid pysqlite python-dateutil python-ldap python-memcached python-pam pytz tzlocal pyzmq py-gfm redis repoze.lru requests routes setproctitle simplejson six sqlalchemy sshpubkeys subprocess32 supervisor tempita translationstring trollius urllib3 urlobject venusian weberror webhelpers2 webhelpers webob whoosh wsgiref zope.cachedescriptors zope.deprecation zope.event zope.interface nbconvert bleach nbformat jupyter-client alembic invoke bumpversion gevent greenlet gunicorn waitress ipdb ipython cprofilev bottle rhodecode-tools appenlight-client pytest py pytest-cov pytest-sugar pytest-runner pytest-profiling gprof2dot pytest-timeout mock webtest cov-core coverage];
+    propagatedBuildInputs = with self; [setuptools-scm amqp authomatic babel beaker celery chameleon channelstream click colander configobj cssselect decorator deform docutils dogpile.cache dogpile.core ecdsa formencode future futures gnureadline infrae.cache iso8601 itsdangerous jinja2 billiard kombu lxml mako markdown markupsafe msgpack-python mysql-python pymysql objgraph packaging paste pastedeploy pastescript pathlib2 peppercorn psutil psycopg2 py-bcrypt pycrypto pycurl pyflakes pygments-markdown-lexer pygments pyparsing pyramid-beaker pyramid-debugtoolbar pyramid-jinja2 pyramid-mako pyramid pysqlite python-dateutil python-ldap python-memcached python-pam pytz tzlocal pyzmq py-gfm redis repoze.lru requests routes setproctitle simplejson six sqlalchemy sshpubkeys subprocess32 supervisor tempita translationstring trollius urllib3 urlobject venusian weberror webhelpers2 webhelpers webob whoosh wsgiref zope.cachedescriptors zope.deprecation zope.event zope.interface nbconvert bleach nbformat jupyter-client alembic invoke bumpversion gevent greenlet gunicorn waitress ipdb ipython cprofilev bottle rhodecode-tools appenlight-client pytest py pytest-cov pytest-sugar pytest-runner pytest-profiling gprof2dot pytest-timeout mock webtest cov-core coverage];
     src = ./.;
     meta = {
       license = [ { fullName = "Affero GNU General Public License v3 or later (AGPLv3+)"; } { fullName = "AGPLv3, and Commercial License"; } ];
