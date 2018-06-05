@@ -89,7 +89,7 @@ def url_validator(url, repo_type, config):
             # initially check if it's at least the proper URL
             # or does it pass basic auth
 
-            MercurialRepository.check_url(url, config)
+            return MercurialRepository.check_url(url, config)
         elif 'svn+http' in url[:8]:  # svn->hg import
             SubversionRepository.check_url(url, config)
         elif 'git+http' in url[:8]:  # git->hg import
@@ -106,7 +106,7 @@ def url_validator(url, repo_type, config):
         if 'http' in url[:4]:
             # initially check if it's at least the proper URL
             # or does it pass basic auth
-            GitRepository.check_url(url, config)
+            return GitRepository.check_url(url, config)
         elif 'svn+http' in url[:8]:  # svn->git import
             raise NotImplementedError()
         elif 'hg+http' in url[:8]:  # hg->git import
@@ -121,7 +121,7 @@ def url_validator(url, repo_type, config):
         # no validation for SVN yet
         return
 
-    raise InvalidCloneUrl('No repo type specified')
+    raise InvalidCloneUrl('Invalid repo type specified: `{}`'.format(repo_type))
 
 
 class CloneUriValidator(object):
