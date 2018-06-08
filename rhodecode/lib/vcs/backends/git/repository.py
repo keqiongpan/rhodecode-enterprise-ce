@@ -757,7 +757,7 @@ class GitRepository(BaseRepository):
                 cmd = ['fetch', self.path, source_branch]
                 self.run_git_command(cmd, fail_on_stderr=False)
 
-    def _local_fetch(self, repository_path, branch_name):
+    def _local_fetch(self, repository_path, branch_name, use_origin=False):
         """
         Fetch a branch from a local repository.
         """
@@ -765,7 +765,17 @@ class GitRepository(BaseRepository):
         if repository_path == self.path:
             raise ValueError('Cannot fetch from the same repository')
 
-        cmd = ['fetch', '--no-tags', repository_path, branch_name]
+        if use_origin:
+            branch_name = '+{branch}:refs/heads/{branch}'.format(
+                branch=branch_name)
+
+        cmd = ['fetch', '--no-tags', '--update-head-ok',
+               repository_path, branch_name]
+        self.run_git_command(cmd, fail_on_stderr=False)
+
+    def _local_reset(self, branch_name):
+        branch_name = '{}'.format(branch_name)
+        cmd = ['reset', '--hard', branch_name]
         self.run_git_command(cmd, fail_on_stderr=False)
 
     def _last_fetch_heads(self):
@@ -840,7 +850,7 @@ class GitRepository(BaseRepository):
                'merge', '--no-ff', '-m', safe_str(merge_message)]
         cmd.extend(heads)
         try:
-            self.run_git_command(cmd, fail_on_stderr=False)
+            output = self.run_git_command(cmd, fail_on_stderr=False)
         except RepositoryError:
             # Cleanup any merge leftovers
             self.run_git_command(['merge', '--abort'], fail_on_stderr=False)
@@ -897,6 +907,8 @@ class GitRepository(BaseRepository):
                     merger_name, merger_email, dry_run=False,
                     use_rebase=False, close_branch=False):
         if target_ref.commit_id != self.branches[target_ref.name]:
+            log.warning('Target ref %s commit mismatch %s vs %s', target_ref,
+                        target_ref.commit_id, self.branches[target_ref.name])
             return MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
 
@@ -907,20 +919,29 @@ class GitRepository(BaseRepository):
             if shadow_repo.get_remote_ref(source_ref.name):
                 shadow_repo._checkout(source_ref.name, force=True)
 
-        # checkout target
+        # checkout target, and fetch changes
         shadow_repo._checkout(target_ref.name, force=True)
-        shadow_repo._local_pull(self.path, target_ref.name)
+
+        # fetch/reset pull the target, in case it is changed
+        # this handles even force changes
+        shadow_repo._local_fetch(self.path, target_ref.name, use_origin=True)
+        shadow_repo._local_reset(target_ref.name)
 
         # Need to reload repo to invalidate the cache, or otherwise we cannot
         # retrieve the last target commit.
         shadow_repo = GitRepository(shadow_repository_path)
         if target_ref.commit_id != shadow_repo.branches[target_ref.name]:
+            log.warning('Shadow Target ref %s commit mismatch %s vs %s',
+                        target_ref, target_ref.commit_id,
+                        shadow_repo.branches[target_ref.name])
             return MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
 
+        # calculate new branch
         pr_branch = shadow_repo._get_new_pr_branch(
             source_ref.name, target_ref.name)
         log.debug('using pull-request merge branch: `%s`', pr_branch)
+        # checkout to temp branch, and fetch changes
         shadow_repo._checkout(pr_branch, create=True)
         try:
             shadow_repo._local_fetch(source_repo.path, source_ref.name)

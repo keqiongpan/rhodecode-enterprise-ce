@@ -417,6 +417,7 @@
                       <strong>${_('Missing commits')}:</strong>
                         ${_('This pull request cannot be displayed, because one or more commits no longer exist in the source repository.')}
                         ${_('Please update this pull request, push the commits back into the source repository, or consider closing this pull request.')}
+                        ${_('Consider doing a {force_refresh_url} in case you think this is an error.').format(force_refresh_url=h.link_to('force refresh', h.current_route_path(request, force_refresh='1')))|n}
                     </div>
                   </div>
                 </div>

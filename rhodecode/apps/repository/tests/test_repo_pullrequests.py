@@ -747,6 +747,69 @@ class TestPullrequestsView(object):
         assert 'Pull request updated to' in response.body
         assert 'with 1 added, 1 removed commits.' in response.body
 
+    def test_update_target_revision_with_removal_of_1_commit_git(self, backend_git, csrf_token):
+        backend = backend_git
+        commits = [
+            {'message': 'master-commit-1'},
+            {'message': 'master-commit-2-change-1'},
+            {'message': 'master-commit-3-change-2'},
+
+            {'message': 'feat-commit-1', 'parents': ['master-commit-1']},
+            {'message': 'feat-commit-2'},
+        ]
+        commit_ids = backend.create_master_repo(commits)
+        target = backend.create_repo(heads=['master-commit-3-change-2'])
+        source = backend.create_repo(heads=['feat-commit-2'])
+
+        # create pr from a in source to A in target
+        pull_request = PullRequest()
+        pull_request.source_repo = source
+        # TODO: johbo: Make sure that we write the source ref this way!
+        pull_request.source_ref = 'branch:{branch}:{commit_id}'.format(
+            branch=backend.default_branch_name,
+            commit_id=commit_ids['master-commit-3-change-2'])
+
+        pull_request.target_repo = target
+        # TODO: johbo: Target ref should be branch based, since tip can jump
+        # from branch to branch
+        pull_request.target_ref = 'branch:{branch}:{commit_id}'.format(
+            branch=backend.default_branch_name,
+            commit_id=commit_ids['feat-commit-2'])
+
+        pull_request.revisions = [
+            commit_ids['feat-commit-1'],
+            commit_ids['feat-commit-2']
+        ]
+        pull_request.title = u"Test"
+        pull_request.description = u"Description"
+        pull_request.author = UserModel().get_by_username(
+            TEST_USER_ADMIN_LOGIN)
+        Session().add(pull_request)
+        Session().commit()
+        pull_request_id = pull_request.pull_request_id
+
+        # PR is created, now we simulate a force-push into target,
+        # that drops a 2 last commits
+        vcsrepo = target.scm_instance()
+        vcsrepo.config.clear_section('hooks')
+        vcsrepo.run_git_command(['reset', '--soft', 'HEAD~2'])
+
+        # update PR
+        self.app.post(
+            route_path('pullrequest_update',
+                repo_name=target.repo_name,
+                pull_request_id=pull_request_id),
+            params={'update_commits': 'true',
+                    'csrf_token': csrf_token},
+            status=200)
+
+        response = self.app.get(route_path(
+            'pullrequest_new',
+            repo_name=target.repo_name))
+        assert response.status_int == 200
+        response.mustcontain('Pull request updated to')
+        response.mustcontain('with 0 added, 0 removed commits.')
+
     def test_update_of_ancestor_reference(self, backend, csrf_token):
         commits = [
             {'message': 'ancestor'},
