@@ -103,8 +103,9 @@ class GitRepository(BaseRepository):
         if not isinstance(cmd, list):
             raise ValueError('cmd must be a list, got %s instead' % type(cmd))
 
+        skip_stderr_log = opts.pop('skip_stderr_log', False)
         out, err = self._remote.run_git_command(cmd, **opts)
-        if err:
+        if err and not skip_stderr_log:
             log.debug('Stderr output of git command "%s":\n%s', cmd, err)
         return out, err
 
