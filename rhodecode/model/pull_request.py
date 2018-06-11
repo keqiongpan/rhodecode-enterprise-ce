@@ -510,6 +510,7 @@ class PullRequestModel(BaseModel):
                     reviewer.rule_data = rule_data
 
             Session().add(reviewer)
+            Session().flush()
 
         # Set approval status to "Under Review" for all commits which are
         # part of this pull request.
@@ -519,7 +520,13 @@ class PullRequestModel(BaseModel):
             user=created_by_user,
             pull_request=pull_request
         )
+        # we commit early at this point. This has to do with a fact
+        # that before queries do some row-locking. And because of that
+        # we need to commit and finish transation before below validate call
+        # that for large repos could be long resulting in long row locks
+        Session().commit()
 
+        # prepare workspace, and run initial merge simulation
         MergeCheck.validate(
             pull_request, user=created_by_user, translator=translator)
 
@@ -1624,7 +1631,7 @@ class MergeCheck(object):
             if fail_early:
                 return merge_check
 
-        # merge possible
+        # merge possible, here is the filesystem simulation + shadow repo
         merge_status, msg = PullRequestModel().merge_status(
             pull_request, translator=translator)
         merge_check.merge_possible = merge_status
