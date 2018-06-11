@@ -137,9 +137,11 @@ class TestAdminUsersView(TestController):
         self.log_user()
 
         user = User.get_by_username(TEST_USER_REGULAR_LOGIN)
+        user_id = user.user_id
+        auth_tokens = user.auth_tokens
         response = self.app.get(
-            route_path('edit_user_auth_tokens', user_id=user.user_id))
-        for token in user.auth_tokens:
+            route_path('edit_user_auth_tokens', user_id=user_id))
+        for token in auth_tokens:
             response.mustcontain(token)
             response.mustcontain('never')
 
