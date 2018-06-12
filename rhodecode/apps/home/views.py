@@ -280,7 +280,7 @@ class HomeView(BaseAppView):
         query = self.request.GET.get('query')
         log.debug('generating main filter data, query %s', query)
 
-        default_search_val = 'Full text search for: `{}`'.format(query)
+        default_search_val = u'Full text search for: `{}`'.format(query)
         res = []
         if not query:
             return {'suggestions': res}
