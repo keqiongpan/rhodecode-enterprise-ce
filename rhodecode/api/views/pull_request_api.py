@@ -677,7 +677,8 @@ def create_pull_request(
             [commit.raw_id for commit in reversed(commit_ranges)]),
         reviewers=reviewers,
         title=title,
-        description=Optional.extract(description)
+        description=Optional.extract(description),
+        auth_user=apiuser
     )
 
     Session().commit()

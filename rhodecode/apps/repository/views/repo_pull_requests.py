@@ -894,7 +894,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             pull_request = PullRequestModel().create(
                 self._rhodecode_user.user_id, source_repo, source_ref,
                 target_repo, target_ref, commit_ids, reviewers,
-                pullrequest_title, description, reviewer_rules
+                pullrequest_title, description, reviewer_rules,
+                auth_user=self._rhodecode_user
             )
             Session().commit()
 
@@ -1203,7 +1204,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 status_change_type=(status
                                     if status and allowed_to_change_status else None),
                 comment_type=comment_type,
-                resolves_comment_id=resolves_comment_id
+                resolves_comment_id=resolves_comment_id,
+                auth_user=self._rhodecode_user
             )
 
             if allowed_to_change_status:

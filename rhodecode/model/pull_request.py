@@ -444,10 +444,11 @@ class PullRequestModel(BaseModel):
 
     def create(self, created_by, source_repo, source_ref, target_repo,
                target_ref, revisions, reviewers, title, description=None,
-               reviewer_data=None, translator=None):
+               reviewer_data=None, translator=None, auth_user=None):
         translator = translator or get_current_request().translate
 
         created_by_user = self._get_user(created_by)
+        auth_user = auth_user or created_by_user
         source_repo = self._get_repo(source_repo)
         target_repo = self._get_repo(target_repo)
 
@@ -537,7 +538,7 @@ class PullRequestModel(BaseModel):
         creation_data = pull_request.get_api_data(with_merge_state=False)
         self._log_audit_action(
             'repo.pull_request.create', {'data': creation_data},
-            created_by_user, pull_request)
+            auth_user, pull_request)
 
         return pull_request
 
