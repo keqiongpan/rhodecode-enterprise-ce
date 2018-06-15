@@ -404,9 +404,11 @@ Enter name of repository, or repository group for quick search.
 
 Prefix query to allow special search:
 
-For usernames, e.g user:admin
+user:admin, to search for usernames
 
-For commit hash/id, e.g commit:efced4
+user_group:devops, to search for user groups
+
+commit:efced4, to search for commits
 
         </div>
        </li>
@@ -543,6 +545,9 @@ For commit hash/id, e.g commit:efced4
             }
             else if (searchType === 'repo_group') {
                 icon += '<i class="icon-folder-close"></i> ';
+            }
+            else if (searchType === 'user_group') {
+                icon += '<i class="icon-group"></i> ';
             }
             else if (searchType === 'user') {
                 icon += '<img class="gravatar" src="{0}"/>'.format(data['icon_link']);

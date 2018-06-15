@@ -211,6 +211,39 @@ class HomeView(BaseAppView):
             }
             for obj in acl_iter]
 
+    def _get_user_groups_list(self, name_contains=None, limit=20):
+        org_query = name_contains
+        if not name_contains:
+            return []
+
+        name_contains = re.compile('(?:user_group:)(.+)').findall(name_contains)
+        if len(name_contains) != 1:
+            return []
+        name_contains = name_contains[0]
+
+        query = UserGroup.query()\
+            .order_by(func.length(UserGroup.users_group_name))\
+            .order_by(UserGroup.users_group_name)
+
+        if name_contains:
+            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
+            query = query.filter(
+                UserGroup.users_group_name.ilike(ilike_expression))
+            query = query.limit(limit)
+
+        acl_iter = query
+
+        return [
+            {
+                'id': obj.users_group_id,
+                'value': org_query,
+                'value_display': obj.users_group_name,
+                'type': 'user_group',
+                'url': h.route_path(
+                    'user_group_profile', user_group_name=obj.users_group_name)
+            }
+            for obj in acl_iter]
+
     def _get_hash_commit_list(self, auth_user, query):
         org_query = query
         if not query or len(query) < 3:
@@ -308,6 +341,10 @@ class HomeView(BaseAppView):
             users = self._get_user_list(query)
             for serialized_user in users:
                 res.append(serialized_user)
+
+            user_groups = self._get_user_groups_list(query)
+            for serialized_user_group in user_groups:
+                res.append(serialized_user_group)
 
         commits = self._get_hash_commit_list(c.auth_user, query)
         if commits:
