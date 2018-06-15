@@ -733,7 +733,7 @@ class UserGroupModel(BaseModel):
 
         data = {
             'users_group_id': user_group.users_group_id,
-            'group_name': user_group.users_group_name,
+            'group_name': h.link_to_group(user_group.users_group_name),
             'group_description': user_group.user_group_description,
             'active': user_group.users_group_active,
             "owner": user_group.user.username,
