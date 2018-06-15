@@ -48,7 +48,7 @@ from rhodecode.model.db import (
     User, Repository, Permission, UserToPerm, UserGroupToPerm, UserGroupMember,
     UserIpMap, UserApiKeys, RepoGroup, UserGroup)
 from rhodecode.lib import caches
-from rhodecode.lib.utils2 import safe_unicode, aslist, safe_str, md5
+from rhodecode.lib.utils2 import safe_unicode, aslist, safe_str, md5, safe_int
 from rhodecode.lib.utils import (
     get_repo_slug, get_repo_group_slug, get_user_group_slug)
 from rhodecode.lib.caching_query import FromCache
@@ -1070,10 +1070,16 @@ class AuthUser(object):
         # inheritance of global permissions like create repo/fork repo etc
         user_inherit_default_permissions = user.inherit_default_permissions
 
-        log.debug('Computing PERMISSION tree for scope %s' % (scope, ))
+        cache_seconds = safe_int(
+            rhodecode.CONFIG.get('beaker.cache.short_term.expire'))
+        cache_on = cache or cache_seconds > 0
+        log.debug(
+            'Computing PERMISSION tree for scope `%s` with caching: %s' % (
+                scope, cache_on))
+
         compute = caches.conditional_cache(
             'short_term', 'cache_desc',
-            condition=cache, func=_cached_perms_data)
+            condition=cache_on, func=_cached_perms_data)
         result = compute(user_id, scope, user_is_admin,
                          user_inherit_default_permissions, explicit, algo,
                          calculate_super_admin)
