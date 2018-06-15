@@ -86,6 +86,8 @@ def add_request_user_context(event):
     Adds auth user into request context
     """
     request = event.request
+    # access req_id as soon as possible
+    req_id = request.req_id
 
     if hasattr(request, 'vcs_call'):
         # skip vcs calls
@@ -98,7 +100,7 @@ def add_request_user_context(event):
     auth_user = get_auth_user(request)
     request.user = auth_user
     request.environ['rc_auth_user'] = auth_user
-
+    request.environ['rc_req_id'] = req_id
 
 def inject_app_settings(event):
     settings = event.app.registry.settings

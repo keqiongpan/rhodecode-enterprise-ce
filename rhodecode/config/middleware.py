@@ -38,6 +38,7 @@ from rhodecode.config import utils as config_utils
 from rhodecode.config.environment import load_pyramid_environment
 
 from rhodecode.lib.middleware.vcs import VCSMiddleware
+from rhodecode.lib.request import Request
 from rhodecode.lib.vcs import VCSCommunicationError
 from rhodecode.lib.exceptions import VCSServerUnavailable
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
@@ -192,6 +193,7 @@ def includeme_first(config):
 
 def includeme(config):
     settings = config.registry.settings
+    config.set_request_factory(Request)
 
     # plugin information
     config.registry.rhodecode_plugins = collections.OrderedDict()

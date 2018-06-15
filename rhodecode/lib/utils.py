@@ -41,7 +41,7 @@ import pkg_resources
 from webhelpers.text import collapse, remove_formatting, strip_tags
 from mako import exceptions
 from pyramid.threadlocal import get_current_registry
-from pyramid.request import Request
+from rhodecode.lib.request import Request
 
 from rhodecode.lib.fakemod import create_module
 from rhodecode.lib.vcs.backends.base import Config

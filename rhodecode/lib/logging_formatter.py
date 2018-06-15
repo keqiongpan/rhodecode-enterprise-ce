@@ -123,6 +123,35 @@ class ColorFormatter(ExceptionAwareFormatter):
         return colored_record
 
 
+def _inject_req_id(record):
+    from pyramid.threadlocal import get_current_request
+    req = get_current_request()
+    req_id = 'req_id:%-36s ' % (getattr(req, 'req_id', None))
+    record.req_id = req_id
+
+
+class RequestTrackingFormatter(ExceptionAwareFormatter):
+    def format(self, record):
+        _inject_req_id(record)
+        def_record = logging.Formatter.format(self, record)
+        return def_record
+
+
+class ColorRequestTrackingFormatter(ColorFormatter):
+    def format(self, record):
+        """
+        Changes record's levelname to use with COLORS enum
+        """
+        _inject_req_id(record)
+        levelname = record.levelname
+        start = COLOR_SEQ % (COLORS[levelname])
+        def_record = logging.Formatter.format(self, record)
+        end = RESET_SEQ
+
+        colored_record = ''.join([start, def_record, end])
+        return colored_record
+
+
 class ColorFormatterSql(logging.Formatter):
 
     def format(self, record):
