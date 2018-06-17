@@ -433,12 +433,14 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         source_scm = source_repo.scm_instance()
         target_scm = target_repo.scm_instance()
 
-        # try first shadow repo, fallback to regular repo
+        shadow_scm = None
         try:
-            commits_source_repo = pull_request_latest.get_shadow_repo()
+            shadow_scm = pull_request_latest.get_shadow_repo()
         except Exception:
             log.debug('Failed to get shadow repo', exc_info=True)
-            commits_source_repo = source_scm
+        # try first the existing source_repo, and then shadow
+        # repo if we can obtain one
+        commits_source_repo = source_scm or shadow_scm
 
         c.commits_source_repo = commits_source_repo
         c.ancestor = None  # set it to None, to hide it from PR view
