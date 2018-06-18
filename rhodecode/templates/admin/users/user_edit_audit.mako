@@ -14,7 +14,9 @@
             <input class="q_filter_box ${'' if c.filter_term else 'initial'}" id="j_filter" size="15" type="text" name="filter" value="${c.filter_term or ''}" placeholder="${_('audit filter...')}"/>
             <input type='submit' value="${_('filter')}" class="btn" />
         ${h.end_form()}
-        <p class="tooltip filterexample" style="position: inherit" title="${h.tooltip(h.journal_filter_help(request))}">${_('Example Queries')}</p>
+
+        <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Example Queries')}</p>
+        <pre id="search-help" style="display: none">${h.tooltip(h.journal_filter_help(request))}</pre>
 
         <%include file="/admin/admin_log_base.mako" />
 

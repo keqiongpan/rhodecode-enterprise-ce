@@ -29,6 +29,7 @@ import os
 import random
 import hashlib
 import StringIO
+import textwrap
 import urllib
 import math
 import logging
@@ -1864,6 +1865,8 @@ def get_permission_name(key):
 
 def journal_filter_help(request):
     _ = request.translate
+    from rhodecode.lib.audit_logger import ACTIONS
+    actions = '\n'.join(textwrap.wrap(', '.join(sorted(ACTIONS.keys())), 80))
 
     return _(
         'Example filter terms:\n' +
@@ -1875,6 +1878,8 @@ def journal_filter_help(request):
         '     date:20120101\n' +
         '     date:[20120101100000 TO 20120102]\n' +
         '\n' +
+        'Actions: {actions}\n' +
+        '\n' +
         'Generate wildcards using \'*\' character:\n' +
         '     "repository:vcs*" - search everything starting with \'vcs\'\n' +
         '     "repository:*vcs*" - search for repository containing \'vcs\'\n' +
@@ -1882,7 +1887,7 @@ def journal_filter_help(request):
         'Optional AND / OR operators in queries\n' +
         '     "repository:vcs OR repository:test"\n' +
         '     "username:test AND repository:test*"\n'
-    )
+    ).format(actions=actions)
 
 
 def search_filter_help(searcher, request):

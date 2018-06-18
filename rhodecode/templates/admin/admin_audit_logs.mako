@@ -14,12 +14,14 @@
         <input type='submit' value="${_('filter')}" class="btn" />
         ${_('Audit logs')} - ${_ungettext('%s entry', '%s entries', c.audit_logs.item_count) % (c.audit_logs.item_count)}
     ${h.end_form()}
-    <p class="tooltip filterexample" title="${h.tooltip(h.journal_filter_help(request))}">${_('Example Queries')}</p>
+    <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Example Queries')}</p>
+    <pre id="search-help" style="display: none">${h.tooltip(h.journal_filter_help(request))}</pre>
 </%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}
 </%def>
+
 <%def name="main()">
 <div class="box">
     <!-- box / title -->
