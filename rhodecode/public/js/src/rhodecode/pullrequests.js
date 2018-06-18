@@ -41,10 +41,10 @@ var prButtonLock = function(lockEnabled, msg, scope) {
       }
       var checksMeet = prButtonLockChecks.compare && prButtonLockChecks.reviewers;
       if (lockEnabled) {
-          $('#save').attr('disabled', 'disabled');
+          $('#pr_submit').attr('disabled', 'disabled');
       }
       else if (checksMeet) {
-          $('#save').removeAttr('disabled');
+          $('#pr_submit').removeAttr('disabled');
       }
 
       if (msg) {

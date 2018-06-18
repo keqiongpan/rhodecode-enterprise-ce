@@ -98,7 +98,7 @@
                             </div>
                             <div class="input">
                                 <div class="pr-submit-button">
-                                    ${h.submit('save',_('Submit Pull Request'),class_="btn")}
+                                    <input id="pr_submit" class="btn" name="save" type="submit" value="${_('Submit Pull Request')}">
                                 </div>
                                 <div id="pr_open_message"></div>
                             </div>
@@ -171,6 +171,7 @@ $(function(){
   var defaultTargetRepoData = ${c.default_repo_data['target_refs_json']|n};
 
   var $pullRequestForm = $('#pull_request_form');
+  var $pullRequestSubmit = $('#pr_submit', $pullRequestForm);
   var $sourceRepo = $('#source_repo', $pullRequestForm);
   var $targetRepo = $('#target_repo', $pullRequestForm);
   var $sourceRef = $('#source_ref', $pullRequestForm);
@@ -508,6 +509,10 @@ $(function(){
           }
       })
 
+  });
+
+  $pullRequestForm.on('submit', function(e){
+      prButtonLock(true, null, 'all');
   });
 
   prButtonLock(true, "${_('Please select source and target')}", 'all');
