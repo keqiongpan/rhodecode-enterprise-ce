@@ -8,6 +8,9 @@ if hasattr(c, 'rhodecode_db_repo'):
     c.template_context['repo_type'] = c.rhodecode_db_repo.repo_type
     c.template_context['repo_landing_commit'] = c.rhodecode_db_repo.landing_rev[1]
 
+if getattr(c, 'repo_group', None):
+    c.template_context['repo_group_id'] = c.repo_group.group_id
+
 if getattr(c, 'rhodecode_user', None) and c.rhodecode_user.user_id:
     c.template_context['rhodecode_user']['username'] = c.rhodecode_user.username
     c.template_context['rhodecode_user']['email'] = c.rhodecode_user.email

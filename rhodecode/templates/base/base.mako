@@ -523,7 +523,10 @@ commit:efced4, to search for commits
 
             var icon = '';
 
-            if (searchType === 'search') {
+            if (searchType === 'hint') {
+                icon += '<i class="icon-folder-close"></i> ';
+            }
+            else if (searchType === 'search') {
                 icon += '<i class="icon-more"></i> ';
             }
             else if (searchType === 'repo') {
@@ -561,7 +564,12 @@ commit:efced4, to search for commits
         };
 
         var handleSelect = function(element, suggestion) {
-            window.location = suggestion['url'];
+            if (suggestion.type === "hint") {
+                // we skip action
+                $('#main_filter').focus();
+            } else {
+              window.location = suggestion['url'];
+            }
         };
         var autocompleteMainFilterResult = function (suggestion, originalQuery, queryLowerCase) {
             if (queryLowerCase.split(':').length === 2) {
@@ -572,6 +580,7 @@ commit:efced4, to search for commits
 
         $('#main_filter').autocomplete({
             serviceUrl: pyroutes.url('goto_switcher_data'),
+            params: {"repo_group_id": templateContext.repo_group_id},
             minChars:2,
             maxHeight:400,
             deferRequestBy: 300, //miliseconds

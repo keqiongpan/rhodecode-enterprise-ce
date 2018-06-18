@@ -29,7 +29,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator)
 from rhodecode.lib.index import searcher_from_config
-from rhodecode.lib.utils2 import safe_unicode, str2bool
+from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.ext_json import json
 from rhodecode.model.db import (
     func, or_, in_filter_generator, Repository, RepoGroup, User, UserGroup)
@@ -326,6 +326,20 @@ class HomeView(BaseAppView):
             'url': h.route_path(
                 'search', _query={'q': query})
         })
+        repo_group_id = safe_int(self.request.GET.get('repo_group_id'))
+        if repo_group_id:
+            repo_group = RepoGroup.get(repo_group_id)
+            composed_hint = '{}/{}'.format(repo_group.group_name, query)
+            show_hint = not query.startswith(repo_group.group_name)
+            if repo_group and show_hint:
+                hint = u'Group search: `{}`'.format(composed_hint)
+                res.append({
+                    'id': -1,
+                    'value': composed_hint,
+                    'value_display': hint,
+                    'type': 'hint',
+                    'url': ""
+                })
 
         repo_groups = self._get_repo_group_list(query)
         for serialized_repo_group in repo_groups:
