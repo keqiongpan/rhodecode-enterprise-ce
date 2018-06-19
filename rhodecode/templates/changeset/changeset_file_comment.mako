@@ -7,6 +7,7 @@
 
 <%def name="comment_block(comment, inline=False)">
   <% pr_index_ver = comment.get_index_version(getattr(c, 'versions', [])) %>
+  <% latest_ver = len(getattr(c, 'versions', [])) %>
   % if inline:
       <% outdated_at_ver = comment.outdated_at_version(getattr(c, 'at_version_num', None)) %>
   % else:
@@ -103,11 +104,11 @@
                   <div class="pr-version-inline">
                     <a href="${request.current_route_path(_query=dict(version=comment.pull_request_version_id), _anchor='comment-{}'.format(comment.comment_id))}">
                     % if outdated_at_ver:
-                        <code class="pr-version-num" title="${_('Outdated comment from pull request version {0}').format(pr_index_ver)}">
+                        <code class="pr-version-num" title="${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
                             outdated ${'v{}'.format(pr_index_ver)} |
                         </code>
                     % elif pr_index_ver:
-                        <code class="pr-version-num" title="${_('Comment from pull request version {0}').format(pr_index_ver)}">
+                        <code class="pr-version-num" title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
                             ${'v{}'.format(pr_index_ver)} |
                         </code>
                     % endif
@@ -119,10 +120,10 @@
                     <div class="pr-version">
                       % if comment.outdated:
                         <a href="?version=${comment.pull_request_version_id}#comment-${comment.comment_id}">
-                            ${_('Outdated comment from pull request version {}').format(pr_index_ver)}
+                            ${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}
                         </a>
                       % else:
-                        <div title="${_('Comment from pull request version {0}').format(pr_index_ver)}">
+                        <div title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
                             <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}">
                             <code class="pr-version-num">
                                 ${'v{}'.format(pr_index_ver)}

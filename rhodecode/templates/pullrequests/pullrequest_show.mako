@@ -221,7 +221,7 @@
                                <td>
                                    % if c.at_version_num != ver_pr:
                                     <i class="icon-comment"></i>
-                                       <code class="tooltip" title="${_('Comment from pull request version {0}, general:{1} inline:{2}').format(ver_pos, len(c.comment_versions[ver_pr]['at']), len(c.inline_versions[ver_pr]['at']))}">
+                                       <code class="tooltip" title="${_('Comment from pull request version v{0}, general:{1} inline:{2}').format(ver_pos, len(c.comment_versions[ver_pr]['at']), len(c.inline_versions[ver_pr]['at']))}">
                                            G:${len(c.comment_versions[ver_pr]['at'])} / I:${len(c.inline_versions[ver_pr]['at'])}
                                        </code>
                                    % endif
