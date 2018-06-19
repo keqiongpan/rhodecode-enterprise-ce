@@ -263,8 +263,13 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 
     ## outdated comments that are made for a file that has been deleted
     % for filename, comments_dict in (deleted_files_comments or {}).items():
-
-        <div class="filediffs filediff-outdated" style="display: none">
+        <%
+            display_state = 'display: none'
+            open_comments_in_file = [x for x in comments_dict['comments'] if x.outdated is False]
+            if open_comments_in_file:
+                display_state = ''
+        %>
+        <div class="filediffs filediff-outdated" style="${display_state}">
             <input ${collapse_all and 'checked' or ''} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox">
             <div class="filediff" data-f-path="${filename}"  id="a_${h.FID('', filename)}">
                 <label for="filediff-collapse-${id(filename)}" class="filediff-heading">
@@ -291,7 +296,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 
                         <td></td>
                         <td class="cb-text cb-${op_class(BIN_FILENODE)}" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=5'}>
-                        ${_('File was deleted in this version, and outdated comments were made on it')}
+                        ${_('File was deleted in this version. There are still outdated/unresolved comments attached to it.')}
                         </td>
                     </tr>
                     %if c.diffmode == 'unified':
