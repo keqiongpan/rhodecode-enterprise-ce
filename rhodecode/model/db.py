@@ -2231,8 +2231,13 @@ class Repository(Base, BaseModel):
 
         # check if we have maybe already latest cached revision
         if is_outdated(cs_cache) or not self.changeset_cache:
-            _default = datetime.datetime.fromtimestamp(0)
+            _default = datetime.datetime.utcnow()
             last_change = cs_cache.get('date') or _default
+            if self.updated_on and self.updated_on > last_change:
+                # we check if last update is newer than the new value
+                # if yes, we use the current timestamp instead. Imagine you get
+                # old commit pushed 1y ago, we'd set last update 1y to ago.
+                last_change = _default
             log.debug('updated repo %s with new cs cache %s',
                       self.repo_name, cs_cache)
             self.updated_on = last_change
