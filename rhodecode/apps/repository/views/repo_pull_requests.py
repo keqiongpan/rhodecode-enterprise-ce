@@ -340,7 +340,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         # check merge capabilities
         _merge_check = MergeCheck.validate(
             pull_request_latest, user=self._rhodecode_user,
-            translator=self.request.translate, force_shadow_repo_refresh=force_refresh)
+            translator=self.request.translate,
+            force_shadow_repo_refresh=force_refresh)
         c.pr_merge_errors = _merge_check.error_details
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
@@ -1063,7 +1064,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def _merge_pull_request(self, pull_request, user, extras):
         _ = self.request.translate
-        merge_resp = PullRequestModel().merge(pull_request, user, extras=extras)
+        merge_resp = PullRequestModel().merge_repo(pull_request, user, extras=extras)
 
         if merge_resp.executed:
             log.debug("The merge was successful, closing the pull request.")

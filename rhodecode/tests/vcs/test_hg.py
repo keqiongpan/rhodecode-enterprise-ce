@@ -31,7 +31,7 @@ from rhodecode.lib.vcs.backends.hg import MercurialRepository, MercurialCommit
 from rhodecode.lib.vcs.exceptions import (
     RepositoryError, VCSError, NodeDoesNotExistError, CommitDoesNotExistError)
 from rhodecode.lib.vcs.nodes import FileNode, NodeKind, NodeState
-from rhodecode.tests import TEST_HG_REPO, TEST_HG_REPO_CLONE
+from rhodecode.tests import TEST_HG_REPO, TEST_HG_REPO_CLONE, repo_id_generator
 
 
 pytestmark = pytest.mark.backends("hg")
@@ -45,7 +45,6 @@ def repo_path_generator():
     while True:
         i += 1
         yield '%s-%d' % (TEST_HG_REPO_CLONE, i)
-
 
 REPO_PATH_GENERATOR = repo_path_generator()
 
@@ -553,7 +552,7 @@ TODO: To be written...
 
     def test_maybe_prepare_merge_workspace(self):
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr2', 'unused', 'unused2')
+            1, 'pr2', 'unused', 'unused2')
 
         assert os.path.isdir(workspace)
         workspace_repo = MercurialRepository(workspace)
@@ -561,20 +560,22 @@ TODO: To be written...
 
         # Calling it a second time should also succeed
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr2', 'unused', 'unused2')
+            1, 'pr2', 'unused', 'unused2')
         assert os.path.isdir(workspace)
 
     def test_cleanup_merge_workspace(self):
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr3', 'unused', 'unused2')
-        self.repo.cleanup_merge_workspace('pr3')
+            1, 'pr3', 'unused', 'unused2')
+
+        assert os.path.isdir(workspace)
+        self.repo.cleanup_merge_workspace(1, 'pr3')
 
         assert not os.path.exists(workspace)
 
     def test_cleanup_merge_workspace_invalid_workspace_id(self):
         # No assert: because in case of an inexistent workspace this function
         # should still succeed.
-        self.repo.cleanup_merge_workspace('pr4')
+        self.repo.cleanup_merge_workspace(1, 'pr4')
 
     def test_merge_target_is_bookmark(self, vcsbackend_hg):
         target_repo = vcsbackend_hg.create_repo(number_of_commits=1)
@@ -594,10 +595,10 @@ TODO: To be written...
         target_repo.bookmark(bookmark_name)
         target_ref = Reference('book', bookmark_name, target_commit.raw_id)
         source_ref = Reference('branch', default_branch, source_commit.raw_id)
-        workspace = 'test-merge'
-
+        workspace_id = 'test-merge'
+        repo_id = repo_id_generator(target_repo.path)
         merge_response = target_repo.merge(
-            target_ref, source_repo, source_ref, workspace,
+            repo_id, workspace_id, target_ref, source_repo, source_ref,
             'test user', 'test@rhodecode.com', 'merge message 1',
             dry_run=False)
         expected_merge_response = MergeResponse(
@@ -638,10 +639,10 @@ TODO: To be written...
         source_repo._update(default_branch)
         source_repo.bookmark(bookmark_name)
         source_ref = Reference('book', bookmark_name, source_commit.raw_id)
-        workspace = 'test-merge'
-
+        workspace_id = 'test-merge'
+        repo_id = repo_id_generator(target_repo.path)
         merge_response = target_repo.merge(
-            target_ref, source_repo, source_ref, workspace,
+            repo_id, workspace_id, target_ref, source_repo, source_ref,
             'test user', 'test@rhodecode.com', 'merge message 1',
             dry_run=False)
         expected_merge_response = MergeResponse(
@@ -677,14 +678,15 @@ TODO: To be written...
 
         target_ref = Reference('branch', default_branch, target_commit.raw_id)
         source_ref = Reference('branch', default_branch, source_commit.raw_id)
-        workspace = 'test-merge'
+        workspace_id = 'test-merge'
 
         assert len(target_repo._heads(branch='default')) == 2
         expected_merge_response = MergeResponse(
             False, False, None,
             MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS)
+        repo_id = repo_id_generator(target_repo.path)
         merge_response = target_repo.merge(
-            target_ref, source_repo, source_ref, workspace,
+            repo_id, workspace_id, target_ref, source_repo, source_ref,
             'test user', 'test@rhodecode.com', 'merge message 1',
             dry_run=False)
         assert merge_response == expected_merge_response
@@ -711,10 +713,11 @@ TODO: To be written...
 
         target_ref = Reference('branch', default_branch, target_commit.raw_id)
         source_ref = Reference('book', bookmark_name, source_commit.raw_id)
-        workspace = 'test-merge'
+        repo_id = repo_id_generator(target_repo.path)
+        workspace_id = 'test-merge'
 
         merge_response = target_repo.merge(
-            target_ref, source_repo, source_ref, workspace,
+            repo_id, workspace_id, target_ref, source_repo, source_ref,
             'test user', 'test@rhodecode.com', 'merge message 1',
             dry_run=False, use_rebase=True)
 

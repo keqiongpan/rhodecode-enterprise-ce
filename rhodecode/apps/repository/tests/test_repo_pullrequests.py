@@ -618,7 +618,7 @@ class TestPullrequestsView(object):
 
         model_patcher = mock.patch.multiple(
             PullRequestModel,
-            merge=mock.Mock(return_value=MergeResponse(
+            merge_repo=mock.Mock(return_value=MergeResponse(
                 True, False, 'STUB_COMMIT_ID', MergeFailureReason.PUSH_FAILED)),
             merge_status=mock.Mock(return_value=(True, 'WRONG_MESSAGE')))
 

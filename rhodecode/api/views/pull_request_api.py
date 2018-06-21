@@ -302,7 +302,7 @@ def merge_pull_request(
         request.environ, repo_name=target_repo.repo_name,
         username=apiuser.username, action='push',
         scm=target_repo.repo_type)
-    merge_response = PullRequestModel().merge(
+    merge_response = PullRequestModel().merge_repo(
         pull_request, apiuser, extras=extras)
     if merge_response.executed:
         PullRequestModel().close_pull_request(

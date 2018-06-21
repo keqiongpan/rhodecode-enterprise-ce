@@ -583,7 +583,7 @@ class PullRequestModel(BaseModel):
 
         return commit_ids
 
-    def merge(self, pull_request, user, extras):
+    def merge_repo(self, pull_request, user, extras):
         log.debug("Merging pull request %s", pull_request.pull_request_id)
         merge_state = self._merge_pull_request(pull_request, user, extras)
         if merge_state.executed:
@@ -616,6 +616,7 @@ class PullRequestModel(BaseModel):
             }
 
         workspace_id = self._workspace_id(pull_request)
+        repo_id = pull_request.target_repo.repo_id
         use_rebase = self._use_rebase_for_merging(pull_request)
         close_branch = self._close_branch_before_merging(pull_request)
 
@@ -629,9 +630,10 @@ class PullRequestModel(BaseModel):
             target_vcs.config.set(
                 'rhodecode', 'RC_SCM_DATA', json.dumps(extras))
             merge_state = target_vcs.merge(
-                target_ref, source_vcs, pull_request.source_ref_parts,
-                workspace_id, user_name=user.username,
-                user_email=user.email, message=message, use_rebase=use_rebase,
+                repo_id, workspace_id, target_ref, source_vcs,
+                pull_request.source_ref_parts,
+                user_name=user.username, user_email=user.email,
+                message=message, use_rebase=use_rebase,
                 close_branch=close_branch)
         return merge_state
 
@@ -1328,11 +1330,13 @@ class PullRequestModel(BaseModel):
     def _refresh_merge_state(self, pull_request, target_vcs, target_reference):
         workspace_id = self._workspace_id(pull_request)
         source_vcs = pull_request.source_repo.scm_instance()
+        repo_id = pull_request.target_repo.repo_id
         use_rebase = self._use_rebase_for_merging(pull_request)
         close_branch = self._close_branch_before_merging(pull_request)
         merge_state = target_vcs.merge(
+            repo_id, workspace_id,
             target_reference, source_vcs, pull_request.source_ref_parts,
-            workspace_id, dry_run=True, use_rebase=use_rebase,
+            dry_run=True, use_rebase=use_rebase,
             close_branch=close_branch)
 
         # Do not store the response if there was an unknown error.
@@ -1398,11 +1402,12 @@ class PullRequestModel(BaseModel):
 
     def _cleanup_merge_workspace(self, pull_request):
         # Merging related cleanup
+        repo_id = pull_request.target_repo.repo_id
         target_scm = pull_request.target_repo.scm_instance()
-        workspace_id = 'pr-%s' % pull_request.pull_request_id
+        workspace_id = self._workspace_id(pull_request)
 
         try:
-            target_scm.cleanup_merge_workspace(workspace_id)
+            target_scm.cleanup_merge_workspace(repo_id, workspace_id)
         except NotImplementedError:
             pass
 

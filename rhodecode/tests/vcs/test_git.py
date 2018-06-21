@@ -566,7 +566,7 @@ TODO: To be written...
 
     def test_maybe_prepare_merge_workspace(self):
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr2', Reference('branch', 'master', 'unused'),
+            2, 'pr2', Reference('branch', 'master', 'unused'),
             Reference('branch', 'master', 'unused'))
 
         assert os.path.isdir(workspace)
@@ -575,13 +575,13 @@ TODO: To be written...
 
         # Calling it a second time should also succeed
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr2', Reference('branch', 'master', 'unused'),
+            2, 'pr2', Reference('branch', 'master', 'unused'),
             Reference('branch', 'master', 'unused'))
         assert os.path.isdir(workspace)
 
     def test_maybe_prepare_merge_workspace_different_refs(self):
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr2', Reference('branch', 'master', 'unused'),
+            2, 'pr2', Reference('branch', 'master', 'unused'),
             Reference('branch', 'develop', 'unused'))
 
         assert os.path.isdir(workspace)
@@ -590,22 +590,22 @@ TODO: To be written...
 
         # Calling it a second time should also succeed
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr2', Reference('branch', 'master', 'unused'),
+            2, 'pr2', Reference('branch', 'master', 'unused'),
             Reference('branch', 'develop', 'unused'))
         assert os.path.isdir(workspace)
 
     def test_cleanup_merge_workspace(self):
         workspace = self.repo._maybe_prepare_merge_workspace(
-            'pr3', Reference('branch', 'master', 'unused'),
+            2, 'pr3', Reference('branch', 'master', 'unused'),
             Reference('branch', 'master', 'unused'))
-        self.repo.cleanup_merge_workspace('pr3')
+        self.repo.cleanup_merge_workspace(2, 'pr3')
 
         assert not os.path.exists(workspace)
 
     def test_cleanup_merge_workspace_invalid_workspace_id(self):
         # No assert: because in case of an inexistent workspace this function
         # should still succeed.
-        self.repo.cleanup_merge_workspace('pr4')
+        self.repo.cleanup_merge_workspace(1, 'pr4')
 
     def test_set_refs(self):
         test_ref = 'refs/test-refs/abcde'

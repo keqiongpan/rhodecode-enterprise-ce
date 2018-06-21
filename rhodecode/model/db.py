@@ -1883,6 +1883,12 @@ class Repository(Base, BaseModel):
             return os.listdir(diff_cache_dir)
         return []
 
+    def shadow_repos(self):
+        shadow_repos_pattern = '.__shadow_repo_{}'.format(self.repo_id)
+        return [
+            x for x in os.listdir(os.path.dirname(self.repo_full_path))
+            if x.startswith(shadow_repos_pattern)]
+
     def get_new_name(self, repo_name):
         """
         returns new full repository name based on assigned group and new new
@@ -3762,7 +3768,7 @@ class PullRequest(Base, _PullRequestBase):
         workspace_id = self.workspace_id
         vcs_obj = self.target_repo.scm_instance()
         shadow_repository_path = vcs_obj._get_shadow_repository_path(
-            workspace_id)
+            self.target_repo.repo_id, workspace_id)
         if os.path.isdir(shadow_repository_path):
             return vcs_obj._get_shadow_instance(shadow_repository_path)
 

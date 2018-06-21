@@ -681,15 +681,10 @@ class MercurialRepository(BaseRepository):
             return ref.name
         return self._remote.ctx_branch(ref.commit_id)
 
-    def _get_shadow_repository_path(self, workspace_id):
-        # The name of the shadow repository must start with '.', so it is
-        # skipped by 'rhodecode.lib.utils.get_filesystem_repos'.
-        return os.path.join(
-            os.path.dirname(self.path),
-            '.__shadow_%s_%s' % (os.path.basename(self.path), workspace_id))
-
-    def _maybe_prepare_merge_workspace(self, workspace_id, unused_target_ref, unused_source_ref):
-        shadow_repository_path = self._get_shadow_repository_path(workspace_id)
+    def _maybe_prepare_merge_workspace(
+            self, repo_id, workspace_id, unused_target_ref, unused_source_ref):
+        shadow_repository_path = self._get_shadow_repository_path(
+            repo_id, workspace_id)
         if not os.path.exists(shadow_repository_path):
             self._local_clone(shadow_repository_path)
             log.debug(
@@ -697,7 +692,7 @@ class MercurialRepository(BaseRepository):
 
         return shadow_repository_path
 
-    def _merge_repo(self, shadow_repository_path, target_ref,
+    def _merge_repo(self, repo_id, workspace_id, target_ref,
                     source_repo, source_ref, merge_message,
                     merger_name, merger_email, dry_run=False,
                     use_rebase=False, close_branch=False):
@@ -719,6 +714,8 @@ class MercurialRepository(BaseRepository):
             return MergeResponse(
                 False, False, None, MergeFailureReason.MISSING_TARGET_REF)
 
+        shadow_repository_path = self._maybe_prepare_merge_workspace(
+            repo_id, workspace_id, target_ref, source_ref)
         shadow_repo = self._get_shadow_instance(shadow_repository_path)
 
         log.debug('Pulling in target reference %s', target_ref)

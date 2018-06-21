@@ -902,7 +902,19 @@ class GitRepository(BaseRepository):
 
         return '%s%d' % (prefix, branch_id)
 
-    def _merge_repo(self, shadow_repository_path, target_ref,
+    def _maybe_prepare_merge_workspace(
+            self, repo_id, workspace_id, target_ref, source_ref):
+        shadow_repository_path = self._get_shadow_repository_path(
+            repo_id, workspace_id)
+        if not os.path.exists(shadow_repository_path):
+            self._local_clone(
+                shadow_repository_path, target_ref.name, source_ref.name)
+            log.debug(
+                'Prepared shadow repository in %s', shadow_repository_path)
+
+        return shadow_repository_path
+
+    def _merge_repo(self, repo_id, workspace_id, target_ref,
                     source_repo, source_ref, merge_message,
                     merger_name, merger_email, dry_run=False,
                     use_rebase=False, close_branch=False):
@@ -912,7 +924,10 @@ class GitRepository(BaseRepository):
             return MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
 
-        shadow_repo = GitRepository(shadow_repository_path)
+        shadow_repository_path = self._maybe_prepare_merge_workspace(
+            repo_id, workspace_id, target_ref, source_ref)
+        shadow_repo = self._get_shadow_instance(shadow_repository_path)
+
         # checkout source, if it's different. Otherwise we could not
         # fetch proper commits for merge testing
         if source_ref.name != target_ref.name:
@@ -929,7 +944,7 @@ class GitRepository(BaseRepository):
 
         # Need to reload repo to invalidate the cache, or otherwise we cannot
         # retrieve the last target commit.
-        shadow_repo = GitRepository(shadow_repository_path)
+        shadow_repo = self._get_shadow_instance(shadow_repository_path)
         if target_ref.commit_id != shadow_repo.branches[target_ref.name]:
             log.warning('Shadow Target ref %s commit mismatch %s vs %s',
                         target_ref, target_ref.commit_id,
@@ -989,18 +1004,3 @@ class GitRepository(BaseRepository):
         return MergeResponse(
             merge_possible, merge_succeeded, merge_ref,
             merge_failure_reason)
-
-    def _get_shadow_repository_path(self, workspace_id):
-        # The name of the shadow repository must start with '.', so it is
-        # skipped by 'rhodecode.lib.utils.get_filesystem_repos'.
-        return os.path.join(
-            os.path.dirname(self.path),
-            '.__shadow_%s_%s' % (os.path.basename(self.path), workspace_id))
-
-    def _maybe_prepare_merge_workspace(self, workspace_id, target_ref, source_ref):
-        shadow_repository_path = self._get_shadow_repository_path(workspace_id)
-        if not os.path.exists(shadow_repository_path):
-            self._local_clone(
-                shadow_repository_path, target_ref.name, source_ref.name)
-
-        return shadow_repository_path

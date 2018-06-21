@@ -451,7 +451,7 @@ class BaseRepository(object):
         """
         raise NotImplementedError
 
-    def merge(self, target_ref, source_repo, source_ref, workspace_id,
+    def merge(self, repo_id, workspace_id, target_ref, source_repo, source_ref,
               user_name='', user_email='', message='', dry_run=False,
               use_rebase=False, close_branch=False):
         """
@@ -465,13 +465,14 @@ class BaseRepository(object):
         'possible', 'executed', 'source_commit', 'target_commit',
         'merge_commit'.
 
+        :param repo_id: `repo_id` target repo id.
+        :param workspace_id: `workspace_id` unique identifier.
         :param target_ref: `target_ref` points to the commit on top of which
             the `source_ref` should be merged.
         :param source_repo: The repository that contains the commits to be
             merged.
         :param source_ref: `source_ref` points to the topmost commit from
             the `source_repo` which should be merged.
-        :param workspace_id: `workspace_id` unique identifier.
         :param user_name: Merge commit `user_name`.
         :param user_email: Merge commit `user_email`.
         :param message: Merge commit `message`.
@@ -492,12 +493,9 @@ class BaseRepository(object):
             if not message:
                 raise ValueError('message cannot be empty')
 
-        shadow_repository_path = self._maybe_prepare_merge_workspace(
-            workspace_id, target_ref, source_ref)
-
         try:
             return self._merge_repo(
-                shadow_repository_path, target_ref, source_repo,
+                repo_id, workspace_id, target_ref, source_repo,
                 source_ref, message, user_name, user_email, dry_run=dry_run,
                 use_rebase=use_rebase, close_branch=close_branch)
         except RepositoryError:
@@ -507,14 +505,15 @@ class BaseRepository(object):
             return MergeResponse(
                 False, False, None, MergeFailureReason.UNKNOWN)
 
-    def _merge_repo(self, shadow_repository_path, target_ref,
+    def _merge_repo(self, repo_id, workspace_id, target_ref,
                     source_repo, source_ref, merge_message,
                     merger_name, merger_email, dry_run=False,
                     use_rebase=False, close_branch=False):
         """Internal implementation of merge."""
         raise NotImplementedError
 
-    def _maybe_prepare_merge_workspace(self, workspace_id, target_ref, source_ref):
+    def _maybe_prepare_merge_workspace(
+            self, repo_id, workspace_id, target_ref, source_ref):
         """
         Create the merge workspace.
 
@@ -522,10 +521,27 @@ class BaseRepository(object):
         """
         raise NotImplementedError
 
-    def _get_shadow_repository_path(self, workspace_id):
-        raise NotImplementedError
+    def _get_legacy_shadow_repository_path(self, workspace_id):
+        """
+        Legacy version that was used before. We still need it for
+        backward compat
+        """
+        return os.path.join(
+            os.path.dirname(self.path),
+            '.__shadow_%s_%s' % (os.path.basename(self.path), workspace_id))
 
-    def cleanup_merge_workspace(self, workspace_id):
+    def _get_shadow_repository_path(self, repo_id, workspace_id):
+        # The name of the shadow repository must start with '.', so it is
+        # skipped by 'rhodecode.lib.utils.get_filesystem_repos'.
+        legacy_repository_path = self._get_legacy_shadow_repository_path(workspace_id)
+        if os.path.exists(legacy_repository_path):
+            return legacy_repository_path
+        else:
+            return os.path.join(
+                os.path.dirname(self.path),
+                '.__shadow_repo_%s_%s' % (repo_id, workspace_id))
+
+    def cleanup_merge_workspace(self, repo_id, workspace_id):
         """
         Remove merge workspace.
 
@@ -534,7 +550,7 @@ class BaseRepository(object):
 
         :param workspace_id: `workspace_id` unique identifier.
         """
-        shadow_repository_path = self._get_shadow_repository_path(workspace_id)
+        shadow_repository_path = self._get_shadow_repository_path(repo_id, workspace_id)
         shadow_repository_path_del = '{}.{}.delete'.format(
             shadow_repository_path, time.time())
 

@@ -116,6 +116,13 @@ def get_new_dir(title):
     return get_normalized_path(path)
 
 
+def repo_id_generator(name):
+    numeric_hash = 0
+    for char in name:
+        numeric_hash += (ord(char))
+    return numeric_hash
+
+
 @pytest.mark.usefixtures('app', 'index_location')
 class TestController(object):
 
