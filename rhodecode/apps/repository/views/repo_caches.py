@@ -53,7 +53,7 @@ class RepoCachesView(RepoAppView):
         c.cached_diff_size = 0
         if os.path.isdir(cached_diffs_dir):
             c.cached_diff_size = system_info.get_storage_size(cached_diffs_dir)
-
+        c.shadow_repos = c.rhodecode_db_repo.shadow_repos()
         return self._get_template_context(c)
 
     @LoginRequired()

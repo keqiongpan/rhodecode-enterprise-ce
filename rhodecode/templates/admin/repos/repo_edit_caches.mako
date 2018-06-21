@@ -52,6 +52,28 @@
     </div>
 </div>
 
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">${_('Shadow Repositories')}</h3>
+    </div>
+    <div class="panel-body">
+        <table class="rctable edit_cache">
+            % if c.shadow_repos:
+            % for shadow_repo in c.shadow_repos:
+                <tr>
+                    <td>${shadow_repo}</td>
+                </tr>
+            % endfor
+            % else:
+                <tr>
+                    <td>${_('No Shadow repositories exist for this repository.')}</td>
+                </tr>
+            % endif
+
+        </table>
+    </div>
+</div>
+
 
 <div class="panel panel-default">
     <div class="panel-heading">
