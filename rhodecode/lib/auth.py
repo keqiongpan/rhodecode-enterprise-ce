@@ -23,6 +23,7 @@ authentication and permission libraries
 """
 
 import os
+import time
 import inspect
 import collections
 import fnmatch
@@ -1074,9 +1075,9 @@ class AuthUser(object):
             rhodecode.CONFIG.get('beaker.cache.short_term.expire'))
         cache_on = cache or cache_seconds > 0
         log.debug(
-            'Computing PERMISSION tree for scope `%s` with caching: %s' % (
-                scope, cache_on))
-
+            'Computing PERMISSION tree for user %s scope `%s` '
+            'with caching: %s[%ss]' % (user, scope, cache_on, cache_seconds))
+        start = time.time()
         compute = caches.conditional_cache(
             'short_term', 'cache_desc',
             condition=cache_on, func=_cached_perms_data)
@@ -1087,8 +1088,9 @@ class AuthUser(object):
         result_repr = []
         for k in result:
             result_repr.append((k, len(result[k])))
-
-        log.debug('PERMISSION tree computed %s' % (result_repr,))
+        total = time.time() - start
+        log.debug('PERMISSION tree for user %s computed in %.3fs: %s' % (
+            user, total, result_repr))
         return result
 
     @property
