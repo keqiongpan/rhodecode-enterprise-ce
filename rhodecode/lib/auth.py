@@ -1154,7 +1154,7 @@ class AuthUser(object):
                     RepoList(qry, perm_set=perm_def)]
 
         compute = caches.conditional_cache(
-            'long_term', 'repo_acl_ids.{}'.format(self.user_id),
+            'short_term', 'repo_acl_ids.{}'.format(self.user_id),
             condition=cache, func=_cached_repo_acl)
         return compute(self.user_id, perms, name_filter)
 
@@ -1180,7 +1180,7 @@ class AuthUser(object):
                     RepoGroupList(qry, perm_set=perm_def)]
 
         compute = caches.conditional_cache(
-            'long_term', 'repo_group_acl_ids.{}'.format(self.user_id),
+            'short_term', 'repo_group_acl_ids.{}'.format(self.user_id),
             condition=cache, func=_cached_repo_group_acl)
         return compute(self.user_id, perms, name_filter)
 
@@ -1206,7 +1206,7 @@ class AuthUser(object):
                     UserGroupList(qry, perm_set=perm_def)]
 
         compute = caches.conditional_cache(
-            'long_term', 'user_group_acl_ids.{}'.format(self.user_id),
+            'short_term', 'user_group_acl_ids.{}'.format(self.user_id),
             condition=cache, func=_cached_user_group_acl)
         return compute(self.user_id, perms, name_filter)
 
