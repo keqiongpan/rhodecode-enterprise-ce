@@ -1079,7 +1079,7 @@ class AuthUser(object):
             'with caching: %s[%ss]' % (user, scope, cache_on, cache_seconds))
         start = time.time()
         compute = caches.conditional_cache(
-            'short_term', 'cache_desc',
+            'short_term', 'cache_desc.{}'.format(user_id),
             condition=cache_on, func=_cached_perms_data)
         result = compute(user_id, scope, user_is_admin,
                          user_inherit_default_permissions, explicit, algo,
@@ -1154,7 +1154,7 @@ class AuthUser(object):
                     RepoList(qry, perm_set=perm_def)]
 
         compute = caches.conditional_cache(
-            'long_term', 'repo_acl_ids',
+            'long_term', 'repo_acl_ids.{}'.format(self.user_id),
             condition=cache, func=_cached_repo_acl)
         return compute(self.user_id, perms, name_filter)
 
@@ -1180,7 +1180,7 @@ class AuthUser(object):
                     RepoGroupList(qry, perm_set=perm_def)]
 
         compute = caches.conditional_cache(
-            'long_term', 'repo_group_acl_ids',
+            'long_term', 'repo_group_acl_ids.{}'.format(self.user_id),
             condition=cache, func=_cached_repo_group_acl)
         return compute(self.user_id, perms, name_filter)
 
@@ -1206,7 +1206,7 @@ class AuthUser(object):
                     UserGroupList(qry, perm_set=perm_def)]
 
         compute = caches.conditional_cache(
-            'long_term', 'user_group_acl_ids',
+            'long_term', 'user_group_acl_ids.{}'.format(self.user_id),
             condition=cache, func=_cached_user_group_acl)
         return compute(self.user_id, perms, name_filter)
 

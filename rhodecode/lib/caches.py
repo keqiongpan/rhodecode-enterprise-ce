@@ -17,7 +17,7 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
+import functools
 
 import beaker
 import logging
@@ -148,7 +148,7 @@ def get_repo_namespace_key(prefix, repo_name):
     return '{0}_{1}'.format(prefix, compute_key_from_params(repo_name))
 
 
-def conditional_cache(region, prefix, condition, func):
+def conditional_cache(region, cache_namespace, condition, func):
     """
     Conditional caching function use like::
         def _c(arg):
@@ -161,7 +161,7 @@ def conditional_cache(region, prefix, condition, func):
         return compute(arg)
 
     :param region: name of cache region
-    :param prefix: cache region prefix
+    :param cache_namespace: cache namespace
     :param condition: condition for cache to be triggered, and
         return data cached
     :param func: wrapped heavy function to compute
@@ -171,8 +171,34 @@ def conditional_cache(region, prefix, condition, func):
     if condition:
         log.debug('conditional_cache: True, wrapping call of '
                   'func: %s into %s region cache', region, func)
-        cached_region = _cache_decorate((prefix,), None, None, region)
+
+        def _cache_wrap(region_name, cache_namespace):
+            """Return a caching wrapper"""
+
+            def decorate(func):
+                @functools.wraps(func)
+                def cached(*args, **kwargs):
+                    if kwargs:
+                        raise AttributeError(
+                            'Usage of kwargs is not allowed. '
+                            'Use only positional arguments in wrapped function')
+                    manager = get_cache_manager(region_name, cache_namespace)
+                    cache_key = compute_key_from_params(*args)
+
+                    def go():
+                        return func(*args, **kwargs)
+
+                    # save org function name
+                    go.__name__ = '_cached_%s' % (func.__name__,)
+
+                    return manager.get(cache_key, createfunc=go)
+                return cached
+
+            return decorate
+
+        cached_region = _cache_wrap(region, cache_namespace)
         wrapped = cached_region(func)
+
     return wrapped
 
 
