@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import os
 import logging
 import traceback
 import collections
@@ -71,6 +72,15 @@ def make_pyramid_app(global_config, **settings):
       cases when these fragments are assembled from another place.
 
     """
+
+    # Allows to use format style "{ENV_NAME}" placeholders in the configuration. It
+    # will be replaced by the value of the environment variable "NAME" in this case.
+    environ = {
+        'ENV_{}'.format(key): value for key, value in os.environ.items()}
+
+    global_config = _substitute_values(global_config, environ)
+    settings = _substitute_values(settings, environ)
+
     sanitize_settings_and_apply_defaults(settings)
 
     config = Configurator(settings=settings)
@@ -438,3 +448,13 @@ def _string_setting(settings, name, default, lower=True):
     if lower:
         value = value.lower()
     settings[name] = value
+
+
+def _substitute_values(mapping, substitutions):
+    result = {
+        # Note: Cannot use regular replacements, since they would clash
+        # with the implementation of ConfigParser. Using "format" instead.
+        key: value.format(**substitutions)
+        for key, value in mapping.items()
+    }
+    return result
