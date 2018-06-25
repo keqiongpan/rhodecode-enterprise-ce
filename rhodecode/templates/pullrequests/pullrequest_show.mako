@@ -1,5 +1,6 @@
 <%inherit file="/base/base.mako"/>
 <%namespace name="base" file="/base/base.mako"/>
+<%namespace name="dt" file="/data_table/_dt_elements.mako"/>
 
 <%def name="title()">
     ${_('%s Pull Request #%s') % (c.repo_name, c.pull_request.pull_request_id)}
@@ -169,10 +170,10 @@
                 <label>${_('Description')}:</label>
             </div>
             <div id="pr-desc" class="input">
-                <div class="pr-description">${h.urlify_commit_message(c.pull_request.description, c.repo_name)}</div>
+                <div class="pr-description">${h.render(c.pull_request.description, renderer=c.visual.default_renderer)}</div>
             </div>
             <div id="pr-desc-edit" class="input textarea editor" style="display: none;">
-                <textarea id="pr-description-input" size="30">${c.pull_request.description}</textarea>
+                ${dt.markup_form('pr-description-input', form_text=c.pull_request.description)}
             </div>
            </div>
 
@@ -643,7 +644,7 @@
         $(function(){
 
             // custom code mirror
-            var codeMirrorInstance = initPullRequestsCodeMirror('#pr-description-input');
+            var codeMirrorInstance = $('#pr-description-input').get(0).MarkupForm.cm;
 
             var PRDetails = {
               editButton: $('#open_edit_pullrequest'),

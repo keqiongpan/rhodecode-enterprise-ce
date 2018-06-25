@@ -27,7 +27,8 @@ from pyramid.view import view_config
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
-    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator)
+    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator,
+    CSRFRequired)
 from rhodecode.lib.index import searcher_from_config
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.ext_json import json
@@ -425,3 +426,21 @@ class HomeView(BaseAppView):
         c.repo_groups_data = json.dumps(repo_group_data)
 
         return self._get_template_context(c)
+
+    @LoginRequired()
+    @CSRFRequired()
+    @view_config(
+        route_name='markup_preview', request_method='POST',
+        renderer='string', xhr=True)
+    def markup_preview(self):
+        # Technically a CSRF token is not needed as no state changes with this
+        # call. However, as this is a POST is better to have it, so automated
+        # tools don't flag it as potential CSRF.
+        # Post is required because the payload could be bigger than the maximum
+        # allowed by GET.
+
+        text = self.request.POST.get('text')
+        renderer = self.request.POST.get('renderer') or 'rst'
+        if text:
+            return h.render(text, renderer=renderer, mentions=True)
+        return ''

@@ -42,6 +42,29 @@ var bindToggleButtons = function() {
   });
 };
 
+
+
+var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
+    failHandler = failHandler || function() {};
+    postData = toQueryString(postData);
+    var request = $.ajax({
+        url: url,
+        type: 'POST',
+        data: postData,
+        headers: {'X-PARTIAL-XHR': true}
+    })
+    .done(function (data) {
+        successHandler(data);
+    })
+    .fail(function (data, textStatus, errorThrown) {
+        failHandler(data, textStatus, errorThrown)
+    });
+    return request;
+};
+
+
+
+
 /* Comment form for main and inline comments */
 (function(mod) {
 
@@ -259,24 +282,7 @@ var bindToggleButtons = function() {
         };
 
         this.submitAjaxPOST = function(url, postData, successHandler, failHandler) {
-            failHandler = failHandler || function() {};
-            var postData = toQueryString(postData);
-            var request = $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: postData,
-                    headers: {'X-PARTIAL-XHR': true}
-                })
-                .done(function(data) {
-                    successHandler(data);
-                })
-                .fail(function(data, textStatus, errorThrown){
-                    alert(
-                        "Error while submitting comment.\n" +
-                        "Error code {0} ({1}).".format(data.status, data.statusText));
-                    failHandler()
-                });
-            return request;
+            return _submitAjaxPOST(url, postData, successHandler, failHandler);
         };
 
         // overwrite a submitHandler, we need to do it for inline comments
@@ -340,7 +346,11 @@ var bindToggleButtons = function() {
                 self.globalSubmitSuccessCallback();
 
             };
-            var submitFailCallback = function(){
+            var submitFailCallback = function(data) {
+                alert(
+                "Error while submitting comment.\n" +
+                "Error code {0} ({1}).".format(data.status, data.statusText)
+                );
                 self.resetCommentFormState(text);
             };
             self.submitAjaxPOST(
@@ -436,7 +446,11 @@ var bindToggleButtons = function() {
             $(self.previewContainer).show();
 
             // by default we reset state of comment preserving the text
-            var previewFailCallback = function(){
+            var previewFailCallback = function(data){
+                alert(
+                "Error while preview of comment.\n" +
+                "Error code {0} ({1}).".format(data.status, data.statusText)
+                );
                 self.resetCommentFormState(text)
             };
             self.submitAjaxPOST(
@@ -763,7 +777,11 @@ var CommentsController = function() {
               commentForm.setActionButtonsDisabled(false);
 
             };
-            var submitFailCallback = function(){
+            var submitFailCallback = function(data){
+                alert(
+                "Error while submitting comment.\n" +
+                "Error code {0} ({1}).".format(data.status, data.statusText)
+                );
                 commentForm.resetCommentFormState(text)
             };
             commentForm.submitAjaxPOST(

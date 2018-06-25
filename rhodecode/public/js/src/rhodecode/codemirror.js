@@ -231,6 +231,68 @@ var initCodeMirror = function(textAreadId, resetUrl, focus, options) {
   return myCodeMirror;
 };
 
+
+var initMarkupCodeMirror = function(textAreadId, focus, options) {
+  var initialHeight = 100;
+
+  var ta = $(textAreadId).get(0);
+  if (focus === undefined) {
+      focus = true;
+  }
+
+  // default options
+  var codeMirrorOptions = {
+    lineNumbers: false,
+    indentUnit: 4,
+    viewportMargin: 30,
+    // this is a trick to trigger some logic behind codemirror placeholder
+    // it influences styling and behaviour.
+    placeholder: " ",
+    lineWrapping: true,
+    autofocus: focus
+  };
+
+  if (options !== undefined) {
+    // extend with custom options
+    codeMirrorOptions = $.extend(true, codeMirrorOptions, options);
+  }
+
+  var cm = CodeMirror.fromTextArea(ta, codeMirrorOptions);
+  cm.setSize(null, initialHeight);
+  cm.setOption("mode", DEFAULT_RENDERER);
+  CodeMirror.autoLoadMode(cm, DEFAULT_RENDERER); // load rst or markdown mode
+  cmLog.debug('Loading codemirror mode', DEFAULT_RENDERER);
+
+  // start listening on changes to make auto-expanded editor
+  cm.on("change", function(instance, changeObj) {
+    var height = initialHeight;
+    var lines = instance.lineCount();
+    if ( lines > 6 && lines < 20) {
+      height = "auto";
+    }
+    else if (lines >= 20){
+      zheight = 20*15;
+    }
+    instance.setSize(null, height);
+
+    // detect if the change was trigger by auto desc, or user input
+    var changeOrigin = changeObj.origin;
+
+    if (changeOrigin === "setValue") {
+        cmLog.debug('Change triggered by setValue');
+    }
+    else {
+        cmLog.debug('user triggered change !');
+        // set special marker to indicate user has created an input.
+        instance._userDefinedValue = true;
+    }
+
+  });
+
+  return cm;
+};
+
+
 var initCommentBoxCodeMirror = function(CommentForm, textAreaId, triggerActions){
   var initialHeight = 100;
 
@@ -593,3 +655,196 @@ var CodeMirrorPreviewEnable = function(edit_mode) {
     }
   }
 };
+
+
+ /* markup form */
+(function(mod) {
+
+    if (typeof exports == "object" && typeof module == "object") {
+        // CommonJS
+        module.exports = mod();
+    }
+    else {
+        // Plain browser env
+        (this || window).MarkupForm = mod();
+    }
+
+})(function() {
+    "use strict";
+
+    function MarkupForm(textareaId) {
+        if (!(this instanceof MarkupForm)) {
+            return new MarkupForm(textareaId);
+        }
+
+        // bind the element instance to our Form
+        $('#' + textareaId).get(0).MarkupForm = this;
+
+        this.withSelectorId = function(selector) {
+            var selectorId = textareaId;
+            return selector + '_' + selectorId;
+        };
+
+        this.previewButton = this.withSelectorId('#preview-btn');
+        this.previewContainer = this.withSelectorId('#preview-container');
+
+        this.previewBoxSelector = this.withSelectorId('#preview-box');
+
+        this.editButton = this.withSelectorId('#edit-btn');
+        this.editContainer = this.withSelectorId('#edit-container');
+
+        this.cmBox = textareaId;
+        this.cm = initMarkupCodeMirror('#' + textareaId);
+
+        this.previewUrl = pyroutes.url('markup_preview');
+
+        // FUNCTIONS and helpers
+        var self = this;
+
+        this.getCmInstance = function(){
+            return this.cm
+        };
+
+        this.setPlaceholder = function(placeholder) {
+            var cm = this.getCmInstance();
+            if (cm){
+                cm.setOption('placeholder', placeholder);
+            }
+        };
+
+        this.initStatusChangeSelector = function(){
+            var formatChangeStatus = function(state, escapeMarkup) {
+                var originalOption = state.element;
+                return '<div class="flag_status ' + $(originalOption).data('status') + ' pull-left"></div>' +
+                       '<span>' + escapeMarkup(state.text) + '</span>';
+            };
+            var formatResult = function(result, container, query, escapeMarkup) {
+                return formatChangeStatus(result, escapeMarkup);
+            };
+
+            var formatSelection = function(data, container, escapeMarkup) {
+                return formatChangeStatus(data, escapeMarkup);
+            };
+
+            $(this.submitForm).find(this.statusChange).select2({
+                placeholder: _gettext('Status Review'),
+                formatResult: formatResult,
+                formatSelection: formatSelection,
+                containerCssClass: "drop-menu status_box_menu",
+                dropdownCssClass: "drop-menu-dropdown",
+                dropdownAutoWidth: true,
+                minimumResultsForSearch: -1
+            });
+            $(this.submitForm).find(this.statusChange).on('change', function() {
+                var status = self.getCommentStatus();
+
+                if (status && !self.isInline()) {
+                    $(self.submitButton).prop('disabled', false);
+                }
+
+                var placeholderText = _gettext('Comment text will be set automatically based on currently selected status ({0}) ...').format(status);
+                self.setPlaceholder(placeholderText)
+            })
+        };
+
+        // reset the text area into it's original state
+        this.resetMarkupFormState = function(content) {
+            content = content || '';
+
+            $(this.editContainer).show();
+            $(this.editButton).parent().addClass('active');
+
+            $(this.previewContainer).hide();
+            $(this.previewButton).parent().removeClass('active');
+
+            this.setActionButtonsDisabled(true);
+            self.cm.setValue(content);
+            self.cm.setOption("readOnly", false);
+        };
+
+        this.previewSuccessCallback = function(o) {
+            $(self.previewBoxSelector).html(o);
+            $(self.previewBoxSelector).removeClass('unloaded');
+
+            // swap buttons, making preview active
+            $(self.previewButton).parent().addClass('active');
+            $(self.editButton).parent().removeClass('active');
+
+            // unlock buttons
+            self.setActionButtonsDisabled(false);
+        };
+
+        this.setActionButtonsDisabled = function(state) {
+            $(this.editButton).prop('disabled', state);
+            $(this.previewButton).prop('disabled', state);
+        };
+
+        // lock preview/edit/submit buttons on load, but exclude cancel button
+        var excludeCancelBtn = true;
+        this.setActionButtonsDisabled(true);
+
+        // anonymous users don't have access to initialized CM instance
+        if (this.cm !== undefined){
+            this.cm.on('change', function(cMirror) {
+                if (cMirror.getValue() === "") {
+                    self.setActionButtonsDisabled(true)
+                } else {
+                    self.setActionButtonsDisabled(false)
+                }
+            });
+        }
+
+        $(this.editButton).on('click', function(e) {
+            e.preventDefault();
+
+            $(self.previewButton).parent().removeClass('active');
+            $(self.previewContainer).hide();
+
+            $(self.editButton).parent().addClass('active');
+            $(self.editContainer).show();
+
+        });
+
+        $(this.previewButton).on('click', function(e) {
+            e.preventDefault();
+            var text = self.cm.getValue();
+
+            if (text === "") {
+                return;
+            }
+
+            var postData = {
+                'text': text,
+                'renderer': templateContext.visual.default_renderer,
+                'csrf_token': CSRF_TOKEN
+            };
+
+            // lock ALL buttons on preview
+            self.setActionButtonsDisabled(true);
+
+            $(self.previewBoxSelector).addClass('unloaded');
+            $(self.previewBoxSelector).html(_gettext('Loading ...'));
+
+            $(self.editContainer).hide();
+            $(self.previewContainer).show();
+
+            // by default we reset state of comment preserving the text
+            var previewFailCallback = function(data){
+                alert(
+                "Error while submitting preview.\n" +
+                "Error code {0} ({1}).".format(data.status, data.statusText)
+                );
+                self.resetMarkupFormState(text)
+            };
+            _submitAjaxPOST(
+                self.previewUrl, postData, self.previewSuccessCallback,
+                previewFailCallback);
+
+            $(self.previewButton).parent().addClass('active');
+            $(self.editButton).parent().removeClass('active');
+        });
+
+    }
+
+    return MarkupForm;
+});

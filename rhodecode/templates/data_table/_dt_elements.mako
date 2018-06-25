@@ -350,8 +350,7 @@
 </%def>
 
 <%def name="pullrequest_title(title, description)">
-    ${title} <br/>
-    ${h.shorter(description, 40)}
+    ${title}
 </%def>
 
 <%def name="pullrequest_comments(comments_nr)">
@@ -374,4 +373,53 @@
 
 <%def name="pullrequest_author(full_contact)">
     ${base.gravatar_with_user(full_contact, 16)}
+</%def>
+
+
+<%def name="markup_form(form_id, form_text='', help_text=None)">
+
+  <div class="markup-form">
+    <div class="markup-form-area">
+        <div class="markup-form-area-header">
+            <ul class="nav-links clearfix">
+                <li class="active">
+                    <a href="#edit-text" tabindex="-1" id="edit-btn_${form_id}">${_('Write')}</a>
+                </li>
+                <li class="">
+                    <a href="#preview-text" tabindex="-1" id="preview-btn_${form_id}">${_('Preview')}</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="markup-form-area-write" style="display: block;">
+            <div id="edit-container_${form_id}">
+                <textarea id="${form_id}" name="${form_id}" class="comment-block-ta ac-input">${form_text if form_text else ''}</textarea>
+            </div>
+            <div id="preview-container_${form_id}" class="clearfix" style="display: none;">
+                <div id="preview-box_${form_id}" class="preview-box"></div>
+            </div>
+        </div>
+
+        <div class="markup-form-area-footer">
+            <div class="toolbar">
+                <div class="toolbar-text">
+                  ${(_('Parsed using %s syntax') % (
+                           ('<a href="%s">%s</a>' % (h.route_url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
+                       )
+                    )|n}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="markup-form-footer">
+        % if help_text:
+            <span class="help-block">${help_text}</span>
+        % endif
+    </div>
+  </div>
+  <script type="text/javascript">
+    new MarkupForm('${form_id}');
+  </script>
+
 </%def>

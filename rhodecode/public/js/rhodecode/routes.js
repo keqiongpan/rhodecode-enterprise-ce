@@ -76,6 +76,7 @@ function registerRCRoutes() {
     pyroutes.register('admin_settings_search', '/_admin/settings/search', []);
     pyroutes.register('admin_settings_labs', '/_admin/settings/labs', []);
     pyroutes.register('admin_settings_labs_update', '/_admin/settings/labs/update', []);
+    pyroutes.register('admin_settings_automation', '/_admin/_admin/settings/automation', []);
     pyroutes.register('admin_permissions_application', '/_admin/permissions/application', []);
     pyroutes.register('admin_permissions_application_update', '/_admin/permissions/application/update', []);
     pyroutes.register('admin_permissions_global', '/_admin/permissions/global', []);
@@ -141,6 +142,7 @@ function registerRCRoutes() {
     pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('repo_list_data', '/_repos', []);
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
+    pyroutes.register('markup_preview', '/_markup_preview', []);
     pyroutes.register('journal', '/_admin/journal', []);
     pyroutes.register('journal_rss', '/_admin/journal/rss', []);
     pyroutes.register('journal_atom', '/_admin/journal/atom', []);
@@ -222,6 +224,7 @@ function registerRCRoutes() {
     pyroutes.register('edit_repo_advanced_locking', '/%(repo_name)s/settings/advanced/locking', ['repo_name']);
     pyroutes.register('edit_repo_advanced_journal', '/%(repo_name)s/settings/advanced/journal', ['repo_name']);
     pyroutes.register('edit_repo_advanced_fork', '/%(repo_name)s/settings/advanced/fork', ['repo_name']);
+    pyroutes.register('edit_repo_advanced_hooks', '/%(repo_name)s/settings/advanced/hooks', ['repo_name']);
     pyroutes.register('edit_repo_caches', '/%(repo_name)s/settings/caches', ['repo_name']);
     pyroutes.register('edit_repo_perms', '/%(repo_name)s/settings/permissions', ['repo_name']);
     pyroutes.register('edit_repo_maintenance', '/%(repo_name)s/settings/maintenance', ['repo_name']);
@@ -275,6 +278,7 @@ function registerRCRoutes() {
     pyroutes.register('search', '/_admin/search', []);
     pyroutes.register('search_repo', '/%(repo_name)s/search', ['repo_name']);
     pyroutes.register('user_profile', '/_profiles/%(username)s', ['username']);
+    pyroutes.register('user_group_profile', '/_profile_user_group/%(user_group_name)s', ['user_group_name']);
     pyroutes.register('my_account_profile', '/_admin/my_account/profile', []);
     pyroutes.register('my_account_edit', '/_admin/my_account/edit', []);
     pyroutes.register('my_account_update', '/_admin/my_account/update', []);

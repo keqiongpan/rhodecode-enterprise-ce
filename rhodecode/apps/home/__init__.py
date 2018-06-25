@@ -42,6 +42,10 @@ def includeme(config):
         name='goto_switcher_data',
         pattern='/_goto_data')
 
+    config.add_route(
+        name='markup_preview',
+        pattern='/_markup_preview')
+
     # register our static links via redirection mechanism
     routing_links.connect_redirection_links(config)
 
