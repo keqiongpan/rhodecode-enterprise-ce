@@ -1304,7 +1304,7 @@ class AuthUser(object):
                 # since we use heavy caching sometimes it happens that we get
                 # deleted objects here, we just skip them
                 pass
-        return _set or set(['0.0.0.0/0', '::/0'])
+        return _set or {ip for ip in ['0.0.0.0/0', '::/0']}
 
 
 def set_available_permissions(settings):
@@ -1636,7 +1636,7 @@ class HasRepoPermissionAllDecorator(PermsDecorator):
         repo_name = self._get_repo_name()
 
         try:
-            user_perms = set([perms['repositories'][repo_name]])
+            user_perms = {perms['repositories'][repo_name]}
         except KeyError:
             log.debug('cannot locate repo with name: `%s` in permissions defs',
                       repo_name)
@@ -1663,7 +1663,7 @@ class HasRepoPermissionAnyDecorator(PermsDecorator):
         repo_name = self._get_repo_name()
 
         try:
-            user_perms = set([perms['repositories'][repo_name]])
+            user_perms = {perms['repositories'][repo_name]}
         except KeyError:
             log.debug(
                 'cannot locate repo with name: `%s` in permissions defs',
@@ -1691,7 +1691,7 @@ class HasRepoGroupPermissionAllDecorator(PermsDecorator):
         perms = user.permissions
         group_name = self._get_repo_group_name()
         try:
-            user_perms = set([perms['repositories_groups'][group_name]])
+            user_perms = {perms['repositories_groups'][group_name]}
         except KeyError:
             log.debug(
                 'cannot locate repo group with name: `%s` in permissions defs',
@@ -1720,7 +1720,7 @@ class HasRepoGroupPermissionAnyDecorator(PermsDecorator):
         group_name = self._get_repo_group_name()
 
         try:
-            user_perms = set([perms['repositories_groups'][group_name]])
+            user_perms = {perms['repositories_groups'][group_name]}
         except KeyError:
             log.debug(
                 'cannot locate repo group with name: `%s` in permissions defs',
@@ -1747,7 +1747,7 @@ class HasUserGroupPermissionAllDecorator(PermsDecorator):
         perms = user.permissions
         group_name = self._get_user_group_name()
         try:
-            user_perms = set([perms['user_groups'][group_name]])
+            user_perms = {perms['user_groups'][group_name]}
         except KeyError:
             return False
 
@@ -1769,7 +1769,7 @@ class HasUserGroupPermissionAnyDecorator(PermsDecorator):
         perms = user.permissions
         group_name = self._get_user_group_name()
         try:
-            user_perms = set([perms['user_groups'][group_name]])
+            user_perms = {perms['user_groups'][group_name]}
         except KeyError:
             return False
 
@@ -1882,7 +1882,7 @@ class HasRepoPermissionAll(PermsFunction):
         self.repo_name = self._get_repo_name()
         perms = user.permissions
         try:
-            user_perms = set([perms['repositories'][self.repo_name]])
+            user_perms = {perms['repositories'][self.repo_name]}
         except KeyError:
             return False
         if self.required_perms.issubset(user_perms):
@@ -1905,7 +1905,7 @@ class HasRepoPermissionAny(PermsFunction):
         self.repo_name = self._get_repo_name()
         perms = user.permissions
         try:
-            user_perms = set([perms['repositories'][self.repo_name]])
+            user_perms = {perms['repositories'][self.repo_name]}
         except KeyError:
             return False
         if self.required_perms.intersection(user_perms):
@@ -1922,8 +1922,7 @@ class HasRepoGroupPermissionAny(PermsFunction):
     def check_permissions(self, user):
         perms = user.permissions
         try:
-            user_perms = set(
-                [perms['repositories_groups'][self.repo_group_name]])
+            user_perms = {perms['repositories_groups'][self.repo_group_name]}
         except KeyError:
             return False
         if self.required_perms.intersection(user_perms):
@@ -1940,8 +1939,7 @@ class HasRepoGroupPermissionAll(PermsFunction):
     def check_permissions(self, user):
         perms = user.permissions
         try:
-            user_perms = set(
-                [perms['repositories_groups'][self.repo_group_name]])
+            user_perms = {perms['repositories_groups'][self.repo_group_name]}
         except KeyError:
             return False
         if self.required_perms.issubset(user_perms):
@@ -1958,7 +1956,7 @@ class HasUserGroupPermissionAny(PermsFunction):
     def check_permissions(self, user):
         perms = user.permissions
         try:
-            user_perms = set([perms['user_groups'][self.user_group_name]])
+            user_perms = {perms['user_groups'][self.user_group_name]}
         except KeyError:
             return False
         if self.required_perms.intersection(user_perms):
@@ -1975,7 +1973,7 @@ class HasUserGroupPermissionAll(PermsFunction):
     def check_permissions(self, user):
         perms = user.permissions
         try:
-            user_perms = set([perms['user_groups'][self.user_group_name]])
+            user_perms = {perms['user_groups'][self.user_group_name]}
         except KeyError:
             return False
         if self.required_perms.issubset(user_perms):
@@ -2011,7 +2009,7 @@ class HasPermissionAnyMiddleware(object):
         perms = user.permissions_with_scope({'repo_name': repo_name})
 
         try:
-            user_perms = set([perms['repositories'][repo_name]])
+            user_perms = {perms['repositories'][repo_name]}
         except Exception:
             log.exception('Error while accessing user permissions')
             return False
@@ -2094,7 +2092,7 @@ class HasRepoPermissionAllApi(_BaseApiPerm):
     def check_permissions(self, perm_defs, repo_name=None, group_name=None,
                           user_group_name=None):
         try:
-            _user_perms = set([perm_defs['repositories'][repo_name]])
+            _user_perms = {perm_defs['repositories'][repo_name]}
         except KeyError:
             log.warning(traceback.format_exc())
             return False
@@ -2107,7 +2105,7 @@ class HasRepoPermissionAnyApi(_BaseApiPerm):
     def check_permissions(self, perm_defs, repo_name=None, group_name=None,
                           user_group_name=None):
         try:
-            _user_perms = set([perm_defs['repositories'][repo_name]])
+            _user_perms = {perm_defs['repositories'][repo_name]}
         except KeyError:
             log.warning(traceback.format_exc())
             return False
@@ -2120,7 +2118,7 @@ class HasRepoGroupPermissionAnyApi(_BaseApiPerm):
     def check_permissions(self, perm_defs, repo_name=None, group_name=None,
                           user_group_name=None):
         try:
-            _user_perms = set([perm_defs['repositories_groups'][group_name]])
+            _user_perms = {perm_defs['repositories_groups'][group_name]}
         except KeyError:
             log.warning(traceback.format_exc())
             return False
@@ -2133,7 +2131,7 @@ class HasRepoGroupPermissionAllApi(_BaseApiPerm):
     def check_permissions(self, perm_defs, repo_name=None, group_name=None,
                           user_group_name=None):
         try:
-            _user_perms = set([perm_defs['repositories_groups'][group_name]])
+            _user_perms = {perm_defs['repositories_groups'][group_name]}
         except KeyError:
             log.warning(traceback.format_exc())
             return False
@@ -2146,7 +2144,7 @@ class HasUserGroupPermissionAnyApi(_BaseApiPerm):
     def check_permissions(self, perm_defs, repo_name=None, group_name=None,
                           user_group_name=None):
         try:
-            _user_perms = set([perm_defs['user_groups'][user_group_name]])
+            _user_perms = {perm_defs['user_groups'][user_group_name]}
         except KeyError:
             log.warning(traceback.format_exc())
             return False
