@@ -1235,11 +1235,12 @@ class AuthUser(object):
         allowed_ips = AuthUser.get_allowed_ips(
             user_id, cache=True, inherit_from_default=inherit_from_default)
         if check_ip_access(source_ip=ip_addr, allowed_ips=allowed_ips):
-            log.debug('IP:%s is in range of %s' % (ip_addr, allowed_ips))
+            log.debug('IP:%s for user %s is in range of %s' % (
+                ip_addr, user_id, allowed_ips))
             return True
         else:
-            log.info('Access for IP:%s forbidden, '
-                     'not in %s' % (ip_addr, allowed_ips))
+            log.info('Access for IP:%s forbidden for user %s, '
+                     'not in %s' % (ip_addr, user_id, allowed_ips))
             return False
 
     def __repr__(self):
