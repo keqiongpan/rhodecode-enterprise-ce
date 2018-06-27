@@ -91,7 +91,7 @@ class PasswordGenerator(object):
     def gen_password(self, length, type_=None):
         if type_ is None:
             type_ = self.ALPHABETS_FULL
-        self.passwd = ''.join([random.choice(type_) for _ in xrange(length)])
+        self.passwd = ''.join([random.choice(type_) for _ in range(length)])
         return self.passwd
 
 
@@ -948,13 +948,13 @@ class AuthUser(object):
         perms = self.get_perms(user=self, cache=False)
 
         perms['repositories'] = {
-            k: v for k, v in perms['repositories'].iteritems()
+            k: v for k, v in perms['repositories'].items()
             if v != 'repository.none'}
         perms['repositories_groups'] = {
-            k: v for k, v in perms['repositories_groups'].iteritems()
+            k: v for k, v in perms['repositories_groups'].items()
             if v != 'group.none'}
         perms['user_groups'] = {
-            k: v for k, v in perms['user_groups'].iteritems()
+            k: v for k, v in perms['user_groups'].items()
             if v != 'usergroup.none'}
         return perms
 
@@ -1111,7 +1111,7 @@ class AuthUser(object):
         Returns list of repositories you're an admin of
         """
         return [
-            x[0] for x in self.permissions['repositories'].iteritems()
+            x[0] for x in self.permissions['repositories'].items()
             if x[1] == 'repository.admin']
 
     @property
@@ -1120,7 +1120,7 @@ class AuthUser(object):
         Returns list of repository groups you're an admin of
         """
         return [
-            x[0] for x in self.permissions['repositories_groups'].iteritems()
+            x[0] for x in self.permissions['repositories_groups'].items()
             if x[1] == 'group.admin']
 
     @property
@@ -1129,7 +1129,7 @@ class AuthUser(object):
         Returns list of user groups you're an admin of
         """
         return [
-            x[0] for x in self.permissions['user_groups'].iteritems()
+            x[0] for x in self.permissions['user_groups'].items()
             if x[1] == 'usergroup.admin']
 
     def repo_acl_ids(self, perms=None, name_filter=None, cache=False):
@@ -1143,10 +1143,10 @@ class AuthUser(object):
             perms = [
                 'repository.read', 'repository.write', 'repository.admin']
 
-        def _cached_repo_acl(user_id, perm_def, name_filter):
+        def _cached_repo_acl(user_id, perm_def, _name_filter):
             qry = Repository.query()
-            if name_filter:
-                ilike_expression = u'%{}%'.format(safe_unicode(name_filter))
+            if _name_filter:
+                ilike_expression = u'%{}%'.format(safe_unicode(_name_filter))
                 qry = qry.filter(
                     Repository.repo_name.ilike(ilike_expression))
 
@@ -1169,10 +1169,10 @@ class AuthUser(object):
             perms = [
                 'group.read', 'group.write', 'group.admin']
 
-        def _cached_repo_group_acl(user_id, perm_def, name_filter):
+        def _cached_repo_group_acl(user_id, perm_def, _name_filter):
             qry = RepoGroup.query()
-            if name_filter:
-                ilike_expression = u'%{}%'.format(safe_unicode(name_filter))
+            if _name_filter:
+                ilike_expression = u'%{}%'.format(safe_unicode(_name_filter))
                 qry = qry.filter(
                     RepoGroup.group_name.ilike(ilike_expression))
 
