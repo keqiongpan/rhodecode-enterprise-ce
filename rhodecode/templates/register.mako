@@ -102,7 +102,9 @@
                     </p>
 
                     ${h.submit('sign_up',_('Create Account'),class_="btn sign-in")}
-
+                    <p class="help-block pull-right">
+                        RhodeCode ${c.rhodecode_edition}
+                    </p>
                 ${h.end_form()}
             </div>
             <%block name="below_register_button" />

@@ -55,6 +55,7 @@
                           <span class="error-message">${errors.get('email')}</span>
                           <br />
                         %endif
+                        <p class="help-block">${_('Password reset link will be sent to matching email address')}</p>
     
                         %if captcha_active:
                         <div class="login-captcha">
@@ -70,7 +71,9 @@
                         %endif
     
                         ${h.submit('send', _('Send password reset email'), class_="btn sign-in")}
-                        <div class="activation_msg">${_('Password reset link will be sent to matching email address')}</div>
+                        <p class="help-block pull-right">
+                            RhodeCode ${c.rhodecode_edition}
+                        </p>
     
                     ${h.end_form()}
                 </div>
