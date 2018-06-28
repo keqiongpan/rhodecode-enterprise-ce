@@ -35,6 +35,14 @@ self: super: {
     ];
   });
 
+  "gevent" = super."gevent".override (attrs: {
+    propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
+      # NOTE: (marcink) odd requirements from gevent aren't set properly,
+      # thus we need to inject psutil manually
+      self."psutil"
+    ];
+  });
+
   "future" = super."future".override (attrs: {
     meta = {
       license = [ pkgs.lib.licenses.mit ];

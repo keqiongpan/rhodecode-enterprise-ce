@@ -515,14 +515,14 @@ self: super: {
     };
   };
   "gevent" = super.buildPythonPackage {
-    name = "gevent-1.2.2";
+    name = "gevent-1.3.4";
     doCheck = false;
     propagatedBuildInputs = [
       self."greenlet"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/1b/92/b111f76e54d2be11375b47b213b56687214f258fd9dae703546d30b837be/gevent-1.2.2.tar.gz";
-      sha256 = "0bbbjvi423y9k9xagrcsimnayaqymg6f2dj76m9z3mjpkjpci4a7";
+      url = "https://files.pythonhosted.org/packages/f8/85/f92a8f43c9f15ffad49d743d929863a042ce3e8de5746c63bb4d6ce51a02/gevent-1.3.4.tar.gz";
+      sha256 = "0x2gm3iba4cprclnbkcq2i14m6br2hfqns8yv3sjil46b1qdri2k";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1215,14 +1215,14 @@ self: super: {
     };
   };
   "pyasn1-modules" = super.buildPythonPackage {
-    name = "pyasn1-modules-0.2.1";
+    name = "pyasn1-modules-0.2.2";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyasn1"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ab/76/36ab0e099e6bd27ed95b70c2c86c326d3affa59b9b535c63a2f892ac9f45/pyasn1-modules-0.2.1.tar.gz";
-      sha256 = "1k3wrlkcwxj9rpmfjvzwi4wzhnmb647wgckmqdyjidi2427yl05g";
+      url = "https://files.pythonhosted.org/packages/37/33/74ebdc52be534e683dc91faf263931bc00ae05c6073909fde53999088541/pyasn1-modules-0.2.2.tar.gz";
+      sha256 = "0ivm850yi7ajjbi8j115qpsj95bgxdsx48nbjzg0zip788c3xkx0";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
