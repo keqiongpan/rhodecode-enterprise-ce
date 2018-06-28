@@ -4,10 +4,13 @@
 # python-packages.nix. The main objective is to add needed dependencies of C
 # libraries and tweak the build instructions where needed.
 
-{ pkgs, basePythonPackages }:
+{ pkgs
+, basePythonPackages
+}:
 
 let
   sed = "sed -i";
+
   localLicenses = {
     repoze = {
       fullName = "Repoze License";
@@ -19,33 +22,33 @@ in
 
 self: super: {
 
-  appenlight-client = super.appenlight-client.override (attrs: {
+  "appenlight-client" = super."appenlight-client".override (attrs: {
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   });
 
-  beaker = super.beaker.override (attrs: {
+  "beaker" = super."beaker".override (attrs: {
     patches = [
-      ./patch-beaker-lock-func-debug.diff
-      ./patch-beaker-metadata-reuse.diff
+      ./patch_beaker/patch-beaker-lock-func-debug.diff
+      ./patch_beaker/patch-beaker-metadata-reuse.diff
     ];
   });
 
-  future = super.future.override (attrs: {
+  "future" = super."future".override (attrs: {
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   });
 
-  testpath = super.testpath.override (attrs: {
+  "testpath" = super."testpath".override (attrs: {
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   });
 
-  gnureadline = super.gnureadline.override (attrs: {
-    buildInputs = attrs.buildInputs ++ [
+  "gnureadline" = super."gnureadline".override (attrs: {
+    buildInputs = [
       pkgs.ncurses
     ];
     patchPhase = ''
@@ -53,56 +56,50 @@ self: super: {
     '';
   });
 
-  gunicorn = super.gunicorn.override (attrs: {
-    propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
+  "gunicorn" = super."gunicorn".override (attrs: {
+    propagatedBuildInputs = [
       # johbo: futures is needed as long as we are on Python 2, otherwise
       # gunicorn explodes if used with multiple threads per worker.
-      self.futures
+      self."futures"
     ];
   });
 
-  nbconvert = super.nbconvert.override (attrs: {
+ "nbconvert" = super."nbconvert".override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
       # marcink: plug in jupyter-client for notebook rendering
-      self.jupyter-client
+      self."jupyter-client"
     ];
   });
 
-  ipython = super.ipython.override (attrs: {
+  "ipython" = super."ipython".override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
-      self.gnureadline
+      self."gnureadline"
     ];
   });
 
-  lxml = super.lxml.override (attrs: {
-    # johbo: On 16.09 we need this to compile on darwin, otherwise compilation
-    # fails on Darwin.
-    hardeningDisable = if pkgs.stdenv.isDarwin then [ "format" ] else null;
-    buildInputs = with self; [
+  "lxml" = super."lxml".override (attrs: {
+    buildInputs = [
       pkgs.libxml2
       pkgs.libxslt
     ];
+    propagatedBuildInputs = [
+      # Needed, so that "setup.py bdist_wheel" does work
+      self."wheel"
+    ];
   });
 
-  mysql-python = super.mysql-python.override (attrs: {
-    buildInputs = attrs.buildInputs ++ [
+  "mysql-python" = super."mysql-python".override (attrs: {
+    buildInputs = [
       pkgs.openssl
     ];
-    propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
+    propagatedBuildInputs = [
       pkgs.libmysql
       pkgs.zlib
     ];
   });
 
-  psutil = super.psutil.override (attrs: {
-    buildInputs = attrs.buildInputs ++
-      pkgs.lib.optional pkgs.stdenv.isDarwin pkgs.darwin.IOKit;
-  });
-
-  psycopg2 = super.psycopg2.override (attrs: {
-    buildInputs = attrs.buildInputs ++
-      pkgs.lib.optional pkgs.stdenv.isDarwin pkgs.openssl;
-    propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
+  "psycopg2" = super."psycopg2".override (attrs: {
+    propagatedBuildInputs = [
       pkgs.postgresql
     ];
     meta = {
@@ -110,8 +107,8 @@ self: super: {
     };
   });
 
-  pycurl = super.pycurl.override (attrs: {
-    propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
+  "pycurl" = super."pycurl".override (attrs: {
+    propagatedBuildInputs = [
       pkgs.curl
       pkgs.openssl
     ];
@@ -120,30 +117,23 @@ self: super: {
       export PYCURL_SSL_LIBRARY=openssl
     '';
     meta = {
-      # TODO: It is LGPL and MIT
       license = pkgs.lib.licenses.mit;
     };
   });
 
-  pyramid = super.pyramid.override (attrs: {
-    postFixup = ''
-      wrapPythonPrograms
-      # TODO: johbo: "wrapPython" adds this magic line which
-      # confuses pserve.
-      ${sed} '/import sys; sys.argv/d' $out/bin/.pserve-wrapped
-    '';
+  "pyramid" = super."pyramid".override (attrs: {
     meta = {
       license = localLicenses.repoze;
     };
   });
 
-  pyramid-debugtoolbar = super.pyramid-debugtoolbar.override (attrs: {
+  "pyramid-debugtoolbar" = super."pyramid-debugtoolbar".override (attrs: {
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal localLicenses.repoze ];
     };
   });
 
-  pysqlite = super.pysqlite.override (attrs: {
+  "pysqlite" = super."pysqlite".override (attrs: {
     propagatedBuildInputs = [
       pkgs.sqlite
     ];
@@ -152,41 +142,39 @@ self: super: {
     };
   });
 
-  pytest-runner = super.pytest-runner.override (attrs: {
+  "pytest-runner" = super."pytest-runner".override (attrs: {
     propagatedBuildInputs = [
-      self.setuptools-scm
+      self."setuptools-scm"
     ];
   });
 
-  python-ldap = super.python-ldap.override (attrs: {
+  "python-ldap" = super."python-ldap".override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
-      pkgs.cyrus_sasl
       pkgs.openldap
+      pkgs.cyrus_sasl
       pkgs.openssl
     ];
-    # TODO: johbo: Remove the "or" once we drop 16.03 support.
-    NIX_CFLAGS_COMPILE = "-I${pkgs.cyrus_sasl.dev or pkgs.cyrus_sasl}/include/sasl";
   });
 
-  python-pam = super.python-pam.override (attrs:
-    let
-      includeLibPam = pkgs.stdenv.isLinux;
-    in {
-      # TODO: johbo: Move the option up into the default.nix, we should
-      # include python-pam only on supported platforms.
-      propagatedBuildInputs = attrs.propagatedBuildInputs ++
-        pkgs.lib.optional includeLibPam [
-          pkgs.pam
-        ];
-      # TODO: johbo: Check if this can be avoided, or transform into
-      # a real patch
-      patchPhase = pkgs.lib.optionals includeLibPam ''
-        substituteInPlace pam.py \
-          --replace 'find_library("pam")' '"${pkgs.pam}/lib/libpam.so.0"'
-      '';
+  "python-pam" = super."python-pam".override (attrs: {
+    propagatedBuildInputs = [
+        pkgs.pam
+    ];
+    # TODO: johbo: Check if this can be avoided, or transform into
+    # a real patch
+    patchPhase = ''
+      substituteInPlace pam.py \
+        --replace 'find_library("pam")' '"${pkgs.pam}/lib/libpam.so.0"'
+    '';
     });
 
-  urlobject = super.urlobject.override (attrs: {
+  "pyzmq" = super."pyzmq".override (attrs: {
+    buildInputs = [
+      pkgs.czmq
+    ];
+  });
+
+  "urlobject" = super."urlobject".override (attrs: {
     meta = {
       license = {
         spdxId = "Unlicense";
@@ -196,56 +184,56 @@ self: super: {
     };
   });
 
-  docutils = super.docutils.override (attrs: {
+  "docutils" = super."docutils".override (attrs: {
     meta = {
       license = pkgs.lib.licenses.bsd2;
     };
   });
 
-  colander = super.colander.override (attrs: {
+  "colander" = super."colander".override (attrs: {
     meta = {
       license = localLicenses.repoze;
     };
   });
 
-  pyramid-beaker  = super.pyramid-beaker.override (attrs: {
+  "pyramid-beaker"  = super."pyramid-beaker".override (attrs: {
     meta = {
       license = localLicenses.repoze;
     };
   });
 
-  pyramid-mako = super.pyramid-mako.override (attrs: {
+  "pyramid-mako" = super."pyramid-mako".override (attrs: {
     meta = {
       license = localLicenses.repoze;
     };
   });
 
-  repoze.lru = super.repoze.lru.override (attrs: {
+  "repoze.lru" = super."repoze.lru".override (attrs: {
     meta = {
       license = localLicenses.repoze;
     };
   });
 
-  python-editor = super.python-editor.override (attrs: {
+  "python-editor" = super."python-editor".override (attrs: {
     meta = {
       license = pkgs.lib.licenses.asl20;
     };
   });
 
-  translationstring = super.translationstring.override (attrs: {
+  "translationstring" = super."translationstring".override (attrs: {
     meta = {
       license = localLicenses.repoze;
     };
   });
 
-  venusian = super.venusian.override (attrs: {
+  "venusian" = super."venusian".override (attrs: {
     meta = {
       license = localLicenses.repoze;
     };
   });
 
-  # Avoid that setuptools is replaced, this leads to trouble
-  # with buildPythonPackage.
-  setuptools = basePythonPackages.setuptools;
+  # Avoid that base packages screw up the build process
+  inherit (basePythonPackages)
+    setuptools;
 
 }

@@ -47,7 +47,7 @@ Switch nix to the latest STABLE channel
 
 run::
 
-   nix-channel --add https://nixos.org/channels/nixos-16.03 nixpkgs
+   nix-channel --add https://nixos.org/channels/nixos-18.03 nixpkgs
 
 Followed by::
 

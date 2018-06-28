@@ -1,6 +1,9 @@
+# This file contains the adjustments which are desired for a development
+# environment.
+
 { pkgs ? (import <nixpkgs> {})
 , pythonPackages ? "python27Packages"
-, doCheck ? true
+, doCheck ? false
 , sourcesOverrides ? {}
 , doDevelopInstall ? true
 }:
@@ -10,7 +13,10 @@ let
   sources = (pkgs.config.rc.sources or {}) // sourcesOverrides;
 
   enterprise-ce = import ./default.nix {
-    inherit pkgs pythonPackages doCheck;
+    inherit
+      pkgs
+      pythonPackages
+      doCheck;
   };
 
   ce-pythonPackages = enterprise-ce.pythonPackages;
@@ -22,14 +28,17 @@ let
     let
       path = pkgs.lib.attrByPath [attributeName] null sources;
       doIt = doDevelopInstall && path != null;
+
     in
-      pkgs.lib.optionalString doIt (
-      builtins.trace "Develop install of ${attributeName} from ${path}" ''
-        echo "Develop install of '${attributeName}' from '${path}' [BEGIN]"
+      # do develop installation with empty hosts to skip any package duplicates to
+      # be replaced. This only pushes the package to be locally available
+      pkgs.lib.optionalString doIt (''
+        echo "[BEGIN] Develop install of '${attributeName}' from '${path}'"
         pushd ${path}
         python setup.py develop --prefix $tmp_path --allow-hosts ""
         popd
-        echo "Develop install of '${attributeName}' from '${path}' [DONE]"
+        echo "[DONE] Develop install of '${attributeName}' from '${path}'"
+        echo ""
       '');
 
   # This method looks up a path from `pkgs.config.rc.sources` and imports the
@@ -38,13 +47,16 @@ let
   optionalDevelopInstallBuildInputs = attributeName:
     let
       path = pkgs.lib.attrByPath [attributeName] null sources;
-      nixFile = "${path}/default.nix";
       doIt = doDevelopInstall && path != null && pkgs.lib.pathExists "${nixFile}";
+      nixFile = "${path}/default.nix";
+
       derivate = import "${nixFile}" {
         inherit doCheck pkgs pythonPackages;
       };
     in
-      pkgs.lib.lists.optionals doIt derivate.propagatedNativeBuildInputs;
+      pkgs.lib.lists.optionals doIt (
+        derivate.propagatedBuildInputs
+      );
 
   developInstalls = [ "rhodecode-vcsserver" ];
 
@@ -53,21 +65,35 @@ in enterprise-ce.override (attrs: {
   # make development a little bit more convenient.
   src = null;
 
+  # Add dependencies which are useful for the development environment.
   buildInputs =
     attrs.buildInputs ++
-    pkgs.lib.lists.concatMap optionalDevelopInstallBuildInputs developInstalls ++
     (with ce-pythonPackages; [
       bumpversion
       invoke
       ipdb
     ]);
 
-  # Somewhat snappier setup of the development environment
-  # TODO: think of supporting a stable path again, so that multiple shells
-  #       can share it.
-  preShellHook = enterprise-ce.linkNodeAndBowerPackages + ''
+  # place to inject some required libs from develop installs
+  propagatedBuildInputs =
+    attrs.propagatedBuildInputs ++
+    pkgs.lib.lists.concatMap optionalDevelopInstallBuildInputs developInstalls;
+
+
+  # Make sure we execute both hooks
+  shellHook = ''
+    runHook preShellHook
+    runHook postShellHook
+  '';
+
+  preShellHook = ''
+    echo "Entering CE-Shell"
+
     # Custom prompt to distinguish from other dev envs.
     export PS1="\n\[\033[1;32m\][CE-shell:\w]$\[\033[0m\] "
+
+    echo "Building frontend assets"
+    ${enterprise-ce.linkNodeAndBowerPackages}
 
     # Setup a temporary directory.
     tmp_path=$(mktemp -d)
@@ -75,9 +101,16 @@ in enterprise-ce.override (attrs: {
     export PYTHONPATH="$tmp_path/${ce-pythonPackages.python.sitePackages}:$PYTHONPATH"
     mkdir -p $tmp_path/${ce-pythonPackages.python.sitePackages}
 
-    # Develop installations
+    # Develop installation
+    echo "[BEGIN]: develop install of rhodecode-enterprise-ce"
     python setup.py develop --prefix $tmp_path --allow-hosts ""
-    echo "Additional develop installs"
-  '' + pkgs.lib.strings.concatMapStrings optionalDevelopInstall developInstalls;
+  '';
+
+  postShellHook = ''
+    echo "** Additional develop installs **"
+    '' +
+    pkgs.lib.strings.concatMapStrings optionalDevelopInstall developInstalls
+    + ''
+  '';
 
 })
