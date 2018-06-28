@@ -241,8 +241,11 @@ def write_js_routes_if_enabled(event):
         jsroutes_file_path = os.path.join(
             static_path, 'js', 'rhodecode', 'routes.js')
 
-        with io.open(jsroutes_file_path, 'w', encoding='utf-8') as f:
-            f.write(jsroutes_file_content)
+        try:
+            with io.open(jsroutes_file_path, 'w', encoding='utf-8') as f:
+                f.write(jsroutes_file_content)
+        except Exception:
+            log.exception('Failed to write routes.js into %s', jsroutes_file_path)
 
 
 class Subscriber(object):
