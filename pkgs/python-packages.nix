@@ -1134,11 +1134,11 @@ self: super: {
     };
   };
   "psutil" = super.buildPythonPackage {
-    name = "psutil-5.4.5";
+    name = "psutil-5.4.6";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/14/a2/8ac7dda36eac03950ec2668ab1b466314403031c83a95c5efc81d2acf163/psutil-5.4.5.tar.gz";
-      sha256 = "1zlw91g1zh5mr55ixkxvz8bqps4naiik2lgwvrfbj95v6sz97qpb";
+      url = "https://files.pythonhosted.org/packages/51/9e/0f8f5423ce28c9109807024f7bdde776ed0b1161de20b408875de7e030c3/psutil-5.4.6.tar.gz";
+      sha256 = "1xmw4qi6hnrhw81xqzkvmsm9im7j2vkk4v26ycjwq2jczqsmlvk8";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
