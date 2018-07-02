@@ -797,7 +797,7 @@ def ValidPerms(localizer, type_='repo'):
                     obj_type = k[0]
                     obj_id = k[7:]
                     update_type = {'u': 'user',
-                                   'g': 'users_group'}[obj_type]
+                                   'g': 'user_group'}[obj_type]
 
                     if obj_type == 'u' and safe_int(obj_id) == default_user_id:
                         if str2bool(value.get('repo_private')):
@@ -827,7 +827,7 @@ def ValidPerms(localizer, type_='repo'):
                         User.query()\
                             .filter(User.active == true())\
                             .filter(User.user_id == member_id).one()
-                    if member_type == 'users_group':
+                    if member_type == 'user_group':
                         UserGroup.query()\
                             .filter(UserGroup.users_group_active == true())\
                             .filter(UserGroup.users_group_id == member_id)\

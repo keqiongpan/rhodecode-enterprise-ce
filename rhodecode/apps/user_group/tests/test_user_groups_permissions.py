@@ -25,12 +25,13 @@ from rhodecode.tests.utils import permission_update_data_generator
 
 def route_path(name, params=None, **kwargs):
     import urllib
+    from rhodecode.apps._base import ADMIN_PREFIX
 
     base_url = {
-        'edit_repo_group_perms':
-            '/{repo_group_name:}/_settings/permissions',
-        'edit_repo_group_perms_update':
-            '/{repo_group_name}/_settings/permissions/update',
+        'edit_user_group_perms':
+            ADMIN_PREFIX + '/user_groups/{user_group_id}/edit/permissions',
+        'edit_user_group_perms_update':
+            ADMIN_PREFIX + '/user_groups/{user_group_id}/edit/permissions/update',
     }[name].format(**kwargs)
 
     if params:
@@ -39,18 +40,17 @@ def route_path(name, params=None, **kwargs):
 
 
 @pytest.mark.usefixtures("app")
-class TestRepoGroupPermissionsView(object):
+class TestUserGroupPermissionsView(object):
 
     def test_edit_perms_view(self, user_util, autologin_user):
-        repo_group = user_util.create_repo_group()
-
+        user_group = user_util.create_user_group()
         self.app.get(
-            route_path('edit_repo_group_perms',
-                       repo_group_name=repo_group.group_name), status=200)
+            route_path('edit_user_group_perms',
+                       user_group_id=user_group.users_group_id), status=200)
 
     def test_update_permissions(self, csrf_token, user_util):
-        repo_group = user_util.create_repo_group()
-        repo_group_name = repo_group.group_name
+        user_group = user_util.create_user_group()
+        user_group_id = user_group.users_group_id
         user = user_util.create_user()
         user_id = user.user_id
         username = user.username
@@ -58,29 +58,23 @@ class TestRepoGroupPermissionsView(object):
         # grant new
         form_data = permission_update_data_generator(
             csrf_token,
-            default='group.write',
-            grant=[(user_id, 'group.write', username, 'user')])
-
-        # recursive flag required for repo groups
-        form_data.extend([('recursive', u'none')])
+            default='usergroup.write',
+            grant=[(user_id, 'usergroup.write', username, 'user')])
 
         response = self.app.post(
-            route_path('edit_repo_group_perms_update',
-                       repo_group_name=repo_group_name), form_data).follow()
+            route_path('edit_user_group_perms_update',
+                       user_group_id=user_group_id), form_data).follow()
 
-        assert 'Repository Group permissions updated' in response
+        assert 'User Group permissions updated' in response
 
         # revoke given
         form_data = permission_update_data_generator(
             csrf_token,
-            default='group.read',
+            default='usergroup.read',
             revoke=[(user_id, 'user')])
 
-        # recursive flag required for repo groups
-        form_data.extend([('recursive', u'none')])
-
         response = self.app.post(
-            route_path('edit_repo_group_perms_update',
-                       repo_group_name=repo_group_name), form_data).follow()
+            route_path('edit_user_group_perms_update',
+                       user_group_id=user_group_id), form_data).follow()
 
-        assert 'Repository Group permissions updated' in response
+        assert 'User Group permissions updated' in response

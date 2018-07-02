@@ -90,13 +90,16 @@ class UserGroupModel(BaseModel):
                 self.grant_user_permission(
                     user_group=user_group, user=member_id, perm=perm
                 )
-            else:
+            elif member_type == 'user_group':
                 # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
                 if not check_perms or HasUserGroupPermissionAny(
                         *req_perms)(member_name, user=cur_user):
                     self.grant_user_group_permission(
                         target_user_group=user_group, user_group=member_id, perm=perm)
+            else:
+                raise ValueError("member_type must be 'user' or 'user_group' "
+                                 "got {} instead".format(member_type))
 
             changes['updated'].append({
                 'change_obj': change_obj,
@@ -110,13 +113,16 @@ class UserGroupModel(BaseModel):
                 member_name = User.get(member_id).username
                 self.grant_user_permission(
                     user_group=user_group, user=member_id, perm=perm)
-            else:
+            elif member_type == 'user_group':
                 # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
                 if not check_perms or HasUserGroupPermissionAny(
                         *req_perms)(member_name, user=cur_user):
                     self.grant_user_group_permission(
                         target_user_group=user_group, user_group=member_id, perm=perm)
+            else:
+                raise ValueError("member_type must be 'user' or 'user_group' "
+                                 "got {} instead".format(member_type))
 
             changes['added'].append({
                 'change_obj': change_obj,
@@ -129,13 +135,16 @@ class UserGroupModel(BaseModel):
             if member_type == 'user':
                 member_name = User.get(member_id).username
                 self.revoke_user_permission(user_group=user_group, user=member_id)
-            else:
+            elif member_type == 'user_group':
                 # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
                 if not check_perms or HasUserGroupPermissionAny(
                         *req_perms)(member_name, user=cur_user):
                     self.revoke_user_group_permission(
                         target_user_group=user_group, user_group=member_id)
+            else:
+                raise ValueError("member_type must be 'user' or 'user_group' "
+                                 "got {} instead".format(member_type))
 
             changes['deleted'].append({
                 'change_obj': change_obj,
