@@ -333,7 +333,7 @@ class UserGroupsView(UserGroupAppView):
 
         try:
             changes = UserGroupModel().update_permissions(
-                user_group_id,
+                user_group,
                 form['perm_additions'], form['perm_updates'],
                 form['perm_deletions'])
 
