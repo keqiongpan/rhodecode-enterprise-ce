@@ -186,7 +186,7 @@ class GeventCurlMulti(object):
         while True:
             num_q, ok_list, err_list = self._curl_multi.info_read()
             for curl in ok_list:
-                curl.waiter.switch()
+                curl.waiter.switch(value=None)
             for curl, errnum, errmsg in err_list:
                 curl.waiter.throw(Exception('%s %s' % (errnum, errmsg)))
             if num_q == 0:
