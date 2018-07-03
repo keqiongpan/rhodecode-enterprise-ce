@@ -42,7 +42,7 @@ from rhodecode.lib.auth import AuthUser, CookieStoreWrapper
 from rhodecode.lib.exceptions import UserCreationError
 from rhodecode.lib.utils import (password_changed, get_enabled_hook_classes)
 from rhodecode.lib.utils2 import (
-    str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist, safe_str)
+    str2bool, safe_unicode, AttributeDict, safe_int, sha1, aslist, safe_str)
 from rhodecode.model.db import Repository, User, ChangesetComment
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
@@ -256,7 +256,7 @@ class BasicAuth(AuthBasicAuthenticator):
 
 
 def calculate_version_hash(config):
-    return md5(
+    return sha1(
         config.get('beaker.session.secret', '') +
         rhodecode.__version__)[:8]
 
