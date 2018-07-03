@@ -49,7 +49,7 @@ from rhodecode.model.db import (
     User, Repository, Permission, UserToPerm, UserGroupToPerm, UserGroupMember,
     UserIpMap, UserApiKeys, RepoGroup, UserGroup)
 from rhodecode.lib import caches
-from rhodecode.lib.utils2 import safe_unicode, aslist, safe_str, md5, safe_int
+from rhodecode.lib.utils2 import safe_unicode, aslist, safe_str, md5, safe_int, sha1
 from rhodecode.lib.utils import (
     get_repo_slug, get_repo_group_slug, get_user_group_slug)
 from rhodecode.lib.caching_query import FromCache
@@ -210,12 +210,12 @@ class _RhodeCodeCryptoSha256(_RhodeCodeCryptoBase):
         return hashlib.sha256(password).hexdigest() == hashed
 
 
-class _RhodeCodeCryptoMd5(_RhodeCodeCryptoBase):
+class _RhodeCodeCryptoTest(_RhodeCodeCryptoBase):
     ENC_PREF = '_'
 
     def hash_create(self, str_):
         self._assert_bytes(str_)
-        return hashlib.md5(str_).hexdigest()
+        return sha1(str_)
 
     def hash_check(self, password, hashed):
         """
@@ -225,18 +225,18 @@ class _RhodeCodeCryptoMd5(_RhodeCodeCryptoBase):
         :param hashed: password in hashed form
         """
         self._assert_bytes(password)
-        return hashlib.md5(password).hexdigest() == hashed
+        return sha1(password) == hashed
 
 
 def crypto_backend():
     """
     Return the matching crypto backend.
 
-    Selection is based on if we run tests or not, we pick md5 backend to run
+    Selection is based on if we run tests or not, we pick sha1-test backend to run
     tests faster since BCRYPT is expensive to calculate
     """
     if rhodecode.is_test:
-        RhodeCodeCrypto = _RhodeCodeCryptoMd5()
+        RhodeCodeCrypto = _RhodeCodeCryptoTest()
     else:
         RhodeCodeCrypto = _RhodeCodeCryptoBCrypt()
 
