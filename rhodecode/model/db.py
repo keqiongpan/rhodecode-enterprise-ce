@@ -56,7 +56,7 @@ from rhodecode.translation import _
 from rhodecode.lib.vcs import get_vcs_instance
 from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
-    str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
+    str2bool, safe_str, get_commit_safe, safe_unicode, sha1_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
     glob2re, StrictAttributeDict, cleaned_uri)
 from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType, \
@@ -114,7 +114,7 @@ def display_user_group_sort(obj):
 
 
 def _hash_key(k):
-    return md5_safe(k)
+    return sha1_safe(k)
 
 
 def in_filter_generator(qry, items, limit=500):
