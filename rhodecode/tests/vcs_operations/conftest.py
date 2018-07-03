@@ -238,13 +238,13 @@ def enable_webhook_push_integration(request):
     Session().add(integration)
 
     settings = dict(
-        url='http://httpbin.org',
+        url='http://httpbin.org/post',
         secret_token='secret',
         username=None,
         password=None,
         custom_header_key=None,
         custom_header_val=None,
-        method_type='get',
+        method_type='post',
         events=[events.RepoPushEvent.name],
         log_data=True
     )
