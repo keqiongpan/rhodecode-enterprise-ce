@@ -56,6 +56,14 @@ def md5_safe(s):
     return md5(safe_str(s))
 
 
+def sha1(s):
+    return hashlib.sha1(s).hexdigest()
+
+
+def sha1_safe(s):
+    return sha1(safe_str(s))
+
+
 def __get_lem(extra_mapping=None):
     """
     Get language extension map based on what's inside pygments lexers

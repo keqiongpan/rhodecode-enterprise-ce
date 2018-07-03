@@ -26,7 +26,7 @@ import threading
 from beaker.cache import _cache_decorate, cache_regions, region_invalidate
 from sqlalchemy.exc import IntegrityError
 
-from rhodecode.lib.utils import safe_str, md5
+from rhodecode.lib.utils import safe_str, sha1
 from rhodecode.model.db import Session, CacheKey
 
 log = logging.getLogger(__name__)
@@ -141,7 +141,7 @@ def compute_key_from_params(*args):
     """
     Helper to compute key from given params to be used in cache manager
     """
-    return md5("_".join(map(safe_str, args)))
+    return sha1("_".join(map(safe_str, args)))
 
 
 def get_repo_namespace_key(prefix, repo_name):

@@ -48,7 +48,7 @@ from rhodecode.lib.vcs.backends.base import Config
 from rhodecode.lib.vcs.exceptions import VCSError
 from rhodecode.lib.vcs.utils.helpers import get_scm, get_scm_backend
 from rhodecode.lib.utils2 import (
-    safe_str, safe_unicode, get_current_rhodecode_user, md5)
+    safe_str, safe_unicode, get_current_rhodecode_user, md5, sha1)
 from rhodecode.model import meta
 from rhodecode.model.db import (
     Repository, User, RhodeCodeUi, UserLog, RepoGroup, UserGroup)
