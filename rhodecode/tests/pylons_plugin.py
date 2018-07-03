@@ -177,6 +177,7 @@ def ini_config(request, tmpdir_factory, rcserver_port, vcsserver_port):
             'vcs.server.protocol': 'http',
             'vcs.scm_app_implementation': 'http',
             'vcs.hooks.protocol': 'http',
+            'vcs.hooks.host': '127.0.0.1',
         }},
 
         {'handler_console': {

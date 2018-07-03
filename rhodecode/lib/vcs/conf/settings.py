@@ -51,6 +51,7 @@ ARCHIVE_SPECS = {
 
 HOOKS_PROTOCOL = None
 HOOKS_DIRECT_CALLS = False
+HOOKS_HOST = '127.0.0.1'
 
 
 def available_aliases():

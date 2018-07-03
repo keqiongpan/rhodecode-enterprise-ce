@@ -180,7 +180,7 @@ class TestHttpHooksCallbackDaemon(object):
         assert daemon._daemon == tcp_server
 
         _, port = tcp_server.server_address
-        expected_uri = '{}:{}'.format(daemon.IP_ADDRESS, port)
+        expected_uri = '{}:{}'.format('127.0.0.1', port)
         msg = 'Preparing HTTP callback daemon at `{}` and ' \
               'registering hook object'.format(expected_uri)
         assert_message_in_log(
@@ -192,7 +192,7 @@ class TestHttpHooksCallbackDaemon(object):
             daemon = hooks_daemon.HttpHooksCallbackDaemon()
 
         _, port = tcp_server.server_address
-        expected_uri = '{}:{}'.format(daemon.IP_ADDRESS, port)
+        expected_uri = '{}:{}'.format('127.0.0.1', port)
         assert daemon.hooks_uri == expected_uri
 
         msg = 'Preparing HTTP callback daemon at `{}` and ' \
@@ -264,7 +264,8 @@ class TestPrepareHooksDaemon(object):
             self, protocol):
         expected_extras = {'extra1': 'value1'}
         callback, extras = hooks_daemon.prepare_callback_daemon(
-            expected_extras.copy(), protocol=protocol, use_direct_calls=True)
+            expected_extras.copy(), protocol=protocol,
+            host='127.0.0.1', use_direct_calls=True)
         assert isinstance(callback, hooks_daemon.DummyHooksCallbackDaemon)
         expected_extras['hooks_module'] = 'rhodecode.lib.hooks_daemon'
         expected_extras['time'] = extras['time']
@@ -281,7 +282,8 @@ class TestPrepareHooksDaemon(object):
             'hooks_protocol': protocol.lower()
         }
         callback, extras = hooks_daemon.prepare_callback_daemon(
-            expected_extras.copy(), protocol=protocol, use_direct_calls=False,
+            expected_extras.copy(), protocol=protocol, host='127.0.0.1',
+            use_direct_calls=False,
             txn_id='txnid2')
         assert isinstance(callback, expected_class)
         extras.pop('hooks_uri')
@@ -301,7 +303,7 @@ class TestPrepareHooksDaemon(object):
         with pytest.raises(Exception):
             callback, extras = hooks_daemon.prepare_callback_daemon(
                 expected_extras.copy(),
-                protocol=protocol,
+                protocol=protocol, host='127.0.0.1',
                 use_direct_calls=False)
 
 

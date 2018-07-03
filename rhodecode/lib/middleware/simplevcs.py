@@ -663,7 +663,7 @@ class SimpleVCS(object):
 
         return prepare_callback_daemon(
             extras, protocol=vcs_settings.HOOKS_PROTOCOL,
-            use_direct_calls=direct_calls, txn_id=txn_id)
+            host=vcs_settings.HOOKS_HOST, use_direct_calls=direct_calls, txn_id=txn_id)
 
 
 def _should_check_locking(query_string):

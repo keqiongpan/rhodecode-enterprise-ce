@@ -465,6 +465,7 @@ class TestPrepareHooksDaemon(object):
         prepare_mock.assert_called_once_with(
             expected_extras,
             protocol=app_settings['vcs.hooks.protocol'],
+            host=app_settings['vcs.hooks.host'],
             txn_id=None,
             use_direct_calls=app_settings['vcs.hooks.direct_calls'])
 

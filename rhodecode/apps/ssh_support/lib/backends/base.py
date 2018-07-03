@@ -139,6 +139,7 @@ class VcsServer(object):
 
         callback_daemon, extras = prepare_callback_daemon(
             extras, protocol=vcs_settings.HOOKS_PROTOCOL,
+            host=vcs_settings.HOOKS_HOST,
             use_direct_calls=False)
 
         with callback_daemon:

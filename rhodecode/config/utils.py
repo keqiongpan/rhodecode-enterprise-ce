@@ -25,12 +25,13 @@ import platform
 from rhodecode.model import init_model
 
 
-
 def configure_vcs(config):
     """
     Patch VCS config with some RhodeCode specific stuff
     """
     from rhodecode.lib.vcs import conf
+    import rhodecode.lib.vcs.conf.settings
+
     conf.settings.BACKENDS = {
         'hg': 'rhodecode.lib.vcs.backends.hg.MercurialRepository',
         'git': 'rhodecode.lib.vcs.backends.git.GitRepository',
@@ -38,6 +39,7 @@ def configure_vcs(config):
     }
 
     conf.settings.HOOKS_PROTOCOL = config['vcs.hooks.protocol']
+    conf.settings.HOOKS_HOST = config['vcs.hooks.host']
     conf.settings.HOOKS_DIRECT_CALLS = config['vcs.hooks.direct_calls']
     conf.settings.GIT_REV_FILTER = shlex.split(config['git_rev_filter'])
     conf.settings.DEFAULT_ENCODINGS = config['default_encoding']

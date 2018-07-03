@@ -117,6 +117,7 @@ class TestSanitizeVcsSettings(object):
         ('vcs.svn.compatible_version', ''),
         ('git_rev_filter', '--all'),
         ('vcs.hooks.protocol', 'http'),
+        ('vcs.hooks.host', '127.0.0.1'),
         ('vcs.scm_app_implementation', 'http'),
         ('vcs.server', ''),
         ('vcs.server.log_level', 'debug'),

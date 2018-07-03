@@ -622,6 +622,7 @@ class PullRequestModel(BaseModel):
 
         callback_daemon, extras = prepare_callback_daemon(
             extras, protocol=vcs_settings.HOOKS_PROTOCOL,
+            host=vcs_settings.HOOKS_HOST,
             use_direct_calls=vcs_settings.HOOKS_DIRECT_CALLS)
 
         with callback_daemon:
