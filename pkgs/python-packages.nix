@@ -886,11 +886,11 @@ self: super: {
     };
   };
   "msgpack-python" = super.buildPythonPackage {
-    name = "msgpack-python-0.4.8";
+    name = "msgpack-python-0.5.6";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/21/27/8a1d82041c7a2a51fcc73675875a5f9ea06c2663e02fcfeb708be1d081a0/msgpack-python-0.4.8.tar.gz";
-      sha256 = "11pqk5braa6wndpnr1dhg64js82vjgxnm0lzy73rwl831zgijaqs";
+      url = "https://files.pythonhosted.org/packages/8a/20/6eca772d1a5830336f84aca1d8198e5a3f4715cd1c7fc36d3cc7f7185091/msgpack-python-0.5.6.tar.gz";
+      sha256 = "16wh8qgybmfh4pjp8vfv78mdlkxfmcasg78lzlnm6nslsfkci31p";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
