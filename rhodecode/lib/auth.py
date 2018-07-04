@@ -1292,10 +1292,15 @@ class AuthUser(object):
                     # we get deleted objects here, we just skip them
                     pass
 
-        user_ips = UserIpMap.query().filter(UserIpMap.user_id == user_id)
-        if cache:
-            user_ips = user_ips.options(
-                FromCache("sql_cache_short", "get_user_ips_%s" % user_id))
+        # NOTE:(marcink) we don't want to load any rules for empty
+        # user_id which is the case of access of non logged users when anonymous
+        # access is disabled
+        user_ips = []
+        if user_id:
+            user_ips = UserIpMap.query().filter(UserIpMap.user_id == user_id)
+            if cache:
+                user_ips = user_ips.options(
+                    FromCache("sql_cache_short", "get_user_ips_%s" % user_id))
 
         for ip in user_ips:
             try:
