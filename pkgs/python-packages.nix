@@ -372,11 +372,11 @@ self: super: {
     };
   };
   "dogpile.cache" = super.buildPythonPackage {
-    name = "dogpile.cache-0.6.5";
+    name = "dogpile.cache-0.6.6";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/65/24/7bd97e9d486c37ac03ef6ae3a590db1a8e02183e5d7ce9071bcca9d86c44/dogpile.cache-0.6.5.tar.gz";
-      sha256 = "0cazkfz4zhywh7ahahivwjdbqdjpqij65a6hjc7bnwa4igkrf4b3";
+      url = "https://files.pythonhosted.org/packages/48/ca/604154d835c3668efb8a31bd979b0ea4bf39c2934a40ffecc0662296cb51/dogpile.cache-0.6.6.tar.gz";
+      sha256 = "1h8n1lxd4l2qvahfkiinljkqz7pww7w3sgag0j8j9ixbl2h4wk84";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
