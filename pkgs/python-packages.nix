@@ -573,11 +573,11 @@ self: super: {
     };
   };
   "gunicorn" = super.buildPythonPackage {
-    name = "gunicorn-19.7.1";
+    name = "gunicorn-19.9.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/30/3a/10bb213cede0cc4d13ac2263316c872a64bf4c819000c8ccd801f1d5f822/gunicorn-19.7.1.tar.gz";
-      sha256 = "08mnl5l1p47q5wk38d7mafnhsqk50yba0l9kvc2vwrx61jgidqgf";
+      url = "https://files.pythonhosted.org/packages/47/52/68ba8e5e8ba251e54006a49441f7ccabca83b6bef5aedacb4890596c7911/gunicorn-19.9.0.tar.gz";
+      sha256 = "1wzlf4xmn6qjirh5w81l6i6kqjnab1n1qqkh7zsj1yb6gh4n49ps";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
