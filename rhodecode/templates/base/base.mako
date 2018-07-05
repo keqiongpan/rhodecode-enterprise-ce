@@ -458,9 +458,9 @@ commit:efced4, to search for commits
       ${usermenu(active=(active=='my_account'))}
 
       % if c.debug_style:
-      <li class="${is_active('debug_style')}">
+      <li>
           <a class="menulink" title="${_('Style')}" href="${h.route_path('debug_style_home')}">
-            <div class="menulabel">${_('Style')}</div>
+            <div class="menulabel">${_('[Style]')}</div>
           </a>
       </li>
       % endif
