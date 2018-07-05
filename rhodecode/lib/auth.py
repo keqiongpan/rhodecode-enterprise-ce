@@ -48,7 +48,7 @@ from rhodecode.model.user import UserModel
 from rhodecode.model.db import (
     User, Repository, Permission, UserToPerm, UserGroupToPerm, UserGroupMember,
     UserIpMap, UserApiKeys, RepoGroup, UserGroup)
-from rhodecode.lib import caches
+from rhodecode.lib import rc_cache
 from rhodecode.lib.utils2 import safe_unicode, aslist, safe_str, md5, safe_int, sha1
 from rhodecode.lib.utils import (
     get_repo_slug, get_repo_group_slug, get_user_group_slug)
@@ -976,21 +976,18 @@ class AuthUser(object):
             obj = Repository.get_by_repo_name(scope['repo_name'])
             if obj:
                 scope['repo_id'] = obj.repo_id
-        _scope = {
-            'repo_id': -1,
-            'user_group_id': -1,
-            'repo_group_id': -1,
-        }
-        _scope.update(scope)
-        cache_key = "_".join(map(safe_str, reduce(lambda a, b: a+b,
-                                                  _scope.items())))
-        if cache_key not in self._permissions_scoped_cache:
-            # store in cache to mimic how the @LazyProperty works,
-            # the difference here is that we use the unique key calculated
-            # from params and values
-            res = self.get_perms(user=self, cache=False, scope=_scope)
-            self._permissions_scoped_cache[cache_key] = res
-        return self._permissions_scoped_cache[cache_key]
+        _scope = collections.OrderedDict()
+        _scope['repo_id'] = -1
+        _scope['user_group_id'] = -1
+        _scope['repo_group_id'] = -1
+
+        for k in sorted(scope.keys()):
+            _scope[k] = scope[k]
+
+        # store in cache to mimic how the @LazyProperty works,
+        # the difference here is that we use the unique key calculated
+        # from params and values
+        return self.get_perms(user=self, cache=False, scope=_scope)
 
     def get_instance(self):
         return User.get(self.user_id)
@@ -1072,16 +1069,27 @@ class AuthUser(object):
         user_inherit_default_permissions = user.inherit_default_permissions
 
         cache_seconds = safe_int(
-            rhodecode.CONFIG.get('beaker.cache.short_term.expire'))
+            rhodecode.CONFIG.get('rc_cache.cache_perms.expiration_time'))
+
         cache_on = cache or cache_seconds > 0
         log.debug(
             'Computing PERMISSION tree for user %s scope `%s` '
-            'with caching: %s[%ss]' % (user, scope, cache_on, cache_seconds))
+            'with caching: %s[TTL: %ss]' % (user, scope, cache_on, cache_seconds or 0))
+
+        cache_namespace_uid = 'cache_user_auth.{}'.format(user_id)
+        region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+
+        @region.cache_on_arguments(namespace=cache_namespace_uid,
+                                   should_cache_fn=lambda v: cache_on)
+        def compute_perm_tree(cache_name,
+                user_id, scope, user_is_admin,user_inherit_default_permissions,
+                explicit, algo, calculate_super_admin):
+            return _cached_perms_data(
+                user_id, scope, user_is_admin, user_inherit_default_permissions,
+                explicit, algo, calculate_super_admin)
+
         start = time.time()
-        compute = caches.conditional_cache(
-            'short_term', 'cache_desc.{}'.format(user_id),
-            condition=cache_on, func=_cached_perms_data)
-        result = compute(user_id, scope, user_is_admin,
+        result = compute_perm_tree('permissions', user_id, scope, user_is_admin,
                          user_inherit_default_permissions, explicit, algo,
                          calculate_super_admin)
 
@@ -1091,6 +1099,7 @@ class AuthUser(object):
         total = time.time() - start
         log.debug('PERMISSION tree for user %s computed in %.3fs: %s' % (
             user, total, result_repr))
+
         return result
 
     @property
@@ -1153,10 +1162,7 @@ class AuthUser(object):
             return [x.repo_id for x in
                     RepoList(qry, perm_set=perm_def)]
 
-        compute = caches.conditional_cache(
-            'short_term', 'repo_acl_ids.{}'.format(self.user_id),
-            condition=cache, func=_cached_repo_acl)
-        return compute(self.user_id, perms, name_filter)
+        return _cached_repo_acl(self.user_id, perms, name_filter)
 
     def repo_group_acl_ids(self, perms=None, name_filter=None, cache=False):
         """
@@ -1179,10 +1185,7 @@ class AuthUser(object):
             return [x.group_id for x in
                     RepoGroupList(qry, perm_set=perm_def)]
 
-        compute = caches.conditional_cache(
-            'short_term', 'repo_group_acl_ids.{}'.format(self.user_id),
-            condition=cache, func=_cached_repo_group_acl)
-        return compute(self.user_id, perms, name_filter)
+        return _cached_repo_group_acl(self.user_id, perms, name_filter)
 
     def user_group_acl_ids(self, perms=None, name_filter=None, cache=False):
         """
@@ -1205,10 +1208,7 @@ class AuthUser(object):
             return [x.users_group_id for x in
                     UserGroupList(qry, perm_set=perm_def)]
 
-        compute = caches.conditional_cache(
-            'short_term', 'user_group_acl_ids.{}'.format(self.user_id),
-            condition=cache, func=_cached_user_group_acl)
-        return compute(self.user_id, perms, name_filter)
+        return _cached_user_group_acl(self.user_id, perms, name_filter)
 
     @property
     def ip_allowed(self):

@@ -22,36 +22,24 @@ import time
 
 import pytest
 
-from rhodecode.lib import caches
-from rhodecode.lib.memory_lru_debug import MemoryLRUNamespaceManagerBase
+from rhodecode.lib import rc_cache
 
 
-class TestCacheManager(object):
+@pytest.mark.usefixtures( 'app')
+class TestCaches(object):
 
-    @pytest.mark.parametrize('repo_name', [
-        ('',),
-        (u'',),
-        (u'ac',),
-        ('ac', ),
-        (u'ęćc',),
-        ('ąac',),
+    def test_cache_decorator_init_not_configured(self):
+        with pytest.raises(EnvironmentError):
+            rc_cache.get_or_create_region('dontexist')
+
+    @pytest.mark.parametrize('region_name', [
+        'cache_perms', u'cache_perms',
     ])
-    def test_cache_manager_init(self, repo_name):
-        cache_manager_instance = caches.get_cache_manager(
-            repo_name, 'my_cache')
-        assert cache_manager_instance
-
-    def test_cache_manager_init_undefined_namespace(self):
-        cache_manager_instance = caches.get_cache_manager(
-            'repo_cache_long_undefined', 'my_cache')
-        assert cache_manager_instance
-
-        def_config = caches.DEFAULT_CACHE_MANAGER_CONFIG.copy()
-        def_config.pop('type')
-        assert cache_manager_instance.nsargs == def_config
-
-        assert isinstance(
-            cache_manager_instance.namespace, MemoryLRUNamespaceManagerBase)
+    def test_cache_decorator_init(self, region_name):
+        namespace = region_name
+        cache_region = rc_cache.get_or_create_region(
+            region_name, region_namespace=namespace)
+        assert cache_region
 
     @pytest.mark.parametrize('example_input', [
         ('',),
@@ -62,45 +50,60 @@ class TestCacheManager(object):
         (u'/ac', ),
     ])
     def test_cache_manager_create_key(self, example_input):
-        key = caches.compute_key_from_params(*example_input)
+        key = rc_cache.utils.compute_key_from_params(*example_input)
         assert key
 
-    def test_store_and_invalidate_value_from_manager(self):
-        cache_manger_instance = caches.get_cache_manager(
-            'repo_cache_long', 'my_cache_store')
+    @pytest.mark.parametrize('example_namespace', [
+        'namespace', None
+    ])
+    @pytest.mark.parametrize('example_input', [
+        ('',),
+        (u'/ac',),
+        (u'/ac', 1, 2, object()),
+        (u'/ęćc', 1, 2, object()),
+        ('/ąac',),
+        (u'/ac', ),
+    ])
+    def test_cache_keygen(self, example_input, example_namespace):
+        def func_wrapped():
+            return 1
+        func = rc_cache.utils.key_generator(example_namespace, func_wrapped)
+        key = func(*example_input)
+        assert key
 
-        def compute():
+    def test_store_value_in_cache(self):
+        cache_region = rc_cache.get_or_create_region('cache_perms')
+        # make sure we empty the cache now
+        for key in cache_region.backend.list_keys():
+            cache_region.delete(key)
+
+        assert cache_region.backend.list_keys() == []
+
+        @cache_region.cache_on_arguments(expiration_time=5)
+        def compute(key):
             return time.time()
 
-        added_keys = []
-        for i in xrange(3):
-            _cache_key = caches.compute_key_from_params('foo_bar', 'p%s' % i)
-            added_keys.append(_cache_key)
-            for x in xrange(10):
-                cache_manger_instance.get(_cache_key, createfunc=compute)
+        for x in range(10):
+            compute(x)
 
-        for key in added_keys:
-            assert cache_manger_instance[key]
+        assert len(set(cache_region.backend.list_keys())) == 10
 
-        caches.clear_cache_manager(cache_manger_instance)
+    def test_store_and_get_value_from_region(self):
+        cache_region = rc_cache.get_or_create_region('cache_perms')
+        # make sure we empty the cache now
+        for key in cache_region.backend.list_keys():
+            cache_region.delete(key)
+        assert cache_region.backend.list_keys() == []
 
-        for key in added_keys:
-            assert key not in cache_manger_instance
-        assert len(cache_manger_instance.namespace.keys()) == 0
+        @cache_region.cache_on_arguments(expiration_time=5)
+        def compute(key):
+            return time.time()
 
-    def test_store_and_get_value_from_manager(self):
-            cache_manger_instance = caches.get_cache_manager(
-                'repo_cache_long', 'my_cache_store')
+        result = set()
+        for x in range(10):
+            ret = compute('x')
+            result.add(ret)
 
-            _cache_key = caches.compute_key_from_params('foo_bar', 'multicall')
-
-            def compute():
-                return time.time()
-
-            result = set()
-            for x in xrange(10):
-                ret = cache_manger_instance.get(_cache_key, createfunc=compute)
-                result.add(ret)
-
-            # once computed we have only one value after executing it 10x
-            assert len(result) == 1
+        # once computed we have only one value (the same from cache)
+        # after executing it 10x
+        assert len(result) == 1

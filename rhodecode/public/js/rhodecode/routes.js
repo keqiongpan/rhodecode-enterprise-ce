@@ -119,6 +119,8 @@ function registerRCRoutes() {
     pyroutes.register('edit_user_groups_management', '/_admin/users/%(user_id)s/edit/groups_management', ['user_id']);
     pyroutes.register('edit_user_groups_management_updates', '/_admin/users/%(user_id)s/edit/edit_user_groups_management/updates', ['user_id']);
     pyroutes.register('edit_user_audit_logs', '/_admin/users/%(user_id)s/edit/audit', ['user_id']);
+    pyroutes.register('edit_user_caches', '/_admin/users/%(user_id)s/edit/caches', ['user_id']);
+    pyroutes.register('edit_user_caches_update', '/_admin/users/%(user_id)s/edit/caches/update', ['user_id']);
     pyroutes.register('user_groups', '/_admin/user_groups', []);
     pyroutes.register('user_groups_data', '/_admin/user_groups_data', []);
     pyroutes.register('user_groups_new', '/_admin/user_groups/new', []);

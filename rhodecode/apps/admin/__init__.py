@@ -356,6 +356,16 @@ def admin_routes(config):
         name='edit_user_audit_logs',
         pattern='/users/{user_id:\d+}/edit/audit', user_route=True)
 
+    # user caches
+    config.add_route(
+        name='edit_user_caches',
+        pattern='/users/{user_id:\d+}/edit/caches',
+        user_route=True)
+    config.add_route(
+        name='edit_user_caches_update',
+        pattern='/users/{user_id:\d+}/edit/caches/update',
+        user_route=True)
+
     # user-groups admin
     config.add_route(
         name='user_groups',

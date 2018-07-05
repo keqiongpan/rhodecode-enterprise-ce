@@ -22,6 +22,7 @@ import os
 import logging
 import traceback
 import collections
+import tempfile
 
 from paste.gzipper import make_gzip_middleware
 from pyramid.wsgi import wsgiapp
@@ -220,6 +221,7 @@ def includeme(config):
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
     config.include('rhodecode.lib.caches')
+    config.include('rhodecode.lib.rc_cache')
 
     config.include('rhodecode.authentication')
     config.include('rhodecode.integrations')
@@ -382,6 +384,7 @@ def sanitize_settings_and_apply_defaults(settings):
     # Call split out functions that sanitize settings for each topic.
     _sanitize_appenlight_settings(settings)
     _sanitize_vcs_settings(settings)
+    _sanitize_cache_settings(settings)
 
     # configure instance id
     config_utils.set_instance_id(settings)
@@ -419,6 +422,18 @@ def _sanitize_vcs_settings(settings):
     scm_app_impl = settings['vcs.scm_app_implementation']
     if scm_app_impl == 'rhodecode.lib.middleware.utils.scm_app_http':
         settings['vcs.scm_app_implementation'] = 'http'
+
+
+def _sanitize_cache_settings(settings):
+    _string_setting(settings, 'cache_dir',
+                    os.path.join(tempfile.gettempdir(), 'rc_cache'))
+
+    _string_setting(settings, 'rc_cache.cache_perms.backend',
+                    'dogpile.cache.rc.file_namespace')
+    _int_setting(settings, 'rc_cache.cache_perms.expiration_time',
+                 60)
+    _string_setting(settings, 'rc_cache.cache_perms.arguments.filename',
+                    os.path.join(tempfile.gettempdir(), 'rc_cache_1'))
 
 
 def _int_setting(settings, name, default):

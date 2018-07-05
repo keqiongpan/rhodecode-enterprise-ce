@@ -96,7 +96,7 @@ def get_cache_manager(region_name, cache_name, custom_ttl=None):
     Creates a Beaker cache manager. Such instance can be used like that::
 
     _namespace = caches.get_repo_namespace_key(caches.XXX, repo_name)
-    cache_manager = caches.get_cache_manager('repo_cache_long', _namespace)
+    cache_manager = caches.get_cache_manager('some_namespace_name', _namespace)
     _cache_key = caches.compute_key_from_params(repo_name, commit.raw_id)
     def heavy_compute():
         ...
@@ -121,7 +121,7 @@ def get_cache_manager(region_name, cache_name, custom_ttl=None):
 def clear_cache_manager(cache_manager):
     """
     namespace = 'foobar'
-    cache_manager = get_cache_manager('repo_cache_long', namespace)
+    cache_manager = get_cache_manager('some_namespace_name', namespace)
     clear_cache_manager(cache_manager)
     """
 

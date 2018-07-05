@@ -45,6 +45,7 @@
           <li class="${'active' if c.active=='ips' else ''}"><a href="${h.route_path('edit_user_ips', user_id=c.user.user_id)}">${_('Ip Whitelist')}</a></li>
           <li class="${'active' if c.active=='groups' else ''}"><a href="${h.route_path('edit_user_groups_management', user_id=c.user.user_id)}">${_('User Groups Management')}</a></li>
           <li class="${'active' if c.active=='audit' else ''}"><a href="${h.route_path('edit_user_audit_logs', user_id=c.user.user_id)}">${_('Audit logs')}</a></li>
+          <li class="${'active' if c.active=='caches' else ''}"><a href="${h.route_path('edit_user_caches', user_id=c.user.user_id)}">${_('Caches')}</a></li>
         </ul>
     </div>
 

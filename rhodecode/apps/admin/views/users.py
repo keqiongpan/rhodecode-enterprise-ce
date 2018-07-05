@@ -34,7 +34,7 @@ from rhodecode.authentication.plugins import auth_rhodecode
 from rhodecode.events import trigger
 from rhodecode.model.db import true
 
-from rhodecode.lib import audit_logger
+from rhodecode.lib import audit_logger, rc_cache
 from rhodecode.lib.exceptions import (
     UserCreationError, UserOwnsReposException, UserOwnsRepoGroupsException,
     UserOwnsUserGroupsException, DefaultUserException)
@@ -1198,3 +1198,57 @@ class UsersView(UserAppView):
         perm_user = self.db_user.AuthUser(ip_addr=self.request.remote_addr)
 
         return perm_user.permissions
+
+    def _get_user_cache_keys(self, cache_namespace_uid, keys):
+        user_keys = []
+        for k in sorted(keys):
+            if k.startswith(cache_namespace_uid):
+                user_keys.append(k)
+        return user_keys
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_caches', request_method='GET',
+        renderer='rhodecode:templates/admin/users/user_edit.mako')
+    def user_caches(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.user = self.db_user
+
+        c.active = 'caches'
+        c.perm_user = c.user.AuthUser(ip_addr=self.request.remote_addr)
+
+        cache_namespace_uid = 'cache_user_auth.{}'.format(self.db_user.user_id)
+        c.region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+        c.backend = c.region.backend
+        c.user_keys = self._get_user_cache_keys(
+            cache_namespace_uid, c.region.backend.list_keys())
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='edit_user_caches_update', request_method='POST')
+    def user_caches_update(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.user = self.db_user
+
+        c.active = 'caches'
+        c.perm_user = c.user.AuthUser(ip_addr=self.request.remote_addr)
+
+        cache_namespace_uid = 'cache_user_auth.{}'.format(self.db_user.user_id)
+        c.region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+
+        c.user_keys = self._get_user_cache_keys(
+            cache_namespace_uid, c.region.backend.list_keys())
+        for k in c.user_keys:
+            c.region.delete(k)
+
+        h.flash(_("Deleted {} cache keys").format(len(c.user_keys)), category='success')
+
+        return HTTPFound(h.route_path(
+            'edit_user_caches', user_id=c.user.user_id))
