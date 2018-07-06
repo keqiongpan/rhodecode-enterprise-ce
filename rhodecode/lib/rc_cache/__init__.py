@@ -35,7 +35,9 @@ register_backend(
 
 
 from . import region_meta
-from .utils import get_default_cache_settings, key_generator, get_or_create_region
+from .utils import (
+    get_default_cache_settings, key_generator, get_or_create_region,
+    clear_cache_namespace)
 
 
 def configure_dogpile_cache(settings):

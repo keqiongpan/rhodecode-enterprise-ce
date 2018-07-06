@@ -1199,13 +1199,6 @@ class UsersView(UserAppView):
 
         return perm_user.permissions
 
-    def _get_user_cache_keys(self, cache_namespace_uid, keys):
-        user_keys = []
-        for k in sorted(keys):
-            if k.startswith(cache_namespace_uid):
-                user_keys.append(k)
-        return user_keys
-
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
@@ -1222,8 +1215,7 @@ class UsersView(UserAppView):
         cache_namespace_uid = 'cache_user_auth.{}'.format(self.db_user.user_id)
         c.region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
         c.backend = c.region.backend
-        c.user_keys = self._get_user_cache_keys(
-            cache_namespace_uid, c.region.backend.list_keys())
+        c.user_keys = sorted(c.region.backend.list_keys(prefix=cache_namespace_uid))
 
         return self._get_template_context(c)
 
@@ -1241,14 +1233,9 @@ class UsersView(UserAppView):
         c.perm_user = c.user.AuthUser(ip_addr=self.request.remote_addr)
 
         cache_namespace_uid = 'cache_user_auth.{}'.format(self.db_user.user_id)
-        c.region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+        del_keys = rc_cache.clear_cache_namespace('cache_perms', cache_namespace_uid)
 
-        c.user_keys = self._get_user_cache_keys(
-            cache_namespace_uid, c.region.backend.list_keys())
-        for k in c.user_keys:
-            c.region.delete(k)
-
-        h.flash(_("Deleted {} cache keys").format(len(c.user_keys)), category='success')
+        h.flash(_("Deleted {} cache keys").format(del_keys), category='success')
 
         return HTTPFound(h.route_path(
             'edit_user_caches', user_id=c.user.user_id))

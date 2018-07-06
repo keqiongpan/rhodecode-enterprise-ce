@@ -54,6 +54,41 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
+        <h3 class="panel-title">
+            ${_('Cache keys')}
+        </h3>
+    </div>
+    <div class="panel-body">
+<p>
+    Cache keys used for storing cached values of repository stats,
+    file tree history and file tree search.
+    Invalidating the cache will remove those entries.
+</p>
+<pre>
+region: ${c.region.name}
+backend: ${c.region.actual_backend.__class__}
+store: ${c.region.actual_backend.get_store()}
+
+
+% if c.repo_keys:
+${len(c.repo_keys)} <a href="#showKeys" onclick="$('#show-keys').toggle()">${_('Show all')}</a>
+<span id="show-keys" style="display: none">
+    % for k in c.repo_keys:
+ - ${k}
+    % endfor
+</span>
+% else:
+ NO KEYS FOUND
+% endif
+
+</pre>
+
+    </div>
+</div>
+
+
+<div class="panel panel-default">
+    <div class="panel-heading">
         <h3 class="panel-title">${_('Shadow Repositories')}</h3>
     </div>
     <div class="panel-body">

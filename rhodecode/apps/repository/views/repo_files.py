@@ -33,7 +33,7 @@ from pyramid.response import Response
 from rhodecode.apps._base import RepoAppView
 
 from rhodecode.controllers.utils import parse_path_ref
-from rhodecode.lib import diffs, helpers as h, caches
+from rhodecode.lib import diffs, helpers as h, caches, rc_cache
 from rhodecode.lib import audit_logger
 from rhodecode.lib.exceptions import NonRelativePathError
 from rhodecode.lib.codeblocks import (
@@ -187,32 +187,25 @@ class RepoFilesView(RepoAppView):
         # check if commit is a branch name or branch hash
         return commit_id in valid_heads
 
-    def _get_tree_cache_manager(self, namespace_type):
-        _namespace = caches.get_repo_namespace_key(
-            namespace_type, self.db_repo_name)
-        return caches.get_cache_manager('repo_cache_long', _namespace)
-
     def _get_tree_at_commit(
-            self, c, commit_id, f_path, full_load=False, force=False):
-        def _cached_tree():
-            log.debug('Generating cached file tree for %s, %s, %s',
-                      self.db_repo_name, commit_id, f_path)
+            self, c, commit_id, f_path, full_load=False):
+
+        repo_id = self.db_repo.repo_id
+
+        cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
+        region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
+
+        @region.cache_on_arguments(namespace=cache_namespace_uid)
+        def compute_file_tree(repo_id, commit_id, f_path, full_load):
+            log.debug('Generating cached file tree for repo_id: %s, %s, %s',
+                      repo_id, commit_id, f_path)
 
             c.full_load = full_load
             return render(
                 'rhodecode:templates/files/files_browser_tree.mako',
                 self._get_template_context(c), self.request)
 
-        cache_manager = self._get_tree_cache_manager(caches.FILE_TREE)
-
-        cache_key = caches.compute_key_from_params(
-            self.db_repo_name, commit_id, f_path)
-
-        if force:
-            # we want to force recompute of caches
-            cache_manager.remove_value(cache_key)
-
-        return cache_manager.get(cache_key, createfunc=_cached_tree)
+        return compute_file_tree(self.db_repo.repo_id, commit_id, f_path, full_load)
 
     def _get_archive_spec(self, fname):
         log.debug('Detecting archive spec for: `%s`', fname)
@@ -664,12 +657,8 @@ class RepoFilesView(RepoAppView):
         c.file = dir_node
         c.commit = commit
 
-        # using force=True here, make a little trick. We flush the cache and
-        # compute it using the same key as without previous full_load, so now
-        # the fully loaded tree is now returned instead of partial,
-        # and we store this in caches
         html = self._get_tree_at_commit(
-            c, commit.raw_id, dir_node.path, full_load=True, force=True)
+            c, commit.raw_id, dir_node.path, full_load=True)
 
         return Response(html)
 
@@ -784,10 +773,15 @@ class RepoFilesView(RepoAppView):
 
         return response
 
-    def _get_nodelist_at_commit(self, repo_name, commit_id, f_path):
-        def _cached_nodes():
-            log.debug('Generating cached nodelist for %s, %s, %s',
-                      repo_name, commit_id, f_path)
+    def _get_nodelist_at_commit(self, repo_name, repo_id, commit_id, f_path):
+
+        cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
+        region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
+
+        @region.cache_on_arguments(namespace=cache_namespace_uid)
+        def compute_file_search(repo_id, commit_id, f_path):
+            log.debug('Generating cached nodelist for repo_id:%s, %s, %s',
+                      repo_id, commit_id, f_path)
             try:
                 _d, _f = ScmModel().get_nodes(
                     repo_name, commit_id, f_path, flat=False)
@@ -799,12 +793,7 @@ class RepoFilesView(RepoAppView):
                     commit_id='tip', f_path='/'))
             return _d + _f
 
-        cache_manager = self._get_tree_cache_manager(
-            caches.FILE_SEARCH_TREE_META)
-
-        cache_key = caches.compute_key_from_params(
-            repo_name, commit_id, f_path)
-        return cache_manager.get(cache_key, createfunc=_cached_nodes)
+        return compute_file_search(self.db_repo.repo_id, commit_id, f_path)
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
@@ -819,7 +808,7 @@ class RepoFilesView(RepoAppView):
         commit = self._get_commit_or_redirect(commit_id)
 
         metadata = self._get_nodelist_at_commit(
-            self.db_repo_name, commit.raw_id, f_path)
+            self.db_repo_name, self.db_repo.repo_id, commit.raw_id, f_path)
         return {'nodes': metadata}
 
     def _create_references(

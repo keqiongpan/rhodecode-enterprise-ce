@@ -27,7 +27,7 @@ from pyramid.view import view_config
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
-from rhodecode.lib import helpers as h
+from rhodecode.lib import helpers as h, rc_cache
 from rhodecode.lib import system_info
 from rhodecode.model.meta import Session
 from rhodecode.model.scm import ScmModel
@@ -54,6 +54,12 @@ class RepoCachesView(RepoAppView):
         if os.path.isdir(cached_diffs_dir):
             c.cached_diff_size = system_info.get_storage_size(cached_diffs_dir)
         c.shadow_repos = c.rhodecode_db_repo.shadow_repos()
+
+        cache_namespace_uid = 'cache_repo.{}'.format(self.db_repo.repo_id)
+        c.region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
+        c.backend = c.region.backend
+        c.repo_keys = sorted(c.region.backend.list_keys(prefix=cache_namespace_uid))
+
         return self._get_template_context(c)
 
     @LoginRequired()
@@ -68,7 +74,9 @@ class RepoCachesView(RepoAppView):
 
         try:
             ScmModel().mark_for_invalidation(self.db_repo_name, delete=True)
+
             Session().commit()
+
             h.flash(_('Cache invalidation successful'),
                     category='success')
         except Exception:

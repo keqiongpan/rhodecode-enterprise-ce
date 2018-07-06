@@ -27,15 +27,14 @@ from beaker.cache import cache_region
 from rhodecode.controllers import utils
 from rhodecode.apps._base import RepoAppView
 from rhodecode.config.conf import (LANGUAGES_EXTENSIONS_MAP)
-from rhodecode.lib import caches, helpers as h
-from rhodecode.lib.helpers import RepoPage
+from rhodecode.lib import helpers as h, rc_cache
 from rhodecode.lib.utils2 import safe_str, safe_int
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
 from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs.backends.base import EmptyCommit
-from rhodecode.lib.vcs.exceptions import CommitError, EmptyRepositoryError, \
-    CommitDoesNotExistError
+from rhodecode.lib.vcs.exceptions import (
+    CommitError, EmptyRepositoryError, CommitDoesNotExistError)
 from rhodecode.model.db import Statistics, CacheKey, User
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import ReadmeFinder
@@ -134,7 +133,7 @@ class RepoSummaryView(RepoAppView):
         except EmptyRepositoryError:
             collection = self.rhodecode_vcs_repo
 
-        c.repo_commits = RepoPage(
+        c.repo_commits = h.RepoPage(
             collection, page=p, items_per_page=size, url=url_generator)
         page_ids = [x.raw_id for x in c.repo_commits]
         c.comments = self.db_repo.get_comments(page_ids)
@@ -247,16 +246,14 @@ class RepoSummaryView(RepoAppView):
         renderer='json_ext')
     def repo_stats(self):
         commit_id = self.get_request_commit_id()
-
-        _namespace = caches.get_repo_namespace_key(
-            caches.SUMMARY_STATS, self.db_repo_name)
         show_stats = bool(self.db_repo.enable_statistics)
-        cache_manager = caches.get_cache_manager(
-            'repo_cache_long', _namespace)
-        _cache_key = caches.compute_key_from_params(
-            self.db_repo_name, commit_id, show_stats)
+        repo_id = self.db_repo.repo_id
 
-        def compute_stats():
+        cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
+        region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
+
+        @region.cache_on_arguments(namespace=cache_namespace_uid)
+        def compute_stats(repo_id, commit_id, show_stats):
             code_stats = {}
             size = 0
             try:
@@ -279,7 +276,7 @@ class RepoSummaryView(RepoAppView):
             return {'size': h.format_byte_size_binary(size),
                     'code_stats': code_stats}
 
-        stats = cache_manager.get(_cache_key, createfunc=compute_stats)
+        stats = compute_stats(self.db_repo.repo_id, commit_id, show_stats)
         return stats
 
     @LoginRequired()

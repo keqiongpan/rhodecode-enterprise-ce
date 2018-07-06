@@ -31,13 +31,6 @@ from rhodecode.model.db import Session, CacheKey
 
 log = logging.getLogger(__name__)
 
-FILE_TREE = 'cache_file_tree'
-FILE_TREE_META = 'cache_file_tree_metadata'
-FILE_SEARCH_TREE_META = 'cache_file_search_metadata'
-SUMMARY_STATS = 'cache_summary_stats'
-
-# This list of caches gets purged when invalidation happens
-USED_REPO_CACHES = (FILE_TREE, FILE_SEARCH_TREE_META)
 
 DEFAULT_CACHE_MANAGER_CONFIG = {
     'type': 'memorylru_base',
@@ -129,14 +122,6 @@ def clear_cache_manager(cache_manager):
     cache_manager.clear()
 
 
-def clear_repo_caches(repo_name):
-    # invalidate cache manager for this repo
-    for prefix in USED_REPO_CACHES:
-        namespace = get_repo_namespace_key(prefix, repo_name)
-        cache_manager = get_cache_manager('repo_cache_long', namespace)
-        clear_cache_manager(cache_manager)
-
-
 def compute_key_from_params(*args):
     """
     Helper to compute key from given params to be used in cache manager
@@ -146,60 +131,6 @@ def compute_key_from_params(*args):
 
 def get_repo_namespace_key(prefix, repo_name):
     return '{0}_{1}'.format(prefix, compute_key_from_params(repo_name))
-
-
-def conditional_cache(region, cache_namespace, condition, func):
-    """
-    Conditional caching function use like::
-        def _c(arg):
-            # heavy computation function
-            return data
-
-        # depending on the condition the compute is wrapped in cache or not
-        compute = conditional_cache('short_term', 'cache_namespace_id',
-                                    condition=True, func=func)
-        return compute(arg)
-
-    :param region: name of cache region
-    :param cache_namespace: cache namespace
-    :param condition: condition for cache to be triggered, and
-        return data cached
-    :param func: wrapped heavy function to compute
-
-    """
-    wrapped = func
-    if condition:
-        log.debug('conditional_cache: True, wrapping call of '
-                  'func: %s into %s region cache', region, func)
-
-        def _cache_wrap(region_name, cache_namespace):
-            """Return a caching wrapper"""
-
-            def decorate(func):
-                @functools.wraps(func)
-                def cached(*args, **kwargs):
-                    if kwargs:
-                        raise AttributeError(
-                            'Usage of kwargs is not allowed. '
-                            'Use only positional arguments in wrapped function')
-                    manager = get_cache_manager(region_name, cache_namespace)
-                    cache_key = compute_key_from_params(*args)
-
-                    def go():
-                        return func(*args, **kwargs)
-
-                    # save org function name
-                    go.__name__ = '_cached_%s' % (func.__name__,)
-
-                    return manager.get(cache_key, createfunc=go)
-                return cached
-
-            return decorate
-
-        cached_region = _cache_wrap(region, cache_namespace)
-        wrapped = cached_region(func)
-
-    return wrapped
 
 
 class ActiveRegionCache(object):

@@ -49,9 +49,18 @@ class FileNamespaceBackend(Serializer, file_backend.DBMBackend):
     def __init__(self, arguments):
         super(FileNamespaceBackend, self).__init__(arguments)
 
-    def list_keys(self):
+    def list_keys(self, prefix=''):
+        def cond(v):
+            if not prefix:
+                return True
+
+            if v.startswith(prefix):
+                return True
+            return False
+
         with self._dbm_file(True) as dbm:
-            return dbm.keys()
+
+            return filter(cond, dbm.keys())
 
     def get_store(self):
         return self.filename
@@ -81,8 +90,10 @@ class FileNamespaceBackend(Serializer, file_backend.DBMBackend):
 
 
 class RedisPickleBackend(Serializer, redis_backend.RedisBackend):
-    def list_keys(self):
-        return self.client.keys()
+    def list_keys(self, prefix=''):
+        if prefix:
+            prefix = prefix + '*'
+        return self.client.keys(prefix)
 
     def get_store(self):
         return self.client.connection_pool
