@@ -20,6 +20,7 @@
 
 import logging
 import string
+import rhodecode
 
 from pyramid.view import view_config
 from beaker.cache import cache_region
@@ -249,10 +250,19 @@ class RepoSummaryView(RepoAppView):
         show_stats = bool(self.db_repo.enable_statistics)
         repo_id = self.db_repo.repo_id
 
+        cache_seconds = safe_int(
+            rhodecode.CONFIG.get('rc_cache.cache_repo.expiration_time'))
+        cache_on = cache_seconds > 0
+        log.debug(
+            'Computing REPO TREE for repo_id %s commit_id `%s` '
+            'with caching: %s[TTL: %ss]' % (
+                repo_id, commit_id, cache_on, cache_seconds or 0))
+
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-        @region.cache_on_arguments(namespace=cache_namespace_uid)
+        @region.cache_on_arguments(namespace=cache_namespace_uid,
+                                   should_cache_fn=lambda v: cache_on)
         def compute_stats(repo_id, commit_id, show_stats):
             code_stats = {}
             size = 0

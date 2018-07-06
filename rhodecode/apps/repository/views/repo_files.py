@@ -30,6 +30,7 @@ from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
 
+import rhodecode
 from rhodecode.apps._base import RepoAppView
 
 from rhodecode.controllers.utils import parse_path_ref
@@ -39,7 +40,7 @@ from rhodecode.lib.exceptions import NonRelativePathError
 from rhodecode.lib.codeblocks import (
     filenode_as_lines_tokens, filenode_as_annotated_lines_tokens)
 from rhodecode.lib.utils2 import (
-    convert_line_endings, detect_mode, safe_str, str2bool)
+    convert_line_endings, detect_mode, safe_str, str2bool, safe_int)
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib.vcs import path as vcspath
@@ -192,10 +193,19 @@ class RepoFilesView(RepoAppView):
 
         repo_id = self.db_repo.repo_id
 
+        cache_seconds = safe_int(
+            rhodecode.CONFIG.get('rc_cache.cache_repo.expiration_time'))
+        cache_on = cache_seconds > 0
+        log.debug(
+            'Computing FILE TREE for repo_id %s commit_id `%s` and path `%s`'
+            'with caching: %s[TTL: %ss]' % (
+                repo_id, commit_id, f_path, cache_on, cache_seconds or 0))
+
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-        @region.cache_on_arguments(namespace=cache_namespace_uid)
+        @region.cache_on_arguments(namespace=cache_namespace_uid,
+                                   should_cache_fn=lambda v: cache_on)
         def compute_file_tree(repo_id, commit_id, f_path, full_load):
             log.debug('Generating cached file tree for repo_id: %s, %s, %s',
                       repo_id, commit_id, f_path)
@@ -775,10 +785,19 @@ class RepoFilesView(RepoAppView):
 
     def _get_nodelist_at_commit(self, repo_name, repo_id, commit_id, f_path):
 
+        cache_seconds = safe_int(
+            rhodecode.CONFIG.get('rc_cache.cache_repo.expiration_time'))
+        cache_on = cache_seconds > 0
+        log.debug(
+            'Computing FILE SEARCH for repo_id %s commit_id `%s` and path `%s`'
+            'with caching: %s[TTL: %ss]' % (
+                repo_id, commit_id, f_path, cache_on, cache_seconds or 0))
+
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-        @region.cache_on_arguments(namespace=cache_namespace_uid)
+        @region.cache_on_arguments(namespace=cache_namespace_uid,
+                                   should_cache_fn=lambda v: cache_on)
         def compute_file_search(repo_id, commit_id, f_path):
             log.debug('Generating cached nodelist for repo_id:%s, %s, %s',
                       repo_id, commit_id, f_path)
