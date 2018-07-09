@@ -21,6 +21,7 @@
 import logging
 
 from rhodecode import events
+from rhodecode.lib import rc_cache
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +33,10 @@ def trigger_user_permission_flush(event):
     Right Away
     """
     affected_user_ids = event.user_ids
+    for user_id in affected_user_ids:
+        cache_namespace_uid = 'cache_user_auth.{}'.format(user_id)
+        del_keys = rc_cache.clear_cache_namespace('cache_perms', cache_namespace_uid)
+        log.debug('Deleted %s cache keys for user_id: %s', del_keys, user_id)
 
 
 def includeme(config):
