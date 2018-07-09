@@ -28,6 +28,7 @@ from pyramid.view import view_config
 from pyramid.response import Response
 from pyramid.renderers import render
 
+from rhodecode import events
 from rhodecode.lib.exceptions import (
     RepoGroupAssignmentError, UserGroupAssignedException)
 from rhodecode.model.forms import (
@@ -183,6 +184,12 @@ class UserGroupsView(UserGroupAppView):
 
             h.flash(_('Updated user group %s') % updated_user_group,
                     category='success')
+
+            affected_user_ids = []
+            for user_id in added_members + removed_members:
+                affected_user_ids.append(user_id)
+            events.trigger(events.UserPermissionsChange(affected_user_ids))
+
             Session().commit()
         except formencode.Invalid as errors:
             defaults = errors.value
@@ -354,6 +361,14 @@ class UserGroupsView(UserGroupAppView):
 
         Session().commit()
         h.flash(_('User Group permissions updated'), category='success')
+
+        affected_user_ids = []
+        for change in changes['added'] + changes['updated'] + changes['deleted']:
+            if change['type'] == 'user':
+                affected_user_ids.append(change['id'])
+
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
+
         raise HTTPFound(
             h.route_path('edit_user_group_perms', user_group_id=user_group_id))
 

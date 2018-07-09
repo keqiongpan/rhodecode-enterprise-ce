@@ -49,11 +49,13 @@ def trigger(event, registry=None):
     if isinstance(event, RhodecodeEvent):
         integrations_event_handler(event)
 
+
 from rhodecode.events.user import (  # noqa
     UserPreCreate,
     UserPostCreate,
     UserPreUpdate,
-    UserRegistered
+    UserRegistered,
+    UserPermissionsChange,
 )
 
 from rhodecode.events.repo import (  # noqa

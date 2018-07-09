@@ -83,3 +83,22 @@ class UserPreUpdate(RhodecodeEvent):
         super(UserPreUpdate, self).__init__()
         self.user = user
         self.user_data = user_data
+
+
+class UserPermissionsChange(RhodecodeEvent):
+    """
+    This event should be triggered on an event that permissions of user might changed.
+    Currently this should be triggered on:
+
+      - user added/removed from user group
+      - repo permissions changed
+      - repo group permissions changed
+      - user group permissions changed
+
+    """
+    name = 'user-permissions-change'
+    display_name = lazy_ugettext('user permissions change')
+
+    def __init__(self, user_ids):
+        super(UserPermissionsChange, self).__init__()
+        self.user_ids = user_ids

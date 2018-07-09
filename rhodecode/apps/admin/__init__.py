@@ -420,5 +420,7 @@ def includeme(config):
     config.add_route(name='admin_home', pattern=ADMIN_PREFIX)
     config.include(admin_routes, route_prefix=ADMIN_PREFIX)
 
+    config.include('.subscribers')
+
     # Scan module for configuration decorators.
     config.scan('.views', ignore='.tests')

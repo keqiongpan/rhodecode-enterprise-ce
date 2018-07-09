@@ -102,6 +102,7 @@ def add_request_user_context(event):
     request.environ['rc_auth_user'] = auth_user
     request.environ['rc_req_id'] = req_id
 
+
 def inject_app_settings(event):
     settings = event.app.registry.settings
     # inject info about available permissions

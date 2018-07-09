@@ -23,6 +23,7 @@ import logging
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 
+from rhodecode import events
 from rhodecode.apps._base import RepoGroupAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
@@ -95,6 +96,14 @@ class RepoGroupPermissionsView(RepoGroupAppView):
 
         Session().commit()
         h.flash(_('Repository Group permissions updated'), category='success')
+
+        affected_user_ids = []
+        for change in changes['added'] + changes['updated'] + changes['deleted']:
+            if change['type'] == 'user':
+                affected_user_ids.append(change['id'])
+
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
+
         raise HTTPFound(
             h.route_path('edit_repo_group_perms',
                          repo_group_name=self.db_repo_group_name))

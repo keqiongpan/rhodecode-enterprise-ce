@@ -23,6 +23,7 @@ import logging
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
+from rhodecode import events
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
@@ -39,8 +40,6 @@ class RepoSettingsPermissionsView(RepoAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-
         return c
 
     @LoginRequired()
@@ -84,6 +83,13 @@ class RepoSettingsPermissionsView(RepoAppView):
 
         Session().commit()
         h.flash(_('Repository permissions updated'), category='success')
+
+        affected_user_ids = []
+        for change in changes['added'] + changes['updated'] + changes['deleted']:
+            if change['type'] == 'user':
+                affected_user_ids.append(change['id'])
+
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
 
         raise HTTPFound(
             h.route_path('edit_repo_perms', repo_name=self.db_repo_name))
