@@ -54,6 +54,8 @@ class TestGrantUserGroupPermissionFromRepoGroup(object):
             self, name, perm, apply_to_children, user_util):
         user_group = user_util.create_user_group()
         repo_group = user_util.create_repo_group()
+        user_util.create_repo(parent=repo_group)
+
         id_, params = build_data(
             self.apikey,
             'grant_user_group_permission_to_repo_group',

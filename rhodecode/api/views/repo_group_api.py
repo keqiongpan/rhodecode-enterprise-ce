@@ -451,7 +451,7 @@ def grant_user_permission_to_repo_group(
     perm = get_perm_or_error(perm, prefix='group.')
     apply_to_children = Optional.extract(apply_to_children)
 
-    perm_additions = [[user.user_id, perm, "user"]]
+    perm_additions = [[user.user_id, perm.permission_name, "user"]]
     try:
         RepoGroupModel().update_permissions(repo_group=repo_group,
                                             perm_additions=perm_additions,
@@ -609,7 +609,7 @@ def grant_user_group_permission_to_repo_group(
 
     apply_to_children = Optional.extract(apply_to_children)
 
-    perm_additions = [[user_group.users_group_id, perm, "user_group"]]
+    perm_additions = [[user_group.users_group_id, perm.permission_name, "user_group"]]
     try:
         RepoGroupModel().update_permissions(repo_group=repo_group,
                                             perm_additions=perm_additions,
