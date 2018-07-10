@@ -485,7 +485,7 @@ class PullRequestModel(BaseModel):
             reviewer.mandatory = mandatory
 
             # NOTE(marcink): pick only first rule for now
-            rule_id = rules[0] if rules else None
+            rule_id = list(rules)[0] if rules else None
             rule = RepoReviewRule.get(rule_id) if rule_id else None
             if rule:
                 review_group = rule.user_group_vote_rule()
