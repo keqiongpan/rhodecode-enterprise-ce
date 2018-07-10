@@ -28,6 +28,7 @@ from pyramid.view import view_config
 from pyramid.response import Response
 from pyramid.renderers import render
 
+from rhodecode import events
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, CSRFRequired, HasPermissionAnyDecorator)
@@ -253,5 +254,6 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
                     % user_group_name, category='error')
             raise HTTPFound(h.route_path('user_groups_new'))
 
+        events.trigger(events.UserPermissionsChange([self._rhodecode_user.user_id]))
         raise HTTPFound(
             h.route_path('edit_user_group', user_group_id=user_group_id))
