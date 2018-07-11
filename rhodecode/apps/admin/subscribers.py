@@ -32,7 +32,7 @@ def trigger_user_permission_flush(event):
     automatic flush of permission caches, so the users affected receive new permissions
     Right Away
     """
-    affected_user_ids = event.user_ids
+    affected_user_ids = set(event.user_ids)
     for user_id in affected_user_ids:
         cache_namespace_uid = 'cache_user_auth.{}'.format(user_id)
         del_keys = rc_cache.clear_cache_namespace('cache_perms', cache_namespace_uid)
