@@ -608,7 +608,7 @@ def create_pull_request(
             [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
     """
 
-    source_db_repo =  get_repo_or_error(source_repo)
+    source_db_repo = get_repo_or_error(source_repo)
     target_db_repo = get_repo_or_error(target_repo)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
@@ -616,23 +616,28 @@ def create_pull_request(
 
     full_source_ref = resolve_ref_or_error(source_ref, source_db_repo)
     full_target_ref = resolve_ref_or_error(target_ref, target_db_repo)
-    source_commit = get_commit_or_error(full_source_ref, source_db_repo)
-    target_commit = get_commit_or_error(full_target_ref, target_db_repo)
+
     source_scm = source_db_repo.scm_instance()
     target_scm = target_db_repo.scm_instance()
+
+    source_commit = get_commit_or_error(full_source_ref, source_db_repo)
+    target_commit = get_commit_or_error(full_target_ref, target_db_repo)
+
+    ancestor = source_scm.get_common_ancestor(
+        source_commit.raw_id, target_commit.raw_id, target_scm)
+    if not ancestor:
+        raise JSONRPCError('no common ancestor found')
+
+    # recalculate target ref based on ancestor
+    target_ref_type, target_ref_name, __ = full_target_ref.split(':')
+    full_target_ref = ':'.join((target_ref_type, target_ref_name, ancestor))
 
     commit_ranges = target_scm.compare(
         target_commit.raw_id, source_commit.raw_id, source_scm,
         merge=True, pre_load=[])
 
-    ancestor = target_scm.get_common_ancestor(
-        target_commit.raw_id, source_commit.raw_id, source_scm)
-
     if not commit_ranges:
         raise JSONRPCError('no commits found')
-
-    if not ancestor:
-        raise JSONRPCError('no common ancestor found')
 
     reviewer_objects = Optional.extract(reviewers) or []
 
@@ -674,6 +679,7 @@ def create_pull_request(
             source_ref=title_source_ref,
             target=target_repo
         )
+    description = Optional.extract(description)
 
     pull_request = PullRequestModel().create(
         created_by=apiuser.user_id,
@@ -684,7 +690,7 @@ def create_pull_request(
         revisions=[commit.raw_id for commit in reversed(commit_ranges)],
         reviewers=reviewers,
         title=title,
-        description=Optional.extract(description),
+        description=description,
         reviewer_data=reviewer_rules,
         auth_user=apiuser
     )

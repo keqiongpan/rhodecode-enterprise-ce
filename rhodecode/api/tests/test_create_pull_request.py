@@ -94,6 +94,20 @@ class TestCreatePullRequestApi(object):
         assert pull_request.description == ''
 
     @pytest.mark.backends("git", "hg")
+    def test_create_with_empty_title(self, backend):
+        data = self._prepare_data(backend)
+        data.pop('title')
+        id_, params = build_data(
+            self.apikey_regular, 'create_pull_request', **data)
+        response = api_call(self.app, params)
+        result = response.json
+        pull_request_id = result['result']['pull_request_id']
+        pull_request = PullRequestModel().get(pull_request_id)
+        data['ref'] = backend.default_branch_name
+        title = '{source_repo}#{ref} to {target_repo}'.format(**data)
+        assert pull_request.title == title
+
+    @pytest.mark.backends("git", "hg")
     def test_create_with_reviewers_specified_by_names(
             self, backend, no_notifications):
         data = self._prepare_data(backend)
@@ -277,6 +291,7 @@ class TestCreatePullRequestApi(object):
         self.commit_ids = backend.create_master_repo(commits)
         self.source = backend.create_repo(heads=[source_head])
         self.target = backend.create_repo(heads=[target_head])
+
         data = {
             'source_repo': self.source.repo_name,
             'target_repo': self.target.repo_name,
