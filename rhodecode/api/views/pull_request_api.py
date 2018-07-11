@@ -666,15 +666,13 @@ def create_pull_request(
     except ValueError as e:
         raise JSONRPCError('Reviewers Validation: {}'.format(e))
 
-    pull_request_model = PullRequestModel()
-    pull_request = pull_request_model.create(
+    pull_request = PullRequestModel().create(
         created_by=apiuser.user_id,
         source_repo=source_repo,
         source_ref=full_source_ref,
         target_repo=target_repo,
         target_ref=full_target_ref,
-        revisions=reversed(
-            [commit.raw_id for commit in reversed(commit_ranges)]),
+        revisions=[commit.raw_id for commit in reversed(commit_ranges)],
         reviewers=reviewers,
         title=title,
         description=Optional.extract(description),
