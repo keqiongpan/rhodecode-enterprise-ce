@@ -574,7 +574,7 @@ def comment_pull_request(
 @jsonrpc_method()
 def create_pull_request(
         request, apiuser, source_repo, target_repo, source_ref, target_ref,
-        title, description=Optional(''), reviewers=Optional(None)):
+        title=Optional(''), description=Optional(''), reviewers=Optional(None)):
     """
     Creates a new pull request.
 
@@ -595,7 +595,7 @@ def create_pull_request(
     :type source_ref: str
     :param target_ref: Set the target ref name.
     :type target_ref: str
-    :param title: Set the pull request title.
+    :param title: Optionally Set the pull request title, it's generated otherwise
     :type title: str
     :param description: Set the pull request description.
     :type description: Optional(str)
@@ -666,6 +666,15 @@ def create_pull_request(
     except ValueError as e:
         raise JSONRPCError('Reviewers Validation: {}'.format(e))
 
+    title = Optional.extract(title)
+    if not title:
+        title_source_ref = source_ref.split(':', 2)[1]
+        title = PullRequestModel().generate_pullrequest_title(
+            source=source_repo,
+            source_ref=title_source_ref,
+            target=target_repo
+        )
+
     pull_request = PullRequestModel().create(
         created_by=apiuser.user_id,
         source_repo=source_repo,
@@ -676,6 +685,7 @@ def create_pull_request(
         reviewers=reviewers,
         title=title,
         description=Optional.extract(description),
+        reviewer_data=reviewer_rules,
         auth_user=apiuser
     )
 

@@ -44,7 +44,6 @@ class TestCreatePullRequestApi(object):
             'target_repo': 'tests/target_repo',
             'source_ref': 'branch:default:initial',
             'target_ref': 'branch:default:new-feature',
-            'title': 'Test PR 1'
         }
         for key in required_data:
             data = required_data.copy()
