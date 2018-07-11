@@ -868,19 +868,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         ancestor = source_scm.get_common_ancestor(
             source_commit.raw_id, target_commit.raw_id, target_scm)
 
+        # recalculate target ref based on ancestor
         target_ref_type, target_ref_name, __ = _form['target_ref'].split(':')
         target_ref = ':'.join((target_ref_type, target_ref_name, ancestor))
-
-        pullrequest_title = _form['pullrequest_title']
-        title_source_ref = source_ref.split(':', 2)[1]
-        if not pullrequest_title:
-            pullrequest_title = PullRequestModel().generate_pullrequest_title(
-                source=source_repo,
-                source_ref=title_source_ref,
-                target=target_repo
-            )
-
-        description = _form['pullrequest_desc']
 
         get_default_reviewers_data, validate_default_reviewers = \
             PullRequestModel().get_reviewer_functions()
@@ -893,11 +883,29 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         given_reviewers = _form['review_members']
         reviewers = validate_default_reviewers(given_reviewers, reviewer_rules)
 
+        pullrequest_title = _form['pullrequest_title']
+        title_source_ref = source_ref.split(':', 2)[1]
+        if not pullrequest_title:
+            pullrequest_title = PullRequestModel().generate_pullrequest_title(
+                source=source_repo,
+                source_ref=title_source_ref,
+                target=target_repo
+            )
+
+        description = _form['pullrequest_desc']
+
         try:
             pull_request = PullRequestModel().create(
-                self._rhodecode_user.user_id, source_repo, source_ref,
-                target_repo, target_ref, commit_ids, reviewers,
-                pullrequest_title, description, reviewer_rules,
+                created_by=self._rhodecode_user.user_id,
+                source_repo=source_repo,
+                source_ref=source_ref,
+                target_repo=target_repo,
+                target_ref=target_ref,
+                revisions=commit_ids,
+                reviewers=reviewers,
+                title=pullrequest_title,
+                description=description,
+                reviewer_data=reviewer_rules,
                 auth_user=self._rhodecode_user
             )
             Session().commit()
