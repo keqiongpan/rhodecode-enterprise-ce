@@ -4221,7 +4221,7 @@ class RepoReviewRule(Base, BaseModel):
     rule_users = relationship('RepoReviewRuleUser')
     rule_user_groups = relationship('RepoReviewRuleUserGroup')
 
-    def _validate_glob(self, value):
+    def _validate_pattern(self, value):
         re.compile('^' + glob2re(value) + '$')
 
     @hybrid_property
@@ -4230,7 +4230,7 @@ class RepoReviewRule(Base, BaseModel):
 
     @source_branch_pattern.setter
     def source_branch_pattern(self, value):
-        self._validate_glob(value)
+        self._validate_pattern(value)
         self._branch_pattern = value or '*'
 
     @hybrid_property
@@ -4239,7 +4239,7 @@ class RepoReviewRule(Base, BaseModel):
 
     @target_branch_pattern.setter
     def target_branch_pattern(self, value):
-        self._validate_glob(value)
+        self._validate_pattern(value)
         self._target_branch_pattern = value or '*'
 
     @hybrid_property
@@ -4248,7 +4248,7 @@ class RepoReviewRule(Base, BaseModel):
 
     @file_pattern.setter
     def file_pattern(self, value):
-        self._validate_glob(value)
+        self._validate_pattern(value)
         self._file_pattern = value or '*'
 
     def matches(self, source_branch, target_branch, files_changed):
@@ -4269,14 +4269,20 @@ class RepoReviewRule(Base, BaseModel):
             if self.source_branch_pattern == '*':
                 source_branch_match = True
             else:
-                source_branch_regex = re.compile(
-                    '^' + glob2re(self.source_branch_pattern) + '$')
+                if self.source_branch_pattern.startswith('re:'):
+                    source_pattern = self.source_branch_pattern[3:]
+                else:
+                    source_pattern = '^' + glob2re(self.source_branch_pattern) + '$'
+                source_branch_regex = re.compile(source_pattern)
                 source_branch_match = bool(source_branch_regex.search(source_branch))
             if self.target_branch_pattern == '*':
                 target_branch_match = True
             else:
-                target_branch_regex = re.compile(
-                    '^' + glob2re(self.target_branch_pattern) + '$')
+                if self.target_branch_pattern.startswith('re:'):
+                    target_pattern = self.target_branch_pattern[3:]
+                else:
+                    target_pattern = '^' + glob2re(self.target_branch_pattern) + '$'
+                target_branch_regex = re.compile(target_pattern)
                 target_branch_match = bool(target_branch_regex.search(target_branch))
 
             branch_matches = source_branch_match and target_branch_match
@@ -4284,7 +4290,11 @@ class RepoReviewRule(Base, BaseModel):
         files_matches = True
         if self.file_pattern != '*':
             files_matches = False
-            file_regex = re.compile(glob2re(self.file_pattern))
+            if self.file_pattern.startswith('re:'):
+                file_pattern = self.file_pattern[3:]
+            else:
+                file_pattern = glob2re(self.file_pattern)
+            file_regex = re.compile(file_pattern)
             for filename in files_changed:
                 if file_regex.search(filename):
                     files_matches = True
