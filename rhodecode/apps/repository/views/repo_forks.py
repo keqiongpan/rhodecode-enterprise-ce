@@ -28,6 +28,7 @@ from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
 
+from rhodecode import events
 from rhodecode.apps._base import RepoAppView, DataGridAppView
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous,
@@ -253,6 +254,9 @@ class RepoForksView(RepoAppView, DataGridAppView):
             h.flash(msg, category='error')
 
         repo_name = form_result.get('repo_name_full', self.db_repo_name)
+
+        events.trigger(events.UserPermissionsChange([self._rhodecode_user.user_id]))
+
         raise HTTPFound(
             h.route_path('repo_creating',
                          repo_name=repo_name,

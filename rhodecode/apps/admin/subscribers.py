@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 
 def trigger_user_permission_flush(event):
     """
-    Subscriber to the `UserPermissionChange`. This triggers the
+    Subscriber to the `UserPermissionsChange`. This triggers the
     automatic flush of permission caches, so the users affected receive new permissions
     Right Away
     """
