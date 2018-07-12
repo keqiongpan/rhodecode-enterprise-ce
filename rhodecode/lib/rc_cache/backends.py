@@ -28,8 +28,8 @@ from dogpile.cache.backends import file as file_backend
 from dogpile.cache.backends import redis as redis_backend
 from dogpile.cache.backends.file import NO_VALUE, compat, FileLock
 from dogpile.cache.util import memoized_property
+from lru import LRU as LRUDict
 
-from rhodecode.lib.memory_lru_debug import LRUDict
 
 _default_max_size = 1024
 
@@ -37,11 +37,21 @@ log = logging.getLogger(__name__)
 
 
 class LRUMemoryBackend(memory_backend.MemoryBackend):
+    pickle_values = False
 
     def __init__(self, arguments):
         max_size = arguments.pop('max_size', _default_max_size)
         arguments['cache_dict'] = LRUDict(max_size)
         super(LRUMemoryBackend, self).__init__(arguments)
+
+    def delete(self, key):
+        if self._cache.has_key(key):
+            del self._cache[key]
+
+    def delete_multi(self, keys):
+        for key in keys:
+            if self._cache.has_key(key):
+                del self._cache[key]
 
 
 class Serializer(object):
