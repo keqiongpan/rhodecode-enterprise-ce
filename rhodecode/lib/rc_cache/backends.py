@@ -17,15 +17,23 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
+import time
+import errno
+import logging
+
+import gevent
 
 from dogpile.cache.backends import memory as memory_backend
 from dogpile.cache.backends import file as file_backend
 from dogpile.cache.backends import redis as redis_backend
-from dogpile.cache.backends.file import NO_VALUE, compat
+from dogpile.cache.backends.file import NO_VALUE, compat, FileLock
+from dogpile.cache.util import memoized_property
 
 from rhodecode.lib.memory_lru_debug import LRUDict
 
 _default_max_size = 1024
+
+log = logging.getLogger(__name__)
 
 
 class LRUMemoryBackend(memory_backend.MemoryBackend):
@@ -44,9 +52,45 @@ class Serializer(object):
         return compat.pickle.loads(value)
 
 
+class CustomLockFactory(FileLock):
+
+    @memoized_property
+    def _module(self):
+        import fcntl
+        flock_org = fcntl.flock
+
+        def gevent_flock(fd, operation):
+            """
+            Gevent compatible flock
+            """
+            # set non-blocking, this will cause an exception if we cannot acquire a lock
+            operation |= fcntl.LOCK_NB
+            start_lock_time = time.time()
+            timeout = 60 * 5  # 5min
+            while True:
+                try:
+                    flock_org(fd, operation)
+                    # lock has been acquired
+                    break
+                except (OSError, IOError) as e:
+                    # raise on other errors than Resource temporarily unavailable
+                    if e.errno != errno.EAGAIN:
+                        raise
+                    elif (time.time() - start_lock_time) > timeout:
+                        # waited to much time on a lock, better fail than loop for ever
+                        raise
+
+                    log.debug('Failed to acquire lock, retry in 0.1')
+                    gevent.sleep(0.1)
+
+        fcntl.flock = gevent_flock
+        return fcntl
+
+
 class FileNamespaceBackend(Serializer, file_backend.DBMBackend):
 
     def __init__(self, arguments):
+        arguments['lock_factory'] = CustomLockFactory
         super(FileNamespaceBackend, self).__init__(arguments)
 
     def list_keys(self, prefix=''):
