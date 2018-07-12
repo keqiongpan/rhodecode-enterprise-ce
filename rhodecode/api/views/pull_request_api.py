@@ -641,6 +641,7 @@ def create_pull_request(
 
     reviewer_objects = Optional.extract(reviewers) or []
 
+    # serialize and validate passed in given reviewers
     if reviewer_objects:
         schema = ReviewerListSchema()
         try:
@@ -653,20 +654,19 @@ def create_pull_request(
             user = get_user_or_error(reviewer_object['username'])
             reviewer_object['user_id'] = user.user_id
 
-    get_default_reviewers_data, get_validated_reviewers = \
+    get_default_reviewers_data, validate_default_reviewers = \
         PullRequestModel().get_reviewer_functions()
 
+    # recalculate reviewers logic, to make sure we can validate this
     reviewer_rules = get_default_reviewers_data(
         apiuser.get_instance(), source_db_repo,
         source_commit, target_db_repo, target_commit)
 
-    # specified rules are later re-validated, thus we can assume users will
-    # eventually provide those that meet the reviewer criteria.
-    if not reviewer_objects:
-        reviewer_objects = reviewer_rules['reviewers']
+    # now MERGE our given with the calculated
+    reviewer_objects = reviewer_rules['reviewers'] + reviewer_objects
 
     try:
-        reviewers = get_validated_reviewers(
+        reviewers = validate_default_reviewers(
             reviewer_objects, reviewer_rules)
     except ValueError as e:
         raise JSONRPCError('Reviewers Validation: {}'.format(e))

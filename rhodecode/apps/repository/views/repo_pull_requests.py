@@ -881,7 +881,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             source_commit, target_db_repo, target_commit)
 
         given_reviewers = _form['review_members']
-        reviewers = validate_default_reviewers(given_reviewers, reviewer_rules)
+        reviewers = validate_default_reviewers(
+            given_reviewers, reviewer_rules)
 
         pullrequest_title = _form['pullrequest_title']
         title_source_ref = source_ref.split(':', 2)[1]
