@@ -21,11 +21,12 @@
 import os
 import hashlib
 import logging
+import time
 from collections import namedtuple
 from functools import wraps
 import bleach
 
-from rhodecode.lib import caches
+from rhodecode.lib import caches, rc_cache
 from rhodecode.lib.utils2 import (
     Optional, AttributeDict, safe_str, remove_prefix, str2bool)
 from rhodecode.lib.vcs.backends import base
@@ -206,13 +207,17 @@ class SettingsModel(BaseModel):
         return res
 
     def invalidate_settings_cache(self):
-        namespace = 'rhodecode_settings'
-        cache_manager = caches.get_cache_manager('sql_cache_short', namespace)
-        caches.clear_cache_manager(cache_manager)
+        # NOTE:(marcink) we flush the whole sql_cache_short region, because it
+        # reads different settings etc. It's little too much but those caches are
+        # anyway very short lived and it's a safest way.
+        region = rc_cache.get_or_create_region('sql_cache_short')
+        region.invalidate()
 
     def get_all_settings(self, cache=False):
+        region = rc_cache.get_or_create_region('sql_cache_short')
 
-        def _compute():
+        @region.cache_on_arguments(should_cache_fn=lambda v: cache)
+        def _get_all_settings(name, key):
             q = self._get_settings_query()
             if not q:
                 raise Exception('Could not get application settings !')
@@ -223,20 +228,14 @@ class SettingsModel(BaseModel):
             }
             return settings
 
-        if cache:
-            log.debug('Fetching app settings using cache')
-            repo = self._get_repo(self.repo) if self.repo else None
-            namespace = 'rhodecode_settings'
-            cache_manager = caches.get_cache_manager(
-                'sql_cache_short', namespace)
-            _cache_key = (
-                "get_repo_{}_settings".format(repo.repo_id)
-                if repo else "get_app_settings")
+        repo = self._get_repo(self.repo) if self.repo else None
+        key = "settings_repo.{}".format(repo.repo_id) if repo else "settings_app"
+        start = time.time()
+        result = _get_all_settings('rhodecode_settings', key)
+        total = time.time() - start
+        log.debug('Fetching app settings for key: %s took: %.3fs', key, total)
 
-            return cache_manager.get(_cache_key, createfunc=_compute)
-
-        else:
-            return _compute()
+        return result
 
     def get_auth_settings(self):
         q = self._get_settings_query()

@@ -23,7 +23,7 @@ import beaker
 import logging
 import threading
 
-from beaker.cache import _cache_decorate, cache_regions, region_invalidate
+from beaker.cache import _cache_decorate, region_invalidate
 from sqlalchemy.exc import IntegrityError
 
 from rhodecode.lib.utils import safe_str, sha1
@@ -82,44 +82,6 @@ def configure_cache_region(
     region_settings['expire'] = int(region_settings.get('expire', default_expire))
 
     beaker.cache.cache_regions[region_name] = region_settings
-
-
-def get_cache_manager(region_name, cache_name, custom_ttl=None):
-    """
-    Creates a Beaker cache manager. Such instance can be used like that::
-
-    _namespace = caches.get_repo_namespace_key(caches.XXX, repo_name)
-    cache_manager = caches.get_cache_manager('some_namespace_name', _namespace)
-    _cache_key = caches.compute_key_from_params(repo_name, commit.raw_id)
-    def heavy_compute():
-        ...
-    result = cache_manager.get(_cache_key, createfunc=heavy_compute)
-
-    :param region_name: region from ini file
-    :param cache_name: custom cache name, usually prefix+repo_name. eg
-        file_switcher_repo1
-    :param custom_ttl: override .ini file timeout on this cache
-    :return: instance of cache manager
-    """
-
-    cache_config = cache_regions.get(region_name, DEFAULT_CACHE_MANAGER_CONFIG)
-    if custom_ttl:
-        log.debug('Updating region %s with custom ttl: %s',
-                  region_name, custom_ttl)
-        cache_config.update({'expire': custom_ttl})
-
-    return beaker.cache.Cache._get_cache(cache_name, cache_config)
-
-
-def clear_cache_manager(cache_manager):
-    """
-    namespace = 'foobar'
-    cache_manager = get_cache_manager('some_namespace_name', namespace)
-    clear_cache_manager(cache_manager)
-    """
-
-    log.debug('Clearing all values for cache manager %s', cache_manager)
-    cache_manager.clear()
 
 
 def compute_key_from_params(*args):

@@ -25,7 +25,7 @@ from rhodecode.model.meta import Session
 from rhodecode.model.permission import PermissionModel
 from rhodecode.model.ssh_key import SshKeyModel
 from rhodecode.tests import (
-    TestController, clear_all_caches, assert_session_flash)
+    TestController, clear_cache_regions, assert_session_flash)
 
 
 def route_path(name, params=None, **kwargs):
@@ -221,22 +221,21 @@ class TestAdminPermissionsController(TestController):
     def test_index_ips(self):
         self.log_user()
         response = self.app.get(route_path('admin_permissions_ips'))
-        # TODO: Test response...
         response.mustcontain('All IP addresses are allowed')
 
     def test_add_delete_ips(self):
+        clear_cache_regions(['sql_cache_short'])
         self.log_user()
-        clear_all_caches()
 
         # ADD
         default_user_id = User.get_default_user().user_id
         self.app.post(
             route_path('edit_user_ips_add', user_id=default_user_id),
-            params={'new_ip': '127.0.0.0/24', 'csrf_token': self.csrf_token})
+            params={'new_ip': '0.0.0.0/24', 'csrf_token': self.csrf_token})
 
         response = self.app.get(route_path('admin_permissions_ips'))
-        response.mustcontain('127.0.0.0/24')
-        response.mustcontain('127.0.0.0 - 127.0.0.255')
+        response.mustcontain('0.0.0.0/24')
+        response.mustcontain('0.0.0.0 - 0.0.0.255')
 
         # DELETE
         default_user_id = User.get_default_user().user_id
@@ -249,11 +248,11 @@ class TestAdminPermissionsController(TestController):
 
         assert_session_flash(response, 'Removed ip address from user whitelist')
 
-        clear_all_caches()
+        clear_cache_regions(['sql_cache_short'])
         response = self.app.get(route_path('admin_permissions_ips'))
         response.mustcontain('All IP addresses are allowed')
-        response.mustcontain(no=['127.0.0.0/24'])
-        response.mustcontain(no=['127.0.0.0 - 127.0.0.255'])
+        response.mustcontain(no=['0.0.0.0/24'])
+        response.mustcontain(no=['0.0.0.0 - 0.0.0.255'])
 
     def test_index_overview(self):
         self.log_user()

@@ -41,7 +41,7 @@ log = logging.getLogger(__name__)
 
 __all__ = [
     'get_new_dir', 'TestController',
-    'link_to', 'clear_all_caches',
+    'link_to', 'clear_cache_regions',
     'assert_session_flash', 'login_user', 'no_newline_id_generator',
     'TESTS_TMP_PATH', 'HG_REPO', 'GIT_REPO', 'SVN_REPO',
     'NEW_HG_REPO', 'NEW_GIT_REPO',
@@ -95,10 +95,12 @@ TEST_HG_REPO_PULL = jn(TESTS_TMP_PATH, 'vcshgpull%s' % uniq_suffix)
 TEST_REPO_PREFIX = 'vcs-test'
 
 
-def clear_all_caches():
-    from beaker.cache import cache_managers
-    for _cache in cache_managers.values():
-        _cache.clear()
+def clear_cache_regions(regions=None):
+    # dogpile
+    from rhodecode.lib.rc_cache import region_meta
+    for region_name, region in region_meta.dogpile_cache_regions.items():
+        if not regions or region_name in regions:
+            region.invalidate()
 
 
 def get_new_dir(title):

@@ -18,16 +18,16 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-caching_query.py
+"""caching_query.py
 
-Represent persistence structures which allow the usage of
-Beaker caching with SQLAlchemy.
+Represent functions and classes
+which allow the usage of Dogpile caching with SQLAlchemy.
+Introduces a query option called FromCache.
 
 The three new concepts introduced here are:
 
  * CachingQuery - a Query subclass that caches and
-   retrieves results in/from Beaker.
+   retrieves results in/from dogpile.cache.
  * FromCache - a query option that establishes caching
    parameters on a Query
  * RelationshipCache - a variant of FromCache which is specific
@@ -36,57 +36,44 @@ The three new concepts introduced here are:
    a Query.
 
 The rest of what's here are standard SQLAlchemy and
-Beaker constructs.
+dogpile.cache constructs.
 
 """
-import beaker
-from beaker.exceptions import BeakerException
-
 from sqlalchemy.orm.interfaces import MapperOption
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql import visitors
+from dogpile.cache.api import NO_VALUE
 
 from rhodecode.lib.utils2 import safe_str
 
 
 class CachingQuery(Query):
-    """A Query subclass which optionally loads full results from a Beaker
+    """A Query subclass which optionally loads full results from a dogpile
     cache region.
 
-    The CachingQuery stores additional state that allows it to consult
-    a Beaker cache before accessing the database:
-
-    * A "region", which is a cache region argument passed to a
-      Beaker CacheManager, specifies a particular cache configuration
-      (including backend implementation, expiration times, etc.)
-    * A "namespace", which is a qualifying name that identifies a
-      group of keys within the cache.  A query that filters on a name
-      might use the name "by_name", a query that filters on a date range
-      to a joined table might use the name "related_date_range".
-
-    When the above state is present, a Beaker cache is retrieved.
-
-    The "namespace" name is first concatenated with
-    a string composed of the individual entities and columns the Query
-    requests, i.e. such as ``Query(User.id, User.name)``.
-
-    The Beaker cache is then loaded from the cache manager based
-    on the region and composed namespace.  The key within the cache
-    itself is then constructed against the bind parameters specified
-    by this query, which are usually literals defined in the
-    WHERE clause.
+    The CachingQuery optionally stores additional state that allows it to consult
+    a dogpile.cache cache before accessing the database, in the form
+    of a FromCache or RelationshipCache object.   Each of these objects
+    refer to the name of a :class:`dogpile.cache.Region` that's been configured
+    and stored in a lookup dictionary.  When such an object has associated
+    itself with the CachingQuery, the corresponding :class:`dogpile.cache.Region`
+    is used to locate a cached result.  If none is present, then the
+    Query is invoked normally, the results being cached.
 
     The FromCache and RelationshipCache mapper options below represent
     the "public" method of configuring this state upon the CachingQuery.
 
     """
+    def _get_region(self):
+        from rhodecode.lib.rc_cache import region_meta
+        return region_meta.dogpile_cache_regions
 
-    def __init__(self, manager, *args, **kw):
-        self.cache_manager = manager
+    def __init__(self, regions, *args, **kw):
+        self.cache_regions = regions or self._get_region()
         Query.__init__(self, *args, **kw)
 
     def __iter__(self):
-        """override __iter__ to pull results from Beaker
+        """override __iter__ to pull results from dogpile
            if particular attributes have been configured.
 
            Note that this approach does *not* detach the loaded objects from
@@ -98,109 +85,121 @@ class CachingQuery(Query):
            in the cache are not the same ones in the current Session.
 
         """
-        if hasattr(self, '_cache_parameters'):
+        super_ = super(CachingQuery, self)
 
-            def caching_query():
-                return list(Query.__iter__(self))
-
-            return self.get_value(createfunc=caching_query)
+        if hasattr(self, '_cache_region'):
+            return self.get_value(createfunc=lambda: list(super_.__iter__()))
         else:
-            return Query.__iter__(self)
+            return super_.__iter__()
+
+    def _execute_and_instances(self, context):
+        """override _execute_and_instances to pull results from dogpile
+            if the query is invoked directly from an external context.
+
+           This method is necessary in order to maintain compatibility
+           with the "baked query" system now used by default in some
+           relationship loader scenarios.   Note also the
+           RelationshipCache._generate_cache_key method which enables
+           the baked query to be used within lazy loads.
+
+           .. versionadded:: 1.2.7
+        """
+        super_ = super(CachingQuery, self)
+
+        if context.query is not self and hasattr(self, '_cache_region'):
+            # special logic called when the Query._execute_and_instances()
+            # method is called directly from the baked query
+            return self.get_value(
+                createfunc=lambda: list(
+                    super_._execute_and_instances(context)
+                )
+            )
+        else:
+            return super_._execute_and_instances(context)
+
+    def _get_cache_plus_key(self):
+        """Return a cache region plus key."""
+        dogpile_region = self.cache_regions[self._cache_region.region]
+        if self._cache_region.cache_key:
+            key = self._cache_region.cache_key
+        else:
+            key = _key_from_query(self)
+        return dogpile_region, key
 
     def invalidate(self):
-        """Invalidate the value represented by this Query."""
+        """Invalidate the cache value represented by this Query."""
 
-        cache, cache_key = _get_cache_parameters(self)
-        cache.remove(cache_key)
+        dogpile_region, cache_key = self._get_cache_plus_key()
+        dogpile_region.delete(cache_key)
 
-    def get_value(self, merge=True, createfunc=None):
+    def get_value(self, merge=True, createfunc=None,
+                  expiration_time=None, ignore_expiration=False):
         """Return the value from the cache for this query.
 
         Raise KeyError if no value present and no
         createfunc specified.
 
         """
-        cache, cache_key = _get_cache_parameters(self)
-        ret = cache.get_value(cache_key, createfunc=createfunc)
+        dogpile_region, cache_key = self._get_cache_plus_key()
+
+        # ignore_expiration means, if the value is in the cache
+        # but is expired, return it anyway.   This doesn't make sense
+        # with createfunc, which says, if the value is expired, generate
+        # a new value.
+        assert not ignore_expiration or not createfunc, \
+                "Can't ignore expiration and also provide createfunc"
+
+        if ignore_expiration or not createfunc:
+            cached_value = dogpile_region.get(cache_key,
+                                expiration_time=expiration_time,
+                                ignore_expiration=ignore_expiration)
+        else:
+            cached_value = dogpile_region.get_or_create(
+                                    cache_key,
+                                    createfunc,
+                                    expiration_time=expiration_time
+                                )
+        if cached_value is NO_VALUE:
+            raise KeyError(cache_key)
         if merge:
-            ret = self.merge_result(ret, load=False)
-        return ret
+            cached_value = self.merge_result(cached_value, load=False)
+        return cached_value
 
     def set_value(self, value):
         """Set the value in the cache for this query."""
 
-        cache, cache_key = _get_cache_parameters(self)
-        cache.put(cache_key, value)
+        dogpile_region, cache_key = self._get_cache_plus_key()
+        dogpile_region.set(cache_key, value)
 
 
-def query_callable(manager, query_cls=CachingQuery):
+def query_callable(regions=None, query_cls=CachingQuery):
     def query(*arg, **kw):
-        return query_cls(manager, *arg, **kw)
+        return query_cls(regions, *arg, **kw)
     return query
 
 
-def get_cache_region(name, region):
-    if region not in beaker.cache.cache_regions:
-        raise BeakerException('Cache region `%s` not configured '
-            'Check if proper cache settings are in the .ini files' % region)
-    kw = beaker.cache.cache_regions[region]
-    return beaker.cache.Cache._get_cache(name, kw)
+def _key_from_query(query, qualifier=None):
+    """Given a Query, create a cache key.
 
-
-def _get_cache_parameters(query):
-    """For a query with cache_region and cache_namespace configured,
-    return the correspoinding Cache instance and cache key, based
-    on this query's current criterion and parameter values.
+    There are many approaches to this; here we use the simplest,
+    which is to create an md5 hash of the text of the SQL statement,
+    combined with stringified versions of all the bound parameters
+    within it.     There's a bit of a performance hit with
+    compiling out "query.statement" here; other approaches include
+    setting up an explicit cache key with a particular Query,
+    then combining that with the bound parameter values.
 
     """
-    if not hasattr(query, '_cache_parameters'):
-        raise ValueError("This Query does not have caching "
-                         "parameters configured.")
 
-    region, namespace, cache_key = query._cache_parameters
+    stmt = query.with_labels().statement
+    compiled = stmt.compile()
+    params = compiled.params
 
-    namespace = _namespace_from_query(namespace, query)
-
-    if cache_key is None:
-        # cache key - the value arguments from this query's parameters.
-        args = [safe_str(x) for x in _params_from_query(query)]
-        args.extend(filter(lambda k: k not in ['None', None, u'None'],
-                           [str(query._limit), str(query._offset)]))
-
-        cache_key = " ".join(args)
-
-    if cache_key is None:
-        raise Exception('Cache key cannot be None')
-
-    # get cache
-    #cache = query.cache_manager.get_cache_region(namespace, region)
-    cache = get_cache_region(namespace, region)
-    # optional - hash the cache_key too for consistent length
-    # import uuid
-    # cache_key= str(uuid.uuid5(uuid.NAMESPACE_DNS, cache_key))
-
-    return cache, cache_key
-
-
-def _namespace_from_query(namespace, query):
-    # cache namespace - the token handed in by the
-    # option + class we're querying against
-    namespace = " ".join([namespace] + [str(x) for x in query._entities])
-
-    # memcached wants this
-    namespace = namespace.replace(' ', '_')
-
-    return namespace
-
-
-def _set_cache_parameters(query, region, namespace, cache_key):
-
-    if hasattr(query, '_cache_parameters'):
-        region, namespace, cache_key = query._cache_parameters
-        raise ValueError("This query is already configured "
-                         "for region %r namespace %r" %
-                         (region, namespace))
-    query._cache_parameters = region, namespace, cache_key
+    # here we return the key as a long string.  our "key mangler"
+    # set up with the region will boil it down to an md5.
+    return " ".join(
+                    [safe_str(compiled)] +
+                    [safe_str(params[k]) for k in sorted(params)])
 
 
 class FromCache(MapperOption):
@@ -208,15 +207,12 @@ class FromCache(MapperOption):
 
     propagate_to_loaders = False
 
-    def __init__(self, region, namespace, cache_key=None):
+    def __init__(self, region="sql_cache_short", cache_key=None):
         """Construct a new FromCache.
 
         :param region: the cache region.  Should be a
-        region configured in the Beaker CacheManager.
-
-        :param namespace: the cache namespace.  Should
-        be a name uniquely describing the target Query's
-        lexical structure.
+        region configured in the dictionary of dogpile
+        regions.
 
         :param cache_key: optional.  A string cache key
         that will serve as the key to the query.   Use this
@@ -226,14 +222,11 @@ class FromCache(MapperOption):
 
         """
         self.region = region
-        self.namespace = namespace
         self.cache_key = cache_key
 
     def process_query(self, query):
         """Process a Query during normal loading operation."""
-
-        _set_cache_parameters(query, self.region, self.namespace,
-                              self.cache_key)
+        query._cache_region = self
 
 
 class RelationshipCache(MapperOption):
@@ -242,26 +235,38 @@ class RelationshipCache(MapperOption):
 
     propagate_to_loaders = True
 
-    def __init__(self, region, namespace, attribute):
+    def __init__(self, attribute, region="sql_cache_short", cache_key=None):
         """Construct a new RelationshipCache.
-
-        :param region: the cache region.  Should be a
-        region configured in the Beaker CacheManager.
-
-        :param namespace: the cache namespace.  Should
-        be a name uniquely describing the target Query's
-        lexical structure.
 
         :param attribute: A Class.attribute which
         indicates a particular class relationship() whose
         lazy loader should be pulled from the cache.
 
+        :param region: name of the cache region.
+
+        :param cache_key: optional.  A string cache key
+        that will serve as the key to the query, bypassing
+        the usual means of forming a key from the Query itself.
+
         """
         self.region = region
-        self.namespace = namespace
+        self.cache_key = cache_key
         self._relationship_options = {
             (attribute.property.parent.class_, attribute.property.key): self
         }
+
+    def _generate_cache_key(self, path):
+        """Indicate to the lazy-loader strategy that a "baked" query
+        may be used by returning ``None``.
+
+        If this method is omitted, the default implementation of
+        :class:`.MapperOption._generate_cache_key` takes place, which
+        returns ``False`` to disable the "baked" query from being used.
+
+        .. versionadded:: 1.2.7
+
+        """
+        return None
 
     def process_query_conditionally(self, query):
         """Process a Query that is used within a lazy loader.
@@ -271,17 +276,14 @@ class RelationshipCache(MapperOption):
 
         """
         if query._current_path:
-            mapper, key = query._current_path[-2:]
+            mapper, prop = query._current_path[-2:]
+            key = prop.key
 
             for cls in mapper.class_.__mro__:
                 if (cls, key) in self._relationship_options:
-                    relationship_option = \
-                        self._relationship_options[(cls, key)]
-                    _set_cache_parameters(
-                            query,
-                            relationship_option.region,
-                            relationship_option.namespace,
-                            None)
+                    relationship_option = self._relationship_options[(cls, key)]
+                    query._cache_region = relationship_option
+                    break
 
     def and_(self, option):
         """Chain another RelationshipCache option to this one.
@@ -294,32 +296,3 @@ class RelationshipCache(MapperOption):
         self._relationship_options.update(option._relationship_options)
         return self
 
-
-def _params_from_query(query):
-    """Pull the bind parameter values from a query.
-
-    This takes into account any scalar attribute bindparam set up.
-
-    E.g. params_from_query(query.filter(Cls.foo==5).filter(Cls.bar==7)))
-    would return [5, 7].
-
-    """
-    v = []
-    def visit_bindparam(bind):
-
-        if bind.key in query._params:
-            value = query._params[bind.key]
-        elif bind.callable:
-            # lazyloader may dig a callable in here, intended
-            # to late-evaluate params after autoflush is called.
-            # convert to a scalar value.
-            value = bind.callable()
-        else:
-            value = bind.value
-
-        v.append(value)
-    if query._criterion is not None:
-        visitors.traverse(query._criterion, {}, {'bindparam':visit_bindparam})
-    for f in query._from_obj:
-        visitors.traverse(f, {}, {'bindparam':visit_bindparam})
-    return v

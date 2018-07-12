@@ -31,7 +31,6 @@ from rhodecode.authentication.base import get_authn_registry
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
-from rhodecode.lib.caches import clear_cache_manager
 from rhodecode.model.forms import AuthSettingsForm
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel

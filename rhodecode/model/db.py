@@ -690,7 +690,7 @@ class User(Base, BaseModel):
             .filter(UserApiKeys.role == UserApiKeys.ROLE_FEED)
         if cache:
             feed_tokens = feed_tokens.options(
-                FromCache("long_term", "get_user_feed_token_%s" % self.user_id))
+                FromCache("sql_cache_short", "get_user_feed_token_%s" % self.user_id))
 
         feed_tokens = feed_tokens.all()
         if feed_tokens:

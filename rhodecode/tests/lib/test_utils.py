@@ -70,8 +70,7 @@ def disable_hooks(request, hooks):
     ui_settings.invalidate()
 
     ui_settings = session.query(db.RhodeCodeUi).options(
-        caching_query.FromCache(
-            'sql_cache_short', 'get_hook_settings', 'get_hook_settings'))
+        caching_query.FromCache('sql_cache_short', 'get_hook_settings'))
     ui_settings.invalidate()
 
     @request.addfinalizer

@@ -427,20 +427,47 @@ def _sanitize_vcs_settings(settings):
 def _sanitize_cache_settings(settings):
     _string_setting(settings, 'cache_dir',
                     os.path.join(tempfile.gettempdir(), 'rc_cache'))
+    # cache_perms
+    _string_setting(
+        settings,
+        'rc_cache.cache_perms.backend',
+        'dogpile.cache.rc.file_namespace')
+    _int_setting(
+        settings,
+        'rc_cache.cache_perms.expiration_time',
+        60)
+    _string_setting(
+        settings,
+        'rc_cache.cache_perms.arguments.filename',
+        os.path.join(tempfile.gettempdir(), 'rc_cache_1'))
 
-    _string_setting(settings, 'rc_cache.cache_perms.backend',
-                    'dogpile.cache.rc.file_namespace')
-    _int_setting(settings, 'rc_cache.cache_perms.expiration_time',
-                 60)
-    _string_setting(settings, 'rc_cache.cache_perms.arguments.filename',
-                    os.path.join(tempfile.gettempdir(), 'rc_cache_1'))
+    # cache_repo
+    _string_setting(
+        settings,
+        'rc_cache.cache_repo.backend',
+        'dogpile.cache.rc.file_namespace')
+    _int_setting(
+        settings,
+        'rc_cache.cache_repo.expiration_time',
+        60)
+    _string_setting(
+        settings,
+        'rc_cache.cache_repo.arguments.filename',
+        os.path.join(tempfile.gettempdir(), 'rc_cache_2'))
 
-    _string_setting(settings, 'rc_cache.cache_repo.backend',
-                    'dogpile.cache.rc.file_namespace')
-    _int_setting(settings, 'rc_cache.cache_repo.expiration_time',
-                 60)
-    _string_setting(settings, 'rc_cache.cache_repo.arguments.filename',
-                    os.path.join(tempfile.gettempdir(), 'rc_cache_2'))
+    # sql_cache_short
+    _string_setting(
+        settings,
+        'rc_cache.sql_cache_short.backend',
+        'dogpile.cache.rc.memory_lru')
+    _int_setting(
+        settings,
+        'rc_cache.sql_cache_short.expiration_time',
+        30)
+    _int_setting(
+        settings,
+        'rc_cache.sql_cache_short.max_size',
+        10000)
 
 
 def _int_setting(settings, name, default):
