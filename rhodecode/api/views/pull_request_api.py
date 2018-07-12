@@ -573,7 +573,7 @@ def comment_pull_request(
 @jsonrpc_method()
 def create_pull_request(
         request, apiuser, source_repo, target_repo, source_ref, target_ref,
-        title, description=Optional(''), reviewers=Optional(None)):
+        title=Optional(''), description=Optional(''), reviewers=Optional(None)):
     """
     Creates a new pull request.
 
@@ -594,7 +594,7 @@ def create_pull_request(
     :type source_ref: str
     :param target_ref: Set the target ref name.
     :type target_ref: str
-    :param title: Set the pull request title.
+    :param title: Optionally Set the pull request title, it's generated otherwise
     :type title: str
     :param description: Set the pull request description.
     :type description: Optional(str)
@@ -615,26 +615,32 @@ def create_pull_request(
 
     full_source_ref = resolve_ref_or_error(source_ref, source_db_repo)
     full_target_ref = resolve_ref_or_error(target_ref, target_db_repo)
-    source_commit = get_commit_or_error(full_source_ref, source_db_repo)
-    target_commit = get_commit_or_error(full_target_ref, target_db_repo)
+
     source_scm = source_db_repo.scm_instance()
     target_scm = target_db_repo.scm_instance()
+
+    source_commit = get_commit_or_error(full_source_ref, source_db_repo)
+    target_commit = get_commit_or_error(full_target_ref, target_db_repo)
+
+    ancestor = source_scm.get_common_ancestor(
+        source_commit.raw_id, target_commit.raw_id, target_scm)
+    if not ancestor:
+        raise JSONRPCError('no common ancestor found')
+
+    # recalculate target ref based on ancestor
+    target_ref_type, target_ref_name, __ = full_target_ref.split(':')
+    full_target_ref = ':'.join((target_ref_type, target_ref_name, ancestor))
 
     commit_ranges = target_scm.compare(
         target_commit.raw_id, source_commit.raw_id, source_scm,
         merge=True, pre_load=[])
 
-    ancestor = target_scm.get_common_ancestor(
-        target_commit.raw_id, source_commit.raw_id, source_scm)
-
     if not commit_ranges:
         raise JSONRPCError('no commits found')
 
-    if not ancestor:
-        raise JSONRPCError('no common ancestor found')
-
     reviewer_objects = Optional.extract(reviewers) or []
 
+    # serialize and validate passed in given reviewers
     if reviewer_objects:
         schema = ReviewerListSchema()
         try:
@@ -647,36 +653,44 @@ def create_pull_request(
             user = get_user_or_error(reviewer_object['username'])
             reviewer_object['user_id'] = user.user_id
 
-    get_default_reviewers_data, get_validated_reviewers = \
+    get_default_reviewers_data, validate_default_reviewers = \
         PullRequestModel().get_reviewer_functions()
 
+    # recalculate reviewers logic, to make sure we can validate this
     reviewer_rules = get_default_reviewers_data(
         apiuser.get_instance(), source_db_repo,
         source_commit, target_db_repo, target_commit)
 
-    # specified rules are later re-validated, thus we can assume users will
-    # eventually provide those that meet the reviewer criteria.
-    if not reviewer_objects:
-        reviewer_objects = reviewer_rules['reviewers']
+    # now MERGE our given with the calculated
+    reviewer_objects = reviewer_rules['reviewers'] + reviewer_objects
 
     try:
-        reviewers = get_validated_reviewers(
+        reviewers = validate_default_reviewers(
             reviewer_objects, reviewer_rules)
     except ValueError as e:
         raise JSONRPCError('Reviewers Validation: {}'.format(e))
 
-    pull_request_model = PullRequestModel()
-    pull_request = pull_request_model.create(
+    title = Optional.extract(title)
+    if not title:
+        title_source_ref = source_ref.split(':', 2)[1]
+        title = PullRequestModel().generate_pullrequest_title(
+            source=source_repo,
+            source_ref=title_source_ref,
+            target=target_repo
+        )
+    description = Optional.extract(description)
+
+    pull_request = PullRequestModel().create(
         created_by=apiuser.user_id,
         source_repo=source_repo,
         source_ref=full_source_ref,
         target_repo=target_repo,
         target_ref=full_target_ref,
-        revisions=reversed(
-            [commit.raw_id for commit in reversed(commit_ranges)]),
+        revisions=[commit.raw_id for commit in reversed(commit_ranges)],
         reviewers=reviewers,
         title=title,
-        description=Optional.extract(description)
+        description=description,
+        reviewer_data=reviewer_rules,
     )
 
     Session().commit()
