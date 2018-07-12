@@ -1,6 +1,6 @@
 { fetchbower, buildEnv }:
 buildEnv { name = "bower-env"; ignoreCollisions = true; paths = [
-  (fetchbower "webcomponentsjs" "0.7.22" "^0.7.22" "0ggh3k8ssafd056ib1m5bvzi7cpz3ry7gr5176d79na1w0c3i7dz")
+  (fetchbower "webcomponentsjs" "0.7.22" "^0.7.22" "178h9j8jq9wi5845f5pxhhhqw6x022nzmpzm4di8fgsdl1f6nr5d")
   (fetchbower "polymer" "Polymer/polymer#1.6.1" "Polymer/polymer#^1.6.1" "09mm0jgk457gvwqlc155swch7gjr6fs3g7spnvhi6vh5b6518540")
   (fetchbower "paper-button" "PolymerElements/paper-button#1.0.13" "PolymerElements/paper-button#^1.0.13" "0i3y153nqk06pn0gk282vyybnl3g1w3w41d5i9z659cgn27g3fvm")
   (fetchbower "paper-spinner" "PolymerElements/paper-spinner#1.2.0" "PolymerElements/paper-spinner#^1.2.0" "1av1m6y81jw3hjhz1yqy3rwcgxarjzl58ldfn4q6sn51pgzngfqb")

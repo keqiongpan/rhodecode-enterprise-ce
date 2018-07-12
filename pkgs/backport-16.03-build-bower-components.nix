@@ -49,9 +49,10 @@ in pkgs.stdenv.mkDerivation (
       # Bower install in offline mode -- links together the fetched
       # bower packages.
       HOME=$PWD bower \
+          --config.registry=https://registry.bower.io \
           --config.storage.packages=bc/packages \
           --config.storage.registry=bc/registry \
-          --offline install
+          install
 
       # Sets up a single bower_components directory within
       # the output derivation.
