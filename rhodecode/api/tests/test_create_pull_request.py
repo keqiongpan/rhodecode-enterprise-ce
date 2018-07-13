@@ -44,7 +44,6 @@ class TestCreatePullRequestApi(object):
             'target_repo': 'tests/target_repo',
             'source_ref': 'branch:default:initial',
             'target_ref': 'branch:default:new-feature',
-            'title': 'Test PR 1'
         }
         for key in required_data:
             data = required_data.copy()
@@ -95,14 +94,29 @@ class TestCreatePullRequestApi(object):
         assert pull_request.description == ''
 
     @pytest.mark.backends("git", "hg")
+    def test_create_with_empty_title(self, backend):
+        data = self._prepare_data(backend)
+        data.pop('title')
+        id_, params = build_data(
+            self.apikey_regular, 'create_pull_request', **data)
+        response = api_call(self.app, params)
+        result = response.json
+        pull_request_id = result['result']['pull_request_id']
+        pull_request = PullRequestModel().get(pull_request_id)
+        data['ref'] = backend.default_branch_name
+        title = '{source_repo}#{ref} to {target_repo}'.format(**data)
+        assert pull_request.title == title
+
+    @pytest.mark.backends("git", "hg")
     def test_create_with_reviewers_specified_by_names(
             self, backend, no_notifications):
         data = self._prepare_data(backend)
         reviewers = [
             {'username': TEST_USER_REGULAR_LOGIN,
-             'reasons': ['added manually']},
+             'reasons': ['{} added manually'.format(TEST_USER_REGULAR_LOGIN)]},
             {'username': TEST_USER_ADMIN_LOGIN,
-             'reasons': ['added manually']},
+             'reasons': ['{} added manually'.format(TEST_USER_ADMIN_LOGIN)],
+             'mandatory': True},
         ]
         data['reviewers'] = reviewers
         id_, params = build_data(
@@ -115,12 +129,24 @@ class TestCreatePullRequestApi(object):
         assert result['result']['msg'] == expected_message
         pull_request_id = result['result']['pull_request_id']
         pull_request = PullRequestModel().get(pull_request_id)
-        actual_reviewers = [
-            {'username': r.user.username,
-             'reasons': ['added manually'],
-             } for r in pull_request.reviewers
-        ]
-        assert sorted(actual_reviewers) == sorted(reviewers)
+
+        actual_reviewers = []
+        for rev in pull_request.reviewers:
+            entry = {
+                'username': rev.user.username,
+                'reasons': rev.reasons,
+             }
+            if rev.mandatory:
+                entry['mandatory'] = rev.mandatory
+            actual_reviewers.append(entry)
+
+        # default reviewer will be added who is an owner of the repo
+        reviewers.append(
+            {'username': pull_request.author.username,
+             'reasons': [u'Default reviewer', u'Repository owner']},
+        )
+        assert sorted(actual_reviewers, key=lambda e: e['username']) \
+               == sorted(reviewers, key=lambda e: e['username'])
 
     @pytest.mark.backends("git", "hg")
     def test_create_with_reviewers_specified_by_ids(
@@ -146,12 +172,23 @@ class TestCreatePullRequestApi(object):
         assert result['result']['msg'] == expected_message
         pull_request_id = result['result']['pull_request_id']
         pull_request = PullRequestModel().get(pull_request_id)
-        actual_reviewers = [
-            {'username': r.user.user_id,
-             'reasons': ['added manually'],
-             } for r in pull_request.reviewers
-        ]
-        assert sorted(actual_reviewers) == sorted(reviewers)
+
+        actual_reviewers = []
+        for rev in pull_request.reviewers:
+            entry = {
+                'username': rev.user.user_id,
+                'reasons': rev.reasons,
+             }
+            if rev.mandatory:
+                entry['mandatory'] = rev.mandatory
+            actual_reviewers.append(entry)
+        # default reviewer will be added who is an owner of the repo
+        reviewers.append(
+            {'username': pull_request.author.user_id,
+             'reasons': [u'Default reviewer', u'Repository owner']},
+        )
+        assert sorted(actual_reviewers, key=lambda e: e['username']) \
+               == sorted(reviewers, key=lambda e: e['username'])
 
     @pytest.mark.backends("git", "hg")
     def test_create_fails_when_the_reviewer_is_not_found(self, backend):
@@ -258,9 +295,10 @@ class TestCreatePullRequestApi(object):
     def test_create_fails_when_no_permissions(self, backend):
         data = self._prepare_data(backend)
         RepoModel().revoke_user_permission(
-            self.source.repo_name, User.DEFAULT_USER)
-        RepoModel().revoke_user_permission(
             self.source.repo_name, self.test_user)
+        RepoModel().revoke_user_permission(
+            self.source.repo_name, User.DEFAULT_USER)
+
         id_, params = build_data(
             self.apikey_regular, 'create_pull_request', **data)
         response = api_call(self.app, params)
