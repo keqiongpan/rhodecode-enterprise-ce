@@ -41,7 +41,14 @@ class LRUMemoryBackend(memory_backend.MemoryBackend):
 
     def __init__(self, arguments):
         max_size = arguments.pop('max_size', _default_max_size)
-        arguments['cache_dict'] = LRUDict(max_size)
+        callback = None
+        if arguments.pop('log_max_size_reached', None):
+            def evicted(key, value):
+                log.debug(
+                    'LRU: evicting key `%s` due to max size %s reach', key, max_size)
+            callback = evicted
+
+        arguments['cache_dict'] = LRUDict(max_size, callback=callback)
         super(LRUMemoryBackend, self).__init__(arguments)
 
     def delete(self, key):
