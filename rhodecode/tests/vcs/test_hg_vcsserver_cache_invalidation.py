@@ -95,7 +95,7 @@ class TestMercurialRemoteRepoInvalidation(object):
         references.
         """
         from rhodecode.model.pull_request import PullRequestModel
-        repo_id = pull_request.target_repo
+        repo_id = pull_request.target_repo.repo_id
         target_vcs = pull_request.target_repo.scm_instance()
         target_ref = pull_request.target_ref_parts
         source_ref = pull_request.source_ref_parts
