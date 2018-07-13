@@ -74,8 +74,7 @@ class TestCaches(object):
     def test_store_value_in_cache(self):
         cache_region = rc_cache.get_or_create_region('cache_perms')
         # make sure we empty the cache now
-        for key in cache_region.backend.list_keys():
-            cache_region.delete(key)
+        cache_region.delete_multi(cache_region.backend.list_keys())
 
         assert cache_region.backend.list_keys() == []
 
