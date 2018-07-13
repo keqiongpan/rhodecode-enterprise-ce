@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import logging
 from dogpile.cache import register_backend
 from dogpile.cache import make_region
 
@@ -33,6 +34,8 @@ register_backend(
     "dogpile.cache.rc.redis", "rhodecode.lib.rc_cache.backends",
     "RedisPickleBackend")
 
+
+log = logging.getLogger(__name__)
 
 from . import region_meta
 from .utils import (
@@ -52,6 +55,7 @@ def configure_dogpile_cache(settings):
     for key in rc_cache_data.keys():
         namespace_name = key.split('.', 1)[0]
         avail_regions.add(namespace_name)
+    log.debug('dogpile: found following cache regions: %s', avail_regions)
 
     # register them into namespace
     for region_name in avail_regions:
@@ -61,6 +65,9 @@ def configure_dogpile_cache(settings):
         )
 
         new_region.configure_from_config(settings, 'rc_cache.{}.'.format(region_name))
+
+        log.debug('dogpile: registering a new region %s[%s]',
+                  region_name, new_region.__dict__)
         region_meta.dogpile_cache_regions[region_name] = new_region
 
 
