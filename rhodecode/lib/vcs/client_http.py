@@ -139,8 +139,9 @@ class RemoteRepo(object):
         return _remote_call(self.url, payload, EXCEPTIONS_MAP, self._session)
 
     def _call_with_logging(self, name, *args, **kwargs):
-
-        log.debug('Calling %s@%s with args:%r', self.url, name, args)
+        context_uid = self._wire.get('context')
+        log.debug('Calling %s@%s with args:%r. wire_context: %s',
+                  self.url, name, args, context_uid)
         return RemoteRepo._call(self, name, *args, **kwargs)
 
     def __getitem__(self, key):
