@@ -92,13 +92,10 @@ class RepoModel(BaseModel):
         settings_model = VcsSettingsModel(sa=self.sa)
         return settings_model.get_repos_location()
 
-    def get(self, repo_id, cache=False):
+    def get(self, repo_id):
         repo = self.sa.query(Repository) \
             .filter(Repository.repo_id == repo_id)
 
-        if cache:
-            repo = repo.options(
-                FromCache("sql_cache_short", "get_repo_%s" % repo_id))
         return repo.scalar()
 
     def get_repo(self, repository):
