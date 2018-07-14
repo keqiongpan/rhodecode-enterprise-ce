@@ -19,12 +19,91 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import os
 import logging
-from dogpile.cache import make_region
+import functools
+
+from dogpile.cache import CacheRegion
+from dogpile.cache.util import compat
 
 from rhodecode.lib.utils import safe_str, sha1
 from . import region_meta
 
 log = logging.getLogger(__name__)
+
+
+class RhodeCodeCacheRegion(CacheRegion):
+
+    def conditional_cache_on_arguments(
+            self, namespace=None,
+            expiration_time=None,
+            should_cache_fn=None,
+            to_str=compat.string_type,
+            function_key_generator=None,
+            condition=True):
+        """
+        Custom conditional decorator, that will not touch any dogpile internals if
+        condition isn't meet. This works a bit different than should_cache_fn
+        And it's faster in cases we don't ever want to compute cached values
+        """
+        expiration_time_is_callable = compat.callable(expiration_time)
+
+        if function_key_generator is None:
+            function_key_generator = self.function_key_generator
+
+        def decorator(fn):
+            if to_str is compat.string_type:
+                # backwards compatible
+                key_generator = function_key_generator(namespace, fn)
+            else:
+                key_generator = function_key_generator(namespace, fn, to_str=to_str)
+
+            @functools.wraps(fn)
+            def decorate(*arg, **kw):
+                key = key_generator(*arg, **kw)
+
+                @functools.wraps(fn)
+                def creator():
+                    return fn(*arg, **kw)
+
+                if not condition:
+                    return creator()
+
+                timeout = expiration_time() if expiration_time_is_callable \
+                    else expiration_time
+
+                return self.get_or_create(key, creator, timeout, should_cache_fn)
+
+            def invalidate(*arg, **kw):
+                key = key_generator(*arg, **kw)
+                self.delete(key)
+
+            def set_(value, *arg, **kw):
+                key = key_generator(*arg, **kw)
+                self.set(key, value)
+
+            def get(*arg, **kw):
+                key = key_generator(*arg, **kw)
+                return self.get(key)
+
+            def refresh(*arg, **kw):
+                key = key_generator(*arg, **kw)
+                value = fn(*arg, **kw)
+                self.set(key, value)
+                return value
+
+            decorate.set = set_
+            decorate.invalidate = invalidate
+            decorate.refresh = refresh
+            decorate.get = get
+            decorate.original = fn
+            decorate.key_generator = key_generator
+
+            return decorate
+
+        return decorator
+
+
+def make_region(*arg, **kw):
+    return RhodeCodeCacheRegion(*arg, **kw)
 
 
 def get_default_cache_settings(settings, prefixes=None):

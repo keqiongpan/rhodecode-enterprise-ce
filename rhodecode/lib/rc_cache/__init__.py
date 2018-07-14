@@ -20,7 +20,6 @@
 
 import logging
 from dogpile.cache import register_backend
-from dogpile.cache import make_region
 
 register_backend(
     "dogpile.cache.rc.memory_lru", "rhodecode.lib.rc_cache.backends",
@@ -40,7 +39,7 @@ log = logging.getLogger(__name__)
 from . import region_meta
 from .utils import (
     get_default_cache_settings, key_generator, get_or_create_region,
-    clear_cache_namespace)
+    clear_cache_namespace, make_region)
 
 
 def configure_dogpile_cache(settings):

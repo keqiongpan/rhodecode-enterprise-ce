@@ -120,7 +120,6 @@ def get_repo_group_slug(request):
         # pyramid
         _group = request.matchdict.get('repo_group_name')
 
-
     if _group:
         _group = _group.rstrip('/')
     return _group
