@@ -317,9 +317,9 @@ class SimpleVCS(object):
         cache_namespace_uid = 'cache_user_auth.{}'.format(user_id)
         region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
 
-        @region.cache_on_arguments(namespace=cache_namespace_uid,
-                                   expiration_time=cache_ttl,
-                                   should_cache_fn=lambda v: plugin_cache_active)
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                               expiration_time=cache_ttl,
+                                               condition=plugin_cache_active)
         def compute_perm_vcs(
                 cache_name, plugin_id, action, user_id, repo_name, ip_addr):
 

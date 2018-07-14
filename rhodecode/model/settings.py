@@ -216,7 +216,7 @@ class SettingsModel(BaseModel):
     def get_all_settings(self, cache=False):
         region = rc_cache.get_or_create_region('sql_cache_short')
 
-        @region.cache_on_arguments(should_cache_fn=lambda v: cache)
+        @region.conditional_cache_on_arguments(condition=cache)
         def _get_all_settings(name, key):
             q = self._get_settings_query()
             if not q:

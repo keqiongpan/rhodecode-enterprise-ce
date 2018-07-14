@@ -261,8 +261,8 @@ class RepoSummaryView(RepoAppView):
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-        @region.cache_on_arguments(namespace=cache_namespace_uid,
-                                   should_cache_fn=lambda v: cache_on)
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                               condition=cache_on)
         def compute_stats(repo_id, commit_id, show_stats):
             code_stats = {}
             size = 0

@@ -1079,8 +1079,8 @@ class AuthUser(object):
         cache_namespace_uid = 'cache_user_auth.{}'.format(user_id)
         region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
 
-        @region.cache_on_arguments(namespace=cache_namespace_uid,
-                                   should_cache_fn=lambda v: cache_on)
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                               condition=cache_on)
         def compute_perm_tree(cache_name,
                 user_id, scope, user_is_admin,user_inherit_default_permissions,
                 explicit, algo, calculate_super_admin):
@@ -1277,8 +1277,8 @@ class AuthUser(object):
         _set = set()
 
         if inherit_from_default:
-            default_ips = UserIpMap.query().filter(
-                UserIpMap.user == User.get_default_user(cache=True))
+            def_user_id = User.get_default_user(cache=True).user_id
+            default_ips = UserIpMap.query().filter(UserIpMap.user_id == def_user_id)
             if cache:
                 default_ips = default_ips.options(
                     FromCache("sql_cache_short", "get_user_ips_default"))

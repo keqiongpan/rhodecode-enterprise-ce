@@ -78,7 +78,7 @@ class TestCaches(object):
 
         assert cache_region.backend.list_keys() == []
 
-        @cache_region.cache_on_arguments(expiration_time=5)
+        @cache_region.conditional_cache_on_arguments(expiration_time=5)
         def compute(key):
             return time.time()
 
@@ -94,7 +94,7 @@ class TestCaches(object):
             cache_region.delete(key)
         assert cache_region.backend.list_keys() == []
 
-        @cache_region.cache_on_arguments(expiration_time=5)
+        @cache_region.conditional_cache_on_arguments(expiration_time=5)
         def compute(key):
             return time.time()
 

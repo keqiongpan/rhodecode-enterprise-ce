@@ -204,8 +204,8 @@ class RepoFilesView(RepoAppView):
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-        @region.cache_on_arguments(namespace=cache_namespace_uid,
-                                   should_cache_fn=lambda v: cache_on)
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                               condition=cache_on)
         def compute_file_tree(repo_id, commit_id, f_path, full_load):
             log.debug('Generating cached file tree for repo_id: %s, %s, %s',
                       repo_id, commit_id, f_path)
@@ -796,8 +796,8 @@ class RepoFilesView(RepoAppView):
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-        @region.cache_on_arguments(namespace=cache_namespace_uid,
-                                   should_cache_fn=lambda v: cache_on)
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                               condition=cache_on)
         def compute_file_search(repo_id, commit_id, f_path):
             log.debug('Generating cached nodelist for repo_id:%s, %s, %s',
                       repo_id, commit_id, f_path)
