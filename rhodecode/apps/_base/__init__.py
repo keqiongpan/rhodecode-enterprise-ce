@@ -461,20 +461,20 @@ class RepoRoutePredicate(object):
     phash = text
 
     def __call__(self, info, request):
-
         if hasattr(request, 'vcs_call'):
             # skip vcs calls
             return
 
         repo_name = info['match']['repo_name']
         repo_model = repo.RepoModel()
-        by_name_match = repo_model.get_by_repo_name(repo_name, cache=True)
+
+        by_name_match = repo_model.get_by_repo_name(repo_name, cache=False)
 
         def redirect_if_creating(db_repo):
             if db_repo.repo_state in [repo.Repository.STATE_PENDING]:
-                raise HTTPFound(
-                    request.route_path('repo_creating',
-                                       repo_name=db_repo.repo_name))
+                repo_creating_url = request.route_path(
+                    'repo_creating', repo_name=db_repo.repo_name)
+                raise HTTPFound(repo_creating_url)
 
         if by_name_match:
             # register this as request object we can re-use later
@@ -516,7 +516,7 @@ class RepoTypeRoutePredicate(object):
         else:
             log.warning('Current view is not supported for repo type:%s',
                         rhodecode_db_repo.repo_type)
-            #
+
             # h.flash(h.literal(
             #     _('Action not supported for %s.' % rhodecode_repo.alias)),
             #     category='warning')
@@ -542,8 +542,7 @@ class RepoGroupRoutePredicate(object):
 
         repo_group_name = info['match']['repo_group_name']
         repo_group_model = repo_group.RepoGroupModel()
-        by_name_match = repo_group_model.get_by_group_name(
-            repo_group_name, cache=True)
+        by_name_match = repo_group_model.get_by_group_name(repo_group_name, cache=False)
 
         if by_name_match:
             # register this as request object we can re-use later
@@ -569,8 +568,7 @@ class UserGroupRoutePredicate(object):
 
         user_group_id = info['match']['user_group_id']
         user_group_model = user_group.UserGroup()
-        by_id_match = user_group_model.get(
-            user_group_id, cache=True)
+        by_id_match = user_group_model.get(user_group_id, cache=False)
 
         if by_id_match:
             # register this as request object we can re-use later
@@ -596,8 +594,7 @@ class UserRoutePredicateBase(object):
 
         user_id = info['match']['user_id']
         user_model = user.User()
-        by_id_match = user_model.get(
-            user_id, cache=True)
+        by_id_match = user_model.get(user_id, cache=False)
 
         if by_id_match:
             # register this as request object we can re-use later
