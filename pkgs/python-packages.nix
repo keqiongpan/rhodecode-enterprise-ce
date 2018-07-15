@@ -77,8 +77,8 @@ self: super: {
     name = "authomatic-0.1.0.post1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/08/1a/8a930461e604c2d5a7a871e1ac59fa82ccf994c32e807230c8d2fb07815a/Authomatic-0.1.0.post1.tar.gz";
-      sha256 = "0s3aq5ak99g9j8zfw42fgjwkssa15z5gx1pa3p4vyyp3167kj7kk";
+      url = "https://code.rhodecode.com/upstream/authomatic/archive/90a9ce60cc405ae8a2bf5c3713acd5d78579a04e.tar.gz?md5=3c68720a1322b25254009518d1ff6801";
+      sha256 = "1cgk0a86sbsjbri06gf5z5l4npwkjdxw6fdnwl4vvfmxs2sx9yxw";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
