@@ -124,6 +124,7 @@ class EEIntegration(IntegrationTypeBase):
 
 
 # Helpers #
+# updating this required to update the `common_vars` as well.
 WEBHOOK_URL_VARS = [
     ('event_name', 'Unique name of the event type, e.g pullrequest-update'),
     ('repo_name', 'Full name of the repository'),
@@ -134,8 +135,9 @@ WEBHOOK_URL_VARS = [
     ('extra:<extra_key_name>', 'Extra repo variables, read from its settings.'),
 
     # special attrs below that we handle, using multi-call
-    ('branch', 'Name of each brach submitted, if any.'),
-    ('commit_id', 'Id of each commit submitted, if any.'),
+    ('branch', 'Name of each branch submitted, if any.'),
+    ('branch_head', 'Head ID of pushed branch (full sha of last commit), if any.'),
+    ('commit_id', 'ID (full sha) of each commit submitted, if any.'),
 
     # pr events vars
     ('pull_request_id', 'Unique ID of the pull request.'),
@@ -173,11 +175,13 @@ class CommitParsingDataHandler(object):
                 _branch = branch_data[commit_branch] \
                     if commit_branch else commit_branch
                 branch_commits = {'branch': _branch,
+                                  'branch_head': '',
                                   'commits': []}
                 branches_commits[commit_branch] = branch_commits
 
             branch_commits = branches_commits[commit_branch]
             branch_commits['commits'].append(commit)
+            branch_commits['branch_head'] = commit['raw_id']
         return branches_commits
 
 
@@ -218,10 +222,17 @@ class WebhookDataHandler(CommitParsingDataHandler):
 
         branches_commits = self.aggregate_branch_data(
             data['push']['branches'], data['push']['commits'])
-        if '${branch}' in url:
+        if '${branch}' in url or '${branch_head}' in url:
             # call it multiple times, for each branch if used in variables
             for branch, commit_ids in branches_commits.items():
                 branch_url = string.Template(url).safe_substitute(branch=branch)
+
+                if '${branch_head}' in branch_url:
+                    # last commit in the aggregate is the head of the branch
+                    branch_head = commit_ids['branch_head']
+                    branch_url = string.Template(branch_url).safe_substitute(
+                        branch_head=branch_head)
+
                 # call further down for each commit if used
                 if '${commit_id}' in branch_url:
                     for commit_data in commit_ids['commits']:
