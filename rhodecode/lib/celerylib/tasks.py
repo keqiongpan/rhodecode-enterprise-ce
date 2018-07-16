@@ -32,7 +32,7 @@ from rhodecode.lib.celerylib import get_logger, async_task, RequestContextTask
 from rhodecode.lib.hooks_base import log_create_repository
 from rhodecode.lib.rcmail.smtp_mailer import SmtpMailer
 from rhodecode.lib.utils2 import safe_int, str2bool
-from rhodecode.model.db import Session, IntegrityError, Repository, User
+from rhodecode.model.db import Session, IntegrityError, Repository, User, true
 
 
 @async_task(ignore_result=True, base=RequestContextTask)
@@ -52,9 +52,15 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
     subject = "%s %s" % (email_config.get('email_prefix', ''), subject)
     if not recipients:
         # if recipients are not defined we send to email_config + all admins
-        admins = [
-            u.email for u in User.query().filter(User.admin == True).all()]
-        recipients = [email_config.get('email_to')] + admins
+        admins = []
+        for u in User.query().filter(User.admin == true()).all():
+            if u.email:
+                admins.append(u.email)
+        recipients = []
+        config_email = email_config.get('email_to')
+        if config_email:
+            recipients += [config_email]
+        recipients += admins
 
     mail_server = email_config.get('smtp_server') or None
     if mail_server is None:
