@@ -16,7 +16,7 @@ General Webhook
 +++++++++++++++
 
 :ref:`integrations-webhook` allows sending a JSON payload information to specified
-url with GET or POST methods. There are several variables that could be used
+custom URL with GET or POST methods. There are several variables that could be used
 in the URL greatly extending the flexibility of this type of integration.
 
 Most of the modern CI systems such as Jenkins, TeamCity, Bamboo or CircleCi
@@ -50,7 +50,7 @@ the url would look like that::
 
     Please note that some variables will result in multiple calls.
     e.g. for |HG| specifying `${branch}` will trigger as many builds as how
-    many branches the suer actually pushed. Same applies to `${commit_id}`
+    many branches the user actually pushed. Same applies to `${commit_id}`
     This will trigger many builds if many commits are pushed. This allows
     triggering individual builds for each pushed commit.
 
@@ -65,6 +65,9 @@ If the plugin is configured, RhodeCode can trigger builds automatically by
 calling such example url provided in :ref:`integrations-webhook` integration::
 
     http://server/job/${project_id}/build-branch-${branch}/buildWithParameters?token=TOKEN&PARAMETER=value&PARAMETER2=value2
+
+The |RCEE| includes a custom :ref:`integrations-jenkins` integration. That allows using some
+of Jenkins added security features. Please check also the above link for more examples.
 
 
 Team City

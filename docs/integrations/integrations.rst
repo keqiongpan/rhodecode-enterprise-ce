@@ -19,7 +19,8 @@ Type/Name                       |RC| Edition    Description
 :ref:`integrations-webhook`     |RCCEshort|     POST events as `json` to a custom url
 :ref:`integrations-ci`          |RCCEshort|     Trigger Builds for Common CI Systems
 :ref:`integrations-email`       |RCCEshort|     Send repo push commits by email
-:ref:`integrations-redmine`     |RCEEshort|     Close/Resolve/Reference redmine issues
+:ref:`integrations-jenkins`     |RCEEshort|     Trigger Builds for Jenkins CI System
+:ref:`integrations-redmine`     |RCEEshort|     Close/Resolve/Reference Redmine issues
 :ref:`integrations-jira`        |RCEEshort|     Close/Resolve/Reference JIRA issues
 ============================    ============    =====================================
 
@@ -53,3 +54,4 @@ See pages specific to each type of integration for more instructions:
    webhook
    email
    ci
+   jenkins
