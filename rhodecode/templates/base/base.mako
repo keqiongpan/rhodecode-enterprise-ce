@@ -385,9 +385,18 @@
             return "active"
         return ""
     %>
-    <ul id="quick" class="main_nav navigation horizontal-list">
 
-      ## Main filter
+    <ul id="quick" class="main_nav navigation horizontal-list">
+       ## notice box for important system messages
+       <li style="display: none">
+          <a class="notice-box" href="#openNotice" onclick="showNoticeBox(); return false">
+            <div class="menulabel-notice" >
+                0
+            </div>
+          </a>
+       </li>
+
+        ## Main filter
        <li>
         <div class="menulabel main_filter_box">
             <div class="main_filter_input_box">
