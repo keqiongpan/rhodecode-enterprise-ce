@@ -359,8 +359,8 @@
     doCheck = false;
     propagatedBuildInputs = with self; [];
     src = fetchurl {
-      url = "https://pypi.python.org/packages/08/1a/8a930461e604c2d5a7a871e1ac59fa82ccf994c32e807230c8d2fb07815a/Authomatic-0.1.0.post1.tar.gz";
-      md5 = "be3f3ce08747d776aae6d6cc8dcb49a9";
+      url = "https://code.rhodecode.com/upstream/authomatic/archive/90a9ce60cc405ae8a2bf5c3713acd5d78579a04e.tar.gz?md5=3c68720a1322b25254009518d1ff6801";
+      md5 = "3c68720a1322b25254009518d1ff6801";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
