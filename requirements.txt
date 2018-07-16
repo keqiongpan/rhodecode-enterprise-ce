@@ -110,7 +110,7 @@ invoke==0.13.0
 bumpversion==0.5.3
 
 ## http servers
-gevent==1.3.4
+gevent==1.3.5
 greenlet==0.4.13
 gunicorn==19.9.0
 waitress==1.1.0

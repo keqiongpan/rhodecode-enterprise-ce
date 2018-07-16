@@ -515,14 +515,14 @@ self: super: {
     };
   };
   "gevent" = super.buildPythonPackage {
-    name = "gevent-1.3.4";
+    name = "gevent-1.3.5";
     doCheck = false;
     propagatedBuildInputs = [
       self."greenlet"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f8/85/f92a8f43c9f15ffad49d743d929863a042ce3e8de5746c63bb4d6ce51a02/gevent-1.3.4.tar.gz";
-      sha256 = "0x2gm3iba4cprclnbkcq2i14m6br2hfqns8yv3sjil46b1qdri2k";
+      url = "https://files.pythonhosted.org/packages/e6/0a/fc345c6e6161f84484870dbcaa58e427c10bd9bdcd08a69bed3d6b398bf1/gevent-1.3.5.tar.gz";
+      sha256 = "1w3gydxirgd2f60c5yv579w4903ds9s4g3587ik4jby97hgqc5bz";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
