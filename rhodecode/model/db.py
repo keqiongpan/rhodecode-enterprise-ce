@@ -3909,16 +3909,18 @@ class Notification(Base, BaseModel):
         notification.type_ = type_
         notification.created_on = datetime.datetime.now()
 
+        # For each recipient link the created notification to his account
         for u in recipients:
             assoc = UserNotification()
+            assoc.user_id = u.user_id
             assoc.notification = notification
 
             # if created_by is inside recipients mark his notification
             # as read
             if u.user_id == created_by.user_id:
                 assoc.read = True
+            Session().add(assoc)
 
-            u.notifications.append(assoc)
         Session().add(notification)
 
         return notification
