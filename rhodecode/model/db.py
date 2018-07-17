@@ -4496,6 +4496,15 @@ class DbMigrateVersion(Base, BaseModel):
     repository_path = Column('repository_path', Text)
     version = Column('version', Integer)
 
+    @classmethod
+    def set_version(cls, version):
+        """
+        Helper for forcing a different version, usually for debugging purposes via ishell.
+        """
+        ver = DbMigrateVersion.query().first()
+        ver.version = version
+        Session().commit()
+
 
 class DbSession(Base, BaseModel):
     __tablename__ = 'db_session'
