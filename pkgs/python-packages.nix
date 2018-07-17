@@ -1104,15 +1104,15 @@ self: super: {
     };
   };
   "plaster-pastedeploy" = super.buildPythonPackage {
-    name = "plaster-pastedeploy-0.5";
+    name = "plaster-pastedeploy-0.6";
     doCheck = false;
     propagatedBuildInputs = [
       self."pastedeploy"
       self."plaster"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e7/05/cc12d9d3efaa10046b6ec5de91b16486c95de4847dc57599bf58021a3d5c/plaster_pastedeploy-0.5.tar.gz";
-      sha256 = "1aavz3vbh7m9m6hfidwh6gqlrs1mrxl7k6794rm9jdik59dii8vh";
+      url = "https://files.pythonhosted.org/packages/3f/e7/6a6833158d2038ec40085433308a1e164fd1dac595513f6dd556d5669bb8/plaster_pastedeploy-0.6.tar.gz";
+      sha256 = "1bkggk18f4z2bmsmxyxabvf62znvjwbivzh880419r3ap0616cf2";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
