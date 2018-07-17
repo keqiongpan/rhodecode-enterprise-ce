@@ -319,14 +319,18 @@ class MarkupRenderer(object):
         return cls.URL_PAT.sub(url_func, text)
 
     @classmethod
-    def plain(cls, source, universal_newline=True):
+    def plain(cls, source, universal_newline=True, leading_newline=True):
         source = safe_unicode(source)
         if universal_newline:
             newline = '\n'
             source = newline.join(source.splitlines())
 
-        source = cls.urlify_text(source)
-        return '<br />' + source.replace("\n", '<br />')
+        rendered_source = cls.urlify_text(source)
+        source = ''
+        if leading_newline:
+            source += '<br />'
+        source += rendered_source.replace("\n", '<br />')
+        return source
 
     @classmethod
     def markdown(cls, source, safe=True, flavored=True, mentions=False,

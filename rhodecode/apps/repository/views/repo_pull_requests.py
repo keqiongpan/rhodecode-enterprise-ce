@@ -61,7 +61,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         c = self._get_local_tmpl_context(include_app_defaults=True)
         c.REVIEW_STATUS_APPROVED = ChangesetStatus.STATUS_APPROVED
         c.REVIEW_STATUS_REJECTED = ChangesetStatus.STATUS_REJECTED
-
+        # backward compat., we use for OLD PRs a plain renderer
+        c.renderer = 'plain'
         return c
 
     def _get_pull_requests_list(
@@ -297,6 +298,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             pull_request_at_ver)
 
         c.pull_request = pull_request_display_obj
+        c.renderer = pull_request_at_ver.description_renderer or c.renderer
         c.pull_request_latest = pull_request_latest
 
         if compare or (at_version and not at_version == 'latest'):
@@ -894,6 +896,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             )
 
         description = _form['pullrequest_desc']
+        description_renderer = _form['description_renderer']
 
         try:
             pull_request = PullRequestModel().create(
@@ -906,6 +909,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 reviewers=reviewers,
                 title=pullrequest_title,
                 description=description,
+                description_renderer=description_renderer,
                 reviewer_data=reviewer_rules,
                 auth_user=self._rhodecode_user
             )
@@ -970,10 +974,14 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def _edit_pull_request(self, pull_request):
         _ = self.request.translate
+
         try:
             PullRequestModel().edit(
-                pull_request, self.request.POST.get('title'),
-                self.request.POST.get('description'), self._rhodecode_user)
+                pull_request,
+                self.request.POST.get('title'),
+                self.request.POST.get('description'),
+                self.request.POST.get('description_renderer'),
+                self._rhodecode_user)
         except ValueError:
             msg = _(u'Cannot update closed pull requests.')
             h.flash(msg, category='error')

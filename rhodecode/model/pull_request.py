@@ -444,6 +444,7 @@ class PullRequestModel(BaseModel):
 
     def create(self, created_by, source_repo, source_ref, target_repo,
                target_ref, revisions, reviewers, title, description=None,
+               description_renderer=None,
                reviewer_data=None, translator=None, auth_user=None):
         translator = translator or get_current_request().translate
 
@@ -460,6 +461,7 @@ class PullRequestModel(BaseModel):
         pull_request.revisions = revisions
         pull_request.title = title
         pull_request.description = description
+        pull_request.description_renderer = description_renderer
         pull_request.author = created_by_user
         pull_request.reviewer_data = reviewer_data
 
@@ -980,7 +982,7 @@ class PullRequestModel(BaseModel):
         renderer = RstTemplateRenderer()
         return renderer.render('pull_request_update.mako', **params)
 
-    def edit(self, pull_request, title, description, user):
+    def edit(self, pull_request, title, description, description_renderer, user):
         pull_request = self.__get_pull_request(pull_request)
         old_data = pull_request.get_api_data(with_merge_state=False)
         if pull_request.is_closed():
@@ -989,6 +991,7 @@ class PullRequestModel(BaseModel):
             pull_request.title = title
         pull_request.description = description
         pull_request.updated_on = datetime.datetime.now()
+        pull_request.description_renderer = description_renderer
         Session().add(pull_request)
         self._log_audit_action(
             'repo.pull_request.edit', {'old_data': old_data},

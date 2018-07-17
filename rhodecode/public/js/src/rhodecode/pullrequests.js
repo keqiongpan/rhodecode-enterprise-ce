@@ -361,7 +361,7 @@ var updateCommits = function(repo_name, pull_request_id) {
 /**
  * PULL REQUEST edit info
  */
-var editPullRequest = function(repo_name, pull_request_id, title, description) {
+var editPullRequest = function(repo_name, pull_request_id, title, description, renderer) {
     var url = pyroutes.url(
         'pullrequest_update',
         {"repo_name": repo_name, "pull_request_id": pull_request_id});
@@ -369,6 +369,7 @@ var editPullRequest = function(repo_name, pull_request_id, title, description) {
     var postData = {
         'title': title,
         'description': description,
+        'description_renderer': renderer,
         'edit_pull_request': true,
         'csrf_token': CSRF_TOKEN
     };

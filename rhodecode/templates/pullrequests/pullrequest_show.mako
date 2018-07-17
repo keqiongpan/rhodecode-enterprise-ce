@@ -166,13 +166,14 @@
             </div>
            </div>
            <div class="field">
-            <div class="pr-description-label label-summary">
+            <div class="pr-description-label label-summary" title="${_('Rendered using {} renderer').format(c.renderer)}">
                 <label>${_('Description')}:</label>
             </div>
             <div id="pr-desc" class="input">
-                <div class="pr-description">${h.render(c.pull_request.description, renderer=c.visual.default_renderer)}</div>
+                <div class="pr-description">${h.render(c.pull_request.description, renderer=c.renderer)}</div>
             </div>
             <div id="pr-desc-edit" class="input textarea editor" style="display: none;">
+                <input id="pr-renderer-input" type="hidden" name="description_renderer" value="${c.visual.default_renderer}">
                 ${dt.markup_form('pr-description-input', form_text=c.pull_request.description)}
             </div>
            </div>
@@ -795,9 +796,10 @@
             $('#edit_pull_request').on('click', function(e){
                 var title = $('#pr-title-input').val();
                 var description = codeMirrorInstance.getValue();
+                var renderer = $('#pr-renderer-input').val();
                 editPullRequest(
                     "${c.repo_name}", "${c.pull_request.pull_request_id}",
-                    title, description);
+                    title, description, renderer);
             });
 
             $('#update_pull_request').on('click', function(e){

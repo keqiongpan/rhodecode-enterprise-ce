@@ -606,6 +606,7 @@ def PullRequestForm(localizer, repo_id):
         review_members = formencode.ForEach(ReviewerForm())
         pullrequest_title = v.UnicodeString(strip=True, required=True, min=3, max=255)
         pullrequest_desc = v.UnicodeString(strip=True, required=False)
+        description_renderer = v.UnicodeString(strip=True, required=False)
 
     return _PullRequestForm
 

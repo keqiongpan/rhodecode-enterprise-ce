@@ -3454,6 +3454,8 @@ class _PullRequestBase(BaseModel):
     description = Column(
         'description', UnicodeText().with_variant(UnicodeText(10240), 'mysql'),
         nullable=True)
+    description_renderer = Column('description_renderer', Unicode(64), nullable=True)
+
     # new/open/closed status of pull request (not approve/reject/etc)
     status = Column('status', Unicode(255), nullable=False, default=STATUS_NEW)
     created_on = Column(

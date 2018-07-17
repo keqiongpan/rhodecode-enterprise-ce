@@ -1814,7 +1814,11 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             return relative_links(html_source, relative_urls)
         return html_source
 
-    if renderer == 'rst':
+    if renderer == 'plain':
+        return literal(
+            MarkupRenderer.plain(source, leading_newline=False))
+
+    elif renderer == 'rst':
         if repo_name:
             # process patterns on comments if we pass in repo name
             source, issues = process_patterns(
@@ -1824,6 +1828,7 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             '<div class="rst-block">%s</div>' %
             maybe_convert_relative_links(
                 MarkupRenderer.rst(source, mentions=mentions)))
+
     elif renderer == 'markdown':
         if repo_name:
             # process patterns on comments if we pass in repo name
@@ -1835,6 +1840,7 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             maybe_convert_relative_links(
                 MarkupRenderer.markdown(source, flavored=True,
                                         mentions=mentions)))
+
     elif renderer == 'jupyter':
         return literal(
             '<div class="ipynb">%s</div>' %

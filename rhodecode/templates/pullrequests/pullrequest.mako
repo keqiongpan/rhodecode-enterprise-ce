@@ -55,6 +55,7 @@
                                 <label for="pullrequest_desc">${_('Description')}:</label>
                             </div>
                             <div class="textarea text-area editor">
+                                <input id="pr-renderer-input" type="hidden" name="description_renderer" value="${c.visual.default_renderer}">
                                 ${dt.markup_form('pullrequest_desc')}
                             </div>
                         </div>
