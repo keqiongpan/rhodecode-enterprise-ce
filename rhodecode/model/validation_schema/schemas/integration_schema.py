@@ -123,8 +123,6 @@ class IntegrationScopeType(colander.SchemaType):
             else:
                 return 'global'
 
-        raise colander.Invalid(node, '%r is not a valid scope' % appstruct)
-
     def deserialize(self, node, cstruct):
         if cstruct is colander.null:
             return colander.null
