@@ -62,11 +62,23 @@ class LRUMemoryBackend(memory_backend.MemoryBackend):
 
 
 class Serializer(object):
-    def _dumps(self, value):
-        return compat.pickle.dumps(value)
+    def _dumps(self, value, safe=False):
+        try:
+            return compat.pickle.dumps(value)
+        except Exception:
+            if safe:
+                return NO_VALUE
+            else:
+                raise
 
-    def _loads(self, value):
-        return compat.pickle.loads(value)
+    def _loads(self, value, safe=True):
+        try:
+            return compat.pickle.loads(value)
+        except Exception:
+            if safe:
+                return NO_VALUE
+            else:
+                raise
 
 
 class CustomLockFactory(FileLock):
@@ -158,6 +170,12 @@ class RedisPickleBackend(Serializer, redis_backend.RedisBackend):
 
     def get_store(self):
         return self.client.connection_pool
+
+    def get(self, key):
+        value = self.client.get(key)
+        if value is None:
+            return NO_VALUE
+        return self._loads(value)
 
     def set(self, key, value):
         if self.redis_expiration_time:
