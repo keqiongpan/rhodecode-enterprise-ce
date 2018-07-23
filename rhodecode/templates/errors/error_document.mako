@@ -60,9 +60,17 @@
                 </div>
                 <div class="inner-column">
                     <h4>Support</h4>
-                    <p>For support, go to <a href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support')}</a>.
+                    <p>For help and support, go to the <a href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support Page')}</a>.
                        It may be useful to include your log file; see the log file locations <a href="${h.route_url('enterprise_log_file_locations')}">here</a>.
                     </p>
+                    % if c.show_exception_id:
+                    <p>
+                        Super Admin can see detailed traceback information from this exception by checking the below Exception ID.
+                        Please include the below link for further details of this exception.
+
+                        Exception ID: <a href="${c.exception_id_url}">${c.exception_id}</a>
+                    </p>
+                    % endif
                 </div>
                 <div class="inner-column">
                     <h4>Documentation</h4>

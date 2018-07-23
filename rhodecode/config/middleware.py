@@ -19,6 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import os
+import sys
 import logging
 import traceback
 import collections
@@ -48,6 +49,7 @@ from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.celerylib.loader import configure_celery
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
 from rhodecode.lib.utils2 import aslist as rhodecode_aslist, AttributeDict
+from rhodecode.lib.exc_tracking import store_exception
 from rhodecode.subscribers import (
     scan_repositories_if_enabled, write_js_routes_if_enabled,
     write_metadata_if_needed, inject_app_settings)
@@ -172,7 +174,17 @@ def error_handler(exception, request):
         c.causes = base_response.causes
 
     c.messages = helpers.flash.pop_messages(request=request)
-    c.traceback = traceback.format_exc()
+
+    exc_info = sys.exc_info()
+    c.exception_id = id(exc_info)
+    c.show_exception_id = isinstance(base_response, VCSServerUnavailable) \
+                          or base_response.status_code > 499
+    c.exception_id_url = request.route_url(
+        'admin_settings_exception_tracker_show', exception_id=c.exception_id)
+
+    if c.show_exception_id:
+        store_exception(c.exception_id, exc_info)
+
     response = render_to_response(
         '/errors/error_document.mako', {'c': c, 'h': helpers}, request=request,
         response=base_response)

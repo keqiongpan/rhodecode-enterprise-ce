@@ -44,7 +44,7 @@
           </ul>
       </div>
 
-      <div class="main-content-full-width">
+      <div class="main-content-auto-width">
         ${self.main_content()}
       </div>
     </div>

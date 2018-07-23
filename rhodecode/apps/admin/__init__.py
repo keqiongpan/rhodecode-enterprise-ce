@@ -60,6 +60,19 @@ def admin_routes(config):
         pattern='/settings/system/updates')
 
     config.add_route(
+        name='admin_settings_exception_tracker',
+        pattern='/settings/exceptions')
+    config.add_route(
+        name='admin_settings_exception_tracker_delete_all',
+        pattern='/settings/exceptions/delete')
+    config.add_route(
+        name='admin_settings_exception_tracker_show',
+        pattern='/settings/exceptions/{exception_id}')
+    config.add_route(
+        name='admin_settings_exception_tracker_delete',
+        pattern='/settings/exceptions/{exception_id}/delete')
+
+    config.add_route(
         name='admin_settings_sessions',
         pattern='/settings/sessions')
     config.add_route(
