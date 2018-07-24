@@ -34,18 +34,22 @@
     <div class="panel-body">
         <table class="rctable">
         <tr>
+            <th>#</th>
             <th>Exception ID</th>
             <th>Date</th>
             <th>App Type</th>
             <th>Exc Type</th>
         </tr>
+        <% cnt = len(c.exception_list)%>
         % for tb in c.exception_list:
             <tr>
+                <td>${cnt}</td>
                 <td><a href="${h.route_path('admin_settings_exception_tracker_show', exception_id=tb['exc_id'])}"><code>${tb['exc_id']}</code></a></td>
                 <td>${h.format_date(tb['exc_utc_date'])}</td>
                 <td>${tb['app_type']}</td>
                 <td>${tb['exc_type']}</td>
             </tr>
+            <% cnt -=1 %>
         % endfor
         </table>
     </div>
