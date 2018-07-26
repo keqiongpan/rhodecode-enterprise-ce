@@ -262,8 +262,8 @@ self: super: {
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/64/61/079eb60459c44929e684fa7d9e2fdca403f67d64dd9dbac27296be2e0fab/configobj-5.0.6.tar.gz";
-      sha256 = "00h9rcmws03xvdlfni11yb60bz3kxfvsj6dg6nrpzj71f03nbxd2";
+      url = "https://code.rhodecode.com/upstream/configobj/archive/a11ff0a0bd4fbda9e3a91267e720f88329efb4a6.tar.gz?md5=9916c524ea11a6c418217af6b28d4b3c";
+      sha256 = "1hhcxirwvg58grlfr177b3awhbq8hlx1l3lh69ifl1ki7lfd1s1x";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
