@@ -470,7 +470,14 @@ class RepoRoutePredicate(object):
 
         by_name_match = repo_model.get_by_repo_name(repo_name, cache=False)
 
-        def redirect_if_creating(db_repo):
+        def redirect_if_creating(route_info, db_repo):
+            skip_views = ['edit_repo_advanced_delete']
+            route = route_info['route']
+            # we should skip delete view so we can actually "remove" repositories
+            # if they get stuck in creating state.
+            if route.name in skip_views:
+                return
+
             if db_repo.repo_state in [repo.Repository.STATE_PENDING]:
                 repo_creating_url = request.route_path(
                     'repo_creating', repo_name=db_repo.repo_name)
@@ -479,13 +486,13 @@ class RepoRoutePredicate(object):
         if by_name_match:
             # register this as request object we can re-use later
             request.db_repo = by_name_match
-            redirect_if_creating(by_name_match)
+            redirect_if_creating(info, by_name_match)
             return True
 
         by_id_match = repo_model.get_repo_by_id(repo_name)
         if by_id_match:
             request.db_repo = by_id_match
-            redirect_if_creating(by_id_match)
+            redirect_if_creating(info, by_id_match)
             return True
 
         return False
