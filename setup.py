@@ -25,11 +25,17 @@ import os
 import sys
 import pkgutil
 import platform
+import codecs
 
-from pip.download import PipSession
-from pip.req import parse_requirements
+try:  # for pip >= 10
+    from pip._internal.req import parse_requirements
+except ImportError:  # for pip <= 9.0.3
+    from pip.req import parse_requirements
 
-from codecs import open
+try:  # for pip >= 10
+    from pip._internal.download import PipSession
+except ImportError:  # for pip <= 9.0.3
+    from pip.download import PipSession
 
 
 if sys.version_info < (2, 7):
@@ -96,8 +102,8 @@ keywords = ' '.join([
 readme_file = 'README.rst'
 changelog_file = 'CHANGES.rst'
 try:
-    long_description = open(readme_file).read() + '\n\n' + \
-        open(changelog_file).read()
+    long_description = codecs.open(readme_file).read() + '\n\n' + \
+                       codecs.open(changelog_file).read()
 except IOError as err:
     sys.stderr.write(
         "[WARNING] Cannot find file specified as long_description (%s)\n "
