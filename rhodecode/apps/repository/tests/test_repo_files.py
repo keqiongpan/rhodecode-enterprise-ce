@@ -32,6 +32,7 @@ from rhodecode.lib.vcs import nodes
 from rhodecode.lib.vcs.conf import settings
 from rhodecode.tests import assert_session_flash
 from rhodecode.tests.fixture import Fixture
+from rhodecode.model.db import Session
 
 fixture = Fixture()
 
@@ -166,8 +167,8 @@ class TestFilesViews(object):
             {'message': 'b', 'branch': new_branch}
         ]
         backend.create_repo(commits)
-
         backend.repo.landing_rev = "branch:%s" % new_branch
+        Session().commit()
 
         # get response based on tip and not new commit
         response = self.app.get(

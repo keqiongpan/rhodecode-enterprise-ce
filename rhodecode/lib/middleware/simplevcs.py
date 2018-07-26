@@ -514,7 +514,6 @@ class SimpleVCS(object):
                         return auth_result.wsgi_application(
                             environ, start_response)
 
-
                 # ==============================================================
                 # CHECK PERMISSIONS FOR THIS REQUEST USING GIVEN USERNAME
                 # ==============================================================
@@ -522,8 +521,6 @@ class SimpleVCS(object):
                 if not self.valid_and_active_user(user):
                     return HTTPForbidden()(environ, start_response)
                 username = user.username
-                user.update_lastactivity()
-                meta.Session().commit()
 
                 # check user attributes for password change flag
                 user_obj = user

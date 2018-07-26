@@ -992,10 +992,6 @@ class AuthUser(object):
     def get_instance(self):
         return User.get(self.user_id)
 
-    def update_lastactivity(self):
-        if self.user_id:
-            User.get(self.user_id).update_lastactivity()
-
     def propagate_data(self):
         """
         Fills in user data and propagates values to this instance. Maps fetched
@@ -1500,9 +1496,6 @@ class LoginRequired(object):
                 'user %s authenticating with:%s IS authenticated on func %s'
                 % (user, reason, loc))
 
-            # update user data to check last activity
-            user.update_lastactivity()
-            Session().commit()
             return func(*fargs, **fkwargs)
         else:
             log.warning(
