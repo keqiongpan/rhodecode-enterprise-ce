@@ -27,7 +27,7 @@ c.template_context['default_user'] = {
 %>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-lite.min.js', ver=c.rhodecode_version_hash)}"></script>
+        <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-lite.js', ver=c.rhodecode_version_hash)}"></script>
         <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
         <title>${self.title()}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
@@ -63,33 +63,6 @@ c.template_context['default_user'] = {
 
         ## JAVASCRIPT
         <%def name="js()">
-            <script>
-                // setup Polymer options
-                window.Polymer = {lazyRegister: true, dom: 'shadow'};
-
-                // Load webcomponentsjs polyfill if browser does not support native Web Components
-                (function() {
-                    'use strict';
-                    var onload = function() {
-                        // For native Imports, manually fire WebComponentsReady so user code
-                        // can use the same code path for native and polyfill'd imports.
-                        if (!window.HTMLImports) {
-                            document.dispatchEvent(
-                                    new CustomEvent('WebComponentsReady', {bubbles: true})
-                            );
-                        }
-                    };
-                    var webComponentsSupported = (
-                            'registerElement' in document
-                            && 'import' in document.createElement('link')
-                            && 'content' in document.createElement('template')
-                    );
-                    if (!webComponentsSupported) {
-                    } else {
-                        onload();
-                    }
-                })();
-            </script>
 
             <script src="${h.asset('js/rhodecode/i18n/%s.js' % c.language, ver=c.rhodecode_version_hash)}"></script>
             <script type="text/javascript">

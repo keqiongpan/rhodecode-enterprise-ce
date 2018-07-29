@@ -33,7 +33,7 @@ var rhodeCodeApp = Polymer({
     },
 
     faviconUpdate: function (data) {
-        this.$$('rhodecode-favicon').counter = data.count;
+        this.shadowRoot.querySelector('rhodecode-favicon').counter = data.count;
     },
 
     /** opens connection to ws server */
