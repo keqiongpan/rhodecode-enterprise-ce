@@ -16,9 +16,25 @@ var rhodeCodeApp = Polymer({
         for (var i = 0; i < alertMessagePayloads.length; i++) {
             $.Topic('/notifications').publish(alertMessagePayloads[i]);
         }
-        this.kickoffChannelstreamPlugin();
+        this.initPlugins();
+        // after rest of application loads and topics get fired, launch connection
+        $(document).ready(function () {
+            this.kickoffChannelstreamPlugin();
+        }.bind(this));
     },
 
+    initPlugins: function(){
+        for (var i = 0; i < window.APPLICATION_PLUGINS.length; i++) {
+            var pluginDef = window.APPLICATION_PLUGINS[i];
+            if (pluginDef.component){
+                var pluginElem = document.createElement(pluginDef.component);
+                this.shadowRoot.appendChild(pluginElem);
+                if (typeof pluginElem.init !== 'undefined'){
+                    pluginElem.init();
+                }
+            }
+        }
+    },
     /** proxy to channelstream connection */
     getChannelStreamConnection: function () {
         return this.$['channelstream-connection'];

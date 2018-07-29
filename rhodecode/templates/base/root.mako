@@ -70,6 +70,7 @@ c.template_context['default_user'] = {
             var templateContext = ${h.json.dumps(c.template_context)|n};
 
             var APPLICATION_URL = "${h.route_path('home').rstrip('/')}";
+            var APPLICATION_PLUGINS = [];
             var ASSET_URL = "${h.asset('')}";
             var DEFAULT_RENDERER = "${h.get_visual_attr(c, 'default_renderer')}";
             var CSRF_TOKEN = "${getattr(c, 'csrf_token', '')}";
