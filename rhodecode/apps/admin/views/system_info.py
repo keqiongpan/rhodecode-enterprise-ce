@@ -112,6 +112,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
             # Platform/Python
             (_('Platform'), val('platform')['name'], state('platform')),
             (_('Platform UUID'), val('platform')['uuid'], state('platform')),
+            (_('Lang'), val('locale'), state('locale')),
             (_('Python version'), val('python')['version'], state('python')),
             (_('Python path'), val('python')['executable'], state('python')),
             ('', '', ''),  # spacer
