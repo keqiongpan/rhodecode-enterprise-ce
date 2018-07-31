@@ -2192,6 +2192,15 @@ let
         sha1 = "c0d5a63b2718800ad8e1eb0fa5269c84dd41845e";
       };
     };
+    "qrious-4.0.2" = {
+      name = "qrious";
+      packageName = "qrious";
+      version = "4.0.2";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/qrious/-/qrious-4.0.2.tgz";
+        sha512 = "xWPJIrK1zu5Ypn898fBp8RHkT/9ibquV2Kv24S/JY9VYEhMBMKur1gHVsOiNUh7PHP9uCgejjpZUHUIXXKoU/g==";
+      };
+    };
     "qs-0.5.6" = {
       name = "qs";
       packageName = "qs";
@@ -3267,6 +3276,7 @@ let
       sources."proto-list-1.2.4"
       sources."prr-1.0.1"
       sources."punycode-1.4.1"
+      sources."qrious-4.0.2"
       sources."qs-6.4.0"
       (sources."readable-stream-2.3.6" // {
         dependencies = [

@@ -25,6 +25,7 @@
     "jquery": "1.11.3",
     "favico.js": "^0.3.10",
     "clipboard": "^2.0.1",
+    "qrious": "^4.0.2",
     "moment": "^2.18.1",
     "mousetrap": "^1.6.1",
     "appenlight-client": "git+https://git@github.com/AppEnlight/appenlight-client-js.git#0.5.1"
