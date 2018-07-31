@@ -45,6 +45,10 @@ function registerRCRoutes() {
     pyroutes.register('admin_settings_vcs_svn_generate_cfg', '/_admin/settings/vcs/svn_generate_cfg', []);
     pyroutes.register('admin_settings_system', '/_admin/settings/system', []);
     pyroutes.register('admin_settings_system_update', '/_admin/settings/system/updates', []);
+    pyroutes.register('admin_settings_exception_tracker', '/_admin/settings/exceptions', []);
+    pyroutes.register('admin_settings_exception_tracker_delete_all', '/_admin/settings/exceptions/delete', []);
+    pyroutes.register('admin_settings_exception_tracker_show', '/_admin/settings/exceptions/%(exception_id)s', ['exception_id']);
+    pyroutes.register('admin_settings_exception_tracker_delete', '/_admin/settings/exceptions/%(exception_id)s/delete', ['exception_id']);
     pyroutes.register('admin_settings_sessions', '/_admin/settings/sessions', []);
     pyroutes.register('admin_settings_sessions_cleanup', '/_admin/settings/sessions/cleanup', []);
     pyroutes.register('admin_settings_process_management', '/_admin/settings/process_management', []);
