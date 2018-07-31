@@ -34,7 +34,7 @@ def trigger(event, registry=None):
     # passing the registry as an argument to get rid of it.
     registry = registry or get_current_registry()
     registry.notify(event)
-    log.debug('event %s triggered using registry %s', event, registry)
+    log.debug('event %s triggered using registry %s', event.__class__, registry)
 
     # Until we can work around the problem that VCS operations do not have a
     # pyramid context to work with, we send the events to integrations directly
