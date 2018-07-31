@@ -24,7 +24,7 @@
     "bower": "^1.8.4",
     "jquery": "1.11.3",
     "favico.js": "^0.3.10",
-    "clipboard": "^1.7.1",
+    "clipboard": "^2.0.1",
     "moment": "^2.18.1",
     "mousetrap": "^1.6.1",
     "appenlight-client": "git+https://git@github.com/AppEnlight/appenlight-client-js.git#0.5.1"
