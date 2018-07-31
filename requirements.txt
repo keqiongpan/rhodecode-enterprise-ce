@@ -63,7 +63,7 @@ pysqlite==2.8.3
 python-dateutil
 python-ldap==3.1.0
 python-memcached==1.59
-python-pam==1.8.2
+python-pam==1.8.4
 pytz==2018.4
 tzlocal==1.5.1
 pyzmq==14.6.0

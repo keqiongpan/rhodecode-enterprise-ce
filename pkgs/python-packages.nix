@@ -1215,11 +1215,11 @@ self: super: {
     };
   };
   "pyasn1" = super.buildPythonPackage {
-    name = "pyasn1-0.4.3";
+    name = "pyasn1-0.4.4";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/0d/33/3466a3210321a02040e3ab2cd1ffc6f44664301a5d650a7e44be1dc341f2/pyasn1-0.4.3.tar.gz";
-      sha256 = "1z5h38anjzzrxpraa9iq9llffyx2zs8gx0q6dc1g029miwnn50gv";
+      url = "https://files.pythonhosted.org/packages/10/46/059775dc8e50f722d205452bced4b3cc965d27e8c3389156acd3b1123ae3/pyasn1-0.4.4.tar.gz";
+      sha256 = "0drilmx5j25aplfr5wrml0030cs5fgxp9yp94fhllxgx28yjm3zm";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1566,11 +1566,11 @@ self: super: {
     };
   };
   "python-pam" = super.buildPythonPackage {
-    name = "python-pam-1.8.2";
+    name = "python-pam-1.8.4";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/de/8c/f8f5d38b4f26893af267ea0b39023d4951705ab0413a39e0cf7cf4900505/python-pam-1.8.2.tar.gz";
-      sha256 = "0b41f70cj221bfblwdl627a58kjan2xsdi6qgkwi16w6kgky9vr6";
+      url = "https://files.pythonhosted.org/packages/01/16/544d01cae9f28e0292dbd092b6b8b0bf222b528f362ee768a5bed2140111/python-pam-1.8.4.tar.gz";
+      sha256 = "16whhc0vr7gxsbzvsnq65nq8fs3wwmx755cavm8kkczdkz4djmn8";
     };
     meta = {
       license = [ { fullName = "License :: OSI Approved :: MIT License"; } pkgs.lib.licenses.mit ];

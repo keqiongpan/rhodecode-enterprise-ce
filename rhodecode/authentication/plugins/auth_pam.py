@@ -111,8 +111,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         if not username or not password:
             log.debug('Empty username or password skipping...')
             return None
-
-        auth_result = pam.authenticate(username, password, settings["service"])
+        _pam = pam.pam()
+        auth_result = _pam.authenticate(username, password, settings["service"])
 
         if not auth_result:
             log.error("PAM was unable to authenticate user: %s" % (username, ))
