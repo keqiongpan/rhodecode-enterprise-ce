@@ -7,8 +7,9 @@ About
 
 ``RhodeCode`` is a fast and powerful management tool for Mercurial_ and GIT_
 and Subversion_ with a built in push/pull server, full text search,
-pull requests and powerfull code-review system. It works on http/https and
+pull requests and powerful code-review system. It works on http/https and
 has a few unique features like:
+
  - plugable architecture
  - advanced permission system with IP restrictions
  - rich set of authentication plugins including LDAP,
@@ -78,10 +79,9 @@ Listed bellow are various support resources that should help.
 
 - Official issue tracker `RhodeCode Issue tracker <https://issues.rhodecode.com>`_
 
-- Search our community portal `Community portal <https://community.rhodecode.com>`_
+- Official Slack Community Channel `RhodeCode Slack <https://rhodecode.com/join>`_
 
-- Join #rhodecode on FreeNode (irc.freenode.net)
-  or use http://webchat.freenode.net/?channels=rhodecode for web access to irc.
+- Search our community portal `Community portal <https://community.rhodecode.com>`_
 
 - You can also follow RhodeCode on twitter **@RhodeCode** where we often post
   news and other interesting stuff about RhodeCode.
