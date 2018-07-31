@@ -100,6 +100,7 @@ def add_request_user_context(event):
     auth_user = get_auth_user(request)
     request.user = auth_user
     request.environ['rc_auth_user'] = auth_user
+    request.environ['rc_auth_user_id'] = auth_user.user_id
     request.environ['rc_req_id'] = req_id
 
 

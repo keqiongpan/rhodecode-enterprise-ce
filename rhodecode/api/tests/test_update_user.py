@@ -76,6 +76,8 @@ class TestUpdateUser(object):
             'user': ret
         }
         expected = ret
+        expected['user']['last_activity'] = response.json['result']['user'][
+            'last_activity']
         assert_ok(id_, expected, given=response.body)
 
     def test_api_update_user_by_user_id(self):
@@ -91,6 +93,8 @@ class TestUpdateUser(object):
             'user': ret
         }
         expected = ret
+        expected['user']['last_activity'] = response.json['result']['user'][
+            'last_activity']
         assert_ok(id_, expected, given=response.body)
 
     def test_api_update_user_default_user(self):

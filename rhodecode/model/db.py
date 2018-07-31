@@ -931,12 +931,6 @@ class User(Base, BaseModel):
         Session().add(self)
         log.debug('updated user %s lastlogin', self.username)
 
-    def update_lastactivity(self):
-        """Update user lastactivity"""
-        self.last_activity = datetime.datetime.now()
-        Session().add(self)
-        log.debug('updated user `%s` last activity', self.username)
-
     def update_password(self, new_password):
         from rhodecode.lib.auth import get_crypt_password
 

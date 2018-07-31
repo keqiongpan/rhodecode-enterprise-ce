@@ -241,20 +241,24 @@ def store(action, user, action_data=None, user_data=None, ip_addr=None,
         action_name = safe_unicode(action)
         ip_address = safe_unicode(ip_addr)
 
-        user_log = _store_log(
-            action_name=action_name,
-            action_data=action_data or {},
-            user_id=user_id,
-            username=username,
-            user_data=user_data or {},
-            ip_address=ip_address,
-            repository_id=repository_id,
-            repository_name=repository_name
-        )
+        with sa_session.no_autoflush:
+            update_user_last_activity(sa_session, user_id)
 
-        sa_session.add(user_log)
-        if commit:
-            sa_session.commit()
+            user_log = _store_log(
+                action_name=action_name,
+                action_data=action_data or {},
+                user_id=user_id,
+                username=username,
+                user_data=user_data or {},
+                ip_address=ip_address,
+                repository_id=repository_id,
+                repository_name=repository_name
+            )
+
+            sa_session.add(user_log)
+
+            if commit:
+                sa_session.commit()
 
         entry_id = user_log.entry_id or ''
         log.info('AUDIT[%s]: Logging action: `%s` by user:id:%s[%s] ip:%s',
@@ -262,3 +266,14 @@ def store(action, user, action_data=None, user_data=None, ip_addr=None,
 
     except Exception:
         log.exception('AUDIT: failed to store audit log')
+
+
+def update_user_last_activity(sa_session, user_id):
+    _last_activity = datetime.datetime.now()
+    try:
+        sa_session.query(User).filter(User.user_id == user_id).update(
+            {"last_activity": _last_activity})
+        log.debug(
+            'updated user `%s` last activity to:%s', user_id, _last_activity)
+    except Exception:
+        log.exception("Failed last activity update")

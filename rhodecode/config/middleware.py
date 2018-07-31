@@ -25,13 +25,13 @@ import collections
 import tempfile
 
 from paste.gzipper import make_gzip_middleware
+import pyramid.events
 from pyramid.wsgi import wsgiapp
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.settings import asbool, aslist
 from pyramid.httpexceptions import (
     HTTPException, HTTPError, HTTPInternalServerError, HTTPFound, HTTPNotFound)
-from pyramid.events import ApplicationCreated
 from pyramid.renderers import render_to_response
 
 from rhodecode.model import meta
@@ -39,6 +39,7 @@ from rhodecode.config import patches
 from rhodecode.config import utils as config_utils
 from rhodecode.config.environment import load_pyramid_environment
 
+import rhodecode.events
 from rhodecode.lib.middleware.vcs import VCSMiddleware
 from rhodecode.lib.request import Request
 from rhodecode.lib.vcs import VCSCommunicationError
@@ -268,11 +269,14 @@ def includeme(config):
     settings['default_locale_name'] = settings.get('lang', 'en')
 
     # Add subscribers.
-    config.add_subscriber(inject_app_settings, ApplicationCreated)
-    config.add_subscriber(scan_repositories_if_enabled, ApplicationCreated)
-    config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
-    config.add_subscriber(write_js_routes_if_enabled, ApplicationCreated)
-
+    config.add_subscriber(inject_app_settings,
+                          pyramid.events.ApplicationCreated)
+    config.add_subscriber(scan_repositories_if_enabled,
+                          pyramid.events.ApplicationCreated)
+    config.add_subscriber(write_metadata_if_needed,
+                          pyramid.events.ApplicationCreated)
+    config.add_subscriber(write_js_routes_if_enabled,
+                          pyramid.events.ApplicationCreated)
 
     # request custom methods
     config.add_request_method(

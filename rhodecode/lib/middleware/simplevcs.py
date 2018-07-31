@@ -521,6 +521,7 @@ class SimpleVCS(object):
                 if not self.valid_and_active_user(user):
                     return HTTPForbidden()(environ, start_response)
                 username = user.username
+                user_id = user.user_id
 
                 # check user attributes for password change flag
                 user_obj = user
@@ -536,6 +537,7 @@ class SimpleVCS(object):
                     plugin, plugin_cache_active, cache_ttl)
                 if not perm:
                     return HTTPForbidden()(environ, start_response)
+                environ['rc_auth_user_id'] = user_id
 
         # extras are injected into UI object and later available
         # in hooks executed by RhodeCode

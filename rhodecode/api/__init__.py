@@ -208,6 +208,7 @@ def request_view(request):
 
         # register our auth-user
         request.rpc_user = auth_u
+        request.environ['rc_auth_user_id'] = auth_u.user_id
 
         # now check if token is valid for API
         auth_token = request.rpc_api_key

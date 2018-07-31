@@ -32,9 +32,11 @@ def trigger(event, registry=None):
     # For the first step we are using pyramids thread locals here. If the
     # event mechanism works out as a good solution we should think about
     # passing the registry as an argument to get rid of it.
+    event_name = event.__class__
+    log.debug('event %s sent for execution', event_name)
     registry = registry or get_current_registry()
     registry.notify(event)
-    log.debug('event %s triggered using registry %s', event.__class__, registry)
+    log.debug('event %s triggered using registry %s', event_name, registry)
 
     # Send the events to integrations directly
     from rhodecode.integrations import integrations_event_handler
