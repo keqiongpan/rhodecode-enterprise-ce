@@ -21,7 +21,6 @@
 import os
 import sys
 import logging
-import traceback
 import collections
 import tempfile
 
@@ -340,6 +339,7 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
             # if not, then something, somewhere is leaving a connection open
             pool = meta.Base.metadata.bind.engine.pool
             log.debug('sa pool status: %s', pool.status())
+            log.debug('Request processing finalized')
 
     return pyramid_app_with_cleanup
 
