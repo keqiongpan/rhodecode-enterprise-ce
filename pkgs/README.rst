@@ -29,14 +29,13 @@ NodeJS dependencies
 
 .. code:: shell
 
-   # switch to pkgs dir
-   pushd pkgs
-   node2nix --input ../package.json \
-            -o node-packages.nix \
-            -e node-env.nix \
-            -c node-default.nix \
-            -d --flatten --nodejs-6
-   popd
+   rm -rf node_modules
+   nix-shell pkgs/shell-generate.nix --command "
+       node2nix --input package.json \
+                -o pkgs/node-packages.nix \
+                -e pkgs/node-env.nix \
+                -c pkgs/node-default.nix \
+                -d --flatten --nodejs-6 "
 
 
 
@@ -45,8 +44,6 @@ Bower dependencies
 
 .. code:: shell
 
-   bower2nix bower.json pkgs/bower-packages.nix
-   # or
    nix-shell pkgs/shell-generate.nix --command "bower2nix bower.json pkgs/bower-packages.nix"
 
 
