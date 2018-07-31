@@ -110,3 +110,9 @@ class RhodecodeEvent(object):
             'server_url': self.server_url
         }
         return data
+
+
+class RhodeCodeIntegrationEvent(RhodecodeEvent):
+    """
+    Special subclass for Integration events
+    """

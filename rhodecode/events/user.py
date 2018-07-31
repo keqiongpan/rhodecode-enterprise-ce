@@ -20,7 +20,7 @@ import logging
 from zope.interface import implementer
 
 from rhodecode.translation import lazy_ugettext
-from rhodecode.events.base import RhodecodeEvent
+from rhodecode.events.base import RhodecodeEvent, RhodeCodeIntegrationEvent
 from rhodecode.events.interfaces import (
     IUserRegistered, IUserPreCreate, IUserPreUpdate)
 
@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 
 
 @implementer(IUserRegistered)
-class UserRegistered(RhodecodeEvent):
+class UserRegistered(RhodeCodeIntegrationEvent):
     """
     An instance of this class is emitted as an :term:`event` whenever a user
     account is registered.
@@ -43,7 +43,7 @@ class UserRegistered(RhodecodeEvent):
 
 
 @implementer(IUserPreCreate)
-class UserPreCreate(RhodecodeEvent):
+class UserPreCreate(RhodeCodeIntegrationEvent):
     """
     An instance of this class is emitted as an :term:`event` before a new user
     object is created.
@@ -57,7 +57,7 @@ class UserPreCreate(RhodecodeEvent):
 
 
 @implementer(IUserPreCreate)
-class UserPostCreate(RhodecodeEvent):
+class UserPostCreate(RhodeCodeIntegrationEvent):
     """
     An instance of this class is emitted as an :term:`event` after a new user
     object is created.
@@ -71,7 +71,7 @@ class UserPostCreate(RhodecodeEvent):
 
 
 @implementer(IUserPreUpdate)
-class UserPreUpdate(RhodecodeEvent):
+class UserPreUpdate(RhodeCodeIntegrationEvent):
     """
     An instance of this class is emitted as an :term:`event` before a user
     object is updated.

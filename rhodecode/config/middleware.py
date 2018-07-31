@@ -274,11 +274,6 @@ def includeme(config):
     config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
     config.add_subscriber(write_js_routes_if_enabled, ApplicationCreated)
 
-    # events
-    # TODO(marcink): this should be done when pyramid migration is finished
-    # config.add_subscriber(
-    #     'rhodecode.integrations.integrations_event_handler',
-    #     'rhodecode.events.RhodecodeEvent')
 
     # request custom methods
     config.add_request_method(
@@ -316,14 +311,15 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
     """
     Apply outer WSGI middlewares around the application.
     """
-    settings = config.registry.settings
+    registry = config.registry
+    settings = registry.settings
 
     # enable https redirects based on HTTP_X_URL_SCHEME set by proxy
     pyramid_app = HttpsFixup(pyramid_app, settings)
 
     pyramid_app, _ae_client = wrap_in_appenlight_if_enabled(
         pyramid_app, settings)
-    config.registry.ae_client = _ae_client
+    registry.ae_client = _ae_client
 
     if settings['gzip_responses']:
         pyramid_app = make_gzip_middleware(

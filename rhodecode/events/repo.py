@@ -22,7 +22,7 @@ import datetime
 
 from rhodecode.translation import lazy_ugettext
 from rhodecode.model.db import User, Repository, Session
-from rhodecode.events.base import RhodecodeEvent
+from rhodecode.events.base import RhodeCodeIntegrationEvent
 from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 
 log = logging.getLogger(__name__)
@@ -147,7 +147,7 @@ def _issues_as_dict(commits):
     return issues
 
 
-class RepoEvent(RhodecodeEvent):
+class RepoEvent(RhodeCodeIntegrationEvent):
     """
     Base class for events acting on a repository.
 
