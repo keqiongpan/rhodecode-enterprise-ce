@@ -1308,6 +1308,17 @@ self: super: {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  "pyotp" = super.buildPythonPackage {
+    name = "pyotp-2.2.6";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/67/69/131f5ad63de40c30f3be88d891e4a2ea1b69398528db99bc1e5c543422fa/pyotp-2.2.6.tar.gz";
+      sha256 = "0sdxxvr3j4j0pk26v258jpxhgpbnpmyqhvzhl24hsd50j7fk14fx";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
   "pyparsing" = super.buildPythonPackage {
     name = "pyparsing-1.5.7";
     doCheck = false;
@@ -1686,6 +1697,7 @@ self: super: {
       self."msgpack-python"
       self."mysql-python"
       self."pymysql"
+      self."pyotp"
       self."objgraph"
       self."packaging"
       self."paste"
