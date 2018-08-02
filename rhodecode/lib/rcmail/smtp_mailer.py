@@ -24,8 +24,9 @@ Simple smtp mailer used in RhodeCode
 
 import time
 import logging
-from socket import sslerror
+import socket
 from email.utils import formatdate
+
 from rhodecode.lib.rcmail.message import Message
 from rhodecode.lib.rcmail.utils import DNS_NAME
 
@@ -60,7 +61,7 @@ class SmtpMailer(object):
         self.auth = smtp_auth
 
     def _get_smptlib(self):
-        #patch the output
+        # patch the output
         import smtplib
 
         class StderrLogger(object):
@@ -114,6 +115,6 @@ class SmtpMailer(object):
 
         try:
             smtp_serv.quit()
-        except sslerror:
+        except socket.sslerror:
             # sslerror is raised in tls connections on closing sometimes
             smtp_serv.close()
