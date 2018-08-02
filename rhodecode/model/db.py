@@ -2339,7 +2339,6 @@ class Repository(Base, BaseModel):
         def get_instance_cached(repo_id):
             return self._get_instance()
 
-        start = time.time()
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
@@ -2349,8 +2348,8 @@ class Repository(Base, BaseModel):
                 get_instance_cached.invalidate(self.repo_id)
 
             instance = get_instance_cached(self.repo_id)
-            compute_time = time.time() - start
-            log.debug('Repo instance fetched in %.3fs', compute_time)
+            log.debug(
+                'Repo instance fetched in %.3fs', inv_context_manager.compute_time)
             return instance
 
     def _get_instance(self, cache=True, config=None):

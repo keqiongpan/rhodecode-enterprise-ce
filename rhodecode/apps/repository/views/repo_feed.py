@@ -17,7 +17,6 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-import time
 import pytz
 import logging
 
@@ -159,7 +158,6 @@ class RepoFeedView(RepoAppView):
 
             return feed.mime_type, feed.writeString('utf-8')
 
-        start = time.time()
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
@@ -171,8 +169,9 @@ class RepoFeedView(RepoAppView):
 
             mime_type, feed = generate_atom_feed(
                 self.db_repo.repo_id, self.db_repo.repo_name, 'atom')
-            compute_time = time.time() - start
-            log.debug('Repo ATOM feed computed in %.3fs', compute_time)
+
+            log.debug('Repo ATOM feed computed in %.3fs',
+                      inv_context_manager.compute_time)
 
         response = Response(feed)
         response.content_type = mime_type
@@ -224,7 +223,6 @@ class RepoFeedView(RepoAppView):
 
             return feed.mime_type, feed.writeString('utf-8')
 
-        start = time.time()
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
@@ -236,8 +234,8 @@ class RepoFeedView(RepoAppView):
 
             mime_type, feed = generate_rss_feed(
                 self.db_repo.repo_id, self.db_repo.repo_name, 'rss')
-            compute_time = time.time() - start
-            log.debug('Repo RSS feed computed in %.3fs', compute_time)
+            log.debug(
+                'Repo RSS feed computed in %.3fs', inv_context_manager.compute_time)
 
         response = Response(feed)
         response.content_type = mime_type

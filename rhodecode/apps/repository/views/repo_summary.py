@@ -18,7 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import time
 import logging
 import string
 import rhodecode
@@ -86,7 +85,6 @@ class RepoSummaryView(RepoAppView):
                 readme_filename = readme_node.path
             return readme_data, readme_filename
 
-        start = time.time()
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
@@ -98,8 +96,10 @@ class RepoSummaryView(RepoAppView):
 
             instance = generate_repo_readme(
                 db_repo.repo_id, db_repo.repo_name, renderer_type)
-            compute_time = time.time() - start
-            log.debug('Repo readme generated and computed in %.3fs', compute_time)
+
+            log.debug(
+                'Repo readme generated and computed in %.3fs',
+                inv_context_manager.compute_time)
             return instance
 
     def _get_landing_commit_or_none(self, db_repo):

@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import os
+import time
 import logging
 import functools
 import threading
@@ -210,23 +211,19 @@ class InvalidationContext(object):
     """
     usage::
 
-        import time
         from rhodecode.lib import rc_cache
-        my_id = 1
-        cache_namespace_uid = 'cache_demo.{}'.format(my_id)
-        invalidation_namespace = 'repo_cache:1'
+
+        cache_namespace_uid = CacheKey.SOME_NAMESPACE.format(1)
         region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
 
-        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
-                                               expiration_time=30,
-                                               condition=True)
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=True)
         def heavy_compute(cache_name, param1, param2):
             print('COMPUTE {}, {}, {}'.format(cache_name, param1, param2))
-            import time
-            time.sleep(30)
-            return True
 
-        start = time.time()
+        # invalidation namespace is shared namespace key for all process caches
+        # we use it to send a global signal
+        invalidation_namespace = 'repo_cache:1'
+
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
@@ -236,7 +233,7 @@ class InvalidationContext(object):
                 heavy_compute.invalidate('some_name', 'param1', 'param2')
 
             result = heavy_compute('some_name', 'param1', 'param2')
-            compute_time = time.time() - start
+            compute_time = inv_context_manager.compute_time
             print(compute_time)
 
         # To send global invalidation signal, simply run
@@ -268,6 +265,7 @@ class InvalidationContext(object):
         self.cache_key = compute_key_from_params(uid)
         self.cache_key = 'proc:{}_thread:{}_{}'.format(
             self.proc_id, self.thread_id, self.cache_key)
+        self.compute_time = 0
 
     def get_or_create_cache_obj(self, uid, invalidation_namespace=''):
         log.debug('Checking if %s cache key is present and active', self.cache_key)
@@ -284,20 +282,23 @@ class InvalidationContext(object):
         """
         # register or get a new key based on uid
         self.cache_obj = self.get_or_create_cache_obj(uid=self.uid)
-
+        self._start_time = time.time()
         if self.cache_obj.cache_active:
             # means our cache obj is existing and marked as it's
             # cache is not outdated, we return ActiveRegionCache
             self.skip_cache_active_change = True
+
             return ActiveRegionCache(context=self)
 
-        # the key is either not existing or set to False, we return
+            # the key is either not existing or set to False, we return
         # the real invalidator which re-computes value. We additionally set
         # the flag to actually update the Database objects
         self.skip_cache_active_change = False
         return FreshRegionCache(context=self)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # save compute time
+        self.compute_time = time.time() - self._start_time
 
         if self.skip_cache_active_change:
             return
