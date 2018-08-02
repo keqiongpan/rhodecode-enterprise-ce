@@ -21,7 +21,6 @@
 import os
 import hashlib
 import logging
-import time
 from collections import namedtuple
 from functools import wraps
 import bleach
@@ -32,7 +31,7 @@ from rhodecode.lib.utils2 import (
 from rhodecode.lib.vcs.backends import base
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi, RhodeCodeSetting)
+    RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi, RhodeCodeSetting, CacheKey)
 from rhodecode.model.meta import Session
 
 
@@ -207,14 +206,12 @@ class SettingsModel(BaseModel):
         return res
 
     def invalidate_settings_cache(self):
-        # NOTE:(marcink) we flush the whole sql_cache_short region, because it
-        # reads different settings etc. It's little too much but those caches are
-        # anyway very short lived and it's a safest way.
-        region = rc_cache.get_or_create_region('sql_cache_short')
-        region.invalidate()
+        invalidation_namespace = CacheKey.SETTINGS_INVALIDATION_NAMESPACE
+        CacheKey.set_invalidate(invalidation_namespace)
 
     def get_all_settings(self, cache=False):
         region = rc_cache.get_or_create_region('sql_cache_short')
+        invalidation_namespace = CacheKey.SETTINGS_INVALIDATION_NAMESPACE
 
         @region.conditional_cache_on_arguments(condition=cache)
         def _get_all_settings(name, key):
@@ -230,10 +227,23 @@ class SettingsModel(BaseModel):
 
         repo = self._get_repo(self.repo) if self.repo else None
         key = "settings_repo.{}".format(repo.repo_id) if repo else "settings_app"
-        start = time.time()
-        result = _get_all_settings('rhodecode_settings', key)
-        total = time.time() - start
-        log.debug('Fetching app settings for key: %s took: %.3fs', key, total)
+
+        inv_context_manager = rc_cache.InvalidationContext(
+            uid='cache_settings', invalidation_namespace=invalidation_namespace)
+        with inv_context_manager as invalidation_context:
+            # check for stored invalidation signal, and maybe purge the cache
+            # before computing it again
+            if invalidation_context.should_invalidate():
+                # NOTE:(marcink) we flush the whole sql_cache_short region, because it
+                # reads different settings etc. It's little too much but those caches
+                # are anyway very short lived and it's a safest way.
+                region = rc_cache.get_or_create_region('sql_cache_short')
+                region.invalidate()
+
+            result = _get_all_settings('rhodecode_settings', key)
+            log.debug(
+                'Fetching app settings for key: %s took: %.3fs', key,
+                inv_context_manager.compute_time)
 
         return result
 

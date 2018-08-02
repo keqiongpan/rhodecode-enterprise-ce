@@ -3144,6 +3144,7 @@ class CacheKey(Base, BaseModel):
     CACHE_TYPE_README = 'README'
     # namespaces used to register process/thread aware caches
     REPO_INVALIDATION_NAMESPACE = 'repo_cache:{repo_id}'
+    SETTINGS_INVALIDATION_NAMESPACE = 'system_settings'
 
     cache_id = Column("cache_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     cache_key = Column("cache_key", String(255), nullable=True, unique=None, default=None)
