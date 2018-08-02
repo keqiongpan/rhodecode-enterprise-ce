@@ -1829,11 +1829,11 @@ self: super: {
     };
   };
   "scandir" = super.buildPythonPackage {
-    name = "scandir-1.7";
+    name = "scandir-1.8";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/13/bb/e541b74230bbf7a20a3949a2ee6631be299378a784f5445aa5d0047c192b/scandir-1.7.tar.gz";
-      sha256 = "0gbnhjzg42rj87ljv9kb648rfxph69ly3c8r9841dxy4d7l5pmdj";
+      url = "https://files.pythonhosted.org/packages/50/a4/141939a8d213b2cf1b1d6b2704c6f6c07d4f1903df532af887c8e64e6815/scandir-1.8.tar.gz";
+      sha256 = "0w6qhs8wb9k7480jgfbvspislxa45l2s1pca1vcw8hlhm79i2l4d";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "New BSD License"; } ];
