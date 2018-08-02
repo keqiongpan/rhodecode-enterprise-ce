@@ -232,7 +232,6 @@ def includeme(config):
     # Includes which are required. The application would fail without them.
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
-    config.include('rhodecode.lib.caches')
     config.include('rhodecode.lib.rc_cache')
 
     config.include('rhodecode.authentication')
@@ -466,6 +465,20 @@ def _sanitize_cache_settings(settings):
         settings,
         'rc_cache.cache_repo.arguments.filename',
         os.path.join(tempfile.gettempdir(), 'rc_cache_2'))
+
+    # cache_repo_longterm memory, 96H
+    _string_setting(
+        settings,
+        'rc_cache.cache_repo_longterm.backend',
+        'dogpile.cache.rc.memory_lru')
+    _int_setting(
+        settings,
+        'rc_cache.cache_repo_longterm.expiration_time',
+        345600)
+    _int_setting(
+        settings,
+        'rc_cache.cache_repo_longterm.max_size',
+        10000)
 
     # sql_cache_short
     _string_setting(

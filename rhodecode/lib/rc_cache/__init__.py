@@ -39,7 +39,8 @@ log = logging.getLogger(__name__)
 from . import region_meta
 from .utils import (
     get_default_cache_settings, key_generator, get_or_create_region,
-    clear_cache_namespace, make_region)
+    clear_cache_namespace, make_region, InvalidationContext,
+    FreshRegionCache, ActiveRegionCache)
 
 
 def configure_dogpile_cache(settings):

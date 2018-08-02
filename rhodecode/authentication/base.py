@@ -35,7 +35,7 @@ from pyramid.threadlocal import get_current_registry
 
 from rhodecode.authentication.interface import IAuthnPluginRegistry
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
-from rhodecode.lib import caches, rc_cache
+from rhodecode.lib import rc_cache
 from rhodecode.lib.auth import PasswordGenerator, _RhodeCodeCryptoBCrypt
 from rhodecode.lib.utils2 import safe_int, safe_str
 from rhodecode.lib.exceptions import LdapConnectionError

@@ -125,11 +125,6 @@ def vcsserver_factory(tmpdir_factory):
         overrides = list(overrides)
         overrides.append({'server:main': {'port': vcsserver_port}})
 
-        if is_cygwin():
-            platform_override = {'DEFAULT': {
-                'beaker.cache.repo_object.type': 'nocache'}}
-            overrides.append(platform_override)
-
         option_name = 'vcsserver_config_http'
         override_option_name = 'vcsserver_config_override'
         config_file = get_config(

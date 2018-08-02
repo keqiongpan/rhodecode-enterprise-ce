@@ -25,7 +25,7 @@ import pytest
 from rhodecode.lib import rc_cache
 
 
-@pytest.mark.usefixtures( 'app')
+@pytest.mark.usefixtures('app')
 class TestCaches(object):
 
     def test_cache_decorator_init_not_configured(self):

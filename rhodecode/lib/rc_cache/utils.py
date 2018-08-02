@@ -20,11 +20,16 @@
 import os
 import logging
 import functools
+import threading
 
 from dogpile.cache import CacheRegion
 from dogpile.cache.util import compat
 
+import rhodecode
 from rhodecode.lib.utils import safe_str, sha1
+from rhodecode.lib.utils2 import safe_unicode
+from rhodecode.model.db import Session, CacheKey, IntegrityError
+
 from . import region_meta
 
 log = logging.getLogger(__name__)
@@ -183,3 +188,127 @@ def clear_cache_namespace(cache_region, cache_namespace_uid):
     cache_keys = region.backend.list_keys(prefix=cache_namespace_uid)
     region.delete_multi(cache_keys)
     return len(cache_keys)
+
+
+class ActiveRegionCache(object):
+    def __init__(self, context):
+        self.context = context
+
+    def should_invalidate(self):
+        return False
+
+
+class FreshRegionCache(object):
+    def __init__(self, context):
+        self.context = context
+
+    def should_invalidate(self):
+        return True
+
+
+class InvalidationContext(object):
+    """
+    usage::
+
+        import time
+        from rhodecode.lib import rc_cache
+        my_id = 1
+        cache_namespace_uid = 'cache_demo.{}'.format(my_id)
+        invalidation_namespace = 'repo_cache:1'
+        region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                               expiration_time=30,
+                                               condition=True)
+        def heavy_compute(cache_name, param1, param2):
+            print('COMPUTE {}, {}, {}'.format(cache_name, param1, param2))
+            import time
+            time.sleep(30)
+            return True
+
+        start = time.time()
+        inv_context_manager = rc_cache.InvalidationContext(
+            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
+        with inv_context_manager as invalidation_context:
+            # check for stored invalidation signal, and maybe purge the cache
+            # before computing it again
+            if invalidation_context.should_invalidate():
+                heavy_compute.invalidate('some_name', 'param1', 'param2')
+
+            result = heavy_compute('some_name', 'param1', 'param2')
+            compute_time = time.time() - start
+            print(compute_time)
+
+        # To send global invalidation signal, simply run
+        CacheKey.set_invalidate(invalidation_namespace)
+
+    """
+
+    def __repr__(self):
+        return '<InvalidationContext:{}[{}]>'.format(
+            safe_str(self.cache_key), safe_str(self.uid))
+
+    def __init__(self, uid, invalidation_namespace='',
+                 raise_exception=False, thread_scoped=True):
+        self.uid = uid
+        self.invalidation_namespace = invalidation_namespace
+        self.raise_exception = raise_exception
+        self.proc_id = safe_unicode(rhodecode.CONFIG.get('instance_id') or 'DEFAULT')
+        self.thread_id = 'global'
+
+        # Append the thread id to the cache key if this invalidation context
+        # should be scoped to the current thread.
+        if thread_scoped:
+            self.thread_id = threading.current_thread().ident
+
+        self.cache_key = compute_key_from_params(uid)
+        self.cache_key = 'proc:{}_thread:{}_{}'.format(
+            self.proc_id, self.thread_id, self.cache_key)
+
+    def get_or_create_cache_obj(self, uid, invalidation_namespace=''):
+        log.debug('Checking if %s cache key is present and active', self.cache_key)
+        cache_obj = CacheKey.get_active_cache(self.cache_key)
+        invalidation_namespace = invalidation_namespace or self.invalidation_namespace
+        if not cache_obj:
+            cache_obj = CacheKey(self.cache_key, cache_args=invalidation_namespace)
+        return cache_obj
+
+    def __enter__(self):
+        """
+        Test if current object is valid, and return CacheRegion function
+        that does invalidation and calculation
+        """
+        # register or get a new key based on uid
+        self.cache_obj = self.get_or_create_cache_obj(uid=self.uid)
+
+        if self.cache_obj.cache_active:
+            # means our cache obj is existing and marked as it's
+            # cache is not outdated, we return ActiveRegionCache
+            self.skip_cache_active_change = True
+            return ActiveRegionCache(context=self)
+
+        # the key is either not existing or set to False, we return
+        # the real invalidator which re-computes value. We additionally set
+        # the flag to actually update the Database objects
+        self.skip_cache_active_change = False
+        return FreshRegionCache(context=self)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+
+        if self.skip_cache_active_change:
+            return
+
+        try:
+            self.cache_obj.cache_active = True
+            Session().add(self.cache_obj)
+            Session().commit()
+        except IntegrityError:
+            # if we catch integrity error, it means we inserted this object
+            # assumption is that's really an edge race-condition case and
+            # it's safe is to skip it
+            Session().rollback()
+        except Exception:
+            log.exception('Failed to commit on cache key update')
+            Session().rollback()
+            if self.raise_exception:
+                raise

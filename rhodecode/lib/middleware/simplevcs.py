@@ -40,7 +40,7 @@ from zope.cachedescriptors.property import Lazy as LazyProperty
 
 import rhodecode
 from rhodecode.authentication.base import authenticate, VCS_TYPE, loadplugin
-from rhodecode.lib import caches, rc_cache
+from rhodecode.lib import rc_cache
 from rhodecode.lib.auth import AuthUser, HasPermissionAnyMiddleware
 from rhodecode.lib.base import (
     BasicAuth, get_ip_addr, get_user_agent, vcs_operation_context)
@@ -77,7 +77,7 @@ def extract_svn_txn_id(acl_repo_name, data):
                         match = pat.search(sub_el.text)
                         if match:
                             svn_tx_id = match.groupdict()['txn_id']
-                            txn_id = caches.compute_key_from_params(
+                            txn_id = rc_cache.compute_key_from_params(
                                 acl_repo_name, svn_tx_id)
                             return txn_id
     except Exception:

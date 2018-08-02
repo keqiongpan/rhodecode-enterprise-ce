@@ -34,7 +34,7 @@ import rhodecode
 from rhodecode.apps._base import RepoAppView
 
 from rhodecode.controllers.utils import parse_path_ref
-from rhodecode.lib import diffs, helpers as h, caches, rc_cache
+from rhodecode.lib import diffs, helpers as h, rc_cache
 from rhodecode.lib import audit_logger
 from rhodecode.lib.exceptions import NonRelativePathError
 from rhodecode.lib.codeblocks import (

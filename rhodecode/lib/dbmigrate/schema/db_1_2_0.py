@@ -648,17 +648,7 @@ class Repository(Base, BaseModel):
 
     @property
     def scm_instance_cached(self):
-        @cache_region('long_term')
-        def _c(repo_name):
-            return self.__get_instance()
-        rn = self.repo_name
-
-        inv = self.invalidate
-        if inv is not None:
-            region_invalidate(_c, None, rn)
-            # update our cache
-            CacheInvalidation.set_valid(inv.cache_key)
-        return _c(rn)
+        return self.__get_instance()
 
     def __get_instance(self):
 

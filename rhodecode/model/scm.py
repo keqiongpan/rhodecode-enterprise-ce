@@ -43,7 +43,7 @@ from rhodecode.lib.auth import (
     HasRepoPermissionAny, HasRepoGroupPermissionAny,
     HasUserGroupPermissionAny)
 from rhodecode.lib.exceptions import NonRelativePathError, IMCCommitError
-from rhodecode.lib import hooks_utils, caches
+from rhodecode.lib import hooks_utils
 from rhodecode.lib.utils import (
     get_filesystem_repos, make_db_config)
 from rhodecode.lib.utils2 import (safe_str, safe_unicode)
@@ -269,10 +269,13 @@ class ScmModel(BaseModel):
         :param delete: delete the entry keys instead of setting bool
             flag on them, and also purge caches used by the dogpile
         """
-        CacheKey.set_invalidate(repo_name, delete=delete)
         repo = Repository.get_by_repo_name(repo_name)
 
         if repo:
+            invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+                repo_id=repo.repo_id)
+            CacheKey.set_invalidate(invalidation_namespace, delete=delete)
+
             repo_id = repo.repo_id
             config = repo._config
             config.set('extensions', 'largefiles', '')

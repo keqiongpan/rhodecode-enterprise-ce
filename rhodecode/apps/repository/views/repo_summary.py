@@ -18,12 +18,12 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import time
 import logging
 import string
 import rhodecode
 
 from pyramid.view import view_config
-from beaker.cache import cache_region
 
 from rhodecode.controllers import utils
 from rhodecode.apps._base import RepoAppView
@@ -53,26 +53,32 @@ class RepoSummaryView(RepoAppView):
             c.rhodecode_repo = self.rhodecode_vcs_repo
         return c
 
-    def _get_readme_data(self, db_repo, default_renderer):
-        repo_name = db_repo.repo_name
+    def _get_readme_data(self, db_repo, renderer_type):
+
         log.debug('Looking for README file')
 
-        @cache_region('long_term')
-        def _generate_readme(cache_key):
+        cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
+            db_repo.repo_id, CacheKey.CACHE_TYPE_README)
+        invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+            repo_id=self.db_repo.repo_id)
+        region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
+        def generate_repo_readme(repo_id, _repo_name, _renderer_type):
             readme_data = None
             readme_node = None
             readme_filename = None
             commit = self._get_landing_commit_or_none(db_repo)
             if commit:
                 log.debug("Searching for a README file.")
-                readme_node = ReadmeFinder(default_renderer).search(commit)
+                readme_node = ReadmeFinder(_renderer_type).search(commit)
             if readme_node:
                 relative_urls = {
                     'raw': h.route_path(
-                        'repo_file_raw', repo_name=repo_name,
+                        'repo_file_raw', repo_name=_repo_name,
                         commit_id=commit.raw_id, f_path=readme_node.path),
                     'standard': h.route_path(
-                        'repo_files', repo_name=repo_name,
+                        'repo_files', repo_name=_repo_name,
                         commit_id=commit.raw_id, f_path=readme_node.path),
                 }
                 readme_data = self._render_readme_or_none(
@@ -80,14 +86,21 @@ class RepoSummaryView(RepoAppView):
                 readme_filename = readme_node.path
             return readme_data, readme_filename
 
-        invalidator_context = CacheKey.repo_context_cache(
-            _generate_readme, repo_name, CacheKey.CACHE_TYPE_README)
+        start = time.time()
+        inv_context_manager = rc_cache.InvalidationContext(
+            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
+        with inv_context_manager as invalidation_context:
+            # check for stored invalidation signal, and maybe purge the cache
+            # before computing it again
+            if invalidation_context.should_invalidate():
+                generate_repo_readme.invalidate(
+                    db_repo.repo_id, db_repo.repo_name, renderer_type)
 
-        with invalidator_context as context:
-            context.invalidate()
-            computed = context.compute()
-
-        return computed
+            instance = generate_repo_readme(
+                db_repo.repo_id, db_repo.repo_name, renderer_type)
+            compute_time = time.time() - start
+            log.debug('Repo readme generated and computed in %.3fs', compute_time)
+            return instance
 
     def _get_landing_commit_or_none(self, db_repo):
         log.debug("Getting the landing commit.")

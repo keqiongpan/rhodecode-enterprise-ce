@@ -32,6 +32,7 @@ import time
 
 import pytest
 
+from rhodecode.lib import rc_cache
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import Repository, UserIpMap, CacheKey
 from rhodecode.model.meta import Session
@@ -217,46 +218,44 @@ class TestVCSOperations(object):
 
         _check_proper_git_push(stdout, stderr)
 
-    def test_push_invalidates_cache_hg(self, rc_web_server, tmpdir):
-        key = CacheKey.query().filter(CacheKey.cache_key == HG_REPO).scalar()
-        if not key:
-            key = CacheKey(HG_REPO, HG_REPO)
+    def test_push_invalidates_cache(self, rc_web_server, tmpdir):
+        hg_repo = Repository.get_by_repo_name(HG_REPO)
 
-        key.cache_active = True
-        Session().add(key)
-        Session().commit()
+        # init cache objects
+        CacheKey.delete_all_cache()
+        cache_namespace_uid = 'cache_push_test.{}'.format(hg_repo.repo_id)
+        invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+            repo_id=hg_repo.repo_id)
 
-        clone_url = rc_web_server.repo_clone_url(HG_REPO)
+        inv_context_manager = rc_cache.InvalidationContext(
+            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
+
+        with inv_context_manager as invalidation_context:
+            # __enter__ will create and register cache objects
+            pass
+
+        # clone to init cache
+        clone_url = rc_web_server.repo_clone_url(hg_repo.repo_name)
         stdout, stderr = Command('/tmp').execute(
             'hg clone', clone_url, tmpdir.strpath)
 
+        cache_keys = hg_repo.cache_keys
+        assert cache_keys != []
+        for key in cache_keys:
+            assert key.cache_active is True
+
+        # PUSH that should trigger invalidation cache
         stdout, stderr = _add_files_and_push(
             'hg', tmpdir.strpath, clone_url=clone_url, files_no=1)
 
-        key = CacheKey.query().filter(CacheKey.cache_key == HG_REPO).one()
-        assert key.cache_active is False
-
-    def test_push_invalidates_cache_git(self, rc_web_server, tmpdir):
-        key = CacheKey.query().filter(CacheKey.cache_key == GIT_REPO).scalar()
-        if not key:
-            key = CacheKey(GIT_REPO, GIT_REPO)
-
-        key.cache_active = True
-        Session().add(key)
+        # flush...
         Session().commit()
-
-        clone_url = rc_web_server.repo_clone_url(GIT_REPO)
-        stdout, stderr = Command('/tmp').execute(
-            'git clone', clone_url, tmpdir.strpath)
-
-        # commit some stuff into this repo
-        stdout, stderr = _add_files_and_push(
-            'git', tmpdir.strpath, clone_url=clone_url, files_no=1)
-        _check_proper_git_push(stdout, stderr)
-
-        key = CacheKey.query().filter(CacheKey.cache_key == GIT_REPO).one()
-
-        assert key.cache_active is False
+        hg_repo = Repository.get_by_repo_name(HG_REPO)
+        cache_keys = hg_repo.cache_keys
+        assert cache_keys != []
+        for key in cache_keys:
+            # keys should be marked as not active
+            assert key.cache_active is False
 
     def test_push_wrong_credentials_hg(self, rc_web_server, tmpdir):
         clone_url = rc_web_server.repo_clone_url(HG_REPO)

@@ -47,7 +47,6 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.exc import IntegrityError  # noqa
 from sqlalchemy.dialects.mysql import LONGTEXT
-from beaker.cache import cache_region
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from pyramid.threadlocal import get_current_request
@@ -1845,8 +1844,10 @@ class Repository(Base, BaseModel):
         """
         Returns associated cache keys for that repo
         """
+        invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+            repo_id=self.repo_id)
         return CacheKey.query()\
-            .filter(CacheKey.cache_args == self.repo_name)\
+            .filter(CacheKey.cache_args == invalidation_namespace)\
             .order_by(CacheKey.cache_key)\
             .all()
 
@@ -2327,18 +2328,30 @@ class Repository(Base, BaseModel):
         return self._get_instance(cache=bool(cache), config=config)
 
     def _get_instance_cached(self):
-        @cache_region('long_term')
-        def _get_repo(cache_key):
+        from rhodecode.lib import rc_cache
+
+        cache_namespace_uid = 'cache_repo_instance.{}'.format(self.repo_id)
+        invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+            repo_id=self.repo_id)
+        region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
+        def get_instance_cached(repo_id):
             return self._get_instance()
 
-        invalidator_context = CacheKey.repo_context_cache(
-            _get_repo, self.repo_name, None, thread_scoped=True)
+        start = time.time()
+        inv_context_manager = rc_cache.InvalidationContext(
+            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
+        with inv_context_manager as invalidation_context:
+            # check for stored invalidation signal, and maybe purge the cache
+            # before computing it again
+            if invalidation_context.should_invalidate():
+                get_instance_cached.invalidate(self.repo_id)
 
-        with invalidator_context as context:
-            context.invalidate()
-            repo = context.compute()
-
-        return repo
+            instance = get_instance_cached(self.repo_id)
+            compute_time = time.time() - start
+            log.debug('Repo instance fetched in %.3fs', compute_time)
+            return instance
 
     def _get_instance(self, cache=True, config=None):
         config = config or self._config
@@ -3128,9 +3141,10 @@ class CacheKey(Base, BaseModel):
         base_table_args,
     )
 
-    CACHE_TYPE_ATOM = 'ATOM'
-    CACHE_TYPE_RSS = 'RSS'
+    CACHE_TYPE_FEED = 'FEED'
     CACHE_TYPE_README = 'README'
+    # namespaces used to register process/thread aware caches
+    REPO_INVALIDATION_NAMESPACE = 'repo_cache:{repo_id}'
 
     cache_id = Column("cache_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     cache_key = Column("cache_key", String(255), nullable=True, unique=None, default=None)
@@ -3179,44 +3193,27 @@ class CacheKey(Base, BaseModel):
         Session().commit()
 
     @classmethod
-    def get_cache_key(cls, repo_name, cache_type):
-        """
-
-        Generate a cache key for this process of RhodeCode instance.
-        Prefix most likely will be process id or maybe explicitly set
-        instance_id from .ini file.
-        """
-        import rhodecode
-        prefix = safe_unicode(rhodecode.CONFIG.get('instance_id') or '')
-
-        repo_as_unicode = safe_unicode(repo_name)
-        key = u'{}_{}'.format(repo_as_unicode, cache_type) \
-            if cache_type else repo_as_unicode
-
-        return u'{}{}'.format(prefix, key)
-
-    @classmethod
-    def set_invalidate(cls, repo_name, delete=False):
+    def set_invalidate(cls, cache_uid, delete=False):
         """
         Mark all caches of a repo as invalid in the database.
         """
 
         try:
-            qry = Session().query(cls).filter(cls.cache_args == repo_name)
+            qry = Session().query(cls).filter(cls.cache_args == cache_uid)
             if delete:
-                log.debug('cache objects deleted for repo %s',
-                          safe_str(repo_name))
                 qry.delete()
+                log.debug('cache objects deleted for cache args %s',
+                          safe_str(cache_uid))
             else:
-                log.debug('cache objects marked as invalid for repo %s',
-                          safe_str(repo_name))
                 qry.update({"cache_active": False})
+                log.debug('cache objects marked as invalid for cache args %s',
+                          safe_str(cache_uid))
 
             Session().commit()
         except Exception:
             log.exception(
-                'Cache key invalidation failed for repository %s',
-                safe_str(repo_name))
+                'Cache key invalidation failed for cache args %s',
+                safe_str(cache_uid))
             Session().rollback()
 
     @classmethod
@@ -3225,27 +3222,6 @@ class CacheKey(Base, BaseModel):
         if inv_obj:
             return inv_obj
         return None
-
-    @classmethod
-    def repo_context_cache(cls, compute_func, repo_name, cache_type,
-                           thread_scoped=False):
-        """
-        @cache_region('long_term')
-        def _heavy_calculation(cache_key):
-            return 'result'
-
-        cache_context = CacheKey.repo_context_cache(
-            _heavy_calculation, repo_name, cache_type)
-
-        with cache_context as context:
-            context.invalidate()
-            computed = context.compute()
-
-        assert computed == 'result'
-        """
-        from rhodecode.lib import caches
-        return caches.InvalidationContext(
-            compute_func, repo_name, cache_type, thread_scoped=thread_scoped)
 
 
 class ChangesetComment(Base, BaseModel):

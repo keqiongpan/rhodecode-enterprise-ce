@@ -26,7 +26,7 @@ from collections import namedtuple
 from functools import wraps
 import bleach
 
-from rhodecode.lib import caches, rc_cache
+from rhodecode.lib import rc_cache
 from rhodecode.lib.utils2 import (
     Optional, AttributeDict, safe_str, remove_prefix, str2bool)
 from rhodecode.lib.vcs.backends import base
