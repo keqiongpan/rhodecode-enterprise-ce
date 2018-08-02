@@ -27,7 +27,7 @@ from dogpile.cache.util import compat
 
 import rhodecode
 from rhodecode.lib.utils import safe_str, sha1
-from rhodecode.lib.utils2 import safe_unicode
+from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.model.db import Session, CacheKey, IntegrityError
 
 from . import region_meta
@@ -249,16 +249,20 @@ class InvalidationContext(object):
             safe_str(self.cache_key), safe_str(self.uid))
 
     def __init__(self, uid, invalidation_namespace='',
-                 raise_exception=False, thread_scoped=True):
+                 raise_exception=False, thread_scoped=None):
         self.uid = uid
         self.invalidation_namespace = invalidation_namespace
         self.raise_exception = raise_exception
         self.proc_id = safe_unicode(rhodecode.CONFIG.get('instance_id') or 'DEFAULT')
         self.thread_id = 'global'
 
+        if thread_scoped is None:
+            # if we set "default" we can override this via .ini settings
+            thread_scoped = str2bool(rhodecode.CONFIG.get('cache_thread_scoped'))
+
         # Append the thread id to the cache key if this invalidation context
         # should be scoped to the current thread.
-        if thread_scoped:
+        if thread_scoped is True:
             self.thread_id = threading.current_thread().ident
 
         self.cache_key = compute_key_from_params(uid)
