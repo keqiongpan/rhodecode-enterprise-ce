@@ -52,13 +52,15 @@ class LRUMemoryBackend(memory_backend.MemoryBackend):
         super(LRUMemoryBackend, self).__init__(arguments)
 
     def delete(self, key):
-        if self._cache.has_key(key):
+        try:
             del self._cache[key]
+        except KeyError:
+            # we don't care if key isn't there at deletion
+            pass
 
     def delete_multi(self, keys):
         for key in keys:
-            if self._cache.has_key(key):
-                del self._cache[key]
+            self.delete(key)
 
 
 class Serializer(object):
