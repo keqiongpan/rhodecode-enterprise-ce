@@ -268,8 +268,8 @@ class InvalidationContext(object):
         self.compute_time = 0
 
     def get_or_create_cache_obj(self, uid, invalidation_namespace=''):
-        log.debug('Checking if %s cache key is present and active', self.cache_key)
         cache_obj = CacheKey.get_active_cache(self.cache_key)
+        log.debug('Fetched cache obj %s using %s cache key.', cache_obj, self.cache_key)
         invalidation_namespace = invalidation_namespace or self.invalidation_namespace
         if not cache_obj:
             cache_obj = CacheKey(self.cache_key, cache_args=invalidation_namespace)
