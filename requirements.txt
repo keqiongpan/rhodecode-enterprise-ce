@@ -50,7 +50,7 @@ psutil==5.4.6
 psycopg2==2.7.4
 py-bcrypt==0.4
 pycrypto==2.6.1
-pycurl==7.19.5
+pycurl==7.43.0.2
 pyflakes==0.8.1
 pygments-markdown-lexer==0.1.0.dev39
 pygments==2.2.0

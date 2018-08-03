@@ -48,5 +48,6 @@ pkgs.stdenv.mkDerivation {
     echo "Starting Generate Shell"
     # Custom prompt to distinguish from other dev envs.
     export PS1="\n\[\033[1;32m\][Generate-shell:\w]$\[\033[0m\] "
+    export PYCURL_SSL_LIBRARY=openssl
   '';
 }
