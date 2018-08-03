@@ -161,14 +161,12 @@ class RepoFeedView(RepoAppView):
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
-            # check for stored invalidation signal, and maybe purge the cache
-            # before computing it again
+            args = (self.db_repo.repo_id, self.db_repo.repo_name, 'atom',)
+            # re-compute and store cache if we get invalidate signal
             if invalidation_context.should_invalidate():
-                generate_atom_feed.invalidate(
-                    self.db_repo.repo_id, self.db_repo.repo_name, 'atom')
-
-            mime_type, feed = generate_atom_feed(
-                self.db_repo.repo_id, self.db_repo.repo_name, 'atom')
+                mime_type, feed = generate_atom_feed.refresh(*args)
+            else:
+                mime_type, feed = generate_atom_feed(*args)
 
             log.debug('Repo ATOM feed computed in %.3fs',
                       inv_context_manager.compute_time)
@@ -226,14 +224,12 @@ class RepoFeedView(RepoAppView):
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
-            # check for stored invalidation signal, and maybe purge the cache
-            # before computing it again
+            args = (self.db_repo.repo_id, self.db_repo.repo_name, 'rss',)
+            # re-compute and store cache if we get invalidate signal
             if invalidation_context.should_invalidate():
-                generate_rss_feed.invalidate(
-                    self.db_repo.repo_id, self.db_repo.repo_name, 'rss')
-
-            mime_type, feed = generate_rss_feed(
-                self.db_repo.repo_id, self.db_repo.repo_name, 'rss')
+                mime_type, feed = generate_rss_feed.refresh(*args)
+            else:
+                mime_type, feed = generate_rss_feed(*args)
             log.debug(
                 'Repo RSS feed computed in %.3fs', inv_context_manager.compute_time)
 

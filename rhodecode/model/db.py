@@ -2342,12 +2342,13 @@ class Repository(Base, BaseModel):
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
-            # check for stored invalidation signal, and maybe purge the cache
-            # before computing it again
+            args = (self.repo_id,)
+            # re-compute and store cache if we get invalidate signal
             if invalidation_context.should_invalidate():
-                get_instance_cached.invalidate(self.repo_id)
+                instance = get_instance_cached.refresh(*args)
+            else:
+                instance = get_instance_cached(*args)
 
-            instance = get_instance_cached(self.repo_id)
             log.debug(
                 'Repo instance fetched in %.3fs', inv_context_manager.compute_time)
             return instance

@@ -227,14 +227,15 @@ class InvalidationContext(object):
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
-            # check for stored invalidation signal, and maybe purge the cache
-            # before computing it again
+            args = ('one', 'two')
+            # re-compute and store cache if we get invalidate signal
             if invalidation_context.should_invalidate():
-                heavy_compute.invalidate('some_name', 'param1', 'param2')
+                result = heavy_compute.refresh(*args)
+            else:
+                result = heavy_compute(*args)
 
-            result = heavy_compute('some_name', 'param1', 'param2')
             compute_time = inv_context_manager.compute_time
-            print(compute_time)
+            log.debug('result computed in %.3fs' ,compute_time)
 
         # To send global invalidation signal, simply run
         CacheKey.set_invalidate(invalidation_namespace)

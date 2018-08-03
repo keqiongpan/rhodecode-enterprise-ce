@@ -88,14 +88,12 @@ class RepoSummaryView(RepoAppView):
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
-            # check for stored invalidation signal, and maybe purge the cache
-            # before computing it again
+            args = (db_repo.repo_id, db_repo.repo_name, renderer_type,)
+            # re-compute and store cache if we get invalidate signal
             if invalidation_context.should_invalidate():
-                generate_repo_readme.invalidate(
-                    db_repo.repo_id, db_repo.repo_name, renderer_type)
-
-            instance = generate_repo_readme(
-                db_repo.repo_id, db_repo.repo_name, renderer_type)
+                instance = generate_repo_readme.refresh(*args)
+            else:
+                instance = generate_repo_readme(*args)
 
             log.debug(
                 'Repo readme generated and computed in %.3fs',

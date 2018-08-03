@@ -583,8 +583,9 @@ def test_invalidation_context(baseapp):
     with inv_context_manager as invalidation_context:
         should_invalidate = invalidation_context.should_invalidate()
         if should_invalidate:
-            _dummy_func.invalidate('some-key')
-        result = _dummy_func('some-key')
+            result = _dummy_func.refresh('some-key')
+        else:
+            result = _dummy_func('some-key')
 
         assert isinstance(invalidation_context, rc_cache.FreshRegionCache)
         assert should_invalidate is True
@@ -608,8 +609,9 @@ def test_invalidation_context(baseapp):
     with inv_context_manager as invalidation_context:
         should_invalidate = invalidation_context.should_invalidate()
         if should_invalidate:
-            _dummy_func.invalidate('some-key')
-        result = _dummy_func('some-key')
+            result = _dummy_func.refresh('some-key')
+        else:
+            result = _dummy_func('some-key')
 
         assert isinstance(invalidation_context, rc_cache.FreshRegionCache)
         assert should_invalidate is True
@@ -642,8 +644,9 @@ def test_invalidation_context_exception_in_compute(baseapp):
         with inv_context_manager as invalidation_context:
             should_invalidate = invalidation_context.should_invalidate()
             if should_invalidate:
-                _dummy_func.invalidate('some-key-2')
-            _dummy_func('some-key-2')
+                _dummy_func.refresh('some-key-2')
+            else:
+                _dummy_func('some-key-2')
 
 
 @pytest.mark.parametrize('execution_number', range(5))
@@ -674,8 +677,9 @@ def test_cache_invalidation_race_condition(execution_number, baseapp):
         with inv_context_manager as invalidation_context:
             should_invalidate = invalidation_context.should_invalidate()
             if should_invalidate:
-                _dummy_func.invalidate('some-key-3')
-            _dummy_func('some-key-3')
+                _dummy_func.refresh('some-key-3')
+            else:
+                _dummy_func('some-key-3')
 
         # Mark invalidation
         CacheKey.set_invalidate(invalidation_namespace)
