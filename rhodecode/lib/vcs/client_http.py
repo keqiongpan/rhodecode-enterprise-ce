@@ -28,6 +28,7 @@ import threading
 import urllib2
 import urlparse
 import uuid
+import traceback
 
 import pycurl
 import msgpack
@@ -197,7 +198,8 @@ def _remote_call(url, payload, exceptions_map, session):
     try:
         response = session.post(url, data=msgpack.packb(payload))
     except pycurl.error as e:
-        raise exceptions.HttpVCSCommunicationError(e)
+        msg = '{}. pycurl traceback: {}'.format(e, traceback.format_exc())
+        raise exceptions.HttpVCSCommunicationError(msg)
     except Exception as e:
         message = getattr(e, 'message', '')
         if 'Failed to connect' in message:
