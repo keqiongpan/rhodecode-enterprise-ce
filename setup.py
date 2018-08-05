@@ -182,8 +182,8 @@ setup(
             'rc-ssh-wrapper=rhodecode.apps.ssh_support.lib.ssh_wrapper:main',
         ],
         'beaker.backends': [
-            'memorylru_base=rhodecode.lib.memory_lru_debug:MemoryLRUNamespaceManagerBase',
-            'memorylru_debug=rhodecode.lib.memory_lru_debug:MemoryLRUNamespaceManagerDebug'
+            'memorylru_base=rhodecode.lib.memory_lru_dict:MemoryLRUNamespaceManagerBase',
+            'memorylru_debug=rhodecode.lib.memory_lru_dict:MemoryLRUNamespaceManagerDebug'
         ]
     },
 )

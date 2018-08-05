@@ -25,15 +25,8 @@ and the state of LRU dict.
 inrae.cache is licensed under LRUDict is licensed under ZPL license
 This software is Copyright (c) Zope Corporation (tm) and
 Contributors. All rights reserved.
-
-TODO: marcink, we might think of replacing the LRUDict with lru-dict library
-written in C.
-
-eg difference in speed:
-
-    LRUDictC  Time : 0.00025 s, Memory : 110592 Kb
-    LRUDict   Time : 0.00369 s, Memory : 147456 Kb
 """
+
 import logging
 
 from repoze.lru import LRUCache
@@ -44,8 +37,10 @@ log = logging.getLogger(__name__)
 
 
 class LRUDict(LRUCache):
-    """ Wrapper to provide partial dict access
     """
+    Wrapper to provide partial dict access
+    """
+
     def __setitem__(self, key, value):
         return self.put(key, value)
 

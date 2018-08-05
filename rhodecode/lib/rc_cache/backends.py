@@ -28,7 +28,8 @@ from dogpile.cache.backends import file as file_backend
 from dogpile.cache.backends import redis as redis_backend
 from dogpile.cache.backends.file import NO_VALUE, compat, FileLock
 from dogpile.cache.util import memoized_property
-from lru import LRU as LRUDict
+
+from rhodecode.lib.memory_lru_dict import LRUDict, LRUDictDebug
 
 
 _default_max_size = 1024
@@ -41,14 +42,12 @@ class LRUMemoryBackend(memory_backend.MemoryBackend):
 
     def __init__(self, arguments):
         max_size = arguments.pop('max_size', _default_max_size)
-        callback = None
-        if arguments.pop('log_max_size_reached', None):
-            def evicted(key, value):
-                log.debug(
-                    'LRU: evicting key `%s` due to max size %s reach', key, max_size)
-            callback = evicted
 
-        arguments['cache_dict'] = LRUDict(max_size, callback=callback)
+        LRUDictClass = LRUDict
+        if arguments.pop('log_key_count', None):
+            LRUDictClass = LRUDictDebug
+
+        arguments['cache_dict'] = LRUDictClass(max_size)
         super(LRUMemoryBackend, self).__init__(arguments)
 
     def delete(self, key):
@@ -111,9 +110,9 @@ class CustomLockFactory(FileLock):
                         # waited to much time on a lock, better fail than loop for ever
                         log.error('Failed to acquire lock on %s file', self.filename)
                         raise
-
-                    log.debug('Failed to acquire lock, retry in 0.03')
-                    gevent.sleep(0.03)
+                    timeout = 0.03
+                    log.debug('Failed to acquire lock, retry in %ss', timeout)
+                    gevent.sleep(timeout)
 
         fcntl.flock = gevent_flock
         return fcntl

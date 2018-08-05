@@ -791,17 +791,6 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  "lru-dict" = super.buildPythonPackage {
-    name = "lru-dict-1.1.6";
-    doCheck = false;
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/00/a5/32ed6e10246cd341ca8cc205acea5d208e4053f48a4dced2b1b31d45ba3f/lru-dict-1.1.6.tar.gz";
-      sha256 = "1k2lhd4dpl6xa6iialbwx4l6bkdzxmzhygms39pvf19x1rk5fm1n";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
   "lxml" = super.buildPythonPackage {
     name = "lxml-3.7.3";
     doCheck = false;
@@ -1690,7 +1679,6 @@ self: super: {
       self."billiard"
       self."kombu"
       self."lxml"
-      self."lru-dict"
       self."mako"
       self."markdown"
       self."markupsafe"
