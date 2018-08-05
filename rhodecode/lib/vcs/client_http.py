@@ -198,7 +198,7 @@ def _remote_call(url, payload, exceptions_map, session):
     try:
         response = session.post(url, data=msgpack.packb(payload))
     except pycurl.error as e:
-        msg = '{}. pycurl traceback: {}'.format(e, traceback.format_exc())
+        msg = '{}. \npycurl traceback: {}'.format(e, traceback.format_exc())
         raise exceptions.HttpVCSCommunicationError(msg)
     except Exception as e:
         message = getattr(e, 'message', '')
