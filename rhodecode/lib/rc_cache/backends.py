@@ -108,11 +108,13 @@ class CustomLockFactory(FileLock):
                         raise
                     elif (time.time() - start_lock_time) > timeout:
                         # waited to much time on a lock, better fail than loop for ever
-                        log.error('Failed to acquire lock on %s file', self.filename)
+                        log.error('Failed to acquire lock on `%s` after waiting %ss',
+                                  self.filename, timeout)
                         raise
-                    timeout = 0.03
-                    log.debug('Failed to acquire lock, retry in %ss', timeout)
-                    gevent.sleep(timeout)
+                    wait_timeout = 0.03
+                    log.debug('Failed to acquire lock on `%s`, retry in %ss',
+                              self.filename, wait_timeout)
+                    gevent.sleep(wait_timeout)
 
         fcntl.flock = gevent_flock
         return fcntl
