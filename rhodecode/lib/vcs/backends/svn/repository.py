@@ -72,10 +72,12 @@ class SubversionRepository(base.BaseRepository):
                  **kwargs):
         self.path = safe_str(os.path.abspath(repo_path))
         self.config = config if config else self.get_default_config()
-        self._remote = connection.Svn(
-            self.path, self.config)
 
         self._init_repo(create, src_url)
+
+    @LazyProperty
+    def _remote(self):
+        return connection.Svn(self.path, self.config)
 
     def _init_repo(self, create, src_url):
         if create and os.path.exists(self.path):

@@ -62,13 +62,16 @@ class GitRepository(BaseRepository):
 
         self.path = safe_str(os.path.abspath(repo_path))
         self.config = config if config else self.get_default_config()
-        self._remote = connection.Git(
-            self.path, self.config, with_wire=with_wire)
+        self.with_wire = with_wire
 
         self._init_repo(create, src_url, update_after_clone, bare)
 
         # caches
         self._commit_ids = {}
+
+    @LazyProperty
+    def _remote(self):
+        return connection.Git(self.path, self.config, with_wire=self.with_wire)
 
     @LazyProperty
     def bare(self):

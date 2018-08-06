@@ -176,7 +176,6 @@ class BaseRepository(object):
     EMPTY_COMMIT_ID = '0' * 40
 
     path = None
-    _remote = None
 
     def __init__(self, repo_path, config=None, create=False, **kwargs):
         """
@@ -220,6 +219,10 @@ class BaseRepository(object):
             for section, key, val in default:
                 config.set(section, key, val)
         return config
+
+    @LazyProperty
+    def _remote(self):
+        raise NotImplementedError
 
     @LazyProperty
     def EMPTY_COMMIT(self):

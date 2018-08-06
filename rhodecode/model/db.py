@@ -2339,8 +2339,11 @@ class Repository(Base, BaseModel):
         def get_instance_cached(repo_id):
             return self._get_instance()
 
+        # we must use thread scoped cache here,
+        # because each thread of gevent needs it's own connection and cache
         inv_context_manager = rc_cache.InvalidationContext(
-            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
+            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace,
+            thread_scoped=True)
         with inv_context_manager as invalidation_context:
             args = (self.repo_id,)
             # re-compute and store cache if we get invalidate signal

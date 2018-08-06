@@ -27,6 +27,7 @@ class in a way that is compatible with gevent.
 import logging
 import gevent
 import pycurl
+import greenlet
 
 # Import everything from pycurl.
 # This allows us to use this module as a drop in replacement of pycurl.
@@ -230,6 +231,12 @@ class GeventCurl(object):
         This perform method is compatible with gevent because it uses gevent
         synchronization mechanisms to wait for the request to finish.
         """
+        if getattr(self._curl, 'waiter', None) is not None:
+            current = greenlet.getcurrent()
+            msg = 'This curl object is already used by another greenlet, {}, \n' \
+                  'this is {}'.format(self._curl.waiter, current)
+            raise Exception(msg)
+
         waiter = self._curl.waiter = Waiter()
         try:
             self._multi.add_handle(self._curl)

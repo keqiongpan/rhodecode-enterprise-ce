@@ -77,14 +77,16 @@ class MercurialRepository(BaseRepository):
         # special requirements
         self.config = config if config else self.get_default_config(
             default=[('extensions', 'largefiles', '1')])
-
-        self._remote = connection.Hg(
-            self.path, self.config, with_wire=with_wire)
+        self.with_wire = with_wire
 
         self._init_repo(create, src_url, update_after_clone)
 
         # caches
         self._commit_ids = {}
+
+    @LazyProperty
+    def _remote(self):
+        return connection.Hg(self.path, self.config, with_wire=self.with_wire)
 
     @LazyProperty
     def commit_ids(self):
