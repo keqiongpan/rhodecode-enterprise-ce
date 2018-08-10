@@ -346,5 +346,5 @@ def post_text_to_slack(settings, title, text, fields=None, overrides=None):
         "attachments": [message_data]
     }
 
-    resp = requests.post(settings['service'], json=json_message)
+    resp = requests.post(settings['service'], json=json_message, timeout=60)
     resp.raise_for_status()  # raise exception on a failed request

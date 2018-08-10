@@ -264,7 +264,7 @@ def post_to_webhook(url_calls, settings):
         resp = call_method(url, json={
             'token': token,
             'event': data
-        }, headers=call_headers, auth=auth)
+        }, headers=call_headers, auth=auth, timeout=60)
         log.debug('Got Webhook response: %s', resp)
 
         try:

@@ -133,7 +133,7 @@ class LoginView(BaseAppView):
             'response': captcha_rs,
             'remoteip': get_ip_addr(self.request.environ)
         }
-        verify_rs = requests.get(url, params=params, verify=True)
+        verify_rs = requests.get(url, params=params, verify=True, timeout=60)
         verify_rs = verify_rs.json()
         captcha_status = verify_rs.get('success', False)
         captcha_errors = verify_rs.get('error-codes', [])

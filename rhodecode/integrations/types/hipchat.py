@@ -243,9 +243,11 @@ class HipchatIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
 @async_task(ignore_result=True, base=RequestContextTask)
 def post_text_to_hipchat(settings, text):
     log.debug('sending %s to hipchat %s' % (text, settings['server_url']))
-    resp = requests.post(settings['server_url'], json={
+    json_message = {
         "message": text,
         "color": settings.get('color', 'yellow'),
         "notify": settings.get('notify', False),
-    })
+    }
+
+    resp = requests.post(settings['server_url'], json=json_message, timeout=60)
     resp.raise_for_status()  # raise exception on a failed request
