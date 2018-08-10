@@ -377,9 +377,11 @@ class UserModel(BaseModel):
 
             if not edit:
                 # add the RSS token
-                AuthTokenModel().create(username,
-                                        description=u'Generated feed token',
-                                        role=AuthTokenModel.cls.ROLE_FEED)
+                self.add_auth_token(
+                    user=username, lifetime_minutes=-1,
+                    role=self.auth_token_role.ROLE_FEED,
+                    description=u'Generated feed token')
+
                 kwargs = new_user.get_dict()
                 # backward compat, require api_keys present
                 kwargs['api_keys'] = kwargs['auth_tokens']
@@ -829,6 +831,26 @@ class UserModel(BaseModel):
         obj.description = description
         self.sa.add(obj)
         return obj
+
+    auth_token_role = AuthTokenModel.cls
+
+    def add_auth_token(self, user, lifetime_minutes, role, description=u'',
+                       scope_callback=None):
+        """
+        Add AuthToken for user.
+
+        :param user: username/user_id
+        :param lifetime_minutes: in minutes the lifetime for token, -1 equals no limit
+        :param role: one of AuthTokenModel.cls.ROLE_*
+        :param description: optional string description
+        """
+
+        token = AuthTokenModel().create(
+            user, description, lifetime_minutes, role)
+        if scope_callback and callable(scope_callback):
+            # call the callback if we provide, used to attach scope for EE edition
+            scope_callback(token)
+        return token
 
     def delete_extra_ip(self, user, ip_id):
         """

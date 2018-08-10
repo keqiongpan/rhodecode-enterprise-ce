@@ -180,11 +180,12 @@ class MyAccountView(BaseAppView, DataGridAppView):
         description = self.request.POST.get('description')
         role = self.request.POST.get('role')
 
-        token = AuthTokenModel().create(
-            c.user.user_id, description, lifetime, role)
+        token = UserModel().add_auth_token(
+            user=c.user.user_id,
+            lifetime_minutes=lifetime, role=role, description=description,
+            scope_callback=self.maybe_attach_token_scope)
         token_data = token.get_api_data()
 
-        self.maybe_attach_token_scope(token)
         audit_logger.store_web(
             'user.edit.token.add', action_data={
                 'data': {'token': token_data, 'user': 'self'}},

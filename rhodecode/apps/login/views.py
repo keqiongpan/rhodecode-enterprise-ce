@@ -379,13 +379,14 @@ class LoginView(BaseAppView):
                 # Generate reset URL and send mail.
                 user = User.get_by_email(user_email)
 
-                # generate password reset token that expires in 10minutes
-                desc = 'Generated token for password reset from {}'.format(
+                # generate password reset token that expires in 10 minutes
+                description = u'Generated token for password reset from {}'.format(
                     datetime.datetime.now().isoformat())
-                reset_token = AuthTokenModel().create(
-                    user, lifetime=10,
-                    description=desc,
-                    role=UserApiKeys.ROLE_PASSWORD_RESET)
+
+                reset_token = UserModel().add_auth_token(
+                    user=user, lifetime_minutes=10,
+                    role=UserModel.auth_token_role.ROLE_PASSWORD_RESET,
+                    description=description)
                 Session().commit()
 
                 log.debug('Successfully created password recovery token')
