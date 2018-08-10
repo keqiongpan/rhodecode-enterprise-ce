@@ -2336,16 +2336,17 @@ class Repository(Base, BaseModel):
         region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
 
         @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
-        def get_instance_cached(repo_id):
+        def get_instance_cached(repo_id, context_id):
             return self._get_instance()
 
         # we must use thread scoped cache here,
-        # because each thread of gevent needs it's own connection and cache
+        # because each thread of gevent needs it's own not shared connection and cache
+        # we also alter `args` so the cache key is individual for every green thread.
         inv_context_manager = rc_cache.InvalidationContext(
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace,
             thread_scoped=True)
         with inv_context_manager as invalidation_context:
-            args = (self.repo_id,)
+            args = (self.repo_id, inv_context_manager.cache_key)
             # re-compute and store cache if we get invalidate signal
             if invalidation_context.should_invalidate():
                 instance = get_instance_cached.refresh(*args)
