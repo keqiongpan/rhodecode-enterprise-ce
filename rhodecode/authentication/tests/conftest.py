@@ -30,10 +30,7 @@ class EnabledAuthPlugin(object):
     """
 
     def __init__(self, plugin):
-        self.new_value = set([
-            'egg:rhodecode-enterprise-ce#rhodecode',
-            plugin.get_id()
-        ])
+        self.new_value = {'egg:rhodecode-enterprise-ce#rhodecode', plugin.get_id()}
 
     def __enter__(self):
         from rhodecode.model.settings import SettingsModel
@@ -47,7 +44,7 @@ class EnabledAuthPlugin(object):
             'auth_plugins', ','.join(self._old_value))
 
 
-class DisabledAuthPlugin():
+class DisabledAuthPlugin(object):
     """
     Context manager that updates the 'auth_plugins' setting in DB to disable
     a plugin. Previous setting is restored on exit.

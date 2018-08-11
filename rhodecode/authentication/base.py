@@ -439,7 +439,11 @@ class RhodeCodeAuthPluginBase(object):
 
     def get_ttl_cache(self, settings=None):
         plugin_settings = settings or self.get_settings()
-        cache_ttl = 0
+        # we set default to 30, we make a compromise here,
+        # performance > security, mostly due to LDAP/SVN, majority
+        # of users pick cache_ttl to be enabled
+        from rhodecode.authentication import plugin_default_auth_ttl
+        cache_ttl = plugin_default_auth_ttl
 
         if isinstance(self.AUTH_CACHE_TTL, (int, long)):
             # plugin cache set inside is more important than the settings value
