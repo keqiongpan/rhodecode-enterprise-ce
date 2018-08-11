@@ -2206,7 +2206,9 @@ class Repository(Base, BaseModel):
         if cs_cache is None:
             # use no-cache version here
             scm_repo = self.scm_instance(cache=False, config=config)
-            if scm_repo:
+
+            empty = scm_repo.is_empty()
+            if not empty:
                 cs_cache = scm_repo.get_commit(
                     pre_load=["author", "date", "message", "parents"])
             else:

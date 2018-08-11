@@ -177,9 +177,9 @@ class GitRepository(BaseRepository):
         # we must check if this repo is not empty, since later command
         # fails if it is. And it's cheaper to ask than throw the subprocess
         # errors
-        try:
-            self._remote.head()
-        except KeyError:
+
+        head = self._remote.head(show_exc=False)
+        if not head:
             return []
 
         rev_filter = ['--branches', '--tags']
