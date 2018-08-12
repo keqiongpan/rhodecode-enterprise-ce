@@ -1,7 +1,7 @@
 # This file defines how to "build" for packaging.
 
 { pkgs ? import <nixpkgs> {}
-, doCheck ? true
+, doCheck ? false
 }:
 
 let
@@ -9,6 +9,11 @@ let
     inherit
       doCheck
       pkgs;
+
+    # disable checkPhase for build
+    checkPhase = ''
+    '';
+
   };
 
 in {
