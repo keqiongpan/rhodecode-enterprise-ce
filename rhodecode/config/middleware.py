@@ -428,10 +428,10 @@ def _sanitize_vcs_settings(settings):
     _int_setting(settings, 'vcs.connection_timeout', 3600)
 
     # Support legacy values of vcs.scm_app_implementation. Legacy
-    # configurations may use 'rhodecode.lib.middleware.utils.scm_app_http'
-    # which is now mapped to 'http'.
+    # configurations may use 'rhodecode.lib.middleware.utils.scm_app_http', or
+    # disabled since 4.13 'vcsserver.scm_app' which is now mapped to 'http'.
     scm_app_impl = settings['vcs.scm_app_implementation']
-    if scm_app_impl == 'rhodecode.lib.middleware.utils.scm_app_http':
+    if scm_app_impl in ['rhodecode.lib.middleware.utils.scm_app_http', 'vcsserver.scm_app']:
         settings['vcs.scm_app_implementation'] = 'http'
 
 
