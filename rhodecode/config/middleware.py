@@ -466,6 +466,20 @@ def _sanitize_cache_settings(settings):
         'rc_cache.cache_repo.arguments.filename',
         os.path.join(tempfile.gettempdir(), 'rc_cache_2'))
 
+    # cache_license
+    _string_setting(
+        settings,
+        'rc_cache.cache_license.backend',
+        'dogpile.cache.rc.file_namespace')
+    _int_setting(
+        settings,
+        'rc_cache.cache_license.expiration_time',
+        5*60)
+    _string_setting(
+        settings,
+        'rc_cache.cache_license.arguments.filename',
+        os.path.join(tempfile.gettempdir(), 'rc_cache_3'))
+
     # cache_repo_longterm memory, 96H
     _string_setting(
         settings,
