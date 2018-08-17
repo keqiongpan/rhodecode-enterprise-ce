@@ -124,11 +124,11 @@ self: super: {
     };
   };
   "beautifulsoup4" = super.buildPythonPackage {
-    name = "beautifulsoup4-4.6.1";
+    name = "beautifulsoup4-4.6.3";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/8e/37/84b216b36760d157ea81ad7cba48ba2052abe54c604784e7b04668fcb281/beautifulsoup4-4.6.1.tar.gz";
-      sha256 = "1ynvk89cdall0ammpm5n7rhfl3dn46l3vi3h63bar1i8dnra6hxx";
+      url = "https://files.pythonhosted.org/packages/88/df/86bffad6309f74f3ff85ea69344a078fc30003270c8df6894fca7a3c72ff/beautifulsoup4-4.6.3.tar.gz";
+      sha256 = "041dhalzjciw6qyzzq7a2k4h1yvyk76xigp35hv5ibnn448ydy4h";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1817,11 +1817,11 @@ self: super: {
     };
   };
   "scandir" = super.buildPythonPackage {
-    name = "scandir-1.8";
+    name = "scandir-1.9.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/50/a4/141939a8d213b2cf1b1d6b2704c6f6c07d4f1903df532af887c8e64e6815/scandir-1.8.tar.gz";
-      sha256 = "0w6qhs8wb9k7480jgfbvspislxa45l2s1pca1vcw8hlhm79i2l4d";
+      url = "https://files.pythonhosted.org/packages/16/2a/557af1181e6b4e30254d5a6163b18f5053791ca66e251e77ab08887e8fe3/scandir-1.9.0.tar.gz";
+      sha256 = "0r3hvf1a9jm1rkqgx40gxkmccknkaiqjavs8lccgq9s8khh5x5s4";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "New BSD License"; } ];
