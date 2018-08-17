@@ -490,11 +490,12 @@ class PullRequestModel(BaseModel):
             rule_id = list(rules)[0] if rules else None
             rule = RepoReviewRule.get(rule_id) if rule_id else None
             if rule:
-                review_group = rule.user_group_vote_rule()
+                review_group = rule.user_group_vote_rule(user_id)
+                # we check if this particular reviewer is member of a voting group
                 if review_group:
                     # NOTE(marcink):
-                    # again, can be that user is member of more,
-                    # but we pick the first same, as default reviewers algo
+                    # can be that user is member of more but we pick the first same,
+                    # same as default reviewers algo
                     review_group = review_group[0]
 
                     rule_data = {
@@ -506,6 +507,8 @@ class PullRequestModel(BaseModel):
                             review_group.users_group.users_group_name,
                         'rule_user_group_members':
                             [x.user.username for x in review_group.users_group.members],
+                        'rule_user_group_members_id':
+                            [x.user.user_id for x in review_group.users_group.members],
                     }
                     # e.g {'vote_rule': -1, 'mandatory': True}
                     rule_data.update(review_group.rule_data())

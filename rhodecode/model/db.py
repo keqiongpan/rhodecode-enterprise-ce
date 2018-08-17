@@ -4323,10 +4323,15 @@ class RepoReviewRule(Base, BaseModel):
 
         return users
 
-    def user_group_vote_rule(self):
+    def user_group_vote_rule(self, user_id):
+
         rules = []
-        if self.rule_user_groups:
-            for user_group in self.rule_user_groups:
+        if not self.rule_user_groups:
+            return rules
+
+        for user_group in self.rule_user_groups:
+            user_group_members = [x.user_id for x in user_group.users_group.members]
+            if user_id in user_group_members:
                 rules.append(user_group)
         return rules
 
