@@ -1838,6 +1838,17 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  "setuptools" = super.buildPythonPackage {
+    name = "setuptools-40.0.0";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/d3/3e/1d74cdcb393b68ab9ee18d78c11ae6df8447099f55fe86ee842f9c5b166c/setuptools-40.0.0.zip";
+      sha256 = "0pq116lr14gnc62v76nk0npkm6krb2mpp7p9ab369zgv4n7dnah1";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   "setuptools-scm" = super.buildPythonPackage {
     name = "setuptools-scm-2.1.0";
     doCheck = false;
