@@ -913,7 +913,7 @@ class UserModel(BaseModel):
         This way we block only latest created accounts.
 
         :param expected_users: list of users in special order, we deactivate
-            the end N ammoun of users from that list
+            the end N amount of users from that list
         """
 
         list_of_accounts = self.get_accounts_in_creation_order(
