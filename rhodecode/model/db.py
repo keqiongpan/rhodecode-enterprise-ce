@@ -4504,19 +4504,3 @@ class DbSession(Base, BaseModel):
     accessed = Column('accessed', DateTime, nullable=False)
     created = Column('created', DateTime, nullable=False)
     data = Column('data', PickleType, nullable=False)
-
-
-class BeakerCache(Base, BaseModel):
-    __tablename__ = 'beaker_cache'
-    __table_args__ = (
-        base_table_args,
-    )
-
-    def __repr__(self):
-        return '<DB:DbSession({})>'.format(self.id)
-
-    id = Column('id', Integer())
-    namespace = Column('namespace', String(255), primary_key=True)
-    accessed = Column('accessed', DateTime, nullable=False)
-    created = Column('created', DateTime, nullable=False)
-    data = Column('data', PickleType, nullable=False)
