@@ -551,11 +551,11 @@ self: super: {
     };
   };
   "graphviz" = super.buildPythonPackage {
-    name = "graphviz-0.8.4";
+    name = "graphviz-0.9";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/21/e8/13b0523da93d7189d9ab30097cdd2ffe78f88b0cc69f341749dec562b731/graphviz-0.8.4.zip";
-      sha256 = "17v8h7j2yz8hy1jf7q8p0ik8dmf32m58lc6v11x7aqc4pnfa2n29";
+      url = "https://files.pythonhosted.org/packages/2b/e6/71521bab8fb99833133f08f6ac0460e2f6b425a7f75ac4b02323c3c3b512/graphviz-0.9.zip";
+      sha256 = "14r9brj4r31b3qy1nnn34v3l4h0n39bqxg9sn2fz4p3pp5mglnl6";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
