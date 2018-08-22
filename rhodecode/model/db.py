@@ -1376,6 +1376,32 @@ class UserGroup(Base, BaseModel):
         return user_group.get(user_group_id)
 
     def permissions(self, with_admins=True, with_owner=True):
+        """
+        Permissions for user groups
+        """
+        _admin_perm = 'usergroup.admin'
+
+        owner_row = []
+        if with_owner:
+            usr = AttributeDict(self.user.get_dict())
+            usr.owner_row = True
+            usr.permission = _admin_perm
+            owner_row.append(usr)
+
+        super_admin_ids = []
+        super_admin_rows = []
+        if with_admins:
+            for usr in User.get_all_super_admins():
+                super_admin_ids.append(usr.user_id)
+                # if this admin is also owner, don't double the record
+                if usr.user_id == owner_row[0].user_id:
+                    owner_row[0].admin_row = True
+                else:
+                    usr = AttributeDict(usr.get_dict())
+                    usr.admin_row = True
+                    usr.permission = _admin_perm
+                    super_admin_rows.append(usr)
+
         q = UserUserGroupToPerm.query().filter(UserUserGroupToPerm.user_group == self)
         q = q.options(joinedload(UserUserGroupToPerm.user_group),
                       joinedload(UserUserGroupToPerm.user),
@@ -1389,6 +1415,9 @@ class UserGroup(Base, BaseModel):
         perm_rows = []
         for _usr in q.all():
             usr = AttributeDict(_usr.user.get_dict())
+            # if this user is also owner/admin, mark as duplicate record
+            if usr.user_id == owner_row[0].user_id or usr.user_id in super_admin_ids:
+                usr.duplicate_perm = True
             usr.permission = _usr.permission.permission_name
             perm_rows.append(usr)
 
@@ -1396,26 +1425,6 @@ class UserGroup(Base, BaseModel):
         # admin,write,read,none permissions sorted again alphabetically in
         # each group
         perm_rows = sorted(perm_rows, key=display_user_sort)
-
-        _admin_perm = 'usergroup.admin'
-        owner_row = []
-        if with_owner:
-            usr = AttributeDict(self.user.get_dict())
-            usr.owner_row = True
-            usr.permission = _admin_perm
-            owner_row.append(usr)
-
-        super_admin_rows = []
-        if with_admins:
-            for usr in User.get_all_super_admins():
-                # if this admin is also owner, don't double the record
-                if usr.user_id == owner_row[0].user_id:
-                    owner_row[0].admin_row = True
-                else:
-                    usr = AttributeDict(usr.get_dict())
-                    usr.admin_row = True
-                    usr.permission = _admin_perm
-                    super_admin_rows.append(usr)
 
         return super_admin_rows + owner_row + perm_rows
 
@@ -1899,6 +1908,34 @@ class Repository(Base, BaseModel):
         return make_db_config(clear_session=False, repo=self)
 
     def permissions(self, with_admins=True, with_owner=True):
+        """
+        Permissions for repositories
+        """
+        _admin_perm = 'repository.admin'
+
+        owner_row = []
+        if with_owner:
+            usr = AttributeDict(self.user.get_dict())
+            usr.owner_row = True
+            usr.permission = _admin_perm
+            usr.permission_id = None
+            owner_row.append(usr)
+
+        super_admin_ids = []
+        super_admin_rows = []
+        if with_admins:
+            for usr in User.get_all_super_admins():
+                super_admin_ids.append(usr.user_id)
+                # if this admin is also owner, don't double the record
+                if usr.user_id == owner_row[0].user_id:
+                    owner_row[0].admin_row = True
+                else:
+                    usr = AttributeDict(usr.get_dict())
+                    usr.admin_row = True
+                    usr.permission = _admin_perm
+                    usr.permission_id = None
+                    super_admin_rows.append(usr)
+
         q = UserRepoToPerm.query().filter(UserRepoToPerm.repository == self)
         q = q.options(joinedload(UserRepoToPerm.repository),
                       joinedload(UserRepoToPerm.user),
@@ -1912,6 +1949,9 @@ class Repository(Base, BaseModel):
         perm_rows = []
         for _usr in q.all():
             usr = AttributeDict(_usr.user.get_dict())
+            # if this user is also owner/admin, mark as duplicate record
+            if usr.user_id == owner_row[0].user_id or usr.user_id in super_admin_ids:
+                usr.duplicate_perm = True
             usr.permission = _usr.permission.permission_name
             usr.permission_id = _usr.repo_to_perm_id
             perm_rows.append(usr)
@@ -1920,28 +1960,6 @@ class Repository(Base, BaseModel):
         # admin,write,read,none permissions sorted again alphabetically in
         # each group
         perm_rows = sorted(perm_rows, key=display_user_sort)
-
-        _admin_perm = 'repository.admin'
-        owner_row = []
-        if with_owner:
-            usr = AttributeDict(self.user.get_dict())
-            usr.owner_row = True
-            usr.permission = _admin_perm
-            usr.permission_id = None
-            owner_row.append(usr)
-
-        super_admin_rows = []
-        if with_admins:
-            for usr in User.get_all_super_admins():
-                # if this admin is also owner, don't double the record
-                if usr.user_id == owner_row[0].user_id:
-                    owner_row[0].admin_row = True
-                else:
-                    usr = AttributeDict(usr.get_dict())
-                    usr.admin_row = True
-                    usr.permission = _admin_perm
-                    usr.permission_id = None
-                    super_admin_rows.append(usr)
 
         return super_admin_rows + owner_row + perm_rows
 
@@ -2597,6 +2615,32 @@ class RepoGroup(Base, BaseModel):
         return RepoGroup.url_sep().join(path_prefix + [group_name])
 
     def permissions(self, with_admins=True, with_owner=True):
+        """
+        Permissions for repository groups
+        """
+        _admin_perm = 'group.admin'
+
+        owner_row = []
+        if with_owner:
+            usr = AttributeDict(self.user.get_dict())
+            usr.owner_row = True
+            usr.permission = _admin_perm
+            owner_row.append(usr)
+
+        super_admin_ids = []
+        super_admin_rows = []
+        if with_admins:
+            for usr in User.get_all_super_admins():
+                super_admin_ids.append(usr.user_id)
+                # if this admin is also owner, don't double the record
+                if usr.user_id == owner_row[0].user_id:
+                    owner_row[0].admin_row = True
+                else:
+                    usr = AttributeDict(usr.get_dict())
+                    usr.admin_row = True
+                    usr.permission = _admin_perm
+                    super_admin_rows.append(usr)
+
         q = UserRepoGroupToPerm.query().filter(UserRepoGroupToPerm.group == self)
         q = q.options(joinedload(UserRepoGroupToPerm.group),
                       joinedload(UserRepoGroupToPerm.user),
@@ -2610,6 +2654,9 @@ class RepoGroup(Base, BaseModel):
         perm_rows = []
         for _usr in q.all():
             usr = AttributeDict(_usr.user.get_dict())
+            # if this user is also owner/admin, mark as duplicate record
+            if usr.user_id == owner_row[0].user_id or usr.user_id in super_admin_ids:
+                usr.duplicate_perm = True
             usr.permission = _usr.permission.permission_name
             perm_rows.append(usr)
 
@@ -2618,30 +2665,11 @@ class RepoGroup(Base, BaseModel):
         # each group
         perm_rows = sorted(perm_rows, key=display_user_sort)
 
-        _admin_perm = 'group.admin'
-        owner_row = []
-        if with_owner:
-            usr = AttributeDict(self.user.get_dict())
-            usr.owner_row = True
-            usr.permission = _admin_perm
-            owner_row.append(usr)
-
-        super_admin_rows = []
-        if with_admins:
-            for usr in User.get_all_super_admins():
-                # if this admin is also owner, don't double the record
-                if usr.user_id == owner_row[0].user_id:
-                    owner_row[0].admin_row = True
-                else:
-                    usr = AttributeDict(usr.get_dict())
-                    usr.admin_row = True
-                    usr.permission = _admin_perm
-                    super_admin_rows.append(usr)
-
         return super_admin_rows + owner_row + perm_rows
 
     def permission_user_groups(self):
-        q = UserGroupRepoGroupToPerm.query().filter(UserGroupRepoGroupToPerm.group == self)
+        q = UserGroupRepoGroupToPerm.query().filter(
+            UserGroupRepoGroupToPerm.group == self)
         q = q.options(joinedload(UserGroupRepoGroupToPerm.group),
                       joinedload(UserGroupRepoGroupToPerm.users_group),
                       joinedload(UserGroupRepoGroupToPerm.permission),)

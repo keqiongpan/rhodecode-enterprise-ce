@@ -14,6 +14,7 @@
                 <th class="td-radio">${_('Admin')}</th>
                 <th class="td-owner">${_('User/User Group')}</th>
                 <th></th>
+                <th></th>
             </tr>
             ## USERS
             %for _user in c.rhodecode_db_repo.permissions():
@@ -34,6 +35,11 @@
                             %endif
                         </td>
                         <td></td>
+                        <td>
+                            % if c.rhodecode_user.is_admin:
+                                ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='repositories-permissions'))}
+                            % endif
+                        </td>
                     </tr>
                 %elif _user.username == h.DEFAULT_USER and c.rhodecode_db_repo.private:
                     <tr>
@@ -46,6 +52,11 @@
                             ${base.gravatar(h.DEFAULT_USER_EMAIL, 16)}
                             ${h.DEFAULT_USER} - ${_('only users/user groups explicitly added here will have access')}</td>
                         <td></td>
+                        <td>
+                            % if c.rhodecode_user.is_admin:
+                                ${h.link_to('show permissions', h.route_path('admin_permissions_overview', _anchor='repositories-permissions'))}
+                            % endif
+                        </td>
                     </tr>
                 %else:
                     <tr>
@@ -60,6 +71,9 @@
                                     ${h.DEFAULT_USER} <span class="user-perm-help-text"> - ${_('permission for all other users')}</span>
                                 % else:
                                     ${h.link_to_user(_user.username)}
+                                    %if getattr(_user, 'duplicate_perm', None):
+                                        (${_('inactive duplicate')})
+                                    %endif
                                 % endif
                             </span>
                         </td>
@@ -70,6 +84,15 @@
                             ${_('Revoke')}
                             </span>
                           %endif
+                        </td>
+                        <td>
+                            % if c.rhodecode_user.is_admin:
+                                % if _user.username == h.DEFAULT_USER:
+                                    ${h.link_to('show permissions', h.route_path('admin_permissions_overview', _anchor='repositories-permissions'))}
+                                % else:
+                                    ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='repositories-permissions'))}
+                                % endif
+                            % endif
                         </td>
                     </tr>
                 %endif
@@ -98,6 +121,11 @@
                         ${_('Revoke')}
                         </span>
                     </td>
+                    <td>
+                        % if c.rhodecode_user.is_admin:
+                            ${h.link_to('show permissions', h.route_path('edit_user_group_perms_summary', user_group_id=_user_group.users_group_id, _anchor='repositories-permissions'))}
+                        % endif
+                    </td>
                 </tr>
             %endfor
             <tr class="new_members" id="add_perm_input"></tr>
@@ -113,6 +141,7 @@
                         ${_('Add user/user group')}
                     </span>
                 </td>
+                <td></td>
             </tr>
 
         </table>
