@@ -1952,6 +1952,10 @@ class Repository(Base, BaseModel):
             # if this user is also owner/admin, mark as duplicate record
             if usr.user_id == owner_row[0].user_id or usr.user_id in super_admin_ids:
                 usr.duplicate_perm = True
+            # also check if this permission is maybe used by branch_permissions
+            if _usr.branch_perm_entry:
+                usr.branch_rules = [x.branch_rule_id for x in _usr.branch_perm_entry]
+
             usr.permission = _usr.permission.permission_name
             usr.permission_id = _usr.repo_to_perm_id
             perm_rows.append(usr)

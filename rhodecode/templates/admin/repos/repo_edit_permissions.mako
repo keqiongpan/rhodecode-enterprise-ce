@@ -74,11 +74,19 @@
                                     %if getattr(_user, 'duplicate_perm', None):
                                         (${_('inactive duplicate')})
                                     %endif
+                                    %if getattr(_user, 'branch_rules', None):
+                                        <% used_by_n_rules = len(_user.branch_rules) %>
+                                        % if used_by_n_rules == 1:
+                                            (${_('used by {} branch rule').format(used_by_n_rules)})
+                                        % else:
+                                            (${_('used by {} branch rules').format(used_by_n_rules)})
+                                        % endif
+                                    %endif
                                 % endif
                             </span>
                         </td>
                         <td class="td-action">
-                          %if _user.username != h.DEFAULT_USER:
+                          %if _user.username != h.DEFAULT_USER and getattr(_user, 'branch_rules', None) is None:
                             <span class="btn btn-link btn-danger revoke_perm"
                                   member="${_user.user_id}" member_type="user">
                             ${_('Revoke')}
