@@ -34,7 +34,7 @@ from rhodecode.lib.base import bootstrap_request, bootstrap_config
 from rhodecode.lib import hooks_base
 from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.lib.ext_json import json
-
+from rhodecode.lib import rc_cache
 
 log = logging.getLogger(__name__)
 
@@ -45,10 +45,9 @@ class HooksHttpHandler(BaseHTTPRequestHandler):
         method, extras = self._read_request()
         txn_id = getattr(self.server, 'txn_id', None)
         if txn_id:
-            from rhodecode.lib.caches import compute_key_from_params
             log.debug('Computing TXN_ID based on `%s`:`%s`',
                       extras['repository'], extras['txn_id'])
-            computed_txn_id = compute_key_from_params(
+            computed_txn_id = rc_cache.utils.compute_key_from_params(
                 extras['repository'], extras['txn_id'])
             if txn_id != computed_txn_id:
                 raise Exception(

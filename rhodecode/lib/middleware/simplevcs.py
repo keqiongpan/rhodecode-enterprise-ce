@@ -64,7 +64,7 @@ log = logging.getLogger(__name__)
 
 def extract_svn_txn_id(acl_repo_name, data):
     """
-    Helper method for extraction of svn txn_id from submited XML data during
+    Helper method for extraction of svn txn_id from submitted XML data during
     POST operations
     """
     try:
@@ -77,7 +77,7 @@ def extract_svn_txn_id(acl_repo_name, data):
                         match = pat.search(sub_el.text)
                         if match:
                             svn_tx_id = match.groupdict()['txn_id']
-                            txn_id = rc_cache.compute_key_from_params(
+                            txn_id = rc_cache.utils.compute_key_from_params(
                                 acl_repo_name, svn_tx_id)
                             return txn_id
     except Exception:
