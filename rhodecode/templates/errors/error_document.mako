@@ -63,20 +63,27 @@
                     <p>For help and support, go to the <a href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support Page')}</a>.
                        It may be useful to include your log file; see the log file locations <a href="${h.route_url('enterprise_log_file_locations')}">here</a>.
                     </p>
-                    % if c.show_exception_id:
-                    <p>
-                        Super Admin can see detailed traceback information from this exception by checking the below Exception ID.
-                        Please include the below link for further details of this exception.
 
-                        Exception ID: <a href="${c.exception_id_url}">${c.exception_id}</a>
-                    </p>
-                    % endif
                 </div>
                 <div class="inner-column">
                     <h4>Documentation</h4>
                     <p>For more information, see <a href="${h.route_url('enterprise_docs')}">docs.rhodecode.com</a>.</p>
                 </div>
             </div>
+
+            % if c.show_exception_id:
+            <div class="sidebar" style="width: 130px">
+
+            </div>
+            <div class="main-content">
+                <p>
+                <strong>Exception ID: <code><a href="${c.exception_id_url}">${c.exception_id}</a></code> </strong> <br/>
+
+                Super Admins can see detailed traceback information from this exception by checking the below Exception ID.<br/>
+                Please include the above link for further details of this exception.
+                </p>
+            </div>
+            % endif
         </div>
 
     </body>
