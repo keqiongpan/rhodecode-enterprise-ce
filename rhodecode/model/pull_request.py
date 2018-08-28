@@ -449,7 +449,7 @@ class PullRequestModel(BaseModel):
         translator = translator or get_current_request().translate
 
         created_by_user = self._get_user(created_by)
-        auth_user = auth_user or created_by_user
+        auth_user = auth_user or created_by_user.AuthUser()
         source_repo = self._get_repo(source_repo)
         target_repo = self._get_repo(target_repo)
 
@@ -534,7 +534,7 @@ class PullRequestModel(BaseModel):
 
         # prepare workspace, and run initial merge simulation
         MergeCheck.validate(
-            pull_request, user=created_by_user, translator=translator)
+            pull_request, auth_user=auth_user, translator=translator)
 
         self.notify_reviewers(pull_request, reviewer_ids)
         self._trigger_pull_request_hook(
@@ -1599,19 +1599,38 @@ class MergeCheck(object):
         )
 
     @classmethod
-    def validate(cls, pull_request, user, translator, fail_early=False,
+    def validate(cls, pull_request, auth_user, translator, fail_early=False,
                  force_shadow_repo_refresh=False):
         _ = translator
         merge_check = cls()
 
         # permissions to merge
         user_allowed_to_merge = PullRequestModel().check_user_merge(
-            pull_request, user)
+            pull_request, auth_user)
         if not user_allowed_to_merge:
             log.debug("MergeCheck: cannot merge, approval is pending.")
 
-            msg = _('User `{}` not allowed to perform merge.').format(user.username)
-            merge_check.push_error('error', msg, cls.PERM_CHECK, user.username)
+            msg = _('User `{}` not allowed to perform merge.').format(auth_user.username)
+            merge_check.push_error('error', msg, cls.PERM_CHECK, auth_user.username)
+            if fail_early:
+                return merge_check
+
+        # permission to merge into the target branch
+        target_commit_id = pull_request.target_ref_parts.commit_id
+        if pull_request.target_ref_parts.type == 'branch':
+            branch_name = pull_request.target_ref_parts.name
+        else:
+            # for mercurial we can always figure out the branch from the commit
+            # in case of bookmark
+            target_commit = pull_request.target_repo.get_commit(target_commit_id)
+            branch_name = target_commit.branch
+
+        rule, branch_perm = auth_user.get_rule_and_branch_permission(
+            pull_request.target_repo.repo_name, branch_name)
+        if branch_perm and branch_perm == 'branch.none':
+            msg = _('Target branch `{}` changes rejected by rule {}.').format(
+                branch_name, rule)
+            merge_check.push_error('error', msg, cls.PERM_CHECK, auth_user.username)
             if fail_early:
                 return merge_check
 

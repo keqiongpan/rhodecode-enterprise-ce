@@ -284,7 +284,7 @@ def merge_pull_request(
             raise JSONRPCError('userid is not the same as your user')
 
     check = MergeCheck.validate(
-        pull_request, user=apiuser, translator=request.translate)
+        pull_request, auth_user=apiuser, translator=request.translate)
     merge_possible = not check.failed
 
     if not merge_possible:

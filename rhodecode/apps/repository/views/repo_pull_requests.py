@@ -341,7 +341,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         # check merge capabilities
         _merge_check = MergeCheck.validate(
-            pull_request_latest, user=self._rhodecode_user,
+            pull_request_latest, auth_user=self._rhodecode_user,
             translator=self.request.translate,
             force_shadow_repo_refresh=force_refresh)
         c.pr_merge_errors = _merge_check.error_details
@@ -1056,8 +1056,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             self.request.matchdict['pull_request_id'])
 
         self.load_default_context()
-        check = MergeCheck.validate(pull_request, self._rhodecode_db_user,
-                                    translator=self.request.translate)
+        check = MergeCheck.validate(
+            pull_request, auth_user=self._rhodecode_user,
+            translator=self.request.translate)
         merge_possible = not check.failed
 
         for err_type, error_msg in check.errors:
