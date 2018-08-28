@@ -345,6 +345,15 @@ def includeme(config):
         name='edit_repo_perms',
         pattern='/{repo_name:.*?[^/]}/settings/permissions', repo_route=True)
 
+    # Permissions Branch (EE feature)
+    config.add_route(
+        name='edit_repo_perms_branch',
+        pattern='/{repo_name:.*?[^/]}/settings/branch_permissions', repo_route=True)
+    config.add_route(
+        name='edit_repo_perms_branch_delete',
+        pattern='/{repo_name:.*?[^/]}/settings/branch_permissions/{rule_id}/delete',
+        repo_route=True)
+
     # Maintenance
     config.add_route(
         name='edit_repo_maintenance',

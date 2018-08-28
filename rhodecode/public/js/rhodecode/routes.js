@@ -87,6 +87,7 @@ function registerRCRoutes() {
     pyroutes.register('admin_permissions_global_update', '/_admin/permissions/global/update', []);
     pyroutes.register('admin_permissions_object', '/_admin/permissions/object', []);
     pyroutes.register('admin_permissions_object_update', '/_admin/permissions/object/update', []);
+    pyroutes.register('admin_permissions_branch', '/_admin/permissions/branch', []);
     pyroutes.register('admin_permissions_ips', '/_admin/permissions/ips', []);
     pyroutes.register('admin_permissions_overview', '/_admin/permissions/overview', []);
     pyroutes.register('admin_permissions_auth_token_access', '/_admin/permissions/auth_token_access', []);
@@ -233,6 +234,8 @@ function registerRCRoutes() {
     pyroutes.register('edit_repo_advanced_hooks', '/%(repo_name)s/settings/advanced/hooks', ['repo_name']);
     pyroutes.register('edit_repo_caches', '/%(repo_name)s/settings/caches', ['repo_name']);
     pyroutes.register('edit_repo_perms', '/%(repo_name)s/settings/permissions', ['repo_name']);
+    pyroutes.register('edit_repo_perms_branch', '/%(repo_name)s/settings/branch_permissions', ['repo_name']);
+    pyroutes.register('edit_repo_perms_branch_delete', '/%(repo_name)s/settings/branch_permissions/%(rule_id)s/delete', ['repo_name', 'rule_id']);
     pyroutes.register('edit_repo_maintenance', '/%(repo_name)s/settings/maintenance', ['repo_name']);
     pyroutes.register('edit_repo_maintenance_execute', '/%(repo_name)s/settings/maintenance/execute', ['repo_name']);
     pyroutes.register('edit_repo_fields', '/%(repo_name)s/settings/fields', ['repo_name']);

@@ -57,7 +57,7 @@
                             %if _user.username != h.DEFAULT_USER:
                                 <span  class="btn btn-link btn-danger revoke_perm"
                                   member="${_user.user_id}" member_type="user">
-                                <i class="icon-remove"></i> ${_('Revoke')}
+                                ${_('Revoke')}
                                 </span>
                             %endif
                         </td>
@@ -92,7 +92,7 @@
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.write', checked=_user_group.permission=='group.write')}</td>
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.admin', checked=_user_group.permission=='group.admin')}</td>
                     <td class="td-componentname">
-                        <i class="icon-group" ></i>
+                        <i class="icon-user-group"></i>
                         %if h.HasPermissionAny('hg.admin')():
                          <a href="${h.route_path('edit_user_group',user_group_id=_user_group.users_group_id)}">
                              ${_user_group.users_group_name}
@@ -104,17 +104,27 @@
                     <td class="td-action">
                         <span  class="btn btn-link btn-danger revoke_perm"
                               member="${_user_group.users_group_id}" member_type="user_group">
-                        <i class="icon-remove"></i> ${_('Revoke')}
+                        ${_('Revoke')}
                         </span>
                     </td>
                 </tr>
             %endfor
 
             <tr class="new_members" id="add_perm_input"></tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>
+                    <span id="add_perm" class="link">
+                        ${_('Add user/user group')}
+                    </span>
+                </td>
+            </tr>
         </table>
-        <div id="add_perm" class="link">
-            ${_('Add new')}
-        </div>
+
         <div class="fields">
             <div class="field">
                <div class="label label-radio">

@@ -367,8 +367,36 @@ class PermOriginDict(dict):
         self.perm_origin_stack = collections.OrderedDict()
 
     def __setitem__(self, key, (perm, origin)):
-        self.perm_origin_stack.setdefault(key, []).append((perm, origin))
+        self.perm_origin_stack.setdefault(key, []).append(
+            (perm, origin))
         dict.__setitem__(self, key, perm)
+
+
+class BranchPermOriginDict(PermOriginDict):
+    """
+    Dedicated branch permissions dict, with tracking of patterns and origins.
+
+    >>> perms = BranchPermOriginDict()
+    >>> perms['resource'] = '*pattern', 'read', 'default'
+    >>> perms['resource']
+    {'*pattern': 'read'}
+    >>> perms['resource'] = '*pattern', 'write', 'admin'
+    >>> perms['resource']
+    {'*pattern': 'write'}
+    >>> perms.perm_origin_stack
+    {'resource': {'*pattern': [('read', 'default'), ('write', 'admin')]}}
+    """
+    def __setitem__(self, key, (pattern, perm, origin)):
+
+        self.perm_origin_stack.setdefault(key, {}) \
+            .setdefault(pattern, []).append((perm, origin))
+
+        if key in self:
+            self[key].__setitem__(pattern, perm)
+        else:
+            patterns = collections.OrderedDict()
+            patterns[pattern] = perm
+            dict.__setitem__(self, key, patterns)
 
 
 class PermissionCalculator(object):
@@ -395,6 +423,7 @@ class PermissionCalculator(object):
         self.permissions_repositories = PermOriginDict()
         self.permissions_repository_groups = PermOriginDict()
         self.permissions_user_groups = PermOriginDict()
+        self.permissions_repository_branches = BranchPermOriginDict()
         self.permissions_global = set()
 
         self.default_repo_perms = Permission.get_default_repo_perms(
@@ -405,6 +434,11 @@ class PermissionCalculator(object):
             Permission.get_default_user_group_perms(
                 self.default_user_id, self.scope_user_group_id)
 
+        # default branch perms
+        self.default_branch_repo_perms = \
+            Permission.get_default_repo_branch_perms(
+                self.default_user_id, self.scope_repo_id)
+
     def calculate(self):
         if self.user_is_admin and not self.calculate_super_admin:
             return self._admin_permissions()
@@ -413,6 +447,7 @@ class PermissionCalculator(object):
         self._calculate_global_permissions()
         self._calculate_default_permissions()
         self._calculate_repository_permissions()
+        self._calculate_repository_branch_permissions()
         self._calculate_repository_group_permissions()
         self._calculate_user_group_permissions()
         return self._permission_structure()
@@ -443,6 +478,15 @@ class PermissionCalculator(object):
             p = 'usergroup.admin'
             self.permissions_user_groups[u_k] = p, PermOrigin.SUPER_ADMIN
 
+        # branch permissions
+        # TODO(marcink): validate this, especially
+        # how this should work using multiple patterns specified ??
+        # looks ok, but still needs double check !!
+        for perm in self.default_branch_repo_perms:
+            r_k = perm.UserRepoToPerm.repository.repo_name
+            p = 'branch.push_force'
+            self.permissions_repository_branches[r_k] = '*', p, PermOrigin.SUPER_ADMIN
+
         return self._permission_structure()
 
     def _calculate_global_default_permissions(self):
@@ -472,18 +516,14 @@ class PermissionCalculator(object):
         # now we read the defined permissions and overwrite what we have set
         # before those can be configured from groups or users explicitly.
 
-        # TODO: johbo: This seems to be out of sync, find out the reason
-        # for the comment below and update it.
-
-        # In case we want to extend this list we should be always in sync with
-        # User.DEFAULT_USER_PERMISSIONS definitions
+        # In case we want to extend this list we should make sure
+        # this is in sync with User.DEFAULT_USER_PERMISSIONS definitions
         _configurable = frozenset([
             'hg.fork.none', 'hg.fork.repository',
             'hg.create.none', 'hg.create.repository',
             'hg.usergroup.create.false', 'hg.usergroup.create.true',
             'hg.repogroup.create.false', 'hg.repogroup.create.true',
-            'hg.create.write_on_repogroup.false',
-            'hg.create.write_on_repogroup.true',
+            'hg.create.write_on_repogroup.false', 'hg.create.write_on_repogroup.true',
             'hg.inherit_default_perms.false', 'hg.inherit_default_perms.true'
         ])
 
@@ -506,7 +546,7 @@ class PermissionCalculator(object):
         for gr, perms in _explicit_grouped_perms:
             # since user can be in multiple groups iterate over them and
             # select the lowest permissions first (more explicit)
-            # TODO: marcink: do this^^
+            # TODO(marcink): do this^^
 
             # group doesn't inherit default permissions so we actually set them
             if not gr.inherit_default_permissions:
@@ -533,8 +573,8 @@ class PermissionCalculator(object):
 
     def _calculate_default_permissions(self):
         """
-        Set default user permissions for repositories, repository groups
-        taken from the default user.
+        Set default user permissions for repositories, repository branches,
+        repository groups, user groups taken from the default user.
 
         Calculate inheritance of object permissions based on what we have now
         in GLOBAL permissions. We check if .false is in GLOBAL since this is
@@ -551,8 +591,7 @@ class PermissionCalculator(object):
         user_inherit_object_permissions = not ('hg.inherit_default_perms.false'
                                                in self.permissions_global)
 
-        # defaults for repositories, taken from `default` user permissions
-        # on given repo
+        # default permissions for repositories, taken from `default` user permissions
         for perm in self.default_repo_perms:
             r_k = perm.UserRepoToPerm.repository.repo_name
             p = perm.Permission.permission_name
@@ -585,8 +624,24 @@ class PermissionCalculator(object):
                 o = PermOrigin.SUPER_ADMIN
                 self.permissions_repositories[r_k] = p, o
 
-        # defaults for repository groups taken from `default` user permission
-        # on given group
+        # default permissions branch for repositories, taken from `default` user permissions
+        for perm in self.default_branch_repo_perms:
+
+            r_k = perm.UserRepoToPerm.repository.repo_name
+            p = perm.Permission.permission_name
+            pattern = perm.UserToRepoBranchPermission.branch_pattern
+            o = PermOrigin.REPO_USER % perm.UserRepoToPerm.user.username
+
+            if not self.explicit:
+                # TODO(marcink): fix this for multiple entries
+                cur_perm = self.permissions_repository_branches.get(r_k) or 'branch.none'
+                p = self._choose_permission(p, cur_perm)
+
+            # NOTE(marcink): register all pattern/perm instances in this
+            # special dict that aggregates entries
+            self.permissions_repository_branches[r_k] = pattern, p, o
+
+        # default permissions for repository groups taken from `default` user permission
         for perm in self.default_repo_groups_perms:
             rg_k = perm.UserRepoGroupToPerm.group.group_name
             p = perm.Permission.permission_name
@@ -611,8 +666,7 @@ class PermissionCalculator(object):
                 o = PermOrigin.SUPER_ADMIN
                 self.permissions_repository_groups[rg_k] = p, o
 
-        # defaults for user groups taken from `default` user permission
-        # on given user group
+        # default permissions for user groups taken from `default` user permission
         for perm in self.default_user_group_perms:
             u_k = perm.UserUserGroupToPerm.user_group.users_group_name
             p = perm.Permission.permission_name
@@ -702,6 +756,49 @@ class PermissionCalculator(object):
                 p = 'repository.admin'
                 o = PermOrigin.SUPER_ADMIN
                 self.permissions_repositories[r_k] = p, o
+
+    def _calculate_repository_branch_permissions(self):
+        # user group for repositories permissions
+        user_repo_branch_perms_from_user_group = Permission\
+            .get_default_repo_branch_perms_from_user_group(
+                self.user_id, self.scope_repo_id)
+
+        multiple_counter = collections.defaultdict(int)
+        for perm in user_repo_branch_perms_from_user_group:
+            r_k = perm.UserGroupRepoToPerm.repository.repo_name
+            p = perm.Permission.permission_name
+            pattern = perm.UserGroupToRepoBranchPermission.branch_pattern
+            o = PermOrigin.REPO_USERGROUP % perm.UserGroupRepoToPerm\
+                .users_group.users_group_name
+
+            multiple_counter[r_k] += 1
+            if multiple_counter[r_k] > 1:
+                # TODO(marcink): fix this for multi branch support, and multiple entries
+                cur_perm = self.permissions_repository_branches[r_k]
+                p = self._choose_permission(p, cur_perm)
+
+            self.permissions_repository_branches[r_k] = pattern, p, o
+
+        # user explicit branch permissions for repositories, overrides
+        # any specified by the group permission
+        user_repo_branch_perms = Permission.get_default_repo_branch_perms(
+            self.user_id, self.scope_repo_id)
+        for perm in user_repo_branch_perms:
+
+            r_k = perm.UserRepoToPerm.repository.repo_name
+            p = perm.Permission.permission_name
+            pattern = perm.UserToRepoBranchPermission.branch_pattern
+            o = PermOrigin.REPO_USER % perm.UserRepoToPerm.user.username
+
+            if not self.explicit:
+                # TODO(marcink): fix this for multiple entries
+                cur_perm = self.permissions_repository_branches.get(r_k) or 'branch.none'
+                p = self._choose_permission(p, cur_perm)
+
+            # NOTE(marcink): register all pattern/perm instances in this
+            # special dict that aggregates entries
+            self.permissions_repository_branches[r_k] = pattern, p, o
+
 
     def _calculate_repository_group_permissions(self):
         """
@@ -845,6 +942,7 @@ class PermissionCalculator(object):
         return {
             'global': self.permissions_global,
             'repositories': self.permissions_repositories,
+            'repository_branches': self.permissions_repository_branches,
             'repositories_groups': self.permissions_repository_groups,
             'user_groups': self.permissions_user_groups,
         }
@@ -956,6 +1054,9 @@ class AuthUser(object):
         perms['user_groups'] = {
             k: v for k, v in perms['user_groups'].items()
             if v != 'usergroup.none'}
+        perms['repository_branches'] = {
+            k: v for k, v in perms['repository_branches'].iteritems()
+            if v != 'branch.none'}
         return perms
 
     @LazyProperty
@@ -1800,7 +1901,6 @@ class PermsFunction(object):
     def __call__(self, check_location='', user=None):
         if not user:
             log.debug('Using user attribute from global request')
-            # TODO: remove this someday,put as user as attribute here
             request = self._get_request()
             user = request.user
 

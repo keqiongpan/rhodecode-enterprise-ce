@@ -504,10 +504,24 @@ def ObjectPermissionsForm(localizer, repo_perms_choices, group_perms_choices,
         overwrite_default_repo = v.StringBoolean(if_missing=False)
         overwrite_default_group = v.StringBoolean(if_missing=False)
         overwrite_default_user_group = v.StringBoolean(if_missing=False)
+
         default_repo_perm = v.OneOf(repo_perms_choices)
         default_group_perm = v.OneOf(group_perms_choices)
         default_user_group_perm = v.OneOf(user_group_perms_choices)
+
     return _ObjectPermissionsForm
+
+
+def BranchPermissionsForm(localizer, branch_perms_choices):
+    _ = localizer
+
+    class _BranchPermissionsForm(formencode.Schema):
+        allow_extra_fields = True
+        filter_extra_fields = True
+        overwrite_default_branch = v.StringBoolean(if_missing=False)
+        default_branch_perm = v.OneOf(branch_perms_choices)
+
+    return _BranchPermissionsForm
 
 
 def UserPermissionsForm(localizer, create_choices, create_on_write_choices,

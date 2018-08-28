@@ -3,7 +3,10 @@
         <h3 class="panel-title">${_('Default Permissions for Repositories, User Groups and Repository Groups.')}</h3>
     </div>
     <div class="panel-body">
-        <p>${_('Default system permissions. Each permissions management entity will be created with the following default settings. Check the overwrite checkbox to force any permission changes on already existing settings.')}
+        <p>
+        ${_('Default access permissions. This defines permissions for the `default` user from which other users inherit permissions.')}
+        <br/>
+        ${_('Check the overwrite checkbox to force change all previously defined permissions for `default` user to the new selected value.')}
         </p>
         ${h.secure_form(h.route_path('admin_permissions_object_update'), request=request)}
             <div class="form">
@@ -45,7 +48,7 @@
                             ${h.select('default_user_group_perm','',c.user_group_perms_choices)}
                             ${h.checkbox('overwrite_default_user_group','true')}
                             <label for="overwrite_default_user_group">
-                                <span class="tooltip" title="${h.tooltip(_('All default permissions on each user group will be reset to chosen permission, note that all custom default permission on repository groups will be lost'))}">
+                                <span class="tooltip" title="${h.tooltip(_('All default permissions on each user group will be reset to chosen permission, note that all custom default permission on user groups will be lost'))}">
                                     ${_('Overwrite Existing Settings')}
                                 </span>
                             </label>

@@ -109,11 +109,19 @@
     &.read {
         &:extend(.tag1);
     }
-
     &.write {
         &:extend(.tag4);
     }
     &.admin {
+        &:extend(.tag5);
+    }
+    &.merge {
+        &:extend(.tag1);
+    }
+    &.push {
+        &:extend(.tag4);
+    }
+    &.push_force {
         &:extend(.tag5);
     }
 }

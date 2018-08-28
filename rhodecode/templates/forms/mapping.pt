@@ -8,12 +8,11 @@
     <div class="panel-heading">${title}</div>
     <div class="panel-body">
 
-      <div tal:condition="errormsg"
-           class="clearfix alert alert-danger">
-        <p i18n:translate="">
+      <div tal:condition="errormsg" class="clearfix alert alert-error">
+        <span i18n:translate="">
            There was a problem with this section
-        </p>
-        <p>${errormsg}</p>
+        </span>
+        <div>${errormsg}</div>
       </div>
 
       <div tal:condition="description">

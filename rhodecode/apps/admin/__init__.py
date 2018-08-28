@@ -210,6 +210,11 @@ def admin_routes(config):
         name='admin_permissions_object_update',
         pattern='/permissions/object/update')
 
+    # Branch perms EE feature
+    config.add_route(
+        name='admin_permissions_branch',
+        pattern='/permissions/branch')
+
     config.add_route(
         name='admin_permissions_ips',
         pattern='/permissions/ips')

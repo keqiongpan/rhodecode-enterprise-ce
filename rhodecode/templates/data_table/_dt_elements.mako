@@ -284,7 +284,7 @@
 
 <%def name="user_group_name(user_group_name)">
   <div>
-      <i class="icon-group" title="${_('User group')}"></i>
+      <i class="icon-user-group" title="${_('User group')}"></i>
       ${h.link_to_group(user_group_name)}
   </div>
 </%def>

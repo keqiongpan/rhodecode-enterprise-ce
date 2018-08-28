@@ -59,7 +59,7 @@
                           %if _user.username != h.DEFAULT_USER:
                             <span class="btn btn-link btn-danger revoke_perm"
                                   member="${_user.user_id}" member_type="user">
-                            <i class="icon-remove"></i> ${_('revoke')}
+                            ${_('Revoke')}
                             </span>
                           %endif
                         </td>
@@ -94,7 +94,7 @@
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'usergroup.write')}</td>
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'usergroup.admin')}</td>
                     <td class="td-user">
-                        <i class="icon-group" ></i>
+                        <i class="icon-user-group"></i>
                         %if h.HasPermissionAny('hg.admin')():
                          <a href="${h.route_path('edit_user_group',user_group_id=_user_group.users_group_id)}">
                              ${_user_group.users_group_name}
@@ -106,16 +106,26 @@
                     <td class="td-action">
                         <span class="btn btn-link btn-danger revoke_perm"
                               member="${_user_group.users_group_id}" member_type="user_group">
-                        <i class="icon-remove"></i> ${_('revoke')}
+                        ${_('Revoke')}
                         </span>
                     </td>
                 </tr>
             %endfor
             <tr class="new_members" id="add_perm_input"></tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>
+                    <span id="add_perm" class="link">
+                        ${_('Add user/user group')}
+                    </span>
+                </td>
+            </tr>
         </table>
-        <div id="add_perm" class="link">
-            ${_('Add new')}
-        </div>
+
         <div class="buttons">
           ${h.submit('save',_('Save'),class_="btn btn-primary")}
           ${h.reset('reset',_('Reset'),class_="btn btn-danger")}

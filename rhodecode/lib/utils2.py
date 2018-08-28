@@ -751,6 +751,13 @@ class AttributeDict(AttributeDictBase):
 
 
 
+class OrderedDefaultDict(collections.OrderedDict, collections.defaultdict):
+    def __init__(self, default_factory=None, *args, **kwargs):
+        # in python3 you can omit the args to super
+        super(OrderedDefaultDict, self).__init__(*args, **kwargs)
+        self.default_factory = default_factory
+
+
 def fix_PATH(os_=None):
     """
     Get current active python path, and append it to PATH variable to fix

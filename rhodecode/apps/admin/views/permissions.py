@@ -182,7 +182,8 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
             self.request.translate,
             [x[0] for x in c.repo_perms_choices],
             [x[0] for x in c.group_perms_choices],
-            [x[0] for x in c.user_group_perms_choices])()
+            [x[0] for x in c.user_group_perms_choices],
+        )()
 
         try:
             form_result = _form.to_python(dict(self.request.POST))
@@ -214,6 +215,30 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
                     category='error')
 
         raise HTTPFound(h.route_path('admin_permissions_object'))
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='admin_permissions_branch', request_method='GET',
+        renderer='rhodecode:templates/admin/permissions/permissions.mako')
+    def permissions_branch(self):
+        c = self.load_default_context()
+        c.active = 'branch'
+
+        c.user = User.get_default_user(refresh=True)
+        defaults = {}
+        defaults.update(c.user.get_default_perms())
+
+        data = render(
+            'rhodecode:templates/admin/permissions/permissions.mako',
+            self._get_template_context(c), self.request)
+        html = formencode.htmlfill.render(
+            data,
+            defaults=defaults,
+            encoding="UTF-8",
+            force_defaults=False
+        )
+        return Response(html)
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')

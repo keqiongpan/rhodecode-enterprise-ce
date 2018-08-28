@@ -47,6 +47,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.exc import IntegrityError  # noqa
 from sqlalchemy.dialects.mysql import LONGTEXT
+from beaker.cache import cache_region
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from pyramid.threadlocal import get_current_request
@@ -55,7 +56,7 @@ from rhodecode.translation import _
 from rhodecode.lib.vcs import get_vcs_instance
 from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
-    str2bool, safe_str, get_commit_safe, safe_unicode, sha1_safe,
+    str2bool, safe_str, get_commit_safe, safe_unicode, md5_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
     glob2re, StrictAttributeDict, cleaned_uri)
 from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType, \
@@ -113,7 +114,7 @@ def display_user_group_sort(obj):
 
 
 def _hash_key(k):
-    return sha1_safe(k)
+    return md5_safe(k)
 
 
 def in_filter_generator(qry, items, limit=500):
@@ -137,14 +138,6 @@ def in_filter_generator(qry, items, limit=500):
         )
 
     return parts
-
-
-base_table_args = {
-    'extend_existing': True,
-    'mysql_engine': 'InnoDB',
-    'mysql_charset': 'utf8',
-    'sqlite_autoincrement': True
-}
 
 
 class EncryptedTextValue(TypeDecorator):
@@ -309,7 +302,8 @@ class RhodeCodeSetting(Base, BaseModel):
     __tablename__ = 'rhodecode_settings'
     __table_args__ = (
         UniqueConstraint('app_settings_name'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
 
     SETTINGS_TYPES = {
@@ -389,7 +383,8 @@ class RhodeCodeUi(Base, BaseModel):
     __tablename__ = 'rhodecode_ui'
     __table_args__ = (
         UniqueConstraint('ui_key'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
 
     HOOK_REPO_SIZE = 'changegroup.repo_size'
@@ -431,7 +426,8 @@ class RepoRhodeCodeSetting(Base, BaseModel):
         UniqueConstraint(
             'app_settings_name', 'repository_id',
             name='uq_repo_rhodecode_setting_name_repo_id'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
 
     repository_id = Column(
@@ -506,7 +502,8 @@ class RepoRhodeCodeUi(Base, BaseModel):
         UniqueConstraint(
             'repository_id', 'ui_section', 'ui_key',
             name='uq_repo_rhodecode_ui_repository_id_section_key'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
 
     repository_id = Column(
@@ -538,9 +535,9 @@ class User(Base, BaseModel):
         UniqueConstraint('username'), UniqueConstraint('email'),
         Index('u_username_idx', 'username'),
         Index('u_email_idx', 'email'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     DEFAULT_USER = 'default'
     DEFAULT_USER_EMAIL = 'anonymous@rhodecode.org'
     DEFAULT_GRAVATAR_URL = 'https://secure.gravatar.com/avatar/{md5email}?d=identicon&s={size}'
@@ -689,7 +686,7 @@ class User(Base, BaseModel):
             .filter(UserApiKeys.role == UserApiKeys.ROLE_FEED)
         if cache:
             feed_tokens = feed_tokens.options(
-                FromCache("sql_cache_short", "get_user_feed_token_%s" % self.user_id))
+                FromCache("long_term", "get_user_feed_token_%s" % self.user_id))
 
         feed_tokens = feed_tokens.all()
         if feed_tokens:
@@ -930,6 +927,12 @@ class User(Base, BaseModel):
         Session().add(self)
         log.debug('updated user %s lastlogin', self.username)
 
+    def update_lastactivity(self):
+        """Update user lastactivity"""
+        self.last_activity = datetime.datetime.now()
+        Session().add(self)
+        log.debug('updated user `%s` last activity', self.username)
+
     def update_password(self, new_password):
         from rhodecode.lib.auth import get_crypt_password
 
@@ -1031,7 +1034,8 @@ class UserApiKeys(Base, BaseModel):
     __table_args__ = (
         Index('uak_api_key_idx', 'api_key', unique=True),
         Index('uak_api_key_expires_idx', 'api_key', 'expires'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
     __mapper_args__ = {}
 
@@ -1133,7 +1137,8 @@ class UserEmailMap(Base, BaseModel):
     __table_args__ = (
         Index('uem_email_idx', 'email'),
         UniqueConstraint('email'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
     __mapper_args__ = {}
 
@@ -1163,7 +1168,8 @@ class UserIpMap(Base, BaseModel):
     __tablename__ = 'user_ip_map'
     __table_args__ = (
         UniqueConstraint('user_id', 'ip_addr'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
     __mapper_args__ = {}
 
@@ -1202,7 +1208,8 @@ class UserSshKeys(Base, BaseModel):
 
         UniqueConstraint('ssh_key_fingerprint'),
 
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
     __mapper_args__ = {}
 
@@ -1234,9 +1241,9 @@ class UserSshKeys(Base, BaseModel):
 class UserLog(Base, BaseModel):
     __tablename__ = 'user_logs'
     __table_args__ = (
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
-
     VERSION_1 = 'v1'
     VERSION_2 = 'v2'
     VERSIONS = [VERSION_1, VERSION_2]
@@ -1284,7 +1291,8 @@ class UserLog(Base, BaseModel):
 class UserGroup(Base, BaseModel):
     __tablename__ = 'users_groups'
     __table_args__ = (
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
     users_group_id = Column("users_group_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
@@ -1471,7 +1479,8 @@ class UserGroup(Base, BaseModel):
 class UserGroupMember(Base, BaseModel):
     __tablename__ = 'users_groups_members'
     __table_args__ = (
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
     users_group_member_id = Column("users_group_member_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
@@ -1490,9 +1499,9 @@ class RepositoryField(Base, BaseModel):
     __tablename__ = 'repositories_fields'
     __table_args__ = (
         UniqueConstraint('repository_id', 'field_key'),  # no-multi field
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
-
     PREFIX = 'ex_'  # prefix used in form to not conflict with already existing fields
 
     repo_field_id = Column("repo_field_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
@@ -1528,7 +1537,8 @@ class Repository(Base, BaseModel):
     __tablename__ = 'repositories'
     __table_args__ = (
         Index('r_repo_name_idx', 'repo_name', mysql_length=255),
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
     DEFAULT_CLONE_URI = '{scheme}://{user}@{netloc}/{repo}'
     DEFAULT_CLONE_URI_ID = '{scheme}://{user}@{netloc}/_{repoid}'
@@ -1844,10 +1854,8 @@ class Repository(Base, BaseModel):
         """
         Returns associated cache keys for that repo
         """
-        invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
-            repo_id=self.repo_id)
         return CacheKey.query()\
-            .filter(CacheKey.cache_args == invalidation_namespace)\
+            .filter(CacheKey.cache_args == self.repo_name)\
             .order_by(CacheKey.cache_key)\
             .all()
 
@@ -1874,12 +1882,6 @@ class Repository(Base, BaseModel):
         if os.path.isdir(diff_cache_dir):
             return os.listdir(diff_cache_dir)
         return []
-
-    def shadow_repos(self):
-        shadow_repos_pattern = '.__shadow_repo_{}'.format(self.repo_id)
-        return [
-            x for x in os.listdir(os.path.dirname(self.repo_full_path))
-            if x.startswith(shadow_repos_pattern)]
 
     def get_new_name(self, repo_name):
         """
@@ -2209,9 +2211,7 @@ class Repository(Base, BaseModel):
         if cs_cache is None:
             # use no-cache version here
             scm_repo = self.scm_instance(cache=False, config=config)
-
-            empty = scm_repo.is_empty()
-            if not empty:
+            if scm_repo:
                 cs_cache = scm_repo.get_commit(
                     pre_load=["author", "date", "message", "parents"])
             else:
@@ -2228,13 +2228,8 @@ class Repository(Base, BaseModel):
 
         # check if we have maybe already latest cached revision
         if is_outdated(cs_cache) or not self.changeset_cache:
-            _default = datetime.datetime.utcnow()
+            _default = datetime.datetime.fromtimestamp(0)
             last_change = cs_cache.get('date') or _default
-            if self.updated_on and self.updated_on > last_change:
-                # we check if last update is newer than the new value
-                # if yes, we use the current timestamp instead. Imagine you get
-                # old commit pushed 1y ago, we'd set last update 1y to ago.
-                last_change = _default
             log.debug('updated repo %s with new cs cache %s',
                       self.repo_name, cs_cache)
             self.updated_on = last_change
@@ -2333,34 +2328,7 @@ class Repository(Base, BaseModel):
         return self._get_instance(cache=bool(cache), config=config)
 
     def _get_instance_cached(self):
-        from rhodecode.lib import rc_cache
-
-        cache_namespace_uid = 'cache_repo_instance.{}'.format(self.repo_id)
-        invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
-            repo_id=self.repo_id)
-        region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
-
-        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
-        def get_instance_cached(repo_id, context_id):
-            return self._get_instance()
-
-        # we must use thread scoped cache here,
-        # because each thread of gevent needs it's own not shared connection and cache
-        # we also alter `args` so the cache key is individual for every green thread.
-        inv_context_manager = rc_cache.InvalidationContext(
-            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace,
-            thread_scoped=True)
-        with inv_context_manager as invalidation_context:
-            args = (self.repo_id, inv_context_manager.cache_key)
-            # re-compute and store cache if we get invalidate signal
-            if invalidation_context.should_invalidate():
-                instance = get_instance_cached.refresh(*args)
-            else:
-                instance = get_instance_cached(*args)
-
-            log.debug(
-                'Repo instance fetched in %.3fs', inv_context_manager.compute_time)
-            return instance
+        return self._get_instance()
 
     def _get_instance(self, cache=True, config=None):
         config = config or self._config
@@ -2394,7 +2362,8 @@ class RepoGroup(Base, BaseModel):
     __table_args__ = (
         UniqueConstraint('group_name', 'group_parent_id'),
         CheckConstraint('group_id != group_parent_id'),
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
     __mapper_args__ = {'order_by': 'group_name'}
 
@@ -2676,9 +2645,9 @@ class Permission(Base, BaseModel):
     __tablename__ = 'permissions'
     __table_args__ = (
         Index('p_perm_name_idx', 'permission_name'),
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
-
     PERMS = [
         ('hg.admin', _('RhodeCode Super Administrator')),
 
@@ -2738,8 +2707,8 @@ class Permission(Base, BaseModel):
         'repository.read',
         'group.read',
         'usergroup.read',
-        # branch, for backward compat we need same value as before so forced pushed
-        'branch.push_force',
+        # branch
+        'branch.push',
         # global
         'hg.create.repository',
         'hg.repogroup.create.false',
@@ -2812,21 +2781,6 @@ class Permission(Base, BaseModel):
         return q.all()
 
     @classmethod
-    def get_default_repo_branch_perms(cls, user_id, repo_id=None):
-        q = Session().query(UserToRepoBranchPermission, UserRepoToPerm, Permission) \
-            .join(
-                Permission,
-                UserToRepoBranchPermission.permission_id == Permission.permission_id) \
-            .join(
-                UserRepoToPerm,
-                UserToRepoBranchPermission.rule_to_perm_id == UserRepoToPerm.repo_to_perm_id) \
-            .filter(UserRepoToPerm.user_id == user_id)
-
-        if repo_id:
-            q = q.filter(UserToRepoBranchPermission.repository_id == repo_id)
-        return q.order_by(UserToRepoBranchPermission.rule_order).all()
-
-    @classmethod
     def get_default_repo_perms_from_user_group(cls, user_id, repo_id=None):
         q = Session().query(UserGroupRepoToPerm, Repository, Permission)\
             .join(
@@ -2851,37 +2805,10 @@ class Permission(Base, BaseModel):
         return q.all()
 
     @classmethod
-    def get_default_repo_branch_perms_from_user_group(cls, user_id, repo_id=None):
-        q = Session().query(UserGroupToRepoBranchPermission, UserGroupRepoToPerm, Permission) \
-            .join(
-                Permission,
-                UserGroupToRepoBranchPermission.permission_id == Permission.permission_id) \
-            .join(
-                UserGroupRepoToPerm,
-                UserGroupToRepoBranchPermission.rule_to_perm_id == UserGroupRepoToPerm.users_group_to_perm_id) \
-            .join(
-                UserGroup,
-                UserGroupRepoToPerm.users_group_id == UserGroup.users_group_id) \
-            .join(
-                UserGroupMember,
-                UserGroupRepoToPerm.users_group_id == UserGroupMember.users_group_id) \
-            .filter(
-                UserGroupMember.user_id == user_id,
-                UserGroup.users_group_active == true())
-
-        if repo_id:
-            q = q.filter(UserGroupToRepoBranchPermission.repository_id == repo_id)
-        return q.order_by(UserGroupToRepoBranchPermission.rule_order).all()
-
-    @classmethod
     def get_default_group_perms(cls, user_id, repo_group_id=None):
         q = Session().query(UserRepoGroupToPerm, RepoGroup, Permission)\
-            .join(
-                Permission,
-                UserRepoGroupToPerm.permission_id == Permission.permission_id)\
-            .join(
-                RepoGroup,
-                UserRepoGroupToPerm.group_id == RepoGroup.group_id)\
+            .join((Permission, UserRepoGroupToPerm.permission_id == Permission.permission_id))\
+            .join((RepoGroup, UserRepoGroupToPerm.group_id == RepoGroup.group_id))\
             .filter(UserRepoGroupToPerm.user_id == user_id)
         if repo_group_id:
             q = q.filter(UserRepoGroupToPerm.group_id == repo_group_id)
@@ -2958,9 +2885,9 @@ class UserRepoToPerm(Base, BaseModel):
     __tablename__ = 'repo_to_perm'
     __table_args__ = (
         UniqueConstraint('user_id', 'repository_id', 'permission_id'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     repo_to_perm_id = Column("repo_to_perm_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False, unique=None, default=None)
     permission_id = Column("permission_id", Integer(), ForeignKey('permissions.permission_id'), nullable=False, unique=None, default=None)
@@ -2970,7 +2897,7 @@ class UserRepoToPerm(Base, BaseModel):
     repository = relationship('Repository')
     permission = relationship('Permission')
 
-    branch_perm_entry = relationship('UserToRepoBranchPermission', cascade="all, delete, delete-orphan", lazy='joined')
+    branch_perm_entry =  relationship('UserToRepoBranchPermission', cascade="all, delete, delete-orphan", lazy='joined')
 
     @classmethod
     def create(cls, user, repository, permission):
@@ -2989,9 +2916,9 @@ class UserUserGroupToPerm(Base, BaseModel):
     __tablename__ = 'user_user_group_to_perm'
     __table_args__ = (
         UniqueConstraint('user_id', 'user_group_id', 'permission_id'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     user_user_group_to_perm_id = Column("user_user_group_to_perm_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False, unique=None, default=None)
     permission_id = Column("permission_id", Integer(), ForeignKey('permissions.permission_id'), nullable=False, unique=None, default=None)
@@ -3018,9 +2945,9 @@ class UserToPerm(Base, BaseModel):
     __tablename__ = 'user_to_perm'
     __table_args__ = (
         UniqueConstraint('user_id', 'permission_id'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     user_to_perm_id = Column("user_to_perm_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False, unique=None, default=None)
     permission_id = Column("permission_id", Integer(), ForeignKey('permissions.permission_id'), nullable=False, unique=None, default=None)
@@ -3036,9 +2963,9 @@ class UserGroupRepoToPerm(Base, BaseModel):
     __tablename__ = 'users_group_repo_to_perm'
     __table_args__ = (
         UniqueConstraint('repository_id', 'users_group_id', 'permission_id'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     users_group_to_perm_id = Column("users_group_to_perm_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     users_group_id = Column("users_group_id", Integer(), ForeignKey('users_groups.users_group_id'), nullable=False, unique=None, default=None)
     permission_id = Column("permission_id", Integer(), ForeignKey('permissions.permission_id'), nullable=False, unique=None, default=None)
@@ -3066,9 +2993,9 @@ class UserGroupUserGroupToPerm(Base, BaseModel):
     __table_args__ = (
         UniqueConstraint('target_user_group_id', 'user_group_id', 'permission_id'),
         CheckConstraint('target_user_group_id != user_group_id'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     user_group_user_group_to_perm_id = Column("user_group_user_group_to_perm_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     target_user_group_id = Column("target_user_group_id", Integer(), ForeignKey('users_groups.users_group_id'), nullable=False, unique=None, default=None)
     permission_id = Column("permission_id", Integer(), ForeignKey('permissions.permission_id'), nullable=False, unique=None, default=None)
@@ -3095,9 +3022,9 @@ class UserGroupToPerm(Base, BaseModel):
     __tablename__ = 'users_group_to_perm'
     __table_args__ = (
         UniqueConstraint('users_group_id', 'permission_id',),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     users_group_to_perm_id = Column("users_group_to_perm_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     users_group_id = Column("users_group_id", Integer(), ForeignKey('users_groups.users_group_id'), nullable=False, unique=None, default=None)
     permission_id = Column("permission_id", Integer(), ForeignKey('permissions.permission_id'), nullable=False, unique=None, default=None)
@@ -3110,7 +3037,8 @@ class UserRepoGroupToPerm(Base, BaseModel):
     __tablename__ = 'user_repo_group_to_perm'
     __table_args__ = (
         UniqueConstraint('user_id', 'group_id', 'permission_id'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
 
     group_to_perm_id = Column("group_to_perm_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
@@ -3136,7 +3064,8 @@ class UserGroupRepoGroupToPerm(Base, BaseModel):
     __tablename__ = 'users_group_repo_group_to_perm'
     __table_args__ = (
         UniqueConstraint('users_group_id', 'group_id'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
 
     users_group_repo_group_to_perm_id = Column("users_group_repo_group_to_perm_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
@@ -3164,9 +3093,9 @@ class UserGroupRepoGroupToPerm(Base, BaseModel):
 class Statistics(Base, BaseModel):
     __tablename__ = 'statistics'
     __table_args__ = (
-         base_table_args
+         {'extend_existing': True, 'mysql_engine': 'InnoDB',
+          'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     stat_id = Column("stat_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     repository_id = Column("repository_id", Integer(), ForeignKey('repositories.repo_id'), nullable=False, unique=True, default=None)
     stat_on_revision = Column("stat_on_revision", Integer(), nullable=False)
@@ -3182,7 +3111,8 @@ class UserFollowing(Base, BaseModel):
     __table_args__ = (
         UniqueConstraint('user_id', 'follows_repository_id'),
         UniqueConstraint('user_id', 'follows_user_id'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
 
     user_following_id = Column("user_following_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
@@ -3206,14 +3136,12 @@ class CacheKey(Base, BaseModel):
     __table_args__ = (
         UniqueConstraint('cache_key'),
         Index('key_idx', 'cache_key'),
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
-
-    CACHE_TYPE_FEED = 'FEED'
+    CACHE_TYPE_ATOM = 'ATOM'
+    CACHE_TYPE_RSS = 'RSS'
     CACHE_TYPE_README = 'README'
-    # namespaces used to register process/thread aware caches
-    REPO_INVALIDATION_NAMESPACE = 'repo_cache:{repo_id}'
-    SETTINGS_INVALIDATION_NAMESPACE = 'system_settings'
 
     cache_id = Column("cache_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     cache_key = Column("cache_key", String(255), nullable=True, unique=None, default=None)
@@ -3262,27 +3190,44 @@ class CacheKey(Base, BaseModel):
         Session().commit()
 
     @classmethod
-    def set_invalidate(cls, cache_uid, delete=False):
+    def get_cache_key(cls, repo_name, cache_type):
+        """
+
+        Generate a cache key for this process of RhodeCode instance.
+        Prefix most likely will be process id or maybe explicitly set
+        instance_id from .ini file.
+        """
+        import rhodecode
+        prefix = safe_unicode(rhodecode.CONFIG.get('instance_id') or '')
+
+        repo_as_unicode = safe_unicode(repo_name)
+        key = u'{}_{}'.format(repo_as_unicode, cache_type) \
+            if cache_type else repo_as_unicode
+
+        return u'{}{}'.format(prefix, key)
+
+    @classmethod
+    def set_invalidate(cls, repo_name, delete=False):
         """
         Mark all caches of a repo as invalid in the database.
         """
 
         try:
-            qry = Session().query(cls).filter(cls.cache_args == cache_uid)
+            qry = Session().query(cls).filter(cls.cache_args == repo_name)
             if delete:
+                log.debug('cache objects deleted for repo %s',
+                          safe_str(repo_name))
                 qry.delete()
-                log.debug('cache objects deleted for cache args %s',
-                          safe_str(cache_uid))
             else:
+                log.debug('cache objects marked as invalid for repo %s',
+                          safe_str(repo_name))
                 qry.update({"cache_active": False})
-                log.debug('cache objects marked as invalid for cache args %s',
-                          safe_str(cache_uid))
 
             Session().commit()
         except Exception:
             log.exception(
-                'Cache key invalidation failed for cache args %s',
-                safe_str(cache_uid))
+                'Cache key invalidation failed for repository %s',
+                safe_str(repo_name))
             Session().rollback()
 
     @classmethod
@@ -3297,7 +3242,8 @@ class ChangesetComment(Base, BaseModel):
     __tablename__ = 'changeset_comments'
     __table_args__ = (
         Index('cc_revision_idx', 'revision'),
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
     COMMENT_OUTDATED = u'comment_outdated'
@@ -3421,9 +3367,9 @@ class ChangesetStatus(Base, BaseModel):
         Index('cs_revision_idx', 'revision'),
         Index('cs_version_idx', 'version'),
         UniqueConstraint('repo_id', 'revision', 'version'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     STATUS_NOT_REVIEWED = DEFAULT = 'not_reviewed'
     STATUS_APPROVED = 'approved'
     STATUS_REJECTED = 'rejected'
@@ -3493,8 +3439,6 @@ class _PullRequestBase(BaseModel):
     description = Column(
         'description', UnicodeText().with_variant(UnicodeText(10240), 'mysql'),
         nullable=True)
-    description_renderer = Column('description_renderer', Unicode(64), nullable=True)
-
     # new/open/closed status of pull request (not approve/reject/etc)
     status = Column('status', Unicode(255), nullable=False, default=STATUS_NEW)
     created_on = Column(
@@ -3695,7 +3639,8 @@ class _PullRequestBase(BaseModel):
 class PullRequest(Base, _PullRequestBase):
     __tablename__ = 'pull_requests'
     __table_args__ = (
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
     pull_request_id = Column(
@@ -3805,15 +3750,15 @@ class PullRequest(Base, _PullRequestBase):
         workspace_id = self.workspace_id
         vcs_obj = self.target_repo.scm_instance()
         shadow_repository_path = vcs_obj._get_shadow_repository_path(
-            self.target_repo.repo_id, workspace_id)
-        if os.path.isdir(shadow_repository_path):
-            return vcs_obj._get_shadow_instance(shadow_repository_path)
+            workspace_id)
+        return vcs_obj._get_shadow_instance(shadow_repository_path)
 
 
 class PullRequestVersion(Base, _PullRequestBase):
     __tablename__ = 'pull_request_versions'
     __table_args__ = (
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
     pull_request_version_id = Column(
@@ -3851,7 +3796,8 @@ class PullRequestVersion(Base, _PullRequestBase):
 class PullRequestReviewers(Base, BaseModel):
     __tablename__ = 'pull_request_reviewers'
     __table_args__ = (
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
     @hybrid_property
@@ -3911,7 +3857,8 @@ class Notification(Base, BaseModel):
     __tablename__ = 'notifications'
     __table_args__ = (
         Index('notification_type_idx', 'type'),
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
     TYPE_CHANGESET_COMMENT = u'cs_comment'
@@ -3950,18 +3897,16 @@ class Notification(Base, BaseModel):
         notification.type_ = type_
         notification.created_on = datetime.datetime.now()
 
-        # For each recipient link the created notification to his account
         for u in recipients:
             assoc = UserNotification()
-            assoc.user_id = u.user_id
             assoc.notification = notification
 
             # if created_by is inside recipients mark his notification
             # as read
             if u.user_id == created_by.user_id:
                 assoc.read = True
-            Session().add(assoc)
 
+            u.notifications.append(assoc)
         Session().add(notification)
 
         return notification
@@ -3971,9 +3916,9 @@ class UserNotification(Base, BaseModel):
     __tablename__ = 'user_to_notification'
     __table_args__ = (
         UniqueConstraint('user_id', 'notification_id'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     user_id = Column('user_id', Integer(), ForeignKey('users.user_id'), primary_key=True)
     notification_id = Column("notification_id", Integer(), ForeignKey('notifications.notification_id'), primary_key=True)
     read = Column('read', Boolean, default=False)
@@ -3993,9 +3938,9 @@ class Gist(Base, BaseModel):
     __table_args__ = (
         Index('g_gist_access_id_idx', 'gist_access_id'),
         Index('g_created_on_idx', 'created_on'),
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
-
     GIST_PUBLIC = u'public'
     GIST_PRIVATE = u'private'
     DEFAULT_FILENAME = u'gistfile1.txt'
@@ -4090,8 +4035,8 @@ class ExternalIdentity(Base, BaseModel):
     __table_args__ = (
         Index('local_user_id_idx', 'local_user_id'),
         Index('external_id_idx', 'external_id'),
-        base_table_args
-    )
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8'})
 
     external_id = Column('external_id', Unicode(255), default=u'',
                          primary_key=True)
@@ -4152,7 +4097,8 @@ class ExternalIdentity(Base, BaseModel):
 class Integration(Base, BaseModel):
     __tablename__ = 'integrations'
     __table_args__ = (
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True}
     )
 
     integration_id = Column('integration_id', Integer(), primary_key=True)
@@ -4195,7 +4141,8 @@ class Integration(Base, BaseModel):
 class RepoReviewRuleUser(Base, BaseModel):
     __tablename__ = 'repo_review_rules_users'
     __table_args__ = (
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
 
     repo_review_rule_user_id = Column('repo_review_rule_user_id', Integer(), primary_key=True)
@@ -4213,9 +4160,9 @@ class RepoReviewRuleUser(Base, BaseModel):
 class RepoReviewRuleUserGroup(Base, BaseModel):
     __tablename__ = 'repo_review_rules_users_groups'
     __table_args__ = (
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
-
     VOTE_RULE_ALL = -1
 
     repo_review_rule_users_group_id = Column('repo_review_rule_users_group_id', Integer(), primary_key=True)
@@ -4242,7 +4189,8 @@ class RepoReviewRuleUserGroup(Base, BaseModel):
 class RepoReviewRule(Base, BaseModel):
     __tablename__ = 'repo_review_rules'
     __table_args__ = (
-        base_table_args
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
     )
 
     repo_review_rule_id = Column(
@@ -4264,7 +4212,7 @@ class RepoReviewRule(Base, BaseModel):
     rule_users = relationship('RepoReviewRuleUser')
     rule_user_groups = relationship('RepoReviewRuleUserGroup')
 
-    def _validate_pattern(self, value):
+    def _validate_glob(self, value):
         re.compile('^' + glob2re(value) + '$')
 
     @hybrid_property
@@ -4273,7 +4221,7 @@ class RepoReviewRule(Base, BaseModel):
 
     @source_branch_pattern.setter
     def source_branch_pattern(self, value):
-        self._validate_pattern(value)
+        self._validate_glob(value)
         self._branch_pattern = value or '*'
 
     @hybrid_property
@@ -4282,7 +4230,7 @@ class RepoReviewRule(Base, BaseModel):
 
     @target_branch_pattern.setter
     def target_branch_pattern(self, value):
-        self._validate_pattern(value)
+        self._validate_glob(value)
         self._target_branch_pattern = value or '*'
 
     @hybrid_property
@@ -4291,7 +4239,7 @@ class RepoReviewRule(Base, BaseModel):
 
     @file_pattern.setter
     def file_pattern(self, value):
-        self._validate_pattern(value)
+        self._validate_glob(value)
         self._file_pattern = value or '*'
 
     def matches(self, source_branch, target_branch, files_changed):
@@ -4312,20 +4260,14 @@ class RepoReviewRule(Base, BaseModel):
             if self.source_branch_pattern == '*':
                 source_branch_match = True
             else:
-                if self.source_branch_pattern.startswith('re:'):
-                    source_pattern = self.source_branch_pattern[3:]
-                else:
-                    source_pattern = '^' + glob2re(self.source_branch_pattern) + '$'
-                source_branch_regex = re.compile(source_pattern)
+                source_branch_regex = re.compile(
+                    '^' + glob2re(self.source_branch_pattern) + '$')
                 source_branch_match = bool(source_branch_regex.search(source_branch))
             if self.target_branch_pattern == '*':
                 target_branch_match = True
             else:
-                if self.target_branch_pattern.startswith('re:'):
-                    target_pattern = self.target_branch_pattern[3:]
-                else:
-                    target_pattern = '^' + glob2re(self.target_branch_pattern) + '$'
-                target_branch_regex = re.compile(target_pattern)
+                target_branch_regex = re.compile(
+                    '^' + glob2re(self.target_branch_pattern) + '$')
                 target_branch_match = bool(target_branch_regex.search(target_branch))
 
             branch_matches = source_branch_match and target_branch_match
@@ -4333,11 +4275,7 @@ class RepoReviewRule(Base, BaseModel):
         files_matches = True
         if self.file_pattern != '*':
             files_matches = False
-            if self.file_pattern.startswith('re:'):
-                file_pattern = self.file_pattern[3:]
-            else:
-                file_pattern = glob2re(self.file_pattern)
-            file_regex = re.compile(file_pattern)
+            file_regex = re.compile(glob2re(self.file_pattern))
             for filename in files_changed:
                 if file_regex.search(filename):
                     files_matches = True
@@ -4385,15 +4323,10 @@ class RepoReviewRule(Base, BaseModel):
 
         return users
 
-    def user_group_vote_rule(self, user_id):
-
+    def user_group_vote_rule(self):
         rules = []
-        if not self.rule_user_groups:
-            return rules
-
-        for user_group in self.rule_user_groups:
-            user_group_members = [x.user_id for x in user_group.users_group.members]
-            if user_id in user_group_members:
+        if self.rule_user_groups:
+            for user_group in self.rule_user_groups:
                 rules.append(user_group)
         return rules
 
@@ -4407,9 +4340,9 @@ class ScheduleEntry(Base, BaseModel):
     __table_args__ = (
         UniqueConstraint('schedule_name', name='s_schedule_name_idx'),
         UniqueConstraint('task_uid', name='s_task_uid_idx'),
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
-
     schedule_types = ['crontab', 'timedelta', 'integer']
     schedule_entry_id = Column('schedule_entry_id', Integer(), primary_key=True)
 
@@ -4535,7 +4468,7 @@ def set_task_uid(mapper, connection, target):
 class _BaseBranchPerms(BaseModel):
     @classmethod
     def compute_hash(cls, value):
-        return sha1_safe(value)
+        return md5_safe(value)
 
     @hybrid_property
     def branch_pattern(self):
@@ -4629,27 +4562,19 @@ class UserGroupToRepoBranchPermission(Base, _BaseBranchPerms):
 class DbMigrateVersion(Base, BaseModel):
     __tablename__ = 'db_migrate_version'
     __table_args__ = (
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
-
     repository_id = Column('repository_id', String(250), primary_key=True)
     repository_path = Column('repository_path', Text)
     version = Column('version', Integer)
-
-    @classmethod
-    def set_version(cls, version):
-        """
-        Helper for forcing a different version, usually for debugging purposes via ishell.
-        """
-        ver = DbMigrateVersion.query().first()
-        ver.version = version
-        Session().commit()
 
 
 class DbSession(Base, BaseModel):
     __tablename__ = 'db_session'
     __table_args__ = (
-        base_table_args,
+        {'extend_existing': True, 'mysql_engine': 'InnoDB',
+         'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
 
     def __repr__(self):
