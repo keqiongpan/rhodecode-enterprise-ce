@@ -98,6 +98,20 @@ class RepoFilesView(RepoAppView):
                 repo_name=self.db_repo_name, commit_id='tip')
             raise HTTPFound(files_url)
 
+    def check_branch_permission(self, branch_name):
+        _ = self.request.translate
+
+        rule, branch_perm = self._rhodecode_user.get_rule_and_branch_permission(
+            self.db_repo_name, branch_name)
+        if branch_perm and branch_perm not in ['branch.push', 'branch.push_force']:
+            h.flash(
+                _('Branch `{}` changes forbidden by rule {}.').format(branch_name, rule),
+                'warning')
+            files_url = h.route_path(
+                'repo_files:default_path',
+                repo_name=self.db_repo_name, commit_id='tip')
+            raise HTTPFound(files_url)
+
     def _get_commit_and_path(self):
         default_commit_id = self.db_repo.landing_rev[1]
         default_f_path = '/'
@@ -176,17 +190,37 @@ class RepoFilesView(RepoAppView):
         return file_node
 
     def _is_valid_head(self, commit_id, repo):
-        # check if commit is a branch identifier- basically we cannot
-        # create multiple heads via file editing
-        valid_heads = repo.branches.keys() + repo.branches.values()
+        branch_name = sha_commit_id = ''
+        is_head = False
 
         if h.is_svn(repo) and not repo.is_empty():
-            # Note: Subversion only has one head, we add it here in case there
-            # is no branch matched.
-            valid_heads.append(repo.get_commit(commit_idx=-1).raw_id)
+            # Note: Subversion only has one head.
+            if commit_id == repo.get_commit(commit_idx=-1).raw_id:
+                is_head = True
+                return branch_name, sha_commit_id, is_head
 
-        # check if commit is a branch name or branch hash
-        return commit_id in valid_heads
+        for _branch_name, branch_commit_id in repo.branches.items():
+            # simple case we pass in branch name, it's a HEAD
+            if commit_id == _branch_name:
+                is_head = True
+                branch_name = _branch_name
+                sha_commit_id = branch_commit_id
+                break
+            # case when we pass in full sha commit_id, which is a head
+            elif commit_id == branch_commit_id:
+                is_head = True
+                branch_name = _branch_name
+                sha_commit_id = branch_commit_id
+                break
+
+        # checked branches, means we only need to try to get the branch/commit_sha
+        if not repo.is_empty:
+            commit = repo.get_commit(commit_id=commit_id)
+            if commit:
+                branch_name = commit.branch
+                sha_commit_id = commit.raw_id
+
+        return branch_name, sha_commit_id, is_head
 
     def _get_tree_at_commit(
             self, c, commit_id, f_path, full_load=False):
@@ -281,6 +315,7 @@ class RepoFilesView(RepoAppView):
         use_cached_archive = False
         archive_cache_enabled = CONFIG.get(
             'archive_cache_dir') and not self.request.GET.get('no_cache')
+        cached_archive_path = None
 
         if archive_cache_enabled:
             # check if we it's ok to write
@@ -322,16 +357,16 @@ class RepoFilesView(RepoAppView):
             commit=True
         )
 
-        def get_chunked_archive(archive):
-            with open(archive, 'rb') as stream:
+        def get_chunked_archive(archive_path):
+            with open(archive_path, 'rb') as stream:
                 while True:
                     data = stream.read(16 * 1024)
                     if not data:
                         if fd:  # fd means we used temporary file
                             os.close(fd)
                         if not archive_cache_enabled:
-                            log.debug('Destroying temp archive %s', archive)
-                            os.remove(archive)
+                            log.debug('Destroying temp archive %s', archive_path)
+                            os.remove(archive_path)
                         break
                     yield data
 
@@ -572,8 +607,9 @@ class RepoFilesView(RepoAppView):
                         if not c.renderer:
                             c.lines = filenode_as_lines_tokens(c.file)
 
-                c.on_branch_head = self._is_valid_head(
+                _branch_name, _sha_commit_id, is_head = self._is_valid_head(
                     commit_id, self.rhodecode_vcs_repo)
+                c.on_branch_head = is_head
 
                 branch = c.commit.branch if (
                     c.commit.branch and '/' not in c.commit.branch) else None
@@ -987,15 +1023,18 @@ class RepoFilesView(RepoAppView):
         commit_id, f_path = self._get_commit_and_path()
 
         self._ensure_not_locked()
+        _branch_name, _sha_commit_id, is_head = \
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
 
-        if not self._is_valid_head(commit_id, self.rhodecode_vcs_repo):
+        if not is_head:
             h.flash(_('You can only delete files with commit '
-                      'being a valid branch '), category='warning')
+                      'being a valid branch head.'), category='warning')
             raise HTTPFound(
                 h.route_path('repo_files',
                              repo_name=self.db_repo_name, commit_id='tip',
                              f_path=f_path))
 
+        self.check_branch_permission(_branch_name)
         c.commit = self._get_commit_or_redirect(commit_id)
         c.file = self._get_filenode_or_redirect(c.commit, f_path)
 
@@ -1018,14 +1057,17 @@ class RepoFilesView(RepoAppView):
         commit_id, f_path = self._get_commit_and_path()
 
         self._ensure_not_locked()
+        _branch_name, _sha_commit_id, is_head = \
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
 
-        if not self._is_valid_head(commit_id, self.rhodecode_vcs_repo):
+        if not is_head:
             h.flash(_('You can only delete files with commit '
-                      'being a valid branch '), category='warning')
+                      'being a valid branch head.'), category='warning')
             raise HTTPFound(
                 h.route_path('repo_files',
                              repo_name=self.db_repo_name, commit_id='tip',
                              f_path=f_path))
+        self.check_branch_permission(_branch_name)
 
         c.commit = self._get_commit_or_redirect(commit_id)
         c.file = self._get_filenode_or_redirect(c.commit, f_path)
@@ -1071,14 +1113,17 @@ class RepoFilesView(RepoAppView):
         commit_id, f_path = self._get_commit_and_path()
 
         self._ensure_not_locked()
+        _branch_name, _sha_commit_id, is_head = \
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
 
-        if not self._is_valid_head(commit_id, self.rhodecode_vcs_repo):
+        if not is_head:
             h.flash(_('You can only edit files with commit '
-                      'being a valid branch '), category='warning')
+                      'being a valid branch head.'), category='warning')
             raise HTTPFound(
                 h.route_path('repo_files',
                              repo_name=self.db_repo_name, commit_id='tip',
                              f_path=f_path))
+        self.check_branch_permission(_branch_name)
 
         c.commit = self._get_commit_or_redirect(commit_id)
         c.file = self._get_filenode_or_redirect(c.commit, f_path)
@@ -1108,14 +1153,18 @@ class RepoFilesView(RepoAppView):
         commit_id, f_path = self._get_commit_and_path()
 
         self._ensure_not_locked()
+        _branch_name, _sha_commit_id, is_head = \
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
 
-        if not self._is_valid_head(commit_id, self.rhodecode_vcs_repo):
+        if not is_head:
             h.flash(_('You can only edit files with commit '
-                      'being a valid branch '), category='warning')
+                      'being a valid branch head.'), category='warning')
             raise HTTPFound(
                 h.route_path('repo_files',
                              repo_name=self.db_repo_name, commit_id='tip',
                              f_path=f_path))
+
+        self.check_branch_permission(_branch_name)
 
         c.commit = self._get_commit_or_redirect(commit_id)
         c.file = self._get_filenode_or_redirect(c.commit, f_path)
@@ -1196,6 +1245,25 @@ class RepoFilesView(RepoAppView):
         c.default_message = (_('Added file via RhodeCode Enterprise'))
         c.f_path = f_path.lstrip('/')  # ensure not relative path
 
+        if self.rhodecode_vcs_repo.is_empty:
+            # for empty repository we cannot check for current branch, we rely on
+            # c.commit.branch instead
+            _branch_name = c.commit.branch
+            is_head = True
+        else:
+            _branch_name, _sha_commit_id, is_head = \
+                self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+
+        if not is_head:
+            h.flash(_('You can only add files with commit '
+                      'being a valid branch head.'), category='warning')
+            raise HTTPFound(
+                h.route_path('repo_files',
+                             repo_name=self.db_repo_name, commit_id='tip',
+                             f_path=f_path))
+
+        self.check_branch_permission(_branch_name)
+
         return self._get_template_context(c)
 
     @LoginRequired()
@@ -1217,6 +1285,26 @@ class RepoFilesView(RepoAppView):
             commit_id, redirect_after=False)
         if c.commit is None:
             c.commit = EmptyCommit(alias=self.rhodecode_vcs_repo.alias)
+
+        if self.rhodecode_vcs_repo.is_empty:
+            # for empty repository we cannot check for current branch, we rely on
+            # c.commit.branch instead
+            _branch_name = c.commit.branch
+            is_head = True
+        else:
+            _branch_name, _sha_commit_id, is_head = \
+                self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+
+        if not is_head:
+            h.flash(_('You can only add files with commit '
+                      'being a valid branch head.'), category='warning')
+            raise HTTPFound(
+                h.route_path('repo_files',
+                             repo_name=self.db_repo_name, commit_id='tip',
+                             f_path=f_path))
+
+        self.check_branch_permission(_branch_name)
+
         c.default_message = (_('Added file via RhodeCode Enterprise'))
         c.f_path = f_path
         unix_mode = 0
