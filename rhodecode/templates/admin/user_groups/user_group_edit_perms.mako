@@ -13,8 +13,8 @@
                 <th class="td-radio">${_('Write')}</th>
                 <th class="td-radio">${_('Admin')}</th>
                 <th>${_('User/User Group')}</th>
-                <th></th>
-                <th></th>
+                <th class="td-action"></th>
+                <th class="td-action"></th>
             </tr>
             ## USERS
             %for _user in c.user_group.permissions():
@@ -38,9 +38,16 @@
                             </span>
                         </td>
                         <td></td>
-                        <td>
+                        <td class="quick_repo_menu">
                             % if c.rhodecode_user.is_admin:
-                                ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='repositories-permissions'))}
+                                <i class="icon-more"></i>
+                                <div class="menu_items_container" style="display: none;">
+                                <ul class="menu_items">
+                                  <li>
+                                     ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='user-groups-permissions'))}
+                                  </li>
+                                </ul>
+                                </div>
                             % endif
                         </td>
                     </tr>
@@ -69,17 +76,24 @@
                           %if _user.username != h.DEFAULT_USER:
                             <span class="btn btn-link btn-danger revoke_perm"
                                   member="${_user.user_id}" member_type="user">
-                            ${_('Revoke')}
+                            ${_('Remove')}
                             </span>
                           %endif
                         </td>
-                        <td>
+                        <td class="quick_repo_menu">
                             % if c.rhodecode_user.is_admin:
-                                % if _user.username == h.DEFAULT_USER:
-                                    ${h.link_to('show permissions', h.route_path('admin_permissions_overview', _anchor='repositories-permissions'))}
-                                % else:
-                                    ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='repositories-permissions'))}
-                                % endif
+                                <i class="icon-more"></i>
+                                <div class="menu_items_container" style="display: none;">
+                                <ul class="menu_items">
+                                  <li>
+                                    % if _user.username == h.DEFAULT_USER:
+                                        ${h.link_to('show permissions', h.route_path('admin_permissions_overview', _anchor='user-groups-permissions'))}
+                                    % else:
+                                        ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='user-groups-permissions'))}
+                                    % endif
+                                  </li>
+                                </ul>
+                                </div>
                             % endif
                         </td>
                         %else:
@@ -103,9 +117,16 @@
                             </span>
                         </td>
                         <td></td>
-                        <td>
+                        <td class="quick_repo_menu">
                             % if c.rhodecode_user.is_admin:
-                                ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='repositories-permissions'))}
+                                <i class="icon-more"></i>
+                                <div class="menu_items_container" style="display: none;">
+                                <ul class="menu_items">
+                                  <li>
+                                     ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='user-groups-permissions'))}
+                                  </li>
+                                </ul>
+                                </div>
                             % endif
                         </td>
                         %endif
@@ -133,12 +154,19 @@
                     <td class="td-action">
                         <span class="btn btn-link btn-danger revoke_perm"
                               member="${_user_group.users_group_id}" member_type="user_group">
-                        ${_('Revoke')}
+                        ${_('Remove')}
                         </span>
                     </td>
-                    <td>
+                    <td class="quick_repo_menu">
                         % if c.rhodecode_user.is_admin:
-                            ${h.link_to('show permissions', h.route_path('edit_user_group_perms_summary', user_group_id=_user_group.users_group_id, _anchor='repositories-permissions'))}
+                            <i class="icon-more"></i>
+                            <div class="menu_items_container" style="display: none;">
+                            <ul class="menu_items">
+                              <li>
+                                 ${h.link_to('show permissions', h.route_path('edit_user_group_perms_summary', user_group_id=_user_group.users_group_id, _anchor='user-groups-permissions'))}
+                              </li>
+                            </ul>
+                            </div>
                         % endif
                     </td>
                 </tr>
@@ -174,4 +202,5 @@
     $('.revoke_perm').on('click', function(e){
         markRevokePermInput($(this), 'usergroup');
     });
+    quick_repo_menu()
 </script>
