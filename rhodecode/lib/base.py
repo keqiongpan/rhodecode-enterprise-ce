@@ -153,7 +153,7 @@ def get_user_agent(environ):
 
 def vcs_operation_context(
         environ, repo_name, username, action, scm, check_locking=True,
-        is_shadow_repo=False):
+        is_shadow_repo=False, check_branch_perms=False, detect_force_push=False):
     """
     Generate the context for a vcs operation, e.g. push or pull.
 
@@ -193,6 +193,8 @@ def vcs_operation_context(
         'user_agent': get_user_agent(environ),
         'hooks': get_enabled_hook_classes(ui_settings),
         'is_shadow_repo': is_shadow_repo,
+        'detect_force_push': detect_force_push,
+        'check_branch_perms': check_branch_perms,
     }
     return extras
 

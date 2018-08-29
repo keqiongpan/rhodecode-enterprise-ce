@@ -404,14 +404,14 @@ class PermissionCalculator(object):
     def __init__(
             self, user_id, scope, user_is_admin,
             user_inherit_default_permissions, explicit, algo,
-            calculate_super_admin=False):
+            calculate_super_admin_as_user=False):
 
         self.user_id = user_id
         self.user_is_admin = user_is_admin
         self.inherit_default_permissions = user_inherit_default_permissions
         self.explicit = explicit
         self.algo = algo
-        self.calculate_super_admin = calculate_super_admin
+        self.calculate_super_admin_as_user = calculate_super_admin_as_user
 
         scope = scope or {}
         self.scope_repo_id = scope.get('repo_id')
@@ -440,8 +440,8 @@ class PermissionCalculator(object):
                 self.default_user_id, self.scope_repo_id)
 
     def calculate(self):
-        if self.user_is_admin and not self.calculate_super_admin:
-            return self._admin_permissions()
+        if self.user_is_admin and not self.calculate_super_admin_as_user:
+            return self._calculate_admin_permissions()
 
         self._calculate_global_default_permissions()
         self._calculate_global_permissions()
@@ -452,7 +452,7 @@ class PermissionCalculator(object):
         self._calculate_user_group_permissions()
         return self._permission_structure()
 
-    def _admin_permissions(self):
+    def _calculate_admin_permissions(self):
         """
         admin user have all default rights for repositories
         and groups set to admin
@@ -479,13 +479,11 @@ class PermissionCalculator(object):
             self.permissions_user_groups[u_k] = p, PermOrigin.SUPER_ADMIN
 
         # branch permissions
-        # TODO(marcink): validate this, especially
-        # how this should work using multiple patterns specified ??
-        # looks ok, but still needs double check !!
-        for perm in self.default_branch_repo_perms:
-            r_k = perm.UserRepoToPerm.repository.repo_name
-            p = 'branch.push_force'
-            self.permissions_repository_branches[r_k] = '*', p, PermOrigin.SUPER_ADMIN
+        # since super-admin also can have custom rule permissions
+        # we *always* need to calculate those inherited from default, and also explicit
+        self._calculate_default_permissions_repository_branches(
+            user_inherit_object_permissions=False)
+        self._calculate_repository_branch_permissions()
 
         return self._permission_structure()
 
@@ -571,27 +569,7 @@ class PermissionCalculator(object):
             for perm in user_perms:
                 self.permissions_global.add(perm.permission.permission_name)
 
-    def _calculate_default_permissions(self):
-        """
-        Set default user permissions for repositories, repository branches,
-        repository groups, user groups taken from the default user.
-
-        Calculate inheritance of object permissions based on what we have now
-        in GLOBAL permissions. We check if .false is in GLOBAL since this is
-        explicitly set. Inherit is the opposite of .false being there.
-
-        .. note::
-
-           the syntax is little bit odd but what we need to check here is
-           the opposite of .false permission being in the list so even for
-           inconsistent state when both .true/.false is there
-           .false is more important
-
-        """
-        user_inherit_object_permissions = not ('hg.inherit_default_perms.false'
-                                               in self.permissions_global)
-
-        # default permissions for repositories, taken from `default` user permissions
+    def _calculate_default_permissions_repositories(self, user_inherit_object_permissions):
         for perm in self.default_repo_perms:
             r_k = perm.UserRepoToPerm.repository.repo_name
             p = perm.Permission.permission_name
@@ -624,7 +602,7 @@ class PermissionCalculator(object):
                 o = PermOrigin.SUPER_ADMIN
                 self.permissions_repositories[r_k] = p, o
 
-        # default permissions branch for repositories, taken from `default` user permissions
+    def _calculate_default_permissions_repository_branches(self, user_inherit_object_permissions):
         for perm in self.default_branch_repo_perms:
 
             r_k = perm.UserRepoToPerm.repository.repo_name
@@ -641,7 +619,7 @@ class PermissionCalculator(object):
             # special dict that aggregates entries
             self.permissions_repository_branches[r_k] = pattern, p, o
 
-        # default permissions for repository groups taken from `default` user permission
+    def _calculate_default_permissions_repository_groups(self, user_inherit_object_permissions):
         for perm in self.default_repo_groups_perms:
             rg_k = perm.UserRepoGroupToPerm.group.group_name
             p = perm.Permission.permission_name
@@ -666,7 +644,7 @@ class PermissionCalculator(object):
                 o = PermOrigin.SUPER_ADMIN
                 self.permissions_repository_groups[rg_k] = p, o
 
-        # default permissions for user groups taken from `default` user permission
+    def _calculate_default_permissions_user_groups(self, user_inherit_object_permissions):
         for perm in self.default_user_group_perms:
             u_k = perm.UserUserGroupToPerm.user_group.users_group_name
             p = perm.Permission.permission_name
@@ -690,6 +668,39 @@ class PermissionCalculator(object):
                 p = 'usergroup.admin'
                 o = PermOrigin.SUPER_ADMIN
                 self.permissions_user_groups[u_k] = p, o
+
+    def _calculate_default_permissions(self):
+        """
+        Set default user permissions for repositories, repository branches,
+        repository groups, user groups taken from the default user.
+
+        Calculate inheritance of object permissions based on what we have now
+        in GLOBAL permissions. We check if .false is in GLOBAL since this is
+        explicitly set. Inherit is the opposite of .false being there.
+
+        .. note::
+
+           the syntax is little bit odd but what we need to check here is
+           the opposite of .false permission being in the list so even for
+           inconsistent state when both .true/.false is there
+           .false is more important
+
+        """
+        user_inherit_object_permissions = not ('hg.inherit_default_perms.false'
+                                               in self.permissions_global)
+
+        # default permissions inherited from `default` user permissions
+        self._calculate_default_permissions_repositories(
+            user_inherit_object_permissions)
+
+        self._calculate_default_permissions_repository_branches(
+            user_inherit_object_permissions)
+
+        self._calculate_default_permissions_repository_groups(
+            user_inherit_object_permissions)
+
+        self._calculate_default_permissions_user_groups(
+            user_inherit_object_permissions)
 
     def _calculate_repository_permissions(self):
         """
@@ -783,6 +794,7 @@ class PermissionCalculator(object):
         # any specified by the group permission
         user_repo_branch_perms = Permission.get_default_repo_branch_perms(
             self.user_id, self.scope_repo_id)
+
         for perm in user_repo_branch_perms:
 
             r_k = perm.UserRepoToPerm.repository.repo_name
@@ -798,7 +810,6 @@ class PermissionCalculator(object):
             # NOTE(marcink): register all pattern/perm instances in this
             # special dict that aggregates entries
             self.permissions_repository_branches[r_k] = pattern, p, o
-
 
     def _calculate_repository_group_permissions(self):
         """
@@ -1036,14 +1047,14 @@ class AuthUser(object):
 
     @LazyProperty
     def permissions(self):
-        return self.get_perms(user=self, cache=False)
+        return self.get_perms(user=self, cache=None)
 
     @LazyProperty
     def permissions_safe(self):
         """
         Filtered permissions excluding not allowed repositories
         """
-        perms = self.get_perms(user=self, cache=False)
+        perms = self.get_perms(user=self, cache=None)
 
         perms['repositories'] = {
             k: v for k, v in perms['repositories'].items()
@@ -1062,7 +1073,7 @@ class AuthUser(object):
     @LazyProperty
     def permissions_full_details(self):
         return self.get_perms(
-            user=self, cache=False, calculate_super_admin=True)
+            user=self, cache=None, calculate_super_admin=True)
 
     def permissions_with_scope(self, scope):
         """
@@ -1088,7 +1099,7 @@ class AuthUser(object):
         # store in cache to mimic how the @LazyProperty works,
         # the difference here is that we use the unique key calculated
         # from params and values
-        return self.get_perms(user=self, cache=False, scope=_scope)
+        return self.get_perms(user=self, cache=None, scope=_scope)
 
     def get_instance(self):
         return User.get(self.user_id)
@@ -1143,7 +1154,7 @@ class AuthUser(object):
         log.debug('AuthUser: propagated user is now %s', self)
 
     def get_perms(self, user, scope=None, explicit=True, algo='higherwin',
-                  calculate_super_admin=False, cache=False):
+                  calculate_super_admin=False, cache=None):
         """
         Fills user permission attribute with permissions taken from database
         works for permissions given for repositories, and for permissions that
@@ -1158,6 +1169,9 @@ class AuthUser(object):
             it's multiple defined, eg user in two different groups. It also
             decides if explicit flag is turned off how to specify the permission
             for case when user is in a group + have defined separate permission
+        :param calculate_super_admin: calculate permissions for super-admin in the
+            same way as for regular user without speedups
+        :param cache: Use caching for calculation, None = let the cache backend decide
         """
         user_id = user.user_id
         user_is_admin = user.is_admin
@@ -1168,7 +1182,12 @@ class AuthUser(object):
         cache_seconds = safe_int(
             rhodecode.CONFIG.get('rc_cache.cache_perms.expiration_time'))
 
-        cache_on = cache or cache_seconds > 0
+        if cache is None:
+            # let the backend cache decide
+            cache_on = cache_seconds > 0
+        else:
+            cache_on = cache
+
         log.debug(
             'Computing PERMISSION tree for user %s scope `%s` '
             'with caching: %s[TTL: %ss]' % (user, scope, cache_on, cache_seconds or 0))
@@ -1186,9 +1205,10 @@ class AuthUser(object):
                 explicit, algo, calculate_super_admin)
 
         start = time.time()
-        result = compute_perm_tree('permissions', user_id, scope, user_is_admin,
-                         user_inherit_default_permissions, explicit, algo,
-                         calculate_super_admin)
+        result = compute_perm_tree(
+            'permissions', user_id, scope, user_is_admin,
+             user_inherit_default_permissions, explicit, algo,
+             calculate_super_admin)
 
         result_repr = []
         for k in result:
@@ -1339,6 +1359,35 @@ class AuthUser(object):
             log.info('Access for IP:%s forbidden for user %s, '
                      'not in %s' % (ip_addr, user_id, allowed_ips))
             return False
+
+    def get_branch_permissions(self, repo_name, perms=None):
+        perms = perms or self.permissions_with_scope({'repo_name': repo_name})
+        branch_perms = perms.get('repository_branches')
+        return branch_perms
+
+    def get_rule_and_branch_permission(self, repo_name, branch_name):
+        """
+        Check if this AuthUser has defined any permissions for branches. If any of
+        the rules match in order, we return the matching permissions
+        """
+
+        rule = default_perm = ''
+
+        branch_perms = self.get_branch_permissions(repo_name=repo_name)
+        if not branch_perms:
+            return rule, default_perm
+
+        repo_branch_perms = branch_perms.get(repo_name)
+        if not repo_branch_perms:
+            return rule, default_perm
+
+        # now calculate the permissions
+        for pattern, branch_perm in repo_branch_perms.items():
+            if fnmatch.fnmatch(branch_name, pattern):
+                rule = '`{}`=>{}'.format(pattern, branch_perm)
+                return rule, branch_perm
+
+        return rule, default_perm
 
     def __repr__(self):
         return "<AuthUser('id:%s[%s] ip:%s auth:%s')>"\
@@ -2084,23 +2133,22 @@ class HasPermissionAnyMiddleware(object):
     def __init__(self, *perms):
         self.required_perms = set(perms)
 
-    def __call__(self, user, repo_name):
+    def __call__(self, auth_user, repo_name):
         # repo_name MUST be unicode, since we handle keys in permission
         # dict by unicode
         repo_name = safe_unicode(repo_name)
-        user = AuthUser(user.user_id)
         log.debug(
             'Checking VCS protocol permissions %s for user:%s repo:`%s`',
-            self.required_perms, user, repo_name)
+            self.required_perms, auth_user, repo_name)
 
-        if self.check_permissions(user, repo_name):
+        if self.check_permissions(auth_user, repo_name):
             log.debug('Permission to repo:`%s` GRANTED for user:%s @ %s',
-                      repo_name, user, 'PermissionMiddleware')
+                      repo_name, auth_user, 'PermissionMiddleware')
             return True
 
         else:
             log.debug('Permission to repo:`%s` DENIED for user:%s @ %s',
-                      repo_name, user, 'PermissionMiddleware')
+                      repo_name, auth_user, 'PermissionMiddleware')
             return False
 
     def check_permissions(self, user, repo_name):

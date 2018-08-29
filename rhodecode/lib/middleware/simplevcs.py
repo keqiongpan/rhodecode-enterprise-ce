@@ -297,7 +297,7 @@ class SimpleVCS(object):
     def is_shadow_repo_dir(self):
         return os.path.isdir(self.vcs_repo_name)
 
-    def _check_permission(self, action, user, repo_name, ip_addr=None,
+    def _check_permission(self, action, user, auth_user, repo_name, ip_addr=None,
                           plugin_id='', plugin_cache_active=False, cache_ttl=0):
         """
         Checks permissions using action (push/pull) user and repository
@@ -335,14 +335,14 @@ class SimpleVCS(object):
 
             if action == 'push':
                 perms = ('repository.write', 'repository.admin')
-                if not HasPermissionAnyMiddleware(*perms)(user, repo_name):
+                if not HasPermissionAnyMiddleware(*perms)(auth_user, repo_name):
                     return False
 
             else:
                 # any other action need at least read permission
                 perms = (
                     'repository.read', 'repository.write', 'repository.admin')
-                if not HasPermissionAnyMiddleware(*perms)(user, repo_name):
+                if not HasPermissionAnyMiddleware(*perms)(auth_user, repo_name):
                     return False
 
             return True
@@ -441,14 +441,17 @@ class SimpleVCS(object):
         # ======================================================================
         # CHECK ANONYMOUS PERMISSION
         # ======================================================================
+        detect_force_push = False
+        check_branch_perms = False
         if action in ['pull', 'push']:
-            anonymous_user = User.get_default_user()
+            user_obj = anonymous_user = User.get_default_user()
+            auth_user = user_obj.AuthUser()
             username = anonymous_user.username
             if anonymous_user.active:
                 plugin_cache_active, cache_ttl = self._get_default_cache_ttl()
                 # ONLY check permissions if the user is activated
                 anonymous_perm = self._check_permission(
-                    action, anonymous_user, self.acl_repo_name, ip_addr,
+                    action, anonymous_user, auth_user, self.acl_repo_name, ip_addr,
                     plugin_id='anonymous_access',
                     plugin_cache_active=plugin_cache_active,
                     cache_ttl=cache_ttl,
@@ -525,6 +528,7 @@ class SimpleVCS(object):
 
                 # check user attributes for password change flag
                 user_obj = user
+                auth_user = user_obj.AuthUser()
                 if user_obj and user_obj.username != User.DEFAULT_USER and \
                         user_obj.user_data.get('force_password_change'):
                     reason = 'password change required'
@@ -533,19 +537,27 @@ class SimpleVCS(object):
 
                 # check permissions for this repository
                 perm = self._check_permission(
-                    action, user, self.acl_repo_name, ip_addr,
+                    action, user, auth_user, self.acl_repo_name, ip_addr,
                     plugin, plugin_cache_active, cache_ttl)
                 if not perm:
                     return HTTPForbidden()(environ, start_response)
                 environ['rc_auth_user_id'] = user_id
 
+            if action == 'push':
+                perms = auth_user.get_branch_permissions(self.acl_repo_name)
+                if perms:
+                    check_branch_perms = True
+                    detect_force_push = True
+
         # extras are injected into UI object and later available
         # in hooks executed by RhodeCode
         check_locking = _should_check_locking(environ.get('QUERY_STRING'))
+
         extras = vcs_operation_context(
             environ, repo_name=self.acl_repo_name, username=username,
             action=action, scm=self.SCM, check_locking=check_locking,
-            is_shadow_repo=self.is_shadow_repo
+            is_shadow_repo=self.is_shadow_repo, check_branch_perms=check_branch_perms,
+            detect_force_push=detect_force_push
         )
 
         # ======================================================================

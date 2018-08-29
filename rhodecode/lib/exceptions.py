@@ -107,6 +107,21 @@ class HTTPLockedRC(HTTPClientError):
         self.args = (message, )
 
 
+class HTTPBranchProtected(HTTPClientError):
+    """
+    Special Exception For Indicating that branch is protected in RhodeCode, the
+    return code can be overwritten by _code keyword argument passed into constructors
+    """
+    code = 403
+    title = explanation = 'Branch Protected'
+    reason = None
+
+    def __init__(self, message, *args, **kwargs):
+        self.title = self.explanation = message
+        super(HTTPBranchProtected, self).__init__(*args, **kwargs)
+        self.args = (message, )
+
+
 class IMCCommitError(Exception):
     pass
 

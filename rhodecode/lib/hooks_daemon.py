@@ -29,6 +29,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 from SocketServer import TCPServer
 
 import rhodecode
+from rhodecode.lib.exceptions import HTTPLockedRC, HTTPBranchProtected
 from rhodecode.model import meta
 from rhodecode.lib.base import bootstrap_request, bootstrap_config
 from rhodecode.lib import hooks_base
@@ -285,9 +286,20 @@ class Hooks(object):
 
         try:
             result = hook(extras)
-        except Exception as error:
-            exc_tb = traceback.format_exc()
-            log.exception('Exception when handling hook %s', hook)
+        except HTTPBranchProtected as handled_error:
+            # Those special cases doesn't need error reporting. It's a case of
+            # locked repo or protected branch
+            result = AttributeDict({
+                'status': handled_error.code,
+                'output': handled_error.explanation
+            })
+        except (HTTPLockedRC, Exception) as error:
+            # locked needs different handling since we need to also
+            # handle PULL operations
+            exc_tb = ''
+            if not isinstance(error, HTTPLockedRC):
+                exc_tb = traceback.format_exc()
+                log.exception('Exception when handling hook %s', hook)
             error_args = error.args
             return {
                 'status': 128,
