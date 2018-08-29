@@ -73,9 +73,10 @@
                         </td>
                     </tr>
                 %else:
+                    <% used_by_n_rules = len(getattr(_user, 'branch_rules', None) or []) %>
                     <tr>
-                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.none', checked=_user.permission=='repository.none')}</td>
-                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.read', checked=_user.permission=='repository.read')}</td>
+                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.none', checked=_user.permission=='repository.none', disabled="disabled" if (used_by_n_rules and _user.username != h.DEFAULT_USER) else None)}</td>
+                        <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.read', checked=_user.permission=='repository.read', disabled="disabled" if (used_by_n_rules and _user.username != h.DEFAULT_USER) else None)}</td>
                         <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.write', checked=_user.permission=='repository.write')}</td>
                         <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.admin', checked=_user.permission=='repository.admin')}</td>
                         <td class="td-user">
@@ -89,11 +90,10 @@
                                         (${_('inactive duplicate')})
                                     %endif
                                     %if getattr(_user, 'branch_rules', None):
-                                        <% used_by_n_rules = len(_user.branch_rules) %>
                                         % if used_by_n_rules == 1:
-                                            (${_('used by {} branch rule').format(used_by_n_rules)})
+                                            (${_('used by {} branch rule, requires write+ permissions').format(used_by_n_rules)})
                                         % else:
-                                            (${_('used by {} branch rules').format(used_by_n_rules)})
+                                            (${_('used by {} branch rules, requires write+ permissions').format(used_by_n_rules)})
                                         % endif
                                     %endif
                                 % endif

@@ -3079,6 +3079,7 @@ class UserGroupRepoToPerm(Base, BaseModel):
     users_group = relationship('UserGroup')
     permission = relationship('Permission')
     repository = relationship('Repository')
+    user_group_branch_perms = relationship('UserGroupToRepoBranchPermission', cascade='all')
 
     @classmethod
     def create(cls, users_group, repository, permission):
