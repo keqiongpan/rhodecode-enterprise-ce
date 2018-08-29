@@ -70,6 +70,11 @@ class VcsServer(object):
             'permission for %s on %s are: %s',
             self.user, self.repo_name, permission)
 
+        if not permission:
+            log.error('user `%s` permissions to repo:%s are empty. Forbidding access.',
+                      self.user, self.repo_name)
+            return -2
+
         if action == 'pull':
             if permission in self.read_perms:
                 log.info(
@@ -83,8 +88,8 @@ class VcsServer(object):
                     self.user, self.repo_name)
                 return 0
 
-        log.error('Cannot properly fetch or allow user %s permissions. '
-                  'Return value is: %s, req action: %s',
+        log.error('Cannot properly fetch or verify user `%s` permissions. '
+                  'Permissions: %s, vcs action: %s',
                   self.user, permission, action)
         return -2
 

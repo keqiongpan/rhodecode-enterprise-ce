@@ -62,7 +62,8 @@ class SshWrapper(object):
             key.accessed_on = datetime.datetime.utcnow()
             Session().add(key)
             Session().commit()
-            log.debug('Update key `%s` access time', key_id)
+            log.debug('Update key id:`%s` fingerprint:`%s` access time',
+                      key_id, key.ssh_key_fingerprint)
 
     def get_connection_info(self):
         """

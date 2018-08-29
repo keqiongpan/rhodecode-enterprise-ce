@@ -8,7 +8,8 @@
             <tr>
                 <th>${_('Fingerprint')}</th>
                 <th>${_('Description')}</th>
-                <th>${_('Created')}</th>
+                <th>${_('Created on')}</th>
+                <th>${_('Accessed on')}</th>
                 <th>${_('Action')}</th>
             </tr>
             %if c.user_ssh_keys:
@@ -19,6 +20,7 @@
                     </td>
                     <td class="td-wrap">${ssh_key.description}</td>
                     <td class="td-tags">${h.format_date(ssh_key.created_on)}</td>
+                    <td class="td-tags">${h.format_date(ssh_key.accessed_on)}</td>
 
                     <td class="td-action">
                         ${h.secure_form(h.route_path('edit_user_ssh_keys_delete', user_id=c.user.user_id), request=request)}
