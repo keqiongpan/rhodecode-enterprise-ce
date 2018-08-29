@@ -106,11 +106,15 @@ class VcsServer(object):
             'make_lock': None,
             'locked_by': [None, None],
             'server_url': None,
-            'is_shadow_repo': False,
-            'hooks_module': 'rhodecode.lib.hooks_daemon',
+            'user_agent': 'ssh-user-agent',
             'hooks': ['push', 'pull'],
+            'hooks_module': 'rhodecode.lib.hooks_daemon',
+            'is_shadow_repo': False,
+            'detect_force_push': False,
+            'check_branch_perms': False,
+
             'SSH': True,
-            'SSH_PERMISSIONS': self.user_permissions.get(self.repo_name)
+            'SSH_PERMISSIONS': self.user_permissions.get(self.repo_name),
         }
         if extras:
             scm_data.update(extras)
@@ -139,8 +143,10 @@ class VcsServer(object):
 
         return exit_code, action == "push"
 
-    def run(self):
+    def run(self, tunnel_extras=None):
+        tunnel_extras = tunnel_extras or {}
         extras = {}
+        extras.update(tunnel_extras)
 
         callback_daemon, extras = prepare_callback_daemon(
             extras, protocol=vcs_settings.HOOKS_PROTOCOL,

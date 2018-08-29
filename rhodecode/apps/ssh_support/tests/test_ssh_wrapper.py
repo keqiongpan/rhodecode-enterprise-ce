@@ -27,7 +27,7 @@ class TestSSHWrapper(object):
         with pytest.raises(Exception) as exc_info:
             ssh_wrapper.serve(
                 vcs='microsoft-tfs', repo='test-repo', mode=None, user='test',
-                permissions={})
+                permissions={}, branch_permissions={})
         assert exc_info.value.message == 'Unrecognised VCS: microsoft-tfs'
 
     def test_parse_config(self, ssh_wrapper):

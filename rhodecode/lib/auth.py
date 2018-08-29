@@ -1362,8 +1362,11 @@ class AuthUser(object):
 
     def get_branch_permissions(self, repo_name, perms=None):
         perms = perms or self.permissions_with_scope({'repo_name': repo_name})
-        branch_perms = perms.get('repository_branches')
-        return branch_perms
+        branch_perms = perms.get('repository_branches', {})
+        if not branch_perms:
+            return {}
+        repo_branch_perms = branch_perms.get(repo_name)
+        return repo_branch_perms or {}
 
     def get_rule_and_branch_permission(self, repo_name, branch_name):
         """
@@ -1373,11 +1376,7 @@ class AuthUser(object):
 
         rule = default_perm = ''
 
-        branch_perms = self.get_branch_permissions(repo_name=repo_name)
-        if not branch_perms:
-            return rule, default_perm
-
-        repo_branch_perms = branch_perms.get(repo_name)
+        repo_branch_perms = self.get_branch_permissions(repo_name=repo_name)
         if not repo_branch_perms:
             return rule, default_perm
 

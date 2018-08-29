@@ -179,7 +179,9 @@ def vcs_operation_context(
     settings_model = VcsSettingsModel(repo=repo_name)
     ui_settings = settings_model.get_ui_settings()
 
-    extras = {
+    # NOTE(marcink): This should be also in sync with
+    # rhodecode/apps/ssh_support/lib/backends/base.py:update_enviroment scm_data
+    scm_data = {
         'ip': get_ip_addr(environ),
         'username': username,
         'user_id': user_id,
@@ -196,7 +198,7 @@ def vcs_operation_context(
         'detect_force_push': detect_force_push,
         'check_branch_perms': check_branch_perms,
     }
-    return extras
+    return scm_data
 
 
 class BasicAuth(AuthBasicAuthenticator):

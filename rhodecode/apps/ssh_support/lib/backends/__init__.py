@@ -120,11 +120,25 @@ class SshWrapper(object):
 
         return vcs_type, repo_name, mode
 
-    def serve(self, vcs, repo, mode, user, permissions):
+    def serve(self, vcs, repo, mode, user, permissions, branch_permissions):
         store = ScmModel().repos_path
 
+        check_branch_perms = False
+        detect_force_push = False
+
+        if branch_permissions:
+            check_branch_perms = True
+            detect_force_push = True
+
         log.debug(
-            'VCS detected:`%s` mode: `%s` repo_name: %s', vcs, mode, repo)
+            'VCS detected:`%s` mode: `%s` repo_name: %s, branch_permission_checks:%s',
+            vcs, mode, repo, check_branch_perms)
+
+        # detect if we have to check branch permissions
+        extras = {
+            'detect_force_push': detect_force_push,
+            'check_branch_perms': check_branch_perms,
+        }
 
         if vcs == 'hg':
             server = MercurialServer(
@@ -132,7 +146,7 @@ class SshWrapper(object):
                 repo_name=repo, user=user,
                 user_permissions=permissions, config=self.config, env=self.env)
             self.server_impl = server
-            return server.run()
+            return server.run(tunnel_extras=extras)
 
         elif vcs == 'git':
             server = GitServer(
@@ -140,7 +154,7 @@ class SshWrapper(object):
                 repo_name=repo, repo_mode=mode, user=user,
                 user_permissions=permissions, config=self.config, env=self.env)
             self.server_impl = server
-            return server.run()
+            return server.run(tunnel_extras=extras)
 
         elif vcs == 'svn':
             server = SubversionServer(
@@ -148,7 +162,7 @@ class SshWrapper(object):
                 repo_name=None, user=user,
                 user_permissions=permissions, config=self.config, env=self.env)
             self.server_impl = server
-            return server.run()
+            return server.run(tunnel_extras=extras)
 
         else:
             raise Exception('Unrecognised VCS: {}'.format(vcs))
@@ -188,10 +202,11 @@ class SshWrapper(object):
 
             auth_user = user.AuthUser()
             permissions = auth_user.permissions['repositories']
-
+            repo_branch_permissions = auth_user.get_branch_permissions(scm_repo)
             try:
                 exit_code, is_updated = self.serve(
-                    scm_detected, scm_repo, scm_mode, user, permissions)
+                    scm_detected, scm_repo, scm_mode, user, permissions,
+                    repo_branch_permissions)
             except Exception:
                 log.exception('Error occurred during execution of SshWrapper')
                 exit_code = -1
