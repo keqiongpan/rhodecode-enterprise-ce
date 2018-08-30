@@ -28,7 +28,7 @@ from rhodecode.apps.admin.navigation import navigation_list
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
-from rhodecode.lib.utils2 import time_to_utcdatetime
+from rhodecode.lib.utils2 import time_to_utcdatetime, safe_int
 from rhodecode.lib import exc_tracking
 
 log = logging.getLogger(__name__)
@@ -96,7 +96,8 @@ class ExceptionsTrackerView(BaseAppView):
         _ = self.request.translate
         c = self.load_default_context()
         c.active = 'exceptions_browse'
-        c.limit = self.request.GET.get('limit', 50)
+        c.limit = safe_int(self.request.GET.get('limit')) or 50
+        c.next_limit = c.limit + 50
         c.exception_list = self.get_all_exceptions(read_metadata=True, limit=c.limit)
         c.exception_list_count = self.count_all_exceptions()
         c.exception_store_dir = exc_tracking.get_exc_store()

@@ -29,7 +29,8 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Exceptions Tracker - Showing the last {} Exceptions').format(c.limit)}</h3>
+        <h3 class="panel-title">${_('Exceptions Tracker - Showing the last {} Exceptions').format(c.limit)}.</h3>
+        <a class="panel-edit" href="${h.current_route_path(request, limit=c.next_limit)}">${_('Show more')}</a>
     </div>
     <div class="panel-body">
         <table class="rctable">
