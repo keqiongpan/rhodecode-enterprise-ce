@@ -541,10 +541,11 @@ class PermissionModel(BaseModel):
 
                 _def = Permission.get_by_key('branch.' + _def_name)
 
-                # TODO(marcink): those are bind to repo, perms, we need to unfold user somehow from this
-                for g2p in self.sa.query(UserToRepoBranchPermission) \
-                        .filter(UserToRepoBranchPermission.user == perm_user) \
-                        .all():
+                user_perms = UserToRepoBranchPermission.query()\
+                    .join(UserToRepoBranchPermission.user_repo_to_perm)\
+                    .filter(UserRepoToPerm.user == perm_user).all()
+
+                for g2p in user_perms:
                     g2p.permission = _def
                     self.sa.add(g2p)
 
