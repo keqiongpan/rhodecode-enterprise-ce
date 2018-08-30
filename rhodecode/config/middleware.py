@@ -540,10 +540,17 @@ def _string_setting(settings, name, default, lower=True):
 
 
 def _substitute_values(mapping, substitutions):
-    result = {
-        # Note: Cannot use regular replacements, since they would clash
-        # with the implementation of ConfigParser. Using "format" instead.
-        key: value.format(**substitutions)
-        for key, value in mapping.items()
-    }
+
+    try:
+        result = {
+            # Note: Cannot use regular replacements, since they would clash
+            # with the implementation of ConfigParser. Using "format" instead.
+            key: value.format(**substitutions)
+            for key, value in mapping.items()
+        }
+    except KeyError as e:
+        raise ValueError(
+            'Failed to substitute env variable: {}. '
+            'Make sure you have specified this env variable without ENV_ prefix'.format(e))
+
     return result
