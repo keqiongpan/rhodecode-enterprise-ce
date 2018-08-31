@@ -146,15 +146,15 @@ self: super: {
     };
   };
   "bleach" = super.buildPythonPackage {
-    name = "bleach-2.1.3";
+    name = "bleach-2.1.4";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
       self."html5lib"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/eb/ea/58428609442130dc31d3a59010bf6cbd263a16c589d01d23b7c1e6997e3b/bleach-2.1.3.tar.gz";
-      sha256 = "0i4sga1rlnn0qaf9y52i31bk2isd2f5q6jlxrvci179l6bv8cwzb";
+      url = "https://files.pythonhosted.org/packages/7a/b7/fa555afb61462b030abaf9ed1479b8ea031510f58c7706b06113be9f82ea/bleach-2.1.4.tar.gz";
+      sha256 = "1n337zbdml6z6zia0b1qgv6xiddx3qlwmcg9vk2mk60jcxhmzs8f";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];

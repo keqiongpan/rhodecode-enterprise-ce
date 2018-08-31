@@ -240,7 +240,11 @@ class MarkupRenderer(object):
         from .bleach_whitelist import markdown_attrs, markdown_tags
         allowed_tags = markdown_tags
         allowed_attrs = markdown_attrs
-        return bleach.clean(text, tags=allowed_tags, attributes=allowed_attrs)
+
+        try:
+            return bleach.clean(text, tags=allowed_tags, attributes=allowed_attrs)
+        except Exception:
+            return 'UNPARSEABLE TEXT'
 
     @classmethod
     def renderer_from_filename(cls, filename, exclude):
@@ -361,16 +365,17 @@ class MarkupRenderer(object):
             if flavored:
                 source = cls._flavored_markdown(source)
             rendered = markdown_renderer.convert(source)
-            if clean_html:
-                rendered = cls.bleach_clean(rendered)
-            return rendered
         except Exception:
             log.exception('Error when rendering Markdown')
             if safe:
                 log.debug('Fallback to render in plain mode')
-                return cls.plain(source)
+                rendered = cls.plain(source)
             else:
                 raise
+
+        if clean_html:
+            rendered = cls.bleach_clean(rendered)
+        return rendered
 
     @classmethod
     def rst(cls, source, safe=True, mentions=False, clean_html=False):
