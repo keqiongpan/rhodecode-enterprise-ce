@@ -11,11 +11,14 @@
     'user_groups': 'User Group Permissions',
     'repositories_groups': 'Repository Group Permissions',
 } %>
+
 <div id="perms" class="table fields">
   %for section in sorted(permissions.keys(), key=lambda item: {'global': 0, 'repository_branches': 1}.get(item, 1000)):
+  <% total_counter = 0 %>
+
   <div class="panel panel-default">
     <div class="panel-heading" id="${section.replace("_","-")}-permissions">
-        <h3 class="panel-title">${section_to_label.get(section, section)} - ${len(permissions[section])}
+        <h3 class="panel-title">${section_to_label.get(section, section)} - <span id="total_count_${section}"></span>
         <a class="permalink" href="#${section.replace("_","-")}-permissions"> ¶</a>
         </h3>
         % if side_link:
@@ -189,6 +192,15 @@
                     return sorted(permissions, key=custom_sorter)
             %>
             %for k, section_perms in name_sorter(permissions[section].items()):
+                ## for display purposes, for non super-admins we need to check if shown
+                ## repository is actually accessible for user
+                <% repo_perm = permissions['repositories'][k] %>
+                % if repo_perm == 'repository.none' and not c.rhodecode_user.is_admin:
+                    ## skip this entry
+                    <% continue %>
+                % endif
+
+                <% total_counter +=1 %>
                 % for pattern, perm in branch_sorter(section_perms.items()):
                     <tr class="perm_row ${'{}_{}'.format(section, perm.split('.')[-1])}">
                         <td class="td-name">
@@ -300,7 +312,9 @@
                     </td>
                     %endif
                 </tr>
+                <% total_counter +=1 %>
                 %endif
+
             %endfor
 
             <tr id="empty_${section}" class="noborder" style="display:none;">
@@ -315,6 +329,11 @@
       </div>
     </div>
   </div>
+
+  <script>
+    $('#total_count_${section}').html(${total_counter})
+  </script>
+
   %endfor
 </div>
 
