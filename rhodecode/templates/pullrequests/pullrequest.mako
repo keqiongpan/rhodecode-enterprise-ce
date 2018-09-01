@@ -226,9 +226,9 @@
        };
    };
 
-   var formatRefSelection = function(item) {
+   var formatRefSelection = function(data, container, escapeMarkup) {
        var prefix = '';
-       var refData = item.id.split(':');
+       var refData = data.id.split(':');
        if (refData[0] === 'branch') {
            prefix = '<i class="icon-branch"></i>';
        }
@@ -239,9 +239,9 @@
            prefix = '<i class="icon-tag"></i>';
        }
 
-       var originalOption = item.element;
-       return prefix + item.text;
-   };
+       var originalOption = data.element;
+       return prefix + escapeMarkup(data.text);
+   };formatSelection:
 
    // custom code mirror
    var codeMirrorInstance = $('#pullrequest_desc').get(0).MarkupForm.cm;
