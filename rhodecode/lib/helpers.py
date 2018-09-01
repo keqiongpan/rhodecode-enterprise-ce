@@ -43,6 +43,7 @@ from collections import OrderedDict
 import pygments
 import itertools
 import fnmatch
+import bleach
 
 from datetime import datetime
 from functools import partial
@@ -1778,16 +1779,19 @@ def render_binary(repo_name, file_obj):
     """
     Choose how to render a binary file
     """
+
     filename = file_obj.name
 
     # images
     for ext in ['*.png', '*.jpg', '*.ico', '*.gif']:
         if fnmatch.fnmatch(filename, pat=ext):
-            alt = filename
+            alt = escape(filename)
             src = route_path(
                 'repo_file_raw', repo_name=repo_name,
-                commit_id=file_obj.commit.raw_id, f_path=file_obj.path)
-            return literal('<img class="rendered-binary" alt="{}" src="{}">'.format(alt, src))
+                commit_id=file_obj.commit.raw_id,
+                f_path=file_obj.path)
+            return literal(
+                '<img class="rendered-binary" alt="{}" src="{}">'.format(alt, src))
 
 
 def renderer_from_filename(filename, exclude=None):
