@@ -155,7 +155,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
             forks_data.append({
                 "username": h.gravatar_with_user(self.request, fork.user.username),
                 "fork_name": fork_name(fork),
-                "description": fork.description,
+                "description": fork.description_safe,
                 "fork_date": h.age_component(fork.created_on, time_is_local=True),
                 "last_activity": h.format_date(fork.updated_on),
                 "action": fork_actions(fork),
