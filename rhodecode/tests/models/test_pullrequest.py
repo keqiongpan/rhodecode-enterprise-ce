@@ -81,6 +81,7 @@ class TestPullRequestModel(object):
         self.source_commit = self.pull_request.source_ref_parts.commit_id
         self.target_commit = self.pull_request.target_ref_parts.commit_id
         self.workspace_id = 'pr-%s' % self.pull_request.pull_request_id
+        self.repo_id = self.pull_request.target_repo.repo_id
 
         @request.addfinalizer
         def cleanup_pull_request():
@@ -135,17 +136,19 @@ class TestPullRequestModel(object):
         assert pr_count == 1
 
     def test_delete_calls_cleanup_merge(self, pull_request):
+        repo_id = pull_request.target_repo.repo_id
         PullRequestModel().delete(pull_request, pull_request.author)
 
         self.workspace_remove_mock.assert_called_once_with(
-            self.workspace_id)
+            repo_id, self.workspace_id)
 
     def test_close_calls_cleanup_and_hook(self, pull_request):
         PullRequestModel().close_pull_request(
             pull_request, pull_request.author)
+        repo_id = pull_request.target_repo.repo_id
 
         self.workspace_remove_mock.assert_called_once_with(
-            self.workspace_id)
+            repo_id, self.workspace_id)
         self.hook_mock.assert_called_with(
             self.pull_request, self.pull_request.author, 'close')
 
@@ -161,9 +164,10 @@ class TestPullRequestModel(object):
         assert status is True
         assert msg.eval() == 'This pull request can be automatically merged.'
         self.merge_mock.assert_called_with(
+            self.repo_id, self.workspace_id,
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
-            pull_request.source_ref_parts, self.workspace_id, dry_run=True,
+            pull_request.source_ref_parts, dry_run=True,
             use_rebase=False, close_branch=False)
 
         assert pull_request._last_merge_source_rev == self.source_commit
@@ -190,9 +194,10 @@ class TestPullRequestModel(object):
             msg.eval() ==
             'This pull request cannot be merged because of merge conflicts.')
         self.merge_mock.assert_called_with(
+            self.repo_id, self.workspace_id,
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
-            pull_request.source_ref_parts, self.workspace_id, dry_run=True,
+            pull_request.source_ref_parts, dry_run=True,
             use_rebase=False, close_branch=False)
 
         assert pull_request._last_merge_source_rev == self.source_commit
@@ -222,9 +227,10 @@ class TestPullRequestModel(object):
             'This pull request cannot be merged because of an unhandled'
             ' exception.')
         self.merge_mock.assert_called_with(
+            self.repo_id, self.workspace_id,
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
-            pull_request.source_ref_parts, self.workspace_id, dry_run=True,
+            pull_request.source_ref_parts, dry_run=True,
             use_rebase=False, close_branch=False)
 
         assert pull_request._last_merge_source_rev is None
@@ -281,7 +287,7 @@ class TestPullRequestModel(object):
             True, True, merge_ref, MergeFailureReason.NONE)
 
         merge_extras['repository'] = pull_request.target_repo.repo_name
-        PullRequestModel().merge(
+        PullRequestModel().merge_repo(
             pull_request, pull_request.author, extras=merge_extras)
 
         message = (
@@ -295,9 +301,10 @@ class TestPullRequestModel(object):
             )
         )
         self.merge_mock.assert_called_with(
+            self.repo_id, self.workspace_id,
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
-            pull_request.source_ref_parts, self.workspace_id,
+            pull_request.source_ref_parts,
             user_name=user.username, user_email=user.email, message=message,
             use_rebase=False, close_branch=False
         )
@@ -320,7 +327,7 @@ class TestPullRequestModel(object):
             False, False, merge_ref, MergeFailureReason.MERGE_FAILED)
 
         merge_extras['repository'] = pull_request.target_repo.repo_name
-        PullRequestModel().merge(
+        PullRequestModel().merge_repo(
             pull_request, pull_request.author, extras=merge_extras)
 
         message = (
@@ -334,9 +341,10 @@ class TestPullRequestModel(object):
             )
         )
         self.merge_mock.assert_called_with(
+            self.repo_id, self.workspace_id,
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
-            pull_request.source_ref_parts, self.workspace_id,
+            pull_request.source_ref_parts,
             user_name=user.username, user_email=user.email, message=message,
             use_rebase=False, close_branch=False
         )
@@ -392,7 +400,7 @@ class TestIntegrationMerge(object):
         Session().commit()
 
         with mock.patch.dict(rhodecode.CONFIG, extra_config, clear=False):
-            merge_state = PullRequestModel().merge(
+            merge_state = PullRequestModel().merge_repo(
                 pull_request, user_admin, extras=merge_extras)
 
         assert merge_state.executed
@@ -409,7 +417,7 @@ class TestIntegrationMerge(object):
 
         with mock.patch('rhodecode.EXTENSIONS.PRE_PUSH_HOOK') as pre_pull:
             pre_pull.side_effect = RepositoryError("Disallow push!")
-            merge_status = PullRequestModel().merge(
+            merge_status = PullRequestModel().merge_repo(
                 pull_request, user_admin, extras=merge_extras)
 
         assert not merge_status.executed
@@ -429,7 +437,7 @@ class TestIntegrationMerge(object):
         merge_extras['repository'] = pull_request.target_repo.repo_name
         # TODO: johbo: Needed for sqlite, try to find an automatic way for it
         Session().commit()
-        merge_status = PullRequestModel().merge(
+        merge_status = PullRequestModel().merge_repo(
             pull_request, user_regular, extras=merge_extras)
         assert not merge_status.executed
 

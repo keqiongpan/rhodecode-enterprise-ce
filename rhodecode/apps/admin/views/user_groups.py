@@ -28,6 +28,7 @@ from pyramid.view import view_config
 from pyramid.response import Response
 from pyramid.renderers import render
 
+from rhodecode import events
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, CSRFRequired, HasPermissionAnyDecorator)
@@ -41,6 +42,7 @@ from rhodecode.model.db import (
     or_, count, User, UserGroup, UserGroupMember)
 from rhodecode.model.meta import Session
 from rhodecode.model.user_group import UserGroupModel
+from rhodecode.model.db import true
 
 log = logging.getLogger(__name__)
 
@@ -108,6 +110,10 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
             .filter(UserGroup.users_group_id.in_(allowed_ids))\
             .count()
 
+        user_groups_data_total_inactive_count = UserGroup.query()\
+            .filter(UserGroup.users_group_id.in_(allowed_ids))\
+            .filter(UserGroup.users_group_active != true()).count()
+
         member_count = count(UserGroupMember.user_id)
         base_q = Session.query(
             UserGroup.users_group_name,
@@ -123,13 +129,17 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         .join(User, User.user_id == UserGroup.user_id) \
         .group_by(UserGroup, User)
 
+        base_q_inactive = base_q.filter(UserGroup.users_group_active != true())
+
         if search_q:
             like_expression = u'%{}%'.format(safe_unicode(search_q))
             base_q = base_q.filter(or_(
                 UserGroup.users_group_name.ilike(like_expression),
             ))
+            base_q_inactive = base_q.filter(UserGroup.users_group_active != true())
 
         user_groups_data_total_filtered_count = base_q.count()
+        user_groups_data_total_filtered_inactive_count = base_q_inactive.count()
 
         if order_by == 'members_total':
             sort_col = member_count
@@ -171,7 +181,9 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
             'draw': draw,
             'data': user_groups_data,
             'recordsTotal': user_groups_data_total_count,
+            'recordsTotalInactive': user_groups_data_total_inactive_count,
             'recordsFiltered': user_groups_data_total_filtered_count,
+            'recordsFilteredInactive': user_groups_data_total_filtered_inactive_count,
         })
 
         return data
@@ -242,5 +254,6 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
                     % user_group_name, category='error')
             raise HTTPFound(h.route_path('user_groups_new'))
 
+        events.trigger(events.UserPermissionsChange([self._rhodecode_user.user_id]))
         raise HTTPFound(
             h.route_path('edit_user_group', user_group_id=user_group_id))

@@ -18,18 +18,20 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import os
+import sys
 import logging
-import traceback
 import collections
+import tempfile
 
 from paste.gzipper import make_gzip_middleware
+import pyramid.events
 from pyramid.wsgi import wsgiapp
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.settings import asbool, aslist
 from pyramid.httpexceptions import (
     HTTPException, HTTPError, HTTPInternalServerError, HTTPFound, HTTPNotFound)
-from pyramid.events import ApplicationCreated
 from pyramid.renderers import render_to_response
 
 from rhodecode.model import meta
@@ -37,7 +39,9 @@ from rhodecode.config import patches
 from rhodecode.config import utils as config_utils
 from rhodecode.config.environment import load_pyramid_environment
 
+import rhodecode.events
 from rhodecode.lib.middleware.vcs import VCSMiddleware
+from rhodecode.lib.request import Request
 from rhodecode.lib.vcs import VCSCommunicationError
 from rhodecode.lib.exceptions import VCSServerUnavailable
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
@@ -45,6 +49,7 @@ from rhodecode.lib.middleware.https_fixup import HttpsFixup
 from rhodecode.lib.celerylib.loader import configure_celery
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
 from rhodecode.lib.utils2 import aslist as rhodecode_aslist, AttributeDict
+from rhodecode.lib.exc_tracking import store_exception
 from rhodecode.subscribers import (
     scan_repositories_if_enabled, write_js_routes_if_enabled,
     write_metadata_if_needed, inject_app_settings)
@@ -70,6 +75,15 @@ def make_pyramid_app(global_config, **settings):
       cases when these fragments are assembled from another place.
 
     """
+
+    # Allows to use format style "{ENV_NAME}" placeholders in the configuration. It
+    # will be replaced by the value of the environment variable "NAME" in this case.
+    environ = {
+        'ENV_{}'.format(key): value for key, value in os.environ.items()}
+
+    global_config = _substitute_values(global_config, environ)
+    settings = _substitute_values(settings, environ)
+
     sanitize_settings_and_apply_defaults(settings)
 
     config = Configurator(settings=settings)
@@ -160,7 +174,17 @@ def error_handler(exception, request):
         c.causes = base_response.causes
 
     c.messages = helpers.flash.pop_messages(request=request)
-    c.traceback = traceback.format_exc()
+
+    exc_info = sys.exc_info()
+    c.exception_id = id(exc_info)
+    c.show_exception_id = isinstance(base_response, VCSServerUnavailable) \
+                          or base_response.status_code > 499
+    c.exception_id_url = request.route_url(
+        'admin_settings_exception_tracker_show', exception_id=c.exception_id)
+
+    if c.show_exception_id:
+        store_exception(c.exception_id, exc_info)
+
     response = render_to_response(
         '/errors/error_document.mako', {'c': c, 'h': helpers}, request=request,
         response=base_response)
@@ -192,6 +216,7 @@ def includeme_first(config):
 
 def includeme(config):
     settings = config.registry.settings
+    config.set_request_factory(Request)
 
     # plugin information
     config.registry.rhodecode_plugins = collections.OrderedDict()
@@ -207,7 +232,7 @@ def includeme(config):
     # Includes which are required. The application would fail without them.
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
-    config.include('rhodecode.lib.caches')
+    config.include('rhodecode.lib.rc_cache')
 
     config.include('rhodecode.authentication')
     config.include('rhodecode.integrations')
@@ -243,16 +268,14 @@ def includeme(config):
     settings['default_locale_name'] = settings.get('lang', 'en')
 
     # Add subscribers.
-    config.add_subscriber(inject_app_settings, ApplicationCreated)
-    config.add_subscriber(scan_repositories_if_enabled, ApplicationCreated)
-    config.add_subscriber(write_metadata_if_needed, ApplicationCreated)
-    config.add_subscriber(write_js_routes_if_enabled, ApplicationCreated)
-
-    # events
-    # TODO(marcink): this should be done when pyramid migration is finished
-    # config.add_subscriber(
-    #     'rhodecode.integrations.integrations_event_handler',
-    #     'rhodecode.events.RhodecodeEvent')
+    config.add_subscriber(inject_app_settings,
+                          pyramid.events.ApplicationCreated)
+    config.add_subscriber(scan_repositories_if_enabled,
+                          pyramid.events.ApplicationCreated)
+    config.add_subscriber(write_metadata_if_needed,
+                          pyramid.events.ApplicationCreated)
+    config.add_subscriber(write_js_routes_if_enabled,
+                          pyramid.events.ApplicationCreated)
 
     # request custom methods
     config.add_request_method(
@@ -290,14 +313,15 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
     """
     Apply outer WSGI middlewares around the application.
     """
-    settings = config.registry.settings
+    registry = config.registry
+    settings = registry.settings
 
     # enable https redirects based on HTTP_X_URL_SCHEME set by proxy
     pyramid_app = HttpsFixup(pyramid_app, settings)
 
     pyramid_app, _ae_client = wrap_in_appenlight_if_enabled(
         pyramid_app, settings)
-    config.registry.ae_client = _ae_client
+    registry.ae_client = _ae_client
 
     if settings['gzip_responses']:
         pyramid_app = make_gzip_middleware(
@@ -318,6 +342,7 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
             # if not, then something, somewhere is leaving a connection open
             pool = meta.Base.metadata.bind.engine.pool
             log.debug('sa pool status: %s', pool.status())
+            log.debug('Request processing finalized')
 
     return pyramid_app_with_cleanup
 
@@ -370,6 +395,7 @@ def sanitize_settings_and_apply_defaults(settings):
     # Call split out functions that sanitize settings for each topic.
     _sanitize_appenlight_settings(settings)
     _sanitize_vcs_settings(settings)
+    _sanitize_cache_settings(settings)
 
     # configure instance id
     config_utils.set_instance_id(settings)
@@ -389,6 +415,7 @@ def _sanitize_vcs_settings(settings):
     _string_setting(settings, 'vcs.svn.compatible_version', '')
     _string_setting(settings, 'git_rev_filter', '--all')
     _string_setting(settings, 'vcs.hooks.protocol', 'http')
+    _string_setting(settings, 'vcs.hooks.host', '127.0.0.1')
     _string_setting(settings, 'vcs.scm_app_implementation', 'http')
     _string_setting(settings, 'vcs.server', '')
     _string_setting(settings, 'vcs.server.log_level', 'debug')
@@ -401,11 +428,85 @@ def _sanitize_vcs_settings(settings):
     _int_setting(settings, 'vcs.connection_timeout', 3600)
 
     # Support legacy values of vcs.scm_app_implementation. Legacy
-    # configurations may use 'rhodecode.lib.middleware.utils.scm_app_http'
-    # which is now mapped to 'http'.
+    # configurations may use 'rhodecode.lib.middleware.utils.scm_app_http', or
+    # disabled since 4.13 'vcsserver.scm_app' which is now mapped to 'http'.
     scm_app_impl = settings['vcs.scm_app_implementation']
-    if scm_app_impl == 'rhodecode.lib.middleware.utils.scm_app_http':
+    if scm_app_impl in ['rhodecode.lib.middleware.utils.scm_app_http', 'vcsserver.scm_app']:
         settings['vcs.scm_app_implementation'] = 'http'
+
+
+def _sanitize_cache_settings(settings):
+    _string_setting(settings, 'cache_dir',
+                    os.path.join(tempfile.gettempdir(), 'rc_cache'))
+    # cache_perms
+    _string_setting(
+        settings,
+        'rc_cache.cache_perms.backend',
+        'dogpile.cache.rc.file_namespace')
+    _int_setting(
+        settings,
+        'rc_cache.cache_perms.expiration_time',
+        60)
+    _string_setting(
+        settings,
+        'rc_cache.cache_perms.arguments.filename',
+        os.path.join(tempfile.gettempdir(), 'rc_cache_1'))
+
+    # cache_repo
+    _string_setting(
+        settings,
+        'rc_cache.cache_repo.backend',
+        'dogpile.cache.rc.file_namespace')
+    _int_setting(
+        settings,
+        'rc_cache.cache_repo.expiration_time',
+        60)
+    _string_setting(
+        settings,
+        'rc_cache.cache_repo.arguments.filename',
+        os.path.join(tempfile.gettempdir(), 'rc_cache_2'))
+
+    # cache_license
+    _string_setting(
+        settings,
+        'rc_cache.cache_license.backend',
+        'dogpile.cache.rc.file_namespace')
+    _int_setting(
+        settings,
+        'rc_cache.cache_license.expiration_time',
+        5*60)
+    _string_setting(
+        settings,
+        'rc_cache.cache_license.arguments.filename',
+        os.path.join(tempfile.gettempdir(), 'rc_cache_3'))
+
+    # cache_repo_longterm memory, 96H
+    _string_setting(
+        settings,
+        'rc_cache.cache_repo_longterm.backend',
+        'dogpile.cache.rc.memory_lru')
+    _int_setting(
+        settings,
+        'rc_cache.cache_repo_longterm.expiration_time',
+        345600)
+    _int_setting(
+        settings,
+        'rc_cache.cache_repo_longterm.max_size',
+        10000)
+
+    # sql_cache_short
+    _string_setting(
+        settings,
+        'rc_cache.sql_cache_short.backend',
+        'dogpile.cache.rc.memory_lru')
+    _int_setting(
+        settings,
+        'rc_cache.sql_cache_short.expiration_time',
+        30)
+    _int_setting(
+        settings,
+        'rc_cache.sql_cache_short.max_size',
+        10000)
 
 
 def _int_setting(settings, name, default):
@@ -436,3 +537,20 @@ def _string_setting(settings, name, default, lower=True):
     if lower:
         value = value.lower()
     settings[name] = value
+
+
+def _substitute_values(mapping, substitutions):
+
+    try:
+        result = {
+            # Note: Cannot use regular replacements, since they would clash
+            # with the implementation of ConfigParser. Using "format" instead.
+            key: value.format(**substitutions)
+            for key, value in mapping.items()
+        }
+    except KeyError as e:
+        raise ValueError(
+            'Failed to substitute env variable: {}. '
+            'Make sure you have specified this env variable without ENV_ prefix'.format(e))
+
+    return result

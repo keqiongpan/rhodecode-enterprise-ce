@@ -19,22 +19,44 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-def assert_and_get_content(result):
+def assert_and_get_main_filter_content(result):
     repos = []
     groups = []
     commits = []
+    users = []
+    for data_item in result:
+        assert data_item['id']
+        assert data_item['value']
+        assert data_item['value_display']
+        assert data_item['url']
+
+        if data_item['type'] == 'search':
+            assert data_item['value_display'].startswith('Full text search for:')
+        elif data_item['type'] == 'repo':
+            repos.append(data_item)
+        elif data_item['type'] == 'repo_group':
+            groups.append(data_item)
+        elif data_item['type'] == 'user':
+            users.append(data_item)
+        elif data_item['type'] == 'commit':
+            commits.append(data_item)
+        else:
+            raise Exception('invalid type `%s`' % data_item['type'])
+
+    return repos, groups, users, commits
+
+
+def assert_and_get_repo_list_content(result):
+    repos = []
     for data in result:
         for data_item in data['children']:
             assert data_item['id']
             assert data_item['text']
             assert data_item['url']
+
             if data_item['type'] == 'repo':
                 repos.append(data_item)
-            elif data_item['type'] == 'group':
-                groups.append(data_item)
-            elif data_item['type'] == 'commit':
-                commits.append(data_item)
             else:
                 raise Exception('invalid type %s' % data_item['type'])
 
-    return repos, groups, commits
+    return repos

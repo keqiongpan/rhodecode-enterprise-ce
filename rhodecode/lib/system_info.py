@@ -142,6 +142,21 @@ def platform_type():
     return SysInfoRes(value=value)
 
 
+def locale_info():
+    import locale
+
+    value = dict(
+        locale_default=locale.getdefaultlocale(),
+        locale_lc_all=locale.getlocale(locale.LC_ALL),
+        lang_env=os.environ.get('LANG'),
+        lc_all_env=os.environ.get('LC_ALL'),
+        local_archive_env=os.environ.get('LOCALE_ARCHIVE'),
+    )
+    human_value = 'LANG: {}, locale LC_ALL: {},  Default locales: {}'.format(
+        value['lang_env'], value['locale_lc_all'], value['locale_default'])
+    return SysInfoRes(value=value, human_value=human_value)
+
+
 def ulimit_info():
     data = collections.OrderedDict([
         ('cpu time (seconds)', resource.getrlimit(resource.RLIMIT_CPU)),
@@ -712,7 +727,6 @@ def usage_info():
     return SysInfoRes(value=value)
 
 
-
 def get_system_info(environ):
     environ = environ or {}
     return {
@@ -723,6 +737,7 @@ def get_system_info(environ):
         'py_modules': SysInfo(py_modules)(),
 
         'platform': SysInfo(platform_type)(),
+        'locale': SysInfo(locale_info)(),
         'server': SysInfo(server_info, environ=environ)(),
         'database': SysInfo(database_info)(),
         'ulimit': SysInfo(ulimit_info)(),

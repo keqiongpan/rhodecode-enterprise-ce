@@ -10,7 +10,7 @@
 
 <%def name="breadcrumbs_links()">
     <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-    ${h.link_to(_('Admin'),h.route_path('admin_home'))} &raquo; <span id="user_group_count">0</span> ${_('user groups')}
+    ${h.link_to(_('Admin'),h.route_path('admin_home'))} &raquo; <span id="user_group_count">0</span>
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -38,21 +38,33 @@
 </div>
 <script>
 $(document).ready(function() {
-    var getDatatableCount = function(){
-      var table = $('#user_group_list_table').dataTable();
-      var page = table.api().page.info();
-      var  active = page.recordsDisplay;
-      var  total = page.recordsTotal;
-
-      var _text = _gettext("{0} out of {1} users").format(active, total);
-      $('#user_group_count').text(_text);
-    };
+    var $userGroupsListTable = $('#user_group_list_table');
 
     // user list
-    $('#user_group_list_table').DataTable({
+    $userGroupsListTable.DataTable({
       processing: true,
       serverSide: true,
-      ajax: "${h.route_path('user_groups_data')}",
+      ajax: {
+          "url": "${h.route_path('user_groups_data')}",
+          "dataSrc": function (json) {
+              var filteredCount = json.recordsFiltered;
+              var filteredInactiveCount = json.recordsFilteredInactive;
+              var totalInactive = json.recordsTotalInactive;
+              var total = json.recordsTotal;
+
+              var _text = _gettext(
+                      "{0} ({1} inactive) of {2} user groups ({3} inactive)").format(
+                      filteredCount, filteredInactiveCount, total, totalInactive);
+
+              if (total === filteredCount) {
+                  _text = _gettext(
+                          "{0} user groups ({1} inactive)").format(total, totalInactive);
+              }
+              $('#user_group_count').text(_text);
+              return json.data;
+          },
+      },
+
       dom: 'rtp',
       pageLength: ${c.visual.admin_grid_items},
       order: [[ 0, "asc" ]],
@@ -79,17 +91,12 @@ $(document).ready(function() {
       }
     });
 
-    $('#user_group_list_table').on('xhr.dt', function(e, settings, json, xhr){
-        $('#user_group_list_table').css('opacity', 1);
+    $userGroupsListTable.on('xhr.dt', function(e, settings, json, xhr){
+        $userGroupsListTable.css('opacity', 1);
     });
 
-    $('#user_group_list_table').on('preXhr.dt', function(e, settings, data){
-        $('#user_group_list_table').css('opacity', 0.3);
-    });
-
-    // refresh counters on draw
-    $('#user_group_list_table').on('draw.dt', function(){
-        getDatatableCount();
+    $userGroupsListTable.on('preXhr.dt', function(e, settings, data){
+        $userGroupsListTable.css('opacity', 0.3);
     });
 
     // filter

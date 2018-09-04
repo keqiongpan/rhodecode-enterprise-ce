@@ -18,11 +18,9 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
 import os
 import logging
 import rhodecode
-
 
 from rhodecode.config import utils
 
@@ -52,6 +50,8 @@ def load_pyramid_environment(global_config, settings):
     if settings['is_test']:
         rhodecode.is_test = True
         rhodecode.disable_error_handler = True
+        from rhodecode import authentication
+        authentication.plugin_default_auth_ttl = 0
 
         utils.initialize_test_environment(settings_merged)
 

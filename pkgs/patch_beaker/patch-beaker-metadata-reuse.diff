@@ -1,0 +1,13 @@
+diff -rup Beaker-1.9.1-orig/beaker/ext/database.py Beaker-1.9.1/beaker/ext/database.py
+--- Beaker-1.9.1-orig/beaker/ext/database.py	2018-05-22 18:22:34.802619619 +0200
++++ Beaker-1.9.1/beaker/ext/database.py	2018-05-22 17:07:14.048335196 +0200
+@@ -91,7 +91,8 @@ class DatabaseNamespaceManager(OpenResou
+                              sa.Column('created', types.DateTime, nullable=False),
+                              sa.Column('data', types.PickleType, nullable=False),
+                              sa.UniqueConstraint('namespace'),
+-                             schema=schema_name if schema_name else meta.schema
++                             schema=schema_name if schema_name else meta.schema,
++                             extend_existing=True
+             )
+             cache.create(checkfirst=True)
+             return cache

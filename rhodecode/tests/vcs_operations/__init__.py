@@ -77,21 +77,17 @@ class Command(object):
         assert self.process.returncode == 0
 
 
-def _add_files_and_push(vcs, dest, clone_url=None, tags=None, **kwargs):
-    """
-    Generate some files, add it to DEST repo and push back
-    vcs is git or hg and defines what VCS we want to make those files for
-    """
-    # commit some stuff into this repo
-    tags = tags or []
+def _add_files(vcs, dest, clone_url=None, tags=None, target_branch=None,
+                        new_branch=False, **kwargs):
+    git_ident = "git config user.name {} && git config user.email {}".format(
+            'Marcin Kuźminski', 'me@email.com')
     cwd = path = jn(dest)
+
+    tags = tags or []
     added_file = jn(path, '%ssetup.py' % tempfile._RandomNameSequence().next())
     Command(cwd).execute('touch %s' % added_file)
     Command(cwd).execute('%s add %s' % (vcs, added_file))
     author_str = 'Marcin Kuźminski <me@email.com>'
-
-    git_ident = "git config user.name {} && git config user.email {}".format(
-            'Marcin Kuźminski', 'me@email.com')
 
     for i in range(kwargs.get('files_no', 3)):
         cmd = """echo 'added_line%s' >> %s""" % (i, added_file)
@@ -107,30 +103,55 @@ def _add_files_and_push(vcs, dest, clone_url=None, tags=None, **kwargs):
 
     for tag in tags:
         if vcs == 'hg':
-            stdout, stderr = Command(cwd).execute(
+            Command(cwd).execute(
                 'hg tag', tag['name'])
         elif vcs == 'git':
             if tag['commit']:
                 # annotated tag
-                stdout, stderr = Command(cwd).execute(
+                _stdout, _stderr = Command(cwd).execute(
                     """%s && git tag -a %s -m "%s" """ % (
                         git_ident, tag['name'], tag['commit']))
             else:
                 # lightweight tag
-                stdout, stderr = Command(cwd).execute(
+                _stdout, _stderr = Command(cwd).execute(
                     """%s && git tag %s""" % (
                         git_ident, tag['name']))
+
+
+def _add_files_and_push(vcs, dest, clone_url=None, tags=None, target_branch=None,
+                        new_branch=False, **kwargs):
+    """
+    Generate some files, add it to DEST repo and push back
+    vcs is git or hg and defines what VCS we want to make those files for
+    """
+    git_ident = "git config user.name {} && git config user.email {}".format(
+            'Marcin Kuźminski', 'me@email.com')
+    cwd = path = jn(dest)
+
+    # commit some stuff into this repo
+    _add_files(vcs, dest, clone_url, tags, target_branch, new_branch, **kwargs)
+
+    default_target_branch = {
+        'git': 'master',
+        'hg': 'default'
+    }.get(vcs)
+
+    target_branch = target_branch or default_target_branch
 
     # PUSH it back
     stdout = stderr = None
     if vcs == 'hg':
+        maybe_new_branch = ''
+        if new_branch:
+            maybe_new_branch = '--new-branch'
         stdout, stderr = Command(cwd).execute(
-            'hg push --verbose', clone_url)
+            'hg push --verbose {} -r {} {}'.format(maybe_new_branch, target_branch, clone_url)
+        )
     elif vcs == 'git':
         stdout, stderr = Command(cwd).execute(
-            """%s && 
-            git push --verbose --tags %s master""" % (
-                git_ident, clone_url))
+            """{} && 
+            git push --verbose --tags {} {}""".format(git_ident, clone_url, target_branch)
+        )
 
     return stdout, stderr
 

@@ -24,6 +24,7 @@ import deform
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 
+from rhodecode import events
 from rhodecode.apps._base import RepoGroupAppView
 from rhodecode.forms import RcForm
 from rhodecode.lib import helpers as h
@@ -31,7 +32,7 @@ from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAll,
     HasRepoGroupPermissionAny, HasRepoGroupPermissionAnyDecorator, CSRFRequired)
-from rhodecode.model.db import Session, RepoGroup
+from rhodecode.model.db import Session, RepoGroup, User
 from rhodecode.model.scm import RepoGroupList
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.validation_schema.schemas import repo_group_schema
@@ -72,8 +73,6 @@ class RepoGroupSettingsView(RepoGroupAppView):
         if add_parent_group:
             c.repo_groups_choices.append(parent_group.group_id)
             c.repo_groups.append(RepoGroup._generate_choice(parent_group))
-
-
         return c
 
     def _can_create_repo_group(self, parent_group_id=None):
@@ -178,6 +177,13 @@ class RepoGroupSettingsView(RepoGroupAppView):
             log.exception("Exception during update or repository group")
             h.flash(_('Error occurred during update of repository group %s')
                     % old_repo_group_name, category='error')
+
+        name_changed = old_repo_group_name != new_repo_group_name
+        if name_changed:
+            owner = User.get_by_username(schema_data['repo_group_owner'])
+            owner_id = owner.user_id if owner else self._rhodecode_user.user_id
+            events.trigger(events.UserPermissionsChange([
+                self._rhodecode_user.user_id, owner_id]))
 
         raise HTTPFound(
             h.route_path('edit_repo_group', repo_group_name=new_repo_group_name))

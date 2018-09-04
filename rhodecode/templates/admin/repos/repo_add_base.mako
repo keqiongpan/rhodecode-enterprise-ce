@@ -40,6 +40,15 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
         </div>
         <div class="field">
             <div class="label">
+                <label for="repo_type">${_('Type')}:</label>
+            </div>
+            <div class="select">
+                ${h.select('repo_type','hg',c.backends)}
+                <span class="help-block">${_('Set the type of repository to create.')}</span>
+            </div>
+        </div>
+        <div class="field">
+            <div class="label">
                 <label for="repo_description">${_('Description')}:</label>
             </div>
             <div class="textarea editor">
@@ -66,24 +75,6 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
                  <span class="help-block">${_('Optionally select a group to put this repository into.')}</span>
              </div>
         </div>
-        <div id="copy_perms" class="field">
-            <div class="label label-checkbox">
-                <label for="repo_copy_permissions">${_('Copy Parent Group Permissions')}:</label>
-            </div>
-            <div class="checkboxes">
-                ${h.checkbox('repo_copy_permissions', value="True", checked="checked")}
-                <span class="help-block">${_('Copy permission set from the parent repository group.')}</span>
-            </div>
-        </div>
-        <div class="field">
-            <div class="label">
-                <label for="repo_type">${_('Type')}:</label>
-            </div>
-            <div class="select">
-                ${h.select('repo_type','hg',c.backends)}
-                <span class="help-block">${_('Set the type of repository to create.')}</span>
-            </div>
-        </div>
         <div class="field">
             <div class="label">
                 <label for="repo_landing_rev">${_('Landing commit')}:</label>
@@ -91,6 +82,15 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
             <div class="select">
                 ${h.select('repo_landing_rev','',c.landing_revs,class_="medium")}
                 <span class="help-block">${_('The default commit for file pages, downloads, full text search index, and README generation.')}</span>
+            </div>
+        </div>
+        <div id="copy_perms" class="field">
+            <div class="label label-checkbox">
+                <label for="repo_copy_permissions">${_('Copy Parent Group Permissions')}:</label>
+            </div>
+            <div class="checkboxes">
+                ${h.checkbox('repo_copy_permissions', value="True", checked="checked")}
+                <span class="help-block">${_('Copy permission set from the parent repository group.')}</span>
             </div>
         </div>
         <div class="field">

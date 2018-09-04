@@ -1,5 +1,6 @@
 <%inherit file="/base/base.mako"/>
 <%namespace name="base" file="/base/base.mako"/>
+<%namespace name="dt" file="/data_table/_dt_elements.mako"/>
 
 <%def name="title()">
     ${_('%s Pull Request #%s') % (c.repo_name, c.pull_request.pull_request_id)}
@@ -165,14 +166,15 @@
             </div>
            </div>
            <div class="field">
-            <div class="pr-description-label label-summary">
+            <div class="pr-description-label label-summary" title="${_('Rendered using {} renderer').format(c.renderer)}">
                 <label>${_('Description')}:</label>
             </div>
             <div id="pr-desc" class="input">
-                <div class="pr-description">${h.urlify_commit_message(c.pull_request.description, c.repo_name)}</div>
+                <div class="pr-description">${h.render(c.pull_request.description, renderer=c.renderer)}</div>
             </div>
             <div id="pr-desc-edit" class="input textarea editor" style="display: none;">
-                <textarea id="pr-description-input" size="30">${c.pull_request.description}</textarea>
+                <input id="pr-renderer-input" type="hidden" name="description_renderer" value="${c.visual.default_renderer}">
+                ${dt.markup_form('pr-description-input', form_text=c.pull_request.description)}
             </div>
            </div>
 
@@ -221,7 +223,7 @@
                                <td>
                                    % if c.at_version_num != ver_pr:
                                     <i class="icon-comment"></i>
-                                       <code class="tooltip" title="${_('Comment from pull request version {0}, general:{1} inline:{2}').format(ver_pos, len(c.comment_versions[ver_pr]['at']), len(c.inline_versions[ver_pr]['at']))}">
+                                       <code class="tooltip" title="${_('Comment from pull request version v{0}, general:{1} inline:{2}').format(ver_pos, len(c.comment_versions[ver_pr]['at']), len(c.inline_versions[ver_pr]['at']))}">
                                            G:${len(c.comment_versions[ver_pr]['at'])} / I:${len(c.inline_versions[ver_pr]['at'])}
                                        </code>
                                    % endif
@@ -417,6 +419,7 @@
                       <strong>${_('Missing commits')}:</strong>
                         ${_('This pull request cannot be displayed, because one or more commits no longer exist in the source repository.')}
                         ${_('Please update this pull request, push the commits back into the source repository, or consider closing this pull request.')}
+                        ${_('Consider doing a {force_refresh_url} in case you think this is an error.').format(force_refresh_url=h.link_to('force refresh', h.current_route_path(request, force_refresh='1')))|n}
                     </div>
                   </div>
                 </div>
@@ -642,7 +645,7 @@
         $(function(){
 
             // custom code mirror
-            var codeMirrorInstance = initPullRequestsCodeMirror('#pr-description-input');
+            var codeMirrorInstance = $('#pr-description-input').get(0).MarkupForm.cm;
 
             var PRDetails = {
               editButton: $('#open_edit_pullrequest'),
@@ -793,9 +796,10 @@
             $('#edit_pull_request').on('click', function(e){
                 var title = $('#pr-title-input').val();
                 var description = codeMirrorInstance.getValue();
+                var renderer = $('#pr-renderer-input').val();
                 editPullRequest(
                     "${c.repo_name}", "${c.pull_request.pull_request_id}",
-                    title, description);
+                    title, description, renderer);
             });
 
             $('#update_pull_request').on('click', function(e){

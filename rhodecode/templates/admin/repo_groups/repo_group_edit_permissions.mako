@@ -13,10 +13,12 @@
                 <th class="td-radio">${_('Write')}</th>
                 <th class="td-radio">${_('Admin')}</th>
                 <th class="td-owner">${_('User/User Group')}</th>
-                <th></th>
+                <th class="td-action"></th>
+                <th class="td-action"></th>
             </tr>
             ## USERS
             %for _user in c.repo_group.permissions():
+                ## super admin/owner row
                 %if getattr(_user, 'admin_row', None) or getattr(_user, 'owner_row', None):
                     <tr class="perm_admin_row">
                         <td class="td-radio">${h.radio('admin_perm_%s' % _user.user_id,'repository.none', disabled="disabled")}</td>
@@ -34,6 +36,18 @@
                                 %endif
                         </td>
                         <td></td>
+                        <td class="quick_repo_menu">
+                            % if c.rhodecode_user.is_admin:
+                                <i class="icon-more"></i>
+                                <div class="menu_items_container" style="display: none;">
+                                <ul class="menu_items">
+                                  <li>
+                                     ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='repositories-groups-permissions'))}
+                                  </li>
+                                </ul>
+                                </div>
+                            % endif
+                        </td>
                     </tr>
                 %else:
                     <tr>
@@ -50,6 +64,9 @@
                                     ${h.DEFAULT_USER} <span class="user-perm-help-text"> - ${_('permission for all other users')}</span>
                                 % else:
                                     ${h.link_to_user(_user.username)}
+                                    %if getattr(_user, 'duplicate_perm', None):
+                                        (${_('inactive duplicate')})
+                                    %endif
                                 % endif
                             </span>
                         </td>
@@ -57,12 +74,28 @@
                             %if _user.username != h.DEFAULT_USER:
                                 <span  class="btn btn-link btn-danger revoke_perm"
                                   member="${_user.user_id}" member_type="user">
-                                <i class="icon-remove"></i> ${_('Revoke')}
+                                ${_('Remove')}
                                 </span>
                             %endif
                         </td>
+                        <td class="quick_repo_menu">
+                            % if c.rhodecode_user.is_admin:
+                                <i class="icon-more"></i>
+                                <div class="menu_items_container" style="display: none;">
+                                <ul class="menu_items">
+                                  <li>
+                                    % if _user.username == h.DEFAULT_USER:
+                                        ${h.link_to('show permissions', h.route_path('admin_permissions_overview', _anchor='repositories-groups-permissions'))}
+                                    % else:
+                                        ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='repositories-groups-permissions'))}
+                                    % endif
+                                  </li>
+                                </ul>
+                                </div>
+                            % endif
+                        </td>
                         %else:
-                            ## special case for current user permissions, we make sure he cannot take his own permissions
+                            ## special case for currently logged-in user permissions, we make sure he cannot take his own permissions
                             <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.none', disabled="disabled")}</td>
                             <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.read', disabled="disabled")}</td>
                             <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'group.write', disabled="disabled")}</td>
@@ -74,11 +107,26 @@
                                         ${h.DEFAULT_USER} <span class="user-perm-help-text"> - ${_('permission for all other users')}</span>
                                     % else:
                                         ${h.link_to_user(_user.username)}
+                                        %if getattr(_user, 'duplicate_perm', None):
+                                            (${_('inactive duplicate')})
+                                        %endif
                                     % endif
                                     <span class="user-perm-help-text">(${_('delegated admin')})</span>
                                 </span>
                             </td>
                             <td></td>
+                            <td class="quick_repo_menu">
+                                % if c.rhodecode_user.is_admin:
+                                    <i class="icon-more"></i>
+                                    <div class="menu_items_container" style="display: none;">
+                                    <ul class="menu_items">
+                                      <li>
+                                         ${h.link_to('show permissions', h.route_path('edit_user_perms_summary', user_id=_user.user_id, _anchor='repositories-groups-permissions'))}
+                                      </li>
+                                    </ul>
+                                    </div>
+                                % endif
+                            </td>
                         %endif
                     </tr>
                 %endif
@@ -92,7 +140,7 @@
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.write', checked=_user_group.permission=='group.write')}</td>
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.admin', checked=_user_group.permission=='group.admin')}</td>
                     <td class="td-componentname">
-                        <i class="icon-group" ></i>
+                        <i class="icon-user-group"></i>
                         %if h.HasPermissionAny('hg.admin')():
                          <a href="${h.route_path('edit_user_group',user_group_id=_user_group.users_group_id)}">
                              ${_user_group.users_group_name}
@@ -104,17 +152,40 @@
                     <td class="td-action">
                         <span  class="btn btn-link btn-danger revoke_perm"
                               member="${_user_group.users_group_id}" member_type="user_group">
-                        <i class="icon-remove"></i> ${_('Revoke')}
+                        ${_('Remove')}
                         </span>
+                    </td>
+                    <td class="quick_repo_menu">
+                        % if c.rhodecode_user.is_admin:
+                            <i class="icon-more"></i>
+                            <div class="menu_items_container" style="display: none;">
+                            <ul class="menu_items">
+                              <li>
+                                 ${h.link_to('show permissions', h.route_path('edit_user_group_perms_summary', user_group_id=_user_group.users_group_id, _anchor='repositories-groups-permissions'))}
+                              </li>
+                            </ul>
+                            </div>
+                        % endif
                     </td>
                 </tr>
             %endfor
 
             <tr class="new_members" id="add_perm_input"></tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>
+                    <span id="add_perm" class="link">
+                        ${_('Add user/user group')}
+                    </span>
+                </td>
+                <td></td>
+            </tr>
         </table>
-        <div id="add_perm" class="link">
-            ${_('Add new')}
-        </div>
+
         <div class="fields">
             <div class="field">
                <div class="label label-radio">
@@ -142,5 +213,6 @@
     });
     $('.revoke_perm').on('click', function(e){
         markRevokePermInput($(this), 'group');
-    })
+    });
+    quick_repo_menu();
 </script>

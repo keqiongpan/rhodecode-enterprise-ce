@@ -19,13 +19,13 @@
 import logging
 
 from rhodecode.translation import lazy_ugettext
-from rhodecode.events.base import RhodecodeEvent
+from rhodecode.events.base import RhodeCodeIntegrationEvent
 
 
 log = logging.getLogger(__name__)
 
 
-class RepoGroupEvent(RhodecodeEvent):
+class RepoGroupEvent(RhodeCodeIntegrationEvent):
     """
     Base class for events acting on a repository group.
 

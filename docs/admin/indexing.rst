@@ -88,17 +88,21 @@ want to index:
    (venv)$ rhodecode-index --instance-name=enterprise-1
 
    # Using default installation
-   $ /home/user/.rccontrol/enterprise-4/profile/bin/rhodecode-index \
-       --instance-name=enterprise-4
+   $ /home/user/.rccontrol/enterprise-1/profile/bin/rhodecode-index \
+       --instance-name=enterprise-1
 
    # Using a custom mapping file
-   $ /home/user/.rccontrol/enterprise-4/profile/bin/rhodecode-index \
-       --instance-name=enterprise-4 \
-       --mapping=/home/user/.rccontrol/enterprise-4/mapping.ini
+   $ /home/user/.rccontrol/enterprise-1/profile/bin/rhodecode-index \
+       --instance-name=enterprise-1 \
+       --mapping=/home/user/.rccontrol/enterprise-1/mapping.ini
 
 .. note::
 
-   |RCT| require |PY| 2.7 to run.
+   In case of often indexing the index may become fragmented. Most often a result of that
+   is error about `too many open files`. To fix this indexer needs to be executed with
+   --optimize flag. E.g `rhodecode-index --instance-name=enterprise-1 --optimize`
+   This should be executed regularly, once a week is recommended.
+
 
 .. _set-index:
 

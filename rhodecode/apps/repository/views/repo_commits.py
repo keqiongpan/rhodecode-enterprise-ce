@@ -437,7 +437,8 @@ class RepoCommitsView(RepoAppView):
                                if status else None),
                 status_change_type=status,
                 comment_type=comment_type,
-                resolves_comment_id=resolves_comment_id
+                resolves_comment_id=resolves_comment_id,
+                auth_user=self._rhodecode_user
             )
 
             # get status if set !
@@ -528,7 +529,7 @@ class RepoCommitsView(RepoAppView):
         comment_repo_admin = is_repo_admin and is_repo_comment
 
         if super_admin or comment_owner or comment_repo_admin:
-            CommentsModel().delete(comment=comment, user=self._rhodecode_db_user)
+            CommentsModel().delete(comment=comment, auth_user=self._rhodecode_user)
             Session().commit()
             return True
         else:

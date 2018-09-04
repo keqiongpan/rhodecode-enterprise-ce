@@ -62,11 +62,11 @@
           </div>
           <div class="pull-right">
               <span id="parent_link">
-                <a href="#parentCommit" title="${_('Parent Commit')}">${_('Parent')}</a>
+                <a href="#parentCommit" title="${_('Parent Commit')}"><i class="icon-left icon-no-margin"></i>${_('parent')}</a>
               </span>
                |
               <span id="child_link">
-                <a href="#childCommit" title="${_('Child Commit')}">${_('Child')}</a>
+                <a href="#childCommit" title="${_('Child Commit')}">${_('child')}<i class="icon-right icon-no-margin"></i></a>
               </span>
           </div>
       </div>

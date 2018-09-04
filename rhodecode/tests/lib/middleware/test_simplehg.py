@@ -47,16 +47,47 @@ def get_environ(url):
         ('/foo/bar?cmd=pushkey&key=tip', 'push'),
         ('/foo/bar?cmd=listkeys&key=tip', 'pull'),
         ('/foo/bar?cmd=changegroup&key=tip', 'pull'),
-        # Edge case: unknown argument: assume pull
-        ('/foo/bar?cmd=unknown&key=tip', 'pull'),
-        ('/foo/bar?cmd=&key=tip', 'pull'),
+        ('/foo/bar?cmd=hello', 'pull'),
+        ('/foo/bar?cmd=batch', 'push'),
+        ('/foo/bar?cmd=putlfile', 'push'),
+        # Edge case: unknown argument: assume push
+        ('/foo/bar?cmd=unknown&key=tip', 'push'),
+        ('/foo/bar?cmd=&key=tip', 'push'),
         # Edge case: not cmd argument
-        ('/foo/bar?key=tip', 'pull'),
+        ('/foo/bar?key=tip', 'push'),
     ])
 def test_get_action(url, expected_action, request_stub):
     app = simplehg.SimpleHg(config={'auth_ret_code': '', 'base_path': ''},
                             registry=request_stub.registry)
     assert expected_action == app._get_action(get_environ(url))
+
+
+@pytest.mark.parametrize(
+    'environ, expected_xargs, expected_batch',
+    [
+        ({},
+         [''], ['push']),
+
+        ({'HTTP_X_HGARG_1': ''},
+         [''], ['push']),
+
+        ({'HTTP_X_HGARG_1': 'cmds=listkeys+namespace%3Dphases'},
+         ['listkeys namespace=phases'], ['pull']),
+
+        ({'HTTP_X_HGARG_1': 'cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'},
+         ['pushkey namespace=bookmarks,key=bm,old=,new=cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'], ['push']),
+
+        ({'HTTP_X_HGARG_1': 'namespace=phases'},
+         ['namespace=phases'], ['push']),
+
+    ])
+def test_xarg_and_batch_commands(environ, expected_xargs, expected_batch):
+    app = simplehg.SimpleHg
+
+    result = app._get_xarg_headers(environ)
+    result_batch = app._get_batch_cmd(environ)
+    assert expected_xargs == result
+    assert expected_batch == result_batch
 
 
 @pytest.mark.parametrize(

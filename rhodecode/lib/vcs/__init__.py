@@ -22,7 +22,15 @@
 Various version Control System version lib (vcs) management abstraction layer
 for Python. Build with server client architecture.
 """
+import atexit
+import logging
+import urlparse
+from cStringIO import StringIO
 
+from rhodecode.lib.vcs.conf import settings
+from rhodecode.lib.vcs.backends import get_vcs_instance, get_backend
+from rhodecode.lib.vcs.exceptions import (
+    VCSError, RepositoryError, CommitError, VCSCommunicationError)
 
 VERSION = (0, 5, 0, 'dev')
 
@@ -30,21 +38,8 @@ __version__ = '.'.join((str(each) for each in VERSION[:4]))
 
 __all__ = [
     'get_version', 'get_vcs_instance', 'get_backend',
-    'VCSError', 'RepositoryError', 'CommitError'
-    ]
-
-import atexit
-import logging
-import subprocess32
-import time
-import urlparse
-from cStringIO import StringIO
-
-
-from rhodecode.lib.vcs.conf import settings
-from rhodecode.lib.vcs.backends import get_vcs_instance, get_backend
-from rhodecode.lib.vcs.exceptions import (
-    VCSError, RepositoryError, CommitError, VCSCommunicationError)
+    'VCSError', 'RepositoryError', 'CommitError', 'VCSCommunicationError'
+]
 
 log = logging.getLogger(__name__)
 

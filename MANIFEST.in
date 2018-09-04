@@ -26,6 +26,8 @@ recursive-include rhodecode *.mako
 # 502 page
 include rhodecode/public/502.html
 
+# robots
+include rhodecode/public/robots.txt
 
 # images, css
 include rhodecode/public/css/*.css

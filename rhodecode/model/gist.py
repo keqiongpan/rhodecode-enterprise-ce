@@ -33,6 +33,7 @@ from pyramid.threadlocal import get_current_request
 from rhodecode.lib.utils2 import (
     safe_unicode, unique_id, safe_int, time_to_datetime, AttributeDict)
 from rhodecode.lib.ext_json import json
+from rhodecode.lib.vcs import VCSError
 from rhodecode.model import BaseModel
 from rhodecode.model.db import Gist
 from rhodecode.model.repo import RepoModel
@@ -98,7 +99,11 @@ class GistModel(BaseModel):
         :param gist_access_id:
         """
         repo = Gist.get_by_access_id(gist_access_id)
-        commit = repo.scm_instance().get_commit(commit_id=revision)
+        vcs_repo = repo.scm_instance()
+        if not vcs_repo:
+            raise VCSError('Failed to load gist repository for {}'.format(repo))
+
+        commit = vcs_repo.get_commit(commit_id=revision)
         return commit, [n for n in commit.get_node('/')]
 
     def create(self, description, owner, gist_mapping,

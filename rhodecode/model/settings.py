@@ -25,13 +25,13 @@ from collections import namedtuple
 from functools import wraps
 import bleach
 
-from rhodecode.lib import caches
+from rhodecode.lib import rc_cache
 from rhodecode.lib.utils2 import (
     Optional, AttributeDict, safe_str, remove_prefix, str2bool)
 from rhodecode.lib.vcs.backends import base
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi, RhodeCodeSetting)
+    RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi, RhodeCodeSetting, CacheKey)
 from rhodecode.model.meta import Session
 
 
@@ -206,13 +206,15 @@ class SettingsModel(BaseModel):
         return res
 
     def invalidate_settings_cache(self):
-        namespace = 'rhodecode_settings'
-        cache_manager = caches.get_cache_manager('sql_cache_short', namespace)
-        caches.clear_cache_manager(cache_manager)
+        invalidation_namespace = CacheKey.SETTINGS_INVALIDATION_NAMESPACE
+        CacheKey.set_invalidate(invalidation_namespace)
 
     def get_all_settings(self, cache=False):
+        region = rc_cache.get_or_create_region('sql_cache_short')
+        invalidation_namespace = CacheKey.SETTINGS_INVALIDATION_NAMESPACE
 
-        def _compute():
+        @region.conditional_cache_on_arguments(condition=cache)
+        def _get_all_settings(name, key):
             q = self._get_settings_query()
             if not q:
                 raise Exception('Could not get application settings !')
@@ -223,20 +225,27 @@ class SettingsModel(BaseModel):
             }
             return settings
 
-        if cache:
-            log.debug('Fetching app settings using cache')
-            repo = self._get_repo(self.repo) if self.repo else None
-            namespace = 'rhodecode_settings'
-            cache_manager = caches.get_cache_manager(
-                'sql_cache_short', namespace)
-            _cache_key = (
-                "get_repo_{}_settings".format(repo.repo_id)
-                if repo else "get_app_settings")
+        repo = self._get_repo(self.repo) if self.repo else None
+        key = "settings_repo.{}".format(repo.repo_id) if repo else "settings_app"
 
-            return cache_manager.get(_cache_key, createfunc=_compute)
+        inv_context_manager = rc_cache.InvalidationContext(
+            uid='cache_settings', invalidation_namespace=invalidation_namespace)
+        with inv_context_manager as invalidation_context:
+            # check for stored invalidation signal, and maybe purge the cache
+            # before computing it again
+            if invalidation_context.should_invalidate():
+                # NOTE:(marcink) we flush the whole sql_cache_short region, because it
+                # reads different settings etc. It's little too much but those caches
+                # are anyway very short lived and it's a safest way.
+                region = rc_cache.get_or_create_region('sql_cache_short')
+                region.invalidate()
 
-        else:
-            return _compute()
+            result = _get_all_settings('rhodecode_settings', key)
+            log.debug(
+                'Fetching app settings for key: %s took: %.3fs', key,
+                inv_context_manager.compute_time)
+
+        return result
 
     def get_auth_settings(self):
         q = self._get_settings_query()

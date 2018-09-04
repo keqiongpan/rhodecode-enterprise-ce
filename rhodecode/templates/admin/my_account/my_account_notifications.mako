@@ -1,4 +1,5 @@
-<template is="dom-bind" id="notificationsPage">
+<dom-bind id="notificationsPage">
+<template>
 <iron-ajax id="toggleNotifications"
            method="post"
            url="${h.route_path('my_account_notifications_toggle_visibility')}"
@@ -60,6 +61,10 @@
 
 </div>
 
+
+</template>
+</dom-bind>
+
 <script type="text/javascript">
     /** because im not creating a custom element for this page
      * we need to push the function onto the dom-template
@@ -81,7 +86,7 @@
         var levels = ['info', 'error', 'warning', 'success'];
         var level = levels[Math.floor(Math.random()*levels.length)];
         function getRandomArbitrary(min, max) {
-          return parseInt(Math.random() * (max - min) + min);
+            return parseInt(Math.random() * (max - min) + min);
         }
         function shuffle(a) {
             var j, x, i;
@@ -126,5 +131,3 @@
     };
 
 </script>
-
-</template>

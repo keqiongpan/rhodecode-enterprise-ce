@@ -96,6 +96,8 @@ var _TM = {
     'specify commit': 'Spécifier un commit',
     'truncated result': 'truncated result',
     'truncated results': 'truncated results',
+    '{0} ({1} inactive) of {2} user groups ({3} inactive)': '{0} ({1} inactive) of {2} user groups ({3} inactive)',
+    '{0} ({1} inactive) of {2} users ({3} inactive)': '{0} ({1} inactive) of {2} users ({3} inactive)',
     '{0} active out of {1} users': '{0} active out of {1} users',
     '{0} ago': '{0} ago',
     '{0} and {1}': '{0} and {1}',
@@ -111,6 +113,8 @@ var _TM = {
     '{0} out of {1} users': '{0} out of {1} users',
     '{0} results are available, use up and down arrow keys to navigate.': '{0} results are available, use up and down arrow keys to navigate.',
     '{0} sec': '{0} sec',
+    '{0} user groups ({1} inactive)': '{0} user groups ({1} inactive)',
+    '{0} users ({1} inactive)': '{0} users ({1} inactive)',
     '{0} year': '{0} year',
     '{0} years': '{0} années',
     '{0}, {1} ago': '{0}, {1} ago'

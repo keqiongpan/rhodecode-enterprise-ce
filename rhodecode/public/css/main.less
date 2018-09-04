@@ -462,7 +462,7 @@ ul.auth_plugins {
 
     .radios {
         position: relative;
-        width: 405px;
+        width: 505px;
     }
 }
 
@@ -1417,9 +1417,6 @@ table.integrations {
 .pr-details-content {
     margin-top: @textmargin;
     margin-bottom: @textmargin;
-}
-.pr-description {
-    white-space:pre-wrap;
 }
 
 .pr-reviewer-rules {
@@ -2404,4 +2401,66 @@ input[type=radio] {
 .toggle-ajax-spinner{
   height: 16px;
   width: 16px;
+}
+
+
+.markup-form .clearfix {
+    .border-radius(@border-radius);
+    margin: 0px;
+}
+
+.markup-form-area {
+    padding: 8px 12px;
+    border: 1px solid @grey4;
+    .border-radius(@border-radius);
+}
+
+.markup-form-area-header .nav-links {
+    display: flex;
+    flex-flow: row wrap;
+    -webkit-flex-flow: row wrap;
+    width: 100%;
+}
+
+.markup-form-area-footer {
+    display: flex;
+}
+
+.markup-form-area-footer .toolbar {
+
+}
+
+// markup Form
+div.markup-form {
+    margin-top: 20px;
+}
+
+.markup-form strong {
+    display: block;
+    margin-bottom: 15px;
+}
+
+.markup-form textarea {
+    width: 100%;
+    height: 100px;
+    font-family: 'Monaco', 'Courier', 'Courier New', monospace;
+}
+
+form.markup-form {
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+.markup-form .comment-block-ta,
+.markup-form .preview-box {
+    .border-radius(@border-radius);
+    .box-sizing(border-box);
+    background-color: white;
+}
+
+.markup-form .preview-box.unloaded {
+    height: 50px;
+    text-align: center;
+    padding: 20px;
+    background-color: white;
 }

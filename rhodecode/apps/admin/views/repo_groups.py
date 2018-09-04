@@ -27,6 +27,7 @@ from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
 
+from rhodecode import events
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 
 from rhodecode.lib.ext_json import json
@@ -200,6 +201,7 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
                     % repo_group_name, category='error')
             raise HTTPFound(h.route_path('home'))
 
+        events.trigger(events.UserPermissionsChange([self._rhodecode_user.user_id]))
         raise HTTPFound(
             h.route_path('repo_group_home',
                          repo_group_name=form_result['group_name_full']))

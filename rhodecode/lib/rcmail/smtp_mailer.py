@@ -24,8 +24,9 @@ Simple smtp mailer used in RhodeCode
 
 import time
 import logging
-from socket import sslerror
+import socket
 from email.utils import formatdate
+
 from rhodecode.lib.rcmail.message import Message
 from rhodecode.lib.rcmail.utils import DNS_NAME
 
@@ -33,7 +34,8 @@ log = logging.getLogger(__name__)
 
 
 class SmtpMailer(object):
-    """SMTP mailer class
+    """
+    SMTP mailer class
 
     mailer = SmtpMailer(mail_from, user, passwd, mail_server, smtp_auth
                         mail_port, ssl, tls)
@@ -59,7 +61,7 @@ class SmtpMailer(object):
         self.auth = smtp_auth
 
     def _get_smptlib(self):
-        #patch the output
+        # patch the output
         import smtplib
 
         class StderrLogger(object):
@@ -83,7 +85,7 @@ class SmtpMailer(object):
                       recipients_separator=", ", extra_headers=headers)
         raw_msg = msg.to_message()
 
-        #patched smtplib without stderr
+        # patched smtplib without stderr
         smtplib = self._get_smptlib()
         if self.ssl:
             smtp_serv = smtplib.SMTP_SSL(self.mail_server, self.mail_port,
@@ -109,10 +111,10 @@ class SmtpMailer(object):
             smtp_serv.login(self.user, self.passwd)
 
         smtp_serv.sendmail(msg.sender, msg.send_to, raw_msg.as_string())
-        logging.info('MAIL SEND TO: %s' % recipients)
+        log.info('email sent to: %s' % recipients)
 
         try:
             smtp_serv.quit()
-        except sslerror:
+        except socket.sslerror:
             # sslerror is raised in tls connections on closing sometimes
             smtp_serv.close()

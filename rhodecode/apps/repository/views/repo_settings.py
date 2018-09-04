@@ -24,13 +24,14 @@ import deform
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
+from rhodecode import events
 from rhodecode.apps._base import RepoAppView
 from rhodecode.forms import RcForm
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
-from rhodecode.model.db import RepositoryField, RepoGroup, Repository
+from rhodecode.model.db import RepositoryField, RepoGroup, Repository, User
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import RepoGroupList, ScmModel
@@ -71,8 +72,6 @@ class RepoSettingsView(RepoAppView):
         c.personal_repo_group = c.auth_user.personal_repo_group
         c.repo_fields = RepositoryField.query()\
             .filter(RepositoryField.repository == self.db_repo).all()
-
-
         return c
 
     def _get_schema(self, c, old_values=None):
@@ -175,6 +174,13 @@ class RepoSettingsView(RepoAppView):
             log.exception("Exception during update of repository")
             h.flash(_('Error occurred during update of repository {}').format(
                 old_repo_name), category='error')
+
+        name_changed = old_repo_name != new_repo_name
+        if name_changed:
+            owner = User.get_by_username(schema_data['repo_owner'])
+            owner_id = owner.user_id if owner else self._rhodecode_user.user_id
+            events.trigger(events.UserPermissionsChange([
+                self._rhodecode_user.user_id, owner_id]))
 
         raise HTTPFound(
             h.route_path('edit_repo', repo_name=new_repo_name))

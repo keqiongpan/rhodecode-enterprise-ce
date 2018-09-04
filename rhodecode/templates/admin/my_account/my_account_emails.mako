@@ -47,8 +47,14 @@
           </table>
         </div>
 
+    % if c.user.extern_type != 'rhodecode':
+        <p>${_('Your user account details are managed by an external source. Details cannot be managed here.')}
+           <br/>${_('Source type')}: <strong>${c.user.extern_type}</strong>
+        </p>
+    % else:
         <div>
            ${c.form.render() | n}
         </div>
+    % endif
     </div>
 </div>

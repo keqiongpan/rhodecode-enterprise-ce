@@ -242,6 +242,7 @@ class RepoSettingsView(RepoAppView):
         _ = self.request.translate
         self.load_default_context()
         self.rhodecode_vcs_repo.install_hooks(force=True)
-        h.flash(_('installed hooks repository'), category='success')
+        h.flash(_('installed updated hooks into this repository'),
+                category='success')
         raise HTTPFound(
             h.route_path('edit_repo_advanced', repo_name=self.db_repo_name))

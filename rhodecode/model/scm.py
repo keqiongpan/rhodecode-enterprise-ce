@@ -38,12 +38,12 @@ from rhodecode.lib.vcs import get_backend
 from rhodecode.lib.vcs.exceptions import RepositoryError, NodeNotChangedError
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib.vcs.backends.base import EmptyCommit
-from rhodecode.lib import helpers as h
+from rhodecode.lib import helpers as h, rc_cache
 from rhodecode.lib.auth import (
     HasRepoPermissionAny, HasRepoGroupPermissionAny,
     HasUserGroupPermissionAny)
 from rhodecode.lib.exceptions import NonRelativePathError, IMCCommitError
-from rhodecode.lib import hooks_utils, caches
+from rhodecode.lib import hooks_utils
 from rhodecode.lib.utils import (
     get_filesystem_repos, make_db_config)
 from rhodecode.lib.utils2 import (safe_str, safe_unicode)
@@ -267,16 +267,22 @@ class ScmModel(BaseModel):
         :param repo_name: the repo_name for which caches should be marked
             invalid, or deleted
         :param delete: delete the entry keys instead of setting bool
-            flag on them
+            flag on them, and also purge caches used by the dogpile
         """
-        CacheKey.set_invalidate(repo_name, delete=delete)
         repo = Repository.get_by_repo_name(repo_name)
 
         if repo:
+            invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+                repo_id=repo.repo_id)
+            CacheKey.set_invalidate(invalidation_namespace, delete=delete)
+
+            repo_id = repo.repo_id
             config = repo._config
             config.set('extensions', 'largefiles', '')
             repo.update_commit_cache(config=config, cs_cache=None)
-            caches.clear_repo_caches(repo_name)
+            if delete:
+                cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
+                rc_cache.clear_cache_namespace('cache_repo', cache_namespace_uid)
 
     def toggle_following_repo(self, follow_repo_id, user_id):
 

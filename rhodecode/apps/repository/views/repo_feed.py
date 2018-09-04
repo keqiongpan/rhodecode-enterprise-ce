@@ -17,17 +17,16 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
 import pytz
 import logging
 
-from beaker.cache import cache_region
 from pyramid.view import view_config
 from pyramid.response import Response
 from webhelpers.feedgenerator import Rss201rev2Feed, Atom1Feed
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import audit_logger
+from rhodecode.lib import rc_cache
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator)
@@ -124,11 +123,23 @@ class RepoFeedView(RepoAppView):
         """
         self.load_default_context()
 
-        def _generate_feed():
+        cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
+            self.db_repo.repo_id, CacheKey.CACHE_TYPE_FEED)
+        invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+            repo_id=self.db_repo.repo_id)
+
+        region = rc_cache.get_or_create_region('cache_repo_longterm',
+                                               cache_namespace_uid)
+
+        condition = not self.path_filter.is_enabled
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                               condition=condition)
+        def generate_atom_feed(repo_id, _repo_name, _feed_type):
             feed = Atom1Feed(
-                title=self.title % self.db_repo_name,
-                link=h.route_url('repo_summary', repo_name=self.db_repo_name),
-                description=self.description % self.db_repo_name,
+                title=self.title % _repo_name,
+                link=h.route_url('repo_summary', repo_name=_repo_name),
+                description=self.description % _repo_name,
                 language=self.language,
                 ttl=self.ttl
             )
@@ -136,30 +147,29 @@ class RepoFeedView(RepoAppView):
             for commit in reversed(self._get_commits()):
                 date = self._set_timezone(commit.date)
                 feed.add_item(
-                    unique_id=self.uid(self.db_repo.repo_id, commit.raw_id),
+                    unique_id=self.uid(repo_id, commit.raw_id),
                     title=self._get_title(commit),
                     author_name=commit.author,
                     description=self._get_description(commit),
                     link=h.route_url(
-                        'repo_commit', repo_name=self.db_repo_name,
+                        'repo_commit', repo_name=_repo_name,
                         commit_id=commit.raw_id),
                     pubdate=date,)
 
             return feed.mime_type, feed.writeString('utf-8')
 
-        @cache_region('long_term')
-        def _generate_feed_and_cache(cache_key):
-            return _generate_feed()
+        inv_context_manager = rc_cache.InvalidationContext(
+            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
+        with inv_context_manager as invalidation_context:
+            args = (self.db_repo.repo_id, self.db_repo.repo_name, 'atom',)
+            # re-compute and store cache if we get invalidate signal
+            if invalidation_context.should_invalidate():
+                mime_type, feed = generate_atom_feed.refresh(*args)
+            else:
+                mime_type, feed = generate_atom_feed(*args)
 
-        if self.path_filter.is_enabled:
-            mime_type, feed = _generate_feed()
-        else:
-            invalidator_context = CacheKey.repo_context_cache(
-                _generate_feed_and_cache, self.db_repo_name,
-                CacheKey.CACHE_TYPE_ATOM)
-            with invalidator_context as context:
-                context.invalidate()
-                mime_type, feed = context.compute()
+            log.debug('Repo ATOM feed computed in %.3fs',
+                      inv_context_manager.compute_time)
 
         response = Response(feed)
         response.content_type = mime_type
@@ -177,11 +187,22 @@ class RepoFeedView(RepoAppView):
         """
         self.load_default_context()
 
-        def _generate_feed():
+        cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
+            self.db_repo.repo_id, CacheKey.CACHE_TYPE_FEED)
+        invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+            repo_id=self.db_repo.repo_id)
+        region = rc_cache.get_or_create_region('cache_repo_longterm',
+                                               cache_namespace_uid)
+
+        condition = not self.path_filter.is_enabled
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                               condition=condition)
+        def generate_rss_feed(repo_id, _repo_name, _feed_type):
             feed = Rss201rev2Feed(
-                title=self.title % self.db_repo_name,
-                link=h.route_url('repo_summary', repo_name=self.db_repo_name),
-                description=self.description % self.db_repo_name,
+                title=self.title % _repo_name,
+                link=h.route_url('repo_summary', repo_name=_repo_name),
+                description=self.description % _repo_name,
                 language=self.language,
                 ttl=self.ttl
             )
@@ -189,31 +210,28 @@ class RepoFeedView(RepoAppView):
             for commit in reversed(self._get_commits()):
                 date = self._set_timezone(commit.date)
                 feed.add_item(
-                    unique_id=self.uid(self.db_repo.repo_id, commit.raw_id),
+                    unique_id=self.uid(repo_id, commit.raw_id),
                     title=self._get_title(commit),
                     author_name=commit.author,
                     description=self._get_description(commit),
                     link=h.route_url(
-                        'repo_commit', repo_name=self.db_repo_name,
+                        'repo_commit', repo_name=_repo_name,
                         commit_id=commit.raw_id),
                     pubdate=date,)
 
             return feed.mime_type, feed.writeString('utf-8')
 
-        @cache_region('long_term')
-        def _generate_feed_and_cache(cache_key):
-            return _generate_feed()
-
-        if self.path_filter.is_enabled:
-            mime_type, feed = _generate_feed()
-        else:
-            invalidator_context = CacheKey.repo_context_cache(
-                _generate_feed_and_cache, self.db_repo_name,
-                CacheKey.CACHE_TYPE_RSS)
-
-            with invalidator_context as context:
-                context.invalidate()
-                mime_type, feed = context.compute()
+        inv_context_manager = rc_cache.InvalidationContext(
+            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
+        with inv_context_manager as invalidation_context:
+            args = (self.db_repo.repo_id, self.db_repo.repo_name, 'rss',)
+            # re-compute and store cache if we get invalidate signal
+            if invalidation_context.should_invalidate():
+                mime_type, feed = generate_rss_feed.refresh(*args)
+            else:
+                mime_type, feed = generate_rss_feed(*args)
+            log.debug(
+                'Repo RSS feed computed in %.3fs', inv_context_manager.compute_time)
 
         response = Response(feed)
         response.content_type = mime_type

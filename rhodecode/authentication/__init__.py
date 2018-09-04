@@ -37,6 +37,7 @@ log = logging.getLogger(__name__)
 # Plugin ID prefixes to distinct between normal and legacy plugins.
 plugin_prefix = 'egg:'
 legacy_plugin_prefix = 'py:'
+plugin_default_auth_ttl = 30
 
 
 # TODO: Currently this is only used to discover the authentication plugins.

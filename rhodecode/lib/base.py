@@ -42,7 +42,7 @@ from rhodecode.lib.auth import AuthUser, CookieStoreWrapper
 from rhodecode.lib.exceptions import UserCreationError
 from rhodecode.lib.utils import (password_changed, get_enabled_hook_classes)
 from rhodecode.lib.utils2 import (
-    str2bool, safe_unicode, AttributeDict, safe_int, md5, aslist, safe_str)
+    str2bool, safe_unicode, AttributeDict, safe_int, sha1, aslist, safe_str)
 from rhodecode.model.db import Repository, User, ChangesetComment
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
@@ -153,7 +153,7 @@ def get_user_agent(environ):
 
 def vcs_operation_context(
         environ, repo_name, username, action, scm, check_locking=True,
-        is_shadow_repo=False):
+        is_shadow_repo=False, check_branch_perms=False, detect_force_push=False):
     """
     Generate the context for a vcs operation, e.g. push or pull.
 
@@ -179,7 +179,9 @@ def vcs_operation_context(
     settings_model = VcsSettingsModel(repo=repo_name)
     ui_settings = settings_model.get_ui_settings()
 
-    extras = {
+    # NOTE(marcink): This should be also in sync with
+    # rhodecode/apps/ssh_support/lib/backends/base.py:update_enviroment scm_data
+    scm_data = {
         'ip': get_ip_addr(environ),
         'username': username,
         'user_id': user_id,
@@ -193,8 +195,10 @@ def vcs_operation_context(
         'user_agent': get_user_agent(environ),
         'hooks': get_enabled_hook_classes(ui_settings),
         'is_shadow_repo': is_shadow_repo,
+        'detect_force_push': detect_force_push,
+        'check_branch_perms': check_branch_perms,
     }
-    return extras
+    return scm_data
 
 
 class BasicAuth(AuthBasicAuthenticator):
@@ -256,7 +260,7 @@ class BasicAuth(AuthBasicAuthenticator):
 
 
 def calculate_version_hash(config):
-    return md5(
+    return sha1(
         config.get('beaker.session.secret', '') +
         rhodecode.__version__)[:8]
 
@@ -504,7 +508,7 @@ def bootstrap_config(request):
     # allow pyramid lookup in testing
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
-    config.include('rhodecode.lib.caches')
+    config.include('rhodecode.lib.rc_cache')
 
     add_events_routes(config)
 

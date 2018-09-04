@@ -85,21 +85,21 @@
 
             <div class="field">
                 <div class="label label-checkbox">
-                    <label for="private">${_('Private')}:</label>
-                </div>
-                <div class="checkboxes">
-                    ${h.checkbox('private',value="True")}
-                    <span class="help-block">${_('Private repositories are only visible to people explicitly added as collaborators.')}</span>
-                </div>
-            </div>
-
-            <div class="field">
-                <div class="label label-checkbox">
                     <label for="private">${_('Copy permissions')}:</label>
                 </div>
                 <div class="checkboxes">
                     ${h.checkbox('copy_permissions',value="True", checked="checked")}
                     <span class="help-block">${_('Copy permissions from forked repository')}</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="label label-checkbox">
+                    <label for="private">${_('Private')}:</label>
+                </div>
+                <div class="checkboxes">
+                    ${h.checkbox('private',value="True")}
+                    <span class="help-block">${_('Private repositories are only visible to people explicitly added as collaborators.')}</span>
                 </div>
             </div>
 

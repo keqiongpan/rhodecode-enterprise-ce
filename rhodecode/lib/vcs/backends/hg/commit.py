@@ -56,7 +56,7 @@ class MercurialCommit(base.BaseCommit):
         self._remote = repository._remote
 
         self.raw_id = raw_id
-        self.idx = repository._sanitize_commit_idx(idx)
+        self.idx = idx
 
         self._set_bulk_properties(pre_load)
 

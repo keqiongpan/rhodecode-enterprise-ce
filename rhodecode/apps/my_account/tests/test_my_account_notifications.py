@@ -155,6 +155,7 @@ class TestNotificationsController(TestController):
         notification = NotificationModel().create(
             created_by=cur_user, notification_subject=subject,
             notification_body=notif_body, recipients=[cur_user, u1, u2])
+        Session().commit()
 
         response = self.app.get(
             route_path('notifications_show',

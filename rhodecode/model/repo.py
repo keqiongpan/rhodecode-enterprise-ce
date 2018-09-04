@@ -92,13 +92,10 @@ class RepoModel(BaseModel):
         settings_model = VcsSettingsModel(sa=self.sa)
         return settings_model.get_repos_location()
 
-    def get(self, repo_id, cache=False):
+    def get(self, repo_id):
         repo = self.sa.query(Repository) \
             .filter(Repository.repo_id == repo_id)
 
-        if cache:
-            repo = repo.options(
-                FromCache("sql_cache_short", "get_repo_%s" % repo_id))
         return repo.scalar()
 
     def get_repo(self, repository):
@@ -547,14 +544,16 @@ class RepoModel(BaseModel):
                 # this updates also current one if found
                 self.grant_user_permission(
                     repo=repo, user=member_id, perm=perm)
-            else:  # set for user group
+            elif member_type == 'user_group':
                 # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
                 if not check_perms or HasUserGroupPermissionAny(
                         *req_perms)(member_name, user=cur_user):
                     self.grant_user_group_permission(
                         repo=repo, group_name=member_id, perm=perm)
-
+            else:
+                raise ValueError("member_type must be 'user' or 'user_group' "
+                                 "got {} instead".format(member_type))
             changes['updated'].append({'type': member_type, 'id': member_id,
                                        'name': member_name, 'new_perm': perm})
 
@@ -565,13 +564,17 @@ class RepoModel(BaseModel):
                 member_name = User.get(member_id).username
                 self.grant_user_permission(
                     repo=repo, user=member_id, perm=perm)
-            else:  # set for user group
+            elif member_type == 'user_group':
                 # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
                 if not check_perms or HasUserGroupPermissionAny(
                         *req_perms)(member_name, user=cur_user):
                     self.grant_user_group_permission(
                         repo=repo, group_name=member_id, perm=perm)
+            else:
+                raise ValueError("member_type must be 'user' or 'user_group' "
+                                 "got {} instead".format(member_type))
+
             changes['added'].append({'type': member_type, 'id': member_id,
                                      'name': member_name, 'new_perm': perm})
         # delete permissions
@@ -580,13 +583,16 @@ class RepoModel(BaseModel):
             if member_type == 'user':
                 member_name = User.get(member_id).username
                 self.revoke_user_permission(repo=repo, user=member_id)
-            else:  # set for user group
+            elif member_type == 'user_group':
                 # check if we have permissions to alter this usergroup
                 member_name = UserGroup.get(member_id).users_group_name
                 if not check_perms or HasUserGroupPermissionAny(
                         *req_perms)(member_name, user=cur_user):
                     self.revoke_user_group_permission(
                         repo=repo, group_name=member_id)
+            else:
+                raise ValueError("member_type must be 'user' or 'user_group' "
+                                 "got {} instead".format(member_type))
 
             changes['deleted'].append({'type': member_type, 'id': member_id,
                                        'name': member_name, 'new_perm': perm})

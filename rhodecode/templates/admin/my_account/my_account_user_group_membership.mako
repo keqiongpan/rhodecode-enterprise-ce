@@ -38,7 +38,7 @@ $(document).ready(function() {
          { data: {"_": "group_name",
                   "sort": "group_name"}, title: "${_('Name')}", className: "td-componentname," ,
             render: function (data,type,full,meta)
-                    {return '<div><i class="icon-group" title="User group">'+data+'</i></div>'}},
+                    {return '<div><i class="icon-user-group" title="User group">'+data+'</i></div>'}},
 
          { data: {"_": "group_description",
                   "sort": "group_description"}, title: "${_('Description')}", className: "td-description" },

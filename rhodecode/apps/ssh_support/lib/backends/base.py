@@ -70,6 +70,11 @@ class VcsServer(object):
             'permission for %s on %s are: %s',
             self.user, self.repo_name, permission)
 
+        if not permission:
+            log.error('user `%s` permissions to repo:%s are empty. Forbidding access.',
+                      self.user, self.repo_name)
+            return -2
+
         if action == 'pull':
             if permission in self.read_perms:
                 log.info(
@@ -83,8 +88,8 @@ class VcsServer(object):
                     self.user, self.repo_name)
                 return 0
 
-        log.error('Cannot properly fetch or allow user %s permissions. '
-                  'Return value is: %s, req action: %s',
+        log.error('Cannot properly fetch or verify user `%s` permissions. '
+                  'Permissions: %s, vcs action: %s',
                   self.user, permission, action)
         return -2
 
@@ -101,11 +106,15 @@ class VcsServer(object):
             'make_lock': None,
             'locked_by': [None, None],
             'server_url': None,
-            'is_shadow_repo': False,
-            'hooks_module': 'rhodecode.lib.hooks_daemon',
+            'user_agent': 'ssh-user-agent',
             'hooks': ['push', 'pull'],
+            'hooks_module': 'rhodecode.lib.hooks_daemon',
+            'is_shadow_repo': False,
+            'detect_force_push': False,
+            'check_branch_perms': False,
+
             'SSH': True,
-            'SSH_PERMISSIONS': self.user_permissions.get(self.repo_name)
+            'SSH_PERMISSIONS': self.user_permissions.get(self.repo_name),
         }
         if extras:
             scm_data.update(extras)
@@ -134,11 +143,14 @@ class VcsServer(object):
 
         return exit_code, action == "push"
 
-    def run(self):
+    def run(self, tunnel_extras=None):
+        tunnel_extras = tunnel_extras or {}
         extras = {}
+        extras.update(tunnel_extras)
 
         callback_daemon, extras = prepare_callback_daemon(
             extras, protocol=vcs_settings.HOOKS_PROTOCOL,
+            host=vcs_settings.HOOKS_HOST,
             use_direct_calls=False)
 
         with callback_daemon:

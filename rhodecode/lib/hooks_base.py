@@ -32,7 +32,8 @@ from rhodecode import events
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.utils2 import safe_str
-from rhodecode.lib.exceptions import HTTPLockedRC, UserCreationError
+from rhodecode.lib.exceptions import (
+    HTTPLockedRC, HTTPBranchProtected, UserCreationError)
 from rhodecode.model.db import Repository, User
 
 log = logging.getLogger(__name__)
@@ -94,9 +95,9 @@ def pre_push(extras):
     It bans pushing when the repository is locked.
     """
 
-    usr = User.get_by_username(extras.username)
+    user = User.get_by_username(extras.username)
     output = ''
-    if extras.locked_by[0] and usr.user_id != int(extras.locked_by[0]):
+    if extras.locked_by[0] and user.user_id != int(extras.locked_by[0]):
         locked_by = User.get(extras.locked_by[0]).username
         reason = extras.locked_by[2]
         # this exception is interpreted in git/hg middlewares and based
@@ -109,9 +110,48 @@ def pre_push(extras):
         else:
             raise _http_ret
 
-    # Propagate to external components. This is done after checking the
-    # lock, for consistent behavior.
     if not is_shadow_repo(extras):
+        if extras.commit_ids and extras.check_branch_perms:
+
+            auth_user = user.AuthUser()
+            repo = Repository.get_by_repo_name(extras.repository)
+            affected_branches = []
+            if repo.repo_type == 'hg':
+                for entry in extras.commit_ids:
+                    if entry['type'] == 'branch':
+                        is_forced = bool(entry['multiple_heads'])
+                        affected_branches.append([entry['name'], is_forced])
+            elif repo.repo_type == 'git':
+                for entry in extras.commit_ids:
+                    if entry['type'] == 'heads':
+                        is_forced = bool(entry['pruned_sha'])
+                        affected_branches.append([entry['name'], is_forced])
+
+            for branch_name, is_forced in affected_branches:
+
+                rule, branch_perm = auth_user.get_rule_and_branch_permission(
+                    extras.repository, branch_name)
+                if not branch_perm:
+                    # no branch permission found for this branch, just keep checking
+                    continue
+
+                if branch_perm == 'branch.push_force':
+                    continue
+                elif branch_perm == 'branch.push' and is_forced is False:
+                    continue
+                elif branch_perm == 'branch.push' and is_forced is True:
+                    halt_message = 'Branch `{}` changes rejected by rule {}. ' \
+                                   'FORCE PUSH FORBIDDEN.'.format(branch_name, rule)
+                else:
+                    halt_message = 'Branch `{}` changes rejected by rule {}.'.format(
+                        branch_name, rule)
+
+                if halt_message:
+                    _http_ret = HTTPBranchProtected(halt_message)
+                    raise _http_ret
+
+        # Propagate to external components. This is done after checking the
+        # lock, for consistent behavior.
         pre_push_extension(repo_store_path=Repository.base_path(), **extras)
         events.trigger(events.RepoPrePushEvent(
             repo_name=extras.repository, extras=extras))

@@ -89,7 +89,7 @@ class RepoChangelogView(RepoAppView):
             data = dict(
                 raw_id=commit.raw_id,
                 idx=commit.idx,
-                branch=commit.branch,
+                branch=h.escape(commit.branch),
             )
             if parents:
                 data['parents'] = [

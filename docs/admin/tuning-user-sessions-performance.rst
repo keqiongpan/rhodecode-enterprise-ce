@@ -12,7 +12,7 @@ if there are lots of session files.
 
 Therefore, in a large scale deployment, to give better performance,
 scalability, and maintainability we recommend switching from file-based
-sessions to database-based user sessions or memcached sessions.
+sessions to database-based user sessions or Redis based sessions.
 
 To switch to database-based user sessions uncomment the following section in
 your :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file.
@@ -41,14 +41,20 @@ and make sure you comment out the file based sessions.
       #beaker.session.data_dir = %(here)s/data/sessions/data
 
 
-To switch to memcached-based user sessions uncomment the following section in
+The `table_name` will be automatically created on specified database if it isn't yet existing.
+Database specified in the `beaker.session.sa.url` can be the same that RhodeCode
+uses, or if required it can be a different one. We recommend to use the same database.
+
+
+
+To switch to reds-based user sessions uncomment the following section in
 your :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file.
 
 .. code-block:: ini
 
-      ## memcached sessions
-      beaker.session.type = ext:memcached
-      beaker.session.url = localhost:11211
+      ## redis sessions
+      beaker.session.type = ext:redis
+      beaker.session.url = localhost:6379
 
 
 and make sure you comment out the file based sessions.

@@ -20,18 +20,20 @@
 
 import re
 import logging
+import collections
 
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
-    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator)
+    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator,
+    CSRFRequired)
 from rhodecode.lib.index import searcher_from_config
-from rhodecode.lib.utils2 import safe_unicode, str2bool
+from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.ext_json import json
 from rhodecode.model.db import (
-    func, or_, in_filter_generator, Repository, RepoGroup)
+    func, or_, in_filter_generator, Repository, RepoGroup, User, UserGroup)
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import RepoGroupList, RepoList
@@ -104,6 +106,7 @@ class HomeView(BaseAppView):
         return {'suggestions': _user_groups}
 
     def _get_repo_list(self, name_contains=None, repo_type=None, limit=20):
+        org_query = name_contains
         allowed_ids = self._rhodecode_user.repo_acl_ids(
             ['repository.read', 'repository.write', 'repository.admin'],
             cache=False, name_filter=name_contains) or [-1]
@@ -125,20 +128,24 @@ class HomeView(BaseAppView):
                 Repository.repo_name.ilike(ilike_expression))
             query = query.limit(limit)
 
-        acl_repo_iter = query
+        acl_iter = query
 
         return [
             {
                 'id': obj.repo_name,
+                'value': org_query,
+                'value_display': obj.repo_name,
                 'text': obj.repo_name,
                 'type': 'repo',
-                'obj': {'repo_type': obj.repo_type, 'private': obj.private,
-                        'repo_id': obj.repo_id},
+                'repo_id': obj.repo_id,
+                'repo_type': obj.repo_type,
+                'private': obj.private,
                 'url': h.route_path('repo_summary', repo_name=obj.repo_name)
             }
-            for obj in acl_repo_iter]
+            for obj in acl_iter]
 
     def _get_repo_group_list(self, name_contains=None, limit=20):
+        org_query = name_contains
         allowed_ids = self._rhodecode_user.repo_group_acl_ids(
             ['group.read', 'group.write', 'group.admin'],
             cache=False, name_filter=name_contains) or [-1]
@@ -157,20 +164,89 @@ class HomeView(BaseAppView):
                 RepoGroup.group_name.ilike(ilike_expression))
             query = query.limit(limit)
 
-        acl_repo_iter = query
+        acl_iter = query
 
         return [
             {
                 'id': obj.group_name,
-                'text': obj.group_name,
-                'type': 'group',
-                'obj': {},
+                'value': org_query,
+                'value_display': obj.group_name,
+                'type': 'repo_group',
                 'url': h.route_path(
                     'repo_group_home', repo_group_name=obj.group_name)
             }
-            for obj in acl_repo_iter]
+            for obj in acl_iter]
 
-    def _get_hash_commit_list(self, auth_user, query=None):
+    def _get_user_list(self, name_contains=None, limit=20):
+        org_query = name_contains
+        if not name_contains:
+            return []
+
+        name_contains = re.compile('(?:user:)(.+)').findall(name_contains)
+        if len(name_contains) != 1:
+            return []
+        name_contains = name_contains[0]
+
+        query = User.query()\
+            .order_by(func.length(User.username))\
+            .order_by(User.username) \
+            .filter(User.username != User.DEFAULT_USER)
+
+        if name_contains:
+            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
+            query = query.filter(
+                User.username.ilike(ilike_expression))
+            query = query.limit(limit)
+
+        acl_iter = query
+
+        return [
+            {
+                'id': obj.user_id,
+                'value': org_query,
+                'value_display': obj.username,
+                'type': 'user',
+                'icon_link': h.gravatar_url(obj.email, 30),
+                'url': h.route_path(
+                    'user_profile', username=obj.username)
+            }
+            for obj in acl_iter]
+
+    def _get_user_groups_list(self, name_contains=None, limit=20):
+        org_query = name_contains
+        if not name_contains:
+            return []
+
+        name_contains = re.compile('(?:user_group:)(.+)').findall(name_contains)
+        if len(name_contains) != 1:
+            return []
+        name_contains = name_contains[0]
+
+        query = UserGroup.query()\
+            .order_by(func.length(UserGroup.users_group_name))\
+            .order_by(UserGroup.users_group_name)
+
+        if name_contains:
+            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
+            query = query.filter(
+                UserGroup.users_group_name.ilike(ilike_expression))
+            query = query.limit(limit)
+
+        acl_iter = query
+
+        return [
+            {
+                'id': obj.users_group_id,
+                'value': org_query,
+                'value_display': obj.users_group_name,
+                'type': 'user_group',
+                'url': h.route_path(
+                    'user_group_profile', user_group_name=obj.users_group_name)
+            }
+            for obj in acl_iter]
+
+    def _get_hash_commit_list(self, auth_user, query):
+        org_query = query
         if not query or len(query) < 3:
             return []
 
@@ -178,20 +254,21 @@ class HomeView(BaseAppView):
 
         if len(commit_hashes) != 1:
             return []
-
-        commit_hash_prefix = commit_hashes[0]
+        commit_hash = commit_hashes[0]
 
         searcher = searcher_from_config(self.request.registry.settings)
         result = searcher.search(
-            'commit_id:%s*' % commit_hash_prefix, 'commit', auth_user,
+            'commit_id:%s*' % commit_hash, 'commit', auth_user,
             raise_on_exc=False)
 
         return [
             {
                 'id': entry['commit_id'],
-                'text': entry['commit_id'],
+                'value': org_query,
+                'value_display': 'repo `{}` commit: {}'.format(
+                    entry['repository'], entry['commit_id']),
                 'type': 'commit',
-                'obj': {'repo': entry['repository']},
+                'repo': entry['repository'],
                 'url': h.route_path(
                     'repo_commit',
                     repo_name=entry['repository'], commit_id=entry['commit_id'])
@@ -235,41 +312,67 @@ class HomeView(BaseAppView):
         _ = self.request.translate
 
         query = self.request.GET.get('query')
-        log.debug('generating goto switcher list, query %s', query)
+        log.debug('generating main filter data, query %s', query)
 
+        default_search_val = u'Full text search for: `{}`'.format(query)
         res = []
+        if not query:
+            return {'suggestions': res}
+
+        res.append({
+            'id': -1,
+            'value': query,
+            'value_display': default_search_val,
+            'type': 'search',
+            'url': h.route_path(
+                'search', _query={'q': query})
+        })
+        repo_group_id = safe_int(self.request.GET.get('repo_group_id'))
+        if repo_group_id:
+            repo_group = RepoGroup.get(repo_group_id)
+            composed_hint = '{}/{}'.format(repo_group.group_name, query)
+            show_hint = not query.startswith(repo_group.group_name)
+            if repo_group and show_hint:
+                hint = u'Group search: `{}`'.format(composed_hint)
+                res.append({
+                    'id': -1,
+                    'value': composed_hint,
+                    'value_display': hint,
+                    'type': 'hint',
+                    'url': ""
+                })
+
         repo_groups = self._get_repo_group_list(query)
-        if repo_groups:
-            res.append({
-                'text': _('Groups'),
-                'children': repo_groups
-            })
+        for serialized_repo_group in repo_groups:
+            res.append(serialized_repo_group)
 
         repos = self._get_repo_list(query)
-        if repos:
-            res.append({
-                'text': _('Repositories'),
-                'children': repos
-            })
+        for serialized_repo in repos:
+            res.append(serialized_repo)
+
+        # TODO(marcink): permissions for that ?
+        allowed_user_search = self._rhodecode_user.username != User.DEFAULT_USER
+        if allowed_user_search:
+            users = self._get_user_list(query)
+            for serialized_user in users:
+                res.append(serialized_user)
+
+            user_groups = self._get_user_groups_list(query)
+            for serialized_user_group in user_groups:
+                res.append(serialized_user_group)
 
         commits = self._get_hash_commit_list(c.auth_user, query)
         if commits:
-            unique_repos = {}
+            unique_repos = collections.OrderedDict()
             for commit in commits:
-                unique_repos.setdefault(commit['obj']['repo'], []
-                    ).append(commit)
+                repo_name = commit['repo']
+                unique_repos.setdefault(repo_name, []).append(commit)
 
-            for repo in unique_repos:
-                res.append({
-                    'text': _('Commits in %(repo)s') % {'repo': repo},
-                    'children': unique_repos[repo]
-                })
+            for repo, commits in unique_repos.items():
+                for commit in commits:
+                    res.append(commit)
 
-        data = {
-            'more': False,
-            'results': res
-        }
-        return data
+        return {'suggestions': res}
 
     def _get_groups_and_repos(self, repo_group_id=None):
         # repo groups groups
@@ -323,3 +426,21 @@ class HomeView(BaseAppView):
         c.repo_groups_data = json.dumps(repo_group_data)
 
         return self._get_template_context(c)
+
+    @LoginRequired()
+    @CSRFRequired()
+    @view_config(
+        route_name='markup_preview', request_method='POST',
+        renderer='string', xhr=True)
+    def markup_preview(self):
+        # Technically a CSRF token is not needed as no state changes with this
+        # call. However, as this is a POST is better to have it, so automated
+        # tools don't flag it as potential CSRF.
+        # Post is required because the payload could be bigger than the maximum
+        # allowed by GET.
+
+        text = self.request.POST.get('text')
+        renderer = self.request.POST.get('renderer') or 'rst'
+        if text:
+            return h.render(text, renderer=renderer, mentions=True)
+        return ''

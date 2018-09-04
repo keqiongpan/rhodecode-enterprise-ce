@@ -30,10 +30,12 @@ import pytest
 
 from rhodecode.tests import no_newline_id_generator
 from rhodecode.tests.utils import run_test_concurrently
-from rhodecode.lib.helpers import InitialsGravatar
 
+from rhodecode.lib import rc_cache
+from rhodecode.lib.helpers import InitialsGravatar
 from rhodecode.lib.utils2 import AttributeDict
-from rhodecode.model.db import Repository
+
+from rhodecode.model.db import Repository, CacheKey
 
 
 def _urls_for_proto(proto):
@@ -558,87 +560,128 @@ def test_get_repo_by_id(test, expected):
     assert _test == expected
 
 
-@pytest.mark.parametrize("test_repo_name, repo_type", [
-  ("test_repo_1", None),
-  ("repo_group/foobar", None),
-  ("test_non_asci_ąćę", None),
-  (u"test_non_asci_unicode_ąćę", None),
-])
-def test_invalidation_context(baseapp, test_repo_name, repo_type):
-    from beaker.cache import cache_region
-    from rhodecode.lib import caches
-    from rhodecode.model.db import CacheKey
+def test_invalidation_context(baseapp):
+    repo_id = 999
 
-    @cache_region('long_term')
+    cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
+        repo_id, CacheKey.CACHE_TYPE_README)
+    invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+        repo_id=repo_id)
+    region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
+
+    calls = [1, 2]
+
+    @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
     def _dummy_func(cache_key):
-        return 'result'
+        val = calls.pop(0)
+        return 'result:{}'.format(val)
 
-    invalidator_context = CacheKey.repo_context_cache(
-        _dummy_func, test_repo_name, 'repo')
+    inv_context_manager = rc_cache.InvalidationContext(
+        uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
 
-    with invalidator_context as context:
-        invalidated = context.invalidate()
-        result = context.compute()
+    # 1st call, fresh caches
+    with inv_context_manager as invalidation_context:
+        should_invalidate = invalidation_context.should_invalidate()
+        if should_invalidate:
+            result = _dummy_func.refresh('some-key')
+        else:
+            result = _dummy_func('some-key')
 
-    assert invalidated == True
-    assert 'result' == result
-    assert isinstance(context, caches.FreshRegionCache)
+        assert isinstance(invalidation_context, rc_cache.FreshRegionCache)
+        assert should_invalidate is True
 
-    assert 'InvalidationContext' in repr(invalidator_context)
+        assert 'result:1' == result
+        # should be cached so calling it twice will give the same result !
+        result = _dummy_func('some-key')
+        assert 'result:1' == result
 
-    with invalidator_context as context:
-        context.invalidate()
-        result = context.compute()
+    # 2nd call, we create a new context manager, this should be now key aware, and
+    # return an active cache region
+    with inv_context_manager as invalidation_context:
+        should_invalidate = invalidation_context.should_invalidate()
+        assert isinstance(invalidation_context, rc_cache.ActiveRegionCache)
+        assert should_invalidate is False
 
-    assert 'result' == result
-    assert isinstance(context, caches.ActiveRegionCache)
+    # Mark invalidation
+    CacheKey.set_invalidate(invalidation_namespace)
+
+    # 3nd call, fresh caches
+    with inv_context_manager as invalidation_context:
+        should_invalidate = invalidation_context.should_invalidate()
+        if should_invalidate:
+            result = _dummy_func.refresh('some-key')
+        else:
+            result = _dummy_func('some-key')
+
+        assert isinstance(invalidation_context, rc_cache.FreshRegionCache)
+        assert should_invalidate is True
+
+        assert 'result:2' == result
+
+        # cached again, same result
+        result = _dummy_func('some-key')
+        assert 'result:2' == result
 
 
 def test_invalidation_context_exception_in_compute(baseapp):
-    from rhodecode.model.db import CacheKey
-    from beaker.cache import cache_region
+    repo_id = 888
 
-    @cache_region('long_term')
+    cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
+        repo_id, CacheKey.CACHE_TYPE_README)
+    invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+        repo_id=repo_id)
+    region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
+
+    @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
     def _dummy_func(cache_key):
-        # this causes error since it doesn't get any params
-        raise Exception('ups')
-
-    invalidator_context = CacheKey.repo_context_cache(
-        _dummy_func, 'test_repo_2', 'repo')
+        raise Exception('Error in cache func')
 
     with pytest.raises(Exception):
-        with invalidator_context as context:
-            context.invalidate()
-            context.compute()
+        inv_context_manager = rc_cache.InvalidationContext(
+            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
+
+        # 1st call, fresh caches
+        with inv_context_manager as invalidation_context:
+            should_invalidate = invalidation_context.should_invalidate()
+            if should_invalidate:
+                _dummy_func.refresh('some-key-2')
+            else:
+                _dummy_func('some-key-2')
 
 
 @pytest.mark.parametrize('execution_number', range(5))
 def test_cache_invalidation_race_condition(execution_number, baseapp):
     import time
-    from beaker.cache import cache_region
-    from rhodecode.model.db import CacheKey
 
-    if CacheKey.metadata.bind.url.get_backend_name() == "mysql":
-        reason = (
-            'Fails on MariaDB due to some locking issues. Investigation'
-            ' needed')
-        pytest.xfail(reason=reason)
+    repo_id = 777
+
+    cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
+        repo_id, CacheKey.CACHE_TYPE_README)
+    invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
+        repo_id=repo_id)
+    region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
 
     @run_test_concurrently(25)
     def test_create_and_delete_cache_keys():
         time.sleep(0.2)
 
-        @cache_region('long_term')
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
         def _dummy_func(cache_key):
-            return 'result'
+            val = 'async'
+            return 'result:{}'.format(val)
 
-        invalidator_context = CacheKey.repo_context_cache(
-            _dummy_func, 'test_repo_1', 'repo')
+        inv_context_manager = rc_cache.InvalidationContext(
+            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
 
-        with invalidator_context as context:
-            context.invalidate()
-            context.compute()
+        # 1st call, fresh caches
+        with inv_context_manager as invalidation_context:
+            should_invalidate = invalidation_context.should_invalidate()
+            if should_invalidate:
+                _dummy_func.refresh('some-key-3')
+            else:
+                _dummy_func('some-key-3')
 
-        CacheKey.set_invalidate('test_repo_1', delete=True)
+        # Mark invalidation
+        CacheKey.set_invalidate(invalidation_namespace)
 
     test_create_and_delete_cache_keys()

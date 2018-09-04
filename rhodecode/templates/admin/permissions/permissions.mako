@@ -38,6 +38,9 @@
           <li class="${'active' if c.active=='objects' else ''}">
             <a href="${h.route_path('admin_permissions_object')}">${_('Object')}</a>
           </li>
+          <li class="${'active' if c.active=='branch' else ''}">
+            <a href="${h.route_path('admin_permissions_branch')}">${_('Branch')}</a>
+          </li>
           <li class="${'active' if c.active=='ips' else ''}">
             <a href="${h.route_path('admin_permissions_ips')}">${_('IP Whitelist')}</a>
           </li>

@@ -12,7 +12,7 @@
 </%def>
 
 <%def name="breadcrumbs_links()">
-    ${_('Add new file')} @ ${h.show_id(c.commit)}
+    ${_('Add new file')} @ ${h.show_id(c.commit)} ${_('Branch')}: ${c.commit.branch}
 </%def>
 
 <%def name="menu_bar_subnav()">

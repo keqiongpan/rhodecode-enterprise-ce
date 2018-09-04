@@ -216,7 +216,7 @@ var clipboardActivate = function() {
     *
     * <i class="tooltip icon-plus clipboard-action" data-clipboard-text="${commit.raw_id}" title="${_('Copy the full commit id')}"></i>
     * */
-    var clipboard = new Clipboard('.clipboard-action');
+    var clipboard = new ClipboardJS('.clipboard-action');
 
     clipboard.on('success', function(e) {
         var callback = function () {

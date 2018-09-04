@@ -29,6 +29,7 @@ import os
 import random
 import hashlib
 import StringIO
+import textwrap
 import urllib
 import math
 import logging
@@ -42,6 +43,7 @@ from collections import OrderedDict
 import pygments
 import itertools
 import fnmatch
+import bleach
 
 from datetime import datetime
 from functools import partial
@@ -1777,16 +1779,19 @@ def render_binary(repo_name, file_obj):
     """
     Choose how to render a binary file
     """
+
     filename = file_obj.name
 
     # images
     for ext in ['*.png', '*.jpg', '*.ico', '*.gif']:
         if fnmatch.fnmatch(filename, pat=ext):
-            alt = filename
+            alt = escape(filename)
             src = route_path(
                 'repo_file_raw', repo_name=repo_name,
-                commit_id=file_obj.commit.raw_id, f_path=file_obj.path)
-            return literal('<img class="rendered-binary" alt="{}" src="{}">'.format(alt, src))
+                commit_id=file_obj.commit.raw_id,
+                f_path=file_obj.path)
+            return literal(
+                '<img class="rendered-binary" alt="{}" src="{}">'.format(alt, src))
 
 
 def renderer_from_filename(filename, exclude=None):
@@ -1813,7 +1818,11 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             return relative_links(html_source, relative_urls)
         return html_source
 
-    if renderer == 'rst':
+    if renderer == 'plain':
+        return literal(
+            MarkupRenderer.plain(source, leading_newline=False))
+
+    elif renderer == 'rst':
         if repo_name:
             # process patterns on comments if we pass in repo name
             source, issues = process_patterns(
@@ -1823,6 +1832,7 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             '<div class="rst-block">%s</div>' %
             maybe_convert_relative_links(
                 MarkupRenderer.rst(source, mentions=mentions)))
+
     elif renderer == 'markdown':
         if repo_name:
             # process patterns on comments if we pass in repo name
@@ -1834,6 +1844,7 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             maybe_convert_relative_links(
                 MarkupRenderer.markdown(source, flavored=True,
                                         mentions=mentions)))
+
     elif renderer == 'jupyter':
         return literal(
             '<div class="ipynb">%s</div>' %
@@ -1864,6 +1875,8 @@ def get_permission_name(key):
 
 def journal_filter_help(request):
     _ = request.translate
+    from rhodecode.lib.audit_logger import ACTIONS
+    actions = '\n'.join(textwrap.wrap(', '.join(sorted(ACTIONS.keys())), 80))
 
     return _(
         'Example filter terms:\n' +
@@ -1875,6 +1888,8 @@ def journal_filter_help(request):
         '     date:20120101\n' +
         '     date:[20120101100000 TO 20120102]\n' +
         '\n' +
+        'Actions: {actions}\n' +
+        '\n' +
         'Generate wildcards using \'*\' character:\n' +
         '     "repository:vcs*" - search everything starting with \'vcs\'\n' +
         '     "repository:*vcs*" - search for repository containing \'vcs\'\n' +
@@ -1882,7 +1897,7 @@ def journal_filter_help(request):
         'Optional AND / OR operators in queries\n' +
         '     "repository:vcs OR repository:test"\n' +
         '     "username:test AND repository:test*"\n'
-    )
+    ).format(actions=actions)
 
 
 def search_filter_help(searcher, request):

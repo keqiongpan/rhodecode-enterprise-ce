@@ -26,7 +26,7 @@ from urlparse import urljoin
 import requests
 from pyramid.httpexceptions import HTTPNotAcceptable
 
-from rhodecode.lib import caches
+from rhodecode.lib import rc_cache
 from rhodecode.lib.middleware import simplevcs
 from rhodecode.lib.utils import is_valid_repo
 from rhodecode.lib.utils2 import str2bool, safe_int
@@ -86,7 +86,7 @@ class SimpleSvnApp(object):
 
         if response.headers.get('SVN-Txn-name'):
             svn_tx_id = response.headers.get('SVN-Txn-name')
-            txn_id = caches.compute_key_from_params(
+            txn_id = rc_cache.utils.compute_key_from_params(
                 self.config['repository'], svn_tx_id)
             port = safe_int(self.rc_extras['hooks_uri'].split(':')[-1])
             store_txn_id_data(txn_id, {'port': port})

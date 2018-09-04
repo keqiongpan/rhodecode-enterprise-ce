@@ -133,7 +133,7 @@ class LoginView(BaseAppView):
             'response': captcha_rs,
             'remoteip': get_ip_addr(self.request.environ)
         }
-        verify_rs = requests.get(url, params=params, verify=True)
+        verify_rs = requests.get(url, params=params, verify=True, timeout=60)
         verify_rs = verify_rs.json()
         captcha_status = verify_rs.get('success', False)
         captcha_errors = verify_rs.get('error-codes', [])
@@ -299,9 +299,15 @@ class LoginView(BaseAppView):
 
             action_data = {'data': new_user.get_api_data(),
                            'user_agent': self.request.user_agent}
+
+            audit_user = audit_logger.UserWrap(
+                username=new_user.username,
+                user_id=new_user.user_id,
+                ip_addr=self.request.remote_addr)
+
             audit_logger.store_web(
                 'user.register', action_data=action_data,
-                user=new_user)
+                user=audit_user)
 
             event = UserRegistered(user=new_user, session=self.session)
             trigger(event)
@@ -373,13 +379,14 @@ class LoginView(BaseAppView):
                 # Generate reset URL and send mail.
                 user = User.get_by_email(user_email)
 
-                # generate password reset token that expires in 10minutes
-                desc = 'Generated token for password reset from {}'.format(
+                # generate password reset token that expires in 10 minutes
+                description = u'Generated token for password reset from {}'.format(
                     datetime.datetime.now().isoformat())
-                reset_token = AuthTokenModel().create(
-                    user, lifetime=10,
-                    description=desc,
-                    role=UserApiKeys.ROLE_PASSWORD_RESET)
+
+                reset_token = UserModel().add_auth_token(
+                    user=user, lifetime_minutes=10,
+                    role=UserModel.auth_token_role.ROLE_PASSWORD_RESET,
+                    description=description)
                 Session().commit()
 
                 log.debug('Successfully created password recovery token')

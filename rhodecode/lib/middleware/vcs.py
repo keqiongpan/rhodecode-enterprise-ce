@@ -158,7 +158,7 @@ def detect_vcs_request(environ, backends):
             log.debug('got handler:%s from environ', handler)
 
     if not handler:
-        log.debug('checking if request is of VCS type in order: %s', backends)
+        log.debug('request start: checking if request is of VCS type in order: %s', backends)
         for vcs_type in backends:
             vcs_check, _handler = checks[vcs_type]
             if vcs_check(environ):

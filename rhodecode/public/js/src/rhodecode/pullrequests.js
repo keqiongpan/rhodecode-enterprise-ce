@@ -41,10 +41,10 @@ var prButtonLock = function(lockEnabled, msg, scope) {
       }
       var checksMeet = prButtonLockChecks.compare && prButtonLockChecks.reviewers;
       if (lockEnabled) {
-          $('#save').attr('disabled', 'disabled');
+          $('#pr_submit').attr('disabled', 'disabled');
       }
       else if (checksMeet) {
-          $('#save').removeAttr('disabled');
+          $('#pr_submit').removeAttr('disabled');
       }
 
       if (msg) {
@@ -361,7 +361,7 @@ var updateCommits = function(repo_name, pull_request_id) {
 /**
  * PULL REQUEST edit info
  */
-var editPullRequest = function(repo_name, pull_request_id, title, description) {
+var editPullRequest = function(repo_name, pull_request_id, title, description, renderer) {
     var url = pyroutes.url(
         'pullrequest_update',
         {"repo_name": repo_name, "pull_request_id": pull_request_id});
@@ -369,6 +369,7 @@ var editPullRequest = function(repo_name, pull_request_id, title, description) {
     var postData = {
         'title': title,
         'description': description,
+        'description_renderer': renderer,
         'edit_pull_request': true,
         'csrf_token': CSRF_TOKEN
     };
@@ -378,49 +379,6 @@ var editPullRequest = function(repo_name, pull_request_id, title, description) {
     ajaxPOST(url, postData, success);
 };
 
-var initPullRequestsCodeMirror = function (textAreaId) {
-    var ta = $(textAreaId).get(0);
-    var initialHeight = '100px';
-
-    // default options
-    var codeMirrorOptions = {
-        mode: "text",
-        lineNumbers: false,
-        indentUnit: 4,
-        theme: 'rc-input'
-    };
-
-    var codeMirrorInstance = CodeMirror.fromTextArea(ta, codeMirrorOptions);
-    // marker for manually set description
-    codeMirrorInstance._userDefinedDesc = false;
-    codeMirrorInstance.setSize(null, initialHeight);
-    codeMirrorInstance.on("change", function(instance, changeObj) {
-        var height = initialHeight;
-        var lines = instance.lineCount();
-        if (lines > 6 && lines < 20) {
-            height = "auto"
-        }
-        else if (lines >= 20) {
-            height = 20 * 15;
-        }
-        instance.setSize(null, height);
-
-        // detect if the change was trigger by auto desc, or user input
-        changeOrigin = changeObj.origin;
-
-        if (changeOrigin === "setValue") {
-            cmLog.debug('Change triggered by setValue');
-        }
-        else {
-            cmLog.debug('user triggered change !');
-            // set special marker to indicate user has created an input.
-            instance._userDefinedDesc = true;
-        }
-
-    });
-
-    return codeMirrorInstance
-};
 
 /**
  * Reviewer autocomplete

@@ -1,41 +1,40 @@
 # Nix environment for the community edition
 #
-# This shall be as lean as possible, just producing the Enterprise
+# This shall be as lean as possible, just producing the enterprise-ce
 # derivation. For advanced tweaks to pimp up the development environment we use
 # "shell.nix" so that it does not have to clutter this file.
+#
+# Configuration, set values in "~/.nixpkgs/config.nix".
+# example
+#  {
+#    # Thoughts on how to configure the dev environment
+#    rc = {
+#      codeInternalUrl = "https://usr:token@internal-code.rhodecode.com";
+#      sources = {
+#        rhodecode-vcsserver = "/home/user/work/rhodecode-vcsserver";
+#        rhodecode-enterprise-ce = "/home/user/work/rhodecode-enterprise-ce";
+#        rhodecode-enterprise-ee = "/home/user/work/rhodecode-enterprise-ee";
+#      };
+#    };
+#  }
 
 args@
 { pythonPackages ? "python27Packages"
 , pythonExternalOverrides ? self: super: {}
-, doCheck ? true
+, doCheck ? false
 , ...
 }:
 
 let
-
   # Use nixpkgs from args or import them. We use this indirect approach
   # through args to be able to use the name `pkgs` for our customized packages.
   # Otherwise we will end up with an infinite recursion.
-  nixpkgs = args.pkgs or (import <nixpkgs> { });
+  pkgs = args.pkgs or (import <nixpkgs> { });
 
-  # johbo: Interim bridge which allows us to build with the upcoming
-  # nixos.16.09 branch (unstable at the moment of writing this note) and the
-  # current stable nixos-16.03.
-  backwardsCompatibleFetchgit = { ... }@args:
-    let
-      origSources = nixpkgs.fetchgit args;
-    in
-    nixpkgs.lib.overrideDerivation origSources (oldAttrs: {
-      NIX_PREFETCH_GIT_CHECKOUT_HOOK = ''
-        find $out -name '.git*' -print0 | xargs -0 rm -rf
-      '';
-    });
-
-  # Create a customized version of nixpkgs which should be used throughout the
-  # rest of this file.
-  pkgs = nixpkgs.overridePackages (self: super: {
-    fetchgit = backwardsCompatibleFetchgit;
-  });
+  # Works with the new python-packages, still can fallback to the old
+  # variant.
+  basePythonPackagesUnfix = basePythonPackages.__unfix__ or (
+    self: basePythonPackages.override (a: { inherit self; }));
 
   # Evaluates to the last segment of a file system path.
   basename = path: with pkgs.lib; last (splitString "/" path);
@@ -46,7 +45,7 @@ let
       ext = last (splitString "." path);
     in
       !builtins.elem (basename path) [
-        ".git" ".hg" "__pycache__" ".eggs"
+        ".git" ".hg" "__pycache__" ".eggs" ".idea" ".dev"
         "bower_components" "node_modules"
         "build" "data" "result" "tmp"] &&
       !builtins.elem ext ["egg-info" "pyc"] &&
@@ -54,18 +53,20 @@ let
       # it would still be good to restore it since we want to ignore "result-*".
       !hasPrefix "result" path;
 
-  basePythonPackages = with builtins; if isAttrs pythonPackages
-    then pythonPackages
-    else getAttr pythonPackages pkgs;
+  sources =
+    let
+      inherit (pkgs.lib) all isString attrValues;
+      sourcesConfig = pkgs.config.rc.sources or {};
+    in
+      # Ensure that sources are configured as strings. Using a path
+      # would result in a copy into the nix store.
+      assert all isString (attrValues sourcesConfig);
+      sourcesConfig;
 
-  buildBowerComponents =
-    pkgs.buildBowerComponents or
-    (import ./pkgs/backport-16.03-build-bower-components.nix { inherit pkgs; });
-
-  sources = pkgs.config.rc.sources or {};
-  version = builtins.readFile ./rhodecode/VERSION;
+  version = builtins.readFile "${rhodecode-enterprise-ce-src}/rhodecode/VERSION";
   rhodecode-enterprise-ce-src = builtins.filterSource src-filter ./.;
 
+  buildBowerComponents = pkgs.buildBowerComponents;
   nodeEnv = import ./pkgs/node-default.nix {
     inherit pkgs;
   };
@@ -77,133 +78,145 @@ let
     src = rhodecode-enterprise-ce-src;
   };
 
-  pythonGeneratedPackages = self: basePythonPackages.override (a: {
-    inherit self;
-  })
-  // (scopedImport {
-    self = self;
-    super = basePythonPackages;
-    inherit pkgs;
-    inherit (pkgs) fetchurl fetchgit;
-  } ./pkgs/python-packages.nix);
+  rhodecode-testdata-src = sources.rhodecode-testdata or (
+    pkgs.fetchhg {
+      url = "https://code.rhodecode.com/upstream/rc_testdata";
+      rev = "v0.10.0";
+      sha256 = "0zn9swwvx4vgw4qn8q3ri26vvzgrxn15x6xnjrysi1bwmz01qjl0";
+  });
 
-  pythonOverrides = import ./pkgs/python-packages-overrides.nix {
-    inherit
-      basePythonPackages
-      pkgs;
+  rhodecode-testdata = import "${rhodecode-testdata-src}/default.nix" {
+  inherit
+    doCheck
+    pkgs
+    pythonPackages;
   };
 
   pythonLocalOverrides = self: super: {
     rhodecode-enterprise-ce =
       let
         linkNodeAndBowerPackages = ''
-          echo "Export RhodeCode CE path"
           export RHODECODE_CE_PATH=${rhodecode-enterprise-ce-src}
-          echo "Link node packages"
+
+          echo "[BEGIN]: Link node packages"
           rm -fr node_modules
           mkdir node_modules
           # johbo: Linking individual packages allows us to run "npm install"
           # inside of a shell to try things out. Re-entering the shell will
           # restore a clean environment.
           ln -s ${nodeDependencies}/lib/node_modules/* node_modules/
+          echo "[DONE]: Link node packages"
 
-          echo "DONE: Link node packages"
-
-          echo "Link bower packages"
+          echo "[BEGIN]: Link bower packages"
           rm -fr bower_components
           mkdir bower_components
-
           ln -s ${bowerComponents}/bower_components/* bower_components/
-          echo "DONE: Link bower packages"
+          echo "[DONE]: Link bower packages"
         '';
-      in super.rhodecode-enterprise-ce.override (attrs: {
 
+        releaseName = "RhodeCodeEnterpriseCE-${version}";
+      in super.rhodecode-enterprise-ce.override (attrs: {
       inherit
         doCheck
         version;
+
       name = "rhodecode-enterprise-ce-${version}";
-      releaseName = "RhodeCodeEnterpriseCE-${version}";
+      releaseName = releaseName;
       src = rhodecode-enterprise-ce-src;
       dontStrip = true; # prevent strip, we don't need it.
 
-      buildInputs =
-        attrs.buildInputs ++
-        (with self; [
-          pkgs.nodePackages.bower
-          pkgs.nodePackages.grunt-cli
-          pkgs.subversion
-          pytest-catchlog
-          rhodecode-testdata
-        ]);
-
-      #TODO: either move this into overrides, OR use the new machanics from
-      # pip2nix and requiremtn.txt file
-      propagatedBuildInputs = attrs.propagatedBuildInputs ++ (with self; [
-        rhodecode-tools
-      ]);
-
-      # TODO: johbo: Make a nicer way to expose the parts. Maybe
-      # pkgs/default.nix?
+      # expose following attributed outside
       passthru = {
         inherit
+          rhodecode-testdata
           bowerComponents
           linkNodeAndBowerPackages
           myPythonPackagesUnfix
-          pythonLocalOverrides;
+          pythonLocalOverrides
+          pythonCommunityOverrides;
+
         pythonPackages = self;
       };
 
+      buildInputs =
+        attrs.buildInputs or [] ++ [
+          rhodecode-testdata
+          pkgs.nodePackages.bower
+          pkgs.nodePackages.grunt-cli
+        ];
+
+      #NOTE: option to inject additional propagatedBuildInputs
+      propagatedBuildInputs =
+        attrs.propagatedBuildInputs or [] ++ [
+
+        ];
+
       LC_ALL = "en_US.UTF-8";
       LOCALE_ARCHIVE =
-        if pkgs.stdenv ? glibc
+        if pkgs.stdenv.isLinux
         then "${pkgs.glibcLocales}/lib/locale/locale-archive"
         else "";
 
+      # Add bin directory to path so that tests can find 'rhodecode'.
       preCheck = ''
         export PATH="$out/bin:$PATH"
       '';
 
+      # custom check phase for testing
+      checkPhase = ''
+        runHook preCheck
+        PYTHONHASHSEED=random py.test -vv -p no:sugar -r xw --cov-config=.coveragerc --cov=rhodecode --cov-report=term-missing rhodecode
+        runHook postCheck
+      '';
+
       postCheck = ''
-        rm -rf $out/lib/${self.python.libPrefix}/site-packages/pytest_pylons
+        echo "Cleanup of rhodecode/tests"
         rm -rf $out/lib/${self.python.libPrefix}/site-packages/rhodecode/tests
       '';
 
-      preBuild = linkNodeAndBowerPackages + ''
+      preBuild = ''
+
+        echo "Building frontend assets"
+        ${linkNodeAndBowerPackages}
         grunt
         rm -fr node_modules
       '';
 
       postInstall = ''
-        echo "Writing meta information for rccontrol to nix-support/rccontrol"
+        echo "Writing enterprise-ce meta information for rccontrol to nix-support/rccontrol"
         mkdir -p $out/nix-support/rccontrol
         cp -v rhodecode/VERSION $out/nix-support/rccontrol/version
-        echo "DONE: Meta information for rccontrol written"
+        echo "[DONE]: enterprise-ce meta information for rccontrol written"
+
+        mkdir -p $out/etc
+        cp configs/production.ini $out/etc
+        echo "[DONE]: saved enterprise-ce production.ini into $out/etc"
 
         # python based programs need to be wrapped
-        ln -s ${self.pyramid}/bin/* $out/bin/
-        ln -s ${self.gunicorn}/bin/gunicorn $out/bin/
-        ln -s ${self.supervisor}/bin/supervisor* $out/bin/
-        ln -s ${self.PasteScript}/bin/paster $out/bin/
-        ln -s ${self.channelstream}/bin/channelstream $out/bin/
-        ln -s ${self.celery}/bin/celery $out/bin/
-
+        mkdir -p $out/bin
         # rhodecode-tools
         ln -s ${self.rhodecode-tools}/bin/rhodecode-* $out/bin/
 
-        # note that condition should be restricted when adding further tools
+        # required binaries from dependencies
+        #ln -s ${self.python}/bin/python $out/bin
+        ln -s ${self.pyramid}/bin/* $out/bin/
+        ln -s ${self.gunicorn}/bin/gunicorn $out/bin/
+        ln -s ${self.supervisor}/bin/supervisor* $out/bin/
+        ln -s ${self.pastescript}/bin/paster $out/bin/
+        ln -s ${self.channelstream}/bin/channelstream $out/bin/
+        ln -s ${self.celery}/bin/celery $out/bin/
+        echo "[DONE]: created symlinks into $out/bin"
+
         for file in $out/bin/*;
         do
           wrapProgram $file \
-              --prefix PATH : $PATH \
-              --prefix PYTHONPATH : $PYTHONPATH \
-              --set PYTHONHASHSEED random
+            --prefix PATH : $PATH \
+            --prefix PYTHONPATH : $PYTHONPATH \
+            --set PYTHONHASHSEED random
         done
 
-        mkdir $out/etc
-        cp configs/production.ini $out/etc
+        echo "[DONE]: enterprise-ce binary wrapping"
 
-
-        # TODO: johbo: Make part of ac-tests
         if [ ! -f rhodecode/public/js/scripts.js ]; then
           echo "Missing scripts.js"
           exit 1
@@ -213,31 +226,33 @@ let
           exit 1
         fi
       '';
-
     });
-
-    rhodecode-testdata = import "${rhodecode-testdata-src}/default.nix" {
-    inherit
-      doCheck
-      pkgs
-      pythonPackages;
-    };
 
   };
 
-  rhodecode-testdata-src = sources.rhodecode-testdata or (
-    pkgs.fetchhg {
-      url = "https://code.rhodecode.com/upstream/rc_testdata";
-      rev = "v0.10.0";
-      sha256 = "0zn9swwvx4vgw4qn8q3ri26vvzgrxn15x6xnjrysi1bwmz01qjl0";
-  });
+  basePythonPackages = with builtins;
+    if isAttrs pythonPackages then
+      pythonPackages
+    else
+      getAttr pythonPackages pkgs;
+
+  pythonGeneratedPackages = import ./pkgs/python-packages.nix {
+    inherit pkgs;
+    inherit (pkgs) fetchurl fetchgit fetchhg;
+  };
+
+  pythonCommunityOverrides = import ./pkgs/python-packages-overrides.nix {
+    inherit pkgs basePythonPackages;
+  };
 
   # Apply all overrides and fix the final package set
   myPythonPackagesUnfix = with pkgs.lib;
     (extends pythonExternalOverrides
     (extends pythonLocalOverrides
-    (extends pythonOverrides
-             pythonGeneratedPackages)));
+    (extends pythonCommunityOverrides
+    (extends pythonGeneratedPackages
+             basePythonPackagesUnfix))));
+
   myPythonPackages = (pkgs.lib.fix myPythonPackagesUnfix);
 
 in myPythonPackages.rhodecode-enterprise-ce

@@ -83,7 +83,7 @@ comment_pull_request
 create_pull_request 
 -------------------
 
-.. py:function:: create_pull_request(apiuser, source_repo, target_repo, source_ref, target_ref, title, description=<Optional:''>, reviewers=<Optional:None>)
+.. py:function:: create_pull_request(apiuser, source_repo, target_repo, source_ref, target_ref, title=<Optional:''>, description=<Optional:''>, description_renderer=<Optional:''>, reviewers=<Optional:None>)
 
    Creates a new pull request.
 
@@ -104,10 +104,14 @@ create_pull_request
    :type source_ref: str
    :param target_ref: Set the target ref name.
    :type target_ref: str
-   :param title: Set the pull request title.
+   :param title: Optionally Set the pull request title, it's generated otherwise
    :type title: str
    :param description: Set the pull request description.
    :type description: Optional(str)
+   :type description_renderer: Optional(str)
+   :param description_renderer: Set pull request renderer for the description.
+       It should be 'rst', 'markdown' or 'plain'. If not give default
+       system renderer will be used
    :param reviewers: Set the new pull request reviewers list.
        Reviewer defined by review rules will be added automatically to the
        defined list.
@@ -368,7 +372,7 @@ merge_pull_request
 update_pull_request 
 -------------------
 
-.. py:function:: update_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, title=<Optional:''>, description=<Optional:''>, reviewers=<Optional:None>, update_commits=<Optional:None>)
+.. py:function:: update_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, title=<Optional:''>, description=<Optional:''>, description_renderer=<Optional:''>, reviewers=<Optional:None>, update_commits=<Optional:None>)
 
    Updates a pull request.
 
@@ -382,6 +386,9 @@ update_pull_request
    :type title: str
    :param description: Update pull request description.
    :type description: Optional(str)
+   :type description_renderer: Optional(str)
+   :param description_renderer: Update pull request renderer for the description.
+       It should be 'rst', 'markdown' or 'plain'
    :param reviewers: Update pull request reviewers list with new value.
    :type reviewers: Optional(list)
        Accepts username strings or objects of the format:

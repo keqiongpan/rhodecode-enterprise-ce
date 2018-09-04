@@ -21,8 +21,9 @@
 import os
 from pyramid.compat import configparser
 from pyramid.paster import bootstrap as pyramid_bootstrap, setup_logging  # noqa
-from pyramid.request import Request
 from pyramid.scripting import prepare
+
+from rhodecode.lib.request import Request
 
 
 def get_config(ini_path, **kwargs):

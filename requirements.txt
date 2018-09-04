@@ -1,129 +1,129 @@
-## core
-setuptools==30.1.0
-setuptools-scm==1.15.6
+## dependencies
 
-amqp==2.2.2
+setuptools-scm==2.1.0
+amqp==2.3.1
 # not released authomatic that has updated some oauth providers
 https://code.rhodecode.com/upstream/authomatic/archive/90a9ce60cc405ae8a2bf5c3713acd5d78579a04e.tar.gz?md5=3c68720a1322b25254009518d1ff6801#egg=authomatic==0.1.0.post1
-Babel==1.3
-Beaker==1.9.1
-celery==4.1.0
-Chameleon==2.24
+babel==1.3
+beaker==1.9.1
+celery==4.1.1
+chameleon==2.24
 channelstream==0.5.2
 click==6.6
 colander==1.4.0
-configobj==5.0.6
-cssselect==1.0.1
+# our custom configobj
+https://code.rhodecode.com/upstream/configobj/archive/a11ff0a0bd4fbda9e3a91267e720f88329efb4a6.tar.gz?md5=9916c524ea11a6c418217af6b28d4b3c#egg=configobj==5.0.6
+cssselect==1.0.3
 decorator==4.1.2
-deform==2.0.4
+deform==2.0.5
 docutils==0.14.0
-dogpile.cache==0.6.4
+dogpile.cache==0.6.6
 dogpile.core==0.4.1
 ecdsa==0.13
-FormEncode==1.2.4
+formencode==1.2.4
 future==0.14.3
 futures==3.0.2
 gnureadline==6.3.8
 infrae.cache==1.0.1
-iso8601==0.1.12
+iso8601==0.1.11
 itsdangerous==0.24
-Jinja2==2.9.6
+jinja2==2.9.6
 billiard==3.5.0.3
-kombu==4.1.0
+kombu==4.2.0
 lxml==3.7.3
-Mako==1.0.7
-Markdown==2.6.11
-MarkupSafe==1.0.0
-msgpack-python==0.4.8
-MySQL-python==1.2.5
+mako==1.0.7
+markdown==2.6.11
+markupsafe==1.0.0
+msgpack-python==0.5.6
+mysql-python==1.2.5
+pymysql==0.8.1
+pyotp==2.2.6
 objgraph==3.1.1
 packaging==15.2
-Paste==2.0.3
-PasteDeploy==1.5.2
-PasteScript==2.0.2
+paste==2.0.3
+pastedeploy==1.5.2
+pastescript==2.0.2
 pathlib2==2.3.0
 peppercorn==0.5
-psutil==5.4.3
-psycopg2==2.7.3.2
+psutil==5.4.6
+psycopg2==2.7.4
 py-bcrypt==0.4
 pycrypto==2.6.1
-pycurl==7.19.5
+pycurl==7.43.0.2
 pyflakes==0.8.1
 pygments-markdown-lexer==0.1.0.dev39
-Pygments==2.2.0
+pygments==2.2.0
 pyparsing==1.5.7
 pyramid-beaker==0.8
-pyramid-debugtoolbar==4.3.0
+pyramid-debugtoolbar==4.4.0
 pyramid-jinja2==2.7
 pyramid-mako==1.0.2
-pyramid==1.9.1
+pyramid==1.9.2
 pysqlite==2.8.3
 python-dateutil
-python-ldap==2.4.45
-python-memcached==1.58
-python-pam==1.8.2
-pytz==2018.3
+python-ldap==3.1.0
+python-memcached==1.59
+python-pam==1.8.4
+pytz==2018.4
 tzlocal==1.5.1
 pyzmq==14.6.0
 py-gfm==0.1.3
 redis==2.10.6
 repoze.lru==0.7
 requests==2.9.1
-Routes==2.4.1
+routes==2.4.1
 setproctitle==1.1.10
 simplejson==3.11.1
 six==1.11.0
-SQLAlchemy==1.1.15
+sqlalchemy==1.1.18
 sshpubkeys==2.2.0
-subprocess32==3.2.7
+subprocess32==3.5.1
 supervisor==3.3.4
-Tempita==0.5.2
+tempita==0.5.2
 translationstring==1.3
 trollius==1.0.4
-urllib3==1.16
-URLObject==2.4.0
+urllib3==1.21
+urlobject==2.4.3
 venusian==1.1.0
-WebError==0.10.3
-WebHelpers2==2.0
-WebHelpers==1.3
-WebOb==1.7.4
-Whoosh==2.7.4
+weberror==0.10.3
+webhelpers2==2.0
+webhelpers==1.3
+webob==1.7.4
+whoosh==2.7.4
 wsgiref==0.1.2
 zope.cachedescriptors==4.3.1
 zope.deprecation==4.3.0
 zope.event==4.3.0
-zope.interface==4.4.3
+zope.interface==4.5.0
 
 
 # IPYTHON RENDERING
 # entrypoints backport, pypi version doesn't support egg installs
 https://code.rhodecode.com/upstream/entrypoints/archive/96e6d645684e1af3d7df5b5272f3fe85a546b233.tar.gz?md5=7db37771aea9ac9fefe093e5d6987313#egg=entrypoints==0.2.2.rhodecode-upstream1
 nbconvert==5.3.1
-bleach==2.1.2
+bleach==2.1.4
 nbformat==4.4.0
 jupyter_client==5.0.0
 
 ## cli tools
-alembic==0.9.8
+alembic==0.9.9
 invoke==0.13.0
 bumpversion==0.5.3
-transifex-client==0.12.5
 
 ## http servers
-gevent==1.2.2
+gevent==1.3.5
 greenlet==0.4.13
-gunicorn==19.7.1
+gunicorn==19.9.0
 waitress==1.1.0
-uWSGI==2.0.15
 
 ## debug
-ipdb==0.10.3
+ipdb==0.11.0
 ipython==5.1.0
-CProfileV==1.0.7
+cprofilev==1.0.7
 bottle==0.12.13
 
 ## rhodecode-tools, special case
-https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.14.1.tar.gz?md5=0b9c2caad160b68889f8172ea54af7b2#egg=rhodecode-tools==0.14.1
+https://code.rhodecode.com/rhodecode-tools-ce/archive/v0.16.0.tar.gz?md5=87f81286b49156c2ac36f1a1acfa2164#egg=rhodecode-tools==0.16.0
 
 ## appenlight
 appenlight-client==0.6.25

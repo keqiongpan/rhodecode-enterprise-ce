@@ -87,7 +87,8 @@ class TestResolveRefOrError(object):
         ref = 'ancestor:ref'
         with pytest.raises(JSONRPCError) as excinfo:
             utils.resolve_ref_or_error(ref, repo)
-        expected_message = 'The specified ancestor `ref` does not exist'
+        expected_message = (
+            'The specified value:ancestor:`ref` does not exist, or is not allowed.')
         assert excinfo.value.message == expected_message
 
     def test_branch_is_not_found(self):
@@ -99,7 +100,7 @@ class TestResolveRefOrError(object):
             with pytest.raises(JSONRPCError) as excinfo:
                 utils.resolve_ref_or_error(ref, repo)
         expected_message = (
-            'The specified branch `non-existing-one` does not exist')
+            'The specified value:branch:`non-existing-one` does not exist, or is not allowed.')
         assert excinfo.value.message == expected_message
 
     def test_bookmark_is_not_found(self):
@@ -111,7 +112,7 @@ class TestResolveRefOrError(object):
             with pytest.raises(JSONRPCError) as excinfo:
                 utils.resolve_ref_or_error(ref, repo)
         expected_message = (
-            'The specified bookmark `non-existing-one` does not exist')
+            'The specified value:bookmark:`non-existing-one` does not exist, or is not allowed.')
         assert excinfo.value.message == expected_message
 
     @pytest.mark.parametrize("ref", ['ref', '12345', 'a:b:c:d'])

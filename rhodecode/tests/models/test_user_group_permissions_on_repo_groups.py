@@ -48,7 +48,7 @@ def permissions_setup_func_orig(
     repo_group = RepoGroup.get_by_group_name(group_name=group_name)
     if not repo_group:
         raise Exception('Cannot get group %s' % group_name)
-    perm_updates = [[test_u2_gr_id, perm, 'users_group']]
+    perm_updates = [[test_u2_gr_id, perm, 'user_group']]
     RepoGroupModel().update_permissions(repo_group,
                                         perm_updates=perm_updates,
                                         recursive=recursive, check_perms=False)

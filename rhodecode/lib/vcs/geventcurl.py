@@ -27,6 +27,7 @@ class in a way that is compatible with gevent.
 import logging
 import gevent
 import pycurl
+import greenlet
 
 # Import everything from pycurl.
 # This allows us to use this module as a drop in replacement of pycurl.
@@ -139,7 +140,7 @@ class GeventCurlMulti(object):
         while True:
             try:
                 ret, num_handles = self._curl_multi.socket_action(fd, action)
-            except pycurl.error, e:
+            except pycurl.error as e:
                 ret = e.args[0]
             if ret != pycurl.E_CALL_MULTI_PERFORM:
                 break
@@ -156,7 +157,7 @@ class GeventCurlMulti(object):
             try:
                 ret, num_handles = self._curl_multi.socket_action(
                     pycurl.SOCKET_TIMEOUT, 0)
-            except pycurl.error, e:
+            except pycurl.error as e:
                 ret = e.args[0]
             if ret != pycurl.E_CALL_MULTI_PERFORM:
                 break
@@ -186,7 +187,7 @@ class GeventCurlMulti(object):
         while True:
             num_q, ok_list, err_list = self._curl_multi.info_read()
             for curl in ok_list:
-                curl.waiter.switch()
+                curl.waiter.switch(None)
             for curl, errnum, errmsg in err_list:
                 curl.waiter.throw(Exception('%s %s' % (errnum, errmsg)))
             if num_q == 0:
@@ -230,15 +231,22 @@ class GeventCurl(object):
         This perform method is compatible with gevent because it uses gevent
         synchronization mechanisms to wait for the request to finish.
         """
+        if getattr(self._curl, 'waiter', None) is not None:
+            current = greenlet.getcurrent()
+            msg = 'This curl object is already used by another greenlet, {}, \n' \
+                  'this is {}'.format(self._curl.waiter, current)
+            raise Exception(msg)
+
         waiter = self._curl.waiter = Waiter()
         try:
             self._multi.add_handle(self._curl)
-            response = waiter.get()
+            try:
+                return waiter.get()
+            finally:
+                self._multi.remove_handle(self._curl)
         finally:
-            self._multi.remove_handle(self._curl)
             del self._curl.waiter
 
-        return response
 
 # Curl is originally imported from pycurl. At this point we override it with
 # our custom implementation.

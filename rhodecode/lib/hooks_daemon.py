@@ -29,12 +29,13 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 from SocketServer import TCPServer
 
 import rhodecode
+from rhodecode.lib.exceptions import HTTPLockedRC, HTTPBranchProtected
 from rhodecode.model import meta
 from rhodecode.lib.base import bootstrap_request, bootstrap_config
 from rhodecode.lib import hooks_base
 from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.lib.ext_json import json
-
+from rhodecode.lib import rc_cache
 
 log = logging.getLogger(__name__)
 
@@ -45,10 +46,9 @@ class HooksHttpHandler(BaseHTTPRequestHandler):
         method, extras = self._read_request()
         txn_id = getattr(self.server, 'txn_id', None)
         if txn_id:
-            from rhodecode.lib.caches import compute_key_from_params
             log.debug('Computing TXN_ID based on `%s`:`%s`',
                       extras['repository'], extras['txn_id'])
-            computed_txn_id = compute_key_from_params(
+            computed_txn_id = rc_cache.utils.compute_key_from_params(
                 extras['repository'], extras['txn_id'])
             if txn_id != computed_txn_id:
                 raise Exception(
@@ -119,8 +119,8 @@ class ThreadedHookCallbackDaemon(object):
     _daemon = None
     _done = False
 
-    def __init__(self, txn_id=None, port=None):
-        self._prepare(txn_id=txn_id, port=port)
+    def __init__(self, txn_id=None, host=None, port=None):
+        self._prepare(txn_id=txn_id, host=None, port=port)
 
     def __enter__(self):
         self._run()
@@ -130,7 +130,7 @@ class ThreadedHookCallbackDaemon(object):
         log.debug('Callback daemon exiting now...')
         self._stop()
 
-    def _prepare(self, txn_id=None, port=None):
+    def _prepare(self, txn_id=None, host=None, port=None):
         raise NotImplementedError()
 
     def _run(self):
@@ -147,17 +147,16 @@ class HttpHooksCallbackDaemon(ThreadedHookCallbackDaemon):
 
     hooks_uri = None
 
-    IP_ADDRESS = '127.0.0.1'
-
     # From Python docs: Polling reduces our responsiveness to a shutdown
     # request and wastes cpu at all other times.
     POLL_INTERVAL = 0.01
 
-    def _prepare(self, txn_id=None, port=None):
+    def _prepare(self, txn_id=None, host=None, port=None):
+        host = host or '127.0.0.1'
         self._done = False
-        self._daemon = TCPServer((self.IP_ADDRESS, port or 0), HooksHttpHandler)
+        self._daemon = TCPServer((host, port or 0), HooksHttpHandler)
         _, port = self._daemon.server_address
-        self.hooks_uri = '{}:{}'.format(self.IP_ADDRESS, port)
+        self.hooks_uri = '{}:{}'.format(host, port)
         self.txn_id = txn_id
         # inject transaction_id for later verification
         self._daemon.txn_id = self.txn_id
@@ -220,7 +219,7 @@ def get_txn_id_from_store(txn_id):
         return {}
 
 
-def prepare_callback_daemon(extras, protocol, use_direct_calls, txn_id=None):
+def prepare_callback_daemon(extras, protocol, host, use_direct_calls, txn_id=None):
     txn_details = get_txn_id_from_store(txn_id)
     port = txn_details.get('port', 0)
     if use_direct_calls:
@@ -228,7 +227,8 @@ def prepare_callback_daemon(extras, protocol, use_direct_calls, txn_id=None):
         extras['hooks_module'] = callback_daemon.hooks_module
     else:
         if protocol == 'http':
-            callback_daemon = HttpHooksCallbackDaemon(txn_id=txn_id, port=port)
+            callback_daemon = HttpHooksCallbackDaemon(
+                txn_id=txn_id, host=host, port=port)
         else:
             log.error('Unsupported callback daemon protocol "%s"', protocol)
             raise Exception('Unsupported callback daemon protocol.')
@@ -286,9 +286,20 @@ class Hooks(object):
 
         try:
             result = hook(extras)
-        except Exception as error:
-            exc_tb = traceback.format_exc()
-            log.exception('Exception when handling hook %s', hook)
+        except HTTPBranchProtected as handled_error:
+            # Those special cases doesn't need error reporting. It's a case of
+            # locked repo or protected branch
+            result = AttributeDict({
+                'status': handled_error.code,
+                'output': handled_error.explanation
+            })
+        except (HTTPLockedRC, Exception) as error:
+            # locked needs different handling since we need to also
+            # handle PULL operations
+            exc_tb = ''
+            if not isinstance(error, HTTPLockedRC):
+                exc_tb = traceback.format_exc()
+                log.exception('Exception when handling hook %s', hook)
             error_args = error.args
             return {
                 'status': 128,

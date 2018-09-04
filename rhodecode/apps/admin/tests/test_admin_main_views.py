@@ -67,6 +67,7 @@ class TestAdminMainView(TestController):
         self.log_user()
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
+        repo_name = pull_request.target_repo.repo_name
 
         response = self.app.get(
             route_path(view, pull_request_id=pull_request_id),
@@ -74,9 +75,8 @@ class TestAdminMainView(TestController):
         assert response.location.endswith(
             'pull-request/{}'.format(pull_request_id))
 
-        repo_name = pull_request.target_repo.repo_name
         redirect_url = route_path(
             'pullrequest_show', repo_name=repo_name,
-            pull_request_id=pull_request.pull_request_id)
+            pull_request_id=pull_request_id)
 
         assert redirect_url in response.location

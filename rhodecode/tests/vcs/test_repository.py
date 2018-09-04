@@ -30,6 +30,7 @@ from rhodecode.lib.vcs.backends.base import (
 from rhodecode.lib.vcs.exceptions import VCSError, RepositoryError
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.tests.vcs.conftest import BackendTestMixin
+from rhodecode.tests import repo_id_generator
 
 
 @pytest.mark.usefixtures("vcs_repository_support")
@@ -268,7 +269,7 @@ class TestRepositoryGetCommonAncestor:
 
 
 @pytest.mark.backends("git", "hg")
-class TestRepositoryMerge:
+class TestRepositoryMerge(object):
     def prepare_for_success(self, vcsbackend):
         self.target_repo = vcsbackend.create_repo(number_of_commits=1)
         self.source_repo = vcsbackend.clone_repo(self.target_repo)
@@ -287,7 +288,8 @@ class TestRepositoryMerge:
             'branch', default_branch, self.target_commit.raw_id)
         self.source_ref = Reference(
             'branch', default_branch, self.source_commit.raw_id)
-        self.workspace = 'test-merge'
+        self.workspace_id = 'test-merge'
+        self.repo_id = repo_id_generator(self.target_repo.path)
 
     def prepare_for_conflict(self, vcsbackend):
         self.target_repo = vcsbackend.create_repo(number_of_commits=1)
@@ -302,13 +304,15 @@ class TestRepositoryMerge:
             'branch', default_branch, self.target_commit.raw_id)
         self.source_ref = Reference(
             'branch', default_branch, self.source_commit.raw_id)
-        self.workspace = 'test-merge'
+        self.workspace_id = 'test-merge'
+        self.repo_id = repo_id_generator(self.target_repo.path)
 
     def test_merge_success(self, vcsbackend):
         self.prepare_for_success(vcsbackend)
 
         merge_response = self.target_repo.merge(
-            self.target_ref, self.source_repo, self.source_ref, self.workspace,
+            self.repo_id, self.workspace_id, self.target_ref, self.source_repo,
+            self.source_ref,
             'test user', 'test@rhodecode.com', 'merge message 1',
             dry_run=False)
         expected_merge_response = MergeResponse(
@@ -334,7 +338,7 @@ class TestRepositoryMerge:
             merge_response.merge_ref.commit_id)
 
         merge_response = target_repo.merge(
-            target_ref, self.source_repo, self.source_ref, self.workspace,
+            self.repo_id, self.workspace_id, target_ref, self.source_repo, self.source_ref,
             'test user', 'test@rhodecode.com', 'merge message 2',
             dry_run=False)
         expected_merge_response = MergeResponse(
@@ -353,13 +357,13 @@ class TestRepositoryMerge:
         self.prepare_for_success(vcsbackend)
 
         merge_response = self.target_repo.merge(
-            self.target_ref, self.source_repo, self.source_ref, self.workspace,
-            dry_run=True)
+            self.repo_id, self.workspace_id, self.target_ref, self.source_repo,
+            self.source_ref, dry_run=True)
 
         # We call it twice so to make sure we can handle updates
         merge_response_update = self.target_repo.merge(
-            self.target_ref, self.source_repo, self.source_ref, self.workspace,
-            dry_run=True)
+            self.repo_id, self.workspace_id, self.target_ref, self.source_repo,
+            self.source_ref, dry_run=True)
 
         # Multiple merges may differ in their commit id. Therefore we set the
         # commit id to `None` before comparing the merge responses.
@@ -381,13 +385,15 @@ class TestRepositoryMerge:
             False, False, None, MergeFailureReason.MERGE_FAILED)
 
         merge_response = self.target_repo.merge(
-            self.target_ref, self.source_repo, self.source_ref, self.workspace,
+            self.repo_id,  self.workspace_id, self.target_ref,
+            self.source_repo, self.source_ref,
             'test_user', 'test@rhodecode.com', 'test message', dry_run=dry_run)
         assert merge_response == expected_merge_response
 
         # We call it twice so to make sure we can handle updates
         merge_response = self.target_repo.merge(
-            self.target_ref, self.source_repo, self.source_ref, self.workspace,
+            self.repo_id, self.workspace_id, self.target_ref, self.source_repo,
+            self.source_ref,
             'test_user', 'test@rhodecode.com', 'test message', dry_run=dry_run)
         assert merge_response == expected_merge_response
 
@@ -400,8 +406,8 @@ class TestRepositoryMerge:
             self.target_ref.type, self.target_ref.name, '0' * 40)
 
         merge_response = self.target_repo.merge(
-            target_ref, self.source_repo, self.source_ref, self.workspace,
-            dry_run=True)
+            self.repo_id, self.workspace_id, target_ref, self.source_repo,
+            self.source_ref, dry_run=True)
 
         assert merge_response == expected_merge_response
 
@@ -414,7 +420,8 @@ class TestRepositoryMerge:
             self.source_ref.type, 'not_existing', self.source_ref.commit_id)
 
         merge_response = self.target_repo.merge(
-            self.target_ref, self.source_repo, source_ref, self.workspace,
+            self.repo_id, self.workspace_id, self.target_ref,
+            self.source_repo, source_ref,
             dry_run=True)
 
         assert merge_response == expected_merge_response
@@ -427,29 +434,38 @@ class TestRepositoryMerge:
         with mock.patch.object(self.target_repo, '_merge_repo',
                                side_effect=RepositoryError()):
             merge_response = self.target_repo.merge(
-                self.target_ref, self.source_repo, self.source_ref,
-                self.workspace, dry_run=True)
+                self.repo_id, self.workspace_id, self.target_ref,
+                self.source_repo, self.source_ref,
+                dry_run=True)
 
         assert merge_response == expected_merge_response
 
     def test_merge_invalid_user_name(self, vcsbackend):
         repo = vcsbackend.create_repo(number_of_commits=1)
         ref = Reference('branch', 'master', 'not_used')
+        workspace_id = 'test-errors-in-merge'
+        repo_id = repo_id_generator(workspace_id)
         with pytest.raises(ValueError):
-            repo.merge(ref, self, ref, 'workspace_id')
+            repo.merge(repo_id,  workspace_id, ref, self, ref)
 
     def test_merge_invalid_user_email(self, vcsbackend):
         repo = vcsbackend.create_repo(number_of_commits=1)
         ref = Reference('branch', 'master', 'not_used')
+        workspace_id = 'test-errors-in-merge'
+        repo_id = repo_id_generator(workspace_id)
         with pytest.raises(ValueError):
-            repo.merge(ref, self, ref, 'workspace_id', 'user name')
+            repo.merge(
+                repo_id,  workspace_id, ref, self, ref, 'user name')
 
     def test_merge_invalid_message(self, vcsbackend):
         repo = vcsbackend.create_repo(number_of_commits=1)
         ref = Reference('branch', 'master', 'not_used')
+        workspace_id = 'test-errors-in-merge'
+        repo_id = repo_id_generator(workspace_id)
         with pytest.raises(ValueError):
             repo.merge(
-                ref, self, ref, 'workspace_id', 'user name', 'user@email.com')
+                repo_id, workspace_id, ref, self, ref,
+                'user name', 'user@email.com')
 
 
 @pytest.mark.usefixtures("vcs_repository_support")
@@ -505,7 +521,7 @@ class TestRepositoryStrip(BackendTestMixin):
 
 
 @pytest.mark.backends('hg', 'git')
-class TestRepositoryPull:
+class TestRepositoryPull(object):
 
     def test_pull(self, vcsbackend):
         source_repo = vcsbackend.repo

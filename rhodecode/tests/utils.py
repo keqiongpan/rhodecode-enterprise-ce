@@ -427,3 +427,32 @@ def commit_change(
             f_path=filename
         )
     return commit
+
+
+def permission_update_data_generator(csrf_token, default=None, grant=None, revoke=None):
+    if not default:
+        raise ValueError('Permission for default user must be given')
+    form_data = [(
+        'csrf_token', csrf_token
+    )]
+    # add default
+    form_data.extend([
+        ('u_perm_1', default)
+    ])
+
+    if grant:
+        for cnt, (obj_id, perm, obj_name, obj_type) in enumerate(grant, 1):
+            form_data.extend([
+                ('perm_new_member_perm_new{}'.format(cnt), perm),
+                ('perm_new_member_id_new{}'.format(cnt), obj_id),
+                ('perm_new_member_name_new{}'.format(cnt), obj_name),
+                ('perm_new_member_type_new{}'.format(cnt), obj_type),
+
+            ])
+    if revoke:
+        for obj_id, obj_type in revoke:
+            form_data.extend([
+                ('perm_del_member_id_{}'.format(obj_id), obj_id),
+                ('perm_del_member_type_{}'.format(obj_id), obj_type),
+            ])
+    return form_data

@@ -72,10 +72,11 @@ class TestAdminRepos(object):
 
     def test_repo_list(self, autologin_user, user_util):
         repo = user_util.create_repo()
+        repo_name = repo.repo_name
         response = self.app.get(
             route_path('repos'), status=200)
 
-        response.mustcontain(repo.repo_name)
+        response.mustcontain(repo_name)
 
     def test_create_page_restricted_to_single_backend(self, autologin_user, backend):
         with mock.patch('rhodecode.BACKENDS', {'git': 'git'}):
@@ -226,12 +227,14 @@ class TestAdminRepos(object):
                                      group_description='test',
                                      owner=TEST_USER_ADMIN_LOGIN)
         Session().commit()
+        repo_group_id = gr.group_id
 
         group_name_allowed = 'reg_sometest_allowed_%s' % backend.alias
         gr_allowed = RepoGroupModel().create(
             group_name=group_name_allowed,
             group_description='test',
             owner=TEST_USER_REGULAR_LOGIN)
+        allowed_repo_group_id = gr_allowed.group_id
         Session().commit()
 
         repo_name = 'ingroup'
@@ -243,7 +246,7 @@ class TestAdminRepos(object):
                 repo_name=repo_name,
                 repo_type=backend.alias,
                 repo_description=description,
-                repo_group=gr.group_id,
+                repo_group=repo_group_id,
                 csrf_token=csrf_token))
 
         response.mustcontain('Invalid value')
@@ -260,7 +263,7 @@ class TestAdminRepos(object):
                 repo_name=repo_name,
                 repo_type=backend.alias,
                 repo_description=description,
-                repo_group=gr_allowed.group_id,
+                repo_group=allowed_repo_group_id,
                 csrf_token=csrf_token))
 
         # TODO: johbo: Cleanup in pytest fixture
@@ -293,7 +296,7 @@ class TestAdminRepos(object):
 
         # add repo permissions
         Session().commit()
-
+        repo_group_id = gr.group_id
         repo_name = 'ingroup_inherited_%s' % backend.alias
         repo_name_full = RepoGroup.url_sep().join([group_name, repo_name])
         description = 'description for newly created repo'
@@ -304,7 +307,7 @@ class TestAdminRepos(object):
                 repo_name=repo_name,
                 repo_type=backend.alias,
                 repo_description=description,
-                repo_group=gr.group_id,
+                repo_group=repo_group_id,
                 repo_copy_permissions=True,
                 csrf_token=csrf_token))
 

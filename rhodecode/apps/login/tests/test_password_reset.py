@@ -22,7 +22,7 @@ import pytest
 
 from rhodecode.lib import helpers as h
 from rhodecode.tests import (
-    TestController, clear_all_caches,
+    TestController, clear_cache_regions,
     TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import AssertResponse
@@ -64,7 +64,7 @@ class TestPasswordReset(TestController):
         ])
     def test_password_reset_settings(
             self, pwd_reset_setting, show_link, show_reset):
-        clear_all_caches()
+        clear_cache_regions()
         self.log_user(TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
         params = {
             'csrf_token': self.csrf_token,

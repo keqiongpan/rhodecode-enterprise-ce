@@ -20,6 +20,7 @@
 
 import colander
 
+from rhodecode.authentication import plugin_default_auth_ttl
 from rhodecode.translation import _
 
 
@@ -39,7 +40,7 @@ class AuthnPluginSettingsSchemaBase(colander.MappingSchema):
     )
     cache_ttl = colander.SchemaNode(
         colander.Int(),
-        default=0,
+        default=plugin_default_auth_ttl,
         description=_('Amount of seconds to cache the authentication and '
                       'permissions check response call for this plugin. \n'
                       'Useful for expensive calls like LDAP to improve the '

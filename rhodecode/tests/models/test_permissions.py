@@ -140,6 +140,10 @@ class TestPermissions(object):
         assert repo_perms(user)[repo.repo_name] == 'repository.admin'
         repo.user = org_owner
 
+    def test_default_owner_branch_perms(self, user_util, test_user_group):
+        user = user_util.create_user()
+        assert branch_perms(user) == {}
+
     def test_default_owner_repo_group_perms(self, user_util, test_repo_group):
         user = user_util.create_user()
         org_owner = test_repo_group.user
@@ -360,13 +364,15 @@ class TestPermissions(object):
         user_model.revoke_perm(self.u1, 'hg.fork.repository')
         user_model.grant_perm(self.u1, 'hg.fork.none')
 
+        # TODO(marcink): check branch permissions now ?
+
         # make sure inherit flag is turned off
         self.u1.inherit_default_permissions = False
         Session().commit()
 
         # this user will have non inherited permissions from he's
         # explicitly set permissions
-        assert global_perms(self.u1) == set([
+        assert global_perms(self.u1) == {
             'hg.create.none',
             'hg.fork.none',
             'hg.register.manual_activate',
@@ -375,7 +381,8 @@ class TestPermissions(object):
             'repository.read',
             'group.read',
             'usergroup.read',
-            ])
+            'branch.push_force',
+        }
 
     def test_non_inherited_permissions_from_default_on_user_disabled(self):
         user_model = UserModel()
@@ -396,9 +403,11 @@ class TestPermissions(object):
         self.u1.inherit_default_permissions = False
         Session().commit()
 
+        # TODO(marcink): check branch perms
+
         # this user will have non inherited permissions from he's
         # explicitly set permissions
-        assert global_perms(self.u1) == set([
+        assert global_perms(self.u1) == {
             'hg.create.repository',
             'hg.fork.repository',
             'hg.register.manual_activate',
@@ -407,7 +416,8 @@ class TestPermissions(object):
             'repository.read',
             'group.read',
             'usergroup.read',
-            ])
+            'branch.push_force',
+        }
 
     @pytest.mark.parametrize('perm, expected_perm', [
         ('hg.inherit_default_perms.false', 'repository.none', ),
@@ -425,8 +435,10 @@ class TestPermissions(object):
         self.u1.inherit_default_permissions = True
         Session().commit()
 
+        # TODO(marcink): check branch perms
+
         # this user will have inherited permissions from default user
-        assert global_perms(self.u1) == set([
+        assert global_perms(self.u1) == {
             'hg.create.none',
             'hg.fork.none',
             'hg.register.manual_activate',
@@ -435,11 +447,12 @@ class TestPermissions(object):
             'repository.read',
             'group.read',
             'usergroup.read',
+            'branch.push_force',
             'hg.create.write_on_repogroup.true',
             'hg.usergroup.create.false',
             'hg.repogroup.create.false',
-            perm,
-            ])
+            perm
+        }
 
         assert set(repo_perms(self.u1).values()) == set([expected_perm])
 
@@ -691,6 +704,11 @@ class TestPermissions(object):
 def repo_perms(user):
     auth_user = AuthUser(user_id=user.user_id)
     return auth_user.permissions['repositories']
+
+
+def branch_perms(user):
+    auth_user = AuthUser(user_id=user.user_id)
+    return auth_user.permissions['repository_branches']
 
 
 def group_perms(user):

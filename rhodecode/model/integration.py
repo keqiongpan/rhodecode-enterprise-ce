@@ -33,7 +33,7 @@ from rhodecode import events
 from rhodecode.integrations.types.base import EEIntegration
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
-from rhodecode.model.db import Integration, Repository, RepoGroup
+from rhodecode.model.db import Integration, Repository, RepoGroup, true, false
 from rhodecode.integrations import integration_type_registry
 
 log = logging.getLogger(__name__)
@@ -119,20 +119,20 @@ class IntegrationModel(BaseModel):
 
         if isinstance(scope, Repository):
             query = self.sa.query(Integration).filter(
-                Integration.repo==scope)
+                Integration.repo == scope)
         elif isinstance(scope, RepoGroup):
             query = self.sa.query(Integration).filter(
-                Integration.repo_group==scope)
+                Integration.repo_group == scope)
         elif scope == 'global':
             # global integrations
             query = self.sa.query(Integration).filter(
-                and_(Integration.repo_id==None, Integration.repo_group_id==None)
+                and_(Integration.repo_id == None, Integration.repo_group_id == None)
             )
         elif scope == 'root-repos':
             query = self.sa.query(Integration).filter(
-                and_(Integration.repo_id==None,
-                     Integration.repo_group_id==None,
-                     Integration.child_repos_only==True)
+                and_(Integration.repo_id == None,
+                     Integration.repo_group_id == None,
+                     Integration.child_repos_only == true())
             )
         elif scope == 'all':
             query = self.sa.query(Integration)
@@ -158,20 +158,20 @@ class IntegrationModel(BaseModel):
         query = self.sa.query(
             Integration
         ).filter(
-            Integration.enabled==True
+            Integration.enabled == true()
         )
 
         global_integrations_filter = and_(
-            Integration.repo_id==None,
-            Integration.repo_group_id==None,
-            Integration.child_repos_only==False,
+            Integration.repo_id == None,
+            Integration.repo_group_id == None,
+            Integration.child_repos_only == False,
         )
 
         if isinstance(event, events.RepoEvent):
             root_repos_integrations_filter = and_(
-                Integration.repo_id==None,
-                Integration.repo_group_id==None,
-                Integration.child_repos_only==True,
+                Integration.repo_id == None,
+                Integration.repo_group_id == None,
+                Integration.child_repos_only == true(),
             )
 
             clauses = [
@@ -179,16 +179,16 @@ class IntegrationModel(BaseModel):
             ]
 
             # repo integrations
-            if event.repo.repo_id: # pre create events dont have a repo_id yet
+            if event.repo.repo_id:  # pre create events dont have a repo_id yet
                 clauses.append(
-                    Integration.repo_id==event.repo.repo_id
+                    Integration.repo_id == event.repo.repo_id
                 )
 
             if event.repo.group:
                 clauses.append(
                     and_(
-                        Integration.repo_group_id==event.repo.group.group_id,
-                        Integration.child_repos_only==True
+                        Integration.repo_group_id == event.repo.group.group_id,
+                        Integration.child_repos_only == true()
                     )
                 )
                 # repo group cascade to kids
@@ -196,14 +196,13 @@ class IntegrationModel(BaseModel):
                     and_(
                         Integration.repo_group_id.in_(
                             [group.group_id for group in
-                            event.repo.groups_with_parents]
+                             event.repo.groups_with_parents]
                         ),
-                        Integration.child_repos_only==False
+                        Integration.child_repos_only == false()
                     )
                 )
 
-
-            if not event.repo.group: # root repo
+            if not event.repo.group:  # root repo
                 clauses.append(root_repos_integrations_filter)
 
             query = query.filter(or_(*clauses))
@@ -212,7 +211,7 @@ class IntegrationModel(BaseModel):
                 cache_key = "get_enabled_repo_integrations_%i" % event.repo.repo_id
                 query = query.options(
                     FromCache("sql_cache_short", cache_key))
-        else: # only global integrations
+        else:  # only global integrations
             query = query.filter(global_integrations_filter)
             if cache:
                 query = query.options(

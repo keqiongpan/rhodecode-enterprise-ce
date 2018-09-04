@@ -25,22 +25,36 @@ and the state of LRU dict.
 inrae.cache is licensed under LRUDict is licensed under ZPL license
 This software is Copyright (c) Zope Corporation (tm) and
 Contributors. All rights reserved.
-
-TODO: marcink, we might think of replacing the LRUDict with lru-dict library
-written in C.
-
-eg difference in speed:
-
-    LRUDictC  Time : 0.00025 s, Memory : 110592 Kb
-    LRUDict   Time : 0.00369 s, Memory : 147456 Kb
 """
+
 import logging
 
-from infrae.cache.beakerext.lru import LRUDict
+from repoze.lru import LRUCache
 from beaker.container import MemoryNamespaceManager, AbstractDictionaryNSManager
 from rhodecode.lib.utils2 import safe_str
 
 log = logging.getLogger(__name__)
+
+
+class LRUDict(LRUCache):
+    """
+    Wrapper to provide partial dict access
+    """
+
+    def __setitem__(self, key, value):
+        return self.put(key, value)
+
+    def __getitem__(self, key):
+        return self.get(key)
+
+    def __contains__(self, key):
+        return bool(self.get(key))
+
+    def __delitem__(self, key):
+        del self.data[key]
+
+    def keys(self):
+        return self.data.keys()
 
 
 class LRUDictDebug(LRUDict):

@@ -22,21 +22,21 @@
 $(document).ready(function() {
     var $sshKeyListTable = $('#ssh_keys_table');
 
-    var getDatatableCount = function(){
-      var table = $sshKeyListTable.dataTable();
-      var page = table.api().page.info();
-      var  active = page.recordsDisplay;
-      var  total = page.recordsTotal;
-
-      var _text = _gettext("{0} out of {1} ssh keys").format(active, total);
-      $('#ssh_keys_count').text(_text);
-    };
-
     // user list
     $sshKeyListTable.DataTable({
       processing: true,
       serverSide: true,
-      ajax: "${h.route_path('admin_permissions_ssh_keys_data')}",
+      ajax: {
+          "url": "${h.route_path('admin_permissions_ssh_keys_data')}",
+          "dataSrc": function ( json ) {
+              var filteredCount = json.recordsFiltered;
+              var total = json.recordsTotal;
+
+              var _text = _gettext("{0} out of {1} ssh keys").format(filteredCount, total);
+              $('#ssh_keys_count').text(_text);
+              return json.data;
+          }
+      },
       dom: 'rtp',
       pageLength: ${c.visual.admin_grid_items},
       order: [[ 0, "asc" ]],
@@ -73,11 +73,6 @@ $(document).ready(function() {
 
     $sshKeyListTable.on('preXhr.dt', function(e, settings, data){
         $sshKeyListTable.css('opacity', 0.3);
-    });
-
-    // refresh counters on draw
-    $sshKeyListTable.on('draw.dt', function(){
-        getDatatableCount();
     });
 
     // filter

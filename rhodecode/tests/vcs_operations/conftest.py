@@ -33,7 +33,8 @@ import textwrap
 import pytest
 
 from rhodecode import events
-from rhodecode.model.db import Integration
+from rhodecode.model.db import Integration, UserRepoToPerm, Permission, \
+    UserToRepoBranchPermission, User
 from rhodecode.model.integration import IntegrationModel
 from rhodecode.model.db import Repository
 from rhodecode.model.meta import Session
@@ -238,13 +239,13 @@ def enable_webhook_push_integration(request):
     Session().add(integration)
 
     settings = dict(
-        url='http://httpbin.org',
+        url='http://httpbin.org/post',
         secret_token='secret',
         username=None,
         password=None,
         custom_header_key=None,
         custom_header_val=None,
-        method_type='get',
+        method_type='post',
         events=[events.RepoPushEvent.name],
         log_data=True
     )
@@ -266,4 +267,75 @@ def enable_webhook_push_integration(request):
         integration = Integration.get(integration_id)
         Session().delete(integration)
         Session().commit()
+
+
+@pytest.fixture
+def branch_permission_setter(request):
+    """
+
+    def my_test(branch_permission_setter)
+        branch_permission_setter(repo_name, username, pattern='*', permission='branch.push')
+
+    """
+
+    rule_id = None
+    write_perm_id = None
+
+    def _branch_permissions_setter(
+            repo_name, username, pattern='*', permission='branch.push_force'):
+        global rule_id, write_perm_id
+
+        repo = Repository.get_by_repo_name(repo_name)
+        repo_id = repo.repo_id
+
+        user = User.get_by_username(username)
+        user_id = user.user_id
+
+        rule_perm_obj = Permission.get_by_key(permission)
+
+        write_perm = None
+
+        # add new entry, based on existing perm entry
+        perm = UserRepoToPerm.query() \
+            .filter(UserRepoToPerm.repository_id == repo_id) \
+            .filter(UserRepoToPerm.user_id == user_id) \
+            .first()
+
+        if not perm:
+            # such user isn't defined in Permissions for repository
+            # we now on-the-fly add new permission
+
+            write_perm = UserRepoToPerm()
+            write_perm.permission = Permission.get_by_key('repository.write')
+            write_perm.repository_id = repo_id
+            write_perm.user_id = user_id
+            Session().add(write_perm)
+            Session().flush()
+
+            perm = write_perm
+
+        rule = UserToRepoBranchPermission()
+        rule.rule_to_perm_id = perm.repo_to_perm_id
+        rule.branch_pattern = pattern
+        rule.rule_order = 10
+        rule.permission = rule_perm_obj
+        rule.repository_id = repo_id
+        Session().add(rule)
+        Session().commit()
+
+        global rule, write_perm
+
+        return rule
+
+    @request.addfinalizer
+    def cleanup():
+        if rule:
+            Session().delete(rule)
+            Session().commit()
+        if write_perm:
+            Session().delete(write_perm)
+            Session().commit()
+
+    return _branch_permissions_setter
+
 

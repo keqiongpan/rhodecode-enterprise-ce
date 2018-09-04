@@ -56,6 +56,14 @@ def md5_safe(s):
     return md5(safe_str(s))
 
 
+def sha1(s):
+    return hashlib.sha1(s).hexdigest()
+
+
+def sha1_safe(s):
+    return sha1(safe_str(s))
+
+
 def __get_lem(extra_mapping=None):
     """
     Get language extension map based on what's inside pygments lexers
@@ -353,12 +361,17 @@ def ping_connection(connection, branch):
 def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
     """Custom engine_from_config functions."""
     log = logging.getLogger('sqlalchemy.engine')
+    _ping_connection = configuration.pop('sqlalchemy.db1.ping_connection', None)
+
     engine = sqlalchemy.engine_from_config(configuration, prefix, **kwargs)
 
     def color_sql(sql):
         color_seq = '\033[1;33m'  # This is yellow: code 33
         normal = '\x1b[0m'
         return ''.join([color_seq, sql, normal])
+
+    if configuration['debug'] or _ping_connection:
+        sqlalchemy.event.listen(engine, "engine_connect", ping_connection)
 
     if configuration['debug']:
         # attach events only for debug configuration
@@ -381,8 +394,6 @@ def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
                                  parameters, context, executemany):
             delattr(conn, 'query_start_time')
 
-        sqlalchemy.event.listen(engine, "engine_connect",
-                                ping_connection)
         sqlalchemy.event.listen(engine, "before_cursor_execute",
                                 before_cursor_execute)
         sqlalchemy.event.listen(engine, "after_cursor_execute",
@@ -738,6 +749,13 @@ class AttributeDict(AttributeDictBase):
     def __getattr__(self, attr):
         return self.get(attr, None)
 
+
+
+class OrderedDefaultDict(collections.OrderedDict, collections.defaultdict):
+    def __init__(self, default_factory=None, *args, **kwargs):
+        # in python3 you can omit the args to super
+        super(OrderedDefaultDict, self).__init__(*args, **kwargs)
+        self.default_factory = default_factory
 
 
 def fix_PATH(os_=None):

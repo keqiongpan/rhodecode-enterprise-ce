@@ -41,14 +41,14 @@ import pkg_resources
 from webhelpers.text import collapse, remove_formatting, strip_tags
 from mako import exceptions
 from pyramid.threadlocal import get_current_registry
-from pyramid.request import Request
+from rhodecode.lib.request import Request
 
 from rhodecode.lib.fakemod import create_module
 from rhodecode.lib.vcs.backends.base import Config
 from rhodecode.lib.vcs.exceptions import VCSError
 from rhodecode.lib.vcs.utils.helpers import get_scm, get_scm_backend
 from rhodecode.lib.utils2 import (
-    safe_str, safe_unicode, get_current_rhodecode_user, md5)
+    safe_str, safe_unicode, get_current_rhodecode_user, md5, sha1)
 from rhodecode.model import meta
 from rhodecode.model.db import (
     Repository, User, RhodeCodeUi, UserLog, RepoGroup, UserGroup)
@@ -119,7 +119,6 @@ def get_repo_group_slug(request):
     elif getattr(request, 'matchdict', None):
         # pyramid
         _group = request.matchdict.get('repo_group_name')
-
 
     if _group:
         _group = _group.rstrip('/')

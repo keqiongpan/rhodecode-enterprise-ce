@@ -95,7 +95,7 @@ class TestMercurialRemoteRepoInvalidation(object):
         references.
         """
         from rhodecode.model.pull_request import PullRequestModel
-
+        repo_id = pull_request.target_repo.repo_id
         target_vcs = pull_request.target_repo.scm_instance()
         target_ref = pull_request.target_ref_parts
         source_ref = pull_request.source_ref_parts
@@ -104,7 +104,7 @@ class TestMercurialRemoteRepoInvalidation(object):
         pr = PullRequestModel()
         workspace_id = pr._workspace_id(pull_request)
         shadow_repository_path = target_vcs._maybe_prepare_merge_workspace(
-            workspace_id, target_ref, source_ref)
+            repo_id, workspace_id, target_ref, source_ref)
         shadow_repo = target_vcs._get_shadow_instance(shadow_repository_path)
 
         # This will populate the cache of the mercurial repository object

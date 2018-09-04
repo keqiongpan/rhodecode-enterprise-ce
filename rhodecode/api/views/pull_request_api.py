@@ -284,7 +284,7 @@ def merge_pull_request(
             raise JSONRPCError('userid is not the same as your user')
 
     check = MergeCheck.validate(
-        pull_request, user=apiuser, translator=request.translate)
+        pull_request, auth_user=apiuser, translator=request.translate)
     merge_possible = not check.failed
 
     if not merge_possible:
@@ -302,7 +302,7 @@ def merge_pull_request(
         request.environ, repo_name=target_repo.repo_name,
         username=apiuser.username, action='push',
         scm=target_repo.repo_type)
-    merge_response = PullRequestModel().merge(
+    merge_response = PullRequestModel().merge_repo(
         pull_request, apiuser, extras=extras)
     if merge_response.executed:
         PullRequestModel().close_pull_request(
@@ -548,7 +548,8 @@ def comment_pull_request(
         closing_pr=False,
         renderer=renderer,
         comment_type=comment_type,
-        resolves_comment_id=resolves_comment_id
+        resolves_comment_id=resolves_comment_id,
+        auth_user=apiuser
     )
 
     if allowed_to_change_status and status:
@@ -573,7 +574,8 @@ def comment_pull_request(
 @jsonrpc_method()
 def create_pull_request(
         request, apiuser, source_repo, target_repo, source_ref, target_ref,
-        title=Optional(''), description=Optional(''), reviewers=Optional(None)):
+        title=Optional(''), description=Optional(''), description_renderer=Optional(''),
+        reviewers=Optional(None)):
     """
     Creates a new pull request.
 
@@ -598,6 +600,10 @@ def create_pull_request(
     :type title: str
     :param description: Set the pull request description.
     :type description: Optional(str)
+    :type description_renderer: Optional(str)
+    :param description_renderer: Set pull request renderer for the description.
+        It should be 'rst', 'markdown' or 'plain'. If not give default
+        system renderer will be used
     :param reviewers: Set the new pull request reviewers list.
         Reviewer defined by review rules will be added automatically to the
         defined list.
@@ -607,7 +613,7 @@ def create_pull_request(
             [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
     """
 
-    source_db_repo =  get_repo_or_error(source_repo)
+    source_db_repo = get_repo_or_error(source_repo)
     target_db_repo = get_repo_or_error(target_repo)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
@@ -678,7 +684,11 @@ def create_pull_request(
             source_ref=title_source_ref,
             target=target_repo
         )
+    # fetch renderer, if set fallback to plain in case of PR
+    rc_config = SettingsModel().get_all_settings()
+    default_system_renderer = rc_config.get('rhodecode_markup_renderer', 'plain')
     description = Optional.extract(description)
+    description_renderer = Optional.extract(description_renderer) or default_system_renderer
 
     pull_request = PullRequestModel().create(
         created_by=apiuser.user_id,
@@ -690,7 +700,9 @@ def create_pull_request(
         reviewers=reviewers,
         title=title,
         description=description,
+        description_renderer=description_renderer,
         reviewer_data=reviewer_rules,
+        auth_user=apiuser
     )
 
     Session().commit()
@@ -704,8 +716,8 @@ def create_pull_request(
 @jsonrpc_method()
 def update_pull_request(
         request, apiuser, pullrequestid, repoid=Optional(None),
-        title=Optional(''), description=Optional(''), reviewers=Optional(None),
-        update_commits=Optional(None)):
+        title=Optional(''), description=Optional(''), description_renderer=Optional(''),
+        reviewers=Optional(None), update_commits=Optional(None)):
     """
     Updates a pull request.
 
@@ -719,6 +731,9 @@ def update_pull_request(
     :type title: str
     :param description: Update pull request description.
     :type description: Optional(str)
+    :type description_renderer: Optional(str)
+    :param description_renderer: Update pull request renderer for the description.
+        It should be 'rst', 'markdown' or 'plain'
     :param reviewers: Update pull request reviewers list with new value.
     :type reviewers: Optional(list)
         Accepts username strings or objects of the format:
@@ -801,10 +816,15 @@ def update_pull_request(
 
     title = Optional.extract(title)
     description = Optional.extract(description)
+    description_renderer = Optional.extract(description_renderer)
+
     if title or description:
         PullRequestModel().edit(
-            pull_request, title or pull_request.title,
-            description or pull_request.description, apiuser)
+            pull_request,
+            title or pull_request.title,
+            description or pull_request.description,
+            description_renderer or pull_request.description_renderer,
+            apiuser)
         Session().commit()
 
     commit_changes = {"added": [], "common": [], "removed": []}

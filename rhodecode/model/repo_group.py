@@ -425,11 +425,14 @@ class RepoGroupModel(BaseModel):
                     member_name = User.get(member_id).username
                     # this updates also current one if found
                     _set_perm_user(obj, user=member_id, perm=perm)
-                else:  # set for user group
+                elif member_type == 'user_group':
                     member_name = UserGroup.get(member_id).users_group_name
                     if not check_perms or has_group_perm(member_name,
                                                          user=cur_user):
                         _set_perm_group(obj, users_group=member_id, perm=perm)
+                else:
+                    raise ValueError("member_type must be 'user' or 'user_group' "
+                                     "got {} instead".format(member_type))
 
                 changes['updated'].append(
                     {'change_obj': change_obj, 'type': member_type,
@@ -441,12 +444,15 @@ class RepoGroupModel(BaseModel):
                 if member_type == 'user':
                     member_name = User.get(member_id).username
                     _set_perm_user(obj, user=member_id, perm=perm)
-                else:  # set for user group
+                elif member_type == 'user_group':
                     # check if we have permissions to alter this usergroup
                     member_name = UserGroup.get(member_id).users_group_name
                     if not check_perms or has_group_perm(member_name,
                                                          user=cur_user):
                         _set_perm_group(obj, users_group=member_id, perm=perm)
+                else:
+                    raise ValueError("member_type must be 'user' or 'user_group' "
+                                     "got {} instead".format(member_type))
 
                 changes['added'].append(
                     {'change_obj': change_obj, 'type': member_type,
@@ -458,12 +464,15 @@ class RepoGroupModel(BaseModel):
                 if member_type == 'user':
                     member_name = User.get(member_id).username
                     _revoke_perm_user(obj, user=member_id)
-                else:  # set for user group
+                elif member_type == 'user_group':
                     # check if we have permissions to alter this usergroup
                     member_name = UserGroup.get(member_id).users_group_name
                     if not check_perms or has_group_perm(member_name,
                                                          user=cur_user):
                         _revoke_perm_group(obj, user_group=member_id)
+                else:
+                    raise ValueError("member_type must be 'user' or 'user_group' "
+                                     "got {} instead".format(member_type))
 
                 changes['deleted'].append(
                     {'change_obj': change_obj, 'type': member_type,

@@ -403,7 +403,7 @@ def resolve_ref_or_error(ref, repo):
         ref_hash = ref_hash or _get_ref_hash(repo, ref_type, ref_name)
     except (KeyError, ValueError):
         raise JSONRPCError(
-            'The specified {type} `{name}` does not exist'.format(
+            'The specified value:{type}:`{name}` does not exist, or is not allowed.'.format(
                 type=ref_type, name=ref_name))
 
     return ':'.join([ref_type, ref_name, ref_hash])
@@ -431,7 +431,6 @@ def _get_commit_dict(
     }
 
 
-# TODO: mikhail: Think about moving this function to some library
 def _get_ref_hash(repo, type_, name):
     vcs_repo = repo.scm_instance()
     if type_ == 'branch' and vcs_repo.alias in ('hg', 'git'):

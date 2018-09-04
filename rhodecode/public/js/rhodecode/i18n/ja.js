@@ -96,6 +96,8 @@ var _TM = {
     'specify commit': 'specify commit',
     'truncated result': '省略された結果',
     'truncated results': '省略された結果',
+    '{0} ({1} inactive) of {2} user groups ({3} inactive)': '{0} ({1} inactive) of {2} user groups ({3} inactive)',
+    '{0} ({1} inactive) of {2} users ({3} inactive)': '{0} ({1} inactive) of {2} users ({3} inactive)',
     '{0} active out of {1} users': '{0} active out of {1} users',
     '{0} ago': '{0} 前',
     '{0} and {1}': '{0} and {1}',
@@ -111,6 +113,8 @@ var _TM = {
     '{0} out of {1} users': '{0} out of {1} users',
     '{0} results are available, use up and down arrow keys to navigate.': '{0} 件の結果があります。矢印キーの上下で選択できます。',
     '{0} sec': '{0} 秒',
+    '{0} user groups ({1} inactive)': '{0} user groups ({1} inactive)',
+    '{0} users ({1} inactive)': '{0} users ({1} inactive)',
     '{0} year': '{0} 年',
     '{0} years': '{0} years',
     '{0}, {1} ago': '{0}, {1} ago'

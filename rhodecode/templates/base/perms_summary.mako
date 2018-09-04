@@ -4,11 +4,23 @@
 ##    ${p.perms_summary(c.perm_user.permissions)}
 
 <%def name="perms_summary(permissions, show_all=False, actions=True, side_link=None)">
+<% section_to_label = {
+    'global': 'Global Permissions',
+    'repository_branches': 'Repository Branch Rules',
+    'repositories': 'Repository Permissions',
+    'user_groups': 'User Group Permissions',
+    'repositories_groups': 'Repository Group Permissions',
+} %>
+
 <div id="perms" class="table fields">
-  %for section in sorted(permissions.keys()):
+  %for section in sorted(permissions.keys(), key=lambda item: {'global': 0, 'repository_branches': 1}.get(item, 1000)):
+  <% total_counter = 0 %>
+
   <div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">${section.replace("_"," ").capitalize()}</h3>
+    <div class="panel-heading" id="${section.replace("_","-")}-permissions">
+        <h3 class="panel-title">${section_to_label.get(section, section)} - <span id="total_count_${section}"></span>
+        <a class="permalink" href="#${section.replace("_","-")}-permissions"> ¶</a>
+        </h3>
         % if side_link:
             <div class="pull-right">
                 <a href="${side_link}">${_('in JSON format')}</a>
@@ -18,15 +30,24 @@
     <div class="panel-body">
       <div class="perms_section_head field">
         <div class="radios">
-          %if section != 'global':
+          % if section == 'repository_branches':
               <span class="permissions_boxes">
               <span class="desc">${_('show')}: </span>
-              ${h.checkbox('perms_filter_none_%s' % section, 'none', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='none')}   <label for="${'perms_filter_none_%s' % section}"><span class="perm_tag none">${_('none')}</span></label>
-              ${h.checkbox('perms_filter_read_%s' % section, 'read', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='read')}   <label for="${'perms_filter_read_%s' % section}"><span class="perm_tag read">${_('read')}</span></label>
-              ${h.checkbox('perms_filter_write_%s' % section, 'write', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='write')} <label for="${'perms_filter_write_%s' % section}"> <span class="perm_tag write">${_('write')}</span></label>
-              ${h.checkbox('perms_filter_admin_%s' % section, 'admin', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='admin')} <label for="${'perms_filter_admin_%s' % section}"><span class="perm_tag admin">${_('admin')}</span></label>
+              ${h.checkbox('perms_filter_none_%s' % section, 'none', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='none')}   <label for="${'perms_filter_none_{}'.format(section)}"><span class="perm_tag none">${_('none')}</span></label>
+              ${h.checkbox('perms_filter_merge_%s' % section, 'merge', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='merge')}   <label for="${'perms_filter_merge_{}'.format(section)}"><span class="perm_tag merge">${_('merge')}</span></label>
+              ${h.checkbox('perms_filter_push_%s' % section, 'push', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='push')} <label for="${'perms_filter_push_{}'.format(section)}"> <span class="perm_tag push">${_('push')}</span></label>
+              ${h.checkbox('perms_filter_push_force_%s' % section, 'push_force', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='push_force')} <label for="${'perms_filter_push_force_{}'.format(section)}"><span class="perm_tag push_force">${_('push force')}</span></label>
               </span>
-          %endif
+          % elif section != 'global':
+              <span class="permissions_boxes">
+              <span class="desc">${_('show')}: </span>
+              ${h.checkbox('perms_filter_none_%s' % section, 'none', '', class_='perm_filter filter_%s' % section, section=section, perm_type='none')}   <label for="${'perms_filter_none_{}'.format(section)}"><span class="perm_tag none">${_('none')}</span></label>
+              ${h.checkbox('perms_filter_read_%s' % section, 'read', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='read')}   <label for="${'perms_filter_read_{}'.format(section)}"><span class="perm_tag read">${_('read')}</span></label>
+              ${h.checkbox('perms_filter_write_%s' % section, 'write', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='write')} <label for="${'perms_filter_write_{}'.format(section)}"> <span class="perm_tag write">${_('write')}</span></label>
+              ${h.checkbox('perms_filter_admin_%s' % section, 'admin', 'checked', class_='perm_filter filter_%s' % section, section=section, perm_type='admin')} <label for="${'perms_filter_admin_{}'.format(section)}"><span class="perm_tag admin">${_('admin')}</span></label>
+              </span>
+          % endif
+
         </div>
       </div>
       <div class="field">
@@ -72,12 +93,10 @@
                       %endif
                     %else:
                       %if not val_lbl:
-                          ${
-                             {'false': False,
+                          ${{'false': False,
                              'true': True,
                              'none': False,
-                             'repository': True}.get(val[1][0] if 0 < len(val[1]) else 'false')
-                          }
+                             'repository': True}.get(val[1][0] if 0 < len(val[1]) else 'false')}
                       %else:
                           <span class="perm_tag ${val[1][0]}">${val_lbl}.${val[1][0]}</span>
                       %endif
@@ -142,7 +161,81 @@
                 edit_url=h.route_path('user_edit_global_perms', user_id=c.user.user_id), edit_global_url=h.route_path('admin_permissions_object'))}
 
            </tbody>
+          ## Branch perms
+          %elif section == 'repository_branches':
+            <thead>
+                <tr>
+                <th>${_('Name')}</th>
+                <th>${_('Pattern')}</th>
+                <th>${_('Permission')}</th>
+                %if actions:
+                <th>${_('Edit Branch Permission')}</th>
+                %endif
+            </thead>
+            <tbody class="section_${section}">
+            <%
+                def name_sorter(permissions):
+                    def custom_sorter(item):
+                        return item[0]
+                    return sorted(permissions, key=custom_sorter)
+
+                def branch_sorter(permissions):
+                    def custom_sorter(item):
+                       ## none, merge, push, push_force
+                       section = item[1].split('.')[-1]
+                       section_importance = {'none': u'0',
+                                             'merge': u'1',
+                                             'push': u'2',
+                                             'push_force': u'3'}.get(section)
+                       ## sort by importance + name
+                       return section_importance + item[0]
+                    return sorted(permissions, key=custom_sorter)
+            %>
+            %for k, section_perms in name_sorter(permissions[section].items()):
+                ## for display purposes, for non super-admins we need to check if shown
+                ## repository is actually accessible for user
+                <% repo_perm = permissions['repositories'][k] %>
+                % if repo_perm == 'repository.none' and not c.rhodecode_user.is_admin:
+                    ## skip this entry
+                    <% continue %>
+                % endif
+
+                <% total_counter +=1 %>
+                % for pattern, perm in branch_sorter(section_perms.items()):
+                    <tr class="perm_row ${'{}_{}'.format(section, perm.split('.')[-1])}">
+                        <td class="td-name">
+                            <a href="${h.route_path('repo_summary',repo_name=k)}">${k}</a>
+                        </td>
+                        <td>${pattern}</td>
+                        <td class="td-tags">
+                            ## TODO: calculate origin somehow
+                            ## % for i, ((_pat, perm), origin) in enumerate((permissions[section].perm_origin_stack[k])):
+
+                             <div>
+                                 <% i = 0 %>
+                                 <% origin = 'unknown' %>
+                                 <% _css_class = i > 0 and 'perm_overriden' or '' %>
+
+                                 <span class="${_css_class} perm_tag ${perm.split('.')[-1]}">
+                                  ${perm}
+                                  ##(${origin})
+                                 </span>
+                             </div>
+                            ## % endfor
+                        </td>
+                        %if actions:
+                        <td class="td-action">
+                            <a href="${h.route_path('edit_repo_perms_branch',repo_name=k)}">${_('edit')}</a>
+                        </td>
+                        %endif
+                    </tr>
+                % endfor
+            %endfor
+            </tbody>
+
+          ## Repos/Repo Groups/users groups perms
           %else:
+
            ## none/read/write/admin permissions on groups/repos etc
             <thead>
                 <tr>
@@ -167,8 +260,11 @@
                     return sorted(permissions, key=custom_sorter)
             %>
             %for k, section_perm in sorter(permissions[section].items()):
-                %if section_perm.split('.')[-1] != 'none' or show_all:
-                <tr class="perm_row ${'%s_%s' % (section, section_perm.split('.')[-1])}">
+                <% perm_value = section_perm.split('.')[-1] %>
+                <% _css_class = 'display:none' if perm_value in ['none'] else '' %>
+
+                %if perm_value != 'none' or show_all:
+                <tr class="perm_row ${'{}_{}'.format(section, section_perm.split('.')[-1])}" style="${_css_class}">
                     <td class="td-name">
                         %if section == 'repositories':
                             <a href="${h.route_path('repo_summary',repo_name=k)}">${k}</a>
@@ -183,7 +279,7 @@
                       %if hasattr(permissions[section], 'perm_origin_stack'):
                          <div>
                          %for i, (perm, origin) in enumerate(reversed(permissions[section].perm_origin_stack[k])):
-
+                         <% _css_class =  i > 0 and 'perm_overriden' or '' %>
                          % if i > 0:
                              <div style="color: #979797">
                              <i class="icon-arrow_up"></i>
@@ -193,7 +289,7 @@
                          % endif
 
                          <div>
-                             <span class="${i > 0 and 'perm_overriden' or ''} perm_tag ${perm.split('.')[-1]}">
+                             <span class="${_css_class} perm_tag ${perm.split('.')[-1]}">
                               ${perm} (${origin})
                              </span>
                          </div>
@@ -216,11 +312,13 @@
                     </td>
                     %endif
                 </tr>
+                <% total_counter +=1 %>
                 %endif
+
             %endfor
 
             <tr id="empty_${section}" class="noborder" style="display:none;">
-              <td colspan="6">${_('No permission defined')}</td>
+              <td colspan="6">${_('No matching permission defined')}</td>
             </tr>
 
             </tbody>
@@ -231,20 +329,26 @@
       </div>
     </div>
   </div>
+
+  <script>
+    $('#total_count_${section}').html(${total_counter})
+  </script>
+
   %endfor
 </div>
 
 <script>
     $(document).ready(function(){
-        var show_empty = function(section){
+        var showEmpty = function(section){
             var visible = $('.section_{0} tr.perm_row:visible'.format(section)).length;
-            if(visible == 0){
+            if(visible === 0){
                 $('#empty_{0}'.format(section)).show();
             }
             else{
                 $('#empty_{0}'.format(section)).hide();
             }
         };
+
         $('.perm_filter').on('change', function(e){
             var self = this;
             var section = $(this).attr('section');
@@ -261,7 +365,7 @@
                     $('.'+section+'_'+perm_type).hide();
                 }
             });
-            show_empty(section);
+            showEmpty(section);
         })
     })
 </script>

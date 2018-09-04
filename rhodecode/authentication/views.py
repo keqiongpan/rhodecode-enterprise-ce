@@ -27,12 +27,10 @@ from pyramid.renderers import render
 from pyramid.response import Response
 
 from rhodecode.apps._base import BaseAppView
-from rhodecode.authentication.base import (
-    get_auth_cache_manager, get_perms_cache_manager, get_authn_registry)
+from rhodecode.authentication.base import get_authn_registry
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
-from rhodecode.lib.caches import clear_cache_manager
 from rhodecode.model.forms import AuthSettingsForm
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel
@@ -101,16 +99,6 @@ class AuthnPluginViewBase(BaseAppView):
         for name, value in valid_data.items():
             self.plugin.create_or_update_setting(name, value)
         Session().commit()
-
-        # cleanup cache managers in case of change for plugin
-        # TODO(marcink): because we can register multiple namespaces
-        # we should at some point figure out how to retrieve ALL namespace
-        # cache managers and clear them...
-        cache_manager = get_auth_cache_manager()
-        clear_cache_manager(cache_manager)
-
-        cache_manager = get_perms_cache_manager()
-        clear_cache_manager(cache_manager)
 
         # Display success message and redirect.
         h.flash(_('Auth settings updated successfully.'), category='success')

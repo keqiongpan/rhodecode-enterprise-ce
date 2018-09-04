@@ -5,9 +5,8 @@
         <!-- box / title -->
         <div class="title">
             <div class="block-left breadcrumbs">
-              <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
               ${self.breadcrumbs()}
-              <span id="match_container" style="display:none">&raquo; <span id="match_count">0</span> ${_('matches')}</span>
+              <span id="match_container" style="display:none"><span id="match_count">0</span> ${_('matches')}</span>
             </div>
             %if c.rhodecode_user.username != h.DEFAULT_USER:
               <div class="block-right">
@@ -136,65 +135,6 @@
           }
         });
         % endif
-
-        var getDatatableCount = function() {
-          var reposCount = 0;
-          var reposCountTotal = 0;
-
-          % if c.repos_data != '[]':
-          var pageInfo = $('#repo_list_table').dataTable().api().page.info();
-          var reposCount = pageInfo.recordsDisplay;
-          var reposCountTotal = pageInfo.recordsTotal;
-          % endif
-
-          var repoGroupsCount = 0;
-          var repoGroupsCountTotal = 0;
-
-          % if c.repo_groups_data != '[]':
-          var pageInfo = $('#group_list_table').dataTable().api().page.info();
-          var repoGroupsCount = pageInfo.recordsDisplay;
-          var repoGroupsCountTotal = pageInfo.recordsTotal;
-          % endif
-
-          if (repoGroupsCount !== repoGroupsCountTotal) {
-            $('#match_count').text(reposCount + repoGroupsCount);
-          }
-          if (reposCount !== reposCountTotal) {
-            $('#match_container').show();
-          }
-          if ($('#q_filter').val() === '') {
-            $('#match_container').hide();
-          }
-        };
-
-        // update the counter when doing search
-        $('#repo_list_table, #group_list_table').on( 'search.dt', function (e,settings) {
-          getDatatableCount();
-        });
-
-        // filter, filter both grids
-        $('#q_filter').on( 'keyup', function () {
-
-          % if c.repo_groups_data != '[]':
-          var repo_group_api = $('#group_list_table').dataTable().api();
-          repo_group_api
-            .columns( 0 )
-            .search( this.value )
-            .draw();
-          % endif
-
-          % if c.repos_data != '[]':
-          var repo_api = $('#repo_list_table').dataTable().api();
-          repo_api
-            .columns( 0 )
-            .search( this.value )
-            .draw();
-          % endif
-
-        });
-
-        // refilter table if page load via back button
-        $("#q_filter").trigger('keyup');
 
       });
     </script>

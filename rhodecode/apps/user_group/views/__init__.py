@@ -28,6 +28,7 @@ from pyramid.view import view_config
 from pyramid.response import Response
 from pyramid.renderers import render
 
+from rhodecode import events
 from rhodecode.lib.exceptions import (
     RepoGroupAssignmentError, UserGroupAssignedException)
 from rhodecode.model.forms import (
@@ -139,6 +140,9 @@ class UserGroupsView(UserGroupAppView):
         user_group = self.db_user_group
         user_group_id = user_group.users_group_id
 
+        old_user_group_name = self.db_user_group_name
+        new_user_group_name = old_user_group_name
+
         c = self.load_default_context()
         c.user_group = user_group
         c.group_members_obj = [x.user for x in c.user_group.members]
@@ -151,7 +155,7 @@ class UserGroupsView(UserGroupAppView):
             old_data=c.user_group.get_dict(), allow_disabled=True)()
 
         old_values = c.user_group.get_api_data()
-        user_group_name = self.request.POST.get('users_group_name')
+
         try:
             form_result = users_group_form.to_python(self.request.POST)
             pstruct = peppercorn.parse(self.request.POST.items())
@@ -159,7 +163,7 @@ class UserGroupsView(UserGroupAppView):
 
             user_group, added_members, removed_members = \
                 UserGroupModel().update(c.user_group, form_result)
-            updated_user_group = form_result['users_group_name']
+            new_user_group_name = form_result['users_group_name']
 
             for user_id in added_members:
                 user = User.get(user_id)
@@ -181,8 +185,22 @@ class UserGroupsView(UserGroupAppView):
                 'user_group.edit', action_data={'old_data': old_values},
                 user=self._rhodecode_user)
 
-            h.flash(_('Updated user group %s') % updated_user_group,
+            h.flash(_('Updated user group %s') % new_user_group_name,
                     category='success')
+
+            affected_user_ids = []
+            for user_id in added_members + removed_members:
+                affected_user_ids.append(user_id)
+
+            name_changed = old_user_group_name != new_user_group_name
+            if name_changed:
+                owner = User.get_by_username(form_result['user'])
+                owner_id = owner.user_id if owner else self._rhodecode_user.user_id
+                affected_user_ids.append(self._rhodecode_user.user_id)
+                affected_user_ids.append(owner_id)
+
+            events.trigger(events.UserPermissionsChange(affected_user_ids))
+
             Session().commit()
         except formencode.Invalid as errors:
             defaults = errors.value
@@ -204,7 +222,7 @@ class UserGroupsView(UserGroupAppView):
         except Exception:
             log.exception("Exception during update of user group")
             h.flash(_('Error occurred during update of user group %s')
-                    % user_group_name, category='error')
+                    % new_user_group_name, category='error')
 
         raise HTTPFound(
             h.route_path('edit_user_group', user_group_id=user_group_id))
@@ -354,6 +372,14 @@ class UserGroupsView(UserGroupAppView):
 
         Session().commit()
         h.flash(_('User Group permissions updated'), category='success')
+
+        affected_user_ids = []
+        for change in changes['added'] + changes['updated'] + changes['deleted']:
+            if change['type'] == 'user':
+                affected_user_ids.append(change['id'])
+
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
+
         raise HTTPFound(
             h.route_path('edit_user_group_perms', user_group_id=user_group_id))
 

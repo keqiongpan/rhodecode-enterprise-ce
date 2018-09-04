@@ -8,6 +8,9 @@ if hasattr(c, 'rhodecode_db_repo'):
     c.template_context['repo_type'] = c.rhodecode_db_repo.repo_type
     c.template_context['repo_landing_commit'] = c.rhodecode_db_repo.landing_rev[1]
 
+if getattr(c, 'repo_group', None):
+    c.template_context['repo_group_id'] = c.repo_group.group_id
+
 if getattr(c, 'rhodecode_user', None) and c.rhodecode_user.user_id:
     c.template_context['rhodecode_user']['username'] = c.rhodecode_user.username
     c.template_context['rhodecode_user']['email'] = c.rhodecode_user.email
@@ -24,7 +27,7 @@ c.template_context['default_user'] = {
 %>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-lite.min.js', ver=c.rhodecode_version_hash)}"></script>
+        <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-lite.js', ver=c.rhodecode_version_hash)}"></script>
         <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
         <title>${self.title()}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
@@ -60,33 +63,6 @@ c.template_context['default_user'] = {
 
         ## JAVASCRIPT
         <%def name="js()">
-            <script>
-                // setup Polymer options
-                window.Polymer = {lazyRegister: true, dom: 'shadow'};
-
-                // Load webcomponentsjs polyfill if browser does not support native Web Components
-                (function() {
-                    'use strict';
-                    var onload = function() {
-                        // For native Imports, manually fire WebComponentsReady so user code
-                        // can use the same code path for native and polyfill'd imports.
-                        if (!window.HTMLImports) {
-                            document.dispatchEvent(
-                                    new CustomEvent('WebComponentsReady', {bubbles: true})
-                            );
-                        }
-                    };
-                    var webComponentsSupported = (
-                            'registerElement' in document
-                            && 'import' in document.createElement('link')
-                            && 'content' in document.createElement('template')
-                    );
-                    if (!webComponentsSupported) {
-                    } else {
-                        onload();
-                    }
-                })();
-            </script>
 
             <script src="${h.asset('js/rhodecode/i18n/%s.js' % c.language, ver=c.rhodecode_version_hash)}"></script>
             <script type="text/javascript">
@@ -94,6 +70,7 @@ c.template_context['default_user'] = {
             var templateContext = ${h.json.dumps(c.template_context)|n};
 
             var APPLICATION_URL = "${h.route_path('home').rstrip('/')}";
+            var APPLICATION_PLUGINS = [];
             var ASSET_URL = "${h.asset('')}";
             var DEFAULT_RENDERER = "${h.get_visual_attr(c, 'default_renderer')}";
             var CSRF_TOKEN = "${getattr(c, 'csrf_token', '')}";

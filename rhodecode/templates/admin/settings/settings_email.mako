@@ -26,6 +26,10 @@
           <dd  title="${h.tooltip(tt)}">${dd}</dd>
         %endfor
         </dl>
+        <span class="help-block">
+            ${_('You can adjust those settings in [DEFAULT] section of .ini file located at')}: <br/>
+            ${c.rhodecode_ini.get('__file__')}
+        </span>
     </div>
 </div>
 

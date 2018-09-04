@@ -86,6 +86,8 @@ def add_request_user_context(event):
     Adds auth user into request context
     """
     request = event.request
+    # access req_id as soon as possible
+    req_id = request.req_id
 
     if hasattr(request, 'vcs_call'):
         # skip vcs calls
@@ -98,6 +100,8 @@ def add_request_user_context(event):
     auth_user = get_auth_user(request)
     request.user = auth_user
     request.environ['rc_auth_user'] = auth_user
+    request.environ['rc_auth_user_id'] = auth_user.user_id
+    request.environ['rc_req_id'] = req_id
 
 
 def inject_app_settings(event):
@@ -239,8 +243,11 @@ def write_js_routes_if_enabled(event):
         jsroutes_file_path = os.path.join(
             static_path, 'js', 'rhodecode', 'routes.js')
 
-        with io.open(jsroutes_file_path, 'w', encoding='utf-8') as f:
-            f.write(jsroutes_file_content)
+        try:
+            with io.open(jsroutes_file_path, 'w', encoding='utf-8') as f:
+                f.write(jsroutes_file_content)
+        except Exception:
+            log.exception('Failed to write routes.js into %s', jsroutes_file_path)
 
 
 class Subscriber(object):

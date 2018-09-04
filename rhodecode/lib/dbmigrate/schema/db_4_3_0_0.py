@@ -1963,18 +1963,7 @@ class Repository(Base, BaseModel):
         return self._get_instance(cache=bool(cache), config=config)
 
     def _get_instance_cached(self):
-        @cache_region('long_term')
-        def _get_repo(cache_key):
-            return self._get_instance()
-
-        invalidator_context = CacheKey.repo_context_cache(
-            _get_repo, self.repo_name, None)
-
-        with invalidator_context as context:
-            context.invalidate()
-            repo = context.compute()
-
-        return repo
+        self._get_instance()
 
     def _get_instance(self, cache=True, config=None):
         repo_full_path = self.repo_full_path
@@ -2848,25 +2837,6 @@ class CacheKey(Base, BaseModel):
         if inv_obj:
             return inv_obj
         return None
-
-    @classmethod
-    def repo_context_cache(cls, compute_func, repo_name, cache_type):
-        """
-        @cache_region('long_term')
-        def _heavy_calculation(cache_key):
-            return 'result'
-
-        cache_context = CacheKey.repo_context_cache(
-            _heavy_calculation, repo_name, cache_type)
-
-        with cache_context as context:
-            context.invalidate()
-            computed = context.compute()
-
-        assert computed == 'result'
-        """
-        from rhodecode.lib import caches
-        return caches.InvalidationContext(compute_func, repo_name, cache_type)
 
 
 class ChangesetComment(Base, BaseModel):

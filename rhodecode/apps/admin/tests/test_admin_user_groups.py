@@ -167,4 +167,4 @@ class TestAdminUserGroupsView(TestController):
             'csrf_token': self.csrf_token}, status=200)
 
         response.mustcontain(
-            'User group `{}` already exists'.format(user_group.users_group_name))
+            'User group `{}` already exists'.format(duplicate_name))

@@ -73,7 +73,9 @@
                     %endif
 
                     ${h.submit('sign_in', _('Sign In'), class_="btn sign-in")}
-
+                    <p class="help-block pull-right">
+                        RhodeCode ${c.rhodecode_edition}
+                    </p>
                 ${h.end_form()}
                 <script type="text/javascript">
                     $(document).ready(function(){

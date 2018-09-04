@@ -25,11 +25,17 @@ import os
 import sys
 import pkgutil
 import platform
+import codecs
 
-from pip.download import PipSession
-from pip.req import parse_requirements
+try:  # for pip >= 10
+    from pip._internal.req import parse_requirements
+except ImportError:  # for pip <= 9.0.3
+    from pip.req import parse_requirements
 
-from codecs import open
+try:  # for pip >= 10
+    from pip._internal.download import PipSession
+except ImportError:  # for pip <= 9.0.3
+    from pip.download import PipSession
 
 
 if sys.version_info < (2, 7):
@@ -96,8 +102,8 @@ keywords = ' '.join([
 readme_file = 'README.rst'
 changelog_file = 'CHANGES.rst'
 try:
-    long_description = open(readme_file).read() + '\n\n' + \
-        open(changelog_file).read()
+    long_description = codecs.open(readme_file).read() + '\n\n' + \
+                       codecs.open(changelog_file).read()
 except IOError as err:
     sys.stderr.write(
         "[WARNING] Cannot find file specified as long_description (%s)\n "
@@ -113,7 +119,7 @@ setup(
     keywords=keywords,
     license=__license__,
     author=__author__,
-    author_email='marcin@rhodecode.com',
+    author_email='support@rhodecode.com',
     url=__url__,
     setup_requires=setup_requirements,
     install_requires=install_requirements,
@@ -176,8 +182,8 @@ setup(
             'rc-ssh-wrapper=rhodecode.apps.ssh_support.lib.ssh_wrapper:main',
         ],
         'beaker.backends': [
-            'memorylru_base=rhodecode.lib.memory_lru_debug:MemoryLRUNamespaceManagerBase',
-            'memorylru_debug=rhodecode.lib.memory_lru_debug:MemoryLRUNamespaceManagerDebug'
+            'memorylru_base=rhodecode.lib.memory_lru_dict:MemoryLRUNamespaceManagerBase',
+            'memorylru_debug=rhodecode.lib.memory_lru_dict:MemoryLRUNamespaceManagerDebug'
         ]
     },
 )

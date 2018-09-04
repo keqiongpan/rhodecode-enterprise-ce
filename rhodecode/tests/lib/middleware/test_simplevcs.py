@@ -333,7 +333,7 @@ class TestShadowRepoExposure(object):
         workspace_id = PullRequestModel()._workspace_id(pull_request)
         target_vcs = pull_request.target_repo.scm_instance()
         vcs_repo_name = target_vcs._get_shadow_repository_path(
-            workspace_id)
+            pull_request.target_repo.repo_id, workspace_id)
 
         assert controller.vcs_repo_name == vcs_repo_name
         assert controller.url_repo_name == shadow_url
@@ -465,6 +465,7 @@ class TestPrepareHooksDaemon(object):
         prepare_mock.assert_called_once_with(
             expected_extras,
             protocol=app_settings['vcs.hooks.protocol'],
+            host=app_settings['vcs.hooks.host'],
             txn_id=None,
             use_direct_calls=app_settings['vcs.hooks.direct_calls'])
 

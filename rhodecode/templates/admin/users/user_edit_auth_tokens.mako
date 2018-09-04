@@ -129,7 +129,7 @@ var repoFilter = function(data) {
 
     $.each(data.results[0].children, function() {
         // replace name to ID for submision
-        this.id = this.obj.repo_id;
+        this.id = this.repo_id;
         results.push(this);
     });
 
@@ -152,7 +152,7 @@ $("#scope_repo_id").select2({
     dropdownAutoWidth: true,
     containerCssClass: "drop-menu",
     dropdownCssClass: "drop-menu-dropdown",
-    formatResult: formatResult,
+    formatResult: formatRepoResult,
     query: $.debounce(250, function(query){
         self = this;
         var cacheKey = query.term;

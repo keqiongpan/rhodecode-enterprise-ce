@@ -444,10 +444,12 @@ class PullRequestModel(BaseModel):
 
     def create(self, created_by, source_repo, source_ref, target_repo,
                target_ref, revisions, reviewers, title, description=None,
-               reviewer_data=None, translator=None):
+               description_renderer=None,
+               reviewer_data=None, translator=None, auth_user=None):
         translator = translator or get_current_request().translate
 
         created_by_user = self._get_user(created_by)
+        auth_user = auth_user or created_by_user.AuthUser()
         source_repo = self._get_repo(source_repo)
         target_repo = self._get_repo(target_repo)
 
@@ -459,6 +461,7 @@ class PullRequestModel(BaseModel):
         pull_request.revisions = revisions
         pull_request.title = title
         pull_request.description = description
+        pull_request.description_renderer = description_renderer
         pull_request.author = created_by_user
         pull_request.reviewer_data = reviewer_data
 
@@ -487,11 +490,12 @@ class PullRequestModel(BaseModel):
             rule_id = list(rules)[0] if rules else None
             rule = RepoReviewRule.get(rule_id) if rule_id else None
             if rule:
-                review_group = rule.user_group_vote_rule()
+                review_group = rule.user_group_vote_rule(user_id)
+                # we check if this particular reviewer is member of a voting group
                 if review_group:
                     # NOTE(marcink):
-                    # again, can be that user is member of more,
-                    # but we pick the first same, as default reviewers algo
+                    # can be that user is member of more but we pick the first same,
+                    # same as default reviewers algo
                     review_group = review_group[0]
 
                     rule_data = {
@@ -503,6 +507,8 @@ class PullRequestModel(BaseModel):
                             review_group.users_group.users_group_name,
                         'rule_user_group_members':
                             [x.user.username for x in review_group.users_group.members],
+                        'rule_user_group_members_id':
+                            [x.user.user_id for x in review_group.users_group.members],
                     }
                     # e.g {'vote_rule': -1, 'mandatory': True}
                     rule_data.update(review_group.rule_data())
@@ -528,7 +534,7 @@ class PullRequestModel(BaseModel):
 
         # prepare workspace, and run initial merge simulation
         MergeCheck.validate(
-            pull_request, user=created_by_user, translator=translator)
+            pull_request, auth_user=auth_user, translator=translator)
 
         self.notify_reviewers(pull_request, reviewer_ids)
         self._trigger_pull_request_hook(
@@ -537,7 +543,7 @@ class PullRequestModel(BaseModel):
         creation_data = pull_request.get_api_data(with_merge_state=False)
         self._log_audit_action(
             'repo.pull_request.create', {'data': creation_data},
-            created_by_user, pull_request)
+            auth_user, pull_request)
 
         return pull_request
 
@@ -582,7 +588,7 @@ class PullRequestModel(BaseModel):
 
         return commit_ids
 
-    def merge(self, pull_request, user, extras):
+    def merge_repo(self, pull_request, user, extras):
         log.debug("Merging pull request %s", pull_request.pull_request_id)
         merge_state = self._merge_pull_request(pull_request, user, extras)
         if merge_state.executed:
@@ -615,11 +621,13 @@ class PullRequestModel(BaseModel):
             }
 
         workspace_id = self._workspace_id(pull_request)
+        repo_id = pull_request.target_repo.repo_id
         use_rebase = self._use_rebase_for_merging(pull_request)
         close_branch = self._close_branch_before_merging(pull_request)
 
         callback_daemon, extras = prepare_callback_daemon(
             extras, protocol=vcs_settings.HOOKS_PROTOCOL,
+            host=vcs_settings.HOOKS_HOST,
             use_direct_calls=vcs_settings.HOOKS_DIRECT_CALLS)
 
         with callback_daemon:
@@ -628,9 +636,10 @@ class PullRequestModel(BaseModel):
             target_vcs.config.set(
                 'rhodecode', 'RC_SCM_DATA', json.dumps(extras))
             merge_state = target_vcs.merge(
-                target_ref, source_vcs, pull_request.source_ref_parts,
-                workspace_id, user_name=user.username,
-                user_email=user.email, message=message, use_rebase=use_rebase,
+                repo_id, workspace_id, target_ref, source_vcs,
+                pull_request.source_ref_parts,
+                user_name=user.username, user_email=user.email,
+                message=message, use_rebase=use_rebase,
                 close_branch=close_branch)
         return merge_state
 
@@ -976,7 +985,7 @@ class PullRequestModel(BaseModel):
         renderer = RstTemplateRenderer()
         return renderer.render('pull_request_update.mako', **params)
 
-    def edit(self, pull_request, title, description, user):
+    def edit(self, pull_request, title, description, description_renderer, user):
         pull_request = self.__get_pull_request(pull_request)
         old_data = pull_request.get_api_data(with_merge_state=False)
         if pull_request.is_closed():
@@ -985,6 +994,7 @@ class PullRequestModel(BaseModel):
             pull_request.title = title
         pull_request.description = description
         pull_request.updated_on = datetime.datetime.now()
+        pull_request.description_renderer = description_renderer
         Session().add(pull_request)
         self._log_audit_action(
             'repo.pull_request.edit', {'old_data': old_data},
@@ -1218,7 +1228,8 @@ class PullRequestModel(BaseModel):
 
         return comment, status
 
-    def merge_status(self, pull_request, translator=None):
+    def merge_status(self, pull_request, translator=None,
+                     force_shadow_repo_refresh=False):
         _ = translator or get_current_request().translate
 
         if not self._is_merge_enabled(pull_request):
@@ -1232,7 +1243,9 @@ class PullRequestModel(BaseModel):
             return merge_possible, msg
 
         try:
-            resp = self._try_merge(pull_request)
+            resp = self._try_merge(
+                pull_request,
+                force_shadow_repo_refresh=force_shadow_repo_refresh)
             log.debug("Merge response: %s", resp)
             status = resp.possible, self.merge_status_message(
                 resp.failure_reason)
@@ -1269,13 +1282,13 @@ class PullRequestModel(BaseModel):
             'extensions', 'largefiles')
         return largefiles_ui and largefiles_ui[0].active
 
-    def _try_merge(self, pull_request):
+    def _try_merge(self, pull_request, force_shadow_repo_refresh=False):
         """
         Try to merge the pull request and return the merge status.
         """
         log.debug(
-            "Trying out if the pull request %s can be merged.",
-            pull_request.pull_request_id)
+            "Trying out if the pull request %s can be merged. Force_refresh=%s",
+            pull_request.pull_request_id, force_shadow_repo_refresh)
         target_vcs = pull_request.target_repo.scm_instance()
 
         # Refresh the target reference.
@@ -1292,7 +1305,8 @@ class PullRequestModel(BaseModel):
             log.debug("The target repository is locked.")
             merge_state = MergeResponse(
                 False, False, None, MergeFailureReason.TARGET_IS_LOCKED)
-        elif self._needs_merge_state_refresh(pull_request, target_ref):
+        elif force_shadow_repo_refresh or self._needs_merge_state_refresh(
+                pull_request, target_ref):
             log.debug("Refreshing the merge status of the repository.")
             merge_state = self._refresh_merge_state(
                 pull_request, target_vcs, target_ref)
@@ -1323,11 +1337,13 @@ class PullRequestModel(BaseModel):
     def _refresh_merge_state(self, pull_request, target_vcs, target_reference):
         workspace_id = self._workspace_id(pull_request)
         source_vcs = pull_request.source_repo.scm_instance()
+        repo_id = pull_request.target_repo.repo_id
         use_rebase = self._use_rebase_for_merging(pull_request)
         close_branch = self._close_branch_before_merging(pull_request)
         merge_state = target_vcs.merge(
+            repo_id, workspace_id,
             target_reference, source_vcs, pull_request.source_ref_parts,
-            workspace_id, dry_run=True, use_rebase=use_rebase,
+            dry_run=True, use_rebase=use_rebase,
             close_branch=close_branch)
 
         # Do not store the response if there was an unknown error.
@@ -1393,11 +1409,12 @@ class PullRequestModel(BaseModel):
 
     def _cleanup_merge_workspace(self, pull_request):
         # Merging related cleanup
+        repo_id = pull_request.target_repo.repo_id
         target_scm = pull_request.target_repo.scm_instance()
-        workspace_id = 'pr-%s' % pull_request.pull_request_id
+        workspace_id = self._workspace_id(pull_request)
 
         try:
-            target_scm.cleanup_merge_workspace(workspace_id)
+            target_scm.cleanup_merge_workspace(repo_id, workspace_id)
         except NotImplementedError:
             pass
 
@@ -1582,18 +1599,38 @@ class MergeCheck(object):
         )
 
     @classmethod
-    def validate(cls, pull_request, user, translator, fail_early=False):
+    def validate(cls, pull_request, auth_user, translator, fail_early=False,
+                 force_shadow_repo_refresh=False):
         _ = translator
         merge_check = cls()
 
         # permissions to merge
         user_allowed_to_merge = PullRequestModel().check_user_merge(
-            pull_request, user)
+            pull_request, auth_user)
         if not user_allowed_to_merge:
             log.debug("MergeCheck: cannot merge, approval is pending.")
 
-            msg = _('User `{}` not allowed to perform merge.').format(user.username)
-            merge_check.push_error('error', msg, cls.PERM_CHECK, user.username)
+            msg = _('User `{}` not allowed to perform merge.').format(auth_user.username)
+            merge_check.push_error('error', msg, cls.PERM_CHECK, auth_user.username)
+            if fail_early:
+                return merge_check
+
+        # permission to merge into the target branch
+        target_commit_id = pull_request.target_ref_parts.commit_id
+        if pull_request.target_ref_parts.type == 'branch':
+            branch_name = pull_request.target_ref_parts.name
+        else:
+            # for mercurial we can always figure out the branch from the commit
+            # in case of bookmark
+            target_commit = pull_request.target_repo.get_commit(target_commit_id)
+            branch_name = target_commit.branch
+
+        rule, branch_perm = auth_user.get_rule_and_branch_permission(
+            pull_request.target_repo.repo_name, branch_name)
+        if branch_perm and branch_perm == 'branch.none':
+            msg = _('Target branch `{}` changes rejected by rule {}.').format(
+                branch_name, rule)
+            merge_check.push_error('error', msg, cls.PERM_CHECK, auth_user.username)
             if fail_early:
                 return merge_check
 
@@ -1633,7 +1670,8 @@ class MergeCheck(object):
 
         # merge possible, here is the filesystem simulation + shadow repo
         merge_status, msg = PullRequestModel().merge_status(
-            pull_request, translator=translator)
+            pull_request, translator=translator,
+            force_shadow_repo_refresh=force_shadow_repo_refresh)
         merge_check.merge_possible = merge_status
         merge_check.merge_msg = msg
         if not merge_status:

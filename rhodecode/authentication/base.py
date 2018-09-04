@@ -35,7 +35,7 @@ from pyramid.threadlocal import get_current_registry
 
 from rhodecode.authentication.interface import IAuthnPluginRegistry
 from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
-from rhodecode.lib import caches
+from rhodecode.lib import rc_cache
 from rhodecode.lib.auth import PasswordGenerator, _RhodeCodeCryptoBCrypt
 from rhodecode.lib.utils2 import safe_int, safe_str
 from rhodecode.lib.exceptions import LdapConnectionError
@@ -439,7 +439,11 @@ class RhodeCodeAuthPluginBase(object):
 
     def get_ttl_cache(self, settings=None):
         plugin_settings = settings or self.get_settings()
-        cache_ttl = 0
+        # we set default to 30, we make a compromise here,
+        # performance > security, mostly due to LDAP/SVN, majority
+        # of users pick cache_ttl to be enabled
+        from rhodecode.authentication import plugin_default_auth_ttl
+        cache_ttl = plugin_default_auth_ttl
 
         if isinstance(self.AUTH_CACHE_TTL, (int, long)):
             # plugin cache set inside is more important than the settings value
@@ -633,22 +637,6 @@ def get_authn_registry(registry=None):
     return authn_registry
 
 
-def get_auth_cache_manager(custom_ttl=None, suffix=None):
-    cache_name = 'rhodecode.authentication'
-    if suffix:
-        cache_name = 'rhodecode.authentication.{}'.format(suffix)
-    return caches.get_cache_manager(
-        'auth_plugins', cache_name, custom_ttl)
-
-
-def get_perms_cache_manager(custom_ttl=None, suffix=None):
-    cache_name = 'rhodecode.permissions'
-    if suffix:
-        cache_name = 'rhodecode.permissions.{}'.format(suffix)
-    return caches.get_cache_manager(
-        'auth_plugins', cache_name, custom_ttl)
-
-
 def authenticate(username, password, environ=None, auth_type=None,
                  skip_missing=False, registry=None, acl_repo_name=None):
     """
@@ -707,45 +695,37 @@ def authenticate(username, password, environ=None, auth_type=None,
 
         plugin_cache_active, cache_ttl = plugin.get_ttl_cache(plugin_settings)
 
-        # get instance of cache manager configured for a namespace
-        cache_manager = get_auth_cache_manager(
-            custom_ttl=cache_ttl, suffix=user.user_id if user else '')
-
         log.debug('AUTH_CACHE_TTL for plugin `%s` active: %s (TTL: %s)',
                   plugin.get_id(), plugin_cache_active, cache_ttl)
 
-        # for environ based password can be empty, but then the validation is
-        # on the server that fills in the env data needed for authentication
+        user_id = user.user_id if user else None
+        # don't cache for empty users
+        plugin_cache_active = plugin_cache_active and user_id
+        cache_namespace_uid = 'cache_user_auth.{}'.format(user_id)
+        region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
 
-        _password_hash = caches.compute_key_from_params(
-            plugin.name, username, (password or ''))
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                               expiration_time=cache_ttl,
+                                               condition=plugin_cache_active)
+        def compute_auth(
+                cache_name, plugin_name, username, password):
 
-        # _authenticate is a wrapper for .auth() method of plugin.
-        # it checks if .auth() sends proper data.
-        # For RhodeCodeExternalAuthPlugin it also maps users to
-        # Database and maps the attributes returned from .auth()
-        # to RhodeCode database. If this function returns data
-        # then auth is correct.
-        start = time.time()
-        log.debug('Running plugin `%s` _authenticate method', plugin.get_id())
-
-        def auth_func():
-            """
-            This function is used internally in Cache of Beaker to calculate
-            Results
-            """
-            log.debug('auth: calculating password access now...')
+            # _authenticate is a wrapper for .auth() method of plugin.
+            # it checks if .auth() sends proper data.
+            # For RhodeCodeExternalAuthPlugin it also maps users to
+            # Database and maps the attributes returned from .auth()
+            # to RhodeCode database. If this function returns data
+            # then auth is correct.
+            log.debug('Running plugin `%s` _authenticate method '
+                      'using username and password', plugin.get_id())
             return plugin._authenticate(
                 user, username, password, plugin_settings,
                 environ=environ or {})
 
-        if plugin_cache_active:
-            log.debug('Trying to fetch cached auth by pwd hash `...%s`',
-                      _password_hash[:6])
-            plugin_user = cache_manager.get(
-                _password_hash, createfunc=auth_func)
-        else:
-            plugin_user = auth_func()
+        start = time.time()
+        # for environ based auth, password can be empty, but then the validation is
+        # on the server that fills in the env data needed for authentication
+        plugin_user = compute_auth('auth', plugin.name, username, (password or ''))
 
         auth_time = time.time() - start
         log.debug('Authentication for plugin `%s` completed in %.3fs, '

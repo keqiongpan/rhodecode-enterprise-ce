@@ -77,14 +77,16 @@ class MercurialRepository(BaseRepository):
         # special requirements
         self.config = config if config else self.get_default_config(
             default=[('extensions', 'largefiles', '1')])
-
-        self._remote = connection.Hg(
-            self.path, self.config, with_wire=with_wire)
+        self.with_wire = with_wire
 
         self._init_repo(create, src_url, update_after_clone)
 
         # caches
         self._commit_ids = {}
+
+    @LazyProperty
+    def _remote(self):
+        return connection.Hg(self.path, self.config, with_wire=self.with_wire)
 
     @LazyProperty
     def commit_ids(self):
@@ -394,14 +396,6 @@ class MercurialRepository(BaseRepository):
         else:
             return os.stat(st_path).st_mtime
 
-    def _sanitize_commit_idx(self, idx):
-        # Note: Mercurial has ``int(-1)`` reserved as not existing id_or_idx
-        # number. A `long` is treated in the correct way though. So we convert
-        # `int` to `long` here to make sure it is handled correctly.
-        if isinstance(idx, int):
-            return long(idx)
-        return idx
-
     def _get_url(self, url):
         """
         Returns normalized url. If schema is not given, would fall
@@ -436,7 +430,6 @@ class MercurialRepository(BaseRepository):
                 pass
         elif commit_idx is not None:
             self._validate_commit_idx(commit_idx)
-            commit_idx = self._sanitize_commit_idx(commit_idx)
             try:
                 id_ = self.commit_ids[commit_idx]
                 if commit_idx < 0:
@@ -447,10 +440,6 @@ class MercurialRepository(BaseRepository):
                 commit_id = commit_idx
         else:
             commit_id = "tip"
-
-        # TODO Paris: Ugly hack to "serialize" long for msgpack
-        if isinstance(commit_id, long):
-            commit_id = float(commit_id)
 
         if isinstance(commit_id, unicode):
             commit_id = safe_str(commit_id)
@@ -694,15 +683,10 @@ class MercurialRepository(BaseRepository):
             return ref.name
         return self._remote.ctx_branch(ref.commit_id)
 
-    def _get_shadow_repository_path(self, workspace_id):
-        # The name of the shadow repository must start with '.', so it is
-        # skipped by 'rhodecode.lib.utils.get_filesystem_repos'.
-        return os.path.join(
-            os.path.dirname(self.path),
-            '.__shadow_%s_%s' % (os.path.basename(self.path), workspace_id))
-
-    def _maybe_prepare_merge_workspace(self, workspace_id, unused_target_ref, unused_source_ref):
-        shadow_repository_path = self._get_shadow_repository_path(workspace_id)
+    def _maybe_prepare_merge_workspace(
+            self, repo_id, workspace_id, unused_target_ref, unused_source_ref):
+        shadow_repository_path = self._get_shadow_repository_path(
+            repo_id, workspace_id)
         if not os.path.exists(shadow_repository_path):
             self._local_clone(shadow_repository_path)
             log.debug(
@@ -710,7 +694,7 @@ class MercurialRepository(BaseRepository):
 
         return shadow_repository_path
 
-    def _merge_repo(self, shadow_repository_path, target_ref,
+    def _merge_repo(self, repo_id, workspace_id, target_ref,
                     source_repo, source_ref, merge_message,
                     merger_name, merger_email, dry_run=False,
                     use_rebase=False, close_branch=False):
@@ -732,6 +716,8 @@ class MercurialRepository(BaseRepository):
             return MergeResponse(
                 False, False, None, MergeFailureReason.MISSING_TARGET_REF)
 
+        shadow_repository_path = self._maybe_prepare_merge_workspace(
+            repo_id, workspace_id, target_ref, source_ref)
         shadow_repo = self._get_shadow_instance(shadow_repository_path)
 
         log.debug('Pulling in target reference %s', target_ref)

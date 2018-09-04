@@ -28,6 +28,7 @@ import threading
 import urllib2
 import urlparse
 import uuid
+import traceback
 
 import pycurl
 import msgpack
@@ -139,8 +140,9 @@ class RemoteRepo(object):
         return _remote_call(self.url, payload, EXCEPTIONS_MAP, self._session)
 
     def _call_with_logging(self, name, *args, **kwargs):
-
-        log.debug('Calling %s@%s with args:%r', self.url, name, args)
+        context_uid = self._wire.get('context')
+        log.debug('Calling %s@%s with args:%r. wire_context: %s',
+                  self.url, name, args, context_uid)
         return RemoteRepo._call(self, name, *args, **kwargs)
 
     def __getitem__(self, key):
@@ -196,7 +198,8 @@ def _remote_call(url, payload, exceptions_map, session):
     try:
         response = session.post(url, data=msgpack.packb(payload))
     except pycurl.error as e:
-        raise exceptions.HttpVCSCommunicationError(e)
+        msg = '{}. \npycurl traceback: {}'.format(e, traceback.format_exc())
+        raise exceptions.HttpVCSCommunicationError(msg)
     except Exception as e:
         message = getattr(e, 'message', '')
         if 'Failed to connect' in message:

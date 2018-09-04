@@ -31,7 +31,7 @@ from sqlalchemy.exc import DatabaseError
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     User, Permission, UserToPerm, UserRepoToPerm, UserRepoGroupToPerm,
-    UserUserGroupToPerm, UserGroup, UserGroupToPerm)
+    UserUserGroupToPerm, UserGroup, UserGroupToPerm, UserToRepoBranchPermission)
 from rhodecode.lib.utils2 import str2bool, safe_int
 
 log = logging.getLogger(__name__)
@@ -59,6 +59,9 @@ class PermissionModel(BaseModel):
         'default_repo_perm': None,
         'default_group_perm': None,
         'default_user_group_perm': None,
+
+        # branch
+        'default_branch_perm': None,
     }
 
     def set_global_permission_choices(self, c_obj, gettext_translator):
@@ -81,6 +84,12 @@ class PermissionModel(BaseModel):
             ('usergroup.read', _('Read'),),
             ('usergroup.write', _('Write'),),
             ('usergroup.admin', _('Admin'),)]
+
+        c_obj.branch_perms_choices = [
+            ('branch.none', _('Protected/No Access'),),
+            ('branch.merge', _('Web merge'),),
+            ('branch.push', _('Push'),),
+            ('branch.push_force', _('Force Push'),)]
 
         c_obj.register_choices = [
             ('hg.register.none', _('Disabled')),
@@ -132,6 +141,10 @@ class PermissionModel(BaseModel):
 
             if perm.permission.permission_name.startswith('usergroup.'):
                 defaults['default_user_group_perm' + suffix] = perm.permission.permission_name
+
+            # branch
+            if perm.permission.permission_name.startswith('branch.'):
+                defaults['default_branch_perm' + suffix] = perm.permission.permission_name
 
             # creation of objects
             if perm.permission.permission_name.startswith('hg.create.write_on_repogroup'):
@@ -199,6 +212,9 @@ class PermissionModel(BaseModel):
                 'default_repo_perm': 'repository.',
                 'default_group_perm': 'group.',
                 'default_user_group_perm': 'usergroup.',
+                # branch
+                'default_branch_perm': 'branch.',
+
             }[field_name]
         for field in keep_fields:
             pat = get_pat(field)
@@ -236,8 +252,12 @@ class PermissionModel(BaseModel):
         _global_perms = self.global_perms.copy()
         if obj_type not in ['user', 'user_group']:
             raise ValueError("obj_type must be on of 'user' or 'user_group'")
-        if len(_global_perms) != len(Permission.DEFAULT_USER_PERMISSIONS):
-            raise Exception('Inconsistent permissions definition')
+        global_perms = len(_global_perms)
+        default_user_perms = len(Permission.DEFAULT_USER_PERMISSIONS)
+        if global_perms != default_user_perms:
+            raise Exception(
+                'Inconsistent permissions definition. Got {} vs {}'.format(
+                    global_perms, default_user_perms))
 
         if obj_type == 'user':
             self._clear_user_perms(object.user_id, preserve)
@@ -337,8 +357,8 @@ class PermissionModel(BaseModel):
 
     def create_default_user_group_permissions(self, user_group, force=False):
         """
-        Creates only missing default permissions for user group, if force is set it
-        resets the default permissions for that user group
+        Creates only missing default permissions for user group, if force is
+        set it resets the default permissions for that user group
 
         :param user_group:
         :param force:
@@ -366,6 +386,7 @@ class PermissionModel(BaseModel):
                 'default_repo_perm',
                 'default_group_perm',
                 'default_user_group_perm',
+                'default_branch_perm',
 
                 'default_repo_group_create',
                 'default_user_group_create',
@@ -392,6 +413,7 @@ class PermissionModel(BaseModel):
                 'default_repo_perm',
                 'default_group_perm',
                 'default_user_group_perm',
+                'default_branch_perm',
 
                 'default_register',
                 'default_password_reset',
@@ -414,6 +436,7 @@ class PermissionModel(BaseModel):
                 'default_repo_perm',
                 'default_group_perm',
                 'default_user_group_perm',
+                'default_branch_perm',
 
                 'default_register',
                 'default_password_reset',
@@ -440,6 +463,7 @@ class PermissionModel(BaseModel):
                 'default_repo_create',
                 'default_fork_create',
                 'default_inherit_default_permissions',
+                'default_branch_perm',
 
                 'default_register',
                 'default_password_reset',
@@ -477,8 +501,58 @@ class PermissionModel(BaseModel):
                                .all():
                     g2p.permission = _def
                     self.sa.add(g2p)
+
+            # COMMIT
             self.sa.commit()
         except (DatabaseError,):
             log.exception('Failed to set default object permissions')
             self.sa.rollback()
             raise
+
+    def update_branch_permissions(self, form_result):
+        if 'perm_user_id' in form_result:
+            perm_user = User.get(safe_int(form_result['perm_user_id']))
+        else:
+            # used mostly to do lookup for default user
+            perm_user = User.get_by_username(form_result['perm_user_name'])
+        try:
+
+            # stage 2 reset defaults and set them from form data
+            self._set_new_user_perms(perm_user, form_result, preserve=[
+                'default_repo_perm',
+                'default_group_perm',
+                'default_user_group_perm',
+
+                'default_repo_group_create',
+                'default_user_group_create',
+                'default_repo_create_on_write',
+                'default_repo_create',
+                'default_fork_create',
+                'default_inherit_default_permissions',
+
+                'default_register',
+                'default_password_reset',
+                'default_extern_activate'])
+
+            # overwrite default branch permissions
+            if form_result['overwrite_default_branch']:
+                _def_name = \
+                    form_result['default_branch_perm'].split('branch.')[-1]
+
+                _def = Permission.get_by_key('branch.' + _def_name)
+
+                user_perms = UserToRepoBranchPermission.query()\
+                    .join(UserToRepoBranchPermission.user_repo_to_perm)\
+                    .filter(UserRepoToPerm.user == perm_user).all()
+
+                for g2p in user_perms:
+                    g2p.permission = _def
+                    self.sa.add(g2p)
+
+            # COMMIT
+            self.sa.commit()
+        except (DatabaseError,):
+            log.exception('Failed to set default branch permissions')
+            self.sa.rollback()
+            raise
+

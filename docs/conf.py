@@ -32,6 +32,7 @@ import common
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.imgmath'
@@ -41,13 +42,6 @@ intersphinx_mapping = {
     'enterprise': ('https://docs.rhodecode.com/RhodeCode-Enterprise/', None),
     'control': ('https://docs.rhodecode.com/RhodeCode-Control/', None),
 }
-
-if tags.has('dev'):
-    intersphinx_mapping.update({
-        'enterprise': ('https://ci.rhodecode.com/documentation/Momentum/', None),
-        'control': ('https://ci.rhodecode.com/documentation/Control/', None),
-    })
-
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -65,10 +59,11 @@ master_doc = 'index'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-# TODO: johbo: Move into common package for documentation utilities
+
 def _get_version():
     with open('../rhodecode/VERSION') as f:
         return f.read().strip()
+
 
 # The full version, including alpha/beta/rc tags.
 release = _get_version()

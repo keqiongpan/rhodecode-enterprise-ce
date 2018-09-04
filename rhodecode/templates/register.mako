@@ -32,7 +32,12 @@
         <div id="register" class="right-column">
             <!-- login -->
             <div class="sign-in-title">
-                <h1>${_('Create an account')}</h1>
+                % if social_auth_provider:
+                    <h1>${_('Create an account linked with {}').format(social_auth_provider)}</h1>
+                % else:
+                    <h1>${_('Create an account')}</h1>
+                % endif
+
                 <h4>${h.link_to(_("Go to the login page to sign in with an existing account."), request.route_path('login'))}</h4>
             </div>
             <div class="inner form">
@@ -44,6 +49,11 @@
                       <span class="error-message">${errors.get('username')}</span>
                       <br />
                     %endif
+
+                    % if social_auth_provider:
+                        ## hide password prompts for social auth
+                        <div style="display: none">
+                    % endif
 
                     <label for="password">${_('Password')}:</label>
                     ${h.password('password', defaults.get('password'))}
@@ -58,6 +68,11 @@
                       <span class="error-message">${errors.get('password_confirmation')}</span>
                       <br />
                     %endif
+
+                    % if social_auth_provider:
+                        ## hide password prompts for social auth
+                        </div>
+                    % endif
 
                     <label for="firstname">${_('First Name')}:</label>
                     ${h.text('firstname', defaults.get('firstname'))}
@@ -102,7 +117,9 @@
                     </p>
 
                     ${h.submit('sign_up',_('Create Account'),class_="btn sign-in")}
-
+                    <p class="help-block pull-right">
+                        RhodeCode ${c.rhodecode_edition}
+                    </p>
                 ${h.end_form()}
             </div>
             <%block name="below_register_button" />

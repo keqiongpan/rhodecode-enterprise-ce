@@ -139,6 +139,9 @@ class TestGitServer(object):
             'hooks': ['push', 'pull'],
             'is_shadow_repo': False,
             'hooks_module': 'rhodecode.lib.hooks_daemon',
+            'check_branch_perms': False,
+            'detect_force_push': False,
+            'user_agent': u'ssh-user-agent',
             'SSH': True,
             'SSH_PERMISSIONS': 'repository.admin',
         }

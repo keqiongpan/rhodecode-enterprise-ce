@@ -32,6 +32,7 @@ var addNewPermInput = function(node, permission_type, cur_used_id){
                 '    </div>'+
                 '</td>'+
                 '<td></td>'+
+                '<td></td>'+
                 '</tr>';
     var _next_id = 'new'+$('.new_members').length;
     _html = _html.format(_next_id, permission_type);

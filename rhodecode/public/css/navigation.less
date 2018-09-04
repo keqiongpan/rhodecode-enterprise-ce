@@ -281,11 +281,9 @@
 }
 
 .navigation li.open {
-
-   .submenu,
-   .repo_switcher {
-       display: block;
-   }
+    .submenu {
+        display: block;
+    }
 }
 
 .navigation li:last-child .submenu {
@@ -411,6 +409,7 @@
                 display: block;
                 height: 16px;
                 padding: 8px; //must add up to td height (28px)
+                width: 120px; // set width
 
                 &:hover {
                     background-color: @grey5;
@@ -641,4 +640,57 @@ ul#context-pages {
         }
 
     }
+}
+
+.main_filter_help_box {
+    padding: 7px 7px;
+    border-top: 1px solid @grey4;
+    border-right: 1px solid @grey4;
+    border-bottom: 1px solid @grey4;
+    display: inline-block;
+    vertical-align: top;
+    margin-left: -5px;
+    background: @grey3;
+}
+
+.main_filter_input_box {
+    display: inline-block;
+}
+
+.main_filter_box {
+    margin: 9px 0 0 0;
+}
+
+#main_filter_help {
+    background: @grey3;
+    border: 1px solid black;
+    position: absolute;
+    white-space: pre-wrap;
+    z-index: 9999;
+    color: @nav-grey;
+    margin: 1px 7px;
+    padding: 0 2px;
+}
+
+.main_filter_input {
+    padding: 6px;
+    min-width: 220px;
+    color: @nav-grey;
+    background: @grey3;
+}
+
+.main_filter_input::placeholder {
+   color: @nav-grey;
+   opacity: 1;
+}
+
+.notice-box {
+    display:block !important;
+    padding: 9px 0 !important;
+}
+
+.menulabel-notice {
+    border: 1px solid @color5;
+    padding:7px 10px;
+    color: @color5;
 }

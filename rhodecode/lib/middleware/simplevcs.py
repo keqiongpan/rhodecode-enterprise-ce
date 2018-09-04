@@ -39,9 +39,8 @@ from pyramid.httpexceptions import (
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 import rhodecode
-from rhodecode.authentication.base import (
-    authenticate, get_perms_cache_manager, VCS_TYPE, loadplugin)
-from rhodecode.lib import caches
+from rhodecode.authentication.base import authenticate, VCS_TYPE, loadplugin
+from rhodecode.lib import rc_cache
 from rhodecode.lib.auth import AuthUser, HasPermissionAnyMiddleware
 from rhodecode.lib.base import (
     BasicAuth, get_ip_addr, get_user_agent, vcs_operation_context)
@@ -65,7 +64,7 @@ log = logging.getLogger(__name__)
 
 def extract_svn_txn_id(acl_repo_name, data):
     """
-    Helper method for extraction of svn txn_id from submited XML data during
+    Helper method for extraction of svn txn_id from submitted XML data during
     POST operations
     """
     try:
@@ -78,7 +77,7 @@ def extract_svn_txn_id(acl_repo_name, data):
                         match = pat.search(sub_el.text)
                         if match:
                             svn_tx_id = match.groupdict()['txn_id']
-                            txn_id = caches.compute_key_from_params(
+                            txn_id = rc_cache.utils.compute_key_from_params(
                                 acl_repo_name, svn_tx_id)
                             return txn_id
     except Exception:
@@ -204,13 +203,14 @@ class SimpleVCS(object):
 
             # Only proceed if we got a pull request and if acl repo name from
             # URL equals the target repo name of the pull request.
-            if pull_request and (acl_repo_name ==
-                                 pull_request.target_repo.repo_name):
+            if pull_request and \
+                    (acl_repo_name == pull_request.target_repo.repo_name):
+                repo_id = pull_request.target_repo.repo_id
                 # Get file system path to shadow repository.
                 workspace_id = PullRequestModel()._workspace_id(pull_request)
                 target_vcs = pull_request.target_repo.scm_instance()
                 vcs_repo_name = target_vcs._get_shadow_repository_path(
-                    workspace_id)
+                    repo_id, workspace_id)
 
                 # Store names for later usage.
                 self.vcs_repo_name = vcs_repo_name
@@ -297,7 +297,7 @@ class SimpleVCS(object):
     def is_shadow_repo_dir(self):
         return os.path.isdir(self.vcs_repo_name)
 
-    def _check_permission(self, action, user, repo_name, ip_addr=None,
+    def _check_permission(self, action, user, auth_user, repo_name, ip_addr=None,
                           plugin_id='', plugin_cache_active=False, cache_ttl=0):
         """
         Checks permissions using action (push/pull) user and repository
@@ -310,36 +310,24 @@ class SimpleVCS(object):
         :param repo_name: repository name
         """
 
-        # get instance of cache manager configured for a namespace
-        cache_manager = get_perms_cache_manager(
-            custom_ttl=cache_ttl, suffix=user.user_id)
         log.debug('AUTH_CACHE_TTL for permissions `%s` active: %s (TTL: %s)',
                   plugin_id, plugin_cache_active, cache_ttl)
 
-        # for environ based password can be empty, but then the validation is
-        # on the server that fills in the env data needed for authentication
-        _perm_calc_hash = caches.compute_key_from_params(
-            plugin_id, action, user.user_id, repo_name, ip_addr)
+        user_id = user.user_id
+        cache_namespace_uid = 'cache_user_auth.{}'.format(user_id)
+        region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
 
-        # _authenticate is a wrapper for .auth() method of plugin.
-        # it checks if .auth() sends proper data.
-        # For RhodeCodeExternalAuthPlugin it also maps users to
-        # Database and maps the attributes returned from .auth()
-        # to RhodeCode database. If this function returns data
-        # then auth is correct.
-        start = time.time()
-        log.debug('Running plugin `%s` permissions check', plugin_id)
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                               expiration_time=cache_ttl,
+                                               condition=plugin_cache_active)
+        def compute_perm_vcs(
+                cache_name, plugin_id, action, user_id, repo_name, ip_addr):
 
-        def perm_func():
-            """
-            This function is used internally in Cache of Beaker to calculate
-            Results
-            """
             log.debug('auth: calculating permission access now...')
             # check IP
             inherit = user.inherit_default_permissions
             ip_allowed = AuthUser.check_ip_allowed(
-                user.user_id, ip_addr, inherit_from_default=inherit)
+                user_id, ip_addr, inherit_from_default=inherit)
             if ip_allowed:
                 log.info('Access for IP:%s allowed', ip_addr)
             else:
@@ -347,24 +335,25 @@ class SimpleVCS(object):
 
             if action == 'push':
                 perms = ('repository.write', 'repository.admin')
-                if not HasPermissionAnyMiddleware(*perms)(user, repo_name):
+                if not HasPermissionAnyMiddleware(*perms)(auth_user, repo_name):
                     return False
 
             else:
                 # any other action need at least read permission
                 perms = (
                     'repository.read', 'repository.write', 'repository.admin')
-                if not HasPermissionAnyMiddleware(*perms)(user, repo_name):
+                if not HasPermissionAnyMiddleware(*perms)(auth_user, repo_name):
                     return False
 
             return True
 
-        if plugin_cache_active:
-            log.debug('Trying to fetch cached perms by %s', _perm_calc_hash[:6])
-            perm_result = cache_manager.get(
-                _perm_calc_hash, createfunc=perm_func)
-        else:
-            perm_result = perm_func()
+        start = time.time()
+        log.debug('Running plugin `%s` permissions check', plugin_id)
+
+        # for environ based auth, password can be empty, but then the validation is
+        # on the server that fills in the env data needed for authentication
+        perm_result = compute_perm_vcs(
+            'vcs_permissions', plugin_id, action, user.user_id, repo_name, ip_addr)
 
         auth_time = time.time() - start
         log.debug('Permissions for plugin `%s` completed in %.3fs, '
@@ -452,14 +441,17 @@ class SimpleVCS(object):
         # ======================================================================
         # CHECK ANONYMOUS PERMISSION
         # ======================================================================
+        detect_force_push = False
+        check_branch_perms = False
         if action in ['pull', 'push']:
-            anonymous_user = User.get_default_user()
+            user_obj = anonymous_user = User.get_default_user()
+            auth_user = user_obj.AuthUser()
             username = anonymous_user.username
             if anonymous_user.active:
                 plugin_cache_active, cache_ttl = self._get_default_cache_ttl()
                 # ONLY check permissions if the user is activated
                 anonymous_perm = self._check_permission(
-                    action, anonymous_user, self.acl_repo_name, ip_addr,
+                    action, anonymous_user, auth_user, self.acl_repo_name, ip_addr,
                     plugin_id='anonymous_access',
                     plugin_cache_active=plugin_cache_active,
                     cache_ttl=cache_ttl,
@@ -525,7 +517,6 @@ class SimpleVCS(object):
                         return auth_result.wsgi_application(
                             environ, start_response)
 
-
                 # ==============================================================
                 # CHECK PERMISSIONS FOR THIS REQUEST USING GIVEN USERNAME
                 # ==============================================================
@@ -533,11 +524,11 @@ class SimpleVCS(object):
                 if not self.valid_and_active_user(user):
                     return HTTPForbidden()(environ, start_response)
                 username = user.username
-                user.update_lastactivity()
-                meta.Session().commit()
+                user_id = user.user_id
 
                 # check user attributes for password change flag
                 user_obj = user
+                auth_user = user_obj.AuthUser()
                 if user_obj and user_obj.username != User.DEFAULT_USER and \
                         user_obj.user_data.get('force_password_change'):
                     reason = 'password change required'
@@ -546,18 +537,27 @@ class SimpleVCS(object):
 
                 # check permissions for this repository
                 perm = self._check_permission(
-                    action, user, self.acl_repo_name, ip_addr,
+                    action, user, auth_user, self.acl_repo_name, ip_addr,
                     plugin, plugin_cache_active, cache_ttl)
                 if not perm:
                     return HTTPForbidden()(environ, start_response)
+                environ['rc_auth_user_id'] = user_id
+
+            if action == 'push':
+                perms = auth_user.get_branch_permissions(self.acl_repo_name)
+                if perms:
+                    check_branch_perms = True
+                    detect_force_push = True
 
         # extras are injected into UI object and later available
         # in hooks executed by RhodeCode
         check_locking = _should_check_locking(environ.get('QUERY_STRING'))
+
         extras = vcs_operation_context(
             environ, repo_name=self.acl_repo_name, username=username,
             action=action, scm=self.SCM, check_locking=check_locking,
-            is_shadow_repo=self.is_shadow_repo
+            is_shadow_repo=self.is_shadow_repo, check_branch_perms=check_branch_perms,
+            detect_force_push=detect_force_push
         )
 
         # ======================================================================
@@ -662,7 +662,7 @@ class SimpleVCS(object):
 
         return prepare_callback_daemon(
             extras, protocol=vcs_settings.HOOKS_PROTOCOL,
-            use_direct_calls=direct_calls, txn_id=txn_id)
+            host=vcs_settings.HOOKS_HOST, use_direct_calls=direct_calls, txn_id=txn_id)
 
 
 def _should_check_locking(query_string):

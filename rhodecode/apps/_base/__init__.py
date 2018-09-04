@@ -461,31 +461,38 @@ class RepoRoutePredicate(object):
     phash = text
 
     def __call__(self, info, request):
-
         if hasattr(request, 'vcs_call'):
             # skip vcs calls
             return
 
         repo_name = info['match']['repo_name']
         repo_model = repo.RepoModel()
-        by_name_match = repo_model.get_by_repo_name(repo_name, cache=True)
 
-        def redirect_if_creating(db_repo):
+        by_name_match = repo_model.get_by_repo_name(repo_name, cache=False)
+
+        def redirect_if_creating(route_info, db_repo):
+            skip_views = ['edit_repo_advanced_delete']
+            route = route_info['route']
+            # we should skip delete view so we can actually "remove" repositories
+            # if they get stuck in creating state.
+            if route.name in skip_views:
+                return
+
             if db_repo.repo_state in [repo.Repository.STATE_PENDING]:
-                raise HTTPFound(
-                    request.route_path('repo_creating',
-                                       repo_name=db_repo.repo_name))
+                repo_creating_url = request.route_path(
+                    'repo_creating', repo_name=db_repo.repo_name)
+                raise HTTPFound(repo_creating_url)
 
         if by_name_match:
             # register this as request object we can re-use later
             request.db_repo = by_name_match
-            redirect_if_creating(by_name_match)
+            redirect_if_creating(info, by_name_match)
             return True
 
         by_id_match = repo_model.get_repo_by_id(repo_name)
         if by_id_match:
             request.db_repo = by_id_match
-            redirect_if_creating(by_id_match)
+            redirect_if_creating(info, by_id_match)
             return True
 
         return False
@@ -516,7 +523,7 @@ class RepoTypeRoutePredicate(object):
         else:
             log.warning('Current view is not supported for repo type:%s',
                         rhodecode_db_repo.repo_type)
-            #
+
             # h.flash(h.literal(
             #     _('Action not supported for %s.' % rhodecode_repo.alias)),
             #     category='warning')
@@ -542,8 +549,7 @@ class RepoGroupRoutePredicate(object):
 
         repo_group_name = info['match']['repo_group_name']
         repo_group_model = repo_group.RepoGroupModel()
-        by_name_match = repo_group_model.get_by_group_name(
-            repo_group_name, cache=True)
+        by_name_match = repo_group_model.get_by_group_name(repo_group_name, cache=False)
 
         if by_name_match:
             # register this as request object we can re-use later
@@ -569,8 +575,7 @@ class UserGroupRoutePredicate(object):
 
         user_group_id = info['match']['user_group_id']
         user_group_model = user_group.UserGroup()
-        by_id_match = user_group_model.get(
-            user_group_id, cache=True)
+        by_id_match = user_group_model.get(user_group_id, cache=False)
 
         if by_id_match:
             # register this as request object we can re-use later
@@ -596,8 +601,7 @@ class UserRoutePredicateBase(object):
 
         user_id = info['match']['user_id']
         user_model = user.User()
-        by_id_match = user_model.get(
-            user_id, cache=True)
+        by_id_match = user_model.get(user_id, cache=False)
 
         if by_id_match:
             # register this as request object we can re-use later

@@ -573,17 +573,18 @@ class DbManage(object):
 
     def create_user(self, username, password, email='', admin=False,
                     strict_creation_check=True, api_key=None):
-        log.info('creating user %s' % username)
+        log.info('creating user `%s`' % username)
         user = UserModel().create_or_update(
             username, password, email, firstname=u'RhodeCode', lastname=u'Admin',
             active=True, admin=admin, extern_type="rhodecode",
             strict_creation_check=strict_creation_check)
 
         if api_key:
-            log.info('setting a provided api key for the user %s', username)
-            from rhodecode.model.auth_token import AuthTokenModel
-            AuthTokenModel().create(
-                user=user, description=u'BUILTIN TOKEN')
+            log.info('setting a new default auth token for user `%s`', username)
+            UserModel().add_auth_token(
+                user=user, lifetime_minutes=-1,
+                role=UserModel.auth_token_role.ROLE_ALL,
+                description=u'BUILTIN TOKEN')
 
     def create_default_user(self):
         log.info('creating default user')
@@ -594,7 +595,7 @@ class DbManage(object):
                                             firstname=u'Anonymous',
                                             lastname=u'User',
                                             strict_creation_check=False)
-        # based on configuration options activate/deactive this user which
+        # based on configuration options activate/de-activate this user which
         # controlls anonymous access
         if self.cli_args.get('public_access') is False:
             log.info('Public access disabled')

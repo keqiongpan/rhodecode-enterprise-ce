@@ -1,3 +1,8 @@
+# generating packages
+nix-shell pkgs/shell-generate.nix
+cd docs
+pip2nix generate
+
 # building the docs
 cd docs
 nix-build default.nix -o result

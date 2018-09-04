@@ -61,7 +61,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         c = self._get_local_tmpl_context(include_app_defaults=True)
         c.REVIEW_STATUS_APPROVED = ChangesetStatus.STATUS_APPROVED
         c.REVIEW_STATUS_REJECTED = ChangesetStatus.STATUS_REJECTED
-
+        # backward compat., we use for OLD PRs a plain renderer
+        c.renderer = 'plain'
         return c
 
     def _get_pull_requests_list(
@@ -248,6 +249,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         from_version = self.request.GET.get('from_version') or version
         merge_checks = self.request.GET.get('merge_checks')
         c.fulldiff = str2bool(self.request.GET.get('fulldiff'))
+        force_refresh = str2bool(self.request.GET.get('force_refresh'))
 
         (pull_request_latest,
          pull_request_at_ver,
@@ -296,6 +298,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             pull_request_at_ver)
 
         c.pull_request = pull_request_display_obj
+        c.renderer = pull_request_at_ver.description_renderer or c.renderer
         c.pull_request_latest = pull_request_latest
 
         if compare or (at_version and not at_version == 'latest'):
@@ -338,8 +341,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         # check merge capabilities
         _merge_check = MergeCheck.validate(
-            pull_request_latest, user=self._rhodecode_user,
-            translator=self.request.translate)
+            pull_request_latest, auth_user=self._rhodecode_user,
+            translator=self.request.translate,
+            force_shadow_repo_refresh=force_refresh)
         c.pr_merge_errors = _merge_check.error_details
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
@@ -432,12 +436,14 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         source_scm = source_repo.scm_instance()
         target_scm = target_repo.scm_instance()
 
-        # try first shadow repo, fallback to regular repo
+        shadow_scm = None
         try:
-            commits_source_repo = pull_request_latest.get_shadow_repo()
+            shadow_scm = pull_request_latest.get_shadow_repo()
         except Exception:
             log.debug('Failed to get shadow repo', exc_info=True)
-            commits_source_repo = source_scm
+        # try first the existing source_repo, and then shadow
+        # repo if we can obtain one
+        commits_source_repo = source_scm or shadow_scm
 
         c.commits_source_repo = commits_source_repo
         c.ancestor = None  # set it to None, to hide it from PR view
@@ -766,7 +772,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 'id': obj['name'],
                 'text': obj['name'],
                 'type': 'repo',
-                'obj': obj['dbrepo']
+                'repo_id': obj['dbrepo']['repo_id'],
+                'repo_type': obj['dbrepo']['repo_type'],
+                'private': obj['dbrepo']['private'],
+
             })
 
         data = {
@@ -861,8 +870,21 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         ancestor = source_scm.get_common_ancestor(
             source_commit.raw_id, target_commit.raw_id, target_scm)
 
+        # recalculate target ref based on ancestor
         target_ref_type, target_ref_name, __ = _form['target_ref'].split(':')
         target_ref = ':'.join((target_ref_type, target_ref_name, ancestor))
+
+        get_default_reviewers_data, validate_default_reviewers = \
+            PullRequestModel().get_reviewer_functions()
+
+        # recalculate reviewers logic, to make sure we can validate this
+        reviewer_rules = get_default_reviewers_data(
+            self._rhodecode_db_user, source_db_repo,
+            source_commit, target_db_repo, target_commit)
+
+        given_reviewers = _form['review_members']
+        reviewers = validate_default_reviewers(
+            given_reviewers, reviewer_rules)
 
         pullrequest_title = _form['pullrequest_title']
         title_source_ref = source_ref.split(':', 2)[1]
@@ -874,23 +896,22 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             )
 
         description = _form['pullrequest_desc']
-
-        get_default_reviewers_data, validate_default_reviewers = \
-            PullRequestModel().get_reviewer_functions()
-
-        # recalculate reviewers logic, to make sure we can validate this
-        reviewer_rules = get_default_reviewers_data(
-            self._rhodecode_db_user, source_db_repo,
-            source_commit, target_db_repo, target_commit)
-
-        given_reviewers = _form['review_members']
-        reviewers = validate_default_reviewers(given_reviewers, reviewer_rules)
+        description_renderer = _form['description_renderer']
 
         try:
             pull_request = PullRequestModel().create(
-                self._rhodecode_user.user_id, source_repo, source_ref,
-                target_repo, target_ref, commit_ids, reviewers,
-                pullrequest_title, description, reviewer_rules
+                created_by=self._rhodecode_user.user_id,
+                source_repo=source_repo,
+                source_ref=source_ref,
+                target_repo=target_repo,
+                target_ref=target_ref,
+                revisions=commit_ids,
+                reviewers=reviewers,
+                title=pullrequest_title,
+                description=description,
+                description_renderer=description_renderer,
+                reviewer_data=reviewer_rules,
+                auth_user=self._rhodecode_user
             )
             Session().commit()
 
@@ -953,10 +974,14 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def _edit_pull_request(self, pull_request):
         _ = self.request.translate
+
         try:
             PullRequestModel().edit(
-                pull_request, self.request.POST.get('title'),
-                self.request.POST.get('description'), self._rhodecode_user)
+                pull_request,
+                self.request.POST.get('title'),
+                self.request.POST.get('description'),
+                self.request.POST.get('description_renderer'),
+                self._rhodecode_user)
         except ValueError:
             msg = _(u'Cannot update closed pull requests.')
             h.flash(msg, category='error')
@@ -1031,8 +1056,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             self.request.matchdict['pull_request_id'])
 
         self.load_default_context()
-        check = MergeCheck.validate(pull_request, self._rhodecode_db_user,
-                                    translator=self.request.translate)
+        check = MergeCheck.validate(
+            pull_request, auth_user=self._rhodecode_user,
+            translator=self.request.translate)
         merge_possible = not check.failed
 
         for err_type, error_msg in check.errors:
@@ -1056,7 +1082,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def _merge_pull_request(self, pull_request, user, extras):
         _ = self.request.translate
-        merge_resp = PullRequestModel().merge(pull_request, user, extras=extras)
+        merge_resp = PullRequestModel().merge_repo(pull_request, user, extras=extras)
 
         if merge_resp.executed:
             log.debug("The merge was successful, closing the pull request.")
@@ -1199,7 +1225,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 status_change_type=(status
                                     if status and allowed_to_change_status else None),
                 comment_type=comment_type,
-                resolves_comment_id=resolves_comment_id
+                resolves_comment_id=resolves_comment_id,
+                auth_user=self._rhodecode_user
             )
 
             if allowed_to_change_status:
@@ -1285,7 +1312,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         if super_admin or comment_owner or comment_repo_admin:
             old_calculated_status = comment.pull_request.calculated_review_status()
-            CommentsModel().delete(comment=comment, user=self._rhodecode_user)
+            CommentsModel().delete(comment=comment, auth_user=self._rhodecode_user)
             Session().commit()
             calculated_status = comment.pull_request.calculated_review_status()
             if old_calculated_status != calculated_status:

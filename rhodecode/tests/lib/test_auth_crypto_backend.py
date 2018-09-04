@@ -75,7 +75,7 @@ def test_hash_check_with_update_enforces_bytes(crypto_backend, password):
 
 
 @pytest.fixture(params=[
-    auth._RhodeCodeCryptoMd5,
+    auth._RhodeCodeCryptoTest,
     auth._RhodeCodeCryptoBCrypt,
     auth._RhodeCodeCryptoSha256,
 ])
