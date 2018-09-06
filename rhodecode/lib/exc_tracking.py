@@ -87,6 +87,13 @@ def _store_exception(exc_id, exc_info, prefix):
 
 
 def store_exception(exc_id, exc_info, prefix=global_prefix):
+    """
+    Example usage::
+
+        exc_info = sys.exc_info()
+        store_exception(id(exc_info), exc_info)
+    """
+
     try:
         _store_exception(exc_id=exc_id, exc_info=exc_info, prefix=prefix)
     except Exception:

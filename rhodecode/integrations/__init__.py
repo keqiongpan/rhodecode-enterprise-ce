@@ -17,11 +17,13 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
+import sys
 import logging
 
 from rhodecode.integrations.registry import IntegrationTypeRegistry
 from rhodecode.integrations.types import webhook, slack, hipchat, email, base
+from rhodecode.lib.exc_tracking import store_exception
+
 log = logging.getLogger(__name__)
 
 
@@ -61,6 +63,8 @@ def integrations_event_handler(event):
         try:
             integration_model.send_event(integration, event)
         except Exception:
+            exc_info = sys.exc_info()
+            store_exception(id(exc_info), exc_info)
             log.exception(
                 'failure occurred when sending event %s to integration %s' % (
                     event, integration))
