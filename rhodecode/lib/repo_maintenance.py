@@ -51,25 +51,81 @@ class GitGC(MaintenanceTask):
         output = []
         instance = self.db_repo.scm_instance()
 
-        objects = self._count_objects(instance)
-        output.append(objects)
-        log.debug('GIT objects:%s', objects)
+        objects_before = self._count_objects(instance)
 
-        stdout, stderr = instance.run_git_command(
-            ['gc', '--aggressive'], fail_on_stderr=False)
+        log.debug('GIT objects:%s', objects_before)
+        cmd = ['gc', '--aggressive']
+        stdout, stderr = instance.run_git_command(cmd, fail_on_stderr=False)
 
-        out = 'executed git gc --aggressive'
-        if stderr:
-            out = ''.join(stderr.splitlines())
-
-        elif stdout:
-            out = ''.join(stdout.splitlines())
-
+        out = 'executed {}'.format(' '.join(cmd))
         output.append(out)
 
-        objects = self._count_objects(instance)
-        log.debug('GIT objects:%s', objects)
-        output.append(objects)
+        out = ''
+        if stderr:
+            out += ''.join(stderr.splitlines())
+
+        if stdout:
+            out += ''.join(stdout.splitlines())
+
+        if out:
+            output.append(out)
+
+        objects_after = self._count_objects(instance)
+        log.debug('GIT objects:%s', objects_after)
+        output.append('objects before :' + objects_before)
+        output.append('objects after  :' + objects_after)
+
+        return '\n'.join(output)
+
+
+class GitFSCK(MaintenanceTask):
+    human_name = 'GIT FSCK'
+
+    def run(self):
+        output = []
+        instance = self.db_repo.scm_instance()
+
+        cmd = ['fsck', '--full']
+        stdout, stderr = instance.run_git_command(cmd, fail_on_stderr=False)
+
+        out = 'executed {}'.format(' '.join(cmd))
+        output.append(out)
+
+        out = ''
+        if stderr:
+            out += ''.join(stderr.splitlines())
+
+        if stdout:
+            out += ''.join(stdout.splitlines())
+
+        if out:
+            output.append(out)
+
+        return '\n'.join(output)
+
+
+class GitRepack(MaintenanceTask):
+    human_name = 'GIT Repack'
+
+    def run(self):
+        output = []
+        instance = self.db_repo.scm_instance()
+        cmd = ['repack', '-a', '-d',
+               '--window-memory', '10m', '--max-pack-size', '100m']
+        stdout, stderr = instance.run_git_command(cmd, fail_on_stderr=False)
+
+        out = 'executed {}'.format(' '.join(cmd))
+        output.append(out)
+        out = ''
+
+        if stderr:
+            out += ''.join(stderr.splitlines())
+
+        if stdout:
+            out += ''.join(stdout.splitlines())
+
+        if out:
+            output.append(out)
 
         return '\n'.join(output)
 
@@ -98,7 +154,7 @@ class RepoMaintenance(object):
     """
     tasks = {
         'hg': [HGVerify],
-        'git': [GitGC],
+        'git': [GitFSCK, GitGC, GitRepack],
         'svn': [SVNVerify],
     }
 
@@ -114,5 +170,6 @@ class RepoMaintenance(object):
     def execute(self, db_repo):
         executed_tasks = []
         for task in self.tasks[db_repo.repo_type]:
-            executed_tasks.append(task(db_repo).run())
+            output = task.human_name + ':\n' + task(db_repo).run() + '\n--\n'
+            executed_tasks.append(output)
         return executed_tasks
