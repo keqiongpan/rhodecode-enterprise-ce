@@ -81,9 +81,14 @@ def get_vcs_server_protocol(config):
 
 
 def set_instance_id(config):
-    """ Sets a dynamic generated config['instance_id'] if missing or '*' """
+    """
+    Sets a dynamic generated config['instance_id'] if missing or '*'
+    E.g instance_id = *cluster-1 or instance_id = *
+    """
 
     config['instance_id'] = config.get('instance_id') or ''
-    if config['instance_id'] == '*' or not config['instance_id']:
+    instance_id = config['instance_id']
+    if instance_id.startswith('*') or not instance_id:
+        prefix = instance_id.lstrip('*')
         _platform_id = platform.uname()[1] or 'instance'
-        config['instance_id'] = '%s-%s' % (_platform_id, os.getpid())
+        config['instance_id'] = '%s%s-%s' % (prefix, _platform_id, os.getpid())

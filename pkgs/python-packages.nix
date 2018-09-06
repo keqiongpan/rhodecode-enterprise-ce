@@ -1653,6 +1653,8 @@ self: super: {
       self."setuptools-scm"
       self."amqp"
       self."authomatic"
+      self."atomicwrites"
+      self."attrs"
       self."babel"
       self."beaker"
       self."celery"

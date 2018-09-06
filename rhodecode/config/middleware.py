@@ -436,13 +436,23 @@ def _sanitize_vcs_settings(settings):
 
 
 def _sanitize_cache_settings(settings):
-    _string_setting(settings, 'cache_dir',
-                    os.path.join(tempfile.gettempdir(), 'rc_cache'))
+    default_cache_dir = os.path.join(tempfile.gettempdir(), 'rc_cache')
+
+    # save default, cache dir, and use it for all backends later.
+    default_cache_dir = _string_setting(
+        settings,
+        'cache_dir',
+        default_cache_dir, lower=False, default_when_empty=True)
+
+    # ensure we have our dir created
+    if not os.path.isdir(default_cache_dir):
+        os.makedirs(default_cache_dir, mode=0755)
+
     # cache_perms
     _string_setting(
         settings,
         'rc_cache.cache_perms.backend',
-        'dogpile.cache.rc.file_namespace')
+        'dogpile.cache.rc.file_namespace', lower=False)
     _int_setting(
         settings,
         'rc_cache.cache_perms.expiration_time',
@@ -450,13 +460,13 @@ def _sanitize_cache_settings(settings):
     _string_setting(
         settings,
         'rc_cache.cache_perms.arguments.filename',
-        os.path.join(tempfile.gettempdir(), 'rc_cache_1'))
+        os.path.join(default_cache_dir, 'rc_cache_1'), lower=False)
 
     # cache_repo
     _string_setting(
         settings,
         'rc_cache.cache_repo.backend',
-        'dogpile.cache.rc.file_namespace')
+        'dogpile.cache.rc.file_namespace', lower=False)
     _int_setting(
         settings,
         'rc_cache.cache_repo.expiration_time',
@@ -464,13 +474,13 @@ def _sanitize_cache_settings(settings):
     _string_setting(
         settings,
         'rc_cache.cache_repo.arguments.filename',
-        os.path.join(tempfile.gettempdir(), 'rc_cache_2'))
+        os.path.join(default_cache_dir, 'rc_cache_2'), lower=False)
 
     # cache_license
     _string_setting(
         settings,
         'rc_cache.cache_license.backend',
-        'dogpile.cache.rc.file_namespace')
+        'dogpile.cache.rc.file_namespace', lower=False)
     _int_setting(
         settings,
         'rc_cache.cache_license.expiration_time',
@@ -478,13 +488,13 @@ def _sanitize_cache_settings(settings):
     _string_setting(
         settings,
         'rc_cache.cache_license.arguments.filename',
-        os.path.join(tempfile.gettempdir(), 'rc_cache_3'))
+        os.path.join(default_cache_dir, 'rc_cache_3'), lower=False)
 
     # cache_repo_longterm memory, 96H
     _string_setting(
         settings,
         'rc_cache.cache_repo_longterm.backend',
-        'dogpile.cache.rc.memory_lru')
+        'dogpile.cache.rc.memory_lru', lower=False)
     _int_setting(
         settings,
         'rc_cache.cache_repo_longterm.expiration_time',
@@ -498,7 +508,7 @@ def _sanitize_cache_settings(settings):
     _string_setting(
         settings,
         'rc_cache.sql_cache_short.backend',
-        'dogpile.cache.rc.memory_lru')
+        'dogpile.cache.rc.memory_lru', lower=False)
     _int_setting(
         settings,
         'rc_cache.sql_cache_short.expiration_time',
@@ -511,6 +521,7 @@ def _sanitize_cache_settings(settings):
 
 def _int_setting(settings, name, default):
     settings[name] = int(settings.get(name, default))
+    return settings[name]
 
 
 def _bool_setting(settings, name, default):
@@ -518,6 +529,7 @@ def _bool_setting(settings, name, default):
     if isinstance(input_val, unicode):
         input_val = input_val.encode('utf8')
     settings[name] = asbool(input_val)
+    return settings[name]
 
 
 def _list_setting(settings, name, default):
@@ -530,13 +542,20 @@ def _list_setting(settings, name, default):
     else:
         # Otherwise we assume it uses pyramids space/newline separation.
         settings[name] = aslist(raw_value)
+    return settings[name]
 
 
-def _string_setting(settings, name, default, lower=True):
+def _string_setting(settings, name, default, lower=True, default_when_empty=False):
     value = settings.get(name, default)
+
+    if default_when_empty and not value:
+        # use default value when value is empty
+        value = default
+
     if lower:
         value = value.lower()
     settings[name] = value
+    return settings[name]
 
 
 def _substitute_values(mapping, substitutions):
