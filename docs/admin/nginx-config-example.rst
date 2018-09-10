@@ -7,7 +7,7 @@ Use the following example to configure Nginx as a your web server.
 .. code-block:: nginx
 
     ## rate limiter for certain pages to prevent brute force attacks
-    limit_req_zone  $binary_remote_addr  zone=dl_limit:10m   rate=1r/s;
+    limit_req_zone  $binary_remote_addr  zone=req_limit:10m   rate=1r/s;
 
     ## custom log format
     log_format log_custom '$remote_addr - $remote_user [$time_local] '
@@ -18,7 +18,7 @@ Use the following example to configure Nginx as a your web server.
     ## define upstream (local RhodeCode instance) to connect to
     upstream rc {
         # Url to running RhodeCode instance.
-        # This is shown as `- URL:` in output from rccontrol status.
+        # This is shown as `- URL: <host>` in output from rccontrol status.
         server 127.0.0.1:10002;
 
         # add more instances for load balancing
@@ -85,9 +85,10 @@ Use the following example to configure Nginx as a your web server.
         # Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
         #ssl_dhparam /etc/nginx/ssl/dhparam.pem;
 
+        # example of proxy.conf can be found in our docs.
         include     /etc/nginx/proxy.conf;
 
-        ## serve static files by Nginx, recommended for performance
+        ## uncomment to serve static files by Nginx, recommended for performance
         # location /_static/rhodecode {
         #    gzip on;
         #    gzip_min_length  500;
@@ -96,6 +97,7 @@ Use the following example to configure Nginx as a your web server.
         #    gzip_types  text/css text/javascript text/xml text/plain text/x-component application/javascript application/json application/xml application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
         #    gzip_vary on;
         #    gzip_disable     "msie6";
+        #    alias /path/to/.rccontrol/community-1/static;
         #    alias /path/to/.rccontrol/enterprise-1/static;
         # }
 
@@ -120,9 +122,9 @@ Use the following example to configure Nginx as a your web server.
             proxy_set_header Connection  "upgrade";
         }
 
+        ## rate limit this endpoint to prevent login page brute-force attacks
         location /_admin/login {
-            ## rate limit this endpoint
-            limit_req  zone=dl_limit  burst=10  nodelay;
+            limit_req  zone=req_limit  burst=10  nodelay;
             try_files $uri @rhode;
         }
 
@@ -138,6 +140,7 @@ Use the following example to configure Nginx as a your web server.
         ## is turned off
         error_page 502 /502.html;
         location = /502.html {
+           #root  /path/to/.rccontrol/community-1/static;
            root  /path/to/.rccontrol/enterprise-1/static;
         }
     }

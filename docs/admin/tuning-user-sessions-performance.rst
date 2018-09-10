@@ -1,7 +1,7 @@
 .. _user-session-ref:
 
-Increase User Session Performance
----------------------------------
+User Session Performance
+------------------------
 
 The default file-based sessions are only suitable for smaller setups, or
 instances that doesn't have a lot of users or traffic.
@@ -24,8 +24,9 @@ your :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file.
       beaker.session.type = ext:database
       beaker.session.table_name = db_session
 
-      # use just one of the following accoring to the type of database
+      # use just one of the following according to the type of database
       beaker.session.sa.url = postgresql://postgres:secret@localhost/rhodecode
+      # or
       beaker.session.sa.url = mysql://root:secret@127.0.0.1/rhodecode
 
       beaker.session.sa.pool_recycle = 3600

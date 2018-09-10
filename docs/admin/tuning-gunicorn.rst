@@ -1,14 +1,13 @@
 .. _increase-gunicorn:
 
-Increase Gunicorn Workers
--------------------------
+Configure Gunicorn Workers
+--------------------------
 
 
-|RCE| comes with `Gunicorn`_ packaged in its Nix environment.
-Gunicorn is a Python WSGI HTTP Server for UNIX.
+|RCE| comes with `Gunicorn`_ which is a Python WSGI HTTP Server for UNIX.
 
 To improve |RCE| performance you can increase the number of `Gunicorn`_  workers.
-This allows to handle more connections concurently, and provide better
+This allows to handle more connections concurrently, and provide better
 responsiveness and performance.
 
 By default during installation |RCC|  tries to detect how many CPUs are
@@ -18,8 +17,11 @@ However sometimes it's better to manually set the number of workers.
 To do this, use the following steps:
 
 1. Open the :file:`home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file.
-2. In the ``[server:main]`` section, increase the number of Gunicorn
-   ``workers`` using the following formula :math:`(2 * Cores) + 1`.
+2. In the ``[server:main]`` section, change the number of Gunicorn
+   ``workers`` using the following default formula :math:`(2 * Cores) + 1`.
+   We however not recommend using more than 8-12 workers per server. It's better
+   to start using the :ref:`scale-horizontal-cluster` in case that performance
+   with 8-12 workers is not enough.
 
 .. code-block:: ini
 

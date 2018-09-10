@@ -12,8 +12,7 @@ may find some of the following methods useful.
    tuning-vcs-memory-cache
    tuning-user-sessions-performance
    tuning-increase-db-performance
-   tuning-scale-horizontally
-   tuning-increase-cache-size
+   tuning-scale-horizontally-cluster
    tuning-mount-cache-memory
    tuning-change-encoding
    tuning-change-large-file-dir

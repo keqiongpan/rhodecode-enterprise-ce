@@ -1,7 +1,8 @@
-.. _nginx-tuning:
+.. _nginx-proxy-conf:
 
-Nginx Tuning
-------------
+Nginx Proxy Config
+------------------
+
 
 Set the following properties in your ``/etc/nginx/proxy.conf`` so it does not
 timeout during large pushes.
