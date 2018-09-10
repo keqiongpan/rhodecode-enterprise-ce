@@ -1632,7 +1632,7 @@ self: super: {
     };
   };
   "rhodecode-enterprise-ce" = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.13.1";
+    name = "rhodecode-enterprise-ce-4.14.0";
     buildInputs = [
       self."pytest"
       self."py"
@@ -1841,11 +1841,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-40.1.0";
+    name = "setuptools-40.2.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/5a/df/b2e3d9693bb0dcbeac516a73dd7a9eb82b126ae52e4a74605a9b01beddd5/setuptools-40.1.0.zip";
-      sha256 = "0w1blx5ajga5y15dci0mddk49cf2xpq0mp7rp7jrqr2diqk00ib6";
+      url = "https://files.pythonhosted.org/packages/ef/1d/201c13e353956a1c840f5d0fbf0461bd45bbd678ea4843ebf25924e8984c/setuptools-40.2.0.zip";
+      sha256 = "19ng5m7kigllg3x96c91y3a2k28g6kwnbb1v4warrnp4xma1v227";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
