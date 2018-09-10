@@ -164,7 +164,14 @@ def task_retry_signal(
 @signals.task_failure.connect
 def task_failure_signal(
         task_id, exception, args, kwargs, traceback, einfo, **kargs):
+    from rhodecode.lib.exc_tracking import store_exception
+
     meta.Session.remove()
+
+    # simulate sys.exc_info()
+    exc_info = (einfo.type, einfo.exception, einfo.tb)
+    store_exception(id(exc_info), exc_info, prefix='celery_rhodecode')
+
     closer = celery_app.conf['PYRAMID_CLOSER']
     if closer:
         closer()
