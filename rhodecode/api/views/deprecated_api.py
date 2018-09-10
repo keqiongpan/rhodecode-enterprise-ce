@@ -66,7 +66,7 @@ def changeset_comment(request, apiuser, repoid, revision, message,
 
     Example error output:
 
-    .. code-block:: json
+    .. code-block:: javascript
 
         {
             "id" : <id_given_in_input>,
