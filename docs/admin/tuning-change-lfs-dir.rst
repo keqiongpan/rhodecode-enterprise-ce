@@ -1,7 +1,7 @@
 .. _git-lfs-loc:
 
-Change the |git| LFS storage Location
--------------------------------------
+|git| LFS storage Location
+--------------------------
 
 |RCE| manages |git| LFS files from the following default location
 :file:`/home/{user}/repos/.cache/lfs_store`. If you wish to change this, use

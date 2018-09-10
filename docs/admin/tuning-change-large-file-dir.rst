@@ -1,7 +1,7 @@
 .. _hg-lrg-loc:
 
-Change the |hg| Large Files Location
-------------------------------------
+|hg| Large Files Location
+-------------------------
 
 |RCE| manages |hg| larges files from the following default location
 :file:`/home/{user}/repos/.cache/largefiles`. If you wish to change this, use

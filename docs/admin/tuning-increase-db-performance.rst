@@ -1,7 +1,7 @@
 .. _db-session-ref:
 
-Increase Database Performance
------------------------------
+Database Performance
+--------------------
 
 For tuning PostgreSQL we recommend reading: http://www.revsys.com/writings/postgresql-performance.html
 
