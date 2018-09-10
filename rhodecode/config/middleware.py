@@ -436,6 +436,7 @@ def _sanitize_vcs_settings(settings):
 
 
 def _sanitize_cache_settings(settings):
+
     default_cache_dir = os.path.join(tempfile.gettempdir(), 'rc_cache')
 
     # save default, cache dir, and use it for all backends later.
@@ -447,6 +448,12 @@ def _sanitize_cache_settings(settings):
     # ensure we have our dir created
     if not os.path.isdir(default_cache_dir):
         os.makedirs(default_cache_dir, mode=0755)
+
+    # exception store cache
+    _string_setting(
+        settings,
+        'exception_store_path',
+        default_cache_dir, lower=False)
 
     # cache_perms
     _string_setting(
