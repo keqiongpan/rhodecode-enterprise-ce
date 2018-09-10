@@ -73,10 +73,16 @@ class ExceptionsTrackerView(BaseAppView):
 
             if read_metadata:
                 full_path = os.path.join(exc_store_path, fname)
-                # we can read our metadata
-                with open(full_path, 'rb') as f:
-                    exc_metadata = exc_tracking.exc_unserialize(f.read())
-                    exc.update(exc_metadata)
+                if not os.path.isfile(full_path):
+                    continue
+                try:
+                    # we can read our metadata
+                    with open(full_path, 'rb') as f:
+                        exc_metadata = exc_tracking.exc_unserialize(f.read())
+                        exc.update(exc_metadata)
+                except Exception:
+                    log.exception('Failed to read exc data from:{}'.format(full_path))
+                    pass
 
             # convert our timestamp to a date obj, for nicer representation
             exc['exc_utc_date'] = time_to_utcdatetime(exc['exc_timestamp'])
