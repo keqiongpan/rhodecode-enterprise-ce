@@ -21,7 +21,7 @@
 import base64
 import logging
 import urllib
-from urlparse import urljoin
+import urlparse
 
 import requests
 from pyramid.httpexceptions import HTTPNotAcceptable
@@ -48,29 +48,50 @@ class SimpleSvnApp(object):
 
     def __call__(self, environ, start_response):
         request_headers = self._get_request_headers(environ)
-
         data = environ['wsgi.input']
-        # johbo: Avoid that we end up with sending the request in chunked
-        # transfer encoding (mainly on Gunicorn). If we know the content
-        # length, then we should transfer the payload in one request.
-        if environ['REQUEST_METHOD'] == 'MKCOL' or 'CONTENT_LENGTH' in environ:
-            data = data.read()
-            if data.startswith('(create-txn-with-props'):
+        req_method = environ['REQUEST_METHOD']
+        has_content_length = 'CONTENT_LENGTH' in environ
+        path_info = self._get_url(environ['PATH_INFO'])
+        transfer_encoding = environ.get('HTTP_TRANSFER_ENCODING', '')
+        log.debug('Handling: %s method via `%s`', req_method, path_info)
+
+        # stream control flag, based on request and content type...
+        stream = False
+
+        if req_method in ['MKCOL'] or has_content_length:
+            data_processed = False
+            # read chunk to check if we have txn-with-props
+            initial_data = data.read(1024)
+            if initial_data.startswith('(create-txn-with-props'):
+                data = initial_data + data.read()
                 # store on-the-fly our rc_extra using svn revision properties
                 # those can be read later on in hooks executed so we have a way
                 # to pass in the data into svn hooks
                 rc_data = base64.urlsafe_b64encode(json.dumps(self.rc_extras))
                 rc_data_len = len(rc_data)
-                # header defines data lenght, and serialized data
+                # header defines data length, and serialized data
                 skel = ' rc-scm-extras {} {}'.format(rc_data_len, rc_data)
                 data = data[:-2] + skel + '))'
+                data_processed = True
 
-        log.debug('Calling: %s method via `%s`', environ['REQUEST_METHOD'],
-                  self._get_url(environ['PATH_INFO']))
+            if not data_processed:
+                # NOTE(johbo): Avoid that we end up with sending the request in chunked
+                # transfer encoding (mainly on Gunicorn). If we know the content
+                # length, then we should transfer the payload in one request.
+                data = initial_data + data.read()
 
+        if req_method in ['GET', 'PUT'] or transfer_encoding == 'chunked':
+            # NOTE(marcink): when getting/uploading files we want to STREAM content
+            # back to the client/proxy instead of buffering it here...
+            stream = True
+
+        stream = stream
+        log.debug(
+            'Calling SVN PROXY: method:%s via `%s`, Stream: %s',
+            req_method, path_info, stream)
         response = requests.request(
-            environ['REQUEST_METHOD'], self._get_url(environ['PATH_INFO']),
-            data=data, headers=request_headers)
+            req_method, path_info,
+            data=data, headers=request_headers, stream=stream)
 
         if response.status_code not in [200, 401]:
             if response.status_code >= 500:
@@ -97,7 +118,7 @@ class SimpleSvnApp(object):
         return response.iter_content(chunk_size=1024)
 
     def _get_url(self, path):
-        url_path = urljoin(
+        url_path = urlparse.urljoin(
             self.config.get('subversion_http_server_url', ''), path)
         url_path = urllib.quote(url_path, safe="/:=~+!$,;'")
         return url_path
