@@ -190,8 +190,14 @@ class HttpHooksCallbackDaemon(ThreadedHookCallbackDaemon):
 
 
 def get_txn_id_data_path(txn_id):
-    root = tempfile.gettempdir()
-    return os.path.join(root, 'rc_txn_id_{}'.format(txn_id))
+    import rhodecode
+
+    root = rhodecode.CONFIG.get('cache_dir') or tempfile.gettempdir()
+    final_dir = os.path.join(root, 'svn_txn_id')
+
+    if not os.path.isdir(final_dir):
+        os.makedirs(final_dir)
+    return os.path.join(final_dir, 'rc_txn_id_{}'.format(txn_id))
 
 
 def store_txn_id_data(txn_id, data_dict):

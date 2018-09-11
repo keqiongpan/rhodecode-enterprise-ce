@@ -74,10 +74,10 @@ class SimpleSvnApp(object):
 
         if response.status_code not in [200, 401]:
             if response.status_code >= 500:
-                log.error('Got SVN response:%s with text:`%s`',
+                log.error('Got SVN response:%s with text:\n`%s`',
                           response, response.text)
             else:
-                log.debug('Got SVN response:%s with text:`%s`',
+                log.debug('Got SVN response:%s with text:\n`%s`',
                           response, response.text)
         else:
             log.debug('got response code: %s', response.status_code)
