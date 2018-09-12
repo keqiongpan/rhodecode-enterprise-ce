@@ -43,7 +43,7 @@ RC_WEBSITE = "http://localhost:5001/"
 
 def get_file(prefix):
     out_file = None
-    for i in xrange(100):
+    for i in range(100):
         file_path = "%s_profile%.3d.csv" % (prefix, i)
         if os.path.exists(file_path):
             continue
@@ -54,15 +54,15 @@ def get_file(prefix):
 
 
 def dump_system():
-    print "System Overview..."
-    print "\nCPU Count: %d (%d real)" % \
-          (psutil.cpu_count(), psutil.cpu_count(logical=False))
-    print "\nDisk:"
-    print psutil.disk_usage(os.sep)
-    print "\nMemory:"
-    print psutil.virtual_memory()
-    print "\nMemory (swap):"
-    print psutil.swap_memory()
+    print("System Overview...")
+    print("\nCPU Count: %d (%d real)" %
+          (psutil.cpu_count(), psutil.cpu_count(logical=False)))
+    print("\nDisk:")
+    print(psutil.disk_usage(os.sep))
+    print("\nMemory:")
+    print(psutil.virtual_memory())
+    print("\nMemory (swap):")
+    print(psutil.swap_memory())
 
 
 def count_dulwich_fds(proc):
@@ -97,30 +97,30 @@ def dump_process(pid, out_file):
 # Open output files
 vcs_out = get_file("vcs")
 if vcs_out is None:
-    print "Unable to enumerate output file for VCS"
+    print("Unable to enumerate output file for VCS")
     sys.exit(1)
 rc_out = get_file("rc")
 if rc_out is None:
-    print "Unable to enumerate output file for RC"
+    print("Unable to enumerate output file for RC")
     sys.exit(1)
 
 # Show system information
 dump_system()
 
-print "\nStarting VCS..."
+print("\nStarting VCS...")
 vcs = psutil.Popen(["vcsserver"])
 time.sleep(1)
 if not vcs.is_running():
-    print "VCS - Failed to start"
+    print("VCS - Failed to start")
     sys.exit(1)
-print "VCS - Ok"
+print("VCS - Ok")
 
-print "\nStarting RhodeCode..."
+print("\nStarting RhodeCode...")
 rc = psutil.Popen("RC_VCSSERVER_TEST_DISABLE=1 paster serve test.ini",
                   shell=True, stdin=subprocess32.PIPE)
 time.sleep(1)
 if not rc.is_running():
-    print "RC - Failed to start"
+    print("RC - Failed to start")
     vcs.terminate()
     sys.exit(1)
 
@@ -132,19 +132,19 @@ time.sleep(4)
 try:
     urllib.urlopen(RC_WEBSITE)
 except IOError:
-    print "RC - Website not started"
+    print("RC - Website not started")
     vcs.terminate()
     sys.exit(1)
-print "RC - Ok"
+print("RC - Ok")
 
-print "\nProfiling...\n%s\n" % ("-"*80)
+print("\nProfiling...\n%s\n" % ("-"*80))
 while True:
     try:
         dump_process(vcs, vcs_out)
         dump_process(rc, rc_out)
         time.sleep(PROFILING_INTERVAL)
     except Exception:
-        print traceback.format_exc()
+        print(traceback.format_exc())
         break
 
 # Finalize the profiling

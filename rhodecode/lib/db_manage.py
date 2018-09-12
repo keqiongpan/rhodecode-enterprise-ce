@@ -138,7 +138,7 @@ class DbManage(object):
             DatabaseNotControlledError
 
         if 'sqlite' in self.dburi:
-            print (
+            print(
                '********************** WARNING **********************\n'
                'Make sure your version of sqlite is at least 3.7.X.  \n'
                'Earlier versions are known to fail on some migrations\n'

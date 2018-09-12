@@ -38,7 +38,7 @@ def downgrade(migrate_engine):
 def fixups(models, _SESSION):
     notify('Setting default renderer to rst')
     for cs_comment in models.ChangesetComment.get_all():
-        print 'comment_id %s renderer rst' % (cs_comment.comment_id)
+        print('comment_id %s renderer rst' % (cs_comment.comment_id))
         cs_comment.renderer = 'rst'
         _SESSION().add(cs_comment)
         _SESSION().commit()

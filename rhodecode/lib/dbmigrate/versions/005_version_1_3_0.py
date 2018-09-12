@@ -33,7 +33,7 @@ def upgrade(migrate_engine):
         old_cons = UniqueConstraint('user_id', 'repository_id', table=tbl)
     else:
         # sqlite doesn't support dropping constraints...
-        print """Please manually drop UniqueConstraint('user_id', 'repository_id')"""
+        print("""Please manually drop UniqueConstraint('user_id', 'repository_id')""")
 
     if old_cons:
         try:
@@ -41,7 +41,7 @@ def upgrade(migrate_engine):
         except Exception as e:
             # we don't care if this fails really... better to pass migration than
             # leave this in intermidiate state
-            print 'Failed to remove Unique for user_id, repository_id reason %s' % e
+            print('Failed to remove Unique for user_id, repository_id reason %s' % e)
 
 
     #==========================================================================
@@ -61,7 +61,7 @@ def upgrade(migrate_engine):
         old_cons = UniqueConstraint('group_id', 'permission_id', table=tbl, name='group_to_perm_group_id_permission_id_key')
     else:
         # sqlite doesn't support dropping constraints...
-        print """Please manually drop UniqueConstraint('group_id', 'permission_id')"""
+        print("""Please manually drop UniqueConstraint('group_id', 'permission_id')""")
 
     if old_cons:
         try:
@@ -69,7 +69,7 @@ def upgrade(migrate_engine):
         except Exception as e:
             # we don't care if this fails really... better to pass migration than
             # leave this in intermidiate state
-            print 'Failed to remove Unique for user_id, repository_id reason %s' % e
+            print('Failed to remove Unique for user_id, repository_id reason %s' % e)
 
     return
 

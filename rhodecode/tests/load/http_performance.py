@@ -90,7 +90,7 @@ def execute(*popenargs, **kwargs):
         cmd = kwargs.get("args")
         if cmd is None:
             cmd = popenargs[0]
-        print cmd, output, error
+        print('{} {} {} '.format(cmd, output, error))
         raise subprocess32.CalledProcessError(retcode, cmd, output=output)
     return output
 
@@ -125,14 +125,14 @@ class TestPerformanceBase(object):
         try:
             self.test()
         except Exception as error:
-            print error
+            print(error)
         finally:
             self.cleanup()
 
-            print 'Clone time     :', self.clone_time
-            print 'Push time      :', mean(self.push_times)
-            print 'Pull time      :', mean(self.pull_times)
-            print 'Empty pull time:', mean(self.empty_pull_times)
+            print('Clone time     :{}'.format(self.clone_time))
+            print('Push time      :{}'.format(mean(self.push_times)))
+            print('Pull time      :{}'.format(mean(self.pull_times)))
+            print('Empty pull time:{}'.format(mean(self.empty_pull_times)))
 
             return {
                 'clone': self.clone_time,
@@ -163,10 +163,10 @@ class TestPerformanceBase(object):
                 self.orig_repo, commits[self.skip_commits - 1], 'upstream')
         commits = commits[self.skip_commits:self.max_commits]
 
-        print 'Working with %d commits' % len(commits)
-        for i in xrange(self.n_commits - 1, len(commits), self.n_commits):
+        print('Working with %d commits' % len(commits))
+        for i in range(self.n_commits - 1, len(commits), self.n_commits):
             commit = commits[i]
-            print 'Processing commit %s (%d)' % (commit, i + 1)
+            print('Processing commit %s (%d)' % (commit, i + 1))
             self.push_times.append(
                 self.push(self.orig_repo, commit, 'upstream'))
             self.check_remote_last_commit_is(commit, upstream_url)
@@ -402,7 +402,7 @@ def main(argv):
         '--api-key', dest='api_key', action='store', required=True,
         help='The api key of RhodeCode')
     options = parser.parse_args(argv[1:])
-    print options
+    print(options)
 
     test_config = {
         'python': {
@@ -434,8 +434,8 @@ def main(argv):
     if test_names == ['all']:
         test_names = test_config.keys()
     if not set(test_names) <= set(test_config.keys()):
-        print ('Invalid tests: only %s are valid but specified %s' %
-               (test_config.keys(), test_names))
+        print('Invalid tests: only %s are valid but specified %s' %
+              (test_config.keys(), test_names))
         return 1
 
     sizes = options.sizes.split(',')
@@ -452,9 +452,9 @@ def main(argv):
                         test_config[test_name]['limit'],
                         test_config[test_name].get('skip', 0),
                         api_key)
-        print '*' * 80
-        print 'Running performance test: %s with size %d' % (test_name, size)
-        print '*' * 80
+        print('*' * 80)
+        print('Running performance test: %s with size %d' % (test_name, size))
+        print('*' * 80)
         results[test_name][size] = test.run()
     pprint.pprint(dict(results))
 

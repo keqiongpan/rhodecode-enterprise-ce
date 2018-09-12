@@ -73,7 +73,7 @@ def fixups(models, _SESSION):
     repo_store_path = get_repos_location(models.RhodeCodeUi)
     _store = os.path.join(repo_store_path, '.cache', 'largefiles')
     notify('Setting largefiles usercache')
-    print _store
+    print(_store)
 
     if not models.RhodeCodeUi.query().filter(
                     models.RhodeCodeUi.ui_key == 'usercache').scalar():

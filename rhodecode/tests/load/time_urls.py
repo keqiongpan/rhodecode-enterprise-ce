@@ -56,14 +56,14 @@ svn_pages = [
 
 repeat = 10
 
-print "Repeating each URL x%d\n" % repeat
+print("Repeating each URL x%d\n" % repeat)
 for page in pages:
     url = "http://%s/%s" % (server, page)
-    print url
+    print(url)
 
     stmt = "urllib2.urlopen('%s', timeout=120)" % url
     t = timeit.Timer(stmt=stmt, setup="import urllib2")
 
     result = t.repeat(repeat=repeat, number=1)
-    print "\t%.3f (min) - %.3f (max) - %.3f (avg)\n" % \
-          (min(result), max(result), sum(result)/len(result))
+    print("\t%.3f (min) - %.3f (max) - %.3f (avg)\n" %
+          (min(result), max(result), sum(result)/len(result)))

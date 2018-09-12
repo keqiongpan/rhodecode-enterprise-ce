@@ -53,7 +53,7 @@ class TestINI(object):
     data. Example usage::
 
         with TestINI('test.ini', [{'section':{'key':val'}]) as new_test_ini_path:
-            print 'paster server %s' % new_test_ini
+            print('paster server %s' % new_test_ini)
     """
 
     def __init__(self, ini_file_path, ini_params, new_file_prefix='DEFAULT',

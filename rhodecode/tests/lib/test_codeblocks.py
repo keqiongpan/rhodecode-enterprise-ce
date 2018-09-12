@@ -33,7 +33,7 @@ class TestTokenizeString(object):
     import this
 
     var = 6
-    print "this"
+    print("this")
 
     '''
 
@@ -58,10 +58,11 @@ class TestTokenizeString(object):
             ('',    u'\n'),
             ('',    u'    '),
             ('k',   u'print'),
-            ('',    u' '),
-            ('s2',  u'"'),
-            ('s2',  u'this'),
-            ('s2',  u'"'),
+            ('p', u'('),
+            ('s2', u'"'),
+            ('s2', u'this'),
+            ('s2', u'"'),
+            ('p', u')'),
             ('',    u'\n'),
             ('',    u'\n'),
             ('',    u'    ')
@@ -73,7 +74,7 @@ class TestTokenizeString(object):
 
         assert tokens == [
             ('',
-            u'\n    import this\n\n    var = 6\n    print "this"\n\n    ')
+            u'\n    import this\n\n    var = 6\n    print("this")\n\n    ')
         ]
 
 

@@ -89,7 +89,6 @@ class TestUpdatePullRequest(object):
         pr_util.update_source_repository(head='c')
         repo = pull_request.source_repo.scm_instance()
         commits = [x for x in repo.get_commits()]
-        print commits
 
         added_commit_id = commits[-1].raw_id  # c commit
         common_commit_id = commits[1].raw_id  # b commit is common ancestor

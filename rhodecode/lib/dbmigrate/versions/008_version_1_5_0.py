@@ -80,7 +80,7 @@ def fixups(models, _SESSION):
             new_perm = models.Permission()
             new_perm.permission_name = p[0]
             new_perm.permission_longname = p[0]  #translation err with p[1]
-            print 'Creating new permission %s' % p[0]
+            print('Creating new permission %s' % p[0])
             _SESSION().add(new_perm)
 
     _SESSION().commit()
