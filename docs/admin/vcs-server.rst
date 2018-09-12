@@ -113,33 +113,33 @@ match, for example:
 VCS Server Memory Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To configure the VCS server to manage the cache efficiently, you need to
+To optimize the VCS server to manage the cache and memory usage efficiently, you need to
 configure the following options in the
 :file:`/home/{user}/.rccontrol/{vcsserver-id}/vcsserver.ini` file. Once
-configured, restart the VCS Server.
+configured, restart the VCS Server. By default we use an optimal settings, but in certain
+conditions tunning expiration_time and max_size can affect memory usage and performance
 
-.. rst-class:: dl-horizontal
+.. code-block:: ini
 
-    \beaker.cache.repo_object.type = memorylru
-        Configures the cache to discard the least recently used items.
-        This setting takes the following valid options:
+    ## cache region for storing repo_objects cache
+    rc_cache.repo_object.backend = dogpile.cache.rc.memory_lru
 
-        * ``memorylru``: The default setting, which removes the least recently
-          used items from the cache.
-        * ``memory``: Runs the VCS Server without clearing the cache.
-        * ``nocache``: Runs the VCS Server without a cache. This will
-          dramatically reduce the VCS Server performance.
+    ## cache auto-expires after N seconds, setting this to 0 disabled cache
+    rc_cache.repo_object.expiration_time = 300
 
-    \beaker.cache.repo_object.max_items = 100
-        Sets the maximum number of items stored in the cache, before the cache
-        starts to be cleared.
+    ## max size of LRU, old values will be discarded if the size of cache reaches max_size
+    ## Sets the maximum number of items stored in the cache, before the cache
+    ## starts to be cleared.
 
-        As a general rule of thumb, running this value at 120 resulted in a
-        5GB cache. Running it at 240 resulted in a 9GB cache. Your results
-        will differ based on usage patterns and |repo| sizes.
+    ## As a general rule of thumb, running this value at 120 resulted in a
+    ## 5GB cache. Running it at 240 resulted in a 9GB cache. Your results
+    ## will differ based on usage patterns and |repo| sizes.
 
-        Tweaking this value to run at a fairly constant memory load on your
-        server will help performance.
+    ## Tweaking this value to run at a fairly constant memory load on your
+    ## server will help performance.
+
+    rc_cache.repo_object.max_size = 120
+
 
 To clear the cache completely, you can restart the VCS Server.
 
