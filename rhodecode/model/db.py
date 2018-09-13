@@ -739,13 +739,18 @@ class User(Base, BaseModel):
         plain_tokens = []
         hash_tokens = []
 
-        for token in tokens_q.all():
-            # verify scope first
+        user_tokens = tokens_q.all()
+        log.debug('Found %s user tokens to check for authentication', len(user_tokens))
+        for token in user_tokens:
+            log.debug('AUTH_TOKEN: checking if user token with id `%s` matches',
+                      token.user_api_key_id)
+            # verify scope first, since it's way faster than hash calculation of
+            # encrypted tokens
             if token.repo_id:
                 # token has a scope, we need to verify it
                 if scope_repo_id != token.repo_id:
                     log.debug(
-                        'Scope mismatch: token has a set repo scope: %s, '
+                        'AUTH_TOKEN: scope mismatch, token has a set repo scope: %s, '
                         'and calling scope is:%s, skipping further checks',
                          token.repo, scope_repo_id)
                     # token has a scope, and it doesn't match, skip token
@@ -761,7 +766,7 @@ class User(Base, BaseModel):
             return True
 
         for hashed in hash_tokens:
-            # TODO(marcink): this is expensive to calculate, but most secure
+            # NOTE(marcink): this is expensive to calculate, but most secure
             match = crypto_backend.hash_check(auth_token, hashed)
             if match:
                 return True
