@@ -57,7 +57,7 @@ def get_exc_store():
     """
     import rhodecode as app
 
-    exc_store_dir = app.CONFIG.get('exception_store_path', '') or tempfile.gettempdir()
+    exc_store_dir = app.CONFIG.get('exception_tracker.store_path', '') or tempfile.gettempdir()
     _exc_store_path = os.path.join(exc_store_dir, exc_store_dir_name)
 
     _exc_store_path = os.path.abspath(_exc_store_path)
