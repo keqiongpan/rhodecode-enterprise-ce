@@ -442,7 +442,7 @@ class DiffSet(object):
         return self._lexer_cache[filename]
 
     def render_patch(self, patch):
-        log.debug('rendering diff for %r' % patch['filename'])
+        log.debug('rendering diff for %r', patch['filename'])
 
         source_filename = patch['original_filename']
         target_filename = patch['filename']

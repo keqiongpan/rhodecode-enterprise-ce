@@ -98,8 +98,8 @@ class StripView(RepoAppView):
                 ScmModel().strip(
                     repo=self.db_repo,
                     commit_id=commit['rev'], branch=commit['branch'])
-                log.info('Stripped commit %s from repo `%s` by %s' % (
-                    commit['rev'], self.db_repo_name, user))
+                log.info('Stripped commit %s from repo `%s` by %s',
+                         commit['rev'], self.db_repo_name, user)
                 data[commit['rev']] = True
 
                 audit_logger.store_web(
@@ -108,6 +108,6 @@ class StripView(RepoAppView):
 
             except Exception as e:
                 data[commit['rev']] = False
-                log.debug('Stripped commit %s from repo `%s` failed by %s, exeption %s' % (
-                    commit['rev'], self.db_repo_name, user, e.message))
+                log.debug('Stripped commit %s from repo `%s` failed by %s, exeption %s',
+                          commit['rev'], self.db_repo_name, user, e.message)
         return data

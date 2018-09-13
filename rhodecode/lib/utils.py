@@ -291,8 +291,7 @@ def is_valid_repo_group(repo_group_name, base_path, skip_path_check=False):
 
     # check if it's not a repo
     if is_valid_repo(repo_group_name, base_path):
-        log.debug('Repo called %s exist, it is not a valid '
-                  'repo group' % repo_group_name)
+        log.debug('Repo called %s exist, it is not a valid repo group', repo_group_name)
         return False
 
     try:
@@ -300,8 +299,7 @@ def is_valid_repo_group(repo_group_name, base_path, skip_path_check=False):
         # since we might match branches/hooks/info/objects or possible
         # other things inside bare git repo
         scm_ = get_scm(os.path.dirname(full_path))
-        log.debug('path: %s is a vcs object:%s, not valid '
-                  'repo group' % (full_path, scm_))
+        log.debug('path: %s is a vcs object:%s, not valid repo group', full_path, scm_)
         return False
     except VCSError:
         pass
@@ -774,5 +772,5 @@ def generate_platform_uuid():
         uuid_list = [platform.platform()]
         return hashlib.sha256(':'.join(uuid_list)).hexdigest()
     except Exception as e:
-        log.error('Failed to generate host uuid: %s' % e)
+        log.error('Failed to generate host uuid: %s', e)
         return 'UNDEFINED'

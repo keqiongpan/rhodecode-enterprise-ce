@@ -626,7 +626,7 @@ class UserGroupModel(BaseModel):
                     self.remove_user_from_group(gr, user)
             else:
                 log.debug('Skipping removal from group %s since it is '
-                          'not set to be automatically synchronized' % gr)
+                          'not set to be automatically synchronized', gr)
 
         # now we calculate in which groups user should be == groups params
         owner = User.get_first_super_admin().username
@@ -647,7 +647,7 @@ class UserGroupModel(BaseModel):
                 UserGroupModel().add_user_to_group(existing_group, user)
             else:
                 log.debug('Skipping addition to group %s since it is '
-                          'not set to be automatically synchronized' % gr)
+                          'not set to be automatically synchronized', gr)
 
     def change_groups(self, user, groups):
         """

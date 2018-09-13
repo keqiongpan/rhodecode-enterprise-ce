@@ -99,8 +99,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
                 'extern_type': extern_type,
             }
 
-            log.debug('EXTERNAL user: \n%s' % formatted_json(user_attrs))
-            log.info('user `%s` authenticated correctly' % user_attrs['username'])
+            log.debug('EXTERNAL user: \n%s', formatted_json(user_attrs))
+            log.info('user `%s` authenticated correctly', user_attrs['username'])
 
             return user_attrs
 

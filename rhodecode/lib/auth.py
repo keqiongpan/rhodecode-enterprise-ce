@@ -979,7 +979,7 @@ def allowed_auth_token_access(view_name, auth_token, whitelist=None):
     }
 
     log.debug(
-        'Allowed views for AUTH TOKEN access: %s' % (whitelist,))
+        'Allowed views for AUTH TOKEN access: %s', whitelist)
     auth_token_access_valid = False
 
     for entry in whitelist:
@@ -998,8 +998,9 @@ def allowed_auth_token_access(view_name, auth_token, whitelist=None):
             break
 
     if auth_token_access_valid:
-        log.debug('view: `%s` matches entry in whitelist: %s'
-                  % (view_name, whitelist))
+        log.debug('view: `%s` matches entry in whitelist: %s',
+                  view_name, whitelist)
+
     else:
         msg = ('view: `%s` does *NOT* match any entry in whitelist: %s'
                % (view_name, whitelist))
@@ -1190,7 +1191,7 @@ class AuthUser(object):
 
         log.debug(
             'Computing PERMISSION tree for user %s scope `%s` '
-            'with caching: %s[TTL: %ss]' % (user, scope, cache_on, cache_seconds or 0))
+            'with caching: %s[TTL: %ss]', user, scope, cache_on, cache_seconds or 0)
 
         cache_namespace_uid = 'cache_user_auth.{}'.format(user_id)
         region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
@@ -1214,8 +1215,8 @@ class AuthUser(object):
         for k in result:
             result_repr.append((k, len(result[k])))
         total = time.time() - start
-        log.debug('PERMISSION tree for user %s computed in %.3fs: %s' % (
-            user, total, result_repr))
+        log.debug('PERMISSION tree for user %s computed in %.3fs: %s',
+                  user, total, result_repr)
 
         return result
 
@@ -1352,12 +1353,12 @@ class AuthUser(object):
         allowed_ips = AuthUser.get_allowed_ips(
             user_id, cache=True, inherit_from_default=inherit_from_default)
         if check_ip_access(source_ip=ip_addr, allowed_ips=allowed_ips):
-            log.debug('IP:%s for user %s is in range of %s' % (
-                ip_addr, user_id, allowed_ips))
+            log.debug('IP:%s for user %s is in range of %s',
+                      ip_addr, user_id, allowed_ips)
             return True
         else:
             log.info('Access for IP:%s forbidden for user %s, '
-                     'not in %s' % (ip_addr, user_id, allowed_ips))
+                     'not in %s', ip_addr, user_id, allowed_ips)
             return False
 
     def get_branch_permissions(self, repo_name, perms=None):
@@ -1593,7 +1594,7 @@ class LoginRequired(object):
         _ = request.translate
 
         loc = "%s:%s" % (cls.__class__.__name__, func.__name__)
-        log.debug('Starting login restriction checks for user: %s' % (user,))
+        log.debug('Starting login restriction checks for user: %s', user)
         # check if our IP is allowed
         ip_access_valid = True
         if not user.ip_allowed:
@@ -1610,7 +1611,7 @@ class LoginRequired(object):
 
         # explicit controller is enabled or API is in our whitelist
         if self.auth_token_access or auth_token_access_valid:
-            log.debug('Checking AUTH TOKEN access for %s' % (cls,))
+            log.debug('Checking AUTH TOKEN access for %s', cls)
             db_user = user.get_instance()
 
             if db_user:
@@ -1626,36 +1627,33 @@ class LoginRequired(object):
 
             if _auth_token and token_match:
                 auth_token_access_valid = True
-                log.debug('AUTH TOKEN ****%s is VALID' % (_auth_token[-4:],))
+                log.debug('AUTH TOKEN ****%s is VALID', _auth_token[-4:])
             else:
                 auth_token_access_valid = False
                 if not _auth_token:
                     log.debug("AUTH TOKEN *NOT* present in request")
                 else:
-                    log.warning(
-                        "AUTH TOKEN ****%s *NOT* valid" % _auth_token[-4:])
+                    log.warning("AUTH TOKEN ****%s *NOT* valid", _auth_token[-4:])
 
-        log.debug('Checking if %s is authenticated @ %s' % (user.username, loc))
+        log.debug('Checking if %s is authenticated @ %s', user.username, loc)
         reason = 'RHODECODE_AUTH' if user.is_authenticated \
             else 'AUTH_TOKEN_AUTH'
 
         if ip_access_valid and (
                 user.is_authenticated or auth_token_access_valid):
-            log.info(
-                'user %s authenticating with:%s IS authenticated on func %s'
-                % (user, reason, loc))
+            log.info('user %s authenticating with:%s IS authenticated on func %s',
+                     user, reason, loc)
 
             return func(*fargs, **fkwargs)
         else:
             log.warning(
                 'user %s authenticating with:%s NOT authenticated on '
-                'func: %s: IP_ACCESS:%s AUTH_TOKEN_ACCESS:%s'
-                % (user, reason, loc, ip_access_valid,
-                   auth_token_access_valid))
+                'func: %s: IP_ACCESS:%s AUTH_TOKEN_ACCESS:%s',
+                user, reason, loc, ip_access_valid, auth_token_access_valid)
             # we preserve the get PARAM
             came_from = get_came_from(request)
 
-            log.debug('redirecting to login page with %s' % (came_from,))
+            log.debug('redirecting to login page with %s', came_from)
             raise HTTPFound(
                 h.route_path('login', _query={'came_from': came_from}))
 
@@ -1678,7 +1676,7 @@ class NotAnonymous(object):
         self.user = cls._rhodecode_user
         request = self._get_request()
         _ = request.translate
-        log.debug('Checking if user is not anonymous @%s' % cls)
+        log.debug('Checking if user is not anonymous @%s', cls)
 
         anonymous = self.user.username == User.DEFAULT_USER
 
@@ -1939,7 +1937,7 @@ class PermsFunction(object):
         frame = inspect.currentframe()
         stack_trace = traceback.format_stack(frame)
         log.error('Checking bool value on a class instance of perm '
-                  'function is not allowed: %s' % ''.join(stack_trace))
+                  'function is not allowed: %s', ''.join(stack_trace))
         # rather than throwing errors, here we always return False so if by
         # accident someone checks truth for just an instance it will always end
         # up in returning False
@@ -2182,9 +2180,8 @@ class _BaseApiPerm(object):
         if user_group_name:
             check_scope += ', user_group_name:%s' % (user_group_name,)
 
-        log.debug(
-            'checking cls:%s %s %s @ %s'
-            % (cls_name, self.required_perms, check_scope, check_location))
+        log.debug('checking cls:%s %s %s @ %s',
+                  cls_name, self.required_perms, check_scope, check_location)
         if not user:
             log.debug('Empty User passed into arguments')
             return False
@@ -2305,7 +2302,7 @@ def check_ip_access(source_ip, allowed_ips=None):
     :param source_ip:
     :param allowed_ips: list of allowed ips together with mask
     """
-    log.debug('checking if ip:%s is subnet of %s' % (source_ip, allowed_ips))
+    log.debug('checking if ip:%s is subnet of %s', source_ip, allowed_ips)
     source_ip_address = ipaddress.ip_address(safe_unicode(source_ip))
     if isinstance(allowed_ips, (tuple, list, set)):
         for ip in allowed_ips:
@@ -2313,8 +2310,7 @@ def check_ip_access(source_ip, allowed_ips=None):
             try:
                 network_address = ipaddress.ip_network(ip, strict=False)
                 if source_ip_address in network_address:
-                    log.debug('IP %s is network %s' %
-                              (source_ip_address, network_address))
+                    log.debug('IP %s is network %s', source_ip_address, network_address)
                     return True
                 # for any case we cannot determine the IP, don't crash just
                 # skip it and log as error, we want to say forbidden still when

@@ -111,7 +111,7 @@ class SmtpMailer(object):
             smtp_serv.login(self.user, self.passwd)
 
         smtp_serv.sendmail(msg.sender, msg.send_to, raw_msg.as_string())
-        log.info('email sent to: %s' % recipients)
+        log.info('email sent to: %s', recipients)
 
         try:
             smtp_serv.quit()

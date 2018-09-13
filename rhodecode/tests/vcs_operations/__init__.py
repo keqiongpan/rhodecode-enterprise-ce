@@ -57,7 +57,7 @@ class Command(object):
 
         command = cmd + ' ' + ' '.join(args)
         if DEBUG:
-            log.debug('*** CMD %s ***' % (command,))
+            log.debug('*** CMD %s ***', command)
 
         env = dict(os.environ)
         # Delete coverage variables, as they make the test fail for Mercurial
@@ -69,8 +69,8 @@ class Command(object):
                              cwd=self.cwd, env=env)
         stdout, stderr = self.process.communicate()
         if DEBUG:
-            log.debug('STDOUT:%s' % (stdout,))
-            log.debug('STDERR:%s' % (stderr,))
+            log.debug('STDOUT:%s', stdout)
+            log.debug('STDERR:%s', stderr)
         return stdout, stderr
 
     def assert_returncode_success(self):

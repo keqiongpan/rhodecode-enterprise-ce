@@ -446,7 +446,7 @@ class DiffProcessor(object):
 
         for chunk in self._diff.chunks():
             head = chunk.header
-            log.debug('parsing diff %r' % head)
+            log.debug('parsing diff %r', head)
 
             raw_diff = chunk.raw
             limited_diff = False

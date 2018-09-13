@@ -103,7 +103,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
 
     def auth(self, userobj, username, password, settings, **kwargs):
         if not userobj:
-            log.debug('userobj was:%s skipping' % (userobj, ))
+            log.debug('userobj was:%s skipping', userobj)
             return None
 
         user_attrs = {

@@ -171,11 +171,11 @@ class WebhookIntegrationType(IntegrationTypeBase):
             'handling event %s with Webhook integration %s', event.name, self)
 
         if event.__class__ not in self.valid_events:
-            log.debug('event not valid: %r' % event)
+            log.debug('event not valid: %r', event)
             return
 
         if event.name not in self.settings['events']:
-            log.debug('event ignored: %r' % event)
+            log.debug('event ignored: %r', event)
             return
 
         data = event.as_dict()

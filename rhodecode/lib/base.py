@@ -216,7 +216,7 @@ class BasicAuth(AuthBasicAuthenticator):
         try:
             return get_exception(safe_int(http_code))
         except Exception:
-            log.exception('Failed to fetch response for code %s' % http_code)
+            log.exception('Failed to fetch response for code %s', http_code)
             return HTTPForbidden
 
     def get_rc_realm(self):

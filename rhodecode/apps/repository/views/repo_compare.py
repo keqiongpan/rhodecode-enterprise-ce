@@ -256,8 +256,8 @@ class RepoCompareView(RepoAppView):
             # case we want a simple diff without incoming commits,
             # previewing what will be merged.
             # Make the diff on target repo (which is known to have target_ref)
-            log.debug('Using ancestor %s as source_ref instead of %s'
-                      % (c.ancestor, source_ref))
+            log.debug('Using ancestor %s as source_ref instead of %s',
+                      c.ancestor, source_ref)
             source_repo = target_repo
             source_commit = target_repo.get_commit(commit_id=c.ancestor)
 
