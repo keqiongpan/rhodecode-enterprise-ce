@@ -64,10 +64,16 @@ ACTIONS_V1 = {
     'repo.fork': {'data': {}},
     'repo.edit': {'old_data': {}},
     'repo.edit.permissions': {},
+    'repo.edit.permissions.branch': {},
     'repo.delete': {'old_data': {}},
-    'repo.commit.strip': {'commit_id': ''},
+
     'repo.archive.download': {'user_agent': '', 'archive_name': '',
                               'archive_spec': '', 'archive_cached': ''},
+
+    'repo.permissions.branch_rule.create': {},
+    'repo.permissions.branch_rule.edit': {},
+    'repo.permissions.branch_rule.delete': {},
+
     'repo.pull_request.create': '',
     'repo.pull_request.edit': '',
     'repo.pull_request.delete': '',
@@ -80,6 +86,7 @@ ACTIONS_V1 = {
     'repo.pull_request.reviewer.add': '',
     'repo.pull_request.reviewer.delete': '',
 
+    'repo.commit.strip': {'commit_id': ''},
     'repo.commit.comment.create': {'data': {}},
     'repo.commit.comment.delete': {'data': {}},
     'repo.commit.vote': '',
@@ -89,6 +96,7 @@ ACTIONS_V1 = {
     'repo_group.edit.permissions': {},
     'repo_group.delete': {'old_data': {}},
 }
+
 ACTIONS = ACTIONS_V1
 
 SOURCE_WEB = 'source_web'
