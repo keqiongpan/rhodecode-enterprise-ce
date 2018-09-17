@@ -191,7 +191,6 @@ class CommentsModel(BaseModel):
         :param renderer: pick renderer for this comment
         """
 
-        auth_user = auth_user or user
         if not text:
             log.warning('Missing text for comment, skipping...')
             return
@@ -203,6 +202,7 @@ class CommentsModel(BaseModel):
 
         repo = self._get_repo(repo)
         user = self._get_user(user)
+        auth_user = auth_user or user
 
         schema = comment_schema.CommentSchema()
         validated_kwargs = schema.deserialize(dict(
