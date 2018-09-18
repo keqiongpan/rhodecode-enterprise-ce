@@ -924,7 +924,7 @@ def close_pull_request(
 
     # finally close the PR, with proper message comment
     comment, status = PullRequestModel().close_pull_request_with_comment(
-        pull_request, apiuser, repo, message=message)
+        pull_request, apiuser, repo, message=message, auth_user=apiuser)
     status_lbl = ChangesetStatus.get_status_lbl(status)
 
     Session().commit()
