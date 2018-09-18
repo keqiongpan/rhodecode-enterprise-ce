@@ -120,7 +120,8 @@ b) On **rc-node-3** find the following settings and edit :file:`/home/{user}/.rc
 
 
 2) Configure `User Session` to use a shared database. Example config that should be
-   changed on both node 2 and 3. Edit :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini`
+   changed on both **rc-node-2** and **rc-node-3** .
+   Edit :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini`
 
 .. code-block:: ini
 
@@ -160,7 +161,18 @@ persistent sessions across nodes. Please generate other one then in this example
     #archive_cache_dir = /home/rcdev/storage/_tarball_cache_dir
 
 
-4) Change cache backends to use `Redis`_ based caches. Below full example config
+4) Use shared exception store. Example config that should be
+   changed on both **rc-node-2** and **rc-node-3**, and also for VCSServer.
+   Edit :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini` and
+   :file:`/home/{user}/.rccontrol/{vcsserver-instance-id}/vcsserver.ini`
+   and add/change following setting.
+
+.. code-block:: ini
+
+    exception_tracker.store_path = /home/rcdev/storage/_exception_store_data
+
+
+5) Change cache backends to use `Redis`_ based caches. Below full example config
    that replaces default file-based cache to shared `Redis`_ with Distributed Lock.
 
 
@@ -216,7 +228,7 @@ persistent sessions across nodes. Please generate other one then in this example
     rc_cache.cache_repo_longterm.max_size = 10000
 
 
-4) Configure `Nginx`_ as reverse proxy on `rc-node-2/3`:
+6) Configure `Nginx`_ as reverse proxy on `rc-node-2/3`:
    Minimal `Nginx`_ config used:
 
 
@@ -281,7 +293,7 @@ persistent sessions across nodes. Please generate other one then in this example
     }
 
 
-5) Optional: Full text search, in case you use `Whoosh` full text search we also need a
+7) Optional: Full text search, in case you use `Whoosh` full text search we also need a
    shared storage for the index. In our example our NFS is mounted at `/home/rcdev/storage`
    which represents out storage so we can use the following:
 
@@ -298,9 +310,9 @@ persistent sessions across nodes. Please generate other one then in this example
     by default cluster compatible.
 
 
-6) Optional: If you intend to use mailing all instances need to use either a shared
-   mailing node, or each will use individual local mailagent. Simply put node-1/2/3 needs
-   to use same mailing configuration.
+8) Optional: If you intend to use mailing all instances need to use either a shared
+   mailing node, or each will use individual local mail agent. Simply put node-1/2/3
+   needs to use same mailing configuration.
 
 
 
