@@ -23,12 +23,9 @@ Scm model for RhodeCode
 """
 
 import os.path
-import re
-import sys
 import traceback
 import logging
 import cStringIO
-import pkg_resources
 
 from sqlalchemy import func
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -53,6 +50,7 @@ from rhodecode.model.db import (
     Repository, CacheKey, UserFollowing, UserLog, User, RepoGroup,
     PullRequest)
 from rhodecode.model.settings import VcsSettingsModel
+from rhodecode.model.validation_schema.validators import url_validator, InvalidCloneUrl
 
 log = logging.getLogger(__name__)
 
@@ -386,10 +384,16 @@ class ScmModel(BaseModel):
             raise Exception("This repository doesn't have a clone uri")
 
         repo = dbrepo.scm_instance(cache=False)
-        # TODO: marcink fix this an re-enable since we need common logic
-        # for hg/git remove hooks so we don't trigger them on fetching
-        # commits from remote
         repo.config.clear_section('hooks')
+
+        try:
+            # NOTE(marcink): add extra validation so we skip invalid urls
+            # this is due this tasks can be executed via scheduler without
+            # proper validation of remote_uri
+            config = make_db_config(clear_session=False)
+            url_validator(remote_uri, dbrepo.repo_type, config)
+        except InvalidCloneUrl:
+            raise
 
         repo_name = dbrepo.repo_name
         try:
@@ -409,6 +413,15 @@ class ScmModel(BaseModel):
 
         repo = dbrepo.scm_instance(cache=False)
         repo.config.clear_section('hooks')
+
+        try:
+            # NOTE(marcink): add extra validation so we skip invalid urls
+            # this is due this tasks can be executed via scheduler without
+            # proper validation of remote_uri
+            config = make_db_config(clear_session=False)
+            url_validator(remote_uri, dbrepo.repo_type, config)
+        except InvalidCloneUrl:
+            raise
 
         try:
             repo.push(remote_uri)
