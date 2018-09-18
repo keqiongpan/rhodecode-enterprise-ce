@@ -1174,7 +1174,7 @@ class PullRequestModel(BaseModel):
             'repo.pull_request.close', {'data': pr_data}, user, pull_request)
 
     def close_pull_request_with_comment(
-            self, pull_request, user, repo, message=None):
+            self, pull_request, user, repo, message=None, auth_user=None):
 
         pull_request_review_status = pull_request.calculated_review_status()
 
@@ -1198,7 +1198,8 @@ class PullRequestModel(BaseModel):
             pull_request=pull_request.pull_request_id,
             status_change=status_lbl,
             status_change_type=status,
-            closing_pr=True
+            closing_pr=True,
+            auth_user=auth_user,
         )
 
         # calculate old status before we change it

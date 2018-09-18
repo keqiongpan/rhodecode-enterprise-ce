@@ -1195,7 +1195,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                           'pull request %s', pull_request_id)
                 raise HTTPForbidden()
             comment, status = PullRequestModel().close_pull_request_with_comment(
-                pull_request, self._rhodecode_user, self.db_repo, message=text)
+                pull_request, self._rhodecode_user, self.db_repo, message=text,
+                auth_user=self._rhodecode_user)
             Session().flush()
             events.trigger(
                 events.PullRequestCommentEvent(pull_request, comment))
