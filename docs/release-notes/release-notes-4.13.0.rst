@@ -131,3 +131,7 @@ Upgrade notes
   generated rhodecode.template.ini file. This file is stored next to rhodecode.ini
 - SVN 1.10.2 was introduced in this release. Please make sure to update your
   mod_dav to the same version for best compatibility.
+- This release brings new Database drivers. We discovered that in some setups it is now
+  required to explicitly define a encoding charset in the database connection string.
+  If you're getting a permanent exception such as `"UnicodeDecodeError: 'utf8' codec can't decode byte 0xfc in position 15: invalid start byte"`
+  please follow a fix from here: https://community.rhodecode.com/t/unicodedecodeerror-utf8-codec-cant-decode-byte-0xfc-in-position-15-invalid-start-byte/246
