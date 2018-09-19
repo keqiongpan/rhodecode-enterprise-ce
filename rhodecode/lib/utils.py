@@ -298,7 +298,12 @@ def is_valid_repo_group(repo_group_name, base_path, skip_path_check=False):
         # we need to check bare git repos at higher level
         # since we might match branches/hooks/info/objects or possible
         # other things inside bare git repo
-        scm_ = get_scm(os.path.dirname(full_path))
+        maybe_repo = os.path.dirname(full_path)
+        if maybe_repo == base_path:
+            # skip root level repo check, we know root location CANNOT BE a repo group
+            return False
+
+        scm_ = get_scm(maybe_repo)
         log.debug('path: %s is a vcs object:%s, not valid repo group', full_path, scm_)
         return False
     except VCSError:
