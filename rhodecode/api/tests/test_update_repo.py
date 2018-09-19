@@ -56,8 +56,14 @@ class TestApiUpdateRepo(object):
         ({'clone_uri': ''},
          {'clone_uri': ''}),
 
+        ({'clone_uri': 'http://example.com/repo_pull'},
+         {'clone_uri': 'http://example.com/repo_pull'}),
+
         ({'push_uri': ''},
          {'push_uri': ''}),
+
+        ({'push_uri': 'http://example.com/repo_push'},
+         {'push_uri': 'http://example.com/repo_push'}),
 
         ({'landing_rev': 'rev:tip'},
          {'landing_rev': ['rev', 'tip']}),

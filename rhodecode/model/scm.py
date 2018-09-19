@@ -377,7 +377,7 @@ class ScmModel(BaseModel):
         self.sa.add(repo)
         return repo
 
-    def pull_changes(self, repo, username, remote_uri=None):
+    def pull_changes(self, repo, username, remote_uri=None, validate_uri=True):
         dbrepo = self._get_repo(repo)
         remote_uri = remote_uri or dbrepo.clone_uri
         if not remote_uri:
@@ -390,8 +390,9 @@ class ScmModel(BaseModel):
             # NOTE(marcink): add extra validation so we skip invalid urls
             # this is due this tasks can be executed via scheduler without
             # proper validation of remote_uri
-            config = make_db_config(clear_session=False)
-            url_validator(remote_uri, dbrepo.repo_type, config)
+            if validate_uri:
+                config = make_db_config(clear_session=False)
+                url_validator(remote_uri, dbrepo.repo_type, config)
         except InvalidCloneUrl:
             raise
 
@@ -405,7 +406,7 @@ class ScmModel(BaseModel):
             log.error(traceback.format_exc())
             raise
 
-    def push_changes(self, repo, username, remote_uri=None):
+    def push_changes(self, repo, username, remote_uri=None, validate_uri=True):
         dbrepo = self._get_repo(repo)
         remote_uri = remote_uri or dbrepo.push_uri
         if not remote_uri:
@@ -418,8 +419,9 @@ class ScmModel(BaseModel):
             # NOTE(marcink): add extra validation so we skip invalid urls
             # this is due this tasks can be executed via scheduler without
             # proper validation of remote_uri
-            config = make_db_config(clear_session=False)
-            url_validator(remote_uri, dbrepo.repo_type, config)
+            if validate_uri:
+                config = make_db_config(clear_session=False)
+                url_validator(remote_uri, dbrepo.repo_type, config)
         except InvalidCloneUrl:
             raise
 
