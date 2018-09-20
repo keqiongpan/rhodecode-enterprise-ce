@@ -20,6 +20,23 @@
 from rhodecode.config import routing_links
 
 
+class VCSCallPredicate(object):
+    def __init__(self, val, config):
+        self.val = val
+
+    def text(self):
+        return 'vcs_call route = %s' % self.val
+
+    phash = text
+
+    def __call__(self, info, request):
+        if hasattr(request, 'vcs_call'):
+            # skip vcs calls
+            return False
+
+        return True
+
+
 def includeme(config):
 
     config.add_route(
@@ -51,3 +68,6 @@ def includeme(config):
 
     # Scan module for configuration decorators.
     config.scan('.views', ignore='.tests')
+
+    config.add_route_predicate(
+        'skip_vcs_call', VCSCallPredicate)
