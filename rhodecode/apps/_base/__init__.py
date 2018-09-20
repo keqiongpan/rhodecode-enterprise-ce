@@ -22,7 +22,7 @@ import time
 import logging
 import operator
 
-from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPBadRequest
 
 from rhodecode.lib import helpers as h, diffs
 from rhodecode.lib.utils2 import StrictAttributeDict, safe_int, datetime_to_time
@@ -100,6 +100,13 @@ class BaseAppView(object):
         self.request = request
         self.context = context
         self.session = request.session
+        if not hasattr(request, 'user'):
+            # NOTE(marcink): edge case, we ended up in matched route
+            # but probably of web-app context, e.g API CALL/VCS CALL
+            if hasattr(request, 'vcs_call') or hasattr(request, 'rpc_method'):
+                log.warning('Unable to process request `%s` in this scope', request)
+                raise HTTPBadRequest()
+
         self._rhodecode_user = request.user  # auth user
         self._rhodecode_db_user = self._rhodecode_user.get_instance()
         self._maybe_needs_password_change(
