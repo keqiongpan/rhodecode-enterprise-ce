@@ -47,6 +47,14 @@ Bower dependencies
    nix-shell pkgs/shell-generate.nix --command "bower2nix bower.json pkgs/bower-packages.nix"
 
 
+Generate license data
+=====================
+
+.. code:: shell
+
+   nix-build pkgs/license-generate.nix -o result-license && cat result-license/licenses.json | python -m json.tool > rhodecode/config/licenses.json
+
+
 .. Links
 
 .. _RhodeCode Enterprise CE: https://code.rhodecode.com/rhodecode-enterprise-ce

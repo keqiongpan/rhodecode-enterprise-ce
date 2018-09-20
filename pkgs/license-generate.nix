@@ -2,9 +2,9 @@
 #
 # Usage:
 #
-#   nix-build -I ~/dev license.nix -A result
+#  nix-build license.nix -o result-license
 #
-# Afterwards ./result will contain the license information as JSON files.
+# Afterwards ./result-license will contain the license information as JSON files.
 #
 #
 # Overview
@@ -19,7 +19,7 @@
 #    dependencies. The results from step 1 are then limited to the ones which
 #    are in this list.
 #
-# The result is then available in ./result/license.json.
+# The result is then available in ./result-license/license.json.
 #
 
 
@@ -32,20 +32,20 @@ let
   # Enterprise as simple as possible, goal here is just to identify the runtime
   # dependencies. Ideally we could avoid building Enterprise at all and somehow
   # figure it out without calling into nix-store.
-  enterprise = import ./default.nix {
+  enterprise = import ../default.nix {
     doCheck = false;
   };
 
   # For a given derivation, return the list of all dependencies
   drvToDependencies = drv: nixpkgs.lib.flatten [
-    drv.nativeBuildInputs or []
-    drv.propagatedNativeBuildInputs or []
+    drv.buildInputs or []
+    drv.propagatedBuildInputs or []
   ];
 
   # Transform the given derivation into the meta information which we need in
   # the resulting JSON files.
   drvToMeta = drv: {
-    name = drv.name or "UNNAMED";
+    name = drv.name or drv;
     license = if drv ? meta.license then drv.meta.license else "UNKNOWN";
   };
 
@@ -70,10 +70,8 @@ let
     rawStorePaths = nixpkgs.lib.removeSuffix "\n" (
       builtins.readFile srcPath);
     storePaths = nixpkgs.lib.splitString "\n" rawStorePaths;
-    # TODO: johbo: Would be nice to use some sort of utility here to convert
-    # the path to a derivation name.
     storePathPrefix = (
-      builtins.stringLength "/nix/store/zwy7aavnif9ayw30rya1k6xiacafzzl6-");
+      builtins.stringLength "/nix/store/afafafafafafafafafafafafafafafaf-");
     storePathToName = path:
       builtins.substring storePathPrefix (builtins.stringLength path) path;
   in (map storePathToName storePaths);
@@ -147,6 +145,7 @@ in rec {
       cat > build/licenses.json <<EOF
       ${builtins.toJSON enterpriseRuntimeLicenses}
       EOF
+
     '';
 
     installPhase = ''

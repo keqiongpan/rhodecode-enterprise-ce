@@ -488,14 +488,30 @@ class TestLabsSettings(object):
 class TestOpenSourceLicenses(object):
 
     def test_records_are_displayed(self, autologin_user):
-        sample_licenses = {
-            "python2.7-pytest-2.7.1": {
-                "UNKNOWN": None
+        sample_licenses = [
+            {
+                "license": [
+                    {
+                        "fullName": "BSD 4-clause \"Original\" or \"Old\" License",
+                        "shortName": "bsdOriginal",
+                        "spdxId": "BSD-4-Clause",
+                        "url": "http://spdx.org/licenses/BSD-4-Clause.html"
+                    }
+                ],
+                "name": "python2.7-coverage-3.7.1"
             },
-            "python2.7-Markdown-2.6.2": {
-                "BSD-3-Clause": "http://spdx.org/licenses/BSD-3-Clause"
-            }
-        }
+            {
+                "license": [
+                    {
+                        "fullName": "MIT License",
+                        "shortName": "mit",
+                        "spdxId": "MIT",
+                        "url": "http://spdx.org/licenses/MIT.html"
+                    }
+                ],
+                "name": "python2.7-bootstrapped-pip-9.0.1"
+            },
+        ]
         read_licenses_patch = mock.patch(
             'rhodecode.apps.admin.views.open_source_licenses.read_opensource_licenses',
             return_value=sample_licenses)
@@ -506,10 +522,9 @@ class TestOpenSourceLicenses(object):
         assert_response = AssertResponse(response)
         assert_response.element_contains(
             '.panel-heading', 'Licenses of Third Party Packages')
-        for name in sample_licenses:
-            response.mustcontain(name)
-            for license in sample_licenses[name]:
-                assert_response.element_contains('.panel-body', license)
+        for license_data in sample_licenses:
+            response.mustcontain(license_data["license"][0]["spdxId"])
+            assert_response.element_contains('.panel-body', license_data["name"])
 
     def test_records_can_be_read(self, autologin_user):
         response = self.app.get(

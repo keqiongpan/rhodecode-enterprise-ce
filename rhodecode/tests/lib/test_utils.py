@@ -302,7 +302,7 @@ class TestPasswordChanged(object):
         assert result is True
 
 
-class TestReadOpensourceLicenses(object):
+class TestReadOpenSourceLicenses(object):
     def test_success(self):
         utils._license_cache = None
         json_data = '''
@@ -343,10 +343,14 @@ class TestReadOpensourceLicenses(object):
     def test_licenses_file_contains_no_unknown_licenses(self):
         utils._license_cache = None
         result = utils.read_opensource_licenses()
-        license_names = []
-        for licenses in result.values():
-            license_names.extend(licenses.keys())
-        assert 'UNKNOWN' not in license_names
+
+        for license_data in result:
+            if isinstance(license_data["license"], list):
+                for lic_data in license_data["license"]:
+                    assert 'UNKNOWN' not in lic_data["fullName"]
+            else:
+                full_name = license_data.get("fullName") or license_data
+                assert 'UNKNOWN' not in full_name
 
 
 class TestMakeDbConfig(object):
