@@ -57,7 +57,7 @@ class MercurialRepository(BaseRepository):
     DEFAULT_BRANCH_NAME = 'default'
 
     def __init__(self, repo_path, config=None, create=False, src_url=None,
-                 update_after_clone=False, with_wire=None):
+                 do_workspace_checkout=False, with_wire=None, bare=False):
         """
         Raises RepositoryError if repository could not be find at the given
         ``repo_path``.
@@ -67,8 +67,9 @@ class MercurialRepository(BaseRepository):
         :param create=False: if set to True, would try to create repository if
            it does not exist rather than raising exception
         :param src_url=None: would try to clone repository from given location
-        :param update_after_clone=False: sets update of working copy after
+        :param do_workspace_checkout=False: sets update of working copy after
            making a clone
+        :param bare: not used, compatible with other VCS
         """
 
         self.path = safe_str(os.path.abspath(repo_path))
@@ -79,7 +80,7 @@ class MercurialRepository(BaseRepository):
             default=[('extensions', 'largefiles', '1')])
         self.with_wire = with_wire
 
-        self._init_repo(create, src_url, update_after_clone)
+        self._init_repo(create, src_url, do_workspace_checkout)
 
         # caches
         self._commit_ids = {}
@@ -328,7 +329,7 @@ class MercurialRepository(BaseRepository):
     def is_valid_repository(path):
         return os.path.isdir(os.path.join(path, '.hg'))
 
-    def _init_repo(self, create, src_url=None, update_after_clone=False):
+    def _init_repo(self, create, src_url=None, do_workspace_checkout=False):
         """
         Function will check for mercurial repository in given path. If there
         is no repository in that path it will raise an exception unless
@@ -337,7 +338,7 @@ class MercurialRepository(BaseRepository):
 
         If `src_url` is given, would try to clone repository from the
         location at given clone_point. Additionally it'll make update to
-        working copy accordingly to `update_after_clone` flag.
+        working copy accordingly to `do_workspace_checkout` flag.
         """
         if create and os.path.exists(self.path):
             raise RepositoryError(
@@ -348,7 +349,7 @@ class MercurialRepository(BaseRepository):
             url = str(self._get_url(src_url))
             MercurialRepository.check_url(url, self.config)
 
-            self._remote.clone(url, self.path, update_after_clone)
+            self._remote.clone(url, self.path, do_workspace_checkout)
 
             # Don't try to create if we've already cloned repo
             create = False
@@ -538,7 +539,7 @@ class MercurialRepository(BaseRepository):
 
     def pull(self, url, commit_ids=None):
         """
-        Tries to pull changes from external location.
+        Pull changes from external location.
 
         :param commit_ids: Optional. Can be set to a list of commit ids
            which shall be pulled from the other repository.
@@ -546,6 +547,12 @@ class MercurialRepository(BaseRepository):
         url = self._get_url(url)
         self._remote.pull(url, commit_ids=commit_ids)
         self._remote.invalidate_vcs_cache()
+
+    def fetch(self, url, commit_ids=None):
+        """
+        Backward compatibility with GIT fetch==pull
+        """
+        return self.pull(url, commit_ids=commit_ids)
 
     def push(self, url):
         url = self._get_url(url)

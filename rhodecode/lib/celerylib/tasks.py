@@ -123,7 +123,7 @@ def create_repo(form_data, cur_user):
         'enable_downloads', defs.get('repo_enable_downloads'))
 
     try:
-        repo = RepoModel()._create_repo(
+        RepoModel()._create_repo(
             repo_name=repo_name_full,
             repo_type=repo_type,
             description=description,

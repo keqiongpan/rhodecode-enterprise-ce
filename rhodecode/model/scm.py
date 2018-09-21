@@ -399,7 +399,7 @@ class ScmModel(BaseModel):
         repo_name = dbrepo.repo_name
         try:
             # TODO: we need to make sure those operations call proper hooks !
-            repo.pull(remote_uri)
+            repo.fetch(remote_uri)
 
             self.mark_for_invalidation(repo_name)
         except Exception:

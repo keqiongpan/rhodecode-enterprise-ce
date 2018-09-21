@@ -581,7 +581,7 @@ class Backend(object):
 
     def create_repo(
             self, commits=None, number_of_commits=0, heads=None,
-            name_suffix=u'', **kwargs):
+            name_suffix=u'', bare=False, **kwargs):
         """
         Create a repository and record it for later cleanup.
 
@@ -591,16 +591,17 @@ class Backend(object):
            commits will be added to the new repository.
         :param heads: Optional. Can be set to a sequence of of commit
            names which shall be pulled in from the master repository.
-
+        :param name_suffix: adds special suffix to generated repo name
+        :param bare: set a repo as bare (no checkout)
         """
         self.repo_name = self._next_repo_name() + name_suffix
         repo = self._fixture.create_repo(
-            self.repo_name, repo_type=self.alias, **kwargs)
+            self.repo_name, repo_type=self.alias, bare=bare, **kwargs)
         self._cleanup_repos.append(repo.repo_name)
 
         commits = commits or [
             {'message': 'Commit %s of %s' % (x, self.repo_name)}
-            for x in xrange(number_of_commits)]
+            for x in range(number_of_commits)]
         self._add_commits_to_repo(repo.scm_instance(), commits)
         if heads:
             self.pull_heads(repo, heads)
@@ -773,14 +774,15 @@ class VcsBackend(object):
         """
         return get_backend(self.alias)
 
-    def create_repo(self, commits=None, number_of_commits=0, _clone_repo=None):
+    def create_repo(self, commits=None, number_of_commits=0, _clone_repo=None,
+                    bare=False):
         repo_name = self._next_repo_name()
         self._repo_path = get_new_dir(repo_name)
         repo_class = get_backend(self.alias)
         src_url = None
         if _clone_repo:
             src_url = _clone_repo.path
-        repo = repo_class(self._repo_path, create=True, src_url=src_url)
+        repo = repo_class(self._repo_path, create=True, src_url=src_url, bare=bare)
         self._cleanup_repos.append(repo)
 
         commits = commits or [
@@ -1158,13 +1160,13 @@ class UserUtility(object):
         return repo_group
 
     def create_repo(self, owner=TEST_USER_ADMIN_LOGIN, parent=None,
-                    auto_cleanup=True, repo_type='hg'):
+                    auto_cleanup=True, repo_type='hg', bare=False):
         repo_name = "{prefix}_repository_{count}".format(
             prefix=self._test_name,
             count=len(self.repos_ids))
 
         repository = self.fixture.create_repo(
-            repo_name, cur_user=owner, repo_group=parent, repo_type=repo_type)
+            repo_name, cur_user=owner, repo_group=parent, repo_type=repo_type, bare=bare)
         if auto_cleanup:
             self.repos_ids.append(repository.repo_id)
         return repository

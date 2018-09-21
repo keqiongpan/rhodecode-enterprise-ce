@@ -66,6 +66,7 @@ class TestCreatePullRequestApi(object):
         expected_message = "Created new pull request `{title}`".format(
             title=data['title'])
         result = response.json
+        assert result['error'] == None
         assert result['result']['msg'] == expected_message
         pull_request_id = result['result']['pull_request_id']
         pull_request = PullRequestModel().get(pull_request_id)
@@ -88,6 +89,7 @@ class TestCreatePullRequestApi(object):
         expected_message = "Created new pull request `{title}`".format(
             title=data['title'])
         result = response.json
+        assert result['error'] == None
         assert result['result']['msg'] == expected_message
         pull_request_id = result['result']['pull_request_id']
         pull_request = PullRequestModel().get(pull_request_id)
@@ -127,6 +129,7 @@ class TestCreatePullRequestApi(object):
         expected_message = "Created new pull request `{title}`".format(
             title=data['title'])
         result = response.json
+        assert result['error'] == None
         assert result['result']['msg'] == expected_message
         pull_request_id = result['result']['pull_request_id']
         pull_request = PullRequestModel().get(pull_request_id)
@@ -170,6 +173,7 @@ class TestCreatePullRequestApi(object):
         expected_message = "Created new pull request `{title}`".format(
             title=data['title'])
         result = response.json
+        assert result['error'] == None
         assert result['result']['msg'] == expected_message
         pull_request_id = result['result']['pull_request_id']
         pull_request = PullRequestModel().get(pull_request_id)

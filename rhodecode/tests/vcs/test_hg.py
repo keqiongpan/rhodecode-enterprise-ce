@@ -122,7 +122,7 @@ class TestMercurialRepository:
         repo = MercurialRepository(TEST_HG_REPO)
         repo_clone = MercurialRepository(
             TEST_HG_REPO_CLONE + '_w_update',
-            src_url=TEST_HG_REPO, update_after_clone=True)
+            src_url=TEST_HG_REPO, do_workspace_checkout=True)
         assert len(repo.commit_ids) == len(repo_clone.commit_ids)
 
         # check if current workdir was updated
@@ -133,7 +133,7 @@ class TestMercurialRepository:
         repo = MercurialRepository(TEST_HG_REPO)
         repo_clone = MercurialRepository(
             TEST_HG_REPO_CLONE + '_wo_update',
-            src_url=TEST_HG_REPO, update_after_clone=False)
+            src_url=TEST_HG_REPO, do_workspace_checkout=False)
         assert len(repo.commit_ids) == len(repo_clone.commit_ids)
         assert not os.path.isfile(
             os.path.join(TEST_HG_REPO_CLONE + '_wo_update', 'MANIFEST.in'))
