@@ -49,6 +49,14 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
     log = get_logger(send_email)
 
     email_config = email_config or rhodecode.CONFIG
+
+    mail_server = email_config.get('smtp_server') or None
+    if mail_server is None:
+        log.error("SMTP server information missing. Sending email failed. "
+                  "Make sure that `smtp_server` variable is configured "
+                  "inside the .ini file")
+        return False
+
     subject = "%s %s" % (email_config.get('email_prefix', ''), subject)
     if not recipients:
         # if recipients are not defined we send to email_config + all admins
@@ -61,13 +69,6 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
         if config_email:
             recipients += [config_email]
         recipients += admins
-
-    mail_server = email_config.get('smtp_server') or None
-    if mail_server is None:
-        log.error("SMTP server information missing. Sending email failed. "
-                  "Make sure that `smtp_server` variable is configured "
-                  "inside the .ini file")
-        return False
 
     mail_from = email_config.get('app_email_from', 'RhodeCode')
     user = email_config.get('smtp_username')
