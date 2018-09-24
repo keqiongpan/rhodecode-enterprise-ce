@@ -149,42 +149,37 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         lines_changed = filediff.patch['stats']['added'] + filediff.patch['stats']['deleted']
         over_lines_changed_limit = lines_changed > lines_changed_limit
         %>
-        <input ${collapse_all and 'checked' or ''} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox">
+
+        <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox">
         <div
             class="filediff"
             data-f-path="${filediff.patch['filename']}"
-            id="a_${h.FID('', filediff.patch['filename'])}">
-            <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
-                <div class="filediff-collapse-indicator"></div>
-                ${diff_ops(filediff)}
-            </label>
-            ${diff_menu(filediff, use_comments=use_comments)}
-            <table class="cb cb-diff-${c.diffmode} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
-        %if not filediff.hunks:
-            %for op_id, op_text in filediff.patch['stats']['ops'].items():
-                <tr>
-                    <td class="cb-text cb-${op_class(op_id)}" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
-                        %if op_id == DEL_FILENODE:
-                        ${_('File was deleted')}
-                        %elif op_id == BIN_FILENODE:
-                        ${_('Binary file hidden')}
-                        %else:
-                        ${op_text}
-                        %endif
-                    </td>
-                </tr>
-            %endfor
-        %endif
+            id="a_${h.FID('', filediff.patch['filename'])}"
+        >
+
+        <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
+            <div class="filediff-collapse-indicator"></div>
+            ${diff_ops(filediff)}
+        </label>
+        ${diff_menu(filediff, use_comments=use_comments)}
+        <table class="cb cb-diff-${c.diffmode} code-highlight ${(over_lines_changed_limit and 'cb-collapsed' or '')}">
+
+        ## new/deleted/empty content case
+        % if not filediff.hunks:
+            ## Comment container, on "fakes" hunk that contains all data to render comments
+            ${render_hunk_lines(c.diffmode, filediff.hunk_ops, use_comments=use_comments, inline_comments=inline_comments)}
+        % endif
+
         %if filediff.limited_diff:
                 <tr class="cb-warning cb-collapser">
-                    <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
+                    <td class="cb-text" ${(c.diffmode == 'unified' and 'colspan=4' or 'colspan=6')}>
                         ${_('The requested commit is too big and content was truncated.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
                     </td>
                 </tr>
         %else:
             %if over_lines_changed_limit:
                     <tr class="cb-warning cb-collapser">
-                        <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
+                        <td class="cb-text" ${(c.diffmode == 'unified' and 'colspan=4' or 'colspan=6')}>
                             ${_('This diff has been collapsed as it changes many lines, (%i lines changed)' % lines_changed)}
                             <a href="#" class="cb-expand"
                                onclick="$(this).closest('table').removeClass('cb-collapsed'); return false;">${_('Show them')}
@@ -197,31 +192,23 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             %endif
         %endif
 
-        %for hunk in filediff.hunks:
-                <tr class="cb-hunk">
-                    <td ${c.diffmode == 'unified' and 'colspan=3' or ''}>
-                        ## TODO: dan: add ajax loading of more context here
-                        ## <a href="#">
-                            <i class="icon-more"></i>
-                        ## </a>
-                    </td>
-                    <td ${c.diffmode == 'sideside' and 'colspan=5' or ''}>
-                        @@
-                        -${hunk.source_start},${hunk.source_length}
-                        +${hunk.target_start},${hunk.target_length}
-                        ${hunk.section_header}
-                    </td>
-                </tr>
-            %if c.diffmode == 'unified':
-                    ${render_hunk_lines_unified(hunk, use_comments=use_comments, inline_comments=inline_comments)}
-            %elif c.diffmode == 'sideside':
-                    ${render_hunk_lines_sideside(hunk, use_comments=use_comments, inline_comments=inline_comments)}
-            %else:
-                <tr class="cb-line">
-                    <td>unknown diff mode</td>
-                </tr>
-            %endif
-        %endfor
+        % for hunk in filediff.hunks:
+            <tr class="cb-hunk">
+                <td ${(c.diffmode == 'unified' and 'colspan=3' or '')}>
+                    ## TODO: dan: add ajax loading of more context here
+                    ## <a href="#">
+                        <i class="icon-more"></i>
+                    ## </a>
+                </td>
+                <td ${(c.diffmode == 'sideside' and 'colspan=5' or '')}>
+                    @@
+                    -${hunk.source_start},${hunk.source_length}
+                    +${hunk.target_start},${hunk.target_length}
+                    ${hunk.section_header}
+                </td>
+            </tr>
+            ${render_hunk_lines(c.diffmode, hunk, use_comments=use_comments, inline_comments=inline_comments)}
+        % endfor
 
         <% unmatched_comments = (inline_comments or {}).get(filediff.patch['filename'], {}) %>
 
@@ -292,7 +279,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 display_state = ''
         %>
         <div class="filediffs filediff-outdated" style="${display_state}">
-            <input ${collapse_all and 'checked' or ''} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox">
+            <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox">
             <div class="filediff" data-f-path="${filename}"  id="a_${h.FID('', filename)}">
                 <label for="filediff-collapse-${id(filename)}" class="filediff-heading">
                     <div class="filediff-collapse-indicator"></div>
@@ -713,6 +700,20 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
     </tr>
     %endfor
 </%def>
+
+
+<%def name="render_hunk_lines(diff_mode, hunk, use_comments, inline_comments)">
+    % if diff_mode == 'unified':
+        ${render_hunk_lines_unified(hunk, use_comments=use_comments, inline_comments=inline_comments)}
+    % elif diff_mode == 'sideside':
+        ${render_hunk_lines_sideside(hunk, use_comments=use_comments, inline_comments=inline_comments)}
+    % else:
+        <tr class="cb-line">
+            <td>unknown diff mode</td>
+        </tr>
+    % endif
+</%def>
+
 
 <%def name="render_add_comment_button()">
 <button class="btn btn-small btn-primary cb-comment-box-opener" onclick="return Rhodecode.comments.createComment(this)">

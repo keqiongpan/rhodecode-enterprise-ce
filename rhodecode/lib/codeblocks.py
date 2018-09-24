@@ -20,6 +20,7 @@
 
 import logging
 import difflib
+import string
 from itertools import groupby
 
 from pygments import lex
@@ -28,11 +29,11 @@ from pygments.lexers.special import TextLexer, Token
 
 from rhodecode.lib.helpers import (
     get_lexer_for_filenode, html_escape, get_custom_lexer)
-from rhodecode.lib.utils2 import AttributeDict, StrictAttributeDict
+from rhodecode.lib.utils2 import AttributeDict, StrictAttributeDict, safe_unicode
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib.vcs.exceptions import VCSError, NodeDoesNotExistError
 from rhodecode.lib.diff_match_patch import diff_match_patch
-from rhodecode.lib.diffs import LimitedDiffContainer
+from rhodecode.lib.diffs import LimitedDiffContainer, DEL_FILENODE, BIN_FILENODE
 from pygments.lexers import get_lexer_by_name
 
 plain_text_lexer = get_lexer_by_name(
@@ -506,6 +507,7 @@ class DiffSet(object):
             'target_mode': patch['stats']['new_mode'],
             'limited_diff': isinstance(patch, LimitedDiffContainer),
             'hunks': [],
+            'hunk_ops': None,
             'diffset': self,
         })
 
@@ -515,6 +517,30 @@ class DiffSet(object):
             hunkbit.target_file_path = target_file_path
             filediff.hunks.append(hunkbit)
 
+        # Simulate hunk on OPS type line which doesn't really contain any diff
+        # this allows commenting on those
+        actions = []
+        for op_id, op_text in filediff.patch['stats']['ops'].items():
+            if op_id == DEL_FILENODE:
+                actions.append(u'file was deleted')
+            elif op_id == BIN_FILENODE:
+                actions.append(u'binary diff hidden')
+            else:
+                actions.append(safe_unicode(op_text))
+        action_line = u'FILE WITHOUT CONTENT: ' + \
+                      u', '.join(map(string.upper, actions)) or u'UNDEFINED_ACTION'
+
+        hunk_ops = {'source_length': 0, 'source_start': 0,
+                    'lines': [
+                        {'new_lineno': 0, 'old_lineno': 1,
+                         'action': 'unmod', 'line': action_line}
+                    ],
+                    'section_header': u'', 'target_start': 1, 'target_length': 1}
+
+        hunkbit = self.parse_hunk(hunk_ops, source_file, target_file)
+        hunkbit.source_file_path = source_file_path
+        hunkbit.target_file_path = target_file_path
+        filediff.hunk_ops = hunkbit
         return filediff
 
     def parse_hunk(self, hunk, source_file, target_file):
