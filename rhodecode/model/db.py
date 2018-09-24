@@ -943,7 +943,11 @@ class User(Base, BaseModel):
 
     @classmethod
     def get_first_super_admin(cls):
-        user = User.query().filter(User.admin == true()).first()
+        user = User.query()\
+            .filter(User.admin == true()) \
+            .order_by(User.user_id.asc()) \
+            .first()
+
         if user is None:
             raise Exception('FATAL: Missing administrative account!')
         return user
