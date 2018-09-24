@@ -63,6 +63,10 @@ def includeme(config):
         name='markup_preview',
         pattern='/_markup_preview')
 
+    config.add_route(
+        name='store_user_session_value',
+        pattern='/_store_session_attr')
+
     # register our static links via redirection mechanism
     routing_links.connect_redirection_links(config)
 

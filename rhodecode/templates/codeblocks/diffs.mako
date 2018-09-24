@@ -83,7 +83,7 @@ return '%s_%s_%i' % (h.safeid(filename), type, line)
 collapse_all = len(diffset.files) > collapse_when_files_over
 %>
 
-%if c.diffmode == 'sideside':
+%if c.user_session_attrs["diffmode"] == 'sideside':
 <style>
 .wrapper {
     max-width: 1600px !important;
@@ -162,24 +162,24 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             ${diff_ops(filediff)}
         </label>
         ${diff_menu(filediff, use_comments=use_comments)}
-        <table class="cb cb-diff-${c.diffmode} code-highlight ${(over_lines_changed_limit and 'cb-collapsed' or '')}">
+        <table class="cb cb-diff-${c.user_session_attrs["diffmode"]} code-highlight ${(over_lines_changed_limit and 'cb-collapsed' or '')}">
 
         ## new/deleted/empty content case
         % if not filediff.hunks:
             ## Comment container, on "fakes" hunk that contains all data to render comments
-            ${render_hunk_lines(c.diffmode, filediff.hunk_ops, use_comments=use_comments, inline_comments=inline_comments)}
+            ${render_hunk_lines(c.user_session_attrs["diffmode"], filediff.hunk_ops, use_comments=use_comments, inline_comments=inline_comments)}
         % endif
 
         %if filediff.limited_diff:
                 <tr class="cb-warning cb-collapser">
-                    <td class="cb-text" ${(c.diffmode == 'unified' and 'colspan=4' or 'colspan=6')}>
+                    <td class="cb-text" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=6')}>
                         ${_('The requested commit is too big and content was truncated.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
                     </td>
                 </tr>
         %else:
             %if over_lines_changed_limit:
                     <tr class="cb-warning cb-collapser">
-                        <td class="cb-text" ${(c.diffmode == 'unified' and 'colspan=4' or 'colspan=6')}>
+                        <td class="cb-text" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=6')}>
                             ${_('This diff has been collapsed as it changes many lines, (%i lines changed)' % lines_changed)}
                             <a href="#" class="cb-expand"
                                onclick="$(this).closest('table').removeClass('cb-collapsed'); return false;">${_('Show them')}
@@ -194,20 +194,20 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 
         % for hunk in filediff.hunks:
             <tr class="cb-hunk">
-                <td ${(c.diffmode == 'unified' and 'colspan=3' or '')}>
+                <td ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=3' or '')}>
                     ## TODO: dan: add ajax loading of more context here
                     ## <a href="#">
                         <i class="icon-more"></i>
                     ## </a>
                 </td>
-                <td ${(c.diffmode == 'sideside' and 'colspan=5' or '')}>
+                <td ${(c.user_session_attrs["diffmode"] == 'sideside' and 'colspan=5' or '')}>
                     @@
                     -${hunk.source_start},${hunk.source_length}
                     +${hunk.target_start},${hunk.target_length}
                     ${hunk.section_header}
                 </td>
             </tr>
-            ${render_hunk_lines(c.diffmode, hunk, use_comments=use_comments, inline_comments=inline_comments)}
+            ${render_hunk_lines(c.user_session_attrs["diffmode"], hunk, use_comments=use_comments, inline_comments=inline_comments)}
         % endfor
 
         <% unmatched_comments = (inline_comments or {}).get(filediff.patch['filename'], {}) %>
@@ -215,7 +215,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         ## outdated comments that do not fit into currently displayed lines
         % for lineno, comments in unmatched_comments.items():
 
-            %if c.diffmode == 'unified':
+            %if c.user_session_attrs["diffmode"] == 'unified':
                 % if loop.index == 0:
                 <tr class="cb-hunk">
                     <td colspan="3"></td>
@@ -234,7 +234,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                         ${inline_comments_container(comments, inline_comments)}
                     </td>
                 </tr>
-            %elif c.diffmode == 'sideside':
+            %elif c.user_session_attrs["diffmode"] == 'sideside':
                 % if loop.index == 0:
                 <tr class="cb-comment-info">
                     <td colspan="2"></td>
@@ -303,18 +303,18 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                     </span>
                 </label>
 
-                <table class="cb cb-diff-${c.diffmode} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
+                <table class="cb cb-diff-${c.user_session_attrs["diffmode"]} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
                     <tr>
-                        % if c.diffmode == 'unified':
+                        % if c.user_session_attrs["diffmode"] == 'unified':
                         <td></td>
                         %endif
 
                         <td></td>
-                        <td class="cb-text cb-${op_class(BIN_FILENODE)}" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=5'}>
+                        <td class="cb-text cb-${op_class(BIN_FILENODE)}" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=5')}>
                         ${_('File was deleted in this version. There are still outdated/unresolved comments attached to it.')}
                         </td>
                     </tr>
-                    %if c.diffmode == 'unified':
+                    %if c.user_session_attrs["diffmode"] == 'unified':
                     <tr class="cb-line">
                         <td class="cb-data cb-context"></td>
                         <td class="cb-lineno cb-context"></td>
@@ -323,7 +323,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                             ${inline_comments_container(comments_dict['comments'], inline_comments)}
                         </td>
                     </tr>
-                    %elif c.diffmode == 'sideside':
+                    %elif c.user_session_attrs["diffmode"] == 'sideside':
                     <tr class="cb-line">
                         <td class="cb-data cb-context"></td>
                         <td class="cb-lineno cb-context"></td>
@@ -734,13 +734,13 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             <div class="btn-group">
 
                 <a
-                  class="btn ${c.diffmode == 'sideside' and 'btn-primary'} tooltip"
+                  class="btn ${(c.user_session_attrs["diffmode"] == 'sideside' and 'btn-primary')} tooltip"
                   title="${h.tooltip(_('View side by side'))}"
                   href="${h.current_route_path(request, diffmode='sideside')}">
                     <span>${_('Side by Side')}</span>
                 </a>
                 <a
-                  class="btn ${c.diffmode == 'unified' and 'btn-primary'} tooltip"
+                  class="btn ${(c.user_session_attrs["diffmode"] == 'unified' and 'btn-primary')} tooltip"
                   title="${h.tooltip(_('View unified'))}" href="${h.current_route_path(request, diffmode='unified')}">
                     <span>${_('Unified')}</span>
                 </a>

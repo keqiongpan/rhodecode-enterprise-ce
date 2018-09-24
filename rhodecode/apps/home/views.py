@@ -444,3 +444,18 @@ class HomeView(BaseAppView):
         if text:
             return h.render(text, renderer=renderer, mentions=True)
         return ''
+
+    @LoginRequired()
+    @CSRFRequired()
+    @view_config(
+        route_name='store_user_session_value', request_method='POST',
+        renderer='string', xhr=True)
+    def store_user_session_attr(self):
+        key = self.request.POST.get('key')
+        val = self.request.POST.get('val')
+
+        existing_value = self.request.session.get(key)
+        if existing_value != val:
+            self.request.session[key] = val
+
+        return 'stored:{}'.format(key)

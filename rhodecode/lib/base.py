@@ -357,6 +357,28 @@ def attach_context_attributes(context, request, user_id):
         'appenlight.api_public_key', '')
     context.appenlight_server_url = config.get('appenlight.server_url', '')
 
+    diffmode = {
+        "unified": "unified",
+        "sideside": "sideside"
+    }.get(request.GET.get('diffmode'))
+
+    if diffmode and diffmode != request.session.get('rc_user_session_attr.diffmode'):
+        request.session['rc_user_session_attr.diffmode'] = diffmode
+
+    # session settings per user
+    session_attrs = {
+        # defaults
+        "clone_url_format": "http",
+        "diffmode": "sideside"
+    }
+    for k, v in request.session.items():
+        pref = 'rc_user_session_attr.'
+        if k and k.startswith(pref):
+            k = k[len(pref):]
+            session_attrs[k] = v
+
+    context.user_session_attrs = session_attrs
+
     # JS template context
     context.template_context = {
         'repo_name': None,
@@ -367,6 +389,7 @@ def attach_context_attributes(context, request, user_id):
             'email': None,
             'notification_status': False
         },
+        'session_attrs': session_attrs,
         'visual': {
             'default_renderer': None
         },
@@ -384,18 +407,6 @@ def attach_context_attributes(context, request, user_id):
         'extra': {'plugins': {}}
     }
     # END CONFIG VARS
-
-    diffmode = 'sideside'
-    if request.GET.get('diffmode'):
-        if request.GET['diffmode'] == 'unified':
-            diffmode = 'unified'
-    elif request.session.get('diffmode'):
-        diffmode = request.session['diffmode']
-
-    context.diffmode = diffmode
-
-    if request.session.get('diffmode') != diffmode:
-        request.session['diffmode'] = diffmode
 
     context.csrf_token = auth.get_csrf_token(session=request.session)
     context.backends = rhodecode.BACKENDS.keys()

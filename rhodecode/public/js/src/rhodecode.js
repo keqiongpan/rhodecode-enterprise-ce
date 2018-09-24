@@ -553,3 +553,20 @@ var feedLifetimeOptions = function(query, initialData){
 
     query.callback(data);
 };
+
+
+var storeUserSessionAttr = function (key, val) {
+
+    var postData = {
+        'key': key,
+        'val': val,
+        'csrf_token': CSRF_TOKEN
+    };
+
+    var success = function(o) {
+        return true
+    };
+
+    ajaxPOST(pyroutes.url('store_user_session_value'), postData, success);
+    return false;
+};
