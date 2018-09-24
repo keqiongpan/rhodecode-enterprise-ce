@@ -468,6 +468,7 @@ class UserModel(BaseModel):
                 # set description we know why we super admin now owns
                 # additional repositories that were orphaned !
                 r.group_description += '  \n::detached repository group from deleted user: %s' % (username,)
+                r.personal = False
                 self.sa.add(r)
             left_overs = False
         elif handle_mode == 'delete':
