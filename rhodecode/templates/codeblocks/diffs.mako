@@ -236,9 +236,15 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 </tr>
             %elif c.diffmode == 'sideside':
                 % if loop.index == 0:
-                <tr class="cb-hunk">
+                <tr class="cb-comment-info">
                     <td colspan="2"></td>
-                    <td class="cb-line" colspan="6">
+                    <td class="cb-line">
+                        <div>
+                        ${_('Unmatched inline comments below')}
+                        </div>
+                    </td>
+                    <td colspan="2"></td>
+                    <td class="cb-line">
                         <div>
                         ${_('Unmatched comments below')}
                         </div>
