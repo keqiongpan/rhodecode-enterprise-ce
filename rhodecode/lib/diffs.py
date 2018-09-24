@@ -1136,7 +1136,7 @@ class DiffLimitExceeded(Exception):
 
 # NOTE(marcink): if diffs.mako change, probably this
 # needs a bump to next version
-CURRENT_DIFF_VERSION = 'v1'
+CURRENT_DIFF_VERSION = 'v2'
 
 
 def _cleanup_cache_file(cached_diff_file):

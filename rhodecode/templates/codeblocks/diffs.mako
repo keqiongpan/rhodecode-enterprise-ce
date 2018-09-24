@@ -653,7 +653,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             %if comments_args:
                 <% comments = get_comments_for('unified', inline_comments, *comments_args) %>
             %else:
-                <% comments = None%>
+                <% comments = None %>
             %endif
 
             % if comments:
