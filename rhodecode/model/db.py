@@ -2498,7 +2498,9 @@ class RepoGroup(Base, BaseModel):
 
         return cls.query()\
             .filter(cls.personal == true()) \
-            .filter(cls.user == user).scalar()
+            .filter(cls.user == user) \
+            .order_by(cls.group_id.asc()) \
+            .first()
 
     @classmethod
     def get_all_repo_groups(cls, user_id=Optional(None), group_id=Optional(None),
