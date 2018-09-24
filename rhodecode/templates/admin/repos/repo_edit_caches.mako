@@ -67,8 +67,11 @@
 <pre>
 region: ${c.region.name}
 backend: ${c.region.actual_backend.__class__}
+% if c.rhodecode_user.is_admin:
 store: ${c.region.actual_backend.get_store()}
-
+% else:
+store: ${c.region.actual_backend.get_store().__class__}
+% endif
 
 % if c.repo_keys:
 ${len(c.repo_keys)} <a href="#showKeys" onclick="$('#show-keys').toggle()">${_('Show all')}</a>
@@ -118,7 +121,11 @@ ${len(c.repo_keys)} <a href="#showKeys" onclick="$('#show-keys').toggle()">${_('
         <table class="rctable edit_cache">
             <tr>
                 <td>${_('Cached diff name')}:</td>
-                <td>${c.rhodecode_db_repo.cached_diffs_relative_dir}</td>
+                % if c.rhodecode_user.is_admin:
+                    <td>${c.rhodecode_db_repo.cached_diffs_dir}</td>
+                % else:
+                    <td>${c.rhodecode_db_repo.cached_diffs_relative_dir}</td>
+                % endif
             </tr>
             <tr>
                 <td>${_('Cached diff files')}:</td>
