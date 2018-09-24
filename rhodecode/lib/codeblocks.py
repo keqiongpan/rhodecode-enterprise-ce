@@ -368,19 +368,18 @@ class DiffSet(object):
     adding highlighting, side by side/unified renderings and line diffs
     """
 
-    HL_REAL = 'REAL' # highlights using original file, slow
-    HL_FAST = 'FAST' # highlights using just the line, fast but not correct
-                     # in the case of multiline code
-    HL_NONE = 'NONE' # no highlighting, fastest
+    HL_REAL = 'REAL'  # highlights using original file, slow
+    HL_FAST = 'FAST'  # highlights using just the line, fast but not correct
+                      # in the case of multiline code
+    HL_NONE = 'NONE'  # no highlighting, fastest
 
     def __init__(self, highlight_mode=HL_REAL, repo_name=None,
                  source_repo_name=None,
                  source_node_getter=lambda filename: None,
                  target_node_getter=lambda filename: None,
                  source_nodes=None, target_nodes=None,
-                 max_file_size_limit=150 * 1024, # files over this size will
-                                                 # use fast highlighting
-                 comments=None,
+                 # files over this size will use fast highlighting
+                 max_file_size_limit=150 * 1024,
                  ):
 
         self.highlight_mode = highlight_mode
@@ -391,8 +390,6 @@ class DiffSet(object):
         self.target_nodes = target_nodes or {}
         self.repo_name = repo_name
         self.source_repo_name = source_repo_name or repo_name
-        self.comments = comments or {}
-        self.comments_store = self.comments.copy()
         self.max_file_size_limit = max_file_size_limit
 
     def render_patchset(self, patchset, source_ref=None, target_ref=None):
@@ -517,20 +514,6 @@ class DiffSet(object):
             hunkbit.source_file_path = source_file_path
             hunkbit.target_file_path = target_file_path
             filediff.hunks.append(hunkbit)
-
-        left_comments = {}
-        if source_file_path in self.comments_store:
-            for lineno, comments in self.comments_store[source_file_path].items():
-                left_comments[lineno] = comments
-
-        if target_file_path in self.comments_store:
-            for lineno, comments in self.comments_store[target_file_path].items():
-                left_comments[lineno] = comments
-
-        # left comments are one that we couldn't place in diff lines.
-        # could be outdated, or the diff changed and this line is no
-        # longer available
-        filediff.left_comments = left_comments
 
         return filediff
 

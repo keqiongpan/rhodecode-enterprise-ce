@@ -28,7 +28,7 @@
 
       <div class="meta">
           <div class="comment-type-label">
-              <div class="comment-label ${comment.comment_type or 'note'}" id="comment-label-${comment.comment_id}">
+              <div class="comment-label ${comment.comment_type or 'note'}" id="comment-label-${comment.comment_id}" title="line: ${comment.line_no}">
               % if comment.comment_type == 'todo':
                   % if comment.resolved:
                       <div class="resolved tooltip" title="${_('Resolved by comment #{}').format(comment.resolved.comment_id)}">

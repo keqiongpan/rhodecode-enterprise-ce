@@ -223,37 +223,59 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             %endif
         %endfor
 
+        <% unmatched_comments = (inline_comments or {}).get(filediff.patch['filename'], {}) %>
+
         ## outdated comments that do not fit into currently displayed lines
-        % for lineno, comments in filediff.left_comments.items():
+        % for lineno, comments in unmatched_comments.items():
 
-        %if c.diffmode == 'unified':
-            <tr class="cb-line">
-                <td class="cb-data cb-context"></td>
-                <td class="cb-lineno cb-context"></td>
-                <td class="cb-lineno cb-context"></td>
-                <td class="cb-content cb-context">
-                    ${inline_comments_container(comments, inline_comments)}
-                </td>
-            </tr>
-        %elif c.diffmode == 'sideside':
-            <tr class="cb-line">
-                <td class="cb-data cb-context"></td>
-                <td class="cb-lineno cb-context"></td>
-                <td class="cb-content cb-context">
-                    % if lineno.startswith('o'):
+            %if c.diffmode == 'unified':
+                % if loop.index == 0:
+                <tr class="cb-hunk">
+                    <td colspan="3"></td>
+                    <td>
+                        <div>
+                        ${_('Unmatched inline comments below')}
+                        </div>
+                    </td>
+                </tr>
+                % endif
+                <tr class="cb-line">
+                    <td class="cb-data cb-context"></td>
+                    <td class="cb-lineno cb-context"></td>
+                    <td class="cb-lineno cb-context"></td>
+                    <td class="cb-content cb-context">
                         ${inline_comments_container(comments, inline_comments)}
-                    % endif
-                </td>
+                    </td>
+                </tr>
+            %elif c.diffmode == 'sideside':
+                % if loop.index == 0:
+                <tr class="cb-hunk">
+                    <td colspan="2"></td>
+                    <td class="cb-line" colspan="6">
+                        <div>
+                        ${_('Unmatched comments below')}
+                        </div>
+                    </td>
+                </tr>
+                % endif
+                <tr class="cb-line">
+                    <td class="cb-data cb-context"></td>
+                    <td class="cb-lineno cb-context"></td>
+                    <td class="cb-content cb-context">
+                        % if lineno.startswith('o'):
+                            ${inline_comments_container(comments, inline_comments)}
+                        % endif
+                    </td>
 
-                <td class="cb-data cb-context"></td>
-                <td class="cb-lineno cb-context"></td>
-                <td class="cb-content cb-context">
-                    % if lineno.startswith('n'):
-                        ${inline_comments_container(comments, inline_comments)}
-                    % endif
-                </td>
-            </tr>
-        %endif
+                    <td class="cb-data cb-context"></td>
+                    <td class="cb-lineno cb-context"></td>
+                    <td class="cb-content cb-context">
+                        % if lineno.startswith('n'):
+                            ${inline_comments_container(comments, inline_comments)}
+                        % endif
+                    </td>
+                </tr>
+            %endif
 
         % endfor
 
@@ -512,18 +534,20 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 </%def>
 
 <%!
-def get_comments_for(comments, filename, line_version, line_number):
+def get_comments_for(diff_type, comments, filename, line_version, line_number):
     if hasattr(filename, 'unicode_path'):
         filename = filename.unicode_path
 
     if not isinstance(filename, basestring):
         return None
 
-    line_key = '{}{}'.format(line_version, line_number)
+    line_key = '{}{}'.format(line_version, line_number) ## e.g o37, n12
+
     if comments and filename in comments:
         file_comments = comments[filename]
         if line_key in file_comments:
-            return file_comments[line_key]
+            data = file_comments.pop(line_key)
+            return data
 %>
 
 <%def name="render_hunk_lines_sideside(hunk, use_comments=False, inline_comments=None)">
@@ -542,16 +566,17 @@ def get_comments_for(comments, filename, line_version, line_number):
             data-line-no="${line.original.lineno}"
             >
             <div>
-            <% loc = None %>
+
+            <% line_old_comments = None %>
             %if line.original.get_comment_args:
-                <% loc = get_comments_for(inline_comments, *line.original.get_comment_args) %>
+                <% line_old_comments = get_comments_for('side-by-side', inline_comments, *line.original.get_comment_args) %>
             %endif
-            %if loc:
-                <% has_outdated = any([x.outdated for x in loc]) %>
+            %if line_old_comments:
+                <% has_outdated = any([x.outdated for x in line_old_comments]) %>
                 % if has_outdated:
-                    <i title="${_('comments including outdated')}:${len(loc)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i title="${_('comments including outdated')}:${len(line_old_comments)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i title="${_('comments')}: ${len(loc)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i title="${_('comments')}: ${len(line_old_comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
             </div>
@@ -574,8 +599,8 @@ def get_comments_for(comments, filename, line_version, line_number):
             %endif
             <span class="cb-code">${line.original.action} ${line.original.content or '' | n}</span>
 
-            %if use_comments and line.original.lineno and loc:
-                ${inline_comments_container(loc, inline_comments)}
+            %if use_comments and line.original.lineno and line_old_comments:
+                ${inline_comments_container(line_old_comments, inline_comments)}
             %endif
 
         </td>
@@ -585,16 +610,16 @@ def get_comments_for(comments, filename, line_version, line_number):
             <div>
 
             %if line.modified.get_comment_args:
-                <% lmc = get_comments_for(inline_comments, *line.modified.get_comment_args) %>
+                <% line_new_comments = get_comments_for('side-by-side', inline_comments, *line.modified.get_comment_args) %>
             %else:
-                <% lmc = None%>
+                <% line_new_comments = None%>
             %endif
-            %if lmc:
-                <% has_outdated = any([x.outdated for x in lmc]) %>
+            %if line_new_comments:
+                <% has_outdated = any([x.outdated for x in line_new_comments]) %>
                 % if has_outdated:
-                    <i title="${_('comments including outdated')}:${len(lmc)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i title="${_('comments including outdated')}:${len(line_new_comments)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i title="${_('comments')}: ${len(lmc)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i title="${_('comments')}: ${len(line_new_comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
             </div>
@@ -616,8 +641,8 @@ def get_comments_for(comments, filename, line_version, line_number):
             ${render_add_comment_button()}
             %endif
             <span class="cb-code">${line.modified.action} ${line.modified.content or '' | n}</span>
-            %if use_comments and line.modified.lineno and lmc:
-            ${inline_comments_container(lmc, inline_comments)}
+            %if use_comments and line.modified.lineno and line_new_comments:
+            ${inline_comments_container(line_new_comments, inline_comments)}
             %endif
         </td>
     </tr>
@@ -639,7 +664,7 @@ def get_comments_for(comments, filename, line_version, line_number):
             <div>
 
             %if comments_args:
-                <% comments = get_comments_for(inline_comments, *comments_args) %>
+                <% comments = get_comments_for('unified', inline_comments, *comments_args) %>
             %else:
                 <% comments = None%>
             %endif
