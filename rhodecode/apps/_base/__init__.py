@@ -61,12 +61,13 @@ def add_route_with_slash(config,name, pattern, **kw):
         config.add_route(name + '_slash', pattern + '/', **kw)
 
 
-def add_route_requirements(route_path, requirements=URL_NAME_REQUIREMENTS):
+def add_route_requirements(route_path, requirements=None):
     """
     Adds regex requirements to pyramid routes using a mapping dict
     e.g::
         add_route_requirements('{repo_name}/settings')
     """
+    requirements = requirements or URL_NAME_REQUIREMENTS
     for key, regex in requirements.items():
         route_path = route_path.replace('{%s}' % key, '{%s:%s}' % (key, regex))
     return route_path
