@@ -231,11 +231,13 @@ def includeme(config):
     config.add_route(
         name='repo_fork_new',
         pattern='/{repo_name:.*?[^/]}/fork', repo_route=True,
+        repo_forbid_when_archived=True,
         repo_accepted_types=['hg', 'git'])
 
     config.add_route(
         name='repo_fork_create',
         pattern='/{repo_name:.*?[^/]}/fork/create', repo_route=True,
+        repo_forbid_when_archived=True,
         repo_accepted_types=['hg', 'git'])
 
     config.add_route(
@@ -276,27 +278,29 @@ def includeme(config):
     config.add_route(
         name='pullrequest_new',
         pattern='/{repo_name:.*?[^/]}/pull-request/new',
-        repo_route=True, repo_accepted_types=['hg', 'git'])
+        repo_route=True, repo_accepted_types=['hg', 'git'],
+        repo_forbid_when_archived=True)
 
     config.add_route(
         name='pullrequest_create',
         pattern='/{repo_name:.*?[^/]}/pull-request/create',
-        repo_route=True, repo_accepted_types=['hg', 'git'])
+        repo_route=True, repo_accepted_types=['hg', 'git'],
+        repo_forbid_when_archived=True)
 
     config.add_route(
         name='pullrequest_update',
         pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/update',
-        repo_route=True)
+        repo_route=True, repo_forbid_when_archived=True)
 
     config.add_route(
         name='pullrequest_merge',
         pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/merge',
-        repo_route=True)
+        repo_route=True, repo_forbid_when_archived=True)
 
     config.add_route(
         name='pullrequest_delete',
         pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/delete',
-        repo_route=True)
+        repo_route=True, repo_forbid_when_archived=True)
 
     config.add_route(
         name='pullrequest_comment_create',
@@ -318,6 +322,9 @@ def includeme(config):
     config.add_route(
         name='edit_repo_advanced',
         pattern='/{repo_name:.*?[^/]}/settings/advanced', repo_route=True)
+    config.add_route(
+        name='edit_repo_advanced_archive',
+        pattern='/{repo_name:.*?[^/]}/settings/advanced/archive', repo_route=True)
     config.add_route(
         name='edit_repo_advanced_delete',
         pattern='/{repo_name:.*?[^/]}/settings/advanced/delete', repo_route=True)

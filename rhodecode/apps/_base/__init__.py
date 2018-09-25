@@ -505,6 +505,36 @@ class RepoRoutePredicate(object):
         return False
 
 
+class RepoForbidArchivedRoutePredicate(object):
+    def __init__(self, val, config):
+        self.val = val
+
+    def text(self):
+        return 'repo_forbid_archived = %s' % self.val
+
+    phash = text
+
+    def __call__(self, info, request):
+        _ = request.translate
+        rhodecode_db_repo = request.db_repo
+
+        log.debug(
+            '%s checking if archived flag for repo for %s',
+            self.__class__.__name__, rhodecode_db_repo.repo_name)
+
+        if rhodecode_db_repo.archived:
+            log.warning('Current view is not supported for archived repo:%s',
+                        rhodecode_db_repo.repo_name)
+
+            h.flash(
+                h.literal(_('Action not supported for archived repository.')),
+                category='warning')
+            summary_url = request.route_path(
+                'repo_summary', repo_name=rhodecode_db_repo.repo_name)
+            raise HTTPFound(summary_url)
+        return True
+
+
 class RepoTypeRoutePredicate(object):
     def __init__(self, val, config):
         self.val = val or ['hg', 'git', 'svn']
@@ -530,13 +560,6 @@ class RepoTypeRoutePredicate(object):
         else:
             log.warning('Current view is not supported for repo type:%s',
                         rhodecode_db_repo.repo_type)
-
-            # h.flash(h.literal(
-            #     _('Action not supported for %s.' % rhodecode_repo.alias)),
-            #     category='warning')
-            # return redirect(
-            #     route_path('repo_summary', repo_name=cls.rhodecode_db_repo.repo_name))
-
             return False
 
 
@@ -642,6 +665,8 @@ def includeme(config):
         'repo_route', RepoRoutePredicate)
     config.add_route_predicate(
         'repo_accepted_types', RepoTypeRoutePredicate)
+    config.add_route_predicate(
+        'repo_forbid_when_archived', RepoForbidArchivedRoutePredicate)
     config.add_route_predicate(
         'repo_group_route', RepoGroupRoutePredicate)
     config.add_route_predicate(

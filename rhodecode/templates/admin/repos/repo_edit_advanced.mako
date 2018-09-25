@@ -98,7 +98,7 @@
               <button class="btn btn-small" type="submit"
                       onclick="return confirm('${_('Confirm to lock repository.')}');">
                   <i class="icon-lock"></i>
-                  ${_('Lock Repository')}
+                  ${_('Lock repository')}
               </button>
             %endif
          </div>
@@ -110,6 +110,35 @@
         ${h.end_form()}
     </div>
 </div>
+
+
+<div class="panel panel-warning">
+    <div class="panel-heading" id="advanced-archive">
+        <h3 class="panel-title">${_('Archive repository')} <a class="permalink" href="#advanced-archive"> ¶</a></h3>
+    </div>
+    <div class="panel-body">
+      ${h.secure_form(h.route_path('edit_repo_advanced_archive', repo_name=c.repo_name), request=request)}
+
+        <div style="margin: 0 0 20px 0" class="fake-space"></div>
+
+        <div class="field">
+            <button class="btn btn-small btn-danger" type="submit"
+                    onclick="return confirm('${_('Confirm to archive this repository: %s') % c.repo_name}');">
+                <i class="icon-remove-sign"></i>
+                ${_('Archive this repository')}
+            </button>
+        </div>
+        <div class="field">
+            <span class="help-block">
+                ${_('Archiving the repository will make it entirely read-only. The repository cannot be committed to.'
+                    'It is hidden from the search results and dashboard. ')}
+            </span>
+        </div>
+
+      ${h.end_form()}
+    </div>
+</div>
+
 
 <div class="panel panel-danger">
     <div class="panel-heading" id="advanced-delete">
@@ -152,7 +181,7 @@
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to delete this repository: %s') % c.repo_name}');">
                 <i class="icon-remove-sign"></i>
-                ${_('Delete This Repository')}
+                ${_('Delete this repository')}
             </button>
         </div>
         <div class="field">

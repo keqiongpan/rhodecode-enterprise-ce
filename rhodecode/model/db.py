@@ -1585,6 +1585,8 @@ class Repository(Base, BaseModel):
         unique=False, default=None)
     private = Column(
         "private", Boolean(), nullable=True, unique=None, default=None)
+    archived = Column(
+        "archived", Boolean(), nullable=True, unique=None, default=None)
     enable_statistics = Column(
         "statistics", Boolean(), nullable=True, unique=None, default=True)
     enable_downloads = Column(
@@ -1783,8 +1785,11 @@ class Repository(Base, BaseModel):
 
     @classmethod
     def get_all_repos(cls, user_id=Optional(None), group_id=Optional(None),
-                      case_insensitive=True):
+                      case_insensitive=True, archived=False):
         q = Repository.query()
+
+        if not archived:
+            q = q.filter(Repository.archived.isnot(true()))
 
         if not isinstance(user_id, Optional):
             q = q.filter(Repository.user_id == user_id)
@@ -1796,6 +1801,7 @@ class Repository(Base, BaseModel):
             q = q.order_by(func.lower(Repository.repo_name))
         else:
             q = q.order_by(Repository.repo_name)
+
         return q.all()
 
     @property

@@ -26,7 +26,7 @@ from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib import helpers as h
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.db import (
-    PullRequest, ChangesetStatus, UserLog, Notification, ChangesetComment)
+    PullRequest, ChangesetStatus, UserLog, Notification, ChangesetComment, Repository)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
@@ -1190,6 +1190,28 @@ class TestPullrequestsControllerDelete(object):
             status=200
         )
         assert response.body == 'true'
+
+    @pytest.mark.parametrize('url_type', [
+        'pullrequest_new',
+        'pullrequest_create',
+        'pullrequest_update',
+        'pullrequest_merge',
+    ])
+    def test_pull_request_is_forbidden_on_archived_repo(
+            self, autologin_user, backend, xhr_header, user_util, url_type):
+
+        # create a temporary repo
+        source = user_util.create_repo(repo_type=backend.alias)
+        repo_name = source.repo_name
+        repo = Repository.get_by_repo_name(repo_name)
+        repo.archived = True
+        Session().commit()
+
+        response = self.app.get(
+            route_path(url_type, repo_name=repo_name, pull_request_id=1), status=302)
+
+        msg = 'Action not supported for archived repository.'
+        assert_session_flash(response, msg)
 
 
 def assert_pull_request_status(pull_request, expected_status):

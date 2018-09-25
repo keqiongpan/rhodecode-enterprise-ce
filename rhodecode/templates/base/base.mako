@@ -287,6 +287,11 @@
     </div>
     <div class="clear"></div>
   </div>
+    % if c.rhodecode_db_repo.archived:
+    <div class="alert alert-warning text-center">
+        <strong>${_('This repository has been archived. It is now read-only.')}</strong>
+    </div>
+    % endif
   <!--- END CONTEXT BAR -->
 
 </%def>

@@ -33,7 +33,7 @@ from rhodecode.lib.index import searcher_from_config
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.ext_json import json
 from rhodecode.model.db import (
-    func, or_, in_filter_generator, Repository, RepoGroup, User, UserGroup)
+    func, true, or_, in_filter_generator, Repository, RepoGroup, User, UserGroup)
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import RepoGroupList, RepoList
@@ -114,6 +114,7 @@ class HomeView(BaseAppView):
         query = Repository.query()\
             .order_by(func.length(Repository.repo_name))\
             .order_by(Repository.repo_name)\
+            .filter(Repository.archived.isnot(true()))\
             .filter(or_(
                 # generate multiple IN to fix limitation problems
                 *in_filter_generator(Repository.repo_id, allowed_ids)

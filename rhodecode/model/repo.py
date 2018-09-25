@@ -207,8 +207,8 @@ class RepoModel(BaseModel):
         def quick_menu(repo_name):
             return _render('quick_menu', repo_name)
 
-        def repo_lnk(name, rtype, rstate, private, fork_of):
-            return _render('repo_name', name, rtype, rstate, private, fork_of,
+        def repo_lnk(name, rtype, rstate, private, archived, fork_of):
+            return _render('repo_name', name, rtype, rstate, private, archived, fork_of,
                            short_name=not admin, admin=False)
 
         def last_change(last_change):
@@ -246,8 +246,8 @@ class RepoModel(BaseModel):
             row = {
                 "menu": quick_menu(repo.repo_name),
 
-                "name": repo_lnk(repo.repo_name, repo.repo_type,
-                                 repo.repo_state, repo.private, repo.fork),
+                "name": repo_lnk(repo.repo_name, repo.repo_type, repo.repo_state,
+                                 repo.private, repo.archived, repo.fork),
                 "name_raw": repo.repo_name.lower(),
 
                 "last_change": last_change(repo.last_db_change),
@@ -427,6 +427,7 @@ class RepoModel(BaseModel):
             new_repo.group = repo_group
             new_repo.description = description or repo_name
             new_repo.private = private
+            new_repo.archived = False
             new_repo.clone_uri = clone_uri
             new_repo.landing_rev = landing_rev
 
@@ -608,6 +609,23 @@ class RepoModel(BaseModel):
         from rhodecode.lib.celerylib import tasks, run_task
         return run_task(tasks.create_repo_fork, form_data, cur_user)
 
+    def archive(self, repo):
+        """
+        Archive given repository. Set archive flag.
+
+        :param repo:
+        """
+        repo = self._get_repo(repo)
+        if repo:
+
+            try:
+                repo.archived = True
+                self.sa.add(repo)
+                self.sa.commit()
+            except Exception:
+                log.error(traceback.format_exc())
+                raise
+
     def delete(self, repo, forks=None, pull_requests=None, fs_remove=True, cur_user=None):
         """
         Delete given repository, forks parameter defines what do do with
@@ -616,6 +634,7 @@ class RepoModel(BaseModel):
 
         :param repo:
         :param forks: str 'delete' or 'detach'
+        :param pull_requests: str 'delete' or None
         :param fs_remove: remove(archive) repo from filesystem
         """
         if not cur_user:

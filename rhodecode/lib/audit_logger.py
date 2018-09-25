@@ -65,6 +65,7 @@ ACTIONS_V1 = {
     'repo.edit': {'old_data': {}},
     'repo.edit.permissions': {},
     'repo.edit.permissions.branch': {},
+    'repo.archive': {'old_data': {}},
     'repo.delete': {'old_data': {}},
 
     'repo.archive.download': {'user_agent': '', 'archive_name': '',

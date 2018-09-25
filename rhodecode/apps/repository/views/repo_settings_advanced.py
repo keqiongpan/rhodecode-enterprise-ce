@@ -23,6 +23,7 @@ import logging
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 
+from rhodecode import events
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
@@ -45,6 +46,13 @@ class RepoSettingsView(RepoAppView):
         c = self._get_local_tmpl_context()
         return c
 
+    def _get_users_with_permissions(self):
+        user_permissions = {}
+        for perm in self.db_repo.permissions():
+            user_permissions[perm.user_id] = perm
+
+        return user_permissions
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @view_config(
@@ -66,6 +74,49 @@ class RepoSettingsView(RepoAppView):
                 self.db_repo.fork.repo_name, 'repo set as fork page')
 
         return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='edit_repo_advanced_archive', request_method='POST',
+        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
+    def edit_advanced_archive(self):
+        """
+        Archives the repository. It will become read-only, and not visible in search
+        or other queries. But still visible for super-admins.
+        """
+
+        _ = self.request.translate
+
+        try:
+            old_data = self.db_repo.get_api_data()
+            RepoModel().archive(self.db_repo)
+
+            repo = audit_logger.RepoWrap(repo_id=None, repo_name=self.db_repo.repo_name)
+            audit_logger.store_web(
+                'repo.archive', action_data={'old_data': old_data},
+                user=self._rhodecode_user, repo=repo)
+
+            ScmModel().mark_for_invalidation(self.db_repo_name, delete=True)
+            h.flash(
+                _('Archived repository `%s`') % self.db_repo_name,
+                category='success')
+            Session().commit()
+        except Exception:
+            log.exception("Exception during archiving of repository")
+            h.flash(_('An error occurred during archiving of `%s`')
+                    % self.db_repo_name, category='error')
+            # redirect to advanced for more deletion options
+            raise HTTPFound(
+                h.route_path('edit_repo_advanced', repo_name=self.db_repo_name,
+                             _anchor='advanced-archive'))
+
+        # flush permissions for all users defined in permissions
+        affected_user_ids = self._get_users_with_permissions().keys()
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
+
+        raise HTTPFound(h.route_path('home'))
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')

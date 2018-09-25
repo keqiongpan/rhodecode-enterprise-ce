@@ -322,6 +322,7 @@ def _cached_perms_data(user_id, scope, user_is_admin,
 
 class PermOrigin(object):
     SUPER_ADMIN = 'superadmin'
+    ARCHIVED = 'archived'
 
     REPO_USER = 'user:%s'
     REPO_USERGROUP = 'usergroup:%s'
@@ -463,8 +464,14 @@ class PermissionCalculator(object):
         # repositories
         for perm in self.default_repo_perms:
             r_k = perm.UserRepoToPerm.repository.repo_name
+            archived = perm.UserRepoToPerm.repository.archived
             p = 'repository.admin'
             self.permissions_repositories[r_k] = p, PermOrigin.SUPER_ADMIN
+            # special case for archived repositories, which we block still even for
+            # super admins
+            if archived:
+                p = 'repository.read'
+                self.permissions_repositories[r_k] = p, PermOrigin.ARCHIVED
 
         # repository groups
         for perm in self.default_repo_groups_perms:
@@ -572,6 +579,7 @@ class PermissionCalculator(object):
     def _calculate_default_permissions_repositories(self, user_inherit_object_permissions):
         for perm in self.default_repo_perms:
             r_k = perm.UserRepoToPerm.repository.repo_name
+            archived = perm.UserRepoToPerm.repository.archived
             p = perm.Permission.permission_name
             o = PermOrigin.REPO_DEFAULT
             self.permissions_repositories[r_k] = p, o
@@ -601,6 +609,15 @@ class PermissionCalculator(object):
                 p = 'repository.admin'
                 o = PermOrigin.SUPER_ADMIN
                 self.permissions_repositories[r_k] = p, o
+
+            # finally in case of archived repositories, we downgrade  higher
+            # permissions to read
+            if archived:
+                current_perm = self.permissions_repositories[r_k]
+                if current_perm in ['repository.write', 'repository.admin']:
+                    p = 'repository.read'
+                    o = PermOrigin.ARCHIVED
+                    self.permissions_repositories[r_k] = p, o
 
     def _calculate_default_permissions_repository_branches(self, user_inherit_object_permissions):
         for perm in self.default_branch_repo_perms:

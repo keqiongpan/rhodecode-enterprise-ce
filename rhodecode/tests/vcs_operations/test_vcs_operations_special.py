@@ -25,10 +25,13 @@ import pytest
 from rhodecode.lib.vcs.backends.git.repository import GitRepository
 from rhodecode.lib.vcs.backends.hg.repository import MercurialRepository
 from rhodecode.lib.vcs.nodes import FileNode
+from rhodecode.model.db import Repository
 from rhodecode.model.meta import Session
+from rhodecode.tests import GIT_REPO, HG_REPO
 
 from rhodecode.tests.vcs_operations import (
-    Command, _check_proper_clone, _check_proper_git_push, _check_proper_hg_push)
+    Command, _check_proper_clone, _check_proper_git_push, _check_proper_hg_push,
+    _add_files_and_push)
 
 
 @pytest.mark.usefixtures("disable_locking")
@@ -242,3 +245,37 @@ class TestVCSOperationsSpecial(object):
         assert 'remote: RhodeCode: open pull request link: {}'.format(ref) in stdout
         assert 'remote: RhodeCode: push completed' in stdout
         assert 'exporting bookmark feature2' in stdout
+
+    def test_push_is_forbidden_on_archived_repo_hg(self, backend_hg, rc_web_server, tmpdir):
+        empty_repo = backend_hg.create_repo()
+        repo_name = empty_repo.repo_name
+
+        repo = Repository.get_by_repo_name(repo_name)
+        repo.archived = True
+        Session().commit()
+
+        clone_url = rc_web_server.repo_clone_url(repo_name)
+        stdout, stderr = Command('/tmp').execute(
+            'hg clone', clone_url, tmpdir.strpath)
+
+        stdout, stderr = _add_files_and_push(
+            'hg', tmpdir.strpath, clone_url=clone_url)
+
+        assert 'abort: HTTP Error 403: Forbidden' in stderr
+
+    def test_push_is_forbidden_on_archived_repo_git(self, backend_git, rc_web_server, tmpdir):
+        empty_repo = backend_git.create_repo()
+        repo_name = empty_repo.repo_name
+
+        repo = Repository.get_by_repo_name(repo_name)
+        repo.archived = True
+        Session().commit()
+
+        clone_url = rc_web_server.repo_clone_url(repo_name)
+        stdout, stderr = Command('/tmp').execute(
+            'git clone', clone_url, tmpdir.strpath)
+
+        stdout, stderr = _add_files_and_push(
+            'git', tmpdir.strpath, clone_url=clone_url)
+
+        assert "The requested URL returned error: 403" in stderr
