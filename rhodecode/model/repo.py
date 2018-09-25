@@ -32,7 +32,7 @@ from zope.cachedescriptors.property import Lazy as LazyProperty
 from rhodecode import events
 from rhodecode.lib.auth import HasUserGroupPermissionAny
 from rhodecode.lib.caching_query import FromCache
-from rhodecode.lib.exceptions import AttachedForksError
+from rhodecode.lib.exceptions import AttachedForksError, AttachedPullRequestsError
 from rhodecode.lib.hooks_base import log_delete_repository
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.utils import make_db_config
@@ -608,7 +608,7 @@ class RepoModel(BaseModel):
         from rhodecode.lib.celerylib import tasks, run_task
         return run_task(tasks.create_repo_fork, form_data, cur_user)
 
-    def delete(self, repo, forks=None, fs_remove=True, cur_user=None):
+    def delete(self, repo, forks=None, pull_requests=None, fs_remove=True, cur_user=None):
         """
         Delete given repository, forks parameter defines what do do with
         attached forks. Throws AttachedForksError if deleted repo has attached
@@ -631,6 +631,12 @@ class RepoModel(BaseModel):
                     self.delete(r, forks='delete')
             elif [f for f in repo.forks]:
                 raise AttachedForksError()
+
+            # check for pull requests
+            pr_sources = repo.pull_requests_source
+            pr_targets = repo.pull_requests_target
+            if pull_requests != 'delete' and (pr_sources or pr_targets):
+                raise AttachedPullRequestsError()
 
             old_repo_dict = repo.get_dict()
             events.trigger(events.RepoPreDeleteEvent(repo))

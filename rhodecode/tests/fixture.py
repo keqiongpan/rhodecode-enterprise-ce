@@ -226,7 +226,7 @@ class Fixture(object):
         return r
 
     def destroy_repo(self, repo_name, **kwargs):
-        RepoModel().delete(repo_name, **kwargs)
+        RepoModel().delete(repo_name, pull_requests='delete', **kwargs)
         Session().commit()
 
     def destroy_repo_on_filesystem(self, repo_name):

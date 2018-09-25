@@ -7,6 +7,8 @@
     (_('Updated on'), h.format_date(c.rhodecode_db_repo.updated_on), '', ''),
     (_('Cached Commit id'), lambda: h.link_to(c.rhodecode_db_repo.changeset_cache.get('short_id'), h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.changeset_cache.get('raw_id'))), '', ''),
     (_('Attached scoped tokens'), len(c.rhodecode_db_repo.scoped_tokens), '', [x.user for x in c.rhodecode_db_repo.scoped_tokens]),
+    (_('Pull requests source'), len(c.rhodecode_db_repo.pull_requests_source), '', ['pr_id:{}, repo:{}'.format(x.pull_request_id,x.source_repo.repo_name) for x in c.rhodecode_db_repo.pull_requests_source]),
+    (_('Pull requests target'), len(c.rhodecode_db_repo.pull_requests_target), '', ['pr_id:{}, repo:{}'.format(x.pull_request_id,x.target_repo.repo_name) for x in c.rhodecode_db_repo.pull_requests_target]),
  ]
 %>
 
@@ -131,6 +133,18 @@
                     %endif
                 </td>
             </tr>
+            <% attached_prs = len(c.rhodecode_db_repo.pull_requests_source + c.rhodecode_db_repo.pull_requests_target) %>
+            % if c.rhodecode_db_repo.pull_requests_source or c.rhodecode_db_repo.pull_requests_target:
+            <tr>
+                <td>
+                    ${_ungettext('This repository has %s attached pull request.', 'This repository has %s attached pull requests.', attached_prs) % attached_prs}
+                    <br/>
+                    ${_('Consider to archive this repository instead.')}
+                </td>
+                <td></td>
+                <td></td>
+            </tr>
+            % endif
         </table>
         <div style="margin: 0 0 20px 0" class="fake-space"></div>
 
