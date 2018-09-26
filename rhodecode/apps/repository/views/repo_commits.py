@@ -109,7 +109,7 @@ def get_line_ctx(fid, request):
         retval = ln_ctx_global
 
     try:
-        return int(retval)
+        return min(diffs.MAX_CONTEXT, int(retval))
     except Exception:
         return 3
 
