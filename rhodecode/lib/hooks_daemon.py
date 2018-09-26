@@ -245,7 +245,6 @@ def prepare_callback_daemon(extras, protocol, host, use_direct_calls, txn_id=Non
 
     # register txn_id
     extras['txn_id'] = txn_id
-
     log.debug('Prepared a callback daemon: %s at url `%s`',
               callback_daemon.__class__.__name__, callback_daemon.hooks_uri)
     return callback_daemon, extras
@@ -292,6 +291,9 @@ class Hooks(object):
 
         try:
             result = hook(extras)
+            if result is None:
+                raise Exception(
+                    'Failed to obtain hook result from func: {}'.format(hook))
         except HTTPBranchProtected as handled_error:
             # Those special cases doesn't need error reporting. It's a case of
             # locked repo or protected branch

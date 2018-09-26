@@ -114,13 +114,17 @@ class VcsHttpProxy(object):
             stream=True)
 
         log.debug('http-app: got vcsserver response: %s', response)
+        if response.status_code >= 500:
+            log.error('Exception returned by vcsserver at: %s %s, %s',
+                      url, response.status_code, response.content)
+
         # Preserve the headers of the response, except hop_by_hop ones
         response_headers = [
             (h, v) for h, v in response.headers.items()
             if not wsgiref.util.is_hop_by_hop(h)
         ]
 
-        # Build status argument for start_reponse callable.
+        # Build status argument for start_response callable.
         status = '{status_code} {reason_phrase}'.format(
             status_code=response.status_code,
             reason_phrase=response.reason)
