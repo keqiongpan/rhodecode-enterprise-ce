@@ -70,6 +70,7 @@ def hook_extras(user_regular, repo_stub):
         'repository': repo_stub.repo_name,
         'scm': '',
         'config': '',
+        'repo_store': '',
         'server_url': 'http://example.com',
         'make_lock': None,
         'user_agent': 'some-client',

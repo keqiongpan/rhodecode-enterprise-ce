@@ -42,6 +42,7 @@ def scm_extras(user_regular, repo_stub):
         'repository': repo_stub.repo_name,
         'scm': repo_stub.scm_instance().alias,
         'config': '',
+        'repo_store': '',
         'server_url': 'http://example.com',
         'make_lock': None,
         'user-agent': 'some-client',

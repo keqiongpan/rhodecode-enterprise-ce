@@ -180,7 +180,12 @@ def vcs_operation_context(
     ui_settings = settings_model.get_ui_settings()
 
     # NOTE(marcink): This should be also in sync with
-    # rhodecode/apps/ssh_support/lib/backends/base.py:update_enviroment scm_data
+    # rhodecode/apps/ssh_support/lib/backends/base.py:update_environment scm_data
+    store = [x for x in ui_settings if x.key == '/']
+    repo_store = ''
+    if store:
+        repo_store = store[0].value
+
     scm_data = {
         'ip': get_ip_addr(environ),
         'username': username,
@@ -189,6 +194,7 @@ def vcs_operation_context(
         'repository': repo_name,
         'scm': scm,
         'config': rhodecode.CONFIG['__file__'],
+        'repo_store': repo_store,
         'make_lock': make_lock,
         'locked_by': locked_by,
         'server_url': utils2.get_server_url(environ),

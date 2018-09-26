@@ -471,6 +471,7 @@ def merge_extras(user_regular):
         'repository': 'fake_target_repo_name',
         'scm': 'git',
         'config': 'fake_config_ini_path',
+        'repo_store': '',
         'make_lock': None,
         'locked_by': [None, None, None],
         'server_url': 'http://test.example.com:5000',

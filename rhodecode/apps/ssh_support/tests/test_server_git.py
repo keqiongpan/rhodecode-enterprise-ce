@@ -121,6 +121,8 @@ class TestGitServer(object):
         ])
     def test_update_environment(self, git_server, repo_mode, action):
         server = git_server.create(repo_mode=repo_mode)
+        store = server.store
+
         with mock.patch('os.environ', {'SSH_CLIENT': '10.10.10.10 b'}):
             with mock.patch('os.putenv') as putenv_mock:
                 server.update_environment(action)
@@ -135,6 +137,7 @@ class TestGitServer(object):
             'ip': '10.10.10.10',
             'locked_by': [None, None],
             'config': '',
+            'repo_store': store,
             'server_url': None,
             'hooks': ['push', 'pull'],
             'is_shadow_repo': False,

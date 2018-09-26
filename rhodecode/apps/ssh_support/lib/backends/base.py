@@ -103,6 +103,7 @@ class VcsServer(object):
             'repository': self.repo_name,
             'scm': self.backend,
             'config': self.ini_path,
+            'repo_store': self.store,
             'make_lock': None,
             'locked_by': [None, None],
             'server_url': None,
