@@ -54,6 +54,14 @@ HOOKS_DIRECT_CALLS = False
 HOOKS_HOST = '127.0.0.1'
 
 
+MERGE_MESSAGE_TMPL = (
+    u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}\n\n '
+    u'{pr_title}')
+MERGE_DRY_RUN_MESSAGE = 'dry_run_merge_message_from_rhodecode'
+MERGE_DRY_RUN_USER = 'Dry-Run User'
+MERGE_DRY_RUN_EMAIL = 'dry-run-merge@rhodecode.com'
+
+
 def available_aliases():
     """
     Mercurial is required for the system to work, so in case vcs.backends does
