@@ -28,7 +28,57 @@ from rhodecode.integrations import integration_type_registry
 log = logging.getLogger(__name__)
 
 
+class ValidIntegrationPredicate(object):
+    def __init__(self, val, config):
+        self.val = val
+
+    def text(self):
+        return 'valid_integration_route = %s' % self.val
+
+    phash = text
+
+    def __call__(self, info, request):
+        integration_type = info['match']['integration']
+        integration_id = info['match'].get('integration_id')
+
+        if integration_type not in integration_type_registry:
+            return False
+
+        if integration_id:
+            if not safe_int(integration_id):
+                return False
+
+            integration = Integration.get(integration_id)
+            if not integration:
+                return False
+            if integration.integration_type != integration_type:
+                return False
+
+            # match types to repo or repo group
+            repo_name = info['match'].get('repo_name')
+            repo_group_name = info['match'].get('repo_group_name')
+            repo, repo_group = None, None
+            if repo_name:
+                repo = Repository.get_by_repo_name(repo_name)
+                if not repo:
+                    return False
+
+            if repo_group_name:
+                repo_group = RepoGroup.get_by_group_name(repo_group_name)
+                if not repo_group:
+                    return False
+
+            if repo and repo.repo_id != integration.repo_id:
+                return False
+            if repo_group and repo_group.group_id != integration.repo_group_id:
+                return False
+
+        return True
+
+
 def includeme(config):
+    config.add_route_predicate(
+        'valid_integration', ValidIntegrationPredicate)
 
     # global integrations
     config.add_route('global_integrations_new',
@@ -52,10 +102,10 @@ def includeme(config):
 
     config.add_route('global_integrations_create',
                      ADMIN_PREFIX + '/integrations/{integration}/new',
-                     custom_predicates=(valid_integration,))
+                     valid_integration=True)
     config.add_route('global_integrations_edit',
                      ADMIN_PREFIX + '/integrations/{integration}/{integration_id}',
-                     custom_predicates=(valid_integration,))
+                     valid_integration=True)
 
     for route_name in ['global_integrations_create', 'global_integrations_edit']:
         config.add_view('rhodecode.integrations.views.GlobalIntegrationsView',
@@ -92,7 +142,7 @@ def includeme(config):
     config.add_route('repo_group_integrations_list',
                      add_route_requirements('/{repo_group_name}/_settings/integrations/{integration}'),
                      repo_group_route=True,
-                     custom_predicates=(valid_integration,))
+                     valid_integration=True)
     config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
                     attr='integration_list',
                     renderer='rhodecode:templates/admin/integrations/list.mako',
@@ -102,7 +152,7 @@ def includeme(config):
     config.add_route('repo_group_integrations_create',
                      add_route_requirements('/{repo_group_name}/_settings/integrations/{integration}/new'),
                      repo_group_route=True,
-                     custom_predicates=(valid_integration,))
+                     valid_integration=True)
     config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
                     attr='settings_get',
                     renderer='rhodecode:templates/admin/integrations/form.mako',
@@ -117,7 +167,7 @@ def includeme(config):
     config.add_route('repo_group_integrations_edit',
                      add_route_requirements('/{repo_group_name}/_settings/integrations/{integration}/{integration_id}'),
                      repo_group_route=True,
-                     custom_predicates=(valid_integration,))
+                     valid_integration=True)
 
     config.add_view('rhodecode.integrations.views.RepoGroupIntegrationsView',
                     attr='settings_get',
@@ -152,7 +202,7 @@ def includeme(config):
     config.add_route('repo_integrations_list',
                      add_route_requirements('/{repo_name}/settings/integrations/{integration}'),
                      repo_route=True,
-                     custom_predicates=(valid_integration,))
+                     valid_integration=True)
     config.add_view('rhodecode.integrations.views.RepoIntegrationsView',
                     attr='integration_list',
                     request_method='GET',
@@ -162,7 +212,7 @@ def includeme(config):
     config.add_route('repo_integrations_create',
                      add_route_requirements('/{repo_name}/settings/integrations/{integration}/new'),
                      repo_route=True,
-                     custom_predicates=(valid_integration,))
+                     valid_integration=True)
     config.add_view('rhodecode.integrations.views.RepoIntegrationsView',
                     attr='settings_get',
                     renderer='rhodecode:templates/admin/integrations/form.mako',
@@ -177,7 +227,7 @@ def includeme(config):
     config.add_route('repo_integrations_edit',
                      add_route_requirements('/{repo_name}/settings/integrations/{integration}/{integration_id}'),
                      repo_route=True,
-                     custom_predicates=(valid_integration,))
+                     valid_integration=True)
     config.add_view('rhodecode.integrations.views.RepoIntegrationsView',
                     attr='settings_get',
                     renderer='rhodecode:templates/admin/integrations/form.mako',
@@ -188,43 +238,3 @@ def includeme(config):
                     renderer='rhodecode:templates/admin/integrations/form.mako',
                     request_method='POST',
                     route_name='repo_integrations_edit')
-
-
-
-def valid_integration(info, request):
-    integration_type = info['match']['integration']
-    integration_id = info['match'].get('integration_id')
-
-    if integration_type not in integration_type_registry:
-        return False
-
-    if integration_id:
-        if not safe_int(integration_id):
-            return False
-
-        integration = Integration.get(integration_id)
-        if not integration:
-            return False
-        if integration.integration_type != integration_type:
-            return False
-
-        # match types to repo or repo group
-        repo_name = info['match'].get('repo_name')
-        repo_group_name = info['match'].get('repo_group_name')
-        repo, repo_group = None, None
-        if repo_name:
-            repo = Repository.get_by_repo_name(repo_name)
-            if not repo:
-                return False
-
-        if repo_group_name:
-            repo_group = RepoGroup.get_by_group_name(repo_group_name)
-            if not repo_group:
-                return False
-
-        if repo and repo.repo_id != integration.repo_id:
-            return False
-        if repo_group and repo_group.group_id != integration.repo_group_id:
-            return False
-
-    return True

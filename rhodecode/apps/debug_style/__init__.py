@@ -21,22 +21,30 @@ from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.lib.utils2 import str2bool
 
 
-def debug_style_enabled(info, request):
-    return str2bool(request.registry.settings.get('debug_style'))
+class DebugStylePredicate(object):
+    def __init__(self, val, config):
+        self.val = val
 
+    def text(self):
+        return 'debug style route = %s' % self.val
+
+    phash = text
+
+    def __call__(self, info, request):
+        str2bool(request.registry.settings.get('debug_style'))
 
 def includeme(config):
+    config.add_route_predicate(
+        'debug_style', DebugStylePredicate)
+
     config.add_route(
         name='debug_style_home',
         pattern=ADMIN_PREFIX + '/debug_style',
-        custom_predicates=(debug_style_enabled,))
+        debug_style=True)
     config.add_route(
         name='debug_style_template',
         pattern=ADMIN_PREFIX + '/debug_style/t/{t_path}',
-        custom_predicates=(debug_style_enabled,))
+        debug_style=True)
 
     # Scan module for configuration decorators.
     config.scan('.views', ignore='.tests')
-
-
-
