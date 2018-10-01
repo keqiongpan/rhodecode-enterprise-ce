@@ -8,7 +8,7 @@
               <div class="info_box_elem previous">
                     <a id="prev_commit_link" data-commit-id="${c.prev_commit.raw_id}" class="pjax-link ${'disabled' if c.url_prev == '#' else ''}" href="${c.url_prev}" title="${_('Previous commit')}"><i class="icon-left"></i></a>
               </div>
-              <div class="info_box_elem">${h.text('at_rev',value=c.commit.revision)}</div>
+              <div class="info_box_elem">${h.text('at_rev',value=c.commit.idx)}</div>
               <div class="info_box_elem next">
                     <a id="next_commit_link" data-commit-id="${c.next_commit.raw_id}" class="pjax-link ${'disabled' if c.url_next == '#' else ''}" href="${c.url_next}" title="${_('Next commit')}"><i class="icon-right"></i></a>
               </div>

@@ -511,7 +511,7 @@
                                 <td class="td-hash">
                                     <code>
                                         <a href="${h.route_path('repo_commit', repo_name=c.target_repo.repo_name, commit_id=commit.raw_id)}">
-                                            r${commit.revision}:${h.short_id(commit.raw_id)}
+                                            r${commit.idx}:${h.short_id(commit.raw_id)}
                                         </a>
                                         ${h.hidden('revisions', commit.raw_id)}
                                     </code>

@@ -59,7 +59,7 @@
               <td class="td-hash" data-attr-name="commit_id">
                   % if c.full_load:
                   <div class="tooltip" title="${h.tooltip(node.last_commit.message)}">
-                      <pre data-commit-id="${node.last_commit.raw_id}">r${node.last_commit.revision}:${node.last_commit.short_id}</pre>
+                      <pre data-commit-id="${node.last_commit.raw_id}">r${node.last_commit.idx}:${node.last_commit.short_id}</pre>
                   </div>
                   % endif
               </td>

@@ -48,7 +48,7 @@
 
                         % if c.commit_ranges:
                         <code>
-                        r${c.source_commit.revision}:${h.short_id(c.source_commit.raw_id)}...r${c.target_commit.revision}:${h.short_id(c.target_commit.raw_id)}
+                        r${c.source_commit.idx}:${h.short_id(c.source_commit.raw_id)}...r${c.target_commit.idx}:${h.short_id(c.target_commit.raw_id)}
                         </code>
                         % endif
                     </h4>
