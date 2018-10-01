@@ -526,7 +526,7 @@ class DiffSet(object):
             actions = []
             for op_id, op_text in filediff.patch['stats']['ops'].items():
                 if op_id == DEL_FILENODE:
-                    actions.append(u'file was deleted')
+                    actions.append(u'file was removed')
                 elif op_id == BIN_FILENODE:
                     actions.append(u'binary diff hidden')
                 else:
