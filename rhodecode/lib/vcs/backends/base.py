@@ -485,9 +485,9 @@ class BaseRepository(object):
         :param close_branch: If `True` branch will be close before merging it
         """
         if dry_run:
-            message = message or 'dry_run_merge_message'
-            user_email = user_email or 'dry-run-merge@rhodecode.com'
-            user_name = user_name or 'Dry-Run User'
+            message = message or settings.MERGE_DRY_RUN_MESSAGE
+            user_email = user_email or settings.MERGE_DRY_RUN_EMAIL
+            user_name = user_name or settings.MERGE_DRY_RUN_USER
         else:
             if not user_name:
                 raise ValueError('user_name cannot be empty')

@@ -305,7 +305,7 @@ class TestPullRequestModel(object):
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts,
-            user_name=user.username, user_email=user.email, message=message,
+            user_name=user.short_contact, user_email=user.email, message=message,
             use_rebase=False, close_branch=False
         )
         self.invalidation_mock.assert_called_once_with(
@@ -345,7 +345,7 @@ class TestPullRequestModel(object):
             pull_request.target_ref_parts,
             pull_request.source_repo.scm_instance(),
             pull_request.source_ref_parts,
-            user_name=user.username, user_email=user.email, message=message,
+            user_name=user.short_contact, user_email=user.email, message=message,
             use_rebase=False, close_branch=False
         )
 

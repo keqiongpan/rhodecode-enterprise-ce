@@ -608,22 +608,23 @@ class PullRequestModel(BaseModel):
     def _merge_pull_request(self, pull_request, user, extras, merge_msg=None):
         target_vcs = pull_request.target_repo.scm_instance()
         source_vcs = pull_request.source_repo.scm_instance()
-        target_ref = self._refresh_reference(
-            pull_request.target_ref_parts, target_vcs)
 
-        message = merge_msg or (
-            'Merge pull request #%(pr_id)s from '
-            '%(source_repo)s %(source_ref_name)s\n\n %(pr_title)s') % {
-                'pr_id': pull_request.pull_request_id,
-                'source_repo': source_vcs.name,
-                'source_ref_name': pull_request.source_ref_parts.name,
-                'pr_title': pull_request.title
-            }
+        message = safe_unicode(merge_msg or vcs_settings.MERGE_MESSAGE_TMPL).format(
+            pr_id=pull_request.pull_request_id,
+            pr_title=pull_request.title,
+            source_repo=source_vcs.name,
+            source_ref_name=pull_request.source_ref_parts.name,
+            target_repo=target_vcs.name,
+            target_ref_name=pull_request.target_ref_parts.name,
+        )
 
         workspace_id = self._workspace_id(pull_request)
         repo_id = pull_request.target_repo.repo_id
         use_rebase = self._use_rebase_for_merging(pull_request)
         close_branch = self._close_branch_before_merging(pull_request)
+
+        target_ref = self._refresh_reference(
+            pull_request.target_ref_parts, target_vcs)
 
         callback_daemon, extras = prepare_callback_daemon(
             extras, protocol=vcs_settings.HOOKS_PROTOCOL,
@@ -635,10 +636,12 @@ class PullRequestModel(BaseModel):
             # for a single call.
             target_vcs.config.set(
                 'rhodecode', 'RC_SCM_DATA', json.dumps(extras))
+
+            user_name = user.short_contact
             merge_state = target_vcs.merge(
                 repo_id, workspace_id, target_ref, source_vcs,
                 pull_request.source_ref_parts,
-                user_name=user.username, user_email=user.email,
+                user_name=user_name, user_email=user.email,
                 message=message, use_rebase=use_rebase,
                 close_branch=close_branch)
         return merge_state
