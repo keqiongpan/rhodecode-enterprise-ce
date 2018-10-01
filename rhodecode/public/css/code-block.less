@@ -648,6 +648,7 @@ pre.literal-block, .codehilite pre{
 @cb-text-padding: 5px;
 
 @pill-padding: 2px 7px;
+@pill-padding-small: 2px 2px 1px 2px;
 
 input.filediff-collapse-state {
     display: none;
@@ -725,11 +726,20 @@ input.filediff-collapse-state {
     }
 }
 
+.filelist {
+    .pill {
+        display: block;
+        float: left;
+        padding: @pill-padding-small;
+    }
+}
+
 .pill {
     display: block;
     float: left;
     padding: @pill-padding;
 }
+
 .pill-group {
     .pill {
         opacity: .8;
@@ -815,6 +825,56 @@ input.filediff-collapse-state {
         }
     }
 
+    .filediff-collapse-button, .filediff-expand-button {
+        cursor: pointer;
+    }
+    .filediff-collapse-button {
+        display: inline;
+    }
+    .filediff-expand-button {
+        display: none;
+    }
+    .filediff-collapsed .filediff-collapse-button {
+        display: none;
+    }
+    .filediff-collapsed .filediff-expand-button {
+        display: inline;
+    }
+
+    /**** COMMENTS ****/
+
+    .filediff-menu {
+        .show-comment-button {
+            display: none;
+        }
+    }
+    &.hide-comments {
+        .inline-comments {
+            display: none;
+        }
+        .filediff-menu {
+            .show-comment-button {
+                display: inline;
+            }
+            .hide-comment-button {
+                display: none;
+            }
+        }
+    }
+
+    .hide-line-comments {
+        .inline-comments {
+            display: none;
+        }
+    }
+
+    /**** END COMMENTS ****/
+
+}
+
+
+
+.filediff, .filelist {
     .pill {
         &[op="name"] {
             background: none;
@@ -868,53 +928,8 @@ input.filediff-collapse-state {
             color: white;
         }
     }
-
-    .filediff-collapse-button, .filediff-expand-button {
-        cursor: pointer;
-    }
-    .filediff-collapse-button {
-        display: inline;
-    }
-    .filediff-expand-button {
-        display: none;
-    }
-    .filediff-collapsed .filediff-collapse-button {
-        display: none;
-    }
-    .filediff-collapsed .filediff-expand-button {
-        display: inline;
-    }
-
-    /**** COMMENTS ****/
-
-    .filediff-menu {
-        .show-comment-button {
-            display: none;
-        }
-    }
-    &.hide-comments {
-        .inline-comments {
-            display: none;
-        }
-        .filediff-menu {
-            .show-comment-button {
-                display: inline;
-            }
-            .hide-comment-button {
-                display: none;
-            }
-        }
-    }
-
-    .hide-line-comments {
-        .inline-comments {
-            display: none;
-        }
-    }
-
-    /**** END COMMENTS ****/
-
 }
+
 
 .filediff-outdated {
     padding: 8px 0;

@@ -568,7 +568,7 @@
 
                 <div class="cs_files">
                     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
-                    ${cbdiffs.render_diffset_menu()}
+                    ${cbdiffs.render_diffset_menu(c.diffset)}
                     ${cbdiffs.render_diffset(
                       c.diffset, use_comments=True,
                       collapse_when_files_over=30,

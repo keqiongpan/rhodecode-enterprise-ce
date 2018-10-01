@@ -116,20 +116,24 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             </div>
         %endif
         <h2 class="clearinner">
-        %if commit:
-            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">${'r%s:%s' % (commit.revision,h.short_id(commit.raw_id))}</a> -
-            ${h.age_component(commit.date)} -
-        %endif
-
-        %if diffset.limited_diff:
-            ${_('The requested commit is too big and content was truncated.')}
-
-            ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
-            <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
-        %else:
-            ${_ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
-                        '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
-        %endif
+        ## invidual commit
+        % if commit:
+            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">${('r%s:%s' % (commit.idx,h.short_id(commit.raw_id)))}</a> -
+            ${h.age_component(commit.date)}
+            % if diffset.limited_diff:
+                - ${_('The requested commit is too big and content was truncated.')}
+                ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
+                <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+            % elif hasattr(c, 'commit_ranges') and len(c.commit_ranges) > 1:
+                ## compare diff, has no file-selector and we want to show stats anyway
+               ${_ungettext('{num} file changed: {linesadd} inserted, ''{linesdel} deleted',
+                            '{num} files changed: {linesadd} inserted, {linesdel} deleted', diffset.changed_files) \
+                            .format(num=diffset.changed_files, linesadd=diffset.lines_added, linesdel=diffset.lines_deleted)}
+            % endif
+        % else:
+            ## pull requests/compare
+            ${_('File Changes')}
+        % endif
 
         </h2>
     </div>
@@ -432,7 +436,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 </%def>
 
 <%def name="nice_mode(filemode)">
-    ${filemode.startswith('100') and filemode[3:] or filemode}
+    ${(filemode.startswith('100') and filemode[3:] or filemode)}
 </%def>
 
 <%def name="diff_menu(filediff, use_comments=False)">
@@ -693,7 +697,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             %endif
         </td>
         <td class="cb-content ${action_class(action)}"
-            data-line-no="${new_line_no and 'n' or 'o'}${new_line_no or old_line_no}"
+            data-line-no="${(new_line_no and 'n' or 'o')}${(new_line_no or old_line_no)}"
             >
             %if use_comments:
             ${render_add_comment_button()}
@@ -727,7 +731,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 </button>
 </%def>
 
-<%def name="render_diffset_menu()">
+<%def name="render_diffset_menu(diffset=None)">
 
     <div class="diffset-menu clearinner">
         <div class="pull-right">
@@ -749,6 +753,9 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 
         <div class="pull-left">
           <div class="btn-group">
+              <div class="pull-left">
+              ${h.hidden('file_filter')}
+              </div>
               <a
                   class="btn"
                   href="#"
@@ -761,7 +768,103 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                   class="btn"
                   href="#"
                   onclick="return Rhodecode.comments.toggleWideMode(this)">${_('Wide Mode Diff')}</a>
+
           </div>
         </div>
     </div>
+
+    % if diffset:
+
+        %if diffset.limited_diff:
+            <% file_placeholder = _ungettext('%(num)s file changed', '%(num)s files changed', diffset.changed_files) % {'num': diffset.changed_files}%>
+        %else:
+            <% file_placeholder = _ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted', '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}%>
+        %endif
+
+        <script>
+
+        var feedFilesOptions = function (query, initialData) {
+            var data = {results: []};
+            var isQuery = typeof query.term !== 'undefined';
+
+            var section = _gettext('Changed files');
+            var filteredData = [];
+
+            //filter results
+            $.each(initialData.results, function (idx, value) {
+
+                if (!isQuery || query.term.length === 0 || value.text.toUpperCase().indexOf(query.term.toUpperCase()) >= 0) {
+                    filteredData.push({
+                        'id': this.id,
+                        'text': this.text,
+                        "ops": this.ops,
+                    })
+                }
+
+            });
+
+            data.results = filteredData;
+
+            query.callback(data);
+        };
+
+        var formatFileResult = function(result, container, query, escapeMarkup) {
+            return function(data, escapeMarkup) {
+                var container = '<div class="filelist" style="padding-right:100px">{0}</div>';
+                var tmpl = '<span style="margin-right:-50px"><strong>{0}</strong></span>'.format(escapeMarkup(data['text']));
+                var pill = '<span class="pill-group" style="float: right;margin-right: -100px">' +
+                            '<span class="pill" op="added">{0}</span>' +
+                            '<span class="pill" op="deleted">{1}</span>' +
+                           '</span>'
+                        ;
+                var added = data['ops']['added'];
+                if (added === 0) {
+                    // don't show +0
+                    added = 0;
+                } else {
+                    added = '+' + added;
+                }
+
+                var deleted = -1*data['ops']['deleted'];
+
+                tmpl += pill.format(added, deleted);
+                return container.format(tmpl);
+
+            }(result, escapeMarkup);
+        };
+        var preloadData = {
+            results: [
+                % for filediff in diffset.files:
+                    {id:"a_${h.FID('', filediff.patch['filename'])}",
+                     text:"${filediff.patch['filename']}",
+                     ops:${h.json.dumps(filediff.patch['stats'])|n}}${('' if loop.last else ',')}
+                % endfor
+            ]
+        };
+
+        $("#file_filter").select2({
+            'dropdownAutoWidth': true,
+            'width': 'auto',
+            'placeholder': "${file_placeholder}",
+            containerCssClass: "drop-menu",
+            dropdownCssClass: "drop-menu-dropdown",
+            data: preloadData,
+            query: function(query) {
+                feedFilesOptions(query, preloadData);
+            },
+            formatResult: formatFileResult
+        });
+
+        $("#file_filter").on('click', function (e) {
+            e.preventDefault();
+            var selected = $('#file_filter').select2('data');
+            var idSelector = "#"+selected.id;
+            window.location.hash = idSelector;
+            // expand the container if we quick-select the field
+            $(idSelector).prev().prop('checked', false);
+        })
+
+    </script>
+    % endif
+
 </%def>

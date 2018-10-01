@@ -322,7 +322,7 @@
                     <div style="padding:0 10px 10px 0px" class="pull-left"></div>
                     ## commit compare generated below
                     <%include file="compare_commits.mako"/>
-                    ${cbdiffs.render_diffset_menu()}
+                    ${cbdiffs.render_diffset_menu(c.diffset)}
                     ${cbdiffs.render_diffset(c.diffset)}
                  </div>
             % endif
