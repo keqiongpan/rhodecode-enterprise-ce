@@ -156,7 +156,7 @@ def set_anonymous_access(enabled):
 def check_xfail_backends(node, backend_alias):
     # Using "xfail_backends" here intentionally, since this marks work
     # which is "to be done" soon.
-    skip_marker = node.get_marker('xfail_backends')
+    skip_marker = node.get_closest_marker('xfail_backends')
     if skip_marker and backend_alias in skip_marker.args:
         msg = "Support for backend %s to be developed." % (backend_alias, )
         msg = skip_marker.kwargs.get('reason', msg)
@@ -166,7 +166,7 @@ def check_xfail_backends(node, backend_alias):
 def check_skip_backends(node, backend_alias):
     # Using "skip_backends" here intentionally, since this marks work which is
     # not supported.
-    skip_marker = node.get_marker('skip_backends')
+    skip_marker = node.get_closest_marker('skip_backends')
     if skip_marker and backend_alias in skip_marker.args:
         msg = "Feature not supported for backend %s." % (backend_alias, )
         msg = skip_marker.kwargs.get('reason', msg)

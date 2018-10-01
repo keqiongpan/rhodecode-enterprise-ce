@@ -139,7 +139,7 @@ def get_backends_from_metafunc(metafunc):
     if hasattr(metafunc.function, 'backends'):
         # Supported backends by this test function, created from
         # pytest.mark.backends
-        backends = metafunc.function.backends.args
+        backends = metafunc.definition.get_closest_marker('backends').args
     elif hasattr(metafunc.cls, 'backend_alias'):
         # Support class attribute "backend_alias", this is mainly
         # for legacy reasons for tests not yet using pytest.mark.backends
@@ -182,12 +182,10 @@ def http_environ_session():
     """
     Allow to use "http_environ" in session scope.
     """
-    return http_environ(
-        http_host_stub=http_host_stub())
+    return plain_http_environ()
 
 
-@pytest.fixture
-def http_host_stub():
+def plain_http_host_stub():
     """
     Value of HTTP_HOST in the test run.
     """
@@ -195,15 +193,29 @@ def http_host_stub():
 
 
 @pytest.fixture
+def http_host_stub():
+    """
+    Value of HTTP_HOST in the test run.
+    """
+    return plain_http_host_stub()
+
+
+def plain_http_host_only_stub():
+    """
+    Value of HTTP_HOST in the test run.
+    """
+    return plain_http_host_stub().split(':')[0]
+
+
+@pytest.fixture
 def http_host_only_stub():
     """
     Value of HTTP_HOST in the test run.
     """
-    return http_host_stub().split(':')[0]
+    return plain_http_host_only_stub()
 
 
-@pytest.fixture
-def http_environ(http_host_stub):
+def plain_http_environ():
     """
     HTTP extra environ keys.
 
@@ -212,12 +224,24 @@ def http_environ(http_host_stub):
     to override this for a specific test case.
     """
     return {
-        'SERVER_NAME': http_host_only_stub(),
-        'SERVER_PORT': http_host_stub.split(':')[1],
-        'HTTP_HOST': http_host_stub,
+        'SERVER_NAME': plain_http_host_only_stub(),
+        'SERVER_PORT': plain_http_host_stub().split(':')[1],
+        'HTTP_HOST': plain_http_host_stub(),
         'HTTP_USER_AGENT': 'rc-test-agent',
         'REQUEST_METHOD': 'GET'
     }
+
+
+@pytest.fixture
+def http_environ():
+    """
+    HTTP extra environ keys.
+
+    User by the test application and as well for setting up the pylons
+    environment. In the case of the fixture "app" it should be possible
+    to override this for a specific test case.
+    """
+    return plain_http_environ()
 
 
 @pytest.fixture(scope='session')
@@ -423,18 +447,7 @@ class TestRepoContainer(object):
             self._fixture.destroy_repo(repo_name)
 
 
-@pytest.fixture
-def backend(request, backend_alias, baseapp, test_repo):
-    """
-    Parametrized fixture which represents a single backend implementation.
-
-    It respects the option `--backends` to focus the test run on specific
-    backend implementations.
-
-    It also supports `pytest.mark.xfail_backends` to mark tests as failing
-    for specific backends. This is intended as a utility for incremental
-    development of a new backend implementation.
-    """
+def backend_base(request, backend_alias, baseapp, test_repo):
     if backend_alias not in request.config.getoption('--backends'):
         pytest.skip("Backend %s not selected." % (backend_alias, ))
 
@@ -452,18 +465,33 @@ def backend(request, backend_alias, baseapp, test_repo):
 
 
 @pytest.fixture
+def backend(request, backend_alias, baseapp, test_repo):
+    """
+    Parametrized fixture which represents a single backend implementation.
+
+    It respects the option `--backends` to focus the test run on specific
+    backend implementations.
+
+    It also supports `pytest.mark.xfail_backends` to mark tests as failing
+    for specific backends. This is intended as a utility for incremental
+    development of a new backend implementation.
+    """
+    return backend_base(request, backend_alias, baseapp, test_repo)
+
+
+@pytest.fixture
 def backend_git(request, baseapp, test_repo):
-    return backend(request, 'git', baseapp, test_repo)
+    return backend_base(request, 'git', baseapp, test_repo)
 
 
 @pytest.fixture
 def backend_hg(request, baseapp, test_repo):
-    return backend(request, 'hg', baseapp, test_repo)
+    return backend_base(request, 'hg', baseapp, test_repo)
 
 
 @pytest.fixture
 def backend_svn(request, baseapp, test_repo):
-    return backend(request, 'svn', baseapp, test_repo)
+    return backend_base(request, 'svn', baseapp, test_repo)
 
 
 @pytest.fixture
@@ -675,17 +703,7 @@ class Backend(object):
             repo.set_refs(ref_name, refs[ref_name])
 
 
-@pytest.fixture
-def vcsbackend(request, backend_alias, tests_tmp_path, baseapp, test_repo):
-    """
-    Parametrized fixture which represents a single vcs backend implementation.
-
-    See the fixture `backend` for more details. This one implements the same
-    concept, but on vcs level. So it does not provide model instances etc.
-
-    Parameters are generated dynamically, see :func:`pytest_generate_tests`
-    for how this works.
-    """
+def vcsbackend_base(request, backend_alias, tests_tmp_path, baseapp, test_repo):
     if backend_alias not in request.config.getoption('--backends'):
         pytest.skip("Backend %s not selected." % (backend_alias, ))
 
@@ -704,31 +722,32 @@ def vcsbackend(request, backend_alias, tests_tmp_path, baseapp, test_repo):
 
 
 @pytest.fixture
+def vcsbackend(request, backend_alias, tests_tmp_path, baseapp, test_repo):
+    """
+    Parametrized fixture which represents a single vcs backend implementation.
+
+    See the fixture `backend` for more details. This one implements the same
+    concept, but on vcs level. So it does not provide model instances etc.
+
+    Parameters are generated dynamically, see :func:`pytest_generate_tests`
+    for how this works.
+    """
+    return vcsbackend_base(request, backend_alias, tests_tmp_path, baseapp, test_repo)
+
+
+@pytest.fixture
 def vcsbackend_git(request, tests_tmp_path, baseapp, test_repo):
-    return vcsbackend(request, 'git', tests_tmp_path, baseapp, test_repo)
+    return vcsbackend_base(request, 'git', tests_tmp_path, baseapp, test_repo)
 
 
 @pytest.fixture
 def vcsbackend_hg(request, tests_tmp_path, baseapp, test_repo):
-    return vcsbackend(request, 'hg', tests_tmp_path, baseapp, test_repo)
+    return vcsbackend_base(request, 'hg', tests_tmp_path, baseapp, test_repo)
 
 
 @pytest.fixture
 def vcsbackend_svn(request, tests_tmp_path, baseapp, test_repo):
-    return vcsbackend(request, 'svn', tests_tmp_path, baseapp, test_repo)
-
-
-@pytest.fixture
-def vcsbackend_random(vcsbackend_git):
-    """
-    Use this to express that your tests need "a vcsbackend".
-
-    The fixture `vcsbackend` would run the test multiple times for each
-    available vcs backend which is a pure waste of time if the test is
-    independent of the vcs backend type.
-    """
-    # TODO: johbo: Change this to pick a random backend
-    return vcsbackend_git
+    return vcsbackend_base(request, 'svn', tests_tmp_path, baseapp, test_repo)
 
 
 @pytest.fixture

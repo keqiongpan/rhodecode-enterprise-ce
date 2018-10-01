@@ -41,8 +41,7 @@ def dummy_conf_file(tmpdir):
     return os.path.join(f_path)
 
 
-@pytest.fixture
-def dummy_env():
+def plain_dummy_env():
     return {
         'request':
             AttributeDict(host_url='http://localhost', script_name='/')
@@ -50,8 +49,17 @@ def dummy_env():
 
 
 @pytest.fixture
-def dummy_user():
+def dummy_env():
+    return plain_dummy_env()
+
+
+def plain_dummy_user():
     return AttributeDict(username='test_user')
+
+
+@pytest.fixture
+def dummy_user():
+    return plain_dummy_user()
 
 
 @pytest.fixture

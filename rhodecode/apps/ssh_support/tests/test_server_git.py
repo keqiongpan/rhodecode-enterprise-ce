@@ -23,7 +23,7 @@ import mock
 import pytest
 
 from rhodecode.apps.ssh_support.lib.backends.git import GitServer
-from rhodecode.apps.ssh_support.tests.conftest import dummy_env, dummy_user
+from rhodecode.apps.ssh_support.tests.conftest import plain_dummy_env, plain_dummy_user
 
 
 class GitServerCreator(object):
@@ -37,7 +37,7 @@ class GitServerCreator(object):
     }
     repo_name = 'test_git'
     repo_mode = 'receive-pack'
-    user = dummy_user()
+    user = plain_dummy_user()
 
     def __init__(self):
         def config_get(part, key):
@@ -56,7 +56,7 @@ class GitServerCreator(object):
                 self.repo_name: 'repository.admin'
             },
             'config': self.config_mock,
-            'env': dummy_env()
+            'env': plain_dummy_env()
         }
         parameters.update(kwargs)
         server = GitServer(**parameters)

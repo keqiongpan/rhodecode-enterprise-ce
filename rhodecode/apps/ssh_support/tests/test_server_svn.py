@@ -22,7 +22,7 @@ import mock
 import pytest
 
 from rhodecode.apps.ssh_support.lib.backends.svn import SubversionServer
-from rhodecode.apps.ssh_support.tests.conftest import dummy_env, dummy_user
+from rhodecode.apps.ssh_support.tests.conftest import plain_dummy_env, plain_dummy_user
 
 
 class SubversionServerCreator(object):
@@ -35,7 +35,7 @@ class SubversionServerCreator(object):
         }
     }
     repo_name = 'test-svn'
-    user = dummy_user()
+    user = plain_dummy_user()
 
     def __init__(self):
         def config_get(part, key):
@@ -53,7 +53,7 @@ class SubversionServerCreator(object):
                 self.repo_name: 'repository.admin'
             },
             'config': self.config_mock,
-            'env': dummy_env()
+            'env': plain_dummy_env()
         }
 
         parameters.update(kwargs)
