@@ -174,7 +174,7 @@
             </div>
             <div class="right-content">
               <div class="input ${summary(c.show_stats)} downloads">
-                % if c.rhodecode_repo and len(c.rhodecode_repo.revisions) == 0:
+                % if c.rhodecode_repo and len(c.rhodecode_repo.commit_ids) == 0:
                   <span class="disabled">
                     ${_('There are no downloads yet')}
                   </span>
