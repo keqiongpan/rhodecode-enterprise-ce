@@ -22,6 +22,9 @@ import colander
 import string
 import collections
 import logging
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 from mako import exceptions
 
@@ -320,3 +323,33 @@ def render_with_traceback(template, *args, **kwargs):
     except Exception:
         log.error(exceptions.text_error_template().render())
         raise
+
+
+STATUS_400 = (400, 401, 403)
+STATUS_500 = (500, 502, 504)
+
+
+def requests_retry_call(
+        retries=3, backoff_factor=0.3, status_forcelist=STATUS_400+STATUS_500,
+        session=None):
+    """
+    session = requests_retry_session()
+    response = session.get('http://example.com')
+
+    :param retries:
+    :param backoff_factor:
+    :param status_forcelist:
+    :param session:
+    """
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session

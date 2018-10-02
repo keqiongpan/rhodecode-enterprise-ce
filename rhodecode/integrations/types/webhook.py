@@ -23,17 +23,14 @@ from __future__ import unicode_literals
 import deform
 import deform.widget
 import logging
-import requests
-import requests.adapters
 import colander
-from requests.packages.urllib3.util.retry import Retry
 
 import rhodecode
 from rhodecode import events
 from rhodecode.translation import _
 from rhodecode.integrations.types.base import (
     IntegrationTypeBase, get_auth, get_web_token, get_url_vars,
-    WebhookDataHandler, WEBHOOK_URL_VARS)
+    WebhookDataHandler, WEBHOOK_URL_VARS, requests_retry_call)
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 from rhodecode.model.validation_schema import widgets
 
@@ -233,11 +230,6 @@ def post_to_webhook(url_calls, settings):
          'utc_timestamp': datetime.datetime(2017, 11, 30, 13, 0, 1, 569276)
 
     """
-    max_retries = 3
-    retries = Retry(
-        total=max_retries,
-        backoff_factor=0.15,
-        status_forcelist=[500, 502, 503, 504])
     call_headers = {
         'User-Agent': 'RhodeCode-webhook-caller/{}'.format(
             rhodecode.__version__)
@@ -247,9 +239,7 @@ def post_to_webhook(url_calls, settings):
     token = get_web_token(settings)
 
     for url, headers, data in url_calls:
-        req_session = requests.Session()
-        req_session.mount(  # retry max N times
-            'http://', requests.adapters.HTTPAdapter(max_retries=retries))
+        req_session = requests_retry_call()
 
         method = settings.get('method_type') or 'post'
         call_method = getattr(req_session, method)

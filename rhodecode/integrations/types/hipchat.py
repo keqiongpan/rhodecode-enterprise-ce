@@ -31,7 +31,8 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 from rhodecode.lib.colander_utils import strip_whitespace
 from rhodecode.integrations.types.base import (
-    IntegrationTypeBase, CommitParsingDataHandler, render_with_traceback)
+    IntegrationTypeBase, CommitParsingDataHandler, render_with_traceback,
+    requests_retry_call)
 
 log = logging.getLogger(__name__)
 
@@ -248,6 +249,6 @@ def post_text_to_hipchat(settings, text):
         "color": settings.get('color', 'yellow'),
         "notify": settings.get('notify', False),
     }
-
-    resp = requests.post(settings['server_url'], json=json_message, timeout=60)
+    req_session = requests_retry_call()
+    resp = req_session.post(settings['server_url'], json=json_message, timeout=60)
     resp.raise_for_status()  # raise exception on a failed request
