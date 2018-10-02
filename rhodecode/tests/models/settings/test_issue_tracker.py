@@ -49,7 +49,7 @@ class TestIssueTrackerSettingsModel(object):
         model = IssueTrackerSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.get_repo_settings(cache=True)
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
     def test_get_repo_settings(self, repo_stub):
         model = IssueTrackerSettingsModel(repo=repo_stub.repo_name)
