@@ -20,7 +20,9 @@
 
 
 class JSONRPCBaseError(Exception):
-    pass
+    def __init__(self, message='', *args):
+        self.message = message
+        super(JSONRPCBaseError, self).__init__(message, *args)
 
 
 class JSONRPCError(JSONRPCBaseError):
@@ -31,7 +33,8 @@ class JSONRPCValidationError(JSONRPCBaseError):
 
     def __init__(self, *args, **kwargs):
         self.colander_exception = kwargs.pop('colander_exc')
-        super(JSONRPCValidationError, self).__init__(*args, **kwargs)
+        super(JSONRPCValidationError, self).__init__(
+            message=self.colander_exception, *args)
 
 
 class JSONRPCForbidden(JSONRPCBaseError):

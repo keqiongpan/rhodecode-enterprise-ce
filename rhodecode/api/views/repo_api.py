@@ -33,7 +33,7 @@ from rhodecode.lib import audit_logger
 from rhodecode.lib import repo_maintenance
 from rhodecode.lib.auth import HasPermissionAnyApi, HasUserGroupPermissionAnyApi
 from rhodecode.lib.celerylib.utils import get_task_id
-from rhodecode.lib.utils2 import str2bool, time_to_datetime
+from rhodecode.lib.utils2 import str2bool, time_to_datetime, safe_str
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 from rhodecode.model.changeset_status import ChangesetStatusModel
@@ -316,7 +316,7 @@ def get_repo_changeset(request, apiuser, repoid, revision,
     try:
         cs = repo.get_commit(commit_id=revision, pre_load=pre_load)
     except TypeError as e:
-        raise JSONRPCError(e.message)
+        raise JSONRPCError(safe_str(e))
     _cs_json = cs.__json__()
     _cs_json['diff'] = build_commit_data(cs, changes_details)
     if changes_details == 'full':
@@ -382,7 +382,7 @@ def get_repo_changesets(request, apiuser, repoid, start_rev, limit,
         commits = vcs_repo.get_commits(
             start_id=start_rev, pre_load=pre_load)
     except TypeError as e:
-        raise JSONRPCError(e.message)
+        raise JSONRPCError(safe_str(e))
     except Exception:
         log.exception('Fetching of commits failed')
         raise JSONRPCError('Error occurred during commit fetching')
@@ -1433,7 +1433,7 @@ def comment_commit(
         commit_id = repo.scm_instance().get_commit(commit_id=commit_id).raw_id
     except Exception as e:
         log.exception('Failed to fetch commit')
-        raise JSONRPCError(e.message)
+        raise JSONRPCError(safe_str(e))
 
     if isinstance(userid, Optional):
         userid = apiuser.user_id

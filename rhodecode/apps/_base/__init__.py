@@ -25,7 +25,8 @@ import operator
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPBadRequest
 
 from rhodecode.lib import helpers as h, diffs
-from rhodecode.lib.utils2 import StrictAttributeDict, safe_int, datetime_to_time
+from rhodecode.lib.utils2 import (
+    StrictAttributeDict, safe_int, datetime_to_time, safe_unicode)
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import repo
 from rhodecode.model import repo_group
@@ -202,7 +203,7 @@ class RepoAppView(BaseAppView):
     def _handle_missing_requirements(self, error):
         log.error(
             'Requirements are missing for repository %s: %s',
-            self.db_repo_name, error.message)
+            self.db_repo_name, safe_unicode(error))
 
     def _get_local_tmpl_context(self, include_app_defaults=True):
         _ = self.request.translate

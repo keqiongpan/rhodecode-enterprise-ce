@@ -28,7 +28,7 @@ class TestSSHWrapper(object):
             ssh_wrapper.serve(
                 vcs='microsoft-tfs', repo='test-repo', mode=None, user='test',
                 permissions={}, branch_permissions={})
-        assert exc_info.value.message == 'Unrecognised VCS: microsoft-tfs'
+        assert str(exc_info.value) == 'Unrecognised VCS: microsoft-tfs'
 
     def test_parse_config(self, ssh_wrapper):
         config = ssh_wrapper.parse_config(ssh_wrapper.ini_path)
