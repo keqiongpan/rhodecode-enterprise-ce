@@ -218,11 +218,11 @@ class WebhookDataHandler(CommitParsingDataHandler):
 
     def repo_push_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)
-        url_cals = []
+        url_calls = []
 
         branches_commits = self.aggregate_branch_data(
             data['push']['branches'], data['push']['commits'])
-        if '${branch}' in url or '${branch_head}' in url:
+        if '${branch}' in url or '${branch_head}' in url or '${commit_id}' in url:
             # call it multiple times, for each branch if used in variables
             for branch, commit_ids in branches_commits.items():
                 branch_url = string.Template(url).safe_substitute(branch=branch)
@@ -243,7 +243,7 @@ class WebhookDataHandler(CommitParsingDataHandler):
                         log.debug(
                             'register %s call(%s) to url %s',
                             self.name, event, commit_url)
-                        url_cals.append(
+                        url_calls.append(
                             (commit_url, self.headers, data))
 
                 else:
@@ -251,15 +251,15 @@ class WebhookDataHandler(CommitParsingDataHandler):
                     log.debug(
                         'register %s call(%s) to url %s',
                         self.name, event, branch_url)
-                    url_cals.append(
+                    url_calls.append(
                         (branch_url, self.headers, data))
 
         else:
             log.debug(
                 'register %s call(%s) to url %s', self.name, event, url)
-            url_cals.append((url, self.headers, data))
+            url_calls.append((url, self.headers, data))
 
-        return url_cals
+        return url_calls
 
     def repo_create_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)

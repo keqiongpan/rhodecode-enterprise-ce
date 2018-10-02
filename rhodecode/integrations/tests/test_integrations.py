@@ -32,6 +32,65 @@ def route_path(name, **kwargs):
     }[name].format(**kwargs)
 
 
+def _post_integration_test_helper(app, url, csrf_token, repo, repo_group,
+                                  admin_view):
+    """
+    Posts form data to create integration at the url given then deletes it and
+    checks if the redirect url is correct.
+    """
+    repo_name = repo.repo_name
+    repo_group_name = repo_group.group_name
+    app.post(url, params={}, status=403)  # missing csrf check
+    response = app.post(url, params={'csrf_token': csrf_token})
+    assert response.status_code == 200
+    response.mustcontain('Errors exist')
+
+    scopes_destinations = [
+        ('global',
+                ADMIN_PREFIX + '/integrations'),
+        ('root-repos',
+                ADMIN_PREFIX + '/integrations'),
+        ('repo:%s' % repo_name,
+                '/%s/settings/integrations' % repo_name),
+        ('repogroup:%s' % repo_group_name,
+                '/%s/_settings/integrations' % repo_group_name),
+        ('repogroup-recursive:%s' % repo_group_name,
+                '/%s/_settings/integrations' % repo_group_name),
+    ]
+
+    for scope, destination in scopes_destinations:
+        if admin_view:
+            destination = ADMIN_PREFIX + '/integrations'
+
+        form_data = [
+            ('csrf_token', csrf_token),
+            ('__start__', 'options:mapping'),
+            ('name', 'test integration'),
+            ('scope', scope),
+            ('enabled', 'true'),
+            ('__end__', 'options:mapping'),
+            ('__start__', 'settings:mapping'),
+            ('test_int_field', '34'),
+            ('test_string_field', ''), # empty value on purpose as it's required
+            ('__end__', 'settings:mapping'),
+        ]
+        errors_response = app.post(url, form_data)
+        assert 'Errors exist' in errors_response.body
+
+        form_data[-2] = ('test_string_field', 'data!')
+        assert Session().query(Integration).count() == 0
+        created_response = app.post(url, form_data)
+        assert Session().query(Integration).count() == 1
+
+        delete_response = app.post(
+            created_response.location,
+            params={'csrf_token': csrf_token, 'delete': 'delete'})
+
+        assert Session().query(Integration).count() == 0
+        assert delete_response.location.endswith(destination)
+
+
+
 @pytest.mark.usefixtures('app', 'autologin_user')
 class TestIntegrationsView(object):
     pass
@@ -209,61 +268,3 @@ class TestRepoGroupIntegrationsView(TestIntegrationsView):
         _post_integration_test_helper(
             self.app, url, csrf_token, admin_view=False,
             repo=backend_random.repo, repo_group=test_repo_group)
-
-
-def _post_integration_test_helper(app, url, csrf_token, repo, repo_group,
-                                  admin_view):
-    """
-    Posts form data to create integration at the url given then deletes it and
-    checks if the redirect url is correct.
-    """
-    repo_name = repo.repo_name
-    repo_group_name = repo_group.group_name
-    app.post(url, params={}, status=403)  # missing csrf check
-    response = app.post(url, params={'csrf_token': csrf_token})
-    assert response.status_code == 200
-    response.mustcontain('Errors exist')
-
-    scopes_destinations = [
-        ('global',
-                ADMIN_PREFIX + '/integrations'),
-        ('root-repos',
-                ADMIN_PREFIX + '/integrations'),
-        ('repo:%s' % repo_name,
-                '/%s/settings/integrations' % repo_name),
-        ('repogroup:%s' % repo_group_name,
-                '/%s/_settings/integrations' % repo_group_name),
-        ('repogroup-recursive:%s' % repo_group_name,
-                '/%s/_settings/integrations' % repo_group_name),
-    ]
-
-    for scope, destination in scopes_destinations:
-        if admin_view:
-            destination = ADMIN_PREFIX + '/integrations'
-
-        form_data = [
-            ('csrf_token', csrf_token),
-            ('__start__', 'options:mapping'),
-            ('name', 'test integration'),
-            ('scope', scope),
-            ('enabled', 'true'),
-            ('__end__', 'options:mapping'),
-            ('__start__', 'settings:mapping'),
-            ('test_int_field', '34'),
-            ('test_string_field', ''), # empty value on purpose as it's required
-            ('__end__', 'settings:mapping'),
-        ]
-        errors_response = app.post(url, form_data)
-        assert 'Errors exist' in errors_response.body
-
-        form_data[-2] = ('test_string_field', 'data!')
-        assert Session().query(Integration).count() == 0
-        created_response = app.post(url, form_data)
-        assert Session().query(Integration).count() == 1
-
-        delete_response = app.post(
-            created_response.location,
-            params={'csrf_token': csrf_token, 'delete': 'delete'})
-
-        assert Session().query(Integration).count() == 0
-        assert delete_response.location.endswith(destination)
