@@ -107,6 +107,14 @@ def test_webook_parse_url_for_pull_request_event(
          'http://server.com/stable/stable-yyy',
          'http://server.com/dev/dev-xxx',
          'http://server.com/dev/dev-yyy']),
+    ('http://server.com/${branch_head}',
+     ['http://server.com/stable-yyy',
+      'http://server.com/dev-yyy']),
+    ('http://server.com/${commit_id}',
+     ['http://server.com/stable-xxx',
+      'http://server.com/stable-yyy',
+      'http://server.com/dev-xxx',
+      'http://server.com/dev-yyy']),
 ])
 def test_webook_parse_url_for_push_event(
         baseapp, repo_push_event, base_data, template, expected_urls):
