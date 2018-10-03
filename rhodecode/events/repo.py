@@ -99,7 +99,7 @@ def _commits_as_dict(event, commit_ids, repos):
 
                 else:
                     try:
-                        cs = vcs_repo.get_changeset(commit_id)
+                        cs = vcs_repo.get_commit(commit_id)
                     except CommitDoesNotExistError:
                         continue  # maybe its in next repo
 

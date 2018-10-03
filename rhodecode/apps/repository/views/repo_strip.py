@@ -65,7 +65,7 @@ class StripView(RepoAppView):
             check = rp.get(chset)
 
             if check:
-                data[i] = self.db_repo.get_changeset(rp[chset])
+                data[i] = self.db_repo.get_commit(rp[chset])
                 if isinstance(data[i], EmptyCommit):
                     data[i] = {'rev': None, 'commit': h.escape(rp[chset])}
                 else:

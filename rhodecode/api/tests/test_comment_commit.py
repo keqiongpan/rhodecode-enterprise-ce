@@ -65,7 +65,7 @@ class TestCommentCommit(object):
             self, backend, status_change, message, commit_id,
             no_notifications):
 
-        commit_id = backend.repo.scm_instance().get_changeset(commit_id).raw_id
+        commit_id = backend.repo.scm_instance().get_commit(commit_id).raw_id
 
         id_, params = build_data(
             self.apikey, 'comment_commit', repoid=backend.repo_name,
@@ -74,7 +74,7 @@ class TestCommentCommit(object):
         repo = backend.repo.scm_instance()
         expected = {
             'msg': 'Commented on commit `%s` for repository `%s`' % (
-                repo.get_changeset().raw_id, backend.repo_name),
+                repo.get_commit().raw_id, backend.repo_name),
             'status_change': status_change,
             'success': True
         }
