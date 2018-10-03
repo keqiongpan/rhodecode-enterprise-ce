@@ -18,8 +18,8 @@ Prerequisites
 .. tip::
 
    We recommend using Wandisco repositories which provide latest SVN versions
-   for most platforms. Below is example how to add the wandisco repositories
-   for Ubuntu.
+   for most platforms.
+   Here is an example how to add the Wandisco repositories for Ubuntu.
 
     .. code-block:: bash
 
@@ -27,21 +27,54 @@ Prerequisites
         $ sudo wget -q http://opensource.wandisco.com/wandisco-debian.gpg -O- | sudo apt-key add -
         $ sudo apt-get update
 
+    Here is an example how to add the Wandisco repositories for Centos/Redhat. Using
+    a yum config
 
-Using Ubuntu 14.04/16.04 Distribution as an example execute the following to
-install required components:
+    .. code-block:: bash
+
+        [wandisco-Git]
+        name=CentOS-6 - Wandisco Git
+        baseurl=http://opensource.wandisco.com/centos/6/git/$basearch/
+        enabled=1
+        gpgcheck=1
+        gpgkey=http://opensource.wandisco.com/RPM-GPG-KEY-WANdisco
+
+
+
+Example installation of required components for Ubuntu platform:
 
 .. code-block:: bash
 
-    $ sudo apt-get install apache2 libapache2-mod-svn
+    $ sudo apt-get install apache2
+    $ sudo apt-get install libapache2-mod-svn
 
-Once installed you need to enable ``dav_svn``:
+Once installed you need to enable ``dav_svn`` on Ubuntu:
 
 .. code-block:: bash
 
     $ sudo a2enmod dav_svn
     $ sudo a2enmod headers
     $ sudo a2enmod authn_anon
+
+
+Example installation of required components for RedHat/CentOS platform:
+
+.. code-block:: bash
+
+    $ sudo yum install httpd
+    $ sudo yum install subversion mod_dav_svn
+
+
+Once installed you need to enable ``dav_svn`` on RedHat/CentOS:
+
+.. code-block:: bash
+
+    sudo vi /etc/httpd/conf.modules.d/10-subversion.conf
+    ## The file should read:
+
+    LoadModule dav_svn_module     modules/mod_dav_svn.so
+    LoadModule headers_module     modules/mod_headers.so
+    LoadModule authn_anon_module  modules/mod_authn_anon.so
 
 
 Configuring Apache Setup
