@@ -6,9 +6,7 @@
         <%
          elems = [
             (_('Email prefix'), c.rhodecode_ini.get('email_prefix'), ''),
-            (_('RhodeCode email from'), c.rhodecode_ini.get('app_email_from'), ''),
-            (_('Error email from'), c.rhodecode_ini.get('error_email_from'), ''),
-            (_('Error email recipients'), c.rhodecode_ini.get('email_to'), ''),
+            (_('Email from'), c.rhodecode_ini.get('app_email_from'), ''),
 
             (_('SMTP server'), c.rhodecode_ini.get('smtp_server'), ''),
             (_('SMTP username'), c.rhodecode_ini.get('smtp_username'), ''),
@@ -17,7 +15,7 @@
 
             (_('SMTP use TLS'), c.rhodecode_ini.get('smtp_use_tls'), ''),
             (_('SMTP use SSL'), c.rhodecode_ini.get('smtp_use_ssl'), ''),
-            (_('SMTP auth'), c.rhodecode_ini.get('smtp_auth'), ''),
+
          ]
         %>
         <dl class="dl-horizontal settings">
@@ -54,7 +52,3 @@
         ${h.end_form()}
     </div>
 </div>
-
-
-
-

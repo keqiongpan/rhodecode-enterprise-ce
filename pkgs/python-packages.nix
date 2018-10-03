@@ -1368,6 +1368,22 @@ self: super: {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
     };
   };
+  "pyramid-mailer" = super.buildPythonPackage {
+    name = "pyramid-mailer-0.15.1";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."pyramid"
+      self."repoze.sendmail"
+      self."transaction"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/a0/f2/6febf5459dff4d7e653314d575469ad2e11b9d2af2c3606360e1c67202f2/pyramid_mailer-0.15.1.tar.gz";
+      sha256 = "16vg8jb203jgb7b0hd6wllfqvp542qh2ry1gjai2m6qpv5agy2pc";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
   "pyramid-mako" = super.buildPythonPackage {
     name = "pyramid-mako-1.0.2";
     doCheck = false;
@@ -1596,6 +1612,22 @@ self: super: {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
     };
   };
+  "repoze.sendmail" = super.buildPythonPackage {
+    name = "repoze.sendmail-4.4.1";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."setuptools"
+      self."zope.interface"
+      self."transaction"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/12/4e/8ef1fd5c42765d712427b9c391419a77bd48877886d2cbc5e9f23c8cad9b/repoze.sendmail-4.4.1.tar.gz";
+      sha256 = "096ln02jr2afk7ab9j2czxqv2ryqq7m86ah572nqplx52iws73ks";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.zpl21 ];
+    };
+  };
   "requests" = super.buildPythonPackage {
     name = "requests-2.9.1";
     doCheck = false;
@@ -1685,6 +1717,7 @@ self: super: {
       self."pyramid-jinja2"
       self."pyramid-mako"
       self."pyramid"
+      self."pyramid-mailer"
       self."pysqlite"
       self."python-dateutil"
       self."python-ldap"
@@ -1968,6 +2001,20 @@ self: super: {
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
+  "transaction" = super.buildPythonPackage {
+    name = "transaction-2.2.1";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."zope.interface"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/a6/5e/09da91cb9373c73aae41721e5571c47db72fa9e11b259ca8fd3b01e306e9/transaction-2.2.1.tar.gz";
+      sha256 = "0ykcfx5mw76z8wwg6a68ahr52q3qa75hky1xx9axbr9pwiq2097j";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.zpl21 ];
     };
   };
   "translationstring" = super.buildPythonPackage {

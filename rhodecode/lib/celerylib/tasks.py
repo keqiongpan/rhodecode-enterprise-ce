@@ -26,11 +26,13 @@ by celery daemon
 import os
 import time
 
+from pyramid_mailer.mailer import Mailer
+from pyramid_mailer.message import Message
+
 import rhodecode
 from rhodecode.lib import audit_logger
 from rhodecode.lib.celerylib import get_logger, async_task, RequestContextTask
 from rhodecode.lib.hooks_base import log_create_repository
-from rhodecode.lib.rcmail.smtp_mailer import SmtpMailer
 from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.model.db import Session, IntegrityError, Repository, User, true
 
@@ -58,7 +60,11 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
         return False
 
     subject = "%s %s" % (email_config.get('email_prefix', ''), subject)
-    if not recipients:
+
+    if recipients:
+        if isinstance(recipients, basestring):
+            recipients = recipients.split(',')
+    else:
         # if recipients are not defined we send to email_config + all admins
         admins = []
         for u in User.query().filter(User.admin == true()).all():
@@ -70,19 +76,44 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
             recipients += [config_email]
         recipients += admins
 
-    mail_from = email_config.get('app_email_from', 'RhodeCode')
-    user = email_config.get('smtp_username')
-    passwd = email_config.get('smtp_password')
-    mail_port = email_config.get('smtp_port')
-    tls = str2bool(email_config.get('smtp_use_tls'))
-    ssl = str2bool(email_config.get('smtp_use_ssl'))
-    debug = str2bool(email_config.get('debug'))
-    smtp_auth = email_config.get('smtp_auth')
+    # translate our LEGACY config into the one that pyramid_mailer supports
+    email_conf = dict(
+        host=mail_server,
+        port=email_config.get('smtp_port'),
+        username=email_config.get('smtp_username'),
+        password=email_config.get('smtp_password'),
+
+        tls=str2bool(email_config.get('smtp_use_tls')),
+        ssl=str2bool(email_config.get('smtp_use_ssl')),
+
+        # SSL key file
+        # keyfile='',
+
+        # SSL certificate file
+        # certfile='',
+
+        # Location of maildir
+        # queue_path='',
+
+        default_sender=email_config.get('app_email_from', 'RhodeCode'),
+
+        debug=str2bool(email_config.get('smtp_debug')),
+        # /usr/sbin/sendmail	Sendmail executable
+        # sendmail_app='',
+
+        # {sendmail_app} -t -i -f {sender}	Template for sendmail execution
+        # sendmail_template='',
+    )
 
     try:
-        m = SmtpMailer(mail_from, user, passwd, mail_server, smtp_auth,
-                       mail_port, ssl, tls, debug=debug)
-        m.send(recipients, subject, body, html_body)
+        mailer = Mailer(**email_conf)
+
+        message = Message(subject=subject,
+                          sender=email_conf['default_sender'],
+                          recipients=recipients,
+                          body=body, html=html_body)
+        mailer.send_immediately(message)
+
     except Exception:
         log.exception('Mail sending failed')
         return False

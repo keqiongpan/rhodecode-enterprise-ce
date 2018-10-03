@@ -19,9 +19,7 @@ Once configured you can check the settings for your |RCM| instance on the
     ## Additionally these settings will be used by the RhodeCode mailing system   ##
     ################################################################################
     #email_to = admin@localhost
-    #error_email_from = paste_error@localhost
     #app_email_from = rhodecode-noreply@localhost
-    #error_message =
     #email_prefix = [RhodeCode]
 
     #smtp_server = mail.server.com
@@ -30,5 +28,3 @@ Once configured you can check the settings for your |RCM| instance on the
     #smtp_port =
     #smtp_use_tls = false
     #smtp_use_ssl = true
-    ## Specify available auth parameters here (e.g. LOGIN PLAIN CRAM-MD5, etc.)
-    #smtp_auth =
