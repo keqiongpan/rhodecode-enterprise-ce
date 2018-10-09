@@ -574,11 +574,11 @@ self: super: {
     };
   };
   "hupper" = super.buildPythonPackage {
-    name = "hupper-1.3";
+    name = "hupper-1.3.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/51/0c/96335b1f2f32245fb871eea5bb9773196505ddb71fad15190056a282df9e/hupper-1.3.tar.gz";
-      sha256 = "1pkyrm9c2crc32ps00k1ahnc5clj3pjwiarc7j0x8aykwih7ff10";
+      url = "https://files.pythonhosted.org/packages/cf/4b/467b826a84c8594b81f414b5ab6794e981951dac90ca40abaf9ea1cb36b0/hupper-1.3.1.tar.gz";
+      sha256 = "03mf13n6i4dd60wlb9m99ddl4m3lmly70cjp7f82vdkibfl1v6l9";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1976,11 +1976,11 @@ self: super: {
     };
   };
   "testpath" = super.buildPythonPackage {
-    name = "testpath-0.3.1";
+    name = "testpath-0.4.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f4/8b/b71e9ee10e5f751e9d959bc750ab122ba04187f5aa52aabdc4e63b0e31a7/testpath-0.3.1.tar.gz";
-      sha256 = "02bnmkvm6a8a1p5kcygylcd19v2s040qw3zp1n8ab3bqkj1kflqd";
+      url = "https://files.pythonhosted.org/packages/06/30/9a7e917066d851d8b4117e85794b5f14516419ea714a8a2681ec6aa8a981/testpath-0.4.2.tar.gz";
+      sha256 = "1y40hywscnnyb734pnzm55nd8r8kp1072bjxbil83gcd53cv755n";
     };
     meta = {
       license = [  ];
