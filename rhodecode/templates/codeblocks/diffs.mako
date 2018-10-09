@@ -383,17 +383,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         %endif
         <i style="color: #aaa" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy the full path')}" onclick="return false;"></i>
     </span>
-    <span class="pill-group" style="float: left">
+    ## anchor link
+    <a class="pill filediff-anchor" href="#a_${h.FID('', filediff.patch['filename'])}">¶</a>
+
+    <span class="pill-group" style="float: right">
+
+        ## ops pills
         %if filediff.limited_diff:
         <span class="pill tooltip" op="limited" title="The stats for this diff are not complete">limited diff</span>
-        %endif
-
-        %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
-        <span class="pill" op="renamed">renamed</span>
-        %endif
-
-        %if COPIED_FILENODE in filediff.patch['stats']['ops']:
-        <span class="pill" op="copied">copied</span>
         %endif
 
         %if NEW_FILENODE in filediff.patch['stats']['ops']:
@@ -405,6 +402,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         %endif
 
+        %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
+        <span class="pill" op="renamed">renamed</span>
+        %endif
+
+        %if COPIED_FILENODE in filediff.patch['stats']['ops']:
+        <span class="pill" op="copied">copied</span>
+        %endif
+
         %if DEL_FILENODE in filediff.patch['stats']['ops']:
         <span class="pill" op="removed">removed</span>
         %endif
@@ -414,23 +419,17 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             ${nice_mode(filediff['source_mode'])} ➡ ${nice_mode(filediff['target_mode'])}
         </span>
         %endif
-    </span>
 
-    <a class="pill filediff-anchor" href="#a_${h.FID('', filediff.patch['filename'])}">¶</a>
-
-    <span class="pill-group" style="float: right">
         %if BIN_FILENODE in filediff.patch['stats']['ops']:
         <span class="pill" op="binary">binary</span>
             %if MOD_FILENODE in filediff.patch['stats']['ops']:
-            <span class="pill" op="modified">modified</span>
+        <span class="pill" op="modified">modified</span>
             %endif
         %endif
-        %if filediff.patch['stats']['added']:
-        <span class="pill" op="added">+${filediff.patch['stats']['added']}</span>
-        %endif
-        %if filediff.patch['stats']['deleted']:
-        <span class="pill" op="deleted">-${filediff.patch['stats']['deleted']}</span>
-        %endif
+
+        <span class="pill" op="added">${('+' if filediff.patch['stats']['added'] else '')}${filediff.patch['stats']['added']}</span>
+        <span class="pill" op="deleted">${((h.safe_int(filediff.patch['stats']['deleted']) or 0) * -1)}</span>
+
     </span>
 
 </%def>
