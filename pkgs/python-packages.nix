@@ -1411,7 +1411,7 @@ self: super: {
     };
   };
   "pytest" = super.buildPythonPackage {
-    name = "pytest-3.8.1";
+    name = "pytest-3.8.2";
     doCheck = false;
     propagatedBuildInputs = [
       self."py"
@@ -1425,8 +1425,8 @@ self: super: {
       self."pathlib2"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/22/77/8dba15a7ec756b040e82bc216120d19dffb5f4a1e4f896822fd3a45bd0a8/pytest-3.8.1.tar.gz";
-      sha256 = "0m6qn5kblnkc6qjhw8r8dga4gjii077ykn0a1d5131afzy49allm";
+      url = "https://files.pythonhosted.org/packages/5f/d2/7f77f406ac505abda02ab4afb50d06ebf304f6ea42fca34f8f37529106b2/pytest-3.8.2.tar.gz";
+      sha256 = "18nrwzn61kph2y6gxwfz9ms68rfvr9d4vcffsxng9p7jk9z18clk";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
