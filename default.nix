@@ -175,7 +175,6 @@ let
       '';
 
       preBuild = ''
-
         echo "Building frontend assets"
         ${linkNodeAndBowerPackages}
         grunt
@@ -183,6 +182,16 @@ let
       '';
 
       postInstall = ''
+        # check required files
+        if [ ! -f rhodecode/public/js/scripts.js ]; then
+          echo "Missing scripts.js"
+          exit 1
+        fi
+        if [ ! -f rhodecode/public/css/style.css ]; then
+          echo "Missing style.css"
+          exit 1
+        fi
+
         echo "Writing enterprise-ce meta information for rccontrol to nix-support/rccontrol"
         mkdir -p $out/nix-support/rccontrol
         cp -v rhodecode/VERSION $out/nix-support/rccontrol/version
@@ -194,8 +203,6 @@ let
 
         # python based programs need to be wrapped
         mkdir -p $out/bin
-        # rhodecode-tools
-        ln -s ${self.rhodecode-tools}/bin/rhodecode-* $out/bin/
 
         # required binaries from dependencies
         #ln -s ${self.python}/bin/python $out/bin
@@ -217,14 +224,9 @@ let
 
         echo "[DONE]: enterprise-ce binary wrapping"
 
-        if [ ! -f rhodecode/public/js/scripts.js ]; then
-          echo "Missing scripts.js"
-          exit 1
-        fi
-        if [ ! -f rhodecode/public/css/style.css ]; then
-          echo "Missing style.css"
-          exit 1
-        fi
+        # rhodecode-tools don't need wrapping
+        ln -s ${self.rhodecode-tools}/bin/rhodecode-* $out/bin/
+
       '';
     });
 
