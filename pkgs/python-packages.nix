@@ -1788,7 +1788,7 @@ self: super: {
     };
   };
   "rhodecode-tools" = super.buildPythonPackage {
-    name = "rhodecode-tools-1.0.0";
+    name = "rhodecode-tools-1.0.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."click"
@@ -1803,8 +1803,8 @@ self: super: {
       self."whoosh"
     ];
     src = fetchurl {
-      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.0.0.tar.gz?md5=19d554ca6cb043b821caa20c1d28b085";
-      sha256 = "1apd8dav7rj7m3wqrkr1kfjpflc5hkcq7gca0pvy12nvswwjr3wp";
+      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.0.1.tar.gz?md5=ffb5d6bcb855305b93cfe23ad42e500b";
+      sha256 = "0nr300s4sg685qs4wgbwlplwriawrwi6jq79z37frcnpyc89gpvm";
     };
     meta = {
       license = [ { fullName = "Apache 2.0 and Proprietary"; } ];
