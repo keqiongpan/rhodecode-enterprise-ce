@@ -16,15 +16,15 @@ data = {
 }
 %>
 
-${_('[mention]') if mention else ''} \
+${(_('[mention]') if mention else '')} \
 
 % if comment_file:
-    ${_('%(user)s left %(comment_type)s on pull request #%(pr_id)s "%(pr_title)s" (file: `%(comment_file)s`)') % data |n}
+    ${_('{user} left a {comment_type} on file `{comment_file}` in pull request #{pr_id} "{pr_title}"').format(**data) |n}
 % else:
     % if status_change:
-    ${_('%(user)s left %(comment_type)s on pull request #%(pr_id)s "%(pr_title)s" (status: %(status)s)') % data |n}
+    ${_('[status: {status}] {user} left a {comment_type} on pull request #{pr_id} "{pr_title}"').format(**data) |n}
     % else:
-    ${_('%(user)s left %(comment_type)s on pull request #%(pr_id)s "%(pr_title)s"') % data |n}
+    ${_('{user} left a {comment_type} on pull request #{pr_id} "{pr_title}"').format(**data) |n}
     % endif
 % endif
 </%def>
@@ -49,18 +49,18 @@ ${self.subject()}
 * ${_('Source repository')}: ${pr_source_repo_url}
 
 %if comment_file:
-* ${_('File: %(comment_file)s on line %(comment_line)s') % {'comment_file': comment_file, 'comment_line': comment_line}}
+* ${_('File: {comment_file} on line {comment_line}').format(comment_file=comment_file, comment_line=comment_line)}
 %endif
 
 ---
 
 %if status_change and not closing_pr:
-   ${_('%(user)s submitted pull request #%(pr_id)s status: *%(status)s*') % data}
+   ${_('{user} submitted pull request #{pr_id} status: *{status}*').format(**data)}
 %elif status_change and closing_pr:
-   ${_('%(user)s submitted pull request #%(pr_id)s status: *%(status)s and closed*') % data}
+   ${_('{user} submitted pull request #{pr_id} status: *{status} and closed*').format(**data)}
 %endif
 
-${comment_body|n}
+${comment_body |n}
 
 ${self.plaintext_footer()}
 </%def>
@@ -81,9 +81,9 @@ data = {
     <tr><td colspan="2" style="width:100%;padding-bottom:15px;border-bottom:1px solid #dbd9da;">
 
     % if comment_file:
-        <h4><a href="${pr_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('%(user)s commented on pull request #%(pr_id)s "%(pr_title)s" (file:`%(comment_file)s`)') % data |n}</a></h4>
+        <h4><a href="${pr_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('{user} left a {comment_type} on file `{comment_file}` in pull request #{pr_id} "{pr_title}"').format(**data) |n}</a></h4>
     % else:
-        <h4><a href="${pr_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('%(user)s commented on pull request #%(pr_id)s "%(pr_title)s"') % data |n}</a></h4>
+        <h4><a href="${pr_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('{user} left a {comment_type} on pull request #{pr_id} "{pr_title}"').format(**data) |n}</a></h4>
     % endif
 
     </td></tr>
@@ -104,9 +104,9 @@ data = {
     <tr>
         <td style="padding-right:20px;">
             % if comment_type == 'todo':
-                ${(_('TODO comment on line: %(comment_line)s') if comment_file else _('TODO comment')) % data}
+                ${(_('TODO comment on line: {comment_line}') if comment_file else _('TODO comment')).format(**data)}
             % else:
-                ${(_('Note comment on line: %(comment_line)s') if comment_file else _('Note comment')) % data}
+                ${(_('Note comment on line: {comment_line}') if comment_file else _('Note comment')).format(**data)}
             % endif
         </td>
         <td style="line-height:1.2em;white-space:pre-wrap">${h.render(comment_body, renderer=renderer_type, mentions=True)}</td>

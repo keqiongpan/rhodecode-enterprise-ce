@@ -97,9 +97,10 @@ class TestRepoCommitCommentsView(TestController):
         comment_id = ChangesetComment.query().first().comment_id
         assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
 
-        sbj = 'left {0} on commit `{1}` in the {2} repository'.format(
-            comment_type, h.show_id(commit), backend.repo_name)
-        assert sbj in notification.subject
+        author = notification.created_by_user.username_and_name
+        sbj = '{0} left a {1} on commit `{2}` in the {3} repository'.format(
+            author, comment_type, h.show_id(commit), backend.repo_name)
+        assert sbj == notification.subject
 
         lnk = (u'/{0}/changeset/{1}#comment-{2}'.format(
             backend.repo_name, commit_id, comment_id))
@@ -150,12 +151,12 @@ class TestRepoCommitCommentsView(TestController):
         assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
 
         assert comment.revision == commit_id
-        sbj = 'left {comment_type} on commit `{commit}` ' \
-              '(file: `{f_path}`) in the {repo} repository'.format(
-            commit=h.show_id(commit),
-            f_path=f_path, line=line, repo=backend.repo_name,
-            comment_type=comment_type)
-        assert sbj in notification.subject
+
+        author = notification.created_by_user.username_and_name
+        sbj = '{0} left a {1} on file `{2}` in commit `{3}` in the {4} repository'.format(
+            author, comment_type, f_path, h.show_id(commit), backend.repo_name)
+
+        assert sbj == notification.subject
 
         lnk = (u'/{0}/changeset/{1}#comment-{2}'.format(
             backend.repo_name, commit_id, comment.comment_id))
@@ -222,10 +223,10 @@ class TestRepoCommitCommentsView(TestController):
         comment_id = ChangesetComment.query().first().comment_id
         assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
 
-        sbj = 'left note on commit `{0}` (status: Approved) ' \
-              'in the {1} repository'.format(
-            h.show_id(commit), backend.repo_name)
-        assert sbj in notification.subject
+        author = notification.created_by_user.username_and_name
+        sbj = '[status: Approved] {0} left a note on commit `{1}` in the {2} repository'.format(
+            author, h.show_id(commit), backend.repo_name)
+        assert sbj == notification.subject
 
         lnk = (u'/{0}/changeset/{1}#comment-{2}'.format(
             backend.repo_name, commit_id, comment_id))
@@ -283,7 +284,7 @@ class TestRepoCommitCommentsView(TestController):
         commit_id = '0' * 16  # fake this for tests
         response = self.app.post(
             route_path('repo_commit_comment_preview',
-                        repo_name=backend.repo_name, commit_id=commit_id,),
+                       repo_name=backend.repo_name, commit_id=commit_id,),
             params=params,
             extra_environ=xhr_header)
 
