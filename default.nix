@@ -205,16 +205,28 @@ let
         mkdir -p $out/bin
 
         # required binaries from dependencies
-        #ln -s ${self.python}/bin/python $out/bin
-        ln -s ${self.pyramid}/bin/* $out/bin/
-        ln -s ${self.gunicorn}/bin/gunicorn $out/bin/
-        ln -s ${self.supervisor}/bin/supervisor* $out/bin/
+        ln -s ${self.supervisor}/bin/supervisorctl $out/bin/
+        ln -s ${self.supervisor}/bin/supervisord $out/bin/
         ln -s ${self.pastescript}/bin/paster $out/bin/
         ln -s ${self.channelstream}/bin/channelstream $out/bin/
         ln -s ${self.celery}/bin/celery $out/bin/
-        echo "[DONE]: created symlinks into $out/bin"
+        ln -s ${self.gunicorn}/bin/gunicorn $out/bin/
+        ln -s ${self.pyramid}/bin/prequest $out/bin/
+        ln -s ${self.pyramid}/bin/pserve $out/bin/
 
-        for file in $out/bin/*;
+        echo "[DONE]: created symlinks into $out/bin"
+        DEPS="$out/bin/supervisorctl \
+              $out/bin/supervisord \
+              $out/bin/paster \
+              $out/bin/channelstream \
+              $out/bin/celery \
+              $out/bin/gunicorn \
+              $out/bin/prequest \
+              $out/bin/pserve"
+
+        # wrap only dependency scripts, they require to have full PYTHONPATH set
+        # to be able to import all packages
+        for file in $DEPS;
         do
           wrapProgram $file \
             --prefix PATH : $PATH \
