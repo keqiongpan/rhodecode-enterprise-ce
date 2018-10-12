@@ -448,6 +448,16 @@
                               onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
                               ${_ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
                           </a>
+                          <%
+                          range_commit_id = '{}...{}'.format(c.commit_ranges[-1].raw_id, c.commit_ranges[0].raw_id)
+                          %>
+                          <a
+                              class="btn"
+                              href="${request.route_path('repo_commit', repo_name=c.source_repo.repo_name, commit_id=range_commit_id)}"
+                              >
+                              ${_('Show range diff')}
+                          </a>
+
                       </div>
                     </div>
 
