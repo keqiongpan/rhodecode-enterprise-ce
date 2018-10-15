@@ -469,6 +469,13 @@ class DiffSet(object):
 
         source_file = self.source_nodes.get(source_filename, source_filename)
         target_file = self.target_nodes.get(target_filename, target_filename)
+        raw_id_uid = ''
+        if self.source_nodes.get(source_filename):
+            raw_id_uid = self.source_nodes[source_filename].commit.raw_id
+
+        if not raw_id_uid and self.target_nodes.get(target_filename):
+            # in case this is a new file we only have it in target
+            raw_id_uid = self.target_nodes[target_filename].commit.raw_id
 
         source_filenode, target_filenode = None, None
 
@@ -512,7 +519,9 @@ class DiffSet(object):
             'hunks': [],
             'hunk_ops': None,
             'diffset': self,
+            'raw_id': raw_id_uid,
         })
+
         file_chunks = patch['chunks'][1:]
         for hunk in file_chunks:
             hunkbit = self.parse_hunk(hunk, source_file, target_file)

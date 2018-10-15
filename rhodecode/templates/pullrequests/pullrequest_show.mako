@@ -448,16 +448,6 @@
                               onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
                               ${_ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
                           </a>
-                          <%
-                          range_commit_id = '{}...{}'.format(c.commit_ranges[-1].raw_id, c.commit_ranges[0].raw_id)
-                          %>
-                          <a
-                              class="btn"
-                              href="${request.route_path('repo_commit', repo_name=c.source_repo.repo_name, commit_id=range_commit_id)}"
-                              >
-                              ${_('Show range diff')}
-                          </a>
-
                       </div>
                     </div>
 
@@ -578,13 +568,28 @@
 
                 <div class="cs_files">
                     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
-                    ${cbdiffs.render_diffset_menu(c.diffset)}
-                    ${cbdiffs.render_diffset(
-                      c.diffset, use_comments=True,
-                      collapse_when_files_over=30,
-                      disable_new_comments=not c.allowed_to_comment,
-                      deleted_files_comments=c.deleted_files_comments,
-                      inline_comments=c.inline_comments)}
+
+                    ${cbdiffs.render_diffset_menu(c.diffset, range_diff_on=c.range_diff_on)}
+
+                    % if c.range_diff_on:
+                        % for commit in c.commit_ranges:
+                            ${cbdiffs.render_diffset(
+                              c.changes[commit.raw_id],
+                              commit=commit, use_comments=True,
+                              collapse_when_files_over=5,
+                              disable_new_comments=True,
+                              deleted_files_comments=c.deleted_files_comments,
+                              inline_comments=c.inline_comments)}
+                        % endfor
+                    % else:
+                        ${cbdiffs.render_diffset(
+                          c.diffset, use_comments=True,
+                          collapse_when_files_over=30,
+                          disable_new_comments=not c.allowed_to_comment,
+                          deleted_files_comments=c.deleted_files_comments,
+                          inline_comments=c.inline_comments)}
+                    % endif
+
                 </div>
               % else:
                   ## skipping commits we need to clear the view for missing commits

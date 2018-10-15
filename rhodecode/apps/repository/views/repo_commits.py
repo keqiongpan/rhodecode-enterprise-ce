@@ -245,7 +245,7 @@ class RepoCommitsView(RepoAppView):
             c.changes[commit.raw_id] = []
 
             commit2 = commit
-            commit1 = commit.parents[0] if commit.parents else EmptyCommit()
+            commit1 = commit.first_parent
 
             if method == 'show':
                 inline_comments = CommentsModel().get_inline_comments(

@@ -135,12 +135,18 @@ class TestRepoCommitCommentsView(TestController):
         if backend.alias == 'svn':
             response.mustcontain(
                 '''data-f-path="vcs/commands/summary.py" '''
-                '''id="a_c--ad05457a43f8"'''
+                '''id="a_c-300-ad05457a43f8"'''
             )
-        else:
+        if backend.alias == 'git':
             response.mustcontain(
                 '''data-f-path="vcs/backends/hg.py" '''
-                '''id="a_c--9c390eb52cd6"'''
+                '''id="a_c-883e775e89ea-9c390eb52cd6"'''
+            )
+
+        if backend.alias == 'hg':
+            response.mustcontain(
+                '''data-f-path="vcs/backends/hg.py" '''
+                '''id="a_c-e58d85a3973b-9c390eb52cd6"'''
             )
 
         assert Notification.query().count() == 1

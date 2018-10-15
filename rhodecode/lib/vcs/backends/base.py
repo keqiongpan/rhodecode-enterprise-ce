@@ -821,6 +821,13 @@ class BaseCommit(object):
         """
         raise NotImplementedError
 
+    @LazyProperty
+    def first_parent(self):
+        """
+        Returns list of parent commits.
+        """
+        return self.parents[0] if self.parents else EmptyCommit()
+
     @property
     def merge(self):
         """
@@ -1099,8 +1106,7 @@ class BaseCommit(object):
         """
         Returns a `Diff` object representing the change made by this commit.
         """
-        parent = (
-            self.parents[0] if self.parents else self.repository.EMPTY_COMMIT)
+        parent = self.first_parent
         diff = self.repository.get_diff(
             parent, self,
             ignore_whitespace=ignore_whitespace,

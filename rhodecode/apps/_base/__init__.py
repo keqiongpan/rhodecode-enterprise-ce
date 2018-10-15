@@ -303,7 +303,8 @@ class PathFilter(object):
 
     def render_patchset_filtered(self, diffset, patchset, source_ref=None, target_ref=None):
         filtered_patchset, has_hidden_changes = self.filter_patchset(patchset)
-        result = diffset.render_patchset(filtered_patchset, source_ref=source_ref, target_ref=target_ref)
+        result = diffset.render_patchset(
+            filtered_patchset, source_ref=source_ref, target_ref=target_ref)
         result.has_hidden_changes = has_hidden_changes
         return result
 

@@ -104,13 +104,11 @@ class TestCompareView(object):
         # Comparing the revisions
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=origin.repo_name,
-                source_ref_type="rev",
-                source_ref=commit3.raw_id,
-                target_ref_type="rev",
-                target_ref=commit4.raw_id,
-                params=dict(merge='1', target_repo=fork.repo_name)
-           ))
+                       repo_name=origin.repo_name,
+                       source_ref_type="rev", source_ref=commit3.raw_id,
+                       target_ref_type="rev", target_ref=commit4.raw_id,
+                       params=dict(merge='1', target_repo=fork.repo_name)
+                       ))
 
         compare_page = ComparePage(response)
         compare_page.contains_commits([commit4])
@@ -142,13 +140,11 @@ class TestCompareView(object):
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=repo1.repo_name,
-                source_ref_type="branch",
-                source_ref=commit_id2,
-                target_ref_type="branch",
-                target_ref=commit_id1,
-                params=dict(merge='1', target_repo=repo2.repo_name)
-        ))
+                       repo_name=repo1.repo_name,
+                       source_ref_type="branch", source_ref=commit_id2,
+                       target_ref_type="branch", target_ref=commit_id1,
+                       params=dict(merge='1', target_repo=repo2.repo_name)
+                       ))
 
         response.mustcontain('%s@%s' % (repo1.repo_name, commit_id2))
         response.mustcontain('%s@%s' % (repo2.repo_name, commit_id1))
@@ -156,9 +152,9 @@ class TestCompareView(object):
         compare_page = ComparePage(response)
         compare_page.contains_change_summary(1, 2, 0)
         compare_page.contains_commits([commit1, commit2])
-        compare_page.contains_file_links_and_anchors([
-            ('file1', 'a_c--826e8142e6ba'),
-        ])
+
+        anchor = 'a_c-{}-826e8142e6ba'.format(commit0.short_id)
+        compare_page.contains_file_links_and_anchors([('file1', anchor), ])
 
         # Swap is removed when comparing branches since it's a PR feature and
         # it is then a preview mode
@@ -199,13 +195,11 @@ class TestCompareView(object):
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=repo1.repo_name,
-                source_ref_type="branch",
-                source_ref=commit_id2,
-                target_ref_type="branch",
-                target_ref=commit_id1,
-                params=dict(merge='1', target_repo=repo2.repo_name),
-            ))
+                       repo_name=repo1.repo_name,
+                       source_ref_type="branch", source_ref=commit_id2,
+                       target_ref_type="branch", target_ref=commit_id1,
+                       params=dict(merge='1', target_repo=repo2.repo_name),
+                       ))
 
         response.mustcontain('%s@%s' % (repo1.repo_name, commit_id2))
         response.mustcontain('%s@%s' % (repo2.repo_name, commit_id1))
@@ -213,9 +207,8 @@ class TestCompareView(object):
         compare_page = ComparePage(response)
         compare_page.contains_change_summary(1, 2, 0)
         compare_page.contains_commits([commit1, commit2])
-        compare_page.contains_file_links_and_anchors([
-            ('file1', 'a_c--826e8142e6ba'),
-        ])
+        anchor = 'a_c-{}-826e8142e6ba'.format(commit0.short_id)
+        compare_page.contains_file_links_and_anchors([('file1', anchor), ])
 
         # Swap is removed when comparing branches since it's a PR feature and
         # it is then a preview mode
@@ -230,13 +223,11 @@ class TestCompareView(object):
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=orig.repo_name,
-                source_ref_type="rev",
-                source_ref="tip",
-                target_ref_type="rev",
-                target_ref="tip",
-                params=dict(merge='1', target_repo=fork.repo_name),
-            ),
+                       repo_name=orig.repo_name,
+                       source_ref_type="rev", source_ref="tip",
+                       target_ref_type="rev", target_ref="tip",
+                       params=dict(merge='1', target_repo=fork.repo_name),
+                       ),
             status=302)
         response = response.follow()
         response.mustcontain("Repositories unrelated.")
@@ -289,14 +280,12 @@ class TestCompareView(object):
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=repo2.repo_name,
-                source_ref_type="rev",
-                # parent of commit2, in target repo2
-                source_ref=commit1.raw_id,
-                target_ref_type="rev",
-                target_ref=commit4.raw_id,
-                params=dict(merge='1', target_repo=repo1.repo_name),
-            ))
+                       repo_name=repo2.repo_name,
+                       # parent of commit2, in target repo2
+                       source_ref_type="rev", source_ref=commit1.raw_id,
+                       target_ref_type="rev", target_ref=commit4.raw_id,
+                       params=dict(merge='1', target_repo=repo1.repo_name),
+                       ))
         response.mustcontain('%s@%s' % (repo2.repo_name, commit1.short_id))
         response.mustcontain('%s@%s' % (repo1.repo_name, commit4.short_id))
 
@@ -304,9 +293,8 @@ class TestCompareView(object):
         compare_page = ComparePage(response)
         compare_page.contains_change_summary(1, 3, 0)
         compare_page.contains_commits([commit2, commit3, commit4])
-        compare_page.contains_file_links_and_anchors([
-            ('file1', 'a_c--826e8142e6ba'),
-        ])
+        anchor = 'a_c-{}-826e8142e6ba'.format(commit1.short_id)
+        compare_page.contains_file_links_and_anchors([('file1', anchor),])
 
     @pytest.mark.xfail_backends("svn")
     def test_compare_cherry_pick_commits_from_top(self, backend):
@@ -355,14 +343,11 @@ class TestCompareView(object):
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=repo1.repo_name,
-                source_ref_type="rev",
-                # parent of commit3, not in source repo2
-                source_ref=commit2.raw_id,
-                target_ref_type="rev",
-                target_ref=commit5.raw_id,
-                params=dict(merge='1'),
-        ))
+                       repo_name=repo1.repo_name,
+                       # parent of commit3, not in source repo2
+                       source_ref_type="rev", source_ref=commit2.raw_id,
+                       target_ref_type="rev", target_ref=commit5.raw_id,
+                       params=dict(merge='1'),))
 
         response.mustcontain('%s@%s' % (repo1.repo_name, commit2.short_id))
         response.mustcontain('%s@%s' % (repo1.repo_name, commit5.short_id))
@@ -372,9 +357,8 @@ class TestCompareView(object):
         compare_page.contains_commits([commit3, commit4, commit5])
 
         # files
-        compare_page.contains_file_links_and_anchors([
-            ('file1', 'a_c--826e8142e6ba'),
-        ])
+        anchor = 'a_c-{}-826e8142e6ba'.format(commit2.short_id)
+        compare_page.contains_file_links_and_anchors([('file1', anchor),])
 
     @pytest.mark.xfail_backends("svn")
     def test_compare_remote_branches(self, backend):
@@ -382,17 +366,17 @@ class TestCompareView(object):
         repo2 = backend.create_fork()
 
         commit_id1 = repo1.get_commit(commit_idx=3).raw_id
+        commit_id1_short = repo1.get_commit(commit_idx=3).short_id
         commit_id2 = repo1.get_commit(commit_idx=6).raw_id
+        commit_id2_short = repo1.get_commit(commit_idx=6).short_id
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=repo1.repo_name,
-                source_ref_type="rev",
-                source_ref=commit_id1,
-                target_ref_type="rev",
-                target_ref=commit_id2,
-                params=dict(merge='1', target_repo=repo2.repo_name),
-            ))
+                       repo_name=repo1.repo_name,
+                       source_ref_type="rev", source_ref=commit_id1,
+                       target_ref_type="rev", target_ref=commit_id2,
+                       params=dict(merge='1', target_repo=repo2.repo_name),
+                       ))
 
         response.mustcontain('%s@%s' % (repo1.repo_name, commit_id1))
         response.mustcontain('%s@%s' % (repo2.repo_name, commit_id2))
@@ -405,9 +389,9 @@ class TestCompareView(object):
 
         # files
         compare_page.contains_file_links_and_anchors([
-            ('vcs/backends/hg.py', 'a_c--9c390eb52cd6'),
-            ('vcs/backends/__init__.py', 'a_c--41b41c1f2796'),
-            ('vcs/backends/base.py', 'a_c--2f574d260608'),
+            ('vcs/backends/hg.py', 'a_c-{}-9c390eb52cd6'.format(commit_id2_short)),
+            ('vcs/backends/__init__.py', 'a_c-{}-41b41c1f2796'.format(commit_id1_short)),
+            ('vcs/backends/base.py', 'a_c-{}-2f574d260608'.format(commit_id1_short)),
         ])
 
     @pytest.mark.xfail_backends("svn")
@@ -451,13 +435,11 @@ class TestCompareView(object):
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=r2_name,
-                source_ref_type="branch",
-                source_ref=commit_id1,
-                target_ref_type="branch",
-                target_ref=commit_id2,
-                params=dict(merge='1', target_repo=r1_name),
-            ))
+                       repo_name=r2_name,
+                       source_ref_type="branch", source_ref=commit_id1,
+                       target_ref_type="branch", target_ref=commit_id2,
+                       params=dict(merge='1', target_repo=r1_name),
+                       ))
 
         response.mustcontain('%s@%s' % (r2_name, commit_id1))
         response.mustcontain('%s@%s' % (r1_name, commit_id2))
@@ -472,13 +454,11 @@ class TestCompareView(object):
         # compare !
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=r2_name,
-                source_ref_type="branch",
-                source_ref=commit_id1,
-                target_ref_type="branch",
-                target_ref=commit_id2,
-                params=dict(merge='1', target_repo=r1_name),
-            ))
+                       repo_name=r2_name,
+                       source_ref_type="branch", source_ref=commit_id1,
+                       target_ref_type="branch", target_ref=commit_id2,
+                       params=dict(merge='1', target_repo=r1_name),
+                       ))
 
         response.mustcontain('%s@%s' % (r2_name, commit_id1))
         response.mustcontain('%s@%s' % (r1_name, commit_id2))
@@ -495,14 +475,12 @@ class TestCompareView(object):
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=backend.repo_name,
-                source_ref_type="rev",
-                source_ref=commit0.raw_id,
-                target_ref_type="rev",
-                target_ref=commit1.raw_id,
-                params=dict(merge='1')
-            ),
-            extra_environ=xhr_header,)
+                       repo_name=backend.repo_name,
+                       source_ref_type="rev", source_ref=commit0.raw_id,
+                       target_ref_type="rev", target_ref=commit1.raw_id,
+                       params=dict(merge='1')
+                       ),
+            extra_environ=xhr_header, )
 
         # outgoing commits between those commits
         compare_page = ComparePage(response)
@@ -514,13 +492,11 @@ class TestCompareView(object):
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=badrepo,
-                source_ref_type="rev",
-                source_ref='tip',
-                target_ref_type="rev",
-                target_ref='tip',
-                params=dict(merge='1', target_repo=repo.repo_name)
-            ),
+                       repo_name=badrepo,
+                       source_ref_type="rev", source_ref='tip',
+                       target_ref_type="rev", target_ref='tip',
+                       params=dict(merge='1', target_repo=repo.repo_name)
+                       ),
             status=404)
 
     def test_errors_when_comparing_unknown_target_repo(self, backend):
@@ -529,13 +505,11 @@ class TestCompareView(object):
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=repo.repo_name,
-                source_ref_type="rev",
-                source_ref='tip',
-                target_ref_type="rev",
-                target_ref='tip',
-                params=dict(merge='1', target_repo=badrepo),
-            ),
+                       repo_name=repo.repo_name,
+                       source_ref_type="rev", source_ref='tip',
+                       target_ref_type="rev", target_ref='tip',
+                       params=dict(merge='1', target_repo=badrepo),
+                       ),
             status=302)
         redirected = response.follow()
         redirected.mustcontain(
@@ -547,12 +521,10 @@ class TestCompareView(object):
 
         response = self.app.get(
             route_path('repo_compare',
-                repo_name=backend_stub.repo_name,
-                source_ref_type="rev",
-                source_ref=commit0.raw_id,
-                target_ref_type="rev",
-                target_ref=commit1.raw_id,
-            ))
+                       repo_name=backend_stub.repo_name,
+                       source_ref_type="rev", source_ref=commit0.raw_id,
+                       target_ref_type="rev", target_ref=commit1.raw_id,
+                       ))
 
         # outgoing commits between those commits
         compare_page = ComparePage(response)
@@ -575,13 +547,11 @@ class TestCompareView(object):
 
             response = self.app.get(
                 route_path('repo_compare',
-                    repo_name=orig.repo_name,
-                    source_ref_type="rev",
-                    source_ref="tip",
-                    target_ref_type="rev",
-                    target_ref="tip",
-                    params=dict(merge='1', target_repo=fork.repo_name),
-                ),
+                           repo_name=orig.repo_name,
+                           source_ref_type="rev", source_ref="tip",
+                           target_ref_type="rev", target_ref="tip",
+                           params=dict(merge='1', target_repo=fork.repo_name),
+                           ),
                 status=302)
 
             assert_session_flash(
@@ -597,13 +567,13 @@ class TestCompareControllerSvn(object):
         commit_id = repo.get_commit(commit_idx=-1).raw_id
         response = app.get(
             route_path('repo_compare',
-                repo_name=repo.repo_name,
-                source_ref_type="tag",
-                source_ref="%s@%s" % ('tags/v0.1', commit_id),
-                target_ref_type="tag",
-                target_ref="%s@%s" % ('tags/v0.2', commit_id),
-                params=dict(merge='1'),
-            ),
+                       repo_name=repo.repo_name,
+                       source_ref_type="tag",
+                       source_ref="%s@%s" % ('tags/v0.1', commit_id),
+                       target_ref_type="tag",
+                       target_ref="%s@%s" % ('tags/v0.2', commit_id),
+                       params=dict(merge='1'),
+                       ),
             status=200)
 
         # Expecting no commits, since both paths are at the same revision
@@ -620,13 +590,13 @@ class TestCompareControllerSvn(object):
         target_id = repo.get_commit(commit_idx=-1).raw_id
         response = app.get(
             route_path('repo_compare',
-                repo_name=repo.repo_name,
-                source_ref_type="tag",
-                source_ref="%s@%s" % ('tags/v0.1', source_id),
-                target_ref_type="tag",
-                target_ref="%s@%s" % ('tags/v0.2', target_id),
-                params=dict(merge='1')
-            ),
+                       repo_name=repo.repo_name,
+                       source_ref_type="tag",
+                       source_ref="%s@%s" % ('tags/v0.1', source_id),
+                       target_ref_type="tag",
+                       target_ref="%s@%s" % ('tags/v0.2', target_id),
+                       params=dict(merge='1')
+                       ),
             status=200)
 
         # It should show commits
@@ -694,4 +664,3 @@ class ComparePage(AssertResponse):
     def target_source_are_enabled(self):
         response = self.response
         response.mustcontain("var enable_fields = true;")
-

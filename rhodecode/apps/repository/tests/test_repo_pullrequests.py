@@ -81,20 +81,21 @@ class TestPullrequestsView(object):
         repo = backend.repo
 
         self.app.get(
-            route_path('pullrequest_new',
-                repo_name=repo.repo_name,
-                commit=repo.get_commit().raw_id),
+            route_path('pullrequest_new', repo_name=repo.repo_name,
+                       commit=repo.get_commit().raw_id),
             status=200)
 
     @pytest.mark.parametrize('pr_merge_enabled', [True, False])
-    def test_show(self, pr_util, pr_merge_enabled):
+    @pytest.mark.parametrize('range_diff', ["0", "1"])
+    def test_show(self, pr_util, pr_merge_enabled, range_diff):
         pull_request = pr_util.create_pull_request(
             mergeable=pr_merge_enabled, enable_notifications=False)
 
         response = self.app.get(route_path(
             'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=pull_request.pull_request_id))
+            pull_request_id=pull_request.pull_request_id,
+            params={'range-diff': range_diff}))
 
         for commit_id in pull_request.revisions:
             response.mustcontain(commit_id)
@@ -105,9 +106,13 @@ class TestPullrequestsView(object):
         assert target_clone_url in response
 
         assert 'class="pull-request-merge"' in response
-        assert (
-            'Server-side pull request merging is disabled.'
-            in response) != pr_merge_enabled
+        if pr_merge_enabled:
+            response.mustcontain('Pull request reviewer approval is pending')
+        else:
+            response.mustcontain('Server-side pull request merging is disabled.')
+
+        if range_diff == "1":
+            response.mustcontain('Turn off: Show the diff as commit range')
 
     def test_close_status_visibility(self, pr_util, user_util, csrf_token):
         # Logout

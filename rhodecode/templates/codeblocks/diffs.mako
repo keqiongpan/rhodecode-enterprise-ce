@@ -47,7 +47,7 @@ return '%s_%s_%i' % (h.safeid(filename), type, line)
     deleted_files_comments=None,
 
     # for cache purpose
-    inline_comments=None
+    inline_comments=None,
 
 )">
 %if use_comments:
@@ -118,7 +118,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         <h2 class="clearinner">
         ## invidual commit
         % if commit:
-            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">${('r%s:%s' % (commit.idx,h.short_id(commit.raw_id)))}</a> -
+            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=diffset.repo_name,commit_id=commit.raw_id)}">${('r%s:%s' % (commit.idx,h.short_id(commit.raw_id)))}</a> -
             ${h.age_component(commit.date)}
             % if diffset.limited_diff:
                 - ${_('The requested commit is too big and content was truncated.')}
@@ -158,7 +158,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         <div
             class="filediff"
             data-f-path="${filediff.patch['filename']}"
-            id="a_${h.FID('', filediff.patch['filename'])}"
+            id="a_${h.FID(filediff.raw_id, filediff.patch['filename'])}"
         >
 
         <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
@@ -290,7 +290,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         %>
         <div class="filediffs filediff-outdated" style="${display_state}">
             <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox">
-            <div class="filediff" data-f-path="${filename}"  id="a_${h.FID('', filename)}">
+            <div class="filediff" data-f-path="${filename}"  id="a_${h.FID(filediff.raw_id, filename)}">
                 <label for="filediff-collapse-${id(filename)}" class="filediff-heading">
                     <div class="filediff-collapse-indicator"></div>
                     <span class="pill">
@@ -301,7 +301,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                         ## file op, doesn't need translation
                         <span class="pill" op="removed">removed in this version</span>
                     </span>
-                    <a class="pill filediff-anchor" href="#a_${h.FID('', filename)}">¶</a>
+                    <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filename)}">¶</a>
                     <span class="pill-group" style="float: right">
                         <span class="pill" op="deleted">-${comments_dict['stats']}</span>
                     </span>
@@ -384,7 +384,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         <i style="color: #aaa" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy the full path')}" onclick="return false;"></i>
     </span>
     ## anchor link
-    <a class="pill filediff-anchor" href="#a_${h.FID('', filediff.patch['filename'])}">¶</a>
+    <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filediff.patch['filename'])}">¶</a>
 
     <span class="pill-group" style="float: right">
 
@@ -493,10 +493,10 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 
         ## TODO: dan: refactor ignorews_url and context_url into the diff renderer same as diffmode=unified/sideside. Also use ajax to load more context (by clicking hunks)
         %if hasattr(c, 'ignorews_url'):
-        ${c.ignorews_url(request, h.FID('', filediff.patch['filename']))}
+        ${c.ignorews_url(request, h.FID(filediff.raw_id, filediff.patch['filename']))}
         %endif
         %if hasattr(c, 'context_url'):
-        ${c.context_url(request, h.FID('', filediff.patch['filename']))}
+        ${c.context_url(request, h.FID(filediff.raw_id, filediff.patch['filename']))}
         %endif
 
         %if use_comments:
@@ -721,7 +721,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             <td>unknown diff mode</td>
         </tr>
     % endif
-</%def>
+</%def>file changes
 
 
 <%def name="render_add_comment_button()">
@@ -730,7 +730,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 </button>
 </%def>
 
-<%def name="render_diffset_menu(diffset=None)">
+<%def name="render_diffset_menu(diffset=None, range_diff_on=None)">
 
     <div class="diffset-menu clearinner">
         <div class="pull-right">
@@ -747,6 +747,21 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                   title="${h.tooltip(_('View unified'))}" href="${h.current_route_path(request, diffmode='unified')}">
                     <span>${_('Unified')}</span>
                 </a>
+                % if range_diff_on is True:
+                    <a
+                      title="${_('Turn off: Show the diff as commit range')}"
+                      class="btn btn-primary"
+                      href="${h.current_route_path(request, **{"range-diff":"0"})}">
+                        <span>${_('Range Diff')}</span>
+                   </a>
+                % elif range_diff_on is False:
+                    <a
+                      title="${_('Show the diff as commit range')}"
+                      class="btn"
+                      href="${h.current_route_path(request, **{"range-diff":"1"})}">
+                        <span>${_('Range Diff')}</span>
+                   </a>
+                % endif
             </div>
         </div>
 
@@ -834,7 +849,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
         var preloadData = {
             results: [
                 % for filediff in diffset.files:
-                    {id:"a_${h.FID('', filediff.patch['filename'])}",
+                    {id:"a_${h.FID(filediff.raw_id, filediff.patch['filename'])}",
                      text:"${filediff.patch['filename']}",
                      ops:${h.json.dumps(filediff.patch['stats'])|n}}${('' if loop.last else ',')}
                 % endfor
