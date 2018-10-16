@@ -668,7 +668,7 @@ input.filediff-collapse-state {
         .filediff-menu {
             display: none;
         }
-        margin: 10px 0 0 0;
+
     }
 
     &+ .filediff { /* file diff is expanded */
@@ -690,8 +690,57 @@ input.filediff-collapse-state {
         }
     }
 }
+
+.filediffs .anchor {
+    display: block;
+    height: 40px;
+    margin-top: -40px;
+    visibility: hidden;
+}
+
+.filediffs .anchor:nth-of-type(1) {
+    display: block;
+    height: 80px;
+    margin-top: -80px;
+    visibility: hidden;
+}
+
 .cs_files {
     clear: both;
+}
+
+#diff-file-sticky{
+    will-change: min-height;
+}
+
+.sidebar__inner{
+    transform: translate(0, 0); /* For browsers don't support translate3d. */
+    transform: translate3d(0, 0, 0);
+    will-change: position, transform;
+    height: 60px;
+}
+
+.fpath-placeholder {
+    clear: both;
+    visibility: hidden
+}
+
+.is-affixed {
+    .sidebar_inner_shadow {
+        position: fixed;
+        top: 43px;
+        right: 0;
+        left: 0;
+        z-index: 28;
+        display: block;
+        height: 5px;
+        content: "";
+        background: linear-gradient(rgba(0, 0, 0, 0.075), rgba(0, 0, 0, 0.001)) repeat-x 0 0;
+        border-top: 1px solid rgba(0, 0, 0, 0.15);
+    }
+    .fpath-placeholder {
+        visibility: visible !important;
+    }
 }
 
 .diffset-menu {

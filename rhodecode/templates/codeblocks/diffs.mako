@@ -145,6 +145,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     %endif
 
     <div class="filediffs">
+
     ## initial value could be marked as False later on
     <% over_lines_changed_limit = False %>
     %for i, filediff in enumerate(diffset.files):
@@ -153,20 +154,22 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         lines_changed = filediff.patch['stats']['added'] + filediff.patch['stats']['deleted']
         over_lines_changed_limit = lines_changed > lines_changed_limit
         %>
+        ## anchor with support of sticky header
+        <div class="anchor" id="a_${h.FID(filediff.raw_id, filediff.patch['filename'])}"></div>
 
-        <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox">
+        <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox" onchange="Waypoint.refreshAll();">
         <div
             class="filediff"
             data-f-path="${filediff.patch['filename']}"
-            id="a_${h.FID(filediff.raw_id, filediff.patch['filename'])}"
+            data-anchor-id="${h.FID(filediff.raw_id, filediff.patch['filename'])}"
         >
-
         <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
             <div class="filediff-collapse-indicator"></div>
             ${diff_ops(filediff)}
         </label>
+
         ${diff_menu(filediff, use_comments=use_comments)}
-        <table class="cb cb-diff-${c.user_session_attrs["diffmode"]} code-highlight ${(over_lines_changed_limit and 'cb-collapsed' or '')}">
+        <table data-f-path="${filediff.patch['filename']}" data-anchor-id="${h.FID(filediff.raw_id, filediff.patch['filename'])}" class="code-visible-block cb cb-diff-${c.user_session_attrs["diffmode"]} code-highlight ${(over_lines_changed_limit and 'cb-collapsed' or '')}">
 
         ## new/deleted/empty content case
         % if not filediff.hunks:
@@ -289,7 +292,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 display_state = ''
         %>
         <div class="filediffs filediff-outdated" style="${display_state}">
-            <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox">
+            <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox" onchange="Waypoint.refreshAll();">
             <div class="filediff" data-f-path="${filename}"  id="a_${h.FID(filediff.raw_id, filename)}">
                 <label for="filediff-collapse-${id(filename)}" class="filediff-heading">
                     <div class="filediff-collapse-indicator"></div>
@@ -732,8 +735,10 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 
 <%def name="render_diffset_menu(diffset=None, range_diff_on=None)">
 
-    <div class="diffset-menu clearinner">
-        <div class="pull-right">
+    <div id="diff-file-sticky" class="diffset-menu clearinner">
+        ## auto adjustable
+        <div class="sidebar__inner" style="z-index: 30;background-color: #fff; padding: 5px 0px;">
+            <div class="pull-right">
             <div class="btn-group">
 
                 <a
@@ -764,36 +769,47 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 % endif
             </div>
         </div>
-
-        <div class="pull-left">
-          <div class="btn-group">
+            <div class="pull-left">
+            <div class="btn-group">
               <div class="pull-left">
               ${h.hidden('file_filter')}
               </div>
               <a
                   class="btn"
                   href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); return false">${_('Expand All Files')}</a>
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); Waypoint.refreshAll(); return false">${_('Expand All Files')}</a>
               <a
                   class="btn"
                   href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); return false">${_('Collapse All Files')}</a>
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); Waypoint.refreshAll(); return false">${_('Collapse All Files')}</a>
               <a
                   class="btn"
                   href="#"
-                  onclick="return Rhodecode.comments.toggleWideMode(this)">${_('Wide Mode Diff')}</a>
+                  onclick="updateSticky();return Rhodecode.comments.toggleWideMode(this)">${_('Wide Mode Diff')}</a>
 
           </div>
+        </div>
+        <div class="fpath-placeholder">
+            <i class="icon-file-text"></i>
+            <strong class="fpath-placeholder-text">
+
+            </strong>
+        </div>
+        <div class="sidebar_inner_shadow"></div>
         </div>
     </div>
 
     % if diffset:
 
         %if diffset.limited_diff:
-            <% file_placeholder = _ungettext('%(num)s file changed', '%(num)s files changed', diffset.changed_files) % {'num': diffset.changed_files}%>
+            <% file_placeholder = _ungettext('%(num)s file changed', '%(num)s files changed', diffset.changed_files) % {'num': diffset.changed_files} %>
         %else:
             <% file_placeholder = _ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted', '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}%>
         %endif
+        ## case on range-diff placeholder needs to be updated
+        % if range_diff_on is True:
+            <% file_placeholder = _('Disabled on range diff') %>
+        % endif
 
         <script>
 
@@ -856,27 +872,94 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             ]
         };
 
-        $("#file_filter").select2({
-            'dropdownAutoWidth': true,
-            'width': 'auto',
-            'placeholder': "${file_placeholder}",
-            containerCssClass: "drop-menu",
-            dropdownCssClass: "drop-menu-dropdown",
-            data: preloadData,
-            query: function(query) {
-                feedFilesOptions(query, preloadData);
-            },
-            formatResult: formatFileResult
-        });
+        $(document).ready(function () {
 
-        $("#file_filter").on('click', function (e) {
-            e.preventDefault();
-            var selected = $('#file_filter').select2('data');
-            var idSelector = "#"+selected.id;
-            window.location.hash = idSelector;
-            // expand the container if we quick-select the field
-            $(idSelector).prev().prop('checked', false);
-        })
+            var fileFilter = $("#file_filter").select2({
+                'dropdownAutoWidth': true,
+                'width': 'auto',
+                'placeholder': "${file_placeholder}",
+                containerCssClass: "drop-menu",
+                dropdownCssClass: "drop-menu-dropdown",
+                data: preloadData,
+                query: function(query) {
+                    feedFilesOptions(query, preloadData);
+                },
+                formatResult: formatFileResult
+            });
+            % if range_diff_on is True:
+                fileFilter.select2("enable", false);
+
+            % endif
+
+            $("#file_filter").on('click', function (e) {
+                e.preventDefault();
+                var selected = $('#file_filter').select2('data');
+                var idSelector = "#"+selected.id;
+                window.location.hash = idSelector;
+                // expand the container if we quick-select the field
+                $(idSelector).next().prop('checked', false);
+                Waypoint.refreshAll()
+            });
+
+            var contextPrefix = _gettext('Context file: ');
+            ## sticky sidebar
+            var sidebarElement = document.getElementById('diff-file-sticky');
+            sidebar = new StickySidebar(sidebarElement, {
+                  topSpacing: 0,
+                  bottomSpacing: 0,
+                  innerWrapperSelector: '.sidebar__inner'
+            });
+            sidebarElement.addEventListener('affixed.static.stickySidebar', function () {
+                // reset our file so it's not holding new value
+                $('.fpath-placeholder-text').html(contextPrefix)
+            });
+
+            updateSticky = function () {
+                sidebar.updateSticky()
+            };
+
+            var animateText =  $.debounce(100, function(fPath, anchorId) {
+                // animate setting the text
+                var callback = function () {
+                    $('.fpath-placeholder-text').animate({'opacity': 1.00}, 200)
+                    $('.fpath-placeholder-text').html(contextPrefix + '<a href="#a_' + anchorId + '">' + fPath + '</a>')
+                };
+                $('.fpath-placeholder-text').animate({'opacity': 0.15}, 200, callback);
+            });
+
+            ## dynamic file waypoints
+            var setFPathInfo = function(fPath, anchorId){
+                animateText(fPath, anchorId)
+            };
+
+            var codeBlock = $('.filediff');
+            // forward waypoint
+            codeBlock.waypoint(
+                function(direction) {
+                    if (direction === "down"){
+                        setFPathInfo($(this.element).data('fPath'), $(this.element).data('anchorId'))
+                    }
+                }, {
+                    offset: 60,
+                    context: '.fpath-placeholder'
+                }
+            );
+
+            // backward waypoint
+            codeBlock.waypoint(
+                function(direction) {
+                    if (direction === "up"){
+                        setFPathInfo($(this.element).data('fPath'), $(this.element).data('anchorId'))
+                    }
+                }, {
+                    offset: function () {
+                        return -this.element.clientHeight + 80
+                    },
+                    context: '.fpath-placeholder'
+                }
+            );
+
+        });
 
     </script>
     % endif

@@ -618,7 +618,7 @@ class ComparePage(AssertResponse):
         for filename, file_id in files:
             self.contains_one_anchor(file_id)
             diffblock = doc.cssselect('[data-f-path="%s"]' % filename)
-            assert len(diffblock) == 1
+            assert len(diffblock) == 2
             assert len(diffblock[0].cssselect('a[href="#%s"]' % file_id)) == 1
 
     def contains_change_summary(self, files_changed, inserted, deleted):

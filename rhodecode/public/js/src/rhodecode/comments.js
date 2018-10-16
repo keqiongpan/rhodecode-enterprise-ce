@@ -774,6 +774,13 @@ var CommentsController = function() {
               // re trigger the linkification of next/prev navigation
               linkifyComments($('.inline-comment-injected'));
               timeagoActivate();
+
+              if (window.Waypoint !== undefined) {
+                  // potentially our comments change the active window size, so we
+                  // notify waypint to re-paint
+                  Waypoint.refreshAll()
+              }
+
               commentForm.setActionButtonsDisabled(false);
 
             };
