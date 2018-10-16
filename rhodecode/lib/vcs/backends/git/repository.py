@@ -768,7 +768,7 @@ class GitRepository(BaseRepository):
 
     def _local_reset(self, branch_name):
         branch_name = '{}'.format(branch_name)
-        cmd = ['reset', '--hard', branch_name]
+        cmd = ['reset', '--hard', branch_name, '--']
         self.run_git_command(cmd, fail_on_stderr=False)
 
     def _last_fetch_heads(self):
