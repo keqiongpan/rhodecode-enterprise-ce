@@ -717,7 +717,14 @@ input.filediff-collapse-state {
     transform: translate(0, 0); /* For browsers don't support translate3d. */
     transform: translate3d(0, 0, 0);
     will-change: position, transform;
-    height: 60px;
+    height: 70px;
+    z-index: 30;
+    background-color: #fff;
+    padding: 5px 0px;
+}
+
+.sidebar__bar {
+    padding: 5px 0px 0px 0px
 }
 
 .fpath-placeholder {
@@ -728,9 +735,9 @@ input.filediff-collapse-state {
 .is-affixed {
     .sidebar_inner_shadow {
         position: fixed;
-        top: 43px;
-        right: 0;
-        left: 0;
+        top: 75px;
+        right: -100%;
+        left: -100%;
         z-index: 28;
         display: block;
         height: 5px;

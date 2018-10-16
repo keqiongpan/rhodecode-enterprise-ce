@@ -737,7 +737,8 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 
     <div id="diff-file-sticky" class="diffset-menu clearinner">
         ## auto adjustable
-        <div class="sidebar__inner" style="z-index: 30;background-color: #fff; padding: 5px 0px;">
+        <div class="sidebar__inner">
+            <div class="sidebar__bar">
             <div class="pull-right">
             <div class="btn-group">
 
@@ -788,11 +789,12 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                   onclick="updateSticky();return Rhodecode.comments.toggleWideMode(this)">${_('Wide Mode Diff')}</a>
 
           </div>
+            </div>
         </div>
         <div class="fpath-placeholder">
             <i class="icon-file-text"></i>
             <strong class="fpath-placeholder-text">
-
+            Context file:
             </strong>
         </div>
         <div class="sidebar_inner_shadow"></div>
@@ -940,7 +942,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                         setFPathInfo($(this.element).data('fPath'), $(this.element).data('anchorId'))
                     }
                 }, {
-                    offset: 60,
+                    offset: 70,
                     context: '.fpath-placeholder'
                 }
             );
@@ -953,7 +955,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                     }
                 }, {
                     offset: function () {
-                        return -this.element.clientHeight + 80
+                        return -this.element.clientHeight + 90
                     },
                     context: '.fpath-placeholder'
                 }
