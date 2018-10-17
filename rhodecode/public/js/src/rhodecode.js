@@ -295,75 +295,81 @@ $(document).ready(function() {
     });
 
     $('body').on('click', '.cb-lineno a', function(event) {
+        function sortNumber(a,b) {
+            return a - b;
+        }
 
-            function sortNumber(a,b) {
-                return a - b;
-            }
+        var lineNo = $(this).data('lineNo');
+        var lineName = $(this).attr('name');
 
-            var lineNo = $(this).data('lineNo');
-            if (lineNo) {
+        if (lineNo) {
+            var prevLine = $('.cb-line-selected a').data('lineNo');
 
-                // on shift, we do a range selection, if we got previous line
-                var prevLine = $('.cb-line-selected a').data('lineNo');
-                if (event.shiftKey && prevLine !== undefined) {
-                    var prevLine = parseInt(prevLine);
-                    var nextLine = parseInt(lineNo);
-                    var pos = [prevLine, nextLine].sort(sortNumber);
-                    var anchor = '#L{0}-{1}'.format(pos[0], pos[1]);
+            // on shift, we do a range selection, if we got previous line
+            if (event.shiftKey && prevLine !== undefined) {
+                var prevLine = parseInt(prevLine);
+                var nextLine = parseInt(lineNo);
+                var pos = [prevLine, nextLine].sort(sortNumber);
+                var anchor = '#L{0}-{1}'.format(pos[0], pos[1]);
 
-                } else {
-
-                    var nextLine = parseInt(lineNo);
-                    var pos = [nextLine, nextLine];
-                    var anchor = '#L{0}'.format(pos[0]);
-
-                }
-                // highlight
-                var range = [];
-                for (var i = pos[0]; i <= pos[1]; i++) {
-                    range.push(i);
-                }
-                // clear selection
-                $('.cb-line-selected').removeClass('cb-line-selected');
-
-                $.each(range, function (i, lineNo) {
-                    var line_td = $('td.cb-lineno#L' + lineNo);
-                    if (line_td.length) {
-                        line_td.addClass('cb-line-selected'); // line number td
-                        line_td.prev().addClass('cb-line-selected'); // line data
-                        line_td.next().addClass('cb-line-selected'); // line content
-                    }
-                });
-
-
+            // single click
             } else {
-                if ($(this).attr('name') !== undefined) {
-                    // clear selection
-                    $('td.cb-line-selected').removeClass('cb-line-selected');
-                    var aEl = $(this).closest('td');
-                    aEl.addClass('cb-line-selected');
-                    aEl.next('td').addClass('cb-line-selected');
+                var nextLine = parseInt(lineNo);
+                var pos = [nextLine, nextLine];
+                var anchor = '#L{0}'.format(pos[0]);
+
+            }
+            // highlight
+            var range = [];
+            for (var i = pos[0]; i <= pos[1]; i++) {
+                range.push(i);
+            }
+            // clear old selected lines
+            $('.cb-line-selected').removeClass('cb-line-selected');
+
+            $.each(range, function (i, lineNo) {
+                var line_td = $('td.cb-lineno#L' + lineNo);
+
+                if (line_td.length) {
+                    line_td.addClass('cb-line-selected'); // line number td
+                    line_td.prev().addClass('cb-line-selected'); // line data
+                    line_td.next().addClass('cb-line-selected'); // line content
                 }
+            });
+
+        } else if (lineName !== undefined) { // lineName only occurs in diffs
+            // clear old selected lines
+            $('td.cb-line-selected').removeClass('cb-line-selected');
+            var anchor = '#{0}'.format(lineName);
+            var diffmode = templateContext.session_attrs.diffmode || "sideside";
+
+            if (diffmode === "unified") {
+                $(this).closest('tr').find('td').addClass('cb-line-selected');
+            } else {
+                var activeTd = $(this).closest('td');
+                activeTd.addClass('cb-line-selected');
+                activeTd.next('td').addClass('cb-line-selected');
             }
 
-            // Replace URL without jumping to it if browser supports.
-            // Default otherwise
-            if (history.pushState && anchor !== undefined) {
-                var new_location = location.href.rstrip('#');
-                if (location.hash) {
-                    // location without hash
-                    new_location = new_location.replace(location.hash, "");
-                }
+        }
 
-                // Make new anchor url
-                new_location = new_location + anchor;
-                history.pushState(true, document.title, new_location);
-
-                return false;
+        // Replace URL without jumping to it if browser supports.
+        // Default otherwise
+        if (history.pushState && anchor !== undefined) {
+            var new_location = location.href.rstrip('#');
+            if (location.hash) {
+                // location without hash
+                new_location = new_location.replace(location.hash, "");
             }
 
-        });
+            // Make new anchor url
+            new_location = new_location + anchor;
+            history.pushState(true, document.title, new_location);
 
+            return false;
+        }
+
+    });
 
     $('.collapse_file').on('click', function(e) {
         e.stopPropagation();

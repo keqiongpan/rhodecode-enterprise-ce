@@ -1132,6 +1132,9 @@ table.cb {
             .icon-comment {
                 cursor: pointer;
             }
+            &.cb-line-selected {
+                background: @comment-highlight-color !important;
+            }
             &.cb-line-selected > div {
                 display: block;
                 background: @comment-highlight-color !important;
@@ -1154,7 +1157,7 @@ table.cb {
             a::before {
                 content: attr(data-line-no);
             }
-            &.cb-line-selected a {
+            &.cb-line-selected {
                 background: @comment-highlight-color !important;
             }
 
