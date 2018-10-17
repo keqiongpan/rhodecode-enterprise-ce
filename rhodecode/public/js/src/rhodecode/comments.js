@@ -775,10 +775,10 @@ var CommentsController = function() {
               linkifyComments($('.inline-comment-injected'));
               timeagoActivate();
 
-              if (window.Waypoint !== undefined) {
+              if (window.updateSticky !== undefined) {
                   // potentially our comments change the active window size, so we
-                  // notify waypint to re-paint
-                  Waypoint.refreshAll()
+                  // notify sticky elements
+                  updateSticky()
               }
 
               commentForm.setActionButtonsDisabled(false);

@@ -157,7 +157,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         ## anchor with support of sticky header
         <div class="anchor" id="a_${h.FID(filediff.raw_id, filediff.patch['filename'])}"></div>
 
-        <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox" onchange="Waypoint.refreshAll();">
+        <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox" onchange="updateSticky();">
         <div
             class="filediff"
             data-f-path="${filediff.patch['filename']}"
@@ -189,10 +189,10 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                         <td class="cb-text" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=6')}>
                             ${_('This diff has been collapsed as it changes many lines, (%i lines changed)' % lines_changed)}
                             <a href="#" class="cb-expand"
-                               onclick="$(this).closest('table').removeClass('cb-collapsed'); return false;">${_('Show them')}
+                               onclick="$(this).closest('table').removeClass('cb-collapsed'); updateSticky(); return false;">${_('Show them')}
                             </a>
                             <a href="#" class="cb-collapse"
-                               onclick="$(this).closest('table').addClass('cb-collapsed'); return false;">${_('Hide them')}
+                               onclick="$(this).closest('table').addClass('cb-collapsed'); updateSticky(); return false;">${_('Hide them')}
                             </a>
                         </td>
                     </tr>
@@ -292,7 +292,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 display_state = ''
         %>
         <div class="filediffs filediff-outdated" style="${display_state}">
-            <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox" onchange="Waypoint.refreshAll();">
+            <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox" onchange="updateSticky();">
             <div class="filediff" data-f-path="${filename}"  id="a_${h.FID(filediff.raw_id, filename)}">
                 <label for="filediff-collapse-${id(filename)}" class="filediff-heading">
                     <div class="filediff-collapse-indicator"></div>
@@ -778,11 +778,11 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
               <a
                   class="btn"
                   href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); Waypoint.refreshAll(); return false">${_('Expand All Files')}</a>
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); updateSticky(); return false">${_('Expand All Files')}</a>
               <a
                   class="btn"
                   href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); Waypoint.refreshAll(); return false">${_('Collapse All Files')}</a>
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); updateSticky(); return false">${_('Collapse All Files')}</a>
               <a
                   class="btn"
                   href="#"
@@ -900,7 +900,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 window.location.hash = idSelector;
                 // expand the container if we quick-select the field
                 $(idSelector).next().prop('checked', false);
-                Waypoint.refreshAll()
+                updateSticky()
             });
 
             var contextPrefix = _gettext('Context file: ');
@@ -917,7 +917,8 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             });
 
             updateSticky = function () {
-                sidebar.updateSticky()
+                sidebar.updateSticky();
+                Waypoint.refreshAll();
             };
 
             var animateText =  $.debounce(100, function(fPath, anchorId) {
