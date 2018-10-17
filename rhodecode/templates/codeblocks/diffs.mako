@@ -1,7 +1,7 @@
 <%namespace name="commentblock" file="/changeset/changeset_file_comment.mako"/>
 
-<%def name="diff_line_anchor(filename, line, type)"><%
-return '%s_%s_%i' % (h.safeid(filename), type, line)
+<%def name="diff_line_anchor(commit, filename, line, type)"><%
+return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
 %></%def>
 
 <%def name="action_class(action)">
@@ -174,7 +174,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         ## new/deleted/empty content case
         % if not filediff.hunks:
             ## Comment container, on "fakes" hunk that contains all data to render comments
-            ${render_hunk_lines(c.user_session_attrs["diffmode"], filediff.hunk_ops, use_comments=use_comments, inline_comments=inline_comments)}
+            ${render_hunk_lines(filediff, c.user_session_attrs["diffmode"], filediff.hunk_ops, use_comments=use_comments, inline_comments=inline_comments)}
         % endif
 
         %if filediff.limited_diff:
@@ -214,7 +214,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                     ${hunk.section_header}
                 </td>
             </tr>
-            ${render_hunk_lines(c.user_session_attrs["diffmode"], hunk, use_comments=use_comments, inline_comments=inline_comments)}
+            ${render_hunk_lines(filediff, c.user_session_attrs["diffmode"], hunk, use_comments=use_comments, inline_comments=inline_comments)}
         % endfor
 
         <% unmatched_comments = (inline_comments or {}).get(filediff.patch['filename'], {}) %>
@@ -549,15 +549,15 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             return data
 %>
 
-<%def name="render_hunk_lines_sideside(hunk, use_comments=False, inline_comments=None)">
-
+<%def name="render_hunk_lines_sideside(filediff, hunk, use_comments=False, inline_comments=None)">
     %for i, line in enumerate(hunk.sideside):
     <%
     old_line_anchor, new_line_anchor = None, None
+
     if line.original.lineno:
-        old_line_anchor = diff_line_anchor(hunk.source_file_path, line.original.lineno, 'o')
+        old_line_anchor = diff_line_anchor(filediff.raw_id, hunk.source_file_path, line.original.lineno, 'o')
     if line.modified.lineno:
-        new_line_anchor = diff_line_anchor(hunk.target_file_path, line.modified.lineno, 'n')
+        new_line_anchor = diff_line_anchor(filediff.raw_id, hunk.target_file_path, line.modified.lineno, 'n')
     %>
 
     <tr class="cb-line">
@@ -649,14 +649,15 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 </%def>
 
 
-<%def name="render_hunk_lines_unified(hunk, use_comments=False,  inline_comments=None)">
+<%def name="render_hunk_lines_unified(filediff, hunk, use_comments=False,  inline_comments=None)">
     %for old_line_no, new_line_no, action, content, comments_args in hunk.unified:
+
     <%
     old_line_anchor, new_line_anchor = None, None
     if old_line_no:
-        old_line_anchor = diff_line_anchor(hunk.source_file_path, old_line_no, 'o')
+        old_line_anchor = diff_line_anchor(filediff.raw_id, hunk.source_file_path, old_line_no, 'o')
     if new_line_no:
-        new_line_anchor = diff_line_anchor(hunk.target_file_path, new_line_no, 'n')
+        new_line_anchor = diff_line_anchor(filediff.raw_id, hunk.target_file_path, new_line_no, 'n')
     %>
     <tr class="cb-line">
         <td class="cb-data ${action_class(action)}">
@@ -714,11 +715,11 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 </%def>
 
 
-<%def name="render_hunk_lines(diff_mode, hunk, use_comments, inline_comments)">
+<%def name="render_hunk_lines(filediff, diff_mode, hunk, use_comments, inline_comments)">
     % if diff_mode == 'unified':
-        ${render_hunk_lines_unified(hunk, use_comments=use_comments, inline_comments=inline_comments)}
+        ${render_hunk_lines_unified(filediff, hunk, use_comments=use_comments, inline_comments=inline_comments)}
     % elif diff_mode == 'sideside':
-        ${render_hunk_lines_sideside(hunk, use_comments=use_comments, inline_comments=inline_comments)}
+        ${render_hunk_lines_sideside(filediff, hunk, use_comments=use_comments, inline_comments=inline_comments)}
     % else:
         <tr class="cb-line">
             <td>unknown diff mode</td>
