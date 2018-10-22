@@ -19,15 +19,15 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import io
 import re
+import os
 import datetime
 import logging
 import Queue
 import subprocess32
-import os
 
 
 from dateutil.parser import parse
-from pyramid.i18n import get_localizer
+from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.threadlocal import get_current_request
 from pyramid.interfaces import IRoutesMapper
 from pyramid.settings import asbool
@@ -61,7 +61,19 @@ def add_renderer_globals(event):
 
 def add_localizer(event):
     request = event.request
-    localizer = request.localizer
+    try:
+        localizer = request.localizer
+    except Exception:
+        log.exception('Failed to get localizer')
+        # NOTE(marcink): Handle bug in pyramid by malformed GET params could crash
+        # this resulting on various odd errors on missing translators
+        # see: https://github.com/Pylons/pyramid/issues/3399
+
+        def dummy_translate(*args, **kwargs):
+            return ''.join(args)
+        request.translate = tsf
+        request.plularize = dummy_translate
+        raise HTTPBadRequest()
 
     def auto_translate(*args, **kwargs):
         return localizer.translate(tsf(*args, **kwargs))
