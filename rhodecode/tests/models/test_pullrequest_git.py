@@ -60,7 +60,8 @@ class TestGetDiffForPrOrVersion(object):
         source_ref_id = pr_or_version.source_ref_parts.commit_id
         target_ref_id = pr_or_version.target_ref_parts.commit_id
         diff = PullRequestModel()._get_diff_from_pr_or_version(
-            source_repo, source_ref_id, target_ref_id, context=6)
+            source_repo, source_ref_id, target_ref_id,
+            hide_whitespace_changes=False, diff_context=6)
         assert 'file_b' in diff.raw
 
     def assert_commit_cannot_be_accessed(

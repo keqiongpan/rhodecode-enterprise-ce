@@ -41,7 +41,16 @@ log = logging.getLogger(__name__)
 
 # define max context, a file with more than this numbers of lines is unusable
 # in browser anyway
-MAX_CONTEXT = 1024 * 1014
+MAX_CONTEXT = 20 * 1024
+DEFAULT_CONTEXT = 3
+
+
+def get_diff_context(request):
+    return MAX_CONTEXT if request.GET.get('fullcontext', '') == '1' else DEFAULT_CONTEXT
+
+
+def get_diff_whitespace_flag(request):
+    return request.GET.get('ignorews', '') == '1'
 
 
 class OPS(object):

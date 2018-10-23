@@ -467,46 +467,23 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
         >
             ${_('Show file after')}
-        </a> |
+        </a>
     %else:
         <span
             class="tooltip"
             title="${h.tooltip(_('File no longer present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
             >
-                ${_('Show file after')}
-        </span> |
+            ${_('Show file after')}
+        </span>
     %endif
-        <a
-            class="tooltip"
-            title="${h.tooltip(_('Raw diff'))}"
-            href="${h.route_path('repo_files_diff',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path, _query=dict(diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='raw'))}"
-        >
-            ${_('Raw diff')}
-        </a> |
-        <a
-            class="tooltip"
-            title="${h.tooltip(_('Download diff'))}"
-            href="${h.route_path('repo_files_diff',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path, _query=dict(diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='download'))}"
-        >
-            ${_('Download diff')}
-        </a>
+
         % if use_comments:
-            |
-        % endif
-
-        ## TODO: dan: refactor ignorews_url and context_url into the diff renderer same as diffmode=unified/sideside. Also use ajax to load more context (by clicking hunks)
-        %if hasattr(c, 'ignorews_url'):
-        ${c.ignorews_url(request, h.FID(filediff.raw_id, filediff.patch['filename']))}
-        %endif
-        %if hasattr(c, 'context_url'):
-        ${c.context_url(request, h.FID(filediff.raw_id, filediff.patch['filename']))}
-        %endif
-
-        %if use_comments:
+        |
         <a href="#" onclick="return Rhodecode.comments.toggleComments(this);">
             <span class="show-comment-button">${_('Show comments')}</span><span class="hide-comment-button">${_('Hide comments')}</span>
         </a>
-        %endif
+        % endif
+
 %endif
     </div>
 </%def>
@@ -743,17 +720,24 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             <div class="pull-right">
             <div class="btn-group">
 
+                ## DIFF OPTIONS via Select2
+                <div class="pull-left">
+                ${h.hidden('diff_menu')}
+                </div>
+
                 <a
                   class="btn ${(c.user_session_attrs["diffmode"] == 'sideside' and 'btn-primary')} tooltip"
                   title="${h.tooltip(_('View side by side'))}"
                   href="${h.current_route_path(request, diffmode='sideside')}">
                     <span>${_('Side by Side')}</span>
                 </a>
+
                 <a
                   class="btn ${(c.user_session_attrs["diffmode"] == 'unified' and 'btn-primary')} tooltip"
                   title="${h.tooltip(_('View unified'))}" href="${h.current_route_path(request, diffmode='unified')}">
                     <span>${_('Unified')}</span>
                 </a>
+
                 % if range_diff_on is True:
                     <a
                       title="${_('Turn off: Show the diff as commit range')}"
@@ -784,12 +768,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                   class="btn"
                   href="#"
                   onclick="$('input[class=filediff-collapse-state]').prop('checked', true); updateSticky(); return false">${_('Collapse All Files')}</a>
-              <a
-                  class="btn"
-                  href="#"
-                  onclick="updateSticky();return Rhodecode.comments.toggleWideMode(this)">${_('Wide Mode Diff')}</a>
-
-          </div>
+            </div>
             </div>
         </div>
         <div class="fpath-placeholder">
@@ -963,6 +942,72 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 }
             );
 
+            var preloadData = {
+                results: [
+                    ## Wide diff mode
+                    {
+                        id: 1,
+                        text: _gettext('Toggle Wide Mode Diff'),
+                        action: function () {
+                            updateSticky();
+                            Rhodecode.comments.toggleWideMode(this);
+                            return null;
+                        },
+                        url: null,
+                    },
+
+                    ## Whitespace change
+                    % if request.GET.get('ignorews', '') == '1':
+                    {
+                        id: 2,
+                        text: _gettext('Show whitespace changes'),
+                        action: function () {},
+                        url: "${h.current_route_path(request, ignorews=0)|n}"
+                    },
+                    % else:
+                    {
+                        id: 2,
+                        text: _gettext('Hide whitespace changes'),
+                        action: function () {},
+                        url: "${h.current_route_path(request, ignorews=1)|n}"
+                    },
+                    % endif
+
+                    ## FULL CONTEXT
+                    % if request.GET.get('fullcontext', '') == '1':
+                    {
+                        id: 3,
+                        text: _gettext('Hide full context diff'),
+                        action: function () {},
+                        url: "${h.current_route_path(request, fullcontext=0)|n}"
+                    },
+                    % else:
+                    {
+                        id: 3,
+                        text: _gettext('Show full context diff'),
+                        action: function () {},
+                        url: "${h.current_route_path(request, fullcontext=1)|n}"
+                    },
+                    % endif
+
+                ]
+            };
+
+            $("#diff_menu").select2({
+                minimumResultsForSearch: -1,
+                containerCssClass: "drop-menu",
+                dropdownCssClass: "drop-menu-dropdown",
+                dropdownAutoWidth: true,
+                data: preloadData,
+                placeholder: "${_('Diff Options')}",
+            });
+            $("#diff_menu").on('select2-selecting', function (e) {
+                e.choice.action();
+                if (e.choice.url !== null) {
+                    window.location = e.choice.url
+                }
+            });
+            
         });
 
     </script>

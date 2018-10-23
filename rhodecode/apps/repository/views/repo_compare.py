@@ -44,10 +44,7 @@ log = logging.getLogger(__name__)
 class RepoCompareView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
-
         c.rhodecode_repo = self.rhodecode_vcs_repo
-
-
         return c
 
     def _get_commit_or_redirect(
@@ -144,6 +141,10 @@ class RepoCompareView(RepoAppView):
 
         # c.fulldiff disables cut_off_limit
         c.fulldiff = str2bool(self.request.GET.get('fulldiff'))
+
+        # fetch global flags of ignore ws or context lines
+        diff_context = diffs.get_diff_context(self.request)
+        hide_whitespace_changes = diffs.get_diff_whitespace_flag(self.request)
 
         c.file_path = target_path
         c.commit_statuses = ChangesetStatus.STATUSES
@@ -288,7 +289,8 @@ class RepoCompareView(RepoAppView):
 
         txt_diff = source_repo.scm_instance().get_diff(
             commit1=source_commit, commit2=target_commit,
-            path=target_path, path1=source_path)
+            path=target_path, path1=source_path,
+            ignore_whitespace=hide_whitespace_changes, context=diff_context)
 
         diff_processor = diffs.DiffProcessor(
             txt_diff, format='newdiff', diff_limit=diff_limit,

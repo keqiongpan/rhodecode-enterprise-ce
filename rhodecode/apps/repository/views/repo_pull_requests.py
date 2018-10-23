@@ -219,10 +219,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def _get_diffset(self, source_repo_name, source_repo,
                      source_ref_id, target_ref_id,
                      target_commit, source_commit, diff_limit, file_limit,
-                     fulldiff):
+                     fulldiff, hide_whitespace_changes, diff_context):
 
         vcs_diff = PullRequestModel().get_diff(
-            source_repo, source_ref_id, target_ref_id)
+            source_repo, source_ref_id, target_ref_id,
+            hide_whitespace_changes, diff_context)
 
         diff_processor = diffs.DiffProcessor(
             vcs_diff, format='newdiff', diff_limit=diff_limit,
@@ -243,11 +244,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def _get_range_diffset(self, source_scm, source_repo,
                            commit1, commit2, diff_limit, file_limit,
-                           fulldiff, ign_whitespace_lcl, context_lcl):
+                           fulldiff, hide_whitespace_changes, diff_context):
         vcs_diff = source_scm.get_diff(
             commit1, commit2,
-            ignore_whitespace=ign_whitespace_lcl,
-            context=context_lcl)
+            ignore_whitespace=hide_whitespace_changes,
+            context=diff_context)
 
         diff_processor = diffs.DiffProcessor(
             vcs_diff, format='newdiff', diff_limit=diff_limit,
@@ -280,6 +281,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         from_version = self.request.GET.get('from_version') or version
         merge_checks = self.request.GET.get('merge_checks')
         c.fulldiff = str2bool(self.request.GET.get('fulldiff'))
+
+        # fetch global flags of ignore ws or context lines
+        diff_context = diffs.get_diff_context(self.request)
+        hide_whitespace_changes = diffs.get_diff_whitespace_flag(self.request)
+
         force_refresh = str2bool(self.request.GET.get('force_refresh'))
 
         (pull_request_latest,
@@ -490,7 +496,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         cache_path = self.rhodecode_vcs_repo.get_create_shadow_cache_pr_path(target_repo)
         cache_file_path = diff_cache_exist(
             cache_path, 'pull_request', pull_request_id, version_normalized,
-            from_version_normalized, source_ref_id, target_ref_id, c.fulldiff)
+            from_version_normalized, source_ref_id, target_ref_id,
+            hide_whitespace_changes, diff_context, c.fulldiff)
 
         caching_enabled = self._is_diff_cache_enabled(c.target_repo)
         force_recache = self.get_recache_flag()
@@ -561,7 +568,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     c.source_repo.repo_name, commits_source_repo,
                     source_ref_id, target_ref_id,
                     target_commit, source_commit,
-                    diff_limit, file_limit, c.fulldiff)
+                    diff_limit, file_limit, c.fulldiff,
+                    hide_whitespace_changes, diff_context)
 
                 # save cached diff
                 if caching_enabled:

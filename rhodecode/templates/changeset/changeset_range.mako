@@ -68,29 +68,6 @@
             </div>
           </div>
 
-         <%doc>
-         ##TODO(marcink): implement this and diff menus
-          <div class="fieldset">
-            <div class="left-label">
-              ${_('Diff options')}:
-            </div>
-            <div class="right-content">
-                <div class="diff-actions">
-                  <a href="${h.route_path('repo_commit_raw',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
-                    ${_('Raw Diff')}
-                  </a>
-                   |
-                  <a href="${h.route_path('repo_commit_patch',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
-                    ${_('Patch Diff')}
-                  </a>
-                   |
-                  <a href="${h.route_path('repo_commit_download',repo_name=c.repo_name,commit_id='?',_query=dict(diff='download'))}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
-                    ${_('Download Diff')}
-                  </a>
-                </div>
-            </div>
-          </div>
-        </%doc>
         </div> <!-- end summary-detail -->
 
     </div> <!-- end summary -->

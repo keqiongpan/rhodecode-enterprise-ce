@@ -73,7 +73,7 @@ class PullRequestModel(BaseModel):
 
     cls = PullRequest
 
-    DIFF_CONTEXT = 3
+    DIFF_CONTEXT = diffs.DEFAULT_CONTEXT
 
     MERGE_STATUS_MESSAGES = {
         MergeFailureReason.NONE: lazy_ugettext(
@@ -877,19 +877,21 @@ class PullRequestModel(BaseModel):
         diff_context = (
             self.DIFF_CONTEXT +
             CommentsModel.needed_extra_diff_context())
-
+        hide_whitespace_changes = False
         source_repo = pull_request_version.source_repo
         source_ref_id = pull_request_version.source_ref_parts.commit_id
         target_ref_id = pull_request_version.target_ref_parts.commit_id
         old_diff = self._get_diff_from_pr_or_version(
-            source_repo, source_ref_id, target_ref_id, context=diff_context)
+            source_repo, source_ref_id, target_ref_id,
+            hide_whitespace_changes=hide_whitespace_changes, diff_context=diff_context)
 
         source_repo = pull_request.source_repo
         source_ref_id = pull_request.source_ref_parts.commit_id
         target_ref_id = pull_request.target_ref_parts.commit_id
 
         new_diff = self._get_diff_from_pr_or_version(
-            source_repo, source_ref_id, target_ref_id, context=diff_context)
+            source_repo, source_ref_id, target_ref_id,
+            hide_whitespace_changes=hide_whitespace_changes, diff_context=diff_context)
 
         old_diff_data = diffs.DiffProcessor(old_diff)
         old_diff_data.prepare()
@@ -1488,12 +1490,17 @@ class PullRequestModel(BaseModel):
                 raise EmptyRepositoryError()
         return groups, selected
 
-    def get_diff(self, source_repo, source_ref_id, target_ref_id, context=DIFF_CONTEXT):
+    def get_diff(self, source_repo, source_ref_id, target_ref_id,
+                 hide_whitespace_changes, diff_context):
+
         return self._get_diff_from_pr_or_version(
-            source_repo, source_ref_id, target_ref_id, context=context)
+            source_repo, source_ref_id, target_ref_id,
+            hide_whitespace_changes=hide_whitespace_changes, diff_context=diff_context)
 
     def _get_diff_from_pr_or_version(
-            self, source_repo, source_ref_id, target_ref_id, context):
+            self, source_repo, source_ref_id, target_ref_id,
+            hide_whitespace_changes, diff_context):
+
         target_commit = source_repo.get_commit(
             commit_id=safe_str(target_ref_id))
         source_commit = source_repo.get_commit(
@@ -1517,7 +1524,8 @@ class PullRequestModel(BaseModel):
                   safe_unicode(vcs_repo.path))
 
         vcs_diff = vcs_repo.get_diff(
-            commit1=target_commit, commit2=source_commit, context=context)
+            commit1=target_commit, commit2=source_commit,
+            ignore_whitespace=hide_whitespace_changes, context=diff_context)
         return vcs_diff
 
     def _is_merge_enabled(self, pull_request):

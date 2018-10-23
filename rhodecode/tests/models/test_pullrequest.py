@@ -373,7 +373,8 @@ class TestPullRequestModel(object):
         source_ref_id = pull_request.source_ref_parts.commit_id
         target_ref_id = pull_request.target_ref_parts.commit_id
         diff = PullRequestModel()._get_diff_from_pr_or_version(
-            source_repo, source_ref_id, target_ref_id, context=6)
+            source_repo, source_ref_id, target_ref_id,
+            hide_whitespace_changes=False, diff_context=6)
         assert 'file_1' in diff.raw
 
     def test_generate_title_returns_unicode(self):
