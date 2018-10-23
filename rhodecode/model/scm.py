@@ -465,8 +465,8 @@ class ScmModel(BaseModel):
 
         # We trigger the post-push action
         hooks_utils.trigger_post_push_hook(
-            username=user.username, action='push_local', repo_name=repo_name,
-            repo_alias=repo.alias, commit_ids=[tip.raw_id])
+            username=user.username, action='push_local', hook_type='post_push',
+            repo_name=repo_name, repo_alias=repo.alias, commit_ids=[tip.raw_id])
         return tip
 
     def _sanitize_path(self, f_path):
@@ -644,6 +644,7 @@ class ScmModel(BaseModel):
             hooks_utils.trigger_post_push_hook(
                 username=user.username, action='push_local',
                 repo_name=repo.repo_name, repo_alias=scm_instance.alias,
+                hook_type='post_push',
                 commit_ids=[tip.raw_id])
         return tip
 
@@ -708,7 +709,7 @@ class ScmModel(BaseModel):
 
         if trigger_push_hook:
             hooks_utils.trigger_post_push_hook(
-                username=user.username, action='push_local',
+                username=user.username, action='push_local', hook_type='post_push',
                 repo_name=repo.repo_name, repo_alias=scm_instance.alias,
                 commit_ids=[tip.raw_id])
 
@@ -768,7 +769,7 @@ class ScmModel(BaseModel):
         self.mark_for_invalidation(repo.repo_name)
         if trigger_push_hook:
             hooks_utils.trigger_post_push_hook(
-                username=user.username, action='push_local',
+                username=user.username, action='push_local', hook_type='post_push',
                 repo_name=repo.repo_name, repo_alias=scm_instance.alias,
                 commit_ids=[tip.raw_id])
         return tip

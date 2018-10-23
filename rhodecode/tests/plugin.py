@@ -154,10 +154,11 @@ def activate_example_rcextensions(request):
     """
     Patch in an example rcextensions module which verifies passed in kwargs.
     """
-    from rhodecode.tests.other import example_rcextensions
+    from rhodecode.config import rcextensions
 
     old_extensions = rhodecode.EXTENSIONS
-    rhodecode.EXTENSIONS = example_rcextensions
+    rhodecode.EXTENSIONS = rcextensions
+    rhodecode.EXTENSIONS.calls = collections.defaultdict(list)
 
     @request.addfinalizer
     def cleanup():

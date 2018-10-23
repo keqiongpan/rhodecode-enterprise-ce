@@ -578,11 +578,11 @@ class TestPullrequestsView(object):
         assert actions[-1].action_data['commit_ids'] == pr_commit_ids
 
         # Check post_push rcextension was really executed
-        push_calls = rhodecode.EXTENSIONS.calls['post_push']
+        push_calls = rhodecode.EXTENSIONS.calls['_push_hook']
         assert len(push_calls) == 1
         unused_last_call_args, last_call_kwargs = push_calls[0]
         assert last_call_kwargs['action'] == 'push'
-        assert last_call_kwargs['pushed_revs'] == pr_commit_ids
+        assert last_call_kwargs['commit_ids'] == pr_commit_ids
 
     def test_merge_pull_request_disabled(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request(mergeable=False)

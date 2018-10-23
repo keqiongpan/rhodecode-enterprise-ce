@@ -393,6 +393,7 @@ class TestIntegrationMerge(object):
     def test_merge_triggers_push_hooks(
             self, pr_util, user_admin, capture_rcextensions, merge_extras,
             extra_config):
+
         pull_request = pr_util.create_pull_request(
             approved=True, mergeable=True)
         # TODO: johbo: Needed for sqlite, try to find an automatic way for it
@@ -404,8 +405,8 @@ class TestIntegrationMerge(object):
                 pull_request, user_admin, extras=merge_extras)
 
         assert merge_state.executed
-        assert 'pre_push' in capture_rcextensions
-        assert 'post_push' in capture_rcextensions
+        assert '_pre_push_hook' in capture_rcextensions
+        assert '_push_hook' in capture_rcextensions
 
     def test_merge_can_be_rejected_by_pre_push_hook(
             self, pr_util, user_admin, capture_rcextensions, merge_extras):

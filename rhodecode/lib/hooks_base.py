@@ -39,7 +39,21 @@ from rhodecode.model.db import Repository, User
 log = logging.getLogger(__name__)
 
 
-HookResponse = collections.namedtuple('HookResponse', ('status', 'output'))
+class HookResponse(object):
+    def __init__(self, status, output):
+        self.status = status
+        self.output = output
+
+    def __add__(self, other):
+        other_status = getattr(other, 'status', 0)
+        new_status = max(self.status, other_status)
+        other_output = getattr(other, 'output', '')
+        new_output = self.output + other_output
+
+        return HookResponse(new_status, new_output)
+
+    def __bool__(self):
+        return self.status == 0
 
 
 def is_shadow_repo(extras):
@@ -110,6 +124,7 @@ def pre_push(extras):
         else:
             raise _http_ret
 
+    hook_response = ''
     if not is_shadow_repo(extras):
         if extras.commit_ids and extras.check_branch_perms:
 
@@ -152,11 +167,12 @@ def pre_push(extras):
 
         # Propagate to external components. This is done after checking the
         # lock, for consistent behavior.
-        pre_push_extension(repo_store_path=Repository.base_path(), **extras)
+        hook_response = pre_push_extension(
+            repo_store_path=Repository.base_path(), **extras)
         events.trigger(events.RepoPrePushEvent(
             repo_name=extras.repository, extras=extras))
 
-    return HookResponse(0, output)
+    return HookResponse(0, output) + hook_response
 
 
 def pre_pull(extras):
@@ -182,12 +198,15 @@ def pre_pull(extras):
 
     # Propagate to external components. This is done after checking the
     # lock, for consistent behavior.
+    hook_response = ''
     if not is_shadow_repo(extras):
-        pre_pull_extension(**extras)
+        extras.hook_type = extras.hook_type or 'pre_pull'
+        hook_response = pre_pull_extension(
+            repo_store_path=Repository.base_path(), **extras)
         events.trigger(events.RepoPrePullEvent(
             repo_name=extras.repository, extras=extras))
 
-    return HookResponse(0, output)
+    return HookResponse(0, output) + hook_response
 
 
 def post_pull(extras):
@@ -198,15 +217,8 @@ def post_pull(extras):
         ip_addr=extras.ip)
     repo = audit_logger.RepoWrap(repo_name=extras.repository)
     audit_logger.store(
-        'user.pull', action_data={
-            'user_agent': extras.user_agent},
+        'user.pull', action_data={'user_agent': extras.user_agent},
         user=audit_user, repo=repo, commit=True)
-
-    # Propagate to external components.
-    if not is_shadow_repo(extras):
-        post_pull_extension(**extras)
-        events.trigger(events.RepoPullEvent(
-            repo_name=extras.repository, extras=extras))
 
     output = ''
     # make lock is a tri state False, True, None. We only make lock on True
@@ -227,7 +239,16 @@ def post_pull(extras):
             # 2xx Codes don't raise exceptions
             output += _http_ret.title
 
-    return HookResponse(0, output)
+    # Propagate to external components.
+    hook_response = ''
+    if not is_shadow_repo(extras):
+        extras.hook_type = extras.hook_type or 'post_pull'
+        hook_response = post_pull_extension(
+            repo_store_path=Repository.base_path(), **extras)
+        events.trigger(events.RepoPullEvent(
+            repo_name=extras.repository, extras=extras))
+
+    return HookResponse(0, output) + hook_response
 
 
 def post_push(extras):
@@ -245,16 +266,6 @@ def post_push(extras):
         user=audit_user, repo=repo, commit=True)
 
     # Propagate to external components.
-    if not is_shadow_repo(extras):
-        post_push_extension(
-            repo_store_path=Repository.base_path(),
-            pushed_revs=commit_ids,
-            **extras)
-        events.trigger(events.RepoPushEvent(
-            repo_name=extras.repository,
-            pushed_commit_ids=commit_ids,
-            extras=extras))
-
     output = ''
     # make lock is a tri state False, True, None. We only release lock on False
     if extras.make_lock is False and not is_shadow_repo(extras):
@@ -285,8 +296,16 @@ def post_push(extras):
             output += 'RhodeCode: open pull request link: {}\n'.format(
                 tmpl.format(ref_type='bookmark', ref_name=book_name))
 
+    hook_response = ''
+    if not is_shadow_repo(extras):
+        hook_response = post_push_extension(
+            repo_store_path=Repository.base_path(),
+            **extras)
+        events.trigger(events.RepoPushEvent(
+            repo_name=extras.repository, pushed_commit_ids=commit_ids, extras=extras))
+
     output += 'RhodeCode: push completed\n'
-    return HookResponse(0, output)
+    return HookResponse(0, output) + hook_response
 
 
 def _locked_by_explanation(repo_name, user_name, reason):
@@ -299,8 +318,10 @@ def _locked_by_explanation(repo_name, user_name, reason):
 def check_allowed_create_user(user_dict, created_by, **kwargs):
     # pre create hooks
     if pre_create_user.is_active():
-        allowed, reason = pre_create_user(created_by=created_by, **user_dict)
+        hook_result = pre_create_user(created_by=created_by, **user_dict)
+        allowed = hook_result.status == 0
         if not allowed:
+            reason = hook_result.output
             raise UserCreationError(reason)
 
 
@@ -319,8 +340,15 @@ class ExtensionCallback(object):
 
     def __call__(self, *args, **kwargs):
         log.debug('Calling extension callback for %s', self._hook_name)
+        kwargs_to_pass = {}
+        for key in self._kwargs_keys:
+            try:
+                kwargs_to_pass[key] = kwargs[key]
+            except KeyError:
+                log.error('Failed to fetch %s key. Expected keys: %s',
+                          key, self._kwargs_keys)
+                raise
 
-        kwargs_to_pass = dict((key, kwargs[key]) for key in self._kwargs_keys)
         # backward compat for removed api_key for old hooks. THis was it works
         # with older rcextensions that require api_key present
         if self._hook_name in ['CREATE_USER_HOOK', 'DELETE_USER_HOOK']:
@@ -343,28 +371,28 @@ pre_pull_extension = ExtensionCallback(
     hook_name='PRE_PULL_HOOK',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
-        'repository'))
+        'repository', 'hook_type', 'user_agent', 'repo_store_path',))
 
 
 post_pull_extension = ExtensionCallback(
     hook_name='PULL_HOOK',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
-        'repository'))
+        'repository', 'hook_type', 'user_agent', 'repo_store_path',))
 
 
 pre_push_extension = ExtensionCallback(
     hook_name='PRE_PUSH_HOOK',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
-        'repository', 'repo_store_path', 'commit_ids'))
+        'repository', 'repo_store_path', 'commit_ids', 'hook_type', 'user_agent',))
 
 
 post_push_extension = ExtensionCallback(
     hook_name='PUSH_HOOK',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
-        'repository', 'repo_store_path', 'pushed_revs'))
+        'repository', 'repo_store_path', 'commit_ids', 'hook_type', 'user_agent',))
 
 
 pre_create_user = ExtensionCallback(

@@ -590,6 +590,7 @@ class PullRequestModel(BaseModel):
 
     def merge_repo(self, pull_request, user, extras):
         log.debug("Merging pull request %s", pull_request.pull_request_id)
+        extras['user_agent'] = 'internal-merge'
         merge_state = self._merge_pull_request(pull_request, user, extras)
         if merge_state.executed:
             log.debug(

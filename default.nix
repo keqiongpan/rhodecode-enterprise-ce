@@ -201,6 +201,9 @@ let
         cp configs/production.ini $out/etc
         echo "[DONE]: saved enterprise-ce production.ini into $out/etc"
 
+        cp -r rhodecode/config/rcextensions $out/etc/rcextensions.tmpl
+        echo "[DONE]: saved enterprise-ce rcextensions into $out/etc/rcextensions.tmpl"
+
         # python based programs need to be wrapped
         mkdir -p $out/bin
 

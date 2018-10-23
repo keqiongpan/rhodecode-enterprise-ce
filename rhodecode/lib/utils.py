@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import re
+import sys
 import shutil
 import tempfile
 import traceback
@@ -43,7 +44,6 @@ from mako import exceptions
 from pyramid.threadlocal import get_current_registry
 from rhodecode.lib.request import Request
 
-from rhodecode.lib.fakemod import create_module
 from rhodecode.lib.vcs.backends.base import Config
 from rhodecode.lib.vcs.exceptions import VCSError
 from rhodecode.lib.vcs.utils.helpers import get_scm, get_scm_backend
@@ -631,21 +631,21 @@ def load_rcextensions(root_path):
     import rhodecode
     from rhodecode.config import conf
 
-    path = os.path.join(root_path, 'rcextensions', '__init__.py')
-    if os.path.isfile(path):
-        rcext = create_module('rc', path)
-        EXT = rhodecode.EXTENSIONS = rcext
-        log.debug('Found rcextensions now loading %s...', rcext)
+    path = os.path.join(root_path)
+    sys.path.append(path)
+    try:
+        rcextensions = __import__('rcextensions')
+    except ImportError:
+        log.warn('Unable to load rcextensions from %s', path)
+        rcextensions = None
+
+    if rcextensions:
+        log.debug('Found rcextensions module loaded %s...', rcextensions)
+        rhodecode.EXTENSIONS = rcextensions
 
         # Additional mappings that are not present in the pygments lexers
-        conf.LANGUAGES_EXTENSIONS_MAP.update(getattr(EXT, 'EXTRA_MAPPINGS', {}))
-
-        # auto check if the module is not missing any data, set to default if is
-        # this will help autoupdate new feature of rcext module
-        #from rhodecode.config import rcextensions
-        #for k in dir(rcextensions):
-        #    if not k.startswith('_') and not hasattr(EXT, k):
-        #        setattr(EXT, k, getattr(rcextensions, k))
+        conf.LANGUAGES_EXTENSIONS_MAP.update(
+            getattr(rhodecode.EXTENSIONS, 'EXTRA_MAPPINGS', {}))
 
 
 def get_custom_lexer(extension):
