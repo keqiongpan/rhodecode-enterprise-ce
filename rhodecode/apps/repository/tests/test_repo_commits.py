@@ -293,26 +293,13 @@ Added a symlink
 """ + diffs['svn'],
     }
 
-    def _check_diff_menus(self, response, right_menu=False,):
-        # diff menus
-        for elem in ['Show File', 'Unified Diff', 'Side-by-side Diff',
-                     'Raw Diff', 'Download Diff']:
-            response.mustcontain(elem)
-
-        # right pane diff menus
-        if right_menu:
-            for elem in ['Ignore whitespace', 'Increase context',
-                         'Hide comments']:
-                response.mustcontain(elem)
-
     def _check_new_diff_menus(self, response, right_menu=False,):
-        # diff menus
-        for elem in ['Show file before', 'Show file after',
-                     'Raw diff', 'Download diff']:
+        # individual file diff menus
+        for elem in ['Show file before', 'Show file after']:
             response.mustcontain(elem)
 
         # right pane diff menus
         if right_menu:
-            for elem in ['Ignore whitespace', 'Increase context',
-                         'Hide comments']:
+            for elem in ['Hide whitespace changes', 'Toggle Wide Mode diff',
+                         'Show full context diff']:
                 response.mustcontain(elem)

@@ -573,7 +573,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             %if use_comments and line.original.lineno:
             ${render_add_comment_button()}
             %endif
-            <span class="cb-code">${line.original.action} ${line.original.content or '' | n}</span>
+            <span class="cb-code"><span class="cb-action ${action_class(line.original.action)}"></span>${line.original.content or '' | n}</span>
 
             %if use_comments and line.original.lineno and line_old_comments:
                 ${inline_comments_container(line_old_comments, inline_comments)}
@@ -616,7 +616,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             %if use_comments and line.modified.lineno:
             ${render_add_comment_button()}
             %endif
-            <span class="cb-code">${line.modified.action} ${line.modified.content or '' | n}</span>
+            <span class="cb-code"><span class="cb-action ${action_class(line.modified.action)}"></span>${line.modified.content or '' | n}</span>
             %if use_comments and line.modified.lineno and line_new_comments:
             ${inline_comments_container(line_new_comments, inline_comments)}
             %endif
@@ -682,7 +682,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             %if use_comments:
             ${render_add_comment_button()}
             %endif
-            <span class="cb-code">${action} ${content or '' | n}</span>
+            <span class="cb-code"><span class="cb-action ${action_class(action)}"></span> ${content or '' | n}</span>
             %if use_comments and comments:
             ${inline_comments_container(comments, inline_comments)}
             %endif
@@ -947,7 +947,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                     ## Wide diff mode
                     {
                         id: 1,
-                        text: _gettext('Toggle Wide Mode Diff'),
+                        text: _gettext('Toggle Wide Mode diff'),
                         action: function () {
                             updateSticky();
                             Rhodecode.comments.toggleWideMode(this);
@@ -1007,7 +1007,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                     window.location = e.choice.url
                 }
             });
-            
+
         });
 
     </script>

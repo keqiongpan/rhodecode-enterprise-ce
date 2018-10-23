@@ -1098,6 +1098,17 @@ table.cb {
                 .nonl {
                     color: @color5;
                 }
+                .cb-action {
+                    &:before {
+                        content: "  ";
+                    }
+                    &.cb-deletion:before {
+                        content: "- ";
+                    }
+                    &.cb-addition:before {
+                        content: "+ ";
+                    }
+                }
             }
 
             &> button.cb-comment-box-opener {
