@@ -40,7 +40,6 @@ msgpack-python==0.5.6
 mysql-python==1.2.5
 pymysql==0.8.1
 pyotp==2.2.6
-objgraph==3.1.1
 packaging==15.2
 paste==2.0.3
 pastedeploy==1.5.2
@@ -131,3 +130,6 @@ appenlight-client==0.6.25
 
 ## test related requirements
 -r requirements_test.txt
+
+## uncomment to add the debug libraries
+#-r requirements_debug.txt

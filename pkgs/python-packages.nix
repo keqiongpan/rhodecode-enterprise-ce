@@ -525,17 +525,6 @@ self: super: {
       license = [ { fullName = "GNU Lesser General Public License v3 or later (LGPLv3+)"; } { fullName = "LGPL"; } ];
     };
   };
-  "graphviz" = super.buildPythonPackage {
-    name = "graphviz-0.9";
-    doCheck = false;
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/2b/e6/71521bab8fb99833133f08f6ac0460e2f6b425a7f75ac4b02323c3c3b512/graphviz-0.9.zip";
-      sha256 = "14r9brj4r31b3qy1nnn34v3l4h0n39bqxg9sn2fz4p3pp5mglnl6";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
   "greenlet" = super.buildPythonPackage {
     name = "greenlet-0.4.15";
     doCheck = false;
@@ -920,20 +909,6 @@ self: super: {
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
-    };
-  };
-  "objgraph" = super.buildPythonPackage {
-    name = "objgraph-3.1.1";
-    doCheck = false;
-    propagatedBuildInputs = [
-      self."graphviz"
-    ];
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/be/58/9ca81a20cc837054e94866df1475d899caaa94f3732b8a46006858b015f7/objgraph-3.1.1.tar.gz";
-      sha256 = "17aq4cwainiwvj8x61j0hx45c313bkwza5fijnmmw8v8glyy2bcc";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
     };
   };
   "packaging" = super.buildPythonPackage {
@@ -1696,7 +1671,6 @@ self: super: {
       self."mysql-python"
       self."pymysql"
       self."pyotp"
-      self."objgraph"
       self."packaging"
       self."paste"
       self."pastedeploy"
