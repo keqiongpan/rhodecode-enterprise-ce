@@ -814,11 +814,11 @@ self: super: {
     };
   };
   "mistune" = super.buildPythonPackage {
-    name = "mistune-0.8.3";
+    name = "mistune-0.8.4";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/9d/be/e06d4346cc608a01dec6bf770d7d0303a4fd6db588b318ced18f5f257145/mistune-0.8.3.tar.gz";
-      sha256 = "06b662p6kf46wh2jsabaqhaq4bz1srh2zxkrnx4yg96azlxw645w";
+      url = "https://files.pythonhosted.org/packages/2d/a4/509f6e7783ddd35482feda27bc7f72e65b5e7dc910eca4ab2164daf9c577/mistune-0.8.4.tar.gz";
+      sha256 = "0vkmsh0x480rni51lhyvigfdf06b9247z868pk3bal1wnnfl58sr";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1058,11 +1058,11 @@ self: super: {
     };
   };
   "pluggy" = super.buildPythonPackage {
-    name = "pluggy-0.7.1";
+    name = "pluggy-0.8.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/a1/83/ef7d976c12d67a5c7a5bc2a47f0501c926cabae9d9fcfdc26d72abc9ba15/pluggy-0.7.1.tar.gz";
-      sha256 = "1qbn70mksmr03hac6jgp6fiqc4l7859z8dchx2x950vhlij87swm";
+      url = "https://files.pythonhosted.org/packages/65/25/81d0de17cd00f8ca994a4e74e3c4baf7cd25072c0b831dad5c7d9d6138f8/pluggy-0.8.0.tar.gz";
+      sha256 = "1580p47l2zqzsza8jcnw1h2wh3vvmygk6ly8bvi4w0g8j14sjys4";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1978,14 +1978,14 @@ self: super: {
     };
   };
   "transaction" = super.buildPythonPackage {
-    name = "transaction-2.2.1";
+    name = "transaction-2.4.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."zope.interface"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/a6/5e/09da91cb9373c73aae41721e5571c47db72fa9e11b259ca8fd3b01e306e9/transaction-2.2.1.tar.gz";
-      sha256 = "0ykcfx5mw76z8wwg6a68ahr52q3qa75hky1xx9axbr9pwiq2097j";
+      url = "https://files.pythonhosted.org/packages/9d/7d/0e8af0d059e052b9dcf2bb5a08aad20ae3e238746bdd3f8701a60969b363/transaction-2.4.0.tar.gz";
+      sha256 = "17wz1y524ca07vr03yddy8dv0gbscs06dbdywmllxv5rc725jq3j";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpl21 ];
