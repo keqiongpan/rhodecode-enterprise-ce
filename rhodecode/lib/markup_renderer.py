@@ -436,12 +436,20 @@ class MarkupRenderer(object):
             def preprocess(self, nb, resources):
                 sandbox_text = 'SandBoxed(IPython.core.display.Javascript object)'
                 for cell in nb['cells']:
-                    if safe and 'outputs' in cell:
+                    if not safe:
+                        continue
+
+                    if 'outputs' in cell:
                         for cell_output in cell['outputs']:
                             if 'data' in cell_output:
                                 if 'application/javascript' in cell_output['data']:
                                     cell_output['data']['text/plain'] = sandbox_text
                                     cell_output['data'].pop('application/javascript', None)
+
+                    if 'source' in cell and cell['cell_type'] == 'markdown':
+                        # sanitize similar like in markdown
+                        cell['source'] = cls.bleach_clean(cell['source'])
+
                 return nb, resources
 
         def _sanitize_resources(resources):
