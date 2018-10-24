@@ -14,7 +14,6 @@ let
 
   enterprise-ce = import ./default.nix {
     inherit
-      pkgs
       pythonPackages
       doCheck;
   };

@@ -24,12 +24,19 @@ args@
 , doCheck ? false
 , ...
 }:
+let pkgs_ = (import <nixpkgs> {}); in
 
 let
   # Use nixpkgs from args or import them. We use this indirect approach
   # through args to be able to use the name `pkgs` for our customized packages.
   # Otherwise we will end up with an infinite recursion.
-  pkgs = args.pkgs or (import <nixpkgs> { });
+  pkgs = args.pkgs or (import <nixpkgs> {
+    overlays = [
+      (import ./pkgs/overlays.nix)
+    ];
+    inherit (pkgs_)
+      system;
+  });
 
   # Works with the new python-packages, still can fallback to the old
   # variant.
