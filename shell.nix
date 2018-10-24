@@ -50,7 +50,10 @@ let
       nixFile = "${path}/default.nix";
 
       derivate = import "${nixFile}" {
-        inherit doCheck pkgs pythonPackages;
+        inherit
+          doCheck
+          pkgs
+          pythonPackages;
       };
     in
       pkgs.lib.lists.optionals doIt (

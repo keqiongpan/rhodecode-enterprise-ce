@@ -62,7 +62,11 @@ let
 
   sources =
     let
-      inherit (pkgs.lib) all isString attrValues;
+      inherit
+        (pkgs.lib)
+        all
+        isString
+        attrValues;
       sourcesConfig = pkgs.config.rc.sources or {};
     in
       # Ensure that sources are configured as strings. Using a path
@@ -75,7 +79,8 @@ let
 
   buildBowerComponents = pkgs.buildBowerComponents;
   nodeEnv = import ./pkgs/node-default.nix {
-    inherit pkgs;
+    inherit
+      pkgs;
   };
   nodeDependencies = nodeEnv.shell.nodeDependencies;
 
@@ -261,8 +266,13 @@ let
       getAttr pythonPackages pkgs;
 
   pythonGeneratedPackages = import ./pkgs/python-packages.nix {
-    inherit pkgs;
-    inherit (pkgs) fetchurl fetchgit fetchhg;
+    inherit
+      pkgs;
+    inherit
+      (pkgs)
+      fetchurl
+      fetchgit
+      fetchhg;
   };
 
   pythonCommunityOverrides = import ./pkgs/python-packages-overrides.nix {
