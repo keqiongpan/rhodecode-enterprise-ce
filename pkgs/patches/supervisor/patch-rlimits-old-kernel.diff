@@ -1,0 +1,16 @@
+diff -rup supervisor-3.3.4-orig/supervisor/options.py supervisor-3.3.4/supervisor/options.py
+--- supervisor-3.3.4-orig/supervisor/options.py	1970-01-01 01:00:01.000000000 +0100
++++ supervisor-3.3.4/supervisor-new/options.py	2018-10-24 10:53:19.368503735 +0200
+@@ -1395,7 +1395,11 @@ class ServerOptions(Options):
+             name = limit['name']
+             name = name # name is used below by locals()
+
+-            soft, hard = resource.getrlimit(res)
++            try:
++                soft, hard = resource.getrlimit(res)
++            except Exception:
++                # handle old kernel problems, this is not critical to execute
++                soft, hard = -1, -1
+
+             if (soft < min) and (soft != -1): # -1 means unlimited
+                 if (hard < min) and (hard != -1):

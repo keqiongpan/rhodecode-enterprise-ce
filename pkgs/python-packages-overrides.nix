@@ -240,6 +240,12 @@ self: super: {
     };
   });
 
+  "supervisor" = super."supervisor".override (attrs: {
+    patches = [
+      ./patches/supervisor/patch-rlimits-old-kernel.diff
+    ];
+  });
+
   # Avoid that base packages screw up the build process
   inherit (basePythonPackages)
     setuptools;
