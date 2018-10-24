@@ -88,7 +88,7 @@ class TestRepoCommitView(object):
         response.mustcontain('21 files changed: 943 inserted, 288 deleted')
 
         # files op files
-        response.mustcontain('File no longer present at commit: %s' %
+        response.mustcontain('File not present at commit: %s' %
                              _shorten_commit_id(commit_id))
 
         # svn uses a different filename
@@ -133,7 +133,7 @@ class TestRepoCommitView(object):
             response.mustcontain('21 files changed: 943 inserted, 288 deleted')
 
         # files op files
-        response.mustcontain('File no longer present at commit: %s' %
+        response.mustcontain('File not present at commit: %s' %
                              _shorten_commit_id(commit_ids[1]))
         response.mustcontain('Added docstrings to vcs.cli')  # commit msg
         response.mustcontain('Changed theme to ADC theme')  # commit msg
@@ -163,7 +163,7 @@ class TestRepoCommitView(object):
         response.mustcontain(_shorten_commit_id(commit_ids[1]))
 
         # files op files
-        response.mustcontain('File no longer present at commit: %s' %
+        response.mustcontain('File not present at commit: %s' %
                              _shorten_commit_id(commit_ids[1]))
 
         # svn is special

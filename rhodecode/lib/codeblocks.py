@@ -377,6 +377,7 @@ class DiffSet(object):
     def __init__(self, highlight_mode=HL_REAL, repo_name=None,
                  source_repo_name=None,
                  source_node_getter=lambda filename: None,
+                 target_repo_name=None,
                  target_node_getter=lambda filename: None,
                  source_nodes=None, target_nodes=None,
                  # files over this size will use fast highlighting
@@ -390,6 +391,7 @@ class DiffSet(object):
         self.source_nodes = source_nodes or {}
         self.target_nodes = target_nodes or {}
         self.repo_name = repo_name
+        self.target_repo_name = target_repo_name or repo_name
         self.source_repo_name = source_repo_name or repo_name
         self.max_file_size_limit = max_file_size_limit
 
@@ -402,6 +404,7 @@ class DiffSet(object):
             file_stats={},
             limited_diff=isinstance(patchset, LimitedDiffContainer),
             repo_name=self.repo_name,
+            target_repo_name=self.target_repo_name,
             source_repo_name=self.source_repo_name,
             source_ref=source_ref,
             target_ref=target_ref,
@@ -414,6 +417,7 @@ class DiffSet(object):
                 target_ref=diffset.target_ref,
                 repo_name=diffset.repo_name,
                 source_repo_name=diffset.source_repo_name,
+                target_repo_name=diffset.target_repo_name,
             ))
             diffset.files.append(filediff)
             diffset.changed_files += 1

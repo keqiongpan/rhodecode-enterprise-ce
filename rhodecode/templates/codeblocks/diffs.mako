@@ -443,11 +443,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 
 <%def name="diff_menu(filediff, use_comments=False)">
     <div class="filediff-menu">
-%if filediff.diffset.source_ref:
+
+    %if filediff.diffset.source_ref:
+
+    ## FILE BEFORE CHANGES
     %if filediff.operation in ['D', 'M']:
         <a
             class="tooltip"
-            href="${h.route_path('repo_files',repo_name=filediff.diffset.repo_name,commit_id=filediff.diffset.source_ref,f_path=filediff.source_file_path)}"
+            href="${h.route_path('repo_files',repo_name=filediff.diffset.target_repo_name,commit_id=filediff.diffset.source_ref,f_path=filediff.source_file_path)}"
             title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
         >
             ${_('Show file before')}
@@ -455,11 +458,13 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     %else:
         <span
             class="tooltip"
-            title="${h.tooltip(_('File no longer present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
+            title="${h.tooltip(_('File not present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
         >
             ${_('Show file before')}
         </span> |
     %endif
+
+    ## FILE AFTER CHANGES
     %if filediff.operation in ['A', 'M']:
         <a
             class="tooltip"
@@ -471,20 +476,21 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     %else:
         <span
             class="tooltip"
-            title="${h.tooltip(_('File no longer present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
+            title="${h.tooltip(_('File not present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
             >
             ${_('Show file after')}
         </span>
     %endif
 
-        % if use_comments:
-        |
-        <a href="#" onclick="return Rhodecode.comments.toggleComments(this);">
-            <span class="show-comment-button">${_('Show comments')}</span><span class="hide-comment-button">${_('Hide comments')}</span>
-        </a>
-        % endif
+    % if use_comments:
+    |
+    <a href="#" onclick="return Rhodecode.comments.toggleComments(this);">
+        <span class="show-comment-button">${_('Show comments')}</span><span class="hide-comment-button">${_('Hide comments')}</span>
+    </a>
+    % endif
 
-%endif
+    %endif
+
     </div>
 </%def>
 

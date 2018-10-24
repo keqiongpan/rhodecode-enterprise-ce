@@ -300,6 +300,7 @@ class RepoCompareView(RepoAppView):
         diffset = codeblocks.DiffSet(
             repo_name=source_repo.repo_name,
             source_node_getter=codeblocks.diffset_node_getter(source_commit),
+            target_repo_name=self.db_repo_name,
             target_node_getter=codeblocks.diffset_node_getter(target_commit),
         )
         c.diffset = self.path_filter.render_patchset_filtered(
