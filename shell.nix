@@ -52,7 +52,6 @@ let
       derivate = import "${nixFile}" {
         inherit
           doCheck
-          pkgs
           pythonPackages;
       };
     in

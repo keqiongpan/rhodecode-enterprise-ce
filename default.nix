@@ -34,7 +34,8 @@ let
     overlays = [
       (import ./pkgs/overlays.nix)
     ];
-    inherit (pkgs_)
+    inherit
+      (pkgs_)
       system;
   });
 
