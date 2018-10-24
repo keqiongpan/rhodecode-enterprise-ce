@@ -30,8 +30,8 @@ self: super: {
 
   "beaker" = super."beaker".override (attrs: {
     patches = [
-      ./patch_beaker/patch-beaker-lock-func-debug.diff
-      ./patch_beaker/patch-beaker-metadata-reuse.diff
+      ./patches/beaker/patch-beaker-lock-func-debug.diff
+      ./patches/beaker/patch-beaker-metadata-reuse.diff
     ];
   });
 
