@@ -60,7 +60,9 @@ class CustomHTMLTranslator(writers.html4css1.HTMLTranslator):
             refuri = node['refuri']
             if ':' in refuri:
                 prefix, link = refuri.lstrip().split(':', 1)
-                if prefix == 'javascript':
+                prefix = prefix or ''
+
+                if prefix.lower() == 'javascript':
                     # we don't allow javascript type of refs...
                     node['refuri'] = 'javascript:alert("SandBoxedJavascript")'
 
