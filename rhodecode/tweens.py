@@ -20,6 +20,7 @@
 
 
 import logging
+from pyramid.httpexceptions import HTTPException, HTTPBadRequest
 
 from rhodecode.lib.middleware.vcs import (
     detect_vcs_request, VCS_TYPE_KEY, VCS_TYPE_SKIP)
@@ -56,6 +57,53 @@ def vcs_detection_tween_factory(handler, registry):
     return vcs_detection_tween
 
 
+def junk_encoding_detector(request):
+    """
+    Detect bad encoded GET params, and fail immediately with BadRequest
+    """
+
+    try:
+        request.GET.get("", None)
+    except UnicodeDecodeError:
+        raise HTTPBadRequest("Invalid bytes in query string.")
+
+
+def bad_url_data_detector(request):
+    """
+    Detect invalid bytes in a path.
+    """
+    try:
+        request.path_info
+    except UnicodeDecodeError:
+        raise HTTPBadRequest("Invalid bytes in URL.")
+
+
+def junk_form_data_detector(request):
+    """
+    Detect bad encoded POST params, and fail immediately with BadRequest
+    """
+
+    if request.method == "POST":
+        try:
+            request.POST.get("", None)
+        except ValueError:
+            raise HTTPBadRequest("Invalid bytes in form data.")
+
+
+def sanity_check_factory(handler, registry):
+    def sanity_check(request):
+        try:
+            junk_encoding_detector(request)
+            bad_url_data_detector(request)
+            junk_form_data_detector(request)
+        except HTTPException as exc:
+            return exc
+
+        return handler(request)
+
+    return sanity_check
+
+
 def includeme(config):
     config.add_subscriber('rhodecode.subscribers.add_renderer_globals',
                           'pyramid.events.BeforeRender')
@@ -65,5 +113,5 @@ def includeme(config):
                           'pyramid.events.NewRequest')
     config.add_subscriber('rhodecode.subscribers.add_request_user_context',
                           'pyramid.events.ContextFound')
-
+    config.add_tween('rhodecode.tweens.sanity_check_factory')
     config.add_tween('rhodecode.tweens.vcs_detection_tween_factory')
