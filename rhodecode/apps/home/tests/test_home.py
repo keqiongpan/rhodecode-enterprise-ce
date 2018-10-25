@@ -60,10 +60,10 @@ class TestHomeController(TestController):
         response = self.app.get(route_path('home'))
 
         rhodecode_version_hash = calculate_version_hash(
-            {'beaker.session.secret':'test-rc-uytcxaz'})
+            {'beaker.session.secret': 'test-rc-uytcxaz'})
         response.mustcontain('style.css?ver={0}'.format(rhodecode_version_hash))
-        response.mustcontain('rhodecode-components.js?ver={0}'.format(
-            rhodecode_version_hash))
+        response.mustcontain('scripts.js?ver={0}'.format(rhodecode_version_hash))
+        response.mustcontain('hodecode-components.html?ver={0}'.format(rhodecode_version_hash))
 
     def test_index_contains_backend_specific_details(self, backend):
         self.log_user()
