@@ -29,6 +29,8 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
+from rhodecode.lib.utils2 import safe_int
+from rhodecode.model.db import UserGroup
 from rhodecode.model.forms import RepoPermsForm
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
@@ -88,6 +90,11 @@ class RepoSettingsPermissionsView(RepoAppView):
         for change in changes['added'] + changes['updated'] + changes['deleted']:
             if change['type'] == 'user':
                 affected_user_ids.append(change['id'])
+            if change['type'] == 'user_group':
+                user_group = UserGroup.get(safe_int(change['id']))
+                if user_group:
+                    group_members_ids = [x.user_id for x in user_group.members]
+                    affected_user_ids.extend(group_members_ids)
 
         events.trigger(events.UserPermissionsChange(affected_user_ids))
 

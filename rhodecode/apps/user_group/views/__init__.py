@@ -40,8 +40,8 @@ from rhodecode.apps._base import UserGroupAppView
 from rhodecode.lib.auth import (
     LoginRequired, HasUserGroupPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h, audit_logger
-from rhodecode.lib.utils2 import str2bool
-from rhodecode.model.db import User
+from rhodecode.lib.utils2 import str2bool, safe_int
+from rhodecode.model.db import User, UserGroup
 from rhodecode.model.meta import Session
 from rhodecode.model.user_group import UserGroupModel
 
@@ -377,6 +377,11 @@ class UserGroupsView(UserGroupAppView):
         for change in changes['added'] + changes['updated'] + changes['deleted']:
             if change['type'] == 'user':
                 affected_user_ids.append(change['id'])
+            if change['type'] == 'user_group':
+                user_group = UserGroup.get(safe_int(change['id']))
+                if user_group:
+                    group_members_ids = [x.user_id for x in user_group.members]
+                    affected_user_ids.extend(group_members_ids)
 
         events.trigger(events.UserPermissionsChange(affected_user_ids))
 
