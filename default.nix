@@ -54,7 +54,7 @@ let
     in
       !builtins.elem (basename path) [
         ".git" ".hg" "__pycache__" ".eggs" ".idea" ".dev"
-        "bower_components" "node_modules"
+        "bower_components" "node_modules" "node_binaries"
         "build" "data" "result" "tmp"] &&
       !builtins.elem ext ["egg-info" "pyc"] &&
       # TODO: johbo: This check is wrong, since "path" contains an absolute path,
@@ -111,20 +111,25 @@ let
         linkNodeAndBowerPackages = ''
           export RHODECODE_CE_PATH=${rhodecode-enterprise-ce-src}
 
-          echo "[BEGIN]: Link node packages"
-          rm -fr node_modules
-          mkdir node_modules
+          echo "[BEGIN]: Link node packages and binaries"
           # johbo: Linking individual packages allows us to run "npm install"
           # inside of a shell to try things out. Re-entering the shell will
           # restore a clean environment.
+          rm -fr node_modules
+          mkdir node_modules
           ln -s ${nodeDependencies}/lib/node_modules/* node_modules/
-          echo "[DONE]: Link node packages"
+          export NODE_PATH=./node_modules
+
+          rm -fr node_binaries
+          mkdir node_binaries
+          ln -s ${nodeDependencies}/bin/* node_binaries/
+          echo "[DONE ]: Link node packages and binaries"
 
           echo "[BEGIN]: Link bower packages"
           rm -fr bower_components
           mkdir bower_components
           ln -s ${bowerComponents}/bower_components/* bower_components/
-          echo "[DONE]: Link bower packages"
+          echo "[DONE ]: Link bower packages"
         '';
 
         releaseName = "RhodeCodeEnterpriseCE-${version}";
@@ -154,8 +159,6 @@ let
       buildInputs =
         attrs.buildInputs or [] ++ [
           rhodecode-testdata
-          pkgs.nodePackages.bower
-          pkgs.nodePackages.grunt-cli
         ];
 
       #NOTE: option to inject additional propagatedBuildInputs
@@ -188,10 +191,12 @@ let
       '';
 
       preBuild = ''
-        echo "Building frontend assets"
+        echo "[BEGIN]: Building frontend assets"
         ${linkNodeAndBowerPackages}
-        grunt
+        make web-build
         rm -fr node_modules
+        rm -fr node_binaries
+        echo "[DONE ]: Building frontend assets"
       '';
 
       postInstall = ''
@@ -208,14 +213,14 @@ let
         echo "Writing enterprise-ce meta information for rccontrol to nix-support/rccontrol"
         mkdir -p $out/nix-support/rccontrol
         cp -v rhodecode/VERSION $out/nix-support/rccontrol/version
-        echo "[DONE]: enterprise-ce meta information for rccontrol written"
+        echo "[DONE ]: enterprise-ce meta information for rccontrol written"
 
         mkdir -p $out/etc
         cp configs/production.ini $out/etc
-        echo "[DONE]: saved enterprise-ce production.ini into $out/etc"
+        echo "[DONE ]: saved enterprise-ce production.ini into $out/etc"
 
         cp -r rhodecode/config/rcextensions $out/etc/rcextensions.tmpl
-        echo "[DONE]: saved enterprise-ce rcextensions into $out/etc/rcextensions.tmpl"
+        echo "[DONE ]: saved enterprise-ce rcextensions into $out/etc/rcextensions.tmpl"
 
         # python based programs need to be wrapped
         mkdir -p $out/bin
@@ -230,7 +235,7 @@ let
         ln -s ${self.pyramid}/bin/prequest $out/bin/
         ln -s ${self.pyramid}/bin/pserve $out/bin/
 
-        echo "[DONE]: created symlinks into $out/bin"
+        echo "[DONE ]: created symlinks into $out/bin"
         DEPS="$out/bin/supervisorctl \
               $out/bin/supervisord \
               $out/bin/paster \
@@ -250,7 +255,7 @@ let
             --set PYTHONHASHSEED random
         done
 
-        echo "[DONE]: enterprise-ce binary wrapping"
+        echo "[DONE ]: enterprise-ce binary wrapping"
 
         # rhodecode-tools don't need wrapping
         ln -s ${self.rhodecode-tools}/bin/rhodecode-* $out/bin/

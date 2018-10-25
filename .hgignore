@@ -36,6 +36,7 @@ syntax: regexp
 ^htmlcov
 ^junit\.xml$
 ^node_modules/
+^node_binaries/
 ^pylint.log$
 ^rcextensions/
 ^result$

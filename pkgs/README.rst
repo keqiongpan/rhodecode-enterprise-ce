@@ -30,17 +30,17 @@ NodeJS dependencies
 Generate node-packages.nix file with all dependencies from NPM and package.json file
 This should be run before entering nix-shell.
 
+The sed at the end fixex a bug with http rewrite of re-generated packages
+
 .. code:: shell
 
-   rm -rf node_modules
+   rm -rf node_modules &&
    nix-shell pkgs/shell-generate.nix --command "
        node2nix --input package.json \
                 -o pkgs/node-packages.nix \
                 -e pkgs/node-env.nix \
                 -c pkgs/node-default.nix \
-                -d --flatten --nodejs-8 "
-
-   # fix bug with http rewrite of re-generated packages
+                -d --flatten --nodejs-8 " &&
    sed -i -e 's/http:\/\//https:\/\//g' pkgs/node-packages.nix
 
 
