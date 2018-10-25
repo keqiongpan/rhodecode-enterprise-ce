@@ -26,6 +26,7 @@ from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.apps.admin.navigation import navigation_list
+from rhodecode.lib import system_info
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib.utils2 import safe_int, StrictAttributeDict
@@ -71,6 +72,16 @@ class AdminProcessManagementView(BaseAppView):
 
         return proc_list
 
+    def get_workers(self):
+        workers = None
+        try:
+            rc_config = system_info.rhodecode_config().value['config']
+            workers = rc_config['server:main'].get('workers')
+        except Exception:
+            pass
+
+        return workers or '?'
+
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
@@ -83,6 +94,7 @@ class AdminProcessManagementView(BaseAppView):
         c.active = 'process_management'
         c.navlist = navigation_list(self.request)
         c.gunicorn_processes = self.get_processes()
+        c.gunicorn_workers = self.get_workers()
         return self._get_template_context(c)
 
     @LoginRequired()
