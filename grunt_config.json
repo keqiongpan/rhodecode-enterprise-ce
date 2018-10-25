@@ -99,16 +99,6 @@
       "nonull": true
     }
   },
-  "crisper": {
-    "dist": {
-      "options": {
-        "cleanup": false,
-        "onlySplit": true
-      },
-      "src": "<%= dirs.js.dest %>/rhodecode-components.html",
-      "dest": "<%= dirs.js.dest %>/rhodecode-components.js"
-    }
-  },
   "less": {
     "development": {
       "options": {
@@ -157,7 +147,6 @@
         "less:components",
         "concat:polymercss",
         "vulcanize",
-        "crisper",
         "concat:dist"
       ]
     },
@@ -171,7 +160,6 @@
         "less:components",
         "concat:polymercss",
         "vulcanize",
-        "crisper",
         "concat:dist"
       ]
     }

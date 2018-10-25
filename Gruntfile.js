@@ -8,7 +8,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-vulcanize');
-  grunt.loadNpmTasks('grunt-crisper');
   grunt.loadNpmTasks('grunt-contrib-copy');
 
   grunt.registerTask('default', ['less:production', 'less:components', 'concat:polymercss', 'copy', 'concat:dist', 'vulcanize']);
