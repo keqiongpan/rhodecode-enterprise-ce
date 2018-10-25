@@ -68,7 +68,6 @@ class PasswordGenerator(object):
     This is a simple class for generating password from different sets of
     characters
     usage::
-
         passwd_gen = PasswordGenerator()
         #print 8-letter password containing only big and small letters
             of alphabet
@@ -628,8 +627,11 @@ class PermissionCalculator(object):
             o = PermOrigin.REPO_USER % perm.UserRepoToPerm.user.username
 
             if not self.explicit:
-                # TODO(marcink): fix this for multiple entries
-                cur_perm = self.permissions_repository_branches.get(r_k) or 'branch.none'
+                cur_perm = self.permissions_repository_branches.get(r_k)
+                if cur_perm:
+                    cur_perm = cur_perm[pattern]
+                cur_perm = cur_perm or 'branch.none'
+
                 p = self._choose_permission(p, cur_perm)
 
             # NOTE(marcink): register all pattern/perm instances in this
@@ -801,8 +803,7 @@ class PermissionCalculator(object):
 
             multiple_counter[r_k] += 1
             if multiple_counter[r_k] > 1:
-                # TODO(marcink): fix this for multi branch support, and multiple entries
-                cur_perm = self.permissions_repository_branches[r_k]
+                cur_perm = self.permissions_repository_branches[r_k][pattern]
                 p = self._choose_permission(p, cur_perm)
 
             self.permissions_repository_branches[r_k] = pattern, p, o
@@ -820,8 +821,10 @@ class PermissionCalculator(object):
             o = PermOrigin.REPO_USER % perm.UserRepoToPerm.user.username
 
             if not self.explicit:
-                # TODO(marcink): fix this for multiple entries
-                cur_perm = self.permissions_repository_branches.get(r_k) or 'branch.none'
+                cur_perm = self.permissions_repository_branches.get(r_k)
+                if cur_perm:
+                    cur_perm = cur_perm[pattern]
+                cur_perm = cur_perm or 'branch.none'
                 p = self._choose_permission(p, cur_perm)
 
             # NOTE(marcink): register all pattern/perm instances in this
@@ -875,8 +878,7 @@ class PermissionCalculator(object):
             p = perm.Permission.permission_name
 
             if not self.explicit:
-                cur_perm = self.permissions_repository_groups.get(
-                    rg_k, 'group.none')
+                cur_perm = self.permissions_repository_groups.get(rg_k, 'group.none')
                 p = self._choose_permission(p, cur_perm)
 
             self.permissions_repository_groups[rg_k] = p, o
@@ -937,8 +939,7 @@ class PermissionCalculator(object):
             p = perm.Permission.permission_name
 
             if not self.explicit:
-                cur_perm = self.permissions_user_groups.get(
-                    ug_k, 'usergroup.none')
+                cur_perm = self.permissions_user_groups.get(ug_k, 'usergroup.none')
                 p = self._choose_permission(p, cur_perm)
 
             self.permissions_user_groups[ug_k] = p, o
