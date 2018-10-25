@@ -36,7 +36,7 @@ let
       packageName = "@types/parse5";
       version = "0.0.31";
       src = fetchurl {
-        url = "http://registry.npmjs.org/@types/parse5/-/parse5-0.0.31.tgz";
+        url = "https://registry.npmjs.org/@types/parse5/-/parse5-0.0.31.tgz";
         sha1 = "e827a493a443b156e1b582a2e4c3bdc0040f2ee7";
       };
     };
@@ -788,13 +788,13 @@ let
         sha1 = "b2987aa3821347fcde642b24fdfc9e4fb712bf26";
       };
     };
-    "entities-1.1.1" = {
+    "entities-1.1.2" = {
       name = "entities";
       packageName = "entities";
-      version = "1.1.1";
+      version = "1.1.2";
       src = fetchurl {
-        url = "https://registry.npmjs.org/entities/-/entities-1.1.1.tgz";
-        sha1 = "6e5c2d0a5621b5dadaecef80b90edfb5cd7772f0";
+        url = "https://registry.npmjs.org/entities/-/entities-1.1.2.tgz";
+        sha512 = "f2LZMYl1Fzu7YSBKg+RoROelpOaNrcGmE9AZubeDfrCEia483oW4MI4VyFd5VNHIgQ/7qm1I0wUHK1eJnn2y2w==";
       };
     };
     "errno-0.1.7" = {
@@ -1733,22 +1733,22 @@ let
         sha512 = "x0Vn8spI+wuJ1O6S7gnbaQg8Pxh4NNHb7KSINmEWKiPE4RKOplvijn+NkmYmmRgP68mc70j2EbeTFRsrswaQeg==";
       };
     };
-    "mime-db-1.36.0" = {
+    "mime-db-1.37.0" = {
       name = "mime-db";
       packageName = "mime-db";
-      version = "1.36.0";
+      version = "1.37.0";
       src = fetchurl {
-        url = "https://registry.npmjs.org/mime-db/-/mime-db-1.36.0.tgz";
-        sha512 = "L+xvyD9MkoYMXb1jAmzI/lWYAxAMCPvIBSWur0PZ5nOf5euahRLVqH//FKW9mWp2lkqUgYiXPgkzfMUFi4zVDw==";
+        url = "https://registry.npmjs.org/mime-db/-/mime-db-1.37.0.tgz";
+        sha512 = "R3C4db6bgQhlIhPU48fUtdVmKnflq+hRdad7IyKhtFj06VPNVdk2RhiYL3UjQIlso8L+YxAtFkobT0VK+S/ybg==";
       };
     };
-    "mime-types-2.1.20" = {
+    "mime-types-2.1.21" = {
       name = "mime-types";
       packageName = "mime-types";
-      version = "2.1.20";
+      version = "2.1.21";
       src = fetchurl {
-        url = "https://registry.npmjs.org/mime-types/-/mime-types-2.1.20.tgz";
-        sha512 = "HrkrPaP9vGuWbLK1B1FfgAkbqNjIuy4eHlIYnFi7kamZyLLrGlo2mpcx0bBmNpKqBtYtAfGbodDddIgddSJC2A==";
+        url = "https://registry.npmjs.org/mime-types/-/mime-types-2.1.21.tgz";
+        sha512 = "3iL6DbwpyLzjR3xHSFNFeb9Nz/M8WDkX33t1GFQnFOllWk8pOrh/LSrB5OXlnlW5P9LH73X6loW/eogc+F5lJg==";
       };
     };
     "minimatch-0.2.14" = {
@@ -1787,13 +1787,13 @@ let
         sha1 = "857fcabfc3397d2625b8228262e86aa7a011b05d";
       };
     };
-    "minipass-2.3.4" = {
+    "minipass-2.3.5" = {
       name = "minipass";
       packageName = "minipass";
-      version = "2.3.4";
+      version = "2.3.5";
       src = fetchurl {
-        url = "https://registry.npmjs.org/minipass/-/minipass-2.3.4.tgz";
-        sha512 = "mlouk1OHlaUE8Odt1drMtG1bAJA4ZA6B/ehysgV0LUIrDHdKgo1KorZq3pK0b/7Z7LJIQ12MNM6aC+Tn6lUZ5w==";
+        url = "https://registry.npmjs.org/minipass/-/minipass-2.3.5.tgz";
+        sha512 = "Gi1W4k059gyRbyVUZQ4mEqLm0YIUiGYfvxhF6SIlk3ui1WVxMTGfGdQ2SInh3PDrRTVvPKgULkpJtT4RH10+VA==";
       };
     };
     "minizlib-1.1.1" = {
@@ -3027,7 +3027,7 @@ let
       (sources."dom-serializer-0.1.0" // {
         dependencies = [
           sources."domelementtype-1.1.3"
-          sources."entities-1.1.1"
+          sources."entities-1.1.2"
         ];
       })
       sources."dom5-1.3.6"
@@ -3227,11 +3227,11 @@ let
       sources."lodash-0.9.2"
       sources."lru-cache-2.7.3"
       sources."mime-1.6.0"
-      sources."mime-db-1.36.0"
-      sources."mime-types-2.1.20"
+      sources."mime-db-1.37.0"
+      sources."mime-types-2.1.21"
       sources."minimatch-0.2.14"
       sources."minimist-0.0.8"
-      sources."minipass-2.3.4"
+      sources."minipass-2.3.5"
       sources."minizlib-1.1.1"
       sources."mkdirp-0.5.1"
       sources."moment-2.22.2"
@@ -3396,7 +3396,7 @@ let
       license = "SEE LICENSE IN LICENSE.txt";
     };
     production = false;
-    bypassCache = false;
+    bypassCache = true;
   };
 in
 {
