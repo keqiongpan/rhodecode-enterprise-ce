@@ -11,5 +11,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-crisper');
   grunt.loadNpmTasks('grunt-contrib-copy');
 
-  grunt.registerTask('default', ['less:production', 'less:components', 'concat:polymercss', 'copy', 'concat:dist', 'vulcanize', 'crisper']);
+  grunt.registerTask('default', ['less:production', 'less:components', 'concat:polymercss', 'copy', 'concat:dist', 'vulcanize']);
 };

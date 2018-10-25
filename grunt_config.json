@@ -16,7 +16,7 @@
     "main": {
       "expand": true,
       "cwd": "bower_components",
-      "src": "webcomponentsjs/webcomponents-lite.js",
+      "src": "webcomponentsjs/webcomponents*.*",
       "dest": "<%= dirs.js.dest %>/vendors"
     }
   },

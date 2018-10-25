@@ -28,7 +28,6 @@ c.template_context['default_user'] = {
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-lite.js', ver=c.rhodecode_version_hash)}"></script>
-        <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
         <title>${self.title()}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 
@@ -101,7 +100,8 @@ c.template_context['default_user'] = {
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode/routes.js', ver=c.rhodecode_version_hash)}"></script>
             <script> var alertMessagePayloads = ${h.flash.json_alerts(request=request)|n}; </script>
             ## avoide escaping the %N
-            <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode-components.js', ver=c.rhodecode_version_hash)}"></script>
+            <script language="javascript" type="text/javascript" src="${h.asset('js/scripts.js', ver=c.rhodecode_version_hash)}"></script>
+            <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
             <script>CodeMirror.modeURL = "${h.asset('') + 'js/mode/%N/%N.js?ver='+c.rhodecode_version_hash}";</script>
 
 
