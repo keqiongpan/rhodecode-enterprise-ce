@@ -850,7 +850,8 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 
             }(result, escapeMarkup);
         };
-        var preloadData = {
+
+        var preloadFileFilterData = {
             results: [
                 % for filediff in diffset.files:
                     {id:"a_${h.FID(filediff.raw_id, filediff.patch['filename'])}",
@@ -868,15 +869,15 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 'placeholder': "${file_placeholder}",
                 containerCssClass: "drop-menu",
                 dropdownCssClass: "drop-menu-dropdown",
-                data: preloadData,
+                data: preloadFileFilterData,
                 query: function(query) {
-                    feedFilesOptions(query, preloadData);
+                    feedFilesOptions(query, preloadFileFilterData);
                 },
                 formatResult: formatFileResult
             });
+
             % if range_diff_on is True:
                 fileFilter.select2("enable", false);
-
             % endif
 
             $("#file_filter").on('click', function (e) {
@@ -948,7 +949,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 }
             );
 
-            var preloadData = {
+            var preloadDiffMenuData = {
                 results: [
                     ## Wide diff mode
                     {
@@ -1004,7 +1005,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 containerCssClass: "drop-menu",
                 dropdownCssClass: "drop-menu-dropdown",
                 dropdownAutoWidth: true,
-                data: preloadData,
+                data: preloadDiffMenuData,
                 placeholder: "${_('Diff Options')}",
             });
             $("#diff_menu").on('select2-selecting', function (e) {
