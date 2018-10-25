@@ -27,6 +27,9 @@ Python dependencies
 NodeJS dependencies
 ===================
 
+Generate node-packages.nix file with all dependencies from NPM and package.json file
+This should be run before entering nix-shell.
+
 .. code:: shell
 
    rm -rf node_modules
@@ -37,6 +40,8 @@ NodeJS dependencies
                 -c pkgs/node-default.nix \
                 -d --flatten --nodejs-8 "
 
+   # fix bug with http rewrite of re-generated packages
+   sed -i -e 's/http:\/\//https:\/\//g' pkgs/node-packages.nix
 
 
 Bower dependencies
