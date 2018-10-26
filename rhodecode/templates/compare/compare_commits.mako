@@ -50,7 +50,7 @@
                 title="${_( 'Expand commit message')}"
             >
                 <div class="show_more_col">
-                <i class="icon-more-linked"></i>
+                <i class="icon-expand-linked"></i>
                 </div>
             </td>
             <td class="mid td-description">

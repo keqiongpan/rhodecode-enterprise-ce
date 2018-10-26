@@ -518,7 +518,7 @@
                                 </td>
                                 <td class="expand_commit" data-commit-id="${commit.raw_id}" title="${_( 'Expand commit message')}">
                                     <div class="show_more_col">
-                                    <i class="icon-more-linked"></i>
+                                    <i class="icon-expand-linked"></i>
                                     </div>
                                 </td>
                                 <td class="mid td-description">
