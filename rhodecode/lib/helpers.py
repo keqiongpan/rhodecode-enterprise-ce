@@ -1249,15 +1249,18 @@ class InitialsGravatar(object):
         """
         generates the svg metadata for image
         """
-
-        font_family = ','.join([
-            'proximanovaregular',
-            'Proxima Nova Regular',
-            'Proxima Nova',
-            'Arial',
-            'Lucida Grande',
-            'sans-serif'
-            ])
+        fonts = [
+            '-apple-system',
+             'BlinkMacSystemFont',
+             'Segoe UI',
+             'Roboto',
+             'Oxygen-Sans',
+             'Ubuntu',
+             'Cantarell',
+             'Helvetica Neue',
+             'sans-serif'
+        ]
+        font_family = ','.join(fonts)
         if svg_type:
             return self.get_img_data_by_type(font_family, svg_type)
 

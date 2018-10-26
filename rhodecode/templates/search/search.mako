@@ -57,8 +57,7 @@
     %endif
     <div class="form search-form">
         <div class="fields">
-            <label for="q">${_('Search item')}:</label>
-            ${h.text('q', c.cur_query)}
+            ${h.text('q', c.cur_query, placeholder="Enter query...")}
 
             ${h.select('type',c.search_type,[('content',_('File contents')), ('commit',_('Commit messages')), ('path',_('File names')),],id='id_search_type')}
             <input type="submit" value="${_('Search')}" class="btn"/>

@@ -82,7 +82,7 @@
     </td>
     <td class="td-message expand_commit" data-commit-id="${commit.raw_id}" title="${_('Expand commit message')}" onclick="commitsController.expandCommit(this); return false">
       <div class="show_more_col">
-        <i class="show_more"></i>&nbsp;
+        <i class="icon-more-linked"></i>&nbsp;
       </div>
     </td>
     <td class="td-description mid">

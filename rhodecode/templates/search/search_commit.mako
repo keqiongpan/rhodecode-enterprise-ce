@@ -35,7 +35,7 @@
                 </td>
                 <td class="td-message expand_commit search open" data-commit-id="${h.md5_safe(entry['repository'])+entry['commit_id']}" id="t-${h.md5_safe(entry['repository'])+entry['commit_id']}" title="${_('Expand commit message')}">
                     <div class="show_more_col">
-                    <i class="show_more"></i>&nbsp;
+                    <i class="icon-more-linked"></i>&nbsp;
                     </div>
                 </td>
                 <td data-commit-id="${h.md5_safe(entry['repository'])+entry['commit_id']}" id="c-${h.md5_safe(entry['repository'])+entry['commit_id']}" class="message td-description open">
