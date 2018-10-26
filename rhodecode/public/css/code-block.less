@@ -543,7 +543,7 @@ div.search-code-body {
             border-right: 1px solid #ccc !important;
             padding-right: 10px;
             text-align: right;
-            font-family: "Lucida Console",Monaco,monospace;
+            font-family: @text-monospace;
             span {
                 white-space: pre-wrap;
                 color: #666666;
@@ -1066,7 +1066,7 @@ table.cb {
         }
 
         &.cb-hunk {
-            font-family: @font-family-monospace;
+            font-family: @text-monospace;
             color: rgba(0, 0, 0, 0.3);
 
             td {
@@ -1098,7 +1098,7 @@ table.cb {
                 padding-right: @cb-line-code-padding;
                 display: block;
                 white-space: pre-wrap;
-                font-family: @font-family-monospace;
+                font-family: @text-monospace;
                 word-break: break-all;
                 .nonl {
                     color: @color5;
@@ -1143,7 +1143,7 @@ table.cb {
         &.cb-data {
             text-align: right;
             width: 30px;
-            font-family: @font-family-monospace;
+            font-family: @text-monospace;
 
             .icon-comment {
                 cursor: pointer;
@@ -1165,7 +1165,7 @@ table.cb {
             color: rgba(0, 0, 0, 0.3);
             text-align: right;
             border-right: 1px solid #eee;
-            font-family: @font-family-monospace;
+            font-family: @text-monospace;
             -webkit-user-select: none;
             -moz-user-select: none;
             user-select: none;
