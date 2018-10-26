@@ -50,13 +50,13 @@
         <!-- end box / title -->
         <div class="table">
             <div id="groups_list_wrap">
-                <table id="group_list_table" class="display"></table>
+                <table id="group_list_table" class="display" style="width: 100%"></table>
             </div>
         </div>
 
         <div class="table">
             <div id="repos_list_wrap">
-                <table id="repo_list_table" class="display"></table>
+                <table id="repo_list_table" class="display" style="width: 100%"></table>
             </div>
         </div>
 
