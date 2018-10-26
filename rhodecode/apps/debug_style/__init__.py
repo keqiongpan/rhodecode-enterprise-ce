@@ -31,7 +31,8 @@ class DebugStylePredicate(object):
     phash = text
 
     def __call__(self, info, request):
-        str2bool(request.registry.settings.get('debug_style'))
+        return str2bool(request.registry.settings.get('debug_style'))
+
 
 def includeme(config):
     config.add_route_predicate(
