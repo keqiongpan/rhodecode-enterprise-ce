@@ -26,7 +26,7 @@ from pyramid.httpexceptions import HTTPBadRequest, HTTPForbidden, HTTPBadGateway
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib.channelstream import (
-    channelstream_request,
+    channelstream_request, get_channelstream_server_url,
     ChannelstreamConnectionException,
     ChannelstreamPermissionException,
     check_channel_permissions,
@@ -56,8 +56,9 @@ class ChannelstreamView(BaseAppView):
     @NotAnonymous()
     @view_config(route_name='channelstream_connect', renderer='json_ext')
     def connect(self):
-        self.load_default_context()
         """ handle authorization of users trying to connect """
+
+        self.load_default_context()
         try:
             json_body = self.request.json_body
         except Exception:
@@ -107,11 +108,14 @@ class ChannelstreamView(BaseAppView):
                 'broadcast_presence_with_user_lists': True
             }
         # connect user to server
+        channelstream_url = get_channelstream_server_url(
+            self.channelstream_config, '/connect')
         try:
-            connect_result = channelstream_request(self.channelstream_config,
-                                                   payload, '/connect')
+            connect_result = channelstream_request(
+                self.channelstream_config, payload, '/connect')
         except ChannelstreamConnectionException:
-            log.exception('Channelstream service is down')
+            log.exception(
+                'Channelstream service at {} is down'.format(channelstream_url))
             return HTTPBadGateway()
 
         connect_result['channels'] = channels
@@ -153,17 +157,21 @@ class ChannelstreamView(BaseAppView):
                 'store_history': True,
                 'broadcast_presence_with_user_lists': True
             }
+
+        channelstream_url = get_channelstream_server_url(
+            self.channelstream_config, '/subscribe')
         try:
             connect_result = channelstream_request(
                 self.channelstream_config, payload, '/subscribe')
         except ChannelstreamConnectionException:
-            log.exception('Channelstream service is down')
+            log.exception(
+                'Channelstream service at {} is down'.format(channelstream_url))
             return HTTPBadGateway()
         # include_channel_info will limit history only to new channel
         # to not overwrite histories on other channels in client
         connect_result['channels_info'] = parse_channels_info(
             connect_result['channels_info'],
             include_channel_info=filtered_channels)
-        update_history_from_logs(self.channelstream_config,
-                                 filtered_channels, connect_result)
+        update_history_from_logs(
+            self.channelstream_config, filtered_channels, connect_result)
         return connect_result

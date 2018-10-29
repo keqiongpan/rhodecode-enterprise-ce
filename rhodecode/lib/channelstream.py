@@ -53,23 +53,27 @@ class ChannelstreamPermissionException(ChannelstreamException):
     pass
 
 
+def get_channelstream_server_url(config, endpoint):
+    return 'http://{}{}'.format(config['server'], endpoint)
+
+
 def channelstream_request(config, payload, endpoint, raise_exc=True):
     signer = itsdangerous.TimestampSigner(config['secret'])
     sig_for_server = signer.sign(endpoint)
     secret_headers = {'x-channelstream-secret': sig_for_server,
                       'x-channelstream-endpoint': endpoint,
                       'Content-Type': 'application/json'}
-    req_url = 'http://{}{}'.format(config['server'], endpoint)
+    req_url = get_channelstream_server_url(config, endpoint)
     response = None
     try:
         response = requests.post(req_url, data=json.dumps(payload),
                                  headers=secret_headers).json()
     except requests.ConnectionError:
-        log.exception('ConnectionError happened')
+        log.exception('ConnectionError occurred for endpoint %s', req_url)
         if raise_exc:
-            raise ChannelstreamConnectionException()
+            raise ChannelstreamConnectionException(req_url)
     except Exception:
-        log.exception('Exception related to channelstream happened')
+        log.exception('Exception related to Channelstream happened')
         if raise_exc:
             raise ChannelstreamConnectionException()
     return response
