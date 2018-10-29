@@ -30,7 +30,7 @@ NodeJS dependencies
 Generate node-packages.nix file with all dependencies from NPM and package.json file
 This should be run before entering nix-shell.
 
-The sed at the end fixex a bug with http rewrite of re-generated packages
+The sed at the end fixes a bug with http rewrite of re-generated packages
 
 .. code:: shell
 

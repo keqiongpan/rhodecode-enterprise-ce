@@ -1697,13 +1697,13 @@ let
         sha512 = "fvicVRDlhHIQpt/bmbLl3hDHKUZb5ZP8O2OuZLz2fSEPlUBbvwwbhhqhGS617ldN6bDoo9A3+MQKQyFq0p7UXA==";
       };
     };
-    "caniuse-lite-1.0.30000899" = {
+    "caniuse-lite-1.0.30000900" = {
       name = "caniuse-lite";
       packageName = "caniuse-lite";
-      version = "1.0.30000899";
+      version = "1.0.30000900";
       src = fetchurl {
-        url = "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30000899.tgz";
-        sha512 = "enC3zKfUCJxxwvUIsBkbHd54CtJw1KtIWvrK0JZxWD/fEN2knHaai45lndJ4xXAkyRAPyk60J3yagkKDWhfeMA==";
+        url = "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30000900.tgz";
+        sha512 = "xDVs8pBFr6bzq9pXUkLKpGQQnzsF/l6/yX38UnCkTcUcwC0rDl1NGZGildcJVTU+uGBxfsyniK/ZWagPNn1Oqw==";
       };
     };
     "caseless-0.12.0" = {
@@ -7713,7 +7713,7 @@ let
   args = {
     name = "rhodecode-enterprise";
     packageName = "rhodecode-enterprise";
-    version = "1.0.0";
+    version = "2.0.0";
     src = ./..;
     dependencies = [
       sources."@polymer/font-roboto-3.0.2"
@@ -7977,7 +7977,7 @@ let
         ];
       })
       sources."caniuse-db-1.0.30000900"
-      sources."caniuse-lite-1.0.30000899"
+      sources."caniuse-lite-1.0.30000900"
       sources."caseless-0.12.0"
       sources."center-align-0.1.3"
       sources."chalk-0.5.1"
