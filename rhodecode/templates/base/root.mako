@@ -140,16 +140,6 @@ c.template_context['default_user'] = {
                 ${_('Please enable JavaScript to use RhodeCode Enterprise')}
             </div>
         </noscript>
-     ## IE hacks
-      <!--[if IE 7]>
-      <script>$(document.body).addClass('ie7')</script>
-      <![endif]-->
-      <!--[if IE 8]>
-      <script>$(document.body).addClass('ie8')</script>
-      <![endif]-->
-      <!--[if IE 9]>
-      <script>$(document.body).addClass('ie9')</script>
-      <![endif]-->
 
       ${next.body()}
       %if c.post_code:
