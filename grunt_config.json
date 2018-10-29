@@ -8,14 +8,13 @@
       "src": "rhodecode/public/js/src",
       "src_rc": "rhodecode/public/js/rhodecode",
       "dest": "rhodecode/public/js",
-      "bower": "bower_components",
       "node_modules": "node_modules"
     }
   },
   "copy": {
     "main": {
       "expand": true,
-      "cwd": "bower_components",
+      "cwd": "node_modules/@webcomponents",
       "src": "webcomponentsjs/*.*",
       "dest": "<%= dirs.js.dest %>/vendors"
     }

@@ -29,7 +29,7 @@ c.template_context['default_user'] = {
     <head>
 
         <script src="${h.asset('js/vendors/webcomponentsjs/custom-elements-es5-adapter.js', ver=c.rhodecode_version_hash)}"></script>
-        <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-lite.js', ver=c.rhodecode_version_hash)}"></script>
+        <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-bundle.js', ver=c.rhodecode_version_hash)}"></script>
         <title>${self.title()}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 

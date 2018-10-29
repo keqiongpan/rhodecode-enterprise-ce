@@ -10,7 +10,6 @@
   },
   "devDependencies": {
     "appenlight-client": "git+https://git@github.com/AppEnlight/appenlight-client-js.git#0.5.1",
-    "bower": "^1.8.4",
     "clipboard": "^2.0.1",
     "exports-loader": "^0.6.4",
     "favico.js": "^0.3.10",

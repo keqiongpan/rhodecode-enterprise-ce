@@ -54,7 +54,7 @@ let
     in
       !builtins.elem (basename path) [
         ".git" ".hg" "__pycache__" ".eggs" ".idea" ".dev"
-        "bower_components" "node_modules" "node_binaries"
+        "node_modules" "node_binaries"
         "build" "data" "result" "tmp"] &&
       !builtins.elem ext ["egg-info" "pyc"] &&
       # TODO: johbo: This check is wrong, since "path" contains an absolute path,
@@ -78,18 +78,11 @@ let
   version = builtins.readFile "${rhodecode-enterprise-ce-src}/rhodecode/VERSION";
   rhodecode-enterprise-ce-src = builtins.filterSource src-filter ./.;
 
-  buildBowerComponents = pkgs.buildBowerComponents;
   nodeEnv = import ./pkgs/node-default.nix {
     inherit
       pkgs;
   };
   nodeDependencies = nodeEnv.shell.nodeDependencies;
-
-  bowerComponents = buildBowerComponents {
-    name = "enterprise-ce-${version}";
-    generated = ./pkgs/bower-packages.nix;
-    src = rhodecode-enterprise-ce-src;
-  };
 
   rhodecode-testdata-src = sources.rhodecode-testdata or (
     pkgs.fetchhg {
@@ -108,7 +101,7 @@ let
   pythonLocalOverrides = self: super: {
     rhodecode-enterprise-ce =
       let
-        linkNodeAndBowerPackages = ''
+        linkNodePackages = ''
           export RHODECODE_CE_PATH=${rhodecode-enterprise-ce-src}
 
           echo "[BEGIN]: Link node packages and binaries"
@@ -124,12 +117,6 @@ let
           mkdir node_binaries
           ln -s ${nodeDependencies}/bin/* node_binaries/
           echo "[DONE ]: Link node packages and binaries"
-
-          echo "[BEGIN]: Link bower packages"
-          rm -fr bower_components
-          mkdir bower_components
-          ln -s ${bowerComponents}/bower_components/* bower_components/
-          echo "[DONE ]: Link bower packages"
         '';
 
         releaseName = "RhodeCodeEnterpriseCE-${version}";
@@ -147,8 +134,7 @@ let
       passthru = {
         inherit
           rhodecode-testdata
-          bowerComponents
-          linkNodeAndBowerPackages
+          linkNodePackages
           myPythonPackagesUnfix
           pythonLocalOverrides
           pythonCommunityOverrides;
@@ -192,7 +178,7 @@ let
 
       preBuild = ''
         echo "[BEGIN]: Building frontend assets"
-        ${linkNodeAndBowerPackages}
+        ${linkNodePackages}
         make web-build
         rm -fr node_modules
         rm -fr node_binaries

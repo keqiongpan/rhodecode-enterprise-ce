@@ -44,14 +44,6 @@ The sed at the end fixes a bug with http rewrite of re-generated packages
    sed -i -e 's/http:\/\//https:\/\//g' pkgs/node-packages.nix
 
 
-Bower dependencies
-==================
-
-.. code:: shell
-
-   nix-shell pkgs/shell-generate.nix --command "bower2nix bower.json pkgs/bower-packages.nix"
-
-
 Generate license data
 =====================
 

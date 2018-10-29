@@ -1490,15 +1490,6 @@ let
         sha1 = "39c8918ceff5799f83f9492a848f625add0c766f";
       };
     };
-    "bower-1.8.4" = {
-      name = "bower";
-      packageName = "bower";
-      version = "1.8.4";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/bower/-/bower-1.8.4.tgz";
-        sha1 = "e7876a076deb8137f7d06525dc5e8c66db82f28a";
-      };
-    };
     "brace-expansion-1.1.11" = {
       name = "brace-expansion";
       packageName = "brace-expansion";
@@ -7940,7 +7931,6 @@ let
       sources."bn.js-4.11.8"
       sources."boolbase-1.0.0"
       sources."boom-2.10.1"
-      sources."bower-1.8.4"
       sources."brace-expansion-1.1.11"
       (sources."braces-2.3.2" // {
         dependencies = [

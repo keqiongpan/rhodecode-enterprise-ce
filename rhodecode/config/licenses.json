@@ -1896,17 +1896,6 @@
                 "url": "http://spdx.org/licenses/MIT.html"
             }
         ],
-        "name": "node-bower-1.8.4"
-    },
-    {
-        "license": [
-            {
-                "fullName": "MIT License",
-                "shortName": "mit",
-                "spdxId": "MIT",
-                "url": "http://spdx.org/licenses/MIT.html"
-            }
-        ],
         "name": "python2.7-rhodecode-testdata-0.10.0"
     }
 ]

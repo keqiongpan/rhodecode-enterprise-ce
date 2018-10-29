@@ -33,12 +33,9 @@ module.exports = {
     },
     // Tell Webpack which directories to look in to resolve import statements.
     // Normally Webpack will look in node_modules by default but since we’re overriding
-    // the property we’ll need to tell it to look there in addition to the
-    // bower_components folder.
     resolve: {
         modules: [
             path.resolve(__dirname, 'node_modules'),
-            path.resolve(__dirname, 'bower_components')
         ]
     },
     // These rules tell Webpack how to process different module types.
