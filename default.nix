@@ -246,6 +246,13 @@ let
         # rhodecode-tools don't need wrapping
         ln -s ${self.rhodecode-tools}/bin/rhodecode-* $out/bin/
 
+        # expose sources of CE
+        ln -s $out $out/etc/rhodecode_enterprise_ce_source
+
+        # expose static files folder
+        cp -Rf $out/lib/${self.python.libPrefix}/site-packages/rhodecode/public/ $out/etc/static
+        chmod 755 -R $out/etc/static
+
       '';
     });
 
