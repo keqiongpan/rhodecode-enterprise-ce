@@ -13,9 +13,6 @@
         %endif
 
         <link rel="stylesheet" type="text/css" href="${h.asset('css/style.css', ver=c.rhodecode_version_hash)}" media="screen"/>
-        <!--[if IE]>
-            <link rel="stylesheet" type="text/css" href="${h.asset('css/ie.css')}" media="screen"/>
-        <![endif]-->
         <style>body { background:#eeeeee; }</style>
         <script type="text/javascript">
             // register templateContext to pass template variables to JS

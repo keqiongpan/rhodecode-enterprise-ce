@@ -50,9 +50,6 @@ c.template_context['default_user'] = {
         ## CSS definitions
         <%def name="css()">
             <link rel="stylesheet" type="text/css" href="${h.asset('css/style.css', ver=c.rhodecode_version_hash)}" media="screen"/>
-            <!--[if lt IE 9]>
-                <link rel="stylesheet" type="text/css" href="${h.asset('css/ie.css', ver=c.rhodecode_version_hash)}" media="screen"/>
-            <![endif]-->
             ## EXTRA FOR CSS
             ${self.css_extra()}
         </%def>
