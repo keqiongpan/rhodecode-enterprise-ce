@@ -74,10 +74,17 @@ def get_storage_size(storage_path):
     return sum(sizes)
 
 
+def get_resource(resource_type):
+    try:
+        return resource.getrlimit(resource_type)
+    except Exception:
+        return 'NOT_SUPPORTED'
+
+
 class SysInfoRes(object):
-    def __init__(self, value, state=STATE_OK_DEFAULT, human_value=None):
+    def __init__(self, value, state=None, human_value=None):
         self.value = value
-        self.state = state
+        self.state = state or STATE_OK_DEFAULT
         self.human_value = human_value or value
 
     def __json__(self):
@@ -159,16 +166,16 @@ def locale_info():
 
 def ulimit_info():
     data = collections.OrderedDict([
-        ('cpu time (seconds)', resource.getrlimit(resource.RLIMIT_CPU)),
-        ('file size', resource.getrlimit(resource.RLIMIT_FSIZE)),
-        ('stack size', resource.getrlimit(resource.RLIMIT_STACK)),
-        ('core file size', resource.getrlimit(resource.RLIMIT_CORE)),
-        ('address space size', resource.getrlimit(resource.RLIMIT_AS)),
-        ('locked in mem size', resource.getrlimit(resource.RLIMIT_MEMLOCK)),
-        ('heap size', resource.getrlimit(resource.RLIMIT_DATA)),
-        ('rss size', resource.getrlimit(resource.RLIMIT_RSS)),
-        ('number of processes', resource.getrlimit(resource.RLIMIT_NPROC)),
-        ('open files', resource.getrlimit(resource.RLIMIT_NOFILE)),
+        ('cpu time (seconds)', get_resource(resource.RLIMIT_CPU)),
+        ('file size', get_resource(resource.RLIMIT_FSIZE)),
+        ('stack size', get_resource(resource.RLIMIT_STACK)),
+        ('core file size', get_resource(resource.RLIMIT_CORE)),
+        ('address space size', get_resource(resource.RLIMIT_AS)),
+        ('locked in mem size', get_resource(resource.RLIMIT_MEMLOCK)),
+        ('heap size', get_resource(resource.RLIMIT_DATA)),
+        ('rss size', get_resource(resource.RLIMIT_RSS)),
+        ('number of processes', get_resource(resource.RLIMIT_NPROC)),
+        ('open files', get_resource(resource.RLIMIT_NOFILE)),
     ])
 
     text = ', '.join('{}:{}'.format(k,v) for k,v in data.items())
