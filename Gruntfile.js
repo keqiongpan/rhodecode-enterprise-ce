@@ -17,5 +17,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-webpack');
-  grunt.registerTask('default', ['less:production', 'less:components',  'concat:polymercss', 'copy', 'webpack', 'concat:dist']);
+  grunt.registerTask('default', ['less:production', 'less:components', 'copy', 'webpack', 'concat:dist']);
 };

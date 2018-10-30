@@ -1,5 +1,5 @@
 import '@polymer/iron-ajax/iron-ajax.js';
-import './root-styles.gen.html';
+import './shared-styles.js';
 import './channelstream-connection/channelstream-connection.js';
 import './rhodecode-toast/rhodecode-toast.js';
 import './rhodecode-toggle/rhodecode-toggle.js';

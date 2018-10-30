@@ -1,8 +1,8 @@
 {
   "dirs": {
     "css": {
-      "src":"rhodecode/public/css",
-      "dest":"rhodecode/public/css"
+      "src": "rhodecode/public/css",
+      "dest": "rhodecode/public/css"
     },
     "js": {
       "src": "rhodecode/public/js/src",
@@ -13,22 +13,21 @@
   },
   "copy": {
     "main": {
-      "expand": true,
-      "cwd": "node_modules/@webcomponents",
-      "src": "webcomponentsjs/*.*",
-      "dest": "<%= dirs.js.dest %>/vendors"
+      "files": [
+        {
+          "expand": true,
+          "cwd": "node_modules/@webcomponents",
+          "src": "webcomponentsjs/*.*",
+          "dest": "<%= dirs.js.dest %>/vendors"
+        },
+        {
+          "src": "<%= dirs.css.src %>/style-polymer.css",
+          "dest": "<%= dirs.js.dest %>/src/components/style-polymer.css"
+        }
+      ]
     }
   },
   "concat": {
-    "polymercss": {
-      "src": [
-        "<%= dirs.js.src %>/components/root-styles-prefix.html",
-        "<%= dirs.css.src %>/style-polymer.css",
-        "<%= dirs.js.src %>/components/root-styles-suffix.html"
-      ],
-      "dest": "<%= dirs.js.dest %>/src/components/root-styles.gen.html",
-      "nonull": true
-    },
     "dist": {
       "src": [
         "<%= dirs.js.node_modules %>/jquery/dist/jquery.min.js",
