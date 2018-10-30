@@ -27,6 +27,8 @@ c.template_context['default_user'] = {
 %>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
+
+        <script src="${h.asset('js/vendors/webcomponentsjs/custom-elements-es5-adapter.js', ver=c.rhodecode_version_hash)}"></script>
         <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-lite.js', ver=c.rhodecode_version_hash)}"></script>
         <title>${self.title()}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />

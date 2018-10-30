@@ -4,26 +4,35 @@
     <template>
     </template>
     <script>
-        Polymer({
-            is: 'rhodecode-favicon',
-            properties: {
-                favicon: Object,
-                counter: {
-                    type: Number,
-                    observer: '_handleCounter'
-                }
-            },
+        class RhodecodeFavicon extends Polymer.Element {
 
-            ready: function () {
+            static get is() { return 'rhodecode-favicon'; }
+
+            static get properties() {
+                return {
+                    favicon: Object,
+                    counter: {
+                        type: Number,
+                        observer: '_handleCounter'
+                    }
+                }
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
                 this.favicon = new Favico({
                     type: 'rectangle',
                     animation: 'none'
                 });
-            },
-            _handleCounter: function (newVal, oldVal) {
+            }
+
+            _handleCounter(newVal, oldVal) {
                 this.favicon.badge(this.counter);
             }
-        });
+
+        }
+        customElements.define(RhodecodeFavicon.is, RhodecodeFavicon);
+
 
     </script>
 </dom-module>

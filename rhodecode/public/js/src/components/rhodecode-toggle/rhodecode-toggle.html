@@ -1,4 +1,5 @@
-<link rel="import" href="../../../../../../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import"
+      href="../../../../../../bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../../../../../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../../../../../bower_components/paper-tooltip/paper-tooltip.html">
 
@@ -9,6 +10,7 @@
             float: left;
             position: relative;
         }
+
         .rc-toggle paper-spinner {
             position: absolute;
             top: 0;
@@ -29,20 +31,31 @@
     </template>
 
     <script>
-        Polymer({
-            is: 'rhodecode-toggle',
-            properties: {
-                noSpinner: { type: Boolean, value: false, reflectToAttribute:true},
-                tooltipText: { type: String, value: "Click to toggle", reflectToAttribute:true},
-                checked: { type:  Boolean, value: false, reflectToAttribute:true},
-                active: { type: Boolean, value: false, reflectToAttribute:true, notify:true}
-            },
-            shouldShow: function(){
-                return !this.noSpinner
-            },
-            labelStatus: function(isActive){
-                return this.checked? 'Enabled' : "Disabled"
+
+        class RhodecodeToggle extends Polymer.Element {
+
+            static get is() {
+                return 'rhodecode-toggle';
             }
-        });
+
+            static get properties() {
+                return {
+                    noSpinner: {type: Boolean, value: false, reflectToAttribute: true},
+                    tooltipText: {type: String, value: "Click to toggle", reflectToAttribute: true},
+                    checked: {type: Boolean, value: false, reflectToAttribute: true},
+                    active: {type: Boolean, value: false, reflectToAttribute: true, notify: true}
+                }
+            }
+
+            shouldShow() {
+                return !this.noSpinner
+            }
+
+            labelStatus(isActive) {
+                return this.checked ? 'Enabled' : "Disabled"
+            }
+        }
+
+        customElements.define(RhodecodeToggle.is, RhodecodeToggle);
     </script>
 </dom-module>

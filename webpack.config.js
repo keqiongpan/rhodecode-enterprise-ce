@@ -10,6 +10,18 @@ if (process.env.RC_STATIC_DIR) {
     destinationDirectory = process.env.RC_STATIC_DIR;
 }
 
+// doing it this way because it seems that plugin via grunt does not pick up .babelrc
+let babelRCOptions = {
+    "presets": [
+        ["env", {
+            "targets": {
+                "browsers": ["last 2 versions"]
+            }
+        }]
+    ],
+    "plugins": ["transform-object-rest-spread"]
+}
+
 module.exports = {
     // Tell Webpack which file kicks off our app.
     entry: {
@@ -42,7 +54,8 @@ module.exports = {
                 // polymer-webpack-loader, and hand the output to
                 // babel-loader. This let's us transpile JS in our `<script>` elements.
                 use: [
-                    {loader: 'babel-loader'},
+                    {loader: 'babel-loader',
+                    options: babelRCOptions},
                     {loader: 'polymer-webpack-loader',
                         options: {
                             processStyleLinks: true,
@@ -53,7 +66,7 @@ module.exports = {
             {
                 // If you see a file that ends in .js, just send it to the babel-loader.
                 test: /\.js$/,
-                use: 'babel-loader'
+                use: {loader: 'babel-loader', options: babelRCOptions}
                 // Optionally exclude node_modules from transpilation except for polymer-webpack-loader:
                 // exclude: /node_modules\/(?!polymer-webpack-loader\/).*/
             },
