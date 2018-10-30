@@ -187,14 +187,17 @@ let
 
       postInstall = ''
         # check required files
-        if [ ! -f rhodecode/public/js/scripts.js ]; then
-          echo "Missing scripts.js"
-          exit 1
-        fi
-        if [ ! -f rhodecode/public/css/style.css ]; then
-          echo "Missing style.css"
-          exit 1
-        fi
+        STATIC_CHECK="/robots.txt /502.html
+                      /js/scripts.js /js/rhodecode-components.js
+                      /css/style.css /css/style-polymer.css"
+
+        for file in $STATIC_CHECK;
+        do
+            if [ ! -f rhodecode/public/$file ]; then
+              echo "Missing $file"
+              exit 1
+            fi
+        done
 
         echo "Writing enterprise-ce meta information for rccontrol to nix-support/rccontrol"
         mkdir -p $out/nix-support/rccontrol
