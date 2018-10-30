@@ -1,5 +1,6 @@
 const styleElement = document.createElement('dom-module');
-import sharedCSS from 'raw-loader!./style-polymer.css';
+// this will use raw-loader
+import sharedCSS from './style-polymer.css';
 
 styleElement.innerHTML =
     `<template>

@@ -44,6 +44,10 @@ module.exports = {
     module: {
         rules: [
             {
+                test: /style-polymer.css/,
+                use: 'raw-loader'
+            },
+            {
                 // If you see a file that ends in .html, send it to these loaders.
                 test: /\.html$/,
                 // This is an example of chained loaders in Webpack.
