@@ -4,8 +4,19 @@
 
 <dom-module id="rhodecode-toggle">
 
-    <style include="shared-styles"></style>
-    <link rel="stylesheet" href="rhodecode-toggle.css">
+    <style include="shared-styles">
+        .rc-toggle {
+            float: left;
+            position: relative;
+        }
+        .rc-toggle paper-spinner {
+            position: absolute;
+            top: 0;
+            left: -30px;
+            width: 20px;
+            height: 20px;
+        }
+    </style>
 
     <template>
         <div class="rc-toggle">

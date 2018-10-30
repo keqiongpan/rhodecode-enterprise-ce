@@ -93,7 +93,8 @@
         "<%= dirs.js.src %>/rhodecode/tooltips.js",
         "<%= dirs.js.src %>/rhodecode/users.js",
         "<%= dirs.js.src %>/rhodecode/appenlight.js",
-        "<%= dirs.js.src %>/rhodecode.js"
+        "<%= dirs.js.src %>/rhodecode.js",
+        "<%= dirs.js.dest %>/rhodecode-components.js"
       ],
       "dest": "<%= dirs.js.dest %>/scripts.js",
       "nonull": true
@@ -146,7 +147,7 @@
         "less:development",
         "less:components",
         "concat:polymercss",
-        "vulcanize",
+        "webpack",
         "concat:dist"
       ]
     },
@@ -159,7 +160,7 @@
       "tasks": [
         "less:components",
         "concat:polymercss",
-        "vulcanize",
+        "webpack",
         "concat:dist"
       ]
     }
@@ -169,19 +170,6 @@
       "src": "<%= dirs.js.src %>/rhodecode/**/*.js",
       "options": {
         "jshintrc": ".jshintrc"
-      }
-    }
-  },
-  "vulcanize": {
-    "default": {
-      "options": {
-        "abspath": "",
-        "inlineScripts": true,
-        "inlineCss": true,
-        "stripComments": true
-      },
-      "files": {
-        "<%= dirs.js.dest %>/rhodecode-components.html": "<%= dirs.js.src %>/components/shared-components.html"
       }
     }
   }

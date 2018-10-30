@@ -3,8 +3,85 @@
 <link rel="import" href="../rhodecode-unsafe-html/rhodecode-unsafe-html.html">
 <dom-module id="rhodecode-toast">
     <template>
-        <style include="shared-styles"></style>
-        <link rel="stylesheet" href="rhodecode-toast.css">
+        <style include="shared-styles">
+            /* inset border for buttons - does not work in ie */
+            /* rounded borders */
+            /* rounded borders - bottom only */
+            /* rounded borders - top only */
+            /* text shadow */
+            /* centers text in a circle - input diameter of circle and color */
+            /* pill version of the circle */
+            .absolute-center {
+                margin: auto;
+                position: absolute;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                right: 0;
+            }
+            .top-left-rounded-corner {
+                -webkit-border-top-left-radius: 2px;
+                -khtml-border-radius-topleft: 2px;
+                border-top-left-radius: 2px;
+            }
+            .top-right-rounded-corner {
+                -webkit-border-top-right-radius: 2px;
+                -khtml-border-radius-topright: 2px;
+                border-top-right-radius: 2px;
+            }
+            .bottom-left-rounded-corner {
+                -webkit-border-bottom-left-radius: 2px;
+                -khtml-border-radius-bottomleft: 2px;
+                border-bottom-left-radius: 2px;
+            }
+            .bottom-right-rounded-corner {
+                -webkit-border-bottom-right-radius: 2px;
+                -khtml-border-radius-bottomright: 2px;
+                border-bottom-right-radius: 2px;
+            }
+            .top-left-rounded-corner-mid {
+                -webkit-border-top-left-radius: 2px;
+                -khtml-border-radius-topleft: 2px;
+                border-top-left-radius: 2px;
+            }
+            .top-right-rounded-corner-mid {
+                -webkit-border-top-right-radius: 2px;
+                -khtml-border-radius-topright: 2px;
+                border-top-right-radius: 2px;
+            }
+            .bottom-left-rounded-corner-mid {
+                -webkit-border-bottom-left-radius: 2px;
+                -khtml-border-radius-bottomleft: 2px;
+                border-bottom-left-radius: 2px;
+            }
+            .bottom-right-rounded-corner-mid {
+                -webkit-border-bottom-right-radius: 2px;
+                -khtml-border-radius-bottomright: 2px;
+                border-bottom-right-radius: 2px;
+            }
+            .alert {
+                margin: 10px 0;
+            }
+            .toast-close {
+                margin: 0;
+                float: right;
+                cursor: pointer;
+            }
+            .toast-message-holder {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            .toast-message-holder.fixed {
+                position: fixed;
+                padding: 10px 0;
+                margin-left: 10px;
+                margin-right: 10px;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 100;
+            }
+        </style>
+
         <template is="dom-if" if="[[hasToasts]]">
             <div class$="container toast-message-holder [[conditionalClass(isFixed)]]">
                 <template is="dom-repeat" items="[[toasts]]">
