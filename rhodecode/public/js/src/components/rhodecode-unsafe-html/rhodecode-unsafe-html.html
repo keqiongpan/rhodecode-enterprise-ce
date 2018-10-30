@@ -5,5 +5,19 @@
         <style include="shared-styles"></style>
         <slot></slot>
     </template>
-    <script src="rhodecode-unsafe-html.js"></script>
+    <script>
+        Polymer({
+            is: 'rhodecode-unsafe-html',
+            properties: {
+                text: {
+                    type: String,
+                    observer: '_handleText'
+                }
+            },
+            _handleText: function(newVal, oldVal){
+                this.innerHTML = this.text;
+            }
+        })
+
+    </script>
 </dom-module>
