@@ -4,6 +4,222 @@
 
 let
   sources = {
+    "@polymer/font-roboto-3.0.2" = {
+      name = "_at_polymer_slash_font-roboto";
+      packageName = "@polymer/font-roboto";
+      version = "3.0.2";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/font-roboto/-/font-roboto-3.0.2.tgz";
+        sha512 = "tx5TauYSmzsIvmSqepUPDYbs4/Ejz2XbZ1IkD7JEGqkdNUJlh+9KU85G56Tfdk/xjEZ8zorFfN09OSwiMrIQWA==";
+      };
+    };
+    "@polymer/iron-a11y-announcer-3.0.1" = {
+      name = "_at_polymer_slash_iron-a11y-announcer";
+      packageName = "@polymer/iron-a11y-announcer";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-a11y-announcer/-/iron-a11y-announcer-3.0.1.tgz";
+        sha512 = "Xiqmpz0AEEbMNGYPpbrXBIrcI/xaR4tn77pmSLfxVKGGwjEUR/YrRgyIwXp4EN7lvst1dFC8kyl2hLga0uDIVQ==";
+      };
+    };
+    "@polymer/iron-a11y-keys-3.0.1" = {
+      name = "_at_polymer_slash_iron-a11y-keys";
+      packageName = "@polymer/iron-a11y-keys";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-a11y-keys/-/iron-a11y-keys-3.0.1.tgz";
+        sha512 = "zmTi8xHeY4ZMJLAitW2hAmW5zXZ35hVy/eHQUFadAlOccuBK3oRRmoPRQRaZgpyJrCVFDAQRXXzzJtUDil/0CA==";
+      };
+    };
+    "@polymer/iron-a11y-keys-behavior-3.0.1" = {
+      name = "_at_polymer_slash_iron-a11y-keys-behavior";
+      packageName = "@polymer/iron-a11y-keys-behavior";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-a11y-keys-behavior/-/iron-a11y-keys-behavior-3.0.1.tgz";
+        sha512 = "lnrjKq3ysbBPT/74l0Fj0U9H9C35Tpw2C/tpJ8a+5g8Y3YJs1WSZYnEl1yOkw6sEyaxOq/1DkzH0+60gGu5/PQ==";
+      };
+    };
+    "@polymer/iron-ajax-3.0.1" = {
+      name = "_at_polymer_slash_iron-ajax";
+      packageName = "@polymer/iron-ajax";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-ajax/-/iron-ajax-3.0.1.tgz";
+        sha512 = "7+TPEAfWsRdhj1Y8UeF1759ktpVu+c3sG16rJiUC3wF9+woQ9xI1zUm2d59i7Yc3aDEJrR/Q8Y262KlOvyGVNg==";
+      };
+    };
+    "@polymer/iron-autogrow-textarea-3.0.1" = {
+      name = "_at_polymer_slash_iron-autogrow-textarea";
+      packageName = "@polymer/iron-autogrow-textarea";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-autogrow-textarea/-/iron-autogrow-textarea-3.0.1.tgz";
+        sha512 = "FgSL7APrOSL9Vu812sBCFlQ17hvnJsBAV2C2e1UAiaHhB+dyfLq8gGdGUpqVWuGJ50q4Y/49QwCNnLf85AdVYA==";
+      };
+    };
+    "@polymer/iron-behaviors-3.0.1" = {
+      name = "_at_polymer_slash_iron-behaviors";
+      packageName = "@polymer/iron-behaviors";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-behaviors/-/iron-behaviors-3.0.1.tgz";
+        sha512 = "IMEwcv1lhf1HSQxuyWOUIL0lOBwmeaoSTpgCJeP9IBYnuB1SPQngmfRuHKgK6/m9LQ9F9miC7p3HeQQUdKAE0w==";
+      };
+    };
+    "@polymer/iron-checked-element-behavior-3.0.1" = {
+      name = "_at_polymer_slash_iron-checked-element-behavior";
+      packageName = "@polymer/iron-checked-element-behavior";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-checked-element-behavior/-/iron-checked-element-behavior-3.0.1.tgz";
+        sha512 = "aDr0cbCNVq49q+pOqa6CZutFh+wWpwPMLpEth9swx+GkAj+gCURhuQkaUYhIo5f2egDbEioR1aeHMnPlU9dQZA==";
+      };
+    };
+    "@polymer/iron-fit-behavior-3.0.1" = {
+      name = "_at_polymer_slash_iron-fit-behavior";
+      packageName = "@polymer/iron-fit-behavior";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-fit-behavior/-/iron-fit-behavior-3.0.1.tgz";
+        sha512 = "/M0B1L30k31vmwNBaGuZcxzUAhJSHoGccb/DF0CDKI/hT8UlkTvcyemaWdOpmHHLgY52ceKIkRwA3AeXrKyvaQ==";
+      };
+    };
+    "@polymer/iron-flex-layout-3.0.1" = {
+      name = "_at_polymer_slash_iron-flex-layout";
+      packageName = "@polymer/iron-flex-layout";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-flex-layout/-/iron-flex-layout-3.0.1.tgz";
+        sha512 = "7gB869czArF+HZcPTVSgvA7tXYFze9EKckvM95NB7SqYF+NnsQyhoXgKnpFwGyo95lUjUW9TFDLUwDXnCYFtkw==";
+      };
+    };
+    "@polymer/iron-form-element-behavior-3.0.1" = {
+      name = "_at_polymer_slash_iron-form-element-behavior";
+      packageName = "@polymer/iron-form-element-behavior";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-form-element-behavior/-/iron-form-element-behavior-3.0.1.tgz";
+        sha512 = "G/e2KXyL5AY7mMjmomHkGpgS0uAf4ovNpKhkuUTRnMuMJuf589bKqE85KN4ovE1Tzhv2hJoh/igyD6ekHiYU1A==";
+      };
+    };
+    "@polymer/iron-meta-3.0.1" = {
+      name = "_at_polymer_slash_iron-meta";
+      packageName = "@polymer/iron-meta";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-meta/-/iron-meta-3.0.1.tgz";
+        sha512 = "pWguPugiLYmWFV9UWxLWzZ6gm4wBwQdDy4VULKwdHCqR7OP7u98h+XDdGZsSlDPv6qoryV/e3tGHlTIT0mbzJA==";
+      };
+    };
+    "@polymer/iron-overlay-behavior-3.0.2" = {
+      name = "_at_polymer_slash_iron-overlay-behavior";
+      packageName = "@polymer/iron-overlay-behavior";
+      version = "3.0.2";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-overlay-behavior/-/iron-overlay-behavior-3.0.2.tgz";
+        sha512 = "j1qmt6mJHCwpe1mKOvqK5kcCUPQr5LSrlqpgRDbUuLgUfNJ/vGTipjrkBlfbEUagm5FEQdc1VLPLSQP6WVuP9g==";
+      };
+    };
+    "@polymer/iron-resizable-behavior-3.0.1" = {
+      name = "_at_polymer_slash_iron-resizable-behavior";
+      packageName = "@polymer/iron-resizable-behavior";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-resizable-behavior/-/iron-resizable-behavior-3.0.1.tgz";
+        sha512 = "FyHxRxFspVoRaeZSWpT3y0C9awomb4tXXolIJcZ7RvXhMP632V5lez+ch5G5SwK0LpnAPkg35eB0LPMFv+YMMQ==";
+      };
+    };
+    "@polymer/iron-validatable-behavior-3.0.1" = {
+      name = "_at_polymer_slash_iron-validatable-behavior";
+      packageName = "@polymer/iron-validatable-behavior";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/iron-validatable-behavior/-/iron-validatable-behavior-3.0.1.tgz";
+        sha512 = "wwpYh6wOa4fNI+jH5EYKC7TVPYQ2OfgQqocWat7GsNWcsblKYhLYbwsvEY5nO0n2xKqNfZzDLrUom5INJN7msQ==";
+      };
+    };
+    "@polymer/paper-behaviors-3.0.1" = {
+      name = "_at_polymer_slash_paper-behaviors";
+      packageName = "@polymer/paper-behaviors";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/paper-behaviors/-/paper-behaviors-3.0.1.tgz";
+        sha512 = "6knhj69fPJejv8qR0kCSUY+Q0XjaUf0OSnkjRjmTJPAwSrRYtgqE+l6P1FfA+py1X/cUjgne9EF5rMZAKJIg1g==";
+      };
+    };
+    "@polymer/paper-button-3.0.1" = {
+      name = "_at_polymer_slash_paper-button";
+      packageName = "@polymer/paper-button";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/paper-button/-/paper-button-3.0.1.tgz";
+        sha512 = "JRNBc+Oj9EWnmyLr7FcCr8T1KAnEHPh6mosln9BUdkM+qYaYsudSICh3cjTIbnj6AuF5OJidoLkM1dlyj0j6Zg==";
+      };
+    };
+    "@polymer/paper-ripple-3.0.1" = {
+      name = "_at_polymer_slash_paper-ripple";
+      packageName = "@polymer/paper-ripple";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/paper-ripple/-/paper-ripple-3.0.1.tgz";
+        sha512 = "dgOe12GyCF1VZBLUQqnzGWlf3xb255FajNCVB1VFj/AtskYtoamnafa7m3a+1vs+C8qbg4Benn5KwgxVDSW4cg==";
+      };
+    };
+    "@polymer/paper-spinner-3.0.1" = {
+      name = "_at_polymer_slash_paper-spinner";
+      packageName = "@polymer/paper-spinner";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/paper-spinner/-/paper-spinner-3.0.1.tgz";
+        sha512 = "MYIU6qWZnhZ5yNFOBzROPgBteGfxKEnDZ6bCgjrvUtJkBuQEz0MQZzSE/zmZc0oaJ9u5QK5xAFuYdudsGv7+sQ==";
+      };
+    };
+    "@polymer/paper-styles-3.0.1" = {
+      name = "_at_polymer_slash_paper-styles";
+      packageName = "@polymer/paper-styles";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/paper-styles/-/paper-styles-3.0.1.tgz";
+        sha512 = "y6hmObLqlCx602TQiSBKHqjwkE7xmDiFkoxdYGaNjtv4xcysOTdVJsDR/R9UHwIaxJ7gHlthMSykir1nv78++g==";
+      };
+    };
+    "@polymer/paper-toast-3.0.1" = {
+      name = "_at_polymer_slash_paper-toast";
+      packageName = "@polymer/paper-toast";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/paper-toast/-/paper-toast-3.0.1.tgz";
+        sha512 = "pizuogzObniDdICUc6dSLrnDt2VzzoRne1gCmbD6sfOATVv5tc8UfrqhA2iHngbNBEbniBiciS3iogdp5KTVUQ==";
+      };
+    };
+    "@polymer/paper-toggle-button-3.0.1" = {
+      name = "_at_polymer_slash_paper-toggle-button";
+      packageName = "@polymer/paper-toggle-button";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/paper-toggle-button/-/paper-toggle-button-3.0.1.tgz";
+        sha512 = "jadZB60fycT7YnSAH0H23LYo6/2HYmMZTtNr9LpdSIRFPLX6mqqxewex92cFz019bMKaRJgORn308hRlJo2u6A==";
+      };
+    };
+    "@polymer/paper-tooltip-3.0.1" = {
+      name = "_at_polymer_slash_paper-tooltip";
+      packageName = "@polymer/paper-tooltip";
+      version = "3.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/paper-tooltip/-/paper-tooltip-3.0.1.tgz";
+        sha512 = "yiUk09opTEnE1lK+tb501ENb+yQBi4p++Ep0eGJAHesVYKVMPNgPphVKkIizkDaU+n0SE+zXfTsRbYyOMDYXSg==";
+      };
+    };
+    "@polymer/polymer-3.1.0" = {
+      name = "_at_polymer_slash_polymer";
+      packageName = "@polymer/polymer";
+      version = "3.1.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@polymer/polymer/-/polymer-3.1.0.tgz";
+        sha512 = "hwN8IMERsFATz/9dSMxYHL+84J9uBkPuuarxJWlTsppZ4CAYTZKnepBfNrKoyNsafBmA3yXBiiKPPf+fJtza7A==";
+      };
+    };
     "@types/clone-0.1.30" = {
       name = "_at_types_slash_clone";
       packageName = "@types/clone";
@@ -191,6 +407,24 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/@webassemblyjs/wast-printer/-/wast-printer-1.7.10.tgz";
         sha512 = "mJ3QKWtCchL1vhU/kZlJnLPuQZnlDOdZsyP0bbLWPGdYsQDnSBvyTLhzwBA3QAMlzEL9V4JHygEmK6/OTEyytA==";
+      };
+    };
+    "@webcomponents/shadycss-1.5.2" = {
+      name = "_at_webcomponents_slash_shadycss";
+      packageName = "@webcomponents/shadycss";
+      version = "1.5.2";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@webcomponents/shadycss/-/shadycss-1.5.2.tgz";
+        sha512 = "0OyrmVc7S+INtzoqP2ofAo+OdVn2Nj0Qvq4wD9FEGN7nMmLRxaD2mzy6hD6EslzxUSuGH302CDU4KXiY66SEqg==";
+      };
+    };
+    "@webcomponents/webcomponentsjs-2.1.3" = {
+      name = "_at_webcomponents_slash_webcomponentsjs";
+      packageName = "@webcomponents/webcomponentsjs";
+      version = "2.1.3";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@webcomponents/webcomponentsjs/-/webcomponentsjs-2.1.3.tgz";
+        sha512 = "0UHJNY88lR3pnEYtBVT7F8cuuxOiITQGWJa0LxoELqkBSB7IabzJFOj5K99PajD3CGAsWpjB0CAeijfe376Y1w==";
       };
     };
     "@xtuc/ieee754-1.2.0" = {
@@ -1454,13 +1688,13 @@ let
         sha1 = "b534e7c734c4f81ec5fbe8aca2ad24354b962c6c";
       };
     };
-    "caniuse-db-1.0.30000899" = {
+    "caniuse-db-1.0.30000900" = {
       name = "caniuse-db";
       packageName = "caniuse-db";
-      version = "1.0.30000899";
+      version = "1.0.30000900";
       src = fetchurl {
-        url = "https://registry.npmjs.org/caniuse-db/-/caniuse-db-1.0.30000899.tgz";
-        sha512 = "MSCUohyoLU4/PGapapw/PLQkmQ+sFgzX6e3tM6ue8HX9HW9rBD5gRiAYKhC8r0QkvUE0pWTA8Ze6f3jrzBizVg==";
+        url = "https://registry.npmjs.org/caniuse-db/-/caniuse-db-1.0.30000900.tgz";
+        sha512 = "fvicVRDlhHIQpt/bmbLl3hDHKUZb5ZP8O2OuZLz2fSEPlUBbvwwbhhqhGS617ldN6bDoo9A3+MQKQyFq0p7UXA==";
       };
     };
     "caniuse-lite-1.0.30000899" = {
@@ -7482,6 +7716,30 @@ let
     version = "1.0.0";
     src = ./..;
     dependencies = [
+      sources."@polymer/font-roboto-3.0.2"
+      sources."@polymer/iron-a11y-announcer-3.0.1"
+      sources."@polymer/iron-a11y-keys-3.0.1"
+      sources."@polymer/iron-a11y-keys-behavior-3.0.1"
+      sources."@polymer/iron-ajax-3.0.1"
+      sources."@polymer/iron-autogrow-textarea-3.0.1"
+      sources."@polymer/iron-behaviors-3.0.1"
+      sources."@polymer/iron-checked-element-behavior-3.0.1"
+      sources."@polymer/iron-fit-behavior-3.0.1"
+      sources."@polymer/iron-flex-layout-3.0.1"
+      sources."@polymer/iron-form-element-behavior-3.0.1"
+      sources."@polymer/iron-meta-3.0.1"
+      sources."@polymer/iron-overlay-behavior-3.0.2"
+      sources."@polymer/iron-resizable-behavior-3.0.1"
+      sources."@polymer/iron-validatable-behavior-3.0.1"
+      sources."@polymer/paper-behaviors-3.0.1"
+      sources."@polymer/paper-button-3.0.1"
+      sources."@polymer/paper-ripple-3.0.1"
+      sources."@polymer/paper-spinner-3.0.1"
+      sources."@polymer/paper-styles-3.0.1"
+      sources."@polymer/paper-toast-3.0.1"
+      sources."@polymer/paper-toggle-button-3.0.1"
+      sources."@polymer/paper-tooltip-3.0.1"
+      sources."@polymer/polymer-3.1.0"
       sources."@types/clone-0.1.30"
       sources."@types/node-6.14.0"
       sources."@types/parse5-2.2.34"
@@ -7503,6 +7761,8 @@ let
       sources."@webassemblyjs/wasm-parser-1.7.10"
       sources."@webassemblyjs/wast-parser-1.7.10"
       sources."@webassemblyjs/wast-printer-1.7.10"
+      sources."@webcomponents/shadycss-1.5.2"
+      sources."@webcomponents/webcomponentsjs-2.1.3"
       sources."@xtuc/ieee754-1.2.0"
       sources."@xtuc/long-4.2.1"
       sources."abbrev-1.1.1"
@@ -7716,7 +7976,7 @@ let
           sources."browserslist-1.7.7"
         ];
       })
-      sources."caniuse-db-1.0.30000899"
+      sources."caniuse-db-1.0.30000900"
       sources."caniuse-lite-1.0.30000899"
       sources."caseless-0.12.0"
       sources."center-align-0.1.3"

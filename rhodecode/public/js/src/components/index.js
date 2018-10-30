@@ -1,7 +1,7 @@
-import '../../../../../bower_components/iron-ajax/iron-ajax.html';
+import '@polymer/iron-ajax/iron-ajax.js';
 import './root-styles.gen.html';
-import './channelstream-connection/channelstream-connection.html';
-import './rhodecode-toast/rhodecode-toast.html';
-import './rhodecode-toggle/rhodecode-toggle.html';
-import './rhodecode-unsafe-html/rhodecode-unsafe-html.html';
-import './rhodecode-app/rhodecode-app.html';
+import './channelstream-connection/channelstream-connection.js';
+import './rhodecode-toast/rhodecode-toast.js';
+import './rhodecode-toggle/rhodecode-toggle.js';
+import './rhodecode-unsafe-html/rhodecode-unsafe-html.js';
+import './rhodecode-app/rhodecode-app.js';
