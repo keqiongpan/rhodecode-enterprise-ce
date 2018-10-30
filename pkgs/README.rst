@@ -35,7 +35,7 @@ NodeJS dependencies
                 -o pkgs/node-packages.nix \
                 -e pkgs/node-env.nix \
                 -c pkgs/node-default.nix \
-                -d --flatten --nodejs-6 "
+                -d --flatten --nodejs-8 "
 
 
 
