@@ -35,12 +35,12 @@ h1, h2, h3, h4, h5, h6,
   }
 }
 
-h1, .h1 { font-size: 1.54em; font-family: @text-bold; }
-h2, .h2 { font-size: 1.23em; font-family: @text-semibold; }
-h3, .h3 { font-size: 1.23em; font-family: @text-regular; }
-h4, .h4 { font-size: 1em;    font-family: @text-bold; }
-h5, .h5 { font-size: 1em;    font-family: @text-bold-italic; }
-h6, .h6 { font-size: 1em;    font-family: @text-bold-italic; }
+h1, .h1 { font-size: 1.54em; font-weight: @text-bold-weight;     font-family: @text-bold; }
+h2, .h2 { font-size: 1.23em; font-weight: @text-semibold-weight; font-family: @text-semibold;  }
+h3, .h3 { font-size: 1.23em;                                     font-family: @text-regular; }
+h4, .h4 { font-size: 1em;    font-weight: @text-bold-weight;     font-family: @text-bold; }
+h5, .h5 { font-size: 1em;    font-weight: @text-bold-weight;     font-family: @text-bold; }
+h6, .h6 { font-size: 1em;    font-weight: @text-bold-weight;     font-family: @text-bold; }
 
 // Breadcrumbs
 .breadcrumbs {
@@ -95,15 +95,19 @@ img {
 }
 
 strong {
+  font-weight: @text-bold-weight;
   font-family: @text-bold;
 }
 
 em {
   font-family: @text-italic;
+  font-style: italic;
 }
 
 strong em,
 em strong {
+  font-style: italic;
+  font-weight: @text-bold-italic-weight;
   font-family: @text-bold-italic;
 }
 
@@ -384,6 +388,7 @@ dd {
 
 dt {
   margin: @textmargin 0 0 0;
+  font-weight: @text-bold-weight;
   font-family: @text-bold;
 }
 
