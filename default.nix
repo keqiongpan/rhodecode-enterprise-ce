@@ -9,7 +9,7 @@
 #  {
 #    # Thoughts on how to configure the dev environment
 #    rc = {
-#      codeInternalUrl = "https://usr:token@internal-code.rhodecode.com";
+#      codeInternalUrl = "https://usr:token@code.rhodecode.com/internal";
 #      sources = {
 #        rhodecode-vcsserver = "/home/user/work/rhodecode-vcsserver";
 #        rhodecode-enterprise-ce = "/home/user/work/rhodecode-enterprise-ce";
@@ -24,20 +24,20 @@ args@
 , doCheck ? false
 , ...
 }:
-let pkgs_ = (import <nixpkgs> {}); in
 
 let
-  # Use nixpkgs from args or import them. We use this indirect approach
-  # through args to be able to use the name `pkgs` for our customized packages.
-  # Otherwise we will end up with an infinite recursion.
-  pkgs = args.pkgs or (import <nixpkgs> {
+  pkgs_ = (import <nixpkgs> {});
+in
+
+let
+  pkgs = import <nixpkgs> {
     overlays = [
       (import ./pkgs/overlays.nix)
     ];
     inherit
       (pkgs_)
       system;
-  });
+  };
 
   # Works with the new python-packages, still can fallback to the old
   # variant.
