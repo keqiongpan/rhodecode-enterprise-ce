@@ -1,7 +1,6 @@
 ## small box that displays changed/added/removed details fetched by AJAX
 <%namespace name="base" file="/base/base.mako"/>
 
-
 % if c.prev_page:
     <tr>
         <td colspan="9" class="load-more-commits">
@@ -80,14 +79,12 @@
           % endif
       % endif
     </td>
-    <td class="td-message expand_commit" data-commit-id="${commit.raw_id}" title="${_('Expand commit message')}" onclick="commitsController.expandCommit(this); return false">
-      <div class="show_more_col">
+    <td class="td-message expand_commit" data-commit-id="${commit.raw_id}" title="${_('Expand commit message')}" onclick="commitsController.expandCommit(this, true); return false">
         <i class="icon-expand-linked"></i>&nbsp;
-      </div>
     </td>
     <td class="td-description mid">
       <div class="log-container truncate-wrap">
-          <div class="message truncate" id="c-${commit.raw_id}">${urlify_commit_message(commit.message, c.repo_name)}</div>
+          <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${urlify_commit_message(commit.message, c.repo_name)}</div>
       </div>
     </td>
 

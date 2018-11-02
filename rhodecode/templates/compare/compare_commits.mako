@@ -45,23 +45,12 @@
                     ${h.hidden('revisions',commit.raw_id)}
                 </code>
             </td>
-            <td class="expand_commit"
-                data-commit-id="${commit.raw_id}"
-                title="${_( 'Expand commit message')}"
-            >
-                <div class="show_more_col">
+            <td class="td-message expand_commit" data-commit-id="${commit.raw_id}" title="${_('Expand commit message')}" onclick="commitsController.expandCommit(this); return false">
                 <i class="icon-expand-linked"></i>
-                </div>
             </td>
             <td class="mid td-description">
                 <div class="log-container truncate-wrap">
-                    <div
-                        id="c-${commit.raw_id}"
-                        class="message truncate"
-                        data-message-raw="${commit.message}"
-                    >
-                        ${urlify_commit_message(commit.message, c.repo_name)}
-                    </div>
+                    <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${urlify_commit_message(commit.message, c.repo_name)}</div>
                 </div>
             </td>
         </tr>
@@ -85,31 +74,7 @@
 </div>
 
 <script>
-$('.expand_commit').on('click',function(e){
-  var target_expand = $(this);
-  var cid = target_expand.data('commitId');
-
-  // ## TODO: dan: extract styles into css, and just toggleClass('open') here
-  if (target_expand.hasClass('open')){
-    $('#c-'+cid).css({
-        'height': '1.5em',
-        'white-space': 'nowrap',
-        'text-overflow': 'ellipsis',
-        'overflow':'hidden'
-    });
-    target_expand.removeClass('open');
-  }
-  else {
-    $('#c-'+cid).css({
-        'height': 'auto',
-        'white-space': 'pre-line',
-        'text-overflow': 'initial',
-        'overflow':'visible'
-    });
-    target_expand.addClass('open');
-  }
-});
-
+commitsController = new CommitsController();
 $('.compare_select').on('click',function(e){
     var cid = $(this).attr('commit_id');
     $('#row-'+cid).toggleClass('hl', !$('#row-'+cid).hasClass('hl'));

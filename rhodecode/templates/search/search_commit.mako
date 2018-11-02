@@ -34,7 +34,7 @@
                       h.route_path('repo_commit',repo_name=entry['repository'],commit_id=entry['commit_id']))}
                 </td>
                 <td class="td-message expand_commit search open" data-commit-id="${h.md5_safe(entry['repository'])+entry['commit_id']}" id="t-${h.md5_safe(entry['repository'])+entry['commit_id']}" title="${_('Expand commit message')}">
-                    <div class="show_more_col">
+                    <div>
                     <i class="icon-expand-linked"></i>&nbsp;
                     </div>
                 </td>
